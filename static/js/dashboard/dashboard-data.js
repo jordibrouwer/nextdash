@@ -522,12 +522,30 @@ class DashboardData {
         return (Array.isArray(bookmarks) ? bookmarks : []).map((bookmark) => ({ ...bookmark }));
     }
 
+    /*
+     * A category's name is drawn translated, and saved as it was stored.
+     *
+     * A new page's default category is stored as the key "dashboard.others".
+     * The copy held here carried "Overig" in its place, and every category save
+     * sends that copy back -- so one drag stored the Dutch word, and switching
+     * to English left it Dutch for good. The stored name rides along, with the
+     * text it was shown as, and storedCategory() puts it back unless the name
+     * was changed since.
+     */
     clonePageCategories(categories) {
         const d = this.dash;
-        return (Array.isArray(categories) ? categories : []).map((cat) => ({
-            ...cat,
-            name: d.language.t(cat.name) || cat.name,
-        }));
+        return (Array.isArray(categories) ? categories : []).map((cat) => {
+            const shown = d.language.t(cat.name) || cat.name;
+            if (shown === cat.name) return { ...cat };
+            return { ...cat, name: shown, _storedName: cat.name, _shownName: shown };
+        });
+    }
+
+    /** A category as the server stores it: see clonePageCategories. */
+    static storedCategory(cat) {
+        const { _storedName, _shownName, ...row } = cat || {};
+        if (_storedName && row.name === _shownName) row.name = _storedName;
+        return row;
     }
 
     getCachedPageData(pageId) {
@@ -630,6 +648,13 @@ class DashboardData {
         if (revision) {
             this.dash._serverDataRevision = revision;
         }
+        // Seeded once, from the load: the poll only reads a settings change
+        // against a revision it already holds, and nothing else set one until a
+        // save here -- so the first change made on another device was taken as
+        // the starting point and never applied.
+        if (!this.dash._serverSettingsRevision && this._lastSettingsRevision) {
+            this.dash._serverSettingsRevision = this._lastSettingsRevision;
+        }
         return revision;
     }
 
@@ -652,16 +677,36 @@ class DashboardData {
         return changed;
     }
 
-    async refreshIfDataRevisionChanged() {
+    /*
+     * One at a time. Focus and visibilitychange are throttled to one call per
+     * half second, and on a slow server a refresh outlasts that: the second
+     * call ran a whole loadData and render alongside the first.
+     */
+    refreshIfDataRevisionChanged() {
+        if (this._revisionRefresh) return this._revisionRefresh;
+        this._revisionRefresh = this._refreshIfDataRevisionChangedOnce()
+            .finally(() => { this._revisionRefresh = null; });
+        return this._revisionRefresh;
+    }
+
+    async _refreshIfDataRevisionChangedOnce() {
         const d = this.dash;
         if (!d._bookmarksReady || d.isInlineEditActive?.()) {
             return false;
         }
         const changed = await this.syncDataRevision({ invalidateOnChange: true });
-        const settingsChanged = Boolean(this._lastSettingsRevision)
+        let settingsChanged = Boolean(this._lastSettingsRevision)
             && Boolean(d._serverSettingsRevision)
             && this._lastSettingsRevision !== d._serverSettingsRevision;
-        d._serverSettingsRevision = this._lastSettingsRevision || d._serverSettingsRevision;
+        // Not while the look studio is open: loading the settings replaced the
+        // preview with the stored look under the open panel, and Cancel then put
+        // the other device's change back. The revision is left where it was, so
+        // the first poll after the studio closes applies the change.
+        if (settingsChanged && d._lookStudioCommitted) {
+            settingsChanged = false;
+        } else {
+            d._serverSettingsRevision = this._lastSettingsRevision || d._serverSettingsRevision;
+        }
 
         // A config change on another device used to be invisible here: this poll
         // reloaded bookmarks, inbox and health and never settings, while the

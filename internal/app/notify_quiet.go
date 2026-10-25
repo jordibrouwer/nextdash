@@ -429,6 +429,34 @@ func (h *Handlers) trackOpenAlerts(source string, notices []monitorNotification)
 	}
 }
 
+// closeOpenAlerts drops these keys from the register without telling anyone:
+// for a spell that ended with no "up" to close it, such as a container that
+// stopped while over its usage line. Left open, it was reminded about as
+// still going, and a later spell found it open and raised no reminders.
+func (h *Handlers) closeOpenAlerts(keys []string) {
+	if len(keys) == 0 {
+		return
+	}
+	gone := make(map[string]bool, len(keys))
+	for _, key := range keys {
+		gone[key] = true
+	}
+	quietMu.Lock()
+	defer quietMu.Unlock()
+	file := readOpenFile()
+	kept := file.Open[:0]
+	for _, alert := range file.Open {
+		if !gone[alert.Key] {
+			kept = append(kept, alert)
+		}
+	}
+	if len(kept) == len(file.Open) {
+		return
+	}
+	file.Open = kept
+	writeOpenFile(file)
+}
+
 func trimOpen(open []openAlert, now time.Time) []openAlert {
 	cutoff := now.Add(-quietOpenMaxAge).UnixMilli()
 	out := open[:0]

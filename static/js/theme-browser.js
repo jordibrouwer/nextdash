@@ -1074,8 +1074,16 @@
             }
         };
 
+        /*
+         * While Apply is on the wire, every way out waits for it. A Cancel
+         * then (Escape, the ×, a click beside the panel) put the old look on
+         * screen while the save stored the new one, and the next unrelated
+         * save sent the old one back; a second Apply posted the colours twice.
+         */
+        let applying = false;
+
         const cancel = async () => {
-            if (closed) return;
+            if (closed || applying) return;
             setComparing(false);
             endPreview();
             await opts.onCancel?.();
@@ -1084,14 +1092,19 @@
         };
 
         const apply = async () => {
-            if (closed) return;
-            setComparing(false);
-            // What is stored is the chosen theme, so that is what stays drawn.
-            endPreview();
-            const ok = await opts.onApply?.();
-            if (ok === false) return;
-            close();
-            opts.onClose?.();
+            if (closed || applying) return;
+            applying = true;
+            try {
+                setComparing(false);
+                // What is stored is the chosen theme, so that is what stays drawn.
+                endPreview();
+                const ok = await opts.onApply?.();
+                if (ok === false) return;
+                close();
+                opts.onClose?.();
+            } finally {
+                applying = false;
+            }
         };
 
         root.querySelectorAll('[data-studio-tab]').forEach((button) => {

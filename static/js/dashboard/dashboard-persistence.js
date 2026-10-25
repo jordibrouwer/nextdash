@@ -92,7 +92,7 @@ class DashboardPersistence {
 
         if (hadCategory && Array.isArray(d.categories) && Number.isFinite(pageId)) {
             try {
-                const categoryPayload = d.categories.map((c) => ({ ...c, originalId: c.id }));
+                const categoryPayload = d.categories.map((c) => ({ ...DashboardData.storedCategory(c), originalId: c.id }));
                 fetch(`/api/categories?page=${pageId}`, {
                     method: 'POST',
                     headers,

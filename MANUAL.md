@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **376 themes, one look studio** | 188 theme families in light and dark, twelve characters, 29 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16 Appearance](#16-appearance) and [the theme browser](#the-theme-browser) |
+| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and **Aurora Glass** is the default; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16A The new look](#16a-the-new-look), [§16 Appearance](#16-appearance) and [the theme studio](#the-theme-studio) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 | 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
@@ -31,7 +31,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 | 🆕 just installed nextDash | [2 · First launch](#first-launch) → [3 · Core concepts](#3-core-concepts) | [5 · Adding bookmarks](#5-adding-bookmarks) |
 | ⌨️ want to stop using the mouse | [7 · Keyboard](#7-keyboard) | [8 · Search, commands and finders](#8-search-commands-and-finders) |
 | 🏠 run it next to your own services | [Self-hosted guide](#self-hosted-guide) | [14 · Containers](#14-containers), [12 · Checks & health](#12-checks-health) |
-| 🎨 want it to look like yours | [16 · Appearance](#16-appearance) | [15 · Widgets](#15-widgets) |
+| 🎨 want it to look like yours | [16 · Appearance](#16-appearance), [16A · The new look](#16a-the-new-look) | [15 · Widgets](#15-widgets) |
 | 🔤 met a word you don't know | [Glossary](#glossary) | |
 
 **All chapters**
@@ -267,7 +267,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 <summary><b>16.</b> <a href="#16-appearance">Appearance</a></summary>
 
 - [Themes](#161-themes)
-  - [The theme browser](#the-theme-browser)
+  - [The theme studio](#the-theme-studio)
   - [Themes that catch the light](#themes-that-catch-the-light)
 - [Character](#162-character)
 - [Surfaces](#163-surfaces)
@@ -277,6 +277,17 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Header and action buttons](#167-header-and-action-buttons)
 - [Date and weather](#168-date-and-weather)
 - [Finding and resetting](#169-finding-and-resetting)
+
+</details>
+
+<details>
+<summary><b>16A.</b> <a href="#16a-the-new-look">The new look</a></summary>
+
+- [What changed](#16a1-what-changed)
+- [Why](#16a2-why)
+- [Everyone gets Aurora Glass, and the way back](#16a3-everyone-gets-aurora-glass-and-the-way-back)
+- [New and changed backdrops](#16a4-backdrops)
+- [The neutral themes](#16a5-neutrals)
 
 </details>
 
@@ -656,7 +667,7 @@ Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Aro
 | **Add** | One-line quick add, the full form, paste a URL, browser extension, share sheet, bookmarklet, imports |
 | **Watch** | Broken links, uptime monitoring, certificate expiry, page drift, alerts |
 | **Show** | Widgets for health, inbox, feeds, weather, calendar, your machine, your containers and your own services |
-| **Customise** | 188 theme families, backdrops, surfaces, layout, header and action buttons, six languages |
+| **Customise** | 190+ theme families, 75 backdrops, materials and surfaces, layout, header and action buttons, six languages |
 | **Keep** | Automatic backups, a 30-day trash, local copies of pages, HTML and CSV export |
 
 <a id="what-nextdash-is-not"></a>
@@ -928,6 +939,8 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 
 <img src="screenshots/manual.md/04-action-buttons.jpg" alt="The action buttons in a column along the right edge, each with its key on a small chip" width="74" align="right">
 
+**How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§16A](#16a-the-new-look)).
+
 **A bar that slides away.** **Slide a docked bar away after** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The bar comes back when the pointer touches that edge or when focus moves into it, and then slides away again after the delay. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
 
 While it is away, a small **handle** stands on that edge, so the place it came from stays visible. It grows and brightens as the pointer comes near, and a click on it brings the bar back. There is no handle for a bar in the header or behind the menu, and none on a touch screen, where nothing hovers.
@@ -967,7 +980,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)). It waits two days after the analytics question, so the two privacy cards never arrive in one visit.
 - **Moving blocks** — once, a see-through copy of the first category glides to its next place to show that blocks can be moved, and a card under its `//` offers **Try it**. The first time you pick a block up, a card beside the landing box lists the keys until **Got it**.
 - **Theme studio** — *Not happy with how it looks?* names `Shift + A` and the *Surface* and *Layout* tabs, and **Open the studio** opens it. Asked once; a new install is asked after its first day.
-- **Others** — browser notifications, the theme browser and the tour of what moved.
+- **Others** — browser notifications, the theme studio and the tour of what moved.
 
 Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
@@ -980,6 +993,8 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 1. **What the page is** — icon, title, one address and a status pill.
 2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. A bookmark that is a video — YouTube, Vimeo, Dailymotion, or a file that ends in `.mp4` — carries a small **▶** on the corner of its icon (beside the name when icons are off), and the card opens on the thumbnail with a play button over it.
 3. **What you know about it** — last check and ping, uptime, certificate expiry, the Fresh count, opens and last opened, shortcut and location.
+
+The page's picture stands on the left of the card, beside the text.
 
 <img src="screenshots/manual.md/04-preview-card.jpg" alt="The link preview card of a bookmark: picture, description, a tag, when it was last opened, its shortcut and where it lives" width="408" align="left">
 
@@ -1027,11 +1042,11 @@ One bookmark form is used everywhere: the dashboard, the Bookmarks view, the inb
 - **`Shift + B`** from anywhere on the dashboard, unless you are typing in a field.
 - **`Ctrl + Shift + A`** from anywhere.
 
-The form is one column, in the order you fill it in: **address**, **name**, the **preview card**, **tags**, **page › category** and **shortcut**, **pin** and **availability checking**, and the **note**. It opens with the cursor in the address field, adding and editing alike.
+On a screen with a mouse or trackpad the form has two columns. On the left are the fields in the order you fill them in: **address**, **name**, **tags**, **page › category** and the **note**. On the right is the **preview card** — the bookmark as the dashboard will show it — with the **shortcut**, **availability checking** and **pin** under it. `Tab` runs down one column and then the other. On a phone or in a narrow window it is one column, in the same order. It opens with the cursor in the address field, adding and editing alike.
 
 **One read of the page.** When you leave the address field, the page is read once, and that one read fills in the rest:
 
-- **The icon** — with a **✎** on it. **Choose app icon…** heads its menu and opens a search over the app icon sets ([§19.4](#194-icons-previews)); under it come **Upload…**, **Fetch again** and **Clear**. When the sets know the app, up to three suggested icons also show under the address — one click chooses one. An icon you chose or uploaded, or one the bookmark already had, is kept when the address changes; a fetched one is replaced.
+- **The icon** — with a **✎** on it. **Choose app icon…** heads its menu and opens a search over the app icon sets ([§19.4](#194-icons-previews)), in the page itself so the form no longer clips it; under it come **Upload…**, **Fetch again** and **Clear**. When the sets know the app, up to three suggested icons also show under the address — one click chooses one. An icon you chose or uploaded, or one the bookmark already had, is kept when the address changes; a fetched one is replaced.
 - **A name** — left empty, the name field shows the page's own title, *Suggested from the page · Clear*; a name you typed stays, with *Page: … · Use* under it to take the page's title instead.
 - **The card** — the page's host, its own line and its picture. It says **Reading the page…** while a slow site answers, and **No preview** with **Try again** when the page could not be read; the bookmark saves fine without one.
 - **Suggested tags** — chips under the tags field, from the same sources as Tag suggestions ([§10.4](#104-tag-suggestions)). **+** adds one, **✕** turns it down for that site everywhere, and **↻** asks again. Editing a bookmark shows its suggestions straight away, from the words stored for it.
@@ -1204,9 +1219,9 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + H` | The Bookmarks view, the whole list |
 | `Shift + U` | The Bookmarks view, on Unsorted |
 | `Shift + Y` | Containers |
-| `Shift + G` | Glances (once it is set up in Config) |
+| `Shift + G` | Glances, from every view (once it is set up in Config) |
 | `Shift + S` or `<` | Config (and back) |
-| `Shift + A` | The theme browser |
+| `Shift + A` | The theme studio |
 | `>` `:` `?` | Search, commands, finders — from every view |
 | `+` · `Shift + B` · `&` | Full bookmark form · from anywhere · quick add |
 | `/` | Tag cloud (type to find a tag, `Enter` opens its tag view, `Shift + Enter` stacks) |
@@ -1239,8 +1254,8 @@ The Containers view opens with `Shift + Y`, its header icon or `:docker`. The Gl
 | `Home` / `End` | First / last bookmark in the category |
 | `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page |
 | `Page Up` / `Page Down` | One screen up / down |
-| `G` then `1`–`9` | First bookmark in that category or collection |
-| `G` then `P` | First pinned bookmark |
+| `g` then `1`–`9` | First bookmark in that category or collection |
+| `g` then `p` | First pinned bookmark |
 | `G G` | First bookmark on the page |
 | `Enter` / `Space` | Open |
 | `Enter` on **+ N more** | Show or hide the rest of a long category |
@@ -1318,7 +1333,7 @@ A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Co
 
 ### 7.6 The cheat sheet
 
-**`!`** or **`F1`** opens the cheat sheet with a filter box. It opens on the section for the view you are in, and lists more than 200 keys and commands across Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the **Glances view**, the Config view, search modes and every command. The sections stand in two columns (one on a narrow window), the section of the view you are in leads at full width, and a row of topic chips — Navigation, Bookmarks, Views, Search and commands, Other — narrows the sheet. The filter also finds a key or a section name and ignores spaces, so `shift + y` finds Shift+Y; `/` or Ctrl/Cmd+F jumps to it. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
+**`!`** or **`F1`** opens the cheat sheet, with a search field at the top. It opens on the section for the view you are in, and lists more than 250 keys and commands by topic — Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the **Glances view**, the Config view, search modes and every command. The topics stand side by side in columns, and each row names an action. Pick a row — with the arrows or a click — and the **dock** under the list shows the keys that do it; the keys are also read out with the row by a screen reader. The search field finds an action, a key or a section name and ignores spaces, so `shift + y` finds Shift+Y. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
 
 While a panel is open, the grid behind it does not react. `Tab` stays inside the panel, and `Escape` closes it and puts focus back where it was.
 
@@ -1677,7 +1692,7 @@ A file is at most 2 MB.
 - The **header** shows where you came from, the tag (or tags), and a line of figures: how many bookmarks, on how many pages, what was opened last and most, and how many are broken. **Open all** opens every bookmark shown, **Copy links** copies their addresses, and **Manage tag** can **Rename** the tag, **Merge into another tag**, or **Remove from all bookmarks**. Each of these can be undone.
 - The **rail** on the side lists **Related tags** (click one to switch to it, `Shift`+click to add it), the **Pages** the bookmarks live on, and a **Health** filter for broken or never opened bookmarks.
 - The **toolbar** has a search box (`/` jumps to it), a count such as "12 of 40", and a sort menu. Clicking a column head sorts by it too. The table shows each bookmark's name and site, its other tags, its page, how often and when it was last opened, and its score.
-- Move with `↑` `↓`, `g` and `G` jump to the first and last row, `Enter` opens the bookmark, `i` opens its side panel (details, tags, health, with **Open** and **Edit**), and `e` opens the bookmark form. `a` adds the suggested tags of the focused row ([§10.4](#104-tag-suggestions)). Each row carries the site's icon.
+- Move with `↑` `↓`, `g` and `End` jump to the first and last row, `Enter` opens the bookmark, `i` opens its side panel (details, tags, health, with **Open** and **Edit**), and `e` opens the bookmark form. `a` adds the suggested tags of the focused row ([§10.4](#104-tag-suggestions)). Each row carries the site's icon.
 - On a row, `Shift` plus `E`, `P`, `T`, `M`, `D`, `C`, `R`, `L` or `J` does what it does on the dashboard: edit, pin, tags, move, delete, check mode, health, share link and QR code. `Delete` deletes, `Ctrl/Cmd + C` copies the address, and the row menu is the dashboard's. The cheat sheet has a **Tag view** section with all of it ([§7.6](#76-the-cheat-sheet)).
 - `x` ticks a row. `Alt`+click ticks one, `Shift`+click ticks a range, and the tick in the header ticks everything shown. A bar then offers **Open**, **Move to…**, **Delete** and **Clear**. **Move to…** takes a page; categories belong to one page, so they are offered only when every bookmark is on the same one.
 - `Escape` lets go of one thing at a time: the side panel, then the selection. After that it leaves the view and takes you back to the page you opened it from. In the search box, `Escape` first clears what you typed. The home icon and your browser's Back button do the same.
@@ -1851,7 +1866,7 @@ The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, 
 | Key | Action |
 |---|---|
 | `j` / `k`, arrows | Move |
-| `g` / `G` | First / last row |
+| `g` / `End` | First / last row |
 | `Enter` / `o` | Open the bookmark under the cursor |
 | `i` | Open or close the side panel |
 | `1` / `2` / `3`, `[` / `]` | Details, Health or Usage in the side panel |
@@ -1939,6 +1954,20 @@ It fits one screen, and steps its cards down on a small window.
 <summary>📷 Screenshot — Collection health, Overview tab</summary>
 
 <p align="center"><img src="screenshots/manual.md/11-collection-health.jpg" alt="The Collection health modal on its Overview tab: key figures, score over time, what is wrong by kind and monitor uptime" width="860"></p>
+
+</details>
+
+<details>
+<summary>📷 Screenshot — Collection health, Monitors tab</summary>
+
+<p align="center"><img src="screenshots/manual.md/11-collection-health-monitors.jpg" alt="The Collection health modal on its Monitors tab: down now, average response, outages and downtime over 30 days, then uptime across every monitor, the least available bookmarks, what got slower and the outages" width="860"></p>
+
+</details>
+
+<details>
+<summary>📷 Screenshot — Collection health, Trend tab</summary>
+
+<p align="center"><img src="screenshots/manual.md/11-collection-health-trend.jpg" alt="The Collection health modal on its Trend tab: the 90-day trend chart with a pill for each series, its figures beside it, and every monitor per day" width="860"></p>
 
 </details>
 
@@ -2296,7 +2325,7 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 | Key | Action |
 |---|---|
 | `j` / `k` | Move |
-| `g` / `G` / `Home` / `End` | First / last |
+| `g` / `Home` / `End` | First / last |
 | `Enter` | Open the side panel |
 | `o` / `Space` | Open the link |
 | `p` | Promote to a bookmark |
@@ -2461,6 +2490,13 @@ The **✎** on the icon in the panel's head chooses what the container shows: **
 - **From Glances** — for a container the linked Glances host knows: what Glances recorded about it, with **Open in Glances ↗**; the moments it restarted are marked on the Glances graphs ([§15A.6](#15a6-the-docker-host)).
 - **Logs** — the last lines, with **Refresh** and **Open logs window** ([§14.8](#148-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
+
+<details>
+<summary>📷 Screenshot — a container's timeline: a failed health check, a crash and an update</summary>
+
+<p align="center"><img src="screenshots/manual.md/14-container-timeline.jpg" alt="A container's side panel with the Timeline section open: it turned unhealthy twice and healthy again, crashed with an out-of-memory exit code and was updated, each with its date and time" width="384"></p>
+
+</details>
 
 <details>
 <summary>📷 Screenshot — the Containers view with the side panel open, full page</summary>
@@ -3316,7 +3352,7 @@ The **⋯** in the panel's head copies the name or the PID, and for a container 
 - **Busy hours** — one square per hour of each day;
 - **A typical day** — the average for each hour of the day, one bar per hour, with the highest hour on the right; it shows when the machine is busy or quiet;
 - **Peaks and rhythm** — the busiest and the quietest hour of the day, and the moments a reading rose far above its usual level, with the busiest process or container of that moment when its history is recorded;
-- **Load and cores** — the 1, 5 and 15 minute load against the number of cores, and each core's average with its peak as a tick;
+- **Load and cores** — the 1, 5 and 15 minute load against the number of cores the host reports, also on a machine with more than 32, and each core's average with its peak as a tick;
 - **Memory and swap** — where the memory goes on average (in use, cache, free), how long the swap was in use, and who used the most memory;
 - **Temperature per sensor** — every recorded sensor, hottest first, with the time it spent over the yellow line;
 - **Disk space over time** and **Disk activity** — how much each disk filled up over the range, and what it read and wrote per second;
@@ -3513,6 +3549,9 @@ The ones that change something need the write token.
 > [!NOTE]
 > **In short:** Appearance changes how the dashboard looks: themes, background, surfaces, type, layout, rows, link previews, header and action bar. Pick, preview and apply, or build a theme of your own.
 
+> [!TIP]
+> The look changed in this release: every material has a surface of its own and Aurora Glass is the default. What changed, why, and how to get your old look back is in [§16A The new look](#16a-the-new-look).
+
 **Config → Appearance** opens straight on its settings, on the tab you had open if that was in the last five minutes, and on **Theme** otherwise. Nine tabs in three labelled groups:
 
 | Group | Tabs |
@@ -3535,13 +3574,13 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 ### 16.1 Themes
 
-nextDash ships **188 theme families**, each with a light and a dark half — 376 themes in all. A fresh install starts on **Berry**, a colour-burst theme of lime and raspberry light spilling in from the edge, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made. The same goes for the room between categories and between columns (balanced on Berry, airy on Confetti) and for the category header. An install that already has a theme keeps it; a one-time card in the corner offers Berry to everyone who is not on it already, and *Try Berry* can be undone with *Go back* on the same card.
+nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Aurora Glass**, a calm theme of northern light behind a pane you can see through, drawn in the **Signature** material style ([§16A](#16a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§16A.3](#16a3-everyone-gets-aurora-glass-and-the-way-back)).
 
 **Theme** on the Theme tab lists every theme by name. Beside it:
 
-- **The theme browser** — **Open theme studio** beside the theme picker, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *New*, *Light* and *Dark*, and **More filters**, which unfolds the **character chips** ([§16.2](#162-character)) and the **collection** chips. While it is folded, the filters that are on show as chips you can remove, and the button counts them. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 62 newest families wear a **new** badge, and the **New** segment and searching `new` show only them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
-- **Collections** — the **Neutrals** collection holds five calm grey palettes — Slate, Zinc, Gray, Stone and Neutral — drawn under glass, each with a backdrop of its own. The **Looks** collection holds twenty-four colour-burst families, from Ember and Supernova to Holo, built around the burst, splash and leak backdrops ([§16.4](#164-type-and-background)).
-- **For Unraid users** — four themes after the Unraid webGUI, each in light and dark: **Unraid Black** (flat black panels, small uppercase labels, the orange of the logo), **Unraid Azure** (cool grey panels, steel-blue accent), **Unraid Ember** (that orange glowing out of black glass) and **Unraid Blaze** (the red end, hard-edged lacquer on deep crimson).
+- **The theme studio** — **Open theme studio** beside the theme picker, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *New*, *Light* and *Dark*, and **More filters**, which unfolds the **character chips** ([§16.2](#162-character)) and the **collection** chips. While it is folded, the filters that are on show as chips you can remove, and the button counts them. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 62 newest families wear a **new** badge, and the **New** segment and searching `new` show only them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
+- **Collections** — the **Neutrals** collection holds eight grey bases on one lightness ladder — Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete and Black — each with a material and a backdrop of its own; **Accent of the neutrals** gives all eight one colour ([§16.3](#163-surfaces)). The **Looks** collection holds twenty-four colour-burst families, from Ember and Supernova to Holo, built around the burst, splash and leak backdrops ([§16.4](#164-type-and-background)). The **Classic** collection holds **ThinkDashboard Classic**, the theme of v1.0.0 with its colours and its grid of dots; the current ThinkDashboard is now **ThinkDashboard Modern**.
+- **For Unraid users** — four themes after the Unraid webGUI, each in light and dark: **Unraid Black** (flat black panels, small uppercase labels, the orange of the logo), **Unraid Azure** (cool grey panels, steel-blue accent), **Unraid Ember** (that orange glowing out of black glass) and **Unraid Blaze** (the red end, hard-edged lacquer on deep crimson). All four draw card panels in the colours of a server, with a rack backdrop and terminal backdrops behind them, and a calmer band.
 - **Quick mode** — switches between the light and dark half of the family you are on.
 - **Follow system dark mode** — shows the light half by day and the dark half by night, following the operating system, also in a background tab.
 - **Random theme** — **Off**, **On page refresh**, or **On view change** (switching between the dashboard grid, config, the inbox, the Bookmarks view, Containers or pages). Your saved theme stays underneath and comes back when you turn it off. With follow-system on, only halves that match the current mode are picked.
@@ -3549,15 +3588,16 @@ nextDash ships **188 theme families**, each with a light and a dark half — 376
 - **`:theme <name>`** and **`:dark`** switch from the command palette.
 
 <a id="the-theme-browser"></a>
+<a id="the-theme-studio"></a>
 
-#### 🪟 The theme browser
+#### 🪟 The theme studio
 
-The theme browser lies over the right of the dashboard, so every change shows on the real page while you make it. Nothing is stored until **Apply**; **Cancel**, the **×** at the top right, **Esc** or a click on the dashboard beside the panel puts everything back, in every tab. On a narrow window it becomes a sheet along the bottom.
+The theme studio lies over the right of the dashboard, so every change shows on the real page while you make it. Nothing is stored until **Apply**; **Cancel**, the **×** at the top right, **Esc** or a click on the dashboard beside the panel puts everything back, in every tab. On a narrow window it becomes a sheet along the bottom.
 
 <p align="center">
-  <img src="screenshots/manual.md/16-look-studio.jpg" alt="The theme browser open beside the dashboard, with tabs for Themes, Backdrop, Surface, Headers, Layout and Looks and a grid of themes to pick from" width="860">
+  <img src="screenshots/manual.md/16-look-studio.jpg" alt="The theme studio open beside the dashboard, with tabs for Themes, Backdrop, Surface, Headers, Layout and Looks and a grid of themes to pick from" width="860">
 </p>
-<p align="center"><sub>The theme browser opens beside the dashboard (<kbd>Shift</kbd> + <kbd>A</kbd>), so every change shows on the real page until you press Apply.</sub></p>
+<p align="center"><sub>The theme studio opens beside the dashboard (<kbd>Shift</kbd> + <kbd>A</kbd>), so every change shows on the real page until you press Apply.</sub></p>
 
 **Wider.** Drag the panel's left edge to widen it, or focus the edge and use **`←`** / **`→`** (with **`Shift`** for bigger steps); a double-click gives the default width back. It never goes narrower than the default, where the six tabs fit, and always leaves 240 px of the page beside it. The width is kept per browser.
 
@@ -3579,7 +3619,7 @@ The theme browser lies over the right of the dashboard, so every change shows on
 - **Use this theme's look**, above the grid, appears once a theme of your own carries a look. Off, picking such a theme leaves the look on screen as it is.
 - **Save as theme…** turns what is on screen into a new theme of your own: a name (it suggests "‹theme› — mine"), **Bring this look along**, and **Make the light/dark half too** when the theme has two. It is saved at once and opens in the editor; picking it still waits for **Apply**, so **Cancel** keeps the new theme and puts the old one back on screen.
 
-<p align="center"><img src="screenshots/manual.md/16-theme-browser.jpg" alt="The top of the theme browser: its tabs, the search box, filters, the theme in use and the first theme cards" width="490"></p>
+<p align="center"><img src="screenshots/manual.md/16-theme-browser.jpg" alt="The top of the theme studio: its tabs, the search box, filters, the theme in use and the first theme cards" width="490"></p>
 <p align="center"><sub>The top of the Themes tab: search, segments, character chips and the first cards.</sub></p>
 
 <a id="looks"></a>
@@ -3601,14 +3641,14 @@ The theme browser lies over the right of the dashboard, so every change shows on
 | **Neon** | Bright prisms, see-through cards, group cards |
 | **Plain** | No backdrop, solid cards, label headers |
 
-<p align="center"><img src="screenshots/manual.md/16-looks.jpg" alt="The Looks tab of the theme browser: a short explanation, then the first looks, each with a picture, a line, what it sets and a Use button" width="489"></p>
+<p align="center"><img src="screenshots/manual.md/16-looks.jpg" alt="The Looks tab of the theme studio: a short explanation, then the first looks, each with a picture, a line, what it sets and a Use button" width="489"></p>
 <p align="center"><sub>The Looks tab; Use shows a look on the page at once.</sub></p>
 
 <a id="themes-that-catch-the-light"></a>
 
 #### ✨ Themes that catch the light
 
-How a theme catches the light is part of its character, not a group of themes of its own. The shine — a lit band across each surface and a brighter top edge — belongs to the **Lacquer** character; **Enamel** is glazed and rounder, and **Neon** lets the accent leave the surface as a halo. The **Lacquer** chip in the theme browser shows every family that shines.
+How a theme catches the light is part of its character, not a group of themes of its own. The shine — a lit band across each surface and a brighter top edge — belongs to the **Lacquer** character; **Enamel** is glazed and rounder, and **Neon** lets the accent leave the surface as a halo. The **Lacquer** chip in the theme studio shows every family that shines.
 
 Ten families still carry *Gloss* in their name, from when they were the only ones that shone: **Gloss Obsidian**, **Chrome**, **Candy**, **Amber**, **Sapphire** and **Rose Gold** are Lacquer; **Gloss Emerald** and **Pearl** are Enamel; **Gloss Neon Tide** and **Ultraviolet** are Neon. Searching `gloss` finds them by name.
 
@@ -3634,10 +3674,10 @@ kind of surface a theme draws, which is the part a palette cannot say.
 | **Brushed** · **Carbon** | A grain, in one direction or woven |
 | **Paper** · **Terminal** · **Ink** | Matte, square-ish, and carried by the type |
 
-The chips in the theme browser filter on it, and searching finds an archetype
+The chips in the theme studio filter on it, and searching finds an archetype
 by name — or a word from the line each family carries.
 
-<p align="center"><img src="screenshots/manual.md/16-character-chips.jpg" alt="The character chips in the theme browser: All, Lacquer, Glass, Frost, Aurora, Neon, Velvet, Enamel, Brushed, Carbon, Paper, Terminal and Ink" width="481"></p>
+<p align="center"><img src="screenshots/manual.md/16-character-chips.jpg" alt="The character chips in the theme studio: All, Lacquer, Glass, Frost, Aurora, Neon, Velvet, Enamel, Brushed, Carbon, Paper, Terminal and Ink" width="481"></p>
 <p align="center"><sub>The character chips filter the theme cards.</sub></p>
 
 A theme's character is editable in the theme editor, for packaged themes as
@@ -3655,6 +3695,8 @@ it was drawn for, and picking a theme brings its answer with it.
 
 | Setting | Choices |
 |---|---|
+| **Material style** | **Follow the theme** (default) · Signature · Classic — Signature draws each material with a surface of its own, so glass, frost and aurora stop looking like one pane in three colours; Classic is the flat surface as it was before the new look ([§16A](#16a-the-new-look)). *Follow the theme* takes the install-wide answer, which is Signature unless you changed it; Signature and Classic set the theme you are on. With **Use these for every theme** on, the choice holds for the whole install and *Follow the theme* is not offered. |
+| **Accent of the neutrals** | **The theme's own** (default) · Blue · Teal · Green · Amber · Rose · Violet — one colour for the eight neutral themes (Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete, Black); every colour reads on every base, light and dark. Other themes keep their own accent. |
 | **Depth** | **Follow the theme** (default) · Flat · Soft · Rich · Vivid · Glass — the steps add a tint in the greys, raised surfaces and a faint wash of light behind the page; Glass blurs what is behind a surface and sits beside the ladder rather than on it. Menus are never blurred. |
 | **Glow** | **Follow the theme** (default) · Off · Soft · Full — how far the theme's colour carries around a surface. Flat has no glow. |
 | **Effects** | **Follow the theme** (default) · Off · Held back · Full — how loudly the character is drawn: the shine, the glow, the grain, and how round the corners are. Off leaves the palette and nothing else. |
@@ -3692,23 +3734,24 @@ other theme keeps its own. The backdrop and the card glass work the same way.
 Type is in the **Type** panel on the **Theme** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
 
 - **Source** — **Auto** (follows the theme), **None**, **Gradient** or **Image**. **Opacity** (65–100%) fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
-- **Theme backdrop** — **Follow the theme** (default), **Choose one** or **Off**. Every theme draws a backdrop of its own, in its own colours; each light and dark half share one. *Follow the theme* names the one it draws, and *Choose one* opens a grid of all 29, previewed in your theme's colours:
+- **Theme backdrop** — **Follow the theme** (default), **Choose one** or **Off**. Every theme draws a backdrop of its own, in its own colours, chosen from the backdrops that suit its material: a terminal theme gets scanlines or a drafting grid, a paper theme contour lines or linen, Ocean its blue sea, Concrete its bricks. Each light and dark half share one. *Follow the theme* names the one it draws, and *Choose one* opens a grid of all 75, previewed in your theme's colours:
 
   | Group | Backdrops |
   |---|---|
-  | Soft | blooms, glow, sweep, mesh, aurora, bokeh, nebula, stars |
-  | Landscape | horizon, band, sunset, dunes, mountains, waves |
-  | Lines | wireframe, scanlines, crosshatch, topo, perspective, blueprint, pinstripe |
-  | Geometric | rings, hexagons, halftone, prism, chevron |
+  | Soft | blooms, glow, sweep, mesh, aurora, bokeh (a small honeycomb), nebula, stars, haze, veil, spotlight, silk, caustics, dawn, flare, spectrum, inkdrop, sunburst, tide, confetti, ember, bubbles, petals, oceanblue |
+  | Landscape | horizon, band, sunset, dunes, mountains, waves, bamboo |
+  | Lines | wireframe, scanlines, crosshatch, topo, perspective, blueprint, pinstripe, linen, dotgrid, ruled, grain |
+  | Terminal and rack | rack, crt, bootlog, digirain, cellgrid |
+  | Patterns | rings, hexagons, halftone, prism, chevron, dots, scales, seigaiha, diamonds, bricks, checker, zigzag, isocube, tartan, rays, stitch, moire, deco, terrazzo, bauhaus, circuit, triangles, dotsoff, herring, windows |
   | Colour burst | burst, splash, leak |
 
   The colour-burst three are loud, so each is drawn over a floor of theme tint. **Theme tint** can raise it but never go below it.
 
   Like depth and glow, the choice belongs to the theme you are on unless **Use these for every theme** is on ([§16.3](#163-surfaces)). `:backdrop` turns it on or off from the command palette.
-- **Backdrop settings** — **Intensity**, **Scale** and **Variant** (with **🎲** for a new one) change the theme's backdrop; **Blur**, **Brightness**, **Saturation** and **Theme tint** soften it and your own background image alike. Only the backdrop blurs, never the bookmarks. **Back to the defaults** resets all seven.
+- **Backdrop settings** — **Intensity**, **Scale** and **Variant** (with **🎲** for a new one) change the theme's backdrop; **Blur**, **Brightness**, **Saturation** and **Theme tint** soften it and your own background image alike. **Quiet centre** fades the backdrop toward the page colour behind your bookmarks, so a pattern or a scene stays at the edges of the window and out of the way of the text; at 0 the backdrop is drawn edge to edge, and the value is kept per theme, with the install-wide number as the fallback. Only the backdrop blurs, never the bookmarks. **Back to the defaults** resets all eight.
 - **Pattern over it** — **Follow the theme**, **Dots**, **Grid**, **Lines**, **Hatch** or **None**: a texture drawn over the backdrop. Left to the theme, there is none while a backdrop is shown; with the backdrop off, most themes ask for dots.
 
-<p align="center"><img src="screenshots/manual.md/16-backdrops.jpg" alt="The Backdrop tab of the theme browser: Theme backdrop on Follow the theme, which draws scanlines, and the backdrop settings intensity, scale, variant and blur" width="489"></p>
+<p align="center"><img src="screenshots/manual.md/16-backdrops.jpg" alt="The Backdrop tab of the theme studio: Theme backdrop on Follow the theme, which draws scanlines, and the backdrop settings intensity, scale, variant and blur" width="489"></p>
 <p align="center"><sub>The Backdrop tab: the backdrop the theme draws, and its settings.</sub></p>
 
 <a id="165-custom-themes"></a>
@@ -3718,8 +3761,8 @@ Type is in the **Type** panel on the **Theme** tab; everything behind the bookma
 **Open the theme editor…** on the Theme tab opens the editor as a page of its own; the back link above it returns to Theme. A link to `/#config/appearance/custom-themes` opens it directly.
 
 - **Your themes** — **Add custom theme**, edit, reorder (↑ ↓), delete, **⤓** export to a JSON file, and **Import theme…**. A theme you make appears in the theme list beside the packaged ones.
-- A custom theme can set everything a packaged theme can: its colours, and under **Shape & character** its character, corner roundness, surface opacity, blur, glow, the **Gloss** slider (how much light a surface catches), the grain's direction and strength, the category titles, the backdrop — **Automatic** or any of the 26 patterns, shown as tiles in the theme's own colours — and the depth and effects it asks to be drawn at. It has a light and a dark half, like the built-in themes.
-- **This theme's look** (in the theme browser's editor) — a theme of your own can bring a look along: backdrop and its sliders, card glass, depth, headers, type and spacing. **Take the look on screen** stores what you see, **Clear** removes it, and both halves of a pair share it. Picking the theme — a card, the Theme picker or `:theme` — applies the look; switching halves with Quick mode or the system's dark mode does not, and neither does Random theme. A theme file carries its look.
+- A custom theme can set everything a packaged theme can: its colours, and under **Shape & character** its character, corner roundness, surface opacity, blur, glow, the **Gloss** slider (how much light a surface catches), the grain's direction and strength, the category titles, the backdrop — **Automatic** or any of the 75 backdrops, shown as tiles in the theme's own colours — and the depth and effects it asks to be drawn at. It has a light and a dark half, like the built-in themes.
+- **This theme's look** (in the theme studio's editor) — a theme of your own can bring a look along: backdrop and its sliders, card glass, depth, headers, type and spacing. **Take the look on screen** stores what you see, **Clear** removes it, and both halves of a pair share it. Picking the theme — a card, the Theme picker or `:theme` — applies the look; switching halves with Quick mode or the system's dark mode does not, and neither does Random theme. A theme file carries its look.
 - In the **Theme** picker your themes come first, in a group of their own, and the closed picker says **· yours**; a recoloured packaged theme says **· recoloured**.
 - A contrast check warns when text is too faint against its background.
 - **Packaged themes** — recolour any theme that ships, or the base light and dark palettes. **Reset defaults** puts a theme back.
@@ -3816,6 +3859,112 @@ Each tab has a filter beside **Only changed**. When the filter — or **Only cha
 
 ---
 
+<a id="16a-the-new-look"></a>
+
+## 16A. 🪞 The new look
+
+> [!NOTE]
+> **In short:** every material now has a surface of its own, and cards, headers, menus, dialogs and the side panel are drawn as one design. **Aurora Glass** is the default theme, and every install that ran an earlier release moved onto it once. Your bookmarks, settings and own themes stayed exactly as they were, and the old look is one choice away.
+
+<sub>[↑ Contents](#table-of-contents)</sub>
+
+<a id="16a1-what-changed"></a>
+
+### 16A.1 What changed
+
+Before, a theme was mostly a palette on one surface. Its *character* (glass, frost, aurora, lacquer and so on) scaled a few numbers, which is why glass, frost and aurora read as the same pane in three colours. Menus, dialogs and the views each took the look from a different place.
+
+Now the material decides how everything is built:
+
+| Material | What it draws |
+|---|---|
+| **Lacquer** | A band of light across a polished surface |
+| **Glass** · **Frost** | A pane you look through, with a shine per column; frost has stopped being clear |
+| **Aurora** | The page behind everything, with a pane over it |
+| **Neon** | A glowing top edge that fades down, and no outline |
+| **Enamel** | A glazed tile, thick only at the bottom |
+| **Brushed** | A grain in one direction, with a shine that stays inside its own column |
+| **Carbon** | A woven grain |
+| **Paper** | An index card: a double rule and a red line under the head |
+| **Terminal** · **Ink** | Square, matte and carried by the type; Ink puts a bar on the top edge of a layer |
+
+The same drawing reaches every part of the app, in four levels of elevation:
+
+- **Categories and widgets** — each material draws its own category header and its own widget header, and every category header keeps the `//` that picks it up.
+- **Overlays** — menus, dialogs, the quick add bar, the cheat sheet, the preview card and the side panel take the light of their material, and the small layers are closed per material. Reduced transparency closes them; switching effects off flattens them; animations off stay off.
+- **Views and Config** — the summary, cards, controls and table heads of the Bookmarks view, Containers and Config lie on the plate of the material.
+- **The action bar** is a handle on the screen edge, with the mark of its head and a hairline between its groups.
+
+<p align="center">
+  <img src="screenshots/manual.md/16a-classic.jpg" alt="A category, the health tile and the Glances tile drawn in the Classic surface: flat panes with a title strip and a rule under it" width="420">
+  <img src="screenshots/manual.md/16a-signature.jpg" alt="The same category and tiles drawn in the Signature surface: rounded panes with a lit edge, a head of their own and a shine" width="420">
+</p>
+<p align="center"><sub>The same page, drawn in <b>Classic</b> (left) and <b>Signature</b> (right).</sub></p>
+
+A few things came with it:
+
+- **The cheat sheet** (`!`) has a search field, lists its topics in columns, and shows the keys of the row you pick in a dock underneath. Its cards stay whole in Safari.
+- **Add and edit bookmark** has two columns and a live preview ([§5](#5-adding-bookmarks)).
+- **The popover arrow** points at the control you pressed, follows it when the popover is hidden and shown, and clears when it hides.
+- **Bookmark rows** take one inset from one variable, so icons line up with and without a ping.
+- **The keys** — `Shift + G` opens Glances from every view, so the last row of a list is `End` and no longer `G` ([§7](#7-keyboard)).
+
+<a id="16a2-why"></a>
+
+### 16A.2 Why
+
+The new look is drawn per material, and the themes were redrawn with it. Keeping the old drawing next to the new one would have meant two of everything: two sets of surfaces, two sets of headers, two sets of menus. One design that every part shares feels like a whole instead of loose parts, and it lets a paper theme look like paper and a terminal theme like a terminal, instead of three colours of the same pane.
+
+<a id="16a3-everyone-gets-aurora-glass-and-the-way-back"></a>
+
+### 16A.3 Everyone gets Aurora Glass, and the way back
+
+**Aurora Glass** — northern light behind a pane you can see through — is the default theme.
+
+- **A fresh install** starts on Aurora Glass and sees nothing of what follows.
+- **An existing install** moved onto it **once**, when it first ran this release. It stays on the half it was on: a dark theme became Aurora Glass dark, a light one Aurora Glass light. An install that was already on Aurora Glass moved nowhere and sees no dialog.
+- **What stays.** Your bookmarks, categories, pages, settings and your own themes are exactly as you left them. Only the theme changed, and the theme you had is remembered.
+- **A dialog says so, once.** It names the theme you had and the theme you have now, tells you what changed, and ends with *This message appears once.* It comes before any corner card. The corner cards that invited you to a theme browser, to the clock and weather and to Berry are gone; Berry is no longer the default, so there is nobody to invite.
+
+<p align="center"><img src="screenshots/manual.md/16a-migration-dialog.jpg" alt="The dialog that explains the move to Aurora Glass: the theme you had and the theme you have now, a line that your bookmarks, categories, settings and own themes are as you left them, and the buttons Go back, Open the Theme Studio and Got it" width="560"></p>
+<p align="center"><sub>The dialog an existing install sees once.</sub></p>
+
+**Getting your old look back** — there are three ways, from the biggest to the smallest:
+
+1. **Go back to your old theme.** The dialog's **Go back to ‹theme›** puts the theme you had back on the page, on the half it had. Closed the dialog already? Open the theme studio (`Shift + A`, or Config → Appearance → Theme → **Open theme studio**), find your old theme under **Themes** — every theme is still there, 190+ families — and press **Apply**. `:theme <name>` does the same from the command palette.
+2. **Keep the theme, flatten the surface.** Config → Appearance → **Surfaces** → **Material style** → **Classic** draws the theme on the flat surface it had before. It sets the theme you are on, so each theme keeps its own answer; with **Use these for every theme** on, it holds for the whole install.
+3. **Both.** Pick your old theme and set its Material style to Classic, and the dashboard looks as it did before.
+
+<p align="center"><img src="screenshots/manual.md/16a-material-style.jpg" alt="Appearance, Surfaces: the Material style choice set to Follow the theme, with the line that explains it, above the Accent of the neutrals" width="720"></p>
+<p align="center"><sub>Appearance → Surfaces → Material style.</sub></p>
+
+The themes of version 1.0.0 are there too: **ThinkDashboard Classic** brings back the colours and the grid of dots of that release, and the current one is now **ThinkDashboard Modern**.
+
+<a id="16a4-backdrops"></a>
+
+### 16A.4 New and changed backdrops
+
+A theme's backdrop is the picture behind your bookmarks. There are now **75** (there were 29), and a theme no longer takes one at random: **every material has a pool of its own**, from seven to seventeen recipes, and a theme's choice comes from the pool of its material. Two paper themes can have different backdrops, and both are paper backdrops. A terminal theme gets scanlines or a drafting grid, not a soft curtain.
+
+- **New** — haze, veil, spotlight, silk, caustics, dawn, linen, dotgrid, ruled and grain (calm, for reading); flare, spectrum, inkdrop, sunburst, tide, confetti and ember; and a family of patterns: scales, seigaiha, diamonds, bricks, checker, zigzag, isocube, tartan, rays, stitch, moire, deco, terrazzo, bauhaus, circuit, triangles, herring, windows, bubbles, petals and bamboo. Patterns now replace the colour washes that some themes drew before.
+- **For one theme** — Ocean draws its blue sea (`oceanblue`) and Concrete its bricks. The four Unraid themes get a rack and terminal backdrops (`rack`, `crt`, `bootlog`, `digirain`, `cellgrid`), card panels and the colours of a server.
+- **Redrawn** — hexagons, chevron, prism, sunset, dunes, mountains and blueprint are drawn finer, the loud ones are calmed, and bokeh is now a small honeycomb.
+- **Colour** — every recipe carries the colour of its theme, a dark page carries more of it, and 65 dark themes moved to colour recipes. Textures that had lost their colour have it back.
+- **Quiet centre** — a slider under Appearance → Background → **Fine-tune** that fades the backdrop toward the page colour behind your bookmarks, so the pattern stays at the edges of the window and out of the way of the text. It is kept per theme.
+
+<p align="center"><img src="screenshots/manual.md/16a-backdrops.jpg" alt="The Backdrop tab of the theme studio with the grid of backdrops, each drawn in the colours of the theme" width="489"></p>
+<p align="center"><sub>The Backdrop tab: every backdrop, drawn in the colours of your theme.</sub></p>
+
+Choosing one yourself works as before ([§16.4](#164-type-and-background)): **Theme backdrop → Choose one**, or **Follow the theme** to let the theme pick from its pool.
+
+<a id="16a5-neutrals"></a>
+
+### 16A.5 The neutral themes
+
+The eight neutral themes — Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete and Black — now sit on one lightness ladder, each with a material and a backdrop of its own. **Accent of the neutrals** (Appearance → Surfaces) gives all eight one colour: blue, teal, green, amber, rose or violet. Every colour reads on every base, light and dark. Other themes keep their own accent.
+
+---
+
 <a id="17-config"></a>
 
 ## 17. ⚙️ Config
@@ -3886,7 +4035,7 @@ Bookmarks and Inbox each have a view of their own, and the way to it is the same
 
 - A short line under a setting says what it does. **ℹ** beside it opens the longer explanation where there is more to say, and is left out where it would only repeat that line.
 - **↺** puts one setting back to its default; **Reset panel** puts a whole group back (it asks first).
-- **Only changed** hides settings that are still on their default; the **Filter this tab** field beside it narrows the tab by label, hint or option. Both name the other tabs of the section where they find something, and a click goes there.
+- **Only changed** hides settings that are still on their default; the **Filter this tab** field beside it narrows the tab by label, hint or option. Both name the other tabs of the section where they find something, and a click goes there. The filter and the count of what is shown stand in the same place on every tab, so moving between tabs does not move them.
 
 <p align="center"><img src="screenshots/manual.md/17-only-changed.jpg" alt="The head of a config section: its name and line, Only changed, a note that everything on the tab is at its default, and the Filter this tab field" width="860"></p>
 <p align="center"><sub>Only changed and the filter, at the head of the section.</sub></p>
@@ -4061,11 +4210,11 @@ A release opens with a one-line summary, then its **highlight** in a spotlight: 
 | `Shift + S` or `<` | Toggle config |
 | `0`–`9` | Leave for a page (`0` is the tenth; the Inbox is `Shift + I`) |
 | `j` / `k` | Previous / next section |
-| `g` / `G` | First / last section |
+| `g` / `End` | First / last section |
 | Arrows, `Home` / `End` (section rail focused) | Move between sections |
 | `Alt + ←/→` or `[` / `]` | Previous / next tab |
 | `←` / `→` (tab strip focused) | Move between tabs |
-| `↑` / `↓`, `Enter`, `g` / `G` (Structure lists, Bookmarks → Tags) | Move, edit, first / last |
+| `↑` / `↓`, `Enter`, `g` / `End` (Structure lists, Bookmarks → Tags) | Move, edit, first / last |
 | `/` | Search in Bookmarks; tag filter in Bookmarks → Tags |
 | `←` / `→`, `Space` (choice row) | Choose |
 | `Home` / `End` (slider) | Minimum / maximum |
@@ -5167,9 +5316,9 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Tag cloud and tag view | Every tag from every page in three sizes with counts; pick one to open its tag view — all its bookmarks from every page in a table, with related tags, bulk actions and rename, merge or remove for the tag. Shift to stack, type to find. | [§10.2](#102-filtering-by-tag) |
 | Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
 | Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
-| Theme | A colour scheme; 188 families each come in a light and a dark half, picked on the Theme tab or in the theme browser. | [§16.1](#161-themes) |
+| Theme | A colour scheme; 190+ families each come in a light and a dark half, picked on the Theme tab or in the theme studio. | [§16.1](#161-themes) |
 | Theme browser | The panel beside the dashboard, opened with `Shift + A`, for themes, backdrops, surfaces, headers, type and looks. | [§16.1](#the-theme-browser) |
-| Theme editor | The page for recolouring a packaged theme or building a theme of your own, opened from the Theme tab; not the theme browser. | [§16.5](#165-custom-themes) |
+| Theme editor | The page for recolouring a packaged theme or building a theme of your own, opened from the Theme tab; not the theme studio. | [§16.5](#165-custom-themes) |
 | Timeline | A container's history in its side panel: crashes with exit code, out-of-memory kills, health changes, updates and rollbacks. | [§14.3](#143-the-side-panel) |
 | Trash | Deleted bookmarks, pages and categories stay here for 30 days. | [§19.5](#195-trash) |
 | Triage | Takes you through unread inbox links one at a time, in the same shape as Work through. | [§13.4](#134-triage) |

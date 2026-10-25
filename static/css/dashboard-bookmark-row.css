@@ -92,9 +92,9 @@ body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
     transition: none;
 }
 
-/* Status rows: keep extra inset so the left status bar does not crowd favicons. */
+/* Status rows keep the corner of the row. The inset every row takes comes from --bookmark-row-start-pad (dashboard.css), so
+   it follows the layouts that use that variable and leaves the cards, list, widgets and launcher their own paddings. */
 .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing) {
-    padding-left: calc(var(--bookmark-row-start-pad, 6px) + 4px);
     border-radius: var(--layout-radius-sm, 8px);
 }
 

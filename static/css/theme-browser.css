@@ -258,14 +258,18 @@
 .theme-browser-card-head {
     display: flex;
     align-items: baseline;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: var(--space-1-5, 0.4rem);
 }
 
+/* The name keeps a line of its own width: with a character, new and recoloured pill beside it the
+   name was squeezed to one letter per line, so the pills wrap under it instead. */
 .theme-browser-card-name {
     font-weight: 600;
     color: var(--text-primary);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    flex: 1 0 min(100%, 9em);
 }
 
 .theme-browser-star {
@@ -454,6 +458,10 @@
 
 .theme-browser-card-name {
     margin-right: auto;
+}
+
+.theme-browser-badge {
+    white-space: nowrap;
 }
 
 /* ── The look studio ──────────────────────────────────────────────────

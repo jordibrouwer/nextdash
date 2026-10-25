@@ -75,10 +75,18 @@ func dockerUsageVerdict(points []dockerStatsPoint, now time.Time, window time.Du
 // over a line for the whole window, and one that was and is back under.
 func (h *Handlers) checkDockerUsage(list []dockerContainerSummary, now time.Time) []monitorNotification {
 	settings := h.store.GetSettings()
+	// A spell that ends without its "up" -- switched off, muted, stopped --
+	// leaves the register too, once the watch lock is let go: otherwise it
+	// was reminded about as still going for days.
+	var ended []string
+	defer func() { h.closeOpenAlerts(ended) }()
 	w := dockerUsageWatchState
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if !settings.DockerUsageAlerts || !settings.DockerStatsHistory {
+		for name := range w.hot {
+			ended = append(ended, usageAlertKey(name))
+		}
 		w.hot = map[string]bool{}
 		return nil
 	}
@@ -92,6 +100,9 @@ func (h *Handlers) checkDockerUsage(list []dockerContainerSummary, now time.Time
 		name := c.name()
 		seen[name] = true
 		if !h.dockerNotifyAllowed(name, c.ID) {
+			if w.hot[name] {
+				ended = append(ended, usageAlertKey(name))
+			}
 			delete(w.hot, name)
 			continue
 		}
@@ -120,8 +131,14 @@ func (h *Handlers) checkDockerUsage(list []dockerContainerSummary, now time.Time
 	// the stop has its own.
 	for name := range w.hot {
 		if !seen[name] {
+			ended = append(ended, usageAlertKey(name))
 			delete(w.hot, name)
 		}
 	}
 	return out
+}
+
+// usageAlertKey is the register key a usage spell's notices carry.
+func usageAlertKey(name string) string {
+	return noticeKey(noticeSourceContainer, monitorNotification{Name: name, Kind: "usage"})
 }

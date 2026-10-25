@@ -1,0 +1,909 @@
+/* Signatuur — elk materiaal een eigen constructie.
+
+   Een materiaal was een rij getallen (theme_archetype.go): iets meer of minder
+   doorzichtig, iets ronder, iets wazig. Daarom leken glas, berijpt glas en
+   aurora op dezelfde ruit in drie kleuren. Signatuur tekent elk materiaal met
+   een eigen opbouw van vlak, rand en schaduw.
+
+   Twee attributen op <body> (en <html>) sturen het:
+
+     data-material        het materiaal van het theme: lacquer, glass, frost,
+                          aurora, neon, velvet, enamel, brushed, carbon, paper,
+                          terminal of ink. Leeg bij een theme zonder materiaal.
+     data-material-style  signature of classic (Settings.MaterialStyle).
+                          Iedereen begint op signature, ook een
+                          installatie van voor de instelling; classic is een
+                          keuze. Zonder signature verandert er niets.
+
+   Alleen de categorie wordt hier getekend, op dezelfde plek als
+   category-surface.css en met dezelfde uitzonderingen: open tekent geen vlak,
+   en de terminal- en launcher-layouts houden hun eigen ontwerp. De regels zijn
+   specifieker dan die van category-surface.css, dus ze winnen zonder !important.
+
+   De rand van de categorie is een inset-schaduw en geen border: een border
+   schuift de binnenkolommen van het raster (zie category-surface.css). */
+
+/* Neon: een donker vlak met alleen een lichtgevende bovenrand, waar het licht zacht naar beneden uitloopt. Geen rand rondom. */
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(10px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--background-primary) 66%, transparent);
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        0 -1px 0 var(--accent-primary),
+        0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) 70%, transparent),
+        0 10px 20px -12px rgba(0, 0, 0, 0.8);
+}
+
+/* Koolstof: een weefsel in twee richtingen en een accentstreep links. */
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image:
+        linear-gradient(var(--accent-primary), var(--accent-primary)),
+        repeating-linear-gradient(45deg, color-mix(in srgb, var(--text-primary) 5%, transparent) 0 2px, transparent 2px 4px),
+        repeating-linear-gradient(-45deg, color-mix(in srgb, var(--background-primary) 35%, transparent) 0 2px, transparent 2px 4px);
+    background-size: 3px 100%, auto, auto;
+    background-repeat: no-repeat, repeat, repeat;
+    background-position: 0 0, 0 0, 0 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+/* Terminal: radius 0, een rand van 1px in het accent, geen schaduw en geen gloed. */
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: 0;
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+/* Inkt: geen vlak en geen lijnen: alleen typografie. De kop draagt het streepje. */
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: 0;
+    background-color: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    /* Geen volle lijnen: twee blokken onder elkaar kregen twee lijnen onder elkaar. */
+    box-shadow: none;
+}
+
+/* Geen blur zonder transparantie: wie dat vraagt krijgt een massief vlak. */
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+    html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+    html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+        background-color: var(--surface-2, var(--background-secondary));
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+/* Wie eigen kaartglas koos (Appearance → Surface → Card glass) krijgt precies die
+   doorzichtigheid en blur, ook op de materialen die door je heen kijken. */
+html[data-theme] body[data-material-style="signature"][data-material="glass"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="frost"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha, 0.5) * 100%), transparent);
+    backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
+    -webkit-backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
+}
+
+/* Het groene randje om een categorie die net is verplaatst (dashboard.css) blijft zichtbaar. */
+html[data-theme] body[data-material-style="signature"][data-material]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.is-move-landed {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--status-success, #4fd18b) 45%, transparent);
+}
+
+/* ── Neon: de elementen ──────────────────────────────────────────────────
+   Een kaart met een lichtgevende rand is nog geen neon: het hoort in elk element
+   terug te komen. Dunne lichtbuizen, dus een lijn van 1px met gloed, op de rij die
+   je aanwijst, het pictogram, de chips en de cellen van een widget. De gloed zit
+   in lijnen en tekst en niet in vlakken, en daardoor blijft het leesbaar op elke
+   achtergrond. Op licht gaat de gloed eruit en blijft de lijn (zie onderaan). */
+html[data-theme] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 14%, transparent), color-mix(in srgb, var(--accent-primary) 4%, transparent) 70%, transparent);
+    box-shadow: inset 3px 0 0 var(--accent-primary), 0 0 16px color-mix(in srgb, var(--accent-primary) 16%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-text {
+    color: #fff;
+    text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon {
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent-primary) 45%, transparent));
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge {
+    background: transparent;
+    border-color: currentColor;
+    text-shadow: 0 0 6px currentColor;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    border-radius: calc(5px * var(--theme-radius-applied, 1));
+    color: color-mix(in srgb, var(--accent-primary) 85%, #fff);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+    box-shadow: inset 2px 0 0 color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-value {
+    color: color-mix(in srgb, var(--accent-primary) 85%, #fff);
+    text-shadow: 0 0 6px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+/* Op licht leest gloed niet: de lijn blijft, de gloed gaat. */
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+}
+
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) :is(.bookmark-text, .status-text, .dashboard-widget-trend-value) {
+    color: inherit;
+    text-shadow: none;
+}
+
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="neon"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon {
+    filter: none;
+}
+
+/* ── Inkt: de elementen ──────────────────────────────────────────────────
+   Inkt weigert alle effecten, dus het werk zit in de typografie en de witruimte.
+   Geen vakjes en geen kleuren voor ping en sneltoets: gewone, gedempte tekst met
+   vaste cijferbreedte. Het accent is er voor wat je aanwijst en voor het getal
+   van een widget. */
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge,
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: transparent;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-text {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 4px;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: transparent;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-value {
+    color: var(--accent-primary);
+}
+
+/* ── De kop ──────────────────────────────────────────────────────────────
+   Wat `theme` bij de categoriekop betekent: bij signatuur tekent elk materiaal
+   zijn eigen kop. De regels hangen aan data-cat-head="theme", dus wie zelf een
+   stijl koos (clean, underlined, boxed, label, group) houdt die.
+
+   De "//" blijft altijd staan, op elke kop: hij is de greep om een categorie te
+   verslepen en het teken waaraan je nextDash herkent. De regels raken de naam
+   en de rand eromheen en laten het "//" en zijn greep (category-reorder-handle)
+   met rust. Een widget krijgt dezelfde kop (zie hieronder), en de terminal- en
+   launcher-layouts houden hun eigen ontwerp. */
+
+/* ── Het merk van een categorie ──────────────────────────────────────────
+   Onder signatuur zijn de twee strepen van het "//" twee gevulde, schuine blokjes.
+   De tekst "//" blijft in de greep staan, onzichtbaar: de greep, de focus en de
+   schermlezer zien dezelfde knop als altijd. Wie zelf een koppenstijl koos, of op
+   classic staat, houdt het "//". */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category:not(.dashboard-widget) .category-reorder-glyph {
+    position: relative;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category:not(.dashboard-widget) .category-reorder-glyph::before,
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category:not(.dashboard-widget) .category-reorder-glyph::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0.2em;
+    width: calc((100% - 0.4em) * 0.34);
+    height: 0.8em;
+    transform: translateY(-50%) skewX(-20deg);
+    border-radius: 0.06em;
+    background: var(--head-mark-color, var(--accent-primary));
+    opacity: 0.9;
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category:not(.dashboard-widget) .category-reorder-glyph::after {
+    left: calc(0.2em + (100% - 0.4em) * 0.56);
+    opacity: 0.5;
+}
+
+/* ── De lijn onder elke kop ──────────────────────────────────────────────
+   Elke titel draagt twee lijnen die niet bij een materiaal horen: het verloop
+   van theme-depth.css (border-image onder de titel) en het accentstreepje van
+   dashboard.css. Onder signatuur tekent het materiaal zijn eigen kop, en waar
+   het een lijn wil (papier, inkt) trekt het die zelf. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title {
+    border-bottom: 0;
+    border-image: none;
+    background-image: none;
+}
+
+/* A block's title with keyboard focus keeps the selected row's tint: the rule
+   above clears the title's background image, and the tint is one, so without
+   this a focused title wears no mark at all under Signature. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title:focus-visible {
+    background-image: var(--bookmark-row-selected-bg);
+}
+
+/* ── De kop van een widget ───────────────────────────────────────────────
+   Een widget is een categorie met een eigen kopstrook (Widget background).
+   Onder signatuur heeft hij dezelfde kop als de categorieën van zijn
+   materiaal, en dat is dezelfde kaart: de strook geeft zijn vulling, zijn
+   lijn en zijn dwarsloop op. Het enige verschil is het teken vooraan: een
+   categorie heeft "//", een widget zijn paneeltje (category-reorder-glyph--widget),
+   dat zowel de greep als het merk van een widget is. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .dashboard-widget .category-title,
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .dashboard-widget .category-title:hover {
+    background-color: transparent;
+    border-bottom: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .dashboard-widget .dashboard-widget-body {
+    padding: 0;
+    margin: 0;
+}
+
+/* Het merk van een widget: drie balkjes, de rijen van een lijst, in de kleur van de kop.
+   Het paneeltje met de accentkleur was het enige gevulde ding in een kop die verder in
+   tekstkleur is getekend. De balkjes erven de dekking van de greep, net als het "//". */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .dashboard-widget .category-title .category-reorder-glyph--widget::before {
+    left: 0.2em;
+    right: 0.2em;
+    height: 0.8em;
+    border: 0;
+    border-radius: 0;
+    background:
+        linear-gradient(var(--head-mark-color, var(--accent-primary)), var(--head-mark-color, var(--accent-primary))) 0 0 / 100% 2px no-repeat,
+        linear-gradient(var(--head-mark-color, var(--accent-primary)), var(--head-mark-color, var(--accent-primary))) 0 50% / 72% 2px no-repeat,
+        linear-gradient(var(--head-mark-color, var(--accent-primary)), var(--head-mark-color, var(--accent-primary))) 0 100% / 88% 2px no-repeat;
+}
+
+/* Neon: de naam in hoofdletters, in het accent en met gloed. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent-primary);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 70%, transparent), 0 0 18px color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+
+/* Koolstof: de naam in vette hoofdletters. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="carbon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.86em;
+    font-weight: 700;
+}
+
+/* Terminal: de naam in hoofdletters, ruim gespatieerd. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="terminal"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+}
+
+/* Inkt: een korte, dikke streep boven een grotere naam; verder niets. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="ink"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title {
+    padding-top: 0.75em;
+    background-image: linear-gradient(var(--text-primary), var(--text-primary));
+    background-size: 2.25rem 4px;
+    background-repeat: no-repeat;
+    background-position: left top;
+    font-size: calc(var(--font-size-category) * 1.25 * var(--cat-head-scale, 1));
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="ink"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-name {
+    text-transform: none;
+    letter-spacing: -0.01em;
+}
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="ink"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .dashboard-widget .category-title:hover {
+    /* A widget's strip takes no padding on hover; the bar keeps its own 0.75em. */
+    padding-top: 0.75em;
+}
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="ink"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category:not(.dashboard-widget) .category-title:hover {
+    /* The tint pulls the title out to the block's edge and gives the space back as padding: keep the bar's own 0.75em in it, or the title jumps up. */
+    padding-top: calc(var(--category-block-pad, 0px) + 0.75em);
+    background-position: var(--category-inline-pad, 0.5rem) var(--category-block-pad, 0px);
+}
+
+/* ══ Richtingen ═══════════════════════════════════════════════════════════
+   Per materiaal de kaart, de kop en elk element dat erin staat: de rij die je
+   aanwijst, het pictogram, de chips en de cel van een widget. Een materiaal dat
+   alleen een kaart heeft ziet er buiten de kaart uit als elk ander theme. */
+
+/* Lak: een scherpe lichtband bovenin, een weerspiegeling schuin over de kaart en
+   elk element als glanzend knopje met een eigen highlight. */
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(14px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.03) 22%, rgba(255, 255, 255, 0) 23%),
+        linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 30%, var(--background-primary)), color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.35),
+        0 16px 28px -10px rgba(0, 0, 0, 0.6),
+        0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="lacquer"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    font-weight: 800;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon-slot {
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.55), color-mix(in srgb, var(--accent-primary) 35%, transparent) 55%, transparent);
+    box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.04));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge,
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06));
+    border-color: transparent;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Glas: een heldere rand links boven, een zweem licht schuin over het glas en elk
+   element als stukje glas met een eigen rand. */
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(22px * var(--theme-radius-applied, 1));
+    /* Rounded further than the side padding: the grip, the controls and the badges sat on the curve. */
+    --category-inline-pad: 0.9rem;
+    padding-inline: var(--category-inline-pad);
+    background-color: transparent;
+    background-image:
+        linear-gradient(90deg, transparent, rgba(255, 255, 255, 0), transparent),
+        linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent) 55%);
+    background-size: 60% 1px, auto;
+    background-position: 14px 0, 0 0;
+    background-repeat: no-repeat, no-repeat;
+    backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+    box-shadow:
+        inset 1px 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        0 18px 36px -14px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="glass"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon-slot {
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 22%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 18%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge,
+html[data-theme] body[data-material-style="signature"][data-material="glass"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    border-color: transparent;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+/* Berijpt glas: een lichte rand boven (de rijp), een kop in kleine, wijd gespatieerde
+   hoofdletters en elk element matig verhoogd met een lichte bovenrand. */
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(16px * var(--theme-radius-applied, 1));
+    background-color: transparent;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent));
+    backdrop-filter: blur(24px) saturate(1.1);
+    -webkit-backdrop-filter: blur(24px) saturate(1.1);
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        0 10px 24px -14px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="frost"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    font-weight: 400;
+    font-size: 0.86em;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon-slot {
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 45%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 40%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge,
+html[data-theme] body[data-material-style="signature"][data-material="frost"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    border-color: transparent;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 35%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 30%, transparent);
+}
+
+/* Geborsteld metaal: een metalen plaat met een schuin lichtvlak, schroefkoppen in de
+   hoeken en gegraveerde tekst. Een aangewezen rij wordt in het metaal gedrukt. */
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(6px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image:
+        radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--text-primary) 70%, transparent), color-mix(in srgb, var(--text-primary) 15%, transparent)),
+        radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--text-primary) 70%, transparent), color-mix(in srgb, var(--text-primary) 15%, transparent)),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 3px),
+        linear-gradient(100deg, color-mix(in srgb, var(--text-primary) 7%, transparent), color-mix(in srgb, var(--text-primary) 10%, transparent) 40%, color-mix(in srgb, var(--text-primary) 6%, transparent) 100%);
+    background-size: 5px 5px, 5px 5px, auto, auto;
+    background-position: 8px 7px, calc(100% - 8px) 7px, 0 0, 0 0;
+    background-repeat: no-repeat, no-repeat, repeat, no-repeat;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 10px 18px -10px rgba(0, 0, 0, 0.7);
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="brushed"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.82em;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22), 0 -1px 0 rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon-slot {
+    border-radius: 6px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: rgba(0, 0, 0, 0.18);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45), inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge,
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: transparent;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: rgba(0, 0, 0, 0.14);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Email: een dubbele rand als een bord, een glanzende vlek en alle elementen als
+   emaille knopjes en pillen in het accent. */
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+    border-radius: calc(16px * var(--theme-radius-applied, 1));
+    /* A glazed tile: the thickness is only at the bottom, so the sides and the content stay clear. */
+    --category-inline-pad: 1rem;
+    padding-inline: var(--category-inline-pad);
+    padding-top: calc(var(--space-3, 0.75rem) + 2px);
+    padding-bottom: calc(var(--space-3, 0.75rem) + 8px);
+    background-color: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
+    background-image: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), transparent);
+    background-size: 46px 20px;
+    background-position: calc(100% - 64px) 5px;
+    background-repeat: no-repeat;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 -6px 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        0 10px 16px -8px rgba(0, 0, 0, 0.45);
+}
+
+/* Op licht is emaille helder: het bord is wit met een zweem accent, geen grijs. */
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    background-color: color-mix(in srgb, #fff 62%, color-mix(in srgb, var(--accent-primary) 7%, var(--surface-2, var(--background-secondary))));
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="enamel"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    --head-mark-color: var(--accent-primary);
+    font-weight: 800;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon-slot {
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent-primary) 28%, #fff);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 2px 0 color-mix(in srgb, var(--accent-primary) 55%, #000);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: color-mix(in srgb, var(--accent-primary) 26%, transparent);
+    border-radius: 99px;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    border-color: transparent;
+    font-weight: 700;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: var(--accent-primary);
+    border-color: transparent;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 800;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    border-radius: 99px;
+}
+
+/* Papier: een indexkaart. Een dubbele lijn boven, een zachte schaduw, kleine kapitalen met een
+   rode lijn onder de kop, en een aangewezen rij wordt gemarkeerd met een markeerstift. Ook bij
+   een open vlak en voor een widget: dat is dezelfde kaart. */
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+    position: relative;
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    --category-inline-pad: 1rem;
+    padding-inline: var(--category-inline-pad);
+    padding-top: calc(var(--space-3, 0.75rem) + 6px);
+    padding-bottom: var(--space-3, 0.75rem);
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 12px -8px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before,
+html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 6px;
+    height: 4px;
+    border-top: 1px solid color-mix(in srgb, var(--text-primary) 55%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 55%, transparent);
+    pointer-events: none;
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="paper"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title {
+    border-bottom: 0;
+    font-variant: small-caps;
+    font-size: calc(var(--font-size-category) * 1.05 * var(--cat-head-scale, 1));
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding-bottom: 0.4em;
+    margin-bottom: 0.4em;
+    background-image: linear-gradient(color-mix(in srgb, #e0505a 70%, transparent), color-mix(in srgb, #e0505a 70%, transparent));
+    background-size: 100% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+}
+
+/* The hover tint pulls the title out to the card's edge; the red line stays between the sides. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="paper"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category:not(.dashboard-widget) .category-title:hover {
+    background-size: calc(100% - 2 * var(--category-inline-pad, 1rem)) 1px;
+    background-position: var(--category-inline-pad, 1rem) 100%;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link {
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon-slot {
+    background: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-text {
+    background: linear-gradient(transparent 55%, color-mix(in srgb, #ffd84a 60%, transparent) 55%);
+    border-radius: 2px;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge,
+html[data-theme] body[data-material-style="signature"][data-material="paper"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: transparent;
+    border-color: transparent;
+    color: color-mix(in srgb, var(--text-primary) 60%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: none;
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+/* Aurora: twee lichtbanden in de kaart zelf, bovenin, als een noorderlicht.
+   Pictogrammen en chips krijgen een zweem van dezelfde kleuren. */
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(20px * var(--theme-radius-applied, 1));
+    /* Rounded further than the side padding: the grip, the controls and the badges sat on the curve. */
+    --category-inline-pad: 0.9rem;
+    padding-inline: var(--category-inline-pad);
+    background-color: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    background-image:
+        radial-gradient(60% 100% at 30% 0, color-mix(in srgb, var(--accent-primary) 42%, transparent), transparent 70%),
+        radial-gradient(55% 100% at 75% 0, color-mix(in srgb, var(--accent-error, var(--accent-primary)) 38%, transparent), transparent 70%);
+    background-size: 100% 90px, 100% 90px;
+    background-repeat: no-repeat;
+    background-position: 0 0, 0 0;
+    backdrop-filter: blur(10px) saturate(1.3);
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent), 0 0 28px -12px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="aurora"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title .category-title-label {
+    --head-mark-color: var(--accent-primary);
+    font-weight: 600;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon-slot {
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 16%, transparent), color-mix(in srgb, var(--accent-error, var(--accent-primary)) 10%, transparent));
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 18%, transparent), color-mix(in srgb, var(--accent-error, var(--accent-primary)) 18%, transparent));
+    border-color: transparent;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 10%, transparent), color-mix(in srgb, var(--accent-error, var(--accent-primary)) 8%, transparent));
+}
+
+/* Fluweel: ook bij een theme dat op open staat heeft de kolom een kaart; licht dat op de pool valt bovenin, verhoogde knopjes voor pictogrammen en
+   chips en een rij die bij hover wordt ingedrukt. */
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+    /* The card is rounded by 28px: the grip, the controls and a widget's footer sat on the
+       curve and fell outside it. The side padding is wider, and the header's bleed (which is
+       measured from it) follows. */
+    --category-inline-pad: 1.15rem;
+    padding-inline: var(--category-inline-pad);
+    padding-block: var(--space-3, 0.75rem);
+    border-radius: calc(28px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: radial-gradient(90% 60% at 50% 0, color-mix(in srgb, var(--text-primary) 12%, transparent), transparent 75%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent),
+        inset 0 -14px 24px rgba(0, 0, 0, 0.3),
+        0 14px 28px -10px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+    box-shadow: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent), inset 0 -14px 24px rgba(0, 0, 0, 0.12), 0 14px 28px -12px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-icon-slot {
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.18), inset 0 -2px 4px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: rgba(0, 0, 0, 0.16);
+    border-radius: 14px;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .status-text.bookmark-superscript-badge,
+html[data-theme] body[data-material-style="signature"][data-material="velvet"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link .bookmark-shortcut {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    border-color: transparent;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .dashboard-widget .dashboard-widget-trend-row {
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.14);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+/* Inkt: een drukproef. Elke kolom een zacht vlak, ook bij een theme dat op open staat, met
+   snijmerken in de vier hoeken en een foliocijfer bij de kop. Geen rand, geen schaduw en
+   geen lijn over de volle breedte: de merken zijn achtergrondlagen van 11px. */
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+    border-radius: calc(4px * var(--theme-radius-applied, 1));
+    --category-inline-pad: 1rem;
+    padding-inline: var(--category-inline-pad);
+    padding-block: var(--space-3, 0.75rem);
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    --surface-sheen:
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent));
+    background-image: var(--surface-sheen);
+    background-position: 3px 3px, 3px 3px, calc(100% - 3px) 3px, calc(100% - 3px) 3px, 3px calc(100% - 3px), 3px calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) calc(100% - 3px);
+    background-size: 11px 1px, 1px 11px, 11px 1px, 1px 11px, 11px 1px, 1px 11px, 11px 1px, 1px 11px;
+    background-repeat: no-repeat;
+    box-shadow: none;
+}
+
+/* Het foliocijfer: het nummer van het blok, in de volgorde van de pagina. */
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) {
+    counter-reset: ink-folio;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category {
+    counter-increment: ink-folio;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category .category-title {
+    position: relative;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category .category-title::after {
+    content: "\2116\00a0" counter(ink-folio, decimal-leading-zero);
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 0.58em;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+
+/* Terminal: een scherm. Elke kolom een zacht vlak, ook bij een theme dat op open staat, met
+   scanlijnen, een gloed in de accentkleur aan de binnenkant, een $ voor de naam en een
+   cursor erachter. Alles achtergrondlagen en pseudo-elementen: geen extra element. */
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    padding-block: var(--space-3, 0.75rem);
+    background-color: color-mix(in srgb, var(--background-primary, #000) 78%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    --surface-sheen: repeating-linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 8%, transparent) 0 1px, transparent 1px 3px);
+    background-image: var(--surface-sheen);
+    background-size: auto;
+    background-position: 0 0;
+    background-repeat: repeat;
+    box-shadow: inset 0 0 26px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category .category-title-name::before {
+    content: "$\00a0";
+    color: var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category .category-title-name::after {
+    content: "_";
+    margin-left: 0.1em;
+    color: var(--accent-primary);
+    animation: terminal-cursor 1s steps(1) infinite;
+}
+
+@keyframes terminal-cursor {
+    50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme] body[data-material-style="signature"][data-material="terminal"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category .category-title-name::after {
+        animation: none;
+    }
+}
+
+/* De glans van lacquer, glass, frost en geborsteld metaal. Elke kolom en widget heeft vier vaste, willekeurige
+   waarden uit zijn eigen id (theme-loader.js, NDShine): --sh-a de plek langs de bovenrand
+   in procenten, --sh-w de breedte, --sh-g de sterkte en --sh-ang de hoek van een ijle baan
+   over het glas. Een korte, zachte lichtvlek rust op de rand, zonder lijn; de baan erachter is een
+   vleugje teruggekaatst licht. Dezelfde kolom heeft altijd dezelfde
+   glans; een ander id een andere. */
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before,
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before,
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before,
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+    background:
+        radial-gradient(closest-side, rgba(255, 255, 255, calc(0.34 * var(--sh-g, 0.8))), transparent) calc(var(--sh-a, 40) * 1%) 0 / calc(var(--sh-w, 30) * 1.3%) 12px no-repeat,
+        radial-gradient(closest-side, rgba(255, 255, 255, calc(0.08 * var(--sh-g, 0.8))), transparent) calc(var(--sh-a, 40) * 1%) 0 / calc(var(--sh-w, 30) * 2.4%) 38px no-repeat,
+        linear-gradient(calc(var(--sh-ang, 130) * 1deg), transparent calc(var(--sh-a, 40) * 1% - var(--sh-w, 30) * 0.3%), rgba(255, 255, 255, calc(0.03 * var(--sh-g, 0.8))) calc(var(--sh-a, 40) * 1%), transparent calc(var(--sh-a, 40) * 1% + var(--sh-w, 30) * 0.3%));
+}
+
+html[data-theme][data-effects="off"] body[data-material-style="signature"] .dashboard-grid .category::before {
+    display: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-material-style="signature"] .dashboard-grid .category::before {
+        display: none;
+    }
+}
+
+/* Bij een open vlak krijgt een categorie geen kaart, maar een widget met Widget background wel:
+   dan is het paneel van de widget en moet zijn inhoud er niet tegenaan liggen. */
+html[data-theme] body[data-material-style="signature"][data-widget-bg="background"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .dashboard-widget {
+    padding-block: var(--space-3, 0.75rem);
+}

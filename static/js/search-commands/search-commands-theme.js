@@ -100,8 +100,8 @@ class SearchCommandTheme {
      * @returns {string} The display name
      */
     getThemeDisplayName(themeId) {
-        if (themeId === 'light') return 'ThinkDashboard [light]';
-        if (themeId === 'dark') return 'ThinkDashboard [dark]';
+        if (themeId === 'light') return 'ThinkDashboard Modern [light]';
+        if (themeId === 'dark') return 'ThinkDashboard Modern [dark]';
 
         if (this.customThemes && typeof this.customThemes === 'object') {
             if (Array.isArray(this.customThemes)) {

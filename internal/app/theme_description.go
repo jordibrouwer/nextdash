@@ -50,10 +50,13 @@ var themeDescriptions = map[string]string{
 	"look-opal":             "Milky stone with every colour moving just under the surface",
 	"look-holo":             "A foil sticker tilted slowly through the whole spectrum",
 	"slate":                 "Blue-grey stone behind a pane of glass, a cool light above",
-	"zinc":                  "Soft grey clouds drifting behind frosted glass",
-	"gray":                  "Hills in blue-grey haze seen through a clean pane",
-	"stone":                 "Warm grey sand and rock under a thin sheet of glass",
-	"neutral":               "Plain grey with out-of-focus lights glowing behind the glass",
+	"zinc":                  "Woven carbon grey, with a fine grid of dots behind it",
+	"gray":                  "Cool frosted glass in blue-grey, with a low mist rising from below",
+	"stone":                 "Warm grey paper in the sand, with soft dunes along the bottom",
+	"neutral":               "Plain grey ink on the page, with a few faint stars behind it",
+	"chalk":                 "Warm white paper with ruled lines, charcoal after dark",
+	"concrete":              "Brushed grey concrete under a low horizon, light and heavy",
+	"black":                 "True black ink with a few stars, a clean white page by day",
 	"tidepool-lens":         "Looking down through still water at what lives on the rocks",
 	"champagne-flute":       "Pale gold through a tall glass, the bubbles still rising",
 	"prism-veil":            "White light split into its colours by the edge of a pane",
@@ -87,10 +90,10 @@ var themeDescriptions = map[string]string{
 	"indigo-letterpress":    "Indigo pressed into thick cotton paper, a bite you can feel",
 	"iron-gall":             "The brown-black ink of old letters, faded at the edges",
 	"squid-ink":             "Black with a deep sea-blue in it when the light catches it",
-	"unraid-black":          "Flat black panels, small caps labels, the orange of a live server",
-	"unraid-azure":          "Cool grey panels and steel blue, the quieter way to watch a rack",
-	"unraid-ember":          "The logo's orange glowing out of black glass",
-	"unraid-blaze":          "The red end of the logo: hard edges, lacquer and crimson",
+	"unraid-black":          "Near-black flat panels, small caps labels, the orange of a live server",
+	"unraid-azure":          "Slate panels and steel blue, the quieter way to watch a rack",
+	"unraid-ember":          "The logo orange glowing out of a dark cabinet",
+	"unraid-blaze":          "The red end of the logo: square edges, lacquer and crimson",
 	"vermilion-seal":        "Brush ink on white with one red seal stamped in the corner",
 	"absinthe":              "Bitter green on bone, like a café table at closing time",
 	"andromeda-drift":       "Deep space with the accent drifting across it",
@@ -213,6 +216,9 @@ var themeDescriptions = map[string]string{
 	"volcanic-ash":          "Fallen ash with the heat only just gone out",
 	"wheat-field":           "A crop in flat light, waiting for the weather",
 	"zen-ember":             "One warm point in a room kept deliberately empty",
+
+	// The first release, brought back as a theme of its own.
+	"thinkdashboard-classic": "The first page nextDash ever drew: flat, with a grid of dots",
 }
 
 // themeFamilySuffix strips the half a theme id names, so both halves of a

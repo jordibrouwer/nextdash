@@ -82,6 +82,11 @@ func (h *Handlers) refuseRemovedTags(w http.ResponseWriter, r *http.Request, bef
 	if len(refused) == 0 && len(wanted) == 0 {
 		return
 	}
+	// The same lock as SaveSettings: this writes the whole settings back, so a
+	// Config save landing between the read and the write was either lost or
+	// put back to what this read.
+	h.settingsMu.Lock()
+	defer h.settingsMu.Unlock()
 	settings := h.store.GetSettings()
 	var kept, forgotten []string
 	for _, entry := range settings.DismissedTagSuggestions {

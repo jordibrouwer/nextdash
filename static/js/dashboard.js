@@ -79,7 +79,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'look-berry-dark',
+            theme: 'aurora-glass-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
@@ -1013,18 +1013,12 @@ class Dashboard {
         return this.setup.setupExtensionBookmarkSavedListener(...arguments);
     }
 
-    initializeButtonTipsRotation() {
-        return this.setup.initializeButtonTipsRotation(...arguments);
-    }
 
     teardownDashboardTimers() {
         return this.setup.teardownDashboardTimers(...arguments);
     }
 
 
-    initializeSearchFlowHint() {
-        return this.setup.initializeSearchFlowHint(...arguments);
-    }
 
 
     getInlineContextTipsForCurrentPage() {

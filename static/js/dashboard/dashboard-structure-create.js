@@ -187,6 +187,35 @@ class DashboardStructureCreate {
      * is a replace-the-list write. It comes from the fetch below rather than a
      * second one, so it cannot drift from what was actually deleted.
      */
+    /**
+     * Take away a category the app made on the reader's behalf and nothing
+     * went into (a found app's form closed without saving). No trash entry:
+     * the reader never made it.
+     */
+    async removeEmptyCategory(pageId, categoryId) {
+        return this._serializeStructureWrite(`categories:${pageId}`, async () => {
+            const d = this.dash;
+            try {
+                const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
+                if (!res.ok) return false;
+                const list = await res.json();
+                if (!Array.isArray(list)) return false;
+                const payload = list.filter((c) => String(c.id) !== String(categoryId));
+                if (payload.length === list.length) return false;
+                const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(
+                    `/api/categories?page=${encodeURIComponent(pageId)}`,
+                    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+                );
+                if (!save.ok) return false;
+                if (Number(pageId) === Number(d.currentPageId)) d.categories = payload;
+                d.data?.invalidatePageDataCache?.(Number(pageId));
+                return true;
+            } catch {
+                return false;
+            }
+        });
+    }
+
     async deleteCategory(pageId, categoryId) {
         return this._serializeStructureWrite(
             `categories:${pageId}`,

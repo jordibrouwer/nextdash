@@ -448,77 +448,79 @@ type Settings struct {
 	// Set by migrateStripBookmarkPreviewImages as a raw key. Without a field the
 	// first settings save after boot dropped it, and every restart rewrote
 	// every page file to strip images again.
-	PreviewImagesStrippedMigrated   bool   `json:"previewImagesStrippedMigrated,omitempty"`
-	CustomPercentGuessMigrated      bool   `json:"customPercentGuessMigrated,omitempty"`
-	NotesWidgetSeeded               bool   `json:"notesWidgetSeeded,omitempty"`               // one-time: notes widget on the first page; a field, or a settings save dropped it and a removed widget came back
-	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
-	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
-	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
-	GridDefaultsMigrated            bool   `json:"gridDefaultsMigrated,omitempty"`            // one-time: layout masonry and density auto, for an install still on compact and default
-	CategoryHeaderSmallMigrated     bool   `json:"categoryHeaderSmallMigrated,omitempty"`     // one-time: the category header size moved from m to s, for an install still on the old default
-	FontSizeLgMigrated              bool   `json:"fontSizeLgMigrated,omitempty"`              // one-time: the type size moved from m to lg, for an install still on the old default
-	FontDefaultInterMigrated        bool   `json:"fontDefaultInterMigrated,omitempty"`        // one-time: the UI font moved from Source Code Pro to Inter
-	FontDefaultMonoMigrated         bool   `json:"fontDefaultMonoMigrated,omitempty"`         // one-time: the UI font moved back from Inter to Source Code Pro
-	SurfaceFollowMigrated           bool   `json:"surfaceFollowMigrated,omitempty"`           // one-time: depth, glow and effects moved to follow-the-theme
-	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
-	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
-	ActionKeysOffMigrated           bool   `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
-	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
-	HeaderClockClassicMigrated      bool   `json:"headerClockClassicMigrated,omitempty"`      // one-time: clock and weather onto a line of their own
-	FirstRunInstall                 bool   `json:"firstRunInstall,omitempty"`                 // this settings file was written fresh, not upgraded: the changes tour greets rather than explains what moved
-	FirstRunAt                      int64  `json:"firstRunAt,omitempty"`                      // unix ms the fresh settings file was written; corner cards that should not greet a newcomer on day one wait a day from it
-	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
-	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
-	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
-	ShowCollapseAllButton           bool   `json:"showCollapseAllButton"`
-	ShowStatus                      bool   `json:"showStatus"`
-	ColorizeStatus                  bool   `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
-	MonitorEmphasis                 string `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
-	ShowPing                        bool   `json:"showPing"`
-	ShowStatusLoading               bool   `json:"showStatusLoading"`
-	SkipFastPing                    bool   `json:"skipFastPing"`
-	StatusOfflineRetries            int    `json:"statusOfflineRetries"`                    // Failed pings per check before marking offline (1-10)
-	StatusOfflineRetryDelayMs       int    `json:"statusOfflineRetryDelayMs"`               // Delay between retry pings in ms (100-3000)
-	StatusRecheckIntervalMinutes    int    `json:"statusRecheckIntervalMinutes"`            // Background re-check interval in minutes (1-60)
-	GlobalShortcuts                 bool   `json:"globalShortcuts"`                         // Use shortcuts from all pages
-	HyprMode                        bool   `json:"hyprMode"`                                // Launcher mode for PWA usage
-	LockLayout                      bool   `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
-	AnimationsEnabled               bool   `json:"animationsEnabled"`                       // Enable or disable animations globally
-	AnimationSpeed                  string `json:"animationSpeed"`                          // Pace of the arrivals (views rising in): slow, normal or fast
-	ViewAnimationsEnabled           bool   `json:"viewAnimationsEnabled"`                   // The views rising in on arrival; animationsEnabled still switches off everything
-	EnableCustomTitle               bool   `json:"enableCustomTitle"`                       // Enable custom page title
-	CustomTitle                     string `json:"customTitle"`                             // Custom page title
-	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
-	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
-	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
-	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-9)
-	PageSwitcherTextMigrated        bool   `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
-	PageSwitcherClassicMigrated     bool   `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
-	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
-	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
-	ActionBarPosition               string `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
-	ActionBarEnabled                bool   `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
-	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
-	ShowActionKeys                  bool   `json:"showActionKeys"`                          // The key chip on each action button
-	ActionBarIntroStyle             string `json:"actionBarIntroStyle"`                     // How the buttons animate as the bar comes into view; "off" for none
-	ActionBarSize                   string `json:"actionBarSize"`                           // How large the action buttons are drawn: xs, s, m, l or xl
-	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
-	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
-	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
-	EnableCustomFont                bool   `json:"enableCustomFont"`                        // Enable custom font
-	CustomFontPath                  string `json:"customFontPath"`                          // Path to custom font file
-	Language                        string `json:"language"`                                // Language code, e.g., "en" or "es"
-	InterleaveMode                  bool   `json:"interleaveMode"`                          // Search mode: on, letters find names and / finds shortcuts; off (the default), the reverse
-	ShowPageTabs                    bool   `json:"showPageTabs"`                            // Show page navigation tabs
-	AlwaysCollapseCategories        bool   `json:"alwaysCollapseCategories"`                // Always collapse categories on load
-	HideEmptyCategories             bool   `json:"hideEmptyCategories"`                     // Hide categories with no bookmarks
-	HideEmptyCategoriesMigrated     bool   `json:"hideEmptyCategoriesMigrated"`             // Migration marker for hide-empty default-on
-	ShortcutDisplayAlwaysMigrated   bool   `json:"shortcutDisplayAlwaysMigrated,omitempty"` // one-time: show the shortcut letters on every row
-	EnableFuzzySuggestions          bool   `json:"enableFuzzySuggestions"`                  // Enable fuzzy suggestions in shortcut search
-	FuzzySuggestionsStartWith       bool   `json:"fuzzySuggestionsStartWith"`               // Fuzzy suggestions start with query instead of contains
-	KeepSearchOpenWhenEmpty         bool   `json:"keepSearchOpenWhenEmpty"`                 // Keep search interface open when query is empty
-	ShowIcons                       bool   `json:"showIcons"`                               // Show bookmark icons
-	ShowLinkPreviewCards            bool   `json:"showLinkPreviewCards"`                    // Show link preview cards on hover. Kept in step with LinkPreviewMode, which is the field that decides
+	PreviewImagesStrippedMigrated   bool           `json:"previewImagesStrippedMigrated,omitempty"`
+	CustomPercentGuessMigrated      bool           `json:"customPercentGuessMigrated,omitempty"`
+	NotesWidgetSeeded               bool           `json:"notesWidgetSeeded,omitempty"`               // one-time: notes widget on the first page; a field, or a settings save dropped it and a removed widget came back
+	ConfigButtonDefaultOnMigrated   bool           `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
+	SurfaceDefaultsMigrated         bool           `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
+	DepthDefaultFlatMigrated        bool           `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
+	GridDefaultsMigrated            bool           `json:"gridDefaultsMigrated,omitempty"`            // one-time: layout masonry and density auto, for an install still on compact and default
+	CategoryHeaderSmallMigrated     bool           `json:"categoryHeaderSmallMigrated,omitempty"`     // one-time: the category header size moved from m to s, for an install still on the old default
+	FontSizeLgMigrated              bool           `json:"fontSizeLgMigrated,omitempty"`              // one-time: the type size moved from m to lg, for an install still on the old default
+	FontDefaultInterMigrated        bool           `json:"fontDefaultInterMigrated,omitempty"`        // one-time: the UI font moved from Source Code Pro to Inter
+	AuroraGlassMigrated             bool           `json:"auroraGlassMigrated,omitempty"`             // one-time: every install moved onto Aurora Glass with the new look
+	LookMigration                   *LookMigration `json:"lookMigration,omitempty"`                   // what the move to Aurora Glass left behind, for the dialog that explains it
+	FontDefaultMonoMigrated         bool           `json:"fontDefaultMonoMigrated,omitempty"`         // one-time: the UI font moved back from Inter to Source Code Pro
+	SurfaceFollowMigrated           bool           `json:"surfaceFollowMigrated,omitempty"`           // one-time: depth, glow and effects moved to follow-the-theme
+	LauncherDefaultsMigrated        bool           `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
+	ActionButtonsAllOnMigrated      bool           `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
+	ActionKeysOffMigrated           bool           `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
+	ActionBarRightMigrated          bool           `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
+	HeaderClockClassicMigrated      bool           `json:"headerClockClassicMigrated,omitempty"`      // one-time: clock and weather onto a line of their own
+	FirstRunInstall                 bool           `json:"firstRunInstall,omitempty"`                 // this settings file was written fresh, not upgraded: the changes tour greets rather than explains what moved
+	FirstRunAt                      int64          `json:"firstRunAt,omitempty"`                      // unix ms the fresh settings file was written; corner cards that should not greet a newcomer on day one wait a day from it
+	HeaderActionsDefaultTwoMigrated bool           `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
+	ShowSearchFlowBanner            bool           `json:"showSearchFlowBanner"`
+	ShowCheatSheetButton            bool           `json:"showCheatSheetButton"`
+	ShowCollapseAllButton           bool           `json:"showCollapseAllButton"`
+	ShowStatus                      bool           `json:"showStatus"`
+	ColorizeStatus                  bool           `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
+	MonitorEmphasis                 string         `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
+	ShowPing                        bool           `json:"showPing"`
+	ShowStatusLoading               bool           `json:"showStatusLoading"`
+	SkipFastPing                    bool           `json:"skipFastPing"`
+	StatusOfflineRetries            int            `json:"statusOfflineRetries"`                    // Failed pings per check before marking offline (1-10)
+	StatusOfflineRetryDelayMs       int            `json:"statusOfflineRetryDelayMs"`               // Delay between retry pings in ms (100-3000)
+	StatusRecheckIntervalMinutes    int            `json:"statusRecheckIntervalMinutes"`            // Background re-check interval in minutes (1-60)
+	GlobalShortcuts                 bool           `json:"globalShortcuts"`                         // Use shortcuts from all pages
+	HyprMode                        bool           `json:"hyprMode"`                                // Launcher mode for PWA usage
+	LockLayout                      bool           `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
+	AnimationsEnabled               bool           `json:"animationsEnabled"`                       // Enable or disable animations globally
+	AnimationSpeed                  string         `json:"animationSpeed"`                          // Pace of the arrivals (views rising in): slow, normal or fast
+	ViewAnimationsEnabled           bool           `json:"viewAnimationsEnabled"`                   // The views rising in on arrival; animationsEnabled still switches off everything
+	EnableCustomTitle               bool           `json:"enableCustomTitle"`                       // Enable custom page title
+	CustomTitle                     string         `json:"customTitle"`                             // Custom page title
+	ShowPageInTitle                 bool           `json:"showPageInTitle"`                         // Show current page name in title
+	ShowPageNamesInTabs             bool           `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
+	MaxPageTabs                     int            `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
+	MaxHeaderActions                int            `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-9)
+	PageSwitcherTextMigrated        bool           `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
+	PageSwitcherClassicMigrated     bool           `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
+	HeaderClockPlacement            string         `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
+	PageSwitcherStyle               string         `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
+	ActionBarPosition               string         `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
+	ActionBarEnabled                bool           `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
+	ActionBarAutoHideSeconds        int            `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
+	ShowActionKeys                  bool           `json:"showActionKeys"`                          // The key chip on each action button
+	ActionBarIntroStyle             string         `json:"actionBarIntroStyle"`                     // How the buttons animate as the bar comes into view; "off" for none
+	ActionBarSize                   string         `json:"actionBarSize"`                           // How large the action buttons are drawn: xs, s, m, l or xl
+	HeaderButtonStyle               string         `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
+	EnableCustomFavicon             bool           `json:"enableCustomFavicon"`                     // Enable custom favicon
+	CustomFaviconPath               string         `json:"customFaviconPath"`                       // Path to custom favicon file
+	EnableCustomFont                bool           `json:"enableCustomFont"`                        // Enable custom font
+	CustomFontPath                  string         `json:"customFontPath"`                          // Path to custom font file
+	Language                        string         `json:"language"`                                // Language code, e.g., "en" or "es"
+	InterleaveMode                  bool           `json:"interleaveMode"`                          // Search mode: on, letters find names and / finds shortcuts; off (the default), the reverse
+	ShowPageTabs                    bool           `json:"showPageTabs"`                            // Show page navigation tabs
+	AlwaysCollapseCategories        bool           `json:"alwaysCollapseCategories"`                // Always collapse categories on load
+	HideEmptyCategories             bool           `json:"hideEmptyCategories"`                     // Hide categories with no bookmarks
+	HideEmptyCategoriesMigrated     bool           `json:"hideEmptyCategoriesMigrated"`             // Migration marker for hide-empty default-on
+	ShortcutDisplayAlwaysMigrated   bool           `json:"shortcutDisplayAlwaysMigrated,omitempty"` // one-time: show the shortcut letters on every row
+	EnableFuzzySuggestions          bool           `json:"enableFuzzySuggestions"`                  // Enable fuzzy suggestions in shortcut search
+	FuzzySuggestionsStartWith       bool           `json:"fuzzySuggestionsStartWith"`               // Fuzzy suggestions start with query instead of contains
+	KeepSearchOpenWhenEmpty         bool           `json:"keepSearchOpenWhenEmpty"`                 // Keep search interface open when query is empty
+	ShowIcons                       bool           `json:"showIcons"`                               // Show bookmark icons
+	ShowLinkPreviewCards            bool           `json:"showLinkPreviewCards"`                    // Show link preview cards on hover. Kept in step with LinkPreviewMode, which is the field that decides
 	// LinkPreviewMode is how the card is reached: "off", "hover" or
 	// "keyboard". Some people want what the card says and not a panel
 	// appearing under the pointer, and their only answer used to be off —
@@ -686,6 +688,20 @@ type Settings struct {
 	 * Empty means follow.
 	 */
 	ThemeBackdrop string `json:"themeBackdrop,omitempty"`
+
+	/*
+	 * MaterialStyle is how a theme's material is drawn: signature | classic.
+	 * Classic is the surface as it was before the materials had a signature of
+	 * their own, and stays available as a choice. Everyone starts on signature,
+	 * a settings file without the key included.
+	 */
+	MaterialStyle string `json:"materialStyle"`
+
+	/*
+	 * NeutralAccent is the accent the neutral themes wear: theme (each base's own)
+	 * or one of six colour words. See neutral_accent.go.
+	 */
+	NeutralAccent string `json:"neutralAccent"`
 
 	/*
 	 * CardGlass is the card glass when every theme is forced to one answer
@@ -1138,21 +1154,11 @@ type SearchPick struct {
 	At    int64  `json:"at"` // Unix milliseconds of the most recent pick
 }
 
-// berryThemePromoID is the one-time card that asks an install which already
-// existed whether to try Berry. A fresh install starts on Berry, so it begins
-// with the question answered. It replaced the Confetti card, whose id
-// (confetti-theme-try-v1) is left in the files of the installs that answered
-// it: a new id is what puts the question to them again.
-const berryThemePromoID = "berry-theme-try-v1"
-
 // freshDiscoverabilityState is what a new install starts with.
 func freshDiscoverabilityState() *DiscoverabilityState {
 	return &DiscoverabilityState{
-		// The cards the start guide makes redundant: Berry is the theme a
-		// new install begins on, the guide asks for the weather and offers the
-		// theme studio, and the dashboard tour is one of its steps.
-		SeenSettingPromos: []string{berryThemePromoID, "clock-weather-v1", "theme-browser-try-v1"},
-		SeenTips:          []string{"dashboardTutorialV3"},
+		// The card the start guide makes redundant: the dashboard tour is one of its steps.
+		SeenTips: []string{"dashboardTutorialV3"},
 	}
 }
 
@@ -1191,10 +1197,10 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "look-berry-dark"
+const defaultThemeID = "aurora-glass-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "look-berry-light"
+const defaultThemeLightID = "aurora-glass-light"
 
 /*
 The fallback depth and glow.
@@ -1474,6 +1480,10 @@ type ThemeColors struct {
 	// other. A custom theme sets it to choose a recipe of its own.
 	Backdrop string `json:"backdrop,omitempty"`
 
+	// MaterialStyle is how this theme is drawn: "classic" or "signature", or empty for the
+	// install-wide choice. The reader can set it per theme.
+	MaterialStyle string `json:"materialStyle,omitempty"`
+
 	// Collection names the set a theme belongs to, for the browser's
 	// collection chip. Empty is no collection: the older themes, and any
 	// custom one, are in none and show under All only.
@@ -1549,6 +1559,7 @@ type Store interface {
 	// Categories - per page only
 	GetCategoriesByPage(pageID int) []Category
 	SaveCategoriesByPage(pageID int, categories []Category) error
+	MutateCategoriesByPage(pageID int, mutate func([]Category) ([]Category, bool)) error
 	PreviewCategoriesByPage(pageID int, categories []Category) (CategoryRemapPreview, error)
 	// Finders
 	GetFinders() []Finder
@@ -1602,7 +1613,7 @@ type Store interface {
 	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error)
 	AddInboxLinks(links []InboxLink) ([]InboxLink, error)
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
-	RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error)
+	RestoreInboxLinkEvicting(link InboxLink, maxItems int, dedupe bool) (InboxLink, []InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
 	BatchInboxLinks(ids []string, mutate func(*InboxLink) bool) ([]InboxLink, []string, error)
@@ -1821,6 +1832,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			IncludeFindersInSearch:          true,
 			SortMethod:                      "order",
 			LayoutPreset:                    "masonry",
+			MaterialStyle:                   materialSignature,
+			NeutralAccent:                   neutralAccentTheme,
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
@@ -1833,6 +1846,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			GridDefaultsMigrated:            true,
 			FontSizeLgMigrated:              true,
 			FontDefaultInterMigrated:        true,
+			AuroraGlassMigrated:             true,
 			FontDefaultMonoMigrated:         true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
@@ -3131,6 +3145,12 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
+	return fs.categoriesByPageLocked(pageID)
+}
+
+// categoriesByPageLocked is GetCategoriesByPage for a caller that holds
+// fs.mutex for writing (it fills the read cache).
+func (fs *FileStore) categoriesByPageLocked(pageID int) []Category {
 	if cached, ok := fs.readCache.categories[pageID]; ok {
 		return cloneCategories(cached)
 	}
@@ -3171,14 +3191,35 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 // SaveCategoriesByPage saves categories inside bookmarks-{pageID}.json, creating the file if needed
 // It also updates bookmarks to use the new category IDs when category names change
 func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	return fs.saveCategoriesByPageLocked(pageID, categories)
+}
+
+/*
+MutateCategoriesByPage reads a page's categories, hands them to mutate and saves
+what it returns, all under one hold of the store lock. mutate answers false when
+nothing changed, and nothing is written then. It must not call the store.
+
+A read and a save made apart let a save in between be undone: a category
+renamed in Config while discovery added an app came back under its old name.
+*/
+func (fs *FileStore) MutateCategoriesByPage(pageID int, mutate func([]Category) ([]Category, bool)) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	next, changed := mutate(fs.categoriesByPageLocked(pageID))
+	if !changed {
+		return nil
+	}
+	return fs.saveCategoriesByPageLocked(pageID, next)
+}
+
+func (fs *FileStore) saveCategoriesByPageLocked(pageID int, categories []Category) error {
 	for i := range categories {
 		categories[i] = foldCategoryIcon(categories[i])
 		categories[i].Name = clampEntityName(categories[i].Name)
 		categories[i].View = normalizeCategoryView(categories[i].View)
 	}
-	fs.mutex.Lock()
-	defer fs.mutex.Unlock()
-
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
@@ -4479,6 +4520,8 @@ func (fs *FileStore) GetSettings() Settings {
 			BookmarkStaleDays:               defaultBookmarkStaleDays,
 			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
 			LayoutPreset:                    "masonry",
+			MaterialStyle:                   materialSignature,
+			NeutralAccent:                   neutralAccentTheme,
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
@@ -4491,6 +4534,7 @@ func (fs *FileStore) GetSettings() Settings {
 			GridDefaultsMigrated:            true,
 			FontSizeLgMigrated:              true,
 			FontDefaultInterMigrated:        true,
+			AuroraGlassMigrated:             true,
 			FontDefaultMonoMigrated:         true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
@@ -4665,6 +4709,14 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["themeBackdrop"]; !ok {
 			settings.ThemeBackdrop = surfaceFollow
+		}
+		// No key is an install from before materials had a signature, and it gets
+		// the signature like everyone else; classic is a choice, not a default.
+		if _, ok := rawSettings["materialStyle"]; !ok {
+			settings.MaterialStyle = materialSignature
+		}
+		if _, ok := rawSettings["neutralAccent"]; !ok {
+			settings.NeutralAccent = neutralAccentTheme
 		}
 		// A missing object is the default tuning; a partial one keeps what it
 		// has and takes the default for the rest. See fillMissingBackdropTuning.
@@ -5003,6 +5055,8 @@ func (fs *FileStore) GetSettings() Settings {
 		 */
 		settings.InkGap = normalizeInkGap(settings.InkGap)
 		settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
+		settings.MaterialStyle = normalizeMaterialStyle(settings.MaterialStyle)
+		settings.NeutralAccent = normalizeNeutralAccent(settings.NeutralAccent)
 		settings.BackdropTuning = normalizeBackdropTuning(settings.BackdropTuning)
 		settings.CategoryHeaderStyle = normalizeCategoryHeaderStyle(settings.CategoryHeaderStyle)
 		settings.CategoryHeaderSize = normalizeCategoryHeaderSize(settings.CategoryHeaderSize)
@@ -5308,6 +5362,19 @@ func (fs *FileStore) GetSettings() Settings {
 		 * preset, or an uploaded font, stays. After this pass going back to
 		 * Source Code Pro is the reader's own choice.
 		 */
+		/*
+		 * Everyone onto Aurora Glass, once.
+		 *
+		 * The new look is drawn per material and the themes were redrawn with it, so keeping the
+		 * old drawing next to the new one for installs that predate it would mean two of
+		 * everything. Every install moves to Aurora Glass, on the dark or the light half it was
+		 * on, and what it had is kept in one field for the dialog that says so and offers the way
+		 * back. Everything else the reader chose stays. A fresh install carries the marker from
+		 * the start and never sees any of this.
+		 */
+		if !settings.AuroraGlassMigrated {
+			migrateToAuroraGlass(&settings, time.Now().Unix())
+		}
 		if !settings.FontDefaultInterMigrated {
 			if settings.FontPreset == "source-code-pro" {
 				settings.FontPreset = "inter"
@@ -5538,6 +5605,10 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.FontSizeLgMigrated = settings.FontSizeLgMigrated || stored.FontSizeLgMigrated
 			settings.CategoryHeaderSmallMigrated = settings.CategoryHeaderSmallMigrated || stored.CategoryHeaderSmallMigrated
 			settings.FontDefaultInterMigrated = settings.FontDefaultInterMigrated || stored.FontDefaultInterMigrated
+			settings.AuroraGlassMigrated = settings.AuroraGlassMigrated || stored.AuroraGlassMigrated
+			if settings.LookMigration == nil {
+				settings.LookMigration = stored.LookMigration
+			}
 			settings.FontDefaultMonoMigrated = settings.FontDefaultMonoMigrated || stored.FontDefaultMonoMigrated
 			settings.SurfaceFollowMigrated = settings.SurfaceFollowMigrated || stored.SurfaceFollowMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
@@ -5726,12 +5797,12 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		 */
 		"gloss-obsidian-mirror-dark":  {Name: "Gloss Obsidian [dark]", TextPrimary: "#EEF4FA", TextSecondary: "#AFC0D2", TextTertiary: "#7F93AA", BackgroundPrimary: "#07090D", BackgroundSecondary: "#0F141C", BackgroundDots: "#18202B", BackgroundModal: "rgba(7, 9, 13, 0.9)", BorderPrimary: "#243041", BorderSecondary: "#18212D", AccentPrimary: "#5CE1FF", AccentSuccess: "#3EE6A6", AccentWarning: "#FFC857", AccentError: "#FF6B8A", SurfaceBlur: 24, SurfaceGlow: 1, RadiusScale: 1.3, Sheen: 0.9, LabelWeight: 600, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
 		"gloss-obsidian-mirror-light": {Name: "Gloss Obsidian [light]", TextPrimary: "#0E1620", TextSecondary: "#3A4A5C", TextTertiary: "#56677A", BackgroundPrimary: "#F3F7FB", BackgroundSecondary: "#E7EEF6", BackgroundDots: "#D5E0EC", BackgroundModal: "rgba(243, 247, 251, 0.92)", BorderPrimary: "#C3D1E0", BorderSecondary: "#DCE5EF", AccentPrimary: "#0A6E94", AccentSuccess: "#0B7A50", AccentWarning: "#8A5A00", AccentError: "#B82C4A", SurfaceBlur: 18, SurfaceGlow: 0.5, RadiusScale: 1.3, Sheen: 0.7, LabelWeight: 600, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
-		"gloss-liquid-chrome-dark":    {Name: "Gloss Chrome [dark]", TextPrimary: "#F2F4F7", TextSecondary: "#BCC2CC", TextTertiary: "#8E95A1", BackgroundPrimary: "#0C0D10", BackgroundSecondary: "#16181D", BackgroundDots: "#22252C", BackgroundModal: "rgba(12, 13, 16, 0.9)", BorderPrimary: "#30343C", BorderSecondary: "#20232A", AccentPrimary: "#C9D4E3", AccentSuccess: "#7FD1B9", AccentWarning: "#E8C170", AccentError: "#F07A7A", SurfaceBlur: 16, SurfaceGlow: 0.6, RadiusScale: 1.2, Sheen: 1, LabelWeight: 600, Character: "lacquer", SurfaceAlpha: 0.35, Depth: "glass", Glow: "off", Surface: "open"},
-		"gloss-liquid-chrome-light":   {Name: "Gloss Chrome [light]", TextPrimary: "#15171B", TextSecondary: "#464B54", TextTertiary: "#62686F", BackgroundPrimary: "#F5F6F8", BackgroundSecondary: "#EBEDF1", BackgroundDots: "#DADDE3", BackgroundModal: "rgba(245, 246, 248, 0.92)", BorderPrimary: "#C9CDD5", BorderSecondary: "#E0E3E8", AccentPrimary: "#434E60", AccentSuccess: "#2A7355", AccentWarning: "#855C00", AccentError: "#B03636", SurfaceBlur: 14, SurfaceGlow: 0.3, RadiusScale: 1.2, Sheen: 0.8, LabelWeight: 600, Character: "lacquer", SurfaceAlpha: 0.35, Depth: "glass", Glow: "off", Surface: "open"},
+		"gloss-liquid-chrome-dark":    {Name: "Gloss Chrome [dark]", TextPrimary: "#F2F4F7", TextSecondary: "#BCC2CC", TextTertiary: "#8E95A1", BackgroundPrimary: "#0C0D10", BackgroundSecondary: "#16181D", BackgroundDots: "#22252C", BackgroundModal: "rgba(12, 13, 16, 0.9)", BorderPrimary: "#30343C", BorderSecondary: "#20232A", AccentPrimary: "#C9D4E3", AccentSuccess: "#7FD1B9", AccentWarning: "#E8C170", AccentError: "#F07A7A", SurfaceBlur: 16, SurfaceGlow: 0.6, RadiusScale: 1.2, Sheen: 1, LabelWeight: 600, Character: "lacquer", SurfaceAlpha: 0.35, Depth: "glass", Glow: "off", Surface: "glass"},
+		"gloss-liquid-chrome-light":   {Name: "Gloss Chrome [light]", TextPrimary: "#15171B", TextSecondary: "#464B54", TextTertiary: "#62686F", BackgroundPrimary: "#F5F6F8", BackgroundSecondary: "#EBEDF1", BackgroundDots: "#DADDE3", BackgroundModal: "rgba(245, 246, 248, 0.92)", BorderPrimary: "#C9CDD5", BorderSecondary: "#E0E3E8", AccentPrimary: "#434E60", AccentSuccess: "#2A7355", AccentWarning: "#855C00", AccentError: "#B03636", SurfaceBlur: 14, SurfaceGlow: 0.3, RadiusScale: 1.2, Sheen: 0.8, LabelWeight: 600, Character: "lacquer", SurfaceAlpha: 0.35, Depth: "glass", Glow: "off", Surface: "glass"},
 		"gloss-candy-lacquer-dark":    {Name: "Gloss Candy [dark]", TextPrimary: "#FFEFF3", TextSecondary: "#F2B8C6", TextTertiary: "#C48B99", BackgroundPrimary: "#12060A", BackgroundSecondary: "#1E0B12", BackgroundDots: "#2C121C", BackgroundModal: "rgba(18, 6, 10, 0.9)", BorderPrimary: "#3E1A27", BorderSecondary: "#2A111B", AccentPrimary: "#FF4D7A", AccentSuccess: "#45E0A0", AccentWarning: "#FFB547", AccentError: "#FF5A5A", SurfaceBlur: 14, SurfaceGlow: 1, RadiusScale: 1.5, Sheen: 0.95, LabelWeight: 600, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
 		"gloss-candy-lacquer-light":   {Name: "Gloss Candy [light]", TextPrimary: "#2A0A14", TextSecondary: "#6B2A3C", TextTertiary: "#834455", BackgroundPrimary: "#FFF5F7", BackgroundSecondary: "#FDE8EE", BackgroundDots: "#F8D2DE", BackgroundModal: "rgba(255, 245, 247, 0.92)", BorderPrimary: "#F1BFCD", BorderSecondary: "#F8DCE4", AccentPrimary: "#B8143F", AccentSuccess: "#18704B", AccentWarning: "#835400", AccentError: "#A8231C", SurfaceBlur: 12, SurfaceGlow: 0.5, RadiusScale: 1.5, Sheen: 0.8, LabelWeight: 600, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
-		"gloss-amber-resin-dark":      {Name: "Gloss Amber [dark]", TextPrimary: "#FFF3DE", TextSecondary: "#F0CF9A", TextTertiary: "#BF9A6A", BackgroundPrimary: "#120C04", BackgroundSecondary: "#1D1408", BackgroundDots: "#2A1D0C", BackgroundModal: "rgba(18, 12, 4, 0.9)", BorderPrimary: "#3D2A12", BorderSecondary: "#2A1D0C", AccentPrimary: "#FFB23E", AccentSuccess: "#9BD86A", AccentWarning: "#FFD166", AccentError: "#FF7A59", SurfaceBlur: 20, SurfaceGlow: 1, RadiusScale: 1.2, Sheen: 0.85, LabelWeight: 600, Character: "lacquer", SurfaceAlpha: 0.35, Depth: "glass", Glow: "off", Surface: "open"},
-		"gloss-amber-resin-light":     {Name: "Gloss Amber [light]", TextPrimary: "#2B1A05", TextSecondary: "#5E4012", TextTertiary: "#76531E", BackgroundPrimary: "#FFF8EC", BackgroundSecondary: "#FBEFD9", BackgroundDots: "#F2DFBC", BackgroundModal: "rgba(255, 248, 236, 0.92)", BorderPrimary: "#E6CE9E", BorderSecondary: "#F2E3C4", AccentPrimary: "#955A08", AccentSuccess: "#37701A", AccentWarning: "#835400", AccentError: "#A8361B", SurfaceBlur: 16, SurfaceGlow: 0.5, RadiusScale: 1.2, Sheen: 0.75, LabelWeight: 600, Character: "lacquer", SurfaceAlpha: 0.35, Depth: "glass", Glow: "off", Surface: "open"},
+		"gloss-amber-resin-dark":      {Name: "Gloss Amber [dark]", TextPrimary: "#FFF3DE", TextSecondary: "#F0CF9A", TextTertiary: "#BF9A6A", BackgroundPrimary: "#120C04", BackgroundSecondary: "#1D1408", BackgroundDots: "#2A1D0C", BackgroundModal: "rgba(18, 12, 4, 0.9)", BorderPrimary: "#3D2A12", BorderSecondary: "#2A1D0C", AccentPrimary: "#FFB23E", AccentSuccess: "#9BD86A", AccentWarning: "#FFD166", AccentError: "#FF7A59", SurfaceBlur: 20, SurfaceGlow: 1, RadiusScale: 1.2, Sheen: 0.85, LabelWeight: 600, Character: "lacquer", SurfaceAlpha: 0.35, Depth: "glass", Glow: "off", Surface: "glass"},
+		"gloss-amber-resin-light":     {Name: "Gloss Amber [light]", TextPrimary: "#2B1A05", TextSecondary: "#5E4012", TextTertiary: "#76531E", BackgroundPrimary: "#FFF8EC", BackgroundSecondary: "#FBEFD9", BackgroundDots: "#F2DFBC", BackgroundModal: "rgba(255, 248, 236, 0.92)", BorderPrimary: "#E6CE9E", BorderSecondary: "#F2E3C4", AccentPrimary: "#955A08", AccentSuccess: "#37701A", AccentWarning: "#835400", AccentError: "#A8361B", SurfaceBlur: 16, SurfaceGlow: 0.5, RadiusScale: 1.2, Sheen: 0.75, LabelWeight: 600, Character: "lacquer", SurfaceAlpha: 0.35, Depth: "glass", Glow: "off", Surface: "glass"},
 		"gloss-emerald-enamel-dark":   {Name: "Gloss Emerald [dark]", TextPrimary: "#E8FFF4", TextSecondary: "#A8E3C7", TextTertiary: "#78B89A", BackgroundPrimary: "#04110C", BackgroundSecondary: "#0A1C15", BackgroundDots: "#11291F", BackgroundModal: "rgba(4, 17, 12, 0.9)", BorderPrimary: "#1B3D2F", BorderSecondary: "#11291F", AccentPrimary: "#2EE89A", AccentSuccess: "#2EE89A", AccentWarning: "#F5C84C", AccentError: "#FF6B6B", AccentInfo: "#E3C06A", SurfaceBlur: 16, SurfaceGlow: 1, RadiusScale: 1.1, Sheen: 0.85, LabelWeight: 600, Character: "enamel", SurfaceAlpha: 0.2},
 		"gloss-emerald-enamel-light":  {Name: "Gloss Emerald [light]", TextPrimary: "#06261A", TextSecondary: "#245440", TextTertiary: "#3A6A56", BackgroundPrimary: "#F1FBF6", BackgroundSecondary: "#E2F5EB", BackgroundDots: "#CBEBDB", BackgroundModal: "rgba(241, 251, 246, 0.92)", BorderPrimary: "#B3DEC8", BorderSecondary: "#D4EEE0", AccentPrimary: "#0A7046", AccentSuccess: "#0A7046", AccentWarning: "#835A00", AccentError: "#A8231C", AccentInfo: "#7A5A00", SurfaceBlur: 14, SurfaceGlow: 0.5, RadiusScale: 1.1, Sheen: 0.75, LabelWeight: 600, Character: "enamel", SurfaceAlpha: 0.2},
 		"gloss-sapphire-night-dark":   {Name: "Gloss Sapphire [dark]", TextPrimary: "#EAF0FF", TextSecondary: "#AFC0F2", TextTertiary: "#8093CC", BackgroundPrimary: "#050A1A", BackgroundSecondary: "#0B1330", BackgroundDots: "#131E45", BackgroundModal: "rgba(5, 10, 26, 0.9)", BorderPrimary: "#1F2E62", BorderSecondary: "#141F48", AccentPrimary: "#6A9DFF", AccentSuccess: "#3FD9A6", AccentWarning: "#FFC14D", AccentError: "#FF6384", AccentInfo: "#9FD8FF", SurfaceBlur: 22, SurfaceGlow: 1, RadiusScale: 1.3, Sheen: 0.9, LabelWeight: 600, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
@@ -6177,16 +6248,28 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"winter-ember-light": {Name: "Winter Ember [light]", TextPrimary: "#1A171C", TextSecondary: "#474249", TextTertiary: "#625D65", BackgroundPrimary: "#FAF9FA", BackgroundSecondary: "#F1EFF1", BackgroundDots: "#E3E0E4", BackgroundModal: "rgba(250, 249, 250, 0.92)", BorderPrimary: "#D0CCD2", BorderSecondary: "#E8E5E9", AccentPrimary: "#A0540A", AccentSuccess: "#1F6E48", AccentWarning: "#855000", AccentError: "#A83232", AccentInfo: "#2A5AA8", SurfaceAlpha: 0.82, SurfaceBlur: 26, SurfaceGlow: 0.8, RadiusScale: 1.2, Character: "frost"},
 
 		// Neutrals: a neutral palette under glass, one backdrop each
-		"slate-dark":    {Name: "Slate [dark]", TextPrimary: "#E2E8F0", TextSecondary: "#BFC9D7", TextTertiary: "#94A3B8", BackgroundPrimary: "#0F172A", BackgroundSecondary: "#1E293B", BackgroundDots: "#283548", BackgroundModal: "rgba(15, 23, 42, 0.9)", BorderPrimary: "#334155", BorderSecondary: "#283548", AccentPrimary: "#38BDF8", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#F472B6", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, LabelWeight: 700, Character: "glass", Depth: "rich", Surface: "open", Collection: "neutrals", Backdrop: "aurora"},
-		"slate-light":   {Name: "Slate [light]", TextPrimary: "#1E293B", TextSecondary: "#303D50", TextTertiary: "#475569", BackgroundPrimary: "#F1F5F9", BackgroundSecondary: "#F8FAFC", BackgroundDots: "#E2E8EE", BackgroundModal: "rgba(241, 245, 249, 0.92)", BorderPrimary: "#CBD5E1", BorderSecondary: "#E2E8EE", AccentPrimary: "#0369A1", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#BE185D", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, LabelWeight: 700, Character: "glass", Depth: "rich", Surface: "open", Collection: "neutrals", Backdrop: "aurora"},
-		"zinc-dark":     {Name: "Zinc [dark]", TextPrimary: "#E4E4E7", TextSecondary: "#C6C6CC", TextTertiary: "#A1A1AA", BackgroundPrimary: "#18181B", BackgroundSecondary: "#27272A", BackgroundDots: "#333338", BackgroundModal: "rgba(24, 24, 27, 0.9)", BorderPrimary: "#3F3F46", BorderSecondary: "#333338", AccentPrimary: "#A78BFA", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#FB7185", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, Character: "glass", Collection: "neutrals", Backdrop: "mesh"},
-		"zinc-light":    {Name: "Zinc [light]", TextPrimary: "#27272A", TextSecondary: "#3A3A40", TextTertiary: "#52525B", BackgroundPrimary: "#F4F4F5", BackgroundSecondary: "#FAFAFA", BackgroundDots: "#E7E7E9", BackgroundModal: "rgba(244, 244, 245, 0.92)", BorderPrimary: "#D4D4D8", BorderSecondary: "#E7E7E9", AccentPrimary: "#6D28D9", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#BE123C", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, Character: "glass", Collection: "neutrals", Backdrop: "mesh"},
-		"gray-dark":     {Name: "Gray [dark]", TextPrimary: "#E5E7EB", TextSecondary: "#C4C8D0", TextTertiary: "#9CA3AF", BackgroundPrimary: "#111827", BackgroundSecondary: "#1F2937", BackgroundDots: "#2B3544", BackgroundModal: "rgba(17, 24, 39, 0.9)", BorderPrimary: "#374151", BorderSecondary: "#2B3544", AccentPrimary: "#60A5FA", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#F59E0B", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, Character: "glass", Collection: "neutrals", Backdrop: "mountains"},
-		"gray-light":    {Name: "Gray [light]", TextPrimary: "#1F2937", TextSecondary: "#333D4B", TextTertiary: "#4B5563", BackgroundPrimary: "#F3F4F6", BackgroundSecondary: "#F9FAFB", BackgroundDots: "#E5E8EB", BackgroundModal: "rgba(243, 244, 246, 0.92)", BorderPrimary: "#D1D5DB", BorderSecondary: "#E5E8EB", AccentPrimary: "#1D4ED8", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#B45309", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, Character: "glass", Collection: "neutrals", Backdrop: "mountains"},
-		"stone-dark":    {Name: "Stone [dark]", TextPrimary: "#E7E5E4", TextSecondary: "#CBC7C4", TextTertiary: "#A8A29E", BackgroundPrimary: "#1C1917", BackgroundSecondary: "#292524", BackgroundDots: "#363230", BackgroundModal: "rgba(28, 25, 23, 0.9)", BorderPrimary: "#44403C", BorderSecondary: "#363230", AccentPrimary: "#F59E0B", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#EF4444", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, Character: "glass", Collection: "neutrals", Backdrop: "dunes"},
-		"stone-light":   {Name: "Stone [light]", TextPrimary: "#292524", TextSecondary: "#3E3A37", TextTertiary: "#57534E", BackgroundPrimary: "#F5F5F4", BackgroundSecondary: "#FAFAF9", BackgroundDots: "#E8E6E5", BackgroundModal: "rgba(245, 245, 244, 0.92)", BorderPrimary: "#D6D3D1", BorderSecondary: "#E8E6E5", AccentPrimary: "#B45309", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#B91C1C", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, Character: "glass", Collection: "neutrals", Backdrop: "dunes"},
-		"neutral-dark":  {Name: "Neutral [dark]", TextPrimary: "#E5E5E5", TextSecondary: "#C7C7C7", TextTertiary: "#A3A3A3", BackgroundPrimary: "#171717", BackgroundSecondary: "#262626", BackgroundDots: "#333333", BackgroundModal: "rgba(23, 23, 23, 0.9)", BorderPrimary: "#404040", BorderSecondary: "#333333", AccentPrimary: "#34D399", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, Character: "glass", Collection: "neutrals", Backdrop: "bokeh"},
-		"neutral-light": {Name: "Neutral [light]", TextPrimary: "#262626", TextSecondary: "#3A3A3A", TextTertiary: "#525252", BackgroundPrimary: "#F5F5F5", BackgroundSecondary: "#FAFAFA", BackgroundDots: "#E7E7E7", BackgroundModal: "rgba(245, 245, 245, 0.92)", BorderPrimary: "#D4D4D4", BorderSecondary: "#E7E7E7", AccentPrimary: "#047857", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, Character: "glass", Collection: "neutrals", Backdrop: "bokeh"},
+		"neutral-dark":   {Name: "Neutral [dark]", TextPrimary: "#E8E8E8", TextSecondary: "#BEBEBE", TextTertiary: "#989898", BackgroundPrimary: "#0F0F0F", BackgroundSecondary: "#181818", BackgroundDots: "#222222", BackgroundModal: "rgba(15, 15, 15, 0.9)", BorderPrimary: "#303030", BorderSecondary: "#222222", AccentPrimary: "#4BC98F", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "ink", Collection: "neutrals", Backdrop: "stars"},
+		"neutral-light":  {Name: "Neutral [light]", TextPrimary: "#1B1B1B", TextSecondary: "#424242", TextTertiary: "#5D5D5D", BackgroundPrimary: "#F3F3F3", BackgroundSecondary: "#FAFAFA", BackgroundDots: "#E8E8E8", BackgroundModal: "rgba(243, 243, 243, 0.92)", BorderPrimary: "#D1D1D1", BorderSecondary: "#E1E1E1", AccentPrimary: "#007A46", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "ink", Collection: "neutrals", Backdrop: "stars"},
+		"stone-dark":     {Name: "Stone [dark]", TextPrimary: "#EDE7DF", TextSecondary: "#C3BDB6", TextTertiary: "#9D9790", BackgroundPrimary: "#130F0A", BackgroundSecondary: "#1C1712", BackgroundDots: "#25211B", BackgroundModal: "rgba(19, 15, 10, 0.9)", BorderPrimary: "#342F2A", BorderSecondary: "#25211B", AccentPrimary: "#E69C3A", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "paper", Collection: "neutrals", Backdrop: "dunes"},
+		"stone-light":    {Name: "Stone [light]", TextPrimary: "#1E1A15", TextSecondary: "#47413C", TextTertiary: "#625D56", BackgroundPrimary: "#F9F2EB", BackgroundSecondary: "#FFF9F2", BackgroundDots: "#EDE7DF", BackgroundModal: "rgba(249, 242, 235, 0.92)", BorderPrimary: "#D6D0C9", BorderSecondary: "#E7E0D9", AccentPrimary: "#945000", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "paper", Collection: "neutrals", Backdrop: "dunes"},
+		"gray-dark":      {Name: "Gray [dark]", TextPrimary: "#E2E9F0", TextSecondary: "#B8BEC5", TextTertiary: "#9399A0", BackgroundPrimary: "#0B1015", BackgroundSecondary: "#14191E", BackgroundDots: "#1D2227", BackgroundModal: "rgba(11, 16, 21, 0.9)", BorderPrimary: "#2C3136", BorderSecondary: "#1D2227", AccentPrimary: "#6EB0FF", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "frost", Collection: "neutrals", Backdrop: "haze"},
+		"gray-light":     {Name: "Gray [light]", TextPrimary: "#161B20", TextSecondary: "#3E4349", TextTertiary: "#595E64", BackgroundPrimary: "#EEF4FB", BackgroundSecondary: "#F4FBFF", BackgroundDots: "#E2E9F0", BackgroundModal: "rgba(238, 244, 251, 0.92)", BorderPrimary: "#CBD2D9", BorderSecondary: "#DBE2E9", AccentPrimary: "#2063B0", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "frost", Collection: "neutrals", Backdrop: "haze"},
+		"zinc-dark":      {Name: "Zinc [dark]", TextPrimary: "#E7E7ED", TextSecondary: "#BDBDC3", TextTertiary: "#97989D", BackgroundPrimary: "#0F0F13", BackgroundSecondary: "#18181C", BackgroundDots: "#212125", BackgroundModal: "rgba(15, 15, 19, 0.9)", BorderPrimary: "#303034", BorderSecondary: "#212125", AccentPrimary: "#B59BFD", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "carbon", Collection: "neutrals", Backdrop: "dotgrid"},
+		"zinc-light":     {Name: "Zinc [light]", TextPrimary: "#1A1A1E", TextSecondary: "#424247", TextTertiary: "#5D5D62", BackgroundPrimary: "#F3F3F9", BackgroundSecondary: "#F9F9FF", BackgroundDots: "#E7E7ED", BackgroundModal: "rgba(243, 243, 249, 0.92)", BorderPrimary: "#D0D0D6", BorderSecondary: "#E0E1E6", AccentPrimary: "#6A4FA9", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "carbon", Collection: "neutrals", Backdrop: "dotgrid"},
+		"slate-dark":     {Name: "Slate [dark]", TextPrimary: "#DCEAF4", TextSecondary: "#B3C0CA", TextTertiary: "#8E9AA4", BackgroundPrimary: "#071117", BackgroundSecondary: "#101A21", BackgroundDots: "#19232A", BackgroundModal: "rgba(7, 17, 23, 0.9)", BorderPrimary: "#27323A", BorderSecondary: "#19232A", AccentPrimary: "#3CBBF9", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, LabelWeight: 700, Character: "glass", Depth: "rich", Surface: "glass", Collection: "neutrals", Backdrop: "aurora"},
+		"slate-light":    {Name: "Slate [light]", TextPrimary: "#121C23", TextSecondary: "#39444C", TextTertiary: "#545F68", BackgroundPrimary: "#E8F6FF", BackgroundSecondary: "#EFFCFF", BackgroundDots: "#DCEAF4", BackgroundModal: "rgba(232, 246, 255, 0.92)", BorderPrimary: "#C6D3DD", BorderSecondary: "#D6E3EE", AccentPrimary: "#006DA6", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, LabelWeight: 700, Character: "glass", Depth: "rich", Surface: "glass", Collection: "neutrals", Backdrop: "aurora"},
+		"chalk-dark":     {Name: "Chalk [dark]", TextPrimary: "#E9E8E3", TextSecondary: "#BFBEB9", TextTertiary: "#999894", BackgroundPrimary: "#100F0C", BackgroundSecondary: "#191815", BackgroundDots: "#22221E", BackgroundModal: "rgba(16, 15, 12, 0.9)", BorderPrimary: "#31302D", BorderSecondary: "#22221E", AccentPrimary: "#F98B6F", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "paper", Collection: "neutrals", Backdrop: "ruled"},
+		"chalk-light":    {Name: "Chalk [light]", TextPrimary: "#1B1B17", TextSecondary: "#43423F", TextTertiary: "#5F5E5A", BackgroundPrimary: "#F8F7F2", BackgroundSecondary: "#FDFCF7", BackgroundDots: "#ECEBE7", BackgroundModal: "rgba(248, 247, 242, 0.92)", BorderPrimary: "#D8D7D3", BorderSecondary: "#E6E4E0", AccentPrimary: "#A33E25", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "paper", Collection: "neutrals", Backdrop: "ruled"},
+		"concrete-dark":  {Name: "Concrete [dark]", TextPrimary: "#EDEAE8", TextSecondary: "#C6C3C1", TextTertiary: "#A09E9C", BackgroundPrimary: "#232120", BackgroundSecondary: "#2D2B29", BackgroundDots: "#373533", BackgroundModal: "rgba(35, 33, 32, 0.9)", BorderPrimary: "#494745", BorderSecondary: "#373533", AccentPrimary: "#F49752", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "brushed", Collection: "neutrals", Backdrop: "bricks"},
+		"concrete-light": {Name: "Concrete [light]", TextPrimary: "#171614", TextSecondary: "#3A3736", TextTertiary: "#545250", BackgroundPrimary: "#E0DDDB", BackgroundSecondary: "#EAE7E5", BackgroundDots: "#D6D4D2", BackgroundModal: "rgba(224, 221, 219, 0.92)", BorderPrimary: "#C0BDBB", BorderSecondary: "#D0CDCB", AccentPrimary: "#964100", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "brushed", Collection: "neutrals", Backdrop: "bricks"},
+		"black-dark":     {Name: "Black [dark]", TextPrimary: "#EEEEEE", TextSecondary: "#C4C4C4", TextTertiary: "#989898", BackgroundPrimary: "#000000", BackgroundSecondary: "#070707", BackgroundDots: "#121212", BackgroundModal: "rgba(0, 0, 0, 0.9)", BorderPrimary: "#292929", BorderSecondary: "#161616", AccentPrimary: "#00D2D3", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "ink", Collection: "neutrals", Backdrop: "stars"},
+		"black-light":    {Name: "Black [light]", TextPrimary: "#0B0B0B", TextSecondary: "#3A3A3A", TextTertiary: "#585858", BackgroundPrimary: "#FFFFFF", BackgroundSecondary: "#F7F7F7", BackgroundDots: "#EEEEEE", BackgroundModal: "rgba(255, 255, 255, 0.92)", BorderPrimary: "#D7D7D7", BorderSecondary: "#E4E4E4", AccentPrimary: "#007A7C", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "ink", Collection: "neutrals", Backdrop: "stars"},
+
+		// ThinkDashboard (Classic): the two themes the first release shipped, with the page they had: the
+		// palette's own colour and a grid of dots in the dot colour. Nothing else is drawn, so it
+		// reads as it did before there were materials.
+		"thinkdashboard-classic-dark":  {Name: "ThinkDashboard [dark]", TextPrimary: "#E5E7EB", TextSecondary: "#9CA3AF", TextTertiary: "#6B7280", BackgroundPrimary: "#000000", BackgroundSecondary: "#1F2937", BackgroundDots: "#1F2937", BackgroundModal: "rgba(0, 0, 0, 0.8)", BorderPrimary: "#4B5563", BorderSecondary: "#374151", AccentSuccess: "#10B981", AccentWarning: "#F59E0B", AccentError: "#EF4444", Depth: "flat", Glow: "off", Effects: "off", Surface: "card", SurfaceGlow: -1, MaterialStyle: "classic", Collection: "classic", Backdrop: "dots"},
+		"thinkdashboard-classic-light": {Name: "ThinkDashboard [light]", TextPrimary: "#1F2937", TextSecondary: "#6B7280", TextTertiary: "#9CA3AF", BackgroundPrimary: "#F9FAFB", BackgroundSecondary: "#F3F4F6", BackgroundDots: "#E5E7EB", BackgroundModal: "rgba(255, 255, 255, 0.9)", BorderPrimary: "#D1D5DB", BorderSecondary: "#E5E7EB", AccentSuccess: "#059669", AccentWarning: "#D97706", AccentError: "#DC2626", Depth: "flat", Glow: "off", Effects: "off", Surface: "card", SurfaceGlow: -1, MaterialStyle: "classic", Collection: "classic", Backdrop: "dots"},
 
 		// Brushed ─────────────────────────────────────────────────────
 		// Aluminium Deck: silver deck, blue LED
@@ -6213,17 +6296,17 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"squid-ink-dark":  {Name: "Squid Ink [dark]", TextPrimary: "#EAF0F4", TextSecondary: "#AEBCC6", TextTertiary: "#86969F", BackgroundPrimary: "#050709", BackgroundSecondary: "#0A0E12", BackgroundDots: "#11181E", BackgroundModal: "rgba(5, 7, 9, 0.9)", BorderPrimary: "#1C2832", BorderSecondary: "#141D25", AccentPrimary: "#4AA3B8", AccentSuccess: "#7FCFA4", AccentWarning: "#E8C272", AccentError: "#F08484", AccentInfo: "#A89CF0", RadiusScale: 0.2, LabelSpacing: "0.08em", LabelWeight: 800, Character: "ink", Depth: "glass", SurfaceAlpha: 0.2, Surface: "glass"},
 		"squid-ink-light": {Name: "Squid Ink [light]", TextPrimary: "#0A1216", TextSecondary: "#34444C", TextTertiary: "#4F5F68", BackgroundPrimary: "#F6F8F9", BackgroundSecondary: "#ECF0F2", BackgroundDots: "#DCE3E7", BackgroundModal: "rgba(246, 248, 249, 0.92)", BorderPrimary: "#C6D1D7", BorderSecondary: "#E2E8EB", AccentPrimary: "#0F6278", AccentSuccess: "#1E6A48", AccentWarning: "#7E5400", AccentError: "#A83232", AccentInfo: "#4A40A8", RadiusScale: 0.2, LabelSpacing: "0.08em", LabelWeight: 800, Character: "ink", Depth: "glass", SurfaceAlpha: 0.2, Surface: "glass"},
 		// Unraid Black: the webGUI's black theme, flat panels and the orange of the logo
-		"unraid-black-dark":  {Name: "Unraid Black [dark]", TextPrimary: "#F2F2F2", TextSecondary: "#C4C2C0", TextTertiary: "#928F8C", BackgroundPrimary: "#1C1B1B", BackgroundSecondary: "#262524", BackgroundDots: "#302F2D", BackgroundModal: "rgba(28, 27, 27, 0.92)", BorderPrimary: "#3A3836", BorderSecondary: "#2D2B2A", AccentPrimary: "#FF8C2F", AccentSuccess: "#6FBF73", AccentWarning: "#F2C14E", AccentError: "#E8514A", AccentInfo: "#6FA8DC", RadiusScale: 0.15, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "flat", Glow: "off", Effects: "off"},
-		"unraid-black-light": {Name: "Unraid Black [light]", TextPrimary: "#1C1B1B", TextSecondary: "#4A4745", TextTertiary: "#6B6866", BackgroundPrimary: "#F2F2F2", BackgroundSecondary: "#FFFFFF", BackgroundDots: "#E2E0DE", BackgroundModal: "rgba(242, 242, 242, 0.94)", BorderPrimary: "#CFCCC9", BorderSecondary: "#E2E0DE", AccentPrimary: "#B84F00", AccentSuccess: "#2E7D32", AccentWarning: "#8A5A00", AccentError: "#C62828", AccentInfo: "#1F5FA8", RadiusScale: 0.15, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "flat", Glow: "off", Effects: "off"},
+		"unraid-black-dark":  {Name: "Unraid Black [dark]", TextPrimary: "#F2F2F2", TextSecondary: "#C4C2C0", TextTertiary: "#928F8C", BackgroundPrimary: "#1C1B1B", BackgroundSecondary: "#2B2A29", BackgroundDots: "#2E2D2B", BackgroundModal: "rgba(28, 27, 27, 0.92)", BorderPrimary: "#4A4745", BorderSecondary: "#2D2B2A", AccentPrimary: "#FF8C2F", AccentSuccess: "#6FBF73", AccentWarning: "#F2C14E", AccentError: "#E8514A", AccentInfo: "#6FA8DC", RadiusScale: 0.6, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "soft", Glow: "off", Effects: "off", Surface: "card", SurfaceAlpha: 0.9},
+		"unraid-black-light": {Name: "Unraid Black [light]", TextPrimary: "#1C1B1B", TextSecondary: "#4A4745", TextTertiary: "#6B6866", BackgroundPrimary: "#F2F2F2", BackgroundSecondary: "#FFFFFF", BackgroundDots: "#E2E0DE", BackgroundModal: "rgba(242, 242, 242, 0.94)", BorderPrimary: "#CFCCC9", BorderSecondary: "#E2E0DE", AccentPrimary: "#B84F00", AccentSuccess: "#2E7D32", AccentWarning: "#8A5A00", AccentError: "#C62828", AccentInfo: "#1F5FA8", RadiusScale: 0.6, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "soft", Glow: "off", Effects: "off", Surface: "card", SurfaceAlpha: 0.9},
 		// Unraid Azure: the webGUI's azure theme, cool grey panels and its steel blue
-		"unraid-azure-dark":  {Name: "Unraid Azure [dark]", TextPrimary: "#E8EDF2", TextSecondary: "#B4BFCA", TextTertiary: "#8795A3", BackgroundPrimary: "#171B20", BackgroundSecondary: "#1F252C", BackgroundDots: "#29313A", BackgroundModal: "rgba(23, 27, 32, 0.92)", BorderPrimary: "#323C47", BorderSecondary: "#262E37", AccentPrimary: "#7FA2DE", AccentSuccess: "#6FBF8E", AccentWarning: "#E3B65A", AccentError: "#EA6B6B", AccentInfo: "#9C8FE6", RadiusScale: 0.15, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "flat", Glow: "off", Effects: "off"},
-		"unraid-azure-light": {Name: "Unraid Azure [light]", TextPrimary: "#1B2229", TextSecondary: "#44505C", TextTertiary: "#677482", BackgroundPrimary: "#EBEFF2", BackgroundSecondary: "#FFFFFF", BackgroundDots: "#D9E0E6", BackgroundModal: "rgba(235, 239, 242, 0.94)", BorderPrimary: "#C3CCD5", BorderSecondary: "#DCE2E8", AccentPrimary: "#2F57A8", AccentSuccess: "#2A7A4F", AccentWarning: "#8A5A00", AccentError: "#B83232", AccentInfo: "#5A47B0", RadiusScale: 0.15, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "flat", Glow: "off", Effects: "off"},
+		"unraid-azure-dark":  {Name: "Unraid Azure [dark]", TextPrimary: "#E8EDF2", TextSecondary: "#B4BFCA", TextTertiary: "#8795A3", BackgroundPrimary: "#141A21", BackgroundSecondary: "#1D2631", BackgroundDots: "#26313E", BackgroundModal: "rgba(20, 26, 33, 0.92)", BorderPrimary: "#33465A", BorderSecondary: "#273546", AccentPrimary: "#4F96EA", AccentSuccess: "#6FBF8E", AccentWarning: "#E3B65A", AccentError: "#EA6B6B", AccentInfo: "#6EC1E4", RadiusScale: 0.6, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "soft", Glow: "off", Effects: "off", Surface: "card", SurfaceAlpha: 0.9},
+		"unraid-azure-light": {Name: "Unraid Azure [light]", TextPrimary: "#1B2229", TextSecondary: "#44505C", TextTertiary: "#677482", BackgroundPrimary: "#E6EBF0", BackgroundSecondary: "#FFFFFF", BackgroundDots: "#D9E0E6", BackgroundModal: "rgba(230, 235, 240, 0.94)", BorderPrimary: "#C3CCD5", BorderSecondary: "#DCE2E8", AccentPrimary: "#1B62B8", AccentSuccess: "#2A7A4F", AccentWarning: "#8A5A00", AccentError: "#B83232", AccentInfo: "#0F6F94", RadiusScale: 0.6, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "soft", Glow: "off", Effects: "off", Surface: "card", SurfaceAlpha: 0.9},
 		// Unraid Ember: the logo's orange glowing out of black glass
-		"unraid-ember-dark":  {Name: "Unraid Ember [dark]", TextPrimary: "#FFF1E8", TextSecondary: "#E2BCA5", TextTertiary: "#B08D78", BackgroundPrimary: "#0D0706", BackgroundSecondary: "#190E0B", BackgroundDots: "#26140F", BackgroundModal: "rgba(13, 7, 6, 0.9)", BorderPrimary: "#472312", BorderSecondary: "#2F1810", AccentPrimary: "#FF8C2F", AccentSuccess: "#7BD88F", AccentWarning: "#FFC24A", AccentError: "#FF5A4D", AccentInfo: "#7FB4FF", SurfaceBlur: 24, SurfaceGlow: 1, RadiusScale: 1.2, Sheen: 0.9, LabelWeight: 700, LabelSpacing: "0.06em", Character: "neon", Depth: "glass", SurfaceAlpha: 0.2, Surface: "glass"},
-		"unraid-ember-light": {Name: "Unraid Ember [light]", TextPrimary: "#2A110A", TextSecondary: "#5C3326", TextTertiary: "#7A4D3C", BackgroundPrimary: "#FFF6EE", BackgroundSecondary: "#FFEADB", BackgroundDots: "#F7D9C4", BackgroundModal: "rgba(255, 246, 238, 0.92)", BorderPrimary: "#EBC4A8", BorderSecondary: "#F3D8C4", AccentPrimary: "#C24A00", AccentSuccess: "#1F7A3D", AccentWarning: "#8A5200", AccentError: "#B3261E", AccentInfo: "#1F5FA8", SurfaceBlur: 18, SurfaceGlow: 0.6, RadiusScale: 1.2, Sheen: 0.7, LabelWeight: 700, LabelSpacing: "0.06em", Character: "neon", Depth: "glass", SurfaceAlpha: 0.2, Surface: "glass"},
+		"unraid-ember-dark":  {Name: "Unraid Ember [dark]", TextPrimary: "#FFF1E8", TextSecondary: "#E2BCA5", TextTertiary: "#B08D78", BackgroundPrimary: "#0D0706", BackgroundSecondary: "#190E0B", BackgroundDots: "#26140F", BackgroundModal: "rgba(13, 7, 6, 0.9)", BorderPrimary: "#472312", BorderSecondary: "#2F1810", AccentPrimary: "#FF7A1A", AccentSuccess: "#7BD88F", AccentWarning: "#FFC24A", AccentError: "#FF5A4D", AccentInfo: "#7FB4FF", RadiusScale: 0.6, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "soft", Glow: "off", Effects: "off", Surface: "card", SurfaceAlpha: 0.9},
+		"unraid-ember-light": {Name: "Unraid Ember [light]", TextPrimary: "#2A110A", TextSecondary: "#5C3326", TextTertiary: "#7A4D3C", BackgroundPrimary: "#FFF6EE", BackgroundSecondary: "#FFEADB", BackgroundDots: "#F7D9C4", BackgroundModal: "rgba(255, 246, 238, 0.92)", BorderPrimary: "#EBC4A8", BorderSecondary: "#F3D8C4", AccentPrimary: "#C24A00", AccentSuccess: "#1F7A3D", AccentWarning: "#8A5200", AccentError: "#B3261E", AccentInfo: "#1F5FA8", RadiusScale: 0.6, LabelTransform: "uppercase", LabelSpacing: "0.06em", LabelWeight: 700, Depth: "soft", Glow: "off", Effects: "off", Surface: "card", SurfaceAlpha: 0.9},
 		// Unraid Blaze: the logo's red end, hard-edged lacquer on deep crimson
-		"unraid-blaze-dark":  {Name: "Unraid Blaze [dark]", TextPrimary: "#FFF0F0", TextSecondary: "#E6BABA", TextTertiary: "#B38888", BackgroundPrimary: "#14070A", BackgroundSecondary: "#200B10", BackgroundDots: "#2E1118", BackgroundModal: "rgba(20, 7, 10, 0.9)", BorderPrimary: "#4F1A26", BorderSecondary: "#37131B", AccentPrimary: "#FF3B3B", AccentSuccess: "#6FD39B", AccentWarning: "#FFB84D", AccentError: "#FF7A8A", AccentInfo: "#8FB8FF", SurfaceBlur: 16, SurfaceGlow: 0.8, RadiusScale: 0.5, Sheen: 1, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
-		"unraid-blaze-light": {Name: "Unraid Blaze [light]", TextPrimary: "#2B0A0C", TextSecondary: "#5E2A2D", TextTertiary: "#7C4A4C", BackgroundPrimary: "#FFF4F2", BackgroundSecondary: "#FFE6E2", BackgroundDots: "#F7CFC9", BackgroundModal: "rgba(255, 244, 242, 0.92)", BorderPrimary: "#E8B4AC", BorderSecondary: "#F2CFC9", AccentPrimary: "#C41E1E", AccentSuccess: "#1F7A4A", AccentWarning: "#8A5200", AccentError: "#8F1030", AccentInfo: "#1F5FA8", SurfaceBlur: 14, SurfaceGlow: 0.4, RadiusScale: 0.5, Sheen: 0.8, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
+		"unraid-blaze-dark":  {Name: "Unraid Blaze [dark]", TextPrimary: "#FFF0F0", TextSecondary: "#E6BABA", TextTertiary: "#B38888", BackgroundPrimary: "#14070A", BackgroundSecondary: "#200B10", BackgroundDots: "#2E1118", BackgroundModal: "rgba(20, 7, 10, 0.9)", BorderPrimary: "#4F1A26", BorderSecondary: "#37131B", AccentPrimary: "#F2452B", AccentSuccess: "#6FD39B", AccentWarning: "#FFB84D", AccentError: "#FF7A8A", AccentInfo: "#8FB8FF", SurfaceBlur: 16, SurfaceGlow: 0.4, RadiusScale: 0.5, Sheen: 0.5, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
+		"unraid-blaze-light": {Name: "Unraid Blaze [light]", TextPrimary: "#2B0A0C", TextSecondary: "#5E2A2D", TextTertiary: "#7C4A4C", BackgroundPrimary: "#FFF4F2", BackgroundSecondary: "#FFE6E2", BackgroundDots: "#F7CFC9", BackgroundModal: "rgba(255, 244, 242, 0.92)", BorderPrimary: "#E8B4AC", BorderSecondary: "#F2CFC9", AccentPrimary: "#C41E1E", AccentSuccess: "#1F7A4A", AccentWarning: "#8A5200", AccentError: "#8F1030", AccentInfo: "#1F5FA8", SurfaceBlur: 14, SurfaceGlow: 0.25, RadiusScale: 0.5, Sheen: 0.45, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Character: "lacquer", Depth: "glass", SurfaceAlpha: 0.35, Surface: "glass"},
 		// Vermilion Seal: sumi black, one hanko red
 		"vermilion-seal-dark":  {Name: "Vermilion Seal [dark]", TextPrimary: "#F4F1EC", TextSecondary: "#C4BDB2", TextTertiary: "#9C958A", BackgroundPrimary: "#0B0A09", BackgroundSecondary: "#141210", BackgroundDots: "#1E1B18", BackgroundModal: "rgba(11, 10, 9, 0.9)", BorderPrimary: "#302C27", BorderSecondary: "#23201C", AccentPrimary: "#E8503A", AccentSuccess: "#8FCB9A", AccentWarning: "#E6C06E", AccentError: "#FF8FA0", AccentInfo: "#9AB4E6", RadiusScale: 0.1, LabelTransform: "none", LabelSpacing: "0.02em", LabelWeight: 700, Character: "ink", Depth: "glass", SurfaceAlpha: 0.2, Surface: "glass"},
 		"vermilion-seal-light": {Name: "Vermilion Seal [light]", TextPrimary: "#171411", TextSecondary: "#46403A", TextTertiary: "#615A52", BackgroundPrimary: "#FBFAF7", BackgroundSecondary: "#F2F0EB", BackgroundDots: "#E5E1D8", BackgroundModal: "rgba(251, 250, 247, 0.92)", BorderPrimary: "#D2CCC0", BorderSecondary: "#EAE6DE", AccentPrimary: "#B8260F", AccentSuccess: "#2A6A3C", AccentWarning: "#7E5200", AccentError: "#9A1E48", AccentInfo: "#34549E", RadiusScale: 0.1, LabelTransform: "none", LabelSpacing: "0.02em", LabelWeight: 700, Character: "ink", Depth: "glass", SurfaceAlpha: 0.2, Surface: "glass"},
@@ -6250,8 +6333,8 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"look-magma-dark":  {Name: "Magma [dark]", TextPrimary: "#FFF1ED", TextSecondary: "#CBBBB7", TextTertiary: "#A99894", BackgroundPrimary: "#140604", BackgroundSecondary: "#28120E", BackgroundDots: "#351008", BackgroundModal: "rgba(20, 6, 4, 0.9)", BorderPrimary: "#682313", BorderSecondary: "#3A1108", AccentPrimary: "#FF4B1F", AccentSuccess: "#B6E04A", AccentWarning: "#FF9A1F", AccentError: "#E44757", SurfaceGlow: 0.7, SurfaceAlpha: 0.2, RadiusScale: 0.5, LabelTransform: "uppercase", LabelSpacing: "0.08em", LabelWeight: 700, Sheen: 0.15, Character: "carbon", Glow: "off", Collection: "looks", Backdrop: "burst", Depth: "glass", Effects: "off", Surface: "glass"},
 		"look-magma-light": {Name: "Magma [light]", TextPrimary: "#120504", TextSecondary: "#4B403F", TextTertiary: "#716766", BackgroundPrimary: "#FFF1ED", BackgroundSecondary: "#FFFAF8", BackgroundDots: "#FFE2DB", BackgroundModal: "rgba(255, 241, 237, 0.92)", BorderPrimary: "#F5C6BA", BorderSecondary: "#FFDBD2", AccentPrimary: "#D72A00", AccentSuccess: "#5C7714", AccentWarning: "#A45A00", AccentError: "#D91F32", SurfaceGlow: 0.7, SurfaceAlpha: 0.2, RadiusScale: 0.5, LabelTransform: "uppercase", LabelSpacing: "0.08em", LabelWeight: 700, Sheen: 0.15, Character: "carbon", Glow: "off", Collection: "looks", Backdrop: "burst", Depth: "glass", Effects: "off", Surface: "glass"},
 		// Ocean: deep water lit from above in cyan and violet
-		"look-ocean-dark":  {Name: "Ocean [dark]", TextPrimary: "#EBFDFF", TextSecondary: "#B6C8CE", TextTertiary: "#93A5AD", BackgroundPrimary: "#050D1F", BackgroundSecondary: "#0E2031", BackgroundDots: "#042B3E", BackgroundModal: "rgba(5, 13, 31, 0.9)", BorderPrimary: "#0A5A6F", BorderSecondary: "#042F43", AccentPrimary: "#00E0FF", AccentSuccess: "#00F5A8", AccentWarning: "#4980FF", AccentError: "#996AFF", SurfaceAlpha: 0.2, SurfaceBlur: 20, SurfaceGlow: 0.5, RadiusScale: 1.4, LabelWeight: 600, Sheen: 0.35, Character: "glass", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "splash", Surface: "glass"},
-		"look-ocean-light": {Name: "Ocean [light]", TextPrimary: "#040C1C", TextSecondary: "#3E4652", TextTertiary: "#656D77", BackgroundPrimary: "#EBFDFF", BackgroundSecondary: "#F7FEFF", BackgroundDots: "#D6FAFF", BackgroundModal: "rgba(235, 253, 255, 0.92)", BorderPrimary: "#B9DEE3", BorderSecondary: "#CCF9FF", AccentPrimary: "#007D8F", AccentSuccess: "#008058", AccentWarning: "#2064FF", AccentError: "#7A3CFF", SurfaceAlpha: 0.2, SurfaceBlur: 20, SurfaceGlow: 0.5, RadiusScale: 1.4, LabelWeight: 600, Sheen: 0.35, Character: "glass", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "splash", Surface: "glass"},
+		"look-ocean-dark":  {Name: "Ocean [dark]", TextPrimary: "#EBFDFF", TextSecondary: "#B6C8CE", TextTertiary: "#93A5AD", BackgroundPrimary: "#050D1F", BackgroundSecondary: "#0E2031", BackgroundDots: "#042B3E", BackgroundModal: "rgba(5, 13, 31, 0.9)", BorderPrimary: "#0A5A6F", BorderSecondary: "#042F43", AccentPrimary: "#00E0FF", AccentSuccess: "#00F5A8", AccentWarning: "#4980FF", AccentError: "#996AFF", SurfaceAlpha: 0.2, SurfaceBlur: 20, SurfaceGlow: 0.5, RadiusScale: 1.4, LabelWeight: 600, Sheen: 0.35, Character: "glass", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "oceanblue", Surface: "glass"},
+		"look-ocean-light": {Name: "Ocean [light]", TextPrimary: "#040C1C", TextSecondary: "#3E4652", TextTertiary: "#656D77", BackgroundPrimary: "#EBFDFF", BackgroundSecondary: "#F7FEFF", BackgroundDots: "#D6FAFF", BackgroundModal: "rgba(235, 253, 255, 0.92)", BorderPrimary: "#B9DEE3", BorderSecondary: "#CCF9FF", AccentPrimary: "#007D8F", AccentSuccess: "#008058", AccentWarning: "#2064FF", AccentError: "#7A3CFF", SurfaceAlpha: 0.2, SurfaceBlur: 20, SurfaceGlow: 0.5, RadiusScale: 1.4, LabelWeight: 600, Sheen: 0.35, Character: "glass", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "oceanblue", Surface: "glass"},
 		// Lagoon: shallow turquoise water over pale sand
 		"look-lagoon-dark":  {Name: "Lagoon [dark]", TextPrimary: "#EEFEFB", TextSecondary: "#B8CBC8", TextTertiary: "#94A9A5", BackgroundPrimary: "#031614", BackgroundSecondary: "#0E2925", BackgroundDots: "#09352E", BackgroundModal: "rgba(3, 22, 20, 0.9)", BorderPrimary: "#186558", BorderSecondary: "#0A3932", AccentPrimary: "#2EF2D0", AccentSuccess: "#7DFF6A", AccentWarning: "#F5D76E", AccentError: "#FF6F91", SurfaceAlpha: 0.2, SurfaceBlur: 24, SurfaceGlow: 0.35, RadiusScale: 1.3, LabelWeight: 500, Sheen: 0.25, Character: "frost", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "splash", Surface: "glass"},
 		"look-lagoon-light": {Name: "Lagoon [light]", TextPrimary: "#031412", TextSecondary: "#3E4C4B", TextTertiary: "#63706E", BackgroundPrimary: "#EEFEFB", BackgroundSecondary: "#F9FFFE", BackgroundDots: "#DEFDF7", BackgroundModal: "rgba(238, 254, 251, 0.92)", BorderPrimary: "#BDDFD9", BorderSecondary: "#D5FCF6", AccentPrimary: "#087F6A", AccentSuccess: "#118300", AccentWarning: "#8D700A", AccentError: "#E40036", SurfaceAlpha: 0.2, SurfaceBlur: 24, SurfaceGlow: 0.35, RadiusScale: 1.3, LabelWeight: 500, Sheen: 0.25, Character: "frost", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "splash", Surface: "glass"},
@@ -6422,9 +6505,58 @@ func mergeBuiltInThemeDefaults(stored map[string]ThemeColors) map[string]ThemeCo
 			stored[themeID] = defaults
 			continue
 		}
+		// The Unraid themes were redrawn as a server UI; a copy that still has the first drawing's
+		// fingerprint (flat and square, neon glass, full-strength sheen) becomes the new one.
+		if isShippedOldUnraid(themeID, current) {
+			stored[themeID] = defaults
+			continue
+		}
+		// Ocean drew "splash" and now draws its own blue sea; a stored copy that still says splash
+		// is the old shipped value and not a choice.
+		if (themeID == "look-ocean-dark" || themeID == "look-ocean-light") && current.Backdrop == "splash" {
+			current.Backdrop = defaults.Backdrop
+		}
+		// The neutrals were redrawn: an untouched old one becomes the new one.
+		if isShippedOldNeutral(themeID, current) {
+			stored[themeID] = defaults
+			continue
+		}
+		// Gloss Chrome, Gloss Amber and Slate shipped open and now ship on glass, so a column has
+		// a card; a stored copy that still says open is the old shipped value.
+		if shippedOpenThemes[themeID] && current.Surface == "open" {
+			current.Surface = defaults.Surface
+		}
+		// Berry briefly shipped classic and now follows the install like every other theme; a stored
+		// copy that still says classic is that value and not a choice.
+		if shippedClassicThemes[themeID] && current.MaterialStyle == "classic" && defaults.MaterialStyle == "" {
+			current.MaterialStyle = ""
+		}
 		stored[themeID] = fillThemeCharacter(current, defaults)
 	}
 	return stored
+}
+
+// isShippedOldUnraid recognises the first Unraid drawing in a stored theme: Black and Azure were
+// flat with radius 0.15 (so no category card at all), Ember was neon at radius 1.2, Blaze had a
+// full-strength sheen.
+func isShippedOldUnraid(themeID string, current ThemeColors) bool {
+	switch {
+	case strings.HasPrefix(themeID, "unraid-black-"), strings.HasPrefix(themeID, "unraid-azure-"):
+		return current.Depth == "flat" && current.RadiusScale == 0.15
+	case strings.HasPrefix(themeID, "unraid-ember-"):
+		return current.Character == "neon" && current.RadiusScale == 1.2
+	case strings.HasPrefix(themeID, "unraid-blaze-"):
+		return current.Sheen >= 0.8
+	}
+	return false
+}
+
+var shippedOpenThemes = map[string]bool{
+	"gloss-liquid-chrome-dark": true, "gloss-liquid-chrome-light": true,
+	"gloss-amber-resin-dark": true, "gloss-amber-resin-light": true,
+	"slate-dark": true, "slate-light": true,
+	"unraid-black-dark": true, "unraid-black-light": true,
+	"unraid-azure-dark": true, "unraid-azure-light": true,
 }
 
 /*
@@ -6477,6 +6609,9 @@ func fillThemeCharacter(current, defaults ThemeColors) ThemeColors {
 	}
 	if strings.TrimSpace(current.Backdrop) == "" {
 		current.Backdrop = defaults.Backdrop
+	}
+	if strings.TrimSpace(current.MaterialStyle) == "" {
+		current.MaterialStyle = defaults.MaterialStyle
 	}
 	// The archetype and what it draws. Every built-in was written to disk on
 	// first run, so without this an install that has been going a week would
@@ -7129,3 +7264,32 @@ func (fs *FileStore) GetSettingsRevision() string {
 	sum := hash.Sum(nil)
 	return hex.EncodeToString(sum[:8])
 }
+
+// LookMigration is what the move to Aurora Glass left behind: the theme the install was on, and
+// whether the dialog that explains the move has been answered yet.
+type LookMigration struct {
+	From    string `json:"from,omitempty"`
+	Pending bool   `json:"pending"`
+	At      int64  `json:"at,omitempty"`
+}
+
+// migrateToAuroraGlass puts an install on Aurora Glass, on the half it was on, and records the
+// theme it had. An install already on Aurora Glass has nothing to explain and gets no dialog.
+func migrateToAuroraGlass(settings *Settings, now int64) {
+	settings.AuroraGlassMigrated = true
+	from := settings.Theme
+	if strings.HasPrefix(from, "aurora-glass-") {
+		return
+	}
+	light := strings.HasSuffix(from, "-light") || from == "light"
+	if light {
+		settings.Theme = defaultThemeLightID
+	} else {
+		settings.Theme = defaultThemeID
+	}
+	settings.LookMigration = &LookMigration{From: from, Pending: true, At: now}
+}
+
+// shippedClassicThemes are the themes that once shipped with materialStyle classic and now follow
+// the install-wide choice.
+var shippedClassicThemes = map[string]bool{"look-berry-dark": true, "look-berry-light": true}

@@ -108,7 +108,8 @@ class DashboardConfigSync {
                 return;
             }
             lastCheckAt = now;
-            void d.data?.refreshIfDataRevisionChanged?.();
+            // A failed refresh has already said so on screen.
+            d.data?.refreshIfDataRevisionChanged?.()?.catch?.(() => {});
         };
         document.addEventListener('visibilitychange', checkRevision);
         window.addEventListener('focus', checkRevision);
@@ -355,7 +356,6 @@ class DashboardConfigSync {
             d.renderPageNavigation();
             d.inbox?.applySettingsChange?.();
             d.renderDashboard(renderOptions);
-            d.initializeButtonTipsRotation();
             if (d.searchComponent) {
                 d.updateSearchComponent();
             }

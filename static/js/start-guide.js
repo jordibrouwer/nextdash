@@ -205,7 +205,7 @@
         /** The bar waits for any other modal (what's new, a form) to be done. */
         reveal() {
             if (!this.bar) return;
-            if (this.dash.isModalOpen?.() && !this.overlay) {
+            if ((this.dash.isModalOpen?.() || global.LookMigrationNotice?.blocking?.()) && !this.overlay) {
                 this.timers.push(setTimeout(() => this.reveal(), 600));
                 return;
             }

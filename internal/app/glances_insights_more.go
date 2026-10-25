@@ -131,11 +131,11 @@ type glancesFsStat struct {
 	Change float64 `json:"change"` // points over the range
 }
 
-func glancesComputeMore(snaps map[string]glancesSnap, span time.Duration, now time.Time, t GlancesThresholds) glancesMoreInsights {
+func glancesComputeMore(snaps map[string]glancesSnap, span time.Duration, now time.Time, t GlancesThresholds, cores int) glancesMoreInsights {
 	since := now.Add(-span).UnixMilli()
 	out := glancesMoreInsights{}
 	out.Disks = glancesComputeDisks(snaps, since, now)
-	out.Load = glancesComputeLoad(snaps, since, now)
+	out.Load = glancesComputeLoad(snaps, since, now, cores)
 	out.Cores = glancesComputeCores(snaps, since, now)
 	out.MemBreak = glancesComputeMemBreakdown(snaps, since, now)
 	out.Interfaces = glancesComputeInterfaces(snaps, since, now)
@@ -297,7 +297,9 @@ func glancesCoreNumbers(snaps map[string]glancesSnap) []int {
 	return numbers
 }
 
-func glancesComputeLoad(snaps map[string]glancesSnap, since int64, now time.Time) *glancesLoadInfo {
+// cores is how many the host reported at its last beat; only glancesMaxCores of
+// them have a series, so counting the series undercounts a bigger machine.
+func glancesComputeLoad(snaps map[string]glancesSnap, since int64, now time.Time, cores int) *glancesLoadInfo {
 	one, ok := snaps["load1"]
 	if !ok {
 		return nil
@@ -306,7 +308,7 @@ func glancesComputeLoad(snaps map[string]glancesSnap, since int64, now time.Time
 	if len(points) < 4 {
 		return nil
 	}
-	info := &glancesLoadInfo{Cores: len(glancesCoreNumbers(snaps))}
+	info := &glancesLoadInfo{Cores: max(cores, len(glancesCoreNumbers(snaps)))}
 	values := glancesValues(points)
 	avg1, _ := glancesMean(values)
 	info.Avg1, info.Peak1 = math.Round(avg1*100)/100, math.Round(glancesMaxOf(values)*100)/100

@@ -178,11 +178,6 @@ body[data-mobile-layout="true"] .general-keyboard-link-row {
     display: none !important;
 }
 
-/* Search-flow hint — desktop discoverability only */
-body[data-mobile-layout="true"] .search-flow-hint {
-    display: none !important;
-}
-
 /* Toasts above the mobile search footer */
 body[data-mobile-layout="true"] .app-notification {
     bottom: max(4.75rem, calc(env(safe-area-inset-bottom) + 3.75rem));

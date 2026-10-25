@@ -86,6 +86,9 @@ type glancesHost struct {
 	beat      glancesBeatStore
 	incidents glancesIncidentStore
 	retention atomic.Int32
+	// cores is how many processors the host reported at its last beat, all of
+	// them: only glancesMaxCores get a series of their own.
+	cores atomic.Int32
 	// removed is set when the host is taken out of Config: nothing of it is written again.
 	removed atomic.Bool
 	// notices remembers what was announced, so a reading hovering at its red line is not a stream of notices.

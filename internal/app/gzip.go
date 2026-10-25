@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -47,11 +48,23 @@ func compressibleContentType(ct string) bool {
 	return false
 }
 
+// clientAcceptsGzip reads Accept-Encoding with its weights: "gzip;q=0" is the
+// client saying no, and was taken as a yes.
 func clientAcceptsGzip(r *http.Request) bool {
 	for _, part := range strings.Split(r.Header.Get("Accept-Encoding"), ",") {
-		if strings.EqualFold(strings.TrimSpace(strings.SplitN(part, ";", 2)[0]), "gzip") {
-			return true
+		name, params, _ := strings.Cut(part, ";")
+		if !strings.EqualFold(strings.TrimSpace(name), "gzip") {
+			continue
 		}
+		for _, param := range strings.Split(params, ";") {
+			key, value, _ := strings.Cut(strings.TrimSpace(param), "=")
+			if strings.EqualFold(strings.TrimSpace(key), "q") {
+				if q, err := strconv.ParseFloat(strings.TrimSpace(value), 64); err == nil && q <= 0 {
+					return false
+				}
+			}
+		}
+		return true
 	}
 	return false
 }

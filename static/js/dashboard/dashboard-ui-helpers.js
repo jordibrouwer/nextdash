@@ -190,39 +190,6 @@ class DashboardUiHelpers {
             ? [allSections[foundContext], ...allSections.filter((_s, i) => i !== foundContext)]
             : allSections;
         const contextIndex = foundContext >= 0 ? 0 : -1;
-        // Sections by what they are for, so the sheet can be read one topic at
-        // a time. A section the map does not know lands in "other".
-        const TAB_OF_SECTION = {
-            sectionNavigation: 'navigation',
-            sectionBookmarks: 'bookmarks',
-            sectionWidgets: 'bookmarks',
-            sectionMultiSelect: 'bookmarks',
-            sectionLibraryView: 'views',
-            sectionTagView: 'views',
-            sectionInboxView: 'views',
-            sectionInboxTriage: 'views',
-            sectionDockerView: 'views',
-            sectionConfigView: 'views',
-            sectionThemeBrowser: 'views',
-            sectionSearchModes: 'search',
-            sectionCommandsBookmarks: 'search',
-            sectionCommandsNavigation: 'search',
-            sectionCommandsAppearance: 'search',
-            sectionCommandsTools: 'search',
-        };
-        const tabOf = (section) => TAB_OF_SECTION[section.id] || 'other';
-        const tabDefs = [
-            { id: 'all', key: 'cheatsheetTabAll', fallback: 'All' },
-            { id: 'navigation', key: 'cheatsheetTabNavigation', fallback: 'Navigation' },
-            { id: 'bookmarks', key: 'cheatsheetTabBookmarks', fallback: 'Bookmarks' },
-            { id: 'views', key: 'cheatsheetTabViews', fallback: 'Views' },
-            { id: 'search', key: 'cheatsheetTabSearch', fallback: 'Search and commands' },
-            { id: 'other', key: 'cheatsheetTabOther', fallback: 'Other' },
-        ].filter((tab) => tab.id === 'all' || sections.some((section) => tabOf(section) === tab.id));
-        const tabLabel = (tab) => {
-            const text = d.language?.t(`dashboard.${tab.key}`);
-            return text && text !== `dashboard.${tab.key}` ? text : tab.fallback;
-        };
         const leadKey = `cheatsheetContext${context.replace(/(^|-)([a-z])/g, (_m, _d, c) => c.toUpperCase())}Lead`;
         const leadText = context === 'bookmarks'
             ? ''
@@ -230,25 +197,34 @@ class DashboardUiHelpers {
         const showLead = leadText && leadText !== `dashboard.${leadKey}`;
         const shortcutCount = sections.reduce((total, section) => total + section.items.length, 0);
 
+        const tr = (key, fallback) => {
+            const text = d.language?.t(`dashboard.${key}`);
+            return text && text !== `dashboard.${key}` ? text : fallback;
+        };
+        const dockHint = tr('cheatsheetDockHint', 'Select a shortcut to see its keys');
+        // The plain text of a shortcut's keys, so the filter still finds "shift+y"
+        // although the row itself only shows the description.
+        const keysText = (keys) => {
+            const probe = document.createElement('div');
+            probe.innerHTML = formatKeys(keys);
+            return probe.textContent || '';
+        };
+        const squash = (text) => String(text).toLowerCase().replace(/\s+/g, '');
+        // Rows by id, so selecting one can put its keys in the dock.
+        const shortcutById = new Map();
         const groupHtml = sections.map((section, i) => {
             const isContext = contextIndex >= 0 && i === contextIndex;
-            // Falls back to the first section when the view has no section of
-            // its own, which is the behaviour this always had.
-            const open = contextIndex >= 0 ? isContext : i === 0;
             return `
-                    <details class="cheat-sheet-group${isContext ? ' cheat-sheet-group--context' : ''}" data-tab="${tabOf(section)}" ${open ? 'open' : ''}${isContext ? ' data-context-section="true"' : ''}>
-                        <summary class="cheat-sheet-group-title"><span class="cheat-sheet-group-label">${esc(section.title)}</span><span class="cheat-sheet-group-count">${section.items.length}</span></summary>
-                        <table class="keyboard-cheat-sheet-table">
-                            <tbody>
-                                ${section.items.map((shortcut) => `
-                                    <tr>
-                                        <td class="keyboard-cheat-sheet-description">${esc(shortcut.description)}</td>
-                                        <td class="keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </details>`;
+                    <section class="cheat-sheet-group${isContext ? ' cheat-sheet-group--context' : ''}"${isContext ? ' data-context-section="true"' : ''} aria-label="${esc(section.title)}">
+                        <h3 class="cheat-sheet-group-title"><span class="cheat-sheet-group-label">${esc(section.title)}</span><span class="cheat-sheet-group-count">${section.items.length}</span></h3>
+                        <div class="cheat-sheet-rows">
+                            ${section.items.map((shortcut, j) => {
+                                const id = `${i}-${j}`;
+                                shortcutById.set(id, shortcut);
+                                return `<button type="button" class="cheat-sheet-row" data-shortcut-id="${id}" title="${esc(shortcut.description)}" data-search="${esc(squash(`${shortcut.description}${keysText(shortcut.keys)}`))}"><span class="cheat-sheet-row-text">${esc(shortcut.description)}</span><span class="sr-only"> \u2014 ${esc(keysText(shortcut.keys))}</span></button>`;
+                            }).join('')}
+                        </div>
+                    </section>`;
         });
         const html = `
             <div class="keyboard-cheat-sheet" data-context="${esc(context)}">
@@ -256,11 +232,13 @@ class DashboardUiHelpers {
                 <input type="text" id="cheat-sheet-filter" class="cheat-sheet-filter"
                        placeholder="${esc(filterPlaceholder)}" autocomplete="off" spellcheck="false"
                        aria-label="${esc(filterPlaceholder)}">
-                <div class="cheat-sheet-tabs" role="group" aria-label="${esc(d.language?.t('dashboard.cheatsheetTabsLabel') || 'Shortcut topics')}">
-                    ${tabDefs.map((tab) => `<button type="button" class="cheat-sheet-tab${tab.id === 'all' ? ' is-active' : ''}" data-tab="${tab.id}" aria-pressed="${tab.id === 'all'}">${esc(tabLabel(tab))}</button>`).join('')}
+                <p id="cheat-sheet-no-results" class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
+                <div class="cheat-sheet-scroller">
+                    <div class="cheat-sheet-groups">${groupHtml.join('')}</div>
                 </div>
-                <p id="cheat-sheet-no-results"class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
-                <div class="cheat-sheet-groups">${groupHtml.join('')}</div>
+                <div id="cheat-sheet-dock" class="cheat-sheet-dock" aria-live="polite" aria-atomic="true">
+                    <span class="cheat-sheet-dock-hint">${esc(dockHint)}</span>
+                </div>
                 <div class="cheat-sheet-foot">
                     <span>${esc(d.formatDashboardLabel('cheatsheetCount', { n: shortcutCount },
                         '{n} shortcuts'))}</span>
@@ -304,61 +282,62 @@ class DashboardUiHelpers {
         const filterInput = document.getElementById('cheat-sheet-filter');
         if (!filterInput) return;
 
-        // Spaces drop out on both sides, so "shift + y" finds the Shift+Y chip.
-        const squash = (text) => text.toLowerCase().replace(/\s+/g, '');
-        let activeTab = 'all';
-        // One pass from the two things the reader controls: the topic and the
-        // filter. Typing searches every topic; the topic only narrows a sheet
-        // that is not being searched.
+        const dock = document.getElementById('cheat-sheet-dock');
+        const allRows = () => Array.from(document.querySelectorAll('.keyboard-cheat-sheet .cheat-sheet-row'));
+        // The dock shows one shortcut: the focused row, else the selected one.
+        let selectedRow = null;
+        const renderDock = (row) => {
+            if (!dock) return;
+            const shortcut = row ? shortcutById.get(row.dataset.shortcutId) : null;
+            dock.classList.toggle('has-selection', Boolean(shortcut));
+            dock.innerHTML = shortcut
+                ? `<span class="cheat-sheet-dock-keys keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</span><span class="cheat-sheet-dock-text">${esc(shortcut.description)}</span>`
+                : `<span class="cheat-sheet-dock-hint">${esc(dockHint)}</span>`;
+        };
+        const selectRow = (row) => {
+            selectedRow = row;
+            allRows().forEach((other) => {
+                const on = other === row;
+                other.classList.toggle('is-selected', on);
+                if (on) other.setAttribute('aria-current', 'true');
+                else other.removeAttribute('aria-current');
+            });
+            renderDock(row);
+        };
+        document.querySelector('.keyboard-cheat-sheet .cheat-sheet-groups')?.addEventListener('click', (event) => {
+            const row = event.target instanceof Element ? event.target.closest('.cheat-sheet-row') : null;
+            if (row) selectRow(row);
+        });
+        // The dock follows focus without selecting; off the rows it shows the selection.
+        document.querySelector('.keyboard-cheat-sheet')?.addEventListener('focusin', (event) => {
+            const row = event.target instanceof Element ? event.target.closest('.cheat-sheet-row') : null;
+            renderDock(row || selectedRow);
+        });
+        // One pass over every column at once; a column with nothing left hides.
         const applyView = () => {
             const q = squash(filterInput.value);
-            const groups = document.querySelectorAll('.cheat-sheet-group');
+            const groups = document.querySelectorAll('.keyboard-cheat-sheet .cheat-sheet-group');
             const noResults = document.getElementById('cheat-sheet-no-results');
             let anyVisible = false;
-            groups.forEach((group, i) => {
-                const rows = group.querySelectorAll('tr');
+            groups.forEach((group) => {
                 // A section name that matches shows the whole section.
-                const titleMatch = Boolean(q)
-                    && squash(group.querySelector('.cheat-sheet-group-label')?.textContent || '').includes(q);
+                const titleMatch = Boolean(q) && squash(group.querySelector('.cheat-sheet-group-label')?.textContent || '').includes(q);
                 let visible = 0;
-                rows.forEach(row => {
-                    const match = !q || titleMatch || squash(row.textContent).includes(q);
-                    row.style.display = match ? '' : 'none';
+                group.querySelectorAll('.cheat-sheet-row').forEach((row) => {
+                    const match = !q || titleMatch || (row.dataset.search || '').includes(q);
+                    row.hidden = !match;
                     if (match) visible++;
                 });
-                const inTab = activeTab === 'all' || group.dataset.tab === activeTab;
-                if (q) {
-                    group.hidden = visible === 0;
-                    if (visible > 0) {
-                        group.open = true;
-                        anyVisible = true;
-                    }
-                } else {
-                    group.hidden = !inTab;
-                    // A chosen topic opens all its sections; otherwise back as it
-                    // opened: the view's own section, not Navigation.
-                    group.open = activeTab !== 'all'
-                        ? inTab
-                        : (contextIndex >= 0 ? i === contextIndex : i === 0);
-                    if (inTab) anyVisible = true;
-                }
+                group.hidden = visible === 0;
+                if (visible > 0) anyVisible = true;
             });
+            const selected = document.querySelector('.cheat-sheet-row.is-selected');
+            if (selected?.hidden) selectRow(null);
             if (noResults) {
-                noResults.hidden = !q || anyVisible;
+                noResults.hidden = anyVisible;
             }
         };
         filterInput.addEventListener('input', applyView);
-        document.querySelectorAll('.cheat-sheet-tab').forEach((button) => {
-            button.addEventListener('click', () => {
-                activeTab = button.dataset.tab || 'all';
-                document.querySelectorAll('.cheat-sheet-tab').forEach((other) => {
-                    const on = other === button;
-                    other.classList.toggle('is-active', on);
-                    other.setAttribute('aria-pressed', String(on));
-                });
-                applyView();
-            });
-        });
         this._setupCheatSheetKeyboardNav();
     }
 
@@ -399,13 +378,60 @@ class DashboardUiHelpers {
                 return;
             }
 
-            const activeSummary = document.activeElement?.closest?.('.cheat-sheet-group-title');
-            if (activeSummary && (e.key === ' ' || e.key === 'Enter')) {
-                const details = activeSummary.closest('details.cheat-sheet-group');
-                if (details instanceof HTMLDetailsElement) {
+            // Rows are buttons: Enter and Space already press them. The arrows
+            // walk them, down a column and across to the next one.
+            const rowOf = (el) => (el instanceof Element ? el.closest('.cheat-sheet-row') : null);
+            const visibleRows = (scope) => Array.from(scope.querySelectorAll('.cheat-sheet-row')).filter((r) => !r.hidden);
+            const focusRow = (row) => {
+                if (!row) return;
+                row.focus({ preventScroll: true });
+                row.scrollIntoView({ block: 'nearest' });
+            };
+            const current = rowOf(document.activeElement);
+            const fromFilter = document.activeElement?.id === 'cheat-sheet-filter';
+            if (fromFilter && e.key === 'ArrowDown' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+                const first = visibleRows(panel)[0];
+                if (first) {
                     e.preventDefault();
                     e.stopPropagation();
-                    details.open = !details.open;
+                    focusRow(first);
+                }
+                return;
+            }
+            if (current && ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                const group = current.closest('.cheat-sheet-group');
+                const rows = visibleRows(group);
+                const at = rows.indexOf(current);
+                let target = null;
+                if (e.key === 'ArrowDown') target = rows[at + 1] || null;
+                if (e.key === 'ArrowUp') {
+                    target = rows[at - 1] || null;
+                    if (!target) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        panel.querySelector('#cheat-sheet-filter')?.focus({ preventScroll: true });
+                        return;
+                    }
+                }
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    // Neighbouring column = the nearest group whose box sits to that side.
+                    const here = current.getBoundingClientRect();
+                    const dir = e.key === 'ArrowRight' ? 1 : -1;
+                    let best = null;
+                    let bestGap = Infinity;
+                    visibleRows(panel).forEach((r) => {
+                        const box = r.getBoundingClientRect();
+                        const dx = (box.left - here.left) * dir;
+                        if (dx <= 4) return;
+                        const gap = dx * 1000 + Math.abs(box.top - here.top);
+                        if (gap < bestGap) { bestGap = gap; best = r; }
+                    });
+                    target = best;
+                }
+                if (target) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    focusRow(target);
                 }
                 return;
             }
@@ -427,7 +453,7 @@ class DashboardUiHelpers {
                 return;
             }
 
-            const body = panel.querySelector('.modal-body');
+            const body = panel.querySelector('.cheat-sheet-scroller') || panel.querySelector('.modal-body');
             const scrollRoot = body instanceof HTMLElement ? body : panel;
             const lineStep = 56;
             const pageStep = Math.max(200, Math.floor(scrollRoot.clientHeight * 0.85));

@@ -120,6 +120,13 @@ body[data-cat-head="boxed"] .dashboard-grid .category-title {
     -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px));
 }
 
+/* The general title hover grows the title 4px to the left (padding and a negative
+   margin); a boxed title has its own side padding, so that moved the name. */
+body[data-cat-head="boxed"] .dashboard-grid .category-title:hover {
+    padding-left: 0.85em;
+    margin-left: 0;
+}
+
 /* ---- label: kleine hoofdletters, ruim gespatieerd ---- */
 body[data-cat-head="label"] .dashboard-grid .category-title {
     font-size: calc(0.72rem * var(--cat-head-scale, 1));

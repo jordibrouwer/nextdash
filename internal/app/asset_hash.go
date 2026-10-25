@@ -163,6 +163,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-tag-view.js",
 	// Appearance's Background and Surface tabs, and the theme browser's tabs
 	// built from them: both are required by the config loader.
+	"js/dashboard/dashboard-config-appearance.js",
 	"js/dashboard/dashboard-config-look.js",
 	"js/dashboard/dashboard-config-studio.js",
 	"js/dashboard/dashboard-config-theme-edit.js",
@@ -174,6 +175,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-config-unraid.js",
 	"js/dashboard/dashboard-config-status-page.js",
 	"js/dashboard/dashboard-config-inbox.js",
+	"js/dashboard/dashboard-config-data-backups.js",
 	"js/dashboard/dashboard-config-widgets.js",
 	"js/dashboard/dashboard-config-widget-media.js",
 	"js/dashboard/dashboard-config-widget-catalogue.js",

@@ -1,0 +1,1429 @@
+/*
+ * The dashboard's look on every layer that opens over it.
+ *
+ * Modals, popovers, lists, previews, notifications and the command palette take the surface of
+ * the active material, in the same fill, rim and corner as a column, so a layer reads as part
+ * of the page it lies on. A layer that lies on another layer is easier to tell apart: each level
+ * up has a lighter fill, a deeper shadow and a thicker rim in the accent, the scrim under it is
+ * darker, and only the topmost layer has the accent bar along its top edge.
+ *
+ * Signature draws the material. Classic keeps its flat panels and only takes the elevation. Everything
+ * is gated on <body> attributes, like theme-signature.css, so with the gate off nothing here applies,
+ * and it outranks the lazily loaded views bundle whatever the load order.
+ *
+ * The numbers per material follow the card rules in theme-signature.css; theme_overlays_css_test.go
+ * keeps the two in line (same set of materials, same variables, same corner).
+ *
+ * Out of scope on purpose: the Theme Studio and the config view (next round), the drag chip and
+ * What's New (it has its own decoration).
+ */
+
+/* ── Levels and the scrim (both styles) ─────────────────────────────────── */
+html[data-theme] body {
+    /* 1 on a dark page, 0 on a light one: custom themes have no -light id to go by. */
+    --ov-k: calc((1 + var(--ink-dir, 1)) / 2);
+    --ov-cast-ink: color-mix(in srgb, black calc(var(--ov-k) * 100%), rgb(50 60 100));
+    --ov-e2:
+        0 26px 50px -16px color-mix(in srgb, var(--ov-cast-ink) calc(40% + 35% * var(--ov-k)), transparent),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) calc(34% - 4% * var(--ov-k)), transparent);
+    --ov-e3:
+        0 44px 80px -20px color-mix(in srgb, var(--ov-cast-ink) calc(55% + 35% * var(--ov-k)), transparent),
+        0 0 0 2px color-mix(in srgb, var(--accent-primary) 60%, transparent);
+    --ov-bar: 0 -3px 0 var(--accent-primary);
+    --ov-scrim-ink: color-mix(in srgb, var(--background-primary) 35%, var(--ov-cast-ink));
+    --ov-scrim-3: color-mix(in srgb, var(--ov-scrim-ink) 28%, transparent);
+    --ov-scrim-blur-3: 4px;
+    --ov-scrim-4: color-mix(in srgb, var(--ov-scrim-ink) 36%, transparent);
+    --ov-scrim-blur-4: 5px;
+    /* A lighter fill per level is a layer on top of the fill, not a filter: a filter would make the panel
+       the containing block of fixed children such as the icon picker inside the bookmark form. */
+    --ov-lift-2: color-mix(in srgb, #fff calc(2% * var(--ov-k) + 1%), transparent);
+    --ov-lift-3: color-mix(in srgb, #fff calc(4% * var(--ov-k) + 2%), transparent);
+    --ov-lift-4: color-mix(in srgb, #fff calc(8% * var(--ov-k) + 3%), transparent);
+    --ov-ease-in: 140ms;
+    --ov-ease-out: 100ms;
+    --ov-rise: 6px;
+    --modal-scrim: var(--ov-scrim-3);
+    --modal-scrim-blur: var(--ov-scrim-blur-3);
+}
+
+/* The layer on top of another one has the darker scrim. */
+html[data-theme] body [data-ov-level="4"].modal-overlay,
+html[data-theme] body [data-ov-level="4"].shortcut-search,
+html[data-theme] body [data-ov-level="4"].omnibox-overlay {
+    --modal-scrim: var(--ov-scrim-4);
+    --modal-scrim-blur: var(--ov-scrim-blur-4);
+}
+
+/* Two scrims that had their own colour: the same one as the rest, and the tag cloud's without blur (Safari). */
+html[data-theme] body .notes-modal-overlay,
+html[data-theme] body .app-discovery-overlay,
+html[data-theme] body .start-guide-overlay,
+html[data-theme] body .progress-overlay,
+html[data-theme] body .health-focus-overlay {
+    background: var(--modal-scrim);
+}
+
+html[data-theme] body .tag-cloud-modal-backdrop {
+    background: var(--ov-scrim-3);
+}
+
+
+/* ── Classic: the same panels, with the elevation ───────────────────────── */
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .modal,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .search-container,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-cloud-modal,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notes-modal,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-preview-card,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-discovery-card,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-notification,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .start-guide-modal,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .progress-overlay-panel,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .health-focus-card,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) dialog.docker-logs-modal,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) dialog.docker-volume-confirm {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), var(--ov-e3), var(--ov-bar);
+}
+
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .date-popover,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .page-tab-popover,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .move-popover,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .field-popover,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .custom-select-options,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .glances-tip,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .glances-info-pop,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .inbox-snooze-menu,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-offer-pop,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .toolbar-kbd-tooltip,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .icon-set-picker,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .config-setting-promo-inner,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .digest-bar,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .quickstart-card,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .first-start-card,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .block-move-coach,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-ac-dropdown,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .smart-collection-why-popover,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .lvs-drawer-frame,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .action-key-hint,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .inbox-menu,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .health-view-menu,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .health-check-menu,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notes-slash-menu {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), var(--ov-e2);
+}
+
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .modal[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .search-container[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-cloud-modal[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notes-modal[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-preview-card[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-discovery-card[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-notification[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .start-guide-modal[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .progress-overlay-panel[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .health-focus-card[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) dialog.docker-logs-modal[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) dialog.docker-volume-confirm[data-ov-covered] {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), var(--ov-e2);
+}
+
+
+/* Flat depth: no edges, only the elevation. */
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .modal,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .search-container,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-cloud-modal,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notes-modal,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-preview-card,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-discovery-card,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-notification,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .start-guide-modal,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .progress-overlay-panel,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .health-focus-card,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) dialog.docker-logs-modal,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) dialog.docker-volume-confirm {
+    box-shadow: var(--ov-e3), var(--ov-bar);
+}
+
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .date-popover,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .page-tab-popover,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .move-popover,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .field-popover,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .custom-select-options,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .glances-tip,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .glances-info-pop,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .inbox-snooze-menu,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-offer-pop,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .toolbar-kbd-tooltip,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .icon-set-picker,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .config-setting-promo-inner,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .digest-bar,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .quickstart-card,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .first-start-card,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .block-move-coach,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-ac-dropdown,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .smart-collection-why-popover,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .lvs-drawer-frame,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .action-key-hint,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .inbox-menu,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .health-view-menu,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .health-check-menu,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notes-slash-menu {
+    box-shadow: var(--ov-e2);
+}
+
+
+/* ── Signature: what a layer is made of, per material ───────────────────── */
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"] {
+    --ov-radius: calc(22px * var(--theme-radius-applied, 1));
+    --ov-alpha: 0.8;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha) * 100%), transparent);
+    --ov-fill-small: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha-small) * 100%), transparent);
+    --ov-image: linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent) 55%);
+    --ov-image-big: linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent) 55%);
+    --ov-edge: inset 1px 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-edge-big: inset 1px 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: max(18px, 14px);
+    --ov-rule: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    --ov-r-control: 10px;
+    --ov-r-item: 10px;
+    --ov-head-transform: none;
+    --ov-shine: radial-gradient(22% 6px at 24% 6px, rgba(255, 255, 255, 0.34), transparent), radial-gradient(41% 19px at 24% 19px, rgba(255, 255, 255, 0.08), transparent), linear-gradient(128deg, transparent 14%, rgba(255, 255, 255, 0.04) 24%, transparent 55%);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"] {
+    --ov-radius: calc(16px * var(--theme-radius-applied, 1));
+    --ov-alpha: 0.8;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha) * 100%), transparent);
+    --ov-fill-small: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha-small) * 100%), transparent);
+    --ov-image: linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent));
+    --ov-image-big: linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent));
+    --ov-edge: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-edge-big: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: max(24px, 14px);
+    --ov-rule: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-r-control: 8px;
+    --ov-r-item: 8px;
+    --ov-head-transform: none;
+    --ov-shine: radial-gradient(22% 6px at 24% 6px, rgba(255, 255, 255, 0.34), transparent), radial-gradient(41% 19px at 24% 19px, rgba(255, 255, 255, 0.08), transparent), linear-gradient(128deg, transparent 14%, rgba(255, 255, 255, 0.04) 24%, transparent 55%);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] {
+    --ov-radius: calc(20px * var(--theme-radius-applied, 1));
+    --ov-alpha: 0.8;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha) * 100%), transparent);
+    --ov-fill-small: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha-small) * 100%), transparent);
+    --ov-image: none;
+    --ov-image-big: radial-gradient(70% 40% at 20% 0, color-mix(in srgb, var(--accent-primary) 30%, transparent), transparent 70%), radial-gradient(60% 40% at 85% 0, color-mix(in srgb, var(--accent-error) 22%, transparent), transparent 70%);
+    --ov-edge: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    --ov-edge-big: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: max(16px, 14px);
+    --ov-rule: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    --ov-r-control: 999px;
+    --ov-r-item: 12px;
+    --ov-head-transform: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] {
+    --ov-radius: calc(14px * var(--theme-radius-applied, 1));
+    --ov-alpha: 1;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    --ov-fill-small: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    --ov-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 30%, var(--background-primary)), color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)));
+    --ov-image-big: linear-gradient(180deg, rgba(255,255,255,.1) 0, rgba(255,255,255,.03) 22%, rgba(255,255,255,0) 23%), linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 30%, var(--background-primary)), color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)));
+    --ov-edge: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -2px 6px rgba(0,0,0,.35);
+    --ov-edge-big: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -2px 6px rgba(0,0,0,.35);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: 0px;
+    --ov-rule: color-mix(in srgb, var(--text-primary) 16%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: rgba(255,255,255,.14);
+    --ov-r-control: 999px;
+    --ov-r-item: 12px;
+    --ov-head-transform: none;
+    --ov-shine: radial-gradient(22% 6px at 24% 6px, rgba(255, 255, 255, 0.34), transparent), radial-gradient(41% 19px at 24% 19px, rgba(255, 255, 255, 0.08), transparent), linear-gradient(128deg, transparent 14%, rgba(255, 255, 255, 0.04) 24%, transparent 55%);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"] {
+    --ov-radius: calc(10px * var(--theme-radius-applied, 1));
+    --ov-alpha: 0.8;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha) * 100%), transparent);
+    --ov-fill-small: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha-small) * 100%), transparent);
+    --ov-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
+    --ov-image-big: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
+    --ov-edge: 0 -1px 0 var(--accent-primary);
+    --ov-edge-big: 0 -1px 0 var(--accent-primary);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: 0px;
+    --ov-rule: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    --ov-r-control: 6px;
+    --ov-r-item: 6px;
+    --ov-head-transform: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"] {
+    --ov-radius: calc(28px * var(--theme-radius-applied, 1));
+    --ov-alpha: 1;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: var(--surface-2, var(--background-secondary));
+    --ov-fill-small: var(--surface-2, var(--background-secondary));
+    --ov-image: none;
+    --ov-image-big: radial-gradient(90% 60% at 50% 0, color-mix(in srgb, var(--text-primary) 12%, transparent), transparent 75%);
+    --ov-edge: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent);
+    --ov-edge-big: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent), inset 0 -14px 24px rgba(0,0,0,.3);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: 0px;
+    --ov-rule: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-r-control: 999px;
+    --ov-r-item: 14px;
+    --ov-head-transform: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] {
+    --ov-radius: calc(16px * var(--theme-radius-applied, 1));
+    --ov-alpha: 1;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
+    --ov-fill-small: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
+    --ov-image: none;
+    --ov-image-big: radial-gradient(23px 10px at calc(100% - 87px) 15px, rgba(255,255,255,.55), transparent);
+    --ov-edge: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 50%, transparent);
+    --ov-edge-big: inset 0 -6px 0 var(--accent-primary), inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent), inset 0 2px 0 rgba(255,255,255,.35);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: 0px;
+    --ov-rule: color-mix(in srgb, var(--text-primary) 18%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+    --ov-r-control: 999px;
+    --ov-r-item: 999px;
+    --ov-head-transform: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] {
+    --ov-radius: calc(6px * var(--theme-radius-applied, 1));
+    --ov-alpha: 1;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: var(--surface-2, var(--background-secondary));
+    --ov-fill-small: var(--surface-2, var(--background-secondary));
+    --ov-image: repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 1px, transparent 1px 3px), linear-gradient(100deg, color-mix(in srgb, var(--text-primary) 7%, transparent), color-mix(in srgb, var(--text-primary) 10%, transparent) 40%, color-mix(in srgb, var(--text-primary) 6%, transparent));
+    --ov-image-big: repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 1px, transparent 1px 3px), linear-gradient(100deg, color-mix(in srgb, var(--text-primary) 7%, transparent), color-mix(in srgb, var(--text-primary) 10%, transparent) 40%, color-mix(in srgb, var(--text-primary) 6%, transparent));
+    --ov-edge: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -1px 0 rgba(0,0,0,.55);
+    --ov-edge-big: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -1px 0 rgba(0,0,0,.55);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: 0px;
+    --ov-rule: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    --ov-r-control: 5px;
+    --ov-r-item: 5px;
+    --ov-head-transform: none;
+    --ov-shine: radial-gradient(22% 6px at 24% 6px, rgba(255, 255, 255, 0.34), transparent), radial-gradient(41% 19px at 24% 19px, rgba(255, 255, 255, 0.08), transparent), linear-gradient(128deg, transparent 14%, rgba(255, 255, 255, 0.04) 24%, transparent 55%);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="carbon"] {
+    --ov-radius: calc(3px * var(--theme-radius-applied, 1));
+    --ov-alpha: 1;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: var(--surface-2, var(--background-secondary));
+    --ov-fill-small: var(--surface-2, var(--background-secondary));
+    --ov-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--text-primary) 5%, transparent) 0 2px, transparent 2px 4px), repeating-linear-gradient(-45deg, color-mix(in srgb, var(--background-primary) 35%, transparent) 0 2px, transparent 2px 4px);
+    --ov-image-big: repeating-linear-gradient(45deg, color-mix(in srgb, var(--text-primary) 5%, transparent) 0 2px, transparent 2px 4px), repeating-linear-gradient(-45deg, color-mix(in srgb, var(--background-primary) 35%, transparent) 0 2px, transparent 2px 4px);
+    --ov-edge: inset 3px 0 0 var(--accent-primary), inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
+    --ov-edge-big: inset 3px 0 0 var(--accent-primary), inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: 0px;
+    --ov-rule: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    --ov-r-control: 2px;
+    --ov-r-item: 2px;
+    --ov-head-transform: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"] {
+    --ov-radius: calc(3px * var(--theme-radius-applied, 1));
+    --ov-alpha: 1;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: var(--surface-2, var(--background-secondary));
+    --ov-fill-small: var(--surface-2, var(--background-secondary));
+    --ov-image: none;
+    --ov-image-big: none;
+    --ov-edge: 0 0 0 0 transparent;
+    --ov-edge-big: 0 0 0 0 transparent;
+    --ov-cast: 0 1px 2px rgba(0,0,0,.25), 0 6px 12px -8px rgba(0,0,0,.45);
+    --ov-blur: 0px;
+    --ov-rule: color-mix(in srgb, #e0505a 70%, transparent);
+    --ov-rule-soft: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    --ov-hot: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    --ov-r-control: 3px;
+    --ov-r-item: 3px;
+    --ov-head-transform: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"] {
+    --ov-radius: calc(3px * var(--theme-radius-applied, 1));
+    --ov-alpha: 0.85;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha) * 100%), transparent);
+    --ov-fill-small: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha-small) * 100%), transparent);
+    --ov-image: none;
+    --ov-image-big: repeating-linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 8%, transparent) 0 1px, transparent 1px 3px);
+    --ov-edge: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    --ov-edge-big: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 30%, transparent), inset 0 0 26px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: 0px;
+    --ov-rule: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    --ov-r-control: 2px;
+    --ov-r-item: 2px;
+    --ov-head-transform: uppercase;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"] {
+    --ov-radius: calc(4px * var(--theme-radius-applied, 1));
+    --ov-alpha: 0.88;
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
+    --ov-fill: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha) * 100%), transparent);
+    --ov-fill-small: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha-small) * 100%), transparent);
+    --ov-image: none;
+    --ov-image-big: none;
+    --ov-edge: 0 0 0 0 transparent;
+    --ov-edge-big: 0 0 0 0 transparent;
+    --ov-cast: 0 0 0 0 transparent;
+    --ov-blur: max(8px, 14px);
+    --ov-rule: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    --ov-rule-soft: var(--ov-rule);
+    --ov-hot: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    --ov-r-control: 3px;
+    --ov-r-item: 3px;
+    --ov-head-transform: none;
+}
+
+
+/* A reader's own card glass sets the floor for the layers: never less than 70 percent filled, and small layers 90 percent. */
+html[data-theme] body[data-material-style="signature"][data-card-glass="own"][data-material="glass"],
+html[data-theme] body[data-material-style="signature"][data-card-glass="own"][data-material="frost"],
+html[data-theme] body[data-material-style="signature"][data-card-glass="own"][data-material="aurora"],
+html[data-theme] body[data-material-style="signature"][data-card-glass="own"][data-material="neon"],
+html[data-theme] body[data-material-style="signature"][data-card-glass="own"][data-material="terminal"],
+html[data-theme] body[data-material-style="signature"][data-card-glass="own"][data-material="ink"] {
+    --ov-alpha: max(var(--theme-surface-alpha, 1), 0.7);
+}
+
+
+/* ── Signature: the surface ─────────────────────────────────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .modal,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .search-container,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-box,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-discovery-card,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-notification,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .start-guide-modal,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .progress-overlay-panel,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .health-focus-card,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] dialog.docker-logs-modal,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] dialog.docker-volume-confirm {
+    background-color: var(--ov-fill);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+    border: 0;
+    border-radius: var(--ov-radius);
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e3), var(--ov-bar);
+    -webkit-backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+    backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+}
+
+/* A big layer under another one: the second level, without the bar. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .modal[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .search-container[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-box[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-discovery-card[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-notification[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .start-guide-modal[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .progress-overlay-panel[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .health-focus-card[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] dialog.docker-logs-modal[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] dialog.docker-volume-confirm[data-ov-covered] {
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e2);
+}
+
+/* The one on top of two: the deepest lift. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .modal[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .search-container[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-box[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-discovery-card[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-notification[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .start-guide-modal[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .progress-overlay-panel[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .health-focus-card[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] dialog.docker-logs-modal[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] dialog.docker-volume-confirm[data-ov-level="4"] {
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-4), var(--ov-lift-4));
+}
+
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .date-popover,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .page-tab-popover,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .move-popover,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .field-popover,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .custom-select-options,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .glances-tip,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .glances-info-pop,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .inbox-snooze-menu,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-offer-pop,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .toolbar-kbd-tooltip,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .icon-set-picker,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-setting-promo-inner,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .digest-bar,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .quickstart-card,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .first-start-card,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .block-move-coach,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-ac-dropdown,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .smart-collection-why-popover,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs-drawer-frame,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .action-key-hint,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .inbox-menu,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .health-view-menu,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .health-check-menu,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-slash-menu {
+    background-color: var(--ov-fill-small);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image, none), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+
+/* The digest bar stays a pill. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .digest-bar {
+    border-radius: 999px;
+}
+
+/* Effects off: the fill and the rim, without the decoration or the sheen. */
+html[data-theme][data-effects="off"] body[data-material-style="signature"] {
+    --ov-image: none;
+    --ov-image-big: none;
+    --ov-shine: linear-gradient(transparent, transparent);
+}
+
+
+/* Reduced transparency: a closed fill and no blur. */
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-material-style="signature"][data-material][data-material][data-material][data-material] {
+        --ov-alpha: 1;
+        --ov-alpha-small: 1;
+        --ov-blur: 0px;
+    }
+
+    html[data-theme] body {
+        --modal-scrim-blur: 0px;
+        --ov-scrim-blur-3: 0px;
+        --ov-scrim-blur-4: 0px;
+    }
+}
+
+
+/* ── The head of a big layer: the mark of the category head, and the rule under it ───────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .modal-header:has(.modal-title:not(:empty)),
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal-header,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal-toolbar,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card-head {
+    border-bottom: 1px solid var(--ov-rule);
+    padding-bottom: 0.6rem;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .search-prompt {
+    border-bottom-color: var(--ov-rule);
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"]:not([data-material=""])[data-material] .modal .modal-header:has(.modal-title:not(:empty))::before,
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal-header::before,
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal-toolbar::before,
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card-headtext::before {
+    content: "";
+    display: inline-block;
+    flex: none;
+    width: 1em;
+    height: 0.7em;
+    margin-right: 0.55em;
+    transform: skewX(-20deg);
+    background: linear-gradient(var(--accent-primary), var(--accent-primary)) 6% 0 / 34% 100% no-repeat, linear-gradient(color-mix(in srgb, var(--accent-primary) 55%, transparent), color-mix(in srgb, var(--accent-primary) 55%, transparent)) 56% 0 / 34% 100% no-repeat;
+    opacity: 0.9;
+}
+
+/* The material's own type for the head. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="terminal"] :is(.modal-title, .tag-cloud-modal-title, .search-prompt) {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal-title, .tag-cloud-modal-title) {
+    font-variant: small-caps;
+    letter-spacing: 0.06em;
+}
+
+/* ── The palette and quick add: the larger field ──────────────────────────────────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .search-prompt {
+    padding: 0.7rem 0.8rem;
+    font-size: calc(var(--font-size-bookmark) * 1.15);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-input {
+    font-size: calc(var(--text-base, 0.9rem) * 1.15);
+}
+
+/* ── Motion: a short fade and 6px up. Layers built on open and removed on close play it going in. ── */
+@keyframes ovIn {
+    from {
+        opacity: 0;
+        translate: 0 var(--ov-rise);
+    }
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .omnibox-box) {
+    animation: ovIn calc(var(--ov-ease-in) * var(--enter-scale, 0.5) / 0.5) ease-out both;
+}
+
+/* The modal, the palette and the quick add rise without a zoom; closing is quicker. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] {
+    --modal-enter-from: translateY(var(--ov-rise));
+    --modal-enter-transition:
+        opacity calc(var(--ov-ease-in) * var(--enter-scale, 0.5) / 0.5) ease-out,
+        transform calc(var(--ov-ease-in) * var(--enter-scale, 0.5) / 0.5) ease-out;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .modal-overlay:not(.show) .modal,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .shortcut-search:not(.show) .search-container {
+    transition-duration: calc(var(--ov-ease-out) * var(--enter-scale, 0.5) / 0.5);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .omnibox-box),
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-view-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .omnibox-box) {
+    animation: none;
+}
+
+/* ── The decoration that belongs to a material ────────────────────────────────────────────────── */
+/* Neon: the glow only on the topmost big layer, and none on a light page. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card):not([data-ov-covered]) {
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e3), var(--ov-bar), 0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent);
+}
+
+/* Paper: the double rule along the top of a big layer. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card)::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 5px;
+    height: 4px;
+    border-top: 1px solid var(--ov-rule);
+    border-bottom: 1px solid var(--ov-rule);
+    pointer-events: none;
+}
+
+/* Ink: the corner ticks of the column, on both ends of a big layer. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card)::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)) 0 0 / 11px 1px no-repeat,
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)) 0 0 / 1px 11px no-repeat,
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)) 100% 100% / 11px 1px no-repeat,
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)) 100% 100% / 1px 11px no-repeat;
+}
+
+/* Effects off: no decoration and no glow, the rim and the bar stay. */
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card)::after {
+    content: none;
+}
+
+
+/* The decoration is a pseudo-element: the three panels that are not positioned today become the context for it. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.modal:not(.header-sheet):not(.modal--mobile-sheet), .search-container, .notes-modal) {
+    position: relative;
+}
+
+
+/* ── The views: the plate is one card in the material, no elevation ─────────────────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.library-layout > .config-view--library,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    background-color: var(--ov-fill);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none);
+    border-radius: var(--ov-radius);
+    box-shadow: var(--ov-edge-big), var(--ov-cast);
+    -webkit-backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+    backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+}
+
+/* The head of the plate: the rule of a category head under it. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs-header {
+    border-bottom: 1px solid var(--ov-rule);
+    border-radius: 0;
+}
+
+/* The rail: the row in force is lit from its edge, the others light on hover. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs-filter, .lvs-section):is(.is-active, [aria-current="true"], [aria-pressed="true"]) {
+    background: var(--ov-hot);
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs-filter, .lvs-section):not(.is-active):hover {
+    background: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+    border-radius: var(--ov-r-item);
+}
+
+/* Rows stay flat; they light with the material's own colour. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.inbox-item.feed-row, .docker-row, .tag-view-row, .config-bm-row, .glances-proc-row, .glances-ct-row):hover {
+    background: var(--ov-hot);
+}
+
+/* The bars that appear on selection take the item corner of the material. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.inbox-selection-bar, .tag-view-selbar, .config-bm-selbar) {
+    border-radius: var(--ov-r-item);
+}
+
+/* Effects off: the plate keeps its fill and rim, without the surface sheen. */
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs {
+    background-image: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.config-layout > .config-view) {
+        background-color: var(--surface-2, var(--background-secondary));
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
+
+/* ── The config view: what stands on the plate ───────────────────────────────────────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
+    background-color: var(--ov-fill-small);
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+/* A row inside a panel or a table is not a second card. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-crud-list--table) :is(.config-widget-row, .config-crud-row, .config-backup-row, .config-attention-row) {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-crud-list--table .config-crud-row {
+    border-radius: 0;
+    border-bottom: 1px solid var(--ov-rule-soft);
+}
+
+/* A table's name stays text until it is reached for. The rule above that gives
+   every .config-text the small layer's fill and hairline would draw a box
+   round each name at rest; the field comes back on hover and focus. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-crud-list--table .config-crud-fields .config-text:not(:hover):not(:focus) {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+/* The collection whose editor is open keeps its accent: the line under it and
+   the bar at its edge, which the rows' own rule above would otherwise clear. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .structure-table .config-crud-row.is-active {
+    border-bottom-color: var(--accent-primary);
+    background-color: var(--structure-tint);
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-tile--action:hover {
+    box-shadow: inset 0 0 0 1px var(--tile-stripe, var(--accent-primary));
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-update-notice, .config-panel--attention) {
+    border-radius: min(var(--ov-radius), 14px);
+}
+
+/* The rail: the section in force is lit from its edge. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-nav-item {
+    border-radius: var(--ov-r-item);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-nav-item.is-active {
+    background: var(--ov-hot);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-nav-item:not(.is-active):hover {
+    background: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-nav-column .lvs-group-title, .config-nav-group-label) {
+    border-color: var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-nav-search {
+    background-color: var(--ov-fill-small);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+    border-radius: var(--ov-r-control);
+}
+
+/* Controls take the corner and the rule of the material. */
+/* A native select lists its options on its own background: a see-through one shows the page through the list. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(select, .config-select) {
+    background-color: var(--background-secondary);
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-text, .config-choices) {
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    background-color: var(--ov-fill-small);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-btn:not(.config-btn--icon):not(.config-btn--primary):not(.config-btn--danger) {
+    border-radius: var(--ov-r-control);
+    border-color: var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-choice, .config-subtab, .config-toggle) {
+    border-radius: var(--ov-r-item);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-subtabs {
+    border-bottom-color: var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-subtab, .config-choice):not(.is-active):hover,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-crud-row, .config-widget-row, .config-toggle):hover {
+    background-color: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-settings-jump-result:is(:hover, .is-active) {
+    background: var(--ov-hot);
+    border-radius: var(--ov-r-item);
+}
+
+
+/* ── The dots of a tutorial: the ones not yet reached have to show on the surface, the one in force is lit ── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"], .changes-tour-dot) {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: color-mix(in srgb, var(--text-primary) 38%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"], .changes-tour-dot):is(.is-active, [aria-current="step"]) {
+    background: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+}
+
+
+/* ── The input of quick add and of the palette fills the line; the box around it shows the focus ─── */
+html[data-theme] body :is(.omnibox-input, #shortcut-search input):is(:focus, :focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+/* The box takes over: a ring inside it in the accent while the field has the focus. */
+html[data-theme] body .omnibox-box:focus-within {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    outline-offset: -2px;
+}
+
+html[data-theme] body .search-prompt:focus-within {
+    box-shadow: inset 0 -2px 0 var(--accent-primary);
+}
+
+
+/* ── Quick add: one line on the page, so the quiet ring of a small layer and no bar ────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-box,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] .omnibox-box:not([data-ov-covered]),
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--ov-edge, 0 0 0 0 transparent), var(--ov-cast, 0 0 0 0 transparent), 0 18px 36px -18px color-mix(in srgb, black 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+}
+
+
+/* ── The action bar: a handle on the edge of the screen, with the surface of the material ─────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"], [data-action-bar="bottom"]) .dashboard-section.section-controls .header-shortcuts {
+    --ab-r: min(var(--ov-radius), 14px);
+    border: 0;
+    background-color: var(--ov-fill-small);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image, none);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+@media (min-width: 701px) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+        right: 0;
+        border-radius: var(--ab-r) 0 0 var(--ab-r);
+        box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset 3px 0 0 var(--accent-primary);
+    }
+    
+    html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts {
+        left: 0;
+        border-radius: 0 var(--ab-r) var(--ab-r) 0;
+        box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset -3px 0 0 var(--accent-primary);
+    }
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts {
+    bottom: 0;
+    border-radius: var(--ab-r) var(--ab-r) 0 0;
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset 0 3px 0 var(--accent-primary);
+}
+
+/* What is under the pointer or the focus is lit from the edge, like the rail of a view. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"], [data-action-bar="bottom"]) .dashboard-section.section-controls .header-shortcuts :is(button, a):is(:hover, :focus-visible) {
+    background: var(--ov-hot);
+    border-radius: var(--ov-r-item);
+}
+
+
+/* The mark of a column head opens the bar, and a hairline in the rule of the material parts the groups. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"], [data-action-bar="bottom"]) .dashboard-section.section-controls .header-shortcuts::before {
+    content: "";
+    flex: none;
+    align-self: center;
+    width: 14px;
+    height: 8px;
+    margin: 2px 0 0;
+    transform: skewX(-20deg);
+    background: linear-gradient(var(--accent-primary), var(--accent-primary)) 6% 0 / 34% 100% no-repeat, linear-gradient(color-mix(in srgb, var(--accent-primary) 55%, transparent), color-mix(in srgb, var(--accent-primary) 55%, transparent)) 56% 0 / 34% 100% no-repeat;
+    pointer-events: none;
+}
+
+@media (min-width: 701px) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts > * + * {
+    border-top: 1px solid var(--ov-rule-soft);
+    padding-top: 6px;
+}
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts > * + * {
+    border-left: 1px solid var(--ov-rule-soft);
+    padding-left: 6px;
+}
+
+/* On a phone the side bars stand at the bottom centre (dashboard.css): they are the bottom handle there. */
+@media (max-width: 700px) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts {
+    border-radius: var(--ab-r) var(--ab-r) 0 0;
+    bottom: 0;
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset 0 3px 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts > * + * {
+    border-left: 1px solid var(--ov-rule-soft);
+    padding-left: 6px;
+}
+}
+
+
+/* ── The preview card: with a picture, the picture stands on the left of the title and the text ───── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card.is-visible:has(.bookmark-preview-card-image-wrap:not([hidden])) {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    width: min(520px, calc(100vw - 24px));
+    align-items: start;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) .bookmark-preview-card-image-wrap {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: stretch;
+    width: auto;
+    max-height: none;
+    aspect-ratio: auto;
+    border: 0;
+    border-right: 1px solid var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) .bookmark-preview-card-head {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) :is(.bookmark-preview-card-description, .bookmark-preview-card-empty) {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) .bookmark-preview-card-note {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) :is(.bookmark-preview-card-tags, .bookmark-preview-card-facts, .bookmark-preview-card-embed) {
+    grid-column: 1 / -1;
+}
+
+
+/* A card with no scrim behind it lies straight on the page, so its fill is as closed as a list's. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.bookmark-preview-card, .app-notification, .app-discovery-card) {
+    background-color: var(--ov-fill-small);
+}
+
+
+/* Animations off (the site-wide one, or the one for views and modals): a layer is simply there. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is(.no-animations, .no-view-animations) {
+    --modal-enter-from: none;
+    --modal-enter-transition: none;
+}
+
+
+/* ── Save this link: the address, the preview and the two choices lie on the surface ───────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.paste-choice-url, .paste-choice-preview, .paste-choice-card) {
+    background-color: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
+    background-image: none;
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-url {
+    border-radius: var(--ov-r-control);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-card:is(:hover, :focus-visible, .is-selected, [aria-selected="true"], [aria-pressed="true"]) {
+    background-color: var(--ov-hot);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 70%, transparent), inset 3px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-kbd {
+    border: 0;
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+    background: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-preview-thumb {
+    border-radius: var(--ov-r-item);
+    background: color-mix(in srgb, black calc(18% * var(--ov-k) + 6%), transparent);
+}
+
+
+/* ── The arrow of a popover: it points at what opened it. Where it sits is set by overlay-layers.js. ── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .field-popover)[data-ov-arrow]::after {
+    content: "";
+    position: absolute;
+    left: var(--ov-arrow-x, 50%);
+    width: 14px;
+    height: 7px;
+    transform: translateX(-50%);
+    background: var(--ov-fill-small);
+    pointer-events: none;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .field-popover)[data-ov-arrow="top"]::after {
+    top: -7px;
+    clip-path: polygon(50% 0, 0 100%, 100% 100%);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .field-popover)[data-ov-arrow="bottom"]::after {
+    bottom: -7px;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+
+/* ── The row you stand on in the palette: no square outline in a rounded layer ───────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .search-container :is(.keyboard-selected, .selected, [aria-selected="true"]):focus,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .search-container :is(.keyboard-selected, .selected, [aria-selected="true"]):focus-visible {
+    outline: none;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .search-container :is(.keyboard-selected, .selected, [aria-selected="true"]) {
+    background: var(--ov-hot);
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+
+/* A terminal head is a prompt: the dollar in front, the cursor behind. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="terminal"] :is(.modal-title, .tag-cloud-modal-title):not(:empty)::before {
+    content: "$ ";
+    content: "$ " / "";
+    color: var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="terminal"] :is(.modal-title, .tag-cloud-modal-title):not(:empty)::after {
+    content: "_";
+    content: "_" / "";
+    color: var(--accent-primary);
+}
+
+
+/* ── What's New: the spotlight, the lists, the earlier releases and the support block lie on the surface ── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal :is(.wn-entry--new, .wn-lines, .wn-fix-list, .wn-earlier, .wn-support) {
+    background-color: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
+    background-image: none;
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-entry--new {
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft), inset 3px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-media {
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-chip {
+    border: 0;
+    border-radius: var(--ov-r-item);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-chip:is(.is-active, [aria-pressed="true"]) {
+    background: var(--ov-hot);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-go {
+    border-radius: var(--ov-r-control);
+    border: 0;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 60%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-foot {
+    border-top-color: var(--ov-rule-soft);
+}
+
+
+/* ── The views: what stands on the plate ───────────────────────────────────────────────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state, .inbox-legend, .glances-legend) {
+    background-color: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
+    background-image: none;
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .docker-setup pre {
+    border-radius: var(--ov-r-item);
+    background: color-mix(in srgb, black calc(30% * var(--ov-k) + 6%), transparent);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(input[type="search"], input[type="text"], .inbox-search-input, .tag-view-search) {
+    border: 0;
+    border-radius: var(--ov-r-control);
+    background-color: color-mix(in srgb, black calc(16% * var(--ov-k) + 4%), transparent);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+/* A native select lists its options on its own background, so that stays closed. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) select {
+    border: 0;
+    border-radius: var(--ov-r-control);
+    background-color: var(--background-secondary);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(input[type="search"], input[type="text"], .inbox-search-input, .tag-view-search, select):focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) .lvs-action {
+    border: 0;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) .lvs-action--primary {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) .lvs-action:is(:hover, :focus-visible) {
+    background: var(--ov-hot);
+}
+
+/* The head of a table is solid, because rows pass under it, and sits on the plate like a rail row. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs .lvs-colhead, .lvs .tag-view-colhead, .lvs .docker-table thead th, .config-view--library .config-bm-colhead) {
+    background-color: color-mix(in srgb, var(--text-primary) 9%, var(--surface-2, var(--background-secondary)));
+    border-bottom: 1px solid var(--ov-rule);
+    border-radius: var(--ov-r-item) var(--ov-r-item) 0 0;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .glances-pill {
+    border: 0;
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+
+/* ================================================================================================
+   Layer fidelity: layers cut from the same material as the column.
+   Placed after the Ink / Neon decoration blocks, so it may override them.
+   ================================================================================================ */
+
+/* ── Small layers, all materials: the column's texture (gloss band, scanlines, weave, blob) and a
+      layer that rests on the page: the material's rim and cast, not the accent ring of a level. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-notification {
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2);
+}
+
+/* Glass: the rim of the column and a soft cast. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="glass"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    /* Closed and without blur: these are read and pressed, and a blur on a pressable layer catches clicks in Safari. */
+    box-shadow: var(--ov-edge), 0 18px 36px -14px color-mix(in srgb, var(--ov-cast-ink) calc(55% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+
+/* Lacquer: the lit top and the dark pooled bottom of the column, and its lip underneath. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="lacquer"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    box-shadow: var(--ov-edge-big), 0 14px 26px -10px color-mix(in srgb, var(--ov-cast-ink) calc(60% * (0.55 + 0.45 * var(--ov-k))), transparent), 0 2px 0 color-mix(in srgb, var(--ov-cast-ink) calc(30% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+
+/* Paper: the grain of the card, the double rule along its top, a soft cast and no ring. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    background:
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)) 0 5px / 100% 1px no-repeat,
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)) 0 8px / 100% 1px no-repeat,
+        var(--paper-grain);
+    background-color: var(--ov-fill-small);
+    box-shadow: var(--ov-cast);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog):not([data-ov-covered]) {
+    background-image: var(--paper-grain), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+    background-image: var(--paper-grain), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+}
+/* The rules of a big layer are the column's (text colour, not the red head rule). */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card)::after {
+    top: 5px;
+    border-color: color-mix(in srgb, var(--text-primary) 55%, transparent);
+}
+
+/* Terminal: a screen with an inner glow and a rim in the accent. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="terminal"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    box-shadow: var(--ov-edge-big), 0 0 0 0 transparent;
+}
+
+/* Enamel: the bar of the glaze along the bottom (a thinner one on a small layer) and the lit top edge. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="enamel"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    box-shadow:
+        inset 0 -4px 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        0 8px 14px -8px color-mix(in srgb, var(--ov-cast-ink) calc(45% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+
+/* Carbon: the stripe at the left and the 1px rim, a soft cast and no ring. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="carbon"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    box-shadow: var(--ov-edge), 0 10px 18px -10px color-mix(in srgb, var(--ov-cast-ink) calc(50% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+
+/* ── Ink ───────────────────────────────────────────────────────────────────────────────────────── */
+/* A big layer: the column's warm tint, the long crop marks at all four corners, the bar above the head, no accent ring. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog) {
+    background-color: color-mix(in srgb, var(--text-primary) 8%, var(--ov-fill));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent), 0 40px 70px -22px color-mix(in srgb, var(--ov-cast-ink) calc(65% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent), 0 26px 50px -16px color-mix(in srgb, var(--ov-cast-ink) calc(60% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: inherit;
+    pointer-events: none;
+    --ink-tick: color-mix(in srgb, var(--text-primary) 55%, transparent);
+    background:
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 0 / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 0 / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 1px 11px no-repeat,
+        linear-gradient(var(--text-primary), var(--text-primary)) 1.5rem 6px / 2.25rem 4px no-repeat;
+}
+/* A small layer: the same tint and marks (9px, no bar) as background layers, so no pseudo-element is needed. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    --ink-tick: color-mix(in srgb, var(--text-primary) 55%, transparent);
+    background-color: color-mix(in srgb, var(--text-primary) 8%, var(--ov-fill-small));
+    background-image:
+        linear-gradient(var(--ink-tick), var(--ink-tick)), linear-gradient(var(--ink-tick), var(--ink-tick)),
+        linear-gradient(var(--ink-tick), var(--ink-tick)), linear-gradient(var(--ink-tick), var(--ink-tick)),
+        linear-gradient(var(--ink-tick), var(--ink-tick)), linear-gradient(var(--ink-tick), var(--ink-tick)),
+        linear-gradient(var(--ink-tick), var(--ink-tick)), linear-gradient(var(--ink-tick), var(--ink-tick)),
+        linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    background-position: 3px 3px, 3px 3px, calc(100% - 3px) 3px, calc(100% - 3px) 3px, 3px calc(100% - 3px), 3px calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), 0 0;
+    background-size: 9px 1px, 1px 9px, 9px 1px, 1px 9px, 9px 1px, 1px 9px, 9px 1px, 1px 9px, auto;
+    background-repeat: no-repeat;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent), 0 26px 50px -18px color-mix(in srgb, var(--ov-cast-ink) calc(60% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+
+/* ── Neon ──────────────────────────────────────────────────────────────────────────────────────── */
+/* A big layer: only the glowing top edge (the light fades down in the fill), no ring all round. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog):not([data-ov-covered]) {
+    box-shadow:
+        0 -1px 0 var(--accent-primary),
+        0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent),
+        0 40px 70px -22px color-mix(in srgb, var(--ov-cast-ink) calc(80% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+    box-shadow: 0 -1px 0 color-mix(in srgb, var(--accent-primary) 60%, transparent), 0 26px 50px -16px color-mix(in srgb, var(--ov-cast-ink) calc(70% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+/* The head glows like the head of a column: capitals, accent, spaced, with a halo. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal-title, .tag-cloud-modal-title, .bookmark-preview-card-headtext) {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.9em;
+    color: var(--accent-primary);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent), 0 0 18px color-mix(in srgb, var(--accent-primary) calc(40% * var(--ov-k)), transparent);
+}
+/* A small layer: the same dark fill, glowing top edge and fade. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    background-color: color-mix(in srgb, var(--background-primary) 66%, var(--ov-fill-small));
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    box-shadow:
+        0 -1px 0 var(--accent-primary),
+        0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent),
+        0 18px 32px -14px color-mix(in srgb, var(--ov-cast-ink) calc(80% * (0.55 + 0.45 * var(--ov-k))), transparent);
+}
+
+
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
+    content: none;
+}
+
+
+/* The Bookmarks plate carries a pseudo-element with a blur of its own (category-surface.css); the plate
+   blurs by itself under the signature, so the second layer only made this one frostier than the others. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.library-layout > .config-view--library::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+
+/* The row in force is lit from its edge, as in the rail of Inbox, Containers and Tags. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-view--library .config-bm-rail-item.is-on {
+    background: var(--ov-hot);
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-view--library .config-bm-rail-item:not(.is-on):hover {
+    background: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+    border-radius: var(--ov-r-item);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-view--library .config-bm-rail-item {
+    border-radius: var(--ov-r-item);
+}
+
+
+/* A toast and a preview card hold buttons and links: no blur on them, as on every small layer. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.app-notification, .bookmark-preview-card) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+/* The bookmark form is a big layer like the others: under another layer it drops back to the second level
+   without the bar, and the one on top of two takes the deepest lift. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-form-modal-dialog[data-ov-covered] {
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e2);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-form-modal-dialog[data-ov-level="4"] {
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-4), var(--ov-lift-4));
+}
+
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-form-modal-dialog:not([data-ov-covered]) {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), var(--ov-e3), var(--ov-bar);
+}
+
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-form-modal-dialog[data-ov-covered] {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), var(--ov-e2);
+}
+
+/* A flat theme draws no edges: the form takes the elevation alone, as every other layer does. */
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-form-modal-dialog:not([data-ov-covered]) {
+    box-shadow: var(--ov-e3), var(--ov-bar);
+}
+
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-form-modal-dialog[data-ov-covered] {
+    box-shadow: var(--ov-e2);
+}
+
+/* Ink draws the bar above the head on the topmost layer only; a covered layer keeps the crop marks. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered]::after {
+    background:
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 0 / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 0 / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 1px 11px no-repeat;
+}
+
+
+/* ── Effects off: the layers are flat. No blur, no grain, no crop marks, no fade; the fill, the rim and the level stay. ── */
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification),
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
+    --paper-grain: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification) {
+    background-image: linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+}
+
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
+    background-image: linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+}

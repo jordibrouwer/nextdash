@@ -459,6 +459,7 @@ class DashboardRenderCore {
         // rowheader, and the grid around them expects the pair.
         block.setAttribute('role', 'rowgroup');
         block.dataset.categoryId = widget.id;
+        if (window.NDShine) window.NDShine.seed(block, widget.id);
         block.dataset.widgetId = widget.id;
         block.dataset.widgetType = widget.type || '';
 
@@ -2366,7 +2367,7 @@ class DashboardRenderCore {
         }
 
         const sourceCategories = Array.isArray(options.payload) ? options.payload : d.categories;
-        const payload = (sourceCategories || []).map((category) => ({ ...category, originalId: category.id }));
+        const payload = (sourceCategories || []).map((category) => ({ ...DashboardData.storedCategory(category), originalId: category.id }));
 
         if (payload.length === 0 && Array.isArray(d.bookmarks)) {
             const bookmarksStillReferenceCategories = d.bookmarks.some(
@@ -2852,6 +2853,7 @@ class DashboardRenderCore {
             categoryDiv.classList.add('animate-enter');
         }
         categoryDiv.setAttribute('data-category-id', category.id || '');
+        if (window.NDShine) window.NDShine.seed(categoryDiv, category.id || category.name);
         categoryDiv.setAttribute('role', 'rowgroup');
         const isSmartCollection = category.isSmartCollection === true;
         const initialSortMode = window.DashboardCategorySort?.getCategorySortMode(d, category) || 'order';

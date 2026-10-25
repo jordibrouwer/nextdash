@@ -271,17 +271,6 @@ class DashboardPromos {
         // Kept for compatibility: post-onboarding prompts and toolbar hints gate on
         // this flag so they don't overlap with first-run quick-start.
         d.onboardingStartedInSession = quickStart.shouldStart();
-        if (d.onboardingStartedInSession) {
-            const hintEl = document.getElementById('search-flow-hint');
-            if (hintEl) {
-                hintEl.hidden = true;
-                hintEl.classList.remove('dismissing');
-            }
-            try {
-                localStorage.removeItem('nextdash:search-flow-hint-v1');
-                localStorage.removeItem('nextdash:search-flow-hint-v2');
-            } catch {}
-        }
         quickStart.start();
     }
 

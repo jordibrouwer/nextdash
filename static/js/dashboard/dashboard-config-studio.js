@@ -18,7 +18,7 @@
 (function (global) {
     'use strict';
 
-    const DEFAULT_TUNING = { strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0 };
+    const DEFAULT_TUNING = { strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0, calm: 0.5 };
 
     const HEAD_FIELDS = ['categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryIcon',
         'showCategoryCount', 'categoryHeaderAccentLine'];
@@ -41,7 +41,7 @@
 
     /** Every setting the studio previews. Only these are gated and put back. */
     const LOOK_FIELDS = ['theme', 'themeBackdrop', 'themeSurfacePrefs', 'themeSurfacesForceAll',
-        'backdropTuning', 'backgroundPattern', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity',
+        'backdropTuning', 'backgroundPattern', 'cardGlass', 'materialStyle', 'neutralAccent', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity',
         ...HEAD_FIELDS, ...BAR_FIELDS, ...TEXT_FIELDS, ...GRID_FIELDS];
 
     /*
@@ -50,8 +50,8 @@
      */
     const TAB_FIELDS = {
         themes: { fields: ['theme'], prefs: [] },
-        backdrop: { fields: ['themeBackdrop', 'backdropTuning', 'backgroundPattern'], prefs: ['backdrop'] },
-        surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity', 'cardGlass'],
+        backdrop: { fields: ['themeBackdrop', 'backdropTuning', 'backgroundPattern'], prefs: ['backdrop', 'calm'] },
+        surface: { fields: ['materialStyle', 'neutralAccent', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity', 'cardGlass'],
             prefs: ['depth', 'glow', 'effects', 'catSurface', 'alpha', 'blur', 'border'] },
         heads: { fields: [...HEAD_FIELDS, ...BAR_FIELDS], prefs: [] },
         layout: { fields: [...TEXT_FIELDS, ...GRID_FIELDS], prefs: [] },
@@ -196,8 +196,22 @@
 
     Object.assign(global.DashboardConfig.prototype, {
 
-        /** Open the studio, from config, the dashboard, Shift+A or the notice. */
-        async openLookStudio(options = {}) {
+        /**
+         * Open the studio, from config, the dashboard, Shift+A or the notice.
+         *
+         * One opening at a time. The loads below take a moment on a cold page,
+         * and a second Shift+A in that moment passed the isOpen check too: it
+         * took a new snapshot over the first, so Cancel no longer went back to
+         * the look from before, and config did not come back on close.
+         */
+        openLookStudio(options = {}) {
+            if (this._lookStudioOpening) return this._lookStudioOpening;
+            this._lookStudioOpening = this.openLookStudioNow(options)
+                .finally(() => { this._lookStudioOpening = null; });
+            return this._lookStudioOpening;
+        },
+
+        async openLookStudioNow(options = {}) {
             if (!window.ThemeBrowser?.open) return;
             if (window.ThemeBrowser.isOpen?.()) {
                 window.ThemeBrowser.open();
@@ -211,6 +225,10 @@
                 window.ThemeLoader?.loadSurfaceMeta?.(),
                 window.ViewStyles?.ensureViewStyles?.(),
             ]).then(([c, m]) => [c, m]);
+            if (window.ThemeBrowser.isOpen?.() || this._lookStudio) {
+                window.ThemeBrowser.open();
+                return;
+            }
             const palettes = studioPalettes(colors);
 
             // The studio docks beside the dashboard, so config steps aside
@@ -277,7 +295,12 @@
                 onApply: () => this.applyLookStudio(),
                 onClose: () => this.afterLookStudio(),
             });
-            if (!this._lookStudio.ui) this.endLookStudio();
+            if (!this._lookStudio.ui) {
+                // Nothing to show: config, which stepped aside, comes back.
+                const back = this.endLookStudio();
+                this._themePickerPrevious = null;
+                if (back) void this.openConfigView(back.section);
+            }
         },
 
         /** Colour edits made in the studio, undone: the snapshot from when it opened. */
@@ -327,6 +350,11 @@
 
         applyStudioLook({ theme = true, redraw = false } = {}) {
             const settings = this.dash.settings;
+            // The accent of the neutrals is drawn into theme.css: a held change, and
+            // Compare, Cancel and Reset putting it back, fetch the stylesheet again.
+            const accentNow = settings?.neutralAccent || 'theme';
+            if (this._drawnNeutralAccent !== undefined && this._drawnNeutralAccent !== accentNow) this.reloadThemeCSS?.();
+            this._drawnNeutralAccent = accentNow;
             if (theme) {
                 this.clearThemePreview();
                 this.applyThemeLive();
@@ -400,7 +428,7 @@
             // A look comes with the theme, not with its other half: switching
             // halves of one pair keeps whatever look is on screen. Set after
             // the theme, so answers kept per theme land on the new one.
-            const look = this.themeLookOf(id);
+            const look = this.themeLookAnswers(id);
             if (look && !sameFamily && this.studioUsesThemeLook()) this.applyLookAnswers(look);
             this.applyStudioLook();
         },
@@ -678,6 +706,14 @@
             const settings = this.dash.settings;
             if (!look || !settings) return;
             const inPlace = (answers, current) => Object.keys(answers).every((k) => answers[k] === current[k]);
+            // A quiet centre this theme answers for itself outranks the install-wide one the
+            // look sets, so the look's would never show: the look takes the answer over.
+            const themePrefs = settings.themeSurfacePrefs?.[this.currentThemeId()];
+            if (typeof look.tuning?.calm === 'number' && themePrefs && 'calm' in themePrefs) {
+                delete themePrefs.calm;
+                if (!Object.keys(themePrefs).length) delete settings.themeSurfacePrefs[this.currentThemeId()];
+                void this.applyResolvedSurfaces();
+            }
             const shownTuning = { ...DEFAULT_TUNING, ...(settings.backdropTuning || {}) };
             if (look.tuning && !inPlace(look.tuning, shownTuning)) {
                 const tuning = { ...shownTuning, ...look.tuning };
@@ -691,7 +727,7 @@
             if (look.glass) this.setCardGlass(look.glass);
             if (look.depth) this.setSurface('themeDepth', look.depth);
             if (look.backdrop) {
-                if (look.backdrop !== 'off') this._lastBackdropPick = look.backdrop;
+                if (look.backdrop !== 'off' && look.backdrop !== 'follow') this._lastBackdropPick = look.backdrop;
                 this.setBackdropChoice(look.backdrop);
             }
             const text = look.text || {};
@@ -703,6 +739,23 @@
         /** The look a theme of the reader's own brings along, or null. */
         themeLookOf(id) {
             return this._colorsData?.custom?.[id]?.look || null;
+        },
+
+        /**
+         * A theme's look as answers to set. It is stored without the parts that
+         * followed the theme (currentLookAnswers), and a part left out is kept as
+         * it is: the edge and the glass of the look before stayed on. Here the
+         * left-out backdrop, depth and glass follow the theme again.
+         */
+        themeLookAnswers(id) {
+            const look = this.themeLookOf(id);
+            if (!look) return null;
+            return {
+                ...look,
+                backdrop: look.backdrop || 'follow',
+                depth: look.depth || 'follow',
+                glass: { alpha: null, blur: null, border: null, ...(look.glass || {}) },
+            };
         },
 
         /** "Use this theme's look", remembered per browser; on unless turned off. */
@@ -723,7 +776,7 @@
             const pairOf = (themeId) => window.ThemeUtils?.getPairedThemeVariant?.(themeId, true) || themeId;
             if (previous && pairOf(previous) === pairOf(id)) return;
             await this.loadColorsData();
-            const look = this.themeLookOf(id);
+            const look = this.themeLookAnswers(id);
             if (!look || this.dash.settings?.theme !== id) return;
             const seedBefore = this.dash.settings.backdropTuning?.seed;
             this.applyLookAnswers(look);

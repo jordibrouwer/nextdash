@@ -13,10 +13,10 @@ My bookmark bar had become a graveyard, so I built a self-hosted dashboard that 
 Run it on any machine or container, open it in your browser, organise bookmarks across pages, and reach everything from the keyboard. Beside your bookmarks, **widgets** show what is going on: uptime of the services you watch, what waits in the inbox, which certificate runs out, the weather, your calendar, your feeds, your machines — and any self-hosted service that answers with JSON.
 
 <p align="center">
-  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Berry: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
+  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Aurora Glass: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
 </p>
 
-🎨 **376 themes and a look studio.** 188 theme families, each with a light and a dark half, in twelve characters — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed, carbon, paper, terminal and ink — that decide how the surfaces are drawn, not only their colours. **`Shift + A`** opens the look studio beside your dashboard and changes the real page as you go: the theme, 29 backdrops drawn in its colours, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or character, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: Appearance](MANUAL.md#16-appearance)*
+🎨 **384 themes and a theme studio.** 192 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic. **Aurora Glass** is the default, and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 75 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#16a-the-new-look)* · *[Manual: Appearance](MANUAL.md#16-appearance)*
 
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
@@ -75,12 +75,12 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> <i>(Berry)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
+      <sub><b>Dashboard</b> <i>(Aurora Glass)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
       <br />
-      <sub><b>Bookmarks view</b> <i>(Rose Pine)</i> — The whole collection in one place: a rail with the health score, views, health filters, pages and categories; one row per bookmark with its tags, shortcut, a month of use and when it was last opened; a side panel with Details, Health and Usage that saves as you type.</sub>
+      <sub><b>Bookmarks view</b> <i>(Aurora Glass, light)</i> — The whole collection in one place: a rail with the health score, views, health filters, pages and categories; one row per bookmark with its tags, shortcut, a month of use and when it was last opened; a side panel with Details, Health and Usage that saves as you type.</sub>
     </td>
   </tr>
   <tr>
@@ -135,7 +135,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-commands.jpg" alt="Command palette" width="100%" />
       <br />
-      <sub><b>Command palette</b> <i>(Midnight Firefly)</i> — <code>:docker</code> lists every container with its state; pick one to start, stop, restart or update it, open its web UI or read its logs.</sub>
+      <sub><b>Command palette</b> <i>(ThinkDashboard Classic)</i> — <code>:docker</code> lists every container with its state; pick one to start, stop, restart or update it, open its web UI or read its logs.</sub>
     </td>
   </tr>
   <tr>
@@ -145,9 +145,9 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
       <sub><b>Containers</b> <i>(Harbour Fog)</i> — Every container on the host with its app icon, a status glow, CPU and memory. The side panel draws CPU, memory, network and disk over the last hour. Start, stop and update are one key away once control is on, as the legend under the list shows.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-themes.jpg" alt="Look studio" width="100%" />
+      <img src="screenshots/nextdash-themes.jpg" alt="Theme studio" width="100%" />
       <br />
-      <sub><b>The look studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 188 theme families with a light and a dark half, filtered by character, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
+      <sub><b>The theme studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 192 theme families with a light and a dark half, filtered by material or collection, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
     </td>
   </tr>
   <tr>
@@ -472,9 +472,9 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Appearance**
 
-- 188 theme families in light and dark, each with a character that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — plus an editor for your own. *[Manual §16](MANUAL.md#16-appearance)*
-- **A theme browser that is a look studio.** It opens beside the dashboard and changes the page live: the theme, its backdrop, depth and card glass, the category headers and the type. Twelve ready-made looks set them in one go; Compare shows what you had, and nothing is saved until Apply. *[Theme browser](MANUAL.md#the-theme-browser)*
-- 29 backdrops drawn in each theme's own colours, from aurora and dunes to stars and hexagons, each theme with one picked for it — or choose your own and tune it with intensity, scale, blur and tint. *[Manual §16.4](MANUAL.md#164-type-and-background)*
+- 192 theme families in light and dark, each on a material that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — with a signature or Classic way to draw it, eight neutrals with one accent, ThinkDashboard Classic and an editor for your own. Aurora Glass is the default, and every install moved onto it once. *[Manual §16](MANUAL.md#16-appearance)*
+- **A theme studio beside the dashboard.** It opens beside the dashboard and changes the page live: the theme, its backdrop, depth and card glass, the category headers and the type. Twelve ready-made looks set them in one go; Compare shows what you had, and nothing is saved until Apply. *[Theme studio](MANUAL.md#the-theme-studio)*
+- 75 backdrops, from aurora and dunes to stars and hexagons, each material with a pool of its own and each theme with one picked for it — or choose your own and tune it with intensity, scale, blur, tint and a quiet centre. *[Manual §16.4](MANUAL.md#164-type-and-background)*
 - Character, depth, glow, effects, card glass and contrast for any theme; category header styles, layout presets, columns, density and fonts. *[Manual §16.3](MANUAL.md#163-surfaces)*
 - A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu, in five sizes. *[Manual §4](MANUAL.md#4-the-dashboard)*
 - **Appearance in nine tabs, three groups.** Panels fold to a line of their values, runs of switches are chips, and a list of panels sits above the preview on long tabs. *[Manual §16](MANUAL.md#16-appearance)*

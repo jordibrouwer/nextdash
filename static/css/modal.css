@@ -890,6 +890,28 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     padding-right: var(--space-1, 0.25rem);
 }
 
+/* The sheet itself is wide and tall: search and dock stay put, the columns scroll. */
+.modal.keyboard-cheat-sheet-modal:not(.config-settings-jump-modal) {
+    max-width: min(1040px, 94vw);
+    width: min(1040px, 94vw);
+    height: min(46rem, 90vh);
+}
+
+.modal.keyboard-cheat-sheet-modal:not(.config-settings-jump-modal) .modal-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-right: 0;
+}
+
+.modal.keyboard-cheat-sheet-modal:not(.config-settings-jump-modal) .modal-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+}
+
 /* Page overview — compact centered modal (dashboard header pages button) */
 .modal.page-overview-modal {
     max-width: min(26rem, calc(100vw - 2.5rem));
@@ -1640,42 +1662,129 @@ body.no-animations .modal-button.danger.selected {
     cursor: not-allowed;
 }
 
-/* ── Keyboard cheat sheet: accordion style ───────────────────────────────── */
+/* ── Keyboard cheat sheet: columns, one detail dock ──────────────────────── */
 
 /*
- * Two columns of groups, the way the overlays spec lays a panel out.
+ * The sections stand side by side as small cards; each row is only what the
+ * shortcut does. Pressing one puts its keys in the dock under the columns, so
+ * a column reads as a list of intentions rather than a wall of key chips.
  *
- * Fifteen sections in one column made the sheet 968px tall on a 1000px window
- * -- the whole screen, for a reference you are meant to glance at. The groups
- * are boxes with their own ground, so they sit beside each other without a
- * rule between them, and the open one simply makes its own row taller.
+ * CSS columns rather than a grid: sections differ a lot in length, and
+ * columns pack them without the gaps a row-aligned grid leaves.
  *
- * Grid rather than CSS columns: a <details> in a multi-column flow breaks
- * across the column boundary when it opens.
+ * The --ov-* variables exist only under the Signature look; every use has a
+ * fallback so Classic reads as a flat, quiet version of the same thing.
  */
 .keyboard-cheat-sheet {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.cheat-sheet-scroller {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 2px 2px var(--space-2, 0.5rem);
 }
 
 .cheat-sheet-groups {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    column-width: 14.5rem;
+    column-gap: var(--space-3, 0.75rem);
 }
 
-@media (max-width: 40rem) {
-    .cheat-sheet-groups {
-        grid-template-columns: minmax(0, 1fr);
-    }
+.cheat-sheet-group {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    /* WebKit fragments a block card across the columns and drops its ring on the third one; an inline-block
+       with the full width is kept whole. */
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-1, 0.25rem) var(--space-1, 0.25rem);
+    border-radius: min(var(--ov-radius, 10px), 14px);
+    background: rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 0 0 1px var(--ov-rule, var(--border-primary));
 }
 
-/* Stays at the top while the groups scroll, so a search never scrolls away. */
+.cheat-sheet-group[hidden] {
+    display: none;
+}
+
+/* The view the sheet was opened from: same card, its ring in the accent. */
+.cheat-sheet-group--context {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+.cheat-sheet-group-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    margin: 0 0 var(--space-1, 0.25rem);
+    padding: 0 var(--space-2, 0.5rem);
+    color: var(--accent-primary);
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.cheat-sheet-group-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.cheat-sheet-group-count {
+    margin-left: auto;
+    color: var(--text-tertiary);
+    font-weight: var(--font-weight-normal);
+    letter-spacing: 0;
+}
+
+.cheat-sheet-row {
+    position: relative;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--space-1-5, 0.3rem) var(--space-2, 0.5rem);
+    border: none;
+    border-radius: var(--ov-r-item, var(--layout-radius-xs, 6px));
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--text-sm, 0.82rem);
+    line-height: 1.35;
+    text-align: left;
+}
+
+.cheat-sheet-row[hidden] {
+    display: none;
+}
+
+.cheat-sheet-row-text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cheat-sheet-row:hover {
+    background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 14%, transparent));
+    color: var(--text-primary);
+}
+
+.cheat-sheet-row.is-selected {
+    background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 14%, transparent));
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+    color: var(--text-primary);
+}
+
+/* Search: the first thing the reader meets, so it is the biggest thing. */
 .cheat-sheet-filter {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: var(--background-primary);
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -1697,43 +1806,21 @@ body.no-animations .modal-button.danger.selected {
     opacity: 0.65;
 }
 
-/* Topics: a row of chips under the filter that narrows the sheet to one subject. */
-.cheat-sheet-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.4rem);
-    margin-bottom: var(--space-3, 0.75rem);
+.keyboard-cheat-sheet > .cheat-sheet-filter {
+    flex-shrink: 0;
+    padding: 0.7rem 1rem;
+    border: none;
+    border-radius: var(--ov-r-control, var(--layout-radius-sm, 10px));
+    background: rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 0 0 1px var(--ov-rule, var(--border-primary));
+    font-size: 1.15rem;
 }
 
-.cheat-sheet-tab {
-    background: transparent;
-    border: 1px solid var(--border-primary);
-    border-radius: 999px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-family: inherit;
-    font-size: var(--text-xs, 0.75rem);
-    padding: 0.2rem 0.7rem;
-}
-
-.cheat-sheet-tab:hover {
-    color: var(--text-primary);
-}
-
-.cheat-sheet-tab.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-}
-
-.keyboard-cheat-sheet-modal .cheat-sheet-tab:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--accent-primary) 82%, #fff 18%);
-    outline-offset: 2px;
-}
-
-/* The view's own section spans the grid, so it leads instead of sharing a row. */
-.cheat-sheet-group--context {
-    grid-column: 1 / -1;
+.keyboard-cheat-sheet > .cheat-sheet-filter:focus,
+.keyboard-cheat-sheet > .cheat-sheet-filter:focus-visible {
+    border: none;
+    box-shadow: inset 0 0 0 2px var(--accent-primary);
+    outline: none;
 }
 
 .cheat-sheet-no-results {
@@ -1742,137 +1829,73 @@ body.no-animations .modal-button.danger.selected {
     font-size: var(--text-base, 0.9rem);
 }
 
+.cheat-sheet-no-results[hidden] {
+    display: none;
+}
+
 /*
  * One line naming the view the sheet was opened from, above the filter. Only
  * shown outside the bookmarks default, where there is nothing to explain.
  */
 .cheat-sheet-context-lead {
+    flex-shrink: 0;
     margin: 0 0 var(--space-2, 0.6rem);
     font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
 }
 
-.cheat-sheet-group {
-    border-bottom: 1px solid var(--border-primary);
-}
-
-/*
- * The section matching the current view. Marked rather than moved or isolated:
- * every other section stays in place and the filter still searches them all.
- */
-.cheat-sheet-group--context > .cheat-sheet-group-title {
-    border-left: 2px solid var(--accent-primary);
-    padding-left: var(--space-2, 0.5rem);
-    margin-left: -0.5rem;
-    color: var(--accent-primary);
-}
-
-.cheat-sheet-group:last-child {
-    border-bottom: none;
-}
-
-.cheat-sheet-group-title {
-    list-style: none;
-    cursor: pointer;
-    margin-bottom: var(--space-1, 0.25rem);
-    padding: var(--space-1, 0.25rem) 0;
-    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
-    font-size: var(--text-sm, 0.82rem);
-    font-weight: var(--font-weight-bold);
-    color: var(--text-secondary);
+/* The detail dock: keys beside the full description of the chosen row. */
+.cheat-sheet-dock {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: var(--space-1-5, 0.4rem);
-    user-select: none;
-    border-radius: var(--layout-radius-xs, 6px);
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    min-height: 2.6rem;
+    box-sizing: border-box;
+    margin-top: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--ov-r-control, var(--layout-radius-sm, 10px));
+    background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 14%, transparent));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
-.cheat-sheet-group-title::-webkit-details-marker {
-    display: none;
-}
-
-.cheat-sheet-group-title::before {
-    content: '▶';
-    font-size: 0.5rem;
+.cheat-sheet-dock-hint {
     color: var(--text-tertiary);
-    transition: transform 0.15s ease;
-    display: inline-block;
+    font-size: var(--text-sm, 0.82rem);
 }
 
-.cheat-sheet-group[open] .cheat-sheet-group-title::before {
-    transform: rotate(90deg);
-}
-
-.cheat-sheet-group-title:hover {
+.cheat-sheet-dock-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
     color: var(--text-primary);
-}
-
-.cheat-sheet-group-count {
-    margin-left: auto;
-    padding: 0 0.45rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
-    color: var(--text-tertiary);
-    font-size: var(--text-xs, 0.7rem);
-    font-weight: var(--font-weight-normal);
+    font-size: var(--text-base, 0.95rem);
+    line-height: 1.4;
 }
 
 /* Keyboard clarity: always show where focus is inside cheat sheet modal. */
-.keyboard-cheat-sheet-modal .cheat-sheet-filter:focus-visible,
-.keyboard-cheat-sheet-modal .cheat-sheet-group-title:focus-visible,
 .keyboard-cheat-sheet-modal .modal-button:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--accent-primary) 82%, #fff 18%);
     outline-offset: 2px;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
-.keyboard-cheat-sheet-modal .cheat-sheet-group-title:focus-visible {
+/* Focus is a ring, selection is a fill and a bar; one row can have both. */
+.keyboard-cheat-sheet-modal .cheat-sheet-row:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
+    background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 14%, transparent));
     color: var(--text-primary);
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
-.keyboard-cheat-sheet-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 0;
-}
-
-.keyboard-cheat-sheet-table td {
-    padding: var(--space-1-5, 0.35rem) 0;
-    border-bottom: 1px solid var(--border-primary);
-    vertical-align: middle;
-    line-height: 1.35;
-}
-
-.keyboard-cheat-sheet-table tr:last-child td {
-    border-bottom: none;
-}
-
-/*
- * What it does, then what to press.
- *
- * The key came first and took 40% of the row, so fifteen sections opened with
- * a column of keys and the reader looked up what each one was for. The spec
- * has the row read as a line -- the thing, then the key that does it -- which
- * is also the order the reader arrives in: they know what they want to do.
- */
+/* The key chips, in the dock. */
 .keyboard-cheat-sheet-keys {
     font-family: "Source Code Pro", monospace;
-    font-size: var(--text-xs, 0.72rem);
+    font-size: var(--text-sm, 0.82rem);
     font-weight: var(--font-weight-bold);
     color: var(--accent-primary);
     white-space: nowrap;
-    text-align: right;
-    padding-left: var(--space-3, 0.75rem);
-    width: 1%;
-}
-
-.keyboard-cheat-sheet-description {
-    color: var(--text-secondary);
-    font-size: var(--text-sm, 0.82rem);
-    min-width: 0;
-    overflow-wrap: anywhere;
-    width: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1915,7 +1938,6 @@ body.no-animations .modal-button.danger.selected {
  * Not on flat, like every other depth cue in the app.
  */
 body:not([data-depth="flat"]) :is(
-    .cheat-sheet-group,
     .recent-bookmarks-modal-list,
     .page-overview-modal-slab,
     .tag-cloud-modal-body,
@@ -1928,15 +1950,6 @@ body:not([data-depth="flat"]) :is(
         var(--edge-light),
         var(--edge-dark),
         0 2px 8px color-mix(in srgb, black 22%, transparent);
-}
-
-/* The section divider was doing the separating on its own; the slab does it
-   now, and two lines where one will do reads as a seam. */
-body:not([data-depth="flat"]) .cheat-sheet-group {
-    border-bottom: none;
-    /* The column owns the spacing between groups; a margin here doubles it. */
-    margin-bottom: 0;
-    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
 }
 
 /*
@@ -2018,43 +2031,22 @@ body:not([data-depth="flat"]) .wn-earlier {
     display: none;
 }
 
-/*
- * Pinned to the foot of the scrolling sheet.
- *
- * One open section is taller than the panel, so a foot in the flow sat under
- * fifteen groups and was only reachable by scrolling past all of them -- which
- * is the opposite of what a line saying how to close the thing is for.
- */
+/* The foot sits under the dock; only the columns above it scroll. */
 .cheat-sheet-foot {
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
+    flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: var(--space-3, 0.75rem);
     margin-top: var(--space-2, 0.5rem);
-    padding-bottom: var(--space-1, 0.25rem);
-    padding-top: var(--space-3, 0.75rem);
-    /*
-     * Opaque, or the rows scroll straight through the line covering them.
-     * --background-modal carries alpha; the same rgb() trick the inline editor
-     * uses takes it off without naming a second colour.
-     */
-    background: var(--background-primary);
-    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--ov-rule, var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent)));
     color: var(--text-tertiary);
     font-size: var(--font-size-small, 0.65rem);
 }
 
 .cheat-sheet-foot > span {
     opacity: 0.6;
-}
-
-@supports (background: rgb(from red r g b)) {
-    .cheat-sheet-foot {
-        background: rgb(from var(--background-modal, var(--background-primary)) r g b / 1);
-    }
 }
 
 .cheat-sheet-foot-key,

@@ -153,9 +153,8 @@ func glancesNoticeFor(cfg GlancesConfig, ev GlancesIncidentEvent) monitorNotific
 }
 
 // glancesNotify sends a notice for each incident event whose kind is switched on.
-func (h *Handlers) glancesNotify(ctx context.Context, cfg GlancesConfig, events []GlancesIncidentEvent) {
+func (h *Handlers) glancesNotify(ctx context.Context, cfg GlancesConfig, hs *glancesHost, events []GlancesIncidentEvent) {
 	var notices []monitorNotification
-	hs := glancesHostByID(cfg.ID)
 	for _, ev := range events {
 		if cfg.notifies(ev.Incident.Kind) && (ev.Lost || hs.notices.allow(ev, time.Now())) {
 			notices = append(notices, glancesNoticeFor(cfg, ev))

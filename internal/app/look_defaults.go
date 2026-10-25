@@ -15,15 +15,23 @@ settings save keeps a field it is not sent.
 */
 func lookDefaults() map[string]any {
 	return map[string]any{
-		"themeBackdrop":            surfaceFollow,
-		"backdropTuning":           defaultBackdropTuning(),
-		"backgroundPattern":        "auto",
-		"themeSurfacePrefs":        map[string]ThemeSurfacePref{},
-		"themeSurfacesForceAll":    false,
-		"cardGlass":                ThemeSurfacePref{},
-		"themeDepth":               surfaceFollow,
-		"glowStrength":             surfaceFollow,
-		"themeEffects":             surfaceFollow,
+		"themeBackdrop":         surfaceFollow,
+		"backdropTuning":        defaultBackdropTuning(),
+		"backgroundPattern":     "auto",
+		"themeSurfacePrefs":     map[string]ThemeSurfacePref{},
+		"themeSurfacesForceAll": false,
+		"cardGlass":             ThemeSurfacePref{},
+		"themeDepth":            surfaceFollow,
+		"glowStrength":          surfaceFollow,
+		"themeEffects":          surfaceFollow,
+		// The rest of the Surface tab. A forced value outranks the per-theme
+		// answers, so leaving these out kept, say, an Open category surface on
+		// every theme after Reset all.
+		"categorySurface":          surfaceFollow,
+		"widgetSurface":            "auto",
+		"widgetOpacity":            defaultWidgetOpacity,
+		"materialStyle":            materialSignature,
+		"neutralAccent":            neutralAccentTheme,
 		"categoryHeaderStyle":      categoryHeaderThemeOwn,
 		"categoryHeaderSize":       "s",
 		"showCategoryIcon":         true,

@@ -27,7 +27,7 @@
         { keys: 'l', legendKey: 'inboxKeyTags', cheatKey: 'ivTags', fallback: 'tags' },
         { keys: 'a', legendKey: 'inboxKeyAddOffer', cheatKey: 'ivAddOffer', fallback: 'add suggested tag' },
         { keys: 'R', legendKey: 'inboxKeyRefresh', cheatKey: 'ivRefresh', fallback: 'refresh' },
-        { keys: 'g / G / Home / End', legendKey: 'inboxKeyFirstLast', cheatKey: 'ivFirstLast', fallback: 'first / last' },
+        { keys: 'g / Home / End', legendKey: 'inboxKeyFirstLast', cheatKey: 'ivFirstLast', fallback: 'first / last' },
         { keys: 't', legendKey: 'inboxKeyTriage', cheatKey: 'ivTriage', fallback: 'triage' },
         { keys: 'Esc', legendKey: 'inboxKeyEsc', cheatKey: 'ivEsc', fallback: 'clear selection · back to bookmarks' },
     ];

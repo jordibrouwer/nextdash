@@ -2982,7 +2982,7 @@ class DashboardInbox {
             this.applyKeyboardSelection(cards);
             return true;
         }
-        if (e.key === 'G' || e.key === 'End') {
+        if (e.key === 'End') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.selectedItemId = cards[cards.length - 1]?.dataset?.inboxId || null;
@@ -5779,7 +5779,34 @@ class DashboardInbox {
             if (hit) return String(hit.id);
         } catch { /* fall through to creating it */ }
         const created = await d.structureCreate?.createCategoryFromForm?.(Number(pageId), name);
-        return created && !created.error ? String(created.id) : '';
+        if (!created || created.error) return '';
+        // Made for this form only: closing it without a bookmark in it takes
+        // the category away again (releaseDiscoveryCategory).
+        d._pendingDiscoveryCategory = { pageId: Number(pageId), id: String(created.id) };
+        return String(created.id);
+    }
+
+    /**
+     * The form a found app opened has closed. A category made for it that is
+     * still empty goes again: Cancel left an empty "Media" on the dashboard.
+     */
+    async releaseDiscoveryCategory() {
+        const d = this.dash;
+        const made = d._pendingDiscoveryCategory;
+        d._pendingDiscoveryCategory = null;
+        if (!made) return;
+        try {
+            const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(made.pageId)}`, { cache: 'no-store' });
+            if (!res.ok) return;
+            const list = await res.json();
+            if (!Array.isArray(list) || list.some((b) => String(b?.category ?? '') === made.id)) return;
+        } catch {
+            return;
+        }
+        await d.structureCreate?.removeEmptyCategory?.(made.pageId, made.id);
+        if (Number(made.pageId) === Number(d.currentPageId) && !this.isActiveView()) {
+            d.renderDashboard?.({ animate: false });
+        }
     }
 
     /**
@@ -6217,6 +6244,7 @@ class DashboardInbox {
             tags: Array.isArray(item.tags) ? item.tags : [],
         };
         d._pendingDiscoveryLink = null;
+        d._pendingDiscoveryCategory = null;
         if (item.source === 'discovery') {
             // A found app: its container's name, its kind as the category on
             // the page last viewed, its set icon, and a status check.

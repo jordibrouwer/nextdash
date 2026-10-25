@@ -22,7 +22,7 @@
 (function (global) {
     'use strict';
 
-    const DEFAULT_TUNING = { strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0 };
+    const DEFAULT_TUNING = { strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0, calm: 0.5 };
 
     /** The sliders: [key, label key, fallback label, min, max, step, unit]. */
     const TUNING_SLIDERS = [
@@ -33,6 +33,7 @@
         ['brightness', 'config.backdropBrightness', 'Brightness', 0.3, 1.4, 0.05],
         ['saturate', 'config.backdropSaturate', 'Saturation', 0, 2, 0.05],
         ['tint', 'config.backdropTint', 'Theme tint', 0, 0.9, 0.05],
+        ['calm', 'config.backdropCalm', 'Quiet centre', 0, 1, 0.05],
     ];
 
     /** The CSS variable each slider drives on <html>; the seed has none. */
@@ -84,6 +85,44 @@
             const own = settings.themeSurfacePrefs?.[this.currentThemeId()]?.backdrop;
             if (forced !== 'follow' && forced !== 'on') return forced;
             return own || 'follow';
+        },
+
+        /**
+         * The drawing the Material style select shows. Install-wide in every scope: it is stored
+         * in settings.materialStyle (setMaterialStyle), and the per-theme answers do not hold it.
+         * A "follow the theme" here would have nothing to follow, and chose classic when picked.
+         */
+        materialStyleValue() {
+            return this.dash.settings?.materialStyle === 'signature' ? 'signature' : 'classic';
+        },
+
+        materialStyleOptions() {
+            return [['signature', 'Signature'], ['classic', 'Classic']];
+        },
+
+        /**
+         * The quiet centre the slider shows: install-wide when the scope is every
+         * theme, otherwise this theme's own, falling back to the install-wide one.
+         */
+        calmValue() {
+            const settings = this.dash.settings || {};
+            const own = settings.themeSurfacePrefs?.[this.currentThemeId()]?.calm;
+            if (this.surfaceScope() !== 'global' && typeof own === 'number') return own;
+            return tuningOf(this).calm;
+        },
+
+        /** Store the quiet centre where the scope says it belongs, and draw it. */
+        setCalm(value) {
+            const settings = this.dash.settings;
+            if (!settings) return;
+            if (this.surfaceScope() === 'global') {
+                settings.backdropTuning = { ...tuningOf(this), calm: value };
+            } else {
+                const prefs = settings.themeSurfacePrefs || (settings.themeSurfacePrefs = {});
+                const entry = prefs[this.currentThemeId()] || (prefs[this.currentThemeId()] = {});
+                entry.calm = value;
+            }
+            void this.applyResolvedSurfaces();
         },
 
         /** Store a backdrop choice where the scope says it belongs, and draw it. */
@@ -263,11 +302,12 @@
         backdropTuningRows(tuning) {
             const t = (k, f) => this.t(k, f);
             const e = (v) => esc(this, v);
+            const shown = (key) => (key === 'calm' ? this.calmValue() : tuning[key]);
             return TUNING_SLIDERS.map(([key, labelKey, fallback, min, max, step]) => `
-                <div class="config-field config-field--slider" data-tuning-row="${key}"${tuning[key] !== DEFAULT_TUNING[key] ? ' data-fine-changed' : ''}>
+                <div class="config-field config-field--slider" data-tuning-row="${key}"${shown(key) !== DEFAULT_TUNING[key] ? ' data-fine-changed' : ''}>
                     <span class="config-field-label">${e(t(labelKey, fallback))}</span>
-                    <input type="range" class="config-range" data-backdrop-tuning="${key}" min="${min}" max="${max}" step="${step}" value="${tuning[key]}">
-                    <span class="config-range-value" data-tuning-out="${key}">${e(formatTuning(key, tuning[key]))}</span>
+                    <input type="range" class="config-range" data-backdrop-tuning="${key}" min="${min}" max="${max}" step="${step}" value="${shown(key)}">
+                    <span class="config-range-value" data-tuning-out="${key}">${e(formatTuning(key, shown(key)))}</span>
                     ${key === 'seed' ? `<button type="button" class="config-btn config-btn--small" data-backdrop-roll aria-label="${e(t('config.backdropRoll', 'Roll a new variant'))}" title="${e(t('config.backdropRoll', 'Roll a new variant'))}">🎲</button>` : ''}
                     ${this.infoAff(`backdrop${key[0].toUpperCase()}${key.slice(1)}`)}
                 </div>`).join('');
@@ -309,6 +349,13 @@
                     <span class="config-backdrop-name">${esc(this, name)}${isOwn ? ` <em>${esc(this, this.t('config.backdropThemeMark', 'theme'))}</em>` : ''}</span>
                 </button>`;
             }).join('');
+            const restore = this._backdropRestore;
+            this._backdropRestore = null;
+            if (restore) {
+                const pane = grid.closest('[data-studio-pane]');
+                if (pane && restore.top !== null) pane.scrollTop = restore.top;
+                grid.querySelector(`[data-backdrop-recipe="${CSS.escape(restore.recipe)}"]`)?.focus({ preventScroll: true });
+            }
         },
 
         /**
@@ -364,6 +411,22 @@
                 <div class="config-panel">
                     <h3 class="config-panel-title">${e(t('config.appearanceSurfacesTitle', 'Surfaces'))}</h3>
                     <p class="config-panel-note">${e(t('config.appearanceSurfacesNote', 'How a theme is drawn, rather than which theme it is. Both apply to whichever one is on.'))}</p>
+                    <div class="config-field">
+                        <span class="config-field-label">${e(t('config.materialStyleLabel', 'Material style'))}</span>
+                        <select class="config-select" data-appearance-select="materialStyle">
+                            ${this.materialStyleOptions().map(([option, text]) => `<option value="${option}"${this.materialStyleValue() === option ? ' selected' : ''}>${e(t('config.materialStyle' + cap(option), text))}</option>`).join('')}
+                        </select>
+                        ${this.infoAff('materialStyle')}
+                        <p class="config-panel-note">${e(t('config.materialStyleNote', 'How a theme\'s material is drawn. Signature gives each material a surface of its own: glass, frost and aurora stop looking alike. Classic is the surface as it was.'))}</p>
+                    </div>
+                    <div class="config-field">
+                        <span class="config-field-label">${e(t('config.neutralAccentLabel', 'Accent of the neutrals'))}</span>
+                        <select class="config-select" data-appearance-select="neutralAccent">
+                            ${[['theme', 'The theme\'s own'], ['blue', 'Blue'], ['teal', 'Teal'], ['green', 'Green'], ['amber', 'Amber'], ['rose', 'Rose'], ['violet', 'Violet']].map(([option, text]) => `<option value="${option}"${(this.dash.settings?.neutralAccent || 'theme') === option ? ' selected' : ''}>${e(t('config.neutralAccent' + cap(option), text))}</option>`).join('')}
+                        </select>
+                        ${this.infoAff('neutralAccent')}
+                        <p class="config-panel-note">${e(t('config.neutralAccentNote', 'The one colour of the neutral themes (Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete, Black). Every colour reads on every base, light and dark. Other themes keep their own accent.'))}</p>
+                    </div>
                     ${select('themeDepth', 'config.themeDepthLabel', 'Depth',
                         [['flat', 'Flat'], ['soft', 'Soft'], ['rich', 'Rich'], ['vivid', 'Vivid'], ['glass', 'Glass']], 'config.themeDepth',
                         'config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Follow the theme lets each theme bring its own.')}
@@ -638,6 +701,9 @@
                     const btn = event.target.closest('[data-backdrop-recipe]');
                     if (!btn) return;
                     this._lastBackdropPick = btn.getAttribute('data-backdrop-recipe');
+                    // The tab is painted again and its grid fills in after a fetch: remember where
+                    // the reader was, so the chosen thumbnail keeps the focus and the scroll.
+                    this._backdropRestore = { recipe: this._lastBackdropPick, top: grid.closest('[data-studio-pane]')?.scrollTop ?? null };
                     this.setBackdropChoice(this._lastBackdropPick);
                 });
             });
@@ -654,6 +720,14 @@
                 input.addEventListener('input', () => {
                     const value = Number(input.value);
                     if (out) out.textContent = formatTuning(key, value);
+                    if (key === 'calm') {
+                        // Per theme or install-wide as the scope says; drawn by the
+                        // resolved surfaces, not by the tuning variables.
+                        this.setCalm(value);
+                        input.closest('.config-field')?.toggleAttribute('data-fine-changed', value !== DEFAULT_TUNING.calm);
+                        this.refreshFineSummary(input);
+                        return;
+                    }
                     const tuning = { ...tuningOf(this), [key]: value };
                     this.dash.settings.backdropTuning = tuning;
                     input.closest('.config-field')?.toggleAttribute('data-fine-changed', value !== DEFAULT_TUNING[key]);
@@ -690,6 +764,14 @@
                     const wasSeed = tuningOf(this).seed;
                     this.dash.settings.backdropTuning = { ...DEFAULT_TUNING };
                     this.applyBackdropTuning(DEFAULT_TUNING);
+                    // The quiet centre goes back too, for this theme as well.
+                    const resetPrefs = this.dash.settings.themeSurfacePrefs || {};
+                    const resetId = this.currentThemeId();
+                    if (resetPrefs[resetId] && 'calm' in resetPrefs[resetId]) {
+                        delete resetPrefs[resetId].calm;
+                        if (!Object.keys(resetPrefs[resetId]).length) delete resetPrefs[resetId];
+                    }
+                    void this.applyResolvedSurfaces();
                     await this.saveSettingsWithFeedback();
                     if (wasSeed !== 0) this.reloadThemeCSS();
                     // In the theme browser the tab is drawn again by its own

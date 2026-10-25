@@ -57,7 +57,7 @@
     // remaps bookmarks by originalId, and a row carrying another id's would
     // move that category's bookmarks into it.
     const writeCategories = (pageId, list) => send(`/api/categories?page=${encodeURIComponent(pageId)}`, 'POST',
-        list.map((c) => ({ ...c, originalId: c.id })));
+        list.map((c) => ({ ...DashboardData.storedCategory(c), originalId: c.id })));
     const nameKey = (v) => String(v ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 
     function kindOf(rc, id) {
@@ -187,7 +187,7 @@
             const dest = await readCategories(to);
             let landedAs = id;
             const clash = dest.find((c) => String(c.id) === id);
-            if (clash && nameKey(clash.name) !== nameKey(category.name)) landedAs = `${id}-${Date.now().toString(36)}`;
+            if (clash && nameKey(clash.name) !== nameKey(DashboardData.storedCategory(category).name)) landedAs = `${id}-${Date.now().toString(36)}`;
             const created = !dest.some((c) => String(c.id) === landedAs);
             if (created) {
                 const { originalId: _drop, ...row } = category;

@@ -68,6 +68,9 @@ func sanitizeImportedBookmarkFile(content []byte, allowLocal bool) ([]byte, int,
 type stagedImportFile struct {
 	filename string
 	content  []byte
+	// open, when set, stands in for content: a capture read out of the archive
+	// only when it is written, so a restore does not hold every one at once.
+	open func() (io.ReadCloser, error)
 }
 
 func normalizeImportFilename(filename string) string {
@@ -108,6 +111,7 @@ func resolveImportAllowLocalBookmarks(staged []stagedImportFile, fallback bool) 
 type preparedImportFile struct {
 	relPath string // path relative to data/ (e.g. settings.json, icons/foo.png)
 	content []byte
+	open    func() (io.ReadCloser, error) // as on stagedImportFile
 }
 
 /*
@@ -318,6 +322,7 @@ func prepareImportFromStaged(staged []stagedImportFile, allowLocal bool) ([]prep
 		prepared = append(prepared, preparedImportFile{
 			relPath: importDataRelPath(filename),
 			content: content,
+			open:    item.open,
 		})
 	}
 
@@ -518,9 +523,41 @@ func writePreparedImportStaging(stagingDataDir string, prepared []preparedImport
 		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 			return err
 		}
+		if file.open != nil {
+			if err := copyImportEntry(dest, file); err != nil {
+				return err
+			}
+			continue
+		}
 		if err := os.WriteFile(dest, file.content, importFileMode(file.relPath)); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// copyImportEntry writes a file that is read out of the archive only now,
+// held to importEntryLimit the way an entry read in full is: one byte past it
+// is read so the overshoot shows, rather than a cut file being restored.
+func copyImportEntry(dest string, file preparedImportFile) error {
+	rc, err := file.open()
+	if err != nil {
+		return fmt.Errorf("could not read %s from backup: %w", file.relPath, err)
+	}
+	defer rc.Close()
+	out, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, importFileMode(file.relPath))
+	if err != nil {
+		return err
+	}
+	n, err := io.Copy(out, io.LimitReader(rc, importEntryLimit+1))
+	if closeErr := out.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		return fmt.Errorf("could not read %s from backup: %w", file.relPath, err)
+	}
+	if n > importEntryLimit {
+		return fmt.Errorf("%s is too large to restore from this backup", file.relPath)
 	}
 	return nil
 }
@@ -826,11 +863,13 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	}
 	// A backup made without its secrets has them empty; restoring it keeps the
 	// ones in use, as it keeps the secret files it does not carry.
+	h.settingsMu.Lock()
 	if after := h.store.GetSettings(); keepSettingsSecrets(&after, before) {
 		if err := h.store.SaveSettings(after); err != nil {
 			logWarn(logComponentImport, "the alert and archive secrets could not be kept (%v); set them again in Config", err)
 		}
 	}
+	h.settingsMu.Unlock()
 
 	return skippedBookmarks, nil
 }

@@ -385,8 +385,12 @@
             const outages = ((a.incidents && a.incidents.past) || []).filter((i) => i.kind === 'down' && i.end >= a.since);
             const ongoing = ((a.incidents && a.incidents.ongoing) || []).filter((i) => i.kind === 'down');
             if (outages.length || ongoing.length) {
-                const longest = Math.max(0, ...outages.map((i) => i.end - i.start));
-                const total = outages.reduce((sum, i) => sum + (i.end - i.start), 0);
+                // Only the part inside the range counts, and an outage still going
+                // on runs until now: left out, a host down for hours read "1 min".
+                const now = a.at || Date.now();
+                const spans = [...outages, ...ongoing].map((i) => Math.max(0, Math.min(i.end || now, now) - Math.max(i.start, a.since || 0)));
+                const longest = Math.max(0, ...spans);
+                const total = spans.reduce((sum, ms) => sum + ms, 0);
                 const note = this.note(this.t('dashboard.glancesInsOutages', 'In this range the host was out {n} times, {total} in all; the longest lasted {longest}.',
                     { n: outages.length + ongoing.length, total: this.duration(total), longest: this.duration(longest) }));
                 note.setAttribute('data-glances-outages', '');

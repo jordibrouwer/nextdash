@@ -68,6 +68,7 @@ class DashboardInlineEdit {
         if (clearInboxPromote) {
             d._pendingInboxPromoteId = null;
             d._pendingDiscoveryLink = null;
+            void d.inbox?.releaseDiscoveryCategory?.();
             // The resume goes with it. Closing the form without saving is
             // someone stopping, and a flag left set would reopen triage on the
             // next unrelated bookmark they happen to create.
@@ -780,6 +781,12 @@ class DashboardInlineEdit {
         // link's own title -- is the same: that name was chosen, and the page's
         // title is offered beside it.
         if (isCreate && nameInput.value.trim()) nameInput.dataset.touchedByReader = '1';
+        // The caption over the preview card, set in the form's own column so the
+        // two-column layout can put it above the card. Not a field label.
+        const cardLabel = document.createElement('div');
+        cardLabel.className = 'bookmark-form-card-label';
+        cardLabel.textContent = cfg('bookmarkPreviewLabel', 'Preview on the dashboard');
+        colWhat.appendChild(cardLabel);
         const cardHost = document.createElement('div');
         cardHost.className = 'bookmark-form-card';
         colWhat.appendChild(cardHost);
@@ -933,6 +940,9 @@ class DashboardInlineEdit {
                 t: iconSetT,
                 notify: (msg, kind) => d.showNotification?.(msg, kind),
                 onPick: takeSetIcon,
+                // Not inside the dialog: its backdrop-filter makes it the containing block of
+                // fixed boxes and it clips them, so a picker from the right column was cut off.
+                container: document.body,
             });
         };
         // The app the sets match for the address, named for the picker's
@@ -984,6 +994,8 @@ class DashboardInlineEdit {
         // the reader sees and acts on.
         iconWrap.hidden = true;
         cardHost.appendChild(iconWrap);
+        card.setName(nameInput.value);
+        nameInput.addEventListener('input', () => card.setName(nameInput.value));
         syncIconState();
         if (isCreate && !String(bookmark.url || '').trim()) card.setIdle();
         if (String(bookmark.url || '').trim()) void refreshIconSuggestions();
@@ -1224,6 +1236,7 @@ class DashboardInlineEdit {
         const shortcutInput = document.createElement('input');
         shortcutInput.type = 'text';
         shortcutInput.className = 'bookmark-inline-input';
+        shortcutInput.dataset.field = 'shortcut';
         shortcutInput.maxLength = 5;
         shortcutInput.value = (bookmark.shortcut || '').toUpperCase();
         // The warning about a letter appeared under the field as you typed and
@@ -2142,6 +2155,18 @@ class DashboardInlineEdit {
             if (document.querySelector('#app-modal.show, .bookmark-form-place-pop')) return;
             // The tag list takes Tab to complete what was typed.
             if (document.activeElement === tagsInput && document.querySelector('.tag-ac-dropdown .tag-ac-item-active')) return;
+            // The icon picker sits in the body, outside the form: Tab wraps inside it.
+            const pickerPop = document.activeElement?.closest?.('[data-icon-set-popover]');
+            if (pickerPop) {
+                const inner = [...pickerPop.querySelectorAll('input, button, [tabindex]')]
+                    .filter((el) => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0);
+                if (inner.length) {
+                    const i = inner.indexOf(document.activeElement);
+                    e.preventDefault();
+                    inner[(i + (e.shiftKey ? -1 : 1) + inner.length) % inner.length].focus();
+                }
+                return;
+            }
             const seenRadio = new Set();
             // The form, not the whole sheet: the header's × is for the mouse;
             // Escape is its key.
@@ -2487,6 +2512,8 @@ class DashboardInlineEdit {
             if (pendingInboxPromoteId && d.inbox) {
                 d._pendingInboxPromoteId = null;
                 await d.inbox.linkPromotedContainer?.(pageId, bookmark.url);
+                // Saved somewhere else, the category made for it stands empty.
+                await d.inbox.releaseDiscoveryCategory?.();
                 await d.inbox.completePromote(pendingInboxPromoteId);
                 if (bookmark.checkStatus === true || bookmark.monitor === true) {
                     d.inbox.triggerHealthCheckForUrl?.(bookmark.url);

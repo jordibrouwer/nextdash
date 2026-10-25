@@ -93,6 +93,8 @@
         if (document.querySelector('[data-holds-corner]')) return false;
         if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
         if (document.querySelector('.whats-new-modal')) return false;
+        // The dialog that explains the move to Aurora Glass comes before every card.
+        if (global.LookMigrationNotice?.blocking?.()) return false;
         // The block-move intro (animation, then its card) has the screen until it
         // is answered, and comes first when it is still to play in this load: it
         // wakes the queue once it is done or gives up.

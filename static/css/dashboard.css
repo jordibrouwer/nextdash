@@ -1666,16 +1666,6 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
         var(--wide-shortcut-col);
 }
 
-/* A status row is inset 4px further than the rest (dashboard-bookmark-row.css),
-   and in a plain category the shared lead track grows to take that in, so the
-   names still line up. Rows that lay out their own tracks have nothing shared
-   to grow: give the rows without the inset the same 4px after the icon, and
-   the names start at one place down the column again. */
-.dashboard-grid .category--wide .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]):has(> .bookmark-link:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing))
-    > .bookmark-link:not(:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing)) > .bookmark-lead {
-    padding-inline-end: 4px;
-}
-
 /* The "+ N more" toggle and the empty-category placeholders are not bookmarks:
    they belong under the whole list, not in the first column of it. */
 .dashboard-grid .category--wide .bookmarks-list > .category-show-more,
@@ -3269,7 +3259,8 @@ body.no-animations .category-chevron {
     min-width: 0;
     min-height: 2rem;
     width: 100%;
-    --bookmark-row-start-pad: 6px;
+    /* Every row starts its icon 4px in, with a status or without, so the icons of a column stand on one line. */
+    --bookmark-row-start-pad: 10px;
     --bookmark-row-end-pad: 3px;
     --bookmark-status-col: 3.35em;
 }
@@ -5058,7 +5049,7 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
 }
 
 /* The quick-action toolbar (add / search / commands / finders / recent / help /
-   fold, plus the search-flow-hint that advertises their keys) belongs to the
+   fold) belongs to the
    bookmarks dashboard. Gone in every full-container view, keyed off the same
    layout class each one already stamps on #dashboard-layout -- no new class or
    attribute needed. :has() reading #dashboard-layout from up at body is the
@@ -5386,6 +5377,15 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
    modal.css loses to it on specificity. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     width: min(36rem, calc(100vw - 2.5rem));
+}
+
+/* The cheat sheet is four columns of cards with a search above and a dock below,
+   so it is wide and tall at a fixed size: only the columns scroll. The settings
+   search borrows its class and keeps the narrow shell above. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal:not(.config-settings-jump-modal)) .modal {
+    width: min(1040px, 94vw);
+    height: min(46rem, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
+    max-height: calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem);
 }
 
 /* The release notes themselves, as against the notices that borrow the shell:

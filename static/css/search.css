@@ -546,15 +546,14 @@ body.no-view-animations .shortcut-search.show .search-container.from-origin {
 }
 
 /*
- * With no buttons left in it, this is an anchor, not a row.
+ * With no buttons left in it, the container is empty.
  *
- * The actions moved into the header and the container kept only the flow hint,
- * which is absolutely positioned against it. The plate below still drew: a
+ * When the actions move into the header, nothing stays behind. The plate below still drew: a
  * 24px blob of padding and blur at the bottom of the screen, a bubble over the
  * grid with nothing in it. The plate is for buttons, so it is drawn only when
  * there are any, and what is left takes no clicks.
  */
-.button-container:not(:has(> *:not(.search-flow-hint))) {
+.button-container:empty {
     padding: 0;
     pointer-events: none;
 }
@@ -582,100 +581,6 @@ body.no-view-animations .shortcut-search.show .search-container.from-origin {
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-}
-
-.search-flow-hint {
-    /* Absolutely positioned above the button row — not in flex flow, so
-       hiding it causes zero layout shift to the buttons below. */
-    position: absolute;
-    bottom: calc(100% + 0.85rem);
-    left: 0;
-    right: 0;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    font-size: var(--font-size-controls);
-    color: var(--text-tertiary);
-    letter-spacing: 0.05em;
-    pointer-events: none;
-
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity 0.45s ease, transform 0.45s ease;
-}
-
-.search-flow-hint[hidden] {
-    display: none !important;
-}
-
-.search-flow-hint.dismissing {
-    opacity: 0;
-    transform: translateY(-8px);
-}
-
-.search-flow-chip,
-kbd.search-flow-chip {
-    display: inline-block;
-    margin: 0 var(--space-hairline, 0.05rem);
-    color: var(--accent-primary);
-    font-family: var(--font-family-main);
-    font-weight: var(--font-weight-semibold);
-    text-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 55%, transparent);
-    border: none;
-    background: transparent;
-    padding: 0;
-}
-
-.search-flow-hint .sfh-seg-label {
-    margin-left: 0.15em;
-}
-
-/* Each text segment wipes in left-to-right via clip-path — no extra chars, no fade */
-.sfh-seg {
-    display: inline-block;
-    animation: sfhWipe 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-/* Chip chars get an extra scale-bounce on top of the wipe */
-.sfh-seg.search-flow-chip,
-.sfh-seg kbd.search-flow-chip {
-    animation: sfhWipe 0.3s cubic-bezier(0.22, 1, 0.36, 1) both,
-               sfhPop  0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-/* Staggered delays: chips pause slightly longer after each separator */
-.search-flow-hint-text > .sfh-seg:nth-child(1)  { animation-delay: 0.15s; }
-.search-flow-hint-text > .sfh-seg:nth-child(2)  { animation-delay: 0.32s; }
-.search-flow-hint-text > .sfh-seg:nth-child(3)  { animation-delay: 0.60s; }
-.search-flow-hint-text > .sfh-seg:nth-child(4)  { animation-delay: 0.82s; }
-.search-flow-hint-text > .sfh-seg:nth-child(5)  { animation-delay: 0.98s; }
-.search-flow-hint-text > .sfh-seg:nth-child(6)  { animation-delay: 1.26s; }
-.search-flow-hint-text > .sfh-seg:nth-child(7)  { animation-delay: 1.46s; }
-.search-flow-hint-text > .sfh-seg:nth-child(8)  { animation-delay: 1.60s; }
-.search-flow-hint-text > .sfh-seg:nth-child(9)  { animation-delay: 1.88s; }
-.search-flow-hint-text > .sfh-seg:nth-child(10) { animation-delay: 2.08s; }
-.search-flow-hint-text > .sfh-seg:nth-child(11) { animation-delay: 2.22s; }
-
-@keyframes sfhWipe {
-    from { clip-path: inset(0 100% 0 0); }
-    to   { clip-path: inset(0 0%   0 0); }
-}
-
-@keyframes sfhPop {
-    from { transform: scale(0.5); text-shadow: 0 0 24px color-mix(in srgb, var(--accent-primary) 100%, transparent); }
-    65%  { transform: scale(1.3); }
-    to   { transform: scale(1);   text-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 55%, transparent); }
-}
-
-body.no-animations .search-flow-hint {
-    transition: none !important;
-}
-
-body.no-animations .sfh-seg {
-    animation: none !important;
-    clip-path: none !important;
 }
 
 /* Custom tooltips on search buttons — appear above on hover */
@@ -1137,9 +1042,6 @@ body.no-animations .search-history-remove {
     }
     /* Decorative blink cursor */
     .search-cursor { animation: none !important; opacity: 1 !important; }
-    /* Staggered hint segments */
-    .sfh-seg { animation: none !important; opacity: 1 !important; clip-path: none !important; }
-    .search-flow-hint { transition: opacity 0.15s ease !important; }
 }
 
 /* The key that starts the mode, in front of the mode it starts. The tabs under
@@ -1243,7 +1145,7 @@ body.no-animations .search-history-remove {
  * Not on flat. Whoever asked for flat asked for no plate either, and the
  * rules above that made this transparent stay the whole story there.
  */
-body:not([data-depth="flat"]) .button-container:has(> *:not(.search-flow-hint)) {
+body:not([data-depth="flat"]) .button-container:has(> *) {
     /* Sized to the buttons it holds, because a plate the width of the old
        transparent row would be a slab across half the screen. The ceiling is
        the one the row already had, so a narrow window still wraps inside it

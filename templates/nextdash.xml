@@ -52,6 +52,12 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.21.3 (2026-10-23)
+- Fixes: the Containers view keeps its place in Safari when it refreshes
+
+### v1.21.2 (2026-10-23)
+- Fixes: a refresh no longer scrolls Containers, Glances or the Inbox back to the top, and the Containers table fits a narrow list
+
 ### v1.21.1 (2026-10-23)
 - Glances: Insights has nine more blocks, among them a typical day, the load against the cores and where the memory goes, with an info button on every title; the Containers view says why no container could be paired
 - Security: with a write token set, nextDash refuses host names it does not know. Open it by a public name? Add it to Allowed hosts below
@@ -68,20 +74,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Appearance: the dashboard is set in your font preset, Source Code Pro by default, and Config and the other views read in Inter
 - Config: About has Project, Install and News &amp; features tabs, with the version, counts, uptime and a Copy diagnostics button for bug reports
 - Fixes: the text font is Source Code Pro again after v1.20.0 moved it to Inter, and the +N on a tag offer takes the page font
-
-### v1.20.1 (2026-10-20)
-- Widgets: four Beszel widgets read a Beszel hub: every system, one system in full, only the systems that need a look, and every disk
-- Config: one pane instead of a pane per panel, hints under their settings, Appearance tabs on one line, and Unraid opens on its connection
-- Fixes: a service that could not be reached no longer says its sign-in was refused, the Containers table and the Bookmarks view fit a laptop window, and Confetti keeps the // and the widget icon
-
-### v1.20.0 (2026-10-20)
-- Appearance: Confetti is the default look for a new install, with 24 new colour-burst theme families and three new backdrops
-- Appearance: categories and widgets sit on glass, a card or nothing, per theme or for all; widgets get their own background and opacity
-- Dashboard: a category can show tiles, titles can carry an icon, and Space between columns is a setting of its own
-- Statistics: a Server tab, notifications on Health, and widgets by kind and per page
-- First start: a Quick start guide replaces the first-start card and checklist, and a new Inbox holds ten links to try
-- Config: Backups &amp; data reads top to bottom, and the keyboard shortcuts sheet has topic chips and a filter
-- Fixes: app discovery keeps a Remove on the ignored list, Undo on its notice can be retried, and its question opens once
 
   </Changes>
 

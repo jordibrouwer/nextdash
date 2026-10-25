@@ -16,7 +16,7 @@
      * missing: a device with device-specific settings on and no theme in them,
      * or a shell served without the data-theme attribute filled in.
      */
-    const DEFAULT_THEME = 'look-berry-dark';
+    const DEFAULT_THEME = 'aurora-glass-dark';
 
     const LEGACY_THEME_MAP = {
         aurora: 'midnight-neon-dark',
@@ -287,6 +287,44 @@
      * moment it changes and for the device-specific path, where the server's
      * copy is not the one that counts.
      */
+    /**
+     * The theme's material and which drawing of it the reader has: <html> and
+     * <body> both, as for the depth above, so a signature rule matches on the
+     * first paint and again after a theme switch.
+     */
+    /**
+     * The light on the glass: four numbers per column or widget, taken from its own
+     * id, so the same one always shines the same way and no two shine alike.
+     * theme-signature.css draws them (--sh-a, --sh-w, --sh-g, --sh-ang).
+     */
+    window.NDShine = {
+        seed(el, id) {
+            if (!el || !el.style) return;
+            let x = 2166136261;
+            const text = String(id || '');
+            for (let i = 0; i < text.length; i++) {
+                x ^= text.charCodeAt(i);
+                x = Math.imul(x, 16777619);
+            }
+            const n = x >>> 0;
+            const pick = (shift, lo, hi) => lo + (((n >>> shift) & 255) / 255) * (hi - lo);
+            el.style.setProperty('--sh-a', pick(0, 12, 88).toFixed(1));
+            el.style.setProperty('--sh-w', pick(8, 18, 46).toFixed(1));
+            el.style.setProperty('--sh-g', pick(16, 0.55, 1).toFixed(2));
+            el.style.setProperty('--sh-ang', pick(24, 100, 165).toFixed(0));
+        },
+    };
+
+    function applyMaterial(material, style) {
+        const word = String(material || '');
+        const drawing = style === 'signature' ? 'signature' : 'classic';
+        [document.documentElement, document.body].forEach((el) => {
+            if (!el) return;
+            el.setAttribute('data-material', word);
+            el.setAttribute('data-material-style', drawing);
+        });
+    }
+
     function applyThemeDepth(depth) {
         const value = ['flat', 'soft', 'rich', 'vivid', 'glass'].includes(depth) ? depth : 'flat';
         document.documentElement.setAttribute('data-depth', value);
@@ -535,6 +573,11 @@
         // theme's own.
         const glassSource = s.themeSurfacesForceAll ? (s.cardGlass || {}) : prefs;
         const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+        // The quiet centre is per theme too, unless every theme is forced to one
+        // answer; otherwise the install-wide slider is the answer.
+        const tuningCalm = num((s.backdropTuning || {}).calm);
+        const rawCalm = (!s.themeSurfacesForceAll && num(prefs.calm) !== null) ? num(prefs.calm) : (tuningCalm !== null ? tuningCalm : 0.5);
+        const calm = Math.round(Math.min(1, Math.max(0, rawCalm)) * 100) / 100;
         return {
             glass: { alpha: num(glassSource.alpha), blur: num(glassSource.blur), border: glassSource.border === 'on' },
             depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
@@ -544,6 +587,15 @@
                 const depth = pick(s.themeDepth, prefs.depth, ideal.depth || 'soft');
                 // A reader who asked for flat did not ask to see through things.
                 return pick(s.categorySurface, prefs.catSurface, depth === 'flat' ? 'open' : (ideal.catSurface || 'glass'));
+            })(),
+            calm: calm,
+            material: String(ideal.character || ''),
+            // The reader's choice for this theme, then the theme's own, then the install-wide one
+            // (Go: resolveMaterialStyle).
+            materialStyle: (function () {
+                const word = (v) => (v === 'signature' || v === 'classic' ? v : '');
+                if (s.themeSurfacesForceAll) return s.materialStyle === 'signature' ? 'signature' : 'classic';
+                return word(prefs.materialStyle) || word(ideal.materialStyle) || (s.materialStyle === 'signature' ? 'signature' : 'classic');
             })(),
             backdrop: backdrop === 'off' ? 'off' : 'on',
             backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
@@ -669,6 +721,8 @@
             applyColumnSpacing(settings && settings.columnSpacing, theme);
             applyCategorySpacing(settings && settings.categorySpacing, theme);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
+            document.documentElement.style.setProperty('--bd-calm', String(resolved.calm));
+            applyMaterial(resolved.material, resolved.materialStyle);
             applyCardGlass(resolved.glass);
             return resolved;
         });

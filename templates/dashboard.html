@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}flat{{end}}" data-glow="{{if .GlowStrength}}{{.GlowStrength}}{{else}}off{{end}}" data-effects="{{if .ThemeEffects}}{{.ThemeEffects}}{{else}}held{{end}}" data-cat-surface="{{if .CategorySurface}}{{.CategorySurface}}{{else}}glass{{end}}" data-widget-bg="{{if .WidgetSurface}}{{.WidgetSurface}}{{else}}none{{end}}" data-cat-size="{{if .CategoryHeaderSize}}{{.CategoryHeaderSize}}{{else}}s{{end}}" data-header-buttons="{{if .HeaderButtonStyle}}{{.HeaderButtonStyle}}{{else}}plain{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}" style="--bd-strength: {{.BackdropTuning.Strength}}; --bd-scale: {{.BackdropTuning.Scale}}; --bd-blur: {{.BackdropTuning.Blur}}px; --bd-brightness: {{.BackdropTuning.Brightness}}; --bd-saturate: {{.BackdropTuning.Saturate}}; --bd-tint: {{.BackdropTuning.Tint}};{{if .SurfaceAlpha}} --theme-surface-alpha: {{.SurfaceAlpha}};{{end}}{{if .SurfaceBlur}} --theme-surface-blur: {{.SurfaceBlur}}px;{{end}} --widget-bg: {{.WidgetOpacity}};">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}flat{{end}}" data-glow="{{if .GlowStrength}}{{.GlowStrength}}{{else}}off{{end}}" data-effects="{{if .ThemeEffects}}{{.ThemeEffects}}{{else}}held{{end}}" data-material="{{.Material}}" data-material-style="{{if .MaterialStyle}}{{.MaterialStyle}}{{else}}classic{{end}}" data-cat-surface="{{if .CategorySurface}}{{.CategorySurface}}{{else}}glass{{end}}" data-widget-bg="{{if .WidgetSurface}}{{.WidgetSurface}}{{else}}none{{end}}" data-cat-size="{{if .CategoryHeaderSize}}{{.CategoryHeaderSize}}{{else}}s{{end}}" data-header-buttons="{{if .HeaderButtonStyle}}{{.HeaderButtonStyle}}{{else}}plain{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}" style="--bd-strength: {{.BackdropTuning.Strength}}; --bd-scale: {{.BackdropTuning.Scale}}; --bd-blur: {{.BackdropTuning.Blur}}px; --bd-brightness: {{.BackdropTuning.Brightness}}; --bd-saturate: {{.BackdropTuning.Saturate}}; --bd-tint: {{.BackdropTuning.Tint}}; --bd-calm: {{.BackdropCalm}};{{if .SurfaceAlpha}} --theme-surface-alpha: {{.SurfaceAlpha}};{{end}}{{if .SurfaceBlur}} --theme-surface-blur: {{.SurfaceBlur}}px;{{end}} --widget-bg: {{.WidgetOpacity}};">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -91,6 +91,7 @@
     <link rel="stylesheet" href="{{asset "css/theme-ink.css"}}">
     <link rel="stylesheet" href="{{asset "css/theme-backdrop.css"}}">
     <link rel="stylesheet" href="{{asset "css/theme-character.css"}}">
+    <link rel="stylesheet" href="{{asset "css/theme-signature.css"}}">
     <link rel="stylesheet" href="{{asset "css/category-header.css"}}">
     <link rel="stylesheet" href="{{asset "css/category-surface.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-tiles.css"}}">
@@ -137,6 +138,7 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-widget-beszel.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-widget-glances.css"}}">
     <!-- Last: overrides the !important animation rules the sheets above declare. -->
+    <link rel="stylesheet" href="{{asset "css/theme-overlays.css"}}">
     <link rel="stylesheet" href="{{asset "css/reduced-motion.css"}}">
     <link rel="stylesheet" href="{{asset "css/fonts.css"}}">
     <!-- /bundle:css -->
@@ -183,7 +185,7 @@
         </style>
     </noscript>
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}flat{{end}}" data-glow="{{if .GlowStrength}}{{.GlowStrength}}{{else}}off{{end}}" data-effects="{{if .ThemeEffects}}{{.ThemeEffects}}{{else}}held{{end}}" data-cat-surface="{{if .CategorySurface}}{{.CategorySurface}}{{else}}glass{{end}}" data-widget-bg="{{if .WidgetSurface}}{{.WidgetSurface}}{{else}}none{{end}}" data-header-buttons="{{if .HeaderButtonStyle}}{{.HeaderButtonStyle}}{{else}}plain{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}" data-theme-backdrop="{{if .ThemeBackdrop}}{{.ThemeBackdrop}}{{else}}on{{end}}" data-backdrop-recipe="{{.BackdropRecipe}}" data-card-border="{{.CardBorder}}" data-card-glass="{{if or .SurfaceAlpha .SurfaceBlur}}own{{end}}" data-cat-head="{{if .CategoryHeaderStyle}}{{.CategoryHeaderStyle}}{{else}}theme{{end}}" data-cat-size="{{if .CategoryHeaderSize}}{{.CategoryHeaderSize}}{{else}}m{{end}}" data-cat-icon="{{if .ShowCategoryIcon}}on{{else}}off{{end}}" data-cat-count="{{if .ShowCategoryCount}}on{{else}}off{{end}}" data-cat-accent="{{if .CategoryHeaderAccentLine}}on{{else}}off{{end}}" data-row-highlight="{{if .RowHighlight}}{{.RowHighlight}}{{else}}subtle{{end}}" style="--ink-gap-3: {{if .InkGap}}{{.InkGap}}{{else}}0.44{{end}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}flat{{end}}" data-glow="{{if .GlowStrength}}{{.GlowStrength}}{{else}}off{{end}}" data-effects="{{if .ThemeEffects}}{{.ThemeEffects}}{{else}}held{{end}}" data-material="{{.Material}}" data-material-style="{{if .MaterialStyle}}{{.MaterialStyle}}{{else}}classic{{end}}" data-cat-surface="{{if .CategorySurface}}{{.CategorySurface}}{{else}}glass{{end}}" data-widget-bg="{{if .WidgetSurface}}{{.WidgetSurface}}{{else}}none{{end}}" data-header-buttons="{{if .HeaderButtonStyle}}{{.HeaderButtonStyle}}{{else}}plain{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}" data-theme-backdrop="{{if .ThemeBackdrop}}{{.ThemeBackdrop}}{{else}}on{{end}}" data-backdrop-recipe="{{.BackdropRecipe}}" data-card-border="{{.CardBorder}}" data-card-glass="{{if or .SurfaceAlpha .SurfaceBlur}}own{{end}}" data-cat-head="{{if .CategoryHeaderStyle}}{{.CategoryHeaderStyle}}{{else}}theme{{end}}" data-cat-size="{{if .CategoryHeaderSize}}{{.CategoryHeaderSize}}{{else}}m{{end}}" data-cat-icon="{{if .ShowCategoryIcon}}on{{else}}off{{end}}" data-cat-count="{{if .ShowCategoryCount}}on{{else}}off{{end}}" data-cat-accent="{{if .CategoryHeaderAccentLine}}on{{else}}off{{end}}" data-row-highlight="{{if .RowHighlight}}{{.RowHighlight}}{{else}}subtle{{end}}" style="--ink-gap-3: {{if .InkGap}}{{.InkGap}}{{else}}0.44{{end}}">
     <div class="theme-backdrop-layer" aria-hidden="true"></div>
     <a class="skip-to-content" href="#dashboard-layout" data-i18n="dashboard.skipToContent">Skip to bookmarks</a>
     <noscript>
@@ -474,11 +476,7 @@
     </div>
 
     <!-- Search and Finders Buttons -->
-    <div class="button-container">
-        <div id="search-flow-hint" class="search-flow-hint" role="status" aria-live="polite" hidden>
-            <span class="search-flow-hint-text"><span class="sfh-seg"><kbd class="search-flow-chip">&gt;</kbd><span class="sfh-seg-label" data-i18n="dashboard.searchLabel">search</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">:</kbd><span class="sfh-seg-label" data-i18n="dashboard.commandsLabel">commands</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">?</kbd><span class="sfh-seg-label" data-i18n="dashboard.findersLabel">finders</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">+</kbd><span class="sfh-seg-label" data-i18n="dashboard.addBookmarkShort">bookmark</span></span><span class="sfh-seg sfh-seg-swipe hidden">&nbsp;·&nbsp;</span><span class="sfh-seg sfh-seg-swipe hidden" data-i18n="dashboard.swipePagesHint">swipe pages</span></span>
-        </div>
-    </div>
+    <div class="button-container"></div>
 
     <!-- Tag word cloud (desktop): / FAB opens anchored modal; tag pick filters dashboard tiles -->
     <div id="dashboard-tag-cloud-wrap" class="dashboard-tag-cloud-wrap" aria-live="polite">
@@ -551,6 +549,7 @@
     <!-- The theme browser: reads AppModal, so it loads after it. -->
     <script src="{{asset "js/theme-browser.js"}}" defer></script>
     <script src="{{asset "js/focus-trap-utils.js"}}" defer></script>
+    <script src="{{asset "js/overlay-layers.js"}}" defer></script>
     <script src="{{asset "js/whats-new-stub.js"}}" defer></script>
     <script src="{{asset "js/layout-utils.js"}}" defer></script>
     <script src="{{asset "js/shared/config-language.js"}}" defer></script>
@@ -583,12 +582,10 @@
     <!-- Shared bottom-left notice card; must precede the cards that define one. -->
     <script src="{{asset "js/notice-card.js"}}" defer></script>
     <script src="{{asset "js/analytics-notice.js"}}" defer></script>
+    <script src="{{asset "js/look-migration-notice.js"}}" defer></script>
     <script src="{{asset "js/install-count-notice.js"}}" defer></script>
     <script src="{{asset "js/kept-pile-notice.js"}}" defer></script>
-    <script src="{{asset "js/clock-weather-notice.js"}}" defer></script>
     <script src="{{asset "js/changes-tour.js"}}" defer></script>
-    <script src="{{asset "js/theme-browser-notice.js"}}" defer></script>
-    <script src="{{asset "js/berry-theme-notice.js"}}" defer></script>
     <script src="{{asset "js/theme-studio-notice.js"}}" defer></script>
     <script src="{{asset "js/health-review-notice.js"}}" defer></script>
     <script src="{{asset "js/digest-notice.js"}}" defer></script>

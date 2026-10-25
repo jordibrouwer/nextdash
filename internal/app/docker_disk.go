@@ -495,22 +495,23 @@ func (h *Handlers) pruneStoppedContainers(w http.ResponseWriter, r *http.Request
 	}
 	defer h.dockerPruneRunning.Store(false)
 	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerActionTimeout + time.Minute))
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), dockerActionTimeout)
-	defer cancel()
-	// The names the confirmation showed. Without them the list is whatever is
-	// stopped now, and a container stopped after the tab measured went too,
-	// unasked.
+	// The names the confirmation showed, and required. Without them the list
+	// was whatever is stopped now: a container stopped after the tab measured
+	// went too, unasked, and a request with no body removed every one.
 	var body struct {
 		Names []string `json:"names"`
 	}
 	_ = json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&body)
-	var asked map[string]bool
-	if body.Names != nil {
-		asked = make(map[string]bool, len(body.Names))
-		for _, n := range body.Names {
-			asked[n] = true
-		}
+	if body.Names == nil {
+		dockerRefuse(w, http.StatusBadRequest, "names-required")
+		return
 	}
+	asked := make(map[string]bool, len(body.Names))
+	for _, n := range body.Names {
+		asked[n] = true
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), dockerActionTimeout)
+	defer cancel()
 	list, err := api.listContainers(ctx)
 	if err != nil {
 		writeDockerError(w, err)
@@ -520,7 +521,7 @@ func (h *Handlers) pruneStoppedContainers(w http.ResponseWriter, r *http.Request
 	failed := []string{}
 	var reclaimed int64
 	for _, c := range dockerPrunableContainers(list) {
-		if asked != nil && !asked[c.name()] {
+		if !asked[c.name()] {
 			continue
 		}
 		// Held like one container's remove, so an action already running on

@@ -445,3 +445,24 @@ html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .co
     font-size: max(12px, 0.75rem);
 }
 
+
+/*
+ * A widget's text starts a little way inside its edge.
+ *
+ * The side padding of a block is half a rem, which is fine for a list of bookmarks and too little
+ * for a note, a chart or a status line, whose text then sat against the border. A material that
+ * draws its own edge sets a wider padding of its own and wins over this.
+ */
+html[data-theme] body .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .dashboard-widget {
+    --category-inline-pad: 0.85rem;
+    padding-inline: var(--category-inline-pad);
+}
+
+/*
+ * The shine of lacquer, glass, frost and brushed metal is a pseudo-element drawn over the column.
+ * It only stays inside the column when the column is the box it is placed in; a column without a
+ * blur is not one by itself, so the sheen ran along the top of the whole page.
+ */
+html[data-theme] body[data-material-style="signature"]:is([data-material="lacquer"], [data-material="glass"], [data-material="frost"], [data-material="brushed"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    position: relative;
+}

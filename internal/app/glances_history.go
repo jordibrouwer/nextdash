@@ -199,7 +199,26 @@ func (hs *glancesHost) roomFor(name string, at int64) bool {
 		}
 	}
 	if !glancesIsConsumer(name) {
-		return base < glancesMaxSeries
+		if base < glancesMaxSeries {
+			return true
+		}
+		// A disk renamed at a reboot or a sensor that left would hold its place
+		// for good, and a new disk would never get a graph: the machine's own
+		// series that has been silent a day makes room as well.
+		oldest, oldestAt := "", int64(math.MaxInt64)
+		for existing, ring := range hs.rings.series {
+			if glancesIsConsumer(existing) || len(ring.Fine) == 0 {
+				continue
+			}
+			if last := int64(ring.Fine[len(ring.Fine)-1][0]); last < oldestAt {
+				oldest, oldestAt = existing, last
+			}
+		}
+		if oldest != "" && at-oldestAt > 24*3600*1000 {
+			delete(hs.rings.series, oldest)
+			return true
+		}
+		return false
 	}
 	if consumers < glancesMaxConsumers {
 		return true
@@ -551,9 +570,14 @@ func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) <-chan struct{} {
 				all.Add(1)
 				go func() {
 					defer all.Done()
-					h.glancesRunHost(hostCtx, hs)
+					glancesHostLoop(h, hostCtx, hs)
 					// A host that was removed (and maybe added again under the
-					// same name) is started afresh by the next reconcile.
+					// same name) is started afresh by the next reconcile. One
+					// that was stopped says nothing: by the time it is gone a
+					// new loop may run under its id, and that one is not to be stopped.
+					if hostCtx.Err() != nil {
+						return
+					}
 					select {
 					case exited <- hs.id:
 					default:
@@ -591,6 +615,9 @@ func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) <-chan struct{} {
 	}()
 	return finished
 }
+
+// glancesHostLoop is what the sampler runs per host; a test puts a slow one in.
+var glancesHostLoop = (*Handlers).glancesRunHost
 
 // glancesRunHost is one host's loop.
 func (h *Handlers) glancesRunHost(ctx context.Context, hs *glancesHost) {
@@ -678,7 +705,7 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 		// A host that does not answer is a point at 0 on "up", so how long it was
 		// away is drawn, and an incident of its own.
 		hs.record(now, map[string]float64{"up": 0})
-		h.glancesNotify(ctx, cfg, hs.observe(now, []glancesObservation{{Kind: "down", Bad: true}}))
+		h.glancesNotify(ctx, cfg, hs, hs.observe(now, []glancesObservation{{Kind: "down", Bad: true}}))
 		hs.setState(now, false, "unknown", mediaErrorCode(err))
 		return
 	}
@@ -721,7 +748,7 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 	// Disks, sensors and file systems change slowly and cost Glances the most to
 	// read: they are asked once a minute, and the beats between repeat the last
 	// answer.
-	disks, sensors, fs = h.glancesSlowReads(ctx, cfg)
+	disks, sensors, fs = h.glancesSlowReads(ctx, cfg, hs)
 
 	readings := map[string]float64{}
 	put := func(name string, v *float64) {
@@ -731,6 +758,9 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 	}
 	put("up", glancesPtr(1))
 	put("cpu", quick.CPU)
+	if len(quick.PerCPU) > 0 {
+		hs.cores.Store(int32(len(quick.PerCPU)))
+	}
 	// Each core's own load, for the tiles' one-minute trace.
 	for i, c := range quick.PerCPU {
 		if i >= glancesMaxCores {
@@ -793,7 +823,7 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 	}
 	glancesConsumers(readings, procs, containers, tracked)
 	hs.record(now, readings)
-	h.glancesNotify(ctx, cfg, hs.observe(now, glancesObservations(cfg, quick, fs, sensors)))
+	h.glancesNotify(ctx, cfg, hs, hs.observe(now, glancesObservations(cfg, quick, fs, sensors)))
 	h.glancesNotifyForecast(ctx, cfg, hs)
 	hs.setState(now, true, glancesLevel(cfg, quick, fs, sensors), "")
 }
@@ -811,8 +841,7 @@ func glancesSlowEvery() time.Duration {
 
 // glancesSlowReads returns the slow plugins' readings, asking Glances only when
 // the last ask is older than glancesSlowEvery or the host changed.
-func (h *Handlers) glancesSlowReads(ctx context.Context, cfg GlancesConfig) ([]glancesDiskIO, []glancesSensor, []glancesFS) {
-	hs := glancesHostByID(cfg.ID)
+func (h *Handlers) glancesSlowReads(ctx context.Context, cfg GlancesConfig, hs *glancesHost) ([]glancesDiskIO, []glancesSensor, []glancesFS) {
 	key := cfg.Server + "|" + cfg.User
 	hs.slow.Lock()
 	if hs.slow.key == key && !hs.slow.at.IsZero() && time.Since(hs.slow.at) < glancesSlowEvery() {

@@ -162,8 +162,10 @@
             if (!body || !grid) return;
             // The last two steps leave out what only adds to the picture (the
             // figures strip and the extra cards), then the Monitors card: the
-            // Monitors tab has all of it, so the overview can do without.
-            const TIERS = ['is-snug', 'is-snugger', 'is-smallest', 'is-lean', 'is-without-monitors'];
+            // Monitors tab has all of it, so the overview can do without. The
+            // last step takes the air out of what is left: the modal's own
+            // chrome is taller since the overlays took the material's surface.
+            const TIERS = ['is-snug', 'is-snugger', 'is-smallest', 'is-lean', 'is-without-monitors', 'is-bare'];
             const fits = () => body.scrollHeight <= body.clientHeight + 1;
             grid.classList.remove(...TIERS);
             for (const tier of TIERS) {
