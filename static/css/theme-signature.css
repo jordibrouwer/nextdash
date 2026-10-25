@@ -240,6 +240,13 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
     background-image: none;
 }
 
+/* A block's title with keyboard focus keeps the selected row's tint: the rule
+   above clears the title's background image, and the tint is one, so without
+   this a focused title wears no mark at all under Signature. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title:focus-visible {
+    background-image: var(--bookmark-row-selected-bg);
+}
+
 /* ── De kop van een widget ───────────────────────────────────────────────
    Een widget is een categorie met een eigen kopstrook (Widget background).
    Onder signatuur heeft hij dezelfde kop als de categorieën van zijn
