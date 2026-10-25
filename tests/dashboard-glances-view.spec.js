@@ -853,6 +853,26 @@ test.describe('Glances page: recording, insights and the data kept', () => {
         await expect(page.locator('[data-glances-insights-csv]')).toHaveAttribute('href', /\/api\/glances\/history\.csv\?since=\d+/);
     });
 
+    test('Insights: an outage still going on counts until now, and only the part inside the range counts', async ({ page }) => {
+        const now = Date.now();
+        const since = now - 86400000;
+        const hour = 3600000;
+        await mockGlances(page, {
+            insights: {
+                ...INSIGHTS, at: now, since,
+                incidents: {
+                    // Down for two hours and counting.
+                    ongoing: [{ kind: 'down', start: now - 2 * hour }],
+                    // Four hours long, of which one falls inside the range.
+                    past: [{ kind: 'down', start: since - 3 * hour, end: since + hour }],
+                },
+            },
+        });
+        await openView(page, '#glances/insights');
+        const note = page.locator('[data-glances-outages]');
+        await expect(note).toContainText('out 2 times, 3 h 0 min in all; the longest lasted 2 h 0 min');
+    });
+
     test('Config → Glances has five tabs, each with its own panels, and says what is per host', async ({ page }) => {
         await mockGlances(page);
         await markWhatsNewSeen(page);
