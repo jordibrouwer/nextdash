@@ -752,6 +752,22 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     border-bottom: 1px solid var(--ov-rule-soft);
 }
 
+/* A table's name stays text until it is reached for. The rule above that gives
+   every .config-text the small layer's fill and hairline would draw a box
+   round each name at rest; the field comes back on hover and focus. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-crud-list--table .config-crud-fields .config-text:not(:hover):not(:focus) {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+/* The collection whose editor is open keeps its accent: the line under it and
+   the bar at its edge, which the rows' own rule above would otherwise clear. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .structure-table .config-crud-row.is-active {
+    border-bottom-color: var(--accent-primary);
+    background-color: var(--structure-tint);
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+}
+
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-tile--action:hover {
     box-shadow: inset 0 0 0 1px var(--tile-stripe, var(--accent-primary));
 }
