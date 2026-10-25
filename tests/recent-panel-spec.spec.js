@@ -159,7 +159,15 @@ test.describe('the recent bookmarks panel', () => {
          * It was a 440px column you read down. It hangs from the header band
          * now and takes that band's own width, because it is opened from the
          * bar in it -- the same bargain the pages panel makes.
+         *
+         * Measured once the panel has finished rising in: read during the
+         * rise its box is still drawn at the entrance scale, a few percent
+         * short of the row.
          */
+        await page.waitForFunction(() => {
+            const overlay = document.querySelector('#app-modal');
+            return overlay && overlay.getAnimations({ subtree: true }).every((a) => a.playState !== 'running');
+        });
         const seen = await page.evaluate(() => {
             const panel = document.querySelector('.recent-bookmarks-modal').getBoundingClientRect();
             const row = document.querySelector('.header-top').getBoundingClientRect();
