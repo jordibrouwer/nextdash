@@ -152,6 +152,7 @@ Not released yet.
 
 ### Containers
 
+- **fix — Remove stopped needs the names it was asked about.** `pruneStoppedContainers` (`docker_disk.go`) treated a request without `names` as "every stopped container", so a call with no body removed them all. It now answers `400 names-required`; the Disk tab always sends the list its question showed. `TestDockerPruneStoppedContainers` covers both.
 
 ### Glances
 

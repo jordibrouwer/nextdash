@@ -238,7 +238,14 @@ func TestDockerPruneStoppedContainers(t *testing.T) {
 	}
 
 	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	// Without the names the confirmation showed, nothing goes.
 	rec = dockerPost(router, "/api/docker/prune/containers-stopped")
+	if rec.Code != 400 || f.called("DELETE /containers/"+strings.Repeat("b", 64)) {
+		t.Fatalf("prune without names: %d %s, calls = %v", rec.Code, rec.Body, f.calls)
+	}
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("POST", "/api/docker/prune/containers-stopped",
+		strings.NewReader(`{"names":["bazarr","radarr","portainer","sonarr"]}`)))
 	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"removed":2`) {
 		t.Fatalf("prune: %d %s", rec.Code, rec.Body)
 	}
