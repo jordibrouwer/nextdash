@@ -199,7 +199,26 @@ func (hs *glancesHost) roomFor(name string, at int64) bool {
 		}
 	}
 	if !glancesIsConsumer(name) {
-		return base < glancesMaxSeries
+		if base < glancesMaxSeries {
+			return true
+		}
+		// A disk renamed at a reboot or a sensor that left would hold its place
+		// for good, and a new disk would never get a graph: the machine's own
+		// series that has been silent a day makes room as well.
+		oldest, oldestAt := "", int64(math.MaxInt64)
+		for existing, ring := range hs.rings.series {
+			if glancesIsConsumer(existing) || len(ring.Fine) == 0 {
+				continue
+			}
+			if last := int64(ring.Fine[len(ring.Fine)-1][0]); last < oldestAt {
+				oldest, oldestAt = existing, last
+			}
+		}
+		if oldest != "" && at-oldestAt > 24*3600*1000 {
+			delete(hs.rings.series, oldest)
+			return true
+		}
+		return false
 	}
 	if consumers < glancesMaxConsumers {
 		return true

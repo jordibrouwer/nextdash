@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -57,5 +58,45 @@ func TestGlancesReaddedHostStartsOnce(t *testing.T) {
 	if got := nasStarts(); got != 2 {
 		t.Errorf("nas started %d times after one removal and one add, want 2", got)
 	}
+}
+
+// The machine's own series have a limit, and one silent for a day makes room:
+// a disk renamed at a reboot does not keep a new disk from being recorded.
+func TestGlancesSilentMachineSeriesMakeRoom(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t0 := time.Now().Add(-48 * time.Hour).UnixMilli()
+	full := func(id string) *glancesHost {
+		hs := newGlancesHost(id)
+		readings := map[string]float64{}
+		for i := 0; i < glancesMaxSeries; i++ {
+			readings["disk:sd"+strconv.Itoa(i)+":read"] = 1
+		}
+		hs.record(t0, readings)
+		return hs
+	}
+
+	soon := full("soon")
+	soon.record(t0+3600*1000, map[string]float64{"disk:new:read": 1})
+	if len(soon.seriesNames()) != glancesMaxSeries || containsName(soon.seriesNames(), "disk:new:read") {
+		t.Errorf("an hour of silence made room: %d series", len(soon.seriesNames()))
+	}
+
+	later := full("later")
+	later.record(t0+25*3600*1000, map[string]float64{"disk:new:read": 1})
+	if !containsName(later.seriesNames(), "disk:new:read") {
+		t.Error("a new disk got no series while silent ones held every place")
+	}
+	if len(later.seriesNames()) != glancesMaxSeries {
+		t.Errorf("%d series, want the limit", len(later.seriesNames()))
+	}
+}
+
+func containsName(names []string, want string) bool {
+	for _, name := range names {
+		if name == want {
+			return true
+		}
+	}
+	return false
 }
 

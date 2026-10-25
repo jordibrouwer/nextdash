@@ -146,6 +146,7 @@ Not released yet.
 ### Glances
 
 - **fix — a host removed and added again under the same name is started once.** Every host loop reported its end on `exited`, also a loop that was stopped, and the sampler then stopped whatever ran under that id: the new loop, which reported its own end, and so on without stopping, each round a beat that recorded the host as down. A stopped loop now reports nothing (`StartGlancesSampler`, `glances_history.go`). `TestGlancesReaddedHostStartsOnce` fails without it.
+- **fix — a new disk or sensor gets a graph on a machine that has filled its series.** The machine's own series (disks, interfaces, temperatures, mounts) had a limit of 96 and never gave a place back, so a disk renamed at a reboot or a sensor that left held its slot for good and anything new was silently not recorded. `roomFor` now drops the one that has been silent longest once it has been silent a day, as processes and containers already did. `TestGlancesSilentMachineSeriesMakeRoom` fails without it.
 
 ---
 
