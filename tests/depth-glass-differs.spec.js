@@ -30,6 +30,24 @@ async function dashboard(page) {
     await page.evaluate(() => [document.documentElement, document.body].forEach((el) => el.setAttribute('data-material-style', 'classic')));
 }
 
+/*
+ * A theme with no opinion about glass, under Classic. A theme change re-applies
+ * the theme's surfaces on its own, Material style included (theme-loader.js,
+ * 'theme-changed'), and that put Signature back over the Classic set above
+ * whenever it landed after it. So the surfaces are applied here, as Classic and
+ * unsaved, once the theme is on.
+ */
+async function onPlainTheme(page) {
+    await page.waitForFunction(() => Boolean(window.dashboardInstance?.settings), null, { timeout: 20_000 });
+    await page.evaluate(async () => {
+        const theme = 'tarnished-brass-dark';
+        window.ThemeLoader.applyTheme(theme);
+        await window.ThemeLoader.applySurfacesForTheme(theme,
+            { ...window.dashboardInstance.settings, materialStyle: 'classic', themeSurfacesForceAll: true });
+        [document.documentElement, document.body].forEach((el) => el.setAttribute('data-material-style', 'classic'));
+    });
+}
+
 /** A raised card's ground and the blur behind it, at a given depth. */
 const surfaceAt = (page, depth) => page.evaluate((value) => {
     document.body.setAttribute('data-depth', value);
@@ -70,9 +88,8 @@ test.describe('glass against rich', () => {
 
     test('and the page behind it is blurred', async ({ page }) => {
         await dashboard(page);
-        // On a theme with no opinion about glass. The fresh-install theme is a
-        // terminal theme, whose archetype keeps its surfaces solid on purpose.
-        await page.evaluate(() => window.ThemeLoader.applyTheme('tarnished-brass-dark'));
+        // On a theme with no opinion about glass.
+        await onPlainTheme(page);
 
         const rich = await surfaceAt(page, 'rich');
         const glass = await surfaceAt(page, 'glass');
@@ -81,16 +98,19 @@ test.describe('glass against rich', () => {
         expect(glass.blur, `glass draws no blur: ${glass.blur}`).toMatch(/blur\((?!0px)/);
     });
 
+    // A fresh install starts on Aurora Glass since v1.22.0, a glass theme, so the
+    // theme that never mentions glass is put on the page by hand now.
     test('on the theme a fresh install starts on, not only on the glass ones', async ({ page }) => {
         await dashboard(page);
+        await onPlainTheme(page);
 
         const declared = await page.evaluate(() => ({
             theme: document.documentElement.getAttribute('data-theme'),
             alpha: window.getComputedStyle(document.body).getPropertyValue('--theme-surface-alpha').trim(),
         }));
 
-        // Guard, so this cannot pass by the fixture having switched to Aurora
-        // Glass: the point is a theme that never mentions glass.
+        // Guard, so this cannot pass on a glass theme: the point is a theme that
+        // never mentions glass.
         expect(declared.theme, 'the fixture is on a glass theme').not.toContain('glass');
         expect(parseFloat(declared.alpha), 'the step supplies nothing of its own').toBeLessThan(1);
     });
