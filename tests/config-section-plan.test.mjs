@@ -303,6 +303,39 @@ console.log('planner (ground truth: the help split)');
     });
 }
 
+// ─── Callers the core cannot see ────────────────────────────────────────────
+
+console.log('planner (ground truth: the appearance split)');
+
+/*
+ * Both of these moved in the first try at Appearance and broke paths that never
+ * open it: clearThemePreview is reached only from callers outside this file
+ * (the theme switch, the settings jump), and Data & backups' own file calls
+ * backupFailureReason.
+ */
+{
+    const audit = (members) => {
+        try {
+            return JSON.parse(execFileSync('node', ['scripts/config-section-plan.mjs',
+                '--section', 'appearance', '--members', members, '--json'], { encoding: 'utf8' }));
+        } catch (err) {
+            return JSON.parse(err.stdout);
+        }
+    };
+
+    test('catches clearThemePreview, which an outside caller reaches through the core', () => {
+        const hit = audit('clearThemePreview').wrong.find((w) => w.name === 'clearThemePreview');
+        assert.ok(hit, 'clearThemePreview was let through');
+        assert.match(hit.why, /core before any module loads/, `flagged for the wrong reason: ${hit.why}`);
+    });
+
+    test('catches backupFailureReason, which the Data & backups file calls', () => {
+        const hit = audit('backupFailureReason').wrong.find((w) => w.name === 'backupFailureReason');
+        assert.ok(hit, 'backupFailureReason was let through');
+        assert.match(hit.why, /data-backups/, `flagged for the wrong reason: ${hit.why}`);
+    });
+}
+
 // ─── Calls behind inSection() ───────────────────────────────────────────────
 
 console.log('planner (inSection gates)');

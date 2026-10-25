@@ -317,9 +317,50 @@ const externallyCalled = (() => {
     return names;
 })();
 
+/*
+ * Calls from the section files already split out.
+ *
+ * Data & backups' file calls `backupFailureReason`, which sat among
+ * Appearance's members, and nothing here saw it: the walk only reads the core.
+ * A file that SECTION_MODULES lists runs once its section has loaded, so its
+ * calls count as that section's. Any other dashboard-config-*.js is fetched by
+ * a path of its own and counts as the outside world.
+ *
+ * The table is read from the live core, not from --file: the files it names
+ * are the live ones.
+ */
+const moduleCalls = (() => {
+    const fileSection = new Map();
+    let current = null;
+    let inTable = false;
+    for (const line of readFileSync(CORE, 'utf8').split('\n')) {
+        if (/static SECTION_MODULES = \{/.test(line)) { inTable = true; continue; }
+        if (!inTable) continue;
+        if (/^ {4}\};/.test(line)) break;
+        const key = line.match(/^ {8}'?([\w-]+)'?: \{/);
+        if (key) current = key[1];
+        const file = line.match(/file: 'js\/dashboard\/([\w-]+\.js)'/);
+        if (file && current) fileSection.set(file[1], current);
+    }
+    const bySection = new Map();
+    const dir = 'static/js/dashboard';
+    for (const entry of readdirSync(dir)) {
+        if (!/^dashboard-config-[\w-]+\.js$/.test(entry) || entry === 'dashboard-config-loader.js') continue;
+        const names = [...readFileSync(join(dir, entry), 'utf8').matchAll(CALL)].map((m) => m[1]);
+        const section = fileSection.get(entry);
+        if (!section) { names.forEach((n) => externallyCalled.add(n)); continue; }
+        if (!bySection.has(section)) bySection.set(section, new Set());
+        names.forEach((n) => bySection.get(section).add(n));
+    }
+    return bySection;
+})();
+
 const reach = {};
-// A call gated for a section is that section's, wherever it sits.
-for (const [id, entries] of Object.entries(ANCHORS)) reach[id] = reachable([...entries, ...gatedInto(id)], id);
+// A call gated for a section is that section's, wherever it sits; so is one
+// from that section's own file.
+for (const [id, entries] of Object.entries(ANCHORS)) {
+    reach[id] = reachable([...entries, ...gatedInto(id), ...(moduleCalls.get(id) || [])], id);
+}
 
 /*
  * What the core reaches without waiting for any module.
@@ -345,11 +386,24 @@ for (const [id, entries] of Object.entries(ANCHORS)) reach[id] = reachable([...e
 const UNGATED_ROOTS = ['loadAndRender', 'openConfigView', 'render', 'renderShell',
     'setSection', 'loadOverviewData', 'refreshStatus', 'init', 'afterRender',
     'repaintActiveControlPanels', 'bindChangedFilter'];
-const GATED = new Set(['renderSection', ...NAVIGATORS, ...Object.values(ANCHORS).flat()]);
+/*
+ * Two more kinds of root, both learned from the Appearance split.
+ *
+ * A member the rest of the app calls by name runs whenever that caller does:
+ * the command bar's theme switch reaches `applyThemeChoice` with config never
+ * opened. It stayed in the core, but `persistAppearance`, which it calls, moved,
+ * and the switch answered `this.persistAppearance is not a function`.
+ *
+ * A navigator waits for its target section, but not everything it calls is that
+ * section's: the settings jump asks `settingsJumpControlSelector` for a field in
+ * whichever section it lands in. So the walk starts inside the navigators too;
+ * a call there that only one section needs belongs behind inSection().
+ */
+const GATED = new Set(['renderSection', ...Object.values(ANCHORS).flat()]);
 
 const coreReachable = (() => {
     const seen = new Set();
-    const queue = UNGATED_ROOTS.filter((n) => method(n));
+    const queue = [...UNGATED_ROOTS, ...externallyCalled, ...NAVIGATORS].filter((n) => method(n));
     while (queue.length) {
         const name = queue.shift();
         if (seen.has(name) || GATED.has(name)) continue;
