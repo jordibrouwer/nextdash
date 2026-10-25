@@ -1265,7 +1265,20 @@ test.describe('how often the host is recorded', () => {
 async function clickInfo(page, selector) {
     const button = page.locator(selector).first();
     await button.scrollIntoViewIfNeeded();
-    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+    // Until the page has held still for a dozen frames: a section that was just
+    // opened settles its scroll a moment after it is drawn.
+    await page.evaluate(() => new Promise((done) => {
+        let last = -1;
+        let still = 0;
+        const frame = () => {
+            const now = window.scrollY + document.documentElement.scrollHeight;
+            still = now === last ? still + 1 : 0;
+            last = now;
+            if (still >= 12) done();
+            else requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+    }));
     await button.click();
 }
 
