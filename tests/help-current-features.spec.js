@@ -47,7 +47,7 @@ const CASES = [
     // how much is written and another for what goes into the trail.
     { tab: 'logs', needles: [/detail level/i, /activity trail/i, /docker logs/i] },
     // The header rebuild: where the action buttons stand, and how pages switch.
-    { tab: 'appearance', needles: [/in a dock at the bottom/i, /page switcher/i, /theme browser/i] },
+    { tab: 'appearance', needles: [/in a dock at the bottom/i, /page switcher/i, /theme studio/i] },
 ];
 
 for (const { tab, needles } of CASES) {
