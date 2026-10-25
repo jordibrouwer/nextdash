@@ -1847,7 +1847,7 @@ class DashboardConfig {
          * whatever the cursor was on. The arrows would have been the defensible
          * choice; letters never were.
          */
-        const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
+        const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
             if (!(this.listKeyboardBodyId() && isTagFilter && listNavFromFilter.has(e.key))) {
                 return false;
@@ -1900,7 +1900,7 @@ class DashboardConfig {
                 e.stopImmediatePropagation();
                 return this.jumpSectionKeyboard(0);
             }
-            if (e.key === 'G') {
+            if (e.key === 'End') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 return this.jumpSectionKeyboard(DashboardConfig.SECTIONS.length - 1);
@@ -2948,7 +2948,7 @@ class DashboardConfig {
         legend.innerHTML = this.renderKeyboardLegendPairs([
             ['↑/↓', this.t('config.listKeyMove', 'move')],
             ['Enter', this.t('config.listKeyEdit', 'edit')],
-            ['g / G', this.t('config.listKeyFirstLast', 'first / last')],
+            ['g / End', this.t('config.listKeyFirstLast', 'first / last')],
             ['/', this.t('config.listKeyFilterTags', 'filter tags')],
             ['Esc', this.t('config.listKeyClear', 'clear')],
         ]);
@@ -2980,7 +2980,7 @@ class DashboardConfig {
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
-        const listNavKeys = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
+        const listNavKeys = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
             if (!isTagFilter || !listNavKeys.has(e.key)) {
                 return false;
@@ -3041,7 +3041,7 @@ class DashboardConfig {
             this.applyListKeyboardSelection(rows);
             return true;
         }
-        if (e.key === 'G') {
+        if (e.key === 'End') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this._listKeyboardKey = this.listRowKey(rows[rows.length - 1]);
@@ -3523,7 +3523,7 @@ class DashboardConfig {
             this.applyBookmarkKeyboardSelection(rows);
             return true;
         }
-        if (e.key === 'G') {
+        if (e.key === 'End') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this._bmKeyboardKey = this.bookmarkRowKey(rows[rows.length - 1]);
@@ -25387,7 +25387,7 @@ class DashboardConfig {
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
             ['a', this.t('config.bmKeyAddSuggested', 'add suggested')],
-            ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
+            ['g / End', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
             ['Shift P / C', this.t('config.bmKeyStructure', 'pages / categories')],
@@ -29814,13 +29814,13 @@ class DashboardConfig {
                 captionKey: 'config.helpArtViewKeys', caption: 'The views',
             },
             {
-                kind: 'keys', value: ['j', 'k', 'g', 'G'],
+                kind: 'keys', value: ['j', 'k', 'g', 'End'],
                 captionKey: 'config.helpArtMoveKeys', caption: 'Moving around',
             },
         ],
         'config.helpConfigKeyboardTitle': [
             { kind: 'panelMap', value: 'body', captionKey: 'config.helpArtConfigLayer', caption: 'Its own keyboard layer' },
-            { kind: 'keys', value: ['j', 'k', 'g', 'G', '!'] },
+            { kind: 'keys', value: ['j', 'k', 'g', 'End', '!'] },
         ],
 
         // ── Health ─────────────────────────────────────────────────────────

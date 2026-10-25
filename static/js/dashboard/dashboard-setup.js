@@ -586,13 +586,10 @@ class DashboardSetup {
                 return;
             }
 
-            // Shift+G opens Glances, when Config → Glances has it on. Inside the
-            // Inbox, Config and the Bookmarks view G is "last item" (End does the
-            // same), so it stays that there.
+            // Shift+G opens Glances, when Config → Glances has it on, from every view. The last
+            // item of the Inbox, Config and the Bookmarks view is End; it was G, which is
+            // Shift+G, and that kept the Glances key from working there.
             if (e.shiftKey && e.code === 'KeyG' && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                if (['inbox', 'config', 'library'].includes(d.activeView)) {
-                    return;
-                }
                 if (d.glancesStatus?.configured) {
                     e.preventDefault();
                     e.stopPropagation();

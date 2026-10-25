@@ -33,7 +33,7 @@ test.describe('config bookmarks keyboard navigation', () => {
         await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).toBeFocused();
     });
 
-    test('g and Shift+G jump to first and last bookmark rows', async ({ page }) => {
+    test('g and End jump to first and last bookmark rows', async ({ page }) => {
         await openBookmarksWithRows(page, [
             { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },
             { name: 'Beta', url: 'https://beta.example', pageId: 1 },
@@ -42,7 +42,7 @@ test.describe('config bookmarks keyboard navigation', () => {
 
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
-        await page.keyboard.press('Shift+G');
+        await page.keyboard.press('End');
         await expect(page.locator('.config-bm-row').nth(2)).toHaveClass(/keyboard-selected/);
 
         await page.keyboard.press('g');

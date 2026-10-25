@@ -67,7 +67,7 @@ test.describe('config list keyboard navigation', () => {
         await expect(page.locator('[data-finder-index="0"] [data-finder="name"]')).toBeFocused();
     });
 
-    test('g and Shift+G jump to first and last rows', async ({ page }) => {
+    test('g and End jump to first and last rows', async ({ page }) => {
         await openPagesTags(page, [
             { id: '1', name: 'Alpha', searchUrl: 'https://a.com/?q=%s', shortcut: 'a' },
             { id: '2', name: 'Beta', searchUrl: 'https://b.com/?q=%s', shortcut: 'b' },
@@ -76,7 +76,7 @@ test.describe('config list keyboard navigation', () => {
 
         await focusListPanel(page);
         await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('Shift+G');
+        await page.keyboard.press('End');
         await expect(page.locator('[data-finder-index="2"]')).toHaveClass(/keyboard-selected/);
 
         await page.keyboard.press('g');

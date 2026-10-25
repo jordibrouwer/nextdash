@@ -2982,7 +2982,7 @@ class DashboardInbox {
             this.applyKeyboardSelection(cards);
             return true;
         }
-        if (e.key === 'G' || e.key === 'End') {
+        if (e.key === 'End') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.selectedItemId = cards[cards.length - 1]?.dataset?.inboxId || null;

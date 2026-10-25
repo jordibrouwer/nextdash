@@ -1105,17 +1105,18 @@ test.describe('Glances in the navigation and the page overview', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).not.toBe('glances');
     });
 
-    test('Shift+G is Glances from the dashboard, and stays "last item" inside the Inbox, Config and Bookmarks views', async ({ page }) => {
+    test('Shift+G is Glances from every view, Config included; the last item there is End', async ({ page }) => {
         await openDashboard(page);
         await page.locator('body').click({ position: { x: 5, y: 5 } });
         await page.evaluate(() => { window.__lastKey = null; });
         await page.keyboard.press('Shift+G');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('glances');
-        // From Config, G keeps its own meaning (jump to the last section).
+        // From Config too: G used to be "last item" there and kept the key from opening Glances.
         await page.goto('/#config/appearance');
         await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
         await page.keyboard.press('Shift+G');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('glances');
     });
 });
 

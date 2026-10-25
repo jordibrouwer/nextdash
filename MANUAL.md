@@ -1851,7 +1851,7 @@ The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, 
 | Key | Action |
 |---|---|
 | `j` / `k`, arrows | Move |
-| `g` / `G` | First / last row |
+| `g` / `End` | First / last row |
 | `Enter` / `o` | Open the bookmark under the cursor |
 | `i` | Open or close the side panel |
 | `1` / `2` / `3`, `[` / `]` | Details, Health or Usage in the side panel |
