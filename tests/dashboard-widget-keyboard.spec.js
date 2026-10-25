@@ -309,8 +309,16 @@ test.describe('the menu on a widget row', () => {
         // word, so the report now separates them: how many stops the grid has,
         // whether this row is one of them, whether the fold is on, and what
         // actually holds focus.
+        //
+        // The v1.22.0 CI run answered with rowHasFocus true, the row in the
+        // stops and currentIndex -1: focus was on the row, the cursor was not,
+        // and every later round asked again with a focus() on an element that
+        // already held it, which fires no focusin and so could never put the
+        // cursor there. 7 of 7 local runs pass. Each round now moves focus off
+        // and back, as a reader tabbing away and back would, so asking again
+        // is a real focus move.
         await expect.poll(async () => {
-            await row.focus();
+            await row.evaluate((el) => { el.blur(); el.focus(); });
             const at = await cursor(page);
             if (at?.widget === true) return true;
             return JSON.stringify(await cursorWhy(page, rowSelector));
