@@ -127,7 +127,44 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 Not released yet.
 
+**A new look.** Every material now has a surface of its own, drawn through cards, headers, menus, dialogs and the side panel, and the themes were redrawn with it. New backdrops and patterns fit each theme. **Aurora Glass** is the default theme, and every existing install moves onto it once, with a dialog that offers the way back. Next to it: a Classic ThinkDashboard theme, a redesigned cheat sheet, a two-column bookmark form with a live preview, and a round of fixes in Config, the dashboard and Glances.
+
+### Look
+
+- **new — signature material style.** Each of the twelve materials (glass, paper, enamel, brushed metal, neon, ink, terminal and the rest) draws its own surface, category header and widget header, and every header keeps the `//`. Paper columns read as an index card, enamel as a glazed tile, neon with a glowing top edge, brushed metal and glass with a shine per column. Theme Studio → Surface → **Material style** keeps **Classic** as a choice for the flat, old look (`material_style.go`, `theme-signature.css`).
+- **new — Aurora Glass is the default theme.** A fresh install starts on Aurora Glass, on the dark or light half.
+- **new — every install moves onto Aurora Glass once.** The themes were redrawn for the new look, so keeping the old drawing beside it would mean two of everything. The move keeps the dark or light half you were on, and `lookMigration` remembers the theme you had. Bookmarks, categories, settings and own themes stay as they were. Covered by `aurora_glass_migration_test.go`.
+- **new — a dialog explains the move.** It shows the theme you had next to the one you have now, offers **Go back to {theme}** and **Open the Theme Studio**, and appears once, before any corner card (`look-migration-notice.js`). Opening the studio from it waits for the studio to load first.
+- **new — backdrops chosen per theme.** Each material has a pool of its own and each theme picks from it. Eighteen patterns replace the colour washes, with new recipes such as haze, veil, spotlight, silk, caustics, dawn, linen, dotgrid, ruled and grain, a blue sea for Ocean, bricks for Concrete, a small honeycomb for Bokeh, and rack and terminal backdrops for the four Unraid themes. Hexagons, chevron, prism, sunset, dunes, mountains and blueprint are drawn finer and the loud ones calmed. Every recipe carries the colour of its theme; a dark page carries more of it.
+- **new — a quiet centre.** A **Quiet centre** slider fades the backdrop behind the bookmarks. It is kept per theme, with the install-wide value as the fallback.
+- **new — neutrals on one ladder.** The eight neutral themes (Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete, Black) sit on one lightness ladder, each with a material and a backdrop of its own. **Accent of the neutrals** picks one of six colours for all of them, or the theme's own (`neutral_accent.go`). Covered by `tests/neutral-accent.spec.js`.
+- **new — ThinkDashboard Classic.** The ThinkDashboard theme from v1.0.0 returns with its colours and grid of dots; the current one is now **ThinkDashboard Modern**. Covered by `tests/theme-thinkdashboard-classic.spec.js`.
+- **new — Unraid themes redrawn.** Card panels and server colours, a calmer band, and old Unraid copies move to the new card drawing.
+- **new — Gloss Chrome and Gloss Amber on glass**, like the other lacquer themes; Gloss Chrome keeps its plain grey band. 65 dark themes move to colour recipes and textures get their colour back.
+- **fix — the Theme Studio keeps your place.** A picked backdrop keeps the focus and the scroll; theme card names keep their width beside the pills.
+- **removed — the Berry, theme browser and clock and weather corner cards.** Berry is no longer the default, and the dialog above covers the new look.
+
+### Overlays
+
+- **new — overlays, views and Config take the look of the material**, with four levels of elevation. Layers take the light of their material, ink layers carry a bar on the top edge, neon layers glow, and small layers are closed per material.
+- **new — the action bar is a handle on the screen edge**, in the surface of the material, with the mark of the head and hairlines between the groups.
+- **new — the cheat sheet has a search field**, topics in columns, and a dock that shows the keys of the row you pick and follows focus. Rows carry their keys for screen readers, and focus looks different from selected. Cards stay whole in Safari.
+- **new — add and edit bookmark in two columns with a live preview.** Two columns only with a fine pointer, tab order runs down each column, and the label is not read twice. The icon picker opens in the page, so the form no longer clips it.
+- **new — the preview card shows the picture on the left**; cards without a scrim get a closed fill.
+- **new — Save this link, What's New, views and Config lie on the surface of the material**: address, preview, choices, blocks, chips, summaries, cards, controls and table heads.
+- **new — the popover arrow points at the control that was pressed**, follows it when hidden and shown, and clears when the popover hides.
+- **fix — layers respect your settings.** Reduced transparency closes them, effects off is flat, animations off stays off, and the toast and preview have no blur. Shadows follow the light of the page.
+- **fix — bookmark rows take one inset from one variable**, so icons line up with and without a ping and each layout keeps its own padding.
+- **fix — selects, lists and tutorial dots stay readable on the layers**; the active tutorial dot is lit, and quick add and the palette show their focus.
+- **fix — the Bookmarks view has no second blur layer under the plate**, and its rail is lit like the other views. The Config bookmarks preview scrolls with the page.
+
+### Keyboard
+
+- **new — `Shift+G` opens Glances from every view.** In lists, the last row is now `End` instead of `G`.
+
 ### Config
+
+- **fix — the Config band keeps filter and count in the same place on every tab.**
 
 - **fix — taking a tag off a bookmark no longer undoes a settings save.** `refuseRemovedTags` (`tag_refusals.go`) read the settings, added the refusal and wrote them all back without `settingsMu`, so a Config save landing in between was lost or put back. It now holds the same lock as `SaveSettings`. `TestRefusalWaitsForTheSettingsLock` fails without it.
 - **fix — `POST /api/pages` refuses a page id below 1.** A 0 or a negative id was written as `bookmarks-0.json`, which no page list reads back, and stayed in `pages.json`. Now `400 Invalid page ID`. Covered by `TestSavePagesRefusesAnIDBelowOne`.
