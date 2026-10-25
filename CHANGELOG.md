@@ -212,6 +212,10 @@ Not released yet.
 
 - **fix — with IANA unreachable, domain lookups no longer ask for the server list each time.** A failed refresh of the RDAP bootstrap list kept the old one but not its age, so every lookup asked again and waited out the ten-second timeout under the client's lock. The old list now serves another hour first (`serverFor`, `health_domain.go`). `TestRDAPBootstrapFailureIsNotRetriedPerLookup` fails without it.
 
+### Docs
+
+- **docs — Config → Help follows the new look, in all six languages.** The Themes panel names Aurora Glass as the default, more than 190 families and 75 backdrops, and the theme studio instead of the theme browser. New in it: the Signature and Classic material styles, the eight neutrals and their accent, ThinkDashboard Classic, Quiet centre, and a paragraph on the move to Aurora Glass. Appearance lists the new Surfaces settings and the eighth backdrop slider. Keyboard adds `Shift+G` and the new cheat sheet, and uses a lowercase `g` for the chords. Bookmarks, Inbox and Config list `g`/`End` for first and last. The bookmark form is described in two columns. Five tips follow (`tipTuneThemeBrowser`, `tipTuneThemeBrowserWidth`, `tipTuneGloss`, `tipTuneLooks`, `tipTuneBackdrop`).
+
 ---
 
 ## v1.21.3 — 23 October 2026
