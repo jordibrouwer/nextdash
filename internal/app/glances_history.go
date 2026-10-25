@@ -551,9 +551,14 @@ func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) <-chan struct{} {
 				all.Add(1)
 				go func() {
 					defer all.Done()
-					h.glancesRunHost(hostCtx, hs)
+					glancesHostLoop(h, hostCtx, hs)
 					// A host that was removed (and maybe added again under the
-					// same name) is started afresh by the next reconcile.
+					// same name) is started afresh by the next reconcile. One
+					// that was stopped says nothing: by the time it is gone a
+					// new loop may run under its id, and that one is not to be stopped.
+					if hostCtx.Err() != nil {
+						return
+					}
 					select {
 					case exited <- hs.id:
 					default:
@@ -591,6 +596,9 @@ func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) <-chan struct{} {
 	}()
 	return finished
 }
+
+// glancesHostLoop is what the sampler runs per host; a test puts a slow one in.
+var glancesHostLoop = (*Handlers).glancesRunHost
 
 // glancesRunHost is one host's loop.
 func (h *Handlers) glancesRunHost(ctx context.Context, hs *glancesHost) {

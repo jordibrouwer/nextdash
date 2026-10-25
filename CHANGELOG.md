@@ -143,6 +143,10 @@ Not released yet.
 - **fix — revision checks no longer run side by side.** Focus and `visibilitychange` were throttled to one call per 500 ms, and on a slow server a full settings refresh outlasted that. `refreshIfDataRevisionChanged` now hands a second caller the check already running, and the listener catches its rejection. These two are covered by the same spec, each failing without its fix.
 - **fix — the header falls back to four page tabs, like the server.** `pageTabCap` used 5 when `maxPageTabs` was missing, while the server default and the command palette use 4. `tests/dashboard-page-strip.spec.js` now holds the default to four.
 
+### Glances
+
+- **fix — a host removed and added again under the same name is started once.** Every host loop reported its end on `exited`, also a loop that was stopped, and the sampler then stopped whatever ran under that id: the new loop, which reported its own end, and so on without stopping, each round a beat that recorded the host as down. A stopped loop now reports nothing (`StartGlancesSampler`, `glances_history.go`). `TestGlancesReaddedHostStartsOnce` fails without it.
+
 ---
 
 ## v1.21.3 — 23 October 2026
