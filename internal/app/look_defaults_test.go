@@ -46,3 +46,15 @@ func TestLookDefaultsMatchAFreshInstall(t *testing.T) {
 		}
 	}
 }
+
+// Every Surface-tab field is reset: a forced value left behind outranks the
+// per-theme answers Reset all clears, and held for every theme.
+func TestLookDefaultsCoverTheSurfaceTab(t *testing.T) {
+	served := lookDefaults()
+	for _, key := range []string{"themeDepth", "glowStrength", "themeEffects", "categorySurface",
+		"widgetSurface", "widgetOpacity", "materialStyle", "neutralAccent", "cardGlass"} {
+		if _, ok := served[key]; !ok {
+			t.Errorf("Reset all leaves %s as it was", key)
+		}
+	}
+}

@@ -145,6 +145,7 @@ Not released yet.
 
 ### Look studio
 
+- **fix — Reset all also resets the rest of the Surface tab.** `lookDefaults()` (`look_defaults.go`) left out `categorySurface`, `widgetSurface`, `widgetOpacity`, `materialStyle` and `neutralAccent`, and a forced value of those held for every theme after Reset all. Covered by `TestLookDefaultsCoverTheSurfaceTab`.
 
 ### Inbox
 
