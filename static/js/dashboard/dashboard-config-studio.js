@@ -423,7 +423,7 @@
             // A look comes with the theme, not with its other half: switching
             // halves of one pair keeps whatever look is on screen. Set after
             // the theme, so answers kept per theme land on the new one.
-            const look = this.themeLookOf(id);
+            const look = this.themeLookAnswers(id);
             if (look && !sameFamily && this.studioUsesThemeLook()) this.applyLookAnswers(look);
             this.applyStudioLook();
         },
@@ -714,7 +714,7 @@
             if (look.glass) this.setCardGlass(look.glass);
             if (look.depth) this.setSurface('themeDepth', look.depth);
             if (look.backdrop) {
-                if (look.backdrop !== 'off') this._lastBackdropPick = look.backdrop;
+                if (look.backdrop !== 'off' && look.backdrop !== 'follow') this._lastBackdropPick = look.backdrop;
                 this.setBackdropChoice(look.backdrop);
             }
             const text = look.text || {};
@@ -726,6 +726,23 @@
         /** The look a theme of the reader's own brings along, or null. */
         themeLookOf(id) {
             return this._colorsData?.custom?.[id]?.look || null;
+        },
+
+        /**
+         * A theme's look as answers to set. It is stored without the parts that
+         * followed the theme (currentLookAnswers), and a part left out is kept as
+         * it is: the edge and the glass of the look before stayed on. Here the
+         * left-out backdrop, depth and glass follow the theme again.
+         */
+        themeLookAnswers(id) {
+            const look = this.themeLookOf(id);
+            if (!look) return null;
+            return {
+                ...look,
+                backdrop: look.backdrop || 'follow',
+                depth: look.depth || 'follow',
+                glass: { alpha: null, blur: null, border: null, ...(look.glass || {}) },
+            };
         },
 
         /** "Use this theme's look", remembered per browser; on unless turned off. */
@@ -746,7 +763,7 @@
             const pairOf = (themeId) => window.ThemeUtils?.getPairedThemeVariant?.(themeId, true) || themeId;
             if (previous && pairOf(previous) === pairOf(id)) return;
             await this.loadColorsData();
-            const look = this.themeLookOf(id);
+            const look = this.themeLookAnswers(id);
             if (!look || this.dash.settings?.theme !== id) return;
             const seedBefore = this.dash.settings.backdropTuning?.seed;
             this.applyLookAnswers(look);

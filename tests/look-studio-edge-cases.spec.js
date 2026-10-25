@@ -116,3 +116,23 @@ test('a settings change from another device waits until the studio closes', asyn
     await page.evaluate(() => window.dashboardInstance.data.refreshIfDataRevisionChanged());
     await expect.poll(() => local(page, 'inboxViewUnreadMark'), 'applied once the studio closed').toBe(false);
 });
+
+test('a theme\'s own look without glass or backdrop clears the ones before it, for every theme', async ({ page }) => {
+    const look = { heads: { categoryHeaderStyle: 'boxed' } };
+    await setup(page, { themeSurfacesForceAll: true }, {
+        'edge-look-dark': { base: 'dark', theme: { name: 'Edge [dark]', look } },
+        'edge-look-light': { base: 'light', theme: { name: 'Edge [light]', look } },
+    });
+    await openStudio(page);
+    await useLook(page, 'neon');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.cardGlass?.border)).toBe('on');
+
+    await page.locator('[data-studio-tab="themes"]').click();
+    await page.locator('[data-theme-card][data-theme-id="edge-look-dark"]').click();
+    await expect.poll(() => local(page, 'categoryHeaderStyle')).toBe('boxed');
+    const glass = await local(page, 'cardGlass');
+    expect(glass?.border, 'no edge left from Neon').toBeUndefined();
+    expect(glass?.alpha).toBeUndefined();
+    expect(await local(page, 'themeBackdrop')).toBe('follow');
+    expect(await local(page, 'themeDepth')).toBe('follow');
+});
