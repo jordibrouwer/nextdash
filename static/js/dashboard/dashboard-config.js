@@ -5072,8 +5072,8 @@ class DashboardConfig {
     }
 
     /**
-     * "You're running v1.x.y of nextDash" with the changelog and the manual
-     * on GitHub, each opening in a new window, in a panel of its own. The
+     * "You're running v1.x.y of nextDash" with the changelog on GitHub and the
+     * manual on nextdash.cc/docs, each opening in a new window, in a panel of its own. The
      * translated sentence holds {changelog} and {manual} where the links go;
      * the version is the running one from the update status. No panel until
      * that status is known; the title dot says whether it is the newest.
@@ -5084,12 +5084,12 @@ class DashboardConfig {
         if (!current) return '';
         const base = 'https://github.com/jordibrouwer/nextdash/blob/main/';
         const here = this.t('config.overviewVersionHere', 'here');
-        const link = (file) => `<a class="config-overview-version-link" href="${base}${file}" target="_blank" rel="noopener noreferrer">${esc(here)}</a>`;
+        const link = (href) => `<a class="config-overview-version-link" href="${href}" target="_blank" rel="noopener noreferrer">${esc(here)}</a>`;
         const line = esc(this.t('config.overviewVersionLine',
             'You\u2019re running {version} of nextDash. You can find the full changelog {changelog} and the manual {manual}.'))
             .replace('{version}', `<strong class="config-overview-version-tag">${esc(String(current))}</strong>`)
-            .replace('{changelog}', link('CHANGELOG.md'))
-            .replace('{manual}', link('MANUAL.md'));
+            .replace('{changelog}', link(`${base}CHANGELOG.md`))
+            .replace('{manual}', link('https://www.nextdash.cc/docs'));
         // Green on the newest release, red behind it -- also when the update
         // notice was dismissed. No dot when GitHub was not asked or not reached.
         const status = this._updateStatus;
