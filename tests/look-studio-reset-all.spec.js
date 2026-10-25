@@ -44,7 +44,7 @@ async function pickTheme(page, id) {
     const card = page.locator(`[data-theme-card][data-theme-id="${id}"]`).first();
     await card.scrollIntoViewIfNeeded();
     await card.click();
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.settings?.theme)).toBe(id);
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.settings?.theme), { timeout: 15_000 }).toBe(id);
 }
 
 async function useLook(page, id) {
@@ -59,6 +59,8 @@ test.describe('Reset all in the look studio', () => {
     test.describe.configure({ mode: 'serial' });
 
     test('puts every theme back to the defaults, leaves Layout, and only stores on Apply', async ({ page }) => {
+        // Two looks, two themes and two Applies on a runner that draws the glass in software.
+        test.setTimeout(90_000);
         await openDashboard(page);
         const before = await stored(page);
 

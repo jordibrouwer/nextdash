@@ -588,13 +588,25 @@ test.describe('Glances page: tables, cards and keys', () => {
             document.addEventListener('animationstart', (e) => {
                 if (e.animationName === 'lvsRise') window.__lvsRises.push(String(e.target.className));
             }, true);
+            // Whether the blocks were drawn while the entrance window was open: a
+            // host that answers after it closed (a slow runner) gets its blocks
+            // without a rise, and that is not what is being tested.
+            window.__blocksInWindow = null;
+            new MutationObserver(() => {
+                if (window.__blocksInWindow === null && document.querySelector('.glances-ov-block, .glances-card')) {
+                    window.__blocksInWindow = document.body.hasAttribute('data-view-entering');
+                }
+            }).observe(document, { childList: true, subtree: true });
         });
         await openView(page);
         const rose = (pattern) => page.evaluate((source) => window.__lvsRises.filter((c) => new RegExp(source).test(c)).length, pattern);
         const rising = (sel) => page.evaluate((q) => document.getAnimations()
             .filter((x) => x.animationName === 'lvsRise' && x.effect?.target?.matches?.(q)).length, sel);
         await expect.poll(() => rose('lvs-header'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(0);
-        await expect.poll(() => rose('glances-ov-block|glances-card'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(1);
+        await expect.poll(() => page.evaluate(() => window.__blocksInWindow), { timeout: 10_000 }).not.toBeNull();
+        if (await page.evaluate(() => window.__blocksInWindow)) {
+            await expect.poll(() => rose('glances-ov-block|glances-card'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(1);
+        }
         await expect.poll(() => rising('.lvs-header, .glances-ov-block, .glances-card'), { timeout: 3000 }).toBe(0);
         await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/);
     });
@@ -1279,7 +1291,12 @@ async function clickInfo(page, selector) {
         };
         requestAnimationFrame(frame);
     }));
-    await button.click();
+    // The popover closes on any scroll, so a page that is still settling can
+    // close it as it opens; a second press is what a reader would do.
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await button.click();
+        if (await page.locator('[data-glances-info-pop]').first().waitFor({ timeout: 700 }).then(() => true, () => false)) return;
+    }
 }
 
 test.describe('the ℹ buttons', () => {

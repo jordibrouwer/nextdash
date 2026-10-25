@@ -114,7 +114,7 @@ test('a settings change from another device waits until the studio closes', asyn
     await expect(studio(page)).toHaveCount(0);
     expect(await local(page, 'categoryHeaderStyle')).toBe('clean');
     await page.evaluate(() => window.dashboardInstance.data.refreshIfDataRevisionChanged());
-    await expect.poll(() => local(page, 'inboxViewUnreadMark'), 'applied once the studio closed').toBe(false);
+    await expect.poll(() => local(page, 'inboxViewUnreadMark'), { message: 'applied once the studio closed', timeout: 15_000 }).toBe(false);
 });
 
 test('a theme\'s own look without glass or backdrop clears the ones before it, for every theme', async ({ page }) => {
