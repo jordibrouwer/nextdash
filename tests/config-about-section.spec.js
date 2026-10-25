@@ -185,6 +185,9 @@ test.describe('About → Install', () => {
 
     test('diagnostics are Markdown and carry no addresses, names or paths', async ({ page }) => {
         await openInstall(page, info);
+        // The facts arrive from the server after the tab is drawn; the diagnostics
+        // are built from them, so wait until the platform is on the page.
+        await expect(page.locator('[data-about-fact="platform"]')).toContainText('linux/arm64');
         const text = await page.evaluate(() => window.dashboardInstance.config.buildDiagnostics());
         expect(text.startsWith('### nextDash')).toBe(true);
         for (const h of ['### Environment', '### Counts', '### Features on', '### Browser']) expect(text).toContain(h);
