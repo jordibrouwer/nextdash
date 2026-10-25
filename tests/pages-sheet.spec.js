@@ -112,9 +112,19 @@ test('with pages enough it spans the header row and lays them out across it', as
     expect(seen.gapToBand, 'the sheet covers part of the band').toBeGreaterThanOrEqual(-2);
     expect(seen.mid, 'the sheet is not centred on the header row').toBe(seen.rowMid);
     expect(seen.width, 'the sheet does not span the page’s column').toBe(seen.rowWidth);
-    // Square where it meets the band, round where it leaves the page.
-    expect(seen.topRadius, 'the sheet is rounded against the band').toBe(0);
+    // Since v1.22.0 the Signature style (the default) draws the sheet as a layer
+    // of the material, round on every corner with the accent bar on top
+    // (theme-overlays.css); square where it meets the band is the Classic drawing.
     expect(seen.bottomRadius, 'the sheet has square bottom corners').toBeGreaterThan(0);
+    expect(seen.topRadius, 'the sheet is not drawn as a layer of the material').toBe(seen.bottomRadius);
+    await page.evaluate(async () => {
+        await window.ThemeLoader.applySurfacesForTheme(window.dashboardInstance.settings.theme,
+            { ...window.dashboardInstance.settings, materialStyle: 'classic', themeSurfacesForceAll: true });
+    });
+    const classic = await sheet(page);
+    // Square where it meets the band, round where it leaves the page.
+    expect(classic.topRadius, 'the sheet is rounded against the band').toBe(0);
+    expect(classic.bottomRadius, 'the sheet has square bottom corners').toBeGreaterThan(0);
     // Three across the page's column: a minimum in rem would fit five, and five
     // names side by side is a table again.
     expect(seen.columns, `${seen.columns} columns of pages`).toBe(3);
