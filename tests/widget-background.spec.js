@@ -16,6 +16,17 @@ async function openDashboard(page) {
     await page.waitForSelector('.dashboard-grid .dashboard-widget .dashboard-widget-body', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The strip is the Classic drawing of a widget's header. The Signature
+    // style, the default since v1.22.0, draws the header with its material
+    // and has no strip of its own, so the look is put on the page as Classic,
+    // not saved: a saved look would reach the specs running beside this one.
+    await page.evaluate(async () => {
+        await window.ThemeLoader.applySurfacesForTheme(window.dashboardInstance.settings.theme, {
+            ...window.dashboardInstance.settings,
+            materialStyle: 'classic',
+            themeSurfacesForceAll: true,
+        });
+    });
 }
 
 const setSurface = (page, word) => page.evaluate((w) => window.ThemeLoader.applyCatSurface(w), word);
