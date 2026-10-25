@@ -25,6 +25,19 @@ async function openDashboard(page, depth) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The depth ladder is the Classic drawing. Since v1.22.0 the Signature
+    // style (the default) draws each material's card with a construction of
+    // its own, and the depth control is scoped to Classic in the CSS
+    // (theme-signature.css, theme-overlays.css). So the look is put on the
+    // page as Classic, not saved: a saved look would reach the specs beside.
+    await page.waitForFunction(() => window.dashboardInstance?.settings?.theme, null, { timeout: 20_000 });
+    await page.evaluate(async () => {
+        await window.ThemeLoader.applySurfacesForTheme(window.dashboardInstance.settings.theme, {
+            ...window.dashboardInstance.settings,
+            materialStyle: 'classic',
+            themeSurfacesForceAll: true,
+        });
+    });
     await page.evaluate((value) => {
         document.body.setAttribute('data-depth', value);
     }, depth);
