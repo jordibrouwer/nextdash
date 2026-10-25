@@ -1077,3 +1077,12 @@ html body .look-migration-modal .modal-actions .modal-button:last-child:focus-vi
 .look-migration-backbtn:focus-visible {
     color: var(--text-primary);
 }
+
+/* The dialog that explains the move to Aurora Glass has the corner to itself: a card that was
+   already standing there steps out of sight while it is open, and comes back when it closes. */
+body:has(#app-modal.show .look-migration-modal) :is(.quickstart-card, .notice-card, [data-holds-corner]) {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+}

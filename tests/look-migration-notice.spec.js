@@ -55,6 +55,26 @@ test.describe('the look migration dialog', () => {
         await expect.poll(() => page.evaluate(() => window.LookMigrationNotice.blocking())).toBe(false);
     });
 
+    test('a card that was already in the corner steps out of sight while the dialog is open', async ({ page }) => {
+        await withMigration(page, { from: 'slate-dark', pending: true, at: 1 }, 'aurora-glass-dark');
+        await page.goto('/');
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await dismissOnboardingIfPresent(page);
+        // A card already standing in the corner, as the quick start bar or a notice would be.
+        await page.evaluate(() => {
+            const card = document.createElement('div');
+            card.className = 'quickstart-card notice-card show';
+            card.id = 'corner-probe';
+            card.textContent = 'A card';
+            document.body.appendChild(card);
+        });
+        await expect(dialog(page)).toBeVisible({ timeout: 20_000 });
+        await expect(page.locator('#corner-probe')).toHaveCSS('visibility', 'hidden');
+        await page.getByRole('button', { name: 'Got it' }).click();
+        await expect(dialog(page)).toHaveCount(0);
+        await expect(page.locator('#corner-probe')).toHaveCSS('visibility', 'visible');
+    });
+
     test('Back to the old theme puts it back, and the question is answered when the dialog opens', async ({ page }) => {
         await withMigration(page, { from: 'slate-dark', pending: true, at: 1 }, 'aurora-glass-dark');
         const saved = [];
