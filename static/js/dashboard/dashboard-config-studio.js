@@ -706,6 +706,14 @@
             const settings = this.dash.settings;
             if (!look || !settings) return;
             const inPlace = (answers, current) => Object.keys(answers).every((k) => answers[k] === current[k]);
+            // A quiet centre this theme answers for itself outranks the install-wide one the
+            // look sets, so the look's would never show: the look takes the answer over.
+            const themePrefs = settings.themeSurfacePrefs?.[this.currentThemeId()];
+            if (typeof look.tuning?.calm === 'number' && themePrefs && 'calm' in themePrefs) {
+                delete themePrefs.calm;
+                if (!Object.keys(themePrefs).length) delete settings.themeSurfacePrefs[this.currentThemeId()];
+                void this.applyResolvedSurfaces();
+            }
             const shownTuning = { ...DEFAULT_TUNING, ...(settings.backdropTuning || {}) };
             if (look.tuning && !inPlace(look.tuning, shownTuning)) {
                 const tuning = { ...shownTuning, ...look.tuning };

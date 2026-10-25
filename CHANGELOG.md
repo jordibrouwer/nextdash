@@ -153,6 +153,7 @@ Not released yet.
 - **fix — a theme's own look clears the glass and backdrop of the look before.** A theme's look is stored without the parts that follow the theme, and applying it left those as they were, so after Neon the theme's cards kept Neon's edge and see-through glass. `themeLookAnswers` fills the left-out backdrop, depth and glass with "follow the theme".
 - **fix — a studio with nothing to show hands back to config.** When `ThemeBrowser.open` had nothing to draw, config had already stepped aside and never came back. Covered, with the four above, by `tests/look-studio-edge-cases.spec.js`.
 - **fix — Material style no longer snaps back, and no longer picks Classic for every theme.** With "Use these for every theme" off, the select offered "Follow the theme" and read a per-theme answer that nothing wrote; picking it stored Classic install-wide and the select showed it again on the next paint. It is install-wide in every scope now, as the setting is (`materialStyleValue`, `dashboard-config-look.js`). Covered by `tests/appearance-background-surface.spec.js`.
+- **fix — a look keeps the theme's own quiet centre.** The quiet centre is a theme's own answer in theme scope, so Save as theme with its look left it out, and a look applied over it was outranked by it. `currentLookAnswers` now saves the one shown and `applyLookAnswers` takes the theme's own over. Covered by `tests/look-studio-calm.spec.js`.
 
 ### Inbox
 

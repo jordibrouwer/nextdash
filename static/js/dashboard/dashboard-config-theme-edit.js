@@ -82,7 +82,9 @@
             const backdrop = this.backdropChoice();
             const depth = this.surfaceSelectValue('themeDepth');
             const look = {
-                tuning: { ...(s.backdropTuning || {}) },
+                // The quiet centre is this theme's own in theme scope (it lives with the
+                // surface answers, not in the tuning), so the one shown is the one saved.
+                tuning: { ...(s.backdropTuning || {}), calm: this.calmValue() },
                 heads: {
                     categoryHeaderStyle: s.categoryHeaderStyle,
                     categoryHeaderSize: s.categoryHeaderSize,
