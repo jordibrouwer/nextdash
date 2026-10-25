@@ -49,8 +49,12 @@ test.describe('bookmarks view: the band\'s actions', () => {
     await page.locator('[data-focus-pile="list"]').click();
     await expect(card).toBeVisible();
     const look = await card.evaluate((el) => {
+      // Since v1.22.0 the Signature style draws every big layer in the material's
+      // surface (--ov-fill, theme-overlays.css) rather than in --background-modal,
+      // so the card is held to what a .modal on this page is painted with.
       const probe = document.createElement('div');
-      probe.style.background = 'var(--background-modal)';
+      probe.className = 'modal';
+      probe.style.visibility = 'hidden';
       document.body.appendChild(probe);
       const modal = getComputedStyle(probe).backgroundColor;
       probe.remove();
