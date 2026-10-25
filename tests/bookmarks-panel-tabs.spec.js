@@ -307,15 +307,33 @@ test('the side panel wears the theme like the summary tile: edges, cast and glos
   const { bookmarks } = await open(page);
   await page.evaluate(() => { document.body.dataset.depth = 'rich'; });
   await pick(page, bookmarks[1].name);
-  const look = await page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame').evaluate((el) => {
+  const frame = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame');
+  const lookAgainst = (probeClass) => frame.evaluate((el, cls) => {
     const probe = document.createElement('div');
-    probe.className = 'lvs-summary';
+    probe.className = cls;
+    probe.style.visibility = 'hidden';
     document.body.appendChild(probe);
     const tile = getComputedStyle(probe).backgroundImage;
     probe.remove();
     const cs = getComputedStyle(el);
     return { image: cs.backgroundImage, tile, shadow: cs.boxShadow };
+  }, probeClass);
+
+  // Since v1.22.0 the Signature style (the default) draws the panel as one of the
+  // small layers that rest on the page, with the material's texture and rim, the
+  // same as the quick-start card and the toast (theme-overlays.css).
+  const signature = await lookAgainst('quickstart-card');
+  expect(signature.image).toBe(signature.tile);
+  expect(signature.image).not.toBe('none');
+  expect(signature.shadow).toContain('inset');
+
+  // Under Classic it still wears the summary tile's depth: edges, cast and gloss.
+  await page.evaluate(async () => {
+    await window.ThemeLoader.applySurfacesForTheme(window.dashboardInstance.settings.theme,
+      { ...window.dashboardInstance.settings, materialStyle: 'classic', themeSurfacesForceAll: true });
+    document.body.dataset.depth = 'rich';
   });
+  const look = await lookAgainst('lvs-summary');
   expect(look.image).toBe(look.tile);
   expect(look.image).not.toBe('none');
   expect(look.shadow).toContain('inset');
