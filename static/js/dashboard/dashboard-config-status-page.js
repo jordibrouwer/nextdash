@@ -1167,14 +1167,12 @@
             const set = new Set(Array.isArray(w.statusGroups) ? w.statusGroups : []);
             if (box.checked) set.add(id); else set.delete(id);
             if (set.size) w.statusGroups = [...set]; else delete w.statusGroups;
-            const body = JSON.stringify({ maintenanceWindows: windows() });
+            // Through the view's own save, not a raw POST: that one adopts the
+            // new settings revision (or the revision poll takes this save for
+            // somebody else's and refreshes over a half-typed field), tells
+            // the other tabs, and queues behind any save already in flight.
             saving = saving.then(async () => {
-                const res = await global.nextDashFetch('/api/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body,
-                });
-                if (!res.ok) throw new Error(String(res.status));
+                if (await this.saveSettingsWithFeedback() === false) throw new Error('not saved');
             }).catch(() => {
                 const err = root.querySelector('[data-sp-load-error]');
                 if (!err || !root.isConnected) return;
