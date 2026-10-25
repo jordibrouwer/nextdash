@@ -80,3 +80,50 @@ func TestDockerUsageAlertsTellOnceAndRecover(t *testing.T) {
 		t.Fatalf("switched off: %+v", off)
 	}
 }
+
+// A spell that ends with no "up" -- the container stopped, or the alerts were
+// switched off -- leaves the reminder register too, so nobody is reminded
+// about a load that is gone and a later spell is counted afresh.
+func TestDockerUsageSpellEndedSilentlyLeavesTheRegister(t *testing.T) {
+	for _, how := range []string{"stopped", "switched off"} {
+		t.Run(how, func(t *testing.T) {
+			h := dockerTestHandlers(t)
+			dockerUsageWatchState.hot = map[string]bool{}
+			dockerStatsStore.reset()
+			t.Cleanup(dockerStatsStore.reset)
+			now := time.Now()
+			id := strings.Repeat("b", 64)
+			var c dockerContainerSummary
+			c.ID, c.Names, c.State = id, []string{"/radarr"}, "running"
+
+			dockerStatsStore.mu.Lock()
+			dockerStatsStore.series[id] = usagePoints(now, 21, 97, 10)
+			dockerStatsStore.mu.Unlock()
+			down := h.checkDockerUsage([]dockerContainerSummary{c}, now)
+			if len(down) != 1 {
+				t.Fatalf("first = %+v", down)
+			}
+			h.trackOpenAlerts(noticeSourceContainer, down)
+			if open := readOpenFile().Open; len(open) != 1 {
+				t.Fatalf("register after the alert = %+v", open)
+			}
+
+			list := []dockerContainerSummary{c}
+			if how == "stopped" {
+				list = nil
+			} else {
+				settings := h.store.GetSettings()
+				settings.DockerUsageAlerts = false
+				if err := h.store.SaveSettings(settings); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if got := h.checkDockerUsage(list, now.Add(time.Minute)); len(got) != 0 {
+				t.Fatalf("told something: %+v", got)
+			}
+			if open := readOpenFile().Open; len(open) != 0 {
+				t.Fatalf("still open: %+v", open)
+			}
+		})
+	}
+}

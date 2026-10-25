@@ -201,6 +201,7 @@ Not released yet.
 
 - **fix — Remove stopped needs the names it was asked about.** `pruneStoppedContainers` (`docker_disk.go`) treated a request without `names` as "every stopped container", so a call with no body removed them all. It now answers `400 names-required`; the Disk tab always sends the list its question showed. `TestDockerPruneStoppedContainers` covers both.
 
+- **fix — a usage alert that ends without "back to normal" stops its reminders.** `checkDockerUsage` (`docker_usage_alerts.go`) forgot a high-CPU or memory spell when the container stopped, was muted or usage alerts were switched off, but sent no "up", so the reminder register kept it open: up to three "still has a problem" reminders for a load that was gone, and a later spell found it open and got none of its own. Those spells now leave the register through `closeOpenAlerts` (`notify_quiet.go`). `TestDockerUsageSpellEndedSilentlyLeavesTheRegister` fails without it.
 ### Glances
 
 - **fix — a host removed and added again under the same name is started once.** Every host loop reported its end on `exited`, also a loop that was stopped, and the sampler then stopped whatever ran under that id: the new loop, which reported its own end, and so on without stopping, each round a beat that recorded the host as down. A stopped loop now reports nothing (`StartGlancesSampler`, `glances_history.go`). `TestGlancesReaddedHostStartsOnce` fails without it.
