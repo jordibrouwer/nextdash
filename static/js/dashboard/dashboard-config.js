@@ -1871,6 +1871,12 @@ class DashboardConfig {
             }
         }
 
+        // A tab keeps Home and End: the ARIA tabs pattern puts them on the first
+        // and last tab. End is also "the last row" and "the last section" below,
+        // and took them from every strip that is not a Config sub-tab (the
+        // Statistics and Containers tabs).
+        if ((e.key === 'Home' || e.key === 'End') && target?.closest?.('[role="tab"]')) return false;
+
         // The side panel's tabs, before [ ] step Config's sub-tabs.
         if (this.handleWorkbenchPanelTabKey?.(e)) return true;
 
