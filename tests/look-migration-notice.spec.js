@@ -125,6 +125,7 @@ test.describe('the look migration dialog', () => {
         await page.goto('/');
         await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
         await dismissOnboardingIfPresent(page);
+        // The check is that nothing appears: the dialog and the corner cards get their whole window first.
         await page.waitForTimeout(6000);
         await expect(dialog(page)).toHaveCount(0);
     });

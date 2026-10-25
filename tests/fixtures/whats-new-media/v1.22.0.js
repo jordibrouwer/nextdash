@@ -35,6 +35,7 @@ module.exports = {
                     el.value = '0';
                     el.dispatchEvent(new Event('input', { bubbles: true }));
                 });
+                // Pacing for the capture, not a condition: the backdrop fades while the slider moves.
                 await page.waitForTimeout(600);
             },
             async act(page) {
@@ -47,6 +48,7 @@ module.exports = {
                     // Pacing for the capture, not a condition: the backdrop fades while the slider moves.
                     await page.waitForTimeout(450);
                 }
+                // Pacing for the capture, not a condition: the slider rests before the recording starts.
                 await page.waitForTimeout(900);
             },
         },
@@ -66,10 +68,13 @@ module.exports = {
                 // Pacing for the capture, not a condition: the sheet gets time to be read before anything moves.
                 await page.waitForTimeout(1_300);
                 await page.keyboard.type('inbox', { delay: 170 });
+                // Pacing for the capture, not a condition: the filter gets a moment to narrow the list.
                 await page.waitForTimeout(900);
                 await page.keyboard.press('ArrowDown');
+                // Pacing for the capture, not a condition: the dock gets a moment to show the keys.
                 await page.waitForTimeout(900);
                 await page.keyboard.press('ArrowDown');
+                // Pacing for the capture, not a condition: the last frame holds so the dock can be read.
                 await page.waitForTimeout(1_400);
             },
         },

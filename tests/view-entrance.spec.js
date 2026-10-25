@@ -212,6 +212,7 @@ async function pinClassic(page) {
     await page.reload();
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await page.waitForFunction(() => Boolean(window.dashboardInstance), null, { timeout: 20_000 });
+    // Pacing: a settled page, so the entrance read below is the view's own and not the first paint.
     await page.waitForTimeout(600);
 }
 

@@ -139,6 +139,7 @@ test.describe('the header under a material', () => {
                     await block.scrollIntoViewIfNeeded();
                     const rest = await offset();
                     await block.locator('.category-title').first().hover({ position: { x: 150, y: 8 } });
+                    // The check is that the name does not move: the hover transition gets time to finish before the second reading.
                     await page.waitForTimeout(220);
                     const hot = await offset();
                     expect.soft(Math.abs(hot.y - rest.y), where + ': the name jumps vertically on hover').toBeLessThan(1);

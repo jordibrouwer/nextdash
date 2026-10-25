@@ -43,6 +43,7 @@ async function openConfig(page, section) {
     await page.locator('.config-link-anchor').click();
     await page.locator('[data-config-section]').first().waitFor();
     if (section) await page.locator(`[data-config-section="${section}"]`).click();
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(800);
     await settle(page);
 }
@@ -63,6 +64,7 @@ test.describe('the move to Aurora Glass', () => {
         await page.goto('/');
         const dialog = page.locator('#app-modal.show .modal').first();
         await dialog.waitFor({ state: 'visible', timeout: 30_000 });
+        // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
         await page.waitForTimeout(1_200);
         await snap(page, dialog, '16a-migration-dialog.jpg', { pad: 16 });
     });
@@ -71,6 +73,7 @@ test.describe('the move to Aurora Glass', () => {
 /** The same stretch of the dashboard: a category, the health tile and the Glances tile. */
 async function frame(page, name) {
     await openDashboard(page);
+    // Pacing for the capture, not a condition: the one-time tour is offered after a first visit and settle closes it.
     await page.waitForTimeout(1_500);
     const parts = [
         page.locator('#category-title-code').locator('xpath=ancestor::*[contains(@class,"category")][1]'),
@@ -100,6 +103,7 @@ test('16a material style setting', async ({ page }) => {
     const panel = page.locator('#config-appearance-body .config-panel', { has: page.locator('[data-appearance-select="materialStyle"]') }).first();
     await panel.waitFor();
     await page.setViewportSize({ width: 1440, height: 1250 });
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(600);
     await snap(page, panel, '16a-material-style.jpg', { pad: 14, maxHeight: 380 });
 });
@@ -110,9 +114,11 @@ test('16a backdrops', async ({ page }) => {
     await page.keyboard.press('Shift+A');
     await page.locator('[data-look-studio] [data-theme-id]').first().waitFor();
     await page.locator('[data-look-studio] [data-studio-tab="backdrop"], [data-look-studio] [role="tab"]', { hasText: /Backdrop/ }).first().click();
+    // Pacing for the capture, not a condition: the studio tab finishes opening before the frame is taken.
     await page.waitForTimeout(800);
     const choose = page.locator('[data-look-studio]').getByText('Choose one', { exact: false }).first();
     if (await choose.count()) await choose.click();
+    // Pacing for the capture, not a condition: the backdrop finishes drawing before the frame is taken.
     await page.waitForTimeout(1_500);
     await snap(page, page.locator('#look-studio-pane'), '16a-backdrops.jpg', { pad: 0, maxHeight: 760 });
 });

@@ -78,6 +78,7 @@ test('a popover opened without a click at it does not aim at a far-away last cli
         window.dashboardInstance.showDatePopover();
     });
     await expect(page.locator('#date-popover')).toBeVisible();
+    // Pacing: the popover rise-in finishes before its arrow is read.
     await page.waitForTimeout(300);
     // The far click, below the popover, is not the anchor: an arrow on the popover's bottom edge would
     // point at it. Either no arrow, or one on the top edge, at the date line or its badge.
@@ -94,6 +95,7 @@ test('the arrow is gone once the date popover is closed', async ({ page, request
     await expect.poll(() => page.locator('#date-popover').getAttribute('data-ov-arrow')).toBe('top');
     await page.evaluate(() => window.dashboardInstance.showDatePopover());
     await expect(page.locator('#date-popover')).toHaveCount(0);
+    // The check is that nothing comes back: the hide animation gets time before the count is read.
     await page.waitForTimeout(300);
     await expect(page.locator('[data-ov-arrow]')).toHaveCount(0);
 });

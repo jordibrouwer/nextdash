@@ -84,6 +84,7 @@ test.describe('accent of the neutrals', () => {
         await expect.poll(async () => (await stored(page)).neutralAccent, { timeout: 5_000 }).toBe('violet');
         // The stylesheet is fetched again for the new accent: wait for that link, not for a clock.
         await page.waitForFunction(() => [...document.querySelectorAll('link[href^="/api/theme.css"]')].some((l) => l.href.includes('neutralAccent=violet')), null, { timeout: 10_000 });
+        // Pacing: the new stylesheet is in, the repaint after it gets a moment before the colour is read.
         await page.waitForTimeout(200);
         expect(await accentOf(page), 'a theme outside the neutrals changed colour').toBe(own);
     });

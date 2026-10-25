@@ -40,6 +40,7 @@ async function open(page, hash) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // Pacing: the page settles after the corner cards close, before contrast is measured.
     await page.waitForTimeout(300);
 }
 

@@ -52,7 +52,8 @@ async function openDashboard(page) {
 async function measure(page) {
     await page.evaluate(() => { window.AppModal.confirm({ title: 'Remove it?', message: 'Nothing is removed in this test.' }); });
     await page.waitForSelector('#app-modal.show .modal');
-    await page.waitForTimeout(250); // the rise-in finishes; computed styles do not need it, a settled page does
+    // Pacing: the rise-in finishes; computed styles do not need it, a settled page does.
+    await page.waitForTimeout(250);
     return page.evaluate(() => {
         const alpha = (colour) => {
             const slash = colour.match(/\/\s*([\d.]+)\s*\)/);

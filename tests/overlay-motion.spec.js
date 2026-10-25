@@ -19,6 +19,7 @@ async function openSheet(page, request, off) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => Boolean(window.dashboardInstance), null, { timeout: 20_000 });
+    // Pacing: a settled page, so the pace read below is the modal's own and not the page's first paint.
     await page.waitForTimeout(600);
     if (off) await page.evaluate(() => document.body.classList.add('no-view-animations'));
     await page.locator('body').press('!');

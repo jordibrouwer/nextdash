@@ -55,6 +55,7 @@ async function openView(page, hash, plate) {
     await page.waitForSelector(plate, { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // Pacing: the page settles after the corner cards close, before the view is measured.
     await page.waitForTimeout(300);
 }
 

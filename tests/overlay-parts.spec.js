@@ -55,6 +55,7 @@ async function openView(page, hash, plate) {
     await page.waitForSelector(plate, { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // Pacing: the page settles after the corner cards close, before the parts are measured.
     await page.waitForTimeout(300);
 }
 
@@ -78,11 +79,13 @@ async function switchTo(page, material, effects) {
 async function openConfirm(page) {
     await page.evaluate(() => { window.AppModal.confirm({ title: 'Remove it?', message: 'Nothing is removed in this test.' }); });
     await page.waitForSelector('#app-modal.show .modal');
+    // Pacing: the rise-in finishes before computed styles are read.
     await page.waitForTimeout(250);
 }
 
 async function closeModal(page) {
     await page.evaluate(() => window.AppModal.hide?.());
+    // Pacing: the close animation finishes before the next modal opens.
     await page.waitForTimeout(100);
 }
 
@@ -194,6 +197,7 @@ test.describe('overlay parts', () => {
             await link.scrollIntoViewIfNeeded();
             await link.hover();
             await page.waitForSelector('.bookmark-preview-card.is-visible', { timeout: 10_000 });
+            // Pacing: the preview card finishes fading in before it is measured.
             await page.waitForTimeout(300);
         };
         const read = () => page.evaluate(() => {
@@ -226,6 +230,7 @@ test.describe('overlay parts', () => {
         await page.evaluate(() => document.body.setAttribute('data-material-style', 'signature'));
         withImage = false;
         await page.mouse.move(5, 5);
+        // Pacing: the pointer leaves the card and the hover transition ends before the resting style is read.
         await page.waitForTimeout(400);
         await page.evaluate(() => {
             // Drop the cached answers so the next hover asks the stub again.
@@ -255,6 +260,7 @@ test.describe('overlay parts', () => {
         });
         await expect(page.locator('.whats-new-modal')).toBeVisible();
         await page.waitForFunction(() => !document.querySelector('.whats-new-modal .wn-content--loading'), null, { timeout: 15_000 });
+        // Pacing: the release notes finish laying out before the layers are measured.
         await page.waitForTimeout(400);
         for (const material of ['glass', 'paper']) {
             await switchTo(page, material);
@@ -314,6 +320,7 @@ test.describe('overlay parts', () => {
             document.dispatchEvent(event);
         }, 'https://example.invalid/page');
         await expect(page.locator('#paste-choice-modal.show .paste-choice-card').first()).toBeVisible();
+        // Pacing: the cards finish their entrance before they are measured.
         await page.waitForTimeout(400);
 
         for (const material of ['glass', 'paper', 'ink']) {
@@ -344,9 +351,11 @@ test.describe('overlay parts', () => {
         // The first card is the selected one, so the hover is read on the second.
         const second = page.locator('.paste-choice-card').nth(1);
         await page.mouse.move(5, 5);
+        // Pacing: the pointer has left every card and the hover transition has ended.
         await page.waitForTimeout(250);
         const before = await second.evaluate((el) => getComputedStyle(el).boxShadow);
         await second.hover();
+        // Pacing: the hover transition finishes before the shadow is read again.
         await page.waitForTimeout(250);
         const after = await second.evaluate((el) => getComputedStyle(el).boxShadow);
         expect.soft(after, 'hover changed nothing').not.toBe(before);
@@ -371,6 +380,7 @@ test.describe('overlay parts', () => {
             await page.reload();
             await page.waitForSelector('#dashboard-layout.inbox-layout > .lvs', { timeout: 20_000 });
             await dismissBlockingOverlays(page);
+            // Pacing: the inbox settles after the reload before the layers are measured.
             await page.waitForTimeout(300);
             const m = await page.evaluate((alphaSrc) => {
                 const alpha = eval(alphaSrc);
