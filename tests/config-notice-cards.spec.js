@@ -36,18 +36,17 @@ test.describe('notice cards on the config panel', () => {
         await openPanel(page);
         await page.evaluate(() => {
             const s = window.DiscoverabilityState;
-            s.markSettingPromoSeen('clock-weather-v1', { persist: false });
+            s.markSettingPromoSeen('theme-studio-hint-v1', { persist: false });
             s.markSettingPromoSeen('kept-pile-v1', { persist: false });
             window.dashboardInstance.config.render();
         });
-        const clock = page.locator('[data-notice-card="clock-weather"]');
-        await expect(clock).toBeEnabled({ timeout: 10_000 });
-        // The theme browser's card is answered on a fresh install, the start guide
-        // covers it; tag suggestions is one nobody has answered.
+        const studio = page.locator('[data-notice-card="theme-studio"]');
+        await expect(studio).toBeEnabled({ timeout: 10_000 });
+        // Tag suggestions is one nobody has answered.
         await expect(page.locator('[data-notice-card="tag-suggestions"]')).toBeDisabled();
-        await clock.click();
+        await studio.click();
         await expect.poll(() => page.evaluate(
-            () => window.DiscoverabilityState.hasSeenSettingPromo('clock-weather-v1')), { timeout: 10_000 }).toBe(false);
+            () => window.DiscoverabilityState.hasSeenSettingPromo('theme-studio-hint-v1')), { timeout: 10_000 }).toBe(false);
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('kept-pile-v1'))).toBe(true);
     });
 

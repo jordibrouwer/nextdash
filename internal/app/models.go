@@ -1155,10 +1155,8 @@ type SearchPick struct {
 // freshDiscoverabilityState is what a new install starts with.
 func freshDiscoverabilityState() *DiscoverabilityState {
 	return &DiscoverabilityState{
-		// The cards the start guide makes redundant: the guide asks for the
-		// weather and offers the theme studio, and the dashboard tour is one of its steps.
-		SeenSettingPromos: []string{"clock-weather-v1", "theme-browser-try-v1"},
-		SeenTips:          []string{"dashboardTutorialV3"},
+		// The card the start guide makes redundant: the dashboard tour is one of its steps.
+		SeenTips: []string{"dashboardTutorialV3"},
 	}
 }
 

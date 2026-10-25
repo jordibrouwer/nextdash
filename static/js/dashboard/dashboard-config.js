@@ -17582,8 +17582,6 @@ class DashboardConfig {
      */
     static NOTICE_CARDS = [
         { id: 'kept-pile', promo: 'kept-pile-v1', labelKey: 'config.noticeKeptPile', label: 'Kept links piling up' },
-        { id: 'clock-weather', promo: 'clock-weather-v1', labelKey: 'config.noticeClockWeather', label: 'Clock and weather' },
-        { id: 'theme-browser', promo: 'theme-browser-try-v1', labelKey: 'config.noticeThemeBrowser', label: 'Theme browser' },
         { id: 'theme-studio', promo: 'theme-studio-hint-v1', labelKey: 'config.noticeThemeStudio', label: 'Theme studio shortcut' },
         { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
           labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },

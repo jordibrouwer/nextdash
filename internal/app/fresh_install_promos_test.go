@@ -2,24 +2,14 @@ package app
 
 import "testing"
 
-// A fresh install is walked through setup by the start guide, which asks for
-// the weather and offers the theme studio itself, and has the dashboard tour as
-// a step. So the corner cards and the automatic tour that cover the same ground
-// start answered.
+// A fresh install is walked through setup by the start guide, which has the
+// dashboard tour as a step. So the automatic tour that covers the same ground
+// starts answered.
 func TestFreshInstallStartsWithTheGuideOverlapAnswered(t *testing.T) {
 	got := gridSettings(t, nil)
 	state := got.DiscoverabilityState
 	if state == nil {
 		t.Fatal("no discoverability state on a fresh install")
-	}
-	for _, id := range []string{"clock-weather-v1", "theme-browser-try-v1"} {
-		found := false
-		for _, seen := range state.SeenSettingPromos {
-			found = found || seen == id
-		}
-		if !found {
-			t.Errorf("promo %s is not answered on a fresh install", id)
-		}
 	}
 	tour := false
 	for _, tip := range state.SeenTips {
