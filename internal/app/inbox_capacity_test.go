@@ -200,3 +200,22 @@ func TestUndoPushesNothingOutAndDropsADeadIcon(t *testing.T) {
 		t.Fatalf("icon = %q: the file is gone, the name must go too", out.Item.Icon)
 	}
 }
+
+// Undo after the same address came back: with "no duplicate URLs" on, the
+// restore answers with the item already there instead of adding a second row.
+func TestUndoKeepsOneRowWhenTheURLCameBack(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{"inboxDedupeUrls": true}`)
+	gone := InboxLink{ID: "inl_gone", URL: "https://same.example/page", AddedAt: time.Now().UnixMilli() - 60000}
+	if _, _, err := h.store.AddInboxLink(InboxLink{URL: "https://same.example/page"}, true, 0); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	body, _ := json.Marshal(map[string]any{"item": gone})
+	rec := httptest.NewRecorder()
+	h.PutInboxItem(rec, httptest.NewRequest(http.MethodPut, "/api/inbox", strings.NewReader(string(body))))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("restore = %d %s", rec.Code, rec.Body.String())
+	}
+	if n := len(h.store.GetInboxItems()); n != 1 {
+		t.Fatalf("items = %d, want 1: the undo added the URL a second time", n)
+	}
+}

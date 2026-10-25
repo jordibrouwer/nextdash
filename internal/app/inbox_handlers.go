@@ -399,7 +399,7 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 	// No cap, as on add: an undo always has room.
 	const maxItems = 0
 
-	restored, evicted, err := h.store.RestoreInboxLinkEvicting(request.Item, maxItems)
+	restored, evicted, err := h.store.RestoreInboxLinkEvicting(request.Item, maxItems, h.store.GetSettings().InboxDedupeUrls)
 	if err != nil {
 		// A full inbox is not a server fault: nothing broke, there is simply no
 		// room. Answered as 409 so the client can tell the user why undo did

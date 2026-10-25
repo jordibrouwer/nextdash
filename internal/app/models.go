@@ -1612,7 +1612,7 @@ type Store interface {
 	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error)
 	AddInboxLinks(links []InboxLink) ([]InboxLink, error)
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
-	RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error)
+	RestoreInboxLinkEvicting(link InboxLink, maxItems int, dedupe bool) (InboxLink, []InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
 	BatchInboxLinks(ids []string, mutate func(*InboxLink) bool) ([]InboxLink, []string, error)

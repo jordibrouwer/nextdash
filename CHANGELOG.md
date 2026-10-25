@@ -143,6 +143,16 @@ Not released yet.
 - **fix — revision checks no longer run side by side.** Focus and `visibilitychange` were throttled to one call per 500 ms, and on a slow server a full settings refresh outlasted that. `refreshIfDataRevisionChanged` now hands a second caller the check already running, and the listener catches its rejection. These two are covered by the same spec, each failing without its fix.
 - **fix — the header falls back to four page tabs, like the server.** `pageTabCap` used 5 when `maxPageTabs` was missing, while the server default and the command palette use 4. `tests/dashboard-page-strip.spec.js` now holds the default to four.
 
+### Look studio
+
+
+### Inbox
+
+- **fix — Undo after pasting the same link again keeps one row.** With "no duplicate URLs" on, `RestoreInboxLinkEvicting` (`inbox.go`) only compared ids, so deleting a link, pasting its URL again and then pressing Undo left two rows with the same address. It now answers with the item already there when the setting is on; `PutInboxItem` passes the setting in. Covered by `TestUndoKeepsOneRowWhenTheURLCameBack`.
+
+### Containers
+
+
 ### Glances
 
 - **fix — a host removed and added again under the same name is started once.** Every host loop reported its end on `exited`, also a loop that was stopped, and the sampler then stopped whatever ran under that id: the new loop, which reported its own end, and so on without stopping, each round a beat that recorded the host as down. A stopped loop now reports nothing (`StartGlancesSampler`, `glances_history.go`). `TestGlancesReaddedHostStartsOnce` fails without it.

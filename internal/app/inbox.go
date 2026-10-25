@@ -559,14 +559,18 @@ func (fs *FileStore) removeUnusedIconFiles(fileNames []string) {
 }
 
 func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error) {
-	restored, _, err := fs.RestoreInboxLinkEvicting(link, maxItems)
+	restored, _, err := fs.RestoreInboxLinkEvicting(link, maxItems, false)
 	return restored, err
 }
 
 // RestoreInboxLinkEvicting is RestoreInboxLink plus what the capacity trim
 // dropped to make room, as AddInboxLink reports it: the caller removes their
 // icons (that needs the lock held here) and tells the user.
-func (fs *FileStore) RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error) {
+//
+// With dedupe (the inbox's "no duplicate URLs" setting) a link whose address
+// came back in while the undo toast was up answers with that item instead: an
+// undo after pasting the same URL again made two rows of it.
+func (fs *FileStore) RestoreInboxLinkEvicting(link InboxLink, maxItems int, dedupe bool) (InboxLink, []InboxLink, error) {
 	maxItems = demoInboxLimit(maxItems)
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
@@ -580,8 +584,9 @@ func (fs *FileStore) RestoreInboxLinkEvicting(link InboxLink, maxItems int) (Inb
 	if err != nil {
 		return InboxLink{}, nil, err
 	}
+	urlKey := canonicalBookmarkURLKey(link.URL)
 	for _, existing := range inbox.Items {
-		if existing.ID == id {
+		if existing.ID == id || (dedupe && urlKey != "" && canonicalBookmarkURLKey(existing.URL) == urlKey) {
 			return existing, nil, nil
 		}
 	}
