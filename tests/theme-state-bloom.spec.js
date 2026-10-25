@@ -22,6 +22,18 @@ async function openDashboard(page, depth = 'rich') {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The bloom is the Classic drawing's mark. Since v1.22.0 the Signature
+    // style (the default) draws the selected row with its material instead
+    // (theme-signature.css), so the look is put on the page as Classic, not
+    // saved: a saved look would reach the specs running beside this one.
+    await page.waitForFunction(() => window.dashboardInstance?.settings?.theme, null, { timeout: 20_000 });
+    await page.evaluate(async () => {
+        await window.ThemeLoader.applySurfacesForTheme(window.dashboardInstance.settings.theme, {
+            ...window.dashboardInstance.settings,
+            materialStyle: 'classic',
+            themeSurfacesForceAll: true,
+        });
+    });
     await page.evaluate((value) => document.body.setAttribute('data-depth', value), depth);
 }
 
