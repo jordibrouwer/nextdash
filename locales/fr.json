@@ -8898,7 +8898,7 @@
     "overviewNewFeatureUnraidHow": "Sept widgets du catalogue lisent un serveur Unraid : une vue d’ensemble, l’array, la parité, les partages, les VM, l’onduleur et les notifications d’Unraid. Ses alertes — un array arrêté, des erreurs de disque, une vérification de parité avec erreurs — peuvent passer par les mêmes canaux que vos autres alertes.",
     "overviewNewFeatureUnraidEnable": "Créez une clé d’API dans Unraid, puis connectez le serveur sous Config → Unraid.",
     "overviewNewFeatureUnraidCta": "Ouvrir Unraid →",
-    "overviewNewFeatureLookStudioTitle": "Le navigateur de thèmes devient un studio de looks",
+    "overviewNewFeatureLookStudioTitle": "Le navigateur de thèmes devient un studio de thèmes",
     "overviewNewFeatureLookStudioWhat": "Un thème décidait des couleurs, et tout le reste était un réglage quelque part dans Apparence — essayé un par un, pendant que la configuration couvrait la page sur laquelle vous l’essayiez.",
     "overviewNewFeatureLookStudioHow": "Shift+A ouvre le navigateur de thèmes à côté du tableau de bord. Ses onglets changent le thème, son fond — 26 motifs dans les couleurs du thème —, le verre des cartes, les en-têtes de catégorie et la typographie, en direct sur votre propre page. Douze looks règlent tout d’un coup. Comparer montre ce que vous aviez ; Annuler, le × ou un clic à côté du panneau le remet, et rien n’est enregistré avant Appliquer.",
     "overviewNewFeatureLookStudioEnable": "Rien à activer. Chaque thème apporte désormais son propre fond ; Apparence → Arrière-plan permet d’en choisir un autre ou de le désactiver.",

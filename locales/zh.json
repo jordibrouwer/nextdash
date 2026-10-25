@@ -8898,7 +8898,7 @@
     "overviewNewFeatureUnraidHow": "目录中的七个小组件读取 Unraid 服务器：概览、阵列、校验、共享、虚拟机、UPS 和 Unraid 的通知。它的提醒——阵列停止、磁盘错误、带错误的校验——可以和你的其他提醒走同样的渠道。",
     "overviewNewFeatureUnraidEnable": "在 Unraid 中创建 API 密钥，然后在 Config → Unraid 中连接服务器。",
     "overviewNewFeatureUnraidCta": "打开 Unraid →",
-    "overviewNewFeatureLookStudioTitle": "主题浏览器变成了外观工作室",
+    "overviewNewFeatureLookStudioTitle": "主题浏览器变成了主题工作室",
     "overviewNewFeatureLookStudioWhat": "以前主题只决定颜色，其他一切都是外观里的某个设置——只能一项项尝试，而配置界面还挡住了你正在试的页面。",
     "overviewNewFeatureLookStudioHow": "按 Shift+A 会在仪表盘旁边打开主题浏览器。它的标签可以实时在你自己的页面上更改主题、背景（26 种以主题颜色绘制的图案）、卡片玻璃、分类标题和字体。十二种外观可一次全部设置。“对比”显示原来的样子；“取消”、× 或点击面板外部都会恢复原样，点击“应用”之前不会保存任何内容。",
     "overviewNewFeatureLookStudioEnable": "无需开启。现在每个主题都自带背景；在 外观 → 背景 中可以换一种或将其关闭。",

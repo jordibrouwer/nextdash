@@ -8951,7 +8951,7 @@
     "overviewNewFeatureUnraidHow": "Seven widgets in the catalogue read an Unraid server: an overview, the array, parity, shares, VMs, the UPS and Unraid's notifications. Its alerts — a stopped array, disk errors, a parity check with errors — can go through the same channels as your other alerts.",
     "overviewNewFeatureUnraidEnable": "Create an API key in Unraid, then connect the server under Config → Unraid.",
     "overviewNewFeatureUnraidCta": "Open Unraid →",
-    "overviewNewFeatureLookStudioTitle": "The theme browser is a look studio",
+    "overviewNewFeatureLookStudioTitle": "The theme browser is a theme studio",
     "overviewNewFeatureLookStudioWhat": "A theme decided the colours, and everything else was a setting somewhere in Appearance — tried one at a time, with config covering the page you were trying it on.",
     "overviewNewFeatureLookStudioHow": "Shift+A opens the theme browser beside the dashboard. Its tabs change the theme, its backdrop — 26 patterns in the theme's own colours — the glass of the cards, the category headers and the type, live on your own page. Twelve looks set them all at once. Compare shows what you had; Cancel, the × or a click beside the panel puts it back, and nothing is saved until Apply.",
     "overviewNewFeatureLookStudioEnable": "Nothing to switch on. Every theme now brings a backdrop of its own; Appearance → Background lets you choose another or switch it off.",

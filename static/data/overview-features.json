@@ -268,7 +268,7 @@
     },
     {
       "titleKey": "config.overviewNewFeatureLookStudioTitle",
-      "titleFallback": "The theme browser is a look studio",
+      "titleFallback": "The theme browser is a theme studio",
       "whatKey": "config.overviewNewFeatureLookStudioWhat",
       "whatFallback": "A theme decided the colours, and everything else was a setting somewhere in Appearance — tried one at a time, with config covering the page you were trying it on.",
       "howKey": "config.overviewNewFeatureLookStudioHow",
