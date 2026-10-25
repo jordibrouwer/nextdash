@@ -182,6 +182,7 @@ Not released yet.
 - **fix — revision checks no longer run side by side.** Focus and `visibilitychange` were throttled to one call per 500 ms, and on a slow server a full settings refresh outlasted that. `refreshIfDataRevisionChanged` now hands a second caller the check already running, and the listener catches its rejection. These two are covered by the same spec, each failing without its fix.
 - **removed — the one-time key hint along the bottom.** After the quick start, `> search · : commands · ? finders · + bookmark` wiped in from left to right under the grid, once per browser. It no longer fits a dashboard whose actions stand in the header or on the edge. Gone: `#search-flow-hint`, `initializeSearchFlowHint` and its `initializeButtonTipsRotation` entry point, and the `.sfh-seg` styles. An empty `.button-container` now drops its plate through `:empty` (`search.css`).
 - **fix — the header falls back to four page tabs, like the server.** `pageTabCap` used 5 when `maxPageTabs` was missing, while the server default and the command palette use 4. `tests/dashboard-page-strip.spec.js` now holds the default to four.
+- **fix — a client that refuses gzip gets no gzip.** `clientAcceptsGzip` (`gzip.go`) looked only at the name in `Accept-Encoding`, so `gzip;q=0`, which means "not gzip", was answered compressed. A weight of 0 is now read as a no. `TestGzipRefusedWithZeroWeight` fails without it.
 
 ### Theme studio
 

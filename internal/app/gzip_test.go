@@ -164,3 +164,23 @@ func TestGzipFlushReachesThroughTheRequestLog(t *testing.T) {
 		t.Fatal("the flush stopped at the request log's recorder")
 	}
 }
+
+// A weight of zero is the client refusing gzip, not asking for it.
+func TestGzipRefusedWithZeroWeight(t *testing.T) {
+	for header, want := range map[string]bool{
+		"gzip":                 true,
+		"gzip;q=0.5":           true,
+		"deflate, gzip; q=1.0": true,
+		"gzip;q=0":             false,
+		"gzip; q=0.000":        false,
+		"br, gzip;Q=0":         false,
+		"br":                   false,
+		"":                     false,
+	} {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Accept-Encoding", header)
+		if got := clientAcceptsGzip(req); got != want {
+			t.Errorf("Accept-Encoding %q: gzip accepted = %v, want %v", header, got, want)
+		}
+	}
+}
