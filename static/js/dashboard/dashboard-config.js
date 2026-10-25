@@ -7186,6 +7186,8 @@ class DashboardConfig {
         }
 
         const pageName = (this.dash.pages || []).find((p) => Number(p.id) === Number(pageId))?.name || '';
+        // chooseImportDestination lives in the Data & backups file.
+        if (!(await this.ensureSection('data-backups'))) return;
         const dest = await this.chooseImportDestination({
             total: preview.total, pageName, onPage: preview, toInbox: preview.inbox,
         });
@@ -7257,6 +7259,8 @@ class DashboardConfig {
         // No dry run here, so the cards go without counts: the server skips
         // what is already there either way.
         const pageName = (this.dash.pages || []).find((p) => Number(p.id) === Number(pageId))?.name || '';
+        // chooseImportDestination lives in the Data & backups file.
+        if (!(await this.ensureSection('data-backups'))) return;
         const dest = await this.chooseImportDestination({ total: rows.length, pageName });
         if (!dest) return;
         const toInbox = dest === 'inbox';
@@ -22272,6 +22276,10 @@ class DashboardConfig {
 
     async bulkExportCsv(picked) {
         if (!picked?.length) return;
+        // categoryNamesByPage lives in the Data & backups file, which is fetched
+        // when that section opens; an export from the dashboard or the
+        // Bookmarks view comes before that.
+        if (!(await this.ensureSection('data-backups'))) return;
         const pageNames = Object.fromEntries((this.dash.pages || []).map((p) => [p.id, p.name]));
         const catNames = await this.categoryNamesByPage(picked.map((bm) => bm.pageId));
         const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
