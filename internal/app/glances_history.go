@@ -705,7 +705,7 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 		// A host that does not answer is a point at 0 on "up", so how long it was
 		// away is drawn, and an incident of its own.
 		hs.record(now, map[string]float64{"up": 0})
-		h.glancesNotify(ctx, cfg, hs.observe(now, []glancesObservation{{Kind: "down", Bad: true}}))
+		h.glancesNotify(ctx, cfg, hs, hs.observe(now, []glancesObservation{{Kind: "down", Bad: true}}))
 		hs.setState(now, false, "unknown", mediaErrorCode(err))
 		return
 	}
@@ -748,7 +748,7 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 	// Disks, sensors and file systems change slowly and cost Glances the most to
 	// read: they are asked once a minute, and the beats between repeat the last
 	// answer.
-	disks, sensors, fs = h.glancesSlowReads(ctx, cfg)
+	disks, sensors, fs = h.glancesSlowReads(ctx, cfg, hs)
 
 	readings := map[string]float64{}
 	put := func(name string, v *float64) {
@@ -823,7 +823,7 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 	}
 	glancesConsumers(readings, procs, containers, tracked)
 	hs.record(now, readings)
-	h.glancesNotify(ctx, cfg, hs.observe(now, glancesObservations(cfg, quick, fs, sensors)))
+	h.glancesNotify(ctx, cfg, hs, hs.observe(now, glancesObservations(cfg, quick, fs, sensors)))
 	h.glancesNotifyForecast(ctx, cfg, hs)
 	hs.setState(now, true, glancesLevel(cfg, quick, fs, sensors), "")
 }
@@ -841,8 +841,7 @@ func glancesSlowEvery() time.Duration {
 
 // glancesSlowReads returns the slow plugins' readings, asking Glances only when
 // the last ask is older than glancesSlowEvery or the host changed.
-func (h *Handlers) glancesSlowReads(ctx context.Context, cfg GlancesConfig) ([]glancesDiskIO, []glancesSensor, []glancesFS) {
-	hs := glancesHostByID(cfg.ID)
+func (h *Handlers) glancesSlowReads(ctx context.Context, cfg GlancesConfig, hs *glancesHost) ([]glancesDiskIO, []glancesSensor, []glancesFS) {
 	key := cfg.Server + "|" + cfg.User
 	hs.slow.Lock()
 	if hs.slow.key == key && !hs.slow.at.IsZero() && time.Since(hs.slow.at) < glancesSlowEvery() {

@@ -129,3 +129,19 @@ func TestGlancesLoadCountsEveryCore(t *testing.T) {
 	}
 }
 
+// The beat of a host that was removed under it does not bring the host back.
+func TestGlancesNoticeOfARemovedHostMakesNoNewOne(t *testing.T) {
+	h := hostsSetup(t)
+	hostsDo(h, http.MethodPut, "/api/glances/config", `{"enabled":true,"server":"http://a.lan:61208"}`)
+	hostsDo(h, http.MethodPut, "/api/glances/config?host=new", `{"name":"NAS","server":"http://nas.lan:61208"}`)
+	nas := glancesHostByID("nas")
+	cfg, _ := loadGlancesConfigFor("nas")
+	if err := glancesRemoveHost("nas"); err != nil {
+		t.Fatal(err)
+	}
+	h.glancesNotify(context.Background(), cfg, nas, []GlancesIncidentEvent{{Opened: true, Incident: GlancesIncident{Kind: "cpu", Start: 1}}})
+	if glancesHostIfKnown("nas") != nil {
+		t.Error("the removed host is known again")
+	}
+}
+

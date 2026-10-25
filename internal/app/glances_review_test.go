@@ -680,12 +680,12 @@ func TestGlancesNoticesArePerKindAndOffByDefault(t *testing.T) {
 		t.Fatalf("a new setup notifies: %v", cfg.Notify)
 	}
 	open := GlancesIncidentEvent{Opened: true, Incident: GlancesIncident{Kind: "cpu", Start: time.Now().UnixMilli(), Peak: 95}}
-	h.glancesNotify(context.Background(), cfg, []GlancesIncidentEvent{open})
+	h.glancesNotify(context.Background(), cfg, glancesHostByID(cfg.ID), []GlancesIncidentEvent{open})
 	if got := len(readHeldFile().Held); got != 0 {
 		t.Fatalf("off, yet %d notices were held", got)
 	}
 	cfg.Notify = []string{"cpu", "mem"}
-	h.glancesNotify(context.Background(), cfg, []GlancesIncidentEvent{open,
+	h.glancesNotify(context.Background(), cfg, glancesHostByID(cfg.ID), []GlancesIncidentEvent{open,
 		{Opened: true, Incident: GlancesIncident{Kind: "swap", Start: open.Incident.Start}},
 		{Opened: true, Incident: GlancesIncident{Kind: "disk", Subject: "/mnt/x", Start: open.Incident.Start}}})
 	held := readHeldFile().Held
