@@ -922,13 +922,16 @@ test('config spans the page and its rail matches the list views', async ({ page 
             return { padding: c.padding, fontSize: c.fontSize, radius: c.borderTopLeftRadius };
         };
         // A probe for the shell's row: health is not open, so its own rail is
-        // not on the page to measure.
+        // not on the page to measure. The row in force on both sides: since
+        // v1.22.0 the Signature style gives a list view's rail row the
+        // material's item corner only where it is lit (theme-overlays.css),
+        // and a row at rest has no ground for a corner to show on.
         const probe = document.createElement('button');
-        probe.className = 'lvs-filter';
+        probe.className = 'lvs-filter is-active';
         document.querySelector('.config-nav').appendChild(probe);
         const shell = read(probe);
         probe.remove();
-        return { config: read(document.querySelector('.config-nav-item')), shell };
+        return { config: read(document.querySelector('.config-nav-item.is-active')), shell };
     });
     expect(rows.config, 'the config rail is drawn differently from the list views')
         .toEqual(rows.shell);
