@@ -3,10 +3,13 @@ package app
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -138,6 +141,85 @@ func TestStagedFilesFromZipStillAcceptsAnOrdinaryBackup(t *testing.T) {
 	}
 	if len(staged) != 1 || staged[0].filename != "settings.json" {
 		t.Errorf("staged = %+v, want one settings.json", staged)
+	}
+}
+
+// testZip packs name -> body into an archive.
+func testZip(t *testing.T, files map[string][]byte) []byte {
+	t.Helper()
+	var raw bytes.Buffer
+	zw := zip.NewWriter(&raw)
+	for name, body := range files {
+		entry, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write(body); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return raw.Bytes()
+}
+
+/*
+Captures are not held in memory while a restore is staged.
+
+They are left out of the archive's total, and a backup carries every one: held
+all at once, a few hundred of them took a small server down mid-restore. Each
+is read out of the archive when it is written, and still arrives whole.
+*/
+func TestRestoreReadsCapturesWhenWritingThem(t *testing.T) {
+	h := newTestHandlers(t)
+	page, _ := json.Marshal(PageWithBookmarks{Page: Page{ID: 1, Name: "main"}, Bookmarks: []Bookmark{}})
+	capture := []byte("<html>a page as it was</html>")
+	staged, err := h.stagedFilesFromZip(testZip(t, map[string][]byte{
+		"bookmarks-1.json":                   page,
+		archiveDirName + "/example-com.html": capture,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range staged {
+		if strings.HasPrefix(f.filename, archiveDirName+"/") && (f.content != nil || f.open == nil) {
+			t.Fatalf("the capture was read into memory while staging: %d bytes", len(f.content))
+		}
+	}
+
+	if _, impErr := h.applyStagedImport(ResolveDataDir(), staged); impErr != nil {
+		t.Fatal(impErr)
+	}
+	got, err := os.ReadFile(filepath.Join(ResolveDataDir(), archiveDirName, "example-com.html"))
+	if err != nil || !bytes.Equal(got, capture) {
+		t.Fatalf("restored capture = %q, %v", got, err)
+	}
+}
+
+// A capture over the entry ceiling is still refused, before anything is
+// replaced -- and so is one whose archive understated its size.
+func TestRestoreHoldsCapturesToTheEntryLimit(t *testing.T) {
+	h := newTestHandlers(t)
+	original := importEntryLimit
+	importEntryLimit = 16 << 10
+	t.Cleanup(func() { importEntryLimit = original })
+
+	big := bytes.Repeat([]byte("A"), 1<<20)
+	// Two entries: one alone would have its folder stripped as a wrapper.
+	if _, err := h.stagedFilesFromZip(testZip(t, map[string][]byte{
+		"settings.json":              []byte(`{}`),
+		archiveDirName + "/big.html": big,
+	})); err == nil {
+		t.Fatal("a capture far over the limit was staged")
+	}
+
+	// The size a zip claims is only a claim; the copy counts what arrives.
+	dest := filepath.Join(t.TempDir(), "big.html")
+	err := copyImportEntry(dest, preparedImportFile{relPath: archiveDirName + "/big.html",
+		open: func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(big)), nil }})
+	if err == nil {
+		t.Fatal("a capture larger than it claimed was written")
 	}
 }
 

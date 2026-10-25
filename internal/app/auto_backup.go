@@ -642,6 +642,22 @@ func (h *Handlers) stagedFilesFromZipReader(ra io.ReaderAt, size int64) ([]stage
 			// Skip unexpected entries rather than failing the whole restore.
 			continue
 		}
+		/*
+		 * Captures are not read here. They are left out of the total -- nextDash
+		 * writes them itself and a backup carries every one, so a hundred of them
+		 * is a gigabyte -- and held in memory all at once, a backup with a few
+		 * hundred took a small server down mid-restore. Each is copied out of the
+		 * archive when the staging directory is written, one at a time, and held
+		 * to importEntryLimit there.
+		 */
+		if strings.HasPrefix(filename, archiveDirName+"/") {
+			if f.UncompressedSize64 > uint64(importEntryLimit) {
+				return nil, fmt.Errorf("%s is too large to restore from this backup", filename)
+			}
+			entry := f
+			staged = append(staged, stagedImportFile{filename: filename, open: entry.Open})
+			continue
+		}
 		rc, err := f.Open()
 		if err != nil {
 			return nil, fmt.Errorf("could not read %s from backup: %w", filename, err)
@@ -667,13 +683,7 @@ func (h *Handlers) stagedFilesFromZipReader(ra io.ReaderAt, size int64) ([]stage
 		if int64(len(content)) > importEntryLimit {
 			return nil, fmt.Errorf("%s is too large to restore from this backup", filename)
 		}
-		// Captures are left out of the total: nextDash writes them itself, a
-		// backup carries every one by default, and a hundred of them is a
-		// gigabyte -- so counting them would refuse its own backups. Each is
-		// still held to importEntryLimit, and the count to importEntryCountLimit.
-		if !strings.HasPrefix(filename, archiveDirName+"/") {
-			total += int64(len(content))
-		}
+		total += int64(len(content))
 		if total > importTotalLimit {
 			return nil, fmt.Errorf("backup is too large to restore (more than %d MB unpacked)", importTotalLimit>>20)
 		}

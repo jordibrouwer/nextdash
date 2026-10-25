@@ -173,6 +173,7 @@ Not released yet.
 - **fix — a category deleted on another device stays deleted.** The categories editor sends the whole list, and `addCategoriesMadeElsewhere` only added what was new on the server, so the next edit here put a category deleted elsewhere back. `_catOnServer` remembers what the server last had; a category gone from it since leaves the list too.
 - **fix — category saves for one page go out one at a time.** Two quick toggles sent two whole lists at once and the older could land last, so the server kept the first click while the button showed the second. `saveCategories` now queues per page. The last three are covered by `tests/config-structure-review-fixes.spec.js`, each failing without its fix.
 - **fix — a settings save that leaves keys out of the backdrop tuning keeps their defaults.** `SaveSettings` decoded a missing `calm`, `scale` or `brightness` as 0 and clamped it, so a tab still running the page from before the quiet centre stored no quiet centre at all. It now fills the absent keys as a settings file does (`fillMissingBackdropTuning`); an explicit 0 stays. Covered by `TestSaveSettingsFillsMissingBackdropTuning`.
+- **fix — restoring a backup with many local captures no longer runs the server out of memory.** `stagedFilesFromZipReader` (`auto_backup.go`) read every capture under `archives/` into memory before the restore applied, and captures are left out of the 1 GB total, so a backup with a few hundred of them needed gigabytes of RAM. A capture is now copied out of the archive when the staging directory is written, one at a time, and still held to the 64 MB entry limit there (`copyImportEntry`, `backup.go`). Covered by `TestRestoreReadsCapturesWhenWritingThem` and `TestRestoreHoldsCapturesToTheEntryLimit`; the first fails without it.
 
 ### Dashboard
 
@@ -200,8 +201,8 @@ Not released yet.
 ### Containers
 
 - **fix — Remove stopped needs the names it was asked about.** `pruneStoppedContainers` (`docker_disk.go`) treated a request without `names` as "every stopped container", so a call with no body removed them all. It now answers `400 names-required`; the Disk tab always sends the list its question showed. `TestDockerPruneStoppedContainers` covers both.
-
 - **fix — a usage alert that ends without "back to normal" stops its reminders.** `checkDockerUsage` (`docker_usage_alerts.go`) forgot a high-CPU or memory spell when the container stopped, was muted or usage alerts were switched off, but sent no "up", so the reminder register kept it open: up to three "still has a problem" reminders for a load that was gone, and a later spell found it open and got none of its own. Those spells now leave the register through `closeOpenAlerts` (`notify_quiet.go`). `TestDockerUsageSpellEndedSilentlyLeavesTheRegister` fails without it.
+
 ### Glances
 
 - **fix — a host removed and added again under the same name is started once.** Every host loop reported its end on `exited`, also a loop that was stopped, and the sampler then stopped whatever ran under that id: the new loop, which reported its own end, and so on without stopping, each round a beat that recorded the host as down. A stopped loop now reports nothing (`StartGlancesSampler`, `glances_history.go`). `TestGlancesReaddedHostStartsOnce` fails without it.
