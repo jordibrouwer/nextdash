@@ -2,6 +2,186 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureThemesRedrawnTitle",
+      "titleFallback": "Every theme, redrawn",
+      "whatKey": "config.overviewNewFeatureThemesRedrawnWhat",
+      "whatFallback": "A theme was a palette. Glass, frost and aurora looked like the same pane in other colours.",
+      "howKey": "config.overviewNewFeatureThemesRedrawnHow",
+      "howFallback": "Each of the twelve materials draws a surface of its own through cards, headers, menus, dialogs and the side panel, and all 192 theme families are drawn again with it. Aurora Glass is the default; existing installs moved onto it once, with a way back.",
+      "enableKey": "config.overviewNewFeatureThemesRedrawnEnable",
+      "enableFallback": "Press Shift+A to open the theme studio and point at a card.",
+      "ctaKey": "config.overviewNewFeatureThemesRedrawnCta",
+      "ctaFallback": "Open Theme →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "general"
+      },
+      "since": "v1.22.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBackdropsQuietTitle",
+      "titleFallback": "75 backdrops, and a quiet centre",
+      "whatKey": "config.overviewNewFeatureBackdropsQuietWhat",
+      "whatFallback": "A backdrop busy enough to look good was too busy to read over.",
+      "howKey": "config.overviewNewFeatureBackdropsQuietHow",
+      "howFallback": "Each material has patterns of its own and each theme picks one. The Quiet centre slider fades the backdrop behind your bookmarks toward the page colour, so the pattern stays at the edges.",
+      "enableKey": "config.overviewNewFeatureBackdropsQuietEnable",
+      "enableFallback": "Open the theme studio, pick the Backdrop tab and move Quiet centre.",
+      "ctaKey": "config.overviewNewFeatureBackdropsQuietCta",
+      "ctaFallback": "Open Background →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "background"
+      },
+      "since": "v1.22.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMaterialStyleTitle",
+      "titleFallback": "Signature or Classic",
+      "whatKey": "config.overviewNewFeatureMaterialStyleWhat",
+      "whatFallback": "The new surfaces are not everyone's taste.",
+      "howKey": "config.overviewNewFeatureMaterialStyleHow",
+      "howFallback": "Material style keeps each material's signature drawing, or brings back the flat surface of before. It can follow the theme or apply to every theme.",
+      "enableKey": "config.overviewNewFeatureMaterialStyleEnable",
+      "enableFallback": "Open Appearance → Surfaces and pick Material style.",
+      "ctaKey": "config.overviewNewFeatureMaterialStyleCta",
+      "ctaFallback": "Open Surfaces →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "surface"
+      },
+      "since": "v1.22.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureNeutralsClassicTitle",
+      "titleFallback": "Neutrals with one accent, and ThinkDashboard Classic",
+      "whatKey": "config.overviewNewFeatureNeutralsClassicWhat",
+      "whatFallback": "The grey themes each had their own idea of blue, and the first ThinkDashboard page was gone.",
+      "howKey": "config.overviewNewFeatureNeutralsClassicHow",
+      "howFallback": "The eight neutral themes sit on one lightness ladder, with an accent you pick once for all of them. ThinkDashboard Classic brings back the first page nextDash drew, flat, with its grid of dots.",
+      "enableKey": "config.overviewNewFeatureNeutralsClassicEnable",
+      "enableFallback": "Pick a neutral theme in the theme studio, then Accent of the neutrals under Surfaces.",
+      "ctaKey": "config.overviewNewFeatureNeutralsClassicCta",
+      "ctaFallback": "Open Theme →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "general"
+      },
+      "since": "v1.22.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureCheatSheetSearchTitle",
+      "titleFallback": "A cheat sheet you can search",
+      "whatKey": "config.overviewNewFeatureCheatSheetSearchWhat",
+      "whatFallback": "Finding one shortcut meant reading a long list.",
+      "howKey": "config.overviewNewFeatureCheatSheetSearchHow",
+      "howFallback": "The cheat sheet has a search field, topics in columns and a dock that shows the keys of the row you pick and follows the keyboard focus.",
+      "enableKey": "config.overviewNewFeatureCheatSheetSearchEnable",
+      "enableFallback": "Press Shift+1 or F1 on the dashboard and type.",
+      "ctaKey": "config.overviewNewFeatureCheatSheetSearchCta",
+      "ctaFallback": "Open Help →",
+      "go": {
+        "section": "help"
+      },
+      "since": "v1.22.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTwoColumnFormTitle",
+      "titleFallback": "Add a bookmark and see its card",
+      "whatKey": "config.overviewNewFeatureTwoColumnFormWhat",
+      "whatFallback": "You saved a bookmark and only then saw how it looked.",
+      "howKey": "config.overviewNewFeatureTwoColumnFormHow",
+      "howFallback": "The add and edit form has two columns with a live preview of the card, and the icon picker opens inside the page. Two columns show on a screen with a fine pointer.",
+      "enableKey": "config.overviewNewFeatureTwoColumnFormEnable",
+      "enableFallback": "Press the + button, or the + key on the dashboard.",
+      "ctaKey": "config.overviewNewFeatureTwoColumnFormCta",
+      "ctaFallback": "Add a bookmark →",
+      "go": {
+        "openBookmarkForm": true
+      },
+      "since": "v1.22.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureGlancesInsightsTitle",
+      "titleFallback": "Insights that say what a machine did",
+      "whatKey": "config.overviewNewFeatureGlancesInsightsWhat",
+      "whatFallback": "A graph shows a number; it does not say whether it was a normal day.",
+      "howKey": "config.overviewNewFeatureGlancesInsightsHow",
+      "howFallback": "Insights on the Glances page compare the range with the one before, draw a typical day, name the busiest and quietest hours and count an ongoing outage. Every block has an info button that says what it shows.",
+      "enableKey": "config.overviewNewFeatureGlancesInsightsEnable",
+      "enableFallback": "Open the Glances page and pick Insights.",
+      "ctaKey": "config.overviewNewFeatureGlancesInsightsCta",
+      "ctaFallback": "Open Glances →",
+      "go": {
+        "section": "glances"
+      },
+      "since": "v1.21.1"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureGlancesPageTitle",
+      "titleFallback": "A page for the machines you watch",
+      "whatKey": "config.overviewNewFeatureGlancesPageWhat",
+      "whatFallback": "Glances showed one machine's numbers in a widget, with no record of what happened an hour ago.",
+      "howKey": "config.overviewNewFeatureGlancesPageHow",
+      "howFallback": "Glances has a page of its own: overview, processes, containers, disks, network and a thirty-day history with incidents, for up to five hosts. Click a process or a container for its side panel, and compare with last week.",
+      "enableKey": "config.overviewNewFeatureGlancesPageEnable",
+      "enableFallback": "Fill in the address of a Glances 4 server under Config → Glances, then press Shift+G.",
+      "ctaKey": "config.overviewNewFeatureGlancesPageCta",
+      "ctaFallback": "Open Glances →",
+      "go": {
+        "section": "glances"
+      },
+      "since": "v1.21.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureGlancesWidgetTitle",
+      "titleFallback": "One host on your dashboard",
+      "whatKey": "config.overviewNewFeatureGlancesWidgetWhat",
+      "whatFallback": "Keeping an eye on a server meant opening its Glances page.",
+      "howKey": "config.overviewNewFeatureGlancesWidgetHow",
+      "howFallback": "The Glances widget puts one host on a dashboard page, as three meters or as the processor's last hour, and says since when a host does not answer.",
+      "enableKey": "config.overviewNewFeatureGlancesWidgetEnable",
+      "enableFallback": "Add the Glances widget from the catalogue and pick the host.",
+      "ctaKey": "config.overviewNewFeatureGlancesWidgetCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.21.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureDomainExpiryTitle",
+      "titleFallback": "Know before a domain expires",
+      "whatKey": "config.overviewNewFeatureDomainExpiryWhat",
+      "whatFallback": "A domain that ran out was found when its site stopped answering.",
+      "howKey": "config.overviewNewFeatureDomainExpiryHow",
+      "howFallback": "A Domains widget, a badge in Bookmarks and an alert tell you when a registration runs out. Registries that publish no date are named in a group of their own, so a quiet list never looks like a clean one.",
+      "enableKey": "config.overviewNewFeatureDomainExpiryEnable",
+      "enableFallback": "Add the Domains widget, or open Health and look at the domain badges.",
+      "ctaKey": "config.overviewNewFeatureDomainExpiryCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      },
+      "since": "v1.21.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureCategoryAddTitle",
+      "titleFallback": "Add a bookmark to a category from its header",
+      "whatKey": "config.overviewNewFeatureCategoryAddWhat",
+      "whatFallback": "Adding a link meant choosing its category in the form every time.",
+      "howKey": "config.overviewNewFeatureCategoryAddHow",
+      "howFallback": "Right-click a category header and the first entry opens the add-bookmark form with that category already chosen.",
+      "enableKey": "config.overviewNewFeatureCategoryAddEnable",
+      "enableFallback": "Right-click any category header on the dashboard.",
+      "ctaKey": "config.overviewNewFeatureCategoryAddCta",
+      "ctaFallback": "Add a bookmark →",
+      "go": {
+        "openBookmarkForm": true
+      },
+      "since": "v1.21.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureAboutInstallTitle",
       "titleFallback": "Facts about your install, ready for a bug report",
       "whatKey": "config.overviewNewFeatureAboutInstallWhat",
