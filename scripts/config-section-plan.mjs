@@ -30,7 +30,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { indexMembers, memberAt, CORE } from './lib/config-members.mjs';
+import { indexMembers, makeScanner, memberAt, CORE } from './lib/config-members.mjs';
 
 /*
  * Where each section starts. Everything a section owns is reached from here and
@@ -114,8 +114,122 @@ const sourceFile = args.file || CORE;
 const { lines, members, byName } = indexMembers(sourceFile);
 const method = (name) => byName.get(name)?.find((m) => !m.isStatic);
 
+/*
+ * Calls behind `this.inSection('x')`.
+ *
+ * Most of what tied every section to every other was a call the code already
+ * guards at run time: Stats repaints itself when its data lands, but only while
+ * Stats is open; the trash redraws the Data tab, but only while that tab is
+ * there. A walk that cannot see the guard follows the call anyway, and so About
+ * "reaches" all of Stats and Bookmarks "reaches" all of Help.
+ *
+ * Only `inSection` counts. A bare `this.section === 'x'` is true from the
+ * moment a hash route sets it, before the section's file has run, so a call
+ * behind it can still land on a method that is not there yet. `inSection` also
+ * asks whether the file is ready, which makes whatever it guards safe to move
+ * into that file.
+ *
+ * Three shapes are read, each on one line:
+ *   if (…this.inSection('x')…) {        — the block is x's
+ *   if (…this.inSection('x')…) stmt;    — the statement is x's
+ *   if (!this.inSection('x')) return;   — the rest of the enclosing block is x's
+ * A condition with `||` (or, for the early return, `&&`) is not a guard and is
+ * read as ordinary code, as is any condition spread over several lines.
+ */
+const CALL = /this\.([A-Za-z_]\w*)\s*\??\.?\s*\(/g;
+const GUARD = /this\.inSection\('([\w-]+)'\)/;
+
+/** The condition of an `if (` at the start of a line, and what follows it. */
+function splitIf(line) {
+    const at = line.search(/^\s*(?:\}\s*else\s+)?if \(/);
+    if (at < 0) return null;
+    const open = line.indexOf('if (') + 3;
+    let depth = 0;
+    for (let i = open; i < line.length; i += 1) {
+        if (line[i] === '(') depth += 1;
+        else if (line[i] === ')') {
+            depth -= 1;
+            if (depth === 0) return { cond: line.slice(open + 1, i), rest: line.slice(i + 1) };
+        }
+    }
+    return null;
+}
+
+/** A condition with its bracketed parts removed, so `a && (b || c)` reads as `a && `. */
+function topLevel(cond) {
+    let out = '';
+    let depth = 0;
+    for (const c of cond) {
+        if (c === '(' || c === '[') depth += 1;
+        if (depth === 0) out += c;
+        if (c === ')' || c === ']') depth -= 1;
+    }
+    return out;
+}
+
+function splitCalls(m) {
+    const free = new Set();
+    const gated = new Map();   // name -> Set of section ids
+    const add = (text, section) => {
+        for (const c of text.matchAll(CALL)) {
+            if (!section) { free.add(c[1]); continue; }
+            if (!gated.has(c[1])) gated.set(c[1], new Set());
+            gated.get(c[1]).add(section);
+        }
+    };
+    const scan = makeScanner();
+    let depth = 0;
+    const gates = [];   // { section, min }: holds while depth >= min
+    for (let i = m.declLine; i <= m.end; i += 1) {
+        const line = lines[i];
+        // A line that opens by closing a block has left that block already.
+        const closing = (line.match(/^\s*(\}+)/)?.[1] || '').length;
+        while (gates.length && depth - closing < gates.at(-1).min) gates.pop();
+        const active = gates.at(-1)?.section || null;
+        const parts = active ? null : splitIf(line);
+        const guard = parts?.cond.match(GUARD);
+        const before = depth;
+        depth += scan(line);
+        if (!guard) { add(line, active); continue; }
+        const section = guard[1];
+        const negated = parts.cond.includes(`!this.inSection('${section}')`);
+        // The guard itself has to sit at the top level, or `(this.inSection('x') || y)`
+        // would pass for one.
+        const top = topLevel(parts.cond.replace(GUARD, 'GUARD'));
+        add(parts.cond, null);
+        if (!negated && top.includes('GUARD') && !top.includes('||')) {
+            add(parts.rest, section);
+            if (depth > before) gates.push({ section, min: before + 1 });
+        } else if (negated && top.includes('GUARD') && !top.includes('&&') && /^\s*return\b/.test(parts.rest)) {
+            add(parts.rest, null);
+            gates.push({ section, min: before });
+        } else {
+            add(parts.rest, null);
+        }
+    }
+    return { free, gated };
+}
+
+const callsOf = new Map(members.filter((m) => !m.isStatic).map((m) => [m, splitCalls(m)]));
+
+/** What a member calls on the way to `section`: everything ungated, plus that section's gates. */
+function callsFor(m, section) {
+    const { free, gated } = callsOf.get(m);
+    if (!section) return free;
+    return [...free, ...[...gated].filter(([, s]) => s.has(section)).map(([n]) => n)];
+}
+
+/** Every name some member calls behind a gate for `section`, from anywhere. */
+function gatedInto(section) {
+    const out = [];
+    for (const { gated } of callsOf.values()) {
+        for (const [name, s] of gated) if (s.has(section)) out.push(name);
+    }
+    return out;
+}
+
 /** Every member reachable from a set of entry points, stopping at SHARED. */
-function reachable(entries) {
+function reachable(entries, section = null) {
     const seen = new Set();
     const queue = entries.filter((n) => method(n));
     const entrySet = new Set(entries);
@@ -128,7 +242,7 @@ function reachable(entries) {
         seen.add(name);
         const m = method(name);
         if (!m) continue;
-        for (const called of m.calls) {
+        for (const called of callsFor(m, section)) {
             if (!seen.has(called) && !SHARED.has(called) && method(called)) queue.push(called);
         }
     }
@@ -204,7 +318,8 @@ const externallyCalled = (() => {
 })();
 
 const reach = {};
-for (const [id, entries] of Object.entries(ANCHORS)) reach[id] = reachable(entries);
+// A call gated for a section is that section's, wherever it sits.
+for (const [id, entries] of Object.entries(ANCHORS)) reach[id] = reachable([...entries, ...gatedInto(id)], id);
 
 /*
  * What the core reaches without waiting for any module.
@@ -239,7 +354,9 @@ const coreReachable = (() => {
         const name = queue.shift();
         if (seen.has(name) || GATED.has(name)) continue;
         seen.add(name);
-        for (const called of method(name)?.calls || []) {
+        // A call behind inSection() waits for its section's file, like renderSection.
+        const m = method(name);
+        for (const called of m ? callsFor(m, null) : []) {
             if (!seen.has(called) && !GATED.has(called) && method(called)) queue.push(called);
         }
     }

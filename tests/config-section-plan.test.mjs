@@ -280,6 +280,75 @@ console.log('planner (ground truth: the help split)');
     });
 }
 
+// ─── Calls behind inSection() ───────────────────────────────────────────────
+
+console.log('planner (inSection gates)');
+
+/*
+ * About repaints Stats only while Stats is open, and the planner has to see
+ * that or About "reaches" every Stats method. A bare `this.section === 'stats'`
+ * must not count: it is true before the Stats file has run.
+ */
+{
+    const fixture = (guard) => [
+        'class DashboardConfig {',
+        '    renderStats() {',
+        '        return this.statsBody();',
+        '    }',
+        '    statsBody() {',
+        '        return 1;',
+        '    }',
+        '    renderAbout() {',
+        `        ${guard}`,
+        '        return 2;',
+        '    }',
+        '}',
+    ].join('\n');
+    const dir = mkdtempSync(join(tmpdir(), 'config-gate-'));
+    const ownsStatsBody = (guard) => {
+        const path = join(dir, 'gate.js');
+        writeFileSync(path, fixture(guard));
+        let report;
+        try {
+            report = execFileSync('node', ['scripts/config-section-plan.mjs',
+                '--file', path, '--section', 'stats', '--json'], { encoding: 'utf8' });
+        } catch (err) {
+            report = err.stdout;
+        }
+        return JSON.parse(report).owned.includes('statsBody');
+    };
+
+    test('a call behind inSection belongs to that section', () => {
+        assert.ok(ownsStatsBody("if (this.isActiveView() && this.inSection('stats')) this.statsBody();"),
+            'statsBody was shared with About despite the gate');
+    });
+
+    test('a block behind inSection belongs to that section', () => {
+        assert.ok(ownsStatsBody("if (this.inSection('stats') && (a || b)) { this.statsBody(); }"),
+            'a bracketed || hid the gate');
+    });
+
+    test('an early return on !inSection gates the rest of the block', () => {
+        const path = join(dir, 'gate.js');
+        writeFileSync(path, fixture("if (!this.inSection('stats') || this.x) return;\n        this.statsBody();"));
+        const report = JSON.parse(execFileSync('node', ['scripts/config-section-plan.mjs',
+            '--file', path, '--section', 'stats', '--json'], { encoding: 'utf8' }));
+        assert.ok(report.owned.includes('statsBody'), 'the early return did not gate what follows it');
+    });
+
+    test('a bare section check is not a gate', () => {
+        assert.ok(!ownsStatsBody("if (this.section === 'stats') this.statsBody();"),
+            'this.section === \'stats\' was read as a gate, but it holds before the file has run');
+    });
+
+    test('inSection with a top-level || is not a gate', () => {
+        assert.ok(!ownsStatsBody("if (this.inSection('stats') || this.y) this.statsBody();"),
+            'a guard that can be bypassed was read as one');
+    });
+
+    rmSync(dir, { recursive: true, force: true });
+}
+
 console.log('');
 if (failures) {
     console.error(`${failures} failure(s)`);
