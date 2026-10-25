@@ -54,6 +54,12 @@ const glowTokens = (page) => page.evaluate(() => {
  * config view gets exactly the theme's rule and nothing a tab adds.
  */
 const panelShadow = (page) => page.evaluate(() => {
+    // The glow ring and the depth ladder are the Classic drawing. Since
+    // v1.22.0 the Signature style (the default) gives the pane its material's
+    // own surface (theme-overlays.css), with a fixed shadow of its own. The
+    // pane is read as Classic, set on the page only and not saved, and set
+    // again on every read because a theme or depth change redraws it.
+    for (const el of [document.documentElement, document.body]) el.setAttribute('data-material-style', 'classic');
     // Config is one pane now and its panels only carry a hairline, so the
     // surface the theme's glow reaches is the pane itself.
     const pane = document.querySelector('#dashboard-layout.config-layout > .config-view');
