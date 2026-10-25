@@ -863,11 +863,13 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	}
 	// A backup made without its secrets has them empty; restoring it keeps the
 	// ones in use, as it keeps the secret files it does not carry.
+	h.settingsMu.Lock()
 	if after := h.store.GetSettings(); keepSettingsSecrets(&after, before) {
 		if err := h.store.SaveSettings(after); err != nil {
 			logWarn(logComponentImport, "the alert and archive secrets could not be kept (%v); set them again in Config", err)
 		}
 	}
+	h.settingsMu.Unlock()
 
 	return skippedBookmarks, nil
 }
