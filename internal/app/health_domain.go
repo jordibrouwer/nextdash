@@ -196,6 +196,11 @@ func (c *rdapClient) serverFor(ctx context.Context, tld string) (string, error) 
 		if err != nil && c.servers == nil {
 			return "", err
 		}
+		// The old list is used for another hour: without this every lookup
+		// would ask IANA again, each one waiting out the timeout under the lock.
+		if err != nil {
+			c.loaded = time.Now().Add(time.Hour - rdapBootstrapMaxAge)
+		}
 	}
 	return c.servers[strings.ToLower(tld)], nil
 }

@@ -150,6 +150,10 @@ Not released yet.
 - **fix — Insights weighs the load against every processor.** The core count was the number of `core:*` series, which stops at 32, so on a bigger machine a load of 40 counted as over the cores. The sampler keeps the count the host reports (`glancesHost.cores`) and `glancesComputeLoad` uses it. `TestGlancesLoadCountsEveryCore` fails without it.
 - **fix — the last beat of a removed host does not bring it back.** `glancesNotify` and `glancesSlowReads` looked the host up again by id, which made a new one for a host removed in between, and a host added again under that name inherited its notice cooldown. Both now take the beat's own host. `TestGlancesNoticeOfARemovedHostMakesNoNewOne` fails without it.
 
+### Domains
+
+- **fix — with IANA unreachable, domain lookups no longer ask for the server list each time.** A failed refresh of the RDAP bootstrap list kept the old one but not its age, so every lookup asked again and waited out the ten-second timeout under the client's lock. The old list now serves another hour first (`serverFor`, `health_domain.go`). `TestRDAPBootstrapFailureIsNotRetriedPerLookup` fails without it.
+
 ---
 
 ## v1.21.3 — 23 October 2026

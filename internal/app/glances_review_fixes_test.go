@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"sync"
@@ -145,3 +146,32 @@ func TestGlancesNoticeOfARemovedHostMakesNoNewOne(t *testing.T) {
 	}
 }
 
+type failingTransport struct {
+	mu    sync.Mutex
+	calls int
+}
+
+func (f *failingTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	f.mu.Lock()
+	f.calls++
+	f.mu.Unlock()
+	return nil, errors.New("unreachable")
+}
+
+// With IANA away, the list already held answers for an hour: not every lookup
+// asks again and waits out the timeout.
+func TestRDAPBootstrapFailureIsNotRetriedPerLookup(t *testing.T) {
+	transport := &failingTransport{}
+	c := newRDAPClient()
+	c.http.Transport = transport
+	c.servers = map[string]string{"com": "https://rdap.example/"}
+	c.loaded = time.Now().Add(-rdapBootstrapMaxAge - time.Hour)
+	for i := 0; i < 3; i++ {
+		if base, err := c.serverFor(context.Background(), "com"); err != nil || base != "https://rdap.example/" {
+			t.Fatalf("lookup %d: %q %v", i, base, err)
+		}
+	}
+	if transport.calls != 1 {
+		t.Errorf("the list was asked for %d times, want once", transport.calls)
+	}
+}
