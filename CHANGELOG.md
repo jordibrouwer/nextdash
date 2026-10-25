@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.22.0](#v1220)
+- [v1.22.0 — 25 October 2026](#v1220--25-october-2026)
 - [v1.21.3 — 23 October 2026](#v1213--23-october-2026)
 - [v1.21.2 — 23 October 2026](#v1212--23-october-2026)
 - [v1.21.1 — 23 October 2026](#v1211--23-october-2026)
@@ -123,9 +123,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.22.0
-
-Not released yet.
+## v1.22.0 — 25 October 2026
 
 **A new look.** Every material now has a surface of its own, drawn through cards, headers, menus, dialogs and the side panel, and the themes were redrawn with it. New backdrops and patterns fit each theme. **Aurora Glass** is the default theme, and every existing install moves onto it once, with a dialog that offers the way back. Next to it: a Classic ThinkDashboard theme, a redesigned cheat sheet, a two-column bookmark form with a live preview, and a round of fixes in Config, the dashboard and Glances.
 
@@ -228,6 +226,9 @@ Not released yet.
 - **docs — Config → Help follows the new look, in all six languages.** The Themes panel names Aurora Glass as the default, more than 190 families and 75 backdrops, and the theme studio instead of the theme browser. New in it: the Signature and Classic material styles, the eight neutrals and their accent, ThinkDashboard Classic, Quiet centre, and a paragraph on the move to Aurora Glass. Appearance lists the new Surfaces settings and the eighth backdrop slider. Keyboard adds `Shift+G` and the new cheat sheet, and uses a lowercase `g` for the chords. Bookmarks, Inbox and Config list `g`/`End` for first and last. The bookmark form is described in two columns. Five tips follow (`tipTuneThemeBrowser`, `tipTuneThemeBrowserWidth`, `tipTuneGloss`, `tipTuneLooks`, `tipTuneBackdrop`).
 - **docs — `README.md` follows the new look.** It names Aurora Glass as the default, 192 theme families (384 themes), the twelve materials and the three collections, the signature and Classic material styles, 75 backdrops with a quiet centre, and calls the panel the theme studio. All 22 pictures are taken again over the demo data the server seeds itself; the dashboard is in Aurora Glass, the bookmarks view in its light half and the command palette in ThinkDashboard Classic, the rest in a theme each.
 - **docs — the theme studio is called the theme studio.** The Overview news item about it said "look studio"; its title now says theme studio in all six languages.
+- **docs — the Quiet centre, Material style and the accent of the neutrals are translated** in Dutch, German, French, Spanish and Chinese: 20 keys under `config` (`backdropCalm`, `materialStyle*`, `neutralAccent*`), so `validate:locale-parity` passes again.
+- **new — What's new leads with the redrawn themes.** `static/data/whats-new/v1.22.0.json` has three highlights, each with its own picture or recording: every theme redrawn (a screenshot, with a button to the theme studio), 75 backdrops with a quiet centre (a recording) and the searchable cheat sheet (a recording). The plan is in `tests/fixtures/whats-new-media/v1.22.0.js`, the files in `static/data/whats-new/media/`, and `whats-new-stub.js` names v1.22.0 as the release the window opens for.
+- **docs — nextdash.cc follows the new look.** Every feature page has new pictures in Aurora Glass dark, with six on Statistics (all tabs) and two more on Tags (the tag picker and the tags offered on a new bookmark). The theme gallery shows all 192 families in dark and light with the backdrop each comes with, and has a Classic group for ThinkDashboard Classic. The hero and the slider open on Aurora Glass.
 - **new — scripts refill the demo data and retake the manual's shots** (`scripts/make-manual-seed.sh`, `run-manual-shots.sh`, `validate-manual-shot-refs.cjs`). The first lets the server seed itself and fetches the favicons, the second takes the four shot specs with eight workers and reads the real exit code, the third checks that every picture `MANUAL.md` names exists and that every file is used. They refuse `data-demo` and port 8080.
 
 ---

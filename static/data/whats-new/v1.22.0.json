@@ -1,0 +1,96 @@
+{
+  "tag": "v1.22.0",
+  "date": "25 October 2026",
+  "releasedAt": "2026-10-25",
+  "modalLead": "<strong>Every theme is redrawn.</strong> Each material now has a surface of its own, with new backdrops to match. A cheat sheet you can search and an add-bookmark form with a live preview come with it.",
+  "sections": [
+    {
+      "title": "Look",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every theme is redrawn.</strong> Cards, headers, menus, dialogs and the side panel take the surface of their material: paper reads as an index card, enamel as a glazed tile, neon has a glowing top edge. All 192 theme families are drawn again with it, in light and dark. Aurora Glass is the new default, and every install moved onto it once, with a dialog that shows the theme you had and a <strong>Go back</strong> button.",
+          "highlight": true,
+          "title": "Every theme, redrawn",
+          "link": "#config/appearance/general",
+          "linkLabel": "Open theme studio (Shift+A)",
+          "media": {
+            "image": "media/v1.22.0-new-look.jpg",
+            "alt": "The nextDash dashboard in a redrawn theme: translucent columns over a soft backdrop"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>75 backdrops, and a quiet centre.</strong> Each material has patterns of its own and each theme picks one. The <strong>Quiet centre</strong> slider in the theme studio fades the backdrop behind your bookmarks, so the text stays easy to read and the pattern stays at the edges.",
+          "highlight": true,
+          "title": "75 backdrops, and a quiet centre",
+          "link": "#config/appearance/background",
+          "linkLabel": "Open Background",
+          "media": {
+            "image": "media/v1.22.0-quiet-centre.jpg",
+            "video": "media/v1.22.0-quiet-centre.webm",
+            "alt": "The theme studio on its Backdrop tab; the Quiet centre slider fades the pattern behind the bookmarks"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Signature or Classic.</strong> Under Surface, <strong>Material style</strong> keeps the new drawing of each material, or brings back the flat surface of before."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Neutrals and ThinkDashboard Classic.</strong> The eight neutral themes sit on one lightness ladder, with an accent you pick once for all of them. <strong>ThinkDashboard Classic</strong> brings back the first page nextDash drew, with its grid of dots; the current one is now ThinkDashboard Modern."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Unraid themes redrawn.</strong> Card panels, server colours and a calmer band."
+        }
+      ]
+    },
+    {
+      "title": "Keyboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A cheat sheet you can search.</strong> A search field, topics in columns and a dock along the bottom that shows the keys of the row you pick and follows the keyboard focus.",
+          "highlight": true,
+          "title": "A cheat sheet you can search",
+          "media": {
+            "image": "media/v1.22.0-cheat-sheet.jpg",
+            "video": "media/v1.22.0-cheat-sheet.webm",
+            "alt": "The cheat sheet: a word typed in the search field narrows the topics, and the dock shows the keys of the row picked"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Shift+G opens Glances</strong> from every view. In lists, <strong>End</strong> goes to the last row; G no longer does."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Add and edit in two columns.</strong> The form shows the card as it will look on the dashboard while you type, and the icon picker opens inside the page instead of being clipped."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Inbox.</strong> Undo after pasting the same link again keeps one row, and cancelling Promote on a found app leaves no empty category."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Containers.</strong> Remove stopped only removes the containers it listed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Theme studio.</strong> Reset all resets the rest of the Surface tab, a second Shift+A while it loads opens the same studio, and a change made on another device keeps your preview."
+        }
+      ]
+    }
+  ]
+}
