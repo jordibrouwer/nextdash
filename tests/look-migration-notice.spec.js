@@ -76,6 +76,18 @@ test.describe('the look migration dialog', () => {
         });
     });
 
+    test('Open the Theme Studio opens the studio on the Surface tab', async ({ page }) => {
+        await withMigration(page, { from: 'slate-dark', pending: true, at: 1 }, 'aurora-glass-dark');
+        await page.goto('/');
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await dismissOnboardingIfPresent(page);
+        await expect(dialog(page)).toBeVisible({ timeout: 20_000 });
+        await page.getByRole('button', { name: 'Open the Theme Studio' }).click();
+        await expect(dialog(page)).toHaveCount(0);
+        await expect.poll(() => page.evaluate(() => window.ThemeBrowser?.isOpen?.()), { timeout: 15_000 }).toBe(true);
+        await expect(page.locator('[data-studio-tab="surface"][aria-selected="true"]')).toBeVisible();
+    });
+
     test('Got it closes it and nothing else changes', async ({ page }) => {
         await withMigration(page, { from: 'slate-light', pending: true, at: 1 }, 'aurora-glass-light');
         await page.goto('/');

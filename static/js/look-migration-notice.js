@@ -80,7 +80,9 @@
 
     function openStudio() {
         const d = dash();
-        if (d?.config?.openLookStudio) void d.config.openLookStudio({ tab: 'surface' });
+        // openThemeBrowser, not openLookStudio: the studio is fetched with Appearance and may not
+        // have arrived yet; this asks for it first. At the Surface tab, where Material style is.
+        if (d?.config?.openThemeBrowser) void Promise.resolve(d.config.openThemeBrowser({ tab: 'surface' })).catch(() => {});
     }
 
     function isBusy() {
