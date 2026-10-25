@@ -20,16 +20,57 @@ const path = require('path');
 const TESTS_DIR = path.join(__dirname, '..');
 const { binaryPath } = require('../worker-server');
 const { mockDocker } = require('./docker-mock');
+const { dockerHistoryData } = require('./docker-history');
 const { markWhatsNewSeen } = require('../e2e-helpers');
 
 const ROOT = path.join(TESTS_DIR, '..');
 const OUT = process.env.SHOTS_OUT || path.join(ROOT, 'screenshots', 'manual.md');
 const FIX = path.join(TESTS_DIR, 'fixtures', 'manual-screenshots');
-const json = (name) => fs.readFileSync(path.join(FIX, name), 'utf8');
+/*
+ * The moment the shots stand at: when the demo's data was made. The demo writes
+ * its history -- opens, health, the inbox -- counted back from that moment, so
+ * the browser's clock has to stand there too, or the charts end in the future
+ * or leave their last weeks empty. Without a seeded history (an old data copy)
+ * it is the fixed day the manual was first shot on.
+ */
+function shotNow() {
+    try {
+        const stamp = Number(JSON.parse(fs.readFileSync(path.join(process.env.NEXTDASH_DATA_DIR || '', 'health-history.json'), 'utf8')).generatedAt);
+        if (stamp > 0) {
+            const at = new Date(stamp);
+            at.setSeconds(0, 0);
+            return at;
+        }
+    } catch { /* no seeded history */ }
+    return new Date('2026-10-06T09:12:00');
+}
+const NOW = shotNow();
+const pad2 = (n) => String(n).padStart(2, '0');
+const ymd = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+/** The day of the shots, as the fixtures spell it. */
+const DAY = ymd(NOW);
+
+const json = (name) => fs.readFileSync(path.join(FIX, name), 'utf8').replaceAll('2026-10-06', DAY);
 const fixture = (name) => JSON.parse(json(name));
 const unraidAnswer = (name) => JSON.parse(fs.readFileSync(path.join(TESTS_DIR, 'fixtures-unraid', `${name}.json`), 'utf8'));
 
-const NOW = new Date('2026-10-06T09:12:00');
+/** The weather answer, its hours counted on from the hour of the shots. */
+function weatherFixture() {
+    const weather = fixture('weather.json');
+    const hourly = weather.forecast.hourly;
+    hourly.time = hourly.time.map((_, i) => {
+        const at = new Date(NOW);
+        at.setMinutes(0, 0, 0);
+        at.setHours(at.getHours() + i);
+        return `${ymd(at)}T${pad2(at.getHours())}:00`;
+    });
+    weather.forecast.daily.time = weather.forecast.daily.time.map((_, i) => {
+        const at = new Date(NOW);
+        at.setDate(at.getDate() + i);
+        return ymd(at);
+    });
+    return weather;
+}
 const DESKTOP = { width: 1440, height: 900 };
 const PHONE = { width: 390, height: 844 };
 const TABLET = { width: 820, height: 1180 };
@@ -37,9 +78,11 @@ const TABLET = { width: 820, height: 1180 };
 const DEMO_THEME = 'matrix-bluepill-dark';
 /**
  * Every manual screenshot is taken in this theme, whatever the demo data
- * says, so the pictures sit quietly on nextdash.cc and its docs.
+ * says, so the pictures sit quietly on nextdash.cc and its docs. It is the
+ * default theme, so the server's one-time move to Aurora Glass has nothing to
+ * do and its dialog stays away.
  */
-const SHOT_THEME = process.env.SHOT_THEME || 'gloss-liquid-chrome-dark';
+const SHOT_THEME = process.env.SHOT_THEME || 'aurora-glass-dark';
 
 /** A port nothing else is on (never 8080: the OS hands out a free one). */
 function freePort() {
@@ -164,6 +207,24 @@ function tidyDemoData(dir, patch) {
     const settingsFile = path.join(dir, 'settings.json');
     const settings = readJSON(settingsFile);
     settings.weatherLocation = 'Leiden';
+    // No session tips: a toast would sit over the corner of whatever is shot.
+    settings.enableSessionTips = false;
+    // ... and has been through the tours, so no tour or card is waiting in the corner.
+    settings.discoverabilityState = {
+        ...(settings.discoverabilityState || {}),
+        seenSettingPromos: [...new Set([...((settings.discoverabilityState || {}).seenSettingPromos || []),
+            'install-count-v1', 'kept-pile-v1', 'theme-studio-hint-v1'])],
+        seenTips: [...new Set([...((settings.discoverabilityState || {}).seenTips || []),
+            'dashboardTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'inboxTutorialV3', 'blockMoveIntro', 'blockMoveCoach'])],
+    };
+    settings.quickStart = {
+        ...(settings.quickStart || {}),
+        dismissed: true,
+        visitedConfig: true,
+        seenCheatsheet: true,
+        seenAnalyticsNotice: true,
+        analyticsChoiceMade: true,
+    };
     writeJSON(settingsFile, settings);
 
     const homeFile = path.join(dir, 'bookmarks-1.json');
@@ -172,6 +233,21 @@ function tidyDemoData(dir, patch) {
     if (note) {
         note.config = { ...(note.config || {}), text: '[x] Renew the domain\n[x] Clean out the Inbox\n[ ] Check the backup report\n[ ] Update the router' };
     }
+    // The dashboard on show: health first, then what is playing and was added
+    // on the media server (answered by media-mock.js), and the machine from
+    // Glances (answered by glances-mock.js), above the categories.
+    const showcase = [
+        { id: 'w_s00000000001', type: 'jellyfin-playing', config: { server: 'http://jellyfin.lab.example:8096' } },
+        { id: 'w_s00000000002', type: 'jellyfin', config: { server: 'http://jellyfin.lab.example:8096' } },
+        { id: 'w_s00000000003', type: 'glances', config: { host: 'main' } },
+    ];
+    const health = (home.widgets || []).find((w) => w.type === 'health');
+    home.widgets = [...(home.widgets || []), ...showcase];
+    home.blockOrder = [
+        ...(health ? [health.id] : []),
+        ...showcase.map((w) => w.id),
+        ...(home.blockOrder || []).filter((id) => id !== health?.id),
+    ];
     writeJSON(homeFile, home);
 
     const labFile = path.join(dir, 'bookmarks-2.json');
@@ -182,12 +258,13 @@ function tidyDemoData(dir, patch) {
         { id: 'w_m00000000003', type: 'cpu' },
         { id: 'w_m00000000004', type: 'memory' },
         { id: 'w_m00000000005', type: 'disks' },
+        { id: 'w_m00000000006', type: 'uptime' },
         ...(lab.widgets || []),
     ];
-    // Containers first, the machine beside the services, the rest after.
-    lab.blockOrder = ['w_m00000000001', 'w_b00000000001', 'services', 'w_m00000000002',
-        'w_m00000000003', 'w_m00000000004', 'w_b00000000002', 'w_b00000000003', 'tools',
-        'w_m00000000005', 'w_b00000000004', 'w_b00000000005'];
+    // Containers first, then the machine and the uptime tile, the seed's own
+    // categories and its inbox after.
+    lab.blockOrder = ['w_m00000000001', 'w_m00000000002', 'w_m00000000003', 'w_m00000000004',
+        'w_m00000000005', 'w_m00000000006', ...(lab.blockOrder || [])];
     writeJSON(labFile, lab);
 
     const patches = String(patch || '').split(',');
@@ -212,11 +289,13 @@ function tidyDemoData(dir, patch) {
     // One shot only: the wiki on Homelab watched for drift, and retitled.
     if (patches.includes('drift')) {
         const labNow = readJSON(labFile);
-        const wiki = (labNow.bookmarks || []).find((b) => b.url === 'https://wiki.lab.example/');
+        const wiki = (labNow.bookmarks || []).find((b) => b.url === 'https://wiki.example.org/homelab');
         Object.assign(wiki, {
+            checkStatus: true,
+            monitor: true,
             watchDrift: true,
-            driftUrl: 'https://wiki.lab.example/',
-            driftTitle: 'Wiki',
+            driftUrl: 'https://wiki.example.org/homelab',
+            driftTitle: 'Homelab wiki',
             driftNoticed: 'title-parked',
             driftSince: now - 2 * 86_400_000,
             driftReason: 'Page title now reads "Domain for sale"',
@@ -424,7 +503,15 @@ function tidyDemoData(dir, patch) {
     // shot's /api/discovery answer says is running.
     if (patches.includes('discovery')) {
         const settingsFile = path.join(dir, 'settings.json');
-        writeJSON(settingsFile, { ...readJSON(settingsFile), discoverApps: true, discoveryCardDone: false });
+        // The other corner cards stay away, so the apps card has its turn.
+        writeJSON(settingsFile, {
+            ...readJSON(settingsFile),
+            discoverApps: true,
+            discoveryCardDone: false,
+            enableHealthReviewNotice: false,
+            enableTagSuggestionNotice: false,
+            digestEnabled: false,
+        });
     }
 
     // One shot only: two apps turned down, for Config → Containers' list.
@@ -470,9 +557,9 @@ function tidyDemoData(dir, patch) {
     // One shot only: three bookmarks whose last check failed, each its own way.
     if (patches.includes('broken')) {
         const failed = {
-            'https://gone.example/old-page': 'DNS lookup failed',
-            'https://kitchen.reading.example/slow': 'HTTP 404',
-            'https://backup.lab.example/': 'HTTP 502',
+            'https://podcast.example.net/feed': 'DNS lookup failed',
+            'https://wiki.example.org/homelab': 'HTTP 404',
+            'https://www.shodan.io/': 'HTTP 502',
         };
         const cache = fs.existsSync(cacheFile) ? readJSON(cacheFile) : { cache: {} };
         for (const file of fs.readdirSync(dir).filter((f) => /^bookmarks-\d+\.json$/.test(f))) {
@@ -492,7 +579,7 @@ function tidyDemoData(dir, patch) {
 }
 
 /** The urls the 'broken' patch fails, as the status pings answer them. */
-const BROKEN_HOSTS = ['gone.example', 'kitchen.reading.example', 'backup.lab.example'];
+const BROKEN_HOSTS = ['podcast.example.net', 'wiki.example.org', 'shodan.io'];
 
 const test = base.test.extend({
     /** A change to the data for one shot only; see tidyDemoData. */
@@ -603,21 +690,30 @@ async function prepare(page) {
         } catch { /* storage off */ }
     });
 
-    const docker = await mockDocker(page, { containers: fixture('docker-containers.json'), usage: true });
+    const docker = await mockDocker(page, {
+        containers: fixture('docker-containers.json'),
+        usage: true,
+        history: dockerHistoryData(NOW.getTime()),
+    });
     docker.disk = fixture('docker-disk.json');
     await page.route('**/api/docker/status', (r) => r.fulfill({ contentType: 'application/json', body: json('docker-status.json') }));
     await page.route('**/api/system/metrics**', (r) => r.fulfill({ contentType: 'application/json', body: json('system-metrics.json') }));
+    // The media server and the Glances host answer with made-up data, on every
+    // page of the manual that shows the dashboard. Required here, not at the
+    // top, because both helpers read this file's exports.
+    await require('./media-mock').mockMedia(page);
+    await require('./glances-mock').mockGlances(page);
 
     await page.route('**/api/ping?**', (route) => {
         const url = new URL(route.request().url()).searchParams.get('url') || '';
-        const down = url.includes('gone.example');
+        const down = url.includes('podcast.example.net');
         return route.fulfill({
             contentType: 'application/json',
             body: JSON.stringify(down ? { status: 'offline', ping: null, error: 'DNS lookup failed' } : { status: 'online', ping: pingFor(url) }),
         });
     });
 
-    const weather = fixture('weather.json');
+    const weather = weatherFixture();
     await page.route('https://geocoding-api.open-meteo.com/**', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(weather.geocoding) }));
     await page.route('https://api.open-meteo.com/**', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(weather.forecast) }));
 
@@ -763,6 +859,8 @@ module.exports = {
     fixture,
     unraidAnswer,
     NOW,
+    DAY,
+    weatherFixture,
     DESKTOP,
     PHONE,
     TABLET,

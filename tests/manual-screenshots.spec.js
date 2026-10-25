@@ -39,6 +39,7 @@ const {
     fixture,
     unraidAnswer,
     NOW,
+    DAY,
     DESKTOP,
     PHONE,
     TABLET,
@@ -111,7 +112,7 @@ const modal = (page) => page.locator('#app-modal.show .modal');
 test('04 preview card', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await row(page, 'Maps').hover();
+    await row(page, 'Hack The Box').hover();
     const card = page.locator('.bookmark-preview-card').first();
     await card.waitFor({ state: 'visible' });
     await page.waitForTimeout(1_200);
@@ -145,7 +146,7 @@ test('05 full form', async ({ page }) => {
 test('06 context menu', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await row(page, 'Encyclopedia').click({ button: 'right' });
+    await row(page, 'Arch Wiki').click({ button: 'right' });
     const menu = page.locator('.bookmark-context-menu').first();
     await menu.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
@@ -198,7 +199,7 @@ async function openBookmarksView(page) {
 test('11 bookmarks view', async ({ page }) => {
     await prepare(page);
     await openBookmarksView(page);
-    await page.locator('#config-bm-list .config-bm-row', { hasText: 'Encyclopedia' }).first().click();
+    await page.locator('#config-bm-list .config-bm-row', { hasText: 'Arch Wiki' }).first().click();
     const panel = page.locator('[data-lvs-drawer-panel]').first();
     await panel.waitFor({ state: 'visible' });
     await page.mouse.move(700, 400);
@@ -217,6 +218,20 @@ test('11 collection health', async ({ page }) => {
     await page.waitForTimeout(1_500);
     await crop(page, modal(page), '11-collection-health.jpg');
 });
+
+// The other two tabs of the same modal: its monitors, and its course over 90 days.
+for (const [tab, name] of [['monitors', '11-collection-health-monitors.jpg'], ['trend', '11-collection-health-trend.jpg']]) {
+    test(`11 collection health ${tab}`, async ({ page }) => {
+        await prepare(page);
+        await openBookmarksView(page);
+        await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('h');
+        await modal(page).waitFor();
+        await modal(page).locator(`[data-bm-health-modal-tab="${tab}"]`).click();
+        await page.waitForTimeout(1_500);
+        await crop(page, modal(page), name);
+    });
+}
 
 /** Config, by the gear in the header, then a section on its rail. */
 async function openConfig(page, section) {
@@ -311,7 +326,7 @@ async function openInbox(page) {
 test('13 inbox', async ({ page }) => {
     await prepare(page);
     await openInbox(page);
-    await page.locator('.inbox-layout').getByText('Field notes on quokkas').first().click();
+    await page.locator('.inbox-layout').getByText('Jellyfin documentation').first().click();
     await page.locator('[data-lvs-drawer-panel]').first().waitFor({ state: 'visible' });
     await page.waitForTimeout(800);
     await shot(page, '13-inbox.jpg');
@@ -394,7 +409,7 @@ const SONARR_LOG = [
     ['08:00:04', 'out', '[Info] RssSyncService: Starting RSS Sync'],
     ['08:00:07', 'out', '[Info] RssSyncService: RSS Sync Completed. Reports found: 40, Reports grabbed: 0'],
     // Written in local time (the clock in the shots); Docker stamps in UTC.
-].map(([time, s, m]) => ({ t: new Date(`2026-10-06T${time}`).toISOString().replace('.000Z', '.000000000Z'), s, m }));
+].map(([time, s, m]) => ({ t: new Date(`${DAY}T${time}`).toISOString().replace('.000Z', '.000000000Z'), s, m }));
 
 async function fakeLogStream(page, lines) {
     await page.addInitScript((logLines) => {
@@ -618,8 +633,8 @@ test.describe('category count', () => {
         await prepare(page);
         await openDashboard(page);
         await snap(page, page.locator('.dashboard-section.section-controls .header-top'), '04-header.jpg');
-        await snap(page, row(page, 'Encyclopedia'), '04-bookmark-row.jpg', { pad: 8 });
-        const header = page.locator('#category-title-utilities');
+        await snap(page, row(page, 'GitHub'), '04-bookmark-row.jpg', { pad: 8 });
+        const header = page.locator('#category-title-tools');
         await scrollToTop(page, header, 300);
         await snap(page, header, '04-category-header.jpg', { pad: 10 });
     });
@@ -737,7 +752,7 @@ test('08 tag view', async ({ page }) => {
     await page.keyboard.press('/');
     await page.locator('#tag-cloud-modal.is-open').waitFor();
     await page.waitForTimeout(600);
-    await page.locator('#tag-cloud-modal [data-tag="homelab"]').first().click();
+    await page.locator('#tag-cloud-modal [data-tag="security"]').first().click();
     const view = page.locator('#dashboard-layout .tag-view');
     await view.waitFor();
     await view.locator('.tag-view-row').first().waitFor();
@@ -749,7 +764,7 @@ test('08 tag view', async ({ page }) => {
 });
 
 const WEB_RESULTS = [
-    { title: 'Maps of the world - OpenStreetMap', url: 'https://www.openstreetmap.org/', snippet: 'OpenStreetMap is a map of the world, created by people like you and free to use.', domain: 'openstreetmap.org' },
+    { title: 'Maps of the world - OpenStreetMap', url: 'https://www.openstreetmap.org/', snippet: 'OpenStreetMap is a map of the world, created by people like you and free to use.', domain: 'archlinux.org' },
     { title: 'Topographic maps for hiking', url: 'https://topo.maps.example/', snippet: 'Contour lines, trails and huts, for every country in Europe.', domain: 'topo.maps.example' },
     { title: 'A short history of maps', url: 'https://history.maps.example/short', snippet: 'From clay tablets to satellites: how people drew the world they knew.', domain: 'history.maps.example' },
 ];
@@ -775,7 +790,7 @@ test.describe('web search', () => {
 test('09 category menu', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await page.locator('#category-title-dev').click({ button: 'right' });
+    await page.locator('#category-title-code').click({ button: 'right' });
     const menu = page.locator('.bookmark-context-menu').first();
     await menu.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
@@ -812,7 +827,7 @@ test('11 rail, toolbar and header band', async ({ page }) => {
 test('11 row menu', async ({ page }) => {
     await prepare(page);
     await openBookmarksView(page);
-    await page.locator('#config-bm-list .config-bm-row', { hasText: 'openstreetmap.org' }).first().click({ button: 'right' });
+    await page.locator('#config-bm-list .config-bm-row', { hasText: 'archlinux.org' }).first().click({ button: 'right' });
     const menu = page.locator('.config-bm-context-menu').first();
     await menu.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
@@ -843,13 +858,13 @@ async function openHealthTab(page, host) {
 
 test('12 health tab', async ({ page }) => {
     await prepare(page);
-    const panel = await openHealthTab(page, 'media.lab.example');
+    const panel = await openHealthTab(page, 'go.dev');
     await snap(page, panel, '12-health-tab.jpg', { pad: 0, maxHeight: 560 });
 });
 
 test('12 expected response', async ({ page }) => {
     await prepare(page);
-    const panel = await openHealthTab(page, 'media.lab.example');
+    const panel = await openHealthTab(page, 'go.dev');
     const section = panel.locator('details.config-bm-acc', { hasText: 'Expectations' }).first();
     await section.locator('summary').click();
     await page.waitForTimeout(600);
@@ -898,7 +913,7 @@ test('13 inbox row', async ({ page }) => {
     await openInbox(page);
     // A row carries no buttons of its own: its actions are in its menu (and
     // the side panel). The crop is the whole row with the menu it opened.
-    const item = page.locator('.inbox-item', { hasText: 'Field notes on quokkas' }).first();
+    const item = page.locator('.inbox-item', { hasText: 'Jellyfin documentation' }).first();
     await item.locator('.inbox-item-title').click({ button: 'right' });
     const menu = page.locator('.bookmark-context-menu').first();
     await menu.waitFor({ state: 'visible' });
@@ -967,15 +982,18 @@ test.describe('app discovery', () => {
         });
     });
 
-    test('14 discovery ask', async ({ page }) => {
-        await prepare(page);
-        await answerDiscovery(page, { cardDone: true, pending: [FOUND_APPS[0]], targetPage: 1 });
-        await openDashboard(page);
-        await clearCorner(page);
-        const card = page.locator('.app-discovery-card').first();
-        await card.waitFor({ state: 'visible', timeout: 40_000 });
-        await page.waitForTimeout(1_000);
-        await snap(page, card, '14-discovery-ask.jpg', { pad: 16 });
+    test.describe('ask', () => {
+        test.use({ dataPatch: 'discovery' });
+        test('14 discovery ask', async ({ page }) => {
+            await prepare(page);
+            await answerDiscovery(page, { cardDone: true, pending: [FOUND_APPS[0]], targetPage: 1 });
+            await openDashboard(page);
+            await clearCorner(page);
+            const card = page.locator('.app-discovery-card').first();
+            await card.waitFor({ state: 'visible', timeout: 40_000 });
+            await page.waitForTimeout(1_000);
+            await snap(page, card, '14-discovery-ask.jpg', { pad: 16 });
+        });
     });
 
     test.describe('config', () => {
@@ -995,7 +1013,9 @@ test.describe('app discovery', () => {
 test('15 widget tiles', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await snap(page, page.locator('[data-widget-type="notes"]').first(), '15-notes.jpg', { pad: 10 });
+    const notes = page.locator('[data-widget-type="notes"]').first();
+    await scrollToTop(page, notes, 120);
+    await snap(page, notes, '15-notes.jpg', { pad: 10 });
     await page.keyboard.press('2');
     await page.locator('[data-widget-type="uptime"]').first().waitFor();
     await settle(page);
@@ -1084,7 +1104,7 @@ test('19 trash', async ({ page }) => {
     });
     await openBookmarksView(page);
     // Two bookmarks deleted the ordinary way, so the trash has something in it.
-    for (const host of ['deepl.com', 'imdb.com']) {
+    for (const host of ['xkcd.com', 'projecteuler.net']) {
         await page.locator('#config-bm-list .config-bm-row', { hasText: host }).first().click();
         await page.waitForTimeout(400);
         await page.keyboard.press('Escape');
@@ -1136,7 +1156,7 @@ const SERVER_LOG = [
     seq,
     level: level || 'info',
     source: 'request',
-    time: new Date(`2026-10-06T${time}`).toISOString(),
+    time: new Date(`${DAY}T${time}`).toISOString(),
     message: `${(0x5a17c0de + seq * 0x1f3d).toString(16).padStart(8, '0')}${(0x9e3779b9 * (seq + 1) >>> 0).toString(16).padStart(8, '0')} ${msg}`,
 }));
 
@@ -1212,9 +1232,9 @@ test.describe('first launch', () => {
 test('full 09 second page', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    // The page switcher's key: 3 is Reading.
-    await page.keyboard.press('3');
-    await page.locator('#category-title-articles').waitFor();
+    // The page switcher's key: 2 is Homelab.
+    await page.keyboard.press('2');
+    await page.locator('#category-title-platforms').waitFor();
     await settle(page);
     await page.waitForTimeout(1_500);
     await shot(page, '09-second-page.jpg');
@@ -1268,12 +1288,12 @@ test.describe('broken', () => {
         await page.route('**/api/ping?**', (route) => {
             const url = new URL(route.request().url()).searchParams.get('url') || '';
             if (!BROKEN_HOSTS.some((h) => url.includes(h))) return route.fallback();
-            return route.fulfill({ json: { status: 'offline', ping: null, error: url.includes('gone') ? 'DNS lookup failed' : 'HTTP 404' } });
+            return route.fulfill({ json: { status: 'offline', ping: null, error: url.includes('podcast') ? 'DNS lookup failed' : 'HTTP 404' } });
         });
         await openBookmarksView(page);
         await page.locator('#config-bm-rail [data-bm-rail="health"][data-value="broken"]').click();
         await page.waitForTimeout(800);
-        await page.locator('#config-bm-list .config-bm-row', { hasText: 'kitchen.reading.example' }).first().click();
+        await page.locator('#config-bm-list .config-bm-row', { hasText: 'podcast.example.net' }).first().click();
         await page.locator('[data-lvs-drawer-panel]').first().waitFor({ state: 'visible' });
         await page.waitForTimeout(1_000);
         await shot(page, '11-broken.jpg');
@@ -1296,7 +1316,7 @@ test.fixme('full 11 unsorted', async ({ page }) => {
 test('full 11 health in large', async ({ page }) => {
     await prepare(page);
     await openBookmarksView(page);
-    await page.locator('#config-bm-list .config-bm-row', { hasText: 'media.lab.example' }).first().click();
+    await page.locator('#config-bm-list .config-bm-row', { hasText: 'go.dev' }).first().click();
     await page.waitForTimeout(400);
     await page.keyboard.press('Escape');
     await page.keyboard.press('Shift+H');
@@ -1316,6 +1336,22 @@ test('full 14 updates', async ({ page }) => {
     await page.locator('[data-docker-filter="updates"]').first().click();
     await page.waitForTimeout(1_000);
     await shot(page, '14-updates.jpg');
+});
+
+// A container with something to tell: the timeline holds its crash, a health
+// check that failed and came back, and the updates that were pulled.
+test('14 container timeline', async ({ page }) => {
+    await prepare(page);
+    await openContainers(page);
+    await page.locator('[data-docker-row]', { hasText: 'immich-server' }).first().click();
+    const panel = page.locator('[data-lvs-drawer-panel]').first();
+    await panel.waitFor({ state: 'visible' });
+    // Open the Timeline section of the accordion, and fold Details out of its way.
+    await panel.locator('summary, button', { hasText: /^\s*Details\s*$/i }).first().click();
+    await panel.locator('summary, button', { hasText: /^\s*Timeline\s*$/i }).first().click();
+    await page.waitForTimeout(1_200);
+    await panel.locator('[data-docker-timeline], .docker-timeline').first().waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+    await crop(page, panel, '14-container-timeline.jpg', 0);
 });
 
 test('full 14 side panel', async ({ page }) => {
@@ -1591,7 +1627,7 @@ test('full 18 server', async ({ page }) => {
 test('09 category tiles', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await page.locator('#category-title-dev').click({ button: 'right' });
+    await page.locator('#category-title-code').click({ button: 'right' });
     const menu = page.locator('.bookmark-context-menu').first();
     await menu.waitFor({ state: 'visible' });
     await menu.getByText('Show as tiles').click();

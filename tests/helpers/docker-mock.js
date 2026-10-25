@@ -25,9 +25,9 @@ function mockDisk() {
   };
 }
 
-async function mockDocker(page, { control = true, socket = true, containers = null, usage = false } = {}) {
+async function mockDocker(page, { control = true, socket = true, containers = null, usage = false, history = null } = {}) {
   const state = {
-    control, socket, usage, calls: [],
+    control, socket, usage, history, calls: [],
     containers: containers || [
       { id: 'a'.repeat(64), shortId: 'a'.repeat(12), name: 'sonarr', image: 'lscr.io/linuxserver/sonarr:latest', tag: 'latest',
         state: 'running', status: 'Up 6 days (healthy)', health: 'healthy', created: 1790000000,
@@ -68,6 +68,12 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     if (path === '/updates/check') return json({ checkedAt: Date.now(), images: {} });
     // Disk: what images and volumes take, pruning, and one volume at a time.
     if (path === '/disk') return json(state.disk || mockDisk());
+    // The last thirty days of the whole host, as Config -> Statistics -> Server reads them.
+    if (path === '/history' && state.history) {
+      const disk = state.disk || mockDisk();
+      return json({ events: state.history.history, updates: [...state.history.updates].reverse(), disk: disk.totals || null,
+        diskAt: Date.now(), days: 30 });
+    }
     if (path === '/binds/measure' && req.method() === 'POST') {
       if (!state.control) return json({ reason: 'docker-control-off' }, 403);
       const { source } = JSON.parse(req.postData() || '{}');
@@ -113,6 +119,7 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     if (sub === 'stats') return json({ cpuPercent: 3.2, memoryUsed: 262144000, memoryLimit: 8589934592 });
     if (sub === 'logs') return json({ lines: ['line one', 'line two'] });
     if (sub === 'timeline') {
+      if (state.history) return json({ entries: state.history.timeline(c.name) });
       if (c.name !== 'sonarr') return json({ entries: [] });
       const t = (h) => Date.parse('2026-09-29T10:00:00Z') + h * 3600e3;
       return json({ entries: [
