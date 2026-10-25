@@ -204,9 +204,6 @@
         }
 
         const dash = window.dashboardInstance;
-        if (dash && typeof dash.initializeButtonTipsRotation === 'function') {
-            dash.initializeButtonTipsRotation();
-        }
         if (dash && typeof dash.refreshAddBookmarkToolbarLabel === 'function') {
             dash.refreshAddBookmarkToolbarLabel();
         }

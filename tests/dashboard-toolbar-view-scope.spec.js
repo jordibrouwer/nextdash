@@ -8,8 +8,7 @@ const {
 
 /**
  * The quick-action toolbar (+add / >search / :commands / ?finders /
- * *recent / !help / .fold, plus the search-flow-hint that advertises their
- * keys) belongs to the bookmarks dashboard. A full-container view (config,
+ * *recent / !help / .fold) belongs to the bookmarks dashboard. A full-container view (config,
  * health, inbox) owns the whole screen instead, so the toolbar -- and six of
  * its seven shortcuts -- go inert there and come back the moment the view
  * closes. What's New sits outside .button-container and is left alone in

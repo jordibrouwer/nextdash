@@ -1013,18 +1013,12 @@ class Dashboard {
         return this.setup.setupExtensionBookmarkSavedListener(...arguments);
     }
 
-    initializeButtonTipsRotation() {
-        return this.setup.initializeButtonTipsRotation(...arguments);
-    }
 
     teardownDashboardTimers() {
         return this.setup.teardownDashboardTimers(...arguments);
     }
 
 
-    initializeSearchFlowHint() {
-        return this.setup.initializeSearchFlowHint(...arguments);
-    }
 
 
     getInlineContextTipsForCurrentPage() {

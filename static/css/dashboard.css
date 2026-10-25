@@ -5049,7 +5049,7 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
 }
 
 /* The quick-action toolbar (add / search / commands / finders / recent / help /
-   fold, plus the search-flow-hint that advertises their keys) belongs to the
+   fold) belongs to the
    bookmarks dashboard. Gone in every full-container view, keyed off the same
    layout class each one already stamps on #dashboard-layout -- no new class or
    attribute needed. :has() reading #dashboard-layout from up at body is the

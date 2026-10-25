@@ -356,7 +356,6 @@ class DashboardConfigSync {
             d.renderPageNavigation();
             d.inbox?.applySettingsChange?.();
             d.renderDashboard(renderOptions);
-            d.initializeButtonTipsRotation();
             if (d.searchComponent) {
                 d.updateSearchComponent();
             }

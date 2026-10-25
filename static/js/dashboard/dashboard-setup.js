@@ -212,7 +212,6 @@ class DashboardSetup {
         // After the three above: each of them decides whether one side of the
         // band draws anything, and the rule between them follows that.
         d.visual?.syncHeaderZoneDividers?.();
-        this.initializeButtonTipsRotation();
 
         // Apply columns setting
         d.syncDashboardGridLayout();
@@ -760,20 +759,6 @@ class DashboardSetup {
     }
 
 
-    /**
-     * Rotating footer tips are gone; the search-flow hint that shared this entry
-     * point is not. Kept under the old name because mobile-experience.js and the
-     * dashboard both call it on layout/settings changes.
-     */
-    initializeButtonTipsRotation() {
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) {
-            return;
-        }
-        this.initializeSearchFlowHint();
-    }
-
-
-
     teardownDashboardTimers() {
         const d = this.dash;
         d.visual?.stopHealthBadgePolling?.();
@@ -790,33 +775,6 @@ class DashboardSetup {
 
 
 
-    initializeSearchFlowHint() {
-        const d = this.dash;
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
-        if (d.onboardingStartedInSession) return;
-        if (d.settings?.onboardingCompleted !== true) return;
-        const hintEl = document.getElementById('search-flow-hint');
-        if (!hintEl) return;
-
-        if (d.isCoarsePointer()) {
-            hintEl.querySelectorAll('.sfh-seg-swipe').forEach((el) => el.classList.remove('hidden'));
-        }
-
-        const storageKey = 'nextdash:search-flow-hint-v2';
-        try {
-            if (localStorage.getItem(storageKey)) return;
-        } catch {}
-
-        hintEl.hidden = false;
-        try { localStorage.setItem(storageKey, '1'); } catch {}
-
-        // CSS handles the staggered wipe animation on .sfh-seg spans.
-        // Last segment delay is 2.22s + 0.3s duration; dismiss after segments + reading time.
-        setTimeout(() => {
-            hintEl.classList.add('dismissing');
-            setTimeout(() => { hintEl.hidden = true; }, 500);
-        }, 6200);
-    }
 
 
 

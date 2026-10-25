@@ -167,17 +167,9 @@ body .page-swipe-hint {
     font-family: var(--font-family-main);
 }
 
-.search-flow-hint .sfh-seg-swipe.hidden {
-    display: none;
-}
-
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
     .dashboard-mini-status {
         display: block;
-    }
-
-    .search-flow-hint .sfh-seg-swipe.hidden {
-        display: inline;
     }
 
     .search-button[data-tooltip]::after {

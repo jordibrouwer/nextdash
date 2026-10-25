@@ -675,12 +675,10 @@ async function prepare(page) {
     // A browser that has been here before: this release's notes and the
     // one-time keyboard note already seen.
     await markWhatsNewSeen(page);
-    // ... has had the one-time search hint along the bottom, which would sit
-    // over whatever is lowest on the screen for six seconds, and has opened
-    // the inbox tab once, which ends the glow that invites a first visit.
+    // ... has opened the inbox tab once, which ends the glow that invites a
+    // first visit.
     await page.addInitScript(() => {
         try {
-            localStorage.setItem('nextdash:search-flow-hint-v2', '1');
             localStorage.setItem('nextdash:inbox-tab-opened-v1', '1');
             // ... and has seen the one-time notes on new config settings,
             // which scroll their field into view and sit over the panel.
