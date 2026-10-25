@@ -1288,6 +1288,11 @@ class DashboardConfig {
             if (targetSection !== this.section) {
                 this.section = targetSection;
                 if (targetSection === 'structure') this.forgetCategoryLists();
+                // Config is already open, but the section's own file may not be:
+                // drawn before it lands, render() threw and left the old body
+                // under the new heading.
+                const ok = await this.ensureSection(targetSection);
+                if (!ok || this.section !== targetSection) return ok;
                 this.render();
                 this.restoreConfigHash();
             }

@@ -116,6 +116,37 @@ test.describe('the config commands name the config that exists', () => {
         expect(page.url().split('#')[0]).toBe(before.split('#')[0]);
     });
 
+    test('a section opened from inside config waits for its own file', async ({ page }) => {
+        // Held back so the section is chosen before its file lands -- the order
+        // an idle preload usually hides. Drawn early, render() threw and the
+        // old section's body stayed under the new name.
+        let release;
+        const held = new Promise((resolve) => { release = resolve; });
+        await page.route('**/js/dashboard/dashboard-config-logs.js*', async (route) => {
+            await held;
+            await route.continue();
+        });
+        const errors = [];
+        page.on('pageerror', (err) => errors.push(err.message));
+        await loadDashboard(page);
+
+        await offer(page, 'config overview');
+        await firstRowFor(page, 'overview');
+        await page.keyboard.press('Enter');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView),
+            { timeout: 10_000 }).toBe('config');
+
+        await offer(page, 'config logs');
+        await firstRowFor(page, 'logs');
+        await page.keyboard.press('Enter');
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance?.config?.section), { timeout: 10_000 }).toBe('logs');
+        release();
+
+        await expect(page.locator('#config-logs-body')).toBeVisible({ timeout: 10_000 });
+        expect(errors).toEqual([]);
+    });
+
     test('a name that became a sub-tab still arrives at it', async ({ page }) => {
         await loadDashboard(page);
 
