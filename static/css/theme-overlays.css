@@ -190,6 +190,7 @@ html[data-theme] body[data-material-style="signature"][data-material="glass"] {
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: max(18px, 14px);
     --ov-rule: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--text-primary) 12%, transparent);
     --ov-r-control: 10px;
     --ov-r-item: 10px;
@@ -210,6 +211,7 @@ html[data-theme] body[data-material-style="signature"][data-material="frost"] {
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: max(24px, 14px);
     --ov-rule: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--text-primary) 14%, transparent);
     --ov-r-control: 8px;
     --ov-r-item: 8px;
@@ -230,6 +232,7 @@ html[data-theme] body[data-material-style="signature"][data-material="aurora"] {
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: max(16px, 14px);
     --ov-rule: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--accent-primary) 16%, transparent);
     --ov-r-control: 999px;
     --ov-r-item: 12px;
@@ -249,6 +252,7 @@ html[data-theme] body[data-material-style="signature"][data-material="lacquer"] 
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: 0px;
     --ov-rule: color-mix(in srgb, var(--text-primary) 16%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: rgba(255,255,255,.14);
     --ov-r-control: 999px;
     --ov-r-item: 12px;
@@ -269,6 +273,7 @@ html[data-theme] body[data-material-style="signature"][data-material="neon"] {
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: 0px;
     --ov-rule: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--accent-primary) 18%, transparent);
     --ov-r-control: 6px;
     --ov-r-item: 6px;
@@ -288,6 +293,7 @@ html[data-theme] body[data-material-style="signature"][data-material="velvet"] {
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: 0px;
     --ov-rule: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--text-primary) 14%, transparent);
     --ov-r-control: 999px;
     --ov-r-item: 14px;
@@ -307,6 +313,7 @@ html[data-theme] body[data-material-style="signature"][data-material="enamel"] {
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: 0px;
     --ov-rule: color-mix(in srgb, var(--text-primary) 18%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--accent-primary) 24%, transparent);
     --ov-r-control: 999px;
     --ov-r-item: 999px;
@@ -326,6 +333,7 @@ html[data-theme] body[data-material-style="signature"][data-material="brushed"] 
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: 0px;
     --ov-rule: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--text-primary) 12%, transparent);
     --ov-r-control: 5px;
     --ov-r-item: 5px;
@@ -346,6 +354,7 @@ html[data-theme] body[data-material-style="signature"][data-material="carbon"] {
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: 0px;
     --ov-rule: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--accent-primary) 14%, transparent);
     --ov-r-control: 2px;
     --ov-r-item: 2px;
@@ -365,6 +374,7 @@ html[data-theme] body[data-material-style="signature"][data-material="paper"] {
     --ov-cast: 0 1px 2px rgba(0,0,0,.25), 0 6px 12px -8px rgba(0,0,0,.45);
     --ov-blur: 0px;
     --ov-rule: color-mix(in srgb, #e0505a 70%, transparent);
+    --ov-rule-soft: color-mix(in srgb, var(--text-primary) 22%, transparent);
     --ov-hot: color-mix(in srgb, var(--accent-primary) 20%, transparent);
     --ov-r-control: 3px;
     --ov-r-item: 3px;
@@ -384,6 +394,7 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: 0px;
     --ov-rule: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--accent-primary) 14%, transparent);
     --ov-r-control: 2px;
     --ov-r-item: 2px;
@@ -403,6 +414,7 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"] {
     --ov-cast: 0 0 0 0 transparent;
     --ov-blur: max(8px, 14px);
     --ov-rule: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    --ov-rule-soft: var(--ov-rule);
     --ov-hot: color-mix(in srgb, var(--accent-primary) 16%, transparent);
     --ov-r-control: 3px;
     --ov-r-item: 3px;
@@ -726,7 +738,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     background-color: var(--ov-fill-small);
     border: 0;
     border-radius: min(var(--ov-radius), 14px);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 /* A row inside a panel or a table is not a second card. */
@@ -737,7 +749,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-crud-list--table .config-crud-row {
     border-radius: 0;
-    border-bottom: 1px solid var(--ov-rule);
+    border-bottom: 1px solid var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-tile--action:hover {
@@ -763,12 +775,12 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-nav-column .lvs-group-title, .config-nav-group-label) {
-    border-color: var(--ov-rule);
+    border-color: var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-nav-search {
     background-color: var(--ov-fill-small);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
     border-radius: var(--ov-r-control);
 }
 
@@ -778,19 +790,19 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     background-color: var(--background-secondary);
     border-color: transparent;
     border-radius: var(--ov-r-control);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-text, .config-choices) {
     border-color: transparent;
     border-radius: var(--ov-r-control);
     background-color: var(--ov-fill-small);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-btn:not(.config-btn--icon):not(.config-btn--primary):not(.config-btn--danger) {
     border-radius: var(--ov-r-control);
-    border-color: var(--ov-rule);
+    border-color: var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-choice, .config-subtab, .config-toggle) {
@@ -798,7 +810,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-subtabs {
-    border-bottom-color: var(--ov-rule);
+    border-bottom-color: var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-subtab, .config-choice):not(.is-active):hover,
@@ -902,13 +914,13 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 @media (min-width: 701px) {
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts > * + * {
-    border-top: 1px solid var(--ov-rule);
+    border-top: 1px solid var(--ov-rule-soft);
     padding-top: 6px;
 }
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts > * + * {
-    border-left: 1px solid var(--ov-rule);
+    border-left: 1px solid var(--ov-rule-soft);
     padding-left: 6px;
 }
 
@@ -921,7 +933,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts > * + * {
-    border-left: 1px solid var(--ov-rule);
+    border-left: 1px solid var(--ov-rule-soft);
     padding-left: 6px;
 }
 }
@@ -943,7 +955,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     max-height: none;
     aspect-ratio: auto;
     border: 0;
-    border-right: 1px solid var(--ov-rule);
+    border-right: 1px solid var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) .bookmark-preview-card-head {
@@ -985,7 +997,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     background-image: none;
     border: 0;
     border-radius: min(var(--ov-radius), 14px);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-url {
@@ -1000,7 +1012,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-kbd {
     border: 0;
     border-radius: var(--ov-r-item);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
     background: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
 }
 
@@ -1066,23 +1078,23 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     background-image: none;
     border: 0;
     border-radius: min(var(--ov-radius), 14px);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-entry--new {
-    box-shadow: inset 0 0 0 1px var(--ov-rule), inset 3px 0 0 var(--accent-primary);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft), inset 3px 0 0 var(--accent-primary);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-media {
     border-radius: var(--ov-r-item);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-chip {
     border: 0;
     border-radius: var(--ov-r-item);
     background: transparent;
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-chip:is(.is-active, [aria-pressed="true"]) {
@@ -1097,7 +1109,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-foot {
-    border-top-color: var(--ov-rule);
+    border-top-color: var(--ov-rule-soft);
 }
 
 
@@ -1107,20 +1119,20 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     background-image: none;
     border: 0;
     border-radius: min(var(--ov-radius), 14px);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .docker-setup pre {
     border-radius: var(--ov-r-item);
     background: color-mix(in srgb, black calc(30% * var(--ov-k) + 6%), transparent);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(input[type="search"], input[type="text"], .inbox-search-input, .tag-view-search) {
     border: 0;
     border-radius: var(--ov-r-control);
     background-color: color-mix(in srgb, black calc(16% * var(--ov-k) + 4%), transparent);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 /* A native select lists its options on its own background, so that stays closed. */
@@ -1128,7 +1140,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     border: 0;
     border-radius: var(--ov-r-control);
     background-color: var(--background-secondary);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(input[type="search"], input[type="text"], .inbox-search-input, .tag-view-search, select):focus-visible {
@@ -1139,7 +1151,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) .lvs-action {
     border: 0;
     border-radius: var(--ov-r-control);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) .lvs-action--primary {
@@ -1160,7 +1172,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .glances-pill {
     border: 0;
     border-radius: var(--ov-r-item);
-    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
 

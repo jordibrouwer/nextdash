@@ -46,7 +46,7 @@ func TestOverlayCSSMaterialBlocksSetEveryVariable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vars := []string{"--ov-radius", "--ov-alpha", "--ov-alpha-small", "--ov-fill", "--ov-fill-small", "--ov-image", "--ov-image-big", "--ov-edge", "--ov-edge-big", "--ov-cast", "--ov-blur", "--ov-rule", "--ov-hot", "--ov-r-control", "--ov-r-item", "--ov-head-transform"}
+	vars := []string{"--ov-radius", "--ov-alpha", "--ov-alpha-small", "--ov-fill", "--ov-fill-small", "--ov-image", "--ov-image-big", "--ov-edge", "--ov-edge-big", "--ov-cast", "--ov-blur", "--ov-rule", "--ov-rule-soft", "--ov-hot", "--ov-r-control", "--ov-r-item", "--ov-head-transform"}
 	blocks := overlayMaterialBlock.FindAllStringSubmatch(string(raw), -1)
 	if len(blocks) != 12 {
 		t.Fatalf("expected 12 material blocks, found %d", len(blocks))
