@@ -47,7 +47,7 @@ func demoPages() []demoPage {
 	return []demoPage{
 		{
 			name: "Dev", icon: "</>",
-			categories: []Category{{ID: "code", Name: "Code"}, {ID: "docs", Name: "Docs"}, {ID: "tools", Name: "Tools"}, {ID: "news", Name: "News"}},
+			categories: []Category{{ID: "code", Name: "Code"}, {ID: "docs", Name: "Docs"}, {ID: "tools", Name: "Tools"}, {ID: "news", Name: "News"}, {ID: "sec", Name: "Security"}, {ID: "linux", Name: "Linux"}, {ID: "play", Name: "Play"}},
 			links: []demoLink{
 				{name: "GitHub", url: "https://github.com/", category: "code", shortcut: "GH", tags: []string{"git", "code"}, pinned: true, opens: 42},
 				{name: "GitLab", url: "https://gitlab.com/", category: "code", tags: []string{"git", "code"}, opens: 3},
@@ -70,17 +70,47 @@ func demoPages() []demoPage {
 				{name: "Old dev podcast", url: "https://podcast.example.net/feed", category: "news", tags: []string{"podcast"}, lastError: "DNS lookup failed"},
 				{name: "DEV Community", url: "https://dev.to/", category: "news", tags: []string{"news", "blog"}},
 				{name: "The Changelog", url: "https://changelog.com/", category: "news", tags: []string{"podcast", "open-source"}},
+				{name: "Exploit-DB", url: "https://www.exploit-db.com/", category: "sec", shortcut: "EDB", tags: []string{"security", "exploits"}, opens: 6},
+				{name: "Hack The Box", url: "https://www.hackthebox.com/", category: "sec", shortcut: "HTB", tags: []string{"security", "ctf"}, pinned: true, opens: 15},
+				{name: "TryHackMe", url: "https://tryhackme.com/", category: "sec", tags: []string{"security", "ctf"}, opens: 9},
+				{name: "OWASP", url: "https://owasp.org/", category: "sec", tags: []string{"security", "web"}, opens: 4},
+				{name: "PortSwigger Academy", url: "https://portswigger.net/web-security", category: "sec", tags: []string{"security", "web"}, opens: 3},
+				{name: "CyberChef", url: "https://gchq.github.io/CyberChef/", category: "sec", shortcut: "CC", tags: []string{"security", "tools"}, opens: 8},
+				{name: "Shodan", url: "https://www.shodan.io/", category: "sec", tags: []string{"security", "search"}, opens: 2},
+				{name: "Have I Been Pwned", url: "https://haveibeenpwned.com/", category: "sec", tags: []string{"security", "passwords"}},
+				{name: "CVE", url: "https://www.cve.org/", category: "sec", tags: []string{"security", "news"}},
+				{name: "Nmap", url: "https://nmap.org/", category: "sec", tags: []string{"security", "network"}, opens: 5},
+				{name: "Wireshark", url: "https://www.wireshark.org/", category: "sec", tags: []string{"security", "network"}, opens: 3},
+				{name: "Kali Linux", url: "https://www.kali.org/", category: "sec", tags: []string{"security", "linux"}, opens: 2},
+				{name: "Arch Wiki", url: "https://wiki.archlinux.org/", category: "linux", shortcut: "AW", tags: []string{"linux", "docs"}, pinned: true, opens: 20},
+				{name: "kernel.org", url: "https://www.kernel.org/", category: "linux", tags: []string{"linux", "kernel"}},
+				{name: "explainshell", url: "https://explainshell.com/", category: "linux", tags: []string{"linux", "shell"}, opens: 7},
+				{name: "tldr pages", url: "https://tldr.sh/", category: "linux", tags: []string{"linux", "shell"}, opens: 10},
+				{name: "NixOS packages", url: "https://search.nixos.org/packages", category: "linux", tags: []string{"linux", "nix"}, opens: 4},
+				{name: "LWN.net", url: "https://lwn.net/", category: "linux", tags: []string{"linux", "news"}, opens: 5},
+				{name: "Phoronix", url: "https://www.phoronix.com/", category: "linux", tags: []string{"linux", "news", "hardware"}},
+				{name: "Debian", url: "https://www.debian.org/", category: "linux", tags: []string{"linux"}},
+				{name: "Linux From Scratch", url: "https://www.linuxfromscratch.org/", category: "linux", tags: []string{"linux", "docs"}},
+				{name: "ShellCheck", url: "https://www.shellcheck.net/", category: "linux", tags: []string{"shell", "tools"}, opens: 6},
+				{name: "Advent of Code", url: "https://adventofcode.com/", category: "play", shortcut: "AOC", tags: []string{"puzzles", "code"}, opens: 12},
+				{name: "Project Euler", url: "https://projecteuler.net/", category: "play", tags: []string{"puzzles", "math"}},
+				{name: "Exercism", url: "https://exercism.org/", category: "play", tags: []string{"puzzles", "code"}, opens: 3},
+				{name: "Compiler Explorer", url: "https://godbolt.org/", category: "play", shortcut: "CE", tags: []string{"code", "tools"}, opens: 8},
+				{name: "Shadertoy", url: "https://www.shadertoy.com/", category: "play", tags: []string{"graphics", "code"}},
+				{name: "xkcd", url: "https://xkcd.com/", category: "play", tags: []string{"humour"}, opens: 11},
+				{name: "picoCTF", url: "https://picoctf.org/", category: "play", tags: []string{"security", "ctf"}},
+				{name: "CTFtime", url: "https://ctftime.org/", category: "play", tags: []string{"security", "ctf"}},
 			},
 			widgets: []Widget{
 				{ID: "demo-health", Type: WidgetTypeHealth, Config: map[string]any{}},
 				{ID: "demo-weather", Type: WidgetTypeWeather, Config: map[string]any{"forecastRange": "3day"}},
 				{ID: "demo-notes", Type: WidgetTypeNotes, Config: map[string]any{"text": demoNotesText}},
 			},
-			order: []string{"demo-notes", "code", "docs", "demo-weather", "tools", "news", "demo-health"},
+			order: []string{"demo-notes", "code", "docs", "demo-weather", "tools", "news", "sec", "linux", "play", "demo-health"},
 		},
 		{
 			name: "Homelab", icon: "⌂",
-			categories: []Category{{ID: "platforms", Name: "Platforms"}, {ID: "network", Name: "Network"}, {ID: "home", Name: "Home"}, {ID: "community", Name: "Community"}},
+			categories: []Category{{ID: "platforms", Name: "Platforms"}, {ID: "network", Name: "Network"}, {ID: "home", Name: "Home"}, {ID: "community", Name: "Community"}, {ID: "makers", Name: "Makers"}},
 			links: []demoLink{
 				{name: "Proxmox VE docs", url: "https://pve.proxmox.com/wiki/Main_Page", category: "platforms", shortcut: "PX", tags: []string{"virtualization", "docs"}, opens: 14},
 				{name: "TrueNAS docs", url: "https://www.truenas.com/docs/", category: "platforms", tags: []string{"storage", "docs"}, opens: 3},
@@ -98,15 +128,25 @@ func demoPages() []demoPage {
 				{name: "r/homelab", url: "https://www.reddit.com/r/homelab/", category: "community", tags: []string{"community"}, opens: 7},
 				// Moved years ago: the one Health shows as broken.
 				{name: "Old homelab wiki", url: "https://wiki.example.org/homelab", category: "community", tags: []string{"docs"}, lastError: "404 Not Found"},
+				{name: "Raspberry Pi", url: "https://www.raspberrypi.com/", category: "makers", shortcut: "RPI", tags: []string{"hardware", "iot"}, opens: 8},
+				{name: "Adafruit", url: "https://www.adafruit.com/", category: "makers", tags: []string{"hardware", "shop"}, opens: 3},
+				{name: "SparkFun", url: "https://www.sparkfun.com/", category: "makers", tags: []string{"hardware", "shop"}},
+				{name: "Wokwi", url: "https://wokwi.com/", category: "makers", tags: []string{"hardware", "simulator"}, opens: 4},
+				{name: "Flipper Zero", url: "https://flipperzero.one/", category: "makers", tags: []string{"hardware", "security"}, opens: 2},
+				{name: "Hackaday", url: "https://hackaday.com/", category: "makers", shortcut: "HD", tags: []string{"hardware", "news"}, pinned: true, opens: 17},
+				{name: "Hackster.io", url: "https://www.hackster.io/", category: "makers", tags: []string{"hardware", "projects"}},
+				{name: "Pine64", url: "https://pine64.org/", category: "makers", tags: []string{"hardware", "linux"}},
+				{name: "Framework", url: "https://frame.work/", category: "makers", tags: []string{"hardware"}},
+				{name: "OpenWrt", url: "https://openwrt.org/", category: "makers", tags: []string{"network", "linux"}, opens: 5},
 			},
 			widgets: []Widget{
 				{ID: "demo-inbox", Type: WidgetTypeInbox, Config: map[string]any{}},
 			},
-			order: []string{"platforms", "network", "demo-inbox", "home", "community"},
+			order: []string{"platforms", "network", "demo-inbox", "home", "community", "makers"},
 		},
 		{
 			name: "Self-hosted", icon: "▣",
-			categories: []Category{{ID: "discover", Name: "Discover"}, {ID: "apps", Name: "Apps"}, {ID: "infra", Name: "Infrastructure"}},
+			categories: []Category{{ID: "discover", Name: "Discover"}, {ID: "apps", Name: "Apps"}, {ID: "infra", Name: "Infrastructure"}, {ID: "privacy", Name: "Privacy"}},
 			links: []demoLink{
 				{name: "awesome-selfhosted", url: "https://awesome-selfhosted.net/", category: "discover", shortcut: "AS", tags: []string{"self-hosted", "lists"}, opens: 10},
 				{name: "selfh.st", url: "https://selfh.st/", category: "discover", tags: []string{"self-hosted", "news"}, opens: 6},
@@ -126,11 +166,21 @@ func demoPages() []demoPage {
 				// something to show.
 				{name: "Docker Hub", url: "https://hub.docker.com/", category: "infra", tags: []string{"docker"}},
 				{name: "Tailscale", url: "https://tailscale.com/", category: "infra", tags: []string{"vpn"}},
+				{name: "Privacy Guides", url: "https://www.privacyguides.org/", category: "privacy", shortcut: "PG", tags: []string{"privacy", "guides"}, opens: 6},
+				{name: "EFF", url: "https://www.eff.org/", category: "privacy", tags: []string{"privacy", "news"}, opens: 3},
+				{name: "Signal", url: "https://signal.org/", category: "privacy", tags: []string{"privacy", "chat"}, opens: 4},
+				{name: "Tor Project", url: "https://www.torproject.org/", category: "privacy", tags: []string{"privacy", "network"}},
+				{name: "Mullvad", url: "https://mullvad.net/", category: "privacy", tags: []string{"privacy", "vpn"}},
+				{name: "Bitwarden", url: "https://bitwarden.com/", category: "privacy", tags: []string{"passwords", "security"}, opens: 5},
+				{name: "Yubico", url: "https://www.yubico.com/", category: "privacy", tags: []string{"security", "hardware"}},
+				{name: "CryptPad", url: "https://cryptpad.org/", category: "privacy", tags: []string{"privacy", "office"}},
+				{name: "Krebs on Security", url: "https://krebsonsecurity.com/", category: "privacy", tags: []string{"security", "news"}, opens: 7},
+				{name: "Schneier on Security", url: "https://www.schneier.com/", category: "privacy", tags: []string{"security", "news"}},
 			},
 			widgets: []Widget{
 				{ID: "demo-duplicates", Type: WidgetTypeDuplicates, Config: map[string]any{}},
 			},
-			order: []string{"discover", "apps", "infra", "demo-duplicates"},
+			order: []string{"discover", "apps", "infra", "privacy", "demo-duplicates"},
 		},
 	}
 }
@@ -156,13 +206,30 @@ var demoIconCache struct {
 	byURL map[string]string // canonical URL -> icon file name
 }
 
-// demoOpenLog spreads n opens over the last three weeks, the latest first
-// hours ago, so Recent and the usage bars have something to show.
+// demoOpenHours are the hours of the day the opens fall in: a morning, the
+// afternoon, and an evening, so the heatmap has a shape.
+var demoOpenHours = []int{7, 8, 8, 9, 9, 9, 10, 10, 11, 12, 12, 13, 13, 14, 14, 15, 16, 16, 17, 19, 20, 20, 21, 22}
+
+// demoOpenLog spreads n opens over the last ninety days, more of them lately,
+// fewer on weekends, mostly in working hours, so Recent, the usage bars and the
+// heatmap show a collection that has been in use for a while.
 func demoOpenLog(now time.Time, n, seed int) []int64 {
 	log := make([]int64, 0, n)
-	for i := n; i > 0; i-- {
-		hours := (i*37 + seed*11) % (21 * 24)
-		log = append(log, now.Add(-time.Duration(hours)*time.Hour-time.Duration(i)*time.Minute).UnixMilli())
+	for k := 0; k < n; k++ {
+		u := float64(demoNoise(k, seed*7+1)) / 1000
+		daysAgo := int(88 * u * u)
+		at := now.AddDate(0, 0, -daysAgo)
+		// Weekends: half of them move to the day before.
+		if wd := at.Weekday(); (wd == time.Saturday || wd == time.Sunday) && demoNoise(k, seed*3+5)%2 == 0 {
+			at = at.AddDate(0, 0, -int(wd+1)%7-1)
+		}
+		hour := demoOpenHours[demoNoise(k, seed*13+2)%len(demoOpenHours)]
+		minute := demoNoise(k, seed*17+3) % 60
+		at = time.Date(at.Year(), at.Month(), at.Day(), hour, minute, 0, 0, at.Location())
+		if at.After(now) {
+			at = at.AddDate(0, 0, -1)
+		}
+		log = append(log, at.UnixMilli())
 	}
 	// Ascending, as the server appends them.
 	sortInt64s(log)
@@ -200,7 +267,7 @@ func (h *Handlers) writeDemoPages(now time.Time) error {
 		pageID := index + 1
 		bookmarks := make([]Bookmark, 0, len(page.links))
 		for i, link := range page.links {
-			created := now.Add(-time.Duration(40-i) * 24 * time.Hour).UnixMilli()
+			created := now.Add(-time.Duration(1+(i*53+index*17)%110) * 24 * time.Hour).UnixMilli()
 			bookmark := Bookmark{
 				Name: link.name, URL: link.url, Category: link.category, Shortcut: link.shortcut,
 				Tags: link.tags, Pinned: link.pinned, CreatedAt: created,

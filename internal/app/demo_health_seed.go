@@ -39,6 +39,12 @@ var demoMonitors = []demoMonitor{
 	{url: "https://www.home-assistant.io/", page: 2, pingLow: 85, spread: 60, outages: []demoOutage{{daysAgo: 5.2, minutes: 120, code: 0}, {daysAgo: 1.1, minutes: 20, code: 502}}},
 	{url: "https://tailscale.com/", page: 2, pingLow: 28, spread: 25},
 	{url: "https://jellyfin.org/", page: 3, pingLow: 120, spread: 70, outages: []demoOutage{{daysAgo: 18.6, minutes: 60, code: 0}}},
+	{url: "https://gitlab.com/", page: 1, pingLow: 55, spread: 40, outages: []demoOutage{{daysAgo: 22.3, minutes: 90, code: 502}}},
+	{url: "https://lobste.rs/", page: 1, pingLow: 140, spread: 80, outages: []demoOutage{{daysAgo: 8.7, minutes: 45, code: 0}, {daysAgo: 2.4, minutes: 25, code: 503}}},
+	{url: "https://docs.docker.com/", page: 2, pingLow: 75, spread: 30, outages: []demoOutage{{daysAgo: 15, minutes: 30, code: 504}}},
+	{url: "https://hackaday.com/", page: 2, pingLow: 160, spread: 100},
+	{url: "https://selfh.st/", page: 3, pingLow: 95, spread: 60, outages: []demoOutage{{daysAgo: 26, minutes: 50, code: 503}}},
+	{url: "https://www.torproject.org/", page: 3, pingLow: 210, spread: 120, outages: []demoOutage{{daysAgo: 3.3, minutes: 240, code: 0}}},
 }
 
 // demoFeeds are the bookmarks whose pages advertise a feed, with how many
@@ -167,28 +173,51 @@ func (h *Handlers) seedDemoHealth(now time.Time) error {
 		return err
 	}
 
-	// A month of daily health, the second broken link arriving ten days ago.
+	// Ninety days of daily health: the collection grows, a bad week at the
+	// start of the month before last, the second broken link arriving ten days
+	// ago, and a score that climbs as the reader works through what the
+	// reports show.
 	total := 0
 	for _, page := range demoPages() {
 		total += len(page.links)
 	}
 	trend := HealthTrendFile{GeneratedAt: now.UnixMilli()}
 	today := now.Truncate(24 * time.Hour)
-	for day := 29; day >= 0; day-- {
+	for day := 89; day >= 0; day-- {
 		at := today.Add(-time.Duration(day) * 24 * time.Hour)
-		broken := 1
-		if day <= 10 {
+		broken := 0
+		switch {
+		case day <= 10:
 			broken = 2
+		case day <= 40:
+			broken = 1
+		case day >= 56 && day <= 62:
+			broken = 4 // the bad week
+		case day >= 63:
+			broken = 3
 		}
 		monDown := 0
-		if day == 5 || day == 1 {
-			monDown = 1
+		for _, m := range demoMonitors {
+			for _, o := range m.outages {
+				if o.daysAgo >= float64(day) && o.daysAgo < float64(day+1) {
+					monDown++
+				}
+			}
 		}
-		count := total - day/6
+		count := total - day/3
+		weekday := at.Weekday()
+		opens := 5 + demoNoise(day, 7)%9
+		if weekday == time.Saturday || weekday == time.Sunday {
+			opens /= 2
+		}
+		score := 82 + (89-day)*13/89 - broken*2 - monDown*3 + demoNoise(day, 11)%3
+		// The reader turns checking on for more of the collection as the months
+		// go by: forty bookmarks unchecked three months ago, none now.
+		unchecked := day * 40 / 89
 		trend.Points = append(trend.Points, HealthTrendPoint{
-			T: at.UnixMilli(), Total: count, Healthy: count - broken - 2, Broken: broken, MonDown: monDown,
-			Monitored: len(demoMonitors), Unchecked: count - len(demoMonitors), Duplicate: 2,
-			Opens: 6 + demoNoise(day, 7)%9, Score: 94 - broken - monDown,
+			T: at.UnixMilli(), Total: count, Healthy: count - broken - unchecked - 2, Broken: broken, MonDown: monDown,
+			Monitored: len(demoMonitors), Unchecked: unchecked, Duplicate: 2,
+			Opens: opens, Score: score,
 		})
 	}
 	if err := writeHealthTrendFile(trend); err != nil {

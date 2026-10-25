@@ -110,8 +110,8 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 	if strings.Join(names, ",") != "Dev,Homelab,Self-hosted" {
 		t.Fatalf("pages: %v", names)
 	}
-	if total < 45 || total > 55 || tagged != total {
-		t.Errorf("%d bookmarks, %d tagged; want about 50, all tagged", total, tagged)
+	if total < 95 || total > 105 || tagged != total {
+		t.Errorf("%d bookmarks, %d tagged; want about 100, all tagged", total, tagged)
 	}
 	settings := h.store.GetSettings()
 	if !settings.ActionBarEnabled || settings.ActionBarPosition != actionBarRight || settings.ActionBarAutoHideSeconds != 0 {
@@ -155,8 +155,8 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 	if !soon {
 		t.Error("no certificate close to expiry")
 	}
-	if points := readHealthTrendFile().Points; len(points) != 30 {
-		t.Errorf("%d trend points, want 30", len(points))
+	if points := readHealthTrendFile().Points; len(points) != 90 {
+		t.Errorf("%d trend points, want 90", len(points))
 	}
 	fresh := freshnessForBookmarks(readFeedStateFile(), h.store.GetBookmarksByPage(1))
 	all := []Bookmark{}
@@ -274,7 +274,7 @@ func TestDemoPollsNoSite(t *testing.T) {
 		t.Errorf("/api/ping for a seeded monitor answered %d %s", rec.Code, rec.Body.String())
 	}
 	rec = httptest.NewRecorder()
-	h.PingURL(rec, httptest.NewRequest(http.MethodGet, "/api/ping?url=https://gitlab.com/", nil))
+	h.PingURL(rec, httptest.NewRequest(http.MethodGet, "/api/ping?url=https://www.cve.org/", nil))
 	if rec.Code != http.StatusForbidden {
 		t.Errorf("/api/ping for an unseeded link answered %d", rec.Code)
 	}
@@ -290,7 +290,7 @@ func TestDemoPollsNoSite(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, bookmark := range h.store.GetBookmarksByPage(1) {
-		seeded := bookmark.Name == "GitHub" || bookmark.Name == "Hacker News"
+		seeded := bookmark.Name == "GitHub" || bookmark.Name == "Hacker News" || bookmark.Name == "GitLab" || bookmark.Name == "Lobsters"
 		if bookmark.CheckStatus || bookmark.Monitor != seeded {
 			t.Errorf("%s: periodic %v, monitor %v; only the seeded monitors may stay on", bookmark.Name, bookmark.CheckStatus, bookmark.Monitor)
 		}

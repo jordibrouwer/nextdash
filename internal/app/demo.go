@@ -150,14 +150,8 @@ func (h *Handlers) seedDemo(now time.Time) error {
 		return err
 	}
 
-	inbox := []InboxLink{
-		{URL: "https://github.com/awesome-selfhosted/awesome-selfhosted", Title: "Awesome self-hosted", AddedAt: now.Add(-26 * time.Hour).UnixMilli()},
-		{URL: "https://www.home-assistant.io/blog/", Title: "Home Assistant blog", AddedAt: now.Add(-5 * time.Hour).UnixMilli()},
-		{URL: "https://jellyfin.org/docs/", Title: "Jellyfin documentation", AddedAt: now.Add(-3 * time.Hour).UnixMilli()},
-		{URL: "https://docs.docker.com/compose/", Title: "Docker Compose", AddedAt: now.Add(-90 * time.Minute).UnixMilli(), Tags: []string{"docker"}},
-		{URL: "https://tailscale.com/kb/", Title: "Tailscale knowledge base", AddedAt: now.Add(-20 * time.Minute).UnixMilli()},
-	}
-	for _, link := range inbox {
+	// A few weeks of an inbox in use, oldest first (demo_inbox.go).
+	for _, link := range demoInboxLinks(now) {
 		link.Domain = hostnameFromURL(link.URL)
 		if _, _, err := h.store.AddInboxLink(link, true, 0); err != nil {
 			return err
