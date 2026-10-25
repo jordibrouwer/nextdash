@@ -196,11 +196,11 @@ test.describe('dashboard command palette', () => {
         await page.keyboard.press('Enter');
         const sheet = page.locator('#app-modal.show .keyboard-cheat-sheet-modal');
         await expect(sheet).toBeVisible({ timeout: 3000 });
-        await expect(sheet.locator('summary', { hasText: /Bookmarks view/i })).toBeVisible();
-        await expect(sheet.locator('summary', { hasText: /Inbox view/i })).toBeVisible();
-        // Rows live inside collapsed <details>, so the section has to be
-        // opened before any of its lines can be visible.
-        await sheet.locator('summary', { hasText: /Bookmarks view/i }).click();
+        // The sheet lists its topics in columns, each with a title; nothing is
+        // folded, so a topic's rows are there without opening it.
+        const title = (name) => sheet.locator('.cheat-sheet-group-title', { hasText: name });
+        await expect(title(/Bookmarks view/i)).toBeVisible();
+        await expect(title(/Inbox view/i)).toBeVisible();
         await expect(sheet.getByText(/Refresh the health report/i).first()).toBeVisible();
     });
 
