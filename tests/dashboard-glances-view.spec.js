@@ -1257,6 +1257,18 @@ test.describe('how often the host is recorded', () => {
     });
 });
 
+/**
+ * Click an ℹ that is on the page already. The popover closes on any scroll, and
+ * a click that has to bring its button into view scrolls the page first; that
+ * scroll event arrives a frame later and closed the popover it had just opened.
+ */
+async function clickInfo(page, selector) {
+    const button = page.locator(selector).first();
+    await button.scrollIntoViewIfNeeded();
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+    await button.click();
+}
+
 test.describe('the ℹ buttons', () => {
     test('the header ℹ opens the page explainer', async ({ page }) => {
         await mockGlances(page);
@@ -1330,7 +1342,7 @@ test.describe('the ℹ buttons', () => {
         await expect(page.locator('[data-glances-chart="cpu"] [data-glances-info="yesterday"]')).toBeVisible();
         // A stack has no Yesterday, and so no ℹ for it.
         await expect(page.locator('[data-glances-chart="memparts"] [data-glances-info="yesterday"]')).toHaveCount(0);
-        await page.locator('[data-glances-chart="cpu"] [data-glances-info="chart-cpu"]').click();
+        await clickInfo(page, '[data-glances-chart="cpu"] [data-glances-info="chart-cpu"]');
         await expect(page.locator('[data-glances-info-pop]')).toContainText('Red bands');
 
         await page.locator('[data-glances-section="insights"]').click();
@@ -1338,10 +1350,10 @@ test.describe('the ℹ buttons', () => {
         await expect(page.locator('[data-glances-insight="health"] [data-glances-info="forecast"]')).toBeVisible();
         await expect(page.locator('[data-glances-insight="heatmap"] [data-glances-info="heatmap"]')).toBeVisible();
         // The popover goes when the page does.
-        await page.locator('[data-glances-info="score"]').click();
+        await clickInfo(page, '[data-glances-info="score"]');
         await expect(page.locator('[data-glances-info-pop]')).toHaveCount(1);
         await page.locator('[data-glances-section="history"]').click();
-        await page.locator('[data-glances-info="record"]').click();
+        await clickInfo(page, '[data-glances-info="record"]');
         await expect(page.locator('[data-glances-info-pop]')).toHaveCount(1);
     });
 
