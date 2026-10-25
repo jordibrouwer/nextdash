@@ -136,3 +136,21 @@ test('a theme\'s own look without glass or backdrop clears the ones before it, f
     expect(await local(page, 'themeBackdrop')).toBe('follow');
     expect(await local(page, 'themeDepth')).toBe('follow');
 });
+
+test('a studio with nothing to show hands back to config', async ({ page }) => {
+    await setup(page);
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.isActiveView())).toBe(true);
+    await page.evaluate(async () => {
+        const browser = window.ThemeBrowser;
+        const open = browser.open;
+        browser.open = () => null;
+        try {
+            await window.dashboardInstance.config.openThemeBrowser();
+        } finally {
+            browser.open = open;
+        }
+    });
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.isActiveView())).toBe(true);
+    expect(await page.evaluate(() => window.dashboardInstance.config._lookStudio)).toBeNull();
+});

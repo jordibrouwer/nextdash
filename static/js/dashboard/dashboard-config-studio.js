@@ -295,7 +295,12 @@
                 onApply: () => this.applyLookStudio(),
                 onClose: () => this.afterLookStudio(),
             });
-            if (!this._lookStudio.ui) this.endLookStudio();
+            if (!this._lookStudio.ui) {
+                // Nothing to show: config, which stepped aside, comes back.
+                const back = this.endLookStudio();
+                this._themePickerPrevious = null;
+                if (back) void this.openConfigView(back.section);
+            }
         },
 
         /** Colour edits made in the studio, undone: the snapshot from when it opened. */

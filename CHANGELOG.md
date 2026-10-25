@@ -150,6 +150,7 @@ Not released yet.
 - **fix — a settings change from another device no longer wipes the preview.** `refreshIfDataRevisionChanged` loaded the settings under the open studio, which replaced the previewed look with the stored one. It now leaves the settings revision as it was while the studio is open, so the first poll after it closes applies the change.
 - **fix — Reset all also resets the rest of the Surface tab.** `lookDefaults()` (`look_defaults.go`) left out `categorySurface`, `widgetSurface`, `widgetOpacity`, `materialStyle` and `neutralAccent`, and a forced value of those held for every theme after Reset all. Covered by `TestLookDefaultsCoverTheSurfaceTab`.
 - **fix — a theme's own look clears the glass and backdrop of the look before.** A theme's look is stored without the parts that follow the theme, and applying it left those as they were, so after Neon the theme's cards kept Neon's edge and see-through glass. `themeLookAnswers` fills the left-out backdrop, depth and glass with "follow the theme".
+- **fix — a studio with nothing to show hands back to config.** When `ThemeBrowser.open` had nothing to draw, config had already stepped aside and never came back. Covered, with the four above, by `tests/look-studio-edge-cases.spec.js`.
 
 ### Inbox
 
