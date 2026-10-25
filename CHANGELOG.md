@@ -199,6 +199,7 @@ Not released yet.
 
 - **fix — Undo after pasting the same link again keeps one row.** With "no duplicate URLs" on, `RestoreInboxLinkEvicting` (`inbox.go`) only compared ids, so deleting a link, pasting its URL again and then pressing Undo left two rows with the same address. It now answers with the item already there when the setting is on; `PutInboxItem` passes the setting in. Covered by `TestUndoKeepsOneRowWhenTheURLCameBack`.
 - **fix — cancelling Promote on a found app leaves no empty category.** `discoveryCategoryFor` makes the category the app's kind names so the form can preselect it, and closing the form without saving left it on the dashboard. The category is remembered (`_pendingDiscoveryCategory`) and `releaseDiscoveryCategory` takes it away again once the form closes with nothing in it, without a trash entry (`removeEmptyCategory` in `dashboard-structure-create.js`). Covered in `tests/app-discovery.spec.js`.
+- **fix — adding a found app no longer undoes a category edit made at the same time.** `addDiscoveredBookmarks` (`discovery.go`) read the page's categories and saved them back later, so a rename or delete in Config in between was written back as it was. The read and the save now happen under one store lock, through the new `MutateCategoriesByPage` (`models.go`). `TestMutateCategoriesByPageHoldsTheLockFromReadToSave` fails without it.
 
 ### Containers
 

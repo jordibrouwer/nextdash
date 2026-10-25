@@ -1559,6 +1559,7 @@ type Store interface {
 	// Categories - per page only
 	GetCategoriesByPage(pageID int) []Category
 	SaveCategoriesByPage(pageID int, categories []Category) error
+	MutateCategoriesByPage(pageID int, mutate func([]Category) ([]Category, bool)) error
 	PreviewCategoriesByPage(pageID int, categories []Category) (CategoryRemapPreview, error)
 	// Finders
 	GetFinders() []Finder
@@ -3144,6 +3145,12 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
+	return fs.categoriesByPageLocked(pageID)
+}
+
+// categoriesByPageLocked is GetCategoriesByPage for a caller that holds
+// fs.mutex for writing (it fills the read cache).
+func (fs *FileStore) categoriesByPageLocked(pageID int) []Category {
 	if cached, ok := fs.readCache.categories[pageID]; ok {
 		return cloneCategories(cached)
 	}
@@ -3184,14 +3191,35 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 // SaveCategoriesByPage saves categories inside bookmarks-{pageID}.json, creating the file if needed
 // It also updates bookmarks to use the new category IDs when category names change
 func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	return fs.saveCategoriesByPageLocked(pageID, categories)
+}
+
+/*
+MutateCategoriesByPage reads a page's categories, hands them to mutate and saves
+what it returns, all under one hold of the store lock. mutate answers false when
+nothing changed, and nothing is written then. It must not call the store.
+
+A read and a save made apart let a save in between be undone: a category
+renamed in Config while discovery added an app came back under its old name.
+*/
+func (fs *FileStore) MutateCategoriesByPage(pageID int, mutate func([]Category) ([]Category, bool)) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	next, changed := mutate(fs.categoriesByPageLocked(pageID))
+	if !changed {
+		return nil
+	}
+	return fs.saveCategoriesByPageLocked(pageID, next)
+}
+
+func (fs *FileStore) saveCategoriesByPageLocked(pageID int, categories []Category) error {
 	for i := range categories {
 		categories[i] = foldCategoryIcon(categories[i])
 		categories[i].Name = clampEntityName(categories[i].Name)
 		categories[i].View = normalizeCategoryView(categories[i].View)
 	}
-	fs.mutex.Lock()
-	defer fs.mutex.Unlock()
-
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)

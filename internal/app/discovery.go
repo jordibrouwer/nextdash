@@ -797,55 +797,60 @@ func findCategoryByName(cats []Category, name string) *Category {
 // page. A name missing from outcome failed and may be tried again.
 func (h *Handlers) addDiscoveredBookmarks(ctx context.Context, st *discoveryState, pageID int, items []discoveryAddItem, direct, cardDone bool) (added []discoveryRecentAdd, outcome map[string]bool, err error) {
 	outcome = map[string]bool{}
-	cats := h.store.GetCategoriesByPage(pageID)
-	for i := range cats {
-		if cats[i].OriginalID == "" {
-			cats[i].OriginalID = cats[i].ID
-		}
-	}
-	changed := false
-	// New categories go to the top of the page, where the reader sees them.
-	var made []Category
+	// Read and saved under one store lock: a category renamed in Config in
+	// between was otherwise written back under its old name.
+	var cats []Category
 	catOf := make([]string, len(items))
-	for i, it := range items {
-		kind := it.App.Kind
-		if kind == "" {
-			kind = "Apps"
+	err = h.store.MutateCategoriesByPage(pageID, func(stored []Category) ([]Category, bool) {
+		cats = stored
+		for i := range cats {
+			if cats[i].OriginalID == "" {
+				cats[i].OriginalID = cats[i].ID
+			}
 		}
-		var cat *Category
-		name := strings.TrimSpace(it.Category)
-		if direct {
-			if id := st.KindCategory[pageID][kind]; id != "" {
-				for j := range cats {
-					if cats[j].ID == id {
-						cat = &cats[j]
+		// New categories go to the top of the page, where the reader sees them.
+		var made []Category
+		for i, it := range items {
+			kind := it.App.Kind
+			if kind == "" {
+				kind = "Apps"
+			}
+			var cat *Category
+			name := strings.TrimSpace(it.Category)
+			if direct {
+				if id := st.KindCategory[pageID][kind]; id != "" {
+					for j := range cats {
+						if cats[j].ID == id {
+							cat = &cats[j]
+						}
 					}
 				}
+				name = kind
 			}
-			name = kind
+			if name == "" {
+				name = kind
+			}
+			if cat == nil {
+				cat = findCategoryByName(made, name)
+			}
+			if cat == nil {
+				cat = findCategoryByName(cats, name)
+			}
+			if cat == nil {
+				id := newDiscoveryCategoryID()
+				made = append(made, Category{ID: id, OriginalID: id, Name: clampEntityName(name)})
+				cat = &made[len(made)-1]
+			}
+			catOf[i] = cat.ID
 		}
-		if name == "" {
-			name = kind
+		if len(made) == 0 {
+			return cats, false
 		}
-		if cat == nil {
-			cat = findCategoryByName(made, name)
-		}
-		if cat == nil {
-			cat = findCategoryByName(cats, name)
-		}
-		if cat == nil {
-			id := newDiscoveryCategoryID()
-			made = append(made, Category{ID: id, OriginalID: id, Name: clampEntityName(name)})
-			cat = &made[len(made)-1]
-			changed = true
-		}
-		catOf[i] = cat.ID
-	}
-	if changed {
 		cats = append(append([]Category(nil), made...), cats...)
-		if err := h.store.SaveCategoriesByPage(pageID, cats); err != nil {
-			return nil, outcome, err
-		}
+		return cats, true
+	})
+	if err != nil {
+		return nil, outcome, err
 	}
 	nameOf := func(id string) string {
 		for _, c := range cats {
