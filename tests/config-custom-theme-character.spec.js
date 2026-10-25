@@ -79,7 +79,9 @@ test('titles, weight and backdrop are kept', async ({ page }) => {
 test('every backdrop is offered as a tile, and a late one saves', async ({ page }) => {
     const id = await openEditor(page);
     const tiles = page.locator('[data-theme-backdrops] [data-theme-backdrop-tile]');
-    await expect(tiles).toHaveCount(40); // Automatic + 39
+    // Automatic, and one tile per backdrop the server knows.
+    const known = (await (await page.request.get('/api/themes/meta')).json()).backdrops.length;
+    await expect(tiles).toHaveCount(known + 1);
     await page.locator('[data-theme-backdrop-tile="prism"]').click();
     await expect(page.locator('[data-theme-backdrop-tile="prism"]')).toHaveAttribute('aria-pressed', 'true');
     await expect.poll(async () => (await colors(page)).custom[id].backdrop).toBe('prism');

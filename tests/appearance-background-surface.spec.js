@@ -77,7 +77,9 @@ test.describe('the Background and Surface tabs', () => {
         await openConfigPanel(page, 'Backdrop');
 
         await page.locator('[data-backdrop-mode="pick"]').click();
-        await expect(page.locator('.config-backdrop-thumb')).toHaveCount(46);
+        // One thumbnail per backdrop the server knows, however many that is.
+        const known = (await (await page.request.get('/api/themes/meta')).json()).backdrops.length;
+        await expect(page.locator('.config-backdrop-thumb')).toHaveCount(known);
         await page.locator('[data-backdrop-recipe="hexagons"]').click();
         await expect.poll(() => page.getAttribute('body', 'data-backdrop-recipe')).toBe('hexagons');
 

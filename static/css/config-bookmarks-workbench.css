@@ -1478,6 +1478,21 @@ body:has(#config-main) #app-modal.modal-overlay:has(.bm-health-modal) .modal.bm-
     display: none;
 }
 
+/* The fifth step: what is left loses its air, so a window of 560 px still
+   shows the overview without a scrollbar. */
+.bm-health-modal-grid.is-bare .bm-health-modal-card {
+    margin-bottom: 0.15rem;
+    padding-block: 0.15rem;
+}
+
+.bm-health-modal-grid.is-bare .bm-health-modal-card-title {
+    margin-bottom: 0;
+}
+
+.bm-health-modal-grid.is-bare .bm-health-modal-score-big {
+    font-size: 1.3rem;
+}
+
 /* ── The panel's tabs (Details, Health, Usage) ───────────────────────── */
 
 .config-bm-panel-where {
