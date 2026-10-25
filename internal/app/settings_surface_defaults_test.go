@@ -108,6 +108,7 @@ func TestAStoredLookMovesToFollowOnce(t *testing.T) {
 		"currentPage":              1,
 		"surfaceDefaultsMigrated":  true,
 		"depthDefaultFlatMigrated": true,
+		"auroraGlassMigrated":      true,
 		"theme":                    "cherry-graphite-dark",
 		"themeDepth":               "flat",
 		"glowStrength":             "off",

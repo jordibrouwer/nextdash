@@ -448,77 +448,79 @@ type Settings struct {
 	// Set by migrateStripBookmarkPreviewImages as a raw key. Without a field the
 	// first settings save after boot dropped it, and every restart rewrote
 	// every page file to strip images again.
-	PreviewImagesStrippedMigrated   bool   `json:"previewImagesStrippedMigrated,omitempty"`
-	CustomPercentGuessMigrated      bool   `json:"customPercentGuessMigrated,omitempty"`
-	NotesWidgetSeeded               bool   `json:"notesWidgetSeeded,omitempty"`               // one-time: notes widget on the first page; a field, or a settings save dropped it and a removed widget came back
-	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
-	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
-	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
-	GridDefaultsMigrated            bool   `json:"gridDefaultsMigrated,omitempty"`            // one-time: layout masonry and density auto, for an install still on compact and default
-	CategoryHeaderSmallMigrated     bool   `json:"categoryHeaderSmallMigrated,omitempty"`     // one-time: the category header size moved from m to s, for an install still on the old default
-	FontSizeLgMigrated              bool   `json:"fontSizeLgMigrated,omitempty"`              // one-time: the type size moved from m to lg, for an install still on the old default
-	FontDefaultInterMigrated        bool   `json:"fontDefaultInterMigrated,omitempty"`        // one-time: the UI font moved from Source Code Pro to Inter
-	FontDefaultMonoMigrated         bool   `json:"fontDefaultMonoMigrated,omitempty"`         // one-time: the UI font moved back from Inter to Source Code Pro
-	SurfaceFollowMigrated           bool   `json:"surfaceFollowMigrated,omitempty"`           // one-time: depth, glow and effects moved to follow-the-theme
-	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
-	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
-	ActionKeysOffMigrated           bool   `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
-	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
-	HeaderClockClassicMigrated      bool   `json:"headerClockClassicMigrated,omitempty"`      // one-time: clock and weather onto a line of their own
-	FirstRunInstall                 bool   `json:"firstRunInstall,omitempty"`                 // this settings file was written fresh, not upgraded: the changes tour greets rather than explains what moved
-	FirstRunAt                      int64  `json:"firstRunAt,omitempty"`                      // unix ms the fresh settings file was written; corner cards that should not greet a newcomer on day one wait a day from it
-	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
-	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
-	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
-	ShowCollapseAllButton           bool   `json:"showCollapseAllButton"`
-	ShowStatus                      bool   `json:"showStatus"`
-	ColorizeStatus                  bool   `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
-	MonitorEmphasis                 string `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
-	ShowPing                        bool   `json:"showPing"`
-	ShowStatusLoading               bool   `json:"showStatusLoading"`
-	SkipFastPing                    bool   `json:"skipFastPing"`
-	StatusOfflineRetries            int    `json:"statusOfflineRetries"`                    // Failed pings per check before marking offline (1-10)
-	StatusOfflineRetryDelayMs       int    `json:"statusOfflineRetryDelayMs"`               // Delay between retry pings in ms (100-3000)
-	StatusRecheckIntervalMinutes    int    `json:"statusRecheckIntervalMinutes"`            // Background re-check interval in minutes (1-60)
-	GlobalShortcuts                 bool   `json:"globalShortcuts"`                         // Use shortcuts from all pages
-	HyprMode                        bool   `json:"hyprMode"`                                // Launcher mode for PWA usage
-	LockLayout                      bool   `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
-	AnimationsEnabled               bool   `json:"animationsEnabled"`                       // Enable or disable animations globally
-	AnimationSpeed                  string `json:"animationSpeed"`                          // Pace of the arrivals (views rising in): slow, normal or fast
-	ViewAnimationsEnabled           bool   `json:"viewAnimationsEnabled"`                   // The views rising in on arrival; animationsEnabled still switches off everything
-	EnableCustomTitle               bool   `json:"enableCustomTitle"`                       // Enable custom page title
-	CustomTitle                     string `json:"customTitle"`                             // Custom page title
-	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
-	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
-	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
-	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-9)
-	PageSwitcherTextMigrated        bool   `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
-	PageSwitcherClassicMigrated     bool   `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
-	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
-	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
-	ActionBarPosition               string `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
-	ActionBarEnabled                bool   `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
-	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
-	ShowActionKeys                  bool   `json:"showActionKeys"`                          // The key chip on each action button
-	ActionBarIntroStyle             string `json:"actionBarIntroStyle"`                     // How the buttons animate as the bar comes into view; "off" for none
-	ActionBarSize                   string `json:"actionBarSize"`                           // How large the action buttons are drawn: xs, s, m, l or xl
-	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
-	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
-	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
-	EnableCustomFont                bool   `json:"enableCustomFont"`                        // Enable custom font
-	CustomFontPath                  string `json:"customFontPath"`                          // Path to custom font file
-	Language                        string `json:"language"`                                // Language code, e.g., "en" or "es"
-	InterleaveMode                  bool   `json:"interleaveMode"`                          // Search mode: on, letters find names and / finds shortcuts; off (the default), the reverse
-	ShowPageTabs                    bool   `json:"showPageTabs"`                            // Show page navigation tabs
-	AlwaysCollapseCategories        bool   `json:"alwaysCollapseCategories"`                // Always collapse categories on load
-	HideEmptyCategories             bool   `json:"hideEmptyCategories"`                     // Hide categories with no bookmarks
-	HideEmptyCategoriesMigrated     bool   `json:"hideEmptyCategoriesMigrated"`             // Migration marker for hide-empty default-on
-	ShortcutDisplayAlwaysMigrated   bool   `json:"shortcutDisplayAlwaysMigrated,omitempty"` // one-time: show the shortcut letters on every row
-	EnableFuzzySuggestions          bool   `json:"enableFuzzySuggestions"`                  // Enable fuzzy suggestions in shortcut search
-	FuzzySuggestionsStartWith       bool   `json:"fuzzySuggestionsStartWith"`               // Fuzzy suggestions start with query instead of contains
-	KeepSearchOpenWhenEmpty         bool   `json:"keepSearchOpenWhenEmpty"`                 // Keep search interface open when query is empty
-	ShowIcons                       bool   `json:"showIcons"`                               // Show bookmark icons
-	ShowLinkPreviewCards            bool   `json:"showLinkPreviewCards"`                    // Show link preview cards on hover. Kept in step with LinkPreviewMode, which is the field that decides
+	PreviewImagesStrippedMigrated   bool           `json:"previewImagesStrippedMigrated,omitempty"`
+	CustomPercentGuessMigrated      bool           `json:"customPercentGuessMigrated,omitempty"`
+	NotesWidgetSeeded               bool           `json:"notesWidgetSeeded,omitempty"`               // one-time: notes widget on the first page; a field, or a settings save dropped it and a removed widget came back
+	ConfigButtonDefaultOnMigrated   bool           `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
+	SurfaceDefaultsMigrated         bool           `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
+	DepthDefaultFlatMigrated        bool           `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
+	GridDefaultsMigrated            bool           `json:"gridDefaultsMigrated,omitempty"`            // one-time: layout masonry and density auto, for an install still on compact and default
+	CategoryHeaderSmallMigrated     bool           `json:"categoryHeaderSmallMigrated,omitempty"`     // one-time: the category header size moved from m to s, for an install still on the old default
+	FontSizeLgMigrated              bool           `json:"fontSizeLgMigrated,omitempty"`              // one-time: the type size moved from m to lg, for an install still on the old default
+	FontDefaultInterMigrated        bool           `json:"fontDefaultInterMigrated,omitempty"`        // one-time: the UI font moved from Source Code Pro to Inter
+	AuroraGlassMigrated             bool           `json:"auroraGlassMigrated,omitempty"`             // one-time: every install moved onto Aurora Glass with the new look
+	LookMigration                   *LookMigration `json:"lookMigration,omitempty"`                   // what the move to Aurora Glass left behind, for the dialog that explains it
+	FontDefaultMonoMigrated         bool           `json:"fontDefaultMonoMigrated,omitempty"`         // one-time: the UI font moved back from Inter to Source Code Pro
+	SurfaceFollowMigrated           bool           `json:"surfaceFollowMigrated,omitempty"`           // one-time: depth, glow and effects moved to follow-the-theme
+	LauncherDefaultsMigrated        bool           `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
+	ActionButtonsAllOnMigrated      bool           `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
+	ActionKeysOffMigrated           bool           `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
+	ActionBarRightMigrated          bool           `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
+	HeaderClockClassicMigrated      bool           `json:"headerClockClassicMigrated,omitempty"`      // one-time: clock and weather onto a line of their own
+	FirstRunInstall                 bool           `json:"firstRunInstall,omitempty"`                 // this settings file was written fresh, not upgraded: the changes tour greets rather than explains what moved
+	FirstRunAt                      int64          `json:"firstRunAt,omitempty"`                      // unix ms the fresh settings file was written; corner cards that should not greet a newcomer on day one wait a day from it
+	HeaderActionsDefaultTwoMigrated bool           `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
+	ShowSearchFlowBanner            bool           `json:"showSearchFlowBanner"`
+	ShowCheatSheetButton            bool           `json:"showCheatSheetButton"`
+	ShowCollapseAllButton           bool           `json:"showCollapseAllButton"`
+	ShowStatus                      bool           `json:"showStatus"`
+	ColorizeStatus                  bool           `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
+	MonitorEmphasis                 string         `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
+	ShowPing                        bool           `json:"showPing"`
+	ShowStatusLoading               bool           `json:"showStatusLoading"`
+	SkipFastPing                    bool           `json:"skipFastPing"`
+	StatusOfflineRetries            int            `json:"statusOfflineRetries"`                    // Failed pings per check before marking offline (1-10)
+	StatusOfflineRetryDelayMs       int            `json:"statusOfflineRetryDelayMs"`               // Delay between retry pings in ms (100-3000)
+	StatusRecheckIntervalMinutes    int            `json:"statusRecheckIntervalMinutes"`            // Background re-check interval in minutes (1-60)
+	GlobalShortcuts                 bool           `json:"globalShortcuts"`                         // Use shortcuts from all pages
+	HyprMode                        bool           `json:"hyprMode"`                                // Launcher mode for PWA usage
+	LockLayout                      bool           `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
+	AnimationsEnabled               bool           `json:"animationsEnabled"`                       // Enable or disable animations globally
+	AnimationSpeed                  string         `json:"animationSpeed"`                          // Pace of the arrivals (views rising in): slow, normal or fast
+	ViewAnimationsEnabled           bool           `json:"viewAnimationsEnabled"`                   // The views rising in on arrival; animationsEnabled still switches off everything
+	EnableCustomTitle               bool           `json:"enableCustomTitle"`                       // Enable custom page title
+	CustomTitle                     string         `json:"customTitle"`                             // Custom page title
+	ShowPageInTitle                 bool           `json:"showPageInTitle"`                         // Show current page name in title
+	ShowPageNamesInTabs             bool           `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
+	MaxPageTabs                     int            `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
+	MaxHeaderActions                int            `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-9)
+	PageSwitcherTextMigrated        bool           `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
+	PageSwitcherClassicMigrated     bool           `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
+	HeaderClockPlacement            string         `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
+	PageSwitcherStyle               string         `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
+	ActionBarPosition               string         `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
+	ActionBarEnabled                bool           `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
+	ActionBarAutoHideSeconds        int            `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
+	ShowActionKeys                  bool           `json:"showActionKeys"`                          // The key chip on each action button
+	ActionBarIntroStyle             string         `json:"actionBarIntroStyle"`                     // How the buttons animate as the bar comes into view; "off" for none
+	ActionBarSize                   string         `json:"actionBarSize"`                           // How large the action buttons are drawn: xs, s, m, l or xl
+	HeaderButtonStyle               string         `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
+	EnableCustomFavicon             bool           `json:"enableCustomFavicon"`                     // Enable custom favicon
+	CustomFaviconPath               string         `json:"customFaviconPath"`                       // Path to custom favicon file
+	EnableCustomFont                bool           `json:"enableCustomFont"`                        // Enable custom font
+	CustomFontPath                  string         `json:"customFontPath"`                          // Path to custom font file
+	Language                        string         `json:"language"`                                // Language code, e.g., "en" or "es"
+	InterleaveMode                  bool           `json:"interleaveMode"`                          // Search mode: on, letters find names and / finds shortcuts; off (the default), the reverse
+	ShowPageTabs                    bool           `json:"showPageTabs"`                            // Show page navigation tabs
+	AlwaysCollapseCategories        bool           `json:"alwaysCollapseCategories"`                // Always collapse categories on load
+	HideEmptyCategories             bool           `json:"hideEmptyCategories"`                     // Hide categories with no bookmarks
+	HideEmptyCategoriesMigrated     bool           `json:"hideEmptyCategoriesMigrated"`             // Migration marker for hide-empty default-on
+	ShortcutDisplayAlwaysMigrated   bool           `json:"shortcutDisplayAlwaysMigrated,omitempty"` // one-time: show the shortcut letters on every row
+	EnableFuzzySuggestions          bool           `json:"enableFuzzySuggestions"`                  // Enable fuzzy suggestions in shortcut search
+	FuzzySuggestionsStartWith       bool           `json:"fuzzySuggestionsStartWith"`               // Fuzzy suggestions start with query instead of contains
+	KeepSearchOpenWhenEmpty         bool           `json:"keepSearchOpenWhenEmpty"`                 // Keep search interface open when query is empty
+	ShowIcons                       bool           `json:"showIcons"`                               // Show bookmark icons
+	ShowLinkPreviewCards            bool           `json:"showLinkPreviewCards"`                    // Show link preview cards on hover. Kept in step with LinkPreviewMode, which is the field that decides
 	// LinkPreviewMode is how the card is reached: "off", "hover" or
 	// "keyboard". Some people want what the card says and not a panel
 	// appearing under the pointer, and their only answer used to be off —
@@ -1843,6 +1845,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			GridDefaultsMigrated:            true,
 			FontSizeLgMigrated:              true,
 			FontDefaultInterMigrated:        true,
+			AuroraGlassMigrated:             true,
 			FontDefaultMonoMigrated:         true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
@@ -4503,6 +4506,7 @@ func (fs *FileStore) GetSettings() Settings {
 			GridDefaultsMigrated:            true,
 			FontSizeLgMigrated:              true,
 			FontDefaultInterMigrated:        true,
+			AuroraGlassMigrated:             true,
 			FontDefaultMonoMigrated:         true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
@@ -5330,6 +5334,19 @@ func (fs *FileStore) GetSettings() Settings {
 		 * preset, or an uploaded font, stays. After this pass going back to
 		 * Source Code Pro is the reader's own choice.
 		 */
+		/*
+		 * Everyone onto Aurora Glass, once.
+		 *
+		 * The new look is drawn per material and the themes were redrawn with it, so keeping the
+		 * old drawing next to the new one for installs that predate it would mean two of
+		 * everything. Every install moves to Aurora Glass, on the dark or the light half it was
+		 * on, and what it had is kept in one field for the dialog that says so and offers the way
+		 * back. Everything else the reader chose stays. A fresh install carries the marker from
+		 * the start and never sees any of this.
+		 */
+		if !settings.AuroraGlassMigrated {
+			migrateToAuroraGlass(&settings, time.Now().Unix())
+		}
 		if !settings.FontDefaultInterMigrated {
 			if settings.FontPreset == "source-code-pro" {
 				settings.FontPreset = "inter"
@@ -5560,6 +5577,10 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.FontSizeLgMigrated = settings.FontSizeLgMigrated || stored.FontSizeLgMigrated
 			settings.CategoryHeaderSmallMigrated = settings.CategoryHeaderSmallMigrated || stored.CategoryHeaderSmallMigrated
 			settings.FontDefaultInterMigrated = settings.FontDefaultInterMigrated || stored.FontDefaultInterMigrated
+			settings.AuroraGlassMigrated = settings.AuroraGlassMigrated || stored.AuroraGlassMigrated
+			if settings.LookMigration == nil {
+				settings.LookMigration = stored.LookMigration
+			}
 			settings.FontDefaultMonoMigrated = settings.FontDefaultMonoMigrated || stored.FontDefaultMonoMigrated
 			settings.SurfaceFollowMigrated = settings.SurfaceFollowMigrated || stored.SurfaceFollowMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
@@ -7214,6 +7235,31 @@ func (fs *FileStore) GetSettingsRevision() string {
 	}
 	sum := hash.Sum(nil)
 	return hex.EncodeToString(sum[:8])
+}
+
+// LookMigration is what the move to Aurora Glass left behind: the theme the install was on, and
+// whether the dialog that explains the move has been answered yet.
+type LookMigration struct {
+	From    string `json:"from,omitempty"`
+	Pending bool   `json:"pending"`
+	At      int64  `json:"at,omitempty"`
+}
+
+// migrateToAuroraGlass puts an install on Aurora Glass, on the half it was on, and records the
+// theme it had. An install already on Aurora Glass has nothing to explain and gets no dialog.
+func migrateToAuroraGlass(settings *Settings, now int64) {
+	settings.AuroraGlassMigrated = true
+	from := settings.Theme
+	if strings.HasPrefix(from, "aurora-glass-") {
+		return
+	}
+	light := strings.HasSuffix(from, "-light") || from == "light"
+	if light {
+		settings.Theme = defaultThemeLightID
+	} else {
+		settings.Theme = defaultThemeID
+	}
+	settings.LookMigration = &LookMigration{From: from, Pending: true, At: now}
 }
 
 // shippedClassicThemes are the themes that once shipped with materialStyle classic and now follow

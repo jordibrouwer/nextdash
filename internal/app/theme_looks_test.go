@@ -57,7 +57,7 @@ func TestLooksCollection(t *testing.T) {
 			t.Errorf("%s: %q is not an archetype", family, dark.Character)
 		}
 	}
-	for recipe, want := range map[string]int{"burst": 5, "splash": 5, "mesh": 4, "aurora": 3, "leak": 4, "prism": 3} {
+	for recipe, want := range map[string]int{"burst": 5, "splash": 4, "oceanblue": 1, "mesh": 4, "aurora": 3, "leak": 4, "prism": 3} {
 		if recipes[recipe] != want {
 			t.Errorf("%d looks on %s, want %d", recipes[recipe], recipe, want)
 		}

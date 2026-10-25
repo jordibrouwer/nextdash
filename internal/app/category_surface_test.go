@@ -83,7 +83,7 @@ func TestCategorySurfaceMissingKeyReadsAsFollow(t *testing.T) {
 	t.Chdir(t.TempDir())
 	writeSurfaceSettingsFile(t, map[string]any{
 		"theme": "slate-dark", "surfaceDefaultsMigrated": true, "depthDefaultFlatMigrated": true, "surfaceFollowMigrated": true,
-		"themeDepth": "rich",
+		"auroraGlassMigrated": true, "themeDepth": "rich",
 	})
 	got := NewStore().GetSettings()
 	if got.CategorySurface != surfaceFollow || got.Theme != "slate-dark" || got.ThemeDepth != "rich" {

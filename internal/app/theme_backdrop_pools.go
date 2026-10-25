@@ -16,7 +16,7 @@ one material from landing on the same one. A theme that names no material has
 no pool, and its choice stands as it was made.
 */
 var themeBackdropPools = map[string][]string{
-	"lacquer":  {"band", "glow", "sunset", "dawn", "rack", "checker", "deco", "diamonds", "scales", "seigaiha", "bokeh"},
+	"lacquer":  {"band", "glow", "sunset", "dawn", "rack", "checker", "deco", "diamonds", "scales", "seigaiha", "bokeh", "crt"},
 	"glass":    {"mesh", "haze", "bokeh", "aurora", "isocube", "moire", "seigaiha", "stitch", "triangles", "bubbles", "prism", "terrazzo"},
 	"frost":    {"bokeh", "haze", "mesh", "stars", "rings", "herring", "moire", "rays", "scales", "seigaiha", "stitch", "triangles", "zigzag", "chevron", "sunset", "waves"},
 	"aurora":   {"aurora", "nebula", "dawn", "bauhaus", "dotsoff", "moire", "rays", "seigaiha", "zigzag", "petals", "stars", "sunset", "waves", "bubbles"},
