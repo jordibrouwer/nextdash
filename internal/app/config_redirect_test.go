@@ -33,11 +33,14 @@ func TestConfigRedirectMapsLegacySection(t *testing.T) {
 		"categories": "/#config/structure",
 		// Tags is a Bookmarks tab now, and the old query has to land on it
 		// rather than on the section it used to live in.
-		"tags":      "/#config/bookmarks/tags",
-		"colors":    "/#config/appearance",
-		"keyboard":  "/#config/behavior",
-		"backups":   "/#config/data-backups",
-		"bookmarks": "/#config", // maps to overview → bare hash
+		"tags":     "/#config/bookmarks/tags",
+		"colors":   "/#config/appearance",
+		"keyboard": "/#config/behavior",
+		"backups":  "/#config/data-backups",
+		// Both are sections of their own now, not the overview.
+		"bookmarks": "/#config/bookmarks",
+		"stats":     "/#config/stats",
+		"overview":  "/#config",
 		"unknown":   "/#config",
 	}
 	for section, want := range cases {

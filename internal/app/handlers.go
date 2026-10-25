@@ -1269,7 +1269,9 @@ func mapLegacyConfigSection(section string) string {
 		return "behavior"
 	case "backups", "backup", "data", "import", "export", "reset":
 		return "data-backups"
-	case "bookmarks", "stats", "overview":
+	case "bookmarks", "stats":
+		return strings.ToLower(section)
+	case "overview":
 		return ""
 	default:
 		return ""
