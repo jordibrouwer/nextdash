@@ -758,6 +758,9 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 	}
 	put("up", glancesPtr(1))
 	put("cpu", quick.CPU)
+	if len(quick.PerCPU) > 0 {
+		hs.cores.Store(int32(len(quick.PerCPU)))
+	}
 	// Each core's own load, for the tiles' one-minute trace.
 	for i, c := range quick.PerCPU {
 		if i >= glancesMaxCores {

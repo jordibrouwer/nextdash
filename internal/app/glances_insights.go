@@ -331,7 +331,7 @@ func glancesComputeInsights(cfg GlancesConfig, rangeID string, heat string, loc 
 	out.Availability = glancesComputeAvailability(snaps, now)
 	out.Consumers = glancesComputeConsumers(snaps, span, now)
 	out.Temperature = glancesComputeTemperature(snaps, span, now, t)
-	out.glancesMoreInsights = glancesComputeMore(snaps, span, now, t)
+	out.glancesMoreInsights = glancesComputeMore(snaps, span, now, t, int(hs.cores.Load()))
 	return out
 }
 

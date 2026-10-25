@@ -100,3 +100,32 @@ func containsName(names []string, want string) bool {
 	return false
 }
 
+// A machine with more processors than get a series is weighed by all of them.
+func TestGlancesLoadCountsEveryCore(t *testing.T) {
+	h, _, _ := glancesViewSetup(t)
+	glancesWipe()
+	mainHost().cores.Store(0)
+	h.glancesSampleOnce(context.Background())
+	if got := mainHost().cores.Load(); got != 12 {
+		t.Errorf("cores after a beat: %d, want the 12 the host reports", got)
+	}
+
+	now := time.Now()
+	snaps := map[string]glancesSnap{}
+	for i := 0; i < glancesMaxCores; i++ {
+		snaps["core:"+strconv.Itoa(i)] = glancesSnap{}
+	}
+	var load []glancesPoint
+	for i := 0; i < 10; i++ {
+		load = append(load, glancesPoint{float64(now.Add(-time.Duration(10-i) * time.Hour).UnixMilli()), 40})
+	}
+	snaps["load1"] = glancesSnap{Coarse: load}
+	info := glancesComputeLoad(snaps, now.Add(-24*time.Hour).UnixMilli(), now, 64)
+	if info == nil || info.Cores != 64 || info.OverShare != 0 {
+		t.Errorf("a load of 40 on 64 processors: %+v", info)
+	}
+	if info := glancesComputeLoad(snaps, now.Add(-24*time.Hour).UnixMilli(), now, 0); info == nil || info.Cores != glancesMaxCores {
+		t.Errorf("without a count the series are counted: %+v", info)
+	}
+}
+
