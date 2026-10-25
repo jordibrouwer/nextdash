@@ -145,6 +145,7 @@ Not released yet.
 
 ### Look studio
 
+- **fix — Cancel while Apply is saving waits for the save.** Escape, the ×, Cancel or a click beside the panel during Apply put the old look on screen while the save stored the new one, and the next unrelated save sent the old one back; a second Apply posted the colours twice. `theme-browser.js` now ignores every way out while Apply runs.
 - **fix — Reset all also resets the rest of the Surface tab.** `lookDefaults()` (`look_defaults.go`) left out `categorySurface`, `widgetSurface`, `widgetOpacity`, `materialStyle` and `neutralAccent`, and a forced value of those held for every theme after Reset all. Covered by `TestLookDefaultsCoverTheSurfaceTab`.
 
 ### Inbox
