@@ -102,14 +102,24 @@ test.describe('keyboard selection after the inline editor closes', () => {
         // editor left an inline `background` on the row, which outranks the
         // stylesheet, so the row carried .keyboard-selected while rendering
         // exactly like an unselected one.
-        const controlPaint = await page.evaluate(() => {
-            const row = document.querySelectorAll('.bookmark-link')[0];
+        //
+        // The paint is the colour and the image together: since v1.22.0 the
+        // Signature style draws the selected row with its material, which on
+        // glass is a flat tint rather than Classic's gradient
+        // (theme-signature.css). Read on the row that is edited below, with
+        // its transition off so the end state is read and not a first frame.
+        const { controlPaint, restingPaint } = await page.evaluate(() => {
+            const paint = (el) => { const cs = getComputedStyle(el); return `${cs.backgroundColor}|${cs.backgroundImage}`; };
+            const row = document.querySelectorAll('.bookmark-link')[2];
+            row.style.transition = 'none';
+            const resting = paint(row);
             row.classList.add('keyboard-selected');
-            const paint = getComputedStyle(row).backgroundImage;
+            const control = paint(row);
             row.classList.remove('keyboard-selected');
-            return paint;
+            row.style.transition = '';
+            return { controlPaint: control, restingPaint: resting };
         });
-        expect(controlPaint).toContain('gradient');
+        expect(controlPaint, 'a selected row paints like a resting one').not.toBe(restingPaint);
 
         const row = page.locator('.bookmark-link').nth(2);
         await row.click({ button: 'right' });
@@ -123,8 +133,10 @@ test.describe('keyboard selection after the inline editor closes', () => {
 
         await expect.poll(() => page.evaluate(() => {
             const sel = document.querySelector('.bookmark-link.keyboard-selected');
-            return sel ? getComputedStyle(sel).backgroundImage : null;
-        })).toContain('gradient');
+            if (!sel) return null;
+            const cs = getComputedStyle(sel);
+            return `${cs.backgroundColor}|${cs.backgroundImage}`;
+        })).toBe(controlPaint);
 
         // And the leftover inline background is gone rather than merely overridden.
         expect(await page.evaluate(() => {
