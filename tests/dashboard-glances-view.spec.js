@@ -592,11 +592,22 @@ test.describe('Glances page: tables, cards and keys', () => {
             // host that answers after it closed (a slow runner) gets its blocks
             // without a rise, and that is not what is being tested.
             window.__blocksInWindow = null;
+            // How long the window stayed open after the blocks arrived. A block
+            // rises after a stagger of up to about 200 ms, and a rise that has
+            // not started when the window closes is dropped with it: on a busy
+            // runner the window can close inside that stagger, which is the page
+            // behaving, not a rise gone missing.
+            window.__windowLeftMs = null;
+            let blocksAt = 0;
             new MutationObserver(() => {
                 if (window.__blocksInWindow === null && document.querySelector('.glances-ov-block, .glances-card')) {
                     window.__blocksInWindow = document.body.hasAttribute('data-view-entering');
+                    blocksAt = performance.now();
                 }
-            }).observe(document, { childList: true, subtree: true });
+                if (blocksAt && window.__windowLeftMs === null && !document.body.hasAttribute('data-view-entering')) {
+                    window.__windowLeftMs = performance.now() - blocksAt;
+                }
+            }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-view-entering'] });
         });
         await openView(page);
         const rose = (pattern) => page.evaluate((source) => window.__lvsRises.filter((c) => new RegExp(source).test(c)).length, pattern);
@@ -604,11 +615,12 @@ test.describe('Glances page: tables, cards and keys', () => {
             .filter((x) => x.animationName === 'lvsRise' && x.effect?.target?.matches?.(q)).length, sel);
         await expect.poll(() => rose('lvs-header'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(0);
         await expect.poll(() => page.evaluate(() => window.__blocksInWindow), { timeout: 10_000 }).not.toBeNull();
-        if (await page.evaluate(() => window.__blocksInWindow)) {
+        await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/, { timeout: 10_000 });
+        const stayedOpen = await page.evaluate(() => window.__windowLeftMs);
+        if (await page.evaluate(() => window.__blocksInWindow) && stayedOpen !== null && stayedOpen > 300) {
             await expect.poll(() => rose('glances-ov-block|glances-card'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(1);
         }
         await expect.poll(() => rising('.lvs-header, .glances-ov-block, .glances-card'), { timeout: 3000 }).toBe(0);
-        await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/);
     });
 
     test('back on the page, what was read last is there at once and the host is asked again behind it', async ({ page }) => {

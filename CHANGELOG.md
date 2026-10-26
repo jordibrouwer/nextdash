@@ -156,6 +156,10 @@ Glances 5 is recognised and named as not supported yet, instead of being taken f
 - **new — the corner cards list is complete.** Behavior → Privacy & sync → Onboarding now lists the install count, the weekly digest and analytics next to the other cards, each with **Answered** or **Not shown yet** and **Show again**. Analytics keeps its answer in the settings, so its row reads them and a reset writes them back; someone who turned analytics on has nothing to be asked again (`NOTICE_CARDS` in `dashboard-config.js`). Covered by `tests/config-notice-cards.spec.js`.
 - **fix — the cheat sheet listed `:digest` twice** and had no English string for it; the registry check failed on both (`keyboard-cheat-sheet-registry.js`).
 
+### Tests
+
+- **fix — the Glances entrance spec no longer fails on a busy runner.** It asked every block to rise once the entrance window was open when the blocks were drawn, but a block waits up to about 200 ms for its turn and a rise that has not started when the window closes is dropped with it. On a runner under load the window closes inside that wait: the page behaves, the spec failed (the same spec failed on the base of v1.22.0 under a 5x CPU throttle). It now measures how long the window stayed open after the blocks arrived and asks for the rise only when that was longer than 300 ms (`dashboard-glances-view.spec.js`).
+
 ### Docs
 
 - **docs — the manual, the six languages and `static/data/whats-new/v1.22.1.json`.** The manual names the badge section, Retry all and the full list of corner cards; nl, de, fr, es and zh carry the new strings; the release is held back from the What's new window (`hideFromModal`) like v1.21.2 and v1.21.3, so v1.22.0 keeps leading it. `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v353`. `go generate` refreshed `asset_hashes_gen.go`.
