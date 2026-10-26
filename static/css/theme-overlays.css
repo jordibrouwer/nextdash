@@ -1138,6 +1138,11 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
+/* A key legend drawn as a plate needs room on every side, not only the top its rule had. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(.inbox-legend, .glances-legend) {
+    padding: var(--space-2-5, 0.6rem) var(--space-4, 1rem);
+}
+
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .docker-setup pre {
     border-radius: var(--ov-r-item);
     background: color-mix(in srgb, black calc(30% * var(--ov-k) + 6%), transparent);

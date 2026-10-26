@@ -478,6 +478,7 @@
                 { keys: ':overview', printOmit: true, cheatKey: 'cnOverview', fallback: 'Open page overview with bookmark counts (same as ,)' },
                 { keys: ':cheat / :help', cheatKey: 'cnCheat', fallback: 'Open keyboard cheat sheet (same as ! or F1)', print: true, printFallback: 'Open cheat sheet' },
                 { keys: ':whatsnew', printOmit: true, cheatKey: 'cnWhatsnew', fallback: "Open what's new release notes" },
+                { keys: ':digest', printOmit: true, cheatKey: 'cnDigest', fallback: 'Open the latest weekly digest' },
                 { keys: ':reload', printOmit: true, cheatKey: 'cnReload', fallback: 'Reload the dashboard' },
                 { keys: ':config [section]', cheatKey: 'cnConfig', fallback: 'Open config or a tab — bookmarks, backups, stats, …', print: true, printKeys: ':config', printFallback: 'Open config' },
             ],

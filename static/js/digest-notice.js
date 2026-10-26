@@ -136,14 +136,51 @@
         await d.config?.openLibraryView?.();
     }
 
-    function chips(names, total) {
-        if (!names?.length) return '';
-        const rest = Math.max(0, (total || names.length) - names.length);
+    function chips(names, total, extra = '') {
+        if (!names?.length && !extra) return '';
+        const list = names || [];
+        const rest = Math.max(0, (total || list.length) - list.length);
         const more = rest ? `<span class="digest-chip digest-chip--more">${esc(t('dashboard.digestMore', 'and {count} more', { count: rest }))}</span>` : '';
-        return `<div class="digest-chips">${names.map((n) => `<span class="digest-chip">${esc(n)}</span>`).join('')}${more}</div>`;
+        const tail = extra ? `<span class="digest-chip digest-chip--more">${esc(extra)}</span>` : '';
+        return `<div class="digest-chips">${list.map((n) => `<span class="digest-chip">${esc(n)}</span>`).join('')}${more}${tail}</div>`;
     }
 
-    function partHtml({ id, icon, title, note, names, total, action, target, work }, state) {
+    /**
+     * The server sends certificates and domains as "host (N days)" lines. Read
+     * back into a name and a number, nearest first, so they can be drawn as
+     * days left; a line that does not read that way is left out of the bars.
+     */
+    function expiries(lines) {
+        return (lines || []).map((line) => {
+            const m = /^(.+) \((-?\d+) days?\)$/.exec(String(line));
+            return m ? { name: m[1], days: Number(m[2]) } : null;
+        }).filter(Boolean).sort((a, b) => a.days - b.days);
+    }
+
+    /**
+     * Days left as bars. The scale is the stretch that matters for the kind:
+     * a month for a certificate, a year for a domain. Gone already is a full
+     * bar in the danger colour, so it reads as the worst of the list.
+     */
+    function bars(items, { scale, warnBelow }) {
+        if (!items.length) return '';
+        const rows = items.map((it, i) => {
+            const tone = it.days <= 7 ? 'bad' : (it.days <= warnBelow ? 'warn' : 'ok');
+            const width = it.days <= 0 ? 100 : Math.max(3, Math.min(100, Math.round((it.days / scale) * 100)));
+            const value = it.days < 0
+                ? t('dashboard.digestExpiredAgo', 'expired {days} d', { days: -it.days })
+                : t('dashboard.digestDaysLeft', '{days} d', { days: it.days });
+            return `
+                <div class="digest-days-row is-${tone}" style="--digest-i:${i}">
+                    <span class="digest-days-name" title="${esc(it.name)}">${esc(it.name)}</span>
+                    <span class="digest-days-track" aria-hidden="true"><span class="digest-days-fill" style="width:${width}%"></span></span>
+                    <span class="digest-days-value">${esc(value)}</span>
+                </div>`;
+        }).join('');
+        return `<div class="digest-days">${rows}</div>`;
+    }
+
+    function partHtml({ id, tone, title, note, names, total, more, bars: barsHtml, action, target, work }, state, i) {
         const done = state.visited.includes(id);
         const next = !done && state.next === id;
         let button = '';
@@ -155,14 +192,68 @@
             button = `<span class="digest-part-actions">${workButton}<button type="button" class="digest-part-go${next ? ' is-next' : ''}" data-digest-go="${esc(target)}" data-digest-part-id="${esc(id)}">${esc(label)}${done ? '' : ' <span aria-hidden="true">→</span>'}</button></span>`;
         }
         return `
-            <section class="digest-part${done ? ' is-done' : ''}" data-digest-part="${esc(id)}">
+            <section class="digest-part digest-tone--${esc(tone)}${done ? ' is-done' : ''}" data-digest-part="${esc(id)}" style="--digest-i:${i}">
                 <div class="digest-part-head">
-                    <h3 class="digest-part-title"><span class="digest-part-icon" aria-hidden="true">${done ? '✓' : icon}</span>${esc(title)}</h3>
+                    <h3 class="digest-part-title"><span class="digest-part-dot" aria-hidden="true">${done ? '✓' : ''}</span>${esc(title)}</h3>
                     ${button}
                 </div>
                 <p class="digest-part-note">${esc(note)}</p>
-                ${chips(names, total)}
+                ${barsHtml || ''}
+                ${chips(names, total, more)}
             </section>`;
+    }
+
+    /**
+     * The counts across the top, each a way into the view its part opens. Only
+     * the ones with something in them; "runs out within 30 days" takes
+     * certificates and domains together, and opens the one with the nearest.
+     */
+    function tileList(s) {
+        const h = s.health || {}, u = s.updates || {}, g = s.usage || {};
+        const out = [];
+        const broken = (h.newlyBroken?.length || 0) + (h.stillBroken || 0);
+        if (broken) out.push({ part: 'broken', target: 'broken', tone: 'bad', count: broken, label: t('dashboard.digestTileBroken', 'broken links') });
+        const certs = expiries(h.certsExpiring).filter((e) => e.days <= 30);
+        const domains = expiries(h.domainsExpiring).filter((e) => e.days <= 30);
+        if (certs.length || domains.length) {
+            const first = !domains.length || (certs.length && certs[0].days <= domains[0].days) ? 'certificates' : 'domains';
+            out.push({ part: first, target: first, tone: 'warn', count: certs.length + domains.length, label: t('dashboard.digestTileExpiring', 'run out within 30 days') });
+        }
+        if (u.available?.length) out.push({ part: 'updates', target: 'updates', tone: 'info', count: u.available.length, label: t('dashboard.digestTileUpdates', 'container updates') });
+        if (g.neverOpened) out.push({ part: 'never', target: 'unused', tone: 'quiet', count: g.neverOpened, label: t('dashboard.digestTileNever', 'never opened') });
+        return out;
+    }
+
+    function tilesHtml(tiles, state) {
+        if (!tiles.length) return '';
+        return `<div class="digest-tiles" style="--digest-tiles:${tiles.length}">${tiles.map((tile, i) => {
+            const done = state.visited.includes(tile.part);
+            return `
+                <button type="button" class="digest-tile digest-tone--${tile.tone}${done ? ' is-done' : ''}" data-digest-tile="${esc(tile.target)}" data-digest-part-id="${esc(tile.part)}" style="--digest-i:${i}">
+                    <span class="digest-tile-count" data-digest-count="${tile.count}">${tile.count}</span>
+                    <span class="digest-tile-label">${esc(tile.label)}</span>
+                    ${done ? '<span class="digest-tile-done" aria-hidden="true">✓</span>' : ''}
+                </button>`;
+        }).join('')}</div>`;
+    }
+
+    /** The tiles count up from nothing, once, unless motion is turned down. */
+    function countUp(root) {
+        const still = document.body.classList.contains('no-animations')
+            || global.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        if (still || typeof global.requestAnimationFrame !== 'function') return;
+        root.querySelectorAll('[data-digest-count]').forEach((el, i) => {
+            const to = Number(el.getAttribute('data-digest-count')) || 0;
+            const start = performance.now() + 150 + i * 80;
+            const length = 800;
+            el.textContent = '0';
+            const step = (now) => {
+                const p = Math.min(1, Math.max(0, (now - start) / length));
+                el.textContent = String(Math.round(to * (1 - (1 - p) ** 3)));
+                if (p < 1) global.requestAnimationFrame(step);
+            };
+            global.requestAnimationFrame(step);
+        });
     }
 
     /** The parts, in order; the ones with a view to open are the to-do list. */
@@ -180,39 +271,54 @@
                 note = t('dashboard.digestBrokenNoteOld', 'Nothing new broke this week. These have been broken for longer.');
             }
             out.push({
-                id: 'broken', icon: '⛓', title: t('dashboard.digestBrokenTitle', 'Broken links'), note,
+                id: 'broken', tone: 'bad', title: t('dashboard.digestBrokenTitle', 'Broken links'), note,
                 names: newly.length ? newly : h.stillBrokenNames, total: newly.length ? newly.length : h.stillBroken,
+                more: newly.length && h.stillBroken ? t('dashboard.digestOlder', '+{count} older', { count: h.stillBroken }) : '',
                 action: t('dashboard.digestOpenBookmarks', 'Open in Bookmarks'), target: 'broken',
                 // The Bookmarks view's Work through, on the broken ones only.
                 work: t('dashboard.digestWorkThrough', 'Work through'),
             });
         }
         if (h.certsExpiring?.length) {
+            const certs = expiries(h.certsExpiring);
             out.push({
-                id: 'certificates', icon: '🔒', title: t('dashboard.digestCertsTitle', 'Certificates'),
-                note: t('dashboard.digestCertsNote', 'When a certificate runs out, the browser shows a warning instead of the site.'),
-                names: h.certsExpiring, action: t('dashboard.digestOpenBookmarks', 'Open in Bookmarks'), target: 'certificates',
+                id: 'certificates', tone: 'warn', title: t('dashboard.digestCertsTitle', 'Certificates'),
+                note: t('dashboard.digestCertsBarsNote', 'Days left before the browser shows a warning instead of the site.'),
+                bars: bars(certs, { scale: 30, warnBelow: 30 }),
+                // Lines the bars could not read stay as names.
+                names: certs.length ? null : h.certsExpiring,
+                action: t('dashboard.digestOpenBookmarks', 'Open in Bookmarks'), target: 'certificates',
             });
         }
         if (h.domainsExpiring?.length) {
+            // A domain with more than half a year to go is a count, not a bar:
+            // the bars are for the renewals that are coming.
+            const domains = expiries(h.domainsExpiring);
+            const near = domains.filter((d) => d.days <= 200);
+            const far = domains.length - near.length;
             out.push({
-                id: 'domains', icon: '🌐', title: t('dashboard.digestDomainsTitle', 'Domains'),
-                note: t('dashboard.digestDomainsNote', 'When a domain runs out, the site, its certificate and its mail go with it.'),
-                names: h.domainsExpiring, action: t('dashboard.digestOpenBookmarks', 'Open in Bookmarks'), target: 'domains',
+                id: 'domains', tone: 'ok', title: t('dashboard.digestDomainsTitle', 'Domains'),
+                note: near.length
+                    ? t('dashboard.digestDomainsBarsNote', 'Days left before the site, its certificate and its mail go with the domain.')
+                    : t('dashboard.digestDomainsNote', 'When a domain runs out, the site, its certificate and its mail go with it.'),
+                bars: bars(near, { scale: 365, warnBelow: 90 }),
+                names: domains.length ? null : h.domainsExpiring,
+                more: far ? t('dashboard.digestDomainsFar', '+{count} more than 200 days away', { count: far }) : '',
+                action: t('dashboard.digestOpenBookmarks', 'Open in Bookmarks'), target: 'domains',
             });
         }
         if (u.available?.length) {
             out.push({
-                id: 'updates', icon: '⬆', title: t('dashboard.digestUpdatesTitle', 'Container updates'),
+                id: 'updates', tone: 'info', title: t('dashboard.digestUpdatesTitle', 'Container updates'),
                 note: t('dashboard.digestUpdatesNote', 'A newer image is available for these. Containers you hold back are left out.'),
                 names: u.available, action: t('dashboard.digestOpenContainers', 'Open Containers'), target: 'updates',
             });
         }
         if (g.topOpened?.length) {
             out.push({
-                id: 'top', icon: '★', title: t('dashboard.digestTopTitle', 'Most opened'),
+                id: 'top', tone: 'accent', title: t('dashboard.digestTopTitle', 'Most opened'),
                 note: t('dashboard.digestTopNote', 'What you opened most in the last 7 days.'),
-                names: g.topOpened,
+                names: g.topOpened.map((name, i) => `${i + 1} · ${name}`),
             });
         }
         // The Bookmarks view's own two filters, so the count is the list the
@@ -220,7 +326,7 @@
         // days set under "count as neglected after".
         if (g.neverOpened) {
             out.push({
-                id: 'never', icon: '○', title: t('dashboard.digestNeverTitle', 'Never opened'),
+                id: 'never', tone: 'quiet', title: t('dashboard.digestNeverTitle', 'Never opened'),
                 note: count(g.neverOpened, 'dashboard.digestNeverNote', '1 bookmark nobody has opened yet.', '{count} bookmarks nobody has opened yet.'),
                 names: g.neverOpenedNames, total: g.neverOpened,
                 action: t('dashboard.digestReview', 'Review'), target: 'unused',
@@ -229,7 +335,7 @@
         if (g.stale) {
             const days = String(g.staleDays || 90);
             out.push({
-                id: 'stale', icon: '💤', title: t('dashboard.digestStaleTitle', 'Not opened in {days} days').replace('{days}', days),
+                id: 'stale', tone: 'quiet', title: t('dashboard.digestStaleTitle', 'Not opened in {days} days').replace('{days}', days),
                 note: count(g.stale, 'dashboard.digestStaleNote', '1 bookmark. A candidate to move, archive or delete.', '{count} bookmarks. Candidates to move, archive or delete.'),
                 names: g.staleNames, total: g.stale,
                 action: t('dashboard.digestReview', 'Review'), target: 'stale',
@@ -237,7 +343,7 @@
         }
         if (g.inbox) {
             out.push({
-                id: 'inbox', icon: '📥', title: t('dashboard.digestInboxTitle', 'Inbox'),
+                id: 'inbox', tone: 'accent', title: t('dashboard.digestInboxTitle', 'Inbox'),
                 note: count(g.inbox, 'dashboard.digestInboxNote', '1 link waiting to be sorted.', '{count} links waiting to be sorted.'),
                 action: t('dashboard.digestOpenInbox', 'Open Inbox'), target: 'inbox',
             });
@@ -246,7 +352,7 @@
         const news = s.news || {};
         if (news.releases?.length) {
             out.push({
-                id: 'news', icon: '✦', title: t('dashboard.digestNewsTitle', 'New in nextDash'),
+                id: 'news', tone: 'accent', title: t('dashboard.digestNewsTitle', 'New in nextDash'),
                 note: t('dashboard.digestNewsNote', '{releases} came out this week.', { releases: news.releases.join(', ') }),
                 names: news.highlights,
                 action: t('dashboard.digestOpenWhatsNew', "Open What's new"), target: 'whats-new', info: true,
@@ -285,11 +391,15 @@
         removeBar();
         const progress = readProgress(s);
         const state = { visited: progress.visited, next: nextPart(s, progress)?.id };
+        // The tiles first, then the parts in two columns, so a full week fits
+        // the window without scrolling down through it.
         const html = `
             <div class="digest-window">
                 <p class="digest-window-when">${esc(when(s))}</p>
-                <p class="digest-window-intro">${esc(t('dashboard.digestIntro', 'What changed in the last 7 days. Each part opens where you can deal with it.'))}</p>
-                ${partList(s).map((p) => partHtml(p, state)).join('')}
+                ${tilesHtml(tileList(s), state)}
+                <div class="digest-parts">
+                    ${partList(s).map((p, i) => partHtml(p, state, i)).join('')}
+                </div>
             </div>`;
         global.AppModal.show({
             title: t('dashboard.digestWindowTitle', 'Weekly digest'),
@@ -297,7 +407,7 @@
             confirmText: t('dashboard.digestDone', 'Done'),
             showCancel: false,
             modalClass: 'digest-modal',
-            modalMaxWidth: 'min(36rem, calc(100vw - 2.5rem))',
+            modalMaxWidth: 'min(66rem, calc(100vw - 2.5rem))',
             // Closed halfway through: back to the bar, so the rest is not lost.
             onHide: () => {
                 if (readProgress(s).visited.length) showBar(s);
@@ -320,6 +430,15 @@
                 void visit(s, btn.getAttribute('data-digest-part-id'), btn.getAttribute('data-digest-work'), { work: true });
             });
         });
+        // A tile is its part's Open button, counted.
+        document.querySelectorAll('.digest-modal [data-digest-tile]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                global.AppModal.hide?.();
+                void visit(s, btn.getAttribute('data-digest-part-id'), btn.getAttribute('data-digest-tile'));
+            });
+        });
+        const win = document.querySelector('.digest-modal .digest-window');
+        if (win) countUp(win);
         return true;
     }
 
@@ -480,5 +599,25 @@
         start();
     }
 
-    global.DigestNotice = { shouldShow, openDigest, holdsTheWeek, render: card.render, close: card.close, showBar: () => latest && showBar(latest) };
+    /**
+     * The latest digest in brief, for Config's overview panel: when it came
+     * out, its tiles, and how many of its parts are still to be opened. Null
+     * while there is none, or with the digest switched off.
+     */
+    async function summary() {
+        if (dash()?.settings?.digestEnabled === false) return null;
+        const s = latest || await fetchLatest();
+        if (!s) return null;
+        const progress = readProgress(s);
+        const list = todo(s);
+        return {
+            generatedAt: s.generatedAt,
+            when: when(s),
+            tiles: tileList(s).map(({ label, count, tone }) => ({ label, count, tone })),
+            todo: list.length,
+            left: list.filter((p) => !progress.visited.includes(p.id)).length,
+        };
+    }
+
+    global.DigestNotice = { shouldShow, openDigest, holdsTheWeek, summary, render: card.render, close: card.close, showBar: () => latest && showBar(latest) };
 })(window);

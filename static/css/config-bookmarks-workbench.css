@@ -3633,3 +3633,26 @@ html body .config-bm-more-menu .config-btn {
         flex: 1 1 0;
     }
 }
+
+/* The Uptime badge section of the Health tab: a preview, a period, two copy buttons. */
+.config-bm-badge {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.55rem);
+}
+
+.config-bm-badge-preview {
+    min-height: 24px;
+}
+
+.config-bm-badge-days,
+.config-bm-badge-copy {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.config-bm-badge-days .config-btn.is-active {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}

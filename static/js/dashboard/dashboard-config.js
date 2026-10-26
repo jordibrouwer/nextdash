@@ -4743,6 +4743,7 @@ class DashboardConfig {
                         ${this.renderOverviewInboxWidget()}
                         ${this.renderOverviewContainersWidget()}
                         ${this.renderOverviewHealthWidget()}
+                        ${this.renderOverviewDigestWidget()}
                         ${this.renderOverviewStatsWidget()}
                         ${this.renderOverviewFeaturesBanner()}
                     </div>
@@ -4953,6 +4954,31 @@ class DashboardConfig {
             ]),
             note: esc(this.t('config.overviewContainersTotal', '{n} in total').replace('{n}', String(list.length))),
             alert: updates.length ? esc(names) : '',
+        });
+    }
+
+    /**
+     * The latest weekly digest: how many of its parts are still to open, its
+     * counts, and when it came out. The way in opens the digest itself, the
+     * same window as the card and the push. Fetched by loadOverviewDigest;
+     * absent until there is one.
+     */
+    renderOverviewDigestWidget() {
+        const d = this._overviewDigest;
+        if (!d) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const urgent = d.tiles.some((t) => t.tone === 'bad' || t.tone === 'warn');
+        const tone = !d.left ? 'good' : (urgent ? 'warn' : '');
+        return this.renderOverviewWidget({
+            id: 'digest',
+            title: this.t('config.digestTitle', 'Weekly digest'),
+            tone,
+            go: { digest: true },
+            goLabel: this.t('config.overviewDigestOpen', 'Read'),
+            body: this.renderOverviewFigure(d.left, this.t('config.overviewDigestLeftUnit', 'parts to look at'))
+                + this.renderOverviewRows(d.tiles.map((t) => [t.label.charAt(0).toUpperCase() + t.label.slice(1), t.count,
+                    t.tone === 'bad' ? 'crit' : (t.tone === 'warn' ? 'warn' : '')])),
+            note: esc(d.when),
         });
     }
 
@@ -5247,6 +5273,24 @@ class DashboardConfig {
             const next = Array.isArray(list) ? list : null;
             const changed = JSON.stringify(next) !== JSON.stringify(this._overviewContainers);
             this._overviewContainers = next;
+            if (changed) this.repaintOverview();
+            return next;
+        }).catch(() => null);
+    }
+
+    /**
+     * The latest weekly digest for the overview's panel. Repaints once when it
+     * lands; no digest yet, or the digest switched off, leaves the panel out.
+     */
+    loadOverviewDigest() {
+        const notice = window.DigestNotice;
+        if (!notice?.summary) {
+            this._overviewDigest = null;
+            return Promise.resolve(null);
+        }
+        return notice.summary().then((next) => {
+            const changed = JSON.stringify(next) !== JSON.stringify(this._overviewDigest ?? null);
+            this._overviewDigest = next;
             if (changed) this.repaintOverview();
             return next;
         }).catch(() => null);
@@ -5666,6 +5710,7 @@ class DashboardConfig {
         // Also not awaited: a slow Docker daemon must not hold the page up.
         // The panel appears when the list lands.
         void this.loadOverviewContainers();
+        void this.loadOverviewDigest();
         if (d.settings?.updateCheckEnabled !== false && !document.querySelector('meta[name="nextdash-update-check-locked"]')) {
             jobs.push(this.loadUpdateStatus());
         } else {
@@ -5835,6 +5880,11 @@ class DashboardConfig {
         // A button that plays a tour, as Help's Glances topic has.
         if (target.tour) {
             void this.playViewTour(target.tour);
+            return;
+        }
+        // The overview's digest panel: the digest's own window, over Config.
+        if (target.digest) {
+            void window.DigestNotice?.openDigest?.();
             return;
         }
         if (target.section) {
@@ -12638,12 +12688,32 @@ class DashboardConfig {
         { id: 'theme-studio', promo: 'theme-studio-hint-v1', labelKey: 'config.noticeThemeStudio', label: 'Theme studio shortcut' },
         { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
           labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
+        { id: 'install-count', promo: 'install-count-v1', labelKey: 'config.noticeInstallCount', label: 'Install count' },
+        { id: 'digest', keys: ['nextdashDigestSeenAt', 'nextdashDigestProgress'],
+          labelKey: 'config.noticeDigest', label: 'Weekly digest' },
+        // Analytics keeps its answer in the settings, not the browser: a choice
+        // made, or a snooze that has not run out. Someone who turned analytics
+        // on has nothing left to be asked, so there is nothing to put back.
+        { id: 'analytics', labelKey: 'config.noticeAnalytics', label: 'Analytics',
+          answered(dash) {
+              const qs = dash.settings?.quickStart || {};
+              if (dash.settings?.analyticsOptIn === true) return false;
+              return qs.analyticsChoiceMade === true || (Number(qs.analyticsAskAfter) || 0) > Math.floor(Date.now() / 1000);
+          },
+          async reset(dash) {
+              const qs = dash.settings.quickStart = dash.settings.quickStart || {};
+              qs.analyticsChoiceMade = false;
+              qs.analyticsAskAfter = 0;
+              qs.analyticsSnoozes = 0;
+              await dash.saveSettings?.();
+          } },
         { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
           labelKey: 'config.noticeHealthReview', label: 'Health review' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */
     noticeCardAnswered(card) {
+        if (card.answered) return card.answered(this.dash) === true;
         if (card.promo) return window.DiscoverabilityState?.hasSeenSettingPromo?.(card.promo) === true;
         try {
             return card.keys.some((key) => localStorage.getItem(key) !== null);
@@ -12675,7 +12745,14 @@ class DashboardConfig {
     async replayNoticeCard(id) {
         const card = DashboardConfig.NOTICE_CARDS.find((entry) => entry.id === id);
         if (!card) return;
-        if (card.promo) {
+        if (card.reset) {
+            try {
+                await card.reset(this.dash);
+            } catch {
+                this.notify(this.t('config.noticeShowAgainError', 'Could not bring that card back.'), 'error');
+                return;
+            }
+        } else if (card.promo) {
             window.DiscoverabilityState?.resetSettingPromoSeen?.(card.promo, { persist: false });
             try {
                 await window.DiscoverabilityState?.persistNow?.();

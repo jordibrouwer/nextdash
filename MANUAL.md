@@ -982,7 +982,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Theme studio** — *Not happy with how it looks?* names `Shift + A` and the *Surface* and *Layout* tabs, and **Open the studio** opens it. Asked once; a new install is asked after its first day.
 - **Others** — browser notifications, the theme studio and the tour of what moved.
 
-Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
+Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists the cards — kept links, the theme studio, tag suggestions, health review, the install count, the weekly digest and analytics — each with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
 <a id="the-link-preview-card"></a>
 
@@ -1489,7 +1489,7 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:locklayout` | Lock or unlock drag and drop |
 | `:collections` | Smart collections on or off |
 | `:telemetry on\|off` | Analytics (reloads the page) |
-| `:cheat` · `:help` · `:whatsnew` · `:reload` | Cheat sheet · release notes · reload |
+| `:cheat` · `:help` · `:whatsnew` · `:digest` · `:reload` | Cheat sheet · release notes · latest weekly digest · reload |
 
 <details>
 <summary>📷 Screenshot — the command palette (<kbd>:</kbd>)</summary>
@@ -2181,7 +2181,7 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 **Weekly digest.** Once a week nextDash sums up what needs you: links that broke, certificates that run out soon, container updates, what you opened most, bookmarks nobody opens, and links waiting in the Inbox. It is on by default and goes out on **Monday at 08:00**, in the time zone of the quiet hours.
 
 - **Where it arrives** — as a browser notification when those are on, through the service under **Downtime alerts**, and once on the dashboard as a card, *Your week in nextDash*, that names the one or two things that matter most. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
-- **Reading it** — **Read the digest** opens a window with a part per subject: what it means, the names behind the count, and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Review** for never opened and long unopened bookmarks, **Open Inbox**. Last comes **New in nextDash** when a release came out that week: the releases with their highlights, and **Open What's new**. It is news, so it does not count as a part to work through. After a button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the following part. The bar goes once every part is opened, or with **×**. Clicking the push notification opens the same window (`/#digest`).
+- **Reading it** — **Read the digest** opens a window with counts across the top — broken links, what runs out within 30 days, container updates, never opened — each a way into its view. Under them, in two columns, a part per subject: what it means, the names behind the count (certificates and domains as bars of days left; domains more than 200 days out as a count), and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Review** for never opened and long unopened bookmarks, **Open Inbox**. Last comes **New in nextDash** when a release came out that week: the releases with their highlights, and **Open What's new**. It is news, so it does not count as a part to work through. After a button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the following part. The bar goes once every part is opened, or with **×**. Clicking the push notification opens the same window (`/#digest`), and so do `:digest` and the **Weekly digest** panel on Config's overview, which counts the parts still to open.
 - **Setting it up** — Monitoring → Notifications → **Weekly digest**: **Send a weekly digest**, **On** (the day), **At** (the hour), and which parts go in — **Include broken links and certificates**, **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**. **The latest digest → Show** opens the last one again; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
 
 On the day the digest comes out it goes first, and the daily review card ([§4](#corner-cards)) waits — both offer the same broken and unopened links.
@@ -2210,7 +2210,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 <a id="uptime-badges"></a>
 
-**Uptime badges.** **Serve uptime badges** (off by default) lets `/badge/uptime.svg?url=<address>&days=7` (or `30`) return a small SVG for a README or a forum post: the uptime percentage, green from 99.9 %, amber from 99 %, red below. It answers for monitored addresses only; any other address reads *no data*, so the badge never tells whether an address is known. Anyone who knows a monitored address can read its badge, which is why it is off until you switch it on.
+**Uptime badges.** **Serve uptime badges** (off by default) lets `/badge/uptime.svg?url=<address>&days=7` (or `30`) return a small SVG for a README or a forum post: the uptime percentage, green from 99.9 %, amber from 99 %, red below. It answers for monitored addresses only; any other address reads *no data*, so the badge never tells whether an address is known. Anyone who knows a monitored address can read its badge, which is why it is off until you switch it on. A monitored bookmark's **Health** tab in the Bookmarks view has an **Uptime badge** section with a preview, a choice of 7 or 30 days and two buttons, **Copy Markdown** and **Copy HTML**, that put the snippet for your server on the clipboard. While badges are off the section says so and has a button to the switch.
 
 <a id="126-fresh"></a>
 
@@ -2220,7 +2220,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 - Switch it on under **Behavior → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
 - A bookmark with news carries a count on its row, and the **Fresh** collection lists them, newest first. Opening the bookmark clears the count.
-- Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**.
+- Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**, and **Retry all** when more than one has stopped.
 - The bookmark editor shows a **Feed** line when there is one. `status:feed` / `-status:feed` search for them. **Mark rows that publish** (off by default) puts a quiet dot on those rows.
 - Fresh stores no articles, only counts. It is off by default because it contacts other servers on a schedule. The guide is under Config → Help → Monitoring.
 
@@ -2761,7 +2761,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 |---|---|
 | **Inbox** | How much is waiting, and how old the oldest is |
 | **Unsorted** | Links kept from the inbox without a page yet — newest first, at random, by one tag or grouped under every tag, with each address under its title. A row opens the Bookmarks view on Unsorted, with that bookmark's side panel; the overflow row reads **Open Unsorted**. |
-| **Feeds** | Feeds with news, and feeds that stopped after repeated failures; a stopped feed has a **Retry** button that tries it again now instead of tomorrow |
+| **Feeds** | Feeds with news, and feeds that stopped after repeated failures; a stopped feed has a **Retry** button that tries it again now instead of tomorrow, and **Retry all** tries every stopped feed at once |
 | **Sources** | What each import source last did |
 
 *What needs tidying?*

@@ -1,0 +1,67 @@
+{
+  "tag": "v1.22.1",
+  "date": "26 October 2026",
+  "releasedAt": "2026-10-26",
+  "modalLead": "A click on a bookmark's <strong>icon</strong> opens it, Glances 5 is named for what it is, and the weekly digest, the Uptime badge and the Feeds widget get small additions.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A click on a bookmark's icon opens the bookmark,</strong> like a click on its name."
+        }
+      ]
+    },
+    {
+      "title": "Glances",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A Glances 5 server is no longer called version 3.</strong> nextDash says Glances 5 is not supported yet."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The key legend sits inside its panel,</strong> and a refresh keeps your place on the page in Safari."
+        }
+      ]
+    },
+    {
+      "title": "Weekly digest",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A clearer digest window and <code>:digest</code>.</strong> Four counts at the top, the parts in two columns, and a Weekly digest panel on Config's overview.",
+          "link": "#digest"
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Copy an Uptime badge from a bookmark's Health tab,</strong> as Markdown or HTML, with a preview."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Retry all</strong> on the Feeds widget tries every stopped feed at once."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The corner cards list is complete:</strong> the install count, the weekly digest and analytics can be shown again too."
+        }
+      ]
+    }
+  ]
+}

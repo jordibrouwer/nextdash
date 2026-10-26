@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.22.1 — 26 October 2026](#v1221--26-october-2026)
 - [v1.22.0 — 25 October 2026](#v1220--25-october-2026)
 - [v1.21.3 — 23 October 2026](#v1213--23-october-2026)
 - [v1.21.2 — 23 October 2026](#v1212--23-october-2026)
@@ -120,6 +121,48 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.22.1 — 26 October 2026
+
+Glances 5 is recognised and named as not supported yet, instead of being taken for Glances 3, and the icon in front of a bookmark opens it, like the name beside it.
+
+### Dashboard
+
+- **fix — a click on a bookmark's icon opens the bookmark.** The icon sat in the row's lead, next to the link rather than inside it, so a click on it went nowhere. `populateBookmarkRowView` now makes the icon slot an anchor of its own, with the name's sanitised `href`, `target` and `rel`, out of the tab order and hidden from assistive tech (`dashboard-bookmark-rows.js`). The grid's delegated click and auxclick listeners take it as the name, so a plain click, Cmd/Ctrl+click, middle click and Alt/Shift+click for selection behave the same and the open is recorded. A long press on the icon blocks the click that ends it, as on the name (`dashboard-inline-edit.js`, `dashboard-bookmark-interactions-loader.js`). A mouse press on the icon hands focus to the name once the button is up, not before: moving focus during the press cancelled the row's drag (`keyboard-navigation.js`). The icon gets a pointer cursor, and the default one while a selection is open (`dashboard.css`, `dashboard-multi-select.css`). Covered by `tests/bookmark-icon-opens-link.spec.js`; every test but the drag one fails without the fix.
+
+### Glances
+
+- **fix — a Glances 5 server is no longer called version 3.** Glances 5 (5.0.0b1, beta) serves its API under `/api/5` with a new data model, so `/api/4/status` answers 404 and nextDash said the server answered like version 3. `glancesGet` in `glances_client.go` now asks `/api/5/status` when that happens; if it answers, the error is `Glances 5 not supported`, and Config and the Glances view say that Glances 5 is not supported yet and that Glances 4 is needed. Reading Glances 5 itself waits until 5.0 is stable. `TestGlancesConnect` covers it; it fails without the fix.
+- **fix — the key legend sits inside its panel.** Under a Signature material the key legend at the foot of the Glances view (and the Inbox's) is drawn as a plate, but it kept only the top padding of its old rule, so the keys sat on its bottom edge. `theme-overlays.css` gives it room on every side.
+- **fix — a refresh no longer throws a scrolled Safari reader to the top of the Glances page.** Every beat redraws the open section, and in WebKit that redraw moved the scroll to the top, so a reader half-way down the page had to scroll back every few seconds; Chromium kept the place. `_drawSection()` in `dashboard-glances.js` reads the scroll position before the redraw and puts it back in the same task, as the Containers view does since v1.21.3. `tests/glances-redraw-scroll.spec.js` moves the page to the top half-way through a redraw, as WebKit did; it fails without the fix.
+
+### Weekly digest
+
+- **new — a clearer digest window.** Four counts across the top (broken links, what runs out within 30 days, container updates, never opened) that count up and each open their view; under them the parts in two columns with a coloured dot, so a full week fits without scrolling. Certificates and domains are bars of days left, nearest first; domains more than 200 days out become a count. A part you opened gets a tick and dims, and so does its tile (`digest-notice.js`, `digest.css`).
+- **new — `:digest` and an overview panel.** The command palette opens the latest digest with `:digest`, and Config's overview has a **Weekly digest** panel with the parts still to open, the counts and the date; **Read** opens the same window (`search-commands.js`, `dashboard-config.js`). Covered by `tests/digest-notice.spec.js`.
+
+### Health
+
+- **new — an Uptime badge section on a monitored bookmark's Health tab.** A preview of the badge, a choice of 7 or 30 days and two buttons, **Copy Markdown** and **Copy HTML**, that put the snippet for this server on the clipboard. While *Serve uptime badges* is off the section says so and has a button to the switch; a bookmark that is not monitored has no section, since the route answers *no data* for it (`renderBmBadgeBody`, `bindBmBadge` in `dashboard-config-bookmarks-health.js`). Covered by `tests/bookmarks-health-badge.spec.js`.
+
+### Widgets
+
+- **new — Retry all on the Feeds widget.** With more than one stopped feed the tile offers **Retry all N**, which asks the server to try every stopped feed again now (`POST /api/feeds/retry` with no address) instead of one click per row (`dashboard-widget-feeds.js`).
+
+### Config
+
+- **new — the corner cards list is complete.** Behavior → Privacy & sync → Onboarding now lists the install count, the weekly digest and analytics next to the other cards, each with **Answered** or **Not shown yet** and **Show again**. Analytics keeps its answer in the settings, so its row reads them and a reset writes them back; someone who turned analytics on has nothing to be asked again (`NOTICE_CARDS` in `dashboard-config.js`). Covered by `tests/config-notice-cards.spec.js`.
+- **fix — the cheat sheet listed `:digest` twice** and had no English string for it; the registry check failed on both (`keyboard-cheat-sheet-registry.js`).
+
+### Tests
+
+- **fix — the Glances entrance spec no longer fails on a busy runner.** It asked every block to rise once the entrance window was open when the blocks were drawn, but a block waits up to about 200 ms for its turn and a rise that has not started when the window closes is dropped with it. On a runner under load the window closes inside that wait: the page behaves, the spec failed (the same spec failed on the base of v1.22.0 under a 5x CPU throttle). It now measures how long the window stayed open after the blocks arrived and asks for the rise only when that was longer than 300 ms (`dashboard-glances-view.spec.js`).
+
+### Docs
+
+- **docs — the manual, the six languages and `static/data/whats-new/v1.22.1.json`.** The manual names the badge section, Retry all and the full list of corner cards; nl, de, fr, es and zh carry the new strings; the release is held back from the What's new window (`hideFromModal`) like v1.21.2 and v1.21.3, so v1.22.0 keeps leading it. `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v353`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
