@@ -126,7 +126,11 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.22.1 — 26 October 2026
 
-Glances 5 is recognised and named as not supported yet, instead of being taken for Glances 3.
+Glances 5 is recognised and named as not supported yet, instead of being taken for Glances 3, and the icon in front of a bookmark opens it, like the name beside it.
+
+### Dashboard
+
+- **fix — a click on a bookmark's icon opens the bookmark.** The icon sat in the row's lead, next to the link rather than inside it, so a click on it went nowhere. `populateBookmarkRowView` now makes the icon slot an anchor of its own, with the name's sanitised `href`, `target` and `rel`, out of the tab order and hidden from assistive tech (`dashboard-bookmark-rows.js`). The grid's delegated click and auxclick listeners take it as the name, so a plain click, Cmd/Ctrl+click, middle click and Alt/Shift+click for selection behave the same and the open is recorded. A long press on the icon blocks the click that ends it, as on the name (`dashboard-inline-edit.js`, `dashboard-bookmark-interactions-loader.js`). A mouse press on the icon hands focus to the name once the button is up, not before: moving focus during the press cancelled the row's drag (`keyboard-navigation.js`). The icon gets a pointer cursor, and the default one while a selection is open (`dashboard.css`, `dashboard-multi-select.css`). Covered by `tests/bookmark-icon-opens-link.spec.js`; every test but the drag one fails without the fix.
 
 ### Glances
 
