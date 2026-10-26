@@ -2219,6 +2219,8 @@
     "widgetFeedsRetry": "Retry",
     "widgetFeedsRetryHint": "Try this feed again now instead of waiting for tomorrow.",
     "widgetFeedsRetryFailed": "Could not retry that feed.",
+    "widgetFeedsRetryAll": "Retry all {count}",
+    "widgetFeedsRetryAllHint": "Try every stopped feed again now.",
     "widgetNoAnswer": "nextDash did not answer.",
     "unsorted": "Unsorted",
     "notesTool.Heading": "Heading",

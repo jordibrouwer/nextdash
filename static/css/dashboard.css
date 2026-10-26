@@ -6517,6 +6517,11 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
     color: var(--text-primary);
 }
 
+.dashboard-widget-feeds-retry-all {
+    display: block;
+    margin: 0 0 var(--space-2, 0.55rem) auto;
+}
+
 .dashboard-widget-feeds-retry[disabled] {
     opacity: 0.5;
     cursor: default;

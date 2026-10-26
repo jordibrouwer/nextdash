@@ -133,6 +133,28 @@
         const list = utils?.rowList?.() || document.createElement('div');
         if (!list.className) list.className = 'dashboard-widget-rows dashboard-widget-rows--pairs';
 
+        // Several stopped at once is usually one cause (a network that was down,
+        // a proxy that changed), so one button tries them all: the server reads
+        // an empty address as "every stopped feed".
+        if (retired.length > 1) {
+            const retryAll = document.createElement('button');
+            retryAll.type = 'button';
+            retryAll.className = 'dashboard-widget-feeds-retry dashboard-widget-feeds-retry-all';
+            retryAll.textContent = label(dash, 'dashboard.widgetFeedsRetryAll', 'Retry all {count}')
+                .replace('{count}', String(retired.length));
+            retryAll.title = label(dash, 'dashboard.widgetFeedsRetryAllHint',
+                'Try every stopped feed again now.');
+            retryAll.addEventListener('click', async () => {
+                retryAll.disabled = true;
+                if (!await retryFeed(dash, '')) {
+                    retryAll.disabled = false;
+                    return;
+                }
+                await render(body, widget, dash);
+            });
+            wrap.appendChild(retryAll);
+        }
+
         // Retired first: "this stopped working" outranks "this has three new
         // items", and it is the half nobody can see anywhere else.
         retired.slice(0, rows).forEach((feed) => {
