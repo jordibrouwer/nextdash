@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.22.2 — 26 October 2026](#v1222--26-october-2026)
 - [v1.22.1 — 26 October 2026](#v1221--26-october-2026)
 - [v1.22.0 — 25 October 2026](#v1220--25-october-2026)
 - [v1.21.3 — 23 October 2026](#v1213--23-october-2026)
@@ -121,6 +122,29 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.22.2 — 26 October 2026
+
+The action bar, the five views and Config are drawn like a category under every Signature material, instead of as the dialog plate of that material, and the blocks on Config lie on their pane as a light tint instead of a box of their own colour — held back from the What's new window (`hideFromModal`) like v1.22.1, so v1.22.0 keeps leading it.
+
+### Appearance
+
+- **fix — the action bar draws like a category.** Out of the header, the bar was a plate in the material of a dialog: an accent bar on the edge, a mark on top and the shine of the overlay. Under Category surface glass or card it now draws the ruit or card of a category with the same hairline, sheen, cast and radius (`category-surface.css`), and under a Signature material it takes the paint of that material's category rule (`theme-signature.css`; the dock selectors ride in the category blocks). What a category sets for its own layout (`position`, padding) is reset for the dock. Ink keeps a thin plate, since a bare row of icons has nothing to tell it apart from the bookmarks. Under open the dock keeps the plate of the overlay.
+- **fix — the views draw like a category.** Bookmarks, Inbox, Containers, Glances and Tags carried the overlay plate (shine, edge, cast); under every Signature material they now take the fill, edge, shadow and blur of that material's category, including `--surface-sheen` for terminal and ink. The overlay plate stays under open (`theme-overlays.css`).
+- **fix — Config draws like a category.** The same for the Config view itself; the panels, widgets, tiles and update bar on it take the corner of the material (`#dashboard-layout.config-layout > .config-view` and its blocks, in `theme-signature.css`).
+- **fix — the blocks of Config lie on the pane as a tint.** Under Signature a block lay on the small fill of the material (`--ov-fill-small`, 96% on glass), which read as a box of its own colour. Under every surface but open it now takes what Classic gives it: 35% of the surface colour with a hairline, and a 4% tint on a card surface (`theme-signature.css`).
+- **fix — the cards on those views take the corners of the material.** The summary card and the Glances, Docker, tag and Inbox cards use the radius of the material's category, up to 14px.
+
+### Tests
+
+- **fix — the config pane spec expects the pane of a category.** `config-panes.spec.js` asked for a fill that is neither clear nor solid under Signature; Aurora's category lets the backdrop supply the colour, so the Config view now does too, and the spec asks for the blur and a fill below 1.
+- **fix — CI.** Weighted shards and per-spec timings (`scripts/shard-weights.cjs`, `scripts/slow-specs.cjs`, `tests/shard-times.json`); the Playwright image was tried and left again.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.22.2.json` and its index entry**, held back from the What's new window; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v354`. `go generate` refreshed `asset_hashes_gen.go`. `tests/whats-new-hidden-release.spec.js` lists v1.22.2 as held back.
 
 ---
 

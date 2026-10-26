@@ -466,3 +466,42 @@ html[data-theme] body .dashboard-grid:is(.layout-default, .layout-compact, .layo
 html[data-theme] body[data-material-style="signature"]:is([data-material="lacquer"], [data-material="glass"], [data-material="frost"], [data-material="brushed"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
     position: relative;
 }
+
+/* The action bar as a pane.
+
+   Out of the header, the bar is a dock, and it stood as a plate of its own
+   (the modal look of the material) beside categories that are glass or card.
+   Under those two surfaces it draws what a category draws: the same ruit or
+   solid fill, the hairline, the sheen and the cast, and the same radius. Under
+   open it keeps its plate, since a bare row floating over the bookmarks has
+   nothing to tell it apart from them. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
+    border: 0;
+    border-radius: var(--radius-6, 10px);
+    background-image: var(--surface-sheen, none);
+    box-shadow:
+        inset 0 0 0 1px var(--hairline, color-mix(in srgb, var(--text-primary) 14%, transparent)),
+        var(--edge-light, inset 0 1px 0 color-mix(in srgb, var(--text-primary) 12%, transparent)),
+        var(--surface-cast, 0 8px 24px rgba(0, 0, 0, 0.22));
+}
+
+html[data-theme] body[data-cat-surface="glass"]:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
+    background-color: color-mix(in srgb,
+        var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha) * 100%), transparent);
+    backdrop-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+}
+
+html[data-theme] body[data-cat-surface="card"]:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
+    background-color: var(--surface-2, var(--background-secondary));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-cat-surface="glass"]:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
+        background-color: var(--surface-2, var(--background-secondary));
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}

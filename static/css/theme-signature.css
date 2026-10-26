@@ -24,7 +24,8 @@
    schuift de binnenkolommen van het raster (zie category-surface.css). */
 
 /* Neon: een donker vlak met alleen een lichtgevende bovenrand, waar het licht zacht naar beneden uitloopt. Geen rand rondom. */
-html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(10px * var(--theme-radius-applied, 1));
     background-color: color-mix(in srgb, var(--background-primary) 66%, transparent);
     background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
@@ -37,7 +38,8 @@ html[data-theme] body[data-material-style="signature"][data-material="neon"]:not
 }
 
 /* Koolstof: een weefsel in twee richtingen en een accentstreep links. */
-html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(3px * var(--theme-radius-applied, 1));
     background-color: var(--surface-2, var(--background-secondary));
     background-image:
@@ -53,7 +55,8 @@ html[data-theme] body[data-material-style="signature"][data-material="carbon"]:n
 }
 
 /* Terminal: radius 0, een rand van 1px in het accent, geen schaduw en geen gloed. */
-html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: 0;
     background-color: var(--surface-2, var(--background-secondary));
     background-image: none;
@@ -63,7 +66,8 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
 }
 
 /* Inkt: geen vlak en geen lijnen: alleen typografie. De kop draagt het streepje. */
-html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: 0;
     background-color: transparent;
     background-image: none;
@@ -77,7 +81,10 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"]:not(
 @media (prefers-reduced-transparency: reduce) {
     html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
     html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
-    html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts,
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
         background-color: var(--surface-2, var(--background-secondary));
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
@@ -88,7 +95,10 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"]:not(
    doorzichtigheid en blur, ook op de materialen die door je heen kijken. */
 html[data-theme] body[data-material-style="signature"][data-material="glass"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="frost"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
-html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="glass"][data-card-glass="own"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts,
+html[data-theme] body[data-material-style="signature"][data-material="frost"][data-card-glass="own"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha, 0.5) * 100%), transparent);
     backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
     -webkit-backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
@@ -337,7 +347,8 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 
 /* Lak: een scherpe lichtband bovenin, een weerspiegeling schuin over de kaart en
    elk element als glanzend knopje met een eigen highlight. */
-html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(14px * var(--theme-radius-applied, 1));
     background-color: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
     background-image:
@@ -382,7 +393,8 @@ html[data-theme] body[data-material-style="signature"][data-material="lacquer"] 
 
 /* Glas: een heldere rand links boven, een zweem licht schuin over het glas en elk
    element als stukje glas met een eigen rand. */
-html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(22px * var(--theme-radius-applied, 1));
     /* Rounded further than the side padding: the grip, the controls and the badges sat on the curve. */
     --category-inline-pad: 0.9rem;
@@ -432,7 +444,8 @@ html[data-theme] body[data-material-style="signature"][data-material="glass"] .d
 
 /* Berijpt glas: een lichte rand boven (de rijp), een kop in kleine, wijd gespatieerde
    hoofdletters en elk element matig verhoogd met een lichte bovenrand. */
-html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(16px * var(--theme-radius-applied, 1));
     background-color: transparent;
     background-image:
@@ -478,7 +491,8 @@ html[data-theme] body[data-material-style="signature"][data-material="frost"] .d
 
 /* Geborsteld metaal: een metalen plaat met een schuin lichtvlak, schroefkoppen in de
    hoeken en gegraveerde tekst. Een aangewezen rij wordt in het metaal gedrukt. */
-html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(6px * var(--theme-radius-applied, 1));
     background-color: var(--surface-2, var(--background-secondary));
     background-image:
@@ -533,7 +547,8 @@ html[data-theme] body[data-material-style="signature"][data-material="brushed"] 
 html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(16px * var(--theme-radius-applied, 1));
     /* A glazed tile: the thickness is only at the bottom, so the sides and the content stay clear. */
     --category-inline-pad: 1rem;
@@ -555,7 +570,8 @@ html[data-theme] body[data-material-style="signature"][data-material="enamel"][d
 }
 
 /* Op licht is emaille helder: het bord is wit met een zweem accent, geen grijs. */
-html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     background-color: color-mix(in srgb, #fff 62%, color-mix(in srgb, var(--accent-primary) 7%, var(--surface-2, var(--background-secondary))));
 }
 
@@ -600,7 +616,8 @@ html[data-theme] body[data-material-style="signature"][data-material="enamel"] .
 html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     position: relative;
     border-radius: calc(3px * var(--theme-radius-applied, 1));
     --category-inline-pad: 1rem;
@@ -678,7 +695,8 @@ html[data-theme] body[data-material-style="signature"][data-material="paper"] .d
 
 /* Aurora: twee lichtbanden in de kaart zelf, bovenin, als een noorderlicht.
    Pictogrammen en chips krijgen een zweem van dezelfde kleuren. */
-html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(20px * var(--theme-radius-applied, 1));
     /* Rounded further than the side padding: the grip, the controls and the badges sat on the curve. */
     --category-inline-pad: 0.9rem;
@@ -725,7 +743,8 @@ html[data-theme] body[data-material-style="signature"][data-material="aurora"] .
 html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     /* The card is rounded by 28px: the grip, the controls and a widget's footer sat on the
        curve and fell outside it. The side padding is wider, and the header's bleed (which is
        measured from it) follows. */
@@ -746,7 +765,8 @@ html[data-theme] body[data-material-style="signature"][data-material="velvet"][d
 html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     box-shadow: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent), inset 0 -14px 24px rgba(0, 0, 0, 0.12), 0 14px 28px -12px rgba(0, 0, 0, 0.3);
 }
 
@@ -781,7 +801,8 @@ html[data-theme] body[data-material-style="signature"][data-material="velvet"] .
 html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(4px * var(--theme-radius-applied, 1));
     --category-inline-pad: 1rem;
     padding-inline: var(--category-inline-pad);
@@ -833,7 +854,8 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"] .das
 html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="terminal"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="terminal"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(3px * var(--theme-radius-applied, 1));
     padding-block: var(--space-3, 0.75rem);
     background-color: color-mix(in srgb, var(--background-primary, #000) 78%, transparent);
@@ -906,4 +928,576 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"] .dash
    dan is het paneel van de widget en moet zijn inhoud er niet tegenaan liggen. */
 html[data-theme] body[data-material-style="signature"][data-widget-bg="background"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .dashboard-widget {
     padding-block: var(--space-3, 0.75rem);
+}
+
+/* The action bar as a pane of the material.
+
+   Out of the header the bar is a dock, and under every material that draws a
+   category it draws the same surface (the selectors above carry it). What a
+   category sets for its own layout must not reach the dock: it stands fixed,
+   with the padding of its buttons. */
+html[data-theme] body[data-material-style="signature"][data-material]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
+    position: fixed;
+    padding: 6px;
+}
+
+/* Ink draws a category as type alone; a dock of bare icons over the bookmarks
+   would have nothing to tell it apart from them, so it keeps a thin plate. */
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
+    background-color: var(--surface-2, var(--background-secondary));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 18%, transparent);
+}
+
+
+
+
+/* The views: the plate is a pane of the material, drawn as a category is drawn.
+
+   The plate of the overlay (shine, edge, cast) made each view a modal in the material
+   next to dashboard pages whose categories drew another surface. Under every material
+   that draws a category the plate takes the paint of that category; open keeps the
+   plate of the overlay. The inner panels take the corner of the material. */
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(10px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--background-primary) 66%, transparent);
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 -1px 0 var(--accent-primary),
+        0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) 70%, transparent),
+        0 10px 20px -12px rgba(0, 0, 0, 0.8);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: linear-gradient(var(--accent-primary), var(--accent-primary)),
+        repeating-linear-gradient(45deg, color-mix(in srgb, var(--text-primary) 5%, transparent) 0 2px, transparent 2px 4px),
+        repeating-linear-gradient(-45deg, color-mix(in srgb, var(--background-primary) 35%, transparent) 0 2px, transparent 2px 4px);
+    background-size: 3px 100%, auto, auto;
+    background-repeat: no-repeat, repeat, repeat;
+    background-position: 0 0, 0 0, 0 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: 0;
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: 0;
+    background-color: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="glass"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library,
+html[data-theme] body[data-material-style="signature"][data-material="frost"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="frost"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha, 0.5) * 100%), transparent);
+    backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
+    -webkit-backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(14px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.03) 22%, rgba(255, 255, 255, 0) 23%),
+        linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 30%, var(--background-primary)), color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.35),
+        0 16px 28px -10px rgba(0, 0, 0, 0.6),
+        0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(22px * var(--theme-radius-applied, 1));
+    background-color: transparent;
+    background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0), transparent),
+        linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent) 55%);
+    background-size: 60% 1px, auto;
+    background-repeat: no-repeat, no-repeat;
+    background-position: 14px 0, 0 0;
+    backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+    box-shadow: inset 1px 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        0 18px 36px -14px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(16px * var(--theme-radius-applied, 1));
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent));
+    backdrop-filter: blur(24px) saturate(1.1);
+    -webkit-backdrop-filter: blur(24px) saturate(1.1);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        0 10px 24px -14px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(6px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--text-primary) 70%, transparent), color-mix(in srgb, var(--text-primary) 15%, transparent)),
+        radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--text-primary) 70%, transparent), color-mix(in srgb, var(--text-primary) 15%, transparent)),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 3px),
+        linear-gradient(100deg, color-mix(in srgb, var(--text-primary) 7%, transparent), color-mix(in srgb, var(--text-primary) 10%, transparent) 40%, color-mix(in srgb, var(--text-primary) 6%, transparent) 100%);
+    background-size: 5px 5px, 5px 5px, auto, auto;
+    background-repeat: no-repeat, no-repeat, repeat, no-repeat;
+    background-position: 8px 7px, calc(100% - 8px) 7px, 0 0, 0 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 10px 18px -10px rgba(0, 0, 0, 0.7);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(16px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
+    background-image: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), transparent);
+    background-size: 46px 20px;
+    background-repeat: no-repeat;
+    background-position: calc(100% - 64px) 5px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 -6px 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        0 10px 16px -8px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    background-color: color-mix(in srgb, #fff 62%, color-mix(in srgb, var(--accent-primary) 7%, var(--surface-2, var(--background-secondary))));
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 12px -8px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(20px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    background-image: radial-gradient(60% 100% at 30% 0, color-mix(in srgb, var(--accent-primary) 42%, transparent), transparent 70%),
+        radial-gradient(55% 100% at 75% 0, color-mix(in srgb, var(--accent-error, var(--accent-primary)) 38%, transparent), transparent 70%);
+    background-size: 100% 90px, 100% 90px;
+    background-repeat: no-repeat;
+    background-position: 0 0, 0 0;
+    backdrop-filter: blur(10px) saturate(1.3);
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent), 0 0 28px -12px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    border-radius: calc(28px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: radial-gradient(90% 60% at 50% 0, color-mix(in srgb, var(--text-primary) 12%, transparent), transparent 75%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent),
+        inset 0 -14px 24px rgba(0, 0, 0, 0.3),
+        0 14px 28px -10px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    box-shadow: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent), inset 0 -14px 24px rgba(0, 0, 0, 0.12), 0 14px 28px -12px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    --surface-sheen: linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent));
+    border-radius: calc(4px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    background-image: var(--surface-sheen);
+    background-size: 11px 1px, 1px 11px, 11px 1px, 1px 11px, 11px 1px, 1px 11px, 11px 1px, 1px 11px;
+    background-repeat: no-repeat;
+    background-position: 3px 3px, 3px 3px, calc(100% - 3px) 3px, calc(100% - 3px) 3px, 3px calc(100% - 3px), 3px calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) calc(100% - 3px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.library-layout > .config-view--library {
+    --surface-sheen: repeating-linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 8%, transparent) 0 1px, transparent 1px 3px);
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--background-primary, #000) 78%, transparent);
+    background-image: var(--surface-sheen);
+    background-size: auto;
+    background-repeat: repeat;
+    background-position: 0 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 26px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(10px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(0, 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(0, 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(14px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(22px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(16px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(6px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(16px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(20px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(28px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(4px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+    border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
+}
+
+
+/* The config view: the plate is a pane of the material, drawn as a category is drawn.
+
+   The plate of the overlay (shine, edge, cast) made the config view a modal in the material
+   next to dashboard pages whose categories drew another surface. Under every material
+   that draws a category the plate takes the paint of that category; open keeps the
+   plate of the overlay. The panels on it take the corner of the material. */
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(10px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--background-primary) 66%, transparent);
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 -1px 0 var(--accent-primary),
+        0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) 70%, transparent),
+        0 10px 20px -12px rgba(0, 0, 0, 0.8);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: linear-gradient(var(--accent-primary), var(--accent-primary)),
+        repeating-linear-gradient(45deg, color-mix(in srgb, var(--text-primary) 5%, transparent) 0 2px, transparent 2px 4px),
+        repeating-linear-gradient(-45deg, color-mix(in srgb, var(--background-primary) 35%, transparent) 0 2px, transparent 2px 4px);
+    background-size: 3px 100%, auto, auto;
+    background-repeat: no-repeat, repeat, repeat;
+    background-position: 0 0, 0 0, 0 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: 0;
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: 0;
+    background-color: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view,
+html[data-theme] body[data-material-style="signature"][data-material="frost"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha, 0.5) * 100%), transparent);
+    backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
+    -webkit-backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(14px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.03) 22%, rgba(255, 255, 255, 0) 23%),
+        linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 30%, var(--background-primary)), color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.35),
+        0 16px 28px -10px rgba(0, 0, 0, 0.6),
+        0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(22px * var(--theme-radius-applied, 1));
+    background-color: transparent;
+    background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0), transparent),
+        linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent) 55%);
+    background-size: 60% 1px, auto;
+    background-repeat: no-repeat, no-repeat;
+    background-position: 14px 0, 0 0;
+    backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+    box-shadow: inset 1px 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        0 18px 36px -14px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(16px * var(--theme-radius-applied, 1));
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent));
+    backdrop-filter: blur(24px) saturate(1.1);
+    -webkit-backdrop-filter: blur(24px) saturate(1.1);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        0 10px 24px -14px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(6px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--text-primary) 70%, transparent), color-mix(in srgb, var(--text-primary) 15%, transparent)),
+        radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--text-primary) 70%, transparent), color-mix(in srgb, var(--text-primary) 15%, transparent)),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 3px),
+        linear-gradient(100deg, color-mix(in srgb, var(--text-primary) 7%, transparent), color-mix(in srgb, var(--text-primary) 10%, transparent) 40%, color-mix(in srgb, var(--text-primary) 6%, transparent) 100%);
+    background-size: 5px 5px, 5px 5px, auto, auto;
+    background-repeat: no-repeat, no-repeat, repeat, no-repeat;
+    background-position: 8px 7px, calc(100% - 8px) 7px, 0 0, 0 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 10px 18px -10px rgba(0, 0, 0, 0.7);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(16px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
+    background-image: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), transparent);
+    background-size: 46px 20px;
+    background-repeat: no-repeat;
+    background-position: calc(100% - 64px) 5px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 -6px 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        0 10px 16px -8px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    background-color: color-mix(in srgb, #fff 62%, color-mix(in srgb, var(--accent-primary) 7%, var(--surface-2, var(--background-secondary))));
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 12px -8px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(20px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    background-image: radial-gradient(60% 100% at 30% 0, color-mix(in srgb, var(--accent-primary) 42%, transparent), transparent 70%),
+        radial-gradient(55% 100% at 75% 0, color-mix(in srgb, var(--accent-error, var(--accent-primary)) 38%, transparent), transparent 70%);
+    background-size: 100% 90px, 100% 90px;
+    background-repeat: no-repeat;
+    background-position: 0 0, 0 0;
+    backdrop-filter: blur(10px) saturate(1.3);
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent), 0 0 28px -12px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    border-radius: calc(28px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: radial-gradient(90% 60% at 50% 0, color-mix(in srgb, var(--text-primary) 12%, transparent), transparent 75%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent),
+        inset 0 -14px 24px rgba(0, 0, 0, 0.3),
+        0 14px 28px -10px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    box-shadow: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent), inset 0 -14px 24px rgba(0, 0, 0, 0.12), 0 14px 28px -12px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    --surface-sheen: linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent));
+    border-radius: calc(4px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    background-image: var(--surface-sheen);
+    background-size: 11px 1px, 1px 11px, 11px 1px, 1px 11px, 11px 1px, 1px 11px, 11px 1px, 1px 11px;
+    background-repeat: no-repeat;
+    background-position: 3px 3px, 3px 3px, calc(100% - 3px) 3px, calc(100% - 3px) 3px, 3px calc(100% - 3px), 3px calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) calc(100% - 3px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: none;
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    --surface-sheen: repeating-linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 8%, transparent) 0 1px, transparent 1px 3px);
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--background-primary, #000) 78%, transparent);
+    background-image: var(--surface-sheen);
+    background-size: auto;
+    background-repeat: repeat;
+    background-position: 0 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 26px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(10px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(0, 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(0, 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(14px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(22px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(16px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(6px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(16px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(20px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(28px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(4px * var(--theme-radius-applied, 1)), 14px);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+    border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
+}
+
+/* The blocks of Config on the pane.
+
+   A block lay on the pane in the small fill of the material (--ov-fill-small,
+   nearly closed), which read as a tinted box of its own colour on every theme.
+   Under every surface but open a block takes what Classic gives it: a light
+   darkening of the pane with a hairline, so the pane shows through and the
+   theme stays what you see. On a card surface the pane is the surface colour
+   itself, so there the block is told apart by a light tint. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) 35%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-cat-surface="card"] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
+    background-color: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+/* A row inside a panel or a table is not a second card. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-crud-list--table) :is(.config-widget-row, .config-crud-row, .config-backup-row, .config-attention-row) {
+    background-color: transparent;
 }
