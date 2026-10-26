@@ -828,6 +828,20 @@
         }
 
         /**
+         * Hand a section its data, leaving a scrolled reader where they were.
+         *
+         * Every beat redraws the open section. WebKit moved the scroll to the
+         * top on that redraw (Chromium kept it), so the place is read before
+         * and put back after, in the same task: nothing is painted in between,
+         * so nothing moves on screen. The Containers view does the same.
+         */
+        _drawSection(inst, data) {
+            const y = window.scrollY;
+            inst.render(this.hostEl, data);
+            if (Math.abs(window.scrollY - y) > 1) window.scrollTo({ top: y, behavior: 'instant' });
+        }
+
+        /**
          * Draw a section from its last answers without a read. Returns how old
          * the oldest of them is, or null when any is missing or too old.
          */
@@ -848,7 +862,7 @@
             try {
                 this.tipCard?.reset();
                 this._playEnter();
-                inst.render(this.hostEl, data);
+                this._drawSection(inst, data);
                 this.tipCard?.refresh();
             } catch (err) {
                 console.error('Glances section failed to draw', err);
@@ -1069,7 +1083,7 @@
             try {
                 this.tipCard?.reset();
                 this._playEnter();
-                inst.render(this.hostEl, data);
+                this._drawSection(inst, data);
                 this.tipCard?.refresh();
             } catch (err) {
                 console.error('Glances section failed to draw', err);

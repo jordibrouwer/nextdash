@@ -136,6 +136,7 @@ Glances 5 is recognised and named as not supported yet, instead of being taken f
 
 - **fix — a Glances 5 server is no longer called version 3.** Glances 5 (5.0.0b1, beta) serves its API under `/api/5` with a new data model, so `/api/4/status` answers 404 and nextDash said the server answered like version 3. `glancesGet` in `glances_client.go` now asks `/api/5/status` when that happens; if it answers, the error is `Glances 5 not supported`, and Config and the Glances view say that Glances 5 is not supported yet and that Glances 4 is needed. Reading Glances 5 itself waits until 5.0 is stable. `TestGlancesConnect` covers it; it fails without the fix.
 - **fix — the key legend sits inside its panel.** Under a Signature material the key legend at the foot of the Glances view (and the Inbox's) is drawn as a plate, but it kept only the top padding of its old rule, so the keys sat on its bottom edge. `theme-overlays.css` gives it room on every side.
+- **fix — a refresh no longer throws a scrolled Safari reader to the top of the Glances page.** Every beat redraws the open section, and in WebKit that redraw moved the scroll to the top, so a reader half-way down the page had to scroll back every few seconds; Chromium kept the place. `_drawSection()` in `dashboard-glances.js` reads the scroll position before the redraw and puts it back in the same task, as the Containers view does since v1.21.3. `tests/glances-redraw-scroll.spec.js` moves the page to the top half-way through a redraw, as WebKit did; it fails without the fix.
 
 ### Weekly digest
 
