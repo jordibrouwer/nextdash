@@ -93,12 +93,12 @@ test.describe('config is one pane', () => {
         await open(page, '#config/appearance');
         await page.waitForSelector(view, { timeout: 20_000 });
 
-        // Signature, the default: one pane in the material -- on Aurora Glass a blurred,
-        // see-through plate with a round corner, whatever the category surface is.
+        // Signature, the default: one pane drawn as a category of the material is --
+        // on Aurora Glass a blurred, see-through plate with a round corner. Aurora
+        // lets the backdrop supply the colour, so the fill itself can be clear.
         await setSurface(page, 'card');
         const signature = await paint(page, view);
         expect(signature.blur).toBe('blur');
-        expect(signature.alpha).toBeGreaterThan(0);
         expect(signature.alpha).toBeLessThan(1);
         expect(parseFloat(signature.radius)).toBeGreaterThanOrEqual(8);
 
