@@ -140,6 +140,7 @@ Glances 5 is recognised and named as not supported yet, instead of being taken f
 ### Weekly digest
 
 - **new — a clearer digest window.** Four counts across the top (broken links, what runs out within 30 days, container updates, never opened) that count up and each open their view; under them the parts in two columns with a coloured dot, so a full week fits without scrolling. Certificates and domains are bars of days left, nearest first; domains more than 200 days out become a count. A part you opened gets a tick and dims, and so does its tile (`digest-notice.js`, `digest.css`).
+- **new — `:digest` and an overview panel.** The command palette opens the latest digest with `:digest`, and Config's overview has a **Weekly digest** panel with the parts still to open, the counts and the date; **Read** opens the same window (`search-commands.js`, `dashboard-config.js`). Covered by `tests/digest-notice.spec.js`.
 
 ---
 

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, WRITE_TOKEN } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
  * The weekly digest's dashboard card (static/js/digest-notice.js).
@@ -264,9 +264,10 @@ test.describe('the digest and the review card', () => {
 });
 
 /*
- * The window's counts and bars.
+ * The window's counts and bars, and the two ways in besides the card and the
+ * push: the :digest command and the panel on Config's overview.
  */
-test.describe('tiles and bars', () => {
+test.describe('tiles, bars and the ways in', () => {
     // A week with something in every kind: what the tiles, the bars and the
     // ways in are drawn from.
     const fullWeek = () => ({
@@ -326,6 +327,25 @@ test.describe('tiles and bars', () => {
         await expect(win.locator('[data-digest-tile="unused"]')).toHaveClass(/is-done/);
         await expect(win.locator('[data-digest-part="never"]')).toHaveClass(/is-done/);
         await expect(win.locator('[data-digest-tile="certificates"]')).not.toHaveClass(/is-done/);
+    });
+
+    test(':digest opens the latest digest', async ({ page }) => {
+        await openRouted(page, fullWeek());
+        await page.keyboard.press(':');
+        await page.keyboard.type('digest');
+        await page.keyboard.press('Enter');
+        await expect(page.locator('.digest-modal .digest-window')).toBeVisible();
+    });
+
+    test('the Config overview has a panel that opens it', async ({ page }) => {
+        await openRouted(page, fullWeek());
+        await waitForConfigReady(page);
+        await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('overview'); });
+        const panel = page.locator('#config-view-body .config-widget--digest');
+        await expect(panel).toBeVisible({ timeout: 10_000 });
+        await expect(panel.locator('.config-widget-value')).toHaveText('4');
+        await panel.locator('[data-overview-go]').click();
+        await expect(page.locator('.digest-modal .digest-window')).toBeVisible();
     });
 });
 

@@ -599,5 +599,25 @@
         start();
     }
 
-    global.DigestNotice = { shouldShow, openDigest, holdsTheWeek, render: card.render, close: card.close, showBar: () => latest && showBar(latest) };
+    /**
+     * The latest digest in brief, for Config's overview panel: when it came
+     * out, its tiles, and how many of its parts are still to be opened. Null
+     * while there is none, or with the digest switched off.
+     */
+    async function summary() {
+        if (dash()?.settings?.digestEnabled === false) return null;
+        const s = latest || await fetchLatest();
+        if (!s) return null;
+        const progress = readProgress(s);
+        const list = todo(s);
+        return {
+            generatedAt: s.generatedAt,
+            when: when(s),
+            tiles: tileList(s).map(({ label, count, tone }) => ({ label, count, tone })),
+            todo: list.length,
+            left: list.filter((p) => !progress.visited.includes(p.id)).length,
+        };
+    }
+
+    global.DigestNotice = { shouldShow, openDigest, holdsTheWeek, summary, render: card.render, close: card.close, showBar: () => latest && showBar(latest) };
 })(window);

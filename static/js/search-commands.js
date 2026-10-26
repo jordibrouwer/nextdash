@@ -80,7 +80,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'digest', 'changes', 'telemetry'],
             },
         ];
         // Which groups are open. None is, until the reader opens one: the
@@ -158,6 +158,7 @@ class SearchCommandsComponent {
             'cheat': this.handleCheatCommand.bind(this),
             'help': this.handleCheatCommand.bind(this),
             'whatsnew': this.handleWhatsNewCommand.bind(this),
+            'digest': this.handleDigestCommand.bind(this),
             'changes': this.handleChangesTourCommand.bind(this),
             'add': this.handleAddCommand.bind(this),
             'config': this.handleConfigCommand.bind(this),
@@ -1250,6 +1251,21 @@ class SearchCommandsComponent {
             type: 'command',
             action: () => this._runOverlayAction(() => {
                 window.openWhatsNewModal?.({ force: true });
+            }),
+        }];
+    }
+
+    // The latest weekly digest, the same window the card and the push open.
+    handleDigestCommand(args, fullQuery) {
+        return [{
+            name: this._t('commands.digestLabel', 'Weekly digest'),
+            shortcut: ':DIGEST',
+            type: 'command',
+            action: () => this._runOverlayAction(async () => {
+                const shown = await window.DigestNotice?.openDigest?.();
+                if (!shown) {
+                    window.dashboardInstance?.notifications?.notifyConfig?.('digestShowNone', 'No digest yet.', 'info');
+                }
             }),
         }];
     }
