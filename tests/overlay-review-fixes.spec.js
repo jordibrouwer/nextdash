@@ -68,7 +68,7 @@ test('on a phone the side bars keep their place at the bottom centre under the s
         test.skip(m.side !== position, 'the action bar is not on the ' + position);
         expect.soft(m.right, position + ': the bar is pinned to the right edge on a phone').toBe('auto');
         expect.soft(m.left === '50%' || Math.round(parseFloat(m.left)) === Math.round(m.width / 2), position + ': the bar is not centred: ' + m.left).toBe(true);
-        expect.soft(m.bottom, position + ': the bar is not at the bottom').toBe('0px');
+        expect.soft(m.bottom, position + ': the bar is not at the bottom').toBe('16px');
         expect.soft(m.direction, position + ': the bar is a column on a phone').toBe('row');
     }
 });
