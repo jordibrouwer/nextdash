@@ -263,9 +263,92 @@
                     ${monitored ? `<div data-bm-section="monitor">${item('monitor', t('bmSectionMonitor', 'Monitor & history'),
                         uptime != null ? t('bmHealthUptime24h', '{p}% last 24 h').replace('{p}', String(Math.round(uptime * 1000) / 10)) : '',
                         health.hasMonitorStats(issue) ? health.buildMonitorStatsHtml(issue) : '')}</div>` : ''}
+                    ${monitored ? item('badge', t('bmBadge', 'Uptime badge'),
+                        this.dash.settings?.uptimeBadges === true ? `${this.bmBadgeDays()} ${t('bmBadgeDaysUnit', 'days')}` : t('bmBadgeOff', 'off'),
+                        this.renderBmBadgeBody(b)) : ''}
                     ${item('expectations', t('bmHealthExpectations', 'Expectations'), expectSet ? t('bmHealthExpectSet', 'set') : t('bmHealthExpectNone', 'none'),
                         `<div class="health-view-expect-panel">${health.renderExpectPanel(issue)}</div>`)}
                 </div>`;
+        },
+
+        /** The window the badge reports, in days: 7 or 30, remembered while the page is open. */
+        bmBadgeDays() {
+            return this._bmBadgeDays === 7 ? 7 : 30;
+        },
+
+        /** The address a README embeds: this server, this bookmark, the chosen window. */
+        bmBadgeUrl(b, days) {
+            return `${global.location.origin}/badge/uptime.svg?url=${encodeURIComponent(b.url)}&days=${days}`;
+        },
+
+        /** What goes on the clipboard for one of the two formats. */
+        bmBadgeSnippet(b, days, format) {
+            const url = this.bmBadgeUrl(b, days);
+            return format === 'html' ? `<img src="${url}" alt="Uptime">` : `![Uptime](${url})`;
+        },
+
+        /**
+         * The Uptime badge section: a preview and two copy buttons while the
+         * server's switch is on, and the way to the switch while it is off.
+         * Only monitored bookmarks get one -- the route answers "no data" for
+         * everything else, and a section that offers an empty image is a trap.
+         */
+        renderBmBadgeBody(b) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const t = (key, fallback) => this.t(`config.${key}`, fallback);
+            if (this.dash.settings?.uptimeBadges !== true) {
+                return `<p class="config-bm-panel-muted">${esc(t('bmBadgeOffNote',
+                    'Badges are switched off. Anyone who knows a monitored address can read its badge, so the switch is yours.'))}</p>
+                    <button type="button" class="config-btn config-btn--small" data-bm-badge-settings>${esc(t('bmBadgeOpenSettings', 'Open the switch'))}</button>`;
+            }
+            const days = this.bmBadgeDays();
+            const choice = (n) => `<button type="button" class="config-btn config-btn--small${n === days ? ' is-active' : ''}"
+                    data-bm-badge-days="${n}" aria-pressed="${n === days}">${esc(t('bmBadgeDaysChoice', '{n} days').replace('{n}', String(n)))}</button>`;
+            return `<div class="config-bm-badge">
+                    <div class="config-bm-badge-preview"><img src="${esc(this.bmBadgeUrl(b, days))}" alt="${esc(t('bmBadgePreviewAlt', 'Uptime badge preview'))}" data-bm-badge-img></div>
+                    <div class="config-bm-badge-days" role="group" aria-label="${esc(t('bmBadgeWindow', 'Period'))}">${choice(7)}${choice(30)}</div>
+                    <div class="config-bm-badge-copy">
+                        <button type="button" class="config-btn config-btn--small" data-bm-badge-copy="markdown">${esc(t('bmBadgeCopyMarkdown', 'Copy Markdown'))}</button>
+                        <button type="button" class="config-btn config-btn--small" data-bm-badge-copy="html">${esc(t('bmBadgeCopyHtml', 'Copy HTML'))}</button>
+                    </div>
+                    <p class="config-bm-panel-muted">${esc(t('bmBadgePublicNote', 'Public: anyone with the link can read this badge.'))}</p>
+                </div>`;
+        },
+
+        /** Wire the badge section: the period, the copy buttons and the way to the switch. */
+        bindBmBadge(panel, b) {
+            const root = panel.querySelector('[data-bm-acc="badge"]');
+            if (!root) return;
+            root.querySelector('[data-bm-badge-settings]')?.addEventListener('click', () => {
+                this.monitoringTab = 'checks';
+                void this.openConfigView?.('monitoring');
+            });
+            root.querySelectorAll('[data-bm-badge-days]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    this._bmBadgeDays = Number(btn.getAttribute('data-bm-badge-days')) === 7 ? 7 : 30;
+                    const days = this.bmBadgeDays();
+                    root.querySelectorAll('[data-bm-badge-days]').forEach((other) => {
+                        const on = Number(other.getAttribute('data-bm-badge-days')) === days;
+                        other.classList.toggle('is-active', on);
+                        other.setAttribute('aria-pressed', String(on));
+                    });
+                    const img = root.querySelector('[data-bm-badge-img]');
+                    if (img) img.src = this.bmBadgeUrl(b, days);
+                    const answer = root.querySelector('summary .config-bm-acc-answer');
+                    if (answer) answer.textContent = `${days} ${this.t('config.bmBadgeDaysUnit', 'days')}`;
+                });
+            });
+            root.querySelectorAll('[data-bm-badge-copy]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const text = this.bmBadgeSnippet(b, this.bmBadgeDays(), btn.getAttribute('data-bm-badge-copy'));
+                    try {
+                        await global.navigator.clipboard.writeText(text);
+                        this.notify(this.t('config.bmBadgeCopied', 'Badge copied.'), 'success');
+                    } catch {
+                        this.notify(this.t('config.bmBadgeCopyFailed', 'Could not copy the badge.'), 'error');
+                    }
+                });
+            });
         },
 
         /** Whether an accordion section is open: the reader's last choice, else open for Why when something is wrong. */
@@ -430,6 +513,7 @@
                     }
                 });
             });
+            this.bindBmBadge(panel, b);
             panel.querySelector('[data-bm-health-enable]')?.addEventListener('click', () => {
                 this.openBmHealthAcc('checking')?.querySelector('[data-check-mode]')?.focus();
             });
