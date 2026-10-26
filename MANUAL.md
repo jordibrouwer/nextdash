@@ -982,7 +982,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Theme studio** — *Not happy with how it looks?* names `Shift + A` and the *Surface* and *Layout* tabs, and **Open the studio** opens it. Asked once; a new install is asked after its first day.
 - **Others** — browser notifications, the theme studio and the tour of what moved.
 
-Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
+Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists the cards — kept links, the theme studio, tag suggestions, health review, the install count, the weekly digest and analytics — each with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
 <a id="the-link-preview-card"></a>
 
@@ -2210,7 +2210,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 <a id="uptime-badges"></a>
 
-**Uptime badges.** **Serve uptime badges** (off by default) lets `/badge/uptime.svg?url=<address>&days=7` (or `30`) return a small SVG for a README or a forum post: the uptime percentage, green from 99.9 %, amber from 99 %, red below. It answers for monitored addresses only; any other address reads *no data*, so the badge never tells whether an address is known. Anyone who knows a monitored address can read its badge, which is why it is off until you switch it on.
+**Uptime badges.** **Serve uptime badges** (off by default) lets `/badge/uptime.svg?url=<address>&days=7` (or `30`) return a small SVG for a README or a forum post: the uptime percentage, green from 99.9 %, amber from 99 %, red below. It answers for monitored addresses only; any other address reads *no data*, so the badge never tells whether an address is known. Anyone who knows a monitored address can read its badge, which is why it is off until you switch it on. A monitored bookmark's **Health** tab in the Bookmarks view has an **Uptime badge** section with a preview, a choice of 7 or 30 days and two buttons, **Copy Markdown** and **Copy HTML**, that put the snippet for your server on the clipboard. While badges are off the section says so and has a button to the switch.
 
 <a id="126-fresh"></a>
 
@@ -2220,7 +2220,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 - Switch it on under **Behavior → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
 - A bookmark with news carries a count on its row, and the **Fresh** collection lists them, newest first. Opening the bookmark clears the count.
-- Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**.
+- Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**, and **Retry all** when more than one has stopped.
 - The bookmark editor shows a **Feed** line when there is one. `status:feed` / `-status:feed` search for them. **Mark rows that publish** (off by default) puts a quiet dot on those rows.
 - Fresh stores no articles, only counts. It is off by default because it contacts other servers on a schedule. The guide is under Config → Help → Monitoring.
 
@@ -2761,7 +2761,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 |---|---|
 | **Inbox** | How much is waiting, and how old the oldest is |
 | **Unsorted** | Links kept from the inbox without a page yet — newest first, at random, by one tag or grouped under every tag, with each address under its title. A row opens the Bookmarks view on Unsorted, with that bookmark's side panel; the overflow row reads **Open Unsorted**. |
-| **Feeds** | Feeds with news, and feeds that stopped after repeated failures; a stopped feed has a **Retry** button that tries it again now instead of tomorrow |
+| **Feeds** | Feeds with news, and feeds that stopped after repeated failures; a stopped feed has a **Retry** button that tries it again now instead of tomorrow, and **Retry all** tries every stopped feed at once |
 | **Sources** | What each import source last did |
 
 *What needs tidying?*

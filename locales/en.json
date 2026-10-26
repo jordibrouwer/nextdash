@@ -536,6 +536,7 @@
       "caHealth": "Open the Bookmarks view on a health filter — broken / duplicate / stale; refresh re-scans",
       "caSort": "Change sort order — order / az / recent / custom",
       "cnInbox": "Open Inbox (Shift + I)",
+      "cnDigest": "Open the latest weekly digest",
       "cnInboxTriage": "Triage inbox items one by one",
       "cnCheat": "Open keyboard cheat sheet (same as !, F1, or :help)",
       "otCheatSheet": "This cheat sheet",

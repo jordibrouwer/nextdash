@@ -143,6 +143,23 @@ Glances 5 is recognised and named as not supported yet, instead of being taken f
 - **new — a clearer digest window.** Four counts across the top (broken links, what runs out within 30 days, container updates, never opened) that count up and each open their view; under them the parts in two columns with a coloured dot, so a full week fits without scrolling. Certificates and domains are bars of days left, nearest first; domains more than 200 days out become a count. A part you opened gets a tick and dims, and so does its tile (`digest-notice.js`, `digest.css`).
 - **new — `:digest` and an overview panel.** The command palette opens the latest digest with `:digest`, and Config's overview has a **Weekly digest** panel with the parts still to open, the counts and the date; **Read** opens the same window (`search-commands.js`, `dashboard-config.js`). Covered by `tests/digest-notice.spec.js`.
 
+### Health
+
+- **new — an Uptime badge section on a monitored bookmark's Health tab.** A preview of the badge, a choice of 7 or 30 days and two buttons, **Copy Markdown** and **Copy HTML**, that put the snippet for this server on the clipboard. While *Serve uptime badges* is off the section says so and has a button to the switch; a bookmark that is not monitored has no section, since the route answers *no data* for it (`renderBmBadgeBody`, `bindBmBadge` in `dashboard-config-bookmarks-health.js`). Covered by `tests/bookmarks-health-badge.spec.js`.
+
+### Widgets
+
+- **new — Retry all on the Feeds widget.** With more than one stopped feed the tile offers **Retry all N**, which asks the server to try every stopped feed again now (`POST /api/feeds/retry` with no address) instead of one click per row (`dashboard-widget-feeds.js`).
+
+### Config
+
+- **new — the corner cards list is complete.** Behavior → Privacy & sync → Onboarding now lists the install count, the weekly digest and analytics next to the other cards, each with **Answered** or **Not shown yet** and **Show again**. Analytics keeps its answer in the settings, so its row reads them and a reset writes them back; someone who turned analytics on has nothing to be asked again (`NOTICE_CARDS` in `dashboard-config.js`). Covered by `tests/config-notice-cards.spec.js`.
+- **fix — the cheat sheet listed `:digest` twice** and had no English string for it; the registry check failed on both (`keyboard-cheat-sheet-registry.js`).
+
+### Docs
+
+- **docs — the manual, the six languages and `static/data/whats-new/v1.22.1.json`.** The manual names the badge section, Retry all and the full list of corner cards; nl, de, fr, es and zh carry the new strings; the release is held back from the What's new window (`hideFromModal`) like v1.21.2 and v1.21.3, so v1.22.0 keeps leading it. `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v353`. `go generate` refreshed `asset_hashes_gen.go`.
+
 ---
 
 ## v1.22.0 — 25 October 2026
