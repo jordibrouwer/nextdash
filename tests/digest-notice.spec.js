@@ -264,6 +264,72 @@ test.describe('the digest and the review card', () => {
 });
 
 /*
+ * The window's counts and bars.
+ */
+test.describe('tiles and bars', () => {
+    // A week with something in every kind: what the tiles, the bars and the
+    // ways in are drawn from.
+    const fullWeek = () => ({
+        dueKey: '2026-10-26', generatedAt: Date.now(),
+        health: {
+            newlyBroken: ['Forgejo'], stillBroken: 2,
+            certsExpiring: ['old.example (-21 days)', 'soon.example (7 days)', 'later.example (40 days)'],
+            domainsExpiring: ['near.example (20 days)', 'mid.example (150 days)', 'far.example (800 days)'],
+        },
+        usage: { neverOpened: 3, neverOpenedNames: ['A', 'B', 'C'] },
+    });
+
+    async function openRouted(page, snapshot) {
+        await page.route('**/api/digest/latest', (route) => route.fulfill({ json: snapshot }));
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.localStorage.removeItem('nextdashDigestSeenAt');
+            window.localStorage.removeItem('nextdashDigestProgress');
+        });
+    }
+
+    test('counts across the top, and days left as bars', async ({ page }) => {
+        await openRouted(page, fullWeek());
+        await page.evaluate(() => window.DigestNotice.openDigest());
+        const win = page.locator('.digest-modal .digest-window');
+
+        // Broken old and new together; certificates and domains within 30
+        // days together, the gone one included.
+        const tiles = win.locator('[data-digest-tile]');
+        await expect(tiles.locator('.digest-tile-label')).toHaveText(['broken links', 'run out within 30 days', 'never opened']);
+        await expect(tiles.locator('.digest-tile-count')).toHaveText(['3', '3', '3']);
+
+        const certs = win.locator('[data-digest-part="certificates"] .digest-days-row');
+        await expect(certs.locator('.digest-days-name')).toHaveText(['old.example', 'soon.example', 'later.example']);
+        await expect(certs.first().locator('.digest-days-value')).toHaveText('expired 21 d');
+        await expect(certs.first()).toHaveClass(/is-bad/);
+
+        // Domains: a bar for what is coming, a count for the rest.
+        const domains = win.locator('[data-digest-part="domains"]');
+        await expect(domains.locator('.digest-days-name')).toHaveText(['near.example', 'mid.example']);
+        await expect(domains.locator('.digest-chip')).toHaveText(['+1 more than 200 days away']);
+
+        await expect(win.locator('[data-digest-part="broken"] .digest-chip')).toHaveText(['Forgejo', '+2 older']);
+    });
+
+    test('a tile opens its view, and is ticked when the digest comes back', async ({ page }) => {
+        await openRouted(page, fullWeek());
+        await page.evaluate(() => window.DigestNotice.openDigest());
+        const win = page.locator('.digest-modal .digest-window');
+
+        await win.locator('[data-digest-tile="unused"]').click();
+        await expect(win).toHaveCount(0);
+        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#bookmarks?health=unused');
+        await expect(page.locator('.digest-bar')).toContainText('1 of 4 done');
+
+        await page.locator('.digest-bar [data-digest-bar="open"]').click();
+        await expect(win.locator('[data-digest-tile="unused"]')).toHaveClass(/is-done/);
+        await expect(win.locator('[data-digest-part="never"]')).toHaveClass(/is-done/);
+        await expect(win.locator('[data-digest-tile="certificates"]')).not.toHaveClass(/is-done/);
+    });
+});
+
+/*
  * nextDash's own releases of the week: last in the window, with a button to
  * What's new, and not one of the parts the bar counts as to do.
  */

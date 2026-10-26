@@ -1,15 +1,35 @@
 /*
  * The weekly digest's window (static/js/digest-notice.js).
  *
- * A part per subject: a title with the button to the view that deals with it,
- * one line of what it means, and the names behind the count as chips. The
- * window scrolls inside the modal like any other; nothing here is fixed.
+ * Counts across the top, each a way into its view; under them a part per
+ * subject in two columns: a title with the button to the view that deals with
+ * it, one line of what it means, and the names behind the count -- as bars of
+ * days left for certificates and domains, as chips for the rest. Two columns
+ * so a full week fits the window without scrolling; one on a narrow screen.
+ *
+ * Each subject has a tone (bad, warn, ok, info, accent, quiet) that colours
+ * its dot and its tile. The window comes in once: tiles and parts rise in
+ * turn, the counts count up (in the script) and the bars grow. Reduced motion
+ * is handled globally (reduced-motion.css); the in-app switch is below.
  */
 .digest-window {
+    --digest-bad: var(--accent-error, #e5534b);
+    --digest-warn: var(--accent-warning, #d29922);
+    --digest-ok: var(--accent-success, #3fb950);
+    --digest-info: var(--accent-info, var(--accent-primary, #4a90d9));
+    --digest-accent: var(--accent-primary, var(--accent-color, #8b7cf6));
+    --digest-quiet: var(--text-tertiary);
     display: flex;
     flex-direction: column;
     text-align: left;
 }
+
+.digest-tone--bad { --digest-tone: var(--digest-bad); }
+.digest-tone--warn { --digest-tone: var(--digest-warn); }
+.digest-tone--ok { --digest-tone: var(--digest-ok); }
+.digest-tone--info { --digest-tone: var(--digest-info); }
+.digest-tone--accent { --digest-tone: var(--digest-accent); }
+.digest-tone--quiet { --digest-tone: var(--digest-quiet); }
 
 .digest-window-when {
     margin: 0;
@@ -17,16 +37,194 @@
     color: var(--text-tertiary);
 }
 
-.digest-window-intro {
-    margin: var(--space-1, 0.3rem) 0 var(--space-2, 0.55rem);
-    font-size: var(--font-size-text);
+@keyframes digest-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes digest-grow {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+.digest-tiles {
+    display: grid;
+    grid-template-columns: repeat(var(--digest-tiles, 4), minmax(0, 1fr));
+    gap: var(--space-2, 0.6rem);
+    margin: var(--space-3, 0.8rem) 0 var(--space-1, 0.3rem);
+}
+
+.digest-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0.7rem 0.8rem 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--hairline, var(--border-primary));
+    border-radius: var(--radius-6, 12px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+    animation: digest-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(var(--digest-i, 0) * 70ms + 80ms);
+}
+
+/* The tone as a strip along the bottom. */
+.digest-tile::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--digest-tone);
+}
+
+.digest-tile:hover {
+    background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+    transform: translateY(-2px);
+}
+
+.digest-tile:focus-visible {
+    outline: 2px solid var(--accent-primary, var(--accent-color, #4a90d9));
+    outline-offset: 2px;
+}
+
+.digest-tile-count {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.digest-tile-label {
+    font-size: var(--font-size-small, 0.78rem);
     color: var(--text-secondary);
-    line-height: 1.5;
+}
+
+.digest-tile-done {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.7rem;
+    color: var(--digest-tone);
+    font-weight: 700;
+}
+
+.digest-tile.is-done .digest-tile-count,
+.digest-tile.is-done .digest-tile-label {
+    opacity: 0.5;
+}
+
+.digest-parts {
+    columns: 2;
+    column-gap: 1.9rem;
 }
 
 .digest-part {
+    break-inside: avoid;
     padding: var(--space-3, 0.8rem) 0;
     border-top: 1px solid var(--hairline, var(--border-primary));
+    animation: digest-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(var(--digest-i, 0) * 60ms + 260ms);
+}
+
+.digest-part-dot {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--digest-tone);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--digest-tone) 22%, transparent);
+    color: var(--background-primary, #111);
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.digest-part.is-done .digest-part-dot {
+    width: 1rem;
+    height: 1rem;
+    box-shadow: none;
+}
+
+/* Days left: a name, a bar, a number. */
+.digest-days {
+    display: grid;
+    gap: 0.4rem;
+    margin-top: var(--space-2, 0.55rem);
+}
+
+.digest-days-row {
+    display: grid;
+    grid-template-columns: minmax(0, 11rem) minmax(3rem, 1fr) auto;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: var(--font-size-small, 0.8rem);
+}
+
+.digest-days-row.is-bad { --digest-tone: var(--digest-bad); }
+.digest-days-row.is-warn { --digest-tone: var(--digest-warn); }
+.digest-days-row.is-ok { --digest-tone: var(--digest-ok); }
+
+.digest-days-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.digest-days-track {
+    height: 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+    overflow: hidden;
+}
+
+.digest-days-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--digest-tone);
+    transform-origin: left;
+    animation: digest-grow 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(var(--digest-i, 0) * 70ms + 420ms);
+}
+
+.digest-days-value {
+    min-width: 3.2rem;
+    text-align: right;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.digest-days-row.is-bad .digest-days-value {
+    color: var(--digest-bad);
+    font-weight: 600;
+}
+
+/* The in-app "animations off"; the OS setting is reduced-motion.css's. */
+body.no-animations .digest-tile,
+body.no-animations .digest-part,
+body.no-animations .digest-days-fill {
+    animation: none;
+}
+
+@media (max-width: 760px) {
+    .digest-parts {
+        columns: 1;
+    }
+
+    .digest-tiles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .digest-part-head {
@@ -44,12 +242,6 @@
     font-size: var(--font-size-text);
     font-weight: 600;
     color: var(--text-primary);
-}
-
-.digest-part-icon {
-    width: 1.2em;
-    text-align: center;
-    color: var(--text-secondary);
 }
 
 .digest-part-go {
@@ -108,8 +300,9 @@
     color: var(--text-tertiary);
 }
 
-.digest-part.is-done .digest-part-icon {
-    color: var(--accent-primary, var(--accent-color, currentColor));
+.digest-part.is-done .digest-days,
+.digest-part.is-done .digest-chips {
+    opacity: 0.5;
 }
 
 .digest-part-go.is-next {
