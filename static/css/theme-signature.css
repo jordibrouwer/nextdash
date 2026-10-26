@@ -24,7 +24,8 @@
    schuift de binnenkolommen van het raster (zie category-surface.css). */
 
 /* Neon: een donker vlak met alleen een lichtgevende bovenrand, waar het licht zacht naar beneden uitloopt. Geen rand rondom. */
-html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(10px * var(--theme-radius-applied, 1));
     background-color: color-mix(in srgb, var(--background-primary) 66%, transparent);
     background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
@@ -37,7 +38,8 @@ html[data-theme] body[data-material-style="signature"][data-material="neon"]:not
 }
 
 /* Koolstof: een weefsel in twee richtingen en een accentstreep links. */
-html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(3px * var(--theme-radius-applied, 1));
     background-color: var(--surface-2, var(--background-secondary));
     background-image:
@@ -53,7 +55,8 @@ html[data-theme] body[data-material-style="signature"][data-material="carbon"]:n
 }
 
 /* Terminal: radius 0, een rand van 1px in het accent, geen schaduw en geen gloed. */
-html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: 0;
     background-color: var(--surface-2, var(--background-secondary));
     background-image: none;
@@ -63,7 +66,8 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
 }
 
 /* Inkt: geen vlak en geen lijnen: alleen typografie. De kop draagt het streepje. */
-html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: 0;
     background-color: transparent;
     background-image: none;
@@ -77,7 +81,10 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"]:not(
 @media (prefers-reduced-transparency: reduce) {
     html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
     html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
-    html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts,
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
         background-color: var(--surface-2, var(--background-secondary));
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
@@ -88,7 +95,10 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"]:not(
    doorzichtigheid en blur, ook op de materialen die door je heen kijken. */
 html[data-theme] body[data-material-style="signature"][data-material="glass"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="frost"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
-html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="glass"][data-card-glass="own"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts,
+html[data-theme] body[data-material-style="signature"][data-material="frost"][data-card-glass="own"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"][data-card-glass="own"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha, 0.5) * 100%), transparent);
     backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
     -webkit-backdrop-filter: blur(var(--cat-glass-blur, 16px)) saturate(1.3);
@@ -337,7 +347,8 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 
 /* Lak: een scherpe lichtband bovenin, een weerspiegeling schuin over de kaart en
    elk element als glanzend knopje met een eigen highlight. */
-html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(14px * var(--theme-radius-applied, 1));
     background-color: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
     background-image:
@@ -382,7 +393,8 @@ html[data-theme] body[data-material-style="signature"][data-material="lacquer"] 
 
 /* Glas: een heldere rand links boven, een zweem licht schuin over het glas en elk
    element als stukje glas met een eigen rand. */
-html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(22px * var(--theme-radius-applied, 1));
     /* Rounded further than the side padding: the grip, the controls and the badges sat on the curve. */
     --category-inline-pad: 0.9rem;
@@ -432,7 +444,8 @@ html[data-theme] body[data-material-style="signature"][data-material="glass"] .d
 
 /* Berijpt glas: een lichte rand boven (de rijp), een kop in kleine, wijd gespatieerde
    hoofdletters en elk element matig verhoogd met een lichte bovenrand. */
-html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(16px * var(--theme-radius-applied, 1));
     background-color: transparent;
     background-image:
@@ -478,7 +491,8 @@ html[data-theme] body[data-material-style="signature"][data-material="frost"] .d
 
 /* Geborsteld metaal: een metalen plaat met een schuin lichtvlak, schroefkoppen in de
    hoeken en gegraveerde tekst. Een aangewezen rij wordt in het metaal gedrukt. */
-html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(6px * var(--theme-radius-applied, 1));
     background-color: var(--surface-2, var(--background-secondary));
     background-image:
@@ -533,7 +547,8 @@ html[data-theme] body[data-material-style="signature"][data-material="brushed"] 
 html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(16px * var(--theme-radius-applied, 1));
     /* A glazed tile: the thickness is only at the bottom, so the sides and the content stay clear. */
     --category-inline-pad: 1rem;
@@ -555,7 +570,8 @@ html[data-theme] body[data-material-style="signature"][data-material="enamel"][d
 }
 
 /* Op licht is emaille helder: het bord is wit met een zweem accent, geen grijs. */
-html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     background-color: color-mix(in srgb, #fff 62%, color-mix(in srgb, var(--accent-primary) 7%, var(--surface-2, var(--background-secondary))));
 }
 
@@ -600,7 +616,8 @@ html[data-theme] body[data-material-style="signature"][data-material="enamel"] .
 html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     position: relative;
     border-radius: calc(3px * var(--theme-radius-applied, 1));
     --category-inline-pad: 1rem;
@@ -678,7 +695,8 @@ html[data-theme] body[data-material-style="signature"][data-material="paper"] .d
 
 /* Aurora: twee lichtbanden in de kaart zelf, bovenin, als een noorderlicht.
    Pictogrammen en chips krijgen een zweem van dezelfde kleuren. */
-html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(20px * var(--theme-radius-applied, 1));
     /* Rounded further than the side padding: the grip, the controls and the badges sat on the curve. */
     --category-inline-pad: 0.9rem;
@@ -725,7 +743,8 @@ html[data-theme] body[data-material-style="signature"][data-material="aurora"] .
 html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     /* The card is rounded by 28px: the grip, the controls and a widget's footer sat on the
        curve and fell outside it. The side padding is wider, and the header's bleed (which is
        measured from it) follows. */
@@ -746,7 +765,8 @@ html[data-theme] body[data-material-style="signature"][data-material="velvet"][d
 html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme$="-light"] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     box-shadow: inset 0 2px 0 color-mix(in srgb, var(--text-primary) 22%, transparent), inset 0 -14px 24px rgba(0, 0, 0, 0.12), 0 14px 28px -12px rgba(0, 0, 0, 0.3);
 }
 
@@ -781,7 +801,8 @@ html[data-theme] body[data-material-style="signature"][data-material="velvet"] .
 html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(4px * var(--theme-radius-applied, 1));
     --category-inline-pad: 1rem;
     padding-inline: var(--category-inline-pad);
@@ -833,7 +854,8 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"] .das
 html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="terminal"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
 html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
-html[data-theme] body[data-material-style="signature"][data-material="terminal"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
     border-radius: calc(3px * var(--theme-radius-applied, 1));
     padding-block: var(--space-3, 0.75rem);
     background-color: color-mix(in srgb, var(--background-primary, #000) 78%, transparent);
@@ -906,4 +928,22 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"] .dash
    dan is het paneel van de widget en moet zijn inhoud er niet tegenaan liggen. */
 html[data-theme] body[data-material-style="signature"][data-widget-bg="background"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .dashboard-widget {
     padding-block: var(--space-3, 0.75rem);
+}
+
+/* The action bar as a pane of the material.
+
+   Out of the header the bar is a dock, and under every material that draws a
+   category it draws the same surface (the selectors above carry it). What a
+   category sets for its own layout must not reach the dock: it stands fixed,
+   with the padding of its buttons. */
+html[data-theme] body[data-material-style="signature"][data-material]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
+    position: fixed;
+    padding: 6px;
+}
+
+/* Ink draws a category as type alone; a dock of bare icons over the bookmarks
+   would have nothing to tell it apart from them, so it keeps a thin plate. */
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts {
+    background-color: var(--surface-2, var(--background-secondary));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 18%, transparent);
 }
