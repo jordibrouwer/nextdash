@@ -95,6 +95,10 @@ jobs:
       #
       # Listed one per line rather than chained with &&, so a failure names
       # itself in the step that broke instead of in one long command.
+      # The e2e job runs in the Playwright image of the version the lockfile
+      # installs; a lockfile that moved on leaves it with the wrong browsers.
+      - name: Validate the Playwright image
+        run: npm run validate:playwright-image
       - name: Validate the cheat sheet
         run: npm run validate:cheatsheet-registry && npm run validate:cheatsheet-i18n
       - name: Validate help translations
@@ -154,6 +158,22 @@ jobs:
   e2e:
     needs: changes
     runs-on: ubuntu-latest
+    # Microsoft's Playwright image: Chromium and the system libraries it needs
+    # are inside it. Each shard used to run `playwright install-deps`, an
+    # apt-get that took 13 to 20 seconds on most runners and 6 to 10 minutes on
+    # one or two of the twelve in every run (592, 462 and 378 seconds in run
+    # 40355951298), and the run is as long as its slowest shard. The tag has to
+    # be the version package-lock.json installs; validate-json checks that
+    # (scripts/validate-playwright-image.cjs). --ipc=host is what Playwright's
+    # own documentation asks of the image, so Chromium does not run out of
+    # shared memory.
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.0-noble
+      options: --ipc=host
+    # A shard that is stuck (a mirror that stalls, a browser that hangs) fails
+    # at twenty-five minutes instead of the six hours GitHub allows. The
+    # longest shard has been twenty.
+    timeout-minutes: 25
     # Twelve runners for the whole suite (six took ten to fourteen minutes
     # each, nearly all of it in the tests), one for a push that only changed
     # tests or a run of named specs; see the changes job. Inside a runner, Playwright runs
@@ -161,20 +181,24 @@ jobs:
     # tests/worker-server.js gives each its own server, port and data
     # directory, so the workers cannot touch each other's store.
     #
-    # The shards are left at Playwright's own split, by test count.
+    # The shards are weighted by how long each took last time. Playwright cuts
+    # the suite by test count, and in run 40355951298 that left the shards at
+    # 194 to 690 seconds of tests, so the run was as long as the 690. The
+    # times are in tests/shard-times.json and scripts/shard-weights.cjs turns
+    # them into PWTEST_SHARD_WEIGHTS (a full run only; a run of one shard has
+    # nothing to weigh). Every full run uploads its timings as playwright-json
+    # artifacts, and scripts/slow-specs.cjs reads them back, so the next set of
+    # weights is a copy and a paste away.
     #
-    # They were weighted for a while, with PWTEST_SHARD_WEIGHTS, because the
-    # `h`-`i` slice -- 47 health-* and 20 inbox-* files -- ran 24 minutes while
-    # every other shard finished in five to eight. That slowness was not real:
-    # those specs click the inbox and health destinations in the header, the
-    # header folds them away below about 1500px, and Playwright's default window
-    # is 1280 wide. Every one of those clicks waited its full thirty seconds.
-    # One run carried 552 of those timeouts.
-    #
-    # playwright.config.js sets a wide viewport now, and the same 24 spec files
-    # run in a minute. If a shard is ever the odd one out again, measure before
-    # weighting: a shard that is slow because its tests are waiting cannot be
-    # fixed by giving it fewer of them.
+    # It was done once before and undone, because the `h`-`i` slice -- 47
+    # health-* and 20 inbox-* files -- ran 24 minutes while every other shard
+    # finished in five to eight. That slowness was not real: those specs click
+    # the inbox and health destinations in the header, the header folds them
+    # away below about 1500px, and Playwright's default window is 1280 wide.
+    # Every one of those clicks waited its full thirty seconds. One run carried
+    # 552 of those timeouts. A shard that is slow because its tests are waiting
+    # cannot be fixed by giving it fewer of them, so look at why before the
+    # times are changed.
     strategy:
       fail-fast: false
       matrix:
@@ -195,27 +219,16 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+      # The checkout belongs to another user than the container's, and git
+      # (which --only-changed asks) refuses such a folder.
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install dependencies
-        run: npm ci
-      # Chromium was downloaded afresh on every shard of every run, six times a
-      # push. It is cached per Playwright version, so a version bump downloads
-      # the matching browser once and the shards after it reuse it. The system
-      # libraries it needs are not in the cache and are installed either way.
-      - name: Read the Playwright version
-        id: playwright
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - name: Cache the Playwright browser
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-      - name: Install Playwright
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install chromium --with-deps
-      - name: Install the browser's system libraries
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: npm ci --no-audit --no-fund
+      - name: Weigh the shards
+        id: weights
+        if: needs.changes.outputs.mode == 'full'
+        run: echo "weights=$(node scripts/shard-weights.cjs)" >> "$GITHUB_OUTPUT"
       - name: Run Playwright tests
         env:
           # From the changes job: nothing, --only-changed=<sha>, or the specs
@@ -223,6 +236,10 @@ jobs:
           # the script, so a typed value cannot become a command.
           ARGS: ${{ needs.changes.outputs.args }}
           SHARD: ${{ matrix.shard }}/${{ needs.changes.outputs.total }}
+          # Empty for a run of one shard, which Playwright then leaves alone.
+          PWTEST_SHARD_WEIGHTS: ${{ steps.weights.outputs.weights }}
+          # The JSON reporter (playwright.config.js) writes here.
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-json/shard-${{ matrix.shard }}.json
         # $ARGS unquoted on purpose: it is a list of words.
         run: xvfb-run npx playwright test --shard="$SHARD" $ARGS
       - name: Upload report
@@ -232,3 +249,12 @@ jobs:
           name: playwright-report-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 7
+      # How long each spec took, kept for scripts/slow-specs.cjs: which specs
+      # are the slow ones, and the times the next weights come from.
+      - name: Upload timings
+        if: always() && needs.changes.outputs.mode == 'full'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-json-${{ matrix.shard }}
+          path: playwright-json/
+          retention-days: 14

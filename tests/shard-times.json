@@ -1,0 +1,4 @@
+{
+  "source": "CI run 40355951298 (dev 0d1c439b), step 'Run Playwright tests' of each of the 12 e2e shards, in seconds. Refresh with scripts/slow-specs.cjs from the playwright-json artifacts of a newer full run.",
+  "seconds": [521, 690, 402, 395, 444, 527, 399, 500, 589, 499, 512, 194]
+}

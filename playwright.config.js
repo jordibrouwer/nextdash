@@ -66,7 +66,13 @@ module.exports = defineConfig({
      * to download. `open: 'never'` keeps it from trying to launch a browser on
      * a machine with no display.
      */
-    reporter: isCI ? [['github'], ['line'], ['html', { open: 'never' }]] : 'line',
+    // The JSON reporter writes to PLAYWRIGHT_JSON_OUTPUT_NAME, which the e2e job
+    // sets per shard; without it the report goes to stdout, so it is only
+    // listed when the workflow has said where it belongs.
+    reporter: isCI
+        ? [['github'], ['line'], ['html', { open: 'never' }],
+            ...(process.env.PLAYWRIGHT_JSON_OUTPUT_NAME ? [['json']] : [])]
+        : 'line',
     globalSetup: require.resolve('./tests/playwright-global-setup.js'),
     globalTeardown: require.resolve('./tests/playwright-global-teardown.js'),
     use: {
