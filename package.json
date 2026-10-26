@@ -25,7 +25,6 @@
     "validate:unraid-template": "node scripts/validate-unraid-template.cjs",
     "validate:tag-patterns": "node scripts/validate-tag-patterns.cjs",
     "validate:test-waits": "node scripts/validate-test-waits.cjs",
-    "validate:playwright-image": "node scripts/validate-playwright-image.cjs",
     "test:news-stream": "node tests/news-stream-model.test.cjs",
     "test:workbench-model": "node tests/bookmark-workbench-model.test.cjs",
     "test:config-split": "node tests/config-section-plan.test.mjs",

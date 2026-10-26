@@ -95,10 +95,6 @@ jobs:
       #
       # Listed one per line rather than chained with &&, so a failure names
       # itself in the step that broke instead of in one long command.
-      # The e2e job runs in the Playwright image of the version the lockfile
-      # installs; a lockfile that moved on leaves it with the wrong browsers.
-      - name: Validate the Playwright image
-        run: npm run validate:playwright-image
       - name: Validate the cheat sheet
         run: npm run validate:cheatsheet-registry && npm run validate:cheatsheet-i18n
       - name: Validate help translations
@@ -158,18 +154,15 @@ jobs:
   e2e:
     needs: changes
     runs-on: ubuntu-latest
-    # Microsoft's Playwright image: Chromium and the system libraries it needs
-    # are inside it. Each shard used to run `playwright install-deps`, an
-    # apt-get that took 13 to 20 seconds on most runners and 6 to 10 minutes on
-    # one or two of the twelve in every run (592, 462 and 378 seconds in run
-    # 40355951298), and the run is as long as its slowest shard. The tag has to
-    # be the version package-lock.json installs; validate-json checks that
-    # (scripts/validate-playwright-image.cjs). --ipc=host is what Playwright's
-    # own documentation asks of the image, so Chromium does not run out of
-    # shared memory.
-    container:
-      image: mcr.microsoft.com/playwright:v1.61.0-noble
-      options: --ipc=host
+    # Not in Microsoft's Playwright image, though it would remove the apt-get
+    # below: that step took 13 to 20 seconds on most runners and 6 to 10 minutes
+    # on one or two of the twelve in every run (592, 462 and 378 seconds in run
+    # 40355951298), and the run is as long as its slowest shard. Run 40367272614
+    # tried the image and nine specs failed in two shards that had passed on the
+    # runner -- one measured a line of text at 29px instead of 28 -- so the
+    # image's fonts or its environment are not the runner's. If it is tried
+    # again, look at those specs first.
+    #
     # A shard that is stuck (a mirror that stalls, a browser that hangs) fails
     # at twenty-five minutes instead of the six hours GitHub allows. The
     # longest shard has been twenty.
@@ -219,12 +212,27 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-      # The checkout belongs to another user than the container's, and git
-      # (which --only-changed asks) refuses such a folder.
-      - name: Trust the checkout
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+      # Chromium was downloaded afresh on every shard of every run, six times a
+      # push. It is cached per Playwright version, so a version bump downloads
+      # the matching browser once and the shards after it reuse it. The system
+      # libraries it needs are not in the cache and are installed either way.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache the Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Playwright
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium --with-deps
+      - name: Install the browser's system libraries
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - name: Weigh the shards
         id: weights
         if: needs.changes.outputs.mode == 'full'
