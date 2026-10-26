@@ -50,6 +50,43 @@ test.describe('notice cards on the config panel', () => {
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('kept-pile-v1'))).toBe(true);
     });
 
+    test('the digest and install-count cards are listed and put back', async ({ page }) => {
+        await openPanel(page);
+        await page.evaluate(() => {
+            localStorage.setItem('nextdashDigestSeenAt', '1760000000000');
+            window.DiscoverabilityState.markSettingPromoSeen('install-count-v1', { persist: false });
+            window.dashboardInstance.config.render();
+        });
+        const digest = page.locator('[data-notice-card="digest"]');
+        await expect(digest).toBeEnabled({ timeout: 10_000 });
+        await expect(page.locator('[data-notice-card="install-count"]')).toBeEnabled();
+        await digest.click();
+        await expect.poll(() => page.evaluate(
+            () => localStorage.getItem('nextdashDigestSeenAt')), { timeout: 10_000 }).toBeNull();
+    });
+
+    test('an analytics answer kept in the settings is put back, and opting in leaves nothing to put back', async ({ page }) => {
+        await openPanel(page);
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.analyticsOptIn = false;
+            d.settings.quickStart = { ...(d.settings.quickStart || {}), analyticsChoiceMade: true };
+            d.config.render();
+        });
+        const btn = page.locator('[data-notice-card="analytics"]');
+        await expect(btn).toBeEnabled({ timeout: 10_000 });
+        await btn.click();
+        await expect.poll(() => page.evaluate(
+            () => window.dashboardInstance.settings.quickStart.analyticsChoiceMade), { timeout: 10_000 }).toBe(false);
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.analyticsOptIn = true;
+            d.settings.quickStart.analyticsChoiceMade = true;
+            d.config.render();
+        });
+        await expect(page.locator('[data-notice-card="analytics"]')).toBeDisabled();
+    });
+
     test('a card kept in this browser is put back by clearing its keys', async ({ page }) => {
         await openPanel(page);
         await page.evaluate(() => {

@@ -12688,12 +12688,32 @@ class DashboardConfig {
         { id: 'theme-studio', promo: 'theme-studio-hint-v1', labelKey: 'config.noticeThemeStudio', label: 'Theme studio shortcut' },
         { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
           labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
+        { id: 'install-count', promo: 'install-count-v1', labelKey: 'config.noticeInstallCount', label: 'Install count' },
+        { id: 'digest', keys: ['nextdashDigestSeenAt', 'nextdashDigestProgress'],
+          labelKey: 'config.noticeDigest', label: 'Weekly digest' },
+        // Analytics keeps its answer in the settings, not the browser: a choice
+        // made, or a snooze that has not run out. Someone who turned analytics
+        // on has nothing left to be asked, so there is nothing to put back.
+        { id: 'analytics', labelKey: 'config.noticeAnalytics', label: 'Analytics',
+          answered(dash) {
+              const qs = dash.settings?.quickStart || {};
+              if (dash.settings?.analyticsOptIn === true) return false;
+              return qs.analyticsChoiceMade === true || (Number(qs.analyticsAskAfter) || 0) > Math.floor(Date.now() / 1000);
+          },
+          async reset(dash) {
+              const qs = dash.settings.quickStart = dash.settings.quickStart || {};
+              qs.analyticsChoiceMade = false;
+              qs.analyticsAskAfter = 0;
+              qs.analyticsSnoozes = 0;
+              await dash.saveSettings?.();
+          } },
         { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
           labelKey: 'config.noticeHealthReview', label: 'Health review' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */
     noticeCardAnswered(card) {
+        if (card.answered) return card.answered(this.dash) === true;
         if (card.promo) return window.DiscoverabilityState?.hasSeenSettingPromo?.(card.promo) === true;
         try {
             return card.keys.some((key) => localStorage.getItem(key) !== null);
@@ -12725,7 +12745,14 @@ class DashboardConfig {
     async replayNoticeCard(id) {
         const card = DashboardConfig.NOTICE_CARDS.find((entry) => entry.id === id);
         if (!card) return;
-        if (card.promo) {
+        if (card.reset) {
+            try {
+                await card.reset(this.dash);
+            } catch {
+                this.notify(this.t('config.noticeShowAgainError', 'Could not bring that card back.'), 'error');
+                return;
+            }
+        } else if (card.promo) {
             window.DiscoverabilityState?.resetSettingPromoSeen?.(card.promo, { persist: false });
             try {
                 await window.DiscoverabilityState?.persistNow?.();
