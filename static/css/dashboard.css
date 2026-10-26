@@ -3547,6 +3547,10 @@ a.bookmark-open:hover {
        meant to break the icon's edge, which is what makes it read as a badge
        on the icon rather than part of the picture. */
     position: relative;
+    /* On the dashboard it is a link to the bookmark, like the name beside it. */
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .empty-state--category {

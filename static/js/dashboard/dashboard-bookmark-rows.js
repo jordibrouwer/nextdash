@@ -549,8 +549,17 @@ class DashboardBookmarkRows {
         // read. Null when favicons are off, which is the mark's other home.
         let iconSlot = null;
         if (d.settings.showIcons !== false) {
-            iconSlot = document.createElement('span');
+            // A link of its own, to the same address as the name: the icon is
+            // where people aim. Being a real anchor keeps Cmd/Ctrl+click,
+            // middle click and the browser's link menu working as on the name.
+            // Hidden from assistive tech and out of the tab order, since the
+            // name already is that link. The href is filled in once the name's
+            // has been sanitised, below.
+            iconSlot = document.createElement('a');
             iconSlot.className = 'bookmark-icon-slot';
+            iconSlot.draggable = false;
+            iconSlot.tabIndex = -1;
+            iconSlot.setAttribute('aria-hidden', 'true');
             lead.appendChild(iconSlot);
 
             const createLetterAvatar = () => {
@@ -642,6 +651,13 @@ class DashboardBookmarkRows {
         if (d.settings.openInNewTab) {
             openLink.target = '_blank';
             openLink.rel = 'noopener noreferrer';
+        }
+        if (iconSlot) {
+            iconSlot.href = openLink.getAttribute('href');
+            if (openLink.target) {
+                iconSlot.target = openLink.target;
+                iconSlot.rel = openLink.rel;
+            }
         }
 
         d.attachBookmarkPreviewBehavior(openLink, bookmark);
@@ -2609,9 +2625,12 @@ class DashboardBookmarkRows {
         }
         grid.dataset.bookmarkOpenDelegated = '1';
 
+        // The icon is a second anchor to the same address, so it opens,
+        // ticks and records exactly as the name does.
+        const linkSelector = 'a.bookmark-open, a.bookmark-icon-slot';
         const resolve = (e) => {
             const link = e.target instanceof Element
-                ? e.target.closest('a.bookmark-open')
+                ? e.target.closest(linkSelector)
                 : null;
             if (!link || !grid.contains(link)) return null;
             const row = link.closest('.bookmark-link');
@@ -2628,7 +2647,7 @@ class DashboardBookmarkRows {
         // that follows it.
         const pointerTypeByLink = new WeakMap();
         grid.addEventListener('pointerdown', (e) => {
-            const link = e.target instanceof Element ? e.target.closest('a.bookmark-open') : null;
+            const link = e.target instanceof Element ? e.target.closest(linkSelector) : null;
             if (link) pointerTypeByLink.set(link, e.pointerType);
         });
 

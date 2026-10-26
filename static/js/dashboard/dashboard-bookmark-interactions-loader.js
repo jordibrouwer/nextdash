@@ -333,12 +333,15 @@
                     }
                     void this.load().then((mod) => {
                         mod.openBookmarkInlineEditor(row, bookmarkRef);
+                        // The icon is a link to the same address, and the release that
+                        // ends the press lands on whichever of the two it began on.
+                        const links = row.querySelectorAll('a.bookmark-open, a.bookmark-icon-slot');
                         const blockNav = (ev) => {
                             ev.preventDefault();
                             ev.stopPropagation();
-                            openLink.removeEventListener('click', blockNav, true);
+                            links.forEach((link) => link.removeEventListener('click', blockNav, true));
                         };
-                        openLink.addEventListener('click', blockNav, { capture: true, once: true });
+                        links.forEach((link) => link.addEventListener('click', blockNav, { capture: true, once: true }));
                     }).catch(() => {});
                 }, longMs);
             };

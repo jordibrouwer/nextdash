@@ -89,7 +89,8 @@
 
 /* While a selection is open, a plain click clears it rather than opening the
  * link, so the pointer should not promise navigation. */
-body.has-multi-selection .bookmark-link a.bookmark-open {
+body.has-multi-selection .bookmark-link a.bookmark-open,
+body.has-multi-selection .bookmark-link a.bookmark-icon-slot {
     cursor: default;
 }
 

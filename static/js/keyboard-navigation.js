@@ -575,7 +575,32 @@ class KeyboardNavigation {
                  * button is the stop itself -- and until it was one, tabbing
                  * into a widget left the cursor behind on a bookmark, so the
                  * next Enter acted somewhere else entirely.
+                 *
+                 * The icon is a second link to the same address, hidden from
+                 * assistive tech; a mouse press on it hands focus to the name,
+                 * which then arrives here as any other focus would. Not while
+                 * the button is still down: moving focus then cancels the drag
+                 * the press may be starting. A press that becomes a drag ends
+                 * in pointercancel, and the row is redrawn after the drop.
                  */
+                const icon = e.target.closest?.('a.bookmark-icon-slot');
+                if (icon) {
+                    const toName = () => icon.closest('.bookmark-link')
+                        ?.querySelector('a.bookmark-open')?.focus({ preventScroll: true });
+                    if (icon !== this._iconPressed) {
+                        toName();
+                        return;
+                    }
+                    this._iconPressed = null;
+                    const done = (ev) => {
+                        document.removeEventListener('pointerup', done, true);
+                        document.removeEventListener('pointercancel', done, true);
+                        if (ev.type === 'pointerup' && document.activeElement === icon) toName();
+                    };
+                    document.addEventListener('pointerup', done, true);
+                    document.addEventListener('pointercancel', done, true);
+                    return;
+                }
                 const link = e.target.closest?.('a.bookmark-open');
                 const widgetButton = this._isWidgetElement(e.target)
                     ? e.target.closest('button')
@@ -594,6 +619,11 @@ class KeyboardNavigation {
                 }
             };
             dashboardLayout.addEventListener('focusin', this._focusInHandler);
+            // The press that focuses an icon comes just before its focusin.
+            this._iconPressHandler = (e) => {
+                this._iconPressed = e.target.closest?.('a.bookmark-icon-slot') || null;
+            };
+            dashboardLayout.addEventListener('pointerdown', this._iconPressHandler, true);
 
             this._pointerOverLayout = dashboardLayout;
             this._pointerOverHandler = (e) => {
@@ -1071,6 +1101,7 @@ class KeyboardNavigation {
         }
         if (this._focusInLayout && this._focusInHandler) {
             this._focusInLayout.removeEventListener('focusin', this._focusInHandler);
+            this._focusInLayout.removeEventListener('pointerdown', this._iconPressHandler, true);
         }
         if (this._pointerOverLayout && this._pointerOverHandler) {
             this._pointerOverLayout.removeEventListener('pointerover', this._pointerOverHandler, true);
