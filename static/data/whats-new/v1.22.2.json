@@ -1,0 +1,21 @@
+{
+  "tag": "v1.22.2",
+  "date": "26 October 2026",
+  "releasedAt": "2026-10-26",
+  "modalLead": "The action bar, the views and Config now look like the rest of your theme: drawn like a category, in every material.",
+  "sections": [
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The action bar looks like a category.</strong> Beside the page, it takes the surface, edge and corners of your theme's material instead of the plate of a dialog."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks, Inbox, Containers, Glances, Tags and Config</strong> are drawn like a category too, and the cards on them take the corners of the material."
+        }
+      ]
+    }
+  ]
+}
