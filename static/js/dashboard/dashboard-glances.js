@@ -60,6 +60,7 @@
         'login refused': ['dashboard.glancesErrLogin', 'Glances refused that login. Check the login in Config → Glances.'],
         'key refused': ['dashboard.glancesErrLogin', 'Glances refused that login. Check the login in Config → Glances.'],
         'needs Glances 4': ['dashboard.glancesErrNeedsV4', 'This view needs Glances 4.'],
+        'Glances 5 not supported': ['dashboard.glancesErrV5', 'Glances 5 is not supported yet. This view needs Glances 4.'],
         unreachable: ['dashboard.glancesErrUnreachable', 'Glances does not answer at that address.'],
         paused: ['dashboard.glancesErrPaused', 'The connection is off. Switch it on to read the host again.'],
     };

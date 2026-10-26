@@ -36,6 +36,9 @@ const (
 var (
 	errGlancesNotFound = errors.New("not available")
 	errGlancesNeedsV4  = errors.New("needs Glances 4")
+	// errGlancesV5 is a server that answers under /api/5: Glances 5 rewrote the
+	// API and its data model, which nextDash does not read yet.
+	errGlancesV5 = errors.New("Glances 5 not supported")
 )
 
 // Every reading is a pointer: a plugin that leaves one out is absent, not 0.
@@ -125,8 +128,8 @@ func (n glancesNet) up() bool { return n.IsUp == nil || *n.IsUp }
 var glancesDiskNoise = regexp.MustCompile(`^(loop|ram|zram|nbd)\d+$`)
 
 // glancesGet asks one path under /api/4. A 404 is a plugin that is off, except
-// for /status, whose 404 is a server that is not version 4. A refused login is
-// not a refused key.
+// for /status, whose 404 is a server that is not version 4: version 5 when
+// /api/5/status answers, older otherwise. A refused login is not a refused key.
 func (h *Handlers) glancesGet(ctx context.Context, server string, credential HealthCredential, path string, query url.Values, out any) error {
 	ctx, cancel := context.WithTimeout(withOutboundLimiter(ctx, glancesOutboundLimiter), mediaRequestTimeout)
 	defer cancel()
@@ -135,6 +138,9 @@ func (h *Handlers) glancesGet(ctx context.Context, server string, credential Hea
 		var status *mediaHTTPError
 		switch {
 		case errors.As(err, &status) && status.Status == 404 && path == "/status":
+			if h.glancesAnswersV5(ctx, server, credential) {
+				return errGlancesV5
+			}
 			return errGlancesNeedsV4
 		case errors.As(err, &status) && status.Status == 404:
 			return errGlancesNotFound
@@ -152,6 +158,16 @@ func (h *Handlers) glancesGet(ctx context.Context, server string, credential Hea
 		return fmt.Errorf("%w: %v", errMediaUnreachable, err)
 	}
 	return nil
+}
+
+// glancesAnswersV5 reports whether the server answers /api/5/status.
+func (h *Handlers) glancesAnswersV5(ctx context.Context, server string, credential HealthCredential) bool {
+	resp, err := h.mediaRequest(ctx, server, credential, "/api/5/status", nil, "application/json", nil)
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return true
 }
 
 // glancesOutboundLimiter is what the page may ask of its one host. The shared

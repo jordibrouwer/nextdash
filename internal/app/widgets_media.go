@@ -80,7 +80,7 @@ func mediaSignInError(err error) error {
 // mediaErrorCode is what the tile is told: a short code it can word, never
 // the wrapped detail, which may name an internal address.
 func mediaErrorCode(err error) string {
-	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities, errMediaSystemGone, errMediaLogin, errGlancesNotFound, errGlancesNeedsV4} {
+	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities, errMediaSystemGone, errMediaLogin, errGlancesNotFound, errGlancesNeedsV4, errGlancesV5} {
 		if errors.Is(err, known) {
 			return known.Error()
 		}

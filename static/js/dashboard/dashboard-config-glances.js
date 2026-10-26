@@ -337,6 +337,7 @@
             'address not allowed': t('glancesErrAddress', 'That address is not allowed here. Check the local-network setting.'),
             'login refused': t('glancesErrLogin', 'Glances refused that login.'),
             'needs Glances 4': t('glancesErrV4', 'Glances 4 is needed; this server answers like version 3.'),
+            'Glances 5 not supported': t('glancesErrV5', 'This server runs Glances 5, which nextDash does not support yet. Use Glances 4.'),
             unreachable: t('glancesErrUnreachable', 'Glances could not be reached at that address.'),
         };
 

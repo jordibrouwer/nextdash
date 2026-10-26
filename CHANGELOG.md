@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.22.1 — 26 October 2026](#v1221--26-october-2026)
 - [v1.22.0 — 25 October 2026](#v1220--25-october-2026)
 - [v1.21.3 — 23 October 2026](#v1213--23-october-2026)
 - [v1.21.2 — 23 October 2026](#v1212--23-october-2026)
@@ -120,6 +121,16 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.22.1 — 26 October 2026
+
+Glances 5 is recognised and named as not supported yet, instead of being taken for Glances 3.
+
+### Glances
+
+- **fix — a Glances 5 server is no longer called version 3.** Glances 5 (5.0.0b1, beta) serves its API under `/api/5` with a new data model, so `/api/4/status` answers 404 and nextDash said the server answered like version 3. `glancesGet` in `glances_client.go` now asks `/api/5/status` when that happens; if it answers, the error is `Glances 5 not supported`, and Config and the Glances view say that Glances 5 is not supported yet and that Glances 4 is needed. Reading Glances 5 itself waits until 5.0 is stable. `TestGlancesConnect` covers it; it fails without the fix.
 
 ---
 

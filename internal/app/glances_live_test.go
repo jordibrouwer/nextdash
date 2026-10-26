@@ -457,6 +457,13 @@ func TestGlancesConnect(t *testing.T) {
 	if out := post(`{"server":"` + fake.URL + `"}`); out["error"] != "needs Glances 4" {
 		t.Errorf("version 3: %v", out)
 	}
+	// Version 5 answers under /api/5 instead.
+	fake.mu.Lock()
+	fake.override["/api/5/status"] = []byte(`{"version":"5.0.0b1"}`)
+	fake.mu.Unlock()
+	if out := post(`{"server":"` + fake.URL + `"}`); out["error"] != "Glances 5 not supported" {
+		t.Errorf("version 5: %v", out)
+	}
 	if out := post(`{"server":""}`); out["error"] != "not set up" {
 		t.Errorf("no address: %v", out)
 	}
