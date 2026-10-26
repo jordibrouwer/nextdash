@@ -131,6 +131,7 @@ Glances 5 is recognised and named as not supported yet, instead of being taken f
 ### Glances
 
 - **fix — a Glances 5 server is no longer called version 3.** Glances 5 (5.0.0b1, beta) serves its API under `/api/5` with a new data model, so `/api/4/status` answers 404 and nextDash said the server answered like version 3. `glancesGet` in `glances_client.go` now asks `/api/5/status` when that happens; if it answers, the error is `Glances 5 not supported`, and Config and the Glances view say that Glances 5 is not supported yet and that Glances 4 is needed. Reading Glances 5 itself waits until 5.0 is stable. `TestGlancesConnect` covers it; it fails without the fix.
+- **fix — the key legend sits inside its panel.** Under a Signature material the key legend at the foot of the Glances view (and the Inbox's) is drawn as a plate, but it kept only the top padding of its old rule, so the keys sat on its bottom edge. `theme-overlays.css` gives it room on every side.
 
 ---
 
