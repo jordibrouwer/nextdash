@@ -1480,3 +1480,24 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"]:not(
 html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
     border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
 }
+
+/* The blocks of Config on the pane.
+
+   A block lay on the pane in the small fill of the material (--ov-fill-small,
+   nearly closed), which read as a tinted box of its own colour on every theme.
+   Under every surface but open a block takes what Classic gives it: a light
+   darkening of the pane with a hairline, so the pane shows through and the
+   theme stays what you see. On a card surface the pane is the surface colour
+   itself, so there the block is told apart by a light tint. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) 35%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-cat-surface="card"] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
+    background-color: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+/* A row inside a panel or a table is not a second card. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-crud-list--table) :is(.config-widget-row, .config-crud-row, .config-backup-row, .config-attention-row) {
+    background-color: transparent;
+}
