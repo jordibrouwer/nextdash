@@ -132,6 +132,33 @@ func TestInstallPingStaysOffInTheDemo(t *testing.T) {
 	}
 }
 
+// NEXTDASH_DISABLE_INSTALL_PING takes the install count away and nothing else:
+// the usage analytics stay under the user's control, which is the reason it
+// exists next to DISABLE_TELEMETRY.
+func TestInstallPingCanBeSwitchedOffAlone(t *testing.T) {
+	on := Settings{InstallPingEnabled: true}
+	t.Setenv("DISABLE_TELEMETRY", "")
+	t.Setenv(installPingDisabledEnv, "")
+	if !installPingEnabled(on) {
+		t.Fatal("the ping is off with nothing set")
+	}
+	for _, value := range []string{"1", "true", "TRUE", "yes", "on"} {
+		t.Setenv(installPingDisabledEnv, value)
+		if installPingEnabled(on) {
+			t.Fatalf("the ping stayed on with %s=%s", installPingDisabledEnv, value)
+		}
+		if _, enabled, _ := analyticsTarget(Settings{AnalyticsOptIn: true}); !enabled {
+			t.Fatalf("%s=%s switched the usage analytics off too", installPingDisabledEnv, value)
+		}
+	}
+	for _, value := range []string{"0", "false", "no", "nonsense"} {
+		t.Setenv(installPingDisabledEnv, value)
+		if !installPingEnabled(on) {
+			t.Fatalf("the ping went off with %s=%s", installPingDisabledEnv, value)
+		}
+	}
+}
+
 // pageHTML renders the real dashboard template the way a visitor gets it.
 func pageHTML(t *testing.T, settings Settings) string {
 	t.Helper()

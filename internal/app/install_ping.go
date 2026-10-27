@@ -49,7 +49,7 @@ const (
 // installPingEnabled reports whether the daily ping may be sent: the user's
 // switch, unless the operator disabled telemetry outright.
 func installPingEnabled(settings Settings) bool {
-	if telemetryDisabledByEnv() {
+	if telemetryDisabledByEnv() || envFlag(installPingDisabledEnv) {
 		return false
 	}
 	// The demo resets every half hour; each reset would count as a new install.

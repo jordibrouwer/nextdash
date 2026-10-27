@@ -42,6 +42,11 @@ const RAINDROP_STUB_PORT = 18076;
 const E2E_WEB_SERVER_ENV = {
     NEXTDASH_WRITE_TOKEN: WRITE_TOKEN,
     NEXTDASH_DISABLE_PREFETCH: '1',
+    // Every start of a server on an empty data folder is a new install to the
+    // daily install count, so test runs and CI shards were most of its
+    // "installs". Only the ping: DISABLE_TELEMETRY would take the analytics
+    // away from the specs that exercise them.
+    NEXTDASH_DISABLE_INSTALL_PING: '1',
     // The one-page starter set the specs were written against, not the
     // hundred-link demo set a real install gets.
     NEXTDASH_SEED: 'minimal',

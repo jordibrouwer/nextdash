@@ -248,6 +248,9 @@ jobs:
           PWTEST_SHARD_WEIGHTS: ${{ steps.weights.outputs.weights }}
           # The JSON reporter (playwright.config.js) writes here.
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-json/shard-${{ matrix.shard }}.json
+          # A shard starts servers on empty data folders; each would count as a
+          # new install in the daily install count. Only the ping, not the analytics.
+          NEXTDASH_DISABLE_INSTALL_PING: '1'
         # $ARGS unquoted on purpose: it is a list of words.
         run: xvfb-run npx playwright test --shard="$SHARD" $ARGS
       - name: Upload report
