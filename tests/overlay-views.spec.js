@@ -78,11 +78,15 @@ async function readPlate(page, plate) {
             ovRadius,
             ovImageBig: bodyCs.getPropertyValue('--ov-image-big').trim(),
             boxShadow: cs.boxShadow,
+            blur: cs.backdropFilter || cs.webkitBackdropFilter || 'none',
         };
     }, plate);
 }
 
 const transparent = (c) => c === 'rgba(0, 0, 0, 0)' || c === 'transparent';
+// A plate that is drawn like a category (since v1.22.2) lets the backdrop supply
+// the colour on a glass material: it counts as filled when it blurs what is behind.
+const filled = (m) => !transparent(m.bg) || (m.blur && m.blur !== 'none');
 const hasBar = (s) => /inset/.test(s) && /\b2px 0px 0px 0px\b/.test(s);
 const hasRing = (s) => /inset/.test(s) && /\b0px 0px 0px 1px\b/.test(s);
 
@@ -121,11 +125,15 @@ test.describe('view plates per material', () => {
             await dismissBlockingOverlays(page);
             const m = await readPlate(page, PLATE.inbox);
             expect.soft(m.material, material + ': the theme did not bring its material').toBe(material);
-            expect.soft(transparent(m.bg), material + ': the plate fill is see-through').toBe(false);
+            expect.soft(filled(m), material + ': the plate fill is see-through').toBe(true);
             if (m.ovImageBig && m.ovImageBig !== 'none') {
                 expect.soft(m.image, material + ': the plate has no surface layer').not.toBe('none');
             } else {
-                expect.soft(m.image, material + ': the plate draws a layer the material does not have').toBe('none');
+                // Terminal and ink draw their plate like their category, which carries the
+                // theme's own sheen (--surface-sheen) as a layer of its own.
+                if (!['terminal', 'ink'].includes(material)) {
+                    expect.soft(m.image, material + ': the plate draws a layer the material does not have').toBe('none');
+                }
             }
             expect.soft(parseFloat(m.radius), material + ': the plate has no corner').toBeGreaterThan(0);
             expect.soft(m.radius, material + ': the plate corner is not --ov-radius').toBe(m.ovRadius);
@@ -140,7 +148,7 @@ test.describe('view plates per material', () => {
             for (const material of TWO) {
                 await switchTo(page, material);
                 const m = await readPlate(page, PLATE[view]);
-                expect.soft(transparent(m.bg), view + ' / ' + material + ': the plate fill is see-through').toBe(false);
+                expect.soft(filled(m), view + ' / ' + material + ': the plate fill is see-through').toBe(true);
                 expect.soft(m.radius, view + ' / ' + material + ': the plate corner is not --ov-radius').toBe(m.ovRadius);
                 expect.soft(parseFloat(m.radius), view + ' / ' + material + ': no corner').toBeGreaterThan(0);
                 if (m.ovImageBig && m.ovImageBig !== 'none') {
@@ -245,7 +253,7 @@ test.describe('view plates per material', () => {
             await switchTo(page, material, 'off');
             const m = await readPlate(page, PLATE.inbox);
             expect.soft(m.image, material + ': the plate draws a layer with effects off').toBe('none');
-            expect.soft(transparent(m.bg), material + ': the fill went with the layer').toBe(false);
+            expect.soft(filled(m), material + ': the fill went with the layer').toBe(true);
         }
     });
 
