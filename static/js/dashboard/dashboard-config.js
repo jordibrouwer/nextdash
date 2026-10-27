@@ -12726,6 +12726,8 @@ class DashboardConfig {
           labelKey: 'config.noticeHealthRecheck', label: 'Link re-check offer' },
         { id: 'docker-update', promo: 'docker-update-offer-v1', keys: ['nextdashDockerUpdateOfferSnoozeUntil', 'nextdashDockerViewOpens'],
           labelKey: 'config.noticeDockerUpdate', label: 'Image update check' },
+        { id: 'inbox-extension', promo: 'inbox-extension-notice-v1', keys: ['nextdashInboxExtensionSnoozeUntil', 'nextdashInboxOpens'],
+          labelKey: 'config.noticeInboxExtension', label: 'Browser extension for the Inbox' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */
