@@ -233,3 +233,45 @@ func TestBundledListNamesTheUnraidPlatformOnly(t *testing.T) {
 		t.Errorf("platform = %v on Unraid, want unraid", got)
 	}
 }
+
+// The start guide asks first: keep the examples (the template becomes a page of
+// its own) or start empty (the template fills main).
+func TestOnboardingTemplateTargetDecidesWhereItGoes(t *testing.T) {
+	t.Run("new keeps an untouched main", func(t *testing.T) {
+		h := newTestHandlers(t)
+		before := len(h.store.GetBookmarksByPage(1))
+		code, out := applyOnboardingTemplate(t, h, OnboardingTemplateRequest{ID: "homelab", Server: "192.168.1.10", Target: "new"})
+		if code != http.StatusOK || out["replaced"] != false {
+			t.Fatalf("status %d, %v", code, out)
+		}
+		if got := len(h.store.GetBookmarksByPage(1)); got != before || got == 0 {
+			t.Errorf("main has %d bookmarks, want the %d it started with", got, before)
+		}
+	})
+	t.Run("main fills a cleared main", func(t *testing.T) {
+		h := newTestHandlers(t)
+		if _, err := h.clearStarterLinks(); err != nil {
+			t.Fatal(err)
+		}
+		if h.isUntouchedMainPage() || !h.mainHoldsNothing() {
+			t.Fatal("main should be cleared, not untouched")
+		}
+		code, out := applyOnboardingTemplate(t, h, OnboardingTemplateRequest{ID: "developer", Server: "192.168.1.10", Target: "main"})
+		if code != http.StatusOK || out["replaced"] != true {
+			t.Fatalf("status %d, %v", code, out)
+		}
+		if len(h.store.GetBookmarksByPage(1)) == 0 {
+			t.Error("main is still empty")
+		}
+	})
+	t.Run("main never takes a page somebody filled", func(t *testing.T) {
+		h := newTestHandlers(t)
+		if err := h.store.SaveBookmarksByPage(1, []Bookmark{{Name: "Mine", URL: "https://mine.example/"}}); err != nil {
+			t.Fatal(err)
+		}
+		_, out := applyOnboardingTemplate(t, h, OnboardingTemplateRequest{ID: "developer", Server: "192.168.1.10", Target: "main"})
+		if out["replaced"] != false {
+			t.Errorf("replaced a filled main: %v", out)
+		}
+	})
+}

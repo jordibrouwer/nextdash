@@ -235,6 +235,19 @@ type OnboardingTemplateRequest struct {
 	ID     string            `json:"id"`
 	Server string            `json:"server"`
 	Values map[string]string `json:"values,omitempty"`
+	// Target says where the page goes. "new" is always a page of its own, so
+	// the example links someone chose to keep stay where they are. "main" is
+	// for someone who started empty: it fills main while that holds nothing of
+	// theirs. Left out, the template takes main when it is still the untouched
+	// starter and becomes a new page otherwise.
+	Target string `json:"target,omitempty"`
+}
+
+// mainHoldsNothing says whether main has no bookmarks left: the starter links
+// were cleared and nothing was added. Its widgets are the starter's too, and a
+// template writes its own over them.
+func (h *Handlers) mainHoldsNothing() bool {
+	return len(h.store.GetBookmarksByPage(defaultMainPage().Page.ID)) == 0
 }
 
 /*
@@ -269,7 +282,14 @@ func (h *Handlers) ApplyOnboardingTemplate(w http.ResponseWriter, r *http.Reques
 
 	pageTemplateImportMu.Lock()
 	defer pageTemplateImportMu.Unlock()
-	if h.isUntouchedMainPage() {
+	replaceMain := h.isUntouchedMainPage()
+	switch req.Target {
+	case "new":
+		replaceMain = false
+	case "main":
+		replaceMain = replaceMain || h.mainHoldsNothing()
+	}
+	if replaceMain {
 		seed := defaultMainPage()
 		plan := h.planPageTemplateReplacing(tpl, values, seed.Page.ID)
 		var target Page
