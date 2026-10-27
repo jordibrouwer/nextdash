@@ -4192,13 +4192,56 @@ class DashboardConfig {
             const value = entry.kind === 'field' ? this.settingsJumpValueText(entry.field) : '';
             return value ? { ...entry, value } : entry;
         });
-        if (!q) return all;
+        if (!q) return this.withRecentSettings(all);
         // Keywords are matched but never shown, so a setting is reachable by
         // the word people look for as well as the one it is labelled with. The
         // value is matched *and* shown: finding a setting by what it says is
         // only useful if the result then confirms it.
         return all.filter((e) => `${e.title} ${e.subtitle} ${e.keywords || ''} ${e.value || ''}`
             .toLowerCase().includes(q));
+    }
+
+    /**
+     * The settings last changed or opened from the search, newest first, kept
+     * in this browser only. An entry id for a visit, `f:<field>` for a change
+     * made on the tab itself; both resolve to the same row.
+     */
+    static RECENT_SETTINGS_KEY = 'nextdash.settingsJumpRecent';
+    static RECENT_SETTINGS_MAX = 8;
+
+    recentSettingsTokens() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(DashboardConfig.RECENT_SETTINGS_KEY) || '[]');
+            return Array.isArray(raw) ? raw.filter((t) => typeof t === 'string') : [];
+        } catch {
+            return [];
+        }
+    }
+
+    rememberSetting(token) {
+        if (!token) return;
+        const next = [token, ...this.recentSettingsTokens().filter((t) => t !== token)]
+            .slice(0, DashboardConfig.RECENT_SETTINGS_MAX);
+        try {
+            localStorage.setItem(DashboardConfig.RECENT_SETTINGS_KEY, JSON.stringify(next));
+        } catch { /* a browser refusing storage just has no recent list */ }
+    }
+
+    /** Recent rows first, marked so the list can head them; the rest follow. */
+    withRecentSettings(all) {
+        const picked = [];
+        const seen = new Set();
+        this.recentSettingsTokens().forEach((token) => {
+            const entry = token.startsWith('f:')
+                ? all.find((e) => e.kind === 'field' && e.field === token.slice(2))
+                : all.find((e) => e.id === token);
+            if (entry && !seen.has(entry.id)) {
+                seen.add(entry.id);
+                picked.push({ ...entry, recent: true });
+            }
+        });
+        if (!picked.length) return all;
+        return [...picked, ...all.filter((e) => !seen.has(e.id))];
     }
 
     isSettingsJumpOpen() {
@@ -4218,8 +4261,11 @@ class DashboardConfig {
         if (!entries.length) {
             return `<p class="config-settings-jump-empty">${esc(this.t('config.settingsSearchNoResults', 'No settings match.'))}</p>`;
         }
+        const hasRecent = entries.some((e) => e.recent);
+        const heading = (text) => `<li class="config-settings-jump-group" role="presentation">${esc(text)}</li>`;
         return `<ul class="config-settings-jump-results" role="listbox">
-            ${entries.map((entry, i) => `
+            ${entries.map((entry, i) => `${hasRecent && i === 0 ? heading(this.t('config.settingsSearchRecent', 'Recent')) : ''}${
+                hasRecent && !entry.recent && entries[i - 1]?.recent ? heading(this.t('config.settingsSearchAll', 'All settings')) : ''}
                 <li class="config-settings-jump-result${i === this._settingsJumpSelected ? ' is-active' : ''}"
                     role="option" aria-selected="${i === this._settingsJumpSelected ? 'true' : 'false'}"
                     data-settings-jump-index="${i}">
@@ -4324,7 +4370,9 @@ class DashboardConfig {
         });
         const filter = document.getElementById('config-settings-jump-filter');
         if (!filter) return;
+        this._settingsJumpTyped = false;
         const refresh = () => {
+            this._settingsJumpTyped = filter.value.trim() !== '';
             entries = this.filterSettingsJumpEntries(filter.value);
             if (this._settingsJumpSelected >= entries.length) {
                 this._settingsJumpSelected = Math.max(0, entries.length - 1);
@@ -4403,6 +4451,12 @@ class DashboardConfig {
 
     async activateSettingsJumpEntry(entry) {
         if (!entry) return;
+        this.rememberSetting(entry.id);
+        // How the row was reached, in fixed words: a remembered row, a typed
+        // search, or a pick from the unfiltered list.
+        this._trackAction('settings-search', {
+            via: entry.recent ? 'recent' : (this._settingsJumpTyped ? 'typed' : 'browse'),
+        });
         window.AppModal.hide();
         this.cleanupSettingsJumpHandler();
         if (entry.section !== this.section) {
@@ -13167,6 +13221,7 @@ class DashboardConfig {
         // custom text are free-form and can be personal). Booleans are the one
         // exception — 'on'/'off' is what makes a toggle worth measuring, and it
         // cannot carry anything identifying.
+        this.rememberSetting(`f:${field}`);
         this._trackAction('setting', {
             field,
             ...(typeof value === 'boolean' ? { value: value ? 'on' : 'off' } : {}),

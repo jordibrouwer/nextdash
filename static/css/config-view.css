@@ -5911,6 +5911,16 @@ body.no-animations .config-new-features-panel-star {
     cursor: pointer;
 }
 
+.config-settings-jump-group {
+    padding: 8px 10px 2px;
+    font-size: 0.78em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted, inherit);
+    opacity: 0.75;
+}
+
 .config-settings-jump-result:hover,
 .config-settings-jump-result.is-active {
     background: var(--hover-bg, rgba(128, 128, 128, 0.12));

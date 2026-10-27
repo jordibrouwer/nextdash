@@ -9939,7 +9939,9 @@
     "helpGlancesInsightsTitle": "Insights",
     "helpArtInsDay": "典型的一天",
     "helpArtInsLoad": "负载与核心数",
-    "helpGlancesInsightsBody": "<p>Insights 根据记录回答问题，时段可选 <strong>24 小时、7 天或 30 天</strong>，<strong>Download CSV</strong> 会保存这些数字。它由一组区块组成：背后数据太少的区块会被省略，每个标题旁的 <strong>ℹ</strong> 会说明它显示什么。</p><ul><li><strong>Health</strong> — 满分 100 的分数，依据各读数离红线有多近、进行中的事件和可用性；85 及以上为良好。<strong>Disks: when full</strong> 用一条直线穿过每个磁盘最近一周的使用情况。</li><li><strong>Typical and peak</strong> 和 <strong>Compared with before</strong>（把本时段与紧邻其前的时段对比）。</li><li><strong>Busy hours</strong> 和 <strong>A typical day</strong>：一天中每小时的平均值，每小时一根条。<strong>Peaks and rhythm</strong> 指出最忙和最闲的小时。</li><li><strong>Load and cores</strong>：负载与核心数的对比，以及各核心分担工作是否均匀。</li><li><strong>Memory and swap</strong>、<strong>Temperature per sensor</strong>、<strong>Disk space over time</strong>、<strong>Disk activity</strong> 和 <strong>Network per interface</strong>。</li><li><strong>Availability</strong>、<strong>Incidents</strong> 和 <strong>Who used the most</strong>，涵盖你记录过的进程和容器。</li></ul>"
+    "helpGlancesInsightsBody": "<p>Insights 根据记录回答问题，时段可选 <strong>24 小时、7 天或 30 天</strong>，<strong>Download CSV</strong> 会保存这些数字。它由一组区块组成：背后数据太少的区块会被省略，每个标题旁的 <strong>ℹ</strong> 会说明它显示什么。</p><ul><li><strong>Health</strong> — 满分 100 的分数，依据各读数离红线有多近、进行中的事件和可用性；85 及以上为良好。<strong>Disks: when full</strong> 用一条直线穿过每个磁盘最近一周的使用情况。</li><li><strong>Typical and peak</strong> 和 <strong>Compared with before</strong>（把本时段与紧邻其前的时段对比）。</li><li><strong>Busy hours</strong> 和 <strong>A typical day</strong>：一天中每小时的平均值，每小时一根条。<strong>Peaks and rhythm</strong> 指出最忙和最闲的小时。</li><li><strong>Load and cores</strong>：负载与核心数的对比，以及各核心分担工作是否均匀。</li><li><strong>Memory and swap</strong>、<strong>Temperature per sensor</strong>、<strong>Disk space over time</strong>、<strong>Disk activity</strong> 和 <strong>Network per interface</strong>。</li><li><strong>Availability</strong>、<strong>Incidents</strong> 和 <strong>Who used the most</strong>，涵盖你记录过的进程和容器。</li></ul>",
+    "settingsSearchRecent": "Recent",
+    "settingsSearchAll": "All settings"
   },
   "colors": {
     "title": "主题自定义",
