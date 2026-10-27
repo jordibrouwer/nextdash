@@ -10511,6 +10511,11 @@ class DashboardConfig {
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
                     bool('healthAutoRecheckEnabled', 'config.healthRecheckLabel', 'Re-check in the background'),
+                    {
+                        type: 'note',
+                        shown: (st) => st.healthAutoRecheckEnabled === false,
+                        text: t('config.healthRecheckOffHint', 'Off: links are only re-checked when you run a check yourself. nextDash will offer to turn this back on when the last check is a week old.'),
+                    },
                     // Bound to healthAutoRecheckIntervalHours, in hours.
                     //
                     // This used to write `healthRecheckIntervalMinutes`, which
@@ -10876,11 +10881,11 @@ class DashboardConfig {
             // Standalone explanatory text between controls. It has no field, so
             // it must be handled before anything reads c.field — the fallthrough
             // below turns an unknown type into a text input bound to undefined.
+            // A control that only makes sense while another is on (a note too).
+            if (typeof c.shown === 'function' && !c.shown(s)) return '';
             if (c.type === 'note') {
                 return `<p class="config-field-hint">${esc(c.text)}</p>`;
             }
-            // A control that only makes sense while another is on.
-            if (typeof c.shown === 'function' && !c.shown(s)) return '';
             // A live card built from a real bookmark, redrawn as the checklist
             // beside it is flipped. Appearance previews its settings; this was
             // the one you had to leave the screen and hover something to see.
@@ -12717,6 +12722,8 @@ class DashboardConfig {
           } },
         { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
           labelKey: 'config.noticeHealthReview', label: 'Health review' },
+        { id: 'health-recheck-offer', keys: ['nextdashHealthRecheckOfferDoneOn', 'nextdashHealthRecheckOfferSnoozeUntil'],
+          labelKey: 'config.noticeHealthRecheck', label: 'Link re-check offer' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */

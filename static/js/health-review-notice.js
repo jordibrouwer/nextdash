@@ -221,10 +221,140 @@
         ],
     });
 
+    /*
+     * The second card: the last link check is old and nothing is going to run
+     * another.
+     *
+     * Background re-checks are on by default, so this only meets an install
+     * that switched them off. Switching them off is a fine answer; what it
+     * leaves is a Health view quietly going out of date, and the way to learn
+     * that was to open it. So once the newest check is over a week old the
+     * corner says so, and offers the two ways out: check now, or let the
+     * server do it every day. Turning it on is an explicit write, never a
+     * migration of the stored false.
+     */
+    const RECHECK_STALE_DAYS = 7;
+    const RECHECK_DONE_KEY = 'nextdashHealthRecheckOfferDoneOn';
+    const RECHECK_SNOOZE_KEY = 'nextdashHealthRecheckOfferSnoozeUntil';
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    function recheckTrack(action) {
+        global.nextdashTrack?.('health-recheck-offer', { action });
+    }
+
+    function recheckDoneToday() {
+        try { return global.localStorage?.getItem(RECHECK_DONE_KEY) === todayKey(); } catch { return false; }
+    }
+
+    function recheckSnoozed() {
+        try {
+            const until = Number(global.localStorage?.getItem(RECHECK_SNOOZE_KEY));
+            return Number.isFinite(until) && until > Date.now();
+        } catch { return false; }
+    }
+
+    let lastCheckAgeDays = RECHECK_STALE_DAYS;
+
+    /** Whole days since the newest check, or null when the offer has no ground. */
+    async function staleCheckDays() {
+        const summary = await global.HealthBadgeUtils?.fetchBookmarkHealthSummary?.();
+        if (!summary || !(Number(summary.monitoredCount) > 0)) return null;
+        const at = Number(summary.lastCheckedAt) || 0;
+        if (!at) return null;
+        const days = Math.floor((Date.now() - at) / DAY_MS);
+        return days >= RECHECK_STALE_DAYS ? days : null;
+    }
+
+    async function recheckNow() {
+        const fetcher = typeof global.nextDashFetch === 'function' ? global.nextDashFetch : global.fetch;
+        try {
+            await fetcher('/api/health/retest-all?scope=all', { method: 'POST' });
+            await dash()?.updateHealthBadge?.();
+        } catch {
+            /* the health view reports a failed check itself; the card has closed */
+        }
+    }
+
+    async function recheckEveryDay() {
+        const d = dash();
+        if (!d?.settings) return;
+        d.settings.healthAutoRecheckEnabled = true;
+        d.settings.healthAutoRecheckIntervalHours = 24;
+        try { await d.saveSettings?.(); } catch { /* the setting stays visible in Behavior */ }
+    }
+
+    const recheckCard = global.NoticeCard.define({
+        id: 'health-recheck-offer',
+        showDelayMs: SHOW_DELAY_MS,
+        title: () => t('dashboard.healthRecheckOfferTitle', 'Last link check was {days} days ago',
+            { days: lastCheckAgeDays }),
+        body: () => t('dashboard.healthRecheckOfferBody',
+            'Re-check your links now, or let nextDash re-check them every day.'),
+        dismissLabel: () => t('dashboard.healthRecheckOfferLater', 'Not now'),
+        dismissName: 'later',
+        canShow: async () => {
+            const settings = dash()?.settings;
+            if (settings?.enableHealthRecheckNotice === false) return false;
+            if (settings?.healthAutoRecheckEnabled !== false) return false;
+            if (recheckDoneToday() || recheckSnoozed()) return false;
+            if (dash()?.health?.isEnabled?.() === false) return false;
+            // One health card at a time; the review offer goes first.
+            if (document.querySelector('.health-review-notice-card')) return false;
+            const days = await staleCheckDays();
+            if (days === null) return false;
+            lastCheckAgeDays = days;
+            return true;
+        },
+        onShown: () => recheckTrack('shown'),
+        onDismiss: () => { markRecheckDone(); recheckTrack('later'); },
+        actionAttr: 'data-health-recheck-action',
+        actions: [
+            {
+                name: 'now',
+                label: () => t('dashboard.healthRecheckOfferNow', 'Re-check now'),
+                primary: true,
+                onClick: (handle) => { recheckTrack('now'); handle.close(); void recheckNow(); },
+            },
+            {
+                name: 'auto',
+                label: () => t('dashboard.healthRecheckOfferEveryDay', 'Every day'),
+                onClick: (handle) => { recheckTrack('auto'); handle.close(); void recheckEveryDay(); },
+            },
+            {
+                name: 'later',
+                label: () => t('dashboard.healthRecheckOfferLater', 'Not now'),
+                onClick: (handle) => { markRecheckDone(); recheckTrack('later'); handle.close(); },
+            },
+            {
+                name: 'remind',
+                quiet: true,
+                label: () => t('dashboard.healthRecheckOfferRemind', 'Remind me in 30 days'),
+                onClick: (handle) => {
+                    try { global.localStorage?.setItem(RECHECK_SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * DAY_MS)); } catch { /* storage off */ }
+                    recheckTrack('remind');
+                    handle.close();
+                },
+            },
+        ],
+    });
+
+    function markRecheckDone() {
+        try { global.localStorage?.setItem(RECHECK_DONE_KEY, todayKey()); } catch { /* storage off */ }
+    }
+
+    global.HealthRecheckOffer = {
+        STALE_DAYS: RECHECK_STALE_DAYS,
+        render: recheckCard.render,
+        shouldShow: recheckCard.shouldShow,
+        isSnoozed: recheckSnoozed,
+    };
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', card.autoStart, { once: true });
+        document.addEventListener('DOMContentLoaded', recheckCard.autoStart, { once: true });
     } else {
         card.autoStart();
+        recheckCard.autoStart();
     }
 
     global.HealthReviewSession = {
