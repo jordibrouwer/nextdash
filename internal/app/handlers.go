@@ -978,6 +978,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 
 			report.Summary.TotalBookmarks++
+			if bm.LastChecked > report.Summary.LastCheckedAt {
+				report.Summary.LastCheckedAt = bm.LastChecked
+			}
 			if bm.Pinned {
 				report.Summary.PinnedCount++
 			}

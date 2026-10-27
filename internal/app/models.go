@@ -6716,6 +6716,10 @@ type HealthSummary struct {
 	// whatever other status a bookmark has, so it is not one of the three
 	// mutually exclusive broken/content/monitorDown counts above.
 	DriftCount int `json:"driftCount"`
+	// LastCheckedAt is the newest LastChecked (Unix ms) over all bookmarks, 0
+	// when none was ever checked. This is when links were last checked, unlike
+	// the report's GeneratedAt, which only says when the report was built.
+	LastCheckedAt int64 `json:"lastCheckedAt"`
 }
 
 type HealthReason struct {

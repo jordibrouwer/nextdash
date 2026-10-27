@@ -285,10 +285,10 @@
             filter: 'healthy',
         }));
 
-        const updated = ageText(dash, window.HealthFacts?.generatedAt || 0);
+        const updated = ageText(dash, Number(summary?.lastCheckedAt) || 0);
         if (updated) {
             rows.push(row(dash, {
-                key: 'age', name: label(dash, 'dashboard.healthSummaryUpdated', 'Updated'), value: updated,
+                key: 'age', name: label(dash, 'dashboard.healthSummaryLastCheck', 'Last check'), value: updated,
             }));
         }
 

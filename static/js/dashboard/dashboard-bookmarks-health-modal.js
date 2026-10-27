@@ -831,7 +831,7 @@
             const parts = [
                 this.t('config.bmHealthModalTotal', '{n} bookmarks').replace('{n}', String(total)),
                 pages ? this.t('config.bmHealthModalPagesCount', 'on {n} pages').replace('{n}', String(pages)) : '',
-                age ? this.t('config.bmHealthModalUpdated', 'updated {age}').replace('{age}', age) : '',
+                age ? this.t('config.bmHealthModalLastCheck', 'last check {age}').replace('{age}', age) : '',
             ].filter(Boolean);
             return `<p class="bm-health-modal-subtitle">${esc(parts.join(' · '))}</p>`;
         },
@@ -1074,7 +1074,7 @@
                 tile('monitor', CM ? CM.meta(CM.MONITOR).label : this.t('config.bmSectionMonitor', 'Monitor')),
             ].join('');
 
-            const generated = Number(health.report?.generatedAt) || 0;
+            const generated = Number(health.report?.summary?.lastCheckedAt) || 0;
             const sweepLine = generated ? `<div class="bm-health-modal-kv">
                 <span>${esc(this.t('config.bmHealthModalLastSweep', 'Last sweep'))}</span>
                 <span data-bm-health-modal-count="last-sweep">${esc(new Date(generated).toLocaleString())}</span></div>` : '';
@@ -1194,7 +1194,7 @@
                 <span class="bm-health-modal-footer-hint">${esc(this.t('config.bmHealthModalFooterHint',
                     'Every number is a filter: click one to see those bookmarks.'))}</span>
                 <span class="bm-health-modal-footer-actions">
-                    ${age ? `<span class="bm-health-modal-footer-age">${esc(health.t('dashboard.healthSummaryUpdated', 'Updated'))} ${esc(age)}</span>` : ''}
+                    ${age ? `<span class="bm-health-modal-footer-age">${esc(health.t('dashboard.healthSummaryLastCheck', 'Last check'))} ${esc(age)}</span>` : ''}
                     <button type="button" class="config-btn config-btn--small" data-bm-health-modal-action="rot">${esc(health.t('dashboard.healthRotTitle', 'What has rotted'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-bm-health-modal-action="settings">${esc(health.t('dashboard.healthSettingsLink', 'Settings'))}</button>
                     <button type="button" class="config-btn config-btn--small config-btn--primary" data-bm-health-modal-action="refresh">${esc(this.t('config.bmHealthModalRefresh', 'Refresh'))}</button>

@@ -1947,11 +1947,14 @@ class DashboardHealth {
      *
      * Under a minute reads as "just now" rather than "0m", which looks like a
      * stuck clock; a clock that disagrees with the server would otherwise print
-     * a negative age, so the future counts as fresh. '' when the report carries
-     * no timestamp at all.
+     * a negative age, so the future counts as fresh. '' when nothing was ever
+     * checked.
+     *
+     * Reads the newest check, not the report's build time: the report is
+     * rebuilt on every request, so its own timestamp always said "just now".
      */
     reportAgeText() {
-        const generated = Number(this.report?.generatedAt) || 0;
+        const generated = Number(this.report?.summary?.lastCheckedAt) || 0;
         if (!generated) return '';
         const age = Date.now() - generated;
         return age < 60_000
@@ -2018,7 +2021,7 @@ class DashboardHealth {
                 }]
                 : []),
             ...(uptimeRow ? [uptimeRow] : []),
-            { key: 'age', label: this.t('dashboard.healthSummaryUpdated', 'Updated'), value: this.reportAgeText() },
+            { key: 'age', label: this.t('dashboard.healthSummaryLastCheck', 'Last check'), value: this.reportAgeText() },
         ].filter((row) => row.value !== '');
     }
 
