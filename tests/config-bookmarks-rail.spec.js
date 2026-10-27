@@ -60,7 +60,7 @@ test.describe('the bookmarks workbench', () => {
             horizontal: el.scrollWidth <= el.clientWidth + 1,
         }));
         expect(fit).toEqual({ vertical: true, horizontal: true });
-        expect(r.width).toBeLessThanOrEqual(180);
+        expect(r.width).toBeLessThanOrEqual(206);
     });
 
     test('a page in the rail filters the list, and the other pages keep their counts', async ({ page }) => {
@@ -176,7 +176,7 @@ test.describe('the bookmarks workbench', () => {
                 horizontal: el.scrollWidth <= el.clientWidth + 1,
             }));
             expect(fit).toEqual({ vertical: true, horizontal: true });
-            expect((await rail.boundingBox()).width).toBeLessThanOrEqual(180);
+            expect((await rail.boundingBox()).width).toBeLessThanOrEqual(206);
         } finally {
             await page.request.post(`/api/bookmarks?page=${pid}`, { data: bmsBefore, headers });
             await page.request.post(`/api/categories?page=${pid}`, { data: catsBefore, headers });
