@@ -23,7 +23,13 @@
  *             { label: () => 'No thanks', onClick: (card) => card.close() },
  *         ],
  *         onDismiss: () => markAnswered(),    // the × in the corner
+ *         view: 'docker',                     // optional: the view it belongs in
  *     });
+ *
+ * A card shows in the bookmarks view unless it names another with `view`
+ * (the value of the dashboard's `activeView`, such as 'docker' or 'inbox'):
+ * a card about containers is for the Containers view, and would otherwise
+ * never be shown, since every other view is held clear of interruptions.
  *
  * The returned handle exposes render/autoStart/close for tests and for a manual
  * re-prompt from config, matching what the hand-written cards exposed.
@@ -57,7 +63,7 @@
      * "another card is up" check so a card does not consider itself a blocker
      * when re-rendered.
      */
-    function cornerIsFree(selfClass, { essential = false } = {}) {
+    function cornerIsFree(selfClass, { essential = false, view = 'bookmarks' } = {}) {
         const d = dash();
         if (!d?.settings) return false;
         // The public demo shows no corner cards: every visitor is new, and a
@@ -80,8 +86,9 @@
         // without this a card drops on top of whatever the user opened — including,
         // for a settings-related card, the very panel it is about. Only interrupt
         // the bookmarks view. ("bookmarks" is also the value before the first view
-        // is assigned, which is the dashboard.)
-        if (d.activeView && d.activeView !== 'bookmarks') return false;
+        // is assigned, which is the dashboard.) A card that belongs to another
+        // view asks for that one instead, and only shows there.
+        if (d.activeView && d.activeView !== view) return false;
         // Quick-start — the setup wizard *or* the checklist that follows it — owns
         // the same corner, as does any other notice card.
         // An essential card waits for another notice, but stands above the
@@ -240,6 +247,8 @@ canShow every time.
         for (const card of registry) {
             if (card.spec.essential === true) continue;
             if (card.element()) return true;
+            // A card for another view is not part of the line-up here.
+            if (card.spec.view && dash()?.activeView !== card.spec.view) continue;
             // Waiting out its delay, but a card that would not show anyway (answered, or nothing
             // to offer) is not part of the line-up: nothing should wait the length of its delay.
             if (card.waiting()) {
@@ -251,7 +260,7 @@ canShow every time.
             // Queued and able to show now. A card the corner holds back for
             // the rest of this session (the first one, during onboarding)
             // comes on a later load; nothing should wait for it until then.
-            if (queue.some((entry) => entry.id === card.id) && cornerIsFree(card.id)) {
+            if (queue.some((entry) => entry.id === card.id) && cornerIsFree(card.id, { view: card.spec.view })) {
                 try {
                     if ((await card.spec.canShow?.()) !== false) return true;
                 } catch { /* a card that cannot answer is not waiting */ }
@@ -298,13 +307,13 @@ canShow every time.
 
         function gateSync() {
             if (cardEl) return false;
-            if (!cornerIsFree(cardClass, { essential: spec.essential === true })) return false;
+            if (!cornerIsFree(cardClass, { essential: spec.essential === true, view: spec.view })) return false;
             return spec.canShow?.() !== false;
         }
 
         async function shouldShow() {
             if (cardEl) return false;
-            if (!cornerIsFree(cardClass, { essential: spec.essential === true })) return false;
+            if (!cornerIsFree(cardClass, { essential: spec.essential === true, view: spec.view })) return false;
             // Async so a card may consult something that needs awaiting.
             return (await spec.canShow?.()) !== false;
         }
