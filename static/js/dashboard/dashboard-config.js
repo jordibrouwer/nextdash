@@ -7246,17 +7246,25 @@ class DashboardConfig {
         // chooseImportDestination lives in the Data & backups file.
         if (!(await this.ensureSection('data-backups'))) return;
         const dest = await this.chooseImportDestination({
-            total: preview.total, pageName, onPage: preview, toInbox: preview.inbox,
+            total: preview.total, pageName, onPage: preview, toInbox: preview.inbox, newPage: true,
         });
         if (!dest) return;
         const toInbox = dest === 'inbox';
+        // A page of its own: made first, and the file is written there.
+        let importUrl = url;
+        let targetPage = pageId;
+        if (dest === 'newpage') {
+            targetPage = await this.createImportPage();
+            if (!targetPage) return;
+            importUrl = `/api/bookmarks/import-html?page=${encodeURIComponent(targetPage)}`;
+        }
 
         // Shown for as long as the import runs and the page reloads after it.
         this.showProgressOverlay(this.t('config.csvImportTitle', 'Importing bookmarks…'),
             this.t('config.waitImportStatus', '{n} bookmarks')
                 .replace('{n}', String((toInbox ? preview.inbox?.new : preview.new) ?? preview.new)));
         try {
-            const res = await this.writeFetch(toInbox ? `${url}&inbox=1` : url, { method: 'POST', body: file });
+            const res = await this.writeFetch(toInbox ? `${importUrl}&inbox=1` : importUrl, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
             const imported = Number(result.imported) || 0;
@@ -7275,7 +7283,10 @@ class DashboardConfig {
                     .replace('{i}', String(imported)).replace('{s}', String(skipped)),
                 'success'
             );
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(() => {
+                if (dest === 'newpage') window.location.hash = this.pageHash(targetPage);
+                window.location.reload();
+            }, 1000);
         } catch {
             this.hideProgressOverlay();
             this.notify(this.t('config.browserImportError', 'Could not import the bookmarks.'), 'error');
@@ -7318,9 +7329,14 @@ class DashboardConfig {
         const pageName = (this.dash.pages || []).find((p) => Number(p.id) === Number(pageId))?.name || '';
         // chooseImportDestination lives in the Data & backups file.
         if (!(await this.ensureSection('data-backups'))) return;
-        const dest = await this.chooseImportDestination({ total: rows.length, pageName });
+        const dest = await this.chooseImportDestination({ total: rows.length, pageName, newPage: true });
         if (!dest) return;
         const toInbox = dest === 'inbox';
+        let targetPage = pageId;
+        if (dest === 'newpage') {
+            targetPage = await this.createImportPage();
+            if (!targetPage) return;
+        }
 
         try {
             // After the confirm, so the overlay never covers the question it
@@ -7331,7 +7347,7 @@ class DashboardConfig {
             const res = await this.writeFetch(`/api/bookmarks/import-browser${toInbox ? '?inbox=1' : ''}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId, bookmarks: rows }),
+                body: JSON.stringify({ pageId: targetPage, bookmarks: rows }),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
@@ -7348,7 +7364,10 @@ class DashboardConfig {
                     .replace('{s}', String(Number(result.skipped) || 0)),
                 'success'
             );
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(() => {
+                if (dest === 'newpage') window.location.hash = this.pageHash(targetPage);
+                window.location.reload();
+            }, 1000);
         } catch {
             this.hideProgressOverlay();
             this.notify(this.t('config.csvImportError', 'Could not import the bookmarks.'), 'error');

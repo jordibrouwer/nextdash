@@ -485,6 +485,27 @@
     },
 
     /**
+     * A page for an import to land on: "Imported", or "Imported 2" when the
+     * name is taken. Resolves to the page's id, or 0 after saying why not.
+     */
+    async createImportPage() {
+        const base = this.t('config.importNewPageName', 'Imported');
+        for (let n = 1; n <= 20; n += 1) {
+            const created = await this.dash.structureCreate?.createPageFromForm?.(n === 1 ? base : `${base} ${n}`);
+            if (created && !created.error && created.id) return Number(created.id);
+            if (!created?.error || !/exist/i.test(String(created.error))) break;
+        }
+        this.notify(this.t('config.sourcePageCreateError', 'Could not create that page.'), 'error');
+        return 0;
+    },
+
+    /** The hash that shows a page, so a reload after an import lands on it. */
+    pageHash(pageId) {
+        const at = (this.dash.pages || []).findIndex((p) => Number(p.id) === Number(pageId));
+        return at >= 0 ? `#${at + 1}` : '';
+    },
+
+    /**
      * The question every bookmark import asks before it writes: onto the
      * dashboard, or into the inbox to sort them there first.
      *
@@ -495,9 +516,12 @@
      * `onPage` and `toInbox` are the dry run's counts for each answer
      * ({ new, duplicates }); either may be missing when nothing was counted
      * up front (the CSV import), and the card then leaves the numbers out.
-     * Resolves 'page', 'inbox', or null for cancel.
+     * Resolves 'page', 'newpage' (where `newPage` offers it), 'inbox', or null for cancel.
      */
-    chooseImportDestination({ total, pageName, onPage, toInbox } = {}) {
+    async chooseImportDestination({ total, pageName, onPage, toInbox, newPage = false } = {}) {
+        // Asked from the quick start too, where the views' stylesheet has not
+        // been needed yet: without it the choices are bare browser buttons.
+        await window.ViewStyles?.ensureViewStyles?.();
         const esc = (v) => this.dash.escapeHtml(v);
         document.getElementById('config-confirm-modal')?.remove();
         const counts = (c) => {
@@ -516,6 +540,15 @@
                 body: this.t('config.importDestPageBody', 'On “{p}”. Folders become categories.').replace('{p}', pageName || ''),
                 counts: counts(onPage),
             },
+            // A page of its own, for someone who wants to keep what is already
+            // on the page they are looking at. Only where the importer writes
+            // to the current page: a source keeps the page it was set up with.
+            ...(newPage ? [{
+                value: 'newpage',
+                title: this.t('config.importDestNewPage', 'On a new page'),
+                body: this.t('config.importDestNewPageBody', 'A page of its own, so what is on “{p}” stays as it is. Folders become categories.').replace('{p}', pageName || ''),
+                counts: counts(onPage),
+            }] : []),
             {
                 value: 'inbox',
                 title: this.t('config.importDestInbox', 'Into the inbox first'),
