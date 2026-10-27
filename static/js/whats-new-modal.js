@@ -417,8 +417,11 @@
      * releases used to see only the newest; the ones between were a row each
      * in Earlier that nobody opened.
      */
-    function buildSinceHtml(releases) {
+    function buildSinceHtml(releases, unreadCount) {
         if (releases.length < 2) return '';
+        // The modal opens at most MAX_OPEN_RELEASES in full; the number said
+        // here is how many the reader has not read, not how many are open.
+        const unread = Math.max(Number(unreadCount) || 0, releases.length);
         const totals = releases.reduce((sum, data) => {
             const { added, fixed } = countKinds(data.sections);
             return { added: sum.added + added, fixed: sum.fixed + fixed };
@@ -427,7 +430,7 @@
             <p class="wn-since" data-wn-since>${wnTranslate(
                 'dashboard.whatsNewSince',
                 'Since your last visit: <strong>{releases} releases</strong>, {added} new and {fixed} fixed.',
-                { releases: releases.length, added: totals.added, fixed: totals.fixed }
+                { releases: unread, added: totals.added, fixed: totals.fixed }
             )}</p>`;
     }
 
@@ -488,10 +491,10 @@
      * The open releases: the newest, then every unread one, then the support
      * card. The filter and the "since your last visit" line sit above them.
      */
-    function renderOpenReleases(releases) {
+    function renderOpenReleases(releases, unreadCount) {
         const [first, ...unread] = releases;
         return `
-            ${buildSinceHtml(releases)}
+            ${buildSinceHtml(releases, unreadCount)}
             ${buildFilterHtml(releases)}
             ${renderReleaseArticle(first, { headline: true })}
             ${unread.map((data) => renderReleaseArticle(data, { unread: true })).join('')}
@@ -1222,7 +1225,9 @@
                     const shown = loaded.filter(Boolean);
                     const shownIds = new Set(open.filter((_, i) => loaded[i]).map((entry) => entry.id));
                     const earlier = visible.filter((entry) => !shownIds.has(entry.id));
-                    textEl.innerHTML = buildShellHtml(earlier, renderOpenReleases(shown));
+                    textEl.innerHTML = buildShellHtml(earlier, renderOpenReleases(shown, lastSeenTag
+                        ? visible.filter((entry) => compareReleaseTags(entry.tag || entry.id, lastSeenTag) > 0).length
+                        : 0));
                     liftFooter();
                     textEl.querySelector('.wn-content')?.removeAttribute('aria-busy');
                     const contentRoot = textEl.querySelector('[data-wn-content]');
