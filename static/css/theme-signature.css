@@ -1169,59 +1169,59 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
     box-shadow: inset 0 0 26px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(10px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(0, 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(0, 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(14px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(22px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(16px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(6px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(16px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(20px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(28px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(4px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state) {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state) {
     border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
 }
 

@@ -1130,7 +1130,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 
 /* ── The views: what stands on the plate ───────────────────────────────────────────────────────────── */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state, .inbox-legend, .glances-legend) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state, .inbox-legend, .glances-legend) {
     background-color: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
     background-image: none;
     border: 0;
