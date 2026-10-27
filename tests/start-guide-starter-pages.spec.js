@@ -156,3 +156,43 @@ test.describe('language hint', () => {
         await expect(modal(page).locator('[data-sg-lang-hint]')).toHaveCount(0);
     });
 });
+
+test.describe('after the page is made', () => {
+    test('a popover in the middle says how to edit, delete and add, and Got it closes it', async ({ page, request }) => {
+        await page.route('**/api/onboarding/template', (route) =>
+            route.fulfill({ json: { result: { pageId: 1 }, replaced: true } }));
+        await setup(page, request);
+        await modal(page).locator('[data-sg-starter="homelab"]').click();
+        await modal(page).getByLabel('Your server address').fill('nas.local');
+        await modal(page).getByRole('button', { name: 'Create page' }).click();
+
+        const tips = page.locator('#app-modal .sg-tips');
+        await expect(tips).toBeVisible();
+        await expect(tips.locator('li')).toHaveCount(4);
+        await expect(tips).toContainText('right-click it, choose Availability check, then Monitor');
+        await expect(tips).toContainText('every hour');
+        await expect(tips).toContainText('Right-click a bookmark and choose Edit');
+        await expect(tips).toContainText('Right-click a bookmark and choose Delete');
+        await expect(tips).toContainText('Press + for the full form');
+        await expect(page.locator('#app-modal .sg-tips-note')).toBeVisible();
+        await page.locator('#app-modal').getByRole('button', { name: 'Got it' }).click();
+        await expect(tips).toBeHidden();
+    });
+
+    test('a page added beside main is opened first, without an address there is no address note', async ({ page, request }) => {
+        await page.route('**/api/onboarding/template', (route) =>
+            route.fulfill({ json: { result: { pageId: 7 }, replaced: false } }));
+        await setup(page, request, { bundled: BUNDLED({ replacesMain: false }) });
+        await page.evaluate(() => {
+            window.__opened = [];
+            window.dashboardInstance.pageNav.requestPageNavigation = async (id) => { window.__opened.push(id); return true; };
+        });
+        await modal(page).locator('[data-sg-starter="developer"]').click();
+        await modal(page).getByRole('button', { name: 'Create page' }).click();
+
+        await expect(page.locator('#app-modal .sg-tips')).toBeVisible();
+        expect(await page.evaluate(() => window.__opened)).toEqual([7]);
+        await expect(page.locator('#app-modal .sg-tips li')).toHaveCount(4);
+        await expect(page.locator('#app-modal .sg-tips-note')).toHaveCount(0);
+    });
+});

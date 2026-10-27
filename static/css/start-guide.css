@@ -658,3 +658,43 @@ body.no-animations .start-guide-modal {
         display: none;
     }
 }
+
+/* What to do with the links of a new ready-made page: three short lines. */
+.sg-tips {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sg-tips li {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: baseline;
+}
+
+.sg-tips b {
+    font-weight: 600;
+}
+
+.sg-tips span {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.sg-tips kbd {
+    font: inherit;
+    font-size: 0.85em;
+    padding: 0 0.35rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.sg-tips-note {
+    margin: 0.9rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}

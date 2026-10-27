@@ -715,6 +715,7 @@
                 if (el) { el.textContent = message; el.hidden = false; }
             };
             let replaced = false;
+            let pageId = MAIN_PAGE_ID;
             try {
                 const api = typeof global.nextDashFetch === 'function' ? global.nextDashFetch : fetch;
                 const res = await api('/api/onboarding/template', {
@@ -729,15 +730,23 @@
                     showError(message || tq('guideStarterFailed', 'Could not create the page'));
                     return;
                 }
-                try { replaced = (await res.json())?.replaced === true; } catch { /* treated as added */ }
+                try {
+                    const answer = await res.json();
+                    replaced = answer?.replaced === true;
+                    // A page added beside main is the one to show: the reader
+                    // asked for it, and landing on main would hide it.
+                    pageId = Number(answer?.result?.pageId) || MAIN_PAGE_ID;
+                } catch { /* treated as added */ }
             } catch {
                 this.busy = false;
                 showError(tq('guideStarterFailed', 'Could not create the page'));
                 return;
             }
             if (STARTER_IDS.includes(id)) global.nextdashTrack?.('start-template', { id, replaced });
+            const server = this.starterServer.trim() !== '';
             try {
                 await this.showPage(MAIN_PAGE_ID);
+                if (!replaced && pageId !== MAIN_PAGE_ID) await this.dash.pageNav?.requestPageNavigation?.(pageId);
             } catch { /* the page catches up on the next revision check */ } finally {
                 this.busy = false;
                 if (replaced) {
@@ -748,6 +757,31 @@
                 this.starterId = '';
                 this.close();
             }
+            this.showStarterTips(server);
+        }
+
+        /**
+         * The page is there; what to do with its links comes next, in the
+         * middle of the screen where nobody can miss it: edit, delete, add.
+         */
+        showStarterTips(hasAddress) {
+            if (!global.AppModal?.show) return;
+            const key = (text) => `<kbd>${esc(text)}</kbd>`;
+            const line = (label, text, keyText) => `
+                <li><b>${esc(label)}</b><span>${esc(text).replace('{key}', key(keyText))}</span></li>`;
+            global.nextdashTrack?.('start-template-tips', { action: 'shown' });
+            global.AppModal.show({
+                title: tq('guideTipsTitle', 'Your page is ready'),
+                htmlMessage: `<ul class="sg-tips">
+                    ${line(tq('guideTipsEdit', 'Edit'), tq('guideTipsEditText', 'Right-click a bookmark and choose Edit, or select it and press {key}.'), 'Shift+E')}
+                    ${line(tq('guideTipsDelete', 'Delete'), tq('guideTipsDeleteText', 'Right-click a bookmark and choose Delete, or select it and press {key}.'), 'Shift+D')}
+                    ${line(tq('guideTipsAdd', 'Add'), tq('guideTipsAddText', 'Press {key} for the full form, or paste a link anywhere on the page.'), '+')}
+                    ${line(tq('guideTipsMonitor', 'Monitor'), tq('guideTipsMonitorText', 'To watch a service, right-click it, choose Availability check, then Monitor and pick how often, for example every hour. The {key} view shows when one is down.'), 'Bookmarks')}
+                    </ul>${hasAddress ? `<p class="sg-tips-note">${esc(tq('guideTipsAddress', 'The links use the server address you entered. Edit any link whose address is different.'))}</p>` : ''}`,
+                confirmText: tq('guideTipsDone', 'Got it'),
+                showCancel: false,
+                modalClass: 'sg-tips-modal',
+            });
         }
 
         /** [code, name] of the browser's language when it is offered and not the current one. */
