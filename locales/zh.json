@@ -684,6 +684,8 @@
     "tagCloudModalClose": "关闭",
     "tagCloudClearFilter": "清除标签过滤",
     "tagCloudEmpty": "还没有标签——可在 配置 → 书签 中添加。",
+    "tagCloudDemoNote": "These are example tags. Tag a bookmark (right-click, then Tags) and your own words appear here; pick one to see its bookmarks.",
+    "tagCloudDemoView": "Open the Tags view",
     "tagCloudFilterAria": "在过滤条件中切换标签 {tag}",
     "tagFilterEmpty": "没有带 {tags} 的书签。",
     "tagFilterEmptyClear": "清除标签过滤",

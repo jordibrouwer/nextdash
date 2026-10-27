@@ -713,6 +713,8 @@
     "tagCloudModalClose": "Close",
     "tagCloudClearFilter": "Clear tag filter",
     "tagCloudEmpty": "No tags yet — add tags in config → bookmarks.",
+    "tagCloudDemoNote": "These are example tags. Tag a bookmark (right-click, then Tags) and your own words appear here; pick one to see its bookmarks.",
+    "tagCloudDemoView": "Open the Tags view",
     "tagCloudFilterAria": "Toggle tag {tag} in filter",
     "tagCloudLegendPick": "pick",
     "tagCloudLegendStack": "stack",

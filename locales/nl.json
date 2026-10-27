@@ -684,6 +684,8 @@
     "tagCloudModalClose": "Sluiten",
     "tagCloudClearFilter": "Tagfilter wissen",
     "tagCloudEmpty": "Nog geen tags — voeg tags toe via config → bookmarks.",
+    "tagCloudDemoNote": "These are example tags. Tag a bookmark (right-click, then Tags) and your own words appear here; pick one to see its bookmarks.",
+    "tagCloudDemoView": "Open the Tags view",
     "tagCloudFilterAria": "Tag {tag} in filter aan/uit",
     "tagFilterEmpty": "Geen bookmarks met {tags}.",
     "tagFilterEmptyClear": "Tagfilter wissen",

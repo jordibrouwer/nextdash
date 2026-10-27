@@ -1268,6 +1268,9 @@ type QuickStartState struct {
 	// id, or "keep" for the starter links. Empty means the card has not been
 	// answered and comes before the checklist.
 	TemplatePicked string `json:"templatePicked,omitempty"`
+	// TagDemoShown is set once the start guide has shown the example tag cloud,
+	// which it does a single time and only for a library with no tags.
+	TagDemoShown bool `json:"tagDemoShown,omitempty"`
 	// Same three-part state for the browser-notification invitation: whether it
 	// was actually answered, how long it stays hidden after being left open, and
 	// how often that has happened. Registering a device is per browser, so this
