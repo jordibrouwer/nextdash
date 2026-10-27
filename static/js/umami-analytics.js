@@ -114,9 +114,48 @@
         else if (!name.endsWith(':shown')) depth.actions += 1;
     }
 
+    /**
+     * A guard against a loop: one production day had 2,575 pageviews from 21
+     * sessions. An identical event (same name, same props) inside 500 ms is a
+     * double fire and is dropped; past 100 events in a rolling minute the rest
+     * are dropped silently. The four snapshots go out once per load and are
+     * never counted against the cap. Pure on purpose: the clock is passed in,
+     * so a test can walk through time without waiting for it.
+     */
+    const RATE_DEDUPE_MS = 500;
+    const RATE_WINDOW_MS = 60000;
+    const RATE_MAX_EVENTS = 100;
+    const RATE_EXEMPT = ['settings-snapshot', 'content-snapshot', 'widgets-snapshot', 'containers-snapshot', 'views-snapshot'];
+
+    function createRateLimiter() {
+        let last = { key: '', at: -Infinity };
+        let sent = [];
+        return function allow(name, props, now) {
+            let key;
+            try {
+                key = `${name}\u0000${JSON.stringify(props === undefined ? null : props)}`;
+            } catch (_) {
+                key = String(name);
+            }
+            if (key === last.key && now - last.at < RATE_DEDUPE_MS) return false;
+            last = { key, at: now };
+            if (RATE_EXEMPT.includes(name)) return true;
+            sent = sent.filter((t) => now - t < RATE_WINDOW_MS);
+            if (sent.length >= RATE_MAX_EVENTS) return false;
+            sent.push(now);
+            return true;
+        };
+    }
+    const allowEvent = createRateLimiter();
+
     // Public helper. No-op (but always callable) when disabled.
     window.nextdashTrack = function (name, props) {
         if (!enabled || !name) return;
+        try {
+            if (!allowEvent(String(name), props, Date.now())) return;
+        } catch (_) {
+            // The guard failing must not stop the event or break the app.
+        }
         countDepth(String(name));
         let safe = sanitizeProps(props);
         if (isDemo) safe = { ...(safe && typeof safe === 'object' ? safe : {}), mode: 'demo' };
@@ -129,6 +168,7 @@
 
     // Exposed for the tests that pin the promise the setting makes.
     window.nextdashBucketCount = bucketCount;
+    window.nextdashRateLimit = createRateLimiter;
 
     /**
      * Umami accepts at most 50 properties per event and silently drops the
@@ -207,35 +247,25 @@
         // What a bookmark row shows
         ['showStatus', flag('showStatus')],
         ['showPing', flag('showPing')],
-        ['shortcutDisplay', pick('shortcutDisplay', 'always')],
         ['showIcons', flag('showIcons')],
         ['showRowTags', flag('showRowTags')],
         ['linkPreviewCards', flag('showLinkPreviewCards')],
         // Search
-        ['fuzzySuggestions', flag('enableFuzzySuggestions')],
         ['interleaveMode', flag('interleaveMode')],
         ['findersInSearch', flag('includeFindersInSearch')],
         // Views and inbox
-        ['inboxEnabled', flagOn('inboxEnabled')],
-        ['inboxInPageTabs', flagOn('inboxShowInPageTabs')],
-        ['pasteDestination', pick('pasteDestination', 'ask')],
-        ['pasteQuickAdd', flag('pasteUrlQuickAdd')],
-        ['healthView', flagOn('healthViewEnabled')],
         ['healthAutoRecheck', flag('healthAutoRecheckEnabled')],
         ['newBookmarkCheckMode', pick('newBookmarkCheckMode', 'periodic')],
-        ['monitorInterval', bucketOf('defaultMonitorIntervalMin', [5, 15, 60, 360])],
         ['staleDays', bucketOf('bookmarkStaleDays', [30, 90, 180, 365])],
         // Smart collections
         ['smartRecent', flag('showSmartRecentCollection')],
         ['smartMostUsed', flag('showSmartMostUsedCollection')],
         // Config habits and the rest
-        ['bookmarksSort', pick('configBookmarksSort', 'page')],
+        ['language', pick('language', 'en')],
         ['sessionTips', flagOn('enableSessionTips')],
         ['serverLog', flag('serverLogEnabled')],
         ['weather', flag('showWeatherWithDate')],
-        ['globalShortcuts', flag('globalShortcuts')],
         ['hyprMode', flag('hyprMode')],
-        ['autoBackup', flag('autoBackupEnabled')],
         ['openInNewTab', flagOn('openInNewTab')],
     ];
 
@@ -262,16 +292,99 @@
     }
 
     /**
-     * One settings snapshot per page load, so adoption reads directly as
-     * "X% of sessions have feature Y on" — a change-only event would miss
-     * everyone who never touches a setting.
+     * What this browser remembers between page loads, only ever written while
+     * analytics is on: when each snapshot last went out and what it said, the
+     * release it last ran, and when it first saw the app. Storage can be absent
+     * or refuse writes (private windows, blocked site data), and then the
+     * snapshots simply go out every load, as they did before.
+     */
+    const STATE_KEY = 'nextdash.analytics';
+    function readState() {
+        try {
+            const state = JSON.parse(window.localStorage.getItem(STATE_KEY) || 'null');
+            return state && typeof state === 'object' ? state : {};
+        } catch (_) {
+            return {};
+        }
+    }
+    function writeState(state) {
+        try {
+            window.localStorage.setItem(STATE_KEY, JSON.stringify(state));
+        } catch (_) {
+            // Not remembered; the next load decides again.
+        }
+    }
+
+    /** A short, non-reversible fingerprint of a payload, to tell "same as last time". */
+    function hashPayload(payload) {
+        const text = JSON.stringify(payload);
+        let hash = 5381;
+        for (let i = 0; i < text.length; i += 1) hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0;
+        return (hash >>> 0).toString(36);
+    }
+
+    /**
+     * A snapshot goes out when it says something new: first time, a changed
+     * payload (the release is part of it, so every update sends a full set), a
+     * new calendar month (Umami's visitor id rotates monthly, and a visitor
+     * without a snapshot would vanish from the adoption figures), or a week
+     * since the last one.
+     *
+     * A snapshot per page load was 55% of every event and 700,000 stored
+     * properties in a hundred days, for numbers that moved a few times.
+     */
+    const SNAPSHOT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+    const monthOf = (ms) => new Date(ms).toISOString().slice(0, 7);
+    function snapshotDue(previous, payload, now) {
+        if (!Array.isArray(previous) || previous.length < 2) return true;
+        if (previous[0] !== hashPayload(payload)) return true;
+        if (monthOf(previous[1]) !== monthOf(now)) return true;
+        return now - previous[1] >= SNAPSHOT_REFRESH_MS;
+    }
+    window.nextdashSnapshotDue = snapshotDue;
+
+    /**
+     * Remembered only once the tracker has loaded: a snapshot that was queued
+     * for a tracker that then failed to load (offline, blocked) was never sent,
+     * and must not count as sent for the next week.
+     */
+    const afterTrackerLoad = [];
+    function sendSnapshot(name, payload) {
+        const now = Date.now();
+        const state = readState();
+        state.snap = state.snap && typeof state.snap === 'object' ? state.snap : {};
+        if (!snapshotDue(state.snap[name], payload, now)) return;
+        const remember = () => {
+            const latest = readState();
+            latest.snap = latest.snap && typeof latest.snap === 'object' ? latest.snap : {};
+            latest.snap[name] = [hashPayload(payload), now];
+            writeState(latest);
+        };
+        window.nextdashTrack(name, payload);
+        if (umamiReady) remember();
+        else afterTrackerLoad.push(remember);
+    }
+
+    /**
+     * One settings snapshot per page load at most (and see snapshotDue for how
+     * rarely it is actually sent), so adoption reads as "X% of visitors have
+     * feature Y on": the weekly repeat keeps those who never touch a setting
+     * in the picture.
      */
     function trackSettingsSnapshot(settings) {
         // The demo's settings are the seed's, which says nothing about anyone.
         if (!enabled || isDemo || !settings || typeof settings !== 'object') return;
         if (trackSettingsSnapshot._sent) return; // once per page load
         trackSettingsSnapshot._sent = true;
-        window.nextdashTrack('settings-snapshot', buildPayload(SETTINGS_FIELDS, settings));
+        const payload = buildPayload(SETTINGS_FIELDS, settings);
+        // Who and how: a code for this install, how the server runs, and how
+        // it is reached. Each a fixed word or short code, set by the server.
+        const installRef = self.getAttribute('data-install');
+        if (/^[0-9a-f]{16}$/.test(installRef || '')) payload.installId = installRef;
+        const distribution = self.getAttribute('data-distribution');
+        if (/^[a-z]{1,10}$/.test(distribution || '')) payload.distribution = distribution;
+        payload.exposure = hostExposure(window.location.hostname);
+        sendSnapshot('settings-snapshot', payload);
     }
 
     /**
@@ -315,7 +428,7 @@
         }
         if (!counts || typeof counts !== 'object') return;
         trackContentSnapshot._sent = true;
-        window.nextdashTrack('content-snapshot', buildPayload(CONTENT_FIELDS, counts));
+        sendSnapshot('content-snapshot', buildPayload(CONTENT_FIELDS, counts));
     }
 
     /**
@@ -338,6 +451,9 @@
         const byType = raw && typeof raw.byType === 'object' ? raw.byType : {};
         Object.keys(byType).sort().forEach((type) => {
             if (!/^[a-z]{1,20}$/.test(type)) return;
+            // A type nobody has stays out: absent reads as none, and the
+            // register is long enough that the zeros were most of the event.
+            if (!(Number(byType[type]) > 0)) return;
             fields.push([type, () => bucket(byType[type], [0, 1, 2, 5])]);
         });
         return fields;
@@ -348,11 +464,9 @@
         ['control', flag('control')],
         ['writeToken', flag('writeToken')],
         ['runAsRoot', flag('runAsRoot')],
-        ['viewEnabled', flag('viewEnabled')],
         ['updateInterval', pick('updateInterval', 'off')],
         ['refreshSeconds', pick('refreshSeconds', '5')],
         ['logLines', pick('logLines', '200')],
-        ['statsHistory', flag('statsHistory')],
         ['confirmStopRestart', flag('confirmStopRestart')],
         ['hidden', bucketOf('hidden', [0, 1, 5, 20])],
         ['customWebUIs', bucketOf('customWebUIs', [0, 1, 5, 20])],
@@ -366,32 +480,17 @@
         // Health
         ['healthChecked', bucketOf('healthChecked', [0, 10, 50, 200, 500])],
         ['healthDown', bucketOf('healthDown', [0, 1, 3, 10])],
-        ['healthErrors', bucketOf('healthErrors', [0, 1, 3, 10])],
         ['certsDue', bucketOf('certsDue', [0, 1, 3])],
         ['certsExpired', bucketOf('certsExpired', [0, 1, 3])],
         ['lastCheckHours', bucketOrWord('lastCheckHours', [1, 6, 24, 168], 'never')],
-        ['recheckHours', bucketOf('recheckHours', [1, 6, 12, 24, 72])],
         // Inbox
         ['inboxUnread', bucketOf('inboxUnread', [0, 5, 20, 100])],
-        ['inboxSnoozed', bucketOf('inboxSnoozed', [0, 1, 5, 20])],
         ['inboxNoted', bucketOf('inboxNoted', [0, 1, 5, 20])],
         ['inboxKept', bucketOf('inboxKept', [0, 10, 50])],
         ['inboxFromExtension', flag('inboxFrom_extension')],
         ['inboxFromPaste', flag('inboxFrom_paste')],
-        ['inboxFromShare', flag('inboxFrom_share')],
-        ['inboxFromImport', flag('inboxFrom_import')],
-        ['inboxSort', pick('inboxSort', 'last')],
-        ['inboxFilter', pick('inboxFilter', 'last')],
-        ['inboxAddress', pick('inboxAddress', 'domain')],
-        ['inboxKeyLegend', pick('inboxKeyLegend', 'below')],
-        ['inboxDeleteAfterPromote', flag('inboxDeleteAfterPromote')],
         // The Bookmarks view
         ['bmColumns', bucketOrWord('bmColumns', [0, 2, 4, 6, 9], 'all')],
-        ['bmGroup', pick('bmGroup', 'last')],
-        ['bmAddress', pick('bmAddress', 'full')],
-        ['bmPanelWidth', pick('bmPanelWidth', 'normal')],
-        ['bmRail', pick('bmRail', 'open')],
-        ['bmRowColors', flag('bmRowColors')],
     ];
 
     function trackFeatureSnapshots() {
@@ -407,9 +506,9 @@
         }
         if (!snaps || typeof snaps !== 'object') return;
         trackFeatureSnapshots._sent = true;
-        if (snaps.widgets) window.nextdashTrack('widgets-snapshot', buildPayload(widgetFields(snaps.widgets), snaps.widgets));
-        if (snaps.containers) window.nextdashTrack('containers-snapshot', buildPayload(CONTAINER_FIELDS, snaps.containers));
-        if (snaps.views) window.nextdashTrack('views-snapshot', buildPayload(VIEW_FIELDS, snaps.views));
+        if (snaps.widgets) sendSnapshot('widgets-snapshot', buildPayload(widgetFields(snaps.widgets), snaps.widgets));
+        if (snaps.containers) sendSnapshot('containers-snapshot', buildPayload(CONTAINER_FIELDS, snaps.containers));
+        if (snaps.views) sendSnapshot('views-snapshot', buildPayload(VIEW_FIELDS, snaps.views));
     }
 
     // Exposed so the dashboard/config can report once their settings are loaded.
@@ -418,6 +517,88 @@
     // are the server's counts.
     window.nextdashTrackSettings = trackSettingsSnapshot;
     window.nextdashTrackContent = trackContentSnapshot;
+
+    /** "v1.19" from "v1.19.8" or "v2026.07" from "v2026.07.23.6", else "unknown". */
+    function minorOf(tag) {
+        const match = /^v\d+\.\d+/.exec(String(tag || ''));
+        return match ? match[0] : 'unknown';
+    }
+
+    /**
+     * Three small questions the snapshots cannot answer, none of which carries
+     * more than a fixed word: how fast people move to a new release, how soon a
+     * new install gets its first bookmark, and whether the app breaks.
+     */
+    if (enabled && !isDemo) {
+        const state = readState();
+        let changed = false;
+
+        // `app-updated`: the minor release this browser moved from and to. Never
+        // on the first visit, which has nothing to move from.
+        if (releaseTag && state.release !== releaseTag) {
+            if (state.release) {
+                window.nextdashTrack('app-updated', { from: minorOf(state.release), to: minorOf(releaseTag) });
+            }
+            state.release = releaseTag;
+            changed = true;
+        }
+
+        // The first sighting, kept only as a time, and only counted as an install
+        // worth timing when it started small: for a library that was already
+        // there, "time to first bookmark" would measure nothing.
+        if (!state.first) {
+            let started = false;
+            try {
+                started = Number(JSON.parse(self.getAttribute('data-content') || '{}').bookmarks) <= 10;
+            } catch (_) {
+                started = false;
+            }
+            state.first = Date.now();
+            state.fresh = started;
+            changed = true;
+        }
+        if (changed) writeState(state);
+
+        // `first-bookmark`: once per browser, as a band: ten minutes, a day, a
+        // week, or later.
+        const FIRST_STEPS = [10 * 60 * 1000, 24 * 60 * 60 * 1000, 7 * 24 * 60 * 60 * 1000];
+        const FIRST_WORDS = ['10m', '1d', '7d'];
+        const trackAll = window.nextdashTrack;
+        window.nextdashTrack = function (name, props) {
+            trackAll(name, props);
+            if (name !== 'bookmark-created' || !props || props.result !== 'ok') return;
+            const now = readState();
+            if (!now.fresh || now.firstBookmark) return;
+            const since = Date.now() - now.first;
+            const index = FIRST_STEPS.findIndex((step) => since <= step);
+            now.firstBookmark = true;
+            writeState(now);
+            trackAll('first-bookmark', { after: index === -1 ? 'later' : FIRST_WORDS[index] });
+        };
+
+        // `app-error`: that something threw, and in which view. Never the
+        // message or the stack, which can hold a URL or a title. At most three
+        // per page load, so a loop cannot become a flood, and only errors from
+        // this app's own scripts, not from an extension or a blocked resource.
+        let errorsSent = 0;
+        const viewOf = () => {
+            const word = window.location.hash.replace(/^#/, '').split(/[/?&=]/)[0];
+            if (/^\d{1,2}$/.test(word)) return 'page';
+            return /^[a-z][a-z0-9-]{0,30}$/i.test(word) ? word.toLowerCase() : 'other';
+        };
+        const reportError = (kind) => {
+            if (errorsSent >= 3) return;
+            errorsSent += 1;
+            window.nextdashTrack('app-error', { kind, view: viewOf() });
+        };
+        if (typeof window.addEventListener === 'function') {
+            window.addEventListener('error', (event) => {
+                if (event && event.filename && !String(event.filename).startsWith(window.location.origin)) return;
+                reportError('error');
+            });
+            window.addEventListener('unhandledrejection', () => reportError('rejection'));
+        }
+    }
 
     /**
      * `demo:session-depth`: how far a demo visit went, once, when it ends.
@@ -448,6 +629,33 @@
         const out = { ...payload };
         if (out.url) out.url = demoSafeUrl(out.url);
         if (out.referrer) out.referrer = demoSafeUrl(out.referrer);
+        return out;
+    }
+
+    /**
+     * Where nextDash is opened, as one word: "localhost", "lan" (a private or
+     * link-local address, a name without dots, or .local/.lan/.home.arpa/.internal)
+     * or "domain" (anything else). The word is all that leaves.
+     */
+    function hostExposure(hostname) {
+        const host = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+        if (!host) return 'unknown';
+        if (host === 'localhost' || host.endsWith('.localhost') || host === '::1' || /^127\./.test(host)) return 'localhost';
+        if (/^(10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)) return 'lan';
+        if (/^(fe80:|fc|fd)/.test(host) && host.includes(':')) return 'lan';
+        if (!host.includes('.') && !host.includes(':')) return 'lan';
+        if (/\.(local|lan|home\.arpa|internal|home)$/.test(host)) return 'lan';
+        return 'domain';
+    }
+    window.nextdashHostExposure = hostExposure;
+
+    /** Umami's data-before-send hook outside the demo: no hostname, referrer or page title. */
+    function installBeforeSend(_type, payload) {
+        if (!payload || typeof payload !== 'object') return payload;
+        const out = { ...payload };
+        if ('hostname' in out) out.hostname = hostExposure(out.hostname);
+        if ('referrer' in out) out.referrer = '';
+        if ('title' in out) out.title = 'nextDash';
         return out;
     }
 
@@ -487,19 +695,37 @@
         window.nextdashDemoBeforeSend = demoBeforeSend;
         window.addEventListener('pagehide', sendSessionDepth);
         window.addEventListener('pageshow', (event) => { if (event.persisted) depthSent = false; });
+    } else {
+        // What Umami would record about where this runs is the address people
+        // open nextDash on, which is their own: a LAN address, a private domain,
+        // the login page of the proxy in front. None of it leaves; the snapshot
+        // carries `exposure` instead (see hostExposure).
+        tracker.setAttribute('data-before-send', 'nextdashBeforeSend');
+        window.nextdashBeforeSend = installBeforeSend;
     }
-    // Let Umami auto-track the initial pageview for real page loads (/, /config).
-    // Same-URL view changes (health, inbox, page switches) are tracked manually.
+    // Umami hooks history.pushState/replaceState and counts every address
+    // change as a pageview, so each in-app view switch (#config, #inbox, #1)
+    // became one and bounce rate was meaningless. Auto-tracking is off; the
+    // page load is reported once below, and view changes stay `view:*` events.
+    tracker.setAttribute('data-auto-track', 'false');
     tracker.addEventListener('load', function () {
         umamiReady = true;
+        try {
+            // The path only: the hash is the in-app view, which has its own events.
+            window.umami.track((payload) => ({ ...payload, url: window.location.pathname }));
+        } catch (_) {
+            // Analytics must never break the app.
+        }
         while (queue.length) {
             const [name, props] = queue.shift();
             rawTrack(name, props);
         }
+        while (afterTrackerLoad.length) afterTrackerLoad.shift()();
     });
     tracker.addEventListener('error', function () {
         // Blocked (ad-blocker / offline / CSP). Drop the queue silently.
         queue.length = 0;
+        afterTrackerLoad.length = 0;
     });
     document.head.appendChild(tracker);
 })();

@@ -66,6 +66,8 @@ async function stubStats(page) {
                     send('event', { url: location.href });
                     window.umami = {
                         track(name, props) {
+                            // The page's one pageview: a payload callback, not an event.
+                            if (typeof name === 'function') { send('event', name({ url: location.href })); return; }
                             (window.__umami = window.__umami || []).push({ name, props });
                             send('event', { name, data: props, url: location.href });
                         },

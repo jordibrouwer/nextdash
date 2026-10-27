@@ -71,7 +71,8 @@ w2.nextdashTrack('bookmark:move', { size: '6-20' });
 
 flush();
 
-assert.deepStrictEqual(sent.map(([name, props]) => [name, props]), [
+// The page load's own pageview is a track(fn) call, not a named event.
+assert.deepStrictEqual(sent.filter(([name]) => typeof name === 'string').map(([name, props]) => [name, props]), [
     ['health:bulk-recheck', { count: '50' }],
     ['health:export', { rows: '100+' }],
     ['page-switch', { index: 3 }],

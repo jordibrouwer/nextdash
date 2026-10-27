@@ -22,12 +22,16 @@ async function stubTracker(page) {
     await page.route(TRACKER, (route) => route.fulfill({
         status: 200,
         contentType: 'application/javascript',
-        body: 'window.__events = window.__events || []; window.umami = { track: (n, p) => window.__events.push([n, p]) };',
+        body: 'window.__events = window.__events || []; window.umami = { track: (n, p) => { if (typeof n === "string") window.__events.push([n, p]); } };',
     }));
 }
 
 async function loadWithAnalyticsOn(page, extra = {}) {
     await stubTracker(page);
+    // The snapshots are remembered between loads and not sent again while they
+    // say the same thing (analytics-snapshot-gate.test.cjs); these tests want to
+    // read every one of them on each load.
+    await page.addInitScript(() => { try { window.localStorage.removeItem('nextdash.analytics'); } catch (_) { /* no storage */ } });
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.settings != null, null, { timeout: 15_000 });
@@ -182,7 +186,9 @@ test.describe('the analytics snapshots', () => {
         await loadWithAnalyticsOn(page, { dockerHostAddress: 'tower.lan', dockerHiddenContainers: ['secret-box'] });
         const byName = Object.fromEntries(await snapshots(page));
 
-        expect(Object.keys(byName['widgets-snapshot'])).toEqual(expect.arrayContaining(['total', 'pages', 'health', 'containers']));
+        expect(Object.keys(byName['widgets-snapshot'])).toEqual(expect.arrayContaining(['total', 'pages', 'health']));
+        // A type this install does not have stays out: absent reads as none.
+        expect(Object.keys(byName['widgets-snapshot'])).not.toContain('containers');
         expect(byName['containers-snapshot']).toMatchObject({ hostAddressSet: true, hidden: '1' });
         expect(Object.keys(byName['views-snapshot'])).toEqual(expect.arrayContaining(['healthChecked', 'inboxUnread', 'bmColumns']));
         const all = JSON.stringify([byName['widgets-snapshot'], byName['containers-snapshot'], byName['views-snapshot']]);
