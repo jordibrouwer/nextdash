@@ -4407,6 +4407,39 @@ body.no-animations .config-new-features-panel-star {
     }
 }
 
+/* On a phone the fixed-width controls (13rem filter, 13rem link slot, 6.5rem
+   button) add up to more than the viewport and the page scrolled sideways.
+   Let them give way instead. */
+@media (max-width: 640px) {
+    .config-view-head .lvs-header-actions:has(.config-changed-bar) {
+        flex-shrink: 1;
+        min-width: 0;
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+    .config-view-head .lvs-header-actions .config-changed-bar {
+        flex-wrap: wrap;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .config-view-head .lvs-header-actions .config-settings-filter {
+        flex: 1 1 8rem;
+        inline-size: auto;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view], [data-monitoring-tour]))::after {
+        display: none;
+    }
+    .config-view-head .lvs-header-actions [data-inbox-open-view],
+    .config-view-head .lvs-header-actions [data-bm-open-view],
+    .config-view-head .lvs-header-actions [data-monitoring-tour] {
+        flex: 0 1 auto;
+        inline-size: auto;
+        max-width: 100%;
+    }
+}
+
 /*
  * Settings here save on change, so this indicator is the only confirmation a
  * change landed. It is fixed rather than sitting in the header because the
