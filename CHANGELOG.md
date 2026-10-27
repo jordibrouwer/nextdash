@@ -141,6 +141,10 @@ The usage analytics send less and carry what was missing to read them: an instal
 - **fix — a loop cannot flood the data.** `nextdashTrack` drops an identical event within 500 ms and caps the rest at 100 per rolling minute; the snapshots are exempt from the cap. One day had 2,575 pageviews from 21 visitors.
 - **new — `NEXTDASH_DISABLE_INSTALL_PING=1`.** Switches off the daily install count alone, where `DISABLE_TELEMETRY` also takes the analytics away. Test runs and CI shards start a server on an empty data folder, which counted as a new install each time and made up most of the count.
 
+### Config
+
+- **fix — the band's line is one line in every section.** The description under a section's title could wrap to a second line, which made the sticky band sixteen pixels taller in Inbox, Appearance and Behavior than in Bookmarks and moved everything under it when you went from one tab to another. `.config-view-head .lvs-description` is now `nowrap` with an ellipsis (the whole sentence is still its title), and the Inbox, Appearance and Behavior lines are shorter in all six languages so that they fit in the 400px the filter leaves them.
+
 ### Tests
 
 - **new — `analytics-snapshot-gate.test.cjs` and `analytics-pageview-rate.test.cjs`.** The gate (changed, month, week, release, a tracker that never loaded), the three small events, the install code, the hostname words and the rate limiter, against a fake storage and clock. `analytics-count-buckets.test.cjs` skips the tracker's own pageview call.

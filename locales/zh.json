@@ -8132,7 +8132,7 @@
     "inboxGroupBadge": "页眉图标",
     "inboxGroupCollecting": "收集",
     "inboxGroupRailPanel": "筛选栏和侧边面板",
-    "inboxIntro": "哪些内容进入收件箱，以及收件箱视图的外观。每项更改立即生效并保存。",
+    "inboxIntro": "收件箱收集什么，以及它的外观。",
     "inboxOpenView": "打开收件箱",
     "inboxShowInPageTabsInfoMessage": "页眉目的地中的收件箱图标，以及用 Shift+I 前往。关闭后收件箱仍可使用，但会隐藏，直到你访问 #inbox。",
     "inboxShowInPageTabsInfoTitle": "页眉中的收件箱",

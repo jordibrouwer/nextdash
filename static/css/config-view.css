@@ -4284,14 +4284,22 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /*
- * Up to two lines, so the band can grow by one in a section with a long line.
- * Kept to two because the band is sticky; the old rule was one line so the band
- * was the same height in every section; the intros are short enough now that
- * few reach the second line. The whole sentence is still the line's title.
+ * One line, cut with an ellipsis. The band is the same height in every section,
+ * so the navigation below it does not move when you go from one tab to another;
+ * with two lines allowed, a section whose line wrapped made the band sixteen
+ * pixels taller than the next one's. The section's filter takes the right of
+ * the band and leaves the line about 400px, which is what the intros are
+ * written to. The whole sentence is the line's title (_fillShellHeadFromSection).
  */
 .config-view-head .lvs-header-text {
     min-width: 0;
     flex: 1 1 auto;
+}
+
+.config-view-head .lvs-description {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .config-view-head-breadcrumb {

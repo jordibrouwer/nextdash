@@ -41,7 +41,7 @@
         }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.inboxIntro',
-                'What lands in the inbox, and how the Inbox view looks. Every change applies immediately and is saved.'))}</p>
+                'What the inbox collects and how it looks.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div class="config-tabpage">
                 <div class="config-tabpage-main">

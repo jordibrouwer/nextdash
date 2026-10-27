@@ -12435,7 +12435,7 @@ class DashboardConfig {
         // preview to put beside it, and the short line under each setting is
         // the explanation the hub drew as a picture.
         return `
-            <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves.'))}</p>
             ${this.renderSectionTabStrip('behavior')}
             <div class="config-tabpage">
                 <div class="config-tabpage-main">
