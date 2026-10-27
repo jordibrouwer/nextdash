@@ -4351,13 +4351,17 @@ body.no-animations .config-new-features-panel-star {
     gap: var(--space-2, 0.5rem);
 }
 
-.config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view]))::after {
+.config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view], [data-monitoring-tour]))::after {
     content: '';
     flex: 0 0 var(--config-view-link-slot);
 }
 
+/* A tour on a band that has the filter takes the same slot at the right edge, as
+   the view link does for Bookmarks and Inbox: the filter stays where it is on
+   every tab, and the tour is at the end, as on the bands without a filter. */
 .config-view-head .lvs-header-actions [data-inbox-open-view],
-.config-view-head .lvs-header-actions [data-bm-open-view] {
+.config-view-head .lvs-header-actions [data-bm-open-view],
+.config-view-head .lvs-header-actions [data-monitoring-tour] {
     flex: 0 0 var(--config-view-link-slot);
     inline-size: var(--config-view-link-slot);
     box-sizing: border-box;

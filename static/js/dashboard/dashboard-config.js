@@ -2358,6 +2358,10 @@ class DashboardConfig {
         const containersTour = this.section === 'containers'
             ? `<button type="button" class="lvs-action" data-containers-tour title="${this.dash.escapeHtml(this.t('config.containersTourHint', 'A tour of the Containers view'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Monitoring has its own tour, as Widgets does, on the same band.
+        const monitoringTour = this.section === 'monitoring'
+            ? `<button type="button" class="lvs-action" data-monitoring-tour title="${this.dash.escapeHtml(this.t('config.monitoringTourHint', 'A tour of monitoring'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         // Glances the same: its tour, a click away from the settings that feed it.
         const glancesTour = this.section === 'glances'
             ? `<button type="button" class="lvs-action" data-glances-config-tour title="${this.dash.escapeHtml(this.t('config.glancesTourHint', 'A tour of the Glances page'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
@@ -2374,7 +2378,7 @@ class DashboardConfig {
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + viewLink + widgetsTour + containersTour + glancesTour;
+                : '')) + viewLink + widgetsTour + monitoringTour + containersTour + glancesTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2399,6 +2403,7 @@ class DashboardConfig {
                         void this.dash.inbox?.openInboxView?.(link);
                     }
                 } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
+                else if (e.target.closest('[data-monitoring-tour]')) void this.openMonitoringTour();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-glances-config-tour]')) void this.playViewTour('glancesTutorialV1');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
@@ -2656,6 +2661,7 @@ class DashboardConfig {
             this.bindBehaviorControls(container);
         } else if (this.section === 'monitoring') {
             this.bindMonitoringControls(container);
+            void this.maybeShowMonitoringTutorial();
         } else if (this.section === 'structure') {
             this.bindPagesTags(container);
         } else if (this.section === 'bookmarks') {
@@ -12831,7 +12837,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1', 'monitoringTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -12901,6 +12907,42 @@ class DashboardConfig {
         this.bindBehaviorActions(container);
         this.bindFilterElsewhere(container);
         this.bindFormKeyboard(container);
+    }
+
+    /**
+     * The one-time Monitoring tour, the first time this section is opened --
+     * the same guards and the same order as the Widgets tour's: the cheap
+     * checks run before the fetch, so a reader who has seen it, or has session
+     * tips off, never asks for the script at all.
+     */
+    async maybeShowMonitoringTutorial() {
+        // Once: binding runs again on every repaint of the section, and a
+        // second call would replace the tour on screen.
+        if (this._monitoringTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.MONITORING_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._monitoringTutorialAsked = true;
+        if (!(await this.loadMonitoringTour())) return;
+        window.MonitoringTutorial?.maybeShow?.();
+    }
+
+    /** Fetch the tour script once. False when it cannot be had. */
+    async loadMonitoringTour() {
+        if (typeof window.MonitoringTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/monitoring-tutorial.js', 'monitoringTutorialModule',
+                () => typeof window.MonitoringTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    }
+
+    /** The Monitoring tour, from the Tour button on the band or Config's replay: seen or not. */
+    async openMonitoringTour() {
+        if (!(await this.loadMonitoringTour())) return false;
+        return window.MonitoringTutorial?.open?.() === true;
     }
 
     bindMonitoringControls(container) {
@@ -13044,6 +13086,10 @@ class DashboardConfig {
             case 'widgetsTutorialV1':
                 await this.openConfigView('widgets');
                 await this.openWidgetsTour?.();
+                return true;
+            case 'monitoringTutorialV1':
+                await this.openConfigView('monitoring');
+                await this.openMonitoringTour();
                 return true;
             default:
                 return false;
@@ -16215,6 +16261,9 @@ class DashboardConfig {
     // fetched at all. Both must agree.
     static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
 
+    // Repeated from monitoring-tutorial.js, for the same reason.
+    static MONITORING_TUTORIAL_TIP_ID = 'monitoringTutorialV1';
+
     /*
      * The six guided tours, in one list.
      *
@@ -16246,6 +16295,8 @@ class DashboardConfig {
           whereKey: 'config.tourWhereGlances', where: 'the next time you open the Glances page' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
+        { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring',
+          whereKey: 'config.tourWhereMonitoring', where: 'the next time you open Config → Monitoring' },
     ];
 
     /** The types a reader may add. Mirrors the server's register. */

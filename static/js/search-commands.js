@@ -16,6 +16,7 @@ class SearchCommandsComponent {
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers' },
         { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
+        { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring' },
     ];
 
     constructor(language = null, currentBookmarks = [], allBookmarks = [], updateQueryCallback = null) {

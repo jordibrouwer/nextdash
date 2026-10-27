@@ -44,6 +44,7 @@ const TOURS = [
     { id: 'bookmarksTutorialV1', view: 'library', modal: '.bookmarks-tutorial-modal' },
     { id: 'containersTutorialV3', view: 'docker', modal: '.containers-tutorial-modal', docker: true },
     { id: 'widgetsTutorialV1', view: 'config', modal: '.widgets-tutorial-modal', section: 'widgets' },
+    { id: 'monitoringTutorialV1', view: 'config', modal: '.monitoring-tutorial-modal', section: 'monitoring' },
 ];
 
 for (const tour of TOURS) {
