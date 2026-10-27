@@ -475,7 +475,7 @@ test.describe('the way back', () => {
         await openModal(page);
         await modal(page).locator('[data-sg-more]').click();
         await expect(modal(page).locator('[data-sg-step="containers"]')).toHaveCount(0);
-        expect(await modal(page).locator('[data-sg-step]').count()).toBe(9);
+        expect(await modal(page).locator('[data-sg-step]').count()).toBe(10);
     });
 
     test('the key 1 brings you back from config, and the modal says so from the start', async ({ page, request }) => {
@@ -501,7 +501,7 @@ test.describe('the steps', () => {
         await openModal(page);
         const ids = await modal(page).evaluate((el) => [...el.querySelectorAll('[data-sg-step]')].map((s) => s.getAttribute('data-sg-step')));
         // Find your way, bring your links in, look at them, add to the page, watch it, then the settings.
-        expect(ids).toEqual(['tour', 'import', 'extension', 'bookmarks', 'inbox', 'widget', 'checks', 'notifications', 'overview']);
+        expect(ids).toEqual(['tour', 'import', 'extension', 'bookmarks', 'inbox', 'widget', 'checks', 'notifications', 'overview', 'secondPage']);
     });
 
     test('Open the Inbox view opens it, and Esc comes back to the dashboard', async ({ page, request }) => {

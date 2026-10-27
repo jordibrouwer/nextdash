@@ -418,6 +418,52 @@ body.no-animations .start-guide-modal {
     color: var(--text-secondary);
 }
 
+/* The ready-made pages: three cards in a row, then the address they share. */
+.start-guide-modal .sg-choices[data-sg-starters] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 0.6rem;
+}
+
+.start-guide-modal .sg-chip {
+    display: inline-block;
+    margin: 0.15rem 0.3rem 0 0;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    font-size: 0.72rem;
+    font-style: normal;
+}
+
+.start-guide-modal .sg-starter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.65rem;
+    font-size: var(--font-size-controls, 0.88rem);
+}
+
+.start-guide-modal .sg-starter-form[hidden] {
+    display: none;
+}
+
+.start-guide-modal .sg-starter-form label {
+    color: var(--text-secondary);
+}
+
+.start-guide-modal .sg-starter-form .sg-btn {
+    align-self: flex-start;
+}
+
+/* "Nederlands detected · Switch", under the language menu. */
+.start-guide-modal .sg-lang-hint {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
 .start-guide-modal .sg-weather {
     display: flex;
     align-items: center;

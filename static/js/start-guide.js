@@ -35,6 +35,7 @@
     // reloads, before anyone had looked.)
     const FOUND_KEY = 'nextdash:start-guide-found';
     const VISIBLE_STEPS = 3;
+    const STARTER_IDS = ['homelab', 'media-server', 'developer'];
     const LANGUAGES = [
         ['en', 'English'], ['nl', 'Nederlands'], ['de', 'Deutsch'],
         ['fr', 'Français'], ['zh', '中文'], ['es', 'Español'],
@@ -69,7 +70,7 @@
      */
     function buildSteps(guide) {
         const go = (hash) => () => guide.goTo(hash);
-        return [
+        const steps = [
             {
                 id: 'tour',
                 label: tq('stepTour', 'Take the 1-minute tour'),
@@ -124,7 +125,23 @@
                 hint: tq('stepOverviewHint', 'An overview of your install'),
                 run: go('#config/overview'),
             },
+            {
+                id: 'secondPage',
+                label: tq('stepSecondPage', 'Add a second page'),
+                hint: tq('stepSecondPageHint', 'Keep work and home apart'),
+                run: go('#config/pages-tags'),
+            },
         ];
+        // Only on an Unraid server: the step has nothing to open anywhere else.
+        if (guide.platform === 'unraid') {
+            steps.push({
+                id: 'unraid',
+                label: tq('stepUnraid', 'Connect your Unraid server'),
+                hint: tq('stepUnraidHint', 'See your array and shares'),
+                run: go('#config/unraid'),
+            });
+        }
+        return steps;
     }
 
     class StartGuide {
@@ -138,6 +155,13 @@
             this.emptyAsk = false;
             this.busy = false;
             this.replacesMain = false;
+            this.bundled = null;
+            this.platform = '';
+            this.starterId = '';
+            this.starterServer = '';
+            this.starterError = '';
+            this.langTouched = false;
+            this.langHintTracked = false;
             this.lastAllSet = false;
             this.langToken = 0;
             this.timers = [];
@@ -186,6 +210,8 @@
                     // Only main as it started can be emptied; anything somebody
                     // changed is theirs, and there is nothing to ask about it.
                     this.replacesMain = data.replacesMain === true;
+                    this.bundled = data;
+                    this.platform = data.platform === 'unraid' ? 'unraid' : '';
                 }
             } catch { /* the steps still make sense without the choice */ }
             this.buildBar();
@@ -494,7 +520,7 @@
             // nearest thing) once the content is drawn again.
             const active = document.activeElement;
             const focusKey = active && panel.contains(active)
-                ? ['data-sg-language', 'data-sg-city', 'data-sg-unit', 'data-sg-keep', 'data-sg-empty']
+                ? ['data-sg-language', 'data-sg-city', 'data-sg-unit', 'data-sg-keep', 'data-sg-empty', 'data-sg-starter-server', 'data-sg-starter-create', 'data-sg-lang-switch']
                     .map((attr) => (active.hasAttribute?.(attr) ? `[${attr}${attr === 'data-sg-unit' ? `="${active.getAttribute(attr)}"` : ''}]` : ''))
                     .find(Boolean) || ''
                 : '';
@@ -508,6 +534,12 @@
             const city = d.settings?.weatherLocation || '';
             const answered = ['keep', 'empty'].includes(this.state().templatePicked);
             const hasChoice = this.replacesMain && !answered;
+            const starter = this.renderStarter();
+            const langHint = this.languageSuggestion();
+            if (langHint && !this.langHintTracked) {
+                this.langHintTracked = true;
+                global.nextdashTrack?.('language-suggest', { action: 'shown', to: langHint[0] });
+            }
             const choices = hasChoice ? `
                 <div class="sg-choices">
                     <button type="button" class="sg-choice sg-choice-primary" data-sg-keep>
@@ -538,6 +570,7 @@
                         <select data-sg-language aria-label="${esc(tq('guideLanguage', 'Language'))}">
                             ${LANGUAGES.map(([code, name]) => `<option value="${code}"${code === lang ? ' selected' : ''}>${esc(name)}</option>`).join('')}
                         </select>
+                        ${langHint ? `<span class="sg-lang-hint" data-sg-lang-hint>${esc(tq('guideLanguageDetected', '{language} detected', { language: langHint[1] }))} <button type="button" class="sg-link" data-sg-lang-switch="${esc(langHint[0])}">${esc(tq('guideLanguageSwitch', 'Switch'))}</button></span>` : ''}
                     </label>
                 </div>
                 ${choices}
@@ -556,6 +589,7 @@
                         <button type="button" data-sg-unit="fahrenheit" aria-pressed="${unit === 'fahrenheit'}">°F</button>
                     </span>
                 </div>
+                ${starter}
                 <hr class="sg-rule">
                 <p class="sg-label">${esc(tq('guideNextSteps', 'Next steps'))}</p>
                 <ul class="sg-steps">${steps.map((s) => this.renderStep(s, done.has(s.id), !shown.has(s.id))).join('')}</ul>
@@ -591,6 +625,11 @@
                     return;
                 }
                 if (target.hasAttribute('data-sg-empty-confirm')) { void this.startEmpty(); return; }
+                const pick = target.getAttribute('data-sg-starter');
+                if (pick) { this.pickStarter(pick); return; }
+                if (target.hasAttribute('data-sg-starter-create')) { void this.createStarter(); return; }
+                const switchTo = target.getAttribute('data-sg-lang-switch');
+                if (switchTo) { this.acceptLanguage(switchTo); return; }
                 if (target.hasAttribute('data-sg-manual')) { global.open(DOCS_URL, '_blank', 'noopener'); return; }
                 if (target.hasAttribute('data-sg-studio')) { this.openStudio(); return; }
                 if (target.hasAttribute('data-sg-minimise')) { this.close(); return; }
@@ -615,8 +654,117 @@
             });
             city.addEventListener('change', () => this.saveWeather({ city: city.value }));
             panel.querySelector('[data-sg-language]').addEventListener('change', (event) => {
+                this.langTouched = true;
                 void this.setLanguage(event.target.value);
             });
+            const server = panel.querySelector('[data-sg-starter-server]');
+            if (server) {
+                server.addEventListener('input', () => { this.starterServer = server.value; });
+                server.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') { event.preventDefault(); void this.createStarter(); }
+                });
+            }
+        }
+
+        // ---- Ready-made pages and the language hint ------------------------------
+
+        starterTemplates() {
+            const list = this.bundled?.templates;
+            return Array.isArray(list) ? list.filter((t) => t && typeof t.id === 'string') : [];
+        }
+
+        renderStarter() {
+            const list = this.starterTemplates();
+            if (!list.length) return '';
+            const sub = this.replacesMain
+                ? tq('guideStarterReplaces', 'Replaces the example links.')
+                : tq('guideStarterNew', 'Added as a new page.');
+            const cards = list.map((t) => `
+                    <button type="button" class="sg-choice${t.id === this.starterId ? ' sg-choice-primary' : ''}" data-sg-starter="${esc(t.id)}" aria-pressed="${t.id === this.starterId}">
+                        <b>${esc(t.name)}</b>
+                        <span>${(Array.isArray(t.services) ? t.services.slice(0, 3) : []).map((n) => `<i class="sg-chip">${esc(n)}</i>`).join('')}</span>
+                    </button>`).join('');
+            const open = this.starterId && list.some((t) => t.id === this.starterId);
+            return `
+                <hr class="sg-rule">
+                <p class="sg-label">${esc(tq('guideStarter', 'Start from a ready-made page'))}</p>
+                <p class="sg-sub" data-sg-starter-sub>${esc(sub)}</p>
+                <div class="sg-choices" data-sg-starters>${cards}</div>
+                <div class="sg-starter-form" data-sg-starter-form${open ? '' : ' hidden'}>
+                    <label for="sg-starter-server">${esc(tq('guideStarterServer', 'Your server address'))}</label>
+                    <input id="sg-starter-server" type="text" data-sg-starter-server autocomplete="off" value="${esc(this.starterServer)}" placeholder="192.168.1.10">
+                    <p class="sg-sub">${esc(tq('guideStarterHint', 'One address fills every service; change single links later.'))}</p>
+                    <button type="button" class="sg-btn sg-btn-primary" data-sg-starter-create${this.busy ? ' disabled' : ''}>${esc(tq('guideStarterCreate', 'Create page'))}</button>
+                    <p class="sg-error" data-sg-starter-error role="alert"${this.starterError ? '' : ' hidden'}>${esc(this.starterError)}</p>
+                </div>`;
+        }
+
+        pickStarter(id) {
+            this.starterId = id;
+            this.starterError = '';
+            this.renderModal();
+            this.overlay?.querySelector('[data-sg-starter-server]')?.focus({ preventScroll: true });
+        }
+
+        async createStarter() {
+            const id = this.starterId;
+            if (!id || this.busy) return;
+            this.busy = true;
+            this.starterError = '';
+            const showError = (message) => {
+                this.starterError = message;
+                const el = this.overlay?.querySelector('[data-sg-starter-error]');
+                if (el) { el.textContent = message; el.hidden = false; }
+            };
+            let replaced = false;
+            try {
+                const api = typeof global.nextDashFetch === 'function' ? global.nextDashFetch : fetch;
+                const res = await api('/api/onboarding/template', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, server: this.starterServer.trim() }),
+                });
+                if (!res.ok) {
+                    let message = '';
+                    try { message = String((await res.json())?.error || ''); } catch { /* no body */ }
+                    this.busy = false;
+                    showError(message || tq('guideStarterFailed', 'Could not create the page'));
+                    return;
+                }
+                try { replaced = (await res.json())?.replaced === true; } catch { /* treated as added */ }
+            } catch {
+                this.busy = false;
+                showError(tq('guideStarterFailed', 'Could not create the page'));
+                return;
+            }
+            if (STARTER_IDS.includes(id)) global.nextdashTrack?.('start-template', { id, replaced });
+            try {
+                await this.showPage(MAIN_PAGE_ID);
+            } catch { /* the page catches up on the next revision check */ } finally {
+                this.busy = false;
+                if (replaced) {
+                    // The example links are gone: the same answer as Start empty.
+                    this.replacesMain = false;
+                    this.recordAnswer('empty');
+                }
+                this.starterId = '';
+                this.close();
+            }
+        }
+
+        /** [code, name] of the browser's language when it is offered and not the current one. */
+        languageSuggestion() {
+            if (this.langTouched) return null;
+            const base = String(global.navigator?.language || '').toLowerCase().split(/[-_]/)[0];
+            const found = LANGUAGES.find(([code]) => code === base);
+            if (!found) return null;
+            return found[0] === (this.dash.settings?.language || 'en') ? null : found;
+        }
+
+        acceptLanguage(code) {
+            this.langTouched = true;
+            global.nextdashTrack?.('language-suggest', { action: 'accepted', to: code });
+            void this.setLanguage(code);
         }
 
         // ---- What the choices do -----------------------------------------------
