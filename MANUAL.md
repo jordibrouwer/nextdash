@@ -4787,8 +4787,8 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
 | Container image registries and GitHub | Image update checks, when switched on | Config → Containers → Updates |
 | Your own services | Custom widgets, webhooks, alerts | Per widget or receiver |
-| Install count | Once a day: a random install id and the version (on Unraid, also the word Unraid) | Behavior → Privacy & sync → *Count this install*; `DISABLE_TELEMETRY=true` |
-| Analytics | Only when switched on | See below |
+| Install count | Once a day: a random install id and the version (on Unraid, also the word Unraid) | Behavior → Privacy & sync → *Count this install*; `DISABLE_TELEMETRY=true`; `NEXTDASH_DISABLE_INSTALL_PING=1` for the count alone |
+| Analytics | Only when switched on, with a random install code (**v1.22.3**) | See below |
 
 <a id="238-analytics"></a>
 
@@ -4796,10 +4796,10 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 
 nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https://umami.is) instance at `stats.nextdash.cc`. It is **off until you turn it on**. The aim is to learn which features are used and what can be improved.
 
-**Install count** — separate from the analytics below, and **on by default**. Once a day the server sends one request to `stats.nextdash.cc` with a random install id and the release you run, so the project can say how many installs exist. On Unraid, which sets `HOST_OS=Unraid` in every container, it also says Unraid. Nothing else: no address, no settings, no bookmarks, no counts. The id lives in the file `install-id` in the data folder; delete it for a new one. The card that announces it waits two days after the analytics question. Turn it off under **Behavior → Privacy & sync → Count this install**, or for the whole server with `DISABLE_TELEMETRY=true`, which also stops the analytics below.
+**Install count** — separate from the analytics below, and **on by default**. Once a day the server sends one request to `stats.nextdash.cc` with a random install id and the release you run, so the project can say how many installs exist. On Unraid, which sets `HOST_OS=Unraid` in every container, it also says Unraid. Nothing else: no address, no settings, no bookmarks, no counts. The id lives in the file `install-id` in the data folder; delete it for a new one. The card that announces it waits two days after the analytics question. Turn it off under **Behavior → Privacy & sync → Count this install**, or for the whole server with `DISABLE_TELEMETRY=true`, which also stops the analytics below. `NEXTDASH_DISABLE_INSTALL_PING=1` (**v1.22.3**) stops the count alone and leaves the analytics as they are. It is for test runs and CI: every server started on an empty data folder is a new install to the count.
 
 - **Turning it on or off** — the card on the dashboard (*Turn on*, *What is recorded?*, *No thanks*), **Config → Behavior → Privacy & sync → Privacy-friendly analytics**, or `:telemetry on` / `:telemetry off`. The page reloads, because the tracker script is only added to the page when analytics is on. Closing the card without answering asks again later; an answer is final.
-- **For the whole server** — `DISABLE_TELEMETRY=true` (also `1`, `yes`, `on`) turns it off for everyone and greys out the switch.
+- **For the whole server** — `DISABLE_TELEMETRY=true` (also `1`, `yes`, `on`) turns it off for everyone and greys out the switch. The same spellings work for `NEXTDASH_DISABLE_INSTALL_PING`, which switches off the install count only.
 - **When off** — the tracker is not in the page and nothing is downloaded. The install count above is the only request that remains, until you switch that off too.
 
 **What is recorded** — event names from a fixed list, with a few properties:
@@ -4811,11 +4811,20 @@ nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https:
 | Actions | Which command ran (by name), which menu entry was picked, bookmark opens and where from, edits, moves, deletes, checking changes, inbox, health and container actions |
 | Outcomes | Whether adding or editing succeeded, or hit a duplicate, conflict or error |
 | First-run help | Tours and tips shown and finished |
-| Settings | The **name** of a setting you change, and on/off for toggles; once per load, which features are on and the release you run |
-| Size | Once per load, bucketed counts (for example `500+` bookmarks) |
-| Widgets | Once per load, how many widgets of each type, bucketed |
-| Containers | Once per load, how the Containers view is set up: which options are on, whether a socket and control are configured, and bucketed counts of hidden containers, custom addresses and waiting updates. Docker itself is not asked. Per action (start, stop, restart, update, mute and the like): which one, whether it worked, where it came from (row, side panel, menu, key, command, selection bar) and, for a selection, a bucketed count |
-| Health, Inbox, Bookmarks view | Once per load, bucketed counts (checked, down, certificates due, unread, snoozed) and the layout options chosen in their Config tabs |
+| Settings | The **name** of a setting you change, and on/off for toggles; which features are on, the language you set and the release you run (see *How often* below) |
+| Size | Bucketed counts (for example `500+` bookmarks) |
+| Widgets | How many widgets of each type, bucketed; a type you do not have is left out |
+| Releases (**v1.22.3**) | When this browser moves to a newer release: the minor release it came from and went to (`v1.19` to `v1.21`), never on the first visit |
+| First bookmark (**v1.22.3**) | Once per browser, on a new small install: how long after the first visit the first bookmark was added, as a band (10 minutes, a day, a week, later) |
+| Errors (**v1.22.3**) | That something failed and in which view (`config`, `inbox`, `page`); never the message or the stack, at most three per page load, and only from nextDash's own scripts |
+| Containers | How the Containers view is set up: which options are on, whether a socket and control are configured, and bucketed counts of hidden containers, custom addresses and waiting updates. Docker itself is not asked. Per action (start, stop, restart, update, mute and the like): which one, whether it worked, where it came from (row, side panel, menu, key, command, selection bar) and, for a selection, a bucketed count |
+| Health, Inbox, Bookmarks view | Bucketed counts (checked, down, certificates due, unread) and the layout options chosen in their Config tabs |
+
+**How often** (**v1.22.3**) — the settings, size, widgets, containers and view snapshots are not sent on every page load. A snapshot goes out the first time, when it has changed, in a new calendar month, or when a week has passed since the last one; a new release always sends a full set. What this browser last sent is kept in its local storage under `nextdash.analytics`, and only while analytics is on. Settings that never differ between installs are no longer sent, and a widget type you do not have is left out rather than sent as zero.
+
+**Install code** (**v1.22.3**) — with the analytics on, the settings snapshot carries a random code so that visits from one install count as one. Without it, the same install would count again every month and in every browser. The code is also handed to the statistics tool as the identity of the visit, so the sessions of one install stay together for longer than the 30 days its own visitor id lasts. The code is made on the server from the `install-id` file and hashed, so it cannot be matched to the install count; delete the file for a new one. It is only sent while analytics is on, and not at all in the demo. There is no extra switch: it follows **Privacy-friendly analytics**.
+
+**Where it runs** (**v1.22.3**) — nextDash does not send the address you open it on. The hostname is replaced by one word, `localhost`, `lan` (a private address or a name without dots) or `domain`; the referrer and the page title are not sent. The snapshot also says how the server runs (`docker`, `unraid` or `other`) and which language is set. A page load is one pageview; moving between views is a view event, not a pageview.
 
 Every count is rounded into a band. **Never recorded:** bookmark names, URLs, search text, page or category names, notes or tag names, container, image or widget names, or any address. No cookies, no profile, no cross-site tracking. This is separate from the open counts in [§6](#6-opening-and-editing-bookmarks), which never leave your server.
 
