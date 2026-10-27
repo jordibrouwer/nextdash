@@ -1103,7 +1103,10 @@
         modalSessionId += 1;
         const sessionId = modalSessionId;
 
-        window.nextdashTrack?.('modal:whats-new');
+        // `auto` tells the modal that opened itself after an update from the one
+        // opened on purpose (the star, a link): only the first can be a nuisance.
+        window.nextdashTrack?.('modal:whats-new', { auto: !force });
+        const openedAt = Date.now();
 
         const finish = () => {
             if (markSeenOnConfirm && releaseToken) {
@@ -1127,9 +1130,17 @@
         // (the cheat sheet, a confirm). Closing ends the session for good.
         const stillOurs = () => isModalStillOpen() && sessionId === modalSessionId
             && document.querySelector('#app-modal .whats-new-modal') != null;
-        const finishOnce = () => {
+        const finishOnce = (how) => {
             if (finished) return;
             finished = true;
+            // How it went away and how soon: a bounce within two seconds is a
+            // different signal from a read. Fixed words only.
+            const open = Date.now() - openedAt;
+            window.nextdashTrack?.('whats-new:closed', {
+                via: how === 'dismiss' || how === 'replaced' ? how : 'button',
+                after: open < 2000 ? '<2s' : open < 10000 ? '<10s' : open < 30000 ? '<30s' : '30s+',
+                auto: !force,
+            });
             if (sessionId === modalSessionId) modalSessionId += 1;
             teardownWhatsNewUpdateCheckHeader();
             dropLiftedFooter();
@@ -1146,9 +1157,9 @@
             confirmText: wnTranslate('dashboard.whatsNewModalClose', 'close'),
             showCancel: false,
             modalClass: 'whats-new-modal',
-            onConfirm: finishOnce,
-            onCancel: finishOnce,
-            onHide: finishOnce,
+            onConfirm: () => finishOnce('button'),
+            onCancel: () => finishOnce('button'),
+            onHide: (info) => finishOnce(info?.reason),
         });
         liftFooter();
 
