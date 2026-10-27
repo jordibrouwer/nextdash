@@ -950,7 +950,7 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 
 <img src="screenshots/manual.md/04-action-buttons.jpg" alt="The action buttons in a column along the right edge, each with its key on a small chip" width="74" align="right">
 
-**How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§16A](#16a-the-new-look)).
+**How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§16A](#16a-the-new-look)). A docked bar stands apart from the cards it slides over: a layer of the surface colour goes over the material's paint, with an edge that leans to the accent. A button that is on is filled with the accent, as the lit view in the header is.
 
 **A bar that slides away.** **Slide a docked bar away after** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The bar comes back when the pointer touches that edge or when focus moves into it, and then slides away again after the delay. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
 
@@ -1520,6 +1520,8 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 <p align="center"><img src="screenshots/manual.md/08-commands.jpg" alt="The command palette opened with a lone colon, listing five command groups with their counts" width="860"></p>
 
 </details>
+
+The palette is drawn like the dashboard: its fill follows how solid the categories are in your theme, it starts with the same skewed blocks as a column head, and its mode word is set as a column head is. Themes with their own fill (neon, terminal, ink, paper) keep it.
 
 <a id="86-finders"></a>
 
