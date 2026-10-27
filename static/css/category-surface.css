@@ -343,9 +343,17 @@ html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .co
 }
 
 html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs > .lvs-rail,
-html[data-theme] body #dashboard-layout.library-layout > .config-view--library > :is(.lvs-rail, .config-nav-column),
-html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view > :is(.lvs-rail, .config-nav-column) {
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library > .lvs-rail {
+    padding-left: 12px;
+}
+
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view > .config-nav-column {
     padding-left: 6px;
+}
+
+/* The bookmarks view holds its own rail inside the page column: the page takes the side padding. */
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library > .config-view-main {
+    padding-left: 12px;
 }
 
 html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs > .lvs-main,
