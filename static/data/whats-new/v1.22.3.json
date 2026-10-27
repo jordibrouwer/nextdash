@@ -2,8 +2,72 @@
   "tag": "v1.22.3",
   "date": "27 October 2026",
   "releasedAt": "2026-10-27",
-  "modalLead": "Privacy-friendly analytics sends fewer messages and says more about how it works: one install code, no address, a few more fixed words.",
+  "modalLead": "A new install starts better, and the quiet features are easier to find: a Quick start that asks first, tours for the keyboard, Monitoring and Unraid, and four short offers. Analytics sends less.",
   "sections": [
+    {
+      "title": "First start",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The Quick start asks before it does.</strong> Keep the example links or start with an empty page, then pick a ready-made page (<em>Homelab</em>, <em>Media server</em>, <em>Developer</em>) that goes beside them or onto the empty one. Ten steps, three at a time; <em>Show more</em> for the rest."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Import a CSV file from the guide</strong>, or choose <em>On a new page</em> when you import bookmarks from a file in Config → Data &amp; backups."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>An example tag cloud.</strong> <em>Browse by tag</em> shows made-up tags once if you have none yet, then points to the Tags view."
+        }
+      ]
+    },
+    {
+      "title": "Tours and tips",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A keyboard tour.</strong> Four steps on typing, <kbd>:</kbd> commands, <kbd>?</kbd> finders and the single keys. Start it from the search panel, with <code>:tour keyboard</code> or from Config → Help → Guided tours."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tours for Config → Monitoring and Config → Unraid</strong>, with a <em>Tour</em> button on each, and a mouse step in the dashboard tour."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tips can come weekly</strong>, and a switch turns off the first-visit tours: Config → Behavior → Onboarding."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings search remembers.</strong> An empty search lists the settings you opened or changed last."
+        }
+      ]
+    },
+    {
+      "title": "Offers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Four short offers, each with its own switch.</strong> Check images for updates (Containers), re-check old links (Bookmarks view), the browser extension (Inbox) and what changed after an update."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Find tags for one category</strong> from its menu."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The action bar and the command palette take more of your theme</strong> and stand apart from the cards with an edge and a shadow. A button that is on is filled."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The title no longer runs into the buttons at the top of Config</strong>, and the band is the same height on every tab."
+        }
+      ]
+    },
     {
       "title": "Privacy & sync",
       "items": [
