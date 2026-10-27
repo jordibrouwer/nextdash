@@ -119,6 +119,16 @@ test.describe('a fresh install', () => {
         await expect(page.locator('.start-guide-overlay')).toHaveCount(0);
     });
 
+    test('a data folder started from scratch opens it again, in a browser that found the bar before', async ({ page, request }) => {
+        await page.addInitScript(() => {
+            window.__e2eStartGuideAutoOpenMs = 1500;
+            // What an earlier install left behind in this browser.
+            if (!localStorage.getItem('nextdash:start-guide-found')) localStorage.setItem('nextdash:start-guide-found', '1');
+        });
+        await freshInstall(page, request);
+        await expect(modal(page)).toBeVisible({ timeout: 10_000 });
+    });
+
     test('the modal opens by itself once, three seconds after the bar, and not again after a reload', async ({ page, request }) => {
         await page.addInitScript(() => { window.__e2eStartGuideAutoOpenMs = 3000; });
         await freshInstall(page, request);
@@ -136,17 +146,17 @@ test.describe('a fresh install', () => {
         await expect(modal(page)).toHaveCount(0);
     });
 
-    test('Keep the examples folds the modal back to the bar and records the answer', async ({ page, request }) => {
+    test('Keep the examples records the answer and the guide stays for what comes next', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);
         await modal(page).locator('[data-sg-keep]').click();
-        await expect(modal(page)).toHaveCount(0);
-        await expect(bar(page)).toBeVisible();
+        await expect(modal(page)).toBeVisible();
+        await expect(modal(page).locator('[data-sg-keep]')).toHaveCount(0);
         await expect.poll(async () => (await stored(page)).quickStart.templatePicked).toBe('keep');
         expect((await stored(page)).onboardingCompleted).toBe(false);
     });
 
-    test('Start empty asks first, then clears the examples and folds back', async ({ page, request }) => {
+    test('Start empty asks first, then clears the examples and the guide stays', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);
         await modal(page).locator('[data-sg-empty]').click();
@@ -154,8 +164,8 @@ test.describe('a fresh install', () => {
         await expect(modal(page)).toBeVisible();
         expect(await page.evaluate(async () => (await (await fetch('/api/bookmarks?page=1')).json()).length)).toBeGreaterThan(0);
         await modal(page).locator('[data-sg-empty-confirm]').click();
-        await expect(modal(page)).toHaveCount(0);
-        await expect(bar(page)).toBeVisible();
+        await expect(modal(page).locator('[data-sg-empty]')).toHaveCount(0);
+        await expect(modal(page)).toBeVisible();
         expect(await page.evaluate(async () => (await (await fetch('/api/bookmarks?page=1')).json()).length)).toBe(0);
         await expect.poll(async () => (await stored(page)).quickStart.templatePicked).toBe('empty');
     });
@@ -245,7 +255,7 @@ test.describe('closing', () => {
         await freshInstall(page, request);
         await openModal(page);
         const ids = await modal(page).evaluate((el) => [...el.querySelectorAll('[data-sg-step]')].map((s) => s.getAttribute('data-sg-step')));
-        expect(ids.length).toBeGreaterThanOrEqual(8);
+        expect(ids.length).toBeGreaterThanOrEqual(7);
         // Tick them off the way a reader without the measuring would.
         await page.evaluate((all) => window.dashboardInstance.quickStart?.guide?.markSteps?.(all), ids);
         await expect.poll(async () => (await stored(page)).quickStart.stepsDone.length).toBe(ids.length);
@@ -275,6 +285,26 @@ test.describe('inside the modal', () => {
         await expect(modal(page).locator('[data-sg-step]:visible')).toHaveCount(3);
     });
 
+    test('all the steps open as a grid under the two columns, and Show fewer folds them again', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        await modal(page).locator('[data-sg-more]').click();
+        const steps = modal(page).locator('[data-sg-step]:visible');
+        await expect(steps).toHaveCount(10);
+        // A grid: the first two steps sit side by side, and the list is under the columns.
+        const spots = await modal(page).evaluate((el) => {
+            const [a, b] = [...el.querySelectorAll('[data-sg-step]')].slice(0, 2).map((n) => n.getBoundingClientRect());
+            return { sameRow: Math.abs(a.top - b.top) < 4, apart: b.left - a.left,
+                below: a.top > el.querySelector('.sg-cols').getBoundingClientRect().bottom - 2 };
+        });
+        expect(spots.sameRow).toBe(true);
+        expect(spots.apart).toBeGreaterThan(150);
+        expect(spots.below).toBe(true);
+        await modal(page).locator('[data-sg-less]').click();
+        await expect(steps).toHaveCount(3);
+        await expect(modal(page).locator('[data-sg-more]')).toBeVisible();
+    });
+
     test('shows three steps and the rest behind Show more, with the tour first', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);
@@ -282,7 +312,7 @@ test.describe('inside the modal', () => {
         await expect(visible).toHaveCount(3);
         await expect(visible.first()).toHaveAttribute('data-sg-step', 'tour');
         await modal(page).locator('[data-sg-more]').click();
-        expect(await modal(page).locator('[data-sg-step]:visible').count()).toBeGreaterThanOrEqual(8);
+        expect(await modal(page).locator('[data-sg-step]:visible').count()).toBeGreaterThanOrEqual(7);
     });
 
     test('a step that leads to config closes the modal and goes there', async ({ page, request }) => {
@@ -376,6 +406,24 @@ test.describe('review findings', () => {
         expect(await page.evaluate(() => window.__opens)).toBe(2);
     });
 
+    test('the cheat sheet is a step: it opens over the dashboard and the step ticks off', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        await modal(page).locator('[data-sg-more]').click();
+        await modal(page).locator('[data-sg-step="cheatsheet"] button').click();
+        await expect(page.locator('.keyboard-cheat-sheet-modal')).toBeVisible();
+        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('cheatsheet');
+    });
+
+    test('the manual has its own block: why there is one, and a button to nextdash.cc/docs', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        await expect(modal(page).locator('.sg-manual')).toContainText('overwhelming');
+        await page.evaluate(() => { window.__opened = []; window.open = (url) => { window.__opened.push(url); return null; }; });
+        await modal(page).getByRole('button', { name: /Open the manual/ }).click();
+        expect(await page.evaluate(() => window.__opened)).toEqual(['https://nextdash.cc/docs/']);
+    });
+
     test('focus stays in the modal after Show more and after cancelling Start empty', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);
@@ -393,6 +441,8 @@ test.describe('review findings', () => {
         await freshInstall(page, request);
         await openModal(page);
         await modal(page).locator('[data-sg-keep]').click();
+        await modal(page).locator('[data-sg-minimise]').click();
+        await expect(modal(page)).toHaveCount(0);
         await bar(page).locator('[data-start-guide-open]').click();
         await expect(modal(page)).toBeVisible();
         await expect(modal(page).locator('[data-sg-keep]')).toHaveCount(0);
@@ -409,7 +459,7 @@ test.describe('review findings', () => {
         await page.evaluate(() => { window.dashboardInstance.loadPageBookmarks = async () => { throw new Error('boom'); }; });
         await modal(page).locator('[data-sg-empty]').click();
         await modal(page).locator('[data-sg-empty-confirm]').click();
-        await expect(modal(page)).toHaveCount(0);
+        await expect(modal(page).locator('[data-sg-empty]')).toHaveCount(0);
         await expect.poll(async () => (await stored(page)).quickStart.templatePicked).toBe('empty');
     });
 
@@ -522,8 +572,8 @@ test.describe('the steps', () => {
         await freshInstall(page, request);
         await openModal(page);
         const ids = await modal(page).evaluate((el) => [...el.querySelectorAll('[data-sg-step]')].map((s) => s.getAttribute('data-sg-step')));
-        // Find your way, bring your links in, look at them, add to the page, watch it, then the settings.
-        expect(ids).toEqual(['tour', 'import', 'extension', 'bookmarks', 'inbox', 'widget', 'checks', 'notifications', 'overview', 'secondPage']);
+        // Find your way, look at your links and their tags, add to the page, watch it, then the settings.
+        expect(ids).toEqual(['tour', 'bookmarks', 'tags', 'inbox', 'widget', 'checks', 'notifications', 'overview', 'cheatsheet', 'secondPage']);
     });
 
     test('Open the Inbox view opens it, and Esc comes back to the dashboard', async ({ page, request }) => {
@@ -545,5 +595,56 @@ test.describe('the steps', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('bookmarks');
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
         await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('inbox');
+    });
+});
+
+test.describe('the tag step', () => {
+    const cloud = (page) => page.locator('#tag-cloud-modal');
+
+    test('with tags in the library it opens the real cloud', async ({ page, request }) => {
+        await freshInstall(page, request);
+        const has = await page.evaluate(() => window.DashboardTagCloud.libraryHasTags());
+        test.skip(!has, 'the starter links carry no tags here');
+        await openModal(page);
+        await modal(page).locator('[data-sg-step="tags"] button').click();
+        await expect(cloud(page)).toBeVisible();
+        await expect(page.locator('[data-tag-cloud-demo]')).toHaveCount(0);
+    });
+
+    test('with no tags it shows an example cloud once, then goes to the Tags view', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await page.evaluate(() => { window.DashboardTagCloud.libraryHasTags = () => false; });
+        await openModal(page);
+        await modal(page).locator('[data-sg-step="tags"] button').click();
+
+        await expect(cloud(page)).toBeVisible();
+        await expect(page.locator('[data-tag-cloud-demo]')).toBeVisible();
+        expect(await cloud(page).locator('.tag-cloud-word').count()).toBeGreaterThanOrEqual(8);
+        // The words are examples: picking one filters nothing.
+        await cloud(page).locator('.tag-cloud-word').first().click();
+        expect(await page.evaluate(() => window.dashboardInstance.hasActiveTagFilters?.() === true)).toBe(false);
+        await expect(cloud(page)).toBeVisible();
+        await expect.poll(async () => (await stored(page)).quickStart.tagDemoShown).toBe(true);
+
+        // Closed, and asked for again: the example does not come back.
+        await page.keyboard.press('Escape');
+        await expect(cloud(page)).toBeHidden();
+        await bar(page).locator('[data-start-guide-open]').click();
+        await expect(modal(page)).toBeVisible();
+        // Taken once, the step sits behind "Show more" with the others that are done.
+        await modal(page).locator('[data-sg-more]').click();
+        await modal(page).locator('[data-sg-step="tags"] button').click();
+        await expect(page).toHaveURL(/#tags/);
+        await expect(page.locator('[data-tag-cloud-demo]')).toHaveCount(0);
+    });
+
+    test('the example has a way into the Tags view', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await page.evaluate(() => { window.DashboardTagCloud.libraryHasTags = () => false; });
+        await openModal(page);
+        await modal(page).locator('[data-sg-step="tags"] button').click();
+        await page.locator('.tag-cloud-demo-view').click();
+        await expect(page).toHaveURL(/#tags/);
+        await expect(cloud(page)).toBeHidden();
     });
 });

@@ -19,7 +19,7 @@ const BUNDLED = (extra = {}) => ({
     ...extra,
 });
 
-async function setup(page, request, { bundled = BUNDLED(), language, navLanguage } = {}) {
+async function setup(page, request, { bundled = BUNDLED(), language, navLanguage, picked = '' } = {}) {
     const headers = { 'X-NextDash-Token': WRITE_TOKEN };
     expect((await request.post('/api/reset', { data: { confirm: true }, headers })).ok()).toBe(true);
     expect((await request.post('/api/settings', {
@@ -27,7 +27,7 @@ async function setup(page, request, { bundled = BUNDLED(), language, navLanguage
             onboardingCompleted: false,
             discoveryCardDone: true,
             ...(language ? { language } : {}),
-            quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: '' },
+            quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: picked },
         },
         headers,
     })).ok()).toBe(true);
@@ -56,20 +56,43 @@ test.afterEach(async ({ request }) => {
 });
 
 test.describe('ready-made pages', () => {
-    test('the row lists the three templates with service chips, and says what happens to the examples', async ({ page, request }) => {
-        await setup(page, request);
+    test('the row lists the three templates with service chips', async ({ page, request }) => {
+        await setup(page, request, { picked: 'keep' });
         const cards = modal(page).locator('[data-sg-starter]');
         await expect(cards).toHaveCount(3);
         await expect(cards.nth(0)).toContainText('Homelab');
         await expect(cards.nth(0)).toContainText('Proxmox');
         await expect(cards.nth(0)).not.toContainText('Router');
-        await expect(modal(page).locator('[data-sg-starter-sub]')).toHaveText('Replaces the example links.');
         await expect(modal(page).locator('[data-sg-starter-form]')).toBeHidden();
+    });
+
+    test('they wait for the choice about the example links, and the choice says where they go', async ({ page, request }) => {
+        await setup(page, request);
+        const cards = modal(page).locator('[data-sg-starter]');
+        await expect(cards.first()).toBeDisabled();
+        await expect(modal(page).locator('[data-sg-starter-sub]')).toContainText('First decide about the example links');
+        // Keep: the page goes beside the examples.
+        await modal(page).locator('[data-sg-keep]').click();
+        await expect(modal(page)).toBeVisible();
+        await expect(modal(page).locator('[data-sg-keep]')).toHaveCount(0);
+        await expect(cards.first()).toBeEnabled();
+        await expect(modal(page).locator('[data-sg-starter-sub]')).toHaveText('Added as a new page.');
+    });
+
+    test('starting empty is the other answer: the page fills the empty page', async ({ page, request }) => {
+        await setup(page, request);
+        await modal(page).locator('[data-sg-empty]').click();
+        await modal(page).locator('[data-sg-empty-confirm]').click();
+        await expect(modal(page).locator('[data-sg-empty]')).toHaveCount(0);
+        await expect(modal(page)).toBeVisible();
+        await expect(modal(page).locator('[data-sg-starter]').first()).toBeEnabled();
+        await expect(modal(page).locator('[data-sg-starter-sub]')).toHaveText('Fills your empty page.');
     });
 
     test('says "Added as a new page" when the main page is no longer the starter', async ({ page, request }) => {
         await setup(page, request, { bundled: BUNDLED({ replacesMain: false }) });
         await expect(modal(page).locator('[data-sg-starter-sub]')).toHaveText('Added as a new page.');
+        await expect(modal(page).locator('[data-sg-starter]').first()).toBeEnabled();
     });
 
     test('picking a card reveals the address field; Create posts the id and the server', async ({ page, request }) => {
@@ -78,7 +101,7 @@ test.describe('ready-made pages', () => {
             body = route.request().postDataJSON();
             return route.fulfill({ json: { result: 'ok', replaced: true } });
         });
-        await setup(page, request);
+        await setup(page, request, { picked: 'empty' });
         await modal(page).locator('[data-sg-starter="media-server"]').click();
         await expect(modal(page).locator('[data-sg-starter="media-server"]')).toHaveAttribute('aria-pressed', 'true');
         const field = modal(page).getByLabel('Your server address');
@@ -86,15 +109,27 @@ test.describe('ready-made pages', () => {
         await expect(field).toHaveAttribute('placeholder', '192.168.1.10');
         await field.fill('nas.local');
         await modal(page).getByRole('button', { name: 'Create page' }).click();
-        await expect.poll(() => body).toEqual({ id: 'media-server', server: 'nas.local' });
+        await expect.poll(() => body).toEqual({ id: 'media-server', server: 'nas.local', target: 'main' });
         await expect(modal(page)).toHaveCount(0);
         await expect.poll(async () => (await (await request.get('/api/settings')).json()).quickStart.templatePicked).toBe('empty');
+    });
+
+    test('kept examples send the page to a new page of its own', async ({ page, request }) => {
+        let body = null;
+        await page.route('**/api/onboarding/template', (route) => {
+            body = route.request().postDataJSON();
+            return route.fulfill({ json: { result: { pageId: 5 }, replaced: false } });
+        });
+        await setup(page, request, { picked: 'keep' });
+        await modal(page).locator('[data-sg-starter="homelab"]').click();
+        await modal(page).getByRole('button', { name: 'Create page' }).click();
+        await expect.poll(() => body).toEqual({ id: 'homelab', server: '', target: 'new' });
     });
 
     test('a 422 shows its message inline and keeps the modal open', async ({ page, request }) => {
         await page.route('**/api/onboarding/template', (route) =>
             route.fulfill({ status: 422, json: { error: 'That address does not look right' } }));
-        await setup(page, request);
+        await setup(page, request, { picked: 'keep' });
         await modal(page).locator('[data-sg-starter="homelab"]').click();
         await modal(page).getByLabel('Your server address').fill('not an address!');
         await modal(page).getByRole('button', { name: 'Create page' }).click();
@@ -161,7 +196,7 @@ test.describe('after the page is made', () => {
     test('a popover in the middle says how to edit, delete and add, and Got it closes it', async ({ page, request }) => {
         await page.route('**/api/onboarding/template', (route) =>
             route.fulfill({ json: { result: { pageId: 1 }, replaced: true } }));
-        await setup(page, request);
+        await setup(page, request, { picked: 'empty' });
         await modal(page).locator('[data-sg-starter="homelab"]').click();
         await modal(page).getByLabel('Your server address').fill('nas.local');
         await modal(page).getByRole('button', { name: 'Create page' }).click();
@@ -169,7 +204,7 @@ test.describe('after the page is made', () => {
         const tips = page.locator('#app-modal .sg-tips');
         await expect(tips).toBeVisible();
         await expect(tips.locator('li')).toHaveCount(4);
-        await expect(tips).toContainText('right-click it, choose Availability check, then Monitor');
+        await expect(tips).toContainText('right-click it, choose Checking, then Monitor');
         await expect(tips).toContainText('every hour');
         await expect(tips).toContainText('Right-click a bookmark and choose Edit');
         await expect(tips).toContainText('Right-click a bookmark and choose Delete');
@@ -217,10 +252,35 @@ test.describe('importing from the guide', () => {
         const ask = page.locator('#config-confirm-modal');
         await expect(ask).toBeVisible();
         await expect(ask).toContainText('Import 2 bookmarks');
+        // Asked from the guide, the views' stylesheet is still fetched: the
+        // choices are cards, not bare browser buttons.
+        await expect(ask.locator('.config-choice-card').first()).toHaveCSS('display', 'flex');
+        await expect(ask.locator('[data-import-dest]')).toHaveCount(3);
         await ask.locator('[data-confirm="ok"]').click();
         await expect.poll(() => posted).not.toBeNull();
         expect(posted.bookmarks).toHaveLength(2);
         expect(posted.bookmarks[0]).toMatchObject({ name: 'One', url: 'https://one.example/', category: 'Work', tags: ['a', 'b'] });
+    });
+
+    test('On a new page makes a page first and imports there, leaving the current page alone', async ({ page, request }) => {
+        let posted = null;
+        await page.route('**/api/bookmarks/import-browser*', (route) => {
+            posted = route.request().postDataJSON();
+            return route.fulfill({ json: { imported: 1, skipped: 0 } });
+        });
+        await setup(page, request, { picked: 'keep' });
+        await modal(page).locator('[data-sg-csv-input]').setInputFiles({
+            name: 'bookmarks.csv', mimeType: 'text/csv',
+            buffer: Buffer.from('name,url\nOne,https://one.example/\n'),
+        });
+        const ask = page.locator('#config-confirm-modal');
+        await expect(ask).toBeVisible();
+        await ask.locator('[data-import-dest="newpage"]').click();
+        await ask.locator('[data-confirm="ok"]').click();
+        await expect.poll(() => posted).not.toBeNull();
+        expect(posted.pageId).not.toBe(1);
+        const pages = await (await request.get('/api/pages')).json();
+        expect(pages.find((p) => p.id === posted.pageId)?.name).toBe('Imported');
     });
 
     test('"More ways to import" opens Config → Data & backups', async ({ page, request }) => {
