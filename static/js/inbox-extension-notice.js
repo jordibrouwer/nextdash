@@ -16,7 +16,7 @@
     const SNOOZE_DAYS = 14;
     // Same target as the "Get the browser extension" step in the start guide
     // (static/js/start-guide.js DOCS_URL, which is not exported).
-    const EXTENSION_URL = 'https://nextdash.cc/docs/';
+    const EXTENSION_URL = 'http://www.nextdash.cc/docs/browser-extension-and-capture.html';
 
     let neverUsed = null; // cached for the session once /api/inbox-stats answers
 

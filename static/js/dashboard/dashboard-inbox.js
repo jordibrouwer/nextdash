@@ -4393,7 +4393,7 @@ class DashboardInbox {
         // Inbox zero only: pure markup, since this state is rebuilt on every render.
         const extensionLine = !narrowed && this.filter === 'all'
             && this.dash.settings?.enableInboxExtensionNotice !== false
-            ? `<p class="inbox-empty-extension"><a href="https://nextdash.cc/docs/" target="_blank" rel="noopener noreferrer">${
+            ? `<p class="inbox-empty-extension"><a href="http://www.nextdash.cc/docs/browser-extension-and-capture.html" target="_blank" rel="noopener noreferrer">${
                 this.escape(this.t('dashboard.inboxEmptyExtensionLine', 'Save pages here with the browser extension.'))}</a></p>`
             : '';
 

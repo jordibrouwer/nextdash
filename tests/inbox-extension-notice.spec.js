@@ -47,7 +47,7 @@ test.describe('the Inbox browser-extension invitation', () => {
             return { text: link?.textContent, href: link?.href, rel: link?.rel, target: link?.target };
         });
         expect(empty.text).toBe('Save pages here with the browser extension.');
-        expect(empty.href).toBe('https://nextdash.cc/docs/');
+        expect(empty.href).toBe('http://www.nextdash.cc/docs/browser-extension-and-capture.html');
         expect(empty.rel).toContain('noopener');
         expect(empty.target).toBe('_blank');
         const seen = await page.evaluate(() => window.__tracked.filter(([n, p]) => n === 'inbox-ext-cta' && p.action === 'empty-line-seen').length);
@@ -105,7 +105,7 @@ test.describe('the Inbox browser-extension invitation', () => {
         await page.evaluate(() => window.DashboardInboxExtensionNotice.card.render());
         await card(page).locator('[data-inbox-ext-action="get"]').click();
         await expect(card(page)).toHaveCount(0);
-        expect(await page.evaluate(() => window.__opened[0]?.[0])).toBe('https://nextdash.cc/docs/');
+        expect(await page.evaluate(() => window.__opened[0]?.[0])).toBe('http://www.nextdash.cc/docs/browser-extension-and-capture.html');
         expect(await page.evaluate((id) => window.DiscoverabilityState.hasSeenSettingPromo(id), PROMO_ID)).toBe(true);
         expect(await page.evaluate(() => window.__tracked.some(([, p]) => p.action === 'get'))).toBe(true);
     });
