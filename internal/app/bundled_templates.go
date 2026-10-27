@@ -195,7 +195,8 @@ type BundledTemplateSummary struct {
 }
 
 // BundledTemplates answers GET /api/page-templates/bundled. replacesMain
-// tells the card which sentence goes under its button.
+// tells the card which sentence goes under its button; platform is "unraid"
+// on an Unraid host and empty anywhere else.
 func (h *Handlers) BundledTemplates(w http.ResponseWriter, r *http.Request) {
 	list := make([]BundledTemplateSummary, 0, len(bundledTemplateIDs))
 	for _, id := range bundledTemplateIDs {
@@ -212,7 +213,9 @@ func (h *Handlers) BundledTemplates(w http.ResponseWriter, r *http.Request) {
 		}
 		list = append(list, summary)
 	}
-	writeJSON(w, map[string]any{"templates": list, "replacesMain": h.isUntouchedMainPage()})
+	// platform lets the start guide offer the one step that only makes sense
+	// on Unraid; it names a host ("unraid") or is empty, nothing else.
+	writeJSON(w, map[string]any{"templates": list, "replacesMain": h.isUntouchedMainPage(), "platform": installPlatform()})
 }
 
 // BundledTemplateFile answers GET /api/page-templates/bundled/{id} with the

@@ -214,3 +214,22 @@ func TestBundledListSaysWhetherMainIsReplaced(t *testing.T) {
 		t.Error("main still offered for replacing after a template took it")
 	}
 }
+
+func TestBundledListNamesTheUnraidPlatformOnly(t *testing.T) {
+	h := newTestHandlers(t)
+	read := func() any {
+		rec := httptest.NewRecorder()
+		h.BundledTemplates(rec, httptest.NewRequest(http.MethodGet, "/api/page-templates/bundled", nil))
+		var out map[string]any
+		_ = json.Unmarshal(rec.Body.Bytes(), &out)
+		return out["platform"]
+	}
+	t.Setenv("HOST_OS", "")
+	if got := read(); got != "" {
+		t.Errorf("platform = %v off Unraid, want empty", got)
+	}
+	t.Setenv("HOST_OS", "Unraid")
+	if got := read(); got != "unraid" {
+		t.Errorf("platform = %v on Unraid, want unraid", got)
+	}
+}
