@@ -6,7 +6,7 @@
  * in the middle: what to do with the example links, the language, the weather
  * and the first steps. The modal opens by itself once, three seconds after the
  * bar is up, so a new reader meets it first; after that only the reader opens it. The bar stays on the
- * dashboard of page 1 until every step is done or the reader closes it for
+ * dashboard, on every page, until every step is done or the reader closes it for
  * good, and it holds the corner for as long as it is there, so no other card
  * competes with it (NoticeCard.cornerIsFree).
  *
@@ -221,11 +221,15 @@
             global.addEventListener('hashchange', this.hashHandler);
         }
 
-        /** The dashboard of page 1, while the onboarding is not finished. */
+        /**
+         * The dashboard, on any of its pages, while the onboarding is not
+         * finished. A ready-made page opens on a page of its own, and a guide
+         * that vanished there would leave the reader without the next steps.
+         */
         atHome() {
             const d = this.dash;
             if (d.settings?.onboardingCompleted === true) return false;
-            return Number(d.currentPageId) === MAIN_PAGE_ID && (!d.activeView || d.activeView === 'bookmarks');
+            return !d.activeView || d.activeView === 'bookmarks';
         }
 
         /** The bar waits for any other modal (what's new, a form) to be done. */

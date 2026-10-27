@@ -172,13 +172,22 @@ test.describe('a fresh install', () => {
 });
 
 test.describe('where the guide stands', () => {
-    test('it is gone in config and on other pages, and back on the dashboard of page 1', async ({ page, request }) => {
+    test('it is gone in config, stays on the other pages, and is back on the dashboard', async ({ page, request }) => {
         await freshInstall(page, request);
+        // A second page to stand on, whatever the reset left behind.
+        if ((await page.evaluate(() => window.dashboardInstance.pages.length)) < 2) {
+            expect((await request.post('/api/pages', {
+                data: [{ id: 1, name: 'main' }, { id: 2, name: 'second' }],
+                headers: { 'X-NextDash-Token': WRITE_TOKEN },
+            })).ok()).toBe(true);
+            await page.reload();
+            await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+        }
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
         await page.evaluate(() => { location.hash = '#config/overview'; });
         await expect(bar(page)).toBeHidden();
         await page.evaluate(() => { location.hash = '#2'; });
-        await expect(bar(page)).toBeHidden();
+        await expect(bar(page)).toBeVisible({ timeout: 10_000 });
         await page.evaluate(() => { location.hash = '#1'; });
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
     });
