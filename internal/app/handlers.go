@@ -1334,6 +1334,11 @@ type htmlPageData struct {
 	// AnalyticsSnapshotsJSON is the widgets, containers and views snapshots
 	// (analytics_snapshots.go), gated and cached the same way.
 	AnalyticsSnapshotsJSON string
+	// AnalyticsInstallRef and AnalyticsDistribution identify the install and how
+	// it runs (analytics_identity.go). Empty unless analytics is on, and in the
+	// demo, which is reset every half hour and is nobody's install.
+	AnalyticsInstallRef   string
+	AnalyticsDistribution string
 
 	// AnalyticsEnabled is true — that is the user's setting AND the operator
 	// not having switched telemetry off via DISABLE_TELEMETRY.
@@ -1405,6 +1410,8 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		AnalyticsRecorderSrc:   analyticsRecorderSrc,
 		AnalyticsContentJSON:   h.analyticsContentJSON(analyticsOn && analyticsSnapshots),
 		AnalyticsSnapshotsJSON: h.analyticsSnapshotsJSON(analyticsOn && analyticsSnapshots),
+		AnalyticsInstallRef:    analyticsInstallRef(analyticsOn && analyticsSnapshots && !demoMode()),
+		AnalyticsDistribution:  analyticsDistribution(analyticsOn && analyticsSnapshots && !demoMode()),
 		TelemetryLockedOff:     telemetryDisabledByEnv(),
 		UpdateCheckLockedOff:   updateCheckDisabledByEnv(),
 		DemoMode:               demoMode(),
