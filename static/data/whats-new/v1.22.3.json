@@ -1,0 +1,25 @@
+{
+  "tag": "v1.22.3",
+  "date": "27 October 2026",
+  "releasedAt": "2026-10-27",
+  "modalLead": "Privacy-friendly analytics sends fewer messages and says more about how it works: one install code, no address, a few more fixed words.",
+  "sections": [
+    {
+      "title": "Privacy & sync",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Privacy-friendly analytics counts an install once.</strong> A random install code, made on your server, lets visits from one install count as one. It follows the same switch, so there is no new question, and it is not sent when analytics is off."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The address you open nextDash on is no longer sent.</strong> It is replaced by one word: <em>lan</em>, <em>domain</em> or <em>localhost</em>. The page you came from and the page title stay home too."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Your settings are sent less often.</strong> When they change, once a month and at most once a week, instead of on every page load. <strong>What is recorded?</strong> under Behavior → Privacy &amp; sync lists the details."
+        }
+      ]
+    }
+  ]
+}

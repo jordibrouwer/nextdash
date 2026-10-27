@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.22.3 — 27 October 2026](#v1223--27-october-2026)
 - [v1.22.2 — 26 October 2026](#v1222--26-october-2026)
 - [v1.22.1 — 26 October 2026](#v1221--26-october-2026)
 - [v1.22.0 — 25 October 2026](#v1220--25-october-2026)
@@ -122,6 +123,34 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.22.3 — 27 October 2026
+
+The usage analytics send less and carry what was missing to read them: an install code, a hostname replaced by one word, the language, how the server runs, and three small events. Everything stays behind the opt-in: with **Privacy-friendly analytics** off, nothing here is in the page and nothing is sent. Held back from the What's new window.
+
+### Privacy & sync
+
+- **new — an install code on the settings snapshot.** `analytics_identity.go` hashes the `install-id` file with its own purpose (`usage-analytics:` + id, first 16 hex characters of the SHA-256), so it cannot be matched to the daily install count, and puts it on the script tag as `data-install`. It follows the analytics switch, is empty in the demo, and the file is not even read while analytics is off (`TestAnalyticsInstallRefNotCollectedWhenDisabled`). Umami's own visitor id rotates monthly and differs per browser, which made retention and release uptake unmeasurable. Once the tracker has loaded the code is also passed to `umami.identify`, so Umami stores it as the session's `distinct_id` and the sessions of one install stay together past the monthly id, as the daily install count's do; Umami records no event for it.
+- **new — hostname, referrer and page title no longer leave.** Outside the demo the tracker gets a `data-before-send` hook (`nextdashBeforeSend`) that replaces the hostname by `localhost`, `lan` or `domain`, empties the referrer and sets the title to `nextDash`. The settings snapshot carries the same word as `exposure`, plus `distribution` (`docker`, `unraid` or `other`, from `/.dockerenv` and `HOST_OS`) and `language`.
+- **new — `app-updated`, `first-bookmark`, `app-error`.** The minor release a browser moved from and to (never on the first visit), the time from first visit to first bookmark as a band for an install that started with ten bookmarks or fewer, and a failure as a kind plus the view name, never the message, at most three per page load and only from scripts of the app's own origin.
+- **new — `bookmark-created` says where it came from.** `source: new-modal` for the New bookmark dialog and `inline-form` for the category form, on the `result: ok` event.
+- **fix — snapshots go out when they change.** A snapshot per page load was 55% of all events and about 700,000 stored properties in a hundred days, enough to make Umami's own Events page fail. Each of the five now goes out the first time, when its payload (which holds the release) changed, in a new calendar month, or after seven days; what was sent is kept in local storage (`nextdash.analytics`) and only written once the tracker has loaded. Constant fields (eleven settings, two for Containers, fifteen for the views) and widget types nobody has are left out.
+- **fix — one pageview per page load.** Umami hooks `history.pushState` and `replaceState` and counted every in-app view change as a pageview, which made pageviews and the bounce rate meaningless. `data-auto-track` is off and the load is reported once with the path only.
+- **fix — a loop cannot flood the data.** `nextdashTrack` drops an identical event within 500 ms and caps the rest at 100 per rolling minute; the snapshots are exempt from the cap. One day had 2,575 pageviews from 21 visitors.
+- **new — `NEXTDASH_DISABLE_INSTALL_PING=1`.** Switches off the daily install count alone, where `DISABLE_TELEMETRY` also takes the analytics away. Test runs and CI shards start a server on an empty data folder, which counted as a new install each time and made up most of the count.
+
+### Tests
+
+- **new — `analytics-snapshot-gate.test.cjs` and `analytics-pageview-rate.test.cjs`.** The gate (changed, month, week, release, a tracker that never loaded), the three small events, the install code, the hostname words and the rate limiter, against a fake storage and clock. `analytics-count-buckets.test.cjs` skips the tracker's own pageview call.
+- **fix — the analytics specs read the snapshots again.** They clear the remembered snapshots before each load, the stubs ignore the tracker's pageview call, and the widgets spec no longer expects a type the fixture does not have. `NEXTDASH_DISABLE_INSTALL_PING` is in the e2e server's environment and in the CI step.
+
+### Docs
+
+- **docs — `MANUAL.md` §23.7 and §23.8** (the table, how often, the install code, where it runs, the environment variable), the README's variable table and its privacy line, **Config → Help → Statistics → Privacy & analytics**, and the three privacy strings in the six locale files.
+- **docs — `static/data/whats-new/v1.22.3.json` and its index entry**, held back from the What's new window; `NEXTDASH_WHATS_NEW_DATA_VERSION` in `whats-new-stub.js` moved to `whats-new-v355` and `DASHBOARD_RELEASE` stays on v1.22.0. `tests/whats-new-hidden-release.spec.js` follows. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — new screenshots.** The manual's pictures are retaken in Arctic Cyan dark and the README's in their own themes.
 
 ---
 
