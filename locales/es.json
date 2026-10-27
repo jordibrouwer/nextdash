@@ -9941,7 +9941,12 @@
     "helpArtInsLoad": "Carga frente a los núcleos",
     "helpGlancesInsightsBody": "<p>Insights responde preguntas a partir del historial registrado, en <strong>24 horas, 7 o 30 días</strong>, y <strong>Download CSV</strong> guarda las cifras. Es un conjunto de bloques: un bloque con pocos datos detrás se omite, y una <strong>ℹ</strong> junto a cada título dice qué muestra.</p><ul><li><strong>Health</strong> — una puntuación sobre 100, según lo cerca que estuvo cada lectura de su línea roja, los incidentes en curso y la disponibilidad; 85 o más es bueno. <strong>Disks: when full</strong> traza una recta por el uso de cada disco en la última semana.</li><li><strong>Typical and peak</strong> y <strong>Compared with before</strong>, que pone el intervalo frente al inmediatamente anterior.</li><li><strong>Busy hours</strong> y <strong>A typical day</strong>: el promedio de cada hora del día, una barra por hora. <strong>Peaks and rhythm</strong> nombra la hora más ocupada y la más tranquila.</li><li><strong>Load and cores</strong>: la carga frente al número de núcleos, y lo parejo que reparten el trabajo.</li><li><strong>Memory and swap</strong>, <strong>Temperature per sensor</strong>, <strong>Disk space over time</strong>, <strong>Disk activity</strong> y <strong>Network per interface</strong>.</li><li><strong>Availability</strong>, <strong>Incidents</strong> y <strong>Who used the most</strong>, sobre los procesos y contenedores que registraste.</li></ul>",
     "settingsSearchRecent": "Recent",
-    "settingsSearchAll": "All settings"
+    "settingsSearchAll": "All settings",
+    "sessionTipsFrequencyLabel": "Keyboard tips come",
+    "sessionTipsDaily": "About once a day",
+    "sessionTipsWeekly": "About once a week",
+    "sectionToursLabel": "Offer a tour the first time a section opens",
+    "sectionToursHint": "The short walk-through that opens the first time you visit Monitoring, Widgets, the Inbox and the other sections. You can still start any tour from its Tour button. Needs the keyboard tips switch above to be on."
   },
   "colors": {
     "title": "personalización del tema",

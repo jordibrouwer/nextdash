@@ -426,7 +426,7 @@
     function maybeShow() {
         if (global.DiscoverabilityState?.hasSeenTip?.(TIP_ID)) return false;
         const d = global.dashboardInstance;
-        if (!d?.settings || d.settings.enableSessionTips === false) return false;
+        if (!d?.settings || d.settings.enableSessionTips === false || d.settings.enableSectionTours === false) return false;
         if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
         if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
         if (d.searchComponent?.isActive?.()) return false;

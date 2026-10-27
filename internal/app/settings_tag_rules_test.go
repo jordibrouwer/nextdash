@@ -158,7 +158,7 @@ func TestViewOfferSettingsDefaultOnAndKeepAnExplicitOff(t *testing.T) {
 		return NewStore().GetSettings()
 	}
 	on := func(s Settings) []bool {
-		return []bool{s.EnableDockerUpdateNotice, s.EnableHealthRecheckNotice, s.EnableInboxExtensionNotice, s.EnableUpdatedNotice}
+		return []bool{s.EnableDockerUpdateNotice, s.EnableHealthRecheckNotice, s.EnableInboxExtensionNotice, s.EnableUpdatedNotice, s.EnableSectionTours}
 	}
 
 	for i, got := range on(read(t, `{"currentPage":1}`)) {
@@ -167,7 +167,7 @@ func TestViewOfferSettingsDefaultOnAndKeepAnExplicitOff(t *testing.T) {
 		}
 	}
 	off := `{"currentPage":1,"enableDockerUpdateNotice":false,"enableHealthRecheckNotice":false,` +
-		`"enableInboxExtensionNotice":false,"enableUpdatedNotice":false}`
+		`"enableInboxExtensionNotice":false,"enableUpdatedNotice":false,"enableSectionTours":false}`
 	for i, got := range on(read(t, off)) {
 		if got {
 			t.Errorf("offer %d: the backfill overwrote an explicit off", i)

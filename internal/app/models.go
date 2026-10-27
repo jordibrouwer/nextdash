@@ -812,6 +812,8 @@ type Settings struct {
 	EnableHealthRecheckNotice  bool   `json:"enableHealthRecheckNotice"`
 	EnableInboxExtensionNotice bool   `json:"enableInboxExtensionNotice"`
 	EnableUpdatedNotice        bool   `json:"enableUpdatedNotice"`
+	EnableSectionTours         bool   `json:"enableSectionTours"`             // The one-time tour on a section's first visit (needs enableSessionTips too)
+	SessionTipsFrequency       string `json:"sessionTipsFrequency,omitempty"` // "weekly" spaces the keyboard tips a week apart; anything else is daily
 	ShowShortcutTooltips       bool   `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
 	ShowGridKeyLegend          bool   `json:"showGridKeyLegend"`
 	ShortcutOpenMode           string `json:"shortcutOpenMode,omitempty"`
@@ -1752,6 +1754,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			EnableHealthRecheckNotice:  true,
 			EnableInboxExtensionNotice: true,
 			EnableUpdatedNotice:        true,
+			EnableSectionTours:         true,
 			ShowShortcutTooltips:       false,
 			ShowGridKeyLegend:          true,
 			ShortcutOpenMode:           "instant",
@@ -4411,6 +4414,7 @@ func (fs *FileStore) GetSettings() Settings {
 			EnableHealthRecheckNotice:       true,
 			EnableInboxExtensionNotice:      true,
 			EnableUpdatedNotice:             true,
+			EnableSectionTours:              true,
 			ShowShortcutTooltips:            false,
 			ShowGridKeyLegend:               true,
 			ShortcutOpenMode:                "instant",
@@ -5041,6 +5045,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["enableUpdatedNotice"]; !ok {
 			settings.EnableUpdatedNotice = true
+		}
+		if _, ok := rawSettings["enableSectionTours"]; !ok {
+			settings.EnableSectionTours = true
 		}
 		// Off unless the file says otherwise. This used to fill an absent key
 		// with true — the popovers were how the keys were discovered — and the

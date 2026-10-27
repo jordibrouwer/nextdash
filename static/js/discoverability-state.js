@@ -10,6 +10,7 @@
     const TIPS_NOT_BEFORE_LEGACY_KEY = 'nextdash-tips-not-before-v1';
     const DAY_MS = 24 * 60 * 60 * 1000;
     const TIPS_WINDOW_MS = DAY_MS;
+    const TIPS_WEEK_MS = 7 * DAY_MS;
     const TIPS_PER_WINDOW = 1;
 
     let state = {
@@ -164,16 +165,24 @@
      * rolling window rather than a calendar day: no time zone to get wrong. tipsNotBefore is still honoured so a gap set by
      * an earlier version runs out instead of being dropped.
      */
+    function tipsWindowMs() {
+        const frequency = global.dashboardInstance?.settings?.sessionTipsFrequency;
+        return frequency === 'weekly' ? TIPS_WEEK_MS : TIPS_WINDOW_MS;
+    }
+
     function tipsAllowedNow(now = Date.now()) {
         if (state.tipsNotBefore > 0 && now < state.tipsNotBefore) return false;
-        const recent = (state.tipsShownAt || []).filter((ts) => now - ts < TIPS_WINDOW_MS);
+        const window = tipsWindowMs();
+        const recent = (state.tipsShownAt || []).filter((ts) => now - ts < window);
         return recent.length < TIPS_PER_WINDOW;
     }
 
     /** Count one tip as shown, for the rate limit. */
     function noteTipShown(options = {}) {
         const now = Date.now();
-        state.tipsShownAt = (state.tipsShownAt || []).filter((ts) => now - ts < TIPS_WINDOW_MS);
+        // Kept for the longer window, so switching to weekly counts the tip
+        // shown yesterday instead of forgetting it.
+        state.tipsShownAt = (state.tipsShownAt || []).filter((ts) => now - ts < TIPS_WEEK_MS);
         state.tipsShownAt.push(now);
         applyToDashboardSettings();
         if (options.persist !== false) {

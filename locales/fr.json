@@ -9941,7 +9941,12 @@
     "helpArtInsLoad": "Charge face aux cœurs",
     "helpGlancesInsightsBody": "<p>Insights répond à des questions à partir de l'historique enregistré, sur <strong>24 heures, 7 ou 30 jours</strong>, et <strong>Download CSV</strong> garde les chiffres. C'est un ensemble de blocs : un bloc qui n'a pas assez de données derrière lui est omis, et un <strong>ℹ</strong> à côté de chaque titre dit ce qu'il montre.</p><ul><li><strong>Health</strong> — un score sur 100, d'après la proximité de chaque mesure avec sa ligne rouge, les incidents en cours et la disponibilité ; 85 et plus est bon. <strong>Disks: when full</strong> trace une droite à travers l'usage de chaque disque sur la dernière semaine.</li><li><strong>Typical and peak</strong> et <strong>Compared with before</strong>, qui met la période en regard de celle qui la précède.</li><li><strong>Busy hours</strong> et <strong>A typical day</strong> : la moyenne de chaque heure de la journée, une barre par heure. <strong>Peaks and rhythm</strong> nomme l'heure la plus chargée et la plus calme.</li><li><strong>Load and cores</strong> : la charge face au nombre de cœurs, et la régularité avec laquelle les cœurs se partagent le travail.</li><li><strong>Memory and swap</strong>, <strong>Temperature per sensor</strong>, <strong>Disk space over time</strong>, <strong>Disk activity</strong> et <strong>Network per interface</strong>.</li><li><strong>Availability</strong>, <strong>Incidents</strong> et <strong>Who used the most</strong>, sur les processus et conteneurs que vous avez enregistrés.</li></ul>",
     "settingsSearchRecent": "Recent",
-    "settingsSearchAll": "All settings"
+    "settingsSearchAll": "All settings",
+    "sessionTipsFrequencyLabel": "Keyboard tips come",
+    "sessionTipsDaily": "About once a day",
+    "sessionTipsWeekly": "About once a week",
+    "sectionToursLabel": "Offer a tour the first time a section opens",
+    "sectionToursHint": "The short walk-through that opens the first time you visit Monitoring, Widgets, the Inbox and the other sections. You can still start any tour from its Tour button. Needs the keyboard tips switch above to be on."
   },
   "colors": {
     "title": "personnalisation du thème",

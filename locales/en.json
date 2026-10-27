@@ -4989,7 +4989,7 @@
     "gotIt": "Got it",
     "resetOnboardingHint": "Show the Quick start bar and guide again on the dashboard (language, weather, the example links and nine next steps), and bring back the one-time tours in Health and the inbox along with the occasional keyboard tips. Saves immediately.",
     "sessionTipsLabel": "Show occasional keyboard tips",
-    "sessionTipsHint": "Now and then shows one keyboard tip as a toast on the dashboard — at most one every few days, never the same tip twice, and never during first-run setup.",
+    "sessionTipsHint": "Now and then shows one keyboard tip as a toast on the dashboard — never the same tip twice, and never during first-run setup. Choose below how often.",
     "resetOnboardingButton": "Show quick start again",
     "tourReplayHint": "Show one guided tour again. It appears where it belongs — in Health, the inbox, or wherever it explains.",
     "tourReplayBlocked": "Occasional keyboard tips are switched off, so no tour will appear until you turn them back on above.",
@@ -9941,7 +9941,12 @@
     "helpArtInsLoad": "Load against the cores",
     "helpGlancesInsightsBody": "<p>Insights answers questions from the record, over <strong>24 hours, 7 or 30 days</strong>, and <strong>Download CSV</strong> keeps the figures. It is a set of blocks: a block with too little behind it is left out, and an <strong>ℹ</strong> beside every title says what it shows.</p><ul><li><strong>Health</strong> — a score out of 100, from how close each reading came to its red line, ongoing incidents and availability; 85 and up is good. <strong>Disks: when full</strong> draws a straight line through the last week of each disk's use.</li><li><strong>Typical and peak</strong> and <strong>Compared with before</strong>, which sets the range against the one right before it.</li><li><strong>Busy hours</strong> and <strong>A typical day</strong>: the average for each hour of the day, one bar per hour. <strong>Peaks and rhythm</strong> names the busiest and the quietest hour.</li><li><strong>Load and cores</strong>: the load against the number of cores, and how evenly the cores share the work.</li><li><strong>Memory and swap</strong>, <strong>Temperature per sensor</strong>, <strong>Disk space over time</strong>, <strong>Disk activity</strong> and <strong>Network per interface</strong>.</li><li><strong>Availability</strong>, <strong>Incidents</strong> and <strong>Who used the most</strong>, over the processes and containers you recorded.</li></ul>",
     "settingsSearchRecent": "Recent",
-    "settingsSearchAll": "All settings"
+    "settingsSearchAll": "All settings",
+    "sessionTipsFrequencyLabel": "Keyboard tips come",
+    "sessionTipsDaily": "About once a day",
+    "sessionTipsWeekly": "About once a week",
+    "sectionToursLabel": "Offer a tour the first time a section opens",
+    "sectionToursHint": "The short walk-through that opens the first time you visit Monitoring, Widgets, the Inbox and the other sections. You can still start any tour from its Tour button. Needs the keyboard tips switch above to be on."
   },
   "colors": {
     "title": "theme customization",
