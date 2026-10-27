@@ -841,13 +841,13 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 
 /* ── The dots of a tutorial: the ones not yet reached have to show on the surface, the one in force is lit ── */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"], .changes-tour-dot) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"]:not([class*="-tutorial-dots"]), .changes-tour-dot) {
     width: 0.5rem;
     height: 0.5rem;
     background: color-mix(in srgb, var(--text-primary) 38%, transparent);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"], .changes-tour-dot):is(.is-active, [aria-current="step"]) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"]:not([class*="-tutorial-dots"]), .changes-tour-dot):is(.is-active, [aria-current="step"]) {
     background: var(--accent-primary);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 30%, transparent);
 }
