@@ -711,6 +711,19 @@
     tracker.addEventListener('load', function () {
         umamiReady = true;
         try {
+            // The install code as Umami's own identity for this visitor. Its
+            // session id changes every month, so without this a visitor is a new
+            // one each time; with it the sessions of one install stay together,
+            // as the daily install count's do. Only the code the server put on
+            // the tag, never in the demo, and Umami sends no event for it.
+            const code = self.getAttribute('data-install');
+            if (!isDemo && /^[0-9a-f]{16}$/.test(code || '') && typeof window.umami.identify === 'function') {
+                window.umami.identify(code);
+            }
+        } catch (_) {
+            // Analytics must never break the app.
+        }
+        try {
             // The path only: the hash is the in-app view, which has its own events.
             window.umami.track((payload) => ({ ...payload, url: window.location.pathname }));
         } catch (_) {

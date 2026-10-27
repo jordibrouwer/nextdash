@@ -26,8 +26,9 @@ function boot({ storage = {}, release = 'v1.19.8', content = '', demo = false, n
     const windowListeners = {};
     const realNow = Date.now;
     Date.now = () => now;
+    const identified = [];
     global.window = {
-        umami: { track: (name, props) => sent.push([name, props]) },
+        umami: { track: (name, props) => sent.push([name, props]), identify: (id) => identified.push(id) },
         localStorage: {
             getItem: (key) => (key in storage ? storage[key] : null),
             setItem: (key, value) => { storage[key] = String(value); },
@@ -59,6 +60,7 @@ function boot({ storage = {}, release = 'v1.19.8', content = '', demo = false, n
     new Function(SRC)();
     const api = {
         sent,
+        identified,
         storage,
         win: global.window,
         ready: () => listeners.load && listeners.load(),
@@ -233,6 +235,22 @@ function settingsSnapshot(app, settings) {
 
     const demo = boot({ storage: {}, demo: true });
     assert.strictEqual(demo.win.nextdashBeforeSend, undefined, 'the demo keeps its own hook');
+    demo.done();
+}
+
+// 9. The install code is Umami's identity for the visitor, so its sessions
+// stay together past the monthly session id; once, only once the tracker is
+// there, and never in the demo.
+{
+    const app = boot({ storage: {} });
+    assert.deepStrictEqual(app.identified, [], 'nothing before the tracker has loaded');
+    app.ready();
+    assert.deepStrictEqual(app.identified, ['a1b2c3d4e5f60718']);
+    app.done();
+
+    const demo = boot({ storage: {}, demo: true });
+    demo.ready();
+    assert.deepStrictEqual(demo.identified, [], 'the demo has no identity');
     demo.done();
 }
 
