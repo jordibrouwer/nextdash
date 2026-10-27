@@ -36,6 +36,9 @@ type analyticsContentCounts struct {
 	InboxAdded    int `json:"inboxAdded"`
 	InboxPromoted int `json:"inboxPromoted"`
 	InboxDeleted  int `json:"inboxDeleted"`
+	// Untagged is how many bookmarks carry no tag; the client turns it into a
+	// share, never a count.
+	Untagged int `json:"untagged"`
 	// Fresh says the settings file was written in the last day. The example
 	// links a new install starts with put it far past any bookmark count that
 	// could mean "just started", so the size alone cannot tell.
@@ -115,6 +118,9 @@ func (h *Handlers) countAnalyticsContent() analyticsContentCounts {
 			counts.Monitored++
 		} else if bookmark.CheckStatus {
 			counts.Periodic++
+		}
+		if len(bookmark.Tags) == 0 {
+			counts.Untagged++
 		}
 		for _, tag := range bookmark.Tags {
 			trimmed := strings.ToLower(strings.TrimSpace(tag))

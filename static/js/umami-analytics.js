@@ -260,6 +260,10 @@
         // Smart collections
         ['smartRecent', flag('showSmartRecentCollection')],
         ['smartMostUsed', flag('showSmartMostUsedCollection')],
+        ['smartToday', flag('showSmartTodayCollection')],
+        ['smartStale', flag('showSmartStaleCollection')],
+        ['smartAdded', flag('showSmartAddedCollection')],
+        ['tagCollections', flag('showTagCollections')],
         // Config habits and the rest
         ['language', pick('language', 'en')],
         ['sessionTips', flagOn('enableSessionTips')],
@@ -399,6 +403,19 @@
      * Every figure is bucketed. An exact 1274 is distinctive enough to follow
      * one install across releases; `500+` is not.
      */
+    /** Share of bookmarks without a tag, as a band; never the count itself. */
+    function untaggedShare(counts) {
+        const total = Number(counts.bookmarks);
+        const untagged = Number(counts.untagged);
+        if (!Number.isFinite(total) || !Number.isFinite(untagged) || total <= 0) return 'unset';
+        const share = untagged / total;
+        if (share === 0) return 'none';
+        if (share <= 0.25) return 'quarter';
+        if (share <= 0.5) return 'half';
+        if (share <= 0.75) return 'most';
+        return 'nearly-all';
+    }
+
     const CONTENT_FIELDS = [
         ['bookmarks', bucketOf('bookmarks', [0, 10, 50, 200, 500])],
         ['pages', bucketOf('pages', [1, 2, 5, 10])],
@@ -412,6 +429,7 @@
         ['inboxAdded', bucketOf('inboxAdded', [0, 10, 50, 200])],
         ['inboxPromoted', bucketOf('inboxPromoted', [0, 10, 50])],
         ['inboxDeleted', bucketOf('inboxDeleted', [0, 10, 50])],
+        ['untaggedShare', untaggedShare],
     ];
 
     function trackContentSnapshot() {

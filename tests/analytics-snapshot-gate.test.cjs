@@ -203,6 +203,24 @@ function settingsSnapshot(app, settings) {
     old.done();
 }
 
+// 6c. The content snapshot carries the untagged share as a band, never a count.
+{
+    const band = (bookmarks, untagged) => {
+        const app = boot({ storage: {}, content: JSON.stringify({ bookmarks, untagged }) });
+        app.ready();
+        app.win.nextdashTrackContent?.();
+        const sent = app.sent.find(([n]) => n === 'content-snapshot');
+        app.done();
+        return sent && sent[1].untaggedShare;
+    };
+    assert.strictEqual(band(40, 0), 'none');
+    assert.strictEqual(band(40, 10), 'quarter');
+    assert.strictEqual(band(40, 20), 'half');
+    assert.strictEqual(band(40, 30), 'most');
+    assert.strictEqual(band(40, 39), 'nearly-all');
+    assert.strictEqual(band(0, 0), 'unset');
+}
+
 // 7. An error is a fixed word and a view name; three per load at most.
 {
     const app = boot({ storage: {} });

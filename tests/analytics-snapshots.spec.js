@@ -107,6 +107,12 @@ test.describe('the analytics snapshots', () => {
 
         for (const [key, value] of Object.entries(content)) {
             if (key === 'appVersion') continue;
+            // The untagged share is a band word, not a step: a share of the whole is the
+            // only way to say "most of it" without a count.
+            if (key === 'untaggedShare') {
+                expect(String(value), `content.${key}`).toMatch(/^(unset|none|quarter|half|most|nearly-all)$/);
+                continue;
+            }
             expect(String(value), `content.${key}`).toMatch(/^(unset|\d+\+?)$/);
         }
 
@@ -119,6 +125,7 @@ test.describe('the analytics snapshots', () => {
                 bookmarks: 1274, pages: 7, categories: 33, tags: 61,
                 finders: 4, collections: 2, monitored: 12, periodic: 240,
                 inboxOpen: 41, inboxAdded: 613, inboxPromoted: 77, inboxDeleted: 158,
+                untagged: 900,
             }));
             window.nextdashTrackContent._sent = false;
             window.nextdashTrackContent();
@@ -128,6 +135,7 @@ test.describe('the analytics snapshots', () => {
             bookmarks: '500+', pages: '10', categories: '40', tags: '50+',
             finders: '10', collections: '3', monitored: '30', periodic: '50+',
             inboxOpen: '100', inboxAdded: '200+', inboxPromoted: '50+', inboxDeleted: '50+',
+            untaggedShare: 'most',
         });
         expect(Object.keys(content)).toEqual(expect.arrayContaining([
             'bookmarks', 'pages', 'categories', 'tags', 'finders', 'collections',

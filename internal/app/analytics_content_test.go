@@ -60,6 +60,10 @@ func TestAnalyticsContentCountsWhatIsThere(t *testing.T) {
 	if counts.Monitored != 1 || counts.Periodic != 1 {
 		t.Errorf("monitored/periodic = %d/%d, want 1/1", counts.Monitored, counts.Periodic)
 	}
+	// Only "three" has no tag at all.
+	if counts.Untagged != 1 {
+		t.Errorf("untagged = %d, want 1", counts.Untagged)
+	}
 
 	encoded := h.analyticsContentJSON(true)
 	if !strings.Contains(encoded, `"bookmarks":3`) {
