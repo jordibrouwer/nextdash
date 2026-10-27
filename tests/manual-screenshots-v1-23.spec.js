@@ -133,6 +133,7 @@ test('17 find settings recent', async ({ page }) => {
     const finder = page.locator('#app-modal.show .config-settings-jump-modal');
     await finder.waitFor();
     await page.locator('.config-settings-jump-group', { hasText: 'Recent' }).waitFor();
+    // The picture is taken once the panel's entrance has finished.
     await page.waitForTimeout(600);
     await snap(page, finder, '17-find-settings-recent.jpg', { pad: 4, keepFocus: true });
 });

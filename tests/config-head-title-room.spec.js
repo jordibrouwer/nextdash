@@ -20,6 +20,7 @@ for (const [section, width] of [['appearance', 760], ['appearance', 1100], ['boo
             document.body.dataset.materialStyle = 'signature';
             document.body.dataset.material = 'brushed';
         }, section);
+        // Layout settles after the section opens and the material is set; there is no event for it.
         await page.waitForTimeout(400);
         const m = await page.evaluate(() => {
             const title = document.querySelector('.config-view-head .lvs-title');

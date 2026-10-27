@@ -11,6 +11,7 @@ test('monitoring tab does not overflow horizontally at 360px', async ({ page }) 
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('monitoring'); });
+    // Layout settles after the section opens; there is no event for it.
     await page.waitForTimeout(500);
 
     const measure = () => page.evaluate(() => {
@@ -32,6 +33,7 @@ test('monitoring tab does not overflow horizontally at 360px', async ({ page }) 
         const t = tabs.nth(i);
         if (!(await t.isVisible())) continue;
         await t.click().catch(() => {});
+        // Layout settles after a sub-tab opens; there is no event for it.
         await page.waitForTimeout(200);
         await check('subtab ' + i);
     }

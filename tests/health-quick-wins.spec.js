@@ -120,12 +120,12 @@ test.describe('health quick wins', () => {
     });
 
     test('the summary says how old the report is', async ({ page }) => {
-        await openBookmarksWithHealth(page, shape(), { report: () => ({ generatedAt: Date.now() - 25 * 60 * 1000 }) });
+        await openBookmarksWithHealth(page, shape(), { report: (issues) => ({ summary: { totalBookmarks: issues.length, brokenCount: 1, lastCheckedAt: Date.now() - 25 * 60 * 1000 } }) });
         await expect(age(page)).toHaveText(/25m/);
     });
 
     test('a report generated moments ago reads "just now", not 0m', async ({ page }) => {
-        await openBookmarksWithHealth(page, shape(), { report: () => ({ generatedAt: Date.now() - 5000 }) });
+        await openBookmarksWithHealth(page, shape(), { report: (issues) => ({ summary: { totalBookmarks: issues.length, brokenCount: 1, lastCheckedAt: Date.now() - 5000 } }) });
         await expect(age(page)).toHaveText(/just now/i);
     });
 });

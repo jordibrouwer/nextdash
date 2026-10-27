@@ -109,6 +109,7 @@ test.describe('the keyboard tour', () => {
         await page.evaluate(() => { window.dashboardInstance.settings.enableSessionTips = false; });
         await page.keyboard.press('>');
         await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5_000 });
+        // The row must not appear, so there is nothing to wait for.
         await page.waitForTimeout(500);
         await expect(page.locator('.search-command-group-header', { hasText: 'Keyboard' })).toHaveCount(0);
     });
@@ -121,7 +122,8 @@ test.describe('the keyboard tour', () => {
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
         const button = page.locator('#commands-button');
         if (await button.isVisible()) {
-            await button.click();
+            // Dispatched: the button can sit under a slid-away bar, outside a small window.
+            await button.dispatchEvent('click');
             await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5_000 });
         }
         const opens = await page.evaluate(() => window.__tracked.filter((e) => e.name === 'modal:commands').map((e) => e.props));

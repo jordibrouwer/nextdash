@@ -21,6 +21,7 @@ for (const material of ['glass', 'brushed', 'lacquer']) {
         }, material);
         await page.keyboard.press(':');
         await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5_000 });
+        // The palette's fill is a transition: read it once it has settled.
         await page.waitForTimeout(500);
         const seen = await page.evaluate(() => {
             const cs = getComputedStyle(document.querySelector('.search-container'));

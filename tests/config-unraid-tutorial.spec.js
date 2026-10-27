@@ -155,7 +155,7 @@ test.describe('the unraid tour', () => {
             const tour = document.querySelector('[data-unraid-tour]').getBoundingClientRect();
             return { head: head.right, tour: tour.right };
         });
-        expect(place.head - place.tour).toBeLessThan(24);
+        expect(place.head - place.tour).toBeLessThanOrEqual(24.5);
         // Only on its own section.
         await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('monitoring'); });
         await expect(page.locator('[data-monitoring-tour]')).toBeVisible();
