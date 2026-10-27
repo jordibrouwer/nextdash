@@ -42,22 +42,41 @@ class DashboardInlineEdit {
             </div>`;
         shell.addEventListener('click', (e) => {
             if (e.target === shell) {
-                void this.requestCloseBookmarkFormModal();
+                void this.requestCloseBookmarkFormModal('backdrop');
             }
         });
         shell.querySelector('.bookmark-form-modal-close')?.addEventListener('click', () => {
-            void this.requestCloseBookmarkFormModal();
+            void this.requestCloseBookmarkFormModal('x');
         });
         document.body.appendChild(shell);
         this._formModalShell = shell;
         return shell;
     }
 
-    async requestCloseBookmarkFormModal() {
+    async requestCloseBookmarkFormModal(via = 'cancel') {
+        const dirty = this.hasInlineEditUnsavedChanges();
         if (!(await this.confirmDiscardInlineEdit())) {
             return;
         }
+        this.trackBookmarkFormClose(via, dirty);
         this.closeBookmarkFormModal();
+    }
+
+    /**
+     * An edit form that closes without saving, and how: the question behind one
+     * edit in three never being saved. Fixed words and a time band only. A new
+     * bookmark's form has no "changed" state to compare, so only edits report.
+     */
+    trackBookmarkFormClose(via, dirty) {
+        if (this._formMode !== 'edit' || !this._formOpenedAt) return;
+        const open = Date.now() - this._formOpenedAt;
+        this._formOpenedAt = 0;
+        window.nextdashTrack?.('bookmark:edit-close', {
+            result: dirty ? 'discarded' : 'untouched',
+            via,
+            source: this._formSource || 'modal',
+            open: open < 5000 ? '<5s' : open < 30000 ? '<30s' : open < 120000 ? '<2m' : '2m+',
+        });
     }
 
     closeBookmarkFormModal({ silent = false, clearInboxPromote = true } = {}) {
@@ -108,6 +127,9 @@ class DashboardInlineEdit {
         const d = this.dash;
         const isEdit = options.mode === 'edit' && (options.bookmark != null || options.bookmarkRef?.bookmark);
         window.nextdashTrack?.(isEdit ? 'modal:edit-bookmark' : 'modal:new-bookmark');
+        this._formMode = isEdit ? 'edit' : 'new';
+        this._formSource = options.source || 'modal';
+        this._formOpenedAt = Date.now();
 
         d.dismissBookmarkPreviewInteractions?.();
 
@@ -2001,7 +2023,7 @@ class DashboardInlineEdit {
         cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            void this.requestCloseBookmarkFormModal();
+            void this.requestCloseBookmarkFormModal('cancel');
         });
 
         const deleteBtn = document.createElement('button');
@@ -2293,7 +2315,6 @@ class DashboardInlineEdit {
         if (!bookmark || !bookmarkRef) {
             return;
         }
-        window.nextdashTrack?.('bookmark:edit', { source: 'dashboard' });
 
         const name = fields.nameInput.value.trim();
         const url = fields.urlInput.value.trim();
@@ -2306,16 +2327,22 @@ class DashboardInlineEdit {
             && targetPageId !== sourcePageId;
 
         if (!name || !url) {
+            window.nextdashTrack?.('bookmark:edit-invalid', { reason: 'name-url' });
             d.notifyDashboard('nameAndUrlRequired', 'Name and URL are required.', 'error');
             return;
         }
 
         if (shortcut && this.hasShortcutConflict(shortcut, bookmarkRef)) {
+            window.nextdashTrack?.('bookmark:edit-invalid', { reason: 'shortcut' });
             d.notifyDashboard('shortcutMustBeUnique', 'Shortcut must be unique across all bookmarks.', 'error');
             fields.shortcutInput.focus();
             fields.shortcutInput.select();
             return;
         }
+
+        // Counted once the form has passed its own checks: it used to fire on
+        // the click, so a form refused for an empty name still read as an edit.
+        window.nextdashTrack?.('bookmark:edit', { source: 'dashboard' });
 
         if (shortcut) {
             const finderShortcutConflict = (Array.isArray(d.finders) ? d.finders : []).some((finder) => {
@@ -2566,7 +2593,7 @@ class DashboardInlineEdit {
 
     cancelBookmarkInlineEdit(row, bookmarkRef) {
         if (document.getElementById('bookmark-form-modal')?.classList.contains('show')) {
-            void this.requestCloseBookmarkFormModal();
+            void this.requestCloseBookmarkFormModal('key');
             return;
         }
         const d = this.dash;
