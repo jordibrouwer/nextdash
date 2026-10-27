@@ -540,6 +540,12 @@
                 body: this.t('config.importDestPageBody', 'On “{p}”. Folders become categories.').replace('{p}', pageName || ''),
                 counts: counts(onPage),
             },
+            {
+                value: 'inbox',
+                title: this.t('config.importDestInbox', 'Into the inbox first'),
+                body: this.t('config.importDestInboxBody', 'Sort them out one by one later. Folders become tags.'),
+                counts: counts(toInbox),
+            },
             // A page of its own, for someone who wants to keep what is already
             // on the page they are looking at. Only where the importer writes
             // to the current page: a source keeps the page it was set up with.
@@ -549,12 +555,6 @@
                 body: this.t('config.importDestNewPageBody', 'A page of its own, so what is on “{p}” stays as it is. Folders become categories.').replace('{p}', pageName || ''),
                 counts: counts(onPage),
             }] : []),
-            {
-                value: 'inbox',
-                title: this.t('config.importDestInbox', 'Into the inbox first'),
-                body: this.t('config.importDestInboxBody', 'Sort them out one by one later. Folders become tags.'),
-                counts: counts(toInbox),
-            },
         ].map((c, i) => `
             <button type="button" class="config-choice-card${i === 0 ? ' is-active' : ''}" data-import-dest="${c.value}"
                     role="radio" aria-checked="${i === 0 ? 'true' : 'false'}" tabindex="${i === 0 ? '0' : '-1'}">
