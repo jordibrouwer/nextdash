@@ -2550,6 +2550,7 @@ class DashboardInlineEdit {
             d.showNotification(d.formatDashboardLabel('bookmarkCreated', {}, 'Bookmark created.'), 'success');
             window.nextdashTrack?.('bookmark-created', {
                 result: 'ok',
+                source: 'inline-form',
                 withIcon: Boolean(bookmark.icon),
                 withTags: Array.isArray(bookmark.tags) && bookmark.tags.length > 0,
                 withShortcut: Boolean(bookmark.shortcut),
