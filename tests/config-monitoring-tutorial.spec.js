@@ -157,7 +157,8 @@ test.describe('the monitoring tour', () => {
         });
         const monitoring = await place();
         // At the band's end, not beside the filter with the slot left empty behind it.
-        expect(monitoring.head - monitoring.tour).toBeLessThan(24);
+        // The band's own padding is 24px; the empty slot it replaces is 208px.
+        expect(monitoring.head - monitoring.tour).toBeLessThanOrEqual(24.5);
         expect(monitoring.tourLeft).toBeGreaterThanOrEqual(monitoring.bar);
         // And the filter ends where it does on a tab whose slot holds the view link.
         await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('inbox'); });

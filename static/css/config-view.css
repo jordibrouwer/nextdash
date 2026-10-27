@@ -4400,6 +4400,64 @@ body.no-animations .config-new-features-panel-star {
     white-space: nowrap;
 }
 
+/*
+ * The title keeps the room its own letters need, and the actions give way.
+ *
+ * The band is a fixed 536px row that did not shrink, beside a title block that
+ * could shrink to nothing: a narrower window, a larger text size, or a material
+ * that sets its titles in capitals with wide letter-spacing (brushed, neon)
+ * ran the title into the buttons. The filter and the empty link slot give first.
+ */
+.config-view-head .lvs-header-text {
+    min-width: min-content;
+}
+
+/* The title stays on one line, mark and word together: it used to break between
+   the material's mark and the word, and the band grew by a line. */
+.config-view-head .lvs-title {
+    white-space: nowrap;
+}
+
+/*
+ * One line, always: the band must be the same height on every tab, or the rail
+ * and the tabs under it jump as you move through the sections. The description
+ * ellipsises when the band is tight, and `width: 0; min-width: 100%` keeps it out
+ * of the block's intrinsic width, so the block's least width is the title's.
+ */
+.config-view-head .lvs-description {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 0;
+    min-width: 100%;
+}
+
+.config-view-head .lvs-header-actions:has(.config-changed-bar) {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.config-view-head .lvs-header-actions .config-changed-bar {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+/* The count gives first (it ellipsises), then the filter. */
+.config-view-head .lvs-header-actions .config-changed-count {
+    flex: 0 1 14rem;
+    min-width: 5rem;
+}
+
+.config-view-head .lvs-header-actions .config-settings-filter {
+    flex: 1 1 13rem;
+    min-width: 7rem;
+}
+
+.config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view], [data-monitoring-tour]))::after {
+    flex: 0 1 var(--config-view-link-slot);
+    min-width: 0;
+}
+
 /* The count between them is the first thing to give when the window narrows. */
 @media (max-width: 1100px) {
     .config-view-head .lvs-header-actions .config-changed-count {
