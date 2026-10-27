@@ -6,4 +6,4 @@ toolchain go1.26.10
 
 require github.com/gorilla/mux v1.8.0
 
-require golang.org/x/net v0.61.0
+require golang.org/x/net v0.62.0

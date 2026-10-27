@@ -180,6 +180,10 @@ A new install starts better and the quiet features get found: the Quick start gu
 - **fix — monitoring texts point at the Bookmarks view.** Three Config texts said *Health view*, in all six languages.
 - **fix — the band's line is one line in every section.** The description under a section's title could wrap to a second line, which made the sticky band sixteen pixels taller in Inbox, Appearance and Behavior than in Bookmarks and moved everything under it when you went from one tab to another. `.config-view-head .lvs-description` is now `nowrap` with an ellipsis (the whole sentence is still its title), and the Inbox, Appearance and Behavior lines are shorter in all six languages so that they fit in the 400px the filter leaves them.
 
+### Security
+
+- **fix — `golang.org/x/net` v0.62.0.** `GO-2026-6860`: the HTML parser took quadratic time when it coalesced text nodes, and importing a bookmark file reaches it (`ParseNetscapeBookmarks`). `govulncheck` reports nothing after the update.
+
 ### Appearance
 
 - **fix — the docked action bar stands apart from the cards.** It took the paint of a category and was lost against the cards it slid over. A layer of the surface colour now goes over the material's own paint (about 38% on a glass theme, more where the theme itself is opaque, from `--cat-glass-alpha`), with an edge that leans to the accent and a cast in a filter, so each material's own edge stays. A button that is on is filled with the accent, as the lit view in the header is. Ink keeps its thin plate.
