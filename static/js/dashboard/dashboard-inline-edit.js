@@ -2427,7 +2427,9 @@ class DashboardInlineEdit {
 
     async createBookmarkFromForm(bookmarkRef, fields, { keepOpen = false } = {}) {
         const d = this.dash;
-        window.nextdashTrack?.('bookmark-created', { source: 'modal' });
+        // Counted where the bookmark has been saved (bottom of this function),
+        // not here: a refused or failed attempt is not a creation, and this
+        // used to count every one of them on top of the saved event.
 
         const name = fields.nameInput.value.trim();
         let url = fields.urlInput.value.trim();

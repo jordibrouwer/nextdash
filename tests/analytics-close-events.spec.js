@@ -65,6 +65,25 @@ test('an edit the form refuses is not counted as an edit', async ({ page }) => {
     expect(seen.some((t) => t.name === 'bookmark:edit')).toBe(false);
 });
 
+test('a new bookmark the server refuses is not counted as created', async ({ page }) => {
+    await ready(page);
+    await page.route('**/api/bookmarks/add', (route) => route.fulfill({ status: 500, body: 'no' }));
+    // The form's own guards sit in front of this; what is asked here is only
+    // that a save that fails at the server is not reported as a creation.
+    await page.evaluate(async () => {
+        const dash = window.dashboardInstance;
+        const field = (value) => ({ value, focus() {}, checked: false });
+        await dash.inlineEdit.createBookmarkFromForm({ pageId: dash.currentPageId || 1 }, {
+            nameInput: { ...field('Refused example'), dataset: {} },
+            urlInput: { ...field('https://refused.example.com'), dataset: {} },
+            shortcutInput: field(''),
+            catSelect: field(''),
+            pageSelect: null,
+        });
+    });
+    expect((await tracks(page)).some((t) => t.name === 'bookmark-created')).toBe(false);
+});
+
 test('the What’s New modal reports how it closed and whether it opened itself', async ({ page }) => {
     await ready(page);
     await page.evaluate(() => window.openWhatsNewModal({ force: true }));
