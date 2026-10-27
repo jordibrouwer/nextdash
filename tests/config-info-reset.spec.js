@@ -123,7 +123,7 @@ test.describe('config info + reset affordances', () => {
             // The two review offers carry a hint line under the toggle that
             // says what the card does and what switching it off leaves alone,
             // so the explanation is on screen rather than behind an ℹ.
-            'enableTagSuggestionNotice', 'enableHealthReviewNotice',
+            'enableTagSuggestionNotice', 'enableHealthReviewNotice', 'enableDockerUpdateNotice', 'enableHealthRecheckNotice', 'enableInboxExtensionNotice', 'enableUpdatedNotice',
             // The Kept pair, for the same reason: the hint under each says what
             // it does in a sentence — "Adds a Kept tab to the inbox, and makes
             // Keep in triage put a link there instead of marking it read" —

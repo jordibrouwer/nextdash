@@ -2709,6 +2709,10 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		settings.EnableSessionTips = stored.EnableSessionTips
 		settings.EnableTagSuggestionNotice = stored.EnableTagSuggestionNotice
 		settings.EnableHealthReviewNotice = stored.EnableHealthReviewNotice
+		settings.EnableDockerUpdateNotice = stored.EnableDockerUpdateNotice
+		settings.EnableHealthRecheckNotice = stored.EnableHealthRecheckNotice
+		settings.EnableInboxExtensionNotice = stored.EnableInboxExtensionNotice
+		settings.EnableUpdatedNotice = stored.EnableUpdatedNotice
 		settings.UpdateCheckEnabled = stored.UpdateCheckEnabled
 		settings.ShowSiteNews = stored.ShowSiteNews
 	}

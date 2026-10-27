@@ -8768,6 +8768,10 @@ class DashboardConfig {
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         enableTagSuggestionNotice: { hint: 'tagSuggestionNoticeHint', def: true },
         enableHealthReviewNotice: { hint: 'healthReviewNoticeHint', def: true },
+        enableDockerUpdateNotice: { hint: 'dockerUpdateNoticeHint', def: true },
+        enableHealthRecheckNotice: { hint: 'healthRecheckNoticeHint', def: true },
+        enableInboxExtensionNotice: { hint: 'inboxExtensionNoticeHint', def: true },
+        enableUpdatedNotice: { hint: 'updatedNoticeHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
         lockLayout: { info: ['lockLayoutInfoTitle', 'lockLayoutInfoMessage'], def: false },
         // Date, time & weather
@@ -9789,6 +9793,10 @@ class DashboardConfig {
                     // about being interrupted.
                     bool('enableTagSuggestionNotice', 'config.tagSuggestionNoticeLabel', 'Offer to review tag suggestions'),
                     bool('enableHealthReviewNotice', 'config.healthReviewNoticeLabel', 'Offer to review links'),
+                    bool('enableDockerUpdateNotice', 'config.dockerUpdateNoticeLabel', 'Offer image update checks'),
+                    bool('enableHealthRecheckNotice', 'config.healthRecheckNoticeLabel', 'Offer to re-check links'),
+                    bool('enableInboxExtensionNotice', 'config.inboxExtensionNoticeLabel', 'Offer the browser extension'),
+                    bool('enableUpdatedNotice', 'config.updatedNoticeLabel', 'Show what changed after an update'),
                 ],
             },
             {

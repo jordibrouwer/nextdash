@@ -143,3 +143,34 @@ func TestReviewOfferSettingsKeepAnExplicitOff(t *testing.T) {
 		t.Error("the backfill overwrote an answer the reader had given")
 	}
 }
+
+// The offers that point at a view (containers, inbox, an update, an old link
+// check) follow the same rule as the first two: a file written before the key
+// existed reads as on, a file that says off stays off.
+func TestViewOfferSettingsDefaultOnAndKeepAnExplicitOff(t *testing.T) {
+	read := func(t *testing.T, body string) Settings {
+		t.Helper()
+		dir := t.TempDir()
+		t.Setenv("NEXTDASH_DATA_DIR", dir)
+		if err := os.WriteFile(filepath.Join(dir, "settings.json"), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return NewStore().GetSettings()
+	}
+	on := func(s Settings) []bool {
+		return []bool{s.EnableDockerUpdateNotice, s.EnableHealthRecheckNotice, s.EnableInboxExtensionNotice, s.EnableUpdatedNotice}
+	}
+
+	for i, got := range on(read(t, `{"currentPage":1}`)) {
+		if !got {
+			t.Errorf("offer %d read as off for a file that never mentioned it", i)
+		}
+	}
+	off := `{"currentPage":1,"enableDockerUpdateNotice":false,"enableHealthRecheckNotice":false,` +
+		`"enableInboxExtensionNotice":false,"enableUpdatedNotice":false}`
+	for i, got := range on(read(t, off)) {
+		if got {
+			t.Errorf("offer %d: the backfill overwrote an explicit off", i)
+		}
+	}
+}
