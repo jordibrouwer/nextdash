@@ -2,45 +2,30 @@
 'use strict';
 
 /**
- * Weights for Playwright's shards, from how long each shard took last time.
+ * PWTEST_SHARD_WEIGHTS for the e2e job: one weight per shard, joined with ":".
  *
- * Playwright cuts the suite into contiguous slices by test count, so a slice
- * that happens to hold slow specs finishes last and sets the length of the
- * whole run: in run 40355951298 the shards took 194 to 690 seconds. This
- * prints PWTEST_SHARD_WEIGHTS, one weight per shard joined with ":", that
- * gives a shard that ran fast a bigger slice and one that ran slow a smaller
- * one: a shard's weight is the mean time over its own time, as a percentage.
+ * Playwright cuts the suite into contiguous slices by test count, and a
+ * weight sets the share of the tests a slice gets. The weights are in
+ * tests/shard-weights.json, made by scripts/balance-shards.cjs from the cost
+ * of every spec file in a full run, so that each slice costs about the same.
+ * Weights guessed from shard times alone went wrong once: the cheapest slice
+ * was handed 919 tests and ran for 19 minutes.
  *
- * The times are in tests/shard-times.json. They describe the slices of the
- * run they came from, so after the weights are used once the next run is the
- * better data: scripts/slow-specs.cjs reads the playwright-json artifacts of
- * a full run and prints the times to paste in. Weight a shard that is slow
- * because its tests wait on something only after looking at why (ci.yml says
- * what that cost once).
+ * Prints nothing, and exits 0, when the file does not have one weight per
+ * shard, so a run with another shard count is simply not weighted.
  *
- *   node scripts/shard-weights.cjs            the weights, for the workflow
- *   node scripts/shard-weights.cjs --explain  the table behind them
+ *   node scripts/shard-weights.cjs [shards]   the weights, for the workflow
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const file = path.join(__dirname, '..', 'tests', 'shard-times.json');
-const { seconds } = JSON.parse(fs.readFileSync(file, 'utf8'));
+const shards = Number(process.argv[2]) || 12;
+const file = path.join(__dirname, '..', 'tests', 'shard-weights.json');
+const { weights } = JSON.parse(fs.readFileSync(file, 'utf8'));
 
-if (!Array.isArray(seconds) || seconds.length === 0 || seconds.some((s) => !(s > 0))) {
-    console.error(`${file}: "seconds" must be a list of positive numbers`);
+if (!Array.isArray(weights) || weights.some((w) => !(w > 0))) {
+    console.error(`${file}: "weights" must be a list of positive numbers`);
     process.exit(1);
 }
-
-const mean = seconds.reduce((a, b) => a + b, 0) / seconds.length;
-const weights = seconds.map((s) => Math.max(1, Math.round((100 * mean) / s)));
-
-if (process.argv.includes('--explain')) {
-    console.log('shard  seconds  weight');
-    seconds.forEach((s, i) => console.log(`${String(i + 1).padStart(5)}  ${String(s).padStart(7)}  ${String(weights[i]).padStart(6)}`));
-    const total = weights.reduce((a, b) => a + b, 0);
-    console.log(`\nslice of the suite, per shard: ${weights.map((w) => `${Math.round((100 * w) / total)}%`).join(' ')}`);
-} else {
-    console.log(weights.join(':'));
-}
+if (weights.length === shards) console.log(weights.join(':'));

@@ -174,14 +174,16 @@ jobs:
     # tests/worker-server.js gives each its own server, port and data
     # directory, so the workers cannot touch each other's store.
     #
-    # The shards are weighted by how long each took last time. Playwright cuts
+    # The shards are weighted by what each spec file costs. Playwright cuts
     # the suite by test count, and in run 40355951298 that left the shards at
     # 194 to 690 seconds of tests, so the run was as long as the 690. The
-    # times are in tests/shard-times.json and scripts/shard-weights.cjs turns
-    # them into PWTEST_SHARD_WEIGHTS (a full run only; a run of one shard has
-    # nothing to weigh). Every full run uploads its timings as playwright-json
-    # artifacts, and scripts/slow-specs.cjs reads them back, so the next set of
-    # weights is a copy and a paste away.
+    # weights are in tests/shard-weights.json, made by scripts/balance-shards.cjs
+    # from the JSON reports of one full run, and scripts/shard-weights.cjs hands
+    # them to PWTEST_SHARD_WEIGHTS (a full run only; a run of one shard has
+    # nothing to weigh). Every full run uploads those reports as playwright-json
+    # artifacts, so the next set is: download, run the script, commit. Weights
+    # guessed from shard times alone gave the cheapest slice 919 tests, where
+    # the others had 268 to 454, and it ran 19 minutes (run 40595061640).
     #
     # It was done once before and undone, because the `h`-`i` slice -- 47
     # health-* and 20 inbox-* files -- ran 24 minutes while every other shard

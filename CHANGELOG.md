@@ -221,7 +221,7 @@ The action bar, the five views and Config are drawn like a category under every 
 ### Tests
 
 - **fix — the config pane spec expects the pane of a category.** `config-panes.spec.js` asked for a fill that is neither clear nor solid under Signature; Aurora's category lets the backdrop supply the colour, so the Config view now does too, and the spec asks for the blur and a fill below 1.
-- **fix — CI.** Weighted shards and per-spec timings (`scripts/shard-weights.cjs`, `scripts/slow-specs.cjs`, `tests/shard-times.json`); the Playwright image was tried and left again.
+- **fix — CI.** Weighted shards, balanced on what each spec file costs (`scripts/balance-shards.cjs`, `scripts/shard-weights.cjs`, `tests/shard-weights.json`), and per-spec timings (`scripts/slow-specs.cjs`); the Playwright image was tried and left again.
 
 ### Docs
 

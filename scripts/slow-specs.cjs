@@ -14,8 +14,8 @@
  *
  * It prints the slowest files by the time their tests took (summed over the
  * workers, so a file with many tests shows more than the clock it held up),
- * the time each shard took, and that list as the "seconds" for
- * tests/shard-times.json, which scripts/shard-weights.cjs turns into weights.
+ * and the time each shard took. scripts/balance-shards.cjs reads the same
+ * reports and works out the shard weights.
  */
 
 const fs = require('fs');
@@ -74,5 +74,3 @@ const shards = [...new Set(files.map((f) => Number(/shard-(\d+)\.json$/.exec(f)[
 const wall = shards.map((s) => Math.round((perShard.get(`wall-${s}`) || 0) / 1000));
 console.log('\nWall time per shard (seconds):');
 shards.forEach((s, i) => console.log(`${String(s).padStart(6)}  ${wall[i]}`));
-console.log('\nFor tests/shard-times.json:');
-console.log(JSON.stringify({ seconds: wall }));

@@ -1,0 +1,17 @@
+{
+  "source": "scripts/balance-shards.cjs over the JSON reports of one full CI run; 709 spec files",
+  "weights": [
+    350,
+    339,
+    429,
+    384,
+    465,
+    511,
+    437,
+    398,
+    373,
+    496,
+    371,
+    434
+  ]
+}
