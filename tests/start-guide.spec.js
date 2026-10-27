@@ -262,6 +262,19 @@ test.describe('closing', () => {
 });
 
 test.describe('inside the modal', () => {
+    test('on a wide screen the guide is two columns and still folds the steps after three', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        const box = await modal(page).evaluate((el) => ({
+            scroll: el.scrollHeight, client: el.clientHeight,
+            left: el.querySelector('.sg-col').getBoundingClientRect().left,
+            right: el.querySelectorAll('.sg-col')[1].getBoundingClientRect().left,
+        }));
+        expect(box.right).toBeGreaterThan(box.left + 200);
+        expect(box.scroll).toBeLessThanOrEqual(box.client);
+        await expect(modal(page).locator('[data-sg-step]:visible')).toHaveCount(3);
+    });
+
     test('shows three steps and the rest behind Show more, with the tour first', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);

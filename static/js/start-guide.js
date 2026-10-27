@@ -575,6 +575,8 @@
                 </div>
                 ${hasChoice ? `<p class="sg-sub">${esc(tf('introWant', 'This page starts with example links. Keep them to look around, or clear them and add your own.'))}</p>` : ''}
                 ${langHint ? `<p class="sg-lang-hint" data-sg-lang-hint>${esc(tq('guideLanguageDetected', '{language} detected', { language: langHint[1] }))} <button type="button" class="sg-link" data-sg-lang-switch="${esc(langHint[0])}">${esc(tq('guideLanguageSwitch', 'Switch'))}</button></p>` : ''}
+                <div class="sg-cols">
+                <div class="sg-col">
                 ${choices}
                 <p class="sg-links">
                     <button type="button" class="sg-link" data-sg-manual>${esc(tf('showManual', 'Show me the manual first'))}</button>
@@ -592,11 +594,14 @@
                     </span>
                 </div>
                 ${starter}
-                <hr class="sg-rule">
+                </div>
+                <div class="sg-col">
                 <p class="sg-label">${esc(tq('guideNextSteps', 'Next steps'))}</p>
                 <ul class="sg-steps">${steps.map((s) => this.renderStep(s, done.has(s.id), !shown.has(s.id))).join('')}</ul>
                 ${hiddenCount > 0 && !this.showAll ? `<button type="button" class="sg-more" data-sg-more>${esc(tq('guideShowMore', 'Show {n} more', { n: hiddenCount }))} ▾</button>` : ''}
                 <p class="sg-back" data-sg-back-hint><kbd>Esc</kbd> ${esc(tq('guideOr', 'or'))} <kbd>1</kbd> ${esc(tq('guideBackHint', 'brings you back to the dashboard from anywhere'))}</p>
+                </div>
+                </div>
                 <div class="sg-foot">
                     <span class="sg-foot-progress" data-sg-progress>${esc(tq('progress', '{done} of {total} done', { done: this.progress().count, total: steps.length }))}</span>
                     ${this.progress().count >= steps.length
