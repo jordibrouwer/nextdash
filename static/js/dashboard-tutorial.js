@@ -321,7 +321,31 @@
                     <p>${esc(f('dashTour4PagesBody2',
                     'Drag the // before a title to move a category or widget. Drop it on the line between two columns to make it wide.'))}</p>`,
             },
-            // 2 — start typing
+            // 2 — the mouse: the menus under the right button
+            {
+                title: f('dashTourMouseTitle', 'With the mouse'),
+                visual: svg(`
+                    ${category(12, 10, 150, f('dashTourCatDev', 'Development'), [['GitHub', 'ok', ''], ['GitLab', 'ok', ''], ['MDN', 'ok', '']])}
+                    <rect x="17" y="33" width="140" height="24" rx="5" class="dtv-select dtv-anim dtv-a-cursor"/>
+                    <g class="dtv-anim dtv-a-panel">
+                        <rect x="176" y="12" width="140" height="104" rx="8" class="dtv-panel"/>
+                        ${[f('dashTourMenuEdit', 'Edit'), f('dashTourMenuMove', 'Move'), f('dashTourMenuTags', 'Tags'), f('dashTourMenuDelete', 'Delete')]
+                            .map((l, i) => label(188, 36 + i * 24, l, 'dtv-title')).join('')}
+                        ${label(246, 138, f('dashTourMouseBookmark', 'right-click a bookmark'), 'dtv-caption', 'middle')}
+                    </g>
+                    <g class="dtv-anim dtv-a-panel" style="animation-delay:0.8s">
+                        <rect x="330" y="12" width="140" height="104" rx="8" class="dtv-panel"/>
+                        ${[f('dashTourMenuAddBookmark', 'Add bookmark'), f('dashTourMenuRename', 'Rename'), f('dashTourMenuFindTags', 'Find tags'), f('dashTourMenuRowsTiles', 'Rows or tiles')]
+                            .map((l, i) => label(342, 36 + i * 24, l, 'dtv-title')).join('')}
+                        ${label(400, 138, f('dashTourMouseTitleCap', 'right-click a title'), 'dtv-caption', 'middle')}
+                    </g>
+                `, f('dashTourMouseAlt', 'A bookmark with the menu of the right mouse button, and the menu of a category title')),
+                body: `<p>${esc(f('dashTourMouseBody1',
+                    'Right-click a bookmark for everything you can do with it: open it in a new tab, copy the address, edit it, tag it, move it, set how it is checked, or delete it.'))}</p>
+                    <p>${esc(f('dashTourMouseBody2',
+                    'Right-click a category title to add a bookmark, rename it, find tags or switch between rows and tiles. Choose Select in a bookmark\'s menu to act on several at once.'))}</p>`,
+            },
+            // 3 — start typing
             {
                 title: f('dashTour4SearchTitle', 'Start typing'),
                 visual: svg(`

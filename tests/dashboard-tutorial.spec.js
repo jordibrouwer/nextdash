@@ -11,7 +11,7 @@ const { markWhatsNewSeen } = require('./e2e-helpers');
  * the one that decides whether it opens.
  */
 
-const STEPS = 8;
+const STEPS = 9;
 const TIP = 'dashboardTutorialV3';
 const modal = (page) => page.locator('#app-modal.show .dashboard-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
@@ -100,6 +100,7 @@ test.describe('dashboard tour', () => {
         expect(titles).toEqual([
             'The action bar',
             'Pages, categories, bookmarks',
+            'With the mouse',
             'Start typing',
             'Two keys to open, Shift to act',
             'Adding: paste, + or the extension',
