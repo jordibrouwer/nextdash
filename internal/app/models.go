@@ -814,7 +814,7 @@ type Settings struct {
 	EnableUpdatedNotice        bool   `json:"enableUpdatedNotice"`
 	EnableSectionTours         bool   `json:"enableSectionTours"`             // The one-time tour on a section's first visit (needs enableSessionTips too)
 	SessionTipsFrequency       string `json:"sessionTipsFrequency,omitempty"` // "weekly" spaces the keyboard tips a week apart; anything else is daily
-	ShowShortcutTooltips       bool   `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
+	ShowShortcutTooltips       bool   `json:"showShortcutTooltips"`           // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
 	ShowGridKeyLegend          bool   `json:"showGridKeyLegend"`
 	ShortcutOpenMode           string `json:"shortcutOpenMode,omitempty"`
 	RememberScrollPosition     bool   `json:"rememberScrollPosition"`   // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
