@@ -261,6 +261,8 @@ body.no-animations .start-guide-modal {
 
 .start-guide-modal h2 {
     margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: calc(var(--font-size-text, 1rem) * 1.25);
     font-weight: 600;
     text-transform: var(--theme-label-transform, none);
@@ -454,13 +456,14 @@ body.no-animations .start-guide-modal {
     align-self: flex-start;
 }
 
-/* "Nederlands detected · Switch", under the language menu. */
+/* "Nederlands detected · Switch", on a line of its own under the heading so it
+   takes no width from the title. */
 .start-guide-modal .sg-lang-hint {
     display: flex;
     gap: 0.4rem;
     align-items: center;
-    margin-top: 0.25rem;
-    font-size: 0.75rem;
+    margin: 0.4rem 0 0;
+    font-size: 0.8rem;
     color: var(--text-secondary);
 }
 

@@ -561,18 +561,16 @@
                 <p class="sg-error" data-sg-error role="alert" hidden></p>` : '';
             panel.innerHTML = `
                 <div class="sg-head">
-                    <div>
-                        <h2 id="sg-title" data-sg-title>${esc(hasChoice ? tf('titleWant', 'what do you want?') : tq('title', 'Quick start'))}</h2>
-                        ${hasChoice ? `<p class="sg-sub">${esc(tf('introWant', 'This page starts with example links. Keep them to look around, or clear them and add your own.'))}</p>` : ''}
-                    </div>
+                    <h2 id="sg-title" data-sg-title>${esc(hasChoice ? tf('titleWant', 'what do you want?') : tq('title', 'Quick start'))}</h2>
                     <label class="sg-lang">
                         <span>${esc(tq('guideLanguage', 'Language'))}</span>
                         <select data-sg-language aria-label="${esc(tq('guideLanguage', 'Language'))}">
                             ${LANGUAGES.map(([code, name]) => `<option value="${code}"${code === lang ? ' selected' : ''}>${esc(name)}</option>`).join('')}
                         </select>
-                        ${langHint ? `<span class="sg-lang-hint" data-sg-lang-hint>${esc(tq('guideLanguageDetected', '{language} detected', { language: langHint[1] }))} <button type="button" class="sg-link" data-sg-lang-switch="${esc(langHint[0])}">${esc(tq('guideLanguageSwitch', 'Switch'))}</button></span>` : ''}
                     </label>
                 </div>
+                ${hasChoice ? `<p class="sg-sub">${esc(tf('introWant', 'This page starts with example links. Keep them to look around, or clear them and add your own.'))}</p>` : ''}
+                ${langHint ? `<p class="sg-lang-hint" data-sg-lang-hint>${esc(tq('guideLanguageDetected', '{language} detected', { language: langHint[1] }))} <button type="button" class="sg-link" data-sg-lang-switch="${esc(langHint[0])}">${esc(tq('guideLanguageSwitch', 'Switch'))}</button></p>` : ''}
                 ${choices}
                 <p class="sg-links">
                     <button type="button" class="sg-link" data-sg-manual>${esc(tf('showManual', 'Show me the manual first'))}</button>
