@@ -113,8 +113,14 @@ test('a settings change from another device waits until the studio closes', asyn
     await page.locator('[data-studio-cancel]').click();
     await expect(studio(page)).toHaveCount(0);
     expect(await local(page, 'categoryHeaderStyle')).toBe('clean');
-    await page.evaluate(() => window.dashboardInstance.data.refreshIfDataRevisionChanged());
-    await expect.poll(() => local(page, 'inboxViewUnreadMark'), { message: 'applied once the studio closed', timeout: 15_000 }).toBe(false);
+    // Asked again on every try: a refresh already running when the studio closed
+    // is handed back to the caller as it is, and it settled the change as
+    // "wait" before the studio closed, so the first answer can still be the old
+    // one. The page's own poll picks the change up after that; this is the poll.
+    await expect.poll(async () => {
+        await page.evaluate(() => window.dashboardInstance.data.refreshIfDataRevisionChanged());
+        return local(page, 'inboxViewUnreadMark');
+    }, { message: 'applied once the studio closed', timeout: 15_000 }).toBe(false);
 });
 
 test('a theme\'s own look without glass or backdrop clears the ones before it, for every theme', async ({ page }) => {
