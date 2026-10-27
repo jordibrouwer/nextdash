@@ -176,6 +176,7 @@ async function markBookmarksTutorialSeen(page) {
         window.DiscoverabilityState?.markTipSeen?.('containersTutorialV3', { persist: false });
         window.DiscoverabilityState?.markTipSeen?.('dashboardTutorialV3', { persist: false });
         window.DiscoverabilityState?.markTipSeen?.('monitoringTutorialV1', { persist: false });
+        window.DiscoverabilityState?.markTipSeen?.('unraidTutorialV1', { persist: false });
     });
 }
 

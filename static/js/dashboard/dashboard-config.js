@@ -2362,6 +2362,10 @@ class DashboardConfig {
         const monitoringTour = this.section === 'monitoring'
             ? `<button type="button" class="lvs-action" data-monitoring-tour title="${this.dash.escapeHtml(this.t('config.monitoringTourHint', 'A tour of monitoring'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Unraid has its own tour too, on the same band.
+        const unraidTour = this.section === 'unraid'
+            ? `<button type="button" class="lvs-action" data-unraid-tour title="${this.dash.escapeHtml(this.t('config.unraidTourHint', 'A tour of Unraid'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         // Glances the same: its tour, a click away from the settings that feed it.
         const glancesTour = this.section === 'glances'
             ? `<button type="button" class="lvs-action" data-glances-config-tour title="${this.dash.escapeHtml(this.t('config.glancesTourHint', 'A tour of the Glances page'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
@@ -2378,7 +2382,7 @@ class DashboardConfig {
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + viewLink + widgetsTour + monitoringTour + containersTour + glancesTour;
+                : '')) + viewLink + widgetsTour + monitoringTour + unraidTour + containersTour + glancesTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2404,6 +2408,7 @@ class DashboardConfig {
                     }
                 } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
                 else if (e.target.closest('[data-monitoring-tour]')) void this.openMonitoringTour();
+                else if (e.target.closest('[data-unraid-tour]')) void this.openUnraidTour();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-glances-config-tour]')) void this.playViewTour('glancesTutorialV1');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
@@ -2627,6 +2632,7 @@ class DashboardConfig {
             this.bindContainersSection(container);
         } else if (this.section === 'unraid') {
             void this.bindUnraidSection?.(container);
+            void this.maybeShowUnraidTutorial();
         } else if (this.section === 'glances') {
             void this.bindGlancesSection?.(container);
         } else if (this.section === 'status-page') {
@@ -12837,7 +12843,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1', 'monitoringTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1', 'monitoringTutorialV1', 'unraidTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -12943,6 +12949,40 @@ class DashboardConfig {
     async openMonitoringTour() {
         if (!(await this.loadMonitoringTour())) return false;
         return window.MonitoringTutorial?.open?.() === true;
+    }
+
+    /**
+     * The one-time Unraid tour, the first time this section is opened -- the
+     * same guards and the same order as the Monitoring tour's.
+     */
+    async maybeShowUnraidTutorial() {
+        // Once: binding runs again on every repaint of the section, and a
+        // second call would replace the tour on screen.
+        if (this._unraidTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.UNRAID_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._unraidTutorialAsked = true;
+        if (!(await this.loadUnraidTour())) return;
+        window.UnraidTutorial?.maybeShow?.();
+    }
+
+    /** Fetch the tour script once. False when it cannot be had. */
+    async loadUnraidTour() {
+        if (typeof window.UnraidTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/unraid-tutorial.js', 'unraidTutorialModule',
+                () => typeof window.UnraidTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    }
+
+    /** The Unraid tour, from the Tour button on the band or Config's replay: seen or not. */
+    async openUnraidTour() {
+        if (!(await this.loadUnraidTour())) return false;
+        return window.UnraidTutorial?.open?.() === true;
     }
 
     bindMonitoringControls(container) {
@@ -13090,6 +13130,10 @@ class DashboardConfig {
             case 'monitoringTutorialV1':
                 await this.openConfigView('monitoring');
                 await this.openMonitoringTour();
+                return true;
+            case 'unraidTutorialV1':
+                await this.openConfigView('unraid');
+                await this.openUnraidTour();
                 return true;
             default:
                 return false;
@@ -16264,6 +16308,9 @@ class DashboardConfig {
     // Repeated from monitoring-tutorial.js, for the same reason.
     static MONITORING_TUTORIAL_TIP_ID = 'monitoringTutorialV1';
 
+    // Repeated from unraid-tutorial.js, for the same reason.
+    static UNRAID_TUTORIAL_TIP_ID = 'unraidTutorialV1';
+
     /*
      * The six guided tours, in one list.
      *
@@ -16297,6 +16344,8 @@ class DashboardConfig {
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
         { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring',
           whereKey: 'config.tourWhereMonitoring', where: 'the next time you open Config → Monitoring' },
+        { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid',
+          whereKey: 'config.tourWhereUnraid', where: 'the next time you open Config → Unraid' },
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
