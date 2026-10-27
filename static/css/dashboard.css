@@ -9613,7 +9613,7 @@ body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section
  * plate, which is its whole answer to the same question.
  */
 html[data-theme] body[data-action-bar][data-action-bar][data-action-bar]:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]):not([data-action-bar-hidden]):not([data-material="ink"]) .dashboard-section.section-controls .header-shortcuts {
-    border-color: color-mix(in srgb, var(--accent-primary) 38%, var(--border-primary));
+    border-color: color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
     /* The cast is a filter, so the material's own edge, bevel or glow (its
        box-shadow) stays what it is. */
     filter:
@@ -9625,7 +9625,7 @@ html[data-theme] body[data-action-bar][data-action-bar][data-action-bar]:is([dat
  * A wash over the material's own paint, not a replacement of it: the dock keeps
  * the look its material gave it, with a layer of the surface colour laid over so
  * it stays apart from the cards behind. --action-bar-wash is how much of the
- * dock is the wash; the rest is still the material.
+ * dock is the wash, taken from how solid the categories are; the rest is the material.
  */
 html[data-theme] body[data-action-bar][data-action-bar][data-action-bar]:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]):not([data-action-bar-hidden]):not([data-material="ink"]) .dashboard-section.section-controls .header-shortcuts::after {
     content: "";
@@ -9633,7 +9633,10 @@ html[data-theme] body[data-action-bar][data-action-bar][data-action-bar]:is([dat
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background: color-mix(in srgb, var(--surface-3, var(--background-secondary)) var(--action-bar-wash, 75%), transparent);
+    /* A good deal less than the categories' own alpha, so the theme is what you
+       see: ~42% on a glass theme, and more where the theme itself is opaque. */
+    --action-bar-wash: calc(max(var(--cat-glass-alpha, var(--theme-surface-alpha, 1)) - 0.2, 0.35) * 100%);
+    background: color-mix(in srgb, var(--surface-3, var(--background-secondary)) var(--action-bar-wash), transparent);
     pointer-events: none;
 }
 

@@ -40,8 +40,8 @@ for (const material of ['brushed', 'glass', 'paper', 'neon']) {
         const shown = await dock(page);
         // Tens of percent of wash: enough to part it from the cards, short of covering the material.
         expect(shown.washed).toBe(true);
-        expect(shown.alpha, 'the wash is too thin to part the dock from the cards').toBeGreaterThanOrEqual(0.5);
-        expect(shown.alpha, 'the wash covers the material').toBeLessThanOrEqual(0.75);
+        expect(shown.alpha, 'the wash is too thin to part the dock from the cards').toBeGreaterThanOrEqual(0.35);
+        expect(shown.alpha, 'the wash covers the material').toBeLessThanOrEqual(0.85);
         expect(shown.filter).toContain('drop-shadow');
         // Slid away, it is not drawn at all, so nothing here changes it.
         await page.evaluate(() => document.body.setAttribute('data-action-bar-hidden', ''));
