@@ -196,3 +196,36 @@ test.describe('after the page is made', () => {
         await expect(page.locator('#app-modal .sg-tips-note')).toHaveCount(0);
     });
 });
+
+test.describe('importing from the guide', () => {
+    test('a CSV file goes through the importer Config uses, and Config is one click away', async ({ page, request }) => {
+        let posted = null;
+        await page.route('**/api/bookmarks/import-browser*', (route) => {
+            posted = route.request().postDataJSON();
+            return route.fulfill({ json: { imported: 2, skipped: 0 } });
+        });
+        await setup(page, request);
+        await expect(modal(page).getByRole('button', { name: 'Import a CSV file' })).toBeVisible();
+        await expect(modal(page).getByRole('button', { name: /More ways to import: Config/ })).toBeVisible();
+
+        await modal(page).locator('[data-sg-csv-input]').setInputFiles({
+            name: 'bookmarks.csv', mimeType: 'text/csv',
+            buffer: Buffer.from('name,url,category,tags\nOne,https://one.example/,Work,"a,b"\nTwo,https://two.example/,Home,\n'),
+        });
+        // The guide steps aside; the importer asks where the rows go.
+        await expect(page.locator('[data-start-guide-modal]')).toHaveCount(0);
+        const ask = page.locator('#config-confirm-modal');
+        await expect(ask).toBeVisible();
+        await expect(ask).toContainText('Import 2 bookmarks');
+        await ask.locator('[data-confirm="ok"]').click();
+        await expect.poll(() => posted).not.toBeNull();
+        expect(posted.bookmarks).toHaveLength(2);
+        expect(posted.bookmarks[0]).toMatchObject({ name: 'One', url: 'https://one.example/', category: 'Work', tags: ['a', 'b'] });
+    });
+
+    test('"More ways to import" opens Config → Data & backups', async ({ page, request }) => {
+        await setup(page, request);
+        await modal(page).getByRole('button', { name: /More ways to import: Config/ }).click();
+        await expect(page).toHaveURL(/#config\/data-backups/);
+    });
+});

@@ -596,6 +596,14 @@
                 ${starter}
                 </div>
                 <div class="sg-col">
+                <p class="sg-label">${esc(tq('guideImport', 'Bring your bookmarks'))}</p>
+                <div class="sg-import">
+                    <button type="button" class="sg-btn" data-sg-csv>${esc(tq('guideImportCsv', 'Import a CSV file'))}</button>
+                    <input type="file" accept=".csv,text/csv" data-sg-csv-input hidden>
+                    <p class="sg-sub">${esc(tq('guideImportHint', 'Needs a url column; name, category, tags and notes are optional.'))}
+                        <button type="button" class="sg-link" data-sg-import-more>${esc(tq('guideImportMore', 'More ways to import: Config → Data & backups'))}</button></p>
+                </div>
+                <hr class="sg-rule">
                 <p class="sg-label">${esc(tq('guideNextSteps', 'Next steps'))}</p>
                 <ul class="sg-steps">${steps.map((s) => this.renderStep(s, done.has(s.id), !shown.has(s.id))).join('')}</ul>
                 ${hiddenCount > 0 && !this.showAll ? `<button type="button" class="sg-more" data-sg-more>${esc(tq('guideShowMore', 'Show {n} more', { n: hiddenCount }))} ▾</button>` : ''}
@@ -637,6 +645,8 @@
                 if (target.hasAttribute('data-sg-starter-create')) { void this.createStarter(); return; }
                 const switchTo = target.getAttribute('data-sg-lang-switch');
                 if (switchTo) { this.acceptLanguage(switchTo); return; }
+                if (target.hasAttribute('data-sg-csv')) { panel.querySelector('[data-sg-csv-input]')?.click(); return; }
+                if (target.hasAttribute('data-sg-import-more')) { void this.runStep('import'); return; }
                 if (target.hasAttribute('data-sg-manual')) { global.open(DOCS_URL, '_blank', 'noopener'); return; }
                 if (target.hasAttribute('data-sg-studio')) { this.openStudio(); return; }
                 if (target.hasAttribute('data-sg-minimise')) { this.close(); return; }
@@ -663,6 +673,11 @@
             panel.querySelector('[data-sg-language]').addEventListener('change', (event) => {
                 this.langTouched = true;
                 void this.setLanguage(event.target.value);
+            });
+            panel.querySelector('[data-sg-csv-input]')?.addEventListener('change', (event) => {
+                const file = event.target.files && event.target.files[0];
+                event.target.value = '';
+                if (file) void this.importCsv(file);
             });
             const server = panel.querySelector('[data-sg-starter-server]');
             if (server) {
@@ -892,6 +907,21 @@
         async runTour() {
             this.close({ land: false });
             await this.dash.promos?.openDashboardTour?.();
+        }
+
+        /**
+         * A CSV the reader already has, straight from the guide. It is the
+         * importer Config → Data & backups has: the same reading of the file,
+         * the same question (this page or the inbox), the same de-duplication.
+         * The guide steps aside first so that question is not asked on top of it.
+         */
+        async importCsv(file) {
+            global.nextdashTrack?.('start-import', { via: 'csv' });
+            this.markSteps(['import']);
+            this.close({ land: false });
+            try {
+                await this.dash.config?.importBookmarksCSV?.(file);
+            } catch { /* the importer says what went wrong itself */ }
         }
 
         async runStep(id) {

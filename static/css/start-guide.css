@@ -740,3 +740,7 @@ body.no-animations .start-guide-modal {
         grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
     }
 }
+
+.start-guide-modal .sg-import .sg-sub {
+    margin-top: 0.5rem;
+}
