@@ -364,6 +364,7 @@ class SearchComponent {
         const findersButton = document.getElementById('finders-button');
         if (findersButton) {
             findersButton.addEventListener('click', () => {
+                this._openVia = 'button';
                 this._openInMode('?');
             });
         }
@@ -372,6 +373,7 @@ class SearchComponent {
         const commandsButton = document.getElementById('commands-button');
         if (commandsButton) {
             commandsButton.addEventListener('click', () => {
+                this._openVia = 'button';
                 this._openInMode(':');
             });
         }
@@ -394,6 +396,7 @@ class SearchComponent {
                     window.dashboardInstance?.showKeyboardCheatSheet?.();
                     return;
                 }
+                this._openVia = 'tab';
                 if (mode === 'command') {
                     this.currentQuery = ':';
                     this.commandsComponent.resetState();
@@ -728,9 +731,15 @@ class SearchComponent {
                     : this.currentQuery === SearchComponent.TAG_MODE_QUERY
                         ? 'tags'
                         : 'search';
+        // Taken before the early return: an opener that changed nothing must
+        // not leave its word behind for the next, unrelated open.
+        const via = this._openVia || 'key';
+        this._openVia = null;
         if (mode === this._lastTrackedMode) return;
         this._lastTrackedMode = mode;
-        window.nextdashTrack?.(`modal:${mode}`);
+        // How commands and finders were reached -- a key, a toolbar button or
+        // a mode tab -- is what says whether the buttons earn their place.
+        window.nextdashTrack?.(`modal:${mode}`, mode === 'commands' || mode === 'finders' ? { via } : undefined);
     }
 
     getThemeIconStylingEntry() {
@@ -3821,8 +3830,9 @@ class SearchComponent {
             const historyClass = match.type === 'history' ? ' history-entry' : '';
             const savedClass = match.type === 'saved-search' ? ' saved-search-entry' : '';
             const filterClass = match.type === 'filter-completion' ? ' filter-completion-entry' : '';
-            const whatsNewClass = match.type === 'whats-new' ? ' whats-new-entry' : '';
-            const groupChildClass = (match.groupId || match.type === 'filter-completion' || match.type === 'whats-new') ? ' command-group-child' : '';
+            const isNoticeRow = match.type === 'whats-new' || match.type === 'keyboard-tour';
+            const whatsNewClass = isNoticeRow ? ' whats-new-entry' : '';
+            const groupChildClass = (match.groupId || match.type === 'filter-completion' || isNoticeRow) ? ' command-group-child' : '';
             // Set only on rows a command handler explicitly marked as the
             // setting's present value (see _markCurrentRow / _buildOnOffRows
             // in search-commands.js) — most match types never carry it.
@@ -3853,7 +3863,7 @@ class SearchComponent {
             // search, not a thing that can be opened.
             let shortcutHtml = '';
             if (match.type !== 'fuzzy' && match.type !== 'global-search' && match.type !== 'mode-hint') {
-                const rawShortcut = match.type === 'whats-new' ? match.shortcut : match.shortcut.toUpperCase();
+                const rawShortcut = isNoticeRow ? match.shortcut : match.shortcut.toUpperCase();
                 const highlightedShortcut = match.query
                     ? this._highlightQuery(rawShortcut, match.query.toUpperCase())
                     : this._escHtml(rawShortcut);
@@ -4084,6 +4094,9 @@ class SearchComponent {
             } else if (selectedMatch.type === 'whats-new') {
                 this.closeSearch();
                 window.openWhatsNewModal?.({ force: true });
+            } else if (selectedMatch.type === 'keyboard-tour') {
+                this.closeSearch();
+                window.KeyboardTutorial?.open?.({ via: 'search' });
             } else if (selectedMatch.type === 'hint-new' || selectedMatch.type === 'hint-finder') {
                 selectedMatch.action?.();
             } else {
@@ -4706,8 +4719,22 @@ class SearchComponent {
             }]
             : [];
 
+        // Offered until it has been seen, then it goes quiet. Open for someone
+        // on Hypr mode, who lives on the keyboard and is the likeliest to want
+        // it; a line in a closed group for everyone else.
+        const keyboardTourItems = window.KeyboardTutorial
+            && !window.DiscoverabilityState?.hasSeenTip?.(window.KeyboardTutorial.TIP_ID)
+            && this.settings?.enableSessionTips !== false
+            ? [{
+                type: 'keyboard-tour',
+                shortcut: '★',
+                name: t('emptyStateKeyboardTourItem', 'Take the keyboard tour')
+            }]
+            : [];
+
         const groups = [
             { id: 'whats-new', label: t('emptyStateWhatsNewLabel', "What's new"), items: whatsNewItems, defaultOpen: true },
+            { id: 'keyboard-tour', label: t('emptyStateKeyboardTourLabel', 'Keyboard'), items: keyboardTourItems, defaultOpen: Boolean(window.hyprMode?.isEnabled?.()) },
             { id: 'recent', label: t('emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
             { id: 'recent-commands', label: t('emptyStateRecentCommandsLabel', 'Recent commands'), items: recentCommandMatches, defaultOpen: false },
             { id: 'saved', label: t('emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },

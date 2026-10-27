@@ -13144,6 +13144,13 @@ class DashboardConfig {
             await this.dash.promos?.openDashboardTour?.();
             return;
         }
+        // The keyboard tour belongs to the search panel, not a view, and is
+        // never started unasked: it plays now.
+        if (tour.id === 'keyboardTutorialV1' && window.KeyboardTutorial?.open) {
+            this.render();
+            window.KeyboardTutorial.open({ via: 'config' });
+            return;
+        }
         // A view tour plays now, in its own view: waiting for "next time"
         // would mean a visit the reader may not make for weeks.
         if (await this.playViewTour(tour.id)) return;
@@ -16393,6 +16400,8 @@ class DashboardConfig {
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'dashboardTutorialV3', labelKey: 'config.tourDashboard', label: 'The dashboard',
+          whereKey: 'config.tourWhereNow', where: 'right away' },
+        { id: 'keyboardTutorialV1', labelKey: 'config.tourKeyboard', label: 'The keyboard',
           whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
