@@ -9575,7 +9575,7 @@
     "importDestInboxBody": "Ordénalos uno a uno más tarde. Las carpetas pasan a ser etiquetas.",
     "importDestNewPage": "En una página nueva",
     "importDestNewPageBody": "Una página propia, para que lo que hay en «{p}» quede como está. Las carpetas se convierten en categorías.",
-    "importNewPageName": "Imported",
+    "importNewPageName": "Importado",
     "importDestNew": "{n} nuevos",
     "importDestDuplicates": "{d} ya están, se saltan",
     "importedToInbox": "Se añadieron {n} a la bandeja de entrada.",
