@@ -128,7 +128,35 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.22.3 — 27 October 2026
 
-The usage analytics send less and carry what was missing to read them: an install code, a hostname replaced by one word, the language, how the server runs, and three small events. Everything stays behind the opt-in: with **Privacy-friendly analytics** off, nothing here is in the page and nothing is sent. Held back from the What's new window.
+A new install starts better and the quiet features get found: the Quick start guide asks first whether to keep the example links, offers ready-made pages and a CSV import, and walks through ten steps; there are tours for the keyboard, Monitoring and Unraid; tips can come weekly; four offer cards ask before doing something, and Config's settings search remembers what you opened. The usage analytics send less and carry what was missing to read them: an install code, a hostname replaced by one word, the language, how the server runs, and a handful of small events. Everything analytics stays behind the opt-in: with **Privacy-friendly analytics** off, nothing here is in the page and nothing is sent. Held back from the What's new window.
+
+### First start
+
+- **new — the Quick start guide asks before it does.** It opens as *Welcome to nextDash* in two columns. First you choose between *Keep these example links* and *Start with an empty page*; the ready-made pages (*Homelab*, *Media server*, *Developer*) stay locked until you have, because where they go depends on it: beside the examples as a new page, or onto the emptied main page (`target` on `POST /api/onboarding/template`, and `platform` on `GET /api/page-templates/bundled`). A weather town, a language list with a hint when the browser asks for another language, a button to the manual at nextdash.cc and a note that nextDash can feel like a lot are in the same window.
+- **new — import a CSV file from the guide.** One button in the guide, a link to Config → Data & backups for the other importers, and the usual question where the links go.
+- **new — import to a new page.** The destination question for CSV and browser-bookmark files has a third answer, *On a new page*: *Imported*, *Imported 2* and so on. The dialog is styled outside Config too (it was an unstyled list).
+- **new — ten steps, three at a time.** *Take the 1-minute tour*, *Open the Bookmarks view*, *Browse by tag*, *Open the Inbox view*, *Add a widget*, *Turn on status checks*, *Set up notifications*, *Open the Config settings*, *Learn the shortcuts* and *Add a second page*, plus *Connect your Unraid server* on an Unraid server. The rest is behind *Show more*. The old import and extension steps are gone.
+- **new — a tip after a ready-made page.** A short popover says how to edit, delete and add a bookmark and that Checking can be set to Monitor per bookmark (the Bookmarks view shows when one is down). Nothing is monitored by itself.
+- **new — an example tag cloud, once.** *Browse by tag* in a library without tags shows ten made-up words and a way to the Tags view, one time. Closing the example offers *Open Tags view*, and the step counts only once you have taken it.
+- **fix — the guide opens again on an empty data folder.** A browser that had seen it kept a flag in local storage and never opened it after the data was cleared; the flag is now tied to `firstRunAt`.
+- **fix — the bar stays on every page.** The Quick start bar is in view on the other pages as well.
+
+### Tours and tips
+
+- **new — a keyboard tour.** Four steps: typing anywhere, `:` for commands, `?` for finders, and `/`, `*`, `!`. It never opens by itself: the search panel's empty state offers it until it has been seen (open for people on Hypr mode), `:tour keyboard` and Config → Help → Guided tours start it.
+- **new — Config tours for Monitoring and Unraid.** A *Tour* button on the band of each, in the same slot as the other tabs, and a one-time tour on the first visit. Monitoring explains that checking is chosen per bookmark; Unraid covers connecting, the widgets and staying read-only.
+- **new — the dashboard tour has a step for the mouse.** Nine steps now; the new third one covers the right-click menu of a bookmark and the other things you can do with the mouse, where the tour only had keys.
+- **new — keyboard tips come daily or weekly, and section tours have a switch.** *Keyboard tips come* and *Offer a tour the first time a section opens* sit in Config → Behavior → Onboarding (`sessionTipsFrequency`, `enableSectionTours`, default on). Tours still need *Show occasional keyboard tips* to be on.
+- **new — the settings search remembers.** With an empty search, *Recent* lists the last eight settings you opened or changed, kept in this browser only.
+
+### Offers
+
+- **new — *Check images for updates?* in the Containers view.** A card after the third open, with *Turn on (daily)*, *Not now* and *Never*. Nothing updates by itself.
+- **new — *Re-check your links?* in the Bookmarks view.** When the last real check is old, the age counts from that check, and a second card offers to turn the automatic re-check on. The Config text now says it is on by default.
+- **new — the browser extension in the Inbox.** A card and a line in the empty Inbox, both linking to the browser-extension page of the docs.
+- **new — *What changed* after an update.** Says which version you came from, and does not hold the other cards back.
+- **new — tags for one category.** *Find tags* on a category's menu, and in Config's category menu.
+- **new — a switch for each.** Config → Behavior → Onboarding has one for each offer (`enableDockerUpdateNotice`, `enableHealthRecheckNotice`, `enableInboxExtensionNotice`, `enableUpdatedNotice`). The notice cards can belong to one view (`view` on `NoticeCard.define`), and a card marked `essential` does not make the others wait.
 
 ### Privacy & sync
 
@@ -139,19 +167,35 @@ The usage analytics send less and carry what was missing to read them: an instal
 - **fix — snapshots go out when they change.** A snapshot per page load was 55% of all events and about 700,000 stored properties in a hundred days, enough to make Umami's own Events page fail. Each of the five now goes out the first time, when its payload (which holds the release) changed, in a new calendar month, or after seven days; what was sent is kept in local storage (`nextdash.analytics`) and only written once the tracker has loaded. Constant fields (eleven settings, two for Containers, fifteen for the views) and widget types nobody has are left out.
 - **fix — one pageview per page load.** Umami hooks `history.pushState` and `replaceState` and counted every in-app view change as a pageview, which made pageviews and the bounce rate meaningless. `data-auto-track` is off and the load is reported once with the path only.
 - **fix — a loop cannot flood the data.** `nextdashTrack` drops an identical event within 500 ms and caps the rest at 100 per rolling minute; the snapshots are exempt from the cap. One day had 2,575 pageviews from 21 visitors.
+- **new — events for the new features.** `start-guide:open`, `:close`, `:step`, `:finish` and `:link` with fixed words and a band for how many steps were done, `start-template`, `start-import`, `language-suggest`, `keyboard-tour`, `monitoring-tutorial` and `unraid-tutorial` (`shown`, `opened`, `finished` with an outcome), `docker-update-offer`, `health-recheck-offer`, `updated-notice`, `config:settings-search` (recent, typed or browse), `whats-new:closed`, `bookmark:edit-close` and `bookmark:edit-invalid`. `modal:commands` and `modal:finders` say whether a key, a button or a tab opened them, and `modal:tag-cloud` whether it was the example. No free text and no exact numbers.
+- **new — more on the snapshots.** The share of bookmarks without tags as a band, and the smart collections and tag collections in use. `demo:refused` is capped at five per action per visit.
+- **fix — `first-bookmark` fires on a default install.** The seed carries about a hundred example links, so the ten-link rule never matched; an install that is less than a day old now counts as fresh.
+- **fix — `bookmark-created` counts the bookmark once it is saved.** It also fired when the form was refused or the server said no, on top of the saved event.
 - **new — `NEXTDASH_DISABLE_INSTALL_PING=1`.** Switches off the daily install count alone, where `DISABLE_TELEMETRY` also takes the analytics away. Test runs and CI shards start a server on an empty data folder, which counted as a new install each time and made up most of the count.
 
 ### Config
 
+- **fix — the title stays clear of the buttons, and the band is one height.** In a material that sets titles in capitals with wide letter-spacing (brushed), the title ran into *Only changed*, because the band's buttons did not shrink and the title block could shrink to nothing. The title keeps its own width (`min-content`, on one line, mark and word together), the buttons give way (count first, then the filter), and the description is one line with an ellipsis, so the band is 67px high on every tab and the rail does not move as you go down it.
+- **fix — Config → Monitoring fits a phone.** The filter and the tour slot made the band 385px wide; below 640px they wrap and shrink.
+- **fix — monitoring texts point at the Bookmarks view.** Three Config texts said *Health view*, in all six languages.
 - **fix — the band's line is one line in every section.** The description under a section's title could wrap to a second line, which made the sticky band sixteen pixels taller in Inbox, Appearance and Behavior than in Bookmarks and moved everything under it when you went from one tab to another. `.config-view-head .lvs-description` is now `nowrap` with an ellipsis (the whole sentence is still its title), and the Inbox, Appearance and Behavior lines are shorter in all six languages so that they fit in the 400px the filter leaves them.
+
+### Appearance
+
+- **fix — the docked action bar stands apart from the cards.** It took the paint of a category and was lost against the cards it slid over. A layer of the surface colour now goes over the material's own paint (about 38% on a glass theme, more where the theme itself is opaque, from `--cat-glass-alpha`), with an edge that leans to the accent and a cast in a filter, so each material's own edge stays. A button that is on is filled with the accent, as the lit view in the header is. Ink keeps its thin plate.
+- **fix — the command palette looks like the dashboard.** Its fill follows how solid the categories are (their alpha plus a tenth, never under 70%) instead of the overlay's 80%, it starts with the two skewed blocks of a column head, and its mode word is set as a column head is in that material. The ring and the cast stay. Neon, terminal, ink and paper keep their own fill.
+- **fix — Pages and Recents rise like the other dialogs.** The two sheets had their own drop; they now use the rise of the add-bookmark form and the search panel.
+- **fix — tour dots keep their size in Signature materials.** The rule for a dot also matched the row of dots and made it eight pixels square.
 
 ### Tests
 
+- **new — specs for what is above.** The guide's choice and steps, the import destination, the tag step, the three tours, tip frequency, Recent in the settings search, the dock and the palette, the Config band and the Monitoring page at 360px, the tour dots, and `bookmark-created` on a refused save. Falsified where the change is behaviour.
 - **new — `analytics-snapshot-gate.test.cjs` and `analytics-pageview-rate.test.cjs`.** The gate (changed, month, week, release, a tracker that never loaded), the three small events, the install code, the hostname words and the rate limiter, against a fake storage and clock. `analytics-count-buckets.test.cjs` skips the tracker's own pageview call.
 - **fix — the analytics specs read the snapshots again.** They clear the remembered snapshots before each load, the stubs ignore the tracker's pageview call, and the widgets spec no longer expects a type the fixture does not have. `NEXTDASH_DISABLE_INSTALL_PING` is in the e2e server's environment and in the CI step.
 
 ### Docs
 
+- **docs — Help, Tips, MANUAL and README for the above.** The *Config → Help* panels for the guide, import, tips and offers, the tips *Config tour list* and *find a value*, seven new manual pictures (Quick start, the example cloud, the keyboard tour, the Monitoring tour, Recent in the settings search, the tips settings) and the chapters they sit in. 228 new and changed strings are translated in Dutch, German, French, Chinese and Spanish.
 - **docs — `MANUAL.md` §23.7 and §23.8** (the table, how often, the install code, where it runs, the environment variable), the README's variable table and its privacy line, **Config → Help → Statistics → Privacy & analytics**, and the three privacy strings in the six locale files.
 - **docs — `static/data/whats-new/v1.22.3.json` and its index entry**, held back from the What's new window; `NEXTDASH_WHATS_NEW_DATA_VERSION` in `whats-new-stub.js` moved to `whats-new-v355` and `DASHBOARD_RELEASE` stays on v1.22.0. `tests/whats-new-hidden-release.spec.js` follows. `go generate` refreshed `asset_hashes_gen.go`.
 - **docs — new screenshots.** The manual's pictures are retaken in Arctic Cyan dark and the README's in their own themes.
