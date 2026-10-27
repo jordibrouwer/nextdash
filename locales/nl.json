@@ -10317,7 +10317,9 @@
     "guideShowMore": "Toon er nog {n}",
     "guideOr": "of",
     "guideBackHint": "brengt je overal vandaan terug naar het dashboard",
-    "guideCloseForNow": "Nu sluiten"
+    "guideCloseForNow": "Nu sluiten",
+    "tagDemoClosed": "That was an example. Give bookmarks tags and your own cloud appears here.",
+    "tagDemoOpenTags": "Open Tags view"
   },
   "demo": {
     "analyticsNotice": "Deze demo registreert bezoeken anoniem, inclusief kliks en schermopnames, om nextDash te verbeteren. Opnames tonen wat er op het scherm staat; alleen wat je in formuliervelden typt wordt gemaskeerd.",

@@ -631,8 +631,8 @@ test.describe('the tag step', () => {
         await expect(cloud(page)).toBeHidden();
         await bar(page).locator('[data-start-guide-open]').click();
         await expect(modal(page)).toBeVisible();
-        // Taken once, the step sits behind "Show more" with the others that are done.
-        await modal(page).locator('[data-sg-more]').click();
+        // Closing an example is not browsing: the step is still to do.
+        expect((await stored(page)).quickStart.stepsDone || []).not.toContain('tags');
         await modal(page).locator('[data-sg-step="tags"] button').click();
         await expect(page).toHaveURL(/#tags/);
         await expect(page.locator('[data-tag-cloud-demo]')).toHaveCount(0);
@@ -646,5 +646,22 @@ test.describe('the tag step', () => {
         await page.locator('.tag-cloud-demo-view').click();
         await expect(page).toHaveURL(/#tags/);
         await expect(cloud(page)).toBeHidden();
+        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('tags');
+    });
+
+    test('closing the example offers the Tags view, and taking it counts the step', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await page.evaluate(() => { window.DashboardTagCloud.libraryHasTags = () => false; });
+        await openModal(page);
+        await modal(page).locator('[data-sg-step="tags"] button').click();
+        await expect(cloud(page)).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(cloud(page)).toBeHidden();
+        const offer = page.locator('.app-notification', { hasText: 'That was an example' });
+        await expect(offer).toBeVisible();
+        expect((await stored(page)).quickStart.stepsDone || []).not.toContain('tags');
+        await offer.getByRole('button', { name: 'Open Tags view' }).click();
+        await expect(page).toHaveURL(/#tags/);
+        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('tags');
     });
 });

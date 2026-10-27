@@ -10317,7 +10317,9 @@
     "guideShowMore": "Mostrar {n} más",
     "guideOr": "o",
     "guideBackHint": "te devuelve al panel desde cualquier parte",
-    "guideCloseForNow": "Cerrar por ahora"
+    "guideCloseForNow": "Cerrar por ahora",
+    "tagDemoClosed": "That was an example. Give bookmarks tags and your own cloud appears here.",
+    "tagDemoOpenTags": "Open Tags view"
   },
   "demo": {
     "analyticsNotice": "Esta demo registra las visitas de forma anónima, incluidos clics y grabaciones de pantalla, para mejorar nextDash. Las grabaciones muestran lo que hay en pantalla; solo se oculta lo que escribes en los campos de formulario.",

@@ -10317,7 +10317,9 @@
     "guideShowMore": "Show {n} more",
     "guideOr": "or",
     "guideBackHint": "brings you back to the dashboard from anywhere",
-    "guideCloseForNow": "Close for now"
+    "guideCloseForNow": "Close for now",
+    "tagDemoClosed": "That was an example. Give bookmarks tags and your own cloud appears here.",
+    "tagDemoOpenTags": "Open Tags view"
   },
   "demo": {
     "analyticsNotice": "This demo records visits anonymously, including clicks and screen replays, to improve nextDash. Replays show what is on screen; only what you type into form fields is masked.",

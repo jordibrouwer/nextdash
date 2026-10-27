@@ -981,6 +981,7 @@
             this.close({ land: false, via: 'step' });
             const cloud = global.DashboardTagCloud;
             if (cloud?.libraryHasTags?.() && cloud.isEligible?.()) {
+                this.markSteps(['tags']);
                 cloud.openModal();
                 return;
             }
@@ -988,9 +989,29 @@
                 this.tagDemoDone = true;
                 this.state();
                 this.save();
-                if (cloud.openDemo()) return;
+                // The example is nobody's tags: the step is done when the
+                // reader goes on to the Tags view, which this offers as the
+                // example closes.
+                if (cloud.openDemo({ onClose: (how) => (how?.toTags ? this.markSteps(['tags']) : this.offerTagsView()) })) return;
             }
+            this.markSteps(['tags']);
             global.location.hash = 'tags';
+        }
+
+        /** After the example cloud: the way to the real Tags view, one click away. */
+        offerTagsView() {
+            global.AppNotification?.show?.(
+                tq('tagDemoClosed', 'That was an example. Give bookmarks tags and your own cloud appears here.'),
+                'info',
+                {
+                    duration: 12000,
+                    actionLabel: tq('tagDemoOpenTags', 'Open Tags view'),
+                    onAction: () => {
+                        this.markSteps(['tags']);
+                        global.location.hash = 'tags';
+                    },
+                },
+            );
         }
 
         /** Every shortcut on one screen: the guide steps aside and the sheet opens over the dashboard. */
@@ -1023,8 +1044,9 @@
             if (!step) return;
             track('start-guide:step', { step: id });
             // Counted before anything moves: a step that leaves the dashboard
-            // is where the reader's attention goes next.
-            this.markSteps([id]);
+            // is where the reader's attention goes next. Browse by tag counts
+            // itself (runTags): clicking away an example is not browsing.
+            if (id !== 'tags') this.markSteps([id]);
             try { await step.run(); } catch { /* a step that cannot run is not an error toast */ }
         }
 

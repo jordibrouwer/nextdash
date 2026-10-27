@@ -597,9 +597,10 @@
          * the shape of the thing is there to look at, and a way into the Tags
          * view. Resolves to false where there is no cloud to show (a phone).
          */
-        openDemo() {
+        openDemo({ onClose } = {}) {
             if (!this.modal || !this.body || isMobileLayout()) return false;
             this._demo = true;
+            this._onDemoClose = typeof onClose === 'function' ? onClose : null;
             this.openModal({ demo: true });
             return this.modalOpen;
         },
@@ -712,6 +713,9 @@
                     // The example's words and its note go with it.
                     this.body?.replaceChildren();
                     this.syncFromSettings();
+                    const afterDemo = this._onDemoClose;
+                    this._onDemoClose = null;
+                    afterDemo?.();
                 }
                 this._kbdFocusZone = 'chip';
                 this.clearBtn?.classList.remove('is-keyboard-focused');
@@ -932,7 +936,12 @@
             open.className = 'tag-cloud-demo-view';
             open.textContent = t('dashboard.tagCloudDemoView', 'Open the Tags view');
             open.addEventListener('click', () => {
+                // Going to the Tags view is what the example was for: the
+                // owner's callback hears it as that, not as a plain close.
+                const afterDemo = this._onDemoClose;
+                this._onDemoClose = null;
                 this.closeModal({ animate: false });
+                afterDemo?.({ toTags: true });
                 window.location.hash = 'tags';
             });
             note.append(text, open);

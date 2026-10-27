@@ -10317,7 +10317,9 @@
     "guideShowMore": "再显示 {n} 项",
     "guideOr": "或",
     "guideBackHint": "随时随地都能回到仪表板",
-    "guideCloseForNow": "暂时关闭"
+    "guideCloseForNow": "暂时关闭",
+    "tagDemoClosed": "That was an example. Give bookmarks tags and your own cloud appears here.",
+    "tagDemoOpenTags": "Open Tags view"
   },
   "demo": {
     "analyticsNotice": "此演示会匿名记录访问，包括点击和屏幕回放，用于改进 nextDash。回放会显示屏幕上的内容；只有你在表单字段中输入的内容会被遮盖。",
