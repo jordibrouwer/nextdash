@@ -544,12 +544,15 @@
         }
 
         // The first sighting, kept only as a time, and only counted as an install
-        // worth timing when it started small: for a library that was already
-        // there, "time to first bookmark" would measure nothing.
+        // worth timing when it started new: a small library, or a settings file
+        // written in the last day (a new install starts with example links, so
+        // its size says nothing). For a library that was already there, "time
+        // to first bookmark" would measure nothing.
         if (!state.first) {
             let started = false;
             try {
-                started = Number(JSON.parse(self.getAttribute('data-content') || '{}').bookmarks) <= 10;
+                const seen = JSON.parse(self.getAttribute('data-content') || '{}');
+                started = Number(seen.bookmarks) <= 10 || seen.fresh === true;
             } catch (_) {
                 started = false;
             }

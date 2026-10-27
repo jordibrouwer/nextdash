@@ -187,6 +187,22 @@ function settingsSnapshot(app, settings) {
     big.done();
 }
 
+// 6b. A new install starts with example links, far past ten bookmarks, so the
+// server says it is new: that install is timed too. Without the flag it is not.
+{
+    const fresh = boot({ storage: {}, content: JSON.stringify({ bookmarks: 99, fresh: true }) });
+    fresh.ready();
+    fresh.win.nextdashTrack('bookmark-created', { result: 'ok', source: 'new-modal' });
+    assert.deepStrictEqual(fresh.names().filter((n) => n === 'first-bookmark').length, 1, 'a new install with example links is timed');
+    fresh.done();
+
+    const old = boot({ storage: {}, content: JSON.stringify({ bookmarks: 99, fresh: false }) });
+    old.ready();
+    old.win.nextdashTrack('bookmark-created', { result: 'ok' });
+    assert.deepStrictEqual(old.names().includes('first-bookmark'), false, 'a settled library is not timed');
+    old.done();
+}
+
 // 7. An error is a fixed word and a view name; three per load at most.
 {
     const app = boot({ storage: {} });

@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Counting reads every page file, which the ordinary dashboard render does not
@@ -63,5 +64,37 @@ func TestAnalyticsContentCountsWhatIsThere(t *testing.T) {
 	encoded := h.analyticsContentJSON(true)
 	if !strings.Contains(encoded, `"bookmarks":3`) {
 		t.Errorf("payload does not carry the count: %s", encoded)
+	}
+}
+
+// A new install starts with far more than ten example links, so its size cannot
+// say it is new; the day-old settings file does. Without this the time to a
+// first bookmark was never measured for an ordinary install.
+func TestAnalyticsContentFreshFollowsFirstRun(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		first time.Time
+		want  bool
+	}{
+		{"written an hour ago", time.Now().Add(-time.Hour), true},
+		{"written last week", time.Now().Add(-7 * 24 * time.Hour), false},
+		{"never stamped", time.Time{}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			store := &FileStore{settingsFile: filepath.Join(dir, "settings.json"), dataDir: dir}
+			settings := store.GetSettings()
+			settings.FirstRunAt = 0
+			if !tc.first.IsZero() {
+				settings.FirstRunAt = tc.first.UnixMilli()
+			}
+			if err := store.SaveSettings(settings); err != nil {
+				t.Fatalf("save settings: %v", err)
+			}
+			h := &Handlers{store: store}
+			if got := h.countAnalyticsContent().Fresh; got != tc.want {
+				t.Errorf("fresh = %v, want %v", got, tc.want)
+			}
+		})
 	}
 }

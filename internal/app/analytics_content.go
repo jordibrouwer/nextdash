@@ -36,7 +36,14 @@ type analyticsContentCounts struct {
 	InboxAdded    int `json:"inboxAdded"`
 	InboxPromoted int `json:"inboxPromoted"`
 	InboxDeleted  int `json:"inboxDeleted"`
+	// Fresh says the settings file was written in the last day. The example
+	// links a new install starts with put it far past any bookmark count that
+	// could mean "just started", so the size alone cannot tell.
+	Fresh bool `json:"fresh"`
 }
+
+// analyticsFreshWindow is how long after the first run an install counts as new.
+const analyticsFreshWindow = 24 * time.Hour
 
 // analyticsContentTTL is how long a count is reused.
 //
@@ -117,6 +124,8 @@ func (h *Handlers) countAnalyticsContent() analyticsContentCounts {
 		}
 	}
 	counts.Tags = len(tags)
+	counts.Fresh = settings.FirstRunAt > 0 &&
+		time.Since(time.UnixMilli(settings.FirstRunAt)) < analyticsFreshWindow
 
 	for _, page := range pages {
 		counts.Categories += len(h.store.GetCategoriesByPage(page.ID))
