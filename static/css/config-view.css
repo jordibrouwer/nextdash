@@ -50,7 +50,7 @@
 
 .config-view {
     display: grid;
-    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-columns: 152px minmax(0, 1fr);
     /* Named, like the shell's own grid: the band spans both columns and the
        rail and the panel sit under it. Left to auto-placement the band landed
        in a third row, in the second column. */
@@ -60,7 +60,7 @@
     grid-template-areas:
         "header header"
         "rail main";
-    gap: 28px;
+    gap: 28px 14px;
     /* The width of the page, like health and the inbox: they were capped at
        68rem and 1040px while the header above them runs the width of the grid,
        so each view sat in a column of its own. */

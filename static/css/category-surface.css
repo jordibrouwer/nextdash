@@ -330,7 +330,28 @@ html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .co
     background-image: var(--cfg-pane-sheen, none);
     border-radius: var(--cfg-pane-radius);
     box-shadow: var(--cfg-pane-shadow);
-    padding: var(--space-4, 1rem) var(--space-5, 1.5rem);
+    /* No padding at the top and the sides: the head runs to the edge of the pane, and the
+       rail and the page take their own. */
+    padding: 0 0 var(--space-4, 1rem);
+}
+
+html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs > .lvs-header,
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library > .lvs-header,
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view > .lvs-header {
+    padding: var(--space-3, 0.75rem) var(--space-5, 1.5rem);
+    border-radius: var(--cfg-pane-radius, 0) var(--cfg-pane-radius, 0) 0 0;
+}
+
+html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs > .lvs-rail,
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library > :is(.lvs-rail, .config-nav-column),
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view > :is(.lvs-rail, .config-nav-column) {
+    padding-left: 6px;
+}
+
+html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs > .lvs-main,
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library > :is(.lvs-main, .config-view-main),
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view > :is(.lvs-main, .config-view-main) {
+    padding-right: 14px;
 }
 
 html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
