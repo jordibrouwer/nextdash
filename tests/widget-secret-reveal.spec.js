@@ -31,6 +31,16 @@ async function openWidgets(page) {
     await expect(page.locator('[data-widget-catalogue]')).toBeVisible();
 }
 
+/**
+ * Connection folds once the widget is connected (a key is saved), so the eye
+ * inside it is out of sight until the section is opened again.
+ */
+async function openConnection(page, row) {
+    const section = page.locator(`${row} [data-widget-section="connection"]`);
+    if (await section.getAttribute('open') === null) await section.locator('summary').click();
+    await expect(section).toHaveAttribute('open', '');
+}
+
 async function addCustom(page) {
     const before = await page.locator('[data-widget-settings]').count();
     await page.locator('[data-widget-catalogue]').click();
@@ -108,6 +118,7 @@ test.describe('a widget’s stored key can be looked at', () => {
         await expect.poll(async () => key.inputValue()).toBe('');
         await expect(key).toHaveAttribute('type', 'password');
 
+        await openConnection(page, row);
         await page.locator(`${row} [data-secret-reveal]`).click();
 
         await expect(key).toHaveValue('Bearer stored-and-saved', { timeout: 10_000 });
@@ -126,6 +137,7 @@ test.describe('a widget’s stored key can be looked at', () => {
         await page.locator(`${row} [data-widget-save]`).click();
         await expect.poll(async () => key.inputValue()).toBe('');
 
+        await openConnection(page, row);
         const eye = page.locator(`${row} [data-secret-reveal]`);
         await eye.click();
         await expect(key).toHaveValue('Bearer stored-and-saved', { timeout: 10_000 });
@@ -305,6 +317,7 @@ test.describe('a service whose key goes in the address', () => {
         await page.locator(`${row} [data-widget-save]`).click();
         await expect.poll(async () => key.inputValue(), { timeout: 10_000 }).toBe('');
 
+        await openConnection(page, row);
         await page.locator(`${row} [data-secret-reveal]`).click();
         await expect(key).toHaveValue('0123456789abcdef0123456789abcdef', { timeout: 10_000 });
     });
