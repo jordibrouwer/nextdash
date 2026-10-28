@@ -258,6 +258,11 @@ class SearchComponent {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     e.stopPropagation();
+                    // A chord is not "run the chosen action": fold the menu and
+                    // let the key do what it does on the result itself.
+                    if (this.rowActions && (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey)) {
+                        this.closeRowActions();
+                    }
                     this.selectCurrentMatch();
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
