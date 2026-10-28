@@ -190,12 +190,13 @@ test.describe('config info + reset affordances', () => {
     test('behavior is split into sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
-        // The inbox's settings moved to Config → Inbox; Fresh kept the tab.
+        // The inbox's settings moved to Config → Inbox, and Fresh to Bookmarks.
         // Status & alerts left for Monitoring, which has tabs of its own.
-        for (const tab of ['general', 'search', 'fresh', 'privacy']) {
+        for (const tab of ['general', 'search', 'privacy']) {
             await expect(page.locator(`[data-behavior-tab="${tab}"]`)).toBeVisible();
         }
         await expect(page.locator('[data-behavior-tab="status"]')).toHaveCount(0);
+        await expect(page.locator('[data-behavior-tab="fresh"]')).toHaveCount(0);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('monitoring'));
         for (const tab of ['checks', 'notifications', 'schedules']) {
             await expect(page.locator(`[data-monitoring-tab="${tab}"]`)).toBeVisible();
