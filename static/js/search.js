@@ -262,7 +262,9 @@ class SearchComponent {
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (!this.isAppModalOpen()) {
+                    if (this.rowActions) {
+                        this.closeRowActions();
+                    } else if (!this.isAppModalOpen()) {
                         this.closeSearch();
                     }
                 }
@@ -909,7 +911,13 @@ class SearchComponent {
 
     handleKeyPress(e) {
         const key = e.key.toUpperCase();
-        
+
+        // Unfolded actions on a result own the arrows, Enter and Escape until
+        // they are folded; anything else folds them and goes on as usual.
+        if (this.rowActions && this.searchActive && this._handleRowActionKey(e, key)) {
+            return;
+        }
+
         // Handle special keys
         if (key === 'ESCAPE') {
             if (!this.isAppModalOpen()) {
@@ -971,6 +979,18 @@ class SearchComponent {
          */
         if (!this.searchActive && key >= '1' && key <= '9' && this._digitNamesAPage(key)) {
             return;
+        }
+
+        // Right on a bookmark result unfolds what can be done with it. Not on a
+        // chip row or a web result, whose Right arrow already means something.
+        if (key === 'ARROWRIGHT' && this.searchActive && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            const match = this.selectableMatches[this.selectedMatchIndex];
+            // The recents tiles are a band whose Right arrow steps to the next tile.
+            const inTileBand = this._recentTilesActive() && this.selectedMatchIndex < SearchComponent.RECENT_TILE_COUNT;
+            if (!inTileBand && match?.type === 'bookmark' && match.bookmark && this.openRowActions(match)) {
+                e.preventDefault();
+                return;
+            }
         }
 
         if ((key === 'ARROWLEFT' || key === 'ARROWRIGHT') && this.searchActive) {
@@ -3199,6 +3219,8 @@ class SearchComponent {
         // Reset so reopening the same mode counts as a new open.
         this._lastTrackedMode = null;
         this.emptyStateExpandedGroups.clear();
+        this.rowActions = null;
+        this._usuallyNowPick = null;
         this.searchGroupsShowAll.clear();
         document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', { detail: { active: false, urls: new Set() } }));
         this.resetQuery();
@@ -3473,6 +3495,8 @@ class SearchComponent {
         this._lastSearchResultCount = this.searchMatches.length;
         const matchesContainer = document.getElementById('search-matches');
         if (!matchesContainer) return;
+        // The list is drawn again below, which takes the unfolded actions with it.
+        this.rowActions = null;
 
         this.updateModeIndicator();
         matchesContainer.innerHTML = '';
@@ -4000,6 +4024,10 @@ class SearchComponent {
     }
 
     selectCurrentMatch({ newTab = false } = {}) {
+        if (this.rowActions) {
+            void this.runRowAction();
+            return;
+        }
         if (this.selectableMatches.length > 0 && this.selectedMatchIndex >= 0) {
             const selectedMatch = this.selectableMatches[this.selectedMatchIndex];
             if (String(selectedMatch?.type || '').startsWith('web-')) {
@@ -4725,6 +4753,7 @@ class SearchComponent {
         const groups = [
             { id: 'whats-new', label: t('emptyStateWhatsNewLabel', "What's new"), items: whatsNewItems, defaultOpen: true },
             { id: 'keyboard-tour', label: t('emptyStateKeyboardTourLabel', 'Keyboard'), items: keyboardTourItems, defaultOpen: Boolean(window.hyprMode?.isEnabled?.()) },
+            { id: 'usually-now', label: t('emptyStateUsuallyNowLabel', 'Usually now'), items: this.getUsuallyNowMatches(), defaultOpen: true },
             { id: 'recent', label: t('emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
             { id: 'recent-commands', label: t('emptyStateRecentCommandsLabel', 'Recent commands'), items: recentCommandMatches, defaultOpen: false },
             { id: 'saved', label: t('emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },
@@ -4757,6 +4786,149 @@ class SearchComponent {
         }
 
         return result;
+    }
+
+    /**
+     * The bookmarks usually opened at this time of day, as result rows.
+     *
+     * Worked out once per time the panel opens and kept until it closes, so the
+     * rows do not move under the reader when an open is logged meanwhile.
+     */
+    getUsuallyNowMatches() {
+        if (!this._usuallyNowPick) {
+            const isUnsorted = window.UnsortedPage?.isUnsorted;
+            const pool = this._collectFilterBookmarkPool()
+                .filter((bookmark) => !(typeof isUnsorted === 'function' && isUnsorted(bookmark) === true));
+            this._usuallyNowPick = window.SearchUsuallyNow?.usuallyNow?.(pool, Date.now()) || [];
+        }
+        return this._usuallyNowPick.map((bookmark) => ({
+            shortcut: bookmark.shortcut || '',
+            bookmark,
+            type: 'bookmark',
+            query: ''
+        }));
+    }
+
+    /**
+     * The grid row of a bookmark on the page in view, by address -- the same
+     * way the :edit and :copy commands find the row they act on. Null for a
+     * bookmark on another page: its row is not on screen to act on.
+     */
+    _gridRowForBookmark(bookmark) {
+        const url = String(bookmark?.url || '').trim();
+        if (!url) return null;
+        const rows = document.querySelectorAll('#dashboard-layout .category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url]');
+        for (const row of rows) {
+            if (String(row.getAttribute('data-bookmark-url') || '').trim() === url) return row;
+        }
+        return null;
+    }
+
+    /** What can be done with a bookmark result, in the order they are listed. */
+    _rowActionList(match) {
+        const t = (key, fallback) => this.dashboardLabel(key, fallback);
+        const row = this._gridRowForBookmark(match.bookmark);
+        const list = [
+            { id: 'open', label: t('searchActionOpen', 'Open') },
+            { id: 'open-tab', label: t('searchActionOpenTab', 'Open in new tab') },
+            { id: 'copy-url', label: t('searchActionCopyUrl', 'Copy URL') },
+        ];
+        // Edit and Move work on a row, so they are offered where the row is.
+        if (row) list.push({ id: 'edit', label: t('searchActionEdit', 'Edit') });
+        list.push({ id: 'health', label: t('dashboard.healthOpenInHealth', 'Show in list') });
+        if (row) list.push({ id: 'move', label: t('dashboard.contextMenuMove', 'Move to…') });
+        return list;
+    }
+
+    /** Unfold the actions under the selected result. False when there is nothing to unfold. */
+    openRowActions(match) {
+        const rowEl = this.matchElements[this.selectedMatchIndex];
+        // An inbox link is not a bookmark on a page: none of these actions fits it.
+        if (!rowEl || !match?.bookmark || match.inbox) return false;
+        const actions = this._rowActionList(match);
+        const box = document.createElement('div');
+        box.className = 'search-row-actions';
+        box.setAttribute('role', 'menu');
+        box.innerHTML = actions.map((a, i) => `<button type="button" role="menuitem" id="search-row-action-${this._escHtml(a.id)}" class="search-row-action${i === 0 ? ' is-selected' : ''}" data-row-action="${this._escHtml(a.id)}" tabindex="-1">${this._escHtml(a.label)}</button>`).join('');
+        // The row keeps focus, so it says that it is open and which action is chosen.
+        rowEl.setAttribute('aria-expanded', 'true');
+        rowEl.setAttribute('aria-activedescendant', `search-row-action-${actions[0].id}`);
+        box.querySelectorAll('[data-row-action]').forEach((btn, i) => {
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                this.rowActions.index = i;
+                void this.runRowAction();
+            });
+        });
+        rowEl.after(box);
+        this.rowActions = { match, actions, index: 0, el: box, rowEl };
+        return true;
+    }
+
+    closeRowActions() {
+        const state = this.rowActions;
+        state?.el?.remove();
+        state?.rowEl?.removeAttribute?.('aria-expanded');
+        state?.rowEl?.removeAttribute?.('aria-activedescendant');
+        this.rowActions = null;
+    }
+
+    _handleRowActionKey(e, key) {
+        if (key === 'ARROWLEFT' || key === 'ESCAPE') {
+            e.preventDefault();
+            this.closeRowActions();
+            return true;
+        }
+        if (key === 'ARROWUP' || key === 'ARROWDOWN') {
+            e.preventDefault();
+            const { actions } = this.rowActions;
+            const next = (this.rowActions.index + (key === 'ARROWDOWN' ? 1 : -1) + actions.length) % actions.length;
+            this.rowActions.index = next;
+            this.rowActions.rowEl?.setAttribute('aria-activedescendant', `search-row-action-${actions[next].id}`);
+            this.rowActions.el.querySelectorAll('[data-row-action]').forEach((btn, i) => {
+                btn.classList.toggle('is-selected', i === next);
+            });
+            return true;
+        }
+        if (key === 'ENTER' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            void this.runRowAction();
+            return true;
+        }
+        if (key === 'ARROWRIGHT') {
+            e.preventDefault();
+            return true;
+        }
+        // Typing and the rest: fold, and let the key do what it did before.
+        this.closeRowActions();
+        return false;
+    }
+
+    /** Run the chosen action through the entry point that already exists for it. */
+    async runRowAction() {
+        const state = this.rowActions;
+        if (!state) return;
+        const { match, actions, index } = state;
+        const action = actions[index]?.id;
+        const bookmark = match.bookmark;
+        const dash = window.dashboardInstance;
+        this.closeRowActions();
+        if (action === 'open' || action === 'open-tab') {
+            this.selectCurrentMatch({ newTab: action === 'open-tab' });
+            return;
+        }
+        const row = this._gridRowForBookmark(bookmark);
+        // The panel goes first: what these open sits above the grid, and must
+        // not sit under the panel.
+        this.closeSearch();
+        if (action === 'copy-url') {
+            this.commandsComponent?._copyUrlToClipboard?.(bookmark.url, row);
+        } else if (action === 'health') {
+            await dash?.contextMenu?.revealInHealth?.({ pageId: bookmark.pageId ?? dash.currentPageId, bookmark });
+        } else if ((action === 'edit' || action === 'move') && row) {
+            const ref = await dash?.contextMenu?.resolveRowBookmark?.(row);
+            if (ref) await dash.contextMenu.runAction(action, row, ref);
+        }
     }
 
     getSearchHistoryMatches() {

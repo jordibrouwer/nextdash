@@ -424,6 +424,7 @@
                 { keys: '?', cheatKey: 'smFinders', fallback: 'Finders — e.g. ?g query to search Google', print: true, printFallback: 'Finders' },
                 { keys: '*', cheatKey: 'smRecentPanel', fallback: 'Recent bookmarks panel', print: true, printFallback: 'Recent bookmarks' },
                 { keys: 'mode chips', cheatKey: 'smModeChips', fallback: 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly', printFallback: 'Click › search · : commands · ? finders to switch mode' },
+                { keys: '→ / ← (bookmark result)', cheatKey: 'smResultActions', fallback: 'On a bookmark result, unfold its actions — open, open in a new tab, copy URL, edit, show in list, move; ← or Esc folds them' },
                 { keys: '← / → (chip row)', cheatKey: 'smEmptyStateChips', fallback: 'Empty overlay — with a recent-search or recent-command chip row highlighted, cycle chips and Enter applies' },
                 { keys: 'category: / tag: / page: / status:', cheatKey: 'smFieldFilters', fallback: 'Filter results by field directly in the search bar — status: also takes untagged, tagged, noted, unnoted' },
                 { keys: '-tag: / -category: / -status:', cheatKey: 'smNegatedFilters', fallback: 'A leading minus excludes instead of selects, on every filter key' },
