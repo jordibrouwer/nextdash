@@ -146,3 +146,170 @@ test.describe('the add picker names a page', () => {
         })).toEqual([false, second]);
     });
 });
+
+/** Answer Test (and the settings panel's own Connect) for Sonarr with `reply`. */
+async function mockSonarr(page, reply) {
+    await page.route('**/api/widgets/sonarr/setup', (route) => (typeof reply === 'function'
+        ? reply(route)
+        : route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(reply) })));
+}
+
+/** One page, no widgets, the picker open on Sonarr and its Add pressed. */
+async function connectScreen(page, type = 'sonarr') {
+    await openWidgets(page);
+    const [only] = await arrange(page, 1);
+    await page.locator('[data-widget-catalogue]').click();
+    await page.locator(`[data-widget-option="${type}"]`).first().click();
+    await page.locator(`[data-widget-add="${type}"]`).click();
+    await expect(page.locator('[data-widget-wizard-screen="connect"]')).toBeVisible();
+    return only;
+}
+
+async function widgetsOn(page, pageId) {
+    return page.evaluate(async (id) => {
+        // With the token: without it the route leaves addresses out.
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await f(`/api/pages/${id}/blocks`);
+        const data = await res.json();
+        return (data.widgets || []).map((w) => ({ id: w.id, type: w.type, config: w.config || {} }));
+    }, pageId);
+}
+
+test.describe('the connect screen for media kinds', () => {
+    test('a media kind asks for address and key before it is added', async ({ page }) => {
+        const only = await connectScreen(page);
+
+        expect(await widgetTypes(page, only)).toEqual([]);
+        await expect(page.locator('[data-widget-wizard-server]')).toBeVisible();
+        await expect(page.locator('[data-widget-wizard-server]')).toHaveAttribute('placeholder', 'http://sonarr.local:8989');
+        await expect(page.locator('[data-widget-wizard-secret]')).toBeVisible();
+        await expect(page.locator('[data-widget-wizard-secret]')).toHaveAttribute('type', 'password');
+        await expect(page.locator('[data-widget-wizard-test]')).toBeDisabled();
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add without testing');
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await expect(page.locator('[data-widget-wizard-test]')).toBeEnabled();
+    });
+
+    test('a good test says so and adds with the address saved', async ({ page }) => {
+        await mockSonarr(page, { version: '4.0' });
+        const only = await connectScreen(page);
+
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await page.locator('[data-widget-wizard-secret]').fill('abc');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('Connected');
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add widget');
+
+        const filed = page.waitForRequest((req) => req.url().includes('/api/health/credentials')
+            && req.method() === 'PUT');
+        await page.locator('[data-widget-wizard-finish]').click();
+        const sent = JSON.parse((await filed).postData() || '{}');
+        expect(sent.headers).toEqual({ 'X-Api-Key': 'abc' });
+
+        await expect.poll(async () => (await widgetsOn(page, only))
+            .map((w) => [w.type, w.config.server])).toEqual([['sonarr', 'http://sonarr.local:8989']]);
+        const [added] = await widgetsOn(page, only);
+        expect(added.config.credentialId).toBe(`widget:${added.id}`);
+        await expect.poll(() => page.evaluate((id) => Object.keys(
+            window.dashboardInstance.healthCredentialDetails || {}).includes(id), `widget:${added.id}`)).toBe(true);
+        expect(await page.evaluate(() => document.body.innerText.includes('abc'))).toBe(false);
+        expect(await page.evaluate(() => document.documentElement.outerHTML.includes('"abc"'))).toBe(false);
+    });
+
+    test('a failed test shows why and still lets you add', async ({ page }) => {
+        await mockSonarr(page, { error: 'key refused' });
+        const only = await connectScreen(page);
+
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await page.locator('[data-widget-wizard-secret]').fill('wrong');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('Sonarr refused that key.');
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add anyway');
+        await page.locator('[data-widget-wizard-finish]').click();
+
+        await expect.poll(() => widgetTypes(page, only)).toEqual(['sonarr']);
+    });
+
+    test('Escape on the connect screen adds nothing', async ({ page }) => {
+        const only = await connectScreen(page);
+
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await page.locator('[data-widget-wizard-secret]').fill('forget-me');
+        await page.keyboard.press('Escape');
+        // Gone with the modal, the password box (and what was in it) too.
+        await expect(page.locator('[data-widget-wizard-screen="connect"]')).toHaveCount(0);
+        await expect(page.locator('[data-widget-wizard-secret]')).toHaveCount(0);
+        expect(await page.evaluate(() => window.dashboardInstance.config._module._widgetWizard)).toBeNull();
+        await page.waitForTimeout(300);
+        expect(await widgetTypes(page, only)).toEqual([]);
+    });
+
+    test('a double click adds one', async ({ page }) => {
+        await mockSonarr(page, { error: 'key refused' });
+        const only = await connectScreen(page);
+
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add anyway');
+        await page.locator('[data-widget-wizard-finish]').dblclick();
+
+        await expect.poll(() => widgetTypes(page, only)).toEqual(['sonarr']);
+        await page.waitForTimeout(500);
+        expect(await widgetTypes(page, only)).toEqual(['sonarr']);
+    });
+
+    test('Test with a server that refuses reads as unreachable', async ({ page }) => {
+        const errors = [];
+        page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
+        page.on('pageerror', (error) => errors.push(String(error)));
+        await mockSonarr(page, (route) => route.fulfill({ status: 500 }));
+        await connectScreen(page);
+
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('could not be reached');
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add anyway');
+        // The mocked 500 is the browser's own resource error, not the page's.
+        expect(errors.filter((e) => !/status of 500/.test(e))).toEqual([]);
+    });
+
+    test('nothing typed adds the widget with an empty config and no sign-in', async ({ page }) => {
+        const only = await connectScreen(page);
+        let filed = false;
+        page.on('request', (req) => {
+            if (req.url().includes('/api/health/credentials') && req.method() === 'PUT') filed = true;
+        });
+        await page.locator('[data-widget-wizard-finish]').click();
+
+        await expect.poll(() => widgetTypes(page, only)).toEqual(['sonarr']);
+        const [added] = await widgetsOn(page, only);
+        expect(added.config.server).toBeUndefined();
+        expect(added.config.credentialId).toBeUndefined();
+        expect(filed).toBe(false);
+    });
+
+    test('Back returns to the picker on the same kind', async ({ page }) => {
+        const only = await connectScreen(page);
+        await page.locator('[data-widget-wizard-back]').click();
+        await expect(page.locator('[data-widget-add="sonarr"]')).toBeVisible();
+        expect(await page.evaluate(() => window.dashboardInstance.config._module._widgetWizard)).toBeNull();
+        expect(await widgetTypes(page, only)).toEqual([]);
+    });
+
+    test('qBittorrent signs in with a username and password', async ({ page }) => {
+        await connectScreen(page, 'qbittorrent');
+        await expect(page.locator('[data-widget-wizard-user]')).toBeVisible();
+        await expect(page.locator('[data-widget-wizard-secret]')).toHaveAttribute('type', 'password');
+        await expect(page.locator('label[for="widget-wizard-secret"]')).toHaveText('Password');
+    });
+
+    test('a kind without a connection still adds in one click', async ({ page }) => {
+        await openWidgets(page);
+        const [only] = await arrange(page, 1);
+        await page.locator('[data-widget-catalogue]').click();
+        await page.locator('[data-widget-option="notes"]').click();
+        await page.locator('[data-widget-add="notes"]').click();
+        await expect(page.locator('[data-widget-wizard-screen="connect"]')).toHaveCount(0);
+        await expect.poll(() => widgetTypes(page, only)).toEqual(['notes']);
+    });
+});

@@ -169,6 +169,10 @@ test.describe('the widget picker', () => {
         await expect(page.locator('.config-widget-picker-preview')).toHaveAttribute('data-type', 'sabnzbd');
 
         await page.keyboard.press('Enter');
+        // SABnzbd connects to a service, so Enter opens its connect screen.
+        await expect(page.locator('[data-widget-wizard-screen="connect"]')).toBeVisible();
+        await expect(page.locator('[data-widget-wizard-server]')).toBeFocused();
+        await page.locator('[data-widget-wizard-finish]').click();
         await expect(page.locator('.modal--widget-catalogue')).toHaveCount(0);
         await expect(page.locator('.config-widget-row')).toHaveCount(1);
         await expect.poll(() => page.evaluate(() =>

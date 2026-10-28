@@ -118,6 +118,8 @@ test.describe('the Seerr widget', () => {
         await page.locator('[data-widget-catalogue]').click();
         await page.locator('.modal--widget-catalogue [data-widget-option="seerr"]').first().click();
         await page.locator('.modal--widget-catalogue [data-widget-add="seerr"]').click();
+        // A media kind asks for its address first; this spec fills it in the panel.
+        await page.locator('[data-widget-wizard-finish]').click();
         await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]')).toBeFocused({ timeout: 10_000 });
         const toggle = page.locator('[data-widget-settings]').last();
         const index = await toggle.getAttribute('data-widget-settings');

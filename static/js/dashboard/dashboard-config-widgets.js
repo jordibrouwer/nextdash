@@ -905,11 +905,12 @@
      * theme browser answers the same question the same way, for the same
      * reason.
      */
-    openWidgetCatalogue({ focusType } = {}) {
+    openWidgetCatalogue({ focusType, pageId = null, again = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!window.AppModal?.show) return;
-        window.nextdashTrack?.('widget:picker-open');
-        this._widgetWizardPageId = null;
+        // Back from the connect screen is the same visit, not a new one.
+        if (!again) window.nextdashTrack?.('widget:picker-open');
+        this._widgetWizardPageId = pageId;
 
         const types = this.widgetCatalogueTypes();
         const fresh = this.newWidgetTypes?.() || [];
@@ -928,6 +929,12 @@
             // The modal moves focus itself a frame or two after it opens, so
             // the field is named here rather than focused afterwards.
             initialFocusSelector: '[data-widget-search]',
+            // However it closes -- Escape, Close, the backdrop, Back -- what
+            // the connect screen held (the key with it) is forgotten.
+            onHide: () => {
+                this._widgetWizard = null;
+                document.querySelector('#modal-text [data-widget-wizard-screen="connect"]')?.remove();
+            },
         });
 
         /*
@@ -968,6 +975,12 @@
             if (!type) return;
             // Read before the modal closes: hiding it takes the select with it.
             const pageValue = picker.querySelector('[data-widget-wizard-page]')?.value;
+            // A kind that connects to a service asks where and how first.
+            if (this.widgetWizardKind?.(type) === 'media') {
+                this._widgetWizardPageId = pageValue ? Number(pageValue) : null;
+                this.openWidgetWizardConnect(type, pageValue ? Number(pageValue) : null);
+                return;
+            }
             window.AppModal.hide();
             void this.addWidget(type, pageValue ? { pageId: Number(pageValue) } : undefined);
         };
@@ -3797,7 +3810,7 @@
         payload.widgets.push({ type, title: '', config: {} });
         // No id: the server mints one. Inventing one here would be a second
         // place that decides what a widget id looks like.
-        if (!await this.saveWidgetBlocks(payload)) return;
+        if (!await this.saveWidgetBlocks(payload)) return false;
         // The type is one of WIDGET_TYPES; the title and config never go out.
         window.nextdashTrack?.('widget:add', { type });
         // Added from the Catalogue or the Custom tab: the new widget is filled
@@ -3828,6 +3841,7 @@
         // caret back on <body> and the mark gone within the same tick.
         await this.refreshDashboardBlocks();
         this.revealNewWidget(added);
+        return true;
     },
 
     /** Where the widget the server just appended sits in the block list. */

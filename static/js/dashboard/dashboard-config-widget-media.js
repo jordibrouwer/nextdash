@@ -693,6 +693,26 @@
         </div>`;
     },
 
+    /*
+     * What Connect (and the Add wizard's Test) sends: the address, and either
+     * the key just typed in the shape this service signs in with, or the
+     * credential already filed when nothing was typed.
+     */
+    mediaSetupPayload(service, server, auth, fallbackCredentialId) {
+        const secret = String(auth?.secret || '').trim();
+        const payload = { server: String(server || '') };
+        const shape = auth || {};
+        if (secret && shape.kind === 'session') {
+            payload.draftCredential = { session: {
+                ...(shape.session || {}), user: String(shape.basicUser || '').trim(), password: secret } };
+        } else if (secret && shape.kind === 'query') {
+            payload.draftCredential = { query: { [shape.queryName]: secret } };
+        } else if (secret) {
+            payload.draftCredential = { headers: { [shape.headerName || service.header]: secret } };
+        } else if (fallbackCredentialId) payload.credentialId = fallbackCredentialId;
+        return payload;
+    },
+
     async connectMedia(index) {
         const block = (this._widgetBlocks || [])[index];
         const service = Config.MEDIA_SERVICES[block?.type];
@@ -700,16 +720,8 @@
         if (!block || !draft || !service) return;
         this.ensureMediaAuth(index, service);
         const secret = String(draft.auth?.secret || '').trim();
-        const payload = { server: String(draft.config?.server || '') };
-        const auth = draft.auth || {};
-        if (secret && auth.kind === 'session') {
-            payload.draftCredential = { session: {
-                ...(auth.session || {}), user: String(auth.basicUser || '').trim(), password: secret } };
-        } else if (secret && auth.kind === 'query') {
-            payload.draftCredential = { query: { [auth.queryName]: secret } };
-        } else if (secret) {
-            payload.draftCredential = { headers: { [auth.headerName || service.header]: secret } };
-        } else payload.credentialId = block.config?.credentialId || this.widgetCredentialId(block);
+        const payload = this.mediaSetupPayload(service, draft.config?.server, draft.auth,
+            block.config?.credentialId || this.widgetCredentialId(block));
 
         const status = document.querySelector(`[data-media-connect="${index}"]`)
             ?.parentElement?.querySelector('[data-media-status]');
