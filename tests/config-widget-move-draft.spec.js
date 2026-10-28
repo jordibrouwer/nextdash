@@ -59,6 +59,13 @@ async function restore(page, snap) {
     }, snap);
 }
 
+/** Adding a widget opens its card; Settings on an open card closes it, so only press it when closed. */
+async function openCard(page, index) {
+    const button = page.locator(`[data-widget-settings="${index}"]`);
+    if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+}
+
 /** A widget of a type on the first page, loaded in the tab, its panel drawn. */
 async function addAndOpen(page, type, from) {
     return page.evaluate(async ({ widgetType, pageId }) => {
@@ -107,7 +114,7 @@ test.describe('moving a widget from its settings', () => {
         test.skip(!snap, 'a second page could not be created here');
         try {
             const { index, id } = await addAndOpen(page, 'custom', snap.from);
-            await page.click(`[data-widget-settings="${index}"]`);
+            await openCard(page, index);
             await page.locator(`[data-widget-move-page="${index}"]`).selectOption(String(snap.to));
 
             await expect.poll(() => page.evaluate(async ({ to, wid }) => {
@@ -127,7 +134,7 @@ test.describe('moving a widget from its settings', () => {
         test.skip(!snap, 'a second page could not be created here');
         try {
             const { index, id } = await addAndOpen(page, 'custom', snap.from);
-            await page.click(`[data-widget-settings="${index}"]`);
+            await openCard(page, index);
             await page.evaluate((i) => {
                 const cfg = window.dashboardInstance.config._module;
                 cfg.widgetDraft(i).config.url = 'http://192.168.0.10:8096';
@@ -155,7 +162,7 @@ test.describe('moving a widget from its settings', () => {
         test.skip(!snap, 'a second page could not be created here');
         try {
             const { index, id } = await addAndOpen(page, 'custom', snap.from);
-            await page.click(`[data-widget-settings="${index}"]`);
+            await openCard(page, index);
             await page.evaluate((i) => {
                 const cfg = window.dashboardInstance.config._module;
                 cfg.widgetDraft(i).config.url = 'http://192.168.0.10:8096';

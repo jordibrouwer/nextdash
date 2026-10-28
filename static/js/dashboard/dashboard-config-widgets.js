@@ -28,10 +28,6 @@
      */
     renderWidgetsSection() {
         const esc = (v) => this.dash.escapeHtml(v);
-        // A redraw of a section already on screen knows its width; a first
-        // paint does not, and the observer bound after it settles the layout.
-        const current = document.getElementById('config-widgets-body');
-        if (current?.clientWidth) this._widgetWide = this.widgetsWideAt(current.clientWidth);
         // One tab, drawn like the strip every other section has, so the
         // sections read alike (Finders does the same).
         const tabs = `<button type="button" class="config-subtab is-active" role="tab" aria-selected="true" tabindex="0" aria-controls="config-widgets-body" data-widgets-tab="widgets">${esc(this.t('config.widgetsTabList', 'Your widgets'))}</button>`;
@@ -143,52 +139,7 @@
     },
 
     /*
-     * Wide or narrow, for a section this many px across. The 40px of slack
-     * keeps a width sitting on the line from flipping back and forth: once
-     * wide, it takes a clear step under the line to go narrow again.
-     */
-    widgetsWideAt(width) {
-        const min = DashboardConfig.WIDGETS_WIDE_MIN;
-        return this._widgetWide ? width >= min - 40 : width >= min;
-    },
-
-    /*
-     * Wide or narrow, from the width the section actually has rather than the
-     * window's: the config rail and the reader's font size both take from it.
-     * Repaints only when the answer changes, so dragging a window edge is not
-     * a repaint per pixel.
-     *
-     * A full render replaces the body, so a new body is observed in place of
-     * the old one; a repaint keeps it, and is left alone.
-     */
-    observeWidgetsWidth(body) {
-        if (typeof ResizeObserver === 'undefined') return;
-        if (this._widgetsWidthObserved === body && body.isConnected) return;
-        this._widgetsWidthObserver?.disconnect();
-        this._widgetsWidthObserved = body;
-
-        const settle = (width) => {
-            const wide = this.widgetsWideAt(width);
-            if (wide === Boolean(this._widgetWide)) return;
-            this._widgetWide = wide;
-            this.repaintWidgetsKeepingFocus();
-        };
-        this._widgetsWidthObserver = new ResizeObserver(([entry]) => {
-            if (!entry || !body.isConnected) {
-                this._widgetsWidthObserver?.disconnect();
-                this._widgetsWidthObserver = null;
-                this._widgetsWidthObserved = null;
-                return;
-            }
-            settle(entry.contentRect.width);
-        });
-        this._widgetsWidthObserver.observe(body);
-        // The first paint came before anything had measured the body.
-        if (body.clientWidth) settle(body.clientWidth);
-    },
-
-    /*
-     * Move between the two layouts without losing the field being typed in.
+     * Repaint without losing the field being typed in.
      *
      * The detail is drawn from the draft, so a value typed but not yet
      * committed by a change event is put into the draft first; then the field
@@ -265,18 +216,7 @@
         return this.widgetRowsForDisplay().flatMap((g) => g.rows.map((r) => r.block.id));
     },
 
-    /*
-     * The widget the side panel shows: the one chosen, if it is still in the
-     * list as filtered, else the first row shown. Worked out, never stored --
-     * a search that hides the chosen one gives it back when it is cleared.
-     */
-    widgetDetailIndex(chosen) {
-        const shown = this.widgetRowsForDisplay().flatMap((g) => g.rows.map((r) => r.index));
-        if (!shown.length) return null;
-        return shown.includes(chosen) ? chosen : shown[0];
-    },
-
-    /** Whether the reader opened this widget, as opposed to the panel showing it by default. */
+    /** Whether the reader opened this widget's card. */
     widgetIsChosen(widget) {
         return widget?.id != null && String(widget.id) === String(this._widgetOpenId);
     },
@@ -292,9 +232,8 @@
         body.innerHTML = this.renderWidgetsTab();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindWidgetsEditor(container);
-        // Wide, a detail is on screen without anyone pressing Settings, so the
-        // disk chips that press would have asked for are asked for here.
-        if (this._widgetWide) void this.fillWidgetSuggestions();
+        // An open card's disk chips are asked for again after a repaint.
+        if (this._widgetSettingsOpen != null) void this.fillWidgetSuggestions();
     },
 
     /*
@@ -326,15 +265,10 @@
                 esc(this.t('config.widgetsAllPages', 'All pages'))}</option>`
             : '');
 
-        // Wide, one widget is always open beside the list: the one chosen, or
-        // the first shown while that one is hidden or gone. Marked as the open
-        // row too, so the list says which one the panel is about. Narrow, only
-        // a chosen one opens -- the default the side panel showed does not
-        // follow the reader into the narrow layout.
+        // One card is open at a time, inline: the one the reader chose. Nothing
+        // opens by itself.
         const chosen = this.widgetIndexOfId(this._widgetOpenId);
-        const detailIndex = this._widgetWide && Array.isArray(this._widgetBlocks)
-            ? this.widgetDetailIndex(chosen) : null;
-        this._widgetSettingsOpen = this._widgetWide ? detailIndex : chosen;
+        this._widgetSettingsOpen = chosen;
 
         let body;
         if (this._widgetBlocks == null) {
@@ -366,9 +300,7 @@
                      * one a reader meant as "select" was as likely to be Shown
                      * -- which writes to the server and hides the widget.
                      */
-                    const settingsState = this._widgetWide
-                        ? `aria-pressed="${open ? 'true' : 'false'}"`
-                        : `aria-expanded="${open ? 'true' : 'false'}" aria-controls="config-widget-settings-${index}"`;
+                    const settingsState = `aria-expanded="${open ? 'true' : 'false'}" aria-controls="config-widget-settings-${index}"`;
                     return `
                 <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
                     data-widget-row="${index}">
@@ -403,8 +335,8 @@
                             this.t('config.widgetsConfigure', 'Settings'))}</button>
                     </div>
                     <div class="config-widget-settings" id="config-widget-settings-${index}"
-                        ${open && !this._widgetWide ? '' : 'hidden'}>${
-                        open && !this._widgetWide ? this.renderWidgetDetail(widget, index) : ''}</div>
+                        ${open ? '' : 'hidden'}>${
+                        open ? this.renderWidgetDetail(widget, index) : ''}</div>
                 </li>`;
                 };
 
@@ -486,14 +418,7 @@
                 ${toolbar}
                 ${body}
             </section>`;
-        if (detailIndex == null) return list;
-        return `
-            <div class="config-widgets-split">
-                ${list}
-                <section class="config-panel config-widgets-detailpanel" aria-live="polite">
-                    ${this.renderWidgetDetail(this._widgetBlocks[detailIndex], detailIndex)}
-                </section>
-            </div>`;
+        return list;
     },
 
     /*
@@ -3342,9 +3267,6 @@
      */
     bindWidgetsEditor(container) {
         const body = document.getElementById('config-widgets-body') || container;
-        // Before the guard: a full render brings a fresh body to observe.
-        const section = document.getElementById('config-widgets-body');
-        if (section) this.observeWidgetsWidth(section);
         // Before the guard below: it answers a link, not a first bind.
         this.widgetsDeepLink?.(window.location.hash);
         if (!body || body.dataset.widgetsDelegated === 'true') return;
@@ -3395,30 +3317,7 @@
 
             const toggle = target.closest('[data-widget-settings]');
             if (toggle) {
-                const index = indexOn(toggle, 'data-widget-settings');
-                const id = (this._widgetBlocks || [])[index]?.id ?? null;
-                // Wide, choosing the widget already beside the list changes
-                // nothing -- and must not stop the probe running in it.
-                if (this._widgetWide && index === this._widgetSettingsOpen) {
-                    // Shown by default until now: choosing it is what lets it
-                    // do what an opened widget does, such as asking Jellyfin.
-                    if (String(this._widgetOpenId) !== String(id)) {
-                        this._widgetOpenId = id;
-                        this.repaintWidgetsBody();
-                    }
-                    return;
-                }
-                // Whatever was being watched, its panel is about to close or
-                // another is about to open over it.
-                this.stopCustomProbeLive();
-                // Wide, the button selects which widget the side panel shows;
-                // narrow, it folds that widget's detail in and out under the row.
-                this._widgetOpenId = this._widgetWide || this._widgetSettingsOpen !== index ? id : null;
-                this._widgetJustSaved = null;
-                this.repaintWidgetsBody();
-                // The disks live on the machine, not in the panel's own state,
-                // so they are asked for after the markup exists.
-                void this.fillWidgetSuggestions();
+                void this.toggleWidgetCard(indexOn(toggle, 'data-widget-settings'));
                 return;
             }
 
@@ -3977,6 +3876,33 @@
     widgetAddMovesPage(pageId) {
         return pageId != null && Number.isFinite(Number(pageId))
             && (this.isAllPagesView() || Number(pageId) !== Number(this._widgetPageId));
+    },
+
+    /*
+     * Open or close one widget's card.
+     *
+     * One card is open at a time. Opening another while the open one has
+     * unsaved edits asks first, the way the page selector does; refusing
+     * leaves both as they were.
+     */
+    async toggleWidgetCard(index) {
+        const blocks = this._widgetBlocks || [];
+        const id = blocks[index]?.id ?? null;
+        const openIndex = this._widgetSettingsOpen;
+        const closing = openIndex === index;
+        if (!closing && openIndex != null && this.widgetDraftDirty(openIndex)) {
+            if (!await this.confirmDiscardWidgetDrafts()) return;
+            delete (this._widgetDrafts || {})[blocks[openIndex]?.id];
+        }
+        // Whatever was being watched, its card is about to close or another
+        // is about to open over it.
+        this.stopCustomProbeLive();
+        this._widgetOpenId = closing ? null : id;
+        this._widgetJustSaved = null;
+        this.repaintWidgetsBody();
+        // The disks live on the machine, not in the card's own state, so they
+        // are asked for after the markup exists.
+        void this.fillWidgetSuggestions();
     },
 
     confirmDiscardWidgetDrafts() {
@@ -4701,18 +4627,10 @@
 
         delete (this._widgetDrafts || {})[block.id];
 
-        /*
-         * What is open afterwards. Narrow, nothing: the detail was under the
-         * row that is gone, and opening a neighbour nobody asked for was a
-         * form appearing somewhere else on the page. Wide, the panel moves to
-         * the row that takes its place on screen, or the one above at the end.
-         */
+        // Nothing opens in its place: a form appearing on a neighbour nobody
+        // asked for would be a surprise.
         if (this.widgetIsChosen(block) || this._widgetSettingsOpen === index) {
-            const shown = this.shownWidgetIds();
-            const at = shown.findIndex((id) => String(id) === String(block.id));
-            this._widgetOpenId = this._widgetWide && at >= 0
-                ? (shown[at + 1] ?? shown[at - 1] ?? null)
-                : null;
+            this._widgetOpenId = null;
         }
 
         // The page is read off the block before it goes: saveWidgetRow would

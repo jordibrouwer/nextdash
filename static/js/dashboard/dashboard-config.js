@@ -16452,15 +16452,6 @@ class DashboardConfig {
     /* ── Categories (native, per page) ─────────────────────────────────────── */
 
 
-    /*
-     * The width of the Widgets section, in px, from which the list and the
-     * opened widget sit side by side. Measured against the section rather than
-     * the window: Config gives it about 890px in a 1280px window and 1080px in
-     * a 1500px one, and the list needs about 380px of that before a detail
-     * beside it leaves the row titles room to read.
-     */
-    static WIDGETS_WIDE_MIN = 960;
-
     /** Config → Widgets: the list. Its old Catalogue and Custom widget tabs are the Add wizard. */
     static WIDGETS_TABS = ['widgets'];
 
