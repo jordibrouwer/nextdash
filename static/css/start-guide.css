@@ -261,6 +261,8 @@ body.no-animations .start-guide-modal {
 
 .start-guide-modal h2 {
     margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: calc(var(--font-size-text, 1rem) * 1.25);
     font-weight: 600;
     text-transform: var(--theme-label-transform, none);
@@ -418,6 +420,53 @@ body.no-animations .start-guide-modal {
     color: var(--text-secondary);
 }
 
+/* The ready-made pages: three cards in a row, then the address they share. */
+.start-guide-modal .sg-choices[data-sg-starters] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 0.6rem;
+}
+
+.start-guide-modal .sg-chip {
+    display: inline-block;
+    margin: 0.15rem 0.3rem 0 0;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    font-size: 0.72rem;
+    font-style: normal;
+}
+
+.start-guide-modal .sg-starter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.65rem;
+    font-size: var(--font-size-controls, 0.88rem);
+}
+
+.start-guide-modal .sg-starter-form[hidden] {
+    display: none;
+}
+
+.start-guide-modal .sg-starter-form label {
+    color: var(--text-secondary);
+}
+
+.start-guide-modal .sg-starter-form .sg-btn {
+    align-self: flex-start;
+}
+
+/* "Nederlands detected · Switch", on a line of its own under the heading so it
+   takes no width from the title. */
+.start-guide-modal .sg-lang-hint {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    margin: 0.4rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
 .start-guide-modal .sg-weather {
     display: flex;
     align-items: center;
@@ -458,18 +507,31 @@ body.no-animations .start-guide-modal {
     color: var(--text-primary);
 }
 
+.start-guide-modal .sg-next {
+    margin-top: 1.1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+/* The steps are cards in a grid that fills the width: three show first, and
+   all ten read as a tidy block rather than a long list. */
 .start-guide-modal .sg-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.5rem;
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
 .start-guide-modal .sg-step {
-    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
+    border-radius: var(--radius-5, 8px);
 }
 
-.start-guide-modal .sg-step:last-child {
-    border-bottom: 0;
+.start-guide-modal .sg-step.is-done {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
 }
 
 .start-guide-modal .sg-step[hidden] {
@@ -478,10 +540,10 @@ body.no-animations .start-guide-modal {
 
 .start-guide-modal .sg-step-button {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.7rem;
     width: 100%;
-    padding: 0.55rem 0.2rem;
+    padding: 0.6rem 0.7rem;
     border: 0;
     background: none;
     color: inherit;
@@ -495,8 +557,16 @@ body.no-animations .start-guide-modal {
     background: color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
 
+.start-guide-modal .sg-step-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
 .start-guide-modal .sg-check {
     flex: 0 0 auto;
+    margin-top: 0.15rem;
     width: 1rem;
     height: 1rem;
     border-radius: 50%;
@@ -515,10 +585,8 @@ body.no-animations .start-guide-modal {
 }
 
 .start-guide-modal .sg-step-hint {
-    margin-left: auto;
     color: var(--text-secondary);
     font-size: var(--font-size-controls, 0.8rem);
-    text-align: right;
 }
 
 .start-guide-modal .sg-more {
@@ -605,7 +673,100 @@ body.no-animations .start-guide-modal {
         flex-direction: column;
     }
 
-    .start-guide-modal .sg-step-hint {
-        display: none;
+}
+
+/* What to do with the links of a new ready-made page: three short lines. */
+.sg-tips {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sg-tips li {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: baseline;
+}
+
+.sg-tips b {
+    font-weight: 600;
+}
+
+.sg-tips span {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.sg-tips kbd {
+    font: inherit;
+    font-size: 0.85em;
+    padding: 0 0.35rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.sg-tips-note {
+    margin: 0.9rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* Two columns where there is room: what to decide on the left, what to do next
+   on the right, so a wide screen shows the whole guide without scrolling. */
+.start-guide-modal .sg-cols {
+    display: block;
+}
+
+.start-guide-modal .sg-col > .sg-rule:first-child {
+    display: none;
+}
+
+/* Stacked: a rule between the two halves, as between any two sections. */
+.start-guide-modal .sg-col + .sg-col {
+    margin-top: 1.1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+@media (min-width: 900px) {
+    .start-guide-modal {
+        max-width: 58rem;
     }
+
+    .start-guide-modal .sg-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 1.75rem;
+        align-items: start;
+        margin-top: 0.4rem;
+    }
+
+    .start-guide-modal .sg-col + .sg-col {
+        margin-top: 0;
+        padding: 0 0 0 1.75rem;
+        border-top: 0;
+        border-left: 1px solid var(--border-primary);
+    }
+
+    .start-guide-modal .sg-choices[data-sg-starters] {
+        grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    }
+}
+
+.start-guide-modal .sg-import .sg-sub {
+    margin-top: 0.5rem;
+}
+
+/* A ready-made page waits for the answer about the example links. */
+.start-guide-modal .sg-choice:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.start-guide-modal .sg-manual .sg-sub {
+    margin: 0 0 0.6rem;
 }

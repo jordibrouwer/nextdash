@@ -50,7 +50,7 @@
 
 .config-view {
     display: grid;
-    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-columns: 152px minmax(0, 1fr);
     /* Named, like the shell's own grid: the band spans both columns and the
        rail and the panel sit under it. Left to auto-placement the band landed
        in a third row, in the second column. */
@@ -60,7 +60,7 @@
     grid-template-areas:
         "header header"
         "rail main";
-    gap: 28px;
+    gap: 28px 14px;
     /* The width of the page, like health and the inbox: they were capped at
        68rem and 1040px while the header above them runs the width of the grid,
        so each view sat in a column of its own. */
@@ -4284,14 +4284,22 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /*
- * Up to two lines, so the band can grow by one in a section with a long line.
- * Kept to two because the band is sticky; the old rule was one line so the band
- * was the same height in every section; the intros are short enough now that
- * few reach the second line. The whole sentence is still the line's title.
+ * One line, cut with an ellipsis. The band is the same height in every section,
+ * so the navigation below it does not move when you go from one tab to another;
+ * with two lines allowed, a section whose line wrapped made the band sixteen
+ * pixels taller than the next one's. The section's filter takes the right of
+ * the band and leaves the line about 400px, which is what the intros are
+ * written to. The whole sentence is the line's title (_fillShellHeadFromSection).
  */
 .config-view-head .lvs-header-text {
     min-width: 0;
     flex: 1 1 auto;
+}
+
+.config-view-head .lvs-description {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .config-view-head-breadcrumb {
@@ -4343,13 +4351,17 @@ body.no-animations .config-new-features-panel-star {
     gap: var(--space-2, 0.5rem);
 }
 
-.config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view]))::after {
+.config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view], [data-monitoring-tour]))::after {
     content: '';
     flex: 0 0 var(--config-view-link-slot);
 }
 
+/* A tour on a band that has the filter takes the same slot at the right edge, as
+   the view link does for Bookmarks and Inbox: the filter stays where it is on
+   every tab, and the tour is at the end, as on the bands without a filter. */
 .config-view-head .lvs-header-actions [data-inbox-open-view],
-.config-view-head .lvs-header-actions [data-bm-open-view] {
+.config-view-head .lvs-header-actions [data-bm-open-view],
+.config-view-head .lvs-header-actions [data-monitoring-tour] {
     flex: 0 0 var(--config-view-link-slot);
     inline-size: var(--config-view-link-slot);
     box-sizing: border-box;
@@ -4388,10 +4400,101 @@ body.no-animations .config-new-features-panel-star {
     white-space: nowrap;
 }
 
+/*
+ * The title keeps the room its own letters need, and the actions give way.
+ *
+ * The band is a fixed 536px row that did not shrink, beside a title block that
+ * could shrink to nothing: a narrower window, a larger text size, or a material
+ * that sets its titles in capitals with wide letter-spacing (brushed, neon)
+ * ran the title into the buttons. The filter and the empty link slot give first.
+ */
+.config-view-head .lvs-header-text {
+    min-width: min-content;
+}
+
+/* The title stays on one line, mark and word together: it used to break between
+   the material's mark and the word, and the band grew by a line. */
+.config-view-head .lvs-title {
+    white-space: nowrap;
+}
+
+/*
+ * One line, always: the band must be the same height on every tab, or the rail
+ * and the tabs under it jump as you move through the sections. The description
+ * ellipsises when the band is tight, and `width: 0; min-width: 100%` keeps it out
+ * of the block's intrinsic width, so the block's least width is the title's.
+ */
+.config-view-head .lvs-description {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 0;
+    min-width: 100%;
+}
+
+.config-view-head .lvs-header-actions:has(.config-changed-bar) {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.config-view-head .lvs-header-actions .config-changed-bar {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+/* The count gives first (it ellipsises), then the filter. */
+.config-view-head .lvs-header-actions .config-changed-count {
+    flex: 0 1 14rem;
+    min-width: 5rem;
+}
+
+.config-view-head .lvs-header-actions .config-settings-filter {
+    flex: 1 1 13rem;
+    min-width: 7rem;
+}
+
+.config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view], [data-monitoring-tour]))::after {
+    flex: 0 1 var(--config-view-link-slot);
+    min-width: 0;
+}
+
 /* The count between them is the first thing to give when the window narrows. */
 @media (max-width: 1100px) {
     .config-view-head .lvs-header-actions .config-changed-count {
         display: none;
+    }
+}
+
+/* On a phone the fixed-width controls (13rem filter, 13rem link slot, 6.5rem
+   button) add up to more than the viewport and the page scrolled sideways.
+   Let them give way instead. */
+@media (max-width: 640px) {
+    .config-view-head .lvs-header-actions:has(.config-changed-bar) {
+        flex-shrink: 1;
+        min-width: 0;
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+    .config-view-head .lvs-header-actions .config-changed-bar {
+        flex-wrap: wrap;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .config-view-head .lvs-header-actions .config-settings-filter {
+        flex: 1 1 8rem;
+        inline-size: auto;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view], [data-monitoring-tour]))::after {
+        display: none;
+    }
+    .config-view-head .lvs-header-actions [data-inbox-open-view],
+    .config-view-head .lvs-header-actions [data-bm-open-view],
+    .config-view-head .lvs-header-actions [data-monitoring-tour] {
+        flex: 0 1 auto;
+        inline-size: auto;
+        max-width: 100%;
     }
 }
 
@@ -5897,6 +6000,16 @@ body.no-animations .config-new-features-panel-star {
     padding: 8px 10px;
     border-radius: var(--radius-5, 8px);
     cursor: pointer;
+}
+
+.config-settings-jump-group {
+    padding: 8px 10px 2px;
+    font-size: 0.78em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted, inherit);
+    opacity: 0.75;
 }
 
 .config-settings-jump-result:hover,

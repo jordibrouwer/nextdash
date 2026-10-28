@@ -49,6 +49,7 @@
     const SEEN_KEY = 'tagSuggestionNoticeSeenCount';
 
     let lastCount = 0;
+    let lastTop = null;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -168,13 +169,49 @@
         }
     }
 
+    /*
+     * The category with the most bookmarks that carry no tag, when it is a pile.
+     *
+     * Grouped on page and category id together: the same name can exist on two
+     * pages. Only the current page's categories are loaded, so a pile on
+     * another page has no name to show and the card keeps its plain text.
+     */
+    const MIN_TOP_CATEGORY = 5;
+
+    function topUntaggedCategory() {
+        const d = dash();
+        if (!Array.isArray(d?.allBookmarks)) return null;
+        const groups = new Map();
+        d.allBookmarks.forEach((b) => {
+            const category = String(b.category ?? '').trim();
+            if (!category) return;
+            if (Array.isArray(b.tags) && b.tags.some(Boolean)) return;
+            const key = `${b.pageId}::${category}`;
+            const row = groups.get(key) || { pageId: b.pageId, category, count: 0 };
+            row.count += 1;
+            groups.set(key, row);
+        });
+        let best = null;
+        groups.forEach((row) => { if (!best || row.count > best.count) best = row; });
+        if (!best || best.count < MIN_TOP_CATEGORY) return null;
+        if (String(best.pageId) !== String(d.currentPageId)) return null;
+        const found = (d.categories || []).find((c) => String(c.id) === best.category);
+        const name = String(found?.name || '').trim();
+        return name ? { name, count: best.count } : null;
+    }
+
     const card = global.NoticeCard.define({
         id: 'tag-suggestions-notice',
         showDelayMs: SHOW_DELAY_MS,
         title: () => t('dashboard.tagSuggestionsNoticeTitle', '{count} bookmarks could take a tag',
             { count: lastCount }),
-        body: () => t('dashboard.tagSuggestionsNoticeBody',
-            'Worked out from the tags you already use and the sites nextDash knows. Nothing is tagged until you say so.'),
+        body: () => {
+            const base = t('dashboard.tagSuggestionsNoticeBody',
+                'Worked out from the tags you already use and the sites nextDash knows. Nothing is tagged until you say so.');
+            if (!lastTop) return base;
+            return `${base} ${t('dashboard.tagSuggestionsNoticeTopCategory',
+                '{category}: {count} without a tag', { category: lastTop.name, count: lastTop.count })}`;
+        },
         dismissLabel: () => t('dashboard.tagSuggestionsNoticeLater', 'Not today'),
         dismissName: 'later',
         canShow: async () => {
@@ -187,6 +224,7 @@
             // does not bring the card straight back for the remainder.
             if (count < MIN_TO_OFFER || count < answeredAt() + MIN_TO_OFFER) return false;
             lastCount = count;
+            lastTop = topUntaggedCategory();
             return true;
         },
         // The × and "Not today" mean the same thing: not now, ask tomorrow.
@@ -261,6 +299,7 @@
         ...card,
         open,
         proposalCount,
+        topUntaggedCategory,
         ensureCatalogue,
         MIN_TO_OFFER,
     };

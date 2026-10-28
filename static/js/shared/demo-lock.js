@@ -88,9 +88,22 @@
         return el;
     }
 
+    /*
+     * The count of refusals per action, capped per visit. One visitor with a
+     * widget polling a refused route sent 125 of the 136 events the demo ever
+     * counted; five of the same action say as much as five hundred.
+     */
+    const REFUSED_CAP = 5;
+    const refused = {};
+    function trackRefused(action) {
+        const key = String(action || 'locked').slice(0, 80);
+        refused[key] = (refused[key] || 0) + 1;
+        if (refused[key] <= REFUSED_CAP) track('demo:refused', { action: key });
+    }
+
     /** Show the explanation. `action` names what was refused, for the demo's count. */
     function explain(action) {
-        track('demo:refused', { action: String(action || 'locked').slice(0, 80) });
+        trackRefused(action);
         const el = popover();
         try {
             if (typeof el.showPopover === 'function') {
@@ -116,7 +129,7 @@
         document.documentElement.dataset.demo = '1';
         // The chip beside a locked panel opens the explanation by itself (popovertarget).
         document.addEventListener('click', (event) => {
-            if (event.target?.closest?.('.demo-lock-chip')) track('demo:refused', { action: 'locked-panel' });
+            if (event.target?.closest?.('.demo-lock-chip')) trackRefused('locked-panel');
         }, true);
         // Install and Community Apps: the links a visitor leaves the demo by.
         const cta = (event) => {
@@ -256,7 +269,7 @@
                 response.clone().text().then((body) => {
                     const message = String(body || '').trim();
                     if (message && DEMO_ANSWERS.some((re) => re.test(message))) {
-                        track('demo:refused', { action: routeName(args[0]) });
+                        trackRefused(routeName(args[0]));
                         global.dashboardInstance?.showNotification?.(message.slice(0, 160), 'warning', { duration: 5000 });
                     }
                 }).catch(() => {});

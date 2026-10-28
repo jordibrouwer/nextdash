@@ -1798,6 +1798,7 @@ class SearchCommandNew {
                 // this closes it. Props stay low-cardinality — never name/url/tags.
                 window.nextdashTrack?.('bookmark-created', {
                     result: 'ok',
+                    source: 'new-modal',
                     withIcon: Boolean(bookmark.icon),
                     withTags: Array.isArray(bookmark.tags) && bookmark.tags.length > 0,
                     withShortcut: Boolean(bookmark.shortcut),

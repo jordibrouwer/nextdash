@@ -1594,7 +1594,7 @@
     renderAppearance() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>`;
+        const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout.'))}</p>`;
         // Which half of the current family is showing, so Quick mode marks the
         // right button whatever theme is picked. Reading s.theme directly only
         // ever matched the two legacy ids, leaving both buttons unlit on every

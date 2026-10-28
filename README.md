@@ -412,6 +412,7 @@ Every variable is listed in the reference table below.
 | `NEXTDASH_STATIC_MUTABLE` | off | `1` re-hashes assets on every request, for a bind-mounted `./static` |
 | `DISABLE_ICON_SETS` | off | `1` stops fetching the app icon sets (dashboard-icons, selfh.st/icons) from jsDelivr |
 | `DISABLE_TELEMETRY` | off | `true` turns analytics and the daily install count off for everyone |
+| `NEXTDASH_DISABLE_INSTALL_PING` | off | `1` turns the daily install count off and leaves analytics alone, for test runs and CI |
 | `DISABLE_UPDATE_CHECK` | off | `true` turns the daily GitHub release check off for everyone |
 | `DISABLE_NEWS_FEED` | off | `true` stops fetching posts from nextdash.cc |
 
@@ -436,7 +437,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Search and keyboard**
 
 - Everything is reachable from the keyboard: one rule for the shortcuts and a searchable cheat sheet on `!`. *[Manual §7](MANUAL.md#7-keyboard)*
-- A key legend under the grid keeps the main keys in sight (`Shift + Z` switches it off), a dashboard tour of seven steps plays again with `Shift + K`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
+- A key legend under the grid keeps the main keys in sight (`Shift + Z` switches it off), a dashboard tour of nine steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
 - One panel for search, commands and finders, plus search from the browser's address bar. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - Filters for tag, category, page, status, added and opened — each also in the negative. *[Manual §8.2](MANUAL.md#82-filters)*
 
@@ -503,7 +504,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - **A bookmarklet and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet for your install; installed as an app, nextDash joins the share sheet. *[Manual §22](MANUAL.md#22-phones-tablets-and-the-installed-app)*
 - **Outgoing webhooks** — seven events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme. *[Manual §19.3](MANUAL.md#193-webhooks)*
 - **An MCP endpoint** — four tools for MCP clients to search and add bookmarks, off until you switch it on. *[Manual §23.6](MANUAL.md#236-the-mcp-endpoint)*
-- **What nextDash asks for by itself** — three things, each with a switch under **Config → Behavior → Privacy & sync** and a variable that turns it off for the whole server: a daily **install count** (a random install id and the release you run; on Unraid also the word Unraid; `DISABLE_TELEMETRY`), a daily check on GitHub for a **newer release** (`DISABLE_UPDATE_CHECK`), and the **nextdash.cc news feed**, every 90 minutes (`DISABLE_NEWS_FEED`). None of them carries bookmarks, settings or addresses. *[Manual §23.7](MANUAL.md#237-what-nextdash-contacts)*
+- **What nextDash asks for by itself** — three things, each with a switch under **Config → Behavior → Privacy & sync** and a variable that turns it off for the whole server: a daily **install count** (a random install id and the release you run; on Unraid also the word Unraid; `DISABLE_TELEMETRY`), a daily check on GitHub for a **newer release** (`DISABLE_UPDATE_CHECK`), and the **nextdash.cc news feed**, every 90 minutes (`DISABLE_NEWS_FEED`). None of them carries bookmarks, settings or addresses. The optional usage analytics (off until you turn them on) add a random install code, and send a hostname of just `lan`, `domain` or `localhost` instead of your address. *[Manual §23.7](MANUAL.md#237-what-nextdash-contacts)*
 - **The machine it runs on** — the system widgets read `/proc`, the disks you name and optionally the Docker socket, read-only unless you set `NEXTDASH_DOCKER_CONTROL=1`, which also uses the socket to write. Update checks reach the image registries, and optionally GitHub. *[Manual §15.4](MANUAL.md#154-system-widgets-and-what-they-need)*
 
 ---

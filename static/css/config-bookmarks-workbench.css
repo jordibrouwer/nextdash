@@ -9,7 +9,7 @@
  */
 
 .config-bm-workbench {
-    --bm-rail-w: 176px;
+    --bm-rail-w: 204px;
     /* The Containers and Inbox row (~38px), so the three list views line up;
        View → Row height sets comfortable (below). The virtual list reads
        this, so it must be the drawn height. */

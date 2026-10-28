@@ -9603,6 +9603,55 @@ body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section
 }
 
 /*
+ * A docked bar that is in view keeps its own layer.
+ *
+ * It takes the paint of a category in every material, so slid back in over the
+ * cards it could not be told from them. While it is in view it gets a denser
+ * surface, an edge that leans to the accent, and a cast of its own, which sits in a filter rather than a box-shadow. The repeated
+ * [data-action-bar] is specificity, not meaning: the material rules that paint
+ * the dock are long, and this has to be the one that wins. Ink keeps its thin
+ * plate, which is its whole answer to the same question.
+ */
+html[data-theme] body[data-action-bar][data-action-bar][data-action-bar]:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]):not([data-action-bar-hidden]):not([data-material="ink"]) .dashboard-section.section-controls .header-shortcuts {
+    border-color: color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
+    /* The cast is a filter, so the material's own edge, bevel or glow (its
+       box-shadow) stays what it is. */
+    filter:
+        drop-shadow(0 10px 18px color-mix(in srgb, #000 42%, transparent))
+        drop-shadow(0 2px 4px color-mix(in srgb, #000 28%, transparent));
+}
+
+/*
+ * A wash over the material's own paint, not a replacement of it: the dock keeps
+ * the look its material gave it, with a layer of the surface colour laid over so
+ * it stays apart from the cards behind. --action-bar-wash is how much of the
+ * dock is the wash, taken from how solid the categories are; the rest is the material.
+ */
+html[data-theme] body[data-action-bar][data-action-bar][data-action-bar]:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]):not([data-action-bar-hidden]):not([data-material="ink"]) .dashboard-section.section-controls .header-shortcuts::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    /* A good deal less than the categories' own alpha, so the theme is what you
+       see: ~42% on a glass theme, and more where the theme itself is opaque. */
+    --action-bar-wash: calc(max(var(--cat-glass-alpha, var(--theme-surface-alpha, 1)) - 0.2, 0.35) * 100%);
+    background: color-mix(in srgb, var(--surface-3, var(--background-secondary)) var(--action-bar-wash), transparent);
+    pointer-events: none;
+}
+
+/* A button that is on is filled with the accent, as the lit view in the header is. */
+body:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts :is(.search-button, button, a):is(.is-active, [aria-pressed="true"]) {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+body:is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts :is(.is-active, [aria-pressed="true"]) .search-button-icon {
+    color: var(--accent-primary);
+}
+
+/*
  * The intro (action-bar-autohide.js, setting actionBarIntroStyle): how the
  * buttons come in as the bar comes into view. The host carries the style and
  * is-intro-playing, each button .action-bar-intro and --intro-index, its turn

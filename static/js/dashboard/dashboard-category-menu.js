@@ -543,6 +543,11 @@ class DashboardCategoryMenu {
             }] : []),
             { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
             ...(stored ? [{
+                id: 'find-tags',
+                label: this.t('categoryMenuFindTags', 'Find tags for this category'),
+                icon: '#',
+            }] : []),
+            ...(stored ? [{
                 id: 'view',
                 label: asTiles
                     ? this.t('categoryMenuViewRows', 'Show as rows')
@@ -970,6 +975,21 @@ class DashboardCategoryMenu {
             if (nameSpan) {
                 d.renderCore?._startCategoryRename?.(titleEl, nameSpan, category);
             }
+            return;
+        }
+
+        if (action === 'find-tags') {
+            // Page and id together: the same name can exist on two pages.
+            const list = (d.allBookmarks || []).filter((b) => b.url
+                && String(b.pageId) === String(d.currentPageId)
+                && String(b.category) === String(category.id));
+            if (!list.length) {
+                d.showNotification?.(this.t('categoryMenuFindTagsEmpty',
+                    'There are no bookmarks in this category to look for tags for.'), 'info');
+                return;
+            }
+            window.nextdashTrack?.('category-find-tags', { via: 'header' });
+            await d.config?.runTagSearch?.(list);
             return;
         }
 

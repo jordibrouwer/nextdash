@@ -19,6 +19,13 @@
 
     const Model = () => window.TagCloudModel;
 
+    // What the cloud looks like with tags in it, for a library that has none
+    // yet: shown once, from the quick start, and never counted as the reader's.
+    const DEMO_TAGS = [
+        ['docs', 14], ['homelab', 12], ['media', 10], ['dev', 9], ['news', 7],
+        ['tools', 6], ['music', 5], ['read-later', 4], ['games', 3], ['recipes', 2],
+    ];
+
     function countTagsFromBookmarks(bookmarks) {
         return Model().countTags(bookmarks);
     }
@@ -32,6 +39,9 @@
         closeBtn: null,
         clearBtn: null,
         modalOpen: false,
+        // True while the example cloud is open: its words are not the
+        // reader's tags, so they pick nothing.
+        _demo: false,
         activeTags: [],
         _kbdFocusIndex: 0,
         _kbdFocusZone: 'chip',
@@ -157,6 +167,17 @@
          */
         refreshChipCounts() {
             const chips = this.getTagChips();
+            if (this._demo) {
+                const counts = new Map(DEMO_TAGS);
+                chips.forEach((chip) => {
+                    const total = counts.get(chip.dataset.tag || '') || 0;
+                    const countEl = chip.querySelector('.tag-cloud-word-count');
+                    if (countEl) countEl.textContent = String(total);
+                    chip.title = `${chip.dataset.tag} — ${this.getTagCountLabel(total)}`;
+                });
+                this.updateHeaderCount(chips.length, 0);
+                return;
+            }
             const active = this.normalizeActiveTags();
             const pool = this.getBookmarkPool();
             const totals = new Map(Model().countTags(pool).map(({ tag, count }) => [tag, count]));
@@ -571,8 +592,22 @@
             }
         },
 
-        openModal() {
-            if (!this.isEligible() || !this.modal) return;
+        /**
+         * The example cloud, for someone with no tags yet: ten made-up words so
+         * the shape of the thing is there to look at, and a way into the Tags
+         * view. Resolves to false where there is no cloud to show (a phone).
+         */
+        openDemo({ onClose } = {}) {
+            if (!this.modal || !this.body || isMobileLayout()) return false;
+            this._demo = true;
+            this._onDemoClose = typeof onClose === 'function' ? onClose : null;
+            this.openModal({ demo: true });
+            return this.modalOpen;
+        },
+
+        openModal({ demo = false } = {}) {
+            if (!demo && !this.isEligible()) return;
+            if (!this.modal) return;
             /*
              * The wrap is what carries the cloud, and it is hidden until it is
              * told it is eligible.
@@ -584,16 +619,23 @@
              * tags in it, answers the keyboard, and is nowhere on screen.
              * Asked here as well, where it costs one class toggle.
              */
-            this.syncFromSettings();
-            window.nextdashTrack?.('modal:tag-cloud');
+            if (demo) {
+                // Not eligible, so the wrap is shown by hand for as long as the
+                // example is up; closing hands it back to syncFromSettings.
+                this.wrap?.classList.add('is-eligible');
+            } else {
+                this._demo = false;
+                this.syncFromSettings();
+            }
+            window.nextdashTrack?.('modal:tag-cloud', demo ? { example: true } : undefined);
             if (this._closeTimerId) {
                 clearTimeout(this._closeTimerId);
                 this._closeTimerId = null;
             }
-            this.syncActiveTagsFromDashboard();
+            if (!demo) this.syncActiveTagsFromDashboard();
             this.renderWordCloud();
             this.playEntrance();
-            this.ensureEveryPageLoaded();
+            if (!demo) this.ensureEveryPageLoaded();
             this.updateClearButton();
             // The × is not a name. The template carries an English label; this
             // keeps it in the current language when the language changed later.
@@ -666,6 +708,15 @@
                 this.backdrop?.setAttribute('hidden', '');
                 this.backdrop?.setAttribute('aria-hidden', 'true');
                 this.modalOpen = false;
+                if (this._demo) {
+                    this._demo = false;
+                    // The example's words and its note go with it.
+                    this.body?.replaceChildren();
+                    this.syncFromSettings();
+                    const afterDemo = this._onDemoClose;
+                    this._onDemoClose = null;
+                    afterDemo?.();
+                }
                 this._kbdFocusZone = 'chip';
                 this.clearBtn?.classList.remove('is-keyboard-focused');
                 this.syncToggleState();
@@ -809,7 +860,9 @@
                 queryLabel.textContent = '';
             }
             const pool = this.getBookmarkPool();
-            const ranked = Model().countTags(pool);
+            const ranked = this._demo
+                ? DEMO_TAGS.map(([tag, count]) => ({ tag, count }))
+                : Model().countTags(pool);
 
             this.body.replaceChildren();
             if (!ranked.length) {
@@ -865,8 +918,34 @@
                 this.body.appendChild(chip);
             });
             this.refreshChipCounts();
+            if (this._demo) this.body.appendChild(this.buildDemoNote());
 
             requestAnimationFrame(() => this.positionModal());
+        },
+
+        /** What the example is, how to get the real thing, and the Tags view. */
+        buildDemoNote() {
+            const note = document.createElement('div');
+            note.className = 'tag-cloud-demo-note';
+            note.dataset.tagCloudDemo = '';
+            const text = document.createElement('p');
+            text.textContent = t('dashboard.tagCloudDemoNote',
+                'These are example tags. Tag a bookmark (right-click, then Tags) and your own words appear here; pick one to see its bookmarks.');
+            const open = document.createElement('button');
+            open.type = 'button';
+            open.className = 'tag-cloud-demo-view';
+            open.textContent = t('dashboard.tagCloudDemoView', 'Open the Tags view');
+            open.addEventListener('click', () => {
+                // Going to the Tags view is what the example was for: the
+                // owner's callback hears it as that, not as a plain close.
+                const afterDemo = this._onDemoClose;
+                this._onDemoClose = null;
+                this.closeModal({ animate: false });
+                afterDemo?.({ toTags: true });
+                window.location.hash = 'tags';
+            });
+            note.append(text, open);
+            return note;
         },
 
         /**
@@ -891,6 +970,8 @@
          * again, switches the filter off.
          */
         selectTag(tag, { stack = false } = {}) {
+            // The words of the example are nobody's tags: nothing to pick.
+            if (this._demo) return;
             const normalized = String(tag || '').trim().toLowerCase();
             if (!normalized) return;
             const dash = window.dashboardInstance;

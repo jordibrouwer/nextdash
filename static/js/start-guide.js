@@ -6,7 +6,7 @@
  * in the middle: what to do with the example links, the language, the weather
  * and the first steps. The modal opens by itself once, three seconds after the
  * bar is up, so a new reader meets it first; after that only the reader opens it. The bar stays on the
- * dashboard of page 1 until every step is done or the reader closes it for
+ * dashboard, on every page, until every step is done or the reader closes it for
  * good, and it holds the corner for as long as it is there, so no other card
  * competes with it (NoticeCard.cornerIsFree).
  *
@@ -35,6 +35,7 @@
     // reloads, before anyone had looked.)
     const FOUND_KEY = 'nextdash:start-guide-found';
     const VISIBLE_STEPS = 3;
+    const STARTER_IDS = ['homelab', 'media-server', 'developer'];
     const LANGUAGES = [
         ['en', 'English'], ['nl', 'Nederlands'], ['de', 'Deutsch'],
         ['fr', 'Français'], ['zh', '中文'], ['es', 'Español'],
@@ -42,6 +43,23 @@
 
     function dash() {
         return global.dashboardInstance || null;
+    }
+
+    /*
+     * What the guide reports, so it can be seen where readers leave it: that it
+     * opened and how, how it closed, which step was taken and how it ended. Fixed
+     * words only (a step's id, a way of closing) and the steps done as a band --
+     * never a name, an address or a number. `nextdashTrack` does nothing unless
+     * analytics is on, and is the same call every other event goes through.
+     */
+    function track(name, props) {
+        global.nextdashTrack?.(name, props);
+    }
+
+    function doneBand(count) {
+        if (!(count > 0)) return '0';
+        if (count <= 2) return '1-2';
+        return count <= 5 ? '3-5' : '6+';
     }
 
     /** A string from the active language, or the English fallback. */
@@ -69,7 +87,7 @@
      */
     function buildSteps(guide) {
         const go = (hash) => () => guide.goTo(hash);
-        return [
+        const steps = [
             {
                 id: 'tour',
                 label: tq('stepTour', 'Take the 1-minute tour'),
@@ -77,22 +95,16 @@
                 run: () => guide.runTour(),
             },
             {
-                id: 'import',
-                label: tq('stepImport', 'Import your bookmarks'),
-                hint: tq('stepImportHint', 'From your browser'),
-                run: go('#config/data-backups'),
-            },
-            {
-                id: 'extension',
-                label: tq('stepExtension', 'Get the browser extension'),
-                hint: tq('stepExtensionHint', 'Save a page without leaving it'),
-                run: () => { global.open(DOCS_URL, '_blank', 'noopener'); },
-            },
-            {
                 id: 'bookmarks',
                 label: tq('stepBookmarks', 'Open the Bookmarks view'),
                 hint: tq('stepBookmarksHint', 'Every bookmark, searchable'),
                 run: go('#bookmarks'),
+            },
+            {
+                id: 'tags',
+                label: tq('stepTags', 'Browse by tag'),
+                hint: tq('stepTagsHint', 'The tag cloud and the Tags view'),
+                run: () => guide.runTags(),
             },
             {
                 id: 'inbox',
@@ -124,7 +136,29 @@
                 hint: tq('stepOverviewHint', 'An overview of your install'),
                 run: go('#config/overview'),
             },
+            {
+                id: 'cheatsheet',
+                label: tq('stepCheatsheet', 'Learn the shortcuts'),
+                hint: tq('stepCheatsheetHint', 'The cheat sheet, also on the ! key'),
+                run: () => guide.runCheatSheet(),
+            },
+            {
+                id: 'secondPage',
+                label: tq('stepSecondPage', 'Add a second page'),
+                hint: tq('stepSecondPageHint', 'Keep work and home apart'),
+                run: go('#config/pages-tags'),
+            },
         ];
+        // Only on an Unraid server: the step has nothing to open anywhere else.
+        if (guide.platform === 'unraid') {
+            steps.push({
+                id: 'unraid',
+                label: tq('stepUnraid', 'Connect your Unraid server'),
+                hint: tq('stepUnraidHint', 'See your array and shares'),
+                run: go('#config/unraid'),
+            });
+        }
+        return steps;
     }
 
     class StartGuide {
@@ -138,6 +172,13 @@
             this.emptyAsk = false;
             this.busy = false;
             this.replacesMain = false;
+            this.bundled = null;
+            this.platform = '';
+            this.starterId = '';
+            this.starterServer = '';
+            this.starterError = '';
+            this.langTouched = false;
+            this.langHintTracked = false;
             this.lastAllSet = false;
             this.langToken = 0;
             this.timers = [];
@@ -151,6 +192,10 @@
             const d = this.dash;
             if (!d.settings) d.settings = {};
             if (!d.settings.quickStart || typeof d.settings.quickStart !== 'object') d.settings.quickStart = {};
+            // A save answered late can hand back an older copy of this object;
+            // the example cloud is shown once, so the fact is kept on the guide
+            // as well and put back on every read.
+            if (this.tagDemoDone) d.settings.quickStart.tagDemoShown = true;
             return d.settings.quickStart;
         }
 
@@ -186,6 +231,8 @@
                     // Only main as it started can be emptied; anything somebody
                     // changed is theirs, and there is nothing to ask about it.
                     this.replacesMain = data.replacesMain === true;
+                    this.bundled = data;
+                    this.platform = data.platform === 'unraid' ? 'unraid' : '';
                 }
             } catch { /* the steps still make sense without the choice */ }
             this.buildBar();
@@ -195,11 +242,15 @@
             global.addEventListener('hashchange', this.hashHandler);
         }
 
-        /** The dashboard of page 1, while the onboarding is not finished. */
+        /**
+         * The dashboard, on any of its pages, while the onboarding is not
+         * finished. A ready-made page opens on a page of its own, and a guide
+         * that vanished there would leave the reader without the next steps.
+         */
         atHome() {
             const d = this.dash;
             if (d.settings?.onboardingCompleted === true) return false;
-            return Number(d.currentPageId) === MAIN_PAGE_ID && (!d.activeView || d.activeView === 'bookmarks');
+            return !d.activeView || d.activeView === 'bookmarks';
         }
 
         /** The bar waits for any other modal (what's new, a form) to be done. */
@@ -215,8 +266,19 @@
             this.scheduleAutoOpen();
         }
 
+        /**
+         * Which install the browser has found the bar on. localStorage belongs
+         * to the browser, and a data folder started from scratch is a new
+         * install in the same browser: a bare "found" flag kept the first
+         * opening from ever happening again there. The settings file's first
+         * run, written once when it is created, tells the two apart.
+         */
+        installMark() {
+            return String(this.dash.settings?.firstRunAt || '') || '1';
+        }
+
         hasBeenFound() {
-            try { return localStorage.getItem(FOUND_KEY) === '1'; } catch { return false; }
+            try { return localStorage.getItem(FOUND_KEY) === this.installMark(); } catch { return false; }
         }
 
         /** The first time, the modal grows out of the bar on its own. */
@@ -232,7 +294,7 @@
                     if (attempt < 20) this.scheduleAutoOpen(attempt + 1);
                     return;
                 }
-                this.open();
+                this.open('auto');
             }, attempt === 0 ? wait : 1000));
         }
 
@@ -249,20 +311,18 @@
             const visible = this.revealed && this.atHome();
             bar.classList.toggle('show', visible);
             bar.toggleAttribute('inert', !visible);
-            if (!visible && this.overlay) this.close({ land: false });
+            if (!visible && this.overlay) this.close({ land: false, via: 'view' });
         }
 
         /** Soft pulses so the eye finds the bar, until it has been opened once. */
         pulse() {
-            let found = false;
-            try { found = localStorage.getItem(FOUND_KEY) === '1'; } catch { /* none */ }
-            if (found) return;
+            if (this.hasBeenFound()) return;
             this.bar?.classList.add('is-pulsing');
         }
 
         /** Remembered per browser: the bar has been found, so it stops pulsing. */
         markFound() {
-            try { localStorage.setItem(FOUND_KEY, '1'); } catch { /* none */ }
+            try { localStorage.setItem(FOUND_KEY, this.installMark()); } catch { /* none */ }
             this.bar?.classList.remove('is-pulsing');
         }
 
@@ -324,7 +384,7 @@
         onBarClick(event) {
             const target = event.target.closest('button');
             if (!target) return;
-            if (target.hasAttribute('data-start-guide-open')) { this.open(); return; }
+            if (target.hasAttribute('data-start-guide-open')) { this.open('bar'); return; }
             if (target.hasAttribute('data-start-guide-close')) {
                 const ask = this.bar.querySelector('[data-sg-confirm]');
                 if (ask) ask.hidden = false;
@@ -335,20 +395,23 @@
                 if (ask) ask.hidden = true;
                 return;
             }
-            if (target.hasAttribute('data-sg-confirm-close') || target.hasAttribute('data-sg-all-set')) this.complete();
+            if (target.hasAttribute('data-sg-confirm-close') || target.hasAttribute('data-sg-all-set')) {
+                this.complete(target.hasAttribute('data-sg-all-set') ? 'all' : 'dismissed');
+            }
         }
 
         // ---- The modal ---------------------------------------------------------
 
-        open() {
+        open(via = 'bar') {
             if (this.overlay) return;
+            track('start-guide:open', { via, done: doneBand(this.progress().count) });
             this.markFound();
             const overlay = document.createElement('div');
             overlay.className = 'start-guide-overlay';
             overlay.setAttribute('data-start-guide-overlay', '');
             overlay.innerHTML = `<div class="start-guide-modal" data-start-guide-modal role="dialog" aria-modal="true" aria-labelledby="sg-title" tabindex="-1"></div>`;
             overlay.addEventListener('mousedown', (event) => {
-                if (event.target === overlay) this.close();
+                if (event.target === overlay) this.close({ via: 'backdrop' });
             });
             document.body.appendChild(overlay);
             this.overlay = overlay;
@@ -416,9 +479,11 @@
         }
 
         /** Fold the modal back into the bar; the bar says where it went. */
-        close({ land = true } = {}) {
+        close({ land = true, via = 'other' } = {}) {
             const overlay = this.overlay;
             if (!overlay) return;
+            // Closing as part of taking the guide down says nothing of its own.
+            if (via !== 'teardown') track('start-guide:close', { via, done: doneBand(this.progress().count) });
             this.overlay = null;
             this.emptyAsk = false;
             document.removeEventListener('keydown', this.keyHandler, true);
@@ -455,7 +520,7 @@
             if (event.key === 'Escape') {
                 event.preventDefault();
                 event.stopPropagation();
-                this.close();
+                this.close({ via: 'escape' });
                 return;
             }
             if (event.key !== 'Tab') return;
@@ -480,8 +545,10 @@
                 <li class="sg-step${done ? ' is-done' : ''}" data-sg-step="${esc(step.id)}"${hidden ? ' hidden' : ''}>
                     <button type="button" class="sg-step-button">
                         <span class="sg-check${done ? ' is-done' : ''}" aria-hidden="true"></span>
-                        <span class="sg-step-text">${esc(step.label)}</span>
-                        <span class="sg-step-hint">${esc(step.hint)}</span>
+                        <span class="sg-step-body">
+                            <span class="sg-step-text">${esc(step.label)}</span>
+                            <span class="sg-step-hint">${esc(step.hint)}</span>
+                        </span>
                     </button>
                 </li>`;
         }
@@ -494,7 +561,7 @@
             // nearest thing) once the content is drawn again.
             const active = document.activeElement;
             const focusKey = active && panel.contains(active)
-                ? ['data-sg-language', 'data-sg-city', 'data-sg-unit', 'data-sg-keep', 'data-sg-empty']
+                ? ['data-sg-language', 'data-sg-city', 'data-sg-unit', 'data-sg-keep', 'data-sg-empty', 'data-sg-starter-server', 'data-sg-starter-create', 'data-sg-lang-switch']
                     .map((attr) => (active.hasAttribute?.(attr) ? `[${attr}${attr === 'data-sg-unit' ? `="${active.getAttribute(attr)}"` : ''}]` : ''))
                     .find(Boolean) || ''
                 : '';
@@ -508,6 +575,12 @@
             const city = d.settings?.weatherLocation || '';
             const answered = ['keep', 'empty'].includes(this.state().templatePicked);
             const hasChoice = this.replacesMain && !answered;
+            const starter = this.renderStarter();
+            const langHint = this.languageSuggestion();
+            if (langHint && !this.langHintTracked) {
+                this.langHintTracked = true;
+                global.nextdashTrack?.('language-suggest', { action: 'shown', to: langHint[0] });
+            }
             const choices = hasChoice ? `
                 <div class="sg-choices">
                     <button type="button" class="sg-choice sg-choice-primary" data-sg-keep>
@@ -529,10 +602,7 @@
                 <p class="sg-error" data-sg-error role="alert" hidden></p>` : '';
             panel.innerHTML = `
                 <div class="sg-head">
-                    <div>
-                        <h2 id="sg-title" data-sg-title>${esc(hasChoice ? tf('titleWant', 'what do you want?') : tq('title', 'Quick start'))}</h2>
-                        ${hasChoice ? `<p class="sg-sub">${esc(tf('introWant', 'This page starts with example links. Keep them to look around, or clear them and add your own.'))}</p>` : ''}
-                    </div>
+                    <h2 id="sg-title" data-sg-title>${esc(hasChoice ? tf('titleWant', 'Welcome to nextDash') : tq('title', 'Quick start'))}</h2>
                     <label class="sg-lang">
                         <span>${esc(tq('guideLanguage', 'Language'))}</span>
                         <select data-sg-language aria-label="${esc(tq('guideLanguage', 'Language'))}">
@@ -540,10 +610,12 @@
                         </select>
                     </label>
                 </div>
+                ${hasChoice ? `<p class="sg-sub">${esc(tf('introWant', 'Your start page comes with example links. Keep them to look around, or clear them first and make it yours.'))}</p>` : ''}
+                ${langHint ? `<p class="sg-lang-hint" data-sg-lang-hint>${esc(tq('guideLanguageDetected', '{language} detected', { language: langHint[1] }))} <button type="button" class="sg-link" data-sg-lang-switch="${esc(langHint[0])}">${esc(tq('guideLanguageSwitch', 'Switch'))}</button></p>` : ''}
+                <div class="sg-cols">
+                <div class="sg-col">
                 ${choices}
                 <p class="sg-links">
-                    <button type="button" class="sg-link" data-sg-manual>${esc(tf('showManual', 'Show me the manual first'))}</button>
-                    <span aria-hidden="true">·</span>
                     <button type="button" class="sg-link" data-sg-studio>${esc(tf('openStudio', 'Open the theme studio'))}</button>
                 </p>
                 <hr class="sg-rule">
@@ -557,10 +629,30 @@
                     </span>
                 </div>
                 <hr class="sg-rule">
+                <p class="sg-label">${esc(tq('guideManual', 'A lot to explore'))}</p>
+                <div class="sg-manual">
+                    <p class="sg-sub">${esc(tq('guideManualText', 'nextDash can do a lot, and that can feel overwhelming. That is why there is a good manual: look things up when you need them, no need to take it all in at once.'))}</p>
+                    <button type="button" class="sg-btn" data-sg-manual>${esc(tq('guideManualButton', 'Open the manual'))} ↗</button>
+                </div>
+                </div>
+                <div class="sg-col">
+                <p class="sg-label">${esc(tq('guideImport', 'Bring your bookmarks'))}</p>
+                <div class="sg-import">
+                    <button type="button" class="sg-btn" data-sg-csv>${esc(tq('guideImportCsv', 'Import a CSV file'))}</button>
+                    <input type="file" accept=".csv,text/csv" data-sg-csv-input hidden>
+                    <p class="sg-sub">${esc(tq('guideImportHint', 'Needs a url column; name, category, tags and notes are optional.'))}
+                        <button type="button" class="sg-link" data-sg-import-more>${esc(tq('guideImportMore', 'More ways to import: Config → Data & backups'))}</button></p>
+                </div>
+                ${starter}
+                </div>
+                </div>
+                <div class="sg-next">
                 <p class="sg-label">${esc(tq('guideNextSteps', 'Next steps'))}</p>
                 <ul class="sg-steps">${steps.map((s) => this.renderStep(s, done.has(s.id), !shown.has(s.id))).join('')}</ul>
                 ${hiddenCount > 0 && !this.showAll ? `<button type="button" class="sg-more" data-sg-more>${esc(tq('guideShowMore', 'Show {n} more', { n: hiddenCount }))} ▾</button>` : ''}
+                ${this.showAll && steps.length > VISIBLE_STEPS ? `<button type="button" class="sg-more" data-sg-less>${esc(tq('guideShowFewer', 'Show fewer'))} ▴</button>` : ''}
                 <p class="sg-back" data-sg-back-hint><kbd>Esc</kbd> ${esc(tq('guideOr', 'or'))} <kbd>1</kbd> ${esc(tq('guideBackHint', 'brings you back to the dashboard from anywhere'))}</p>
+                </div>
                 <div class="sg-foot">
                     <span class="sg-foot-progress" data-sg-progress>${esc(tq('progress', '{done} of {total} done', { done: this.progress().count, total: steps.length }))}</span>
                     ${this.progress().count >= steps.length
@@ -591,12 +683,24 @@
                     return;
                 }
                 if (target.hasAttribute('data-sg-empty-confirm')) { void this.startEmpty(); return; }
-                if (target.hasAttribute('data-sg-manual')) { global.open(DOCS_URL, '_blank', 'noopener'); return; }
-                if (target.hasAttribute('data-sg-studio')) { this.openStudio(); return; }
-                if (target.hasAttribute('data-sg-minimise')) { this.close(); return; }
-                if (target.hasAttribute('data-sg-all-set')) { this.complete(); return; }
+                const pick = target.getAttribute('data-sg-starter');
+                if (pick) { this.pickStarter(pick); return; }
+                if (target.hasAttribute('data-sg-starter-create')) { void this.createStarter(); return; }
+                const switchTo = target.getAttribute('data-sg-lang-switch');
+                if (switchTo) { this.acceptLanguage(switchTo); return; }
+                if (target.hasAttribute('data-sg-csv')) { panel.querySelector('[data-sg-csv-input]')?.click(); return; }
+                if (target.hasAttribute('data-sg-import-more')) { track('start-guide:link', { to: 'import' }); this.goTo('#config/data-backups'); return; }
+                if (target.hasAttribute('data-sg-manual')) { track('start-guide:link', { to: 'manual' }); global.open(DOCS_URL, '_blank', 'noopener'); return; }
+                if (target.hasAttribute('data-sg-studio')) { track('start-guide:link', { to: 'studio' }); this.openStudio(); return; }
+                if (target.hasAttribute('data-sg-minimise')) { this.close({ via: 'minimise' }); return; }
+                if (target.hasAttribute('data-sg-all-set')) { this.complete('all'); return; }
                 if (target.hasAttribute('data-sg-more')) {
                     this.showAll = true;
+                    this.renderModal();
+                    return;
+                }
+                if (target.hasAttribute('data-sg-less')) {
+                    this.showAll = false;
                     this.renderModal();
                     return;
                 }
@@ -615,8 +719,174 @@
             });
             city.addEventListener('change', () => this.saveWeather({ city: city.value }));
             panel.querySelector('[data-sg-language]').addEventListener('change', (event) => {
+                this.langTouched = true;
                 void this.setLanguage(event.target.value);
             });
+            panel.querySelector('[data-sg-csv-input]')?.addEventListener('change', (event) => {
+                const file = event.target.files && event.target.files[0];
+                event.target.value = '';
+                if (file) void this.importCsv(file);
+            });
+            const server = panel.querySelector('[data-sg-starter-server]');
+            if (server) {
+                server.addEventListener('input', () => { this.starterServer = server.value; });
+                server.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') { event.preventDefault(); void this.createStarter(); }
+                });
+            }
+        }
+
+        // ---- Ready-made pages and the language hint ------------------------------
+
+        starterTemplates() {
+            const list = this.bundled?.templates;
+            return Array.isArray(list) ? list.filter((t) => t && typeof t.id === 'string') : [];
+        }
+
+        renderStarter() {
+            const list = this.starterTemplates();
+            if (!list.length) return '';
+            const { locked, target } = this.starterState();
+            const sub = locked
+                ? tq('guideStarterLocked', 'First decide about the example links: keep them or start with an empty page.')
+                : target === 'main'
+                    ? tq('guideStarterMain', 'Fills your empty page.')
+                    : tq('guideStarterNew', 'Added as a new page.');
+            const cards = list.map((t) => `
+                    <button type="button" class="sg-choice${t.id === this.starterId ? ' sg-choice-primary' : ''}" data-sg-starter="${esc(t.id)}" aria-pressed="${t.id === this.starterId}"${locked ? ' disabled' : ''}>
+                        <b>${esc(t.name)}</b>
+                        <span>${(Array.isArray(t.services) ? t.services.slice(0, 3) : []).map((n) => `<i class="sg-chip">${esc(n)}</i>`).join('')}</span>
+                    </button>`).join('');
+            const open = !locked && this.starterId && list.some((t) => t.id === this.starterId);
+            return `
+                <hr class="sg-rule">
+                <p class="sg-label">${esc(tq('guideStarter', 'Start from a ready-made page'))}</p>
+                <p class="sg-sub" data-sg-starter-sub>${esc(sub)}</p>
+                <div class="sg-choices" data-sg-starters>${cards}</div>
+                <div class="sg-starter-form" data-sg-starter-form${open ? '' : ' hidden'}>
+                    <label for="sg-starter-server">${esc(tq('guideStarterServer', 'Your server address'))}</label>
+                    <input id="sg-starter-server" type="text" data-sg-starter-server autocomplete="off" value="${esc(this.starterServer)}" placeholder="192.168.1.10">
+                    <p class="sg-sub">${esc(tq('guideStarterHint', 'One address fills every service; change single links later.'))}</p>
+                    <button type="button" class="sg-btn sg-btn-primary" data-sg-starter-create${this.busy ? ' disabled' : ''}>${esc(tq('guideStarterCreate', 'Create page'))}</button>
+                    <p class="sg-error" data-sg-starter-error role="alert"${this.starterError ? '' : ' hidden'}>${esc(this.starterError)}</p>
+                </div>`;
+        }
+
+        /**
+         * The order is the reader's: first what happens to the example links,
+         * then a ready-made page. Kept, the page goes beside them as a new
+         * one; started empty, it fills the page that is left.
+         */
+        starterState() {
+            const answered = ['keep', 'empty'].includes(this.state().templatePicked);
+            return {
+                locked: this.replacesMain === true && !answered,
+                target: this.state().templatePicked === 'empty' ? 'main' : 'new',
+            };
+        }
+
+        pickStarter(id) {
+            if (this.starterState().locked) return;
+            this.starterId = id;
+            this.starterError = '';
+            this.renderModal();
+            this.overlay?.querySelector('[data-sg-starter-server]')?.focus({ preventScroll: true });
+        }
+
+        async createStarter() {
+            const id = this.starterId;
+            if (!id || this.busy || this.starterState().locked) return;
+            const { target } = this.starterState();
+            this.busy = true;
+            this.starterError = '';
+            const showError = (message) => {
+                this.starterError = message;
+                const el = this.overlay?.querySelector('[data-sg-starter-error]');
+                if (el) { el.textContent = message; el.hidden = false; }
+            };
+            let replaced = false;
+            let pageId = MAIN_PAGE_ID;
+            try {
+                const api = typeof global.nextDashFetch === 'function' ? global.nextDashFetch : fetch;
+                const res = await api('/api/onboarding/template', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, server: this.starterServer.trim(), target }),
+                });
+                if (!res.ok) {
+                    let message = '';
+                    try { message = String((await res.json())?.error || ''); } catch { /* no body */ }
+                    this.busy = false;
+                    showError(message || tq('guideStarterFailed', 'Could not create the page'));
+                    return;
+                }
+                try {
+                    const answer = await res.json();
+                    replaced = answer?.replaced === true;
+                    // A page added beside main is the one to show: the reader
+                    // asked for it, and landing on main would hide it.
+                    pageId = Number(answer?.result?.pageId) || MAIN_PAGE_ID;
+                } catch { /* treated as added */ }
+            } catch {
+                this.busy = false;
+                showError(tq('guideStarterFailed', 'Could not create the page'));
+                return;
+            }
+            if (STARTER_IDS.includes(id)) global.nextdashTrack?.('start-template', { id, replaced });
+            const server = this.starterServer.trim() !== '';
+            try {
+                await this.showPage(MAIN_PAGE_ID);
+                if (!replaced && pageId !== MAIN_PAGE_ID) await this.dash.pageNav?.requestPageNavigation?.(pageId);
+            } catch { /* the page catches up on the next revision check */ } finally {
+                this.busy = false;
+                if (replaced) {
+                    // The example links are gone: the same answer as Start empty.
+                    this.replacesMain = false;
+                    this.recordAnswer('empty');
+                }
+                this.starterId = '';
+                this.close({ via: 'page' });
+            }
+            this.showStarterTips(server);
+        }
+
+        /**
+         * The page is there; what to do with its links comes next, in the
+         * middle of the screen where nobody can miss it: edit, delete, add.
+         */
+        showStarterTips(hasAddress) {
+            if (!global.AppModal?.show) return;
+            const key = (text) => `<kbd>${esc(text)}</kbd>`;
+            const line = (label, text, keyText) => `
+                <li><b>${esc(label)}</b><span>${esc(text).replace('{key}', key(keyText))}</span></li>`;
+            global.nextdashTrack?.('start-template-tips', { action: 'shown' });
+            global.AppModal.show({
+                title: tq('guideTipsTitle', 'Your page is ready'),
+                htmlMessage: `<ul class="sg-tips">
+                    ${line(tq('guideTipsEdit', 'Edit'), tq('guideTipsEditText', 'Right-click a bookmark and choose Edit, or select it and press {key}.'), 'Shift+E')}
+                    ${line(tq('guideTipsDelete', 'Delete'), tq('guideTipsDeleteText', 'Right-click a bookmark and choose Delete, or select it and press {key}.'), 'Shift+D')}
+                    ${line(tq('guideTipsAdd', 'Add'), tq('guideTipsAddText', 'Press {key} for the full form, or paste a link anywhere on the page.'), '+')}
+                    ${line(tq('guideTipsMonitor', 'Monitor'), tq('guideTipsMonitorText', 'To watch a service, right-click it, choose Checking, then Monitor and pick how often, for example every hour. The {key} view shows when one is down.'), 'Bookmarks')}
+                    </ul>${hasAddress ? `<p class="sg-tips-note">${esc(tq('guideTipsAddress', 'The links use the server address you entered. Edit any link whose address is different.'))}</p>` : ''}`,
+                confirmText: tq('guideTipsDone', 'Got it'),
+                showCancel: false,
+                modalClass: 'sg-tips-modal',
+            });
+        }
+
+        /** [code, name] of the browser's language when it is offered and not the current one. */
+        languageSuggestion() {
+            if (this.langTouched) return null;
+            const base = String(global.navigator?.language || '').toLowerCase().split(/[-_]/)[0];
+            const found = LANGUAGES.find(([code]) => code === base);
+            if (!found) return null;
+            return found[0] === (this.dash.settings?.language || 'en') ? null : found;
+        }
+
+        acceptLanguage(code) {
+            this.langTouched = true;
+            global.nextdashTrack?.('language-suggest', { action: 'accepted', to: code });
+            void this.setLanguage(code);
         }
 
         // ---- What the choices do -----------------------------------------------
@@ -629,7 +899,8 @@
         async answer(picked) {
             this.recordAnswer(picked);
             global.nextdashTrack?.('first-start:keep');
-            this.close();
+            // The guide stays: the ready-made pages below wait for this answer.
+            this.renderModal();
         }
 
         showError(message) {
@@ -664,7 +935,7 @@
                 this.busy = false;
                 this.replacesMain = false;
                 this.recordAnswer('empty');
-                this.close();
+                this.renderModal();
             }
         }
 
@@ -686,7 +957,7 @@
         }
 
         openStudio() {
-            this.close({ land: false });
+            this.close({ land: false, via: 'step' });
             const d = this.dash;
             void Promise.resolve(d.config?.openThemeBrowser?.()).catch(() => {
                 global.location.hash = 'config/appearance';
@@ -696,21 +967,86 @@
         // ---- Steps -------------------------------------------------------------
 
         goTo(hash) {
-            this.close({ land: false });
+            this.close({ land: false, via: 'step' });
             global.location.hash = hash;
         }
 
+        /**
+         * The tag cloud, and from it the Tags view. With tags in the library it
+         * is the real cloud. With none, the first time shows an example cloud
+         * (once, so it does not stand in for the reader's own words), and after
+         * that the step opens the Tags view itself.
+         */
+        runTags() {
+            this.close({ land: false, via: 'step' });
+            const cloud = global.DashboardTagCloud;
+            if (cloud?.libraryHasTags?.() && cloud.isEligible?.()) {
+                this.markSteps(['tags']);
+                cloud.openModal();
+                return;
+            }
+            if (!this.state().tagDemoShown && cloud?.openDemo) {
+                this.tagDemoDone = true;
+                this.state();
+                this.save();
+                // The example is nobody's tags: the step is done when the
+                // reader goes on to the Tags view, which this offers as the
+                // example closes.
+                if (cloud.openDemo({ onClose: (how) => (how?.toTags ? this.markSteps(['tags']) : this.offerTagsView()) })) return;
+            }
+            this.markSteps(['tags']);
+            global.location.hash = 'tags';
+        }
+
+        /** After the example cloud: the way to the real Tags view, one click away. */
+        offerTagsView() {
+            global.AppNotification?.show?.(
+                tq('tagDemoClosed', 'That was an example. Give bookmarks tags and your own cloud appears here.'),
+                'info',
+                {
+                    duration: 12000,
+                    actionLabel: tq('tagDemoOpenTags', 'Open Tags view'),
+                    onAction: () => {
+                        this.markSteps(['tags']);
+                        global.location.hash = 'tags';
+                    },
+                },
+            );
+        }
+
+        /** Every shortcut on one screen: the guide steps aside and the sheet opens over the dashboard. */
+        runCheatSheet() {
+            this.close({ land: false, via: 'step' });
+            this.dash.showKeyboardCheatSheet?.();
+        }
+
         async runTour() {
-            this.close({ land: false });
+            this.close({ land: false, via: 'step' });
             await this.dash.promos?.openDashboardTour?.();
+        }
+
+        /**
+         * A CSV the reader already has, straight from the guide. It is the
+         * importer Config → Data & backups has: the same reading of the file,
+         * the same question (this page or the inbox), the same de-duplication.
+         * The guide steps aside first so that question is not asked on top of it.
+         */
+        async importCsv(file) {
+            global.nextdashTrack?.('start-import', { via: 'csv' });
+            this.close({ land: false, via: 'step' });
+            try {
+                await this.dash.config?.importBookmarksCSV?.(file);
+            } catch { /* the importer says what went wrong itself */ }
         }
 
         async runStep(id) {
             const step = this.steps().find((s) => s.id === id);
             if (!step) return;
+            track('start-guide:step', { step: id });
             // Counted before anything moves: a step that leaves the dashboard
-            // is where the reader's attention goes next.
-            this.markSteps([id]);
+            // is where the reader's attention goes next. Browse by tag counts
+            // itself (runTags): clicking away an example is not browsing.
+            if (id !== 'tags') this.markSteps([id]);
             try { await step.run(); } catch { /* a step that cannot run is not an error toast */ }
         }
 
@@ -788,7 +1124,8 @@
         }
 
         /** Closed for good, or every step done and the bar clicked. */
-        complete() {
+        complete(how = 'dismissed') {
+            track('start-guide:finish', { how, done: doneBand(this.progress().count) });
             const d = this.dash;
             const qs = this.state();
             qs.dismissed = true;
@@ -801,7 +1138,7 @@
         }
 
         teardown() {
-            this.close({ land: false });
+            this.close({ land: false, via: 'teardown' });
             this.timers.forEach((id) => { clearTimeout(id); clearInterval(id); });
             this.timers = [];
             if (this.hashHandler) global.removeEventListener('hashchange', this.hashHandler);

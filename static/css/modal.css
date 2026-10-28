@@ -2142,7 +2142,8 @@ body:not([data-depth="flat"]) .wn-earlier {
     /* On the strip's own centre line, which is the header row's: published by
        showPageOverlay so the sheet follows the row at every width. */
     left: var(--header-sheet-mid, 50%);
-    transform: translateX(-50%) translateY(-6px);
+    /* Centred with `translate`, not `transform`: the rise below owns transform. */
+    translate: -50% 0;
     margin: 0;
     /* Square where it meets the band, round where it leaves the page. */
     border-top-left-radius: 0;
@@ -2153,30 +2154,13 @@ body:not([data-depth="flat"]) .wn-earlier {
 }
 
 /*
- * The sheet drops out of the band, and keeps its own centring while it does.
- *
- * The shared open animation animates `transform` from the control that was
- * pressed, which overwrites the translate that puts this panel on the strip's
- * centre line -- the sheet landed half its own width to the right. It gets an
- * animation of its own instead: the same short fall, with the centring carried
- * through every frame.
+ * The sheet rises like every other modal (modalRise), the add-bookmark form and
+ * the search panel included. Its centring is the `translate` above, so the
+ * shared animation can own `transform` without pushing the sheet off the strip.
  */
 .modal-overlay.show .modal.header-sheet,
 .modal-overlay.show .modal.header-sheet.from-origin {
-    animation: header-sheet-rise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
-    transform: translateX(-50%) translateY(0);
-}
-
-/* modalRise with the centring carried through every frame. */
-@keyframes header-sheet-rise {
-    from {
-        transform: translateX(-50%) translateY(14px) scale(0.94);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(-50%) translateY(0);
-        opacity: 1;
-    }
+    animation: modalRise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
 }
 
 body.no-animations .modal-overlay.show .modal.header-sheet,
@@ -2184,12 +2168,6 @@ body.no-animations .modal-overlay.show .modal.header-sheet.from-origin,
 body.no-view-animations .modal-overlay.show .modal.header-sheet,
 body.no-view-animations .modal-overlay.show .modal.header-sheet.from-origin {
     animation: none;
-}
-
-/* theme.css clears every transform under no-animations; this one is the
-   centring, not motion, so it comes back. */
-body.no-animations .modal.header-sheet {
-    transform: translateX(-50%) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

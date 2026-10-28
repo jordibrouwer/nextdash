@@ -1,0 +1,143 @@
+/**
+ * The keyboard tour.
+ *
+ * Same shape as monitoring-tutorial.css: the app's modal chrome carries the title
+ * and the buttons, and only the reading column between them is styled here,
+ * in a sheet of its own so no tour's visuals drift into another's. The motion
+ * inside each picture is the SVG's own (see keyboard-tutorial.js); this is
+ * the frame around it and the change of page.
+ */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-tutorial-modal) .modal {
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-tutorial-modal) .modal {
+    transform: translateY(0) scale(1);
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-tutorial-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.keyboard-tutorial-progress {
+    font-size: var(--text-xs, 0.72rem);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin: 0 0 var(--space-1-5, 0.4rem);
+}
+
+.keyboard-tutorial-step-title {
+    margin: 0 0 var(--space-3, 0.7rem);
+    font-size: var(--text-lg, 1.1rem);
+    color: var(--text-primary);
+}
+
+.keyboard-tutorial-step-body p {
+    margin: 0 0 var(--space-3, 0.7rem);
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.keyboard-tutorial-step-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* ---- The picture -------------------------------------------------------- */
+
+.keyboard-tutorial-scene {
+    margin: 0 0 var(--space-4, 0.9rem);
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-5, 0.5rem);
+    background: var(--background-primary);
+    overflow: hidden;
+}
+
+.keyboard-tutorial-scene .utv {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Each step's picture slides in from the side the reader is heading: Next from
+   the right, Back from the left. */
+.keyboard-tutorial-scene.is-forward {
+    animation: keyboard-tutorial-scene-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.keyboard-tutorial-scene.is-back {
+    animation: keyboard-tutorial-scene-in-back 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes keyboard-tutorial-scene-in {
+    from { opacity: 0; transform: translateX(14px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes keyboard-tutorial-scene-in-back {
+    from { opacity: 0; transform: translateX(-14px); }
+    to { opacity: 1; transform: none; }
+}
+
+.keyboard-tutorial-dots {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-1-5, 0.4rem);
+    margin-top: 1.2rem;
+}
+
+.keyboard-tutorial-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--border-secondary);
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.keyboard-tutorial-dot.is-active {
+    background: var(--accent-primary);
+    transform: scale(1.3);
+}
+
+/*
+ * Still, for anyone who asked for still. The pictures rest on their finished
+ * state — the reading arrived, the key saved, the alert sent — so
+ * switching the motion off leaves a picture that still says the thing.
+ */
+@media (prefers-reduced-motion: reduce) {
+    body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-tutorial-modal) .modal,
+    body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-tutorial-modal) .modal {
+        transform: none !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .keyboard-tutorial-dot {
+        transition: none;
+    }
+
+    .keyboard-tutorial-scene.is-forward,
+    .keyboard-tutorial-scene.is-back {
+        animation: none;
+    }
+}
+
+body.no-animations .keyboard-tutorial-scene.is-forward,
+body.no-animations .keyboard-tutorial-scene.is-back {
+    animation: none;
+}
+
+.keyboard-tutorial-step-body kbd {
+    display: inline-block;
+    min-width: 1.4em;
+    padding: 0 0.4em;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: var(--background-secondary, var(--background-primary));
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.9em;
+    text-align: center;
+}

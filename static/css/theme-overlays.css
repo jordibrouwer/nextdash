@@ -841,13 +841,13 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 
 /* ── The dots of a tutorial: the ones not yet reached have to show on the surface, the one in force is lit ── */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"], .changes-tour-dot) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"]:not([class*="-tutorial-dots"]), .changes-tour-dot) {
     width: 0.5rem;
     height: 0.5rem;
     background: color-mix(in srgb, var(--text-primary) 38%, transparent);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"], .changes-tour-dot):is(.is-active, [aria-current="step"]) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is([class*="-tutorial-dot"]:not([class*="-tutorial-dots"]), .changes-tour-dot):is(.is-active, [aria-current="step"]) {
     background: var(--accent-primary);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 30%, transparent);
 }
@@ -1130,7 +1130,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 
 /* ── The views: what stands on the plate ───────────────────────────────────────────────────────────── */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state, .inbox-legend, .glances-legend) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .glances-proc-scroll, .docker-setup, .tag-view-offer, .inbox-empty-state, .inbox-legend, .glances-legend) {
     background-color: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
     background-image: none;
     border: 0;
@@ -1431,4 +1431,96 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([
 
 html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
     background-image: linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+}
+
+/*
+ * The command palette is drawn like a category, with the edge and the cast of a
+ * layer on top.
+ *
+ * Its fill was the overlay's dense one (80%), so over the dashboard it read as a
+ * slab of its own, where the categories beside it are glass, metal or lacquer. On
+ * the materials that paint a category as a surface it takes a fill that follows
+ * the categories (--palette-fill: their alpha plus a tenth, never under 70%): a
+ * glass theme keeps the material showing, a theme that lifts its surfaces to
+ * opaque gets an opaque palette. The ring and the cast (--ov-e3, --ov-bar) still
+ * part it from the page. Neon, terminal, ink and
+ * paper draw their own fill and keep it.
+ */
+html[data-theme] body[data-material-style="signature"][data-material][data-material]:not([data-material=""]):is([data-material="glass"], [data-material="frost"], [data-material="aurora"], [data-material="lacquer"], [data-material="brushed"], [data-material="enamel"], [data-material="carbon"], [data-material="velvet"]) .shortcut-search .search-container {
+    /* As solid as the categories are, a little more for the text: a theme that lifts
+       its surfaces to opaque gets an opaque palette, a glass one a veil of ~72%. */
+    --palette-fill: calc(min(1, max(var(--cat-glass-alpha, var(--theme-surface-alpha, 1)) + 0.1, 0.7)) * 100%);
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) var(--palette-fill), transparent);
+}
+
+/*
+ * The mark of a category head, at the start of the prompt: the two skewed blocks
+ * every column head opens with, so the palette reads as part of the same page.
+ * Terminal and ink head their categories with a `$` and a bar of their own, and
+ * keep the prompt as it is.
+ */
+html[data-theme] body[data-material-style="signature"][data-material][data-material]:not([data-material=""]):is([data-material="lacquer"], [data-material="glass"], [data-material="frost"], [data-material="aurora"], [data-material="neon"], [data-material="velvet"], [data-material="enamel"], [data-material="brushed"], [data-material="carbon"], [data-material="paper"]) .shortcut-search .search-prompt::before {
+    content: "";
+    flex: none;
+    width: 1.05em;
+    height: 0.7em;
+    transform: skewX(-20deg);
+    background:
+        linear-gradient(var(--accent-primary), var(--accent-primary)) 0 0 / 34% 100% no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) 100% 0 / 34% 100% no-repeat;
+    opacity: 0.9;
+}
+
+/*
+ * The title of the palette is set as the title of a column head (and of a view
+ * head) is in each material: the same capitals, spacing and weight. The word is
+ * the mode pill; what is typed after it is the reader's own and stays plain.
+ */
+html[data-theme] body[data-material-style="signature"][data-material="neon"] .shortcut-search .search-prompt .search-prefix {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent-primary);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 70%, transparent), 0 0 18px color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-theme] body[data-material-style="signature"][data-material="carbon"] .shortcut-search .search-prompt .search-prefix {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+}
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] .shortcut-search .search-prompt .search-prefix {
+    font-weight: 800;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+html[data-theme] body[data-material-style="signature"][data-material="glass"] .shortcut-search .search-prompt .search-prefix {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+html[data-theme] body[data-material-style="signature"][data-material="frost"] .shortcut-search .search-prompt .search-prefix {
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] .shortcut-search .search-prompt .search-prefix {
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22), 0 -1px 0 rgba(0, 0, 0, 0.45);
+}
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] .shortcut-search .search-prompt .search-prefix {
+    font-weight: 800;
+}
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] .shortcut-search .search-prompt .search-prefix {
+    font-weight: 600;
+}
+html[data-theme] body[data-material-style="signature"][data-material="paper"] .shortcut-search .search-prompt .search-prefix {
+    font-variant: small-caps;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+html[data-theme] body[data-material-style="signature"][data-material="terminal"] .shortcut-search .search-prompt .search-prefix {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+}
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .shortcut-search .search-prompt .search-prefix {
+    font-weight: 800;
+    letter-spacing: -0.01em;
 }

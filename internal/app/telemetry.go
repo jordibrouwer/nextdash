@@ -19,7 +19,20 @@ import (
 // Accepts the usual truthy spellings (1, t, T, true, TRUE, yes, on); anything
 // else — including unset — leaves analytics under user control.
 func telemetryDisabledByEnv() bool {
-	raw := strings.TrimSpace(os.Getenv("DISABLE_TELEMETRY"))
+	return envFlag("DISABLE_TELEMETRY")
+}
+
+// installPingDisabledEnv switches off the daily install count alone, leaving
+// the usage analytics under the user's control. For test runs and CI: every
+// server started on an empty data folder is a new install to the count, so
+// they were most of its "installs", and DISABLE_TELEMETRY cannot be used there
+// because it also takes the analytics (and the specs that need them) away.
+const installPingDisabledEnv = "NEXTDASH_DISABLE_INSTALL_PING"
+
+// envFlag reads a truthy environment variable: 1, t, T, true, TRUE, yes, y or
+// on. Anything else, including unset, is false.
+func envFlag(name string) bool {
+	raw := strings.TrimSpace(os.Getenv(name))
 	if raw == "" {
 		return false
 	}

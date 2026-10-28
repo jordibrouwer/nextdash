@@ -26,7 +26,7 @@
     <script src="{{asset "js/app-version-guard.js"}}"></script>
     <script src="{{asset "js/update-notice.js"}}"></script>
     <script src="{{asset "js/write-api.js"}}"></script>
-    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}" data-content="{{.AnalyticsContentJSON}}" data-snapshots="{{.AnalyticsSnapshotsJSON}}"{{if .AnalyticsDemo}} data-mode="demo" data-do-not-track="true"{{end}}></script>{{if .AnalyticsRecorder}}<script defer src="{{.AnalyticsRecorderSrc}}" data-website-id="{{.AnalyticsWebsiteID}}" data-do-not-track="true"></script>{{end}}{{end}}
+    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}" data-content="{{.AnalyticsContentJSON}}" data-snapshots="{{.AnalyticsSnapshotsJSON}}" data-install="{{.AnalyticsInstallRef}}" data-distribution="{{.AnalyticsDistribution}}"{{if .AnalyticsDemo}} data-mode="demo" data-do-not-track="true"{{end}}></script>{{if .AnalyticsRecorder}}<script defer src="{{.AnalyticsRecorderSrc}}" data-website-id="{{.AnalyticsWebsiteID}}" data-do-not-track="true"></script>{{end}}{{end}}
     <script src="{{asset "js/font-presets.js"}}"></script>
     <script src="{{asset "js/device-settings-merge.js"}}"></script>
     <script src="{{asset "js/shared/escape-html.js"}}"></script>
@@ -149,6 +149,9 @@
     <link rel="stylesheet" href="{{asset "css/containers-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/glances-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/widgets-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/monitoring-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/unraid-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/keyboard-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/docker-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-glances.css"}}">
@@ -586,8 +589,12 @@
     <script src="{{asset "js/install-count-notice.js"}}" defer></script>
     <script src="{{asset "js/kept-pile-notice.js"}}" defer></script>
     <script src="{{asset "js/changes-tour.js"}}" defer></script>
+    <script src="{{asset "js/keyboard-tutorial.js"}}" defer></script>
     <script src="{{asset "js/theme-studio-notice.js"}}" defer></script>
     <script src="{{asset "js/health-review-notice.js"}}" defer></script>
+    <script src="{{asset "js/docker-update-notice.js"}}" defer></script>
+    <script src="{{asset "js/inbox-extension-notice.js"}}" defer></script>
+    <script src="{{asset "js/updated-notice.js"}}" defer></script>
     <script src="{{asset "js/digest-notice.js"}}" defer></script>
     <script src="{{asset "js/app-discovery-notice.js"}}" defer></script>
     <script src="{{asset "js/tag-suggestions-notice.js"}}" defer></script>

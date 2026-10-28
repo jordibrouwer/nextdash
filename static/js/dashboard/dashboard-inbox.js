@@ -1913,6 +1913,7 @@ class DashboardInbox {
                     }
                 });
                 this._itemsLoaded = true;
+                window.DashboardInboxExtensionNotice?.onViewReady?.();
                 delete this.dash._widgetInbox;
                 window.TagSuggestLive?.autoSearch?.(this.dash);
                 return this.items;
@@ -4389,6 +4390,12 @@ class DashboardInbox {
          * waiting" while the links sat there, hidden by the filter.
          */
         const narrowed = this.isNarrowed();
+        // Inbox zero only: pure markup, since this state is rebuilt on every render.
+        const extensionLine = !narrowed && this.filter === 'all'
+            && this.dash.settings?.enableInboxExtensionNotice !== false
+            ? `<p class="inbox-empty-extension"><a href="http://www.nextdash.cc/docs/browser-extension-and-capture.html" target="_blank" rel="noopener noreferrer">${
+                this.escape(this.t('dashboard.inboxEmptyExtensionLine', 'Save pages here with the browser extension.'))}</a></p>`
+            : '';
 
         const empty = document.createElement('div');
         empty.className = 'inbox-empty-state';
@@ -4397,7 +4404,12 @@ class DashboardInbox {
             <p class="inbox-empty-hint">${this.escape(narrowed ? this.t('dashboard.inboxNoMatchesHint', 'Try another filter or search term') : hint)}</p>
             ${narrowed ? `<button type="button" class="inbox-empty-clear" data-inbox-clear-filters>${
                 this.escape(this.t('dashboard.inboxClearFilters', 'Clear filters'))}</button>` : ''}
+            ${extensionLine}
         `;
+        if (extensionLine && !DashboardInbox._emptyLineTracked) {
+            DashboardInbox._emptyLineTracked = true;
+            window.nextdashTrack?.('inbox-ext-cta', { action: 'empty-line-seen' });
+        }
         // Offered only where there is something to clear, and it clears all
         // three: telling someone which of the filters is the one hiding their
         // links is work the view can do for them.

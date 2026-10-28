@@ -806,17 +806,23 @@ type Settings struct {
 	TagLookupOnline bool `json:"tagLookupOnline"`
 	// Whether a Find tags round adds what it finds or leaves it as offers
 	// to review. Off unless turned on (TagSuggestLive.applyNow).
-	TagSearchApplyNow        bool   `json:"tagSearchApplyNow"`
-	EnableHealthReviewNotice bool   `json:"enableHealthReviewNotice"` // The link-review offer
-	ShowShortcutTooltips     bool   `json:"showShortcutTooltips"`     // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
-	ShowGridKeyLegend        bool   `json:"showGridKeyLegend"`
-	ShortcutOpenMode         string `json:"shortcutOpenMode,omitempty"`
-	RememberScrollPosition   bool   `json:"rememberScrollPosition"`   // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
-	UptimeBadges             bool   `json:"uptimeBadges"`             // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
-	DetectSoftNotFound       bool   `json:"detectSoftNotFound"`       // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
-	DomainExpiry             bool   `json:"domainExpiry"`             // Look up when the domains of checked bookmarks expire, through the registries' public RDAP service. On by default; each lookup sends one domain name to the registry of its extension.
-	DomainWarnDays           int    `json:"domainWarnDays,omitempty"` // How many days before expiry a domain starts warning. 0 means the built-in 60; clamped to 8–180 on save. A week and three days follow.
-	CertWarnDays             int    `json:"certWarnDays,omitempty"`   // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	TagSearchApplyNow          bool   `json:"tagSearchApplyNow"`
+	EnableHealthReviewNotice   bool   `json:"enableHealthReviewNotice"` // The link-review offer
+	EnableDockerUpdateNotice   bool   `json:"enableDockerUpdateNotice"`
+	EnableHealthRecheckNotice  bool   `json:"enableHealthRecheckNotice"`
+	EnableInboxExtensionNotice bool   `json:"enableInboxExtensionNotice"`
+	EnableUpdatedNotice        bool   `json:"enableUpdatedNotice"`
+	EnableSectionTours         bool   `json:"enableSectionTours"`             // The one-time tour on a section's first visit (needs enableSessionTips too)
+	SessionTipsFrequency       string `json:"sessionTipsFrequency,omitempty"` // "weekly" spaces the keyboard tips a week apart; anything else is daily
+	ShowShortcutTooltips       bool   `json:"showShortcutTooltips"`           // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
+	ShowGridKeyLegend          bool   `json:"showGridKeyLegend"`
+	ShortcutOpenMode           string `json:"shortcutOpenMode,omitempty"`
+	RememberScrollPosition     bool   `json:"rememberScrollPosition"`   // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
+	UptimeBadges               bool   `json:"uptimeBadges"`             // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
+	DetectSoftNotFound         bool   `json:"detectSoftNotFound"`       // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
+	DomainExpiry               bool   `json:"domainExpiry"`             // Look up when the domains of checked bookmarks expire, through the registries' public RDAP service. On by default; each lookup sends one domain name to the registry of its extension.
+	DomainWarnDays             int    `json:"domainWarnDays,omitempty"` // How many days before expiry a domain starts warning. 0 means the built-in 60; clamped to 8–180 on save. A week and three days follow.
+	CertWarnDays               int    `json:"certWarnDays,omitempty"`   // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -1264,6 +1270,9 @@ type QuickStartState struct {
 	// id, or "keep" for the starter links. Empty means the card has not been
 	// answered and comes before the checklist.
 	TemplatePicked string `json:"templatePicked,omitempty"`
+	// TagDemoShown is set once the start guide has shown the example tag cloud,
+	// which it does a single time and only for a library with no tags.
+	TagDemoShown bool `json:"tagDemoShown,omitempty"`
 	// Same three-part state for the browser-notification invitation: whether it
 	// was actually answered, how long it stays hidden after being left open, and
 	// how often that has happened. Registering a device is per browser, so this
@@ -1733,40 +1742,45 @@ func (fs *FileStore) initializeDefaultFiles() {
 	// Initialize settings if file doesn't exist
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
-			CurrentPage:               1,
-			Theme:                     defaultThemeID,
-			OpenInNewTab:              true,
-			AnalyticsOptIn:            false,
-			EnableSessionTips:         true,
-			EnableTagSuggestionNotice: true,
-			DiscoverabilityState:      freshDiscoverabilityState(),
-			EnableHealthReviewNotice:  true,
-			ShowShortcutTooltips:      false,
-			ShowGridKeyLegend:         true,
-			ShortcutOpenMode:          "instant",
-			RememberScrollPosition:    true,
-			DetectSoftNotFound:        true,
-			DomainExpiry:              true,
-			TagLookupOnline:           true,
-			ColumnsPerRow:             3,
-			FontSize:                  "m",
-			ShowTitle:                 true,
-			ShowDate:                  true,
-			ShowTime:                  true,
-			TimeFormat:                "24h",
-			DateFormat:                "short-slash",
-			ShowWeatherWithDate:       true,
-			WeatherSource:             "manual",
-			WeatherLocation:           "",
-			WeatherUnit:               "celsius",
-			NotesProcessing:           "server",
-			WeatherRefreshMinutes:     30,
-			ShowConfigButton:          true,
-			ShowPagesButton:           true,
-			ShowInboxButton:           true,
-			ShowDashboardButton:       true,
-			ShowSearchButton:          true,
-			ShowAddBookmarkButton:     true,
+			CurrentPage:                1,
+			Theme:                      defaultThemeID,
+			OpenInNewTab:               true,
+			AnalyticsOptIn:             false,
+			EnableSessionTips:          true,
+			EnableTagSuggestionNotice:  true,
+			DiscoverabilityState:       freshDiscoverabilityState(),
+			EnableHealthReviewNotice:   true,
+			EnableDockerUpdateNotice:   true,
+			EnableHealthRecheckNotice:  true,
+			EnableInboxExtensionNotice: true,
+			EnableUpdatedNotice:        true,
+			EnableSectionTours:         true,
+			ShowShortcutTooltips:       false,
+			ShowGridKeyLegend:          true,
+			ShortcutOpenMode:           "instant",
+			RememberScrollPosition:     true,
+			DetectSoftNotFound:         true,
+			DomainExpiry:               true,
+			TagLookupOnline:            true,
+			ColumnsPerRow:              3,
+			FontSize:                   "m",
+			ShowTitle:                  true,
+			ShowDate:                   true,
+			ShowTime:                   true,
+			TimeFormat:                 "24h",
+			DateFormat:                 "short-slash",
+			ShowWeatherWithDate:        true,
+			WeatherSource:              "manual",
+			WeatherLocation:            "",
+			WeatherUnit:                "celsius",
+			NotesProcessing:            "server",
+			WeatherRefreshMinutes:      30,
+			ShowConfigButton:           true,
+			ShowPagesButton:            true,
+			ShowInboxButton:            true,
+			ShowDashboardButton:        true,
+			ShowSearchButton:           true,
+			ShowAddBookmarkButton:      true,
 			// Every action button is on: the bar is where a new reader
 			// learns what the keys do, and the fold keeps a full bar tidy.
 			ShowFindersButton:               true,
@@ -4396,6 +4410,11 @@ func (fs *FileStore) GetSettings() Settings {
 			EnableTagSuggestionNotice:       true,
 			DiscoverabilityState:            freshDiscoverabilityState(),
 			EnableHealthReviewNotice:        true,
+			EnableDockerUpdateNotice:        true,
+			EnableHealthRecheckNotice:       true,
+			EnableInboxExtensionNotice:      true,
+			EnableUpdatedNotice:             true,
+			EnableSectionTours:              true,
 			ShowShortcutTooltips:            false,
 			ShowGridKeyLegend:               true,
 			ShortcutOpenMode:                "instant",
@@ -5014,6 +5033,21 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["enableHealthReviewNotice"]; !ok {
 			settings.EnableHealthReviewNotice = true
+		}
+		if _, ok := rawSettings["enableDockerUpdateNotice"]; !ok {
+			settings.EnableDockerUpdateNotice = true
+		}
+		if _, ok := rawSettings["enableHealthRecheckNotice"]; !ok {
+			settings.EnableHealthRecheckNotice = true
+		}
+		if _, ok := rawSettings["enableInboxExtensionNotice"]; !ok {
+			settings.EnableInboxExtensionNotice = true
+		}
+		if _, ok := rawSettings["enableUpdatedNotice"]; !ok {
+			settings.EnableUpdatedNotice = true
+		}
+		if _, ok := rawSettings["enableSectionTours"]; !ok {
+			settings.EnableSectionTours = true
 		}
 		// Off unless the file says otherwise. This used to fill an absent key
 		// with true — the popovers were how the keys were discovered — and the
@@ -6692,6 +6726,10 @@ type HealthSummary struct {
 	// whatever other status a bookmark has, so it is not one of the three
 	// mutually exclusive broken/content/monitorDown counts above.
 	DriftCount int `json:"driftCount"`
+	// LastCheckedAt is the newest LastChecked (Unix ms) over all bookmarks, 0
+	// when none was ever checked. This is when links were last checked, unlike
+	// the report's GeneratedAt, which only says when the report was built.
+	LastCheckedAt int64 `json:"lastCheckedAt"`
 }
 
 type HealthReason struct {

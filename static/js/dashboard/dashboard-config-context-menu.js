@@ -148,6 +148,9 @@ class DashboardConfigContextMenu {
             ...(category
                 ? [{ id: 'filter-category', label: this.t('config.contextFilterCategory', 'Show only this category'), icon: '⛃' }]
                 : []),
+            ...(category
+                ? [{ id: 'find-tags-category', label: this.t('config.contextFindTagsCategory', 'Find tags for this category'), icon: '#' }]
+                : []),
             { id: 'filter-page', label: this.t('config.contextFilterPage', 'Show only this page'), icon: '⌗' },
             ...(tags.length
                 ? [{ id: 'filter-tag', label: this.t('config.contextFilterTag', 'Show only tag “{tag}”', { tag: tags[0] }), icon: '#' }]
@@ -569,6 +572,14 @@ class DashboardConfigContextMenu {
             case 'filter-category':
                 c.filterBookmarksByCategory(bookmark);
                 break;
+            case 'find-tags-category': {
+                const list = (c.dash?.allBookmarks || []).filter((b) => b.url
+                    && String(b.pageId) === String(bookmark.pageId)
+                    && String(b.category) === String(bookmark.category));
+                window.nextdashTrack?.('category-find-tags', { via: 'config' });
+                await c.runTagSearch(list);
+                break;
+            }
             case 'filter-page':
                 await c.filterBookmarksByPage(bookmark.pageId);
                 break;

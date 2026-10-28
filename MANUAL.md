@@ -771,8 +771,11 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 ### 🚦 First launch
 
 1. **The dashboard comes first.** A new install opens on the dashboard with its example links. After a moment a **Quick start** bar slides in at the bottom of the screen and pulses until you have found it. Three seconds after the bar is up, the guide grows out of it to the middle of the page, once, so you meet it first; closing it folds it back into the bar. After that it opens only when you press the bar.
-2. **The guide.** At the top, **What do you want?** **Keep these example links** leaves the starter pages as they are, to look around; remove the links any time. **Start with an empty page** asks first (*Remove the example links from this page?*), then clears the example links and their categories off the first page — its widgets stay — and removes the example news page and the ten example links waiting in the inbox, as long as you have not changed them (an inbox link you have read or put to sleep stays). Two more buttons are not answers: **Show me the manual first** opens nextdash.cc/docs in a new window and **Open the theme studio** opens the theme studio. Under that, **Language** (the dashboard and the guide change at once) and **Weather** (a city and Celsius or Fahrenheit, the same settings as Appearance → Date & weather), then nine **Next steps** in the order a reader would take them: take the 1-minute tour, import your bookmarks, get the browser extension, open the Bookmarks view, open the Inbox view, add a widget, turn on status checks, set up notifications and open the Config settings. Three show at a time; **Show … more** lists the rest, and each ticks itself off when you do it.
-3. **The bar.** **Close for now** (the ×, a click outside the guide, or `Escape`) folds the guide back into the bar. The bar stays on the dashboard of page 1 — not in Config, the other views or on other pages — until every step is done, then says **All set**; **Close for good** closes it for ever, after asking. **Show quick start again** (Behavior → Privacy & sync → Onboarding) brings it back. While the bar is up no other corner card shows, and the others wait ten seconds after it is closed; an *Undo* for something you have just done still appears. The page templates (Homelab, Media server, Developer) are in the import dialog ([§9.8](#98-page-templates)).
+2. **The guide.** It reads *Welcome to nextDash* until you have answered the first question, and *Quick start* after that. At the top left, **Keep these example links** leaves the starter pages as they are, to look around; remove the links any time. **Start with an empty page** asks first (*Remove the example links from this page?*), then clears the example links and their categories off the first page — its widgets stay — and removes the example news page and the ten example links waiting in the inbox, as long as you have not changed them (an inbox link you have read or put to sleep stays). **Open the theme studio** is a link under them. Under that come **Weather** (a city and Celsius or Fahrenheit, the same settings as Appearance → Date & weather) and **A lot to explore**, a button that opens the manual in a new window. **Language** sits at the top right and changes the dashboard and the guide at once; when your browser speaks one of the other five languages, a line says so, with a **Switch** button.
+   - **Bring your bookmarks.** **Import a CSV file** reads a file straight from the guide (it needs a `url` column; name, category, tags and notes are optional), and a link points to the other ways in under Config → Data & backups ([§19](#19-data-backups-and-import)).
+   - **Start from a ready-made page.** Homelab, Media server and Developer ([§9.8](#98-page-templates)). They wait for your answer about the example links: kept, the page is added beside them as a new page; started empty, it fills the page that is left. Type your server's address once to fill every service, then **Create page**; a short note says how to edit, delete, add and monitor links on it. On an Unraid server the cards say so.
+   - **Next steps.** Ten, in the order a reader would take them: take the 1-minute tour, open the Bookmarks view, browse by tag, open the Inbox view, add a widget, turn on status checks, set up notifications, open the Config settings, learn the shortcuts and add a second page. On an Unraid server an eleventh, *Connect your Unraid server*, opens Config → Unraid. Three show at a time; **Show … more** lists the rest as a grid, and each step ticks itself off when you do it. *Browse by tag* opens the tag cloud — or, while no bookmark has a tag yet, an example cloud ([§10.2](#102-filtering-by-tag)) — and counts as done once you go on to the Tags view.
+3. **The bar.** **Close for now** (the ×, a click outside the guide, or `Escape`) folds the guide back into the bar. The bar stays on the dashboard, on every page, until every step is done — it steps aside in Config and the other views, then says **All set**; **Close for good** closes it for ever, after asking. **Show quick start again** (Behavior → Privacy & sync → Onboarding) brings it back. While the bar is up no other corner card shows, and the others wait ten seconds after it is closed; an *Undo* for something you have just done still appears. The ready-made pages are also in the import dialog ([§9.8](#98-page-templates)).
 4. **Example bookmarks.** Kept the example links? A new install starts with 98 links on two pages, so there is something to try search, tags and the keys on. **main** has Development, Docker, Unraid, Self-hosted, Tools and Daily, the **Today** collection and three widgets: Notes at the top right, and Health and Health trend at the bottom; **news** has Tech news, Dev & blogs, Security, Communities, Videos and News. With the Docker socket mounted, a card in the middle of the screen then offers the apps running on this server as bookmarks — once the guide, the tour and any corner card are out of the way ([§14.10](#1410-apps-it-finds-on-its-own)). The inbox starts with ten example links, none of them on the pages, to read, keep, promote or throw away ([§13](#13-inbox)).
 5. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§19](#19-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
 6. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
@@ -792,6 +795,14 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 <p align="center"><img src="screenshots/manual.md/02-start-guide.jpg" alt="The Quick start guide open over the dashboard: the choice about the example links, the language and the weather, and the first of the next steps" width="860"></p>
 
 </details>
+
+The guide as a new install shows it, in two columns: the choice about the example links, the weather and the manual on the left, a CSV import and the ready-made pages on the right, and the first three next steps along the bottom.
+
+<p align="center"><img src="screenshots/manual.md/02-quick-start.jpg" alt="The Quick start guide on a new install: Keep these example links and Start with an empty page, Set up Weather, A lot to explore, Bring your bookmarks with Import a CSV file, three ready-made pages and the first three next steps" width="760"></p>
+
+**Show 7 more** unfolds every step.
+
+<p align="center"><img src="screenshots/manual.md/02-quick-start-steps.jpg" alt="The Quick start guide with all ten next steps shown as a grid of three columns, and Show fewer under it" width="760"></p>
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -939,7 +950,7 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 
 <img src="screenshots/manual.md/04-action-buttons.jpg" alt="The action buttons in a column along the right edge, each with its key on a small chip" width="74" align="right">
 
-**How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§16A](#16a-the-new-look)).
+**How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§16A](#16a-the-new-look)). A docked bar stands apart from the cards it slides over: a layer of the surface colour goes over the material's paint, with an edge that leans to the accent. A button that is on is filled with the accent, as the lit view in the header is.
 
 **A bar that slides away.** **Slide a docked bar away after** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The bar comes back when the pointer touches that edge or when focus moves into it, and then slides away again after the delay. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
 
@@ -967,7 +978,11 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 
 **A key legend** under the grid shows the keys in three lines, on the dashboard view only. The keys that assume you use the keyboard appear at your first cursor move. `Shift + Z` switches the legend off and on, and so does Behavior → Keyboard & search. It is on for new installs.
 
-**Occasional tips.** Now and then the dashboard shows one keyboard tip: at most one in any 24 hours, counted across your devices, never the same one twice and never over a modal. Switch them off under Behavior → Privacy & sync → Onboarding.
+**Occasional tips.** Now and then the dashboard shows one keyboard tip: at most one a day, counted across your devices, never the same one twice and never over a modal. **Keyboard tips come** (Behavior → Privacy & sync → Onboarding) spaces them *About once a day* (the default) or *About once a week*; the switch above it turns them off.
+
+<p align="center"><img src="screenshots/manual.md/17-onboarding-tips.jpg" alt="Config, Behavior, Privacy and sync, the Onboarding group: Show occasional keyboard tips, the Keyboard tips come list set to About once a day, and the switch Offer a tour the first time a section opens" width="760"></p>
+
+**Tours on a first visit.** **Offer a tour the first time a section opens** (the same group, on by default) decides whether Monitoring, Widgets, the Inbox, the Bookmarks view and the other sections open their tour by themselves the first time you visit. It needs the keyboard tips switch on. Switched off, every tour is still one click away on its **Tour** button.
 
 <a id="corner-cards"></a>
 
@@ -980,9 +995,13 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)). It waits two days after the analytics question, so the two privacy cards never arrive in one visit.
 - **Moving blocks** — once, a see-through copy of the first category glides to its next place to show that blocks can be moved, and a card under its `//` offers **Try it**. The first time you pick a block up, a card beside the landing box lists the keys until **Got it**.
 - **Theme studio** — *Not happy with how it looks?* names `Shift + A` and the *Surface* and *Layout* tabs, and **Open the studio** opens it. Asked once; a new install is asked after its first day.
+- **Image updates** — in the Containers view, from the third visit: *Check images for updates?* offers the daily check, which sends requests to the image registries. **Turn on (daily)** switches it on; **Not now** and the **×** ask again in 30 days and **Never** stops asking. Nothing updates by itself ([§14.5](#145-actions-and-updates)).
+- **Re-check links** — *Last link check was 9 days ago* when the newest check is a week old or more and re-checking in the background is off. **Re-check now** runs the checks, **Every day** switches the background re-check on at 24 hours, and **Not now** brings it back tomorrow and **Remind me in 30 days** puts it away.
+- **Browser extension** — in the Inbox, after a few visits and while nothing has ever arrived from the extension: **Get the extension** points to the docs, **Not now** asks again in two weeks, **Don't show again** stops it ([§21](#21-browser-extension-and-capture)).
+- **Updated** — after an upgrade, once the release notes are closed: *Updated from v1.21.0 to v1.22.0*, with **What's new** to open them again. It reports what happened and never asks anything; it comes once per version and not on a new install.
 - **Others** — browser notifications, the theme studio and the tour of what moved.
 
-Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists the cards — kept links, the theme studio, tag suggestions, health review, the install count, the weekly digest and analytics — each with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
+Each review card has a switch under Behavior → Privacy & sync → Onboarding, the four above included (*Offer image update checks*, *Offer to re-check links*, *Offer the browser extension*, *Show what changed after an update*). The same place lists the cards — kept links, the theme studio, tag suggestions, health review, the install count, the weekly digest and analytics — each with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
 <a id="the-link-preview-card"></a>
 
@@ -1382,6 +1401,10 @@ Links still waiting in the inbox that match a name search appear in their own gr
 
 With the panel empty, your recent and saved searches show as chips (`←`/`→` and `Enter`).
 
+**The keyboard tour.** Until you have seen it, the empty panel also lists *Take the keyboard tour* under a **Keyboard** heading (open from the start in Hypr mode, a closed group otherwise). It never opens by itself. Four steps: just start typing, commands start with a colon, finders search the web for you, and three more single keys — `/`, `*` and `!`. `:tour keyboard` plays it any time, and so does the Tour list in Behavior → Privacy & sync → Onboarding.
+
+<p align="center"><img src="screenshots/manual.md/08-keyboard-tour.jpg" alt="The keyboard tour on its second step, Commands start with a colon: a drawing of the command line with :new and :tag, and the Next and Back buttons" width="520"></p>
+
 **Typing a bookmark shortcut** (Behavior → Keyboard & search) has three answers:
 
 | Setting | What happens |
@@ -1497,6 +1520,8 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 <p align="center"><img src="screenshots/manual.md/08-commands.jpg" alt="The command palette opened with a lone colon, listing five command groups with their counts" width="860"></p>
 
 </details>
+
+The palette is drawn like the dashboard: its fill follows how solid the categories are in your theme, it starts with the same skewed blocks as a column head, and its mode word is set as a column head is. Themes with their own fill (neon, terminal, ink, paper) keep it.
 
 <a id="86-finders"></a>
 
@@ -1653,7 +1678,7 @@ A page can be saved as a **template file** and imported on another install, or k
 - **Share.** **Share this page…** in the page switcher (or **Save as template…** in Structure → Pages, or `Share “name” as a template file` in the palette) lists the addresses on your own network — `192.168.1.10`, `nas.lan` — and turns each into a name you can change, such as `jellyfin`. The importer fills in their own address for each service once. Public addresses go as they are, and **Include the text of notes** is off until you tick it. **Download** saves the file, or copy it to paste into a post. Icons travel inside the file.
 - **Import.** **Import a page…** (or `Import a page from a template file` in the palette) takes a file or pasted text and shows what is in it — categories, widgets, links — and asks for one address per service. A link whose service is left empty is skipped, as are links with an address that is not allowed and widgets this version does not know; the result says how many. Importing always makes a **new page**; nothing on your other pages changes.
 - **Start from a template.** An empty page offers **Start from a template…**: the template fills that page instead of making another.
-- **The three that come with nextDash.** The import dialog also offers **Homelab**, **Media server** and **Developer** under *Or start from:*. For these, **Where do these run?** takes one server address and fills in every service's address with its usual port; an address you change by hand stops following it.
+- **The three that come with nextDash.** The import dialog also offers **Homelab**, **Media server** and **Developer** under *Or start from:*, and the Quick start guide offers them too ([§2](#first-launch)). For these, **Where do these run?** takes one server address and fills in every service's address with its usual port; an address you change by hand stops following it. In the guide the page goes where your answer about the example links says: a new page beside them when you kept them, the emptied first page when you started empty.
 
 A file is at most 2 MB.
 
@@ -1686,6 +1711,9 @@ A file is at most 2 MB.
 - `Shift`+click or `Shift + Enter` stacks tags instead of opening: the view then shows bookmarks with **any** of them. Each other tag shows **+N**: how many bookmarks it would add. A tag that would add nothing is dimmed.
 - Type a few letters to find a tag. Tags that do not match are dimmed, and the first match is selected. `Backspace` removes a letter, and `Escape` clears what you typed before it closes the cloud.
 - The cloud is for desktop windows. On a phone, open a tag view with a `#tag/` link or `:filter <tag>`.
+- **An example, while you have no tags.** With no tag on any bookmark there is no cloud to show. The Quick start step *Browse by tag* then opens an example once, so you can see the shape of it: ten made-up words, a line saying so and an **Open the Tags view** button. Its words are nobody's tags and cannot be picked. Afterwards the step opens the Tags view itself, and the real cloud takes over as soon as a bookmark carries a tag.
+
+<p align="center"><img src="screenshots/manual.md/08-tag-cloud-example.jpg" alt="The example tag cloud: ten words such as docs, homelab, dev and media with their counts, the note These are example tags, and the button Open the Tags view" width="512"></p>
 
 **The tag view.** It lists the bookmarks that carry the tag, from **all pages**, in one table. A tag you stacked shows as pills, each with a **×** to take it out, and **+ tag** adds another, with suggestions.
 
@@ -1748,6 +1776,7 @@ Opening a view never goes online by itself: the rows show what the catalogue, yo
 - In the tag view (`#tags` or `#tag/<tag>`) its menu offers *Bookmarks without tags* and *Bookmarks shown* for the rows on screen, and *Read pages* for them.
 - The inbox's **⋯** menu runs it for the inbox's links, and its **With a tag suggestion** filter keeps the list to the ones it found something for.
 - The row menu and the selection bar do it for one bookmark or the ones you ticked.
+- **For one category**, from the right-click menu of its title on the dashboard (**Find tags for this category**), or from the right-click menu of a bookmark in Config → Bookmarks. It looks only at the bookmarks in that category on that page, and says so when the category is empty.
 
 What it finds lands in the rows as suggestions, and a toast offers **Show**. With **Add what it finds straight away** ticked, the tags go on at once instead. That choice is a setting: it is kept on the server with your other settings, or in the browser if you keep settings per device, and it is off until you switch it on.
 
@@ -2081,6 +2110,8 @@ Set the mode in the bookmark form, the Bookmarks view's side panel, the right-cl
 | | **Reminders** | See [§12.5](#reminders) |
 | | **Weekly digest** | See [§12.4](#weekly-digest) |
 | **Schedules** | **Maintenance windows** and **Quiet hours** | See [§12.5](#125-maintenance-windows) |
+
+**An old check.** The age shown in the Bookmarks view's summary (*Last check*) is the time of the newest real check, not of the last time the page was drawn. When it is a week old and re-checking in the background is off, a corner card offers to re-check now or every day ([§4](#corner-cards)).
 
 <img src="screenshots/manual.md/12-health-tab.jpg" alt="The Health tab of a monitored bookmark: the score, the checking mode and interval, a bar for each of the last checks at 100 % with the response time, and the sections Why, Score breakdown, Checking, Monitor & history and Expectations" width="384" align="right">
 
@@ -2549,6 +2580,8 @@ Updating by hand still works on a skipped or held image.
 **While an update runs** the progress window lists each container with its steps — check, pull, compare, stop, rename, create, connect networks, start, remove the old one — ticked off as they happen, and a short log of the pull. A finished container folds up with *Done in 12 s* or *Already current*; one that failed stays open with the step that broke and the reason, and the window waits for **Close**.
 
 **Update automatically** — a switch in the same part, or the selection bar for several — lets nextDash update the container on its own, in the nightly window set in **Config → Containers → Updates** (03:00 to 05:00 until you change it; a window past midnight, 22 to 4, works too). Inside it, every five minutes, a container with this switch on and an update waiting — as the last check found it; not skipped, not held, never nextDash's own — is updated as the Update button would, one at a time, and tried once per night for a given image. It is then watched for five minutes: if it stops, starts again on its own or turns unhealthy, it is rolled back to the image it had, started again, and that version is skipped. A stop or restart you make yourself during those five minutes is left alone. A container that was not running is updated and left stopped, without the watch. Each update, rollback or failure sends a notice ([§14.9](#149-notices)). It needs `NEXTDASH_DOCKER_CONTROL=1`, and the update check switched on — that is what finds a newer image.
+
+**Offered, not assumed.** The check for new images is off until you switch it on, because it asks the registries. After your third visit to the Containers view a corner card offers it once ([§4](#corner-cards)); **Config → Containers → Updates** has the same switch and the interval.
 
 <details>
 <summary>📷 Screenshot — the Containers view filtered on Updates, full page</summary>
@@ -3241,6 +3274,8 @@ Press **Ask now** first. It shows the status and the answer, which is usually th
 ### 15.6 Unraid widgets
 
 Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array**, **Parity**, **Shares**, **VMs**, **UPS** and **Unraid notifications**. They are read-only — nextDash never starts or stops anything on the server.
+
+**A tour and a step.** The first visit to Config → Unraid opens a five-step tour, and its **Tour** button above the tabs plays it again ([§17.8](#config-tours)). On an Unraid server the Quick start guide adds a step, *Connect your Unraid server*, that opens this section.
 
 **What they need.** Unraid 7.2, or an older Unraid with the Unraid Connect plugin, and an API key with the role **Viewer** (in Unraid: Settings → Management Access → API Keys). A key that can do more than read is accepted, but Config says Viewer is enough.
 
@@ -4046,6 +4081,10 @@ Bookmarks and Inbox each have a view of their own, and the way to it is the same
 
 **`Ctrl/Cmd + Shift + K`** — or **Find settings** below the section rail — searches every section, tab, setting and help topic. It also finds settings by related words (*uptime*, *wallpaper*, *hotkey*) and by their current value (*8099*, *Monitor*), and shows that value beside the result.
 
+Before you type, the list starts with **Recent**: the last eight settings you opened from here or changed on their tab, newest first, above **All settings**. They are kept in this browser only. Typing leaves the heading out.
+
+<p align="center"><img src="screenshots/manual.md/17-find-settings-recent.jpg" alt="Find settings opened without typing: the Recent heading with Open links in a new tab and Hold notices during quiet hours, and All settings below it" width="760"></p>
+
 <p align="center"><img src="screenshots/manual.md/17-find-settings.jpg" alt="Find settings with quiet typed: one result, Hold notices during quiet hours, under Monitoring › Schedules, with its value Off" width="840"></p>
 <p align="center"><sub>Find settings shows where a setting lives and what it is set to.</sub></p>
 
@@ -4092,7 +4131,7 @@ The other tabs:
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§15](#15-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
 | **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now ([§12.6](#126-fresh)) |
-| **Privacy & sync** | **Count this install** (on by default, [§23.8](#238-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips, the two review offers, every tour (replay it with its button), *Show quick start again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
+| **Privacy & sync** | **Count this install** (on by default, [§23.8](#238-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips and how often they come, whether a section offers its tour on a first visit, the review and offer cards, every tour (replay it with its button), *Show quick start again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
 
 Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config → Inbox** ([§17.6](#176-config-inbox)).
 
@@ -4163,9 +4202,9 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **Help** shows its Getting started, Tips, Configuring and Search tabs in one row and the rest under **More topics**, in groups (Dashboard, Status & checks, Data). It covers Getting started, Tips, Configuring, Appearance, Structure & bookmarks, the **Bookmarks view**, Widgets, Search & keyboard, **Checks & health**, Monitoring, Inbox, **Containers**, Statistics, Data & hosting and Logs. The search above the tabs covers every tab and About. Each topic has a 🔗 button that copies a link to it. A topic about something that can be switched off says whether it is on for you, with a button to the setting. **Tips** lists every keyboard tip, grouped, with its own filter. **Saving a link from anywhere** (Inbox tab) builds a bookmarklet for this install.
 
-**Guided tours.** Seven tours run over the real page rather than a picture of it: *What has changed*, *First steps*, *The dashboard*, *Inbox*, *Bookmarks view*, *Containers* and *Widgets*. Each is short, four to seven steps, and covers the main things; the rest is in Help. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
+**Guided tours.** Eleven tours run over the real page rather than a picture of it: *What has changed*, *First steps*, *The dashboard*, *The keyboard*, *Inbox*, *Bookmarks view*, *Containers*, *Glances*, *Widgets*, *Monitoring* and *Unraid*. Each is short, four to nine steps, and covers the main things; the rest is in Help. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
-**The dashboard tour.** Eight steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its nine buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; typing to search; two keys to open and Shift to act; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
+**The dashboard tour.** Nine steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its nine buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
 
 
 <details>
@@ -4178,6 +4217,12 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 <a id="view-tours"></a>
 
 **The view tours.** The Bookmarks view, Containers, the Inbox and Config → Widgets each have a tour of their own, drawn in a window and offered once, the first time you visit. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has five steps: the list and its rail, the three ways to check a link, charts and collection health, alerts, and clearing the backlog. The Containers tour has six: the list, acting on containers, the side panel, updates with a way back, Disk, and settings and alerts. The Inbox tour has four and the Widgets tour four: what a widget shows, the catalogue, the Custom widget, and how a widget behaves on the page. **Behavior → Privacy & sync → Onboarding** replays each of them.
+
+<a id="config-tours"></a>
+
+**The Config tours.** Monitoring and Unraid, two sections of Config, have the same kind of tour, opened the first time you visit the section and again from its **Tour** button above the tabs. The Monitoring tour has five steps: what Checks, Notifications and Schedules are for; Off, Periodic or Monitor per bookmark; what you see when something goes down; how an outage reaches you; and maintenance windows against quiet hours. The Unraid tour has five: one connection for every Unraid widget, the address and the Viewer key, the seven widgets, alerts and statistics, and staying safe. Both stay quiet on a first visit when **Offer a tour the first time a section opens** is off.
+
+<p align="center"><img src="screenshots/manual.md/17-monitoring-tour.jpg" alt="The Monitoring tour on its first step, Watching your services, not only your links: a drawing of the three tabs Checks, Notifications and Schedules, and the Next and Skip buttons" width="520"></p>
 
 **About** has three tabs. **Project** says what nextDash is and why it exists, links to the docs, the issues, the changelog, the manual and the maker's site, has a Ko-fi card for those who want to chip in, and ends in a collapsed **Credits and licences** block. **Install** shows the release you run and whether a newer one is out, tiles for pages, categories, bookmarks, widgets, tags, data size, uptime and platform, and **Copy diagnostics**, which puts the facts a bug report asks for on the clipboard. **News & features** lists every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts.
 
@@ -4319,10 +4364,10 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 
 | Button | What it does |
 |---|---|
-| **Import browser bookmarks…** | Reads the HTML file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep. Shows a preview (*12 new, 3 conflicts*), then asks where the bookmarks go: **Onto the dashboard** (on the current page) or **Into the inbox first**, to sort them one by one — folders then become tags, and links the dashboard already holds are skipped. Each answer says how many it would add and skip. Folders become categories; tags, notes and dates come along; duplicates are skipped; missing icons are fetched afterwards. |
+| **Import browser bookmarks…** | Reads the HTML file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep. Shows a preview (*12 new, 3 conflicts*), then asks where the bookmarks go: **Onto the dashboard** (on the current page), **On a new page** (a page of its own called *Imported*, or *Imported 2* when that name is taken, so what is on the current page stays as it is) or **Into the inbox first**, to sort them one by one — folders then become tags, and links the dashboard already holds are skipped. Each answer says how many it would add and skip. Folders become categories; tags, notes and dates come along; duplicates are skipped; missing icons are fetched afterwards. |
 | **Export bookmarks (HTML)** | The same format, for a browser or another tool |
 | **Export bookmarks (CSV)** | Name, URL, category, page, shortcut, tags and notes, with translated headers |
-| **Import bookmarks (CSV)** | Reads that file back, onto the current page or into the inbox — the same question as above. Columns are matched by name; rows without a URL and existing URLs are skipped. |
+| **Import bookmarks (CSV)** | Reads that file back, onto the current page, a new page or into the inbox — the same question as above. The Quick start guide's **Import a CSV file** asks it too. Columns are matched by name; rows without a URL and existing URLs are skipped. |
 
 **Move → Settings** exports or imports `settings.json` alone. The Unraid server is left out of an import: it is set only under Config → Unraid, so an imported file can never point the saved key at another address.
 
@@ -4787,8 +4832,8 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
 | Container image registries and GitHub | Image update checks, when switched on | Config → Containers → Updates |
 | Your own services | Custom widgets, webhooks, alerts | Per widget or receiver |
-| Install count | Once a day: a random install id and the version (on Unraid, also the word Unraid) | Behavior → Privacy & sync → *Count this install*; `DISABLE_TELEMETRY=true` |
-| Analytics | Only when switched on | See below |
+| Install count | Once a day: a random install id and the version (on Unraid, also the word Unraid) | Behavior → Privacy & sync → *Count this install*; `DISABLE_TELEMETRY=true`; `NEXTDASH_DISABLE_INSTALL_PING=1` for the count alone |
+| Analytics | Only when switched on, with a random install code (**v1.22.3**) | See below |
 
 <a id="238-analytics"></a>
 
@@ -4796,10 +4841,10 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 
 nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https://umami.is) instance at `stats.nextdash.cc`. It is **off until you turn it on**. The aim is to learn which features are used and what can be improved.
 
-**Install count** — separate from the analytics below, and **on by default**. Once a day the server sends one request to `stats.nextdash.cc` with a random install id and the release you run, so the project can say how many installs exist. On Unraid, which sets `HOST_OS=Unraid` in every container, it also says Unraid. Nothing else: no address, no settings, no bookmarks, no counts. The id lives in the file `install-id` in the data folder; delete it for a new one. The card that announces it waits two days after the analytics question. Turn it off under **Behavior → Privacy & sync → Count this install**, or for the whole server with `DISABLE_TELEMETRY=true`, which also stops the analytics below.
+**Install count** — separate from the analytics below, and **on by default**. Once a day the server sends one request to `stats.nextdash.cc` with a random install id and the release you run, so the project can say how many installs exist. On Unraid, which sets `HOST_OS=Unraid` in every container, it also says Unraid. Nothing else: no address, no settings, no bookmarks, no counts. The id lives in the file `install-id` in the data folder; delete it for a new one. The card that announces it waits two days after the analytics question. Turn it off under **Behavior → Privacy & sync → Count this install**, or for the whole server with `DISABLE_TELEMETRY=true`, which also stops the analytics below. `NEXTDASH_DISABLE_INSTALL_PING=1` (**v1.22.3**) stops the count alone and leaves the analytics as they are. It is for test runs and CI: every server started on an empty data folder is a new install to the count.
 
 - **Turning it on or off** — the card on the dashboard (*Turn on*, *What is recorded?*, *No thanks*), **Config → Behavior → Privacy & sync → Privacy-friendly analytics**, or `:telemetry on` / `:telemetry off`. The page reloads, because the tracker script is only added to the page when analytics is on. Closing the card without answering asks again later; an answer is final.
-- **For the whole server** — `DISABLE_TELEMETRY=true` (also `1`, `yes`, `on`) turns it off for everyone and greys out the switch.
+- **For the whole server** — `DISABLE_TELEMETRY=true` (also `1`, `yes`, `on`) turns it off for everyone and greys out the switch. The same spellings work for `NEXTDASH_DISABLE_INSTALL_PING`, which switches off the install count only.
 - **When off** — the tracker is not in the page and nothing is downloaded. The install count above is the only request that remains, until you switch that off too.
 
 **What is recorded** — event names from a fixed list, with a few properties:
@@ -4807,15 +4852,24 @@ nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https:
 | Area | Recorded |
 |---|---|
 | Views and navigation | Opening views and config sections and tabs, switching pages by position |
-| Panels | Opening search, commands, finders, the cheat sheet, the tag cloud, what's new and the bookmark form |
+| Panels | Opening search, commands, finders, the cheat sheet, the tag cloud, what's new and the bookmark form, and how the last two closed |
 | Actions | Which command ran (by name), which menu entry was picked, bookmark opens and where from, edits, moves, deletes, checking changes, inbox, health and container actions |
 | Outcomes | Whether adding or editing succeeded, or hit a duplicate, conflict or error |
-| First-run help | Tours and tips shown and finished |
-| Settings | The **name** of a setting you change, and on/off for toggles; once per load, which features are on and the release you run |
-| Size | Once per load, bucketed counts (for example `500+` bookmarks) |
-| Widgets | Once per load, how many widgets of each type, bucketed |
-| Containers | Once per load, how the Containers view is set up: which options are on, whether a socket and control are configured, and bucketed counts of hidden containers, custom addresses and waiting updates. Docker itself is not asked. Per action (start, stop, restart, update, mute and the like): which one, whether it worked, where it came from (row, side panel, menu, key, command, selection bar) and, for a selection, a bucketed count |
-| Health, Inbox, Bookmarks view | Once per load, bucketed counts (checked, down, certificates due, unread, snoozed) and the layout options chosen in their Config tabs |
+| First-run help | Tours and tips shown and finished; how the Quick start guide opened and closed, which step was taken (by name), how many steps are done (as a band) and whether the language hint was used |
+| Settings | The **name** of a setting you change, and on/off for toggles; which features are on, the language you set and the release you run (see *How often* below) |
+| Size | Bucketed counts (for example `500+` bookmarks) |
+| Widgets | How many widgets of each type, bucketed; a type you do not have is left out |
+| Releases (**v1.22.3**) | When this browser moves to a newer release: the minor release it came from and went to (`v1.19` to `v1.21`), never on the first visit |
+| First bookmark (**v1.22.3**) | Once per browser, on a new small install: how long after the first visit the first bookmark was added, as a band (10 minutes, a day, a week, later) |
+| Errors (**v1.22.3**) | That something failed and in which view (`config`, `inbox`, `page`); never the message or the stack, at most three per page load, and only from nextDash's own scripts |
+| Containers | How the Containers view is set up: which options are on, whether a socket and control are configured, and bucketed counts of hidden containers, custom addresses and waiting updates. Docker itself is not asked. Per action (start, stop, restart, update, mute and the like): which one, whether it worked, where it came from (row, side panel, menu, key, command, selection bar) and, for a selection, a bucketed count |
+| Health, Inbox, Bookmarks view | Bucketed counts (checked, down, certificates due, unread) and the layout options chosen in their Config tabs |
+
+**How often** (**v1.22.3**) — the settings, size, widgets, containers and view snapshots are not sent on every page load. A snapshot goes out the first time, when it has changed, in a new calendar month, or when a week has passed since the last one; a new release always sends a full set. What this browser last sent is kept in its local storage under `nextdash.analytics`, and only while analytics is on. Settings that never differ between installs are no longer sent, and a widget type you do not have is left out rather than sent as zero.
+
+**Install code** (**v1.22.3**) — with the analytics on, the settings snapshot carries a random code so that visits from one install count as one. Without it, the same install would count again every month and in every browser. The code is also handed to the statistics tool as the identity of the visit, so the sessions of one install stay together for longer than the 30 days its own visitor id lasts. The code is made on the server from the `install-id` file and hashed, so it cannot be matched to the install count; delete the file for a new one. It is only sent while analytics is on, and not at all in the demo. There is no extra switch: it follows **Privacy-friendly analytics**.
+
+**Where it runs** (**v1.22.3**) — nextDash does not send the address you open it on. The hostname is replaced by one word, `localhost`, `lan` (a private address or a name without dots) or `domain`; the referrer and the page title are not sent. The snapshot also says how the server runs (`docker`, `unraid` or `other`) and which language is set. A page load is one pageview; moving between views is a view event, not a pageview.
 
 Every count is rounded into a band. **Never recorded:** bookmark names, URLs, search text, page or category names, notes or tag names, container, image or widget names, or any address. No cookies, no profile, no cross-site tracking. This is separate from the open counts in [§6](#6-opening-and-editing-bookmarks), which never leave your server.
 

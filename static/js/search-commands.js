@@ -11,11 +11,14 @@ class SearchCommandsComponent {
         { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps' },
         { id: 'dashboardTutorialV3', labelKey: 'config.tourDashboard', label: 'The dashboard' },
+        { id: 'keyboardTutorialV1', labelKey: 'config.tourKeyboard', label: 'The keyboard' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox' },
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers' },
         { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
+        { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring' },
+        { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid' },
     ];
 
     constructor(language = null, currentBookmarks = [], allBookmarks = [], updateQueryCallback = null) {
@@ -3334,6 +3337,10 @@ class SearchCommandsComponent {
             action: () => this._runOverlayAction(() => {
                 if (id === 'changesTourV1' && window.ChangesTour?.open) {
                     window.ChangesTour.open();
+                    return;
+                }
+                if (id === 'keyboardTutorialV1' && window.KeyboardTutorial?.open) {
+                    window.KeyboardTutorial.open({ via: 'command' });
                     return;
                 }
                 if (id === 'dashboardTutorialV3' && dashboard.promos?.openDashboardTour) {

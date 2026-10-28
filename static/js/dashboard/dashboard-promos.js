@@ -60,10 +60,27 @@ class DashboardPromos {
                 || localStorage.getItem('nextdash:last-whats-new-dashboard-release');
             if (release && lastSeen === release) return false;
             if (!release && lastSeen) return false;
+            this.captureUpdatedFrom(lastSeen, release);
         } catch {
             return false;
         }
         return true;
+    }
+
+
+    /**
+     * Remember which version this install came from, once per page load, while
+     * the old one is still on record: closing the modal overwrites it. The
+     * "Updated from X to Y" card reads this. A new install (nothing on record),
+     * an unparsable token, the demo and an unchanged version record nothing.
+     */
+    captureUpdatedFrom(lastSeen, release) {
+        if (window.__nextdashUpdatedFrom || window.DemoLock?.on) return;
+        if (!lastSeen || !release) return;
+        const from = String(lastSeen).match(/v\d+(?:\.\d+)+$/)?.[0];
+        const to = String(release).match(/v\d+(?:\.\d+)+$/)?.[0];
+        if (!from || !to || from === to) return;
+        window.__nextdashUpdatedFrom = { from, to };
     }
 
 
@@ -255,7 +272,11 @@ class DashboardPromos {
             ifBlockingModalOpen: force ? undefined : () => d.isModalOpen(),
             // Disclose the analytics once the release notes are out of the way,
             // so the two cards never compete for the same corner.
-            onClose: () => window.DashboardAnalyticsNotice?.scheduleAfterWhatsNew?.(),
+            onClose: () => {
+                window.DashboardAnalyticsNotice?.scheduleAfterWhatsNew?.();
+                // The card that names the versions comes after the notes, not on them.
+                window.DashboardUpdatedNotice?.scheduleAfterWhatsNew?.();
+            },
         });
     }
 

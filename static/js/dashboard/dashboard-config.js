@@ -2358,6 +2358,14 @@ class DashboardConfig {
         const containersTour = this.section === 'containers'
             ? `<button type="button" class="lvs-action" data-containers-tour title="${this.dash.escapeHtml(this.t('config.containersTourHint', 'A tour of the Containers view'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Monitoring has its own tour, as Widgets does, on the same band.
+        const monitoringTour = this.section === 'monitoring'
+            ? `<button type="button" class="lvs-action" data-monitoring-tour title="${this.dash.escapeHtml(this.t('config.monitoringTourHint', 'A tour of monitoring'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
+        // Unraid has its own tour too, on the same band.
+        const unraidTour = this.section === 'unraid'
+            ? `<button type="button" class="lvs-action" data-unraid-tour title="${this.dash.escapeHtml(this.t('config.unraidTourHint', 'A tour of Unraid'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         // Glances the same: its tour, a click away from the settings that feed it.
         const glancesTour = this.section === 'glances'
             ? `<button type="button" class="lvs-action" data-glances-config-tour title="${this.dash.escapeHtml(this.t('config.glancesTourHint', 'A tour of the Glances page'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
@@ -2374,7 +2382,7 @@ class DashboardConfig {
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + viewLink + widgetsTour + containersTour + glancesTour;
+                : '')) + viewLink + widgetsTour + monitoringTour + unraidTour + containersTour + glancesTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2399,6 +2407,8 @@ class DashboardConfig {
                         void this.dash.inbox?.openInboxView?.(link);
                     }
                 } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
+                else if (e.target.closest('[data-monitoring-tour]')) void this.openMonitoringTour();
+                else if (e.target.closest('[data-unraid-tour]')) void this.openUnraidTour();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-glances-config-tour]')) void this.playViewTour('glancesTutorialV1');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
@@ -2622,6 +2632,7 @@ class DashboardConfig {
             this.bindContainersSection(container);
         } else if (this.section === 'unraid') {
             void this.bindUnraidSection?.(container);
+            void this.maybeShowUnraidTutorial();
         } else if (this.section === 'glances') {
             void this.bindGlancesSection?.(container);
         } else if (this.section === 'status-page') {
@@ -2656,6 +2667,7 @@ class DashboardConfig {
             this.bindBehaviorControls(container);
         } else if (this.section === 'monitoring') {
             this.bindMonitoringControls(container);
+            void this.maybeShowMonitoringTutorial();
         } else if (this.section === 'structure') {
             this.bindPagesTags(container);
         } else if (this.section === 'bookmarks') {
@@ -4180,13 +4192,56 @@ class DashboardConfig {
             const value = entry.kind === 'field' ? this.settingsJumpValueText(entry.field) : '';
             return value ? { ...entry, value } : entry;
         });
-        if (!q) return all;
+        if (!q) return this.withRecentSettings(all);
         // Keywords are matched but never shown, so a setting is reachable by
         // the word people look for as well as the one it is labelled with. The
         // value is matched *and* shown: finding a setting by what it says is
         // only useful if the result then confirms it.
         return all.filter((e) => `${e.title} ${e.subtitle} ${e.keywords || ''} ${e.value || ''}`
             .toLowerCase().includes(q));
+    }
+
+    /**
+     * The settings last changed or opened from the search, newest first, kept
+     * in this browser only. An entry id for a visit, `f:<field>` for a change
+     * made on the tab itself; both resolve to the same row.
+     */
+    static RECENT_SETTINGS_KEY = 'nextdash.settingsJumpRecent';
+    static RECENT_SETTINGS_MAX = 8;
+
+    recentSettingsTokens() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(DashboardConfig.RECENT_SETTINGS_KEY) || '[]');
+            return Array.isArray(raw) ? raw.filter((t) => typeof t === 'string') : [];
+        } catch {
+            return [];
+        }
+    }
+
+    rememberSetting(token) {
+        if (!token) return;
+        const next = [token, ...this.recentSettingsTokens().filter((t) => t !== token)]
+            .slice(0, DashboardConfig.RECENT_SETTINGS_MAX);
+        try {
+            localStorage.setItem(DashboardConfig.RECENT_SETTINGS_KEY, JSON.stringify(next));
+        } catch { /* a browser refusing storage just has no recent list */ }
+    }
+
+    /** Recent rows first, marked so the list can head them; the rest follow. */
+    withRecentSettings(all) {
+        const picked = [];
+        const seen = new Set();
+        this.recentSettingsTokens().forEach((token) => {
+            const entry = token.startsWith('f:')
+                ? all.find((e) => e.kind === 'field' && e.field === token.slice(2))
+                : all.find((e) => e.id === token);
+            if (entry && !seen.has(entry.id)) {
+                seen.add(entry.id);
+                picked.push({ ...entry, recent: true });
+            }
+        });
+        if (!picked.length) return all;
+        return [...picked, ...all.filter((e) => !seen.has(e.id))];
     }
 
     isSettingsJumpOpen() {
@@ -4206,8 +4261,11 @@ class DashboardConfig {
         if (!entries.length) {
             return `<p class="config-settings-jump-empty">${esc(this.t('config.settingsSearchNoResults', 'No settings match.'))}</p>`;
         }
+        const hasRecent = entries.some((e) => e.recent);
+        const heading = (text) => `<li class="config-settings-jump-group" role="presentation">${esc(text)}</li>`;
         return `<ul class="config-settings-jump-results" role="listbox">
-            ${entries.map((entry, i) => `
+            ${entries.map((entry, i) => `${hasRecent && i === 0 ? heading(this.t('config.settingsSearchRecent', 'Recent')) : ''}${
+                hasRecent && !entry.recent && entries[i - 1]?.recent ? heading(this.t('config.settingsSearchAll', 'All settings')) : ''}
                 <li class="config-settings-jump-result${i === this._settingsJumpSelected ? ' is-active' : ''}"
                     role="option" aria-selected="${i === this._settingsJumpSelected ? 'true' : 'false'}"
                     data-settings-jump-index="${i}">
@@ -4312,7 +4370,9 @@ class DashboardConfig {
         });
         const filter = document.getElementById('config-settings-jump-filter');
         if (!filter) return;
+        this._settingsJumpTyped = false;
         const refresh = () => {
+            this._settingsJumpTyped = filter.value.trim() !== '';
             entries = this.filterSettingsJumpEntries(filter.value);
             if (this._settingsJumpSelected >= entries.length) {
                 this._settingsJumpSelected = Math.max(0, entries.length - 1);
@@ -4391,6 +4451,12 @@ class DashboardConfig {
 
     async activateSettingsJumpEntry(entry) {
         if (!entry) return;
+        this.rememberSetting(entry.id);
+        // How the row was reached, in fixed words: a remembered row, a typed
+        // search, or a pick from the unfiltered list.
+        this._trackAction('settings-search', {
+            via: entry.recent ? 'recent' : (this._settingsJumpTyped ? 'typed' : 'browse'),
+        });
         window.AppModal.hide();
         this.cleanupSettingsJumpHandler();
         if (entry.section !== this.section) {
@@ -7246,17 +7312,25 @@ class DashboardConfig {
         // chooseImportDestination lives in the Data & backups file.
         if (!(await this.ensureSection('data-backups'))) return;
         const dest = await this.chooseImportDestination({
-            total: preview.total, pageName, onPage: preview, toInbox: preview.inbox,
+            total: preview.total, pageName, onPage: preview, toInbox: preview.inbox, newPage: true,
         });
         if (!dest) return;
         const toInbox = dest === 'inbox';
+        // A page of its own: made first, and the file is written there.
+        let importUrl = url;
+        let targetPage = pageId;
+        if (dest === 'newpage') {
+            targetPage = await this.createImportPage();
+            if (!targetPage) return;
+            importUrl = `/api/bookmarks/import-html?page=${encodeURIComponent(targetPage)}`;
+        }
 
         // Shown for as long as the import runs and the page reloads after it.
         this.showProgressOverlay(this.t('config.csvImportTitle', 'Importing bookmarks…'),
             this.t('config.waitImportStatus', '{n} bookmarks')
                 .replace('{n}', String((toInbox ? preview.inbox?.new : preview.new) ?? preview.new)));
         try {
-            const res = await this.writeFetch(toInbox ? `${url}&inbox=1` : url, { method: 'POST', body: file });
+            const res = await this.writeFetch(toInbox ? `${importUrl}&inbox=1` : importUrl, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
             const imported = Number(result.imported) || 0;
@@ -7275,7 +7349,10 @@ class DashboardConfig {
                     .replace('{i}', String(imported)).replace('{s}', String(skipped)),
                 'success'
             );
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(() => {
+                if (dest === 'newpage') window.location.hash = this.pageHash(targetPage);
+                window.location.reload();
+            }, 1000);
         } catch {
             this.hideProgressOverlay();
             this.notify(this.t('config.browserImportError', 'Could not import the bookmarks.'), 'error');
@@ -7318,9 +7395,14 @@ class DashboardConfig {
         const pageName = (this.dash.pages || []).find((p) => Number(p.id) === Number(pageId))?.name || '';
         // chooseImportDestination lives in the Data & backups file.
         if (!(await this.ensureSection('data-backups'))) return;
-        const dest = await this.chooseImportDestination({ total: rows.length, pageName });
+        const dest = await this.chooseImportDestination({ total: rows.length, pageName, newPage: true });
         if (!dest) return;
         const toInbox = dest === 'inbox';
+        let targetPage = pageId;
+        if (dest === 'newpage') {
+            targetPage = await this.createImportPage();
+            if (!targetPage) return;
+        }
 
         try {
             // After the confirm, so the overlay never covers the question it
@@ -7331,7 +7413,7 @@ class DashboardConfig {
             const res = await this.writeFetch(`/api/bookmarks/import-browser${toInbox ? '?inbox=1' : ''}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId, bookmarks: rows }),
+                body: JSON.stringify({ pageId: targetPage, bookmarks: rows }),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
@@ -7348,7 +7430,10 @@ class DashboardConfig {
                     .replace('{s}', String(Number(result.skipped) || 0)),
                 'success'
             );
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(() => {
+                if (dest === 'newpage') window.location.hash = this.pageHash(targetPage);
+                window.location.reload();
+            }, 1000);
         } catch {
             this.hideProgressOverlay();
             this.notify(this.t('config.csvImportError', 'Could not import the bookmarks.'), 'error');
@@ -8766,8 +8851,14 @@ class DashboardConfig {
         showGridKeyLegend: { info: ['showGridKeyLegendInfoTitle', 'showGridKeyLegendInfoMessage'], hint: 'gridKeyLegendHint', def: true },
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
+        enableSectionTours: { hint: 'sectionToursHint', def: true },
+        sessionTipsFrequency: { def: 'daily' },
         enableTagSuggestionNotice: { hint: 'tagSuggestionNoticeHint', def: true },
         enableHealthReviewNotice: { hint: 'healthReviewNoticeHint', def: true },
+        enableDockerUpdateNotice: { hint: 'dockerUpdateNoticeHint', def: true },
+        enableHealthRecheckNotice: { hint: 'healthRecheckNoticeHint', def: true },
+        enableInboxExtensionNotice: { hint: 'inboxExtensionNoticeHint', def: true },
+        enableUpdatedNotice: { hint: 'updatedNoticeHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
         lockLayout: { info: ['lockLayoutInfoTitle', 'lockLayoutInfoMessage'], def: false },
         // Date, time & weather
@@ -9781,6 +9872,11 @@ class DashboardConfig {
                 note: t('config.generalGroupOnboardingNote', 'The Quick start bar and guide, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
                     bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
+                    { field: 'sessionTipsFrequency', type: 'select', label: t('config.sessionTipsFrequencyLabel', 'Keyboard tips come'), options: [
+                        opt('daily', t('config.sessionTipsDaily', 'About once a day')),
+                        opt('weekly', t('config.sessionTipsWeekly', 'About once a week')),
+                    ] },
+                    bool('enableSectionTours', 'config.sectionToursLabel', 'Offer a tour the first time a section opens'),
                     // The two cards that offer a review on their own. Here
                     // rather than beside the feature each belongs to, because
                     // this group is where everything that appears unasked is
@@ -9789,6 +9885,10 @@ class DashboardConfig {
                     // about being interrupted.
                     bool('enableTagSuggestionNotice', 'config.tagSuggestionNoticeLabel', 'Offer to review tag suggestions'),
                     bool('enableHealthReviewNotice', 'config.healthReviewNoticeLabel', 'Offer to review links'),
+                    bool('enableDockerUpdateNotice', 'config.dockerUpdateNoticeLabel', 'Offer image update checks'),
+                    bool('enableHealthRecheckNotice', 'config.healthRecheckNoticeLabel', 'Offer to re-check links'),
+                    bool('enableInboxExtensionNotice', 'config.inboxExtensionNoticeLabel', 'Offer the browser extension'),
+                    bool('enableUpdatedNotice', 'config.updatedNoticeLabel', 'Show what changed after an update'),
                 ],
             },
             {
@@ -10503,6 +10603,11 @@ class DashboardConfig {
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
                     bool('healthAutoRecheckEnabled', 'config.healthRecheckLabel', 'Re-check in the background'),
+                    {
+                        type: 'note',
+                        shown: (st) => st.healthAutoRecheckEnabled === false,
+                        text: t('config.healthRecheckOffHint', 'Off: links are only re-checked when you run a check yourself. nextDash will offer to turn this back on when the last check is a week old.'),
+                    },
                     // Bound to healthAutoRecheckIntervalHours, in hours.
                     //
                     // This used to write `healthRecheckIntervalMinutes`, which
@@ -10868,11 +10973,11 @@ class DashboardConfig {
             // Standalone explanatory text between controls. It has no field, so
             // it must be handled before anything reads c.field — the fallthrough
             // below turns an unknown type into a text input bound to undefined.
+            // A control that only makes sense while another is on (a note too).
+            if (typeof c.shown === 'function' && !c.shown(s)) return '';
             if (c.type === 'note') {
                 return `<p class="config-field-hint">${esc(c.text)}</p>`;
             }
-            // A control that only makes sense while another is on.
-            if (typeof c.shown === 'function' && !c.shown(s)) return '';
             // A live card built from a real bookmark, redrawn as the checklist
             // beside it is flipped. Appearance previews its settings; this was
             // the one you had to leave the screen and hover something to see.
@@ -12435,7 +12540,7 @@ class DashboardConfig {
         // preview to put beside it, and the short line under each setting is
         // the explanation the hub drew as a picture.
         return `
-            <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves.'))}</p>
             ${this.renderSectionTabStrip('behavior')}
             <div class="config-tabpage">
                 <div class="config-tabpage-main">
@@ -12709,6 +12814,12 @@ class DashboardConfig {
           } },
         { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
           labelKey: 'config.noticeHealthReview', label: 'Health review' },
+        { id: 'health-recheck-offer', keys: ['nextdashHealthRecheckOfferDoneOn', 'nextdashHealthRecheckOfferSnoozeUntil'],
+          labelKey: 'config.noticeHealthRecheck', label: 'Link re-check offer' },
+        { id: 'docker-update', promo: 'docker-update-offer-v1', keys: ['nextdashDockerUpdateOfferSnoozeUntil', 'nextdashDockerViewOpens'],
+          labelKey: 'config.noticeDockerUpdate', label: 'Image update check' },
+        { id: 'inbox-extension', promo: 'inbox-extension-notice-v1', keys: ['nextdashInboxExtensionSnoozeUntil', 'nextdashInboxOpens'],
+          labelKey: 'config.noticeInboxExtension', label: 'Browser extension for the Inbox' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */
@@ -12793,7 +12904,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1', 'monitoringTutorialV1', 'unraidTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -12863,6 +12974,76 @@ class DashboardConfig {
         this.bindBehaviorActions(container);
         this.bindFilterElsewhere(container);
         this.bindFormKeyboard(container);
+    }
+
+    /**
+     * The one-time Monitoring tour, the first time this section is opened --
+     * the same guards and the same order as the Widgets tour's: the cheap
+     * checks run before the fetch, so a reader who has seen it, or has session
+     * tips off, never asks for the script at all.
+     */
+    async maybeShowMonitoringTutorial() {
+        // Once: binding runs again on every repaint of the section, and a
+        // second call would replace the tour on screen.
+        if (this._monitoringTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.MONITORING_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._monitoringTutorialAsked = true;
+        if (!(await this.loadMonitoringTour())) return;
+        window.MonitoringTutorial?.maybeShow?.();
+    }
+
+    /** Fetch the tour script once. False when it cannot be had. */
+    async loadMonitoringTour() {
+        if (typeof window.MonitoringTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/monitoring-tutorial.js', 'monitoringTutorialModule',
+                () => typeof window.MonitoringTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    }
+
+    /** The Monitoring tour, from the Tour button on the band or Config's replay: seen or not. */
+    async openMonitoringTour() {
+        if (!(await this.loadMonitoringTour())) return false;
+        return window.MonitoringTutorial?.open?.() === true;
+    }
+
+    /**
+     * The one-time Unraid tour, the first time this section is opened -- the
+     * same guards and the same order as the Monitoring tour's.
+     */
+    async maybeShowUnraidTutorial() {
+        // Once: binding runs again on every repaint of the section, and a
+        // second call would replace the tour on screen.
+        if (this._unraidTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.UNRAID_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._unraidTutorialAsked = true;
+        if (!(await this.loadUnraidTour())) return;
+        window.UnraidTutorial?.maybeShow?.();
+    }
+
+    /** Fetch the tour script once. False when it cannot be had. */
+    async loadUnraidTour() {
+        if (typeof window.UnraidTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/unraid-tutorial.js', 'unraidTutorialModule',
+                () => typeof window.UnraidTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    }
+
+    /** The Unraid tour, from the Tour button on the band or Config's replay: seen or not. */
+    async openUnraidTour() {
+        if (!(await this.loadUnraidTour())) return false;
+        return window.UnraidTutorial?.open?.() === true;
     }
 
     bindMonitoringControls(container) {
@@ -12963,6 +13144,13 @@ class DashboardConfig {
             await this.dash.promos?.openDashboardTour?.();
             return;
         }
+        // The keyboard tour belongs to the search panel, not a view, and is
+        // never started unasked: it plays now.
+        if (tour.id === 'keyboardTutorialV1' && window.KeyboardTutorial?.open) {
+            this.render();
+            window.KeyboardTutorial.open({ via: 'config' });
+            return;
+        }
         // A view tour plays now, in its own view: waiting for "next time"
         // would mean a visit the reader may not make for weeks.
         if (await this.playViewTour(tour.id)) return;
@@ -13007,6 +13195,14 @@ class DashboardConfig {
                 await this.openConfigView('widgets');
                 await this.openWidgetsTour?.();
                 return true;
+            case 'monitoringTutorialV1':
+                await this.openConfigView('monitoring');
+                await this.openMonitoringTour();
+                return true;
+            case 'unraidTutorialV1':
+                await this.openConfigView('unraid');
+                await this.openUnraidTour();
+                return true;
             default:
                 return false;
         }
@@ -13039,6 +13235,7 @@ class DashboardConfig {
         // custom text are free-form and can be personal). Booleans are the one
         // exception — 'on'/'off' is what makes a toggle worth measuring, and it
         // cannot carry anything identifying.
+        this.rememberSetting(`f:${field}`);
         this._trackAction('setting', {
             field,
             ...(typeof value === 'boolean' ? { value: value ? 'on' : 'off' } : {}),
@@ -16177,6 +16374,12 @@ class DashboardConfig {
     // fetched at all. Both must agree.
     static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
 
+    // Repeated from monitoring-tutorial.js, for the same reason.
+    static MONITORING_TUTORIAL_TIP_ID = 'monitoringTutorialV1';
+
+    // Repeated from unraid-tutorial.js, for the same reason.
+    static UNRAID_TUTORIAL_TIP_ID = 'unraidTutorialV1';
+
     /*
      * The six guided tours, in one list.
      *
@@ -16198,6 +16401,8 @@ class DashboardConfig {
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'dashboardTutorialV3', labelKey: 'config.tourDashboard', label: 'The dashboard',
           whereKey: 'config.tourWhereNow', where: 'right away' },
+        { id: 'keyboardTutorialV1', labelKey: 'config.tourKeyboard', label: 'The keyboard',
+          whereKey: 'config.tourWhereNow', where: 'right away' },
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view',
@@ -16208,6 +16413,10 @@ class DashboardConfig {
           whereKey: 'config.tourWhereGlances', where: 'the next time you open the Glances page' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
+        { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring',
+          whereKey: 'config.tourWhereMonitoring', where: 'the next time you open Config → Monitoring' },
+        { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid',
+          whereKey: 'config.tourWhereUnraid', where: 'the next time you open Config → Unraid' },
     ];
 
     /** The types a reader may add. Mirrors the server's register. */

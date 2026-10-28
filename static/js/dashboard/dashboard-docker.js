@@ -179,6 +179,7 @@ class DashboardDocker {
         window.nextdashTrack?.('view:docker');
         d.pageNav?.setActiveDockerTab?.();
         await this.loadAndRender();
+        window.DashboardDockerUpdateNotice?.onViewReady?.();
         if (select) {
             this.selectContainer(select, { openDrawer: true, section });
         } else {
