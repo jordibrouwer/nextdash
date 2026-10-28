@@ -70,6 +70,30 @@ test.describe('the Custom widget in three sections', () => {
         expect(Math.abs(bodyWidth - tableWidth)).toBeLessThanOrEqual(8);
     });
 
+    test('Save keeps Connection open while the reader is working in it', async ({ page }) => {
+        const detail = await openWidget(page, { type: 'custom', title: 'Mine', config: { fields: [{ path: 'a.b', label: 'A' }] } });
+        const connection = section(detail, 'connection');
+        await expect(connection).toHaveAttribute('open', '');
+        await expect(connection).toHaveAttribute('data-widget-section-default', 'open');
+        await detail.locator('[data-widget-setting="url"]').fill('https://service.example/api/stats');
+        await detail.locator('[data-widget-auth="kind"]').selectOption('header');
+        const name = detail.locator('[data-widget-auth="headerName"]');
+        await name.fill('Authorization');
+        await name.blur();
+        const key = detail.locator('[data-widget-auth="secret"]');
+        await key.fill('Bearer typed-and-saved');
+        await key.blur();
+        await detail.locator('[data-widget-save]').click();
+        await expect.poll(async () => key.inputValue(), { timeout: 10_000 }).toBe('');
+        // Connected now, so the default moved to folded -- but the reader was
+        // working in it, and Save must not fold it shut under them.
+        await expect(connection).toHaveAttribute('data-widget-section-default', 'closed');
+        await expect(connection).toHaveAttribute('open', '');
+        await expect(key).toBeVisible();
+        await expect(key).toHaveAttribute('placeholder', 'Set — type to replace');
+        await expect(detail.locator('[data-secret-reveal]')).toBeVisible();
+    });
+
     test('Watch keeps running while Connection is collapsed', async ({ page }) => {
         let asked = 0;
         await page.route('**/api/widgets/custom/test', async (route) => {

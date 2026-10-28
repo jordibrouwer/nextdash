@@ -1368,6 +1368,7 @@ class DashboardConfig {
         // a repaint still in flight as the view closes reads the old panel
         // and would put back what a clear on the way out removed.
         this._widgetSectionOpen = {};
+        this._widgetSectionPinned = {};
         // The dashboard may have written categories since the Structure table
         // last read them (a move to another page, say): read them again.
         this.forgetCategoryLists();

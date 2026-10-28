@@ -2736,7 +2736,8 @@
      * after the paint -- a key-only widget's Connection is drawn open until its
      * credential list arrives -- and comparing with today's default would pin
      * the old one as if the reader had toggled. Matching the stamp again clears
-     * the choice, so closing what you opened goes back to the default too.
+     * the choice, so closing what you opened goes back to the default too --
+     * unless the section is pinned: see pinWidgetSection.
      */
     rememberWidgetSection(details) {
         const id = details.getAttribute('data-widget-section-of');
@@ -2745,10 +2746,34 @@
         if (this.widgetIndexOfId(id) == null) return;
         const drawnOpen = details.getAttribute('data-widget-section-default') === 'open';
         this._widgetSectionOpen = this._widgetSectionOpen || {};
-        if (details.open === drawnOpen) {
+        const pinned = this._widgetSectionPinned?.[id]?.[name] === true;
+        if (details.open === drawnOpen && !pinned) {
             if (this._widgetSectionOpen[id]) delete this._widgetSectionOpen[id][name];
             return;
         }
+        this._widgetSectionOpen[id] = { ...this._widgetSectionOpen[id], [name]: details.open };
+    },
+
+    /*
+     * Working inside a section is a choice to have it the way it is.
+     *
+     * A reader typing an address in an open Connection has not toggled it, so
+     * nothing records it -- and the Save that makes the widget connected moves
+     * the default to folded, which then shut the section under them: the key's
+     * state and its eye, a Try-it answer, all gone from sight. Pinned, the
+     * section keeps its current state through every repaint, even where that
+     * state matches the default it was drawn with. A summary is not "inside":
+     * focusing one is moving past it, and toggling it is recorded anyway.
+     */
+    pinWidgetSection(target) {
+        const details = target?.closest?.('details[data-widget-section]');
+        if (!details || target.closest('summary')?.parentElement === details) return;
+        const id = details.getAttribute('data-widget-section-of');
+        const name = details.getAttribute('data-widget-section');
+        if (!id || !name || this.widgetIndexOfId(id) == null) return;
+        this._widgetSectionPinned = this._widgetSectionPinned || {};
+        this._widgetSectionPinned[id] = { ...this._widgetSectionPinned[id], [name]: true };
+        this._widgetSectionOpen = this._widgetSectionOpen || {};
         this._widgetSectionOpen[id] = { ...this._widgetSectionOpen[id], [name]: details.open };
     },
 
@@ -3306,6 +3331,10 @@
         body.addEventListener('toggle', (event) => {
             if (event.target?.matches?.('details[data-widget-section]')) this.rememberWidgetSection(event.target);
         }, true);
+        // Typing or focusing a control inside a section pins it as it is.
+        const pin = (event) => this.pinWidgetSection(event.target);
+        body.addEventListener('input', pin, true);
+        body.addEventListener('focusin', pin, true);
 
         body.addEventListener('click', (event) => {
             const target = event.target;
