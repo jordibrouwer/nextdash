@@ -27,20 +27,28 @@
         dash._widgetCalendar = dash._widgetCalendar || {};
         const key = `${pageId}:${widget.id}`;
         const held = dash._widgetCalendar[key];
-        if (held && held.until > Date.now()) return held.result;
+        if (held && held.until > Date.now()) {
+            window.WidgetState?.fromResult(widget.id, held.result, held.result?.events, window.WidgetState.meta(widget, pageId, false));
+            return held.result;
+        }
         try {
             const res = await fetch(`/api/widgets/calendar?pageId=${encodeURIComponent(pageId)}`
                 + `&id=${encodeURIComponent(widget.id)}`
                 // The reader's offset, so the server ends an all-day event at
                 // local midnight before it caps the rows.
                 + `&tzOffset=${new Date().getTimezoneOffset()}`);
-            if (!res.ok) return null;
+            if (!res.ok) {
+                window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, false));
+                return null;
+            }
             const result = await res.json();
             // Five minutes: short enough that adding an event shows up soon,
             // long enough that a repaint never asks again for it.
             dash._widgetCalendar[key] = { result, until: Date.now() + 5 * 60 * 1000 };
+            window.WidgetState?.fromResult(widget.id, result, result?.events, window.WidgetState.meta(widget, pageId, false));
             return result;
         } catch (error) {
+            window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, false));
             return null;
         }
     }
