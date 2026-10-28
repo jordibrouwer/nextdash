@@ -2894,15 +2894,18 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 
 ### 15.2 Adding and arranging
 
-**Config → Widgets** has three tabs:
+**Config → Widgets** is one list: **Your widgets**, one line for each widget you have. Above it are a search (title and type), a page picker (including **All pages**), a sort (grouped, page order, name, type) and, once rows are selected, a bar with **Show**, **Hide**, **Move to page…** and **Delete**.
 
-| Tab | What it holds |
-|---|---|
-| **Your widgets** | The widgets you have, one line each. **Add a widget** opens a picker: type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the pane beside the list shows the kind you are on. The first `Escape` empties the search, the next closes the picker. A search (title and type), a page picker (including **All pages**), a sort (grouped, page order, name, type) and a selection bar with **Show**, **Hide**, **Move to page…** and **Delete** |
-| **Catalogue** | Every kind on one page, each with a small drawing of what it shows (made of example figures) and an **Add** button. The chips above the cards show one group. Kinds added in the current release carry a **New** badge, and a **New** chip and strip gather them at the top |
-| **Custom widget** | What the Custom widget does and will not do, with an **Add** button ([§15.5](#155-the-custom-widget)) |
+**Add widget** opens the picker. Type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the kinds are grouped, and the pane beside the list shows the kind you are on, with a small drawing of what it shows. With more than one page, a **page select** in the picker says where the widget goes. The first `Escape` empties the search, the next closes the picker.
 
-A widget added from the Catalogue or the Custom widget tab lands on **Your widgets**, ready to be filled in. An old `/#config/widgets/types` address opens the Catalogue.
+- A kind that needs nothing, such as Notes, is added at once, on the page you picked.
+- A kind that talks to a service (Jellyfin, Plex, Sonarr and the other media kinds, Uptime Kuma and so on) opens a **Connect** screen: the address and, where it has one, the key. **Test** tries them and says what it found, or what to fix. A failed test never blocks you: **Add anyway** (or **Add without testing**) adds the widget as it is, and you can correct it in its settings.
+- **Custom** is one of the kinds in the picker, under *And anything else*: any address that answers with JSON. Test the address on the Connect screen, add the widget, and choose its figures afterwards in the widget's settings ([§15.5](#155-the-custom-widget)).
+- Beszel, Home Assistant, Unraid and Glances keep their connection in the widget's settings for now; they are added straight away and filled in there.
+
+A widget added from the picker lands on **Your widgets**, with its settings open. The old addresses `/#config/widgets/catalogue`, `/#config/widgets/types` and `/#config/widgets/custom` still work: they open the Add widget picker.
+
+The first visit to Config → Widgets offers a short tour (four steps: the list, the picker, Connect and Test, and Custom); the **Tour** button beside the **ℹ** plays it again.
 
 On a wide screen the list and the open widget stand side by side: one widget is always open beside the list — the one you chose, or the first shown. Narrower, **Settings** on a row opens the widget under it. **Settings** in a widget's own menu on the dashboard opens that widget's settings with every other row closed. The width that counts is the section's own, not the window's.
 
@@ -3031,7 +3034,7 @@ Start from one of the 42 presets ([Presets](#custom-widget-presets)) or from an 
 
 #### 🪜 Step by step
 
-1. Open **Config → Widgets** and press **Add a widget**. Choose **Custom**, under *And anything else: the Custom widget*. The widget lands at the end of the page with its settings open.
+1. Open **Config → Widgets** and press **Add widget**. Choose **Custom**, under *And anything else: the Custom widget*. The widget lands at the end of the page with its settings open.
 2. Under **Start from a service**, pick one in **Service** — or leave it empty for a service that is not in the list. A preset fills in the address, the figures, the sign-in type and the refresh interval, and a notice says what is still left to do. See [Presets](#custom-widget-presets).
 3. Under **Where to read from**, type the **Address to read**. If a preset put a sample address there (`*.local`), replace the host and leave the path. A word such as `YOUR_NODE` in the address or the figures is a placeholder for something of your own; the panel says which. **How to ask** is `GET`, or `POST` for the few services that only answer that. Nothing is sent with either.
 4. Still there, **Refresh every (seconds)** takes 30 seconds to 24 hours; empty means five minutes. **List from (path, optional)** points at an array to show as rows instead of figures, up to twenty.
@@ -4034,7 +4037,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Monitoring** | Checks · Notifications · Schedules ([§17.5](#monitoring)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§17.6](#176-config-inbox)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
-| **Widgets** | Your widgets · Catalogue · Custom widget ([§15.2](#152-adding-and-arranging)) |
+| **Widgets** | Your widgets, with **Add widget** ([§15.2](#152-adding-and-arranging)) |
 | **Containers** | Connection · View · Updates · Alerts ([§17.7](#177-config-containers)) |
 | **Unraid** | Connection · How it works — the one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
 | **Glances** | Connection · Page · Recording · Notices · Advanced, for up to five hosts — the Glances page and the Glances widget ([§15A.10](#15a10-config-glances)) |
@@ -4181,7 +4184,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. A **Tour** 
 <p align="center"><img src="screenshots/manual.md/14-connection.jpg" alt="The Connection panel under Config, Containers: Docker socket Connected, Actions On, Write token Not set with a warning, and This container nextdash" width="860"></p>
 <p align="center"><sub>Config → Containers → Connection: what the environment set, read only.</sub></p>
 
-The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It has two tabs and opens on **Connection**: the address and key, then **Widgets** — the seven kinds as chips, each with an **Add** that opens Widgets → Catalogue on that kind. **How it works** draws nextDash and the server as two boxes with data running between them, with three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done; it also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
+The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It has two tabs and opens on **Connection**: the address and key, then **Widgets** — the seven kinds as chips, each with an **Add** that opens the Add widget picker on that kind. **How it works** draws nextDash and the server as two boxes with data running between them, with three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done; it also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
 
 <details>
 <summary>📷 Screenshot — Config → Containers, full page</summary>
@@ -4216,7 +4219,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 <a id="view-tours"></a>
 
-**The view tours.** The Bookmarks view, Containers, the Inbox and Config → Widgets each have a tour of their own, drawn in a window and offered once, the first time you visit. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has five steps: the list and its rail, the three ways to check a link, charts and collection health, alerts, and clearing the backlog. The Containers tour has six: the list, acting on containers, the side panel, updates with a way back, Disk, and settings and alerts. The Inbox tour has four and the Widgets tour four: what a widget shows, the catalogue, the Custom widget, and how a widget behaves on the page. **Behavior → Privacy & sync → Onboarding** replays each of them.
+**The view tours.** The Bookmarks view, Containers, the Inbox and Config → Widgets each have a tour of their own, drawn in a window and offered once, the first time you visit. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has five steps: the list and its rail, the three ways to check a link, charts and collection health, alerts, and clearing the backlog. The Containers tour has six: the list, acting on containers, the side panel, updates with a way back, Disk, and settings and alerts. The Inbox tour has four and the Widgets tour four: your widgets in one list, the Add widget picker, Connect and Test, and the Custom widget. **Behavior → Privacy & sync → Onboarding** replays each of them.
 
 <a id="config-tours"></a>
 

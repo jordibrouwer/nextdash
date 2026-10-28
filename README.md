@@ -303,7 +303,7 @@ More is on the way: deeper Unraid integration is being worked on for future vers
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-unraid-config.jpg" alt="Config: Unraid" width="100%" />
       <br />
-      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid: the server's address and a read-only API key, a connection test that reports which of the six areas answers, and the seven widgets under it, each with an Add that opens it in Widgets → Catalogue.</sub>
+      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid: the server's address and a read-only API key, a connection test that reports which of the six areas answers, and the seven widgets under it, each with an Add that opens it in the Add widget picker.</sub>
     </td>
   </tr>
 </table>
