@@ -6015,6 +6015,12 @@ class DashboardConfig {
             void this.playViewTour(target.tour);
             return;
         }
+        // Edit mode lives on the dashboard: leave Config and switch it on.
+        if (target.editMode) {
+            this.closeConfigView();
+            window.dashboardInstance?.editMode?.enter?.();
+            return;
+        }
         // The overview's digest panel: the digest's own window, over Config.
         if (target.digest) {
             void window.DigestNotice?.openDigest?.();

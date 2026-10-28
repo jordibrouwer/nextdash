@@ -2,6 +2,70 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureEditModeTitle",
+      "titleFallback": "Edit the dashboard right where it is",
+      "whatKey": "config.overviewNewFeatureEditModeWhat",
+      "whatFallback": "Renaming a category, changing its width or opening a widget's settings meant a trip to Config and back.",
+      "howKey": "config.overviewNewFeatureEditModeHow",
+      "howFallback": "Edit mode puts a panel beside the page: click a category, widget or page and change its name, icon, width, view or sorting there. A widget's Settings open as a sheet over the dashboard.",
+      "enableKey": "config.overviewNewFeatureEditModeEnable",
+      "enableFallback": "Press Shift+M with no bookmark selected, or click the pencil in the header.",
+      "ctaKey": "config.overviewNewFeatureEditModeCta",
+      "ctaFallback": "Try edit mode →",
+      "go": {
+        "editMode": true
+      },
+      "since": "v1.22.4"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureCheckupTitle",
+      "titleFallback": "One round to tidy up",
+      "whatKey": "config.overviewNewFeatureCheckupWhat",
+      "whatFallback": "Dead links, duplicates, forgotten bookmarks, empty categories and widgets that show an error were spread over several views.",
+      "howKey": "config.overviewNewFeatureCheckupHow",
+      "howFallback": "The checkup walks through them step by step, skips what has nothing to do, and shows what will go before anything is removed.",
+      "enableKey": "config.overviewNewFeatureCheckupEnable",
+      "enableFallback": "Type :checkup, or pick Checkup in the Bookmarks view.",
+      "ctaKey": "config.overviewNewFeatureCheckupCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "view": "bookmarks"
+      },
+      "since": "v1.22.4"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureUsuallyNowTitle",
+      "titleFallback": "Search that knows your habits",
+      "whatKey": "config.overviewNewFeatureUsuallyNowWhat",
+      "whatFallback": "The empty search panel offered recent searches, but not the three links you open every morning.",
+      "howKey": "config.overviewNewFeatureUsuallyNowHow",
+      "howFallback": "A Usually now group lists bookmarks you tend to open around this time of day, and → on a result unfolds what you can do with it: open in a new tab, edit, copy the address, health, move.",
+      "enableKey": "config.overviewNewFeatureUsuallyNowEnable",
+      "enableFallback": "Open the search panel with > on an empty line.",
+      "ctaKey": "config.overviewNewFeatureUsuallyNowCta",
+      "ctaFallback": "Back to the dashboard →",
+      "go": {
+        "closeConfig": true
+      },
+      "since": "v1.22.4"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWeeklyDigestTitle",
+      "titleFallback": "A weekly digest that finds you",
+      "whatKey": "config.overviewNewFeatureWeeklyDigestWhat",
+      "whatFallback": "The digest window had grown into one long page, and it was easy to forget it was there.",
+      "howKey": "config.overviewNewFeatureWeeklyDigestHow",
+      "howFallback": "It now comes every week as a card in the corner, with Snooze and reminders. The window lists the parts on the left in three groups and shows the chosen one on the right.",
+      "enableKey": "config.overviewNewFeatureWeeklyDigestEnable",
+      "enableFallback": "Nothing to switch on. Read the latest one from this overview.",
+      "ctaKey": "config.overviewNewFeatureWeeklyDigestCta",
+      "ctaFallback": "Read the digest →",
+      "go": {
+        "digest": true
+      },
+      "since": "v1.22.4"
+    },
+    {
       "titleKey": "config.overviewNewFeatureThemesRedrawnTitle",
       "titleFallback": "Every theme, redrawn",
       "whatKey": "config.overviewNewFeatureThemesRedrawnWhat",
