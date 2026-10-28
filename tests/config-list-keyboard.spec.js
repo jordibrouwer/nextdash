@@ -19,7 +19,7 @@ async function openPagesTags(page, finders = []) {
         window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
         return window.dashboardInstance.config.openConfigView('structure');
     });
-    await page.locator('[data-pt-tab="finders"]').click();
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('finders'));
     await expect(page.locator('[data-finder-index="0"]')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -43,7 +43,7 @@ test.describe('config list keyboard navigation', () => {
             { id: '2', name: 'Beta', searchUrl: 'https://b.com/?q=%s', shortcut: 'b' },
         ]);
 
-        await focusListPanel(page);
+        await focusListPanel(page, 'config-finders-body');
         await page.keyboard.press('ArrowDown');
         await expect(page.locator('[data-finder-index="0"]')).toHaveClass(/keyboard-selected/);
 
@@ -61,7 +61,7 @@ test.describe('config list keyboard navigation', () => {
             { id: '1', name: 'Alpha', searchUrl: 'https://a.com/?q=%s', shortcut: 'a' },
         ]);
 
-        await focusListPanel(page);
+        await focusListPanel(page, 'config-finders-body');
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('Enter');
         await expect(page.locator('[data-finder-index="0"] [data-finder="name"]')).toBeFocused();
@@ -74,7 +74,7 @@ test.describe('config list keyboard navigation', () => {
             { id: '3', name: 'Gamma', searchUrl: 'https://c.com/?q=%s', shortcut: 'c' },
         ]);
 
-        await focusListPanel(page);
+        await focusListPanel(page, 'config-finders-body');
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('End');
         await expect(page.locator('[data-finder-index="2"]')).toHaveClass(/keyboard-selected/);
@@ -88,7 +88,7 @@ test.describe('config list keyboard navigation', () => {
             { id: '1', name: 'Alpha', searchUrl: 'https://a.com/?q=%s', shortcut: 'a' },
         ]);
 
-        await focusListPanel(page);
+        await focusListPanel(page, 'config-finders-body');
         await page.keyboard.press('ArrowDown');
         await expect(page.locator('[data-finder-index="0"]')).toHaveClass(/keyboard-selected/);
 

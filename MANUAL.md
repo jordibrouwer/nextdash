@@ -1532,7 +1532,7 @@ The palette is drawn like the dashboard: its fill follows how solid the categori
 <p align="center"><img src="screenshots/manual.md/08-finders.jpg" alt="The search panel on its finders tab: a question mark typed, and the two finders Brave Search and DuckDuckGo with their shortcuts" width="840"></p>
 <p align="center"><sub><kbd>?</kbd> lists the finders with their shortcuts.</sub></p>
 
-**Structure → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used; the ones you use most are suggested first. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
+**Config → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used; the ones you use most are suggested first. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
 
 With that setting on (it is by default), a search that matches nothing lists your three most-used finders under the *no matches* line — **Search on …**, with what you typed already filled in. Click one, or reach it with `↓`, to ask that site instead.
 

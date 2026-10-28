@@ -329,6 +329,7 @@ class SearchCommandsComponent {
         { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
         { id: 'structure', labelKey: 'commands.configStructure', fallback: 'Structure' },
         { id: 'behavior', labelKey: 'commands.configBehavior', fallback: 'Behavior' },
+        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders' },
         { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'containers', labelKey: 'commands.configContainers', fallback: 'Containers' },
@@ -344,7 +345,6 @@ class SearchCommandsComponent {
         // what you remember still arrives somewhere sensible.
         { id: 'categories', labelKey: 'commands.configCategories', fallback: 'Categories', section: 'structure', tab: 'categories' },
         { id: 'tags', labelKey: 'commands.configTags', fallback: 'Tags', section: 'bookmarks', tab: 'tags' },
-        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders', section: 'structure', tab: 'finders' },
         { id: 'pages', labelKey: 'commands.configPages', fallback: 'Pages', section: 'structure', tab: 'pages' },
         { id: 'backups', labelKey: 'commands.configBackups', fallback: 'Backups', section: 'data-backups', tab: 'backups' },
         { id: 'themes', labelKey: 'commands.configThemes', fallback: 'Themes', section: 'appearance', tab: 'general' },

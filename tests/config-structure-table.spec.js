@@ -12,10 +12,10 @@ async function openStructure(page, tab) {
   await page.goto('/');
   await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
   await prepareDashboardInteraction(page);
-  await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-  if (tab !== 'categories') {
-    const label = tab === 'finders' ? 'Finders' : 'Pages';
-    await page.locator('#config-view-body').getByText(label, { exact: true }).first().click();
+  // Finders is a section of its own; the rest are Structure tabs.
+  await page.evaluate((t) => window.dashboardInstance.config.openConfigView(t === 'finders' ? 'finders' : 'structure'), tab);
+  if (tab === 'pages') {
+    await page.locator('#config-view-body').getByText('Pages', { exact: true }).first().click();
   }
   await page.waitForSelector(`.config-crud-list--table .config-crud-row`, { timeout: 15_000 });
   await page.mouse.move(0, 0);
@@ -60,8 +60,13 @@ for (const [tab, nameSel] of [['categories', '[data-cat="name"]'], ['pages', '[d
  * Containers: a summary line, small-caps column heads, rows without boxes.
  */
 async function openTab(page, tab) {
-  await page.locator(`#config-view-body [data-pt-tab="${tab}"]`).click();
-  const body = page.locator('#config-pt-body');
+  if (tab === 'finders') {
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('finders'));
+  } else {
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
+    await page.locator(`#config-view-body [data-pt-tab="${tab}"]`).click();
+  }
+  const body = page.locator(tab === 'finders' ? '#config-finders-body' : '#config-pt-body');
   await expect(body.locator('.structure-summary').first()).toBeVisible();
   await expect(body.locator('.structure-colhead').first()).toBeVisible();
   return body;
@@ -149,11 +154,11 @@ test.describe('structure tabs in the list-view look', () => {
       });
       const body = await openTab(page, tab);
       await body.locator('.config-crud-row').first().waitFor();
-      const drift = await page.evaluate(() => {
+      const drift = await page.evaluate((bodyId) => {
         const flat = (row) => [...row.children].flatMap((c) => (getComputedStyle(c).display === 'contents' ? [...c.children] : [c]))
           .filter((c) => !c.classList.contains('config-field-warning'));
-        const head = document.querySelector('#config-pt-body .structure-colhead');
-        const row = document.querySelector('#config-pt-body .config-crud-row');
+        const head = document.querySelector(`#${bodyId} .structure-colhead`);
+        const row = document.querySelector(`#${bodyId} .config-crud-row`);
         const heads = [...head.children];
         const cells = flat(row);
         if (heads.length !== cells.length) return { count: [heads.length, cells.length] };
@@ -164,12 +169,12 @@ test.describe('structure tabs in the list-view look', () => {
           const right = h.classList.contains('structure-num');
           return Math.round(Math.abs(right ? a.right - b.right : a.left - b.left));
         });
-      });
+      }, tab === 'finders' ? 'config-finders-body' : 'config-pt-body');
       expect(drift.count).toBeUndefined();
       for (const px of drift) expect(px).toBeLessThanOrEqual(1);
       // A head is read whole: none runs into its neighbour.
-      const clipped = await page.evaluate(() => [...document.querySelectorAll('#config-pt-body .structure-colhead > *')]
-        .filter((h) => h.scrollWidth > h.clientWidth + 1).map((h) => h.textContent));
+      const clipped = await page.evaluate((bodyId) => [...document.querySelectorAll(`#${bodyId} .structure-colhead > *`)]
+        .filter((h) => h.scrollWidth > h.clientWidth + 1).map((h) => h.textContent), tab === 'finders' ? 'config-finders-body' : 'config-pt-body');
       expect(clipped).toEqual([]);
     });
   }
@@ -179,9 +184,9 @@ test.describe('structure tabs in the list-view look', () => {
     await page.evaluate(() => {
       const c = window.dashboardInstance.config;
       c._finders = [{ name: 'One', searchUrl: 'https://example.com/?q=%s', shortcut: 'o' }];
-      c.repaintPtBody();
+      c.repaintFindersBody();
     });
-    await expect(page.locator('#config-pt-body .structure-summary')).toContainText('1 finder');
-    await expect(page.locator('#config-pt-body .structure-summary')).not.toContainText('1 finders');
+    await expect(page.locator('#config-finders-body .structure-summary')).toContainText('1 finder');
+    await expect(page.locator('#config-finders-body .structure-summary')).not.toContainText('1 finders');
   });
 });

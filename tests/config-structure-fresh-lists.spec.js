@@ -24,9 +24,10 @@ async function newPage(page, name, categories) {
 async function openStructureTab(page, tab) {
     await page.setViewportSize({ width: 1280, height: 900 });
     await markWhatsNewSeen(page);
-    await page.goto(`/?_=${Date.now()}#config/structure`);
+    // Finders is a section of its own; the rest are Structure tabs.
+    await page.goto(`/?_=${Date.now()}#config/${tab === 'finders' ? 'finders' : 'structure'}`);
     await dismissBlockingOverlays(page);
-    await page.locator(`[data-pt-tab="${tab}"]`).click();
+    if (tab !== 'finders') await page.locator(`[data-pt-tab="${tab}"]`).click();
 }
 
 async function confirmDelete(page) {
@@ -82,7 +83,7 @@ test.describe('Structure lists made elsewhere', () => {
             headers: auth,
         });
         await openStructureTab(page, 'finders');
-        await page.waitForSelector('#config-pt-body [data-finder-delete]', { timeout: 15_000 });
+        await page.waitForSelector('#config-finders-body [data-finder-delete]', { timeout: 15_000 });
 
         const current = await (await page.request.get('/api/finders')).json();
         await page.request.post('/api/finders', {
@@ -90,9 +91,9 @@ test.describe('Structure lists made elsewhere', () => {
             headers: auth,
         });
 
-        const names = await page.locator('#config-pt-body [data-finder="name"]').evaluateAll((els) => els.map((e) => e.value));
+        const names = await page.locator('#config-finders-body [data-finder="name"]').evaluateAll((els) => els.map((e) => e.value));
         const saved = page.waitForResponse((r) => r.url().endsWith('/api/finders') && r.request().method() === 'POST');
-        await page.locator(`#config-pt-body [data-finder-delete="${names.indexOf('Drop')}"]`).click();
+        await page.locator(`#config-finders-body [data-finder-delete="${names.indexOf('Drop')}"]`).click();
         await confirmDelete(page);
         expect((await saved).ok()).toBe(true);
 

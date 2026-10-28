@@ -24,6 +24,7 @@ class DashboardConfigLoader {
         'bookmarks',
         'structure',
         'behavior',
+        'finders',
         'inbox',
         'data-backups',
         'widgets',
@@ -86,6 +87,7 @@ class DashboardConfigLoader {
         // Pages & tags is Structure now, and its Tags tab went to
         // Bookmarks. Both old shapes are still in people's links, and this
         // reader runs before the module that knows about either.
+        if (raw === 'config/pages-tags/finders' || raw === 'config/structure/finders') return 'finders';
         if (raw === 'config/pages-tags/tags') return 'bookmarks';
         if (raw === 'config/pages-tags' || raw.startsWith('config/pages-tags/')) return 'structure';
         // The server log left Data & backups for its own section; an old link

@@ -40,7 +40,7 @@ test.describe('where Tags lives', () => {
 
     test('Structure no longer does, and says so in the rail', async ({ page }) => {
         await openConfig(page, 'structure');
-        expect(await tabNames(page, 'data-pt-tab')).toEqual(['categories', 'pages', 'finders', 'collections']);
+        expect(await tabNames(page, 'data-pt-tab')).toEqual(['categories', 'pages', 'collections']);
 
         const rail = await page.evaluate(() =>
             [...document.querySelectorAll('[data-config-section]')].map((n) => n.textContent.trim()));
@@ -76,11 +76,10 @@ test.describe('where Tags lives', () => {
 
     test('an old link to the section lands on its new name', async ({ page }) => {
         await page.goto('/#config/pages-tags/finders');
-        await page.waitForFunction(() => window.dashboardInstance?.config?.section === 'structure', null, { timeout: 15_000 });
+        await page.waitForFunction(() => window.dashboardInstance?.config?.section === 'finders', null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
 
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.ptTab)).toBe('finders');
-        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/structure/finders');
+        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/finders');
     });
 
     test('a Bookmarks tab survives a reload, which it never used to', async ({ page }) => {

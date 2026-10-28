@@ -41,10 +41,10 @@ async function openConfigInbox(page, tab = '') {
 }
 
 test.describe('Config → Inbox', () => {
-    test('stands between Behavior and Data & backups, with the inbox\'s settings', async ({ page }) => {
+    test('stands between Finders and Data & backups, with the inbox\'s settings', async ({ page }) => {
         await openConfigInbox(page);
         const order = await page.locator('.config-nav-item').evaluateAll((els) => els.map((el) => el.getAttribute('data-config-section')));
-        expect(order.indexOf('inbox')).toBe(order.indexOf('behavior') + 1);
+        expect(order.indexOf('inbox')).toBe(order.indexOf('finders') + 1);
         expect(order.indexOf('data-backups')).toBe(order.indexOf('inbox') + 1);
         const tabs = await page.locator('[data-inbox-tab]').evaluateAll((els) => els.map((el) => el.getAttribute('data-inbox-tab')));
         expect(tabs).toEqual(['collecting', 'list', 'panel', 'icon']);

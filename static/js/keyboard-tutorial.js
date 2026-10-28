@@ -184,7 +184,7 @@
                     'Type {question} and the short name of a finder, then your question. The rest of the line goes to that site, and the results open in a new tab.',
                     { question: '?' })}</p>
                 <p>${esc(t('keyboardTour3Body2',
-                    'You choose the sites yourself in Config → Pages & tags → Finders.'))}</p>`,
+                    'You choose the sites yourself in Config → Finders.'))}</p>`,
             },
             {
                 title: t('keyboardTour4Title', 'Three more single keys'),

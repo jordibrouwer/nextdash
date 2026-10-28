@@ -3507,21 +3507,11 @@ class SearchComponent {
                 add.className = 'search-match search-hint-entry';
                 add.innerHTML = `
                     <span class="search-match-shortcut search-hint-shortcut">${this._escHtml(t('dashboard.findersNoneCta', 'Add'))}</span>
-                    <span class="search-match-name search-hint-name">${this._escHtml(t('dashboard.findersNoneAction', 'Add a finder in Config → Pages & tags → Finders'))}</span>
+                    <span class="search-match-name search-hint-name">${this._escHtml(t('dashboard.findersNoneAction', 'Add a finder in Config → Finders'))}</span>
                 `;
-                // The tab is set after the section has rendered: openConfigView
-                // draws Structure on its own default (Categories), so setting
-                // the field first is simply overwritten.
                 const openFinderConfig = async () => {
-                    const cfg = window.dashboardInstance?.config;
                     this.closeSearch();
-                    await cfg?.openConfigView?.('structure');
-                    const mod = cfg?._module;
-                    if (mod && mod.ptTab !== 'finders') {
-                        mod.ptTab = 'finders';
-                        mod.repaintPtBody?.();
-                        mod.restoreConfigHash?.();
-                    }
+                    await window.dashboardInstance?.config?.openConfigView?.('finders');
                 };
                 add.addEventListener('click', openFinderConfig);
                 this.matchElements.push(add);

@@ -10354,16 +10354,16 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-widget-go,
 .config-widget-step,
 .config-widget-link,
-#config-pt-body .structure-chip,
-#config-pt-body .structure-group-toggle {
+:is(#config-pt-body, #config-finders-body) .structure-chip,
+:is(#config-pt-body, #config-finders-body) .structure-group-toggle {
     position: relative;
 }
 
 .config-widget-go::after,
 .config-widget-step::after,
 .config-widget-link::after,
-#config-pt-body .structure-chip::after,
-#config-pt-body .structure-group-toggle::after {
+:is(#config-pt-body, #config-finders-body) .structure-chip::after,
+:is(#config-pt-body, #config-finders-body) .structure-group-toggle::after {
     content: "";
     position: absolute;
     inset: 50% 0 auto 0;

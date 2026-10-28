@@ -40,8 +40,8 @@ test.describe('config: sections restored from the old config', () => {
         // Bookmarks is the collection it shows. Appearance opens that group
         // rather than sitting under the collection, which is where an ordering
         // by how often a section is opened had put it.
-        // Structure and Behavior follow Bookmarks; Inbox comes after them.
-        expect(order.slice(0, 6)).toEqual(['overview', 'appearance', 'bookmarks', 'structure', 'behavior', 'inbox']);
+        // Structure and Behavior follow Bookmarks; Finders, the search shortcuts, sit under Behavior, and Inbox comes after them.
+        expect(order.slice(0, 7)).toEqual(['overview', 'appearance', 'bookmarks', 'structure', 'behavior', 'finders', 'inbox']);
     });
 
     test('the Bookmarks view lists bookmarks and filters by search', async ({ page }) => {

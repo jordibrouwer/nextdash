@@ -20,10 +20,10 @@ test.describe('config pages & tags', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
 
-        for (const tab of ['categories', 'pages', 'finders', 'collections']) {
+        for (const tab of ['categories', 'pages', 'collections']) {
             await expect(page.locator(`[data-pt-tab="${tab}"]`)).toBeVisible();
         }
-        await page.locator('[data-pt-tab="finders"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('finders'));
         await expect(page.locator('[data-finder="name"]')).toHaveValue('Wikipedia');
     });
 
@@ -38,7 +38,7 @@ test.describe('config pages & tags', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-        await page.locator('[data-pt-tab="finders"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('finders'));
         await page.locator('[data-finder-add]').click();
 
         // Add alone no longer persists an all-blank row — a refresh mid-typing
@@ -307,7 +307,7 @@ test.describe('unique names', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-        await page.locator('[data-pt-tab="finders"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('finders'));
 
         const names = page.locator('[data-finder="name"]');
         const shortcuts = page.locator('[data-finder="shortcut"]');
@@ -486,7 +486,7 @@ test.describe('destructive actions confirm first', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-        await page.locator('[data-pt-tab="finders"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('finders'));
         await page.waitForSelector('[data-finder-delete]');
         await page.locator('[data-finder-delete]').first().click();
         await expect(page.locator('.config-confirm-message')).toContainText('Wikipedia');
@@ -505,7 +505,7 @@ test.describe('finder URL placeholder', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-        await page.locator('[data-pt-tab="finders"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('finders'));
         const url = page.locator('[data-finder="searchUrl"]').first();
         // search.js does searchUrl.replace('%s', query) — without it the finder
         // opens the bare URL and silently drops what was typed.
@@ -525,7 +525,7 @@ test.describe('finder URL placeholder', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-        await page.locator('[data-pt-tab="finders"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('finders'));
         await page.locator('[data-finder-add]').click();
         await expect(page.locator('[data-finder="name"]')).toHaveCount(1);
         // The row exists locally and is focused, but nothing is persisted until

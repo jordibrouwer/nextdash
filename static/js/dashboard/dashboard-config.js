@@ -58,6 +58,7 @@ class DashboardConfig {
         'bookmarks',
         'structure',
         'behavior',
+        'finders',
         'inbox',
         'data-backups',
         'widgets',
@@ -494,6 +495,8 @@ class DashboardConfig {
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
         // stops working is worse than a name that lingers.
+        // Finders left Structure for a section of its own.
+        if (raw === 'config/pages-tags/finders' || raw === 'config/structure/finders') return 'finders';
         if (raw === 'config/pages-tags') return 'structure';
         if (raw === 'config/pages-tags/tags') return 'bookmarks';
         if (raw.startsWith('config/pages-tags/')) return 'structure';
@@ -1770,6 +1773,7 @@ class DashboardConfig {
      */
     listKeyboardBodyId() {
         if (this.section === 'structure') return 'config-pt-body';
+        if (this.section === 'finders') return 'config-finders-body';
         if (this.section === 'bookmarks' && this.bmTab === 'tags') return 'config-bm-body';
         return null;
     }
@@ -2230,6 +2234,7 @@ class DashboardConfig {
             inbox: ['config.sectionInbox', 'Inbox'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
+            finders: ['config.sectionFinders', 'Finders'],
             monitoring: ['config.sectionMonitoring', 'Monitoring'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             widgets: ['config.sectionWidgets', 'Widgets'],
@@ -2670,6 +2675,11 @@ class DashboardConfig {
             void this.maybeShowMonitoringTutorial();
         } else if (this.section === 'structure') {
             this.bindPagesTags(container);
+        } else if (this.section === 'finders') {
+            this.bindFinders(container);
+            this.bindPtToolbar(container);
+            this.bindListKeyboard(container);
+            void this.loadFinders();
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
             // The section carries schema panels of its own now, which bind the
@@ -2908,7 +2918,7 @@ class DashboardConfig {
 
     clearListKeyboardSelection() {
         this._listKeyboardKey = null;
-        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected, #config-bm-body .config-crud-row.keyboard-selected').forEach((row) => {
+        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected, #config-finders-body .config-crud-row.keyboard-selected, #config-bm-body .config-crud-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
             row.removeAttribute('aria-selected');
         });
@@ -4676,6 +4686,9 @@ class DashboardConfig {
         }
         if (this.section === 'structure') {
             return this.renderPagesTags();
+        }
+        if (this.section === 'finders') {
+            return this.renderFindersSection();
         }
         if (this.section === 'widgets') {
             return this.renderWidgetsSection();
@@ -12514,6 +12527,7 @@ class DashboardConfig {
      * the new place from wherever it arrives.
      */
     static MONITORING_FROM_BEHAVIOR = { status: 'checks', checks: 'checks', notifications: 'notifications' };
+            fresh: ['config.behaviorTabFresh', 'Fresh'],
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -12527,7 +12541,6 @@ class DashboardConfig {
             general: ['config.behaviorTabGeneral', 'General'],
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
             search: ['config.behaviorTabKeyboardSearch', 'Keyboard & search'],
-            fresh: ['config.behaviorTabFresh', 'Fresh'],
             privacy: ['config.behaviorTabPrivacySync', 'Privacy & sync'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -14054,7 +14067,7 @@ class DashboardConfig {
      * and stopped being a list of names — and the thing it is arranged with,
      * the block order, lives on the categories tab regardless.
      */
-    static PT_TABS = ['categories', 'pages', 'finders', 'collections'];
+    static PT_TABS = ['categories', 'pages', 'collections'];
 
     /**
      * Data & backups keeps its destructive actions on a separate tab, and icon
@@ -14160,7 +14173,6 @@ class DashboardConfig {
 
     ptTabLabel(tab) {
         const map = {
-            finders: ['config.findersTab', 'Finders'],
             tags: ['config.tagsTab', 'Tags'],
             collections: ['config.collectionsTab', 'Collections'],
             pages: ['config.pagesTab', 'Pages'],
@@ -14211,7 +14223,6 @@ class DashboardConfig {
         // panel for a heading list, which the editors below do not carry.
         const heading = `<h3 class="sr-only">${this.dash.escapeHtml(this.ptTabLabel(this.ptTab))}</h3>`;
         switch (this.ptTab) {
-            case 'finders': return heading + this.renderFinders();
             case 'collections': return heading + this.renderCollections();
             case 'pages': return heading + this.renderPagesEditor();
             case 'categories': return heading + this.renderCategoriesEditor();
@@ -14235,6 +14246,9 @@ class DashboardConfig {
     }
 
     repaintPtBody() {
+        // Finders left Structure for a section of its own; the list's search,
+        // sort, add and delete handlers still repaint through here.
+        if (this.section === 'finders') { this.repaintFindersBody(); return; }
         const body = document.getElementById('config-pt-body');
         if (!body) { this.render(); return; }
         body.innerHTML = this.renderPtTab();
@@ -14247,8 +14261,7 @@ class DashboardConfig {
     }
 
     bindPtTabControls(container) {
-        if (this.ptTab === 'finders') { this.bindFinders(container); void this.loadFinders(); }
-        else if (this.ptTab === 'collections') { this.bindCollections(container); }
+        if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
         this.bindPtToolbar(container);
@@ -14406,6 +14419,35 @@ class DashboardConfig {
 
     /* ── Finders (native) ──────────────────────────────────────────────────── */
 
+    /**
+     * Finders, as a section rather than a tab under Structure.
+     *
+     * They are search shortcuts, not part of what a page is made of, so they sit
+     * in the rail between Behavior (where the search settings live) and Inbox.
+     * The list itself is the one that was a Structure tab.
+     */
+    renderFindersSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // One tab, drawn like the strip every other section has, so the sections
+        // read alike. Named for what a finder is: the section already says "Finders".
+        const tabs = `<button type="button" class="config-subtab is-active" role="tab" aria-selected="true" tabindex="0" aria-controls="config-finders-body">${esc(this.t('config.findersListTab', 'Search shortcuts'))}</button>`;
+        return `
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-finders-body" role="tabpanel" tabindex="0">${this.renderFinders()}</div>`;
+    }
+
+    /** Redraw the finders list without refetching it. */
+    repaintFindersBody() {
+        const body = document.getElementById('config-finders-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderFinders();
+        const container = document.getElementById('dashboard-layout');
+        if (!container) return;
+        this.bindFinders(container);
+        this.bindPtToolbar(container);
+        this.bindListKeyboard(container);
+    }
+
     renderFinders() {
         const esc = (v) => this.dash.escapeHtml(v);
         if (this._finders == null) {
@@ -14482,7 +14524,7 @@ class DashboardConfig {
             this._finders = [];
             this._findersLoadFailed = true;
         }
-        if (this.ptTab === 'finders') this.repaintPtBody();
+        if (this.section === 'finders') this.repaintFindersBody();
     }
 
     bindFinders(container) {

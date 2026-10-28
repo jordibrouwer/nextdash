@@ -137,7 +137,7 @@ test.describe('the finder line with nothing set up', () => {
 
         await page.evaluate(() => document.querySelector('.search-hint-entry')?.click());
         await expect
-            .poll(() => page.evaluate(() => window.dashboardInstance.config?._module?.ptTab), { timeout: 15_000 })
+            .poll(() => page.evaluate(() => window.dashboardInstance.config?.section), { timeout: 15_000 })
             .toBe('finders');
     });
 });
