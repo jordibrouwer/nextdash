@@ -97,11 +97,12 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 			}
 		}
 		// Only widgets that read the demo's own data or run in the browser:
-		// nothing that reads the host or fetches from outside on the server.
+		// nothing that reads the host or fetches from outside on the server. Glances
+		// reads Tower, which answers in-process.
 		widgets, _ := h.store.GetPageBlocks(page.ID)
 		for _, widget := range widgets {
 			switch widget.Type {
-			case WidgetTypeHealth, WidgetTypeWeather, WidgetTypeNotes, WidgetTypeInbox, WidgetTypeDuplicates:
+			case WidgetTypeHealth, WidgetTypeWeather, WidgetTypeNotes, WidgetTypeInbox, WidgetTypeDuplicates, WidgetTypeGlances:
 			default:
 				t.Errorf("%s: widget %s is not one the demo may carry", page.Name, widget.Type)
 			}

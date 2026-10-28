@@ -560,8 +560,8 @@ func TestGlancesPageRefreshChoices(t *testing.T) {
 	}
 }
 
-// The public demo has no Glances: no route answers but the status, and that says not set up.
-func TestGlancesIsNotPartOfTheDemo(t *testing.T) {
+// The public demo watches Tower: reading is open and answered in-process, changing the settings or the record is not.
+func TestGlancesDemoWatchesTower(t *testing.T) {
 	h, _, _ := glancesViewSetup(t)
 	r := mux.NewRouter()
 	registerGlancesViewRoutes(r, h)
@@ -570,29 +570,41 @@ func TestGlancesIsNotPartOfTheDemo(t *testing.T) {
 		r.ServeHTTP(rec, httptest.NewRequest(method, path, nil))
 		return rec
 	}
-	// Set up and reachable outside the demo, so the demo's answer is the demo's doing.
-	if rec := do(http.MethodGet, "/api/glances/quicklook"); rec.Code != http.StatusOK {
-		t.Fatalf("outside the demo: %d", rec.Code)
-	}
 	t.Setenv("NEXTDASH_DEMO", "1")
+	if err := h.seedDemoGlances(time.Now()); err != nil {
+		t.Fatal(err)
+	}
 	for _, route := range [][2]string{
-		{http.MethodGet, "/api/glances/config"}, {http.MethodGet, "/api/glances/quicklook"}, {http.MethodGet, "/api/glances/history"},
-		{http.MethodGet, "/api/glances/history.csv"}, {http.MethodGet, "/api/glances/insights"}, {http.MethodDelete, "/api/glances/data"},
+		{http.MethodGet, "/api/glances/config"}, {http.MethodDelete, "/api/glances/data"},
 		{http.MethodPost, "/api/glances/connect"}, {http.MethodDelete, "/api/glances/config"},
 	} {
 		if rec := do(route[0], route[1]); rec.Code != http.StatusNotFound {
 			t.Errorf("%s %s in the demo: %d", route[0], route[1], rec.Code)
 		}
 	}
-	rec := do(http.MethodGet, "/api/glances/status")
+	for _, path := range []string{"quicklook", "fs", "sensors", "containers", "processlist", "history?series=cpu,mem&since=1", "insights"} {
+		if rec := do(http.MethodGet, "/api/glances/"+path); rec.Code != http.StatusOK || strings.Contains(rec.Body.String(), `"error"`) {
+			t.Errorf("GET %s in the demo: %d %.120s", path, rec.Code, rec.Body.String())
+		}
+	}
 	var status struct {
 		Enabled, Configured bool
+		Name                string
 	}
+	rec := do(http.MethodGet, "/api/glances/status")
 	if err := json.Unmarshal(rec.Body.Bytes(), &status); err != nil {
 		t.Fatal(err)
 	}
-	if rec.Code != http.StatusOK || status.Enabled || status.Configured {
+	if rec.Code != http.StatusOK || !status.Enabled || !status.Configured || status.Name != demoGlancesName {
 		t.Errorf("status in the demo: %d %+v", rec.Code, status)
+	}
+	// A week of history is behind it.
+	hs := glancesHostByID(glancesMainID)
+	if series, points, _ := hs.collected(); series < 20 || points < 1000 {
+		t.Errorf("Tower has %d series and %d points", series, points)
+	}
+	if ongoing, past := hs.incidentList(); len(ongoing) != 0 || len(past) != 2 {
+		t.Errorf("Tower's incidents: %d ongoing, %d past", len(ongoing), len(past))
 	}
 }
 

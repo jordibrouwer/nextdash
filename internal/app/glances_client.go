@@ -131,6 +131,14 @@ var glancesDiskNoise = regexp.MustCompile(`^(loop|ram|zram|nbd)\d+$`)
 // for /status, whose 404 is a server that is not version 4: version 5 when
 // /api/5/status answers, older otherwise. A refused login is not a refused key.
 func (h *Handlers) glancesGet(ctx context.Context, server string, credential HealthCredential, path string, query url.Values, out any) error {
+	if demoMode() {
+		// Tower, the demo's one host, answers from glances_demo.go: nothing is dialed.
+		data, err := demoGlancesAnswer(path, time.Now())
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(data, out)
+	}
 	ctx, cancel := context.WithTimeout(withOutboundLimiter(ctx, glancesOutboundLimiter), mediaRequestTimeout)
 	defer cancel()
 	resp, err := h.mediaRequest(ctx, server, credential, glancesAPI+path, query, "application/json", nil)

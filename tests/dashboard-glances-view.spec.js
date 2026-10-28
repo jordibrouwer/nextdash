@@ -1534,7 +1534,7 @@ test.describe('Config → Glances: every change is kept', () => {
     });
 });
 
-test.describe('the public demo has no Glances', () => {
+test.describe('the public demo watches Tower', () => {
     // The server writes <meta name="nextdash-demo"> in demo mode; here it is put into the page.
     async function asDemo(page) {
         await page.route('**/', async (route) => {
@@ -1545,26 +1545,19 @@ test.describe('the public demo has no Glances', () => {
         });
     }
 
-    test('no icon, Shift+G and #glances open nothing, and Config has no Glances section', async ({ page }) => {
-        // Even a server that says it is set up changes nothing in the demo.
+    test('the icon and #glances open the page, and Config has no Glances section', async ({ page }) => {
         await mockGlances(page, { status: { ...STATUS, level: 'ok' } });
         await asDemo(page);
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await expect(page.locator('meta[name="nextdash-demo"]')).toHaveCount(1);
-        await expect(page.locator('#page-nav-glances-link')).toHaveCount(0);
-        await page.locator('body').click({ position: { x: 5, y: 5 } });
-        await page.keyboard.press('Shift+G');
-        // Checks that nothing happens: the key must not open the view, and a check that ran at once would pass either way.
-        await page.waitForTimeout(400);
-        expect(await page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+        await expect(page.locator('#page-nav-glances-link')).toHaveCount(1);
 
         await page.goto('/#glances');
-        // Checks that nothing happens: the route must not open the view, and a check that ran at once would pass either way.
-        await page.waitForTimeout(800);
-        await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
+        await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(1);
 
+        // The settings stay the demo's own: the server refuses them, so the section is not there.
         await page.goto('/#config/glances');
         await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
         await expect(page.locator('[data-config-section="glances"]')).toHaveCount(0);

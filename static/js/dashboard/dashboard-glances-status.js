@@ -14,9 +14,6 @@
 (function () {
     'use strict';
 
-    // The public demo has no Glances: nothing here asks, and nothing shows.
-    const DEMO = Boolean(document.querySelector('meta[name="nextdash-demo"]'));
-
     /**
      * Which Glances host the page is looking at. nextDash can watch several; an
      * empty id is the first. The choice is remembered in this browser, and the
@@ -135,9 +132,9 @@
             this._visibility = null;
         }
 
-        /** The Glances page exists: switched on, and told where to look. Never in the demo. */
+        /** The Glances page exists: switched on, and told where to look. */
         get configured() {
-            return !DEMO && this.state.configured === true;
+            return this.state.configured === true;
         }
 
         /** The connection is switched off: the page and its record stay, nothing is read. */
@@ -166,7 +163,6 @@
         }
 
         async refresh() {
-            if (DEMO) return false;
             let next = null;
             try {
                 const res = await fetch(Host.url('/api/glances/status'), { cache: 'no-store' });
@@ -187,8 +183,6 @@
 
         start() {
             this.stop();
-            // Not part of the demo: nothing to ask, and nothing ever shows.
-            if (DEMO) return;
             void this.refresh();
             this._timer = setInterval(() => {
                 if (document.visibilityState !== 'hidden') void this.refresh();

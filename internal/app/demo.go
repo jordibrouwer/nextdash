@@ -178,6 +178,11 @@ func (h *Handlers) seedDemo(now time.Time) error {
 		return err
 	}
 
+	// Tower, a Glances host with a week of history (glances_demo.go).
+	if err := h.seedDemoGlances(now); err != nil {
+		return err
+	}
+
 	settings := h.store.GetSettings()
 	settings.UnraidServers = []UnraidServer{{ID: demoUnraidServerID, Name: "Tower", BaseURL: "http://tower.local", Enabled: true}}
 	settings.OnboardingCompleted = true

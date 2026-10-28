@@ -108,8 +108,6 @@ class DashboardGlancesLoader {
     }
 
     async openGlancesView(...args) {
-        // Not part of the demo: there is no page to open.
-        if (document.querySelector('meta[name="nextdash-demo"]')) return false;
         await window.ViewStyles?.ensureViewStyles?.();
         let mod;
         try {

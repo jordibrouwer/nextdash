@@ -14,7 +14,7 @@ What the demo holds: three pages of real, public sites for programmers,
 homelabbers and self-hosters, with tags, a few shortcuts and pins, usage that
 fills the smart collections, and a handful of widgets that cost the server
 nothing -- weather and notes run in the browser, health, inbox and duplicates
-count the demo's own data. No widget reads the host or fetches from outside.
+count the demo's own data. No widget reads the host or fetches from outside (the Glances one reads Tower, in-process).
 */
 
 type demoLink struct {
@@ -141,8 +141,10 @@ func demoPages() []demoPage {
 			},
 			widgets: []Widget{
 				{ID: "demo-inbox", Type: WidgetTypeInbox, Config: map[string]any{}},
+				// Tower, the demo's Glances host (glances_demo.go).
+				{ID: "demo-glances", Type: WidgetTypeGlances, Config: map[string]any{"style": "graph"}},
 			},
-			order: []string{"platforms", "network", "demo-inbox", "home", "community", "makers"},
+			order: []string{"platforms", "network", "demo-inbox", "demo-glances", "home", "community", "makers"},
 		},
 		{
 			name: "Self-hosted", icon: "▣",
