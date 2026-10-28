@@ -42,11 +42,15 @@ const section = (detail, name) => detail.locator(`[data-widget-section="${name}"
 test.describe('media widget settings in three sections', () => {
     test('Sonarr: address, key and Connect are in Connection; Page and Width in Display', async ({ page }) => {
         const detail = await openWidget(page, sonarr);
-        // The page picker only exists with a second page to move to.
-        await page.evaluate(() => {
-            const dash = window.dashboardInstance;
-            dash.pages = [...dash.pages, { id: 9999, name: 'Other' }];
-            (dash.config.instance || dash.config).repaintWidgetsBody();
+        // The page picker only exists with a second page to move to: make a real one.
+        const added = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const had = d.pages.length;
+            await (d.config._module || d.config.instance || d.config).addPage();
+            const until = Date.now() + 10_000;
+            while (d.pages.length <= had && Date.now() < until) await new Promise((r) => setTimeout(r, 50));
+            (d.config._module || d.config.instance || d.config).repaintWidgetsBody();
+            return d.pages[d.pages.length - 1].id;
         });
         const connection = section(detail, 'connection');
         const display = section(detail, 'display');
@@ -57,11 +61,19 @@ test.describe('media widget settings in three sections', () => {
         await expect(display.locator('[data-widget-move-page]')).toHaveCount(1);
         await expect(display.locator('[data-widget-setting="columns"]')).toHaveCount(1);
         await expect(connection.locator('[data-widget-move-page]')).toHaveCount(0);
+        await expect(connection).toContainText('Sonarr');
+        await expect(connection.locator('p.config-widget-note').first()).toHaveText('Sonarr');
         const order = await detail.locator('[data-widget-section]')
             .evaluateAll((els) => els.map((el) => el.getAttribute('data-widget-section')));
         expect(order.slice(0, 2)).toEqual(['connection', 'display']);
         await expect(detail.locator('.config-widget-settings-body.is-custom.is-media.is-sonarr')).toHaveCount(1);
         await expect(detail.locator('.config-widget-save-bar, [data-widget-save]').first()).toBeVisible();
+        // Leave the install with the pages it had.
+        await page.evaluate(async (id) => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const headers = typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {};
+            await f(`/api/pages/${id}`, { method: 'DELETE', headers });
+        }, added);
     });
 
     test('Jellyfin choices appear in Display after Connect', async ({ page }) => {

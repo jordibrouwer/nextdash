@@ -673,6 +673,7 @@
         }
         const grid = (html) => (html ? `<div class="config-custom-grid">${html}</div>` : '');
         const connection = `
+            <p class="config-widget-note">${esc(service.name)}</p>
             ${service.hint ? `<span class="config-widget-note">${esc(this.t(service.hint[0], service.hint[1]))}</span>` : ''}
             <div class="config-custom-grid">
                 <div class="config-widget-field">
