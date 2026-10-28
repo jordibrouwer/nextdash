@@ -277,6 +277,9 @@ test.describe('the processor widget in config', () => {
         const detail = page.locator(`[data-widget-detail="${idx}"]`);
         // The first grid: Display's. Advanced has a grid of its own, folded.
         await expect(detail.locator('.config-widget-settings-body').first()).toBeVisible();
+        // The note is all Connection holds here, so that section starts folded.
+        const connection = detail.locator('[data-widget-section="connection"]');
+        if (await connection.getAttribute('open') === null) await connection.locator('> summary').click();
         await expect(detail.locator('.config-widget-setup')).toBeVisible();
         // The panel opens with a transition; read widths only once they agree.
         let lastWidths = '';

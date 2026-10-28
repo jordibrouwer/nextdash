@@ -219,8 +219,14 @@
             }
         }
         // By id where the field has one, else by the attributes that name it:
-        // the row title and a figure's fields have no id of their own.
-        const selector = inside?.id ? `#${CSS.escape(inside.id)}`
+        // the row title and a figure's fields have no id of their own. A
+        // section's title has neither; it is found by its section.
+        const summaryOf = inside?.matches('summary') && inside.parentElement?.matches('details[data-widget-section]')
+            ? inside.parentElement : null;
+        const selector = summaryOf ? `details[data-widget-section-of="${
+            CSS.escape(summaryOf.getAttribute('data-widget-section-of') || '')}"][data-widget-section="${
+            CSS.escape(summaryOf.getAttribute('data-widget-section') || '')}"] > summary`
+            : inside?.id ? `#${CSS.escape(inside.id)}`
             : inside ? ['data-widget', 'data-index', 'data-custom-field', 'data-custom-index',
                 'data-custom-row', 'data-widget-auth', 'data-widget-index', 'data-custom-find']
                 .filter((attr) => inside.hasAttribute(attr))
@@ -2518,8 +2524,8 @@
                 connection: `${this.renderWidgetPresets(widget, index)}${customGrid(sorted.connection)}${
                     this.renderAddressPlaceholderNote(widget, index)}${
                     this.renderWidgetCredential(widget, index)}${this.renderCustomWidgetProbe(widget, index)}`,
-                display: `${this.renderCustomWidgetFields(widget, index)}${customGrid(`${sorted.display}${
-                    this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}`)}`,
+                display: `${this.renderCustomWidgetFields(widget, index)}${customGrid(`${
+                    this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}${sorted.display}`)}`,
                 advanced: customGrid(sorted.advanced),
             })}${this.renderWidgetSaveBar(index)}</div>`;
         }
@@ -2695,8 +2701,8 @@
     },
 
     /*
-     * Whether the widget already has a saved way in: an address, feeds or a
-     * stored key. Read from what is stored, not from the draft -- typing the
+     * Whether the widget already has a saved way in: an address, a host,
+     * feeds or a stored key -- or has nothing to connect at all. Read from what is stored, not from the draft -- typing the
      * first address must not fold the section shut around the caret.
      *
      * A media service needs both its address and its key, and is not
@@ -2714,8 +2720,13 @@
             if (this.mediaSetupFor?.(block)?.error) return false;
             return Boolean(config.server) && this.storedCredentialState(block).kind !== 'none';
         }
-        if (config.server || config.url) return true;
+        if (config.server || config.url || config.host) return true;
         if (Array.isArray(config.feedUrls) && config.feedUrls.length) return true;
+        // Processor, memory, disks, Docker: nothing to connect, only the setup
+        // note about the host. It is there to read when needed, not a step
+        // still to take, so it is drawn folded like a connected one.
+        if (block?.type !== 'custom' && !(DashboardConfig.WIDGET_SETTINGS[block?.type] || [])
+            .some((field) => this.widgetFieldSection(field.key) === 'connection')) return true;
         return this.storedCredentialState(block).kind !== 'none';
     },
 

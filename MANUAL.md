@@ -2913,11 +2913,11 @@ Each widget has a title, a width (one or two columns), the page it counts, a row
 
 Every widget's settings come in the same three folding sections, in this order, and a section with nothing in it is left out:
 
-- **Connection** — how the widget reaches what it shows: an address, a host, the feed addresses, a key or sign-in, and **Connect** or **Test** where there is one. It is open while the widget is not connected yet and folds shut once it is.
+- **Connection** — how the widget reaches what it shows: an address, a host, the feed addresses, a key or sign-in, and **Connect** or **Test** where there is one. It opens on a widget that has no saved way in yet — and on a media service whose key is missing or whose server did not answer, with the reason in it — and starts folded on one that has; a media service's title adds how it stands, such as *connected*. Saving or connecting while you work in it leaves it open. For the processor, memory, disks and Docker it holds only the note on what the host needs, and starts folded.
 - **Display** — what you see on the tile: the page, the width, what to show, the order, how many rows, the style and, for Custom, the figures. It is open.
 - **Advanced** — how often it refreshes, how long an answer is kept, and where a click goes. It is folded.
 
-Open or shut a section yourself and it stays that way while Config is open, even as the panel redraws; close Config and they go back to these starting states. Save and Discard stay below the sections and cover all three.
+Open or shut a section yourself, or work in one, and it stays that way while Config is open, even as the panel redraws; close Config and they go back to these starting states. Save and Discard stay below the sections and cover all three.
 
 Widgets share one order with the categories and are moved on the dashboard: drag the `//` in the title, or use the keys in [§7.4](#74-acting-on-a-category-or-widget). On a one-column dashboard — and on a phone — a wide widget narrows itself and keeps the important half.
 

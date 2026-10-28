@@ -61,6 +61,13 @@ test.describe('the Custom widget in three sections', () => {
         await expect(detail.locator('.config-widget-settings-body.is-custom')).toHaveCount(1);
     });
 
+    test('Display puts Width before its own settings, as every other kind does', async ({ page }) => {
+        const detail = await openWidget(page, custom);
+        const order = await section(detail, 'display').locator('[data-widget-setting]')
+            .evaluateAll((els) => els.map((el) => el.getAttribute('data-widget-setting')));
+        expect(order).toEqual(['columns', 'itemsPath']);
+    });
+
     test('the figures table keeps the full width of Display', async ({ page }) => {
         const detail = await openWidget(page, custom);
         const display = section(detail, 'display');

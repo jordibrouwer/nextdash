@@ -222,4 +222,25 @@ test.describe('widget settings in three sections', () => {
         await repaint(page);
         await expect(section(detail, 'advanced')).not.toHaveAttribute('open', /.*/);
     });
+
+    test('a repaint keeps the focus on a section title', async ({ page }) => {
+        const detail = await openWidget(page, glances);
+        await section(detail, 'advanced').locator('summary').focus();
+        await repaint(page);
+        await expect(section(page.locator('.config-widget-detail').first(), 'advanced').locator('summary')).toBeFocused();
+    });
+
+    test('Glances with a host is connected: Connection starts folded', async ({ page }) => {
+        const detail = await openWidget(page, { ...glances, config: { host: 'http://glances.lan:61208' } });
+        await expect(section(detail, 'connection')).toHaveAttribute('data-widget-section-default', 'closed');
+        await expect(section(detail, 'connection')).not.toHaveAttribute('open', /.*/);
+    });
+
+    test('a kind with only a setup note in Connection starts with it folded', async ({ page }) => {
+        const detail = await openWidget(page, { type: 'cpu', title: 'CPU', config: {} });
+        await expect(section(detail, 'connection').locator('.config-widget-setup')).toHaveCount(1);
+        await expect(section(detail, 'connection')).toHaveAttribute('data-widget-section-default', 'closed');
+        await expect(section(detail, 'connection')).not.toHaveAttribute('open', /.*/);
+        await expect(section(detail, 'display')).toHaveAttribute('open', '');
+    });
 });

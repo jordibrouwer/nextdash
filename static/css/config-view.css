@@ -8136,7 +8136,8 @@ body.no-animations .config-new-features-panel-star {
 .config-widget-settings-body.is-custom {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    /* The same gap as .config-widget-sections: one rhythm between sections. */
+    gap: 14px;
     /* The grid rule this overrides also sets align-items: start, which in a
        column flex box is the horizontal axis -- so every group shrank to its
        content and sat in a third of the panel it had been given. */
@@ -8193,10 +8194,13 @@ body.no-animations .config-new-features-panel-star {
     border-top: 0;
 }
 
+/* A step above the group titles inside it ("Start from a service"). */
 .config-widget-section > summary {
     display: flex;
     align-items: center;
     gap: 6px;
+    font-size: calc(var(--font-size-text) * 0.92);
+    font-weight: var(--font-weight-bold);
     cursor: pointer;
     list-style: none;
     user-select: none;

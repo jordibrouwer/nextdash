@@ -83,28 +83,78 @@ test.describe('media widget settings in three sections', () => {
             (d.config._module || d.config.instance || d.config).repaintWidgetsBody();
             return d.pages[d.pages.length - 1].id;
         });
-        const connection = section(detail, 'connection');
-        const display = section(detail, 'display');
-        await expect(connection.locator('[data-widget-setting="server"]')).toHaveCount(1);
-        await expect(connection.locator('[data-widget-auth="secret"]')).toHaveCount(1);
-        await expect(connection.locator('[data-media-connect]')).toHaveCount(1);
-        await expect(connection.locator('[data-media-status]')).toHaveCount(1);
-        await expect(display.locator('[data-widget-move-page]')).toHaveCount(1);
-        await expect(display.locator('[data-widget-setting="columns"]')).toHaveCount(1);
-        await expect(connection.locator('[data-widget-move-page]')).toHaveCount(0);
-        await expect(connection).toContainText('Sonarr');
-        await expect(connection.locator('p.config-widget-note').first()).toHaveText('Sonarr');
-        const order = await detail.locator('[data-widget-section]')
-            .evaluateAll((els) => els.map((el) => el.getAttribute('data-widget-section')));
-        expect(order.slice(0, 2)).toEqual(['connection', 'display']);
-        await expect(detail.locator('.config-widget-settings-body.is-custom.is-media.is-sonarr')).toHaveCount(1);
-        await expect(detail.locator('.config-widget-save-bar, [data-widget-save]').first()).toBeVisible();
-        // Leave the install with the pages it had.
-        await page.evaluate(async (id) => {
+        try {
+            const connection = section(detail, 'connection');
+            const display = section(detail, 'display');
+            await expect(connection.locator('[data-widget-setting="server"]')).toHaveCount(1);
+            await expect(connection.locator('[data-widget-auth="secret"]')).toHaveCount(1);
+            await expect(connection.locator('[data-media-connect]')).toHaveCount(1);
+            await expect(connection.locator('[data-media-status]')).toHaveCount(1);
+            await expect(display.locator('[data-widget-move-page]')).toHaveCount(1);
+            await expect(display.locator('[data-widget-setting="columns"]')).toHaveCount(1);
+            await expect(connection.locator('[data-widget-move-page]')).toHaveCount(0);
+            await expect(connection).toContainText('Sonarr');
+            await expect(connection.locator('p.config-widget-note').first()).toHaveText('Sonarr');
+            const order = await detail.locator('[data-widget-section]')
+                .evaluateAll((els) => els.map((el) => el.getAttribute('data-widget-section')));
+            expect(order.slice(0, 2)).toEqual(['connection', 'display']);
+            await expect(detail.locator('.config-widget-settings-body.is-custom.is-media.is-sonarr')).toHaveCount(1);
+            await expect(detail.locator('.config-widget-save-bar, [data-widget-save]').first()).toBeVisible();
+        } finally {
+            // Leave the install with the pages it had, whatever failed above.
+            await page.evaluate(async (id) => {
+                const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                const headers = typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {};
+                await f(`/api/pages/${id}`, { method: 'DELETE', headers });
+            }, added);
+        }
+    });
+
+    test('every media service draws its address in Connection and no empty section', async ({ page }) => {
+        await openWidget(page, sonarr);
+        const types = await page.evaluate(async () => {
             const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-            const headers = typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {};
-            await f(`/api/pages/${id}`, { method: 'DELETE', headers });
-        }, added);
+            const headers = { 'Content-Type': 'application/json',
+                ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            const dash = window.dashboardInstance;
+            const all = Object.keys(window.DashboardConfig.MEDIA_SERVICES);
+            const widgets = all.map((type) => ({ type, title: type, config: {} }));
+            const res = await f(`/api/pages/${dash.pages[0].id}/blocks`, { method: 'PUT', headers, body: JSON.stringify({ widgets }) });
+            if (!res.ok) throw new Error(`blocks PUT ${res.status}`);
+            return all;
+        });
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+        await expect(page.locator('[data-widget-settings]')).toHaveCount(types.length, { timeout: 15_000 });
+        const result = await page.evaluate(async (types) => {
+            const dash = window.dashboardInstance;
+            const c = dash.config.instance || dash.config;
+            const until = Date.now() + 10_000;
+            const media = () => (c._widgetBlocks || []).map((block, index) => [block, index])
+                .filter(([block]) => block?.isWidget && window.DashboardConfig.MEDIA_SERVICES[block.type]);
+            while (media().length < types.length && Date.now() < until) await new Promise((r) => setTimeout(r, 50));
+            const problems = [];
+            const drawn = [];
+            for (const [block, index] of media()) {
+                const box = document.createElement('div');
+                box.innerHTML = c.renderWidgetSettings(block, index);
+                drawn.push(block.type);
+                const server = box.querySelector('[data-widget-section="connection"] [data-widget-setting="server"]');
+                if (!server) problems.push(`${block.type}: no address in Connection`);
+                box.querySelectorAll('details.config-widget-section').forEach((el) => {
+                    const body = el.querySelector('.config-widget-section-body');
+                    if (!body || (!body.children.length && !body.textContent.trim())) {
+                        problems.push(`${block.type}: empty ${el.getAttribute('data-widget-section')}`);
+                    }
+                });
+            }
+            return { types: [...types].sort(), drawn: drawn.sort(), problems };
+        }, types);
+        expect(result.drawn).toEqual(result.types);
+        expect(result.problems).toEqual([]);
     });
 
     test('Jellyfin choices appear in Display after Connect', async ({ page }) => {
