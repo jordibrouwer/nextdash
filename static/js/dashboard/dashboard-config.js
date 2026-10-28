@@ -542,8 +542,6 @@ class DashboardConfig {
         }
         // Branding lived on Display, then moved to Header with the browser tab.
         if (raw === 'config/appearance/branding') return 'header';
-        // Widgets → Types listed every kind; the Catalogue draws them now.
-        if (raw === 'config/widgets/types') return 'catalogue';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw === 'config/data-backups/logs') return 'server';
         // Tags left Pages & tags for Bookmarks; an old link to it lands on the
@@ -1203,6 +1201,8 @@ class DashboardConfig {
      */
     resolveConfigOpenTarget(explicitSection) {
         explicitSection = this.followMovedBehaviorTab(explicitSection);
+        // Coming back to config is a new arrival for the widgets links.
+        this._widgetsDeepLinkDone = false;
         const hash = window.location.hash;
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
         const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
@@ -2634,6 +2634,9 @@ class DashboardConfig {
         // binds to them: both move rather than being copied, so a handler bound
         // to the original would be bound to a node that is no longer there.
         this._fillShellHeadFromSection(container, { reset: true });
+        // An old widgets link is answered once per arrival; leaving the
+        // section is what lets the next one be.
+        if (this.section !== 'widgets') this._widgetsDeepLinkDone = false;
         // Created up front, not on first save: a live region has to be in the
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();
@@ -2664,7 +2667,6 @@ class DashboardConfig {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
         } else if (this.section === 'widgets') {
-            this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
             void this.loadWidgetsEditor();
             // The custom widget offers a credential by name; the names are two
@@ -13564,8 +13566,6 @@ class DashboardConfig {
     static SECTION_TAB_NOTES = {
         widgets: {
             'widgets': ['config.widgetsNoteWidgets', 'The widgets on each page: show or hide them, rename them, and change what they count.'],
-            'catalogue': ['config.widgetsNoteCatalogue', 'Every kind nextDash can draw, with example figures. Add one to the page you are on.'],
-            'custom': ['config.widgetsNoteCustom', 'Read a figure out of any service that answers JSON, and show it as a tile.'],
         },
         bookmarks: {
             /*
@@ -16429,8 +16429,8 @@ class DashboardConfig {
      */
     static WIDGETS_WIDE_MIN = 960;
 
-    /** Config → Widgets: the ones you have, every kind there is, and the Custom one at length. */
-    static WIDGETS_TABS = ['widgets', 'catalogue', 'custom'];
+    /** Config → Widgets: the list. Its old Catalogue and Custom widget tabs are the Add wizard. */
+    static WIDGETS_TABS = ['widgets'];
 
     /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];

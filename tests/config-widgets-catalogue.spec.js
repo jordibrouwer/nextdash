@@ -238,17 +238,6 @@ test.describe('new widget kinds', () => {
         await expect(page.locator('[data-widget-option="health"] .config-widget-new-badge')).toHaveCount(0);
     });
 
-    test('the Catalogue tab shows them first, marked', async ({ page }) => {
-        await openWidgets(page);
-        await setRelease(page, 'v1.20.3');
-        await page.locator('[data-widgets-tab="catalogue"]').click();
-
-        const strip = page.locator('.config-widget-kind-group--new .config-widget-kind.is-new');
-        await expect(strip).toHaveCount(MEDIA.length);
-        await expect(page.locator('.config-widget-kind-group').first()).toHaveClass(/config-widget-kind-group--new/);
-        await expect(page.locator('[data-widget-kind-filter="new"]')).toBeVisible();
-    });
-
     test('a minor release later the badge is gone', async ({ page }) => {
         await openWidgets(page);
         await setRelease(page, 'v1.21.0');

@@ -6,9 +6,9 @@ const {
 } = require('./e2e-helpers');
 
 /**
- * Widgets has three tabs, like the other sections: the ones you have, every
- * kind there is (drawn, so a reader can look before adding), and the Custom
- * widget at length. Each tab has its line under the strip.
+ * Widgets is one list with one tab, like Finders. Adding is the picker (the
+ * Add wizard); the old Catalogue and Custom widget tabs are gone, and links
+ * that named them open the wizard instead of a tab that no longer exists.
  */
 async function openWidgetsSection(page, { widgets = [] } = {}) {
     await markWhatsNewSeen(page);
@@ -31,107 +31,67 @@ async function openWidgetsSection(page, { widgets = [] } = {}) {
     await expect(page.locator('#config-widgets-body')).toBeVisible();
 }
 
-const tab = (page, name) => page.locator(`[data-widgets-tab="${name}"]`);
+const picker = (page) => page.locator('.config-widget-picker');
+const customScreen = (page) =>
+    page.locator('[data-widget-wizard-screen="connect"][data-type="custom"]');
 
-test.describe('the Widgets section has three tabs', () => {
-    test('a strip of three, opening on your widgets, each with its own line', async ({ page }) => {
+test.describe('the Widgets section is one list', () => {
+    test('one tab, Your widgets', async ({ page }) => {
         await openWidgetsSection(page);
-        await expect(page.locator('[data-widgets-tab]')).toHaveCount(3);
-        await expect(tab(page, 'widgets')).toHaveAttribute('aria-selected', 'true');
-
-        const notes = new Set();
-        for (const name of ['widgets', 'catalogue', 'custom']) {
-            await tab(page, name).click();
-            await expect(tab(page, name)).toHaveAttribute('aria-selected', 'true');
-            // The first tab is the section's own address; the others are named.
-            await expect(page).toHaveURL(new RegExp(name === 'widgets'
-                ? '#config/widgets$' : `#config/widgets/${name}$`));
-            const note = page.locator('.config-tab-note');
-            await expect(note).toHaveCount(1);
-            notes.add((await note.textContent() || '').trim());
-        }
-        // A line per tab, not one line repeated.
-        expect(notes.size).toBe(3);
-    });
-
-    test('an old link to the Types tab opens the Catalogue', async ({ page }) => {
-        await markWhatsNewSeen(page);
-        await page.goto('/#config/widgets/types');
-        await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
-        await expect(page.locator('.config-widget-kinds')).toBeVisible();
-        await expect(tab(page, 'catalogue')).toHaveAttribute('aria-selected', 'true');
-    });
-});
-
-test.describe('the Catalogue tab', () => {
-    test('draws every kind, each with an example and its own Add', async ({ page }) => {
-        await openWidgetsSection(page);
-        await tab(page, 'catalogue').click();
-        const grouped = await page.evaluate(() => window.DashboardConfig.WIDGET_TYPE_GROUPS
-            .reduce((n, [, types]) => n + types.length, 0));
-        // +1: the Custom widget, in a group of its own at the end. The New
-        // strip on top repeats kinds that are also in their own group.
-        const cards = page.locator('.config-widget-kind-group:not(.config-widget-kind-group--new) .config-widget-kind');
-        await expect(cards).toHaveCount(grouped + 1);
-        await expect(page.locator('.config-widget-kind:not(:has(.config-widget-kind-sample))')).toHaveCount(0);
-        await expect(page.locator('.config-widget-kind:not(:has([data-widget-add]))')).toHaveCount(0);
-    });
-
-    test('says how many of a kind the page already has', async ({ page }) => {
-        await openWidgetsSection(page, { widgets: [
-            { type: 'cpu', title: 'One', config: {} },
-            { type: 'cpu', title: 'Two', config: {} },
-        ] });
-        await tab(page, 'catalogue').click();
-        await expect(page.locator('[data-widget-kind="cpu"] .config-widget-kind-have')).toContainText('2');
-        await expect(page.locator('[data-widget-kind="memory"] .config-widget-kind-have')).toHaveCount(0);
-    });
-
-    test('a chip narrows it to one group, and All brings the rest back', async ({ page }) => {
-        await openWidgetsSection(page);
-        await tab(page, 'catalogue').click();
-        const total = await page.locator('.config-widget-kind').count();
-        await page.locator('[data-widget-kind-filter="system"]').click();
-        const system = await page.evaluate(() => window.DashboardConfig.WIDGET_TYPE_GROUPS
-            .find(([group]) => group === 'system')[1].length);
-        await expect(page.locator('.config-widget-kind')).toHaveCount(system);
-        await expect(page.locator('[data-widget-kind-filter="system"]')).toHaveAttribute('aria-pressed', 'true');
-        await page.locator('[data-widget-kind-filter="all"]').click();
-        await expect(page.locator('.config-widget-kind')).toHaveCount(total);
-    });
-
-    test('Add lands on Your widgets with the new one open', async ({ page }) => {
-        await openWidgetsSection(page);
-        await tab(page, 'catalogue').click();
-        await page.locator('[data-widget-kind="memory"] [data-widget-add]').click();
-        await expect(tab(page, 'widgets')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('[data-widgets-tab]')).toHaveCount(1);
+        await expect(page.locator('[data-widgets-tab]')).toHaveText('Your widgets');
+        await expect(page.locator('[data-widgets-tab="catalogue"]')).toHaveCount(0);
+        await expect(page.locator('[data-widgets-tab="custom"]')).toHaveCount(0);
         await expect(page).toHaveURL(/#config\/widgets$/);
-        await expect(page.locator('.config-widget-row')).toHaveCount(1);
-        await expect(page.locator('.config-widget-row')).toHaveClass(/is-open/);
-        await expect(page.locator('.config-widget-row [data-widget="title"]')).toBeFocused();
     });
 
-    test('How it works on the Custom card opens the Custom widget tab', async ({ page }) => {
+    test('the Add button in the empty list opens the picker', async ({ page }) => {
         await openWidgetsSection(page);
-        await tab(page, 'catalogue').click();
-        await page.locator('[data-widget-kind="custom"] [data-widgets-goto="custom"]').click();
-        await expect(tab(page, 'custom')).toHaveAttribute('aria-selected', 'true');
+        await page.locator('[data-widget-catalogue]').first().click();
+        await expect(picker(page)).toHaveCount(1);
+        await expect(page.locator('[data-widget-search]')).toBeVisible();
     });
 });
 
-test.describe('the Custom widget tab', () => {
-    test('shows where a figure comes from, what it can do, and adds one', async ({ page }) => {
-        await openWidgetsSection(page);
-        await tab(page, 'custom').click();
-        // The picture: service, answer, tile.
-        await expect(page.locator('.config-widget-custom-node')).toHaveCount(3);
-        await expect(page.locator('.config-widget-custom-card')).toHaveCount(6);
-        const presets = await page.evaluate(() => window.DashboardWidgetPresets?.serviceCount?.() || 0);
-        if (presets) {
-            await expect(page.locator('.config-widget-custom-preset').first()).toBeVisible();
-        }
-        await page.locator('.config-widget-custom-how [data-widget-add="custom"]').click();
-        await expect(tab(page, 'widgets')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('.config-widget-row')).toHaveCount(1);
+test.describe('old links open the wizard', () => {
+    for (const name of ['catalogue', 'types']) {
+        test(`#config/widgets/${name} opens the picker`, async ({ page }) => {
+            await markWhatsNewSeen(page);
+            await page.goto(`/#config/widgets/${name}`);
+            await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+            await expect(picker(page)).toHaveCount(1);
+            await expect(page.locator('[data-widget-search]')).toBeVisible();
+            await expect(page.locator('[data-widgets-tab]')).toHaveCount(1);
+            // Not a dead address: the bar says where the list is.
+            await expect(page).toHaveURL(/#config\/widgets$/);
+        });
+    }
+
+    test('#config/widgets/custom opens the custom connect screen once', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/widgets/custom');
+        await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+        await expect(customScreen(page)).toBeVisible();
+        // The same link again, as a second visit to the section.
+        await page.goto('/#config/widgets/custom');
+        await expect(customScreen(page)).toHaveCount(1);
+        await expect(page.locator('#modal-text .config-widget-wizard')).toHaveCount(1);
+    });
+
+    test('a wizard opened by a link and closed stays closed', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/widgets/custom');
+        await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+        await expect(customScreen(page)).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(customScreen(page)).toHaveCount(0);
+        // A repaint of the section binds it again; that must not reopen it,
+        // even with the old address still in the bar.
+        await page.evaluate(() => {
+            history.replaceState(history.state, '', '#config/widgets/custom');
+            window.dashboardInstance.config.repaintWidgetsBody();
+        });
+        await expect(page.locator('#modal-text .config-widget-wizard')).toHaveCount(0);
+        await expect(picker(page)).toHaveCount(0);
     });
 });

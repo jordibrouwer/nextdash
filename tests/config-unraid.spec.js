@@ -175,24 +175,24 @@ test.describe('Config -> Unraid explains itself', () => {
         await expect(page.locator('.unraid-step.is-done')).toHaveCount(0);
     });
 
-    // Widgets: each kind's Add opens the catalogue with that kind's
-    // card focused -- one Enter from a widget on the page.
-    test('Add on a kind opens the catalogue on that kind', async ({ page }) => {
+    // Widgets: each kind's Add opens the Add picker with that kind chosen --
+    // one Enter from a widget on the page.
+    test('Add on a kind opens the picker on that kind', async ({ page }) => {
         await openSection(page, { server: SAVED, keySet: true, suggestedBaseUrl: '' });
         await expect(page.locator('[data-unraid-preview] .unraid-chip')).toHaveCount(7);
         await page.locator('[data-unraid-add="unraidParity"]').click();
         await expect(page.locator('#config-section-widgets')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('[data-widget-kind="unraidParity"] [data-widget-add]')).toBeFocused();
+        await expect(page.locator('.config-widget-picker [data-widget-option="unraidParity"]')).toHaveClass(/is-active/);
+        await expect(page.locator('[data-widget-search]')).toBeFocused();
     });
 
-    test('Add an Unraid widget opens the Catalogue tab on the Unraid group', async ({ page }) => {
+    test('Add an Unraid widget opens the picker on the Unraid kind', async ({ page }) => {
         await openSection(page, { server: null, keySet: false, suggestedBaseUrl: '' });
         await page.locator('[data-unraid-tab="how"]').click();
         await page.locator('[data-unraid-explain] [data-unraid-goto-widgets]').click();
-        await expect(page).toHaveURL(/#config\/widgets\/catalogue$/);
-        await expect(page.locator('[data-widget-kind="unraid"] [data-widget-add]')).toBeFocused();
-        // Narrowed to the Unraid group: no card from another one is drawn.
-        await expect(page.locator('[data-widget-kind="health"]')).toHaveCount(0);
+        await expect(page).toHaveURL(/#config\/widgets$/);
+        await expect(page.locator('.config-widget-picker [data-widget-option="unraid"]')).toHaveClass(/is-active/);
+        await expect(page.locator('[data-widget-search]')).toBeFocused();
     });
 });
 

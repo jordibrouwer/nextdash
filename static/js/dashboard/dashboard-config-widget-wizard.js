@@ -64,6 +64,38 @@
         },
 
         /*
+         * Open the Add wizard: the picker, or -- with screen: 'connect' and a
+         * kind that has a connection -- straight on that kind's connect screen.
+         * Behind a link the picker is still the screen Back returns to.
+         */
+        openWidgetWizard({ type, screen = 'choose' } = {}) {
+            this.openWidgetCatalogue({ focusType: type });
+            if (screen !== 'connect' || !this.widgetWizardKind(type)) return;
+            const pageValue = document.querySelector('#modal-text [data-widget-wizard-page]')?.value;
+            const pageId = pageValue ? Number(pageValue) : null;
+            this._widgetWizardPageId = pageId;
+            this.openWidgetWizardConnect(type, pageId);
+        },
+
+        /*
+         * What an old address asks of the section. Widgets lost its Catalogue
+         * and Custom widget tabs to the wizard, so the links that named them
+         * open it. Once per arrival: the section binds again on every repaint,
+         * and a wizard the reader has closed must stay closed.
+         */
+        widgetsDeepLink(hash) {
+            if (this._widgetsDeepLinkDone) return;
+            const raw = String(hash || '').replace(/^#/, '');
+            if (raw === 'config/widgets/catalogue' || raw === 'config/widgets/types') {
+                this._widgetsDeepLinkDone = true;
+                this.openWidgetWizard();
+            } else if (raw === 'config/widgets/custom') {
+                this._widgetsDeepLinkDone = true;
+                this.openWidgetWizard({ type: 'custom', screen: 'connect' });
+            }
+        },
+
+        /*
          * The connect screen: a media kind asks where it runs and for its key
          * before it is added, and can try them first.
          *

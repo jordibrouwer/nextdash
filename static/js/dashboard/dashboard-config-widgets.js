@@ -28,24 +28,18 @@
      */
     renderWidgetsSection() {
         const esc = (v) => this.dash.escapeHtml(v);
-        // An old link or a stored 'types' meant the list of kinds, which is
-        // the Catalogue now; anything else unknown opens on your widgets.
-        if (!DashboardConfig.WIDGETS_TABS.includes(this.widgetsTab)) {
-            this.widgetsTab = this.widgetsTab === 'types' ? 'catalogue' : 'widgets';
-        }
         // A redraw of a section already on screen knows its width; a first
         // paint does not, and the observer bound after it settles the layout.
         const current = document.getElementById('config-widgets-body');
         if (current?.clientWidth) this._widgetWide = this.widgetsWideAt(current.clientWidth);
-        const tabs = DashboardConfig.WIDGETS_TABS.map((tab) => {
-            const active = tab === this.widgetsTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-widgets-body" data-widgets-tab="${esc(tab)}">${esc(this.widgetsTabLabel(tab))}</button>`;
-        }).join('');
+        // One tab, drawn like the strip every other section has, so the
+        // sections read alike (Finders does the same).
+        const tabs = `<button type="button" class="config-subtab is-active" role="tab" aria-selected="true" tabindex="0" aria-controls="config-widgets-body" data-widgets-tab="widgets">${esc(this.t('config.widgetsTabList', 'Your widgets'))}</button>`;
         return `
             <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
                 'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
-            ${this.renderSectionTabNote('widgets', this.widgetsTab)}
+            ${this.renderSectionTabNote('widgets', 'widgets')}
             <div class="config-tabpage">
                 <div class="config-tabpage-main">
                     <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
@@ -55,39 +49,7 @@
     },
 
     renderWidgetsTab() {
-        if (this.widgetsTab === 'catalogue') return this.renderWidgetCatalogueTab();
-        if (this.widgetsTab === 'custom') return this.renderCustomWidgetTab();
         return this.renderWidgetsEditor();
-    },
-
-    widgetsTabLabel(tab) {
-        const map = {
-            widgets: ['config.widgetsTabList', 'Your widgets'],
-            catalogue: ['config.widgetsTabCatalogue', 'Catalogue'],
-            custom: ['config.widgetsTabCustom', 'Custom widget'],
-        };
-        const [key, fallback] = map[tab] || [tab, tab];
-        return this.t(key, fallback);
-    },
-
-    /*
-     * Switch tabs. Only the body and the line under the strip change: the
-     * strip stays, so the button just clicked keeps its focus.
-     */
-    showWidgetsTab(tab) {
-        if (!DashboardConfig.WIDGETS_TABS.includes(tab) || tab === this.widgetsTab) return;
-        this.stopCustomProbeLive();
-        this.widgetsTab = tab;
-        this.restoreConfigHash();
-        this.repaintWidgetsBody();
-        this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
-        const strip = document.querySelector('[data-widgets-tab]')?.closest('.config-subtabs');
-        this.syncSectionTabNote('widgets', this.widgetsTab, strip?.parentElement);
-    },
-
-    bindWidgetsTabs(container) {
-        if (!container.querySelector('[data-widgets-tab]')) return;
-        this.bindSubTabStrip(container, 'data-widgets-tab', (tab) => this.showWidgetsTab(tab));
     },
 
     widgetTypeGroupLabel(group) {
@@ -322,7 +284,7 @@
         if (container) this.bindWidgetsEditor(container);
         // Wide, a detail is on screen without anyone pressing Settings, so the
         // disk chips that press would have asked for are asked for here.
-        if (this._widgetWide && this.widgetsTab === 'widgets') void this.fillWidgetSuggestions();
+        if (this._widgetWide) void this.fillWidgetSuggestions();
     },
 
     /*
@@ -3205,6 +3167,8 @@
         // Before the guard: a full render brings a fresh body to observe.
         const section = document.getElementById('config-widgets-body');
         if (section) this.observeWidgetsWidth(section);
+        // Before the guard below: it answers a link, not a first bind.
+        this.widgetsDeepLink?.(window.location.hash);
         if (!body || body.dataset.widgetsDelegated === 'true') return;
         body.dataset.widgetsDelegated = 'true';
 
@@ -3226,29 +3190,6 @@
 
             const catalogue = target.closest('[data-widget-catalogue]');
             if (catalogue) { this.openWidgetCatalogue(); return; }
-
-            // The Catalogue's group chips narrow the cards without a refetch.
-            const kindFilter = target.closest('[data-widget-kind-filter]');
-            if (kindFilter) {
-                this.widgetKindFilter = kindFilter.getAttribute('data-widget-kind-filter') || 'all';
-                this.repaintWidgetsBody();
-                body.querySelector(`[data-widget-kind-filter="${CSS.escape(this.widgetKindFilter)}"]`)?.focus();
-                return;
-            }
-
-            // A link from one tab to another, as the strip would.
-            const goto = target.closest('[data-widgets-goto]');
-            if (goto) { this.showWidgetsTab(goto.getAttribute('data-widgets-goto')); return; }
-
-            const add = target.closest('[data-widget-add]');
-            if (add) {
-                // The kind is on the control that was clicked -- a card in the
-                // catalogue overlay, wherever it was opened from. It used to be
-                // read from a dropdown beside a single Add button, which is
-                // what made choosing and adding two steps instead of one.
-                void this.addWidget(add.getAttribute('data-widget-add') || 'health');
-                return;
-            }
 
             const remove = target.closest('[data-widget-delete]');
             if (remove) { void this.deleteWidget(indexOn(remove, 'data-widget-delete')); return; }
@@ -3813,15 +3754,6 @@
         if (!await this.saveWidgetBlocks(payload)) return false;
         // The type is one of WIDGET_TYPES; the title and config never go out.
         window.nextdashTrack?.('widget:add', { type });
-        // Added from the Catalogue or the Custom tab: the new widget is filled
-        // in on Your widgets, so that is where this lands.
-        if (this.widgetsTab !== 'widgets') {
-            this.widgetsTab = 'widgets';
-            this.restoreConfigHash();
-            this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
-            const strip = document.querySelector('[data-widgets-tab]')?.closest('.config-subtabs');
-            this.syncSectionTabNote('widgets', this.widgetsTab, strip?.parentElement);
-        }
         this._widgetLoadedFor = null;
         await this.loadWidgetsEditor();
         /*
@@ -3866,7 +3798,6 @@
         if (widgetId == null) return false;
         const d = this.dash;
         this.stopCustomProbeLive?.();
-        this.widgetsTab = 'widgets';
         this.widgetQuery = '';
         const pageId = d.currentPageId != null ? Number(d.currentPageId) : null;
         const listed = (this._widgetBlocks || []).some((b) => String(b.id) === String(widgetId));
