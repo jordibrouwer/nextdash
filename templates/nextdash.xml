@@ -52,6 +52,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.22.3 (2026-10-28)
+- First start: the Quick start asks whether to keep the example links, offers ready-made pages (Homelab, Media server, Developer) and a CSV import, and lists ten steps
+- Tours and tips: a keyboard tour, tours for Config Monitoring and Unraid, tips that can come weekly, and a settings search that remembers what you opened
+- Offers: check images for updates, re-check old links, the browser extension and what changed after an update, each with its own switch
+- Appearance: the docked action bar and the command palette take more of your theme, and Config's title stays clear of its buttons
+- Privacy: the analytics send an install code and a hostname replaced by one word, and send less often
+- Security: golang.org/x/net v0.62.0
+
 ### v1.22.2 (2026-10-26)
 - Appearance: the action bar, the Bookmarks, Inbox, Containers, Glances, Tags and Config views are drawn like a category in every material, and the blocks in Config lie on their pane as a tint
 
@@ -73,22 +81,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 
 ### v1.21.3 (2026-10-23)
 - Fixes: the Containers view keeps its place in Safari when it refreshes
-
-### v1.21.2 (2026-10-23)
-- Fixes: a refresh no longer scrolls Containers, Glances or the Inbox back to the top, and the Containers table fits a narrow list
-
-### v1.21.1 (2026-10-23)
-- Glances: Insights has nine more blocks, among them a typical day, the load against the cores and where the memory goes, with an info button on every title; the Containers view says why no container could be paired
-- Security: with a write token set, nextDash refuses host names it does not know. Open it by a public name? Add it to Allowed hosts below
-- Fixes: a URL such as localhost:3000 opens as a web address, a double click saves a bookmark once, creating a page no longer overwrites the list when reading failed, and hidden tabs skip status checks
-
-### v1.21.0 (2026-10-23)
-- Glances: a page for the hosts you run Glances on, with processes, containers, graphs, incidents and a Hosts table, and a widget that shows one host on the dashboard
-- Domains: a widget, a badge in Bookmarks and alerts show when a domain registration runs out
-- Appearance: Berry is the default theme for a new install, and a card offers it once to everyone on another theme
-- Dashboard: right-click a category's header to add a bookmark to it, a search keeps the letter you typed, and Escape leaves the bookmark grid
-- Fixes: row checkboxes can be clicked again in Containers and the Inbox, entrance animations no longer stall on a slow load, and uploaded SVGs are served under a sandboxed policy
-
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -96,7 +88,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-26</Date>
+  <Date>2026-10-28</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
