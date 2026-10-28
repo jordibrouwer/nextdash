@@ -457,6 +457,7 @@
                 { keys: ':goto config / stats / health / docker', printOmit: true, cheatKey: 'cbGotoNav', fallback: 'Quick navigation to config, stats, the Bookmarks view on broken ones, or Containers' },
                 { keys: ':duplicate / :duplicates', cheatKey: 'cbDuplicates', fallback: 'Find bookmarks with duplicate URLs across all pages (opens the Bookmarks view on duplicates)', printFallback: 'Find duplicate URLs across all pages' },
                 { keys: ':history / :history clear', printOmit: true, cheatKey: 'cbHistory', fallback: 'Browse recent searches from the command bar / wipe all search history' },
+                { keys: ':checkup', printOmit: true, cheatKey: 'cbCheckup', fallback: 'A round through what is worth tidying — broken, doubled and unused bookmarks, empty categories, widgets that fail' },
                 { keys: ':stale <days>', printOmit: true, cheatKey: 'cbStale', fallback: 'Show bookmarks not opened in <days> days (default 30)' },
                 { keys: ':health [filter]', cheatKey: 'caHealth', fallback: 'Open the Bookmarks view on a health filter — broken / duplicate / stale; refresh re-scans' },
                 { keys: ':health page [n]', printOmit: true, cheatKey: 'cbHealthPage', fallback: 'Open the Bookmarks view on one page' },

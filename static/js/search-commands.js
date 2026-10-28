@@ -51,7 +51,7 @@ class SearchCommandsComponent {
                 labelKey: 'commands.groupBookmarks',
                 commands: [
                     'new', 'add', 'remove', 'note', 'pin', 'move', 'edit', 'copy', 'tag',
-                    'open', 'goto', 'find', 'stale', 'duplicates', 'archive',
+                    'open', 'goto', 'find', 'stale', 'duplicates', 'checkup', 'archive',
                 ],
             },
             {
@@ -148,6 +148,7 @@ class SearchCommandsComponent {
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
             'duplicates': this.handleDuplicateCommand.bind(this),
+            'checkup': this.handleCheckupCommand.bind(this),
             'note': this.handleNoteCommand.bind(this),
             'pin': this.handlePinCommand.bind(this),
             'unpin': this.handlePinCommand.bind(this),
@@ -1254,6 +1255,18 @@ class SearchCommandsComponent {
             type: 'command',
             action: () => this._runOverlayAction(() => {
                 window.openWhatsNewModal?.({ force: true });
+            }),
+        }];
+    }
+
+    // The checkup: a round through what is worth tidying on the dashboard.
+    handleCheckupCommand(args, fullQuery) {
+        return [{
+            name: this._t('commands.checkupLabel', 'Start the checkup'),
+            shortcut: ':CHECKUP',
+            type: 'command',
+            action: () => this._runOverlayAction(async () => {
+                await window.Checkup?.open?.();
             }),
         }];
     }

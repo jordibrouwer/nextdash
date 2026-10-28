@@ -117,6 +117,15 @@ test.describe('the digest window layout', () => {
         await expect(part).toContainText('The Bookmarks view uses your own limit of 90 days');
     });
 
+    test('the checkup is a part of its own, and starting it opens the checkup', async ({ page }) => {
+        const win = await openWindow(page, snapshot({ checkup: { items: 14 } }));
+        const row = win.locator('.digest-row[data-digest-row="checkup"]');
+        await expect(row.locator('.digest-row-count')).toHaveText('14');
+        await row.click();
+        await win.locator('[data-digest-go="checkup"]').click();
+        await expect(page.locator('.checkup-modal .checkup-window')).toBeVisible();
+    });
+
     test('a summary sentence leads the window', async ({ page }) => {
         const win = await openWindow(page, snapshot());
         await expect(win.locator('.digest-summary')).toContainText('links broke this week');
