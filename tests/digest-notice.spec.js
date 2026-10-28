@@ -46,6 +46,11 @@ async function renderCard(page) {
     return page.evaluate(() => window.DigestNotice.render());
 }
 
+/** The window shows one part at a time: pick it from the list first. */
+async function choose(win, id) {
+    await win.locator(`.digest-row[data-digest-row="${id}"]`).click();
+}
+
 test.describe('the weekly digest card', () => {
     test('a proof digest shows once, and a newer one shows again', async ({ page, request }) => {
         await seedAndSend(request);
@@ -79,17 +84,80 @@ test.describe('the weekly digest card', () => {
         await expect(page.locator(CARD)).toBeVisible();
     });
 
-    test('no card while the digest is switched off', async ({ page, request }) => {
+    test('an old off switch no longer hides the card', async ({ page, request }) => {
         await seedAndSend(request);
         const off = await request.post('/api/settings', { data: { digestEnabled: false }, headers });
         expect(off.ok()).toBeTruthy();
         await loadDashboard(page);
         await forgetSeen(page);
-        expect(await renderCard(page)).toBe(false);
-        await expect(page.locator(CARD)).toHaveCount(0);
+        expect(await renderCard(page)).toBe(true);
+        await expect(page.locator(CARD)).toBeVisible();
+    });
+});
 
-        const on = await request.post('/api/settings', { data: { digestEnabled: true }, headers });
-        expect(on.ok()).toBeTruthy();
+test.describe('snooze and reminders on the card', () => {
+    const DAY = 24 * 60 * 60 * 1000;
+
+    async function dayLater(page, base, days) {
+        await page.clock.setFixedTime(new Date(base + days * DAY));
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.settings && window.DigestNotice, null, { timeout: 15_000 });
+        await dismissBlockingOverlays(page);
+    }
+
+    test('Snooze 1 day hides the card until tomorrow', async ({ page, request }) => {
+        await seedAndSend(request);
+        const base = Date.now();
+        await page.clock.install({ time: base });
+        await loadDashboard(page);
+        await forgetSeen(page);
+        expect(await renderCard(page)).toBe(true);
+
+        await page.locator(`${CARD} [data-digest-action="snooze"]`).click();
+        await expect(page.locator(CARD)).toHaveCount(0);
+        await dayLater(page, base, 0);
+        expect(await renderCard(page)).toBe(false);
+
+        await dayLater(page, base, 1);
+        expect(await renderCard(page)).toBe(true);
+    });
+
+    test('Got it brings the card back on the next two days, then not', async ({ page, request }) => {
+        await seedAndSend(request);
+        const base = Date.now();
+        await page.clock.install({ time: base });
+        await loadDashboard(page);
+        await forgetSeen(page);
+        expect(await renderCard(page)).toBe(true);
+        await page.locator(`${CARD} [data-digest-action="seen"]:not([data-notice-dismiss])`).click();
+
+        await dayLater(page, base, 0);
+        expect(await renderCard(page)).toBe(false);
+        await dayLater(page, base, 1);
+        expect(await renderCard(page)).toBe(true);
+        await dayLater(page, base, 1);
+        expect(await renderCard(page)).toBe(false); // one reminder a day
+        await dayLater(page, base, 2);
+        expect(await renderCard(page)).toBe(true);
+        await dayLater(page, base, 3);
+        expect(await renderCard(page)).toBe(false);
+    });
+
+    test('reading the digest ends the reminders', async ({ page, request }) => {
+        await seedAndSend(request);
+        const base = Date.now();
+        await page.clock.install({ time: base });
+        await loadDashboard(page);
+        await forgetSeen(page);
+        expect(await renderCard(page)).toBe(true);
+        await page.locator(`${CARD} [data-digest-action="read"]`).click();
+        await expect(page.locator('.digest-modal .digest-window')).toBeVisible();
+        await page.locator('.digest-modal').getByRole('button', { name: 'Close', exact: true }).click();
+
+        await dayLater(page, base, 1);
+        expect(await renderCard(page)).toBe(false);
+        await dayLater(page, base, 2);
+        expect(await renderCard(page)).toBe(false);
     });
 });
 
@@ -104,6 +172,7 @@ test.describe('the digest window', () => {
         const win = page.locator('.digest-modal .digest-window');
         await expect(win).toBeVisible();
         await expect(page.locator(CARD)).toHaveCount(0);
+        await choose(win, 'inbox');
         await expect(win.locator('[data-digest-part="inbox"]')).toContainText('waiting to be sorted');
 
         await win.locator('[data-digest-go="inbox"]').click();
@@ -137,6 +206,7 @@ test.describe('the digest window', () => {
     test('a part opened shrinks it to a bar that leads to the next part', async ({ page, request }) => {
         await seedTwoParts(request);
         const win = await openFresh(page);
+        await choose(win, 'inbox');
         await win.locator('[data-digest-go="inbox"]').click();
 
         const bar = page.locator('.digest-bar');
@@ -149,8 +219,10 @@ test.describe('the digest window', () => {
         // Back to the window from the bar: the opened part is ticked, the
         // next one stands out.
         await bar.locator('[data-digest-bar="open"]').click();
+        await choose(win, 'inbox');
         await expect(win.locator('[data-digest-part="inbox"]')).toHaveClass(/is-done/);
         await expect(win.locator('[data-digest-go="inbox"]')).toHaveText('Open again');
+        await choose(win, 'never');
         await expect(win.locator('[data-digest-go="unused"]')).toHaveClass(/is-next/);
         await expect(page.locator('.digest-bar')).toHaveCount(0);
 
@@ -170,6 +242,7 @@ test.describe('the digest window', () => {
     test('the bar closes for this digest', async ({ page, request }) => {
         await seedTwoParts(request);
         const win = await openFresh(page);
+        await choose(win, 'inbox');
         await win.locator('[data-digest-go="inbox"]').click();
         await expect(page.locator('.digest-bar')).toBeVisible();
 
@@ -186,6 +259,7 @@ test.describe('the digest window', () => {
         expect(await page.evaluate(() => window.__probeCard.render())).toBe(false);
 
         await page.locator('.digest-bar [data-digest-bar="close"]').click();
+        await page.locator('#app-modal').getByRole('button', { name: 'Close until Monday' }).click();
         await expect(page.locator('.digest-bar')).toHaveCount(0);
         expect(await page.evaluate(() => window.__probeCard.render())).toBe(true);
         await page.evaluate(() => window.__probeCard.close());
@@ -227,11 +301,6 @@ test.describe('the digest and the review card', () => {
         // Fresh install: every bookmark is never opened, enough for a session.
         expect(await page.evaluate(() => window.DigestNotice.holdsTheWeek())).toBe(true);
         expect(await page.evaluate(() => window.HealthReviewSession.shouldShow())).toBe(false);
-
-        // With the digest off, the review card is offered as before.
-        await page.evaluate(() => { window.dashboardInstance.settings.digestEnabled = false; });
-        expect(await page.evaluate(() => window.DigestNotice.holdsTheWeek())).toBe(false);
-        expect(await page.evaluate(() => window.HealthReviewSession.shouldShow())).toBe(true);
     });
 
     test('"Work through" starts a session on the broken links', async ({ page, request }) => {
@@ -289,44 +358,45 @@ test.describe('tiles, bars and the ways in', () => {
         });
     }
 
-    test('counts across the top, and days left as bars', async ({ page }) => {
+    test('a count per part, and days left as bars', async ({ page }) => {
         await openRouted(page, fullWeek());
         await page.evaluate(() => window.DigestNotice.openDigest());
         const win = page.locator('.digest-modal .digest-window');
 
-        // Broken old and new together; certificates and domains within 30
-        // days together, the gone one included.
-        const tiles = win.locator('[data-digest-tile]');
-        await expect(tiles.locator('.digest-tile-label')).toHaveText(['broken links', 'run out within 30 days', 'never opened']);
-        await expect(tiles.locator('.digest-tile-count')).toHaveText(['3', '3', '3']);
+        // Broken old and new together; certificates and domains as they are.
+        for (const [id, count] of [['broken', '3'], ['certificates', '3'], ['domains', '3'], ['never', '3']]) {
+            await expect(win.locator(`.digest-row[data-digest-row="${id}"] .digest-row-count`)).toHaveText(count);
+        }
 
+        await expect(win.locator('[data-digest-part="broken"] .digest-chip')).toHaveText(['Forgejo', '+2 older']);
+
+        await choose(win, 'certificates');
         const certs = win.locator('[data-digest-part="certificates"] .digest-days-row');
         await expect(certs.locator('.digest-days-name')).toHaveText(['old.example', 'soon.example', 'later.example']);
         await expect(certs.first().locator('.digest-days-value')).toHaveText('expired 21 d');
         await expect(certs.first()).toHaveClass(/is-bad/);
 
         // Domains: a bar for what is coming, a count for the rest.
+        await choose(win, 'domains');
         const domains = win.locator('[data-digest-part="domains"]');
         await expect(domains.locator('.digest-days-name')).toHaveText(['near.example', 'mid.example']);
         await expect(domains.locator('.digest-chip')).toHaveText(['+1 more than 200 days away']);
-
-        await expect(win.locator('[data-digest-part="broken"] .digest-chip')).toHaveText(['Forgejo', '+2 older']);
     });
 
-    test('a tile opens its view, and is ticked when the digest comes back', async ({ page }) => {
+    test('a part opens its view, and is ticked when the digest comes back', async ({ page }) => {
         await openRouted(page, fullWeek());
         await page.evaluate(() => window.DigestNotice.openDigest());
         const win = page.locator('.digest-modal .digest-window');
 
-        await win.locator('[data-digest-tile="unused"]').click();
+        await choose(win, 'never');
+        await win.locator('[data-digest-go="unused"]').click();
         await expect(win).toHaveCount(0);
         await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#bookmarks?health=unused');
         await expect(page.locator('.digest-bar')).toContainText('1 of 4 done');
 
         await page.locator('.digest-bar [data-digest-bar="open"]').click();
-        await expect(win.locator('[data-digest-tile="unused"]')).toHaveClass(/is-done/);
-        await expect(win.locator('[data-digest-part="never"]')).toHaveClass(/is-done/);
-        await expect(win.locator('[data-digest-tile="certificates"]')).not.toHaveClass(/is-done/);
+        await expect(win.locator('.digest-row[data-digest-row="never"]')).toHaveClass(/is-done/);
+        await expect(win.locator('.digest-row[data-digest-row="certificates"]')).not.toHaveClass(/is-done/);
     });
 
     test(':digest opens the latest digest', async ({ page }) => {
@@ -369,16 +439,18 @@ test.describe('the news part', () => {
 
         await page.locator(`${CARD} [data-digest-action="read"]`).click();
         const win = page.locator('.digest-modal .digest-window');
+        // The Inbox is the next thing to do, not the news.
+        await choose(win, 'inbox');
+        await expect(win.locator('[data-digest-go="inbox"]')).toHaveClass(/is-next/);
+        // Last, after the parts that need the reader.
+        const ids = await win.locator('.digest-row').evaluateAll((els) => els.map((el) => el.dataset.digestRow));
+        expect(ids[ids.length - 1]).toBe('news');
+
+        await choose(win, 'news');
         const part = win.locator('[data-digest-part="news"]');
         await expect(part).toContainText('New in nextDash');
         await expect(part).toContainText('v9.2.0 came out this week');
         await expect(part.locator('.digest-chip')).toHaveText(['A short title', 'Another one']);
-        // Last, after the parts that need the reader.
-        const ids = await win.locator('[data-digest-part]').evaluateAll((els) => els.map((el) => el.dataset.digestPart));
-        expect(ids[ids.length - 1]).toBe('news');
-        // The Inbox is the next thing to do, not the news.
-        await expect(win.locator('[data-digest-go="inbox"]')).toHaveClass(/is-next/);
-
         await part.locator('[data-digest-go="whats-new"]').click();
         await expect(page.locator('.whats-new-modal')).toBeVisible();
         await expect(page.locator('.digest-bar')).toHaveCount(0);

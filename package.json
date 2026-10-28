@@ -26,6 +26,7 @@
     "validate:tag-patterns": "node scripts/validate-tag-patterns.cjs",
     "validate:test-waits": "node scripts/validate-test-waits.cjs",
     "test:news-stream": "node tests/news-stream-model.test.cjs",
+    "test:digest-card-state": "node tests/digest-card-state.test.cjs",
     "test:workbench-model": "node tests/bookmark-workbench-model.test.cjs",
     "test:config-split": "node tests/config-section-plan.test.mjs",
     "test:block-move-model": "node tests/block-move-model.test.cjs",
