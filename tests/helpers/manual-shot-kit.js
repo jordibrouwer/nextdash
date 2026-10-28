@@ -78,11 +78,11 @@ const TABLET = { width: 820, height: 1180 };
 const DEMO_THEME = 'matrix-bluepill-dark';
 /**
  * Every manual screenshot is taken in this theme, whatever the demo data
- * says, so the pictures sit quietly on nextdash.cc and its docs. It is the
- * default theme, so the server's one-time move to Aurora Glass has nothing to
+ * says, so the pictures sit quietly on nextdash.cc and its docs. The seed is a
+ * fresh install, so the server's one-time move to Aurora Glass has nothing to
  * do and its dialog stays away.
  */
-const SHOT_THEME = process.env.SHOT_THEME || 'aurora-glass-dark';
+const SHOT_THEME = process.env.SHOT_THEME || 'oceanic-steel-dark';
 
 /** A port nothing else is on (never 8080: the OS hands out a free one). */
 function freePort() {
