@@ -324,9 +324,12 @@
                                 placeholder="${esc(this.widgetTypeName(widget.type))}">
                             <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
                         </div>
-                        <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
-                            ${settingsState}>${esc(
-                            this.t('config.widgetsConfigure', 'Settings'))}</button>
+                        <label class="config-toggle config-toggle--inline config-widget-row-shown"
+                            title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
+                            <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}
+                                aria-label="${esc(this.t('config.widgetsEnabledNamed', 'Show {name} on the dashboard').replace('{name}', name))}">
+                            <span aria-hidden="true">${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
+                        </label>
                     </div>
                     <div class="config-widget-card-meta">
                         ${this.renderWidgetCardChip(widget, index)}
@@ -335,12 +338,9 @@
                                 esc(this.t('config.widgetsPageLabel', 'Page'))}">${
                                 esc(widget.pageName)}</span>`
                             : ''}
-                        <label class="config-toggle config-toggle--inline config-widget-row-shown"
-                            title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
-                            <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}
-                                aria-label="${esc(this.t('config.widgetsEnabledNamed', 'Show {name} on the dashboard').replace('{name}', name))}">
-                            <span aria-hidden="true">${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
-                        </label>
+                        <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
+                            ${settingsState}>${esc(
+                            this.t('config.widgetsConfigure', 'Settings'))}</button>
                     </div>
                 </li>`;
                 };
