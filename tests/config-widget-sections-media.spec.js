@@ -35,6 +35,37 @@ async function openWidget(page, widget) {
     return detail;
 }
 
+/*
+ * A Sonarr widget with an address and a filed key, opened in a fresh visit:
+ * the panel asks the server on its own, and `answer` is what it hears back.
+ */
+async function openSavedSonarr(page, answer) {
+    await page.route('**/api/widgets/sonarr/setup', (route) => route.fulfill({
+        status: 200, contentType: 'application/json', body: JSON.stringify(answer) }));
+    await openWidget(page, { type: 'sonarr', title: 'Shows', config: { server: 'http://sonarr.lan:8989' } });
+    await page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+        const id = document.querySelector('.config-widget-detail [data-widget-section-of]')
+            .getAttribute('data-widget-section-of');
+        const res = await f('/api/health/credentials', { method: 'PUT', headers,
+            body: JSON.stringify({ id: `widget:${id}`, label: 'Shows', headers: { 'X-Api-Key': 'abc-key' } }) });
+        if (!res.ok) throw new Error(`credential PUT ${res.status}`);
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+    const toggle = page.locator('[data-widget-settings]').first();
+    await expect(toggle).toBeVisible();
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+    const detail = page.locator('.config-widget-detail').first();
+    await expect(detail).toBeVisible();
+    return detail;
+}
+
 const sonarr = { type: 'sonarr', title: 'Shows', config: {} };
 const jellyfin = { type: 'jellyfin', title: 'Media', config: {} };
 const section = (detail, name) => detail.locator(`[data-widget-section="${name}"]`);
@@ -109,5 +140,28 @@ test.describe('media widget settings in three sections', () => {
         await expect(detail.locator('[data-media-status]')).toContainText(/Shows|connected/i);
         await expect(detail.locator('[data-widget-auth="secret"]')).toHaveValue('abc-key');
         await expect(section(detail, 'connection')).toHaveAttribute('open', '');
+    });
+
+    test('a saved widget whose server cannot be reached opens Connection on the error', async ({ page }) => {
+        const detail = await openSavedSonarr(page, { error: 'unreachable' });
+        const connection = section(detail, 'connection');
+        await expect(detail.locator('[data-media-status]')).toContainText('could not be reached', { timeout: 10_000 });
+        await expect(connection).toHaveAttribute('open', '');
+        await expect(detail.locator('[data-media-status]')).toBeVisible();
+        await expect(connection.locator('summary')).toHaveText('Connection · not reachable');
+    });
+
+    test('a saved widget that connects keeps Connection folded and says so on its summary', async ({ page }) => {
+        const detail = await openSavedSonarr(page, { serverName: 'Shows', version: '4.0' });
+        const connection = section(detail, 'connection');
+        await expect(detail.locator('[data-media-status]')).toContainText('Shows', { timeout: 10_000 });
+        await expect(connection).not.toHaveAttribute('open', /.*/);
+        await expect(connection.locator('summary')).toHaveText('Connection · connected');
+    });
+
+    test('a media widget with an address but no key keeps Connection open', async ({ page }) => {
+        const detail = await openWidget(page, { type: 'sonarr', title: 'Shows', config: { server: 'http://sonarr.lan:8989' } });
+        await expect(section(detail, 'connection')).toHaveAttribute('open', '');
+        await expect(section(detail, 'connection')).toHaveAttribute('data-widget-section-default', 'open');
     });
 });

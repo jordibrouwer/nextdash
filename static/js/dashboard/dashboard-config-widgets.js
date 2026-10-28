@@ -2698,11 +2698,22 @@
      * Whether the widget already has a saved way in: an address, feeds or a
      * stored key. Read from what is stored, not from the draft -- typing the
      * first address must not fold the section shut around the caret.
+     *
+     * A media service needs both its address and its key, and is not
+     * connected while its last Connect answered an error: the panel asks on
+     * its own when a saved one opens, and an answer of "could not be reached"
+     * sits in Connection's status line -- folded away, Display would simply
+     * lack its choices with no reason in sight. The default moving to open
+     * re-opens the section through the stamp, unless the reader chose.
      */
     widgetHasConnection(widget, index) {
         const stored = (this._widgetBlocks || [])[index];
         const block = stored && String(stored.id) === String(widget?.id) ? stored : widget;
         const config = block?.config || {};
+        if (DashboardConfig.MEDIA_SERVICES?.[block?.type]) {
+            if (this.mediaSetupFor?.(block)?.error) return false;
+            return Boolean(config.server) && this.storedCredentialState(block).kind !== 'none';
+        }
         if (config.server || config.url) return true;
         if (Array.isArray(config.feedUrls) && config.feedUrls.length) return true;
         return this.storedCredentialState(block).kind !== 'none';
@@ -2784,8 +2795,11 @@
      * drawn as a header over nothing. A <details> per section, so folding is
      * the browser's own -- Enter and Space on the summary, and a folded
      * section's fields out of the Tab order -- with nothing to bind.
+     *
+     * `states` puts a word after a section's title, so a folded section still
+     * says how it stands (a media service's "connected" / "not reachable").
      */
-    renderWidgetSections(widget, index, parts = {}) {
+    renderWidgetSections(widget, index, parts = {}, states = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         const titles = {
             connection: ['config.widgetSectionConnection', 'Connection'],
@@ -2800,7 +2814,8 @@
                     data-widget-index="${index}" data-widget-section-of="${esc(widget?.id ?? '')}"
                     data-widget-section-default="${this.widgetSectionDefaultOpen(name, hasConnection) ? 'open' : 'closed'}"${
                         this.widgetSectionIsOpen(widget, name, hasConnection) ? ' open' : ''}>
-                    <summary class="config-custom-group-title">${esc(this.t(titles[name][0], titles[name][1]))}</summary>
+                    <summary class="config-custom-group-title">${esc(this.t(titles[name][0], titles[name][1]))}${
+                        states[name] ? `<span class="config-widget-section-state"> · ${esc(states[name])}</span>` : ''}</summary>
                     <div class="config-widget-section-body">${parts[name]}</div>
                 </details>`).join('');
     },

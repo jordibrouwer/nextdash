@@ -694,8 +694,16 @@
             <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
                 this.renderWidgetWidth(widget, index)}${sorted.display}</div>`;
 
+        // How the last Connect went, on Connection's own title: once the
+        // section is folded that line is the only place it can be read.
+        let state = '';
+        if (setup?.error === 'unreachable') state = this.t('config.widgetSectionUnreachable', 'not reachable');
+        else if (setup?.error) state = this.t('config.widgetSectionNotConnected', 'not connected');
+        else if (setup) state = this.t('config.widgetSectionConnected', 'connected');
+
         return `<div class="config-widget-settings-body is-custom is-media is-${esc(service.id)}">
-            ${this.renderWidgetSections(widget, index, { connection, display, advanced: grid(sorted.advanced) })}
+            ${this.renderWidgetSections(widget, index, { connection, display, advanced: grid(sorted.advanced) },
+                { connection: state })}
             ${this.renderWidgetSaveBar(index)}
         </div>`;
     },

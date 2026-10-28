@@ -8223,6 +8223,13 @@ body.no-animations .config-new-features-panel-star {
     transform: rotate(45deg);
 }
 
+/* How a section stands ("connected"), after its title: read, not shouted. */
+.config-widget-section-state {
+    font-weight: var(--font-weight-normal);
+    letter-spacing: normal;
+    text-transform: none;
+}
+
 .config-widget-section > summary:hover {
     color: var(--text-primary);
 }
