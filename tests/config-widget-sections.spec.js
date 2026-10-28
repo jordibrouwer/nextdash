@@ -165,4 +165,61 @@ test.describe('widget settings in three sections', () => {
         await expect(detail.locator('[data-widget-section] [data-widget-save]')).toHaveCount(0);
         await expect(detail.locator('[data-widget-save]')).toHaveCount(1);
     });
+
+    test('at 390px wide the sections stack with no horizontal scroll', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        const custom = { type: 'custom', title: 'Mine', config: { url: 'http://127.0.0.1:9/x', fields: [{ path: 'a.b', label: 'A' }] } };
+        for (const widget of [custom, rss]) {
+            const detail = await openWidget(page, widget);
+            for (const name of ['connection', 'display', 'advanced']) {
+                const el = section(detail, name);
+                if (await el.count() === 0) continue;
+                if (name === 'advanced') await el.locator('summary').click();
+                const box = await el.boundingBox();
+                expect(box.width).toBeLessThanOrEqual(390);
+                expect(box.x + box.width).toBeLessThanOrEqual(390);
+            }
+            expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+            expect(await page.evaluate(() => window.scrollX)).toBe(0);
+        }
+    });
+
+    // The default can move after a paint: a widget whose only connection is a
+    // stored key is drawn with Connection open until the credential list lands.
+    const fileKey = (page) => page.evaluate(() => {
+        const dash = window.dashboardInstance;
+        const c = dash.config.instance || dash.config;
+        const id = document.querySelector('.config-widget-detail [data-widget-section-of]').getAttribute('data-widget-section-of');
+        dash.healthCredentialDetails = { ...(dash.healthCredentialDetails || {}), [`widget:${id}`]: { headers: ['X-Api-Key'] } };
+        c.repaintWidgetsBody();
+    });
+
+    test('a default drawn before the credential list arrives is not kept as a choice', async ({ page }) => {
+        const detail = await openWidget(page, glances);
+        await expect(section(detail, 'connection')).toHaveAttribute('open', '');
+        await expect(section(detail, 'connection')).toHaveAttribute('data-widget-section-default', 'open');
+        await fileKey(page);
+        await expect(section(detail, 'connection')).not.toHaveAttribute('open', /.*/);
+        await expect(section(detail, 'connection')).toHaveAttribute('data-widget-section-default', 'closed');
+    });
+
+    test('a reader\'s own toggle still wins across repaints, also when the default moves', async ({ page }) => {
+        const detail = await openWidget(page, glances);
+        await section(detail, 'advanced').locator('summary').click();
+        await section(detail, 'display').locator('summary').click();
+        await expect(section(detail, 'advanced')).toHaveAttribute('open', '');
+        await expect(section(detail, 'display')).not.toHaveAttribute('open', /.*/);
+        await fileKey(page);
+        await expect(section(detail, 'connection')).not.toHaveAttribute('open', /.*/);
+        await expect(section(detail, 'advanced')).toHaveAttribute('open', '');
+        await expect(section(detail, 'display')).not.toHaveAttribute('open', /.*/);
+        // Opened Connection after it folded: that is a choice and sticks.
+        await section(detail, 'connection').locator('summary').click();
+        await repaint(page);
+        await expect(section(detail, 'connection')).toHaveAttribute('open', '');
+        // Closing what was opened goes back to the default again.
+        await section(detail, 'advanced').locator('summary').click();
+        await repaint(page);
+        await expect(section(detail, 'advanced')).not.toHaveAttribute('open', /.*/);
+    });
 });

@@ -2719,25 +2719,36 @@
     widgetSectionIsOpen(widget, name, hasConnection) {
         const chosen = this._widgetSectionOpen?.[widget?.id]?.[name];
         if (typeof chosen === 'boolean') return chosen;
+        return this.widgetSectionDefaultOpen(name, hasConnection);
+    },
+
+    /** What a section is drawn as when nobody has chosen: the default alone. */
+    widgetSectionDefaultOpen(name, hasConnection) {
         if (name === 'connection') return !hasConnection;
         return name === 'display';
     },
 
     /*
-     * Keep a section's state when it is not what the panel would draw anyway.
+     * Keep a section's state when it is not what it was drawn as by default.
      *
-     * Only a difference is a choice: a section parsed with `open` fires toggle
-     * too, and recording that would pin today's default -- a Connection opened
-     * for a widget with no address yet would never fold once it had one.
+     * Only a difference is a choice. Each section carries the default it was
+     * drawn with (data-widget-section-default), because the default can move
+     * after the paint -- a key-only widget's Connection is drawn open until its
+     * credential list arrives -- and comparing with today's default would pin
+     * the old one as if the reader had toggled. Matching the stamp again clears
+     * the choice, so closing what you opened goes back to the default too.
      */
     rememberWidgetSection(details) {
         const id = details.getAttribute('data-widget-section-of');
         const name = details.getAttribute('data-widget-section');
         if (!id || !name) return;
-        const index = this.widgetIndexOfId(id);
-        const block = index == null ? null : this._widgetBlocks[index];
-        if (block && details.open === this.widgetSectionIsOpen(block, name, this.widgetHasConnection(block, index))) return;
+        if (this.widgetIndexOfId(id) == null) return;
+        const drawnOpen = details.getAttribute('data-widget-section-default') === 'open';
         this._widgetSectionOpen = this._widgetSectionOpen || {};
+        if (details.open === drawnOpen) {
+            if (this._widgetSectionOpen[id]) delete this._widgetSectionOpen[id][name];
+            return;
+        }
         this._widgetSectionOpen[id] = { ...this._widgetSectionOpen[id], [name]: details.open };
     },
 
@@ -2761,7 +2772,8 @@
             .filter((name) => String(parts[name] || '').trim() !== '')
             .map((name) => `
                 <details class="config-widget-section config-custom-group" data-widget-section="${name}"
-                    data-widget-index="${index}" data-widget-section-of="${esc(widget?.id ?? '')}"${
+                    data-widget-index="${index}" data-widget-section-of="${esc(widget?.id ?? '')}"
+                    data-widget-section-default="${this.widgetSectionDefaultOpen(name, hasConnection) ? 'open' : 'closed'}"${
                         this.widgetSectionIsOpen(widget, name, hasConnection) ? ' open' : ''}>
                     <summary class="config-custom-group-title">${esc(this.t(titles[name][0], titles[name][1]))}</summary>
                     <div class="config-widget-section-body">${parts[name]}</div>
