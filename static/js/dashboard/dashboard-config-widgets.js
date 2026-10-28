@@ -975,8 +975,8 @@
             if (!type) return;
             // Read before the modal closes: hiding it takes the select with it.
             const pageValue = picker.querySelector('[data-widget-wizard-page]')?.value;
-            // A kind that connects to a service asks where and how first.
-            if (this.widgetWizardKind?.(type) === 'media') {
+            // A kind that connects to a service, or Custom, asks where and how first.
+            if (this.widgetWizardKind?.(type)) {
                 this._widgetWizardPageId = pageValue ? Number(pageValue) : null;
                 this.openWidgetWizardConnect(type, pageValue ? Number(pageValue) : null);
                 return;

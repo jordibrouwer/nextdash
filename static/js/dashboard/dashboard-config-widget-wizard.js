@@ -76,10 +76,10 @@
         openWidgetWizardConnect(type, pageId) {
             const service = global.DashboardConfig.MEDIA_SERVICES?.[type];
             const text = document.getElementById('modal-text');
-            if (!service || !text) return;
+            if ((!service && type !== 'custom') || !text) return;
             this._widgetWizard = {
                 type, pageId: pageId ?? null, screen: 'connect',
-                server: '', user: '', secret: '', test: null, busy: false, round: 0,
+                server: '', user: '', header: '', secret: '', test: null, busy: false, round: 0,
             };
             text.innerHTML = this.renderWidgetWizardConnect();
             const screen = text.querySelector('[data-widget-wizard-screen="connect"]');
@@ -91,6 +91,7 @@
                 if (!w || !box?.matches) return;
                 if (box.matches('[data-widget-wizard-server]')) w.server = box.value;
                 else if (box.matches('[data-widget-wizard-user]')) w.user = box.value;
+                else if (box.matches('[data-widget-wizard-header]')) w.header = box.value;
                 else if (box.matches('[data-widget-wizard-secret]')) w.secret = box.value;
                 else return;
                 // What was tested is no longer what is on screen, and an answer
@@ -125,8 +126,57 @@
             return this.mediaAuthShape(service, null);
         },
 
+        /*
+         * Custom has no service to name its words, so its connect screen is its
+         * own: an address, an optional header name and the key that goes in it.
+         * The explanation stays a hint -- which figures to read is chosen after
+         * adding, in the widget's settings, where the answer can be looked at.
+         */
+        renderWidgetWizardCustom() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            return `
+            <div class="config-widget-wizard" data-widget-wizard-screen="connect" data-type="custom">
+                <div class="config-widget-picker-head">
+                    <div class="config-widget-picker-title">
+                        <h3 class="config-widget-picker-name">${esc(this.t('dashboard.widgetType.custom', 'Custom'))}</h3>
+                        <span class="config-widget-note" data-widget-wizard-hint>${esc(this.t('config.widgetWizardCustomHint',
+                            'Read a figure out of any service that answers JSON, and show it as a tile. You choose the figures after adding, in the widget\u2019s settings.'))}</span>
+                    </div>
+                </div>
+                <div class="config-custom-grid">
+                    <div class="config-widget-field">
+                        <label for="widget-wizard-server">${esc(this.t('config.widgetCustomUrl', 'Address to read'))}</label>
+                        <input type="text" id="widget-wizard-server" class="config-text" maxlength="2000"
+                            autocomplete="off" spellcheck="false" data-widget-wizard-server
+                            placeholder="${esc(this.t('config.widgetCustomUrlPlaceholder', 'https://service.example/api/stats'))}">
+                    </div>
+                    <div class="config-widget-field">
+                        <label for="widget-wizard-header">${esc(this.t('config.widgetAuthHeaderName', 'Header'))}</label>
+                        <input type="text" id="widget-wizard-header" class="config-text" maxlength="128"
+                            autocomplete="off" spellcheck="false" data-widget-wizard-header placeholder="X-Api-Key">
+                    </div>
+                    <div class="config-widget-field">
+                        <label for="widget-wizard-secret">${esc(this.t('config.widgetAuthKey', 'API key'))}</label>
+                        <input type="password" id="widget-wizard-secret" class="config-text" autocomplete="off"
+                            spellcheck="false" maxlength="1024" data-widget-wizard-secret>
+                    </div>
+                </div>
+                <p class="config-widget-note is-error" data-widget-wizard-problem role="alert" hidden></p>
+                <p class="config-widget-note" data-widget-wizard-result role="status"></p>
+                <div class="config-widget-picker-add">
+                    ${this.widgetWizardPageSelect()}
+                    <button type="button" class="config-btn" data-widget-wizard-back>${
+                        esc(this.t('config.widgetWizardBack', 'Back'))}</button>
+                    <button type="button" class="config-btn" data-widget-wizard-test>${
+                        esc(this.t('config.widgetWizardTest', 'Test'))}</button>
+                    <button type="button" class="config-btn config-btn--primary" data-widget-wizard-finish></button>
+                </div>
+            </div>`;
+        },
+
         renderWidgetWizardConnect() {
             const w = this._widgetWizard;
+            if (w?.type === 'custom') return this.renderWidgetWizardCustom();
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
             if (!service) return '';
             const esc = (v) => this.dash.escapeHtml(v);
@@ -183,8 +233,9 @@
         widgetWizardProblem() {
             const w = this._widgetWizard;
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
-            if (!w || !service) return { scheme: false, user: false };
+            if (!w || (!service && w.type !== 'custom')) return { scheme: false, user: false };
             const server = w.server.trim();
+            if (!service) return { scheme: Boolean(server) && !/^https?:\/\//i.test(server), user: false };
             const session = this.widgetWizardAuth(service).kind === 'session';
             return {
                 scheme: Boolean(server) && !/^https?:\/\//i.test(server),
@@ -197,7 +248,8 @@
             const w = this._widgetWizard;
             const screen = document.querySelector('#modal-text [data-widget-wizard-screen="connect"]');
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
-            if (!w || !screen || !service) return;
+            const custom = w?.type === 'custom';
+            if (!w || !screen || (!service && !custom)) return;
             const result = screen.querySelector('[data-widget-wizard-result]');
             const problemLine = screen.querySelector('[data-widget-wizard-problem]');
             const problem = this.widgetWizardProblem();
@@ -212,7 +264,10 @@
             const test = screen.querySelector('[data-widget-wizard-test]');
             const finish = screen.querySelector('[data-widget-wizard-finish]');
             let said = '';
-            if (w.busy && !w.test) said = this.mediaWord(service, 'connecting');
+            if (custom) {
+                if (w.busy && !w.test) said = this.t('config.widgetWizardCustomAsking', 'Asking\u2026');
+                else if (w.test) said = w.test.text;
+            } else if (w.busy && !w.test) said = this.mediaWord(service, 'connecting');
             else if (w.test?.ok) {
                 said = this.mediaWord(service, 'connected', w.test.answer?.serverName || service.name)
                     .replace('{version}', w.test.answer?.version || w.test.answer?.connected || '');
@@ -239,9 +294,13 @@
         async runWidgetWizardTest() {
             const w = this._widgetWizard;
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
-            if (!w || !service || w.busy || !w.server.trim()) return;
+            if (!w || (!service && w.type !== 'custom') || w.busy || !w.server.trim()) return;
             const problem = this.widgetWizardProblem();
             if (problem.scheme || problem.user) return;
+            if (!service) {
+                await this.runWidgetWizardCustomTest();
+                return;
+            }
             const round = w.round;
             const shape = this.widgetWizardAuth(service);
             const auth = { ...shape, basicUser: w.user, secret: this.widgetWizardSecret(service, shape) };
@@ -274,6 +333,57 @@
             this.syncWidgetWizardConnect();
         },
 
+        /** The header the key travels in, as it would be filed. */
+        widgetWizardHeaderName() {
+            return String(this._widgetWizard?.header || '').trim() || 'X-Api-Key';
+        },
+
+        /*
+         * Ask the address once, with what is typed. The key rides along for
+         * this one request only (draftCredential); nothing is stored by asking.
+         */
+        async runWidgetWizardCustomTest() {
+            const w = this._widgetWizard;
+            const round = w.round;
+            const secret = w.secret.trim();
+            const body = { url: w.server.trim(), method: 'GET' };
+            if (secret) body.draftCredential = { headers: { [this.widgetWizardHeaderName()]: secret } };
+            w.busy = true;
+            w.test = null;
+            this.syncWidgetWizardConnect();
+            let test;
+            try {
+                const res = await this.writeFetch('/api/widgets/custom/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = res.ok ? await res.json() : null;
+                if (!res.ok) test = { ok: false, text: this.customProbeFailure(res.status) };
+                else if (data?.error) test = { ok: false, text: String(data.error) };
+                else {
+                    const said = this.t('config.widgetWizardCustomAnswered', 'Answered {status} in {ms} ms')
+                        .replace('{status}', String(data?.status ?? '')).replace('{ms}', String(data?.tookMs ?? 0));
+                    test = {
+                        ok: true,
+                        text: data?.json === false
+                            ? `${said}. ${this.t('config.widgetWizardCustomNotJson', 'The answer is not JSON, so no figures can be read from it.')}`
+                            : said,
+                    };
+                }
+            } catch (_error) {
+                test = { ok: false, text: this.customProbeFailure(0) };
+            }
+            if (this._widgetWizard !== w) return;
+            w.busy = false;
+            if (w.round !== round) {
+                this.syncWidgetWizardConnect();
+                return;
+            }
+            w.test = test;
+            this.syncWidgetWizardConnect();
+        },
+
         /*
          * Add it, then file what was typed through the same draft and Save the
          * settings panel uses -- the key goes to the credential store, the
@@ -282,8 +392,25 @@
         async finishWidgetWizard() {
             const w = this._widgetWizard;
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
-            if (!w || !service || w.busy || this.widgetWizardProblem().user) return;
+            if (!w || (!service && w.type !== 'custom') || w.busy || this.widgetWizardProblem().user) return;
             w.busy = true;
+            if (!service) {
+                const server = w.server.trim();
+                const secret = w.secret.trim();
+                const headerName = this.widgetWizardHeaderName();
+                const { type, pageId } = w;
+                this._widgetWizard = null;
+                window.AppModal?.hide();
+                const added = await this.addWidget(type, pageId != null ? { pageId } : undefined);
+                if (!added || (!server && !secret)) return;
+                const index = this.lastWidgetIndex();
+                const draft = this.widgetDraft(index);
+                if (!draft || this._widgetBlocks[index]?.type !== type) return;
+                if (server) draft.config.url = server;
+                if (secret) draft.auth = { kind: 'header', headerName, basicUser: '', secret };
+                await this.saveWidgetDraft(index);
+                return;
+            }
             const shape = this.widgetWizardAuth(service);
             const server = w.server.trim();
             const user = w.user.trim();

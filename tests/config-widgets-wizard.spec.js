@@ -389,3 +389,93 @@ test.describe('the connect screen for media kinds', () => {
         await expect.poll(() => widgetTypes(page, only)).toEqual(['notes']);
     });
 });
+
+/** Answer the Custom Test with `reply`. */
+async function mockCustom(page, reply) {
+    await page.route('**/api/widgets/custom/test', (route) => (typeof reply === 'function'
+        ? reply(route)
+        : route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(reply) })));
+}
+
+test.describe('the connect screen for Custom', () => {
+    test('Custom asks for an address and tests it', async ({ page }) => {
+        const KEY = 'custom-wizard-key-9x2m';
+        let body = null;
+        await mockCustom(page, (route) => {
+            body = JSON.parse(route.request().postData() || '{}');
+            return route.fulfill({ status: 200, contentType: 'application/json',
+                body: JSON.stringify({ status: 200, tookMs: 12, json: true }) });
+        });
+        const only = await connectScreen(page, 'custom');
+
+        await expect(page.locator('[data-widget-wizard-header]')).toHaveAttribute('placeholder', 'X-Api-Key');
+        await expect(page.locator('[data-widget-wizard-test]')).toBeDisabled();
+        await page.locator('[data-widget-wizard-server]').fill('https://svc.example/api/stats');
+        await page.locator('[data-widget-wizard-secret]').fill(KEY);
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('200');
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add widget');
+        expect(body.url).toBe('https://svc.example/api/stats');
+        expect(body.method).toBe('GET');
+        expect(body.draftCredential).toEqual({ headers: { 'X-Api-Key': KEY } });
+        expect(await page.evaluate((k) => document.documentElement.outerHTML.includes(k), KEY)).toBe(false);
+
+        const filed = page.waitForRequest((req) => req.url().includes('/api/health/credentials')
+            && req.method() === 'PUT');
+        await page.locator('[data-widget-wizard-finish]').click();
+        expect(JSON.parse((await filed).postData() || '{}').headers).toEqual({ 'X-Api-Key': KEY });
+        await expect.poll(async () => (await widgetsOn(page, only))
+            .map((w) => [w.type, w.config.url])).toEqual([['custom', 'https://svc.example/api/stats']]);
+    });
+
+    test('a custom address that answers with an error still adds anyway', async ({ page }) => {
+        await mockCustom(page, { error: 'unreachable' });
+        const only = await connectScreen(page, 'custom');
+        await page.locator('[data-widget-wizard-server]').fill('https://svc.example/api/stats');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('unreachable');
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add anyway');
+        await page.locator('[data-widget-wizard-finish]').click();
+        await expect.poll(() => widgetTypes(page, only)).toEqual(['custom']);
+    });
+
+    test('a refused test reads through the status, and an answer that is not JSON says so', async ({ page }) => {
+        await mockCustom(page, (route) => route.fulfill({ status: 429 }));
+        await connectScreen(page, 'custom');
+        await page.locator('[data-widget-wizard-server]').fill('https://svc.example/api/stats');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('Too many requests');
+        await page.unroute('**/api/widgets/custom/test');
+        await mockCustom(page, { status: 200, tookMs: 5, json: false });
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('not JSON');
+    });
+
+    test('the custom explanation is a short hint, not a page', async ({ page }) => {
+        await connectScreen(page, 'custom');
+        const hint = (await page.locator('[data-widget-wizard-hint]').textContent() || '').trim();
+        expect(hint.length).toBeGreaterThan(0);
+        expect(hint.length).toBeLessThan(300);
+        expect(hint).toContain('Read a figure out of any service that answers JSON, and show it as a tile.');
+    });
+
+    test('nothing typed adds a custom widget with no address and no sign-in', async ({ page }) => {
+        const only = await connectScreen(page, 'custom');
+        let filed = false;
+        page.on('request', (req) => {
+            if (req.url().includes('/api/health/credentials') && req.method() === 'PUT') filed = true;
+        });
+        await page.locator('[data-widget-wizard-finish]').dblclick();
+        await expect.poll(() => widgetTypes(page, only)).toEqual(['custom']);
+        await page.waitForTimeout(400);
+        expect(await widgetTypes(page, only)).toEqual(['custom']);
+        expect(filed).toBe(false);
+    });
+
+    test('an address without its scheme says so and is not tested', async ({ page }) => {
+        await connectScreen(page, 'custom');
+        await page.locator('[data-widget-wizard-server]').fill('svc.example/api');
+        await expect(page.locator('[data-widget-wizard-problem]')).toHaveText('Start the address with http:// or https://');
+        await expect(page.locator('[data-widget-wizard-test]')).toBeDisabled();
+    });
+});

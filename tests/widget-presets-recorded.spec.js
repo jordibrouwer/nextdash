@@ -201,6 +201,8 @@ test.describe('presets in the widget panel', () => {
         await page.locator('[data-widget-catalogue]').click();
         await page.locator('.modal--widget-catalogue [data-widget-option="custom"]').first().click();
         await page.locator('.modal--widget-catalogue [data-widget-add="custom"]').click();
+        // Custom connects first; nothing typed adds it as it was.
+        await page.locator('[data-widget-wizard-finish]').click();
         await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
         await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]'))
             .toBeFocused({ timeout: 10_000 });

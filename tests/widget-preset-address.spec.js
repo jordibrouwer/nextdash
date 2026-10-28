@@ -47,6 +47,8 @@ async function addCustom(page) {
     await page.locator('[data-widget-catalogue]').click();
     await page.locator('.modal--widget-catalogue [data-widget-option="custom"]').first().click();
     await page.locator('.modal--widget-catalogue [data-widget-add="custom"]').click();
+    // Custom connects first; nothing typed adds it as it was.
+    await page.locator('[data-widget-wizard-finish]').click();
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
     // The count arriving is not the list settling: adding a widget redraws the
     // dashboard behind config and then scrolls the new row into view and puts

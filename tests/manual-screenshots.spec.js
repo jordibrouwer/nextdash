@@ -480,6 +480,8 @@ async function addCustomWidget(page) {
     await page.locator('[data-widget-catalogue]').first().click();
     await page.locator('#app-modal.show [data-widget-option="custom"]').first().click();
     await page.locator('#app-modal.show [data-widget-add="custom"]').click();
+    // Custom connects first; nothing typed adds it as it was.
+    await page.locator('[data-widget-wizard-finish]').click();
     const preset = page.locator('[data-widget-preset]').last();
     await preset.waitFor();
     return preset;
