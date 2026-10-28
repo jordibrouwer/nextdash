@@ -116,7 +116,7 @@ test.describe('the container list widget', () => {
         await waitForFaviconPrefetch(page);
         await page.evaluate(async () => {
             // Config → Widgets introduces itself once; not what this is about.
-            window.DiscoverabilityState?.markTipSeen?.('widgetsTutorialV1');
+            window.DiscoverabilityState?.markTipSeen?.('widgetsTutorialV2');
             await window.dashboardInstance.config.openConfigView('widgets');
         });
         await page.locator('[data-widget-catalogue]').first().click();

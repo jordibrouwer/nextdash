@@ -16,7 +16,7 @@ class SearchCommandsComponent {
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers' },
         { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances' },
-        { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
+        { id: 'widgetsTutorialV2', labelKey: 'config.tourWidgets', label: 'Widgets' },
         { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring' },
         { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid' },
     ];

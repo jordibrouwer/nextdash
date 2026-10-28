@@ -43,7 +43,7 @@ const TOURS = [
     { id: 'inboxTutorialV3', view: 'inbox', modal: '.inbox-tutorial-modal' },
     { id: 'bookmarksTutorialV1', view: 'library', modal: '.bookmarks-tutorial-modal' },
     { id: 'containersTutorialV3', view: 'docker', modal: '.containers-tutorial-modal', docker: true },
-    { id: 'widgetsTutorialV1', view: 'config', modal: '.widgets-tutorial-modal', section: 'widgets' },
+    { id: 'widgetsTutorialV2', view: 'config', modal: '.widgets-tutorial-modal', section: 'widgets' },
     { id: 'monitoringTutorialV1', view: 'config', modal: '.monitoring-tutorial-modal', section: 'monitoring' },
     { id: 'unraidTutorialV1', view: 'config', modal: '.unraid-tutorial-modal', section: 'unraid' },
 ];

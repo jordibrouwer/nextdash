@@ -6,7 +6,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * The one-time Widgets tour.
  *
  * The Widgets tab opens on your own widgets and one button, which says nothing
- * about the two things worth knowing: that the catalogue holds ready-made
+ * about the two things worth knowing: that the picker offers ready-made
  * widgets, many needing no setup, and that the custom widget reaches any
  * address answering JSON.
  */
@@ -23,9 +23,9 @@ async function openDashboard(page) {
         const state = window.DiscoverabilityState;
         if (!state?.exportState) return;
         // Forgotten, not only left out: a tip marked on this page outlives an init.
-        state.forgetTip?.('widgetsTutorialV1', { persist: false });
+        state.forgetTip?.('widgetsTutorialV2', { persist: false });
         const exported = state.exportState();
-        exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'widgetsTutorialV1');
+        exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'widgetsTutorialV2');
         state.init?.(exported);
     });
 }
@@ -80,6 +80,13 @@ test.describe('the widgets tour', () => {
         // Seen or not, the Tour button in the band brings it back.
         await page.locator('[data-widgets-tour]').click();
         await expect(tour).toBeVisible({ timeout: 15_000 });
+    });
+
+    test('someone who saw V1 sees the tour once more', async ({ page }) => {
+        await openDashboard(page);
+        await page.evaluate(() => { window.DiscoverabilityState?.markTipSeen?.('widgetsTutorialV1'); });
+        await openWidgetsSection(page);
+        await expect(page.locator('#app-modal.show .widgets-tutorial-modal')).toBeVisible({ timeout: 15_000 });
     });
 
     test('every step carries a visual beside its prose', async ({ page }) => {

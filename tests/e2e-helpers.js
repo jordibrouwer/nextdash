@@ -207,7 +207,7 @@ async function markWidgetsTutorialSeen(page) {
     // survive that — the tour would then open over the panel the spec is about
     // to click. The tour's own spec puts the tip back to unseen for itself.
     await page.evaluate(async () => {
-        window.DiscoverabilityState?.markTipSeen?.('widgetsTutorialV1');
+        window.DiscoverabilityState?.markTipSeen?.('widgetsTutorialV2');
         await window.DiscoverabilityState?.persistNow?.();
     });
 }

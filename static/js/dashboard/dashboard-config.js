@@ -12944,7 +12944,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1', 'monitoringTutorialV1', 'unraidTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV2', 'monitoringTutorialV1', 'unraidTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -13231,7 +13231,7 @@ class DashboardConfig {
                 if ((await d.glances?.openGlancesView?.({})) === false) return true;
                 await d.glances?.instance?.openTour?.();
                 return true;
-            case 'widgetsTutorialV1':
+            case 'widgetsTutorialV2':
                 await this.openConfigView('widgets');
                 await this.openWidgetsTour?.();
                 return true;
@@ -16449,7 +16449,7 @@ class DashboardConfig {
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
-    static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
+    static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV2';
 
     // Repeated from monitoring-tutorial.js, for the same reason.
     static MONITORING_TUTORIAL_TIP_ID = 'monitoringTutorialV1';
@@ -16488,7 +16488,7 @@ class DashboardConfig {
           whereKey: 'config.tourWhereContainers', where: 'the next time you open the Containers view' },
         { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances',
           whereKey: 'config.tourWhereGlances', where: 'the next time you open the Glances page' },
-        { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
+        { id: 'widgetsTutorialV2', labelKey: 'config.tourWidgets', label: 'Widgets',
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
         { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring',
           whereKey: 'config.tourWhereMonitoring', where: 'the next time you open Config → Monitoring' },
