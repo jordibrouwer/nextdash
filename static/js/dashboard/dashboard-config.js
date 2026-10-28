@@ -3857,7 +3857,7 @@ class DashboardConfig {
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
         remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
-        digestEnabled: ['digest', 'weekly', 'summary', 'report', 'monday', 'broken', 'updates', 'unused'],
+        digestWeekday: ['digest', 'weekly', 'summary', 'report', 'monday', 'broken', 'updates', 'unused'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
         inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
         inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
@@ -5346,7 +5346,7 @@ class DashboardConfig {
 
     /**
      * The latest weekly digest for the overview's panel. Repaints once when it
-     * lands; no digest yet, or the digest switched off, leaves the panel out.
+     * lands; no digest yet leaves the panel out.
      */
     loadOverviewDigest() {
         const notice = window.DigestNotice;
@@ -8956,7 +8956,6 @@ class DashboardConfig {
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         // Weekly digest (digest.go)
-        digestEnabled: { info: ['digestEnabledInfoTitle', 'digestEnabledInfoMessage'], def: true },
         digestWeekday: { def: 1 },
         digestTime: { def: '08:00' },
         digestHealth: { def: true },
@@ -10778,7 +10777,6 @@ class DashboardConfig {
                 note: t('config.digestNote', 'One message a week: links that broke, container updates and bookmarks nobody opens. Sent to your push and alert channels and shown once on the dashboard. Held until quiet hours end. Nothing is sent when there is nothing to say.'),
                 appliesTo: t('config.appliesToDigest', 'Monitors, containers, usage'),
                 controls: [
-                    bool('digestEnabled', 'config.digestEnabledLabel', 'Send a weekly digest'),
                     { field: 'digestWeekday', type: 'select', numeric: true, label: t('config.digestWeekdayLabel', 'On'), options: [
                         opt(1, t('config.weekdayMon', 'Monday')), opt(2, t('config.weekdayTue', 'Tuesday')),
                         opt(3, t('config.weekdayWed', 'Wednesday')), opt(4, t('config.weekdayThu', 'Thursday')),
@@ -10792,7 +10790,6 @@ class DashboardConfig {
                           const value = `${String(hour).padStart(2, '0')}:00`;
                           return opt(value, value);
                       }) },
-                    bool('digestHealth', 'config.digestHealthLabel', 'Include broken links and certificates'),
                     bool('digestUpdates', 'config.digestUpdatesLabel', 'Include container updates'),
                     bool('digestUsage', 'config.digestUsageLabel', 'Include most opened, unused and Inbox'),
                     bool('digestNews', 'config.digestNewsLabel', 'Include what is new in nextDash this week'),

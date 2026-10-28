@@ -60,7 +60,7 @@ test('Monitoring has Checks, Notifications and Schedules, each with its settings
 
     await page.locator('[data-monitoring-tab="notifications"]').click();
     await expect(page.locator('[data-behavior-field="pushNotifyEnabled"]')).toBeVisible();
-    await expect(page.locator('[data-behavior-field="digestEnabled"]')).toBeVisible();
+    await expect(page.locator('[data-behavior-field="digestWeekday"]')).toBeVisible();
     await expect.poll(() => hash(page)).toBe('#config/monitoring/notifications');
 
     await page.locator('[data-monitoring-tab="schedules"]').click();
