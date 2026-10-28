@@ -2911,6 +2911,14 @@ On a wide screen the list and the open widget stand side by side: one widget is 
 
 Each widget has a title, a width (one or two columns), the page it counts, a row count and the settings of its kind. With more than one page, **Page** above the width moves the widget to another page straight away, at the end of that page, with its sign-in and folded state; unsaved changes in the panel ask first. An **ℹ** explains the harder settings and **↺** resets them. The title and **Shown** save at once; the rest waits for **Save**.
 
+Every widget's settings come in the same three folding sections, in this order, and a section with nothing in it is left out:
+
+- **Connection** — how the widget reaches what it shows: an address, a host, the feed addresses, a key or sign-in, and **Connect** or **Test** where there is one. It is open while the widget is not connected yet and folds shut once it is.
+- **Display** — what you see on the tile: the page, the width, what to show, the order, how many rows, the style and, for Custom, the figures. It is open.
+- **Advanced** — how often it refreshes, how long an answer is kept, and where a click goes. It is folded.
+
+Open or shut a section yourself and it stays that way while Config is open, even as the panel redraws; close Config and they go back to these starting states. Save and Discard stay below the sections and cover all three.
+
 Widgets share one order with the categories and are moved on the dashboard: drag the `//` in the title, or use the keys in [§7.4](#74-acting-on-a-category-or-widget). On a one-column dashboard — and on a phone — a wide widget narrows itself and keeps the important half.
 
 **Two columns say more, not the same thing larger.** A tile drawn wide adds the readings a narrow one leaves out: the load average behind the processor's percentage, the container that is failing by name, used and total beside free space, what the weather feels like, the date a certificate expires, when an import last ran. Lists of rows run in two files instead of one. This follows the width the tile actually got, so narrowing the dashboard takes it back at once.
