@@ -7195,7 +7195,7 @@ body.no-animations .config-new-features-panel-star {
 .config-widget-list {
     /* One card per widget; an open card spans the whole row. */
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
     align-items: start;
     gap: 14px;
     margin: 0;

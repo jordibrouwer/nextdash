@@ -178,4 +178,54 @@ test.describe('widgets as cards', () => {
         await page.locator('[data-widget-page]').selectOption('all');
         await expect(page.locator('.config-widget-row .config-widget-row-page').first()).toBeVisible();
     });
+
+    test('at 390px wide the cards are one column with no horizontal scroll', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await openWidgetsSection(page, { widgets: THREE });
+        await settingsOf(page, 2).click();
+        const m = await page.evaluate(() => {
+            const list = document.querySelector('.config-widget-list').getBoundingClientRect();
+            const cards = [...document.querySelectorAll('.config-widget-row')].map((el) => el.getBoundingClientRect());
+            return {
+                overflow: document.documentElement.scrollWidth - window.innerWidth,
+                cardsFit: cards.every((c) => c.right <= window.innerWidth + 1),
+                sameColumn: new Set(cards.map((c) => Math.round(c.left))).size,
+                listWidth: list.width,
+            };
+        });
+        expect(m.overflow).toBeLessThanOrEqual(0);
+        expect(m.cardsFit).toBe(true);
+        expect(m.sameColumn).toBe(1);
+    });
+
+    test('the bulk bar appears only while something is selected', async ({ page }) => {
+        await openWidgetsSection(page, { widgets: THREE });
+        await expect(page.locator('.config-widget-bulk')).toHaveCount(0);
+        await page.locator('.config-widget-row').first().locator('[data-widget-pick]').check();
+        await expect(page.locator('.config-widget-bulk')).toBeVisible();
+        await page.locator('.config-widget-row').first().locator('[data-widget-pick]').uncheck();
+        await expect(page.locator('.config-widget-bulk')).toHaveCount(0);
+    });
+
+    test('grouped, each group has a heading above its cards', async ({ page }) => {
+        await openWidgetsSection(page, { widgets: THREE });
+        await page.locator('[data-widget-sort]').selectOption('group');
+        const groups = page.locator('.config-widget-group');
+        expect(await groups.count()).toBeGreaterThan(1);
+        await expect(groups.first().locator('.config-widget-group-title')).toBeVisible();
+    });
+
+    test('an empty page still offers Add', async ({ page }) => {
+        await openWidgetsSection(page, { widgets: THREE });
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const headers = { 'Content-Type': 'application/json',
+                ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            const dash = window.dashboardInstance;
+            await f(`/api/pages/${dash.pages[0].id}/blocks`, { method: 'PUT', headers, body: JSON.stringify({ widgets: [] }) });
+        });
+        await page.goto('/#config/widgets');
+        await page.reload();
+        await expect(page.locator('.config-widget-empty [data-widget-catalogue]')).toBeVisible({ timeout: 15_000 });
+    });
 });
