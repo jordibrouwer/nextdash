@@ -6047,11 +6047,6 @@ body.no-animations .config-new-features-panel-star {
     padding-top: 8px;
 }/* ─── CRUD lists ────────────────────────────────────────────────────────── *//* ─── Backup list ───────────────────────────────────────────────────────── */
 
-/* ─── Motion preferences ────────────────────────────────────────────────── */
-
-@media (prefers-reduced-motion: reduce) {
-}
-
 /* ── Server logs toolbar ──────────────────────────────────────────────────── */
 
 /*
@@ -7186,15 +7181,6 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /* Catalogue tab: a new kind's card carries the accent before it is hovered. */
-.config-widget-kind.is-new {
-    border-color: color-mix(in srgb, var(--accent-primary) 70%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 6%, var(--surface-2, var(--card-bg, transparent)));
-}
-
-.config-widget-kind-group--new .config-widget-kind-group-title {
-    color: var(--accent-primary);
-}
 
 .config-widget-list {
     display: flex;
@@ -7391,128 +7377,6 @@ body.no-animations .config-new-features-panel-star {
    thing a row says that the detail beside it does not. */
 .config-widgets-split .config-widget-row .config-widget-row-kind { display: none; }
 
-/* ── Widgets → Catalogue: every kind, drawn ─────────────────────────────── */
-
-.config-widget-kinds-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.config-widget-kinds-head .config-panel-title {
-    margin: 0;
-}
-
-.config-widget-kinds-count {
-    margin-left: 6px;
-    font-weight: 400;
-    font-size: calc(var(--font-size-text) * 0.86);
-    color: var(--text-muted, #888);
-}
-
-.config-widget-kinds-page {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: calc(var(--font-size-text) * 0.88);
-    color: var(--text-muted, #888);
-}
-
-.config-widget-kind-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 4px;
-}
-
-.config-widget-kind-chip {
-    padding: 2px 10px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
-    border-radius: var(--radius-pill, 999px);
-    background: transparent;
-    color: var(--text-muted, #888);
-    font: inherit;
-    font-size: calc(var(--font-size-text) * 0.86);
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
-}
-
-.config-widget-kind-chip:hover,
-.config-widget-kind-chip.is-active {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-}
-
-.config-widget-kind-group-title {
-    margin: 18px 0 8px;
-    font-size: calc(var(--font-size-text) * 0.8);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--text-muted, #888);
-}
-
-.config-widget-kind-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-    gap: 10px;
-}
-
-/* A card per kind. They arrive one after another rather than all at once,
-   and lift under the pointer: a page to browse, so it can feel like one. */
-.config-widget-kind {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-6, 10px);
-    background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
-    animation: config-widget-kind-rise 0.35s ease both;
-    animation-delay: calc(var(--i, 0) * 35ms);
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.config-widget-kind:hover,
-.config-widget-kind:focus-within {
-    transform: translateY(-2px);
-    border-color: var(--accent-primary);
-    box-shadow: 0 6px 18px color-mix(in srgb, #000 30%, transparent);
-}
-
-@keyframes config-widget-kind-rise {
-    from { opacity: 0; transform: translateY(6px); }
-}
-
-.config-widget-kind-name {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 0.86);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-secondary, inherit);
-}
-
-.config-widget-kind-have {
-    flex: none;
-    padding: 0 6px;
-    border: 1px solid color-mix(in srgb, var(--accent-success) 50%, transparent);
-    border-radius: var(--radius-pill, 999px);
-    font-size: calc(var(--font-size-text) * 0.72);
-    font-weight: 400;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--accent-success);
-}
-
 /* The drawing: the Unraid preview's tile, rows and bars, one per kind. */
 .config-widget-kind-sample {
     display: flex;
@@ -7539,8 +7403,6 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-widget-kind-good { color: var(--accent-success); }
-.config-widget-kind-warn { color: var(--accent-warning); }
-.config-widget-kind-bad { color: var(--accent-error); }
 
 .config-widget-kind-spark {
     display: flex;
@@ -7564,198 +7426,7 @@ body.no-animations .config-new-features-panel-star {
     from { transform: scaleY(0); }
 }
 
-.config-widget-kind-about {
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 0.86);
-    line-height: 1.45;
-    color: var(--text-muted, #888);
-}
-
-.config-widget-kind-foot {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: auto;
-}
-
-/* ── Widgets → Custom widget: where a figure comes from ─────────────────── */
-
-.config-widget-custom-flow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 3.5rem minmax(0, 1fr) 3.5rem minmax(0, 1fr);
-    align-items: center;
-    margin-top: 14px;
-}
-
-.config-widget-custom-node {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-height: 6rem;
-    padding: 10px;
-    border: 1px solid var(--border-secondary, var(--border-primary));
-    border-radius: var(--radius-6, 10px);
-    background: var(--background-secondary);
-    font-size: var(--text-xs, 0.75rem);
-    color: var(--text-secondary);
-    animation: config-widget-kind-rise 0.4s ease both;
-}
-
-.config-widget-custom-node:nth-of-type(2) { animation-delay: 0.15s; }
-.config-widget-custom-node:nth-of-type(3) { animation-delay: 0.3s; }
-
-.config-widget-custom-node-label {
-    font-size: 0.66rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-tertiary, var(--text-muted, #888));
-}
-
-.config-widget-custom-node-path { color: var(--accent-primary); }
-.config-widget-custom-node-host { color: var(--text-muted, #888); }
-
-.config-widget-custom-json {
-    white-space: pre;
-    overflow: hidden;
-}
-
 /* The two figures the paths pick out, lit in turn with the dot on the wire. */
-.config-widget-custom-json mark {
-    padding: 0 2px;
-    border-radius: 3px;
-    background: transparent;
-    color: var(--accent-primary);
-    animation: config-widget-custom-pick 2.4s ease-in-out infinite;
-}
-
-@keyframes config-widget-custom-pick {
-    0%, 35% { background: transparent; }
-    50%, 100% { background: color-mix(in srgb, var(--accent-primary) 20%, transparent); }
-}
-
-.config-widget-custom-wire {
-    position: relative;
-    height: 2px;
-    margin: 0 6px;
-    background: var(--border-primary);
-}
-
-.config-widget-custom-wire::after {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: 0;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    box-shadow: 0 0 8px var(--accent-primary);
-    animation: config-widget-custom-run 2.4s linear infinite;
-}
-
-.config-widget-custom-wire.is-second::after { animation-delay: 1.2s; }
-
-@keyframes config-widget-custom-run {
-    from { left: 0; }
-    to { left: calc(100% - 8px); }
-}
-
-.config-widget-custom-figures {
-    display: flex;
-    gap: 16px;
-}
-
-.config-widget-custom-figures b {
-    display: block;
-    font-size: calc(var(--font-size-text) * 1.5);
-    color: var(--text-primary, inherit);
-}
-
-.config-widget-custom-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: 10px;
-    margin: 16px 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-.config-widget-custom-card {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px 14px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-6, 10px);
-    background: var(--card-bg, rgba(127, 127, 127, 0.03));
-    animation: config-widget-kind-rise 0.35s ease both;
-    animation-delay: calc(var(--i, 0) * 60ms + 0.3s);
-}
-
-.config-widget-custom-icon {
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-    margin-bottom: 4px;
-    border-radius: 7px;
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-    color: var(--accent-primary);
-}
-
-.config-widget-custom-formats,
-.config-widget-custom-presets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 6px;
-}
-
-.config-widget-custom-format {
-    padding: 1px 7px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
-    border-radius: 6px;
-    font-size: calc(var(--font-size-text) * 0.8);
-    color: var(--text-muted, #888);
-}
-
-.config-widget-custom-format.is-on {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-}
-
-.config-widget-custom-preset {
-    padding: 3px 9px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 7px;
-    background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
-    font-size: calc(var(--font-size-text) * 0.88);
-    animation: config-widget-kind-rise 0.3s ease both;
-    animation-delay: calc(var(--j, 0) * 40ms);
-}
-
-.config-widget-custom-preset.is-more { color: var(--text-muted, #888); }
-
-.config-widget-custom-limits {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 22px;
-    color: var(--text-muted, #888);
-}
-
-.config-widget-custom-limits b {
-    color: var(--text-primary, inherit);
-}
-
-/* Stacked on a phone: three boxes one above the other, the wires dropped. */
-@media (max-width: 720px) {
-    .config-widget-custom-flow {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 10px;
-    }
-    .config-widget-custom-wire { display: none; }
-}
 
 /* The settings, folded out under the row they belong to. Full width, since a
    checkset needs the room, and separated by a rule rather than a box so the row
@@ -9024,43 +8695,6 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /* ── Widgets: choosing one, and what each one is ─────────────────────────── */
-/*
- * The picker and the reference are built from the same parts on purpose.
- *
- * Adding a widget used to be a dropdown, a button, and one line that changed
- * as the dropdown did — so comparing two kinds meant looking at them one at a
- * time and remembering. Both screens now put every kind on the page under the
- * question it answers; the only difference is that one of them is clickable.
- */
-.config-widget-pick-group {
-    margin: 0 0 18px;
-}
-
-.config-widget-pick-group:last-child {
-    margin-bottom: 0;
-}
-
-.config-widget-pick-group-title {
-    margin: 0 0 8px;
-    font-size: var(--font-size-small);
-    font-weight: var(--font-weight-semibold, 600);
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
-}
-
-/*
- * As many across as the panel has room for, never fewer than one.
- *
- * auto-fill with a minimum rather than a fixed count: config is a column
- * inside a page that is itself a column, so the width here is whatever is
- * left after the rail — a number of columns chosen in advance is wrong at
- * some window size.
- */
-.config-widget-pick-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
-    gap: 8px;
-}
 
 .config-widget-pick {
     display: flex;
@@ -9082,17 +8716,6 @@ body.no-animations .config-new-features-panel-star {
 .config-widget-pick:focus-visible {
     border-color: var(--accent-primary);
     box-shadow: inset 0 0 0 1px var(--accent-primary);
-}
-
-.config-widget-pick-name {
-    font-weight: var(--font-weight-semibold, 600);
-}
-
-.config-widget-pick-about {
-    color: var(--text-tertiary);
-    font-size: var(--font-size-small);
-    line-height: 1.5;
-    text-wrap: pretty;
 }
 
 .config-widget-pick-footnote {
@@ -9438,7 +9061,6 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-field-check[data-state="ok"] { color: var(--accent-success, var(--accent-primary)); }
 .config-field-check[data-state="fixable"] { color: var(--accent-warning); }
 .config-field-check[data-state="bad"] { color: var(--accent-error); }
-
 
 /* ── Appearance → Background and Surface ─────────────────────────────────── */
 

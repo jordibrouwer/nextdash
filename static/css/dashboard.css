@@ -6732,12 +6732,6 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
 }
 .dashboard-widget-health-waiting { margin: 0; color: var(--text-tertiary); font-style: italic; }
 
-.config-widget-kind {
-    font-size: var(--font-size-small);
-    color: var(--text-tertiary);
-    margin-left: 8px;
-}
-
 /* ─── Widget rows ────────────────────────────────────────────────────────── */
 /* Shared by the widgets that list rows — sources, feeds, certificates. One set
    of rules rather than three near-copies: they differ in what they say, not in
@@ -10029,7 +10023,6 @@ body[data-action-bar="bottom"] #dashboard-layout {
     font-size: var(--font-size-small, 0.75rem);
     color: var(--text-secondary);
 }
-
 
 /*
  * Pointer targets of at least 24px.

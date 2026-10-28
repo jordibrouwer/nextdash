@@ -44,10 +44,6 @@
     const chip = (label, extra = '') =>
         `<span class="widgets-tutorial-chip${extra}">${esc(label)}</span>`;
 
-    /** A key hint, matching the chips under the grid. */
-    const key = (k, label) =>
-        `<span class="widgets-tutorial-key"><kbd>${esc(k)}</kbd>${esc(label)}</span>`;
-
     /*
      * The opening animation: an address, a request travelling along the wire,
      * and a tile filling in with what came back.
