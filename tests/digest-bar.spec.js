@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
  * Closing the digest's bar (static/js/digest-notice.js): it asks first, and
@@ -65,5 +65,23 @@ test.describe('closing the digest bar', () => {
         const dialog = page.locator('#app-modal');
         await expect(dialog).toContainText('Close this digest until Monday?');
         await expect(dialog).toContainText('not been opened yet');
+    });
+
+    test('names the singular when there is one, and the weekday that is set', async ({ page, request }) => {
+        const headers = { 'X-NextDash-Token': WRITE_TOKEN };
+        const set = await request.post('/api/settings', { data: { digestWeekday: 5 }, headers });
+        expect(set.ok()).toBeTruthy();
+        try {
+            await barUp(page, snapshot({ health: { newlyBroken: ['Plex'], certsExpiring: ['nas.home (5 days)'] } }));
+            await page.locator('.digest-bar [data-digest-bar="close"]').click();
+            const dialog = page.locator('#app-modal');
+            await expect(dialog).toContainText('1 broken link, 1 certificate');
+            await expect(dialog).not.toContainText('1 broken links');
+            await expect(dialog).not.toContainText('1 certificates');
+            await expect(dialog).toContainText('Close this digest until Friday?');
+            await expect(dialog.getByRole('button', { name: 'Close until Friday' })).toBeVisible();
+        } finally {
+            await request.post('/api/settings', { data: { digestWeekday: 1 }, headers });
+        }
     });
 });

@@ -25302,10 +25302,6 @@ class DashboardConfig {
             isOn: (s) => s.monitorNotifyEnabled === true,
             go: { section: 'monitoring', monitoringTab: 'notifications' },
         },
-        'config.helpDigestTitle': {
-            isOn: (s) => s.digestEnabled !== false,
-            go: { section: 'monitoring', monitoringTab: 'notifications' },
-        },
         'config.helpStatsPrivacyTitle': {
             isOn: (s) => s.analyticsOptIn === true,
             go: { section: 'behavior', behaviorTab: 'privacy' },

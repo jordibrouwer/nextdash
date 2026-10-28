@@ -37,7 +37,6 @@ type digestInput struct {
 	Now             time.Time
 	Settings        Settings
 	Issues          []HealthIssue
-	StaleDays       int        // the report's "not opened for" threshold, in days
 	Bookmarks       []Bookmark // for the open log only: what was opened this week
 	InboxCount      int
 	Updates         map[string]*dockerImageUpdate // nil when Docker is not in use

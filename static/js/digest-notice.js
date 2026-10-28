@@ -577,6 +577,28 @@
      * the first group, "7 broken links, 4 certificates", or, with nothing
      * there, only that parts are still unopened.
      */
+    function itemCount(id, n) {
+        switch (id) {
+            case 'broken': return count(n, 'dashboard.digestCloseBroken', '1 broken link', '{count} broken links');
+            case 'certificates': return count(n, 'dashboard.digestCloseCerts', '1 certificate', '{count} certificates');
+            case 'domains': return count(n, 'dashboard.digestCloseDomains', '1 domain', '{count} domains');
+            default: return count(n, 'dashboard.digestCloseUpdates', '1 container update', '{count} container updates');
+        }
+    }
+
+    /** The day the next digest comes, by the name the reader's language gives it. */
+    function nextDigestDay() {
+        const weekday = Number(dash()?.settings?.digestWeekday);
+        const day = Number.isInteger(weekday) && weekday >= 0 && weekday <= 6 ? weekday : 1;
+        // 2026-10-25 was a Sunday, so day 0 is that date and 1 is the Monday after it.
+        const sample = new Date(2026, 9, 25 + day);
+        try {
+            return sample.toLocaleDateString(dash()?.settings?.language || undefined, { weekday: 'long' });
+        } catch (_) {
+            return sample.toLocaleDateString(undefined, { weekday: 'long' });
+        }
+    }
+
     function bodyLine(s) {
         const parts = partList(s);
         const now = GROUPS[0].parts
@@ -584,7 +606,7 @@
             .filter((p) => p && p.count)
             .sort((a, b) => b.count - a.count)
             .slice(0, 2)
-            .map((p) => `${p.count} ${p.title.toLowerCase()}`);
+            .map((p) => itemCount(p.id, p.count));
         if (!now.length) return t('dashboard.digestCloseGeneral', 'Some parts have not been opened yet.');
         return t('dashboard.digestCloseNamed', 'It still holds, for example, {items}.', { items: now.join(', ') });
     }
@@ -592,13 +614,14 @@
     /** Closing the bar loses the digest until next week, so it asks first. */
     function confirmCloseBar(s) {
         if (!global.AppModal?.show) return Promise.resolve(true);
+        const day = nextDigestDay();
         return new Promise((resolve) => {
             let answered = false;
             const answer = (value) => { if (!answered) { answered = true; resolve(value); } };
             global.AppModal.show({
-                title: t('dashboard.digestCloseTitle', 'Close this digest until Monday?'),
+                title: t('dashboard.digestCloseTitle', 'Close this digest until {day}?', { day }),
                 message: `${bodyLine(s)} ${t('dashboard.digestCloseWarn', 'This is important information. Config → Overview opens it again.')}`,
-                confirmText: t('dashboard.digestCloseConfirm', 'Close until Monday'),
+                confirmText: t('dashboard.digestCloseConfirm', 'Close until {day}', { day }),
                 cancelText: t('dashboard.digestCloseKeep', 'Keep it'),
                 onConfirm: () => answer(true),
                 onCancel: () => answer(false),
@@ -752,7 +775,7 @@
     /**
      * The latest digest in brief, for Config's overview panel: when it came
      * out, its tiles, and how many of its parts are still to be opened. Null
-     * while there is none, or with the digest switched off.
+     * while there is none.
      */
     async function summary() {
         const s = latest || await fetchLatest();

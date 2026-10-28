@@ -70,7 +70,6 @@ func (h *Handlers) collectDigestInput(now time.Time) digestInput {
 		Now:             now,
 		Settings:        settings,
 		Issues:          report.Issues,
-		StaleDays:       int(staleOpenThreshold(settings) / (24 * time.Hour)),
 		Bookmarks:       h.store.GetAllBookmarks(),
 		InboxCount:      len(h.store.GetInboxItems()),
 		Updates:         h.dockerUpdateSnapshot(),
