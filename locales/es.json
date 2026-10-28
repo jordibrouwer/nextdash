@@ -6965,6 +6965,8 @@
     "widgetSectionConnected": "conectado",
     "widgetSectionNotConnected": "no conectado",
     "widgetSectionUnreachable": "inaccesible",
+    "widgetCardNotSetUp": "Sin configurar",
+    "widgetCardSetUp": "Configurado",
     "widgetRevert": "Descartar",
     "widgetUnsaved": "Todavía sin guardar",
     "widgetSaved": "Guardado.",

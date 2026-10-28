@@ -131,4 +131,51 @@ test.describe('widgets as cards', () => {
         const placeholder = await page.locator('input[data-widget="title"][value=""]').first().getAttribute('placeholder');
         expect((placeholder || '').length).toBeGreaterThan(0);
     });
+
+    test('every card has a badge with the first letter of its kind', async ({ page }) => {
+        await openWidgetsSection(page, { widgets: THREE });
+        await expect(page.locator('.config-widget-row').nth(1).locator('.config-widget-badge')).toHaveText('H');
+        await expect(page.locator('.config-widget-row').nth(0).locator('.config-widget-badge')).toHaveText('N');
+        const tints = await page.evaluate(() => [...document.querySelectorAll('.config-widget-badge')].map((b) => getComputedStyle(b).color));
+        expect(new Set(tints).size).toBeGreaterThan(1);
+    });
+
+    test('a kind without a connection has no chip', async ({ page }) => {
+        await openWidgetsSection(page, { widgets: THREE });
+        await expect(page.locator('.config-widget-row').nth(0).locator('.config-widget-chip')).toHaveCount(0);
+        await expect(page.locator('.config-widget-row').nth(1).locator('.config-widget-chip')).toHaveCount(0);
+    });
+
+    test('a widget with feeds says Set up, a Sonarr with no address says Not set up', async ({ page }) => {
+        await openWidgetsSection(page, { widgets: [...THREE, { type: 'sonarr', title: '', config: {} }] });
+        await expect(page.locator('.config-widget-row').nth(2).locator('.config-widget-chip')).toHaveText('Set up');
+        await expect(page.locator('.config-widget-row').nth(3).locator('.config-widget-chip')).toHaveText('Not set up');
+    });
+
+    test('a Connect answer shows on the card, and listing the widgets asks nothing', async ({ page }) => {
+        const asked = [];
+        page.on('request', (r) => { if (/\/api\/widgets\/[^/]+\/(setup|test)/.test(r.url())) asked.push(r.url()); });
+        await page.route('**/api/widgets/sonarr/setup', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: JSON.stringify({ error: 'unreachable' }),
+        }));
+        await openWidgetsSection(page, { widgets: [
+            { type: 'sonarr', title: '', config: { server: 'http://sonarr.local:8989' } },
+        ] });
+        // An address but no key filed: not set up yet. Nothing was asked to find out.
+        await expect(page.locator('.config-widget-row').first().locator('.config-widget-chip')).toHaveText('Not set up');
+        expect(asked).toEqual([]);
+        await settingsOf(page, 0).click();
+        await page.locator('[data-media-connect]').click();
+        await expect(page.locator('[data-media-status]')).not.toHaveText('');
+        await settingsOf(page, 0).click();
+        await expect(page.locator('.config-widget-row').first().locator('.config-widget-chip')).toHaveText('Not reachable');
+    });
+
+    test('the all-pages view shows the page on the card', async ({ page }) => {
+        await openWidgetsSection(page, { widgets: THREE });
+        const pages = await page.evaluate(() => window.dashboardInstance.pages.length);
+        test.skip(pages < 2, 'one page only');
+        await page.locator('[data-widget-page]').selectOption('all');
+        await expect(page.locator('.config-widget-row .config-widget-row-page').first()).toBeVisible();
+    });
 });

@@ -6965,6 +6965,8 @@
     "widgetSectionConnected": "verbunden",
     "widgetSectionNotConnected": "nicht verbunden",
     "widgetSectionUnreachable": "nicht erreichbar",
+    "widgetCardNotSetUp": "Nicht eingerichtet",
+    "widgetCardSetUp": "Eingerichtet",
     "widgetRevert": "Verwerfen",
     "widgetUnsaved": "Noch nicht gespeichert",
     "widgetSaved": "Gespeichert.",

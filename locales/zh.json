@@ -6965,6 +6965,8 @@
     "widgetSectionConnected": "已连接",
     "widgetSectionNotConnected": "未连接",
     "widgetSectionUnreachable": "无法访问",
+    "widgetCardNotSetUp": "未设置",
+    "widgetCardSetUp": "已设置",
     "widgetRevert": "放弃",
     "widgetUnsaved": "还没保存",
     "widgetSaved": "已保存。",

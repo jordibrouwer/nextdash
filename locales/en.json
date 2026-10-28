@@ -7204,6 +7204,8 @@
     "widgetSectionConnected": "connected",
     "widgetSectionNotConnected": "not connected",
     "widgetSectionUnreachable": "not reachable",
+    "widgetCardNotSetUp": "Not set up",
+    "widgetCardSetUp": "Set up",
     "widgetRevert": "Discard",
     "widgetUnsaved": "Not saved yet",
     "widgetSaved": "Saved.",

@@ -7264,19 +7264,89 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /* Switched off is a state worth seeing in the list, not only in the checkbox. */
-.config-widget-row.is-off .config-widget-row-line > :not([data-widget-settings]):not(.config-widget-row-shown) {
+.config-widget-row.is-off .config-widget-row-line > :not([data-widget-settings]):not(.config-widget-row-pick),
+.config-widget-row.is-off .config-widget-chip {
     opacity: 0.55;
 }
 
-/* The type, as a quiet chip at the end of the line. */
-.config-widget-row-kind {
+/* The card: a head (pick, badge, title and kind, Settings) and a meta line
+   under it (state, page, Shown). */
+.config-widget-card-head {
+    gap: 10px;
+}
+
+.config-widget-card-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    min-height: 1.6rem;
+}
+
+.config-widget-card-meta .config-widget-row-shown {
+    margin: 0 0 0 auto;
+}
+
+/* The kind's first letter on a tint for its group: the face of the card. */
+.config-widget-badge {
     flex: none;
-    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-6, 10px);
+    font-weight: 700;
+    font-size: calc(var(--font-size-text) * 1.05);
+    color: var(--badge-ink, var(--accent-primary));
+    background: color-mix(in srgb, var(--badge-ink, var(--accent-primary)) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--badge-ink, var(--accent-primary)) 30%, transparent);
+}
+
+.config-widget-badge[data-widget-group="links"] { --badge-ink: var(--accent-primary); }
+.config-widget-badge[data-widget-group="incoming"] { --badge-ink: var(--accent-info, var(--accent-primary)); }
+.config-widget-badge[data-widget-group="upkeep"] { --badge-ink: var(--accent-warning); }
+.config-widget-badge[data-widget-group="system"] { --badge-ink: var(--accent-success); }
+.config-widget-badge[data-widget-group="unraid"] { --badge-ink: var(--accent-error); }
+.config-widget-badge[data-widget-group="ambient"] { --badge-ink: var(--accent-info, var(--accent-primary)); }
+.config-widget-badge[data-widget-group="media"] { --badge-ink: var(--accent-color, var(--accent-primary)); }
+.config-widget-badge[data-widget-group="custom"] { --badge-ink: var(--text-secondary); }
+
+/* The state, as a small chip: set up, connected, not reachable. */
+.config-widget-chip {
+    flex: none;
+    padding: 2px 9px;
     border-radius: var(--radius-pill, 999px);
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    font-size: calc(var(--font-size-text) * 0.78);
+    white-space: nowrap;
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+}
+
+.config-widget-chip[data-widget-chip="ok"] {
+    color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 14%, transparent);
+}
+
+.config-widget-chip[data-widget-chip="warn"] {
+    color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 16%, transparent);
+}
+
+.config-widget-chip[data-widget-chip="bad"] {
+    color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 14%, transparent);
+}
+
+/* The kind, as a quiet line under the title. */
+.config-widget-row-kind {
+    padding-inline: 4px;
     font-size: calc(var(--font-size-text) * 0.8);
     color: var(--text-muted, #888);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Reads as the row's name until it is focused, the way bookmark names do. */
@@ -7313,10 +7383,6 @@ body.no-animations .config-new-features-panel-star {
     white-space: nowrap;
     font-size: calc(var(--font-size-text) * 0.88);
     color: var(--text-muted, #888);
-}
-
-@media (max-width: 640px) {
-    .config-widget-row-kind { display: none; }
 }
 
 /* One widget, opened: description, settings, and the way out. */

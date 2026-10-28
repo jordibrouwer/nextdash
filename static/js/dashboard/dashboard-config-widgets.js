@@ -304,35 +304,38 @@
                     return `
                 <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
                     data-widget-row="${index}">
-                    <div class="config-widget-row-line">
+                    <div class="config-widget-row-line config-widget-card-head">
                         <label class="config-widget-row-pick"
                             title="${esc(this.t('config.widgetsSelectRow', 'Select this widget'))}">
                             <input type="checkbox" data-widget-pick="${esc(widget.id)}"
                                 aria-label="${esc(this.t('config.widgetsSelectNamed', 'Select {name}').replace('{name}', name))}"
                                 ${this.widgetSelection.has(widget.id) ? 'checked' : ''}>
                         </label>
+                        ${this.widgetCardBadge(widget.type)}
+                        <div class="config-widget-row-main">
+                            <input type="text" class="config-text config-widget-row-title" data-widget="title"
+                                id="config-widget-title-${index}" data-index="${index}" value="${esc(widget.title || '')}"
+                                aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
+                                placeholder="${esc(this.widgetTypeName(widget.type))}">
+                            <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                        </div>
+                        <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
+                            ${settingsState}>${esc(
+                            this.t('config.widgetsConfigure', 'Settings'))}</button>
+                    </div>
+                    <div class="config-widget-card-meta">
+                        ${this.renderWidgetCardChip(widget, index)}
+                        ${this.isAllPagesView() && widget.pageName
+                            ? `<span class="config-widget-row-page" title="${
+                                esc(this.t('config.widgetsPageLabel', 'Page'))}">${
+                                esc(widget.pageName)}</span>`
+                            : ''}
                         <label class="config-toggle config-toggle--inline config-widget-row-shown"
                             title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
                             <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}
                                 aria-label="${esc(this.t('config.widgetsEnabledNamed', 'Show {name} on the dashboard').replace('{name}', name))}">
                             <span aria-hidden="true">${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
                         </label>
-                        <div class="config-widget-row-main">
-                            <input type="text" class="config-text config-widget-row-title" data-widget="title"
-                                id="config-widget-title-${index}" data-index="${index}" value="${esc(widget.title || '')}"
-                                aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
-                                placeholder="${esc(this.widgetTypeName(widget.type))}">
-                            <span class="config-widget-row-about">${esc(this.widgetTypeAbout(widget.type))}</span>
-                        </div>
-                        <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
-                        ${this.isAllPagesView() && widget.pageName
-                            ? `<span class="config-widget-row-page" title="${
-                                esc(this.t('config.widgetsPageLabel', 'Page'))}">${
-                                esc(widget.pageName)}</span>`
-                            : ''}
-                        <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
-                            ${settingsState}>${esc(
-                            this.t('config.widgetsConfigure', 'Settings'))}</button>
                     </div>
                     <div class="config-widget-settings" id="config-widget-settings-${index}"
                         ${open ? '' : 'hidden'}>${
@@ -503,6 +506,61 @@
      * a select rather than a button, because the question is not "move" but
      * "where to", and only pages other than this one are worth offering.
      */
+    /*
+     * The badge on a card: the first letter of the kind's name on a tint that
+     * says which group the kind belongs to. Letters rather than icons, so
+     * there is no asset to keep in step with forty-nine kinds.
+     */
+    widgetCardBadge(type) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const group = type === 'custom'
+            ? 'custom'
+            : (DashboardConfig.WIDGET_TYPE_GROUPS.find(([, types]) => types.includes(type))?.[0] || 'links');
+        const letter = (String(this.widgetTypeName(type)).match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
+        return `<span class="config-widget-badge" data-widget-group="${esc(group)}" aria-hidden="true">${esc(letter)}</span>`;
+    },
+
+    /** Whether this kind has anything to connect to (an address, a key, feeds, a host). */
+    widgetKindConnects(type) {
+        if (DashboardConfig.MEDIA_SERVICES?.[type] || type === 'custom') return true;
+        return (DashboardConfig.WIDGET_SETTINGS[type] || [])
+            .some((field) => this.widgetFieldSection(field.key) === 'connection');
+    },
+
+    /*
+     * The state a card shows as a chip, from what is already known: the stored
+     * widget, the answer Connect gave this visit, the custom probe. It never
+     * asks anything, so a widget that was never connected says "set up" or
+     * "not set up", not "connected".
+     */
+    widgetCardStatus(widget, index) {
+        if (!this.widgetKindConnects(widget.type)) return { tone: 'none', text: '' };
+        const cap = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+        // What Connect answered this visit comes first: a refusal is more to
+        // the point than "not set up", which is only what a missing key reads as.
+        if (DashboardConfig.MEDIA_SERVICES?.[widget.type]) {
+            const setup = this.mediaSetupFor?.(widget);
+            if (setup && !setup.error) return { tone: 'ok', text: cap(this.t('config.widgetSectionConnected', 'connected')) };
+            if (setup?.error === 'unreachable') return { tone: 'bad', text: cap(this.t('config.widgetSectionUnreachable', 'not reachable')) };
+            if (setup?.error) return { tone: 'warn', text: cap(this.t('config.widgetSectionNotConnected', 'not connected')) };
+        } else if (widget.type === 'custom') {
+            const probe = this.customProbeState(widget.id);
+            if (probe?.failed) return { tone: 'bad', text: cap(this.t('config.widgetSectionUnreachable', 'not reachable')) };
+            if (probe?.data) return { tone: 'ok', text: cap(this.t('config.widgetSectionConnected', 'connected')) };
+        }
+        if (!this.widgetHasConnection(widget, index)) {
+            return { tone: 'idle', text: this.t('config.widgetCardNotSetUp', 'Not set up') };
+        }
+        return { tone: 'idle', text: this.t('config.widgetCardSetUp', 'Set up') };
+    },
+
+    renderWidgetCardChip(widget, index) {
+        const status = this.widgetCardStatus(widget, index);
+        if (status.tone === 'none') return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<span class="config-widget-chip" data-widget-chip="${esc(status.tone)}">${esc(status.text)}</span>`;
+    },
+
     renderWidgetBulkBar() {
         const esc = (v) => this.dash.escapeHtml(v);
         const picked = this.selectedWidgetIds();

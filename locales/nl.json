@@ -6965,6 +6965,8 @@
     "widgetSectionConnected": "verbonden",
     "widgetSectionNotConnected": "niet verbonden",
     "widgetSectionUnreachable": "niet bereikbaar",
+    "widgetCardNotSetUp": "Niet ingesteld",
+    "widgetCardSetUp": "Ingesteld",
     "widgetRevert": "Ongedaan maken",
     "widgetUnsaved": "Nog niet opgeslagen",
     "widgetSaved": "Opgeslagen.",
