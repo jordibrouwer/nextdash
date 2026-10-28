@@ -219,7 +219,7 @@ function pic(name, theme, scene, { patch = '', tweak = null, viewport = null } =
     });
 }
 
-pic('dashboard', 'aurora-glass-dark', async (page) => {
+pic('dashboard', 'oceanic-steel-dark', async (page) => {
     await setup(page);
     await openDashboard(page);
     await full(page, 'nextdash-dashboard.jpg');
@@ -231,7 +231,7 @@ pic('dashboard-homelab', 'terminal-amber-dark', async (page) => {
     await full(page, 'nextdash-dashboard-homelab.jpg');
 });
 
-pic('bookmarks-view', 'aurora-glass-light', async (page) => {
+pic('bookmarks-view', 'oceanic-steel-light', async (page) => {
     await setup(page);
     await openBookmarksView(page);
     await page.locator('#config-bm-list .config-bm-row', { hasText: 'GitHub' }).first().click();

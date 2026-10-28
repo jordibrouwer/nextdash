@@ -13,7 +13,7 @@ My bookmark bar had become a graveyard, so I built a self-hosted dashboard that 
 Run it on any machine or container, open it in your browser, organise bookmarks across pages, and reach everything from the keyboard. Beside your bookmarks, **widgets** show what is going on: uptime of the services you watch, what waits in the inbox, which certificate runs out, the weather, your calendar, your feeds, your machines — and any self-hosted service that answers with JSON.
 
 <p align="center">
-  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Aurora Glass: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
+  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Oceanic Steel: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
 </p>
 
 🎨 **384 themes and a theme studio.** 192 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic. **Aurora Glass** is the default, and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 75 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#16a-the-new-look)* · *[Manual: Appearance](MANUAL.md#16-appearance)*
@@ -75,12 +75,12 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> <i>(Aurora Glass)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
+      <sub><b>Dashboard</b> <i>(Oceanic Steel)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
       <br />
-      <sub><b>Bookmarks view</b> <i>(Aurora Glass, light)</i> — The whole collection in one place: a rail with the health score, views, health filters, pages and categories; one row per bookmark with its tags, shortcut, a month of use and when it was last opened; a side panel with Details, Health and Usage that saves as you type.</sub>
+      <sub><b>Bookmarks view</b> <i>(Oceanic Steel, light)</i> — The whole collection in one place: a rail with the health score, views, health filters, pages and categories; one row per bookmark with its tags, shortcut, a month of use and when it was last opened; a side panel with Details, Health and Usage that saves as you type.</sub>
     </td>
   </tr>
   <tr>
