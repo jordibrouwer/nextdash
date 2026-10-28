@@ -2899,7 +2899,7 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 **Add widget** opens the picker. Type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the kinds are grouped, and the pane beside the list shows the kind you are on, with a small drawing of what it shows. With more than one page, a **page select** in the picker says where the widget goes. The first `Escape` empties the search, the next closes the picker.
 
 - A kind that needs nothing, such as Notes, is added at once, on the page you picked.
-- A kind that talks to a service (Jellyfin, Plex, Sonarr and the other media kinds, Uptime Kuma and so on) opens a **Connect** screen: the address and, where it has one, the key. **Test** tries them and says what it found, or what to fix. A failed test never blocks you: **Add anyway** (or **Add without testing**) adds the widget as it is, and you can correct it in its settings.
+- A kind that talks to a service (the media kinds: Jellyfin, Emby, Plex, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd) opens a **Connect** screen: the address and, where it has one, the key. **Test** tries them and says what it found, or what to fix. A failed test never blocks you: **Add anyway** (or **Add without testing**) adds the widget as it is, and you can correct it in its settings.
 - **Custom** is one of the kinds in the picker, under *And anything else*: any address that answers with JSON. Test the address on the Connect screen, add the widget, and choose its figures afterwards in the widget's settings ([§15.5](#155-the-custom-widget)).
 - Beszel, Home Assistant, Unraid and Glances keep their connection in the widget's settings for now; they are added straight away and filled in there.
 

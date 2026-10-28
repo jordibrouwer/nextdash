@@ -102,13 +102,13 @@
                     ${chip(t('widgetsTour3Search', 'Search kinds'))}
                     ${[t('widgetsTour3KindHealth', 'Health'), t('widgetsTour3KindInbox', 'Inbox'), t('widgetsTour3KindWeather', 'Weather'),
                         t('widgetsTour3KindCalendar', 'Calendar'), t('widgetsTour3KindFeeds', 'Feeds'), t('widgetsTour3KindDisks', 'Disks'),
-                        'Jellyfin', 'Sonarr', 'Radarr', 'Seerr', 'qBittorrent', 'Home Assistant']
+                        'Jellyfin', 'Sonarr', 'Radarr', 'Seerr', 'qBittorrent']
                         .map((name) => chip(name)).join('')}
                 </div>`,
                 body: `<p>${esc(t('widgetsTour3AddBody1',
                     'Search by name, then choose a kind. Many need nothing set up at all: health, uptime, the inbox, feeds, disks, the weather or a calendar.'))}</p>
                 <p>${esc(t('widgetsTour3AddBody2',
-                    'Last, choose the page it goes on. Media and home kinds ask you to connect first.'))}</p>`,
+                    'Last, choose the page it goes on. Media kinds such as Jellyfin, Plex or Sonarr ask you to connect first.'))}</p>`,
             },
             {
                 title: t('widgetsTour3ConnectTitle', 'Connect, then Test'),
@@ -123,7 +123,7 @@ ${esc(t('widgetsTour3Key', 'Key'))}      ••••••••</pre>
                     </span>
                 </div>`,
                 body: `<p>${esc(t('widgetsTour3ConnectBody1',
-                    'Media and home widgets ask for an address and, where needed, a key. Test asks the service right now and tells you what to fix before anything is added.'))}</p>
+                    'Media widgets (Jellyfin, Emby, Plex, Sonarr, Radarr, Seerr, qBittorrent, SABnzbd) ask for an address and, where needed, a key. Test asks the service right now and tells you what to fix before anything is added.'))}</p>
                 <p>${esc(t('widgetsTour3ConnectBody2',
                     'A failed test never blocks you: Add anyway still adds the widget, for a service that is down or not on yet. The key stays on the server.'))}</p>`,
             },
