@@ -7069,6 +7069,18 @@ body.no-animations .config-new-features-panel-star {
     gap: 8px;
 }
 
+/* The connect screen's problem line is a .config-widget-note, whose display
+   would otherwise beat [hidden] and keep an empty line's room. */
+.config-widget-wizard [hidden] {
+    display: none;
+}
+
+/* A failed Test, and a field that needs fixing, read as such -- not only in
+   their words. */
+.config-widget-wizard .config-widget-note.is-error {
+    color: var(--accent-error, #d1493f);
+}
+
 .config-widget-wizard-page {
     display: inline-flex;
     align-items: center;

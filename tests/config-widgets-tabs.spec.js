@@ -85,6 +85,57 @@ test.describe('old links open the wizard', () => {
         await expect(page.locator('#modal-text .config-widget-wizard')).toHaveCount(1);
     });
 
+    /*
+     * Followed from another Config section before the widgets files have run:
+     * the section waits for them, and the address has been made canonical by
+     * the time it binds. The link has to be remembered across that wait. The
+     * widgets script is held back until the hash has changed, so the module is
+     * provably not there when the link is followed.
+     */
+    async function fromOverviewWithWidgetsCold(page) {
+        let release = () => {};
+        const held = new Promise((resolve) => { release = resolve; });
+        await page.route(/dashboard-config-widgets\.js/, async (route) => {
+            await held;
+            await route.continue();
+        });
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/overview');
+        await page.waitForFunction(() => !!window.dashboardInstance?.config?.instance, null, { timeout: 15_000 });
+        await expect(page.locator('#config-section-overview')).toHaveAttribute('aria-selected', 'true');
+        const ready = await page.evaluate(() => window.DashboardConfig.SECTION_MODULES.widgets.chain[0].ready());
+        expect(ready).toBe(false);
+        return release;
+    }
+
+    test('#config/widgets/custom followed from Overview, module not yet loaded, opens the custom screen', async ({ page }) => {
+        const release = await fromOverviewWithWidgetsCold(page);
+        await page.evaluate(() => { window.location.hash = '#config/widgets/custom'; });
+        await expect(page).toHaveURL(/#config\/widgets$/);
+        expect(await page.evaluate(() => window.DashboardConfig.SECTION_MODULES.widgets.chain[0].ready())).toBe(false);
+        release();
+        await expect(customScreen(page)).toBeVisible();
+        await expect(page.locator('#modal-text .config-widget-wizard')).toHaveCount(1);
+    });
+
+    test('#config/widgets/catalogue followed from Overview, module not yet loaded, opens the picker', async ({ page }) => {
+        const release = await fromOverviewWithWidgetsCold(page);
+        await page.evaluate(() => { window.location.hash = '#config/widgets/catalogue'; });
+        await expect(page).toHaveURL(/#config\/widgets$/);
+        release();
+        await expect(picker(page)).toHaveCount(1);
+        await expect(page.locator('[data-widget-search]')).toBeVisible();
+        await expect(page.locator('[data-widget-wizard-screen="connect"]')).toHaveCount(0);
+    });
+
+    test('an old link followed while already on Widgets opens the picker', async ({ page }) => {
+        await openWidgetsSection(page);
+        await expect(picker(page)).toHaveCount(0);
+        await page.evaluate(() => { window.location.hash = '#config/widgets/catalogue'; });
+        await expect(picker(page)).toHaveCount(1);
+        await expect(page).toHaveURL(/#config\/widgets$/);
+    });
+
     test('a wizard opened by a link and closed stays closed', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/#config/widgets/custom');

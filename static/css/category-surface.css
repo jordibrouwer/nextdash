@@ -405,7 +405,7 @@ html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.config-layou
 /* The bookmarks view: what is inside its pane is a section of it, with a
    heading and whitespace. A panel that is an alert (attention, danger) keeps
    the border that says so. */
-html[data-theme] body #dashboard-layout.library-layout .config-view--library :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
+html[data-theme] body #dashboard-layout.library-layout .config-view--library :is(.config-panel, .config-widget, .config-widget-row, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
     background-color: transparent;
     background-image: none;
     backdrop-filter: none;
@@ -421,7 +421,7 @@ html[data-theme] body #dashboard-layout.library-layout .config-view--library :is
    for it. The pane round the blocks carries the surface; a block only needs to
    show its edges. One inside another (a row in a panel, a card in a list) is not
    tinted twice. An alert keeps its own border. */
-html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
     background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) 35%, transparent);
     background-image: none;
     backdrop-filter: none;
@@ -431,7 +431,7 @@ html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .co
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 8%, transparent);
 }
 
-html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-crud-list--table) :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row):not(.config-panel--attention, .config-panel--danger) {
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-crud-list--table) :is(.config-panel, .config-widget, .config-widget-row, .config-backup-row, .config-attention-row):not(.config-panel--attention, .config-panel--danger) {
     background-color: transparent;
     box-shadow: none;
 }
@@ -442,7 +442,7 @@ html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .co
 
 /* On a card surface the pane already is the surface colour, so a darkening of
    it would not show: there a block is told apart by a light tint. */
-html[data-theme] body[data-cat-surface="card"] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
+html[data-theme] body[data-cat-surface="card"] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
     background-color: color-mix(in srgb, var(--text-primary) 4%, transparent);
 }
 

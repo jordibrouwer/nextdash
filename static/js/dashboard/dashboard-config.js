@@ -82,6 +82,9 @@ class DashboardConfig {
      * section with no entry is one that still lives in this file, which is how
      * this list grows one section at a time.
      */
+    /** Addresses of the widgets tabs the Add wizard replaced; they open it. */
+    static OLD_WIDGETS_LINKS = ['config/widgets/catalogue', 'config/widgets/types', 'config/widgets/custom'];
+
     static SECTION_MODULES = {
         inbox: {
             file: 'js/dashboard/dashboard-config-inbox.js',
@@ -1204,6 +1207,7 @@ class DashboardConfig {
         // Coming back to config is a new arrival for the widgets links.
         this._widgetsDeepLinkDone = false;
         const hash = window.location.hash;
+        this.rememberWidgetsLink(hash);
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
         const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
         const stored = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
@@ -1262,9 +1266,27 @@ class DashboardConfig {
         });
     }
 
+    /*
+     * An old widgets link (the Catalogue and Custom widget tabs the wizard
+     * replaced), kept until the section binds. The address is made canonical
+     * straight away, but the widgets files may still be on their way, and by
+     * the time they run the hash no longer says what was asked for.
+     */
+    rememberWidgetsLink(hash) {
+        const raw = String(hash || '').replace(/^#/, '');
+        if (!DashboardConfig.OLD_WIDGETS_LINKS.includes(raw)) return false;
+        this._widgetsPendingLink = `#${raw}`;
+        this._widgetsDeepLinkDone = false;
+        return true;
+    }
+
     /** Re-apply the section from the hash while the view is already open. */
     restoreConfigSectionFromHash() {
         const hash = window.location.hash;
+        const widgetsLink = this.rememberWidgetsLink(hash);
+        // Already on Widgets with its files in: nothing repaints for a link
+        // that names no tab, so it is answered here.
+        const answerNow = widgetsLink && this.section === 'widgets' && this.inSection('widgets');
         if (DashboardConfig.isGenericConfigHash(hash)) {
             const stored = this.loadLastConfigLocation();
             if (stored?.section) {
@@ -1303,6 +1325,7 @@ class DashboardConfig {
         // and `/display` links resolve to Appearance, and without this the old
         // address stayed in the bar — so copying the URL handed on a dead link.
         this.restoreConfigHash();
+        if (answerNow) this.widgetsDeepLink?.(window.location.hash);
     }
 
     /* ── View lifecycle ────────────────────────────────────────────────────── */
@@ -2636,7 +2659,10 @@ class DashboardConfig {
         this._fillShellHeadFromSection(container, { reset: true });
         // An old widgets link is answered once per arrival; leaving the
         // section is what lets the next one be.
-        if (this.section !== 'widgets') this._widgetsDeepLinkDone = false;
+        if (this.section !== 'widgets') {
+            this._widgetsDeepLinkDone = false;
+            this._widgetsPendingLink = null;
+        }
         // Created up front, not on first save: a live region has to be in the
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();

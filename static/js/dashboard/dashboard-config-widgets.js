@@ -933,8 +933,9 @@
             if (scroll) option.scrollIntoView({ block: 'nearest' });
         };
 
-        const add = (type) => {
-            if (!type) return;
+        let asking = false;
+        const add = async (type) => {
+            if (!type || asking) return;
             // Read before the modal closes: hiding it takes the select with it.
             const pageValue = picker.querySelector('[data-widget-wizard-page]')?.value;
             // A kind that connects to a service, or Custom, asks where and how first.
@@ -943,8 +944,13 @@
                 this.openWidgetWizardConnect(type, pageValue ? Number(pageValue) : null);
                 return;
             }
+            const pageId = pageValue ? Number(pageValue) : null;
+            asking = true;
+            const go = await this.confirmWidgetPageSwitch(pageId);
+            asking = false;
+            if (!go) return;
             window.AppModal.hide();
-            void this.addWidget(type, pageValue ? { pageId: Number(pageValue) } : undefined);
+            void this.addWidget(type, pageId != null ? { pageId } : undefined);
         };
 
         const filter = () => {
@@ -3084,9 +3090,12 @@
                 const category = categoryById.get(String(id));
                 return { id, isWidget: false, name: category?.name || id };
             });
+            this._widgetLoadFailed = false;
         } catch {
             this._widgetBlocks = [];
             this._widgetOrder = [];
+            // Read by addWidget: an empty list here is not the page's own.
+            this._widgetLoadFailed = true;
         }
         this._widgetLoadedFor = this._widgetPageId;
         this.repaintWidgetsBody();
@@ -3367,30 +3376,15 @@
                  */
                 const previousPageId = this._widgetPageId;
                 const goToPage = () => {
-                    this.stopCustomProbeLive();
-                    this._widgetPageId = page.value === WIDGETS_ALL_PAGES
+                    void this.switchWidgetPage(page.value === WIDGETS_ALL_PAGES
                         ? WIDGETS_ALL_PAGES
-                        : Number(page.value);
-                    this._widgetBlocks = null;
-                    this._widgetLoadedFor = null;
-                    this._widgetDrafts = {};
-                    // An index means nothing on another page's list.
-                    this._widgetOpenId = null;
-                    this.repaintWidgetsBody();
-                    void this.loadWidgetsEditor();
+                        : Number(page.value));
                 };
                 if (!this.widgetDraftsDirty()) {
                     goToPage();
                     return;
                 }
-                void this.confirmAction(
-                    this.t('config.widgetsDiscardDraftsBody',
-                        'Your unsaved widget changes on this page will be lost.'),
-                    {
-                        title: this.t('config.widgetsDiscardDraftsTitle', 'Discard unsaved changes?'),
-                        confirmLabel: this.t('config.widgetsDiscardDraftsOk', 'Discard'),
-                    }
-                ).then((ok) => {
+                void this.confirmDiscardWidgetDrafts().then((ok) => {
                     if (ok) {
                         goToPage();
                         return;
@@ -3741,11 +3735,18 @@
         // The picker may name a page other than the one the list shows (or
         // any page at all, on the all-pages view): move the list there first,
         // so the widget is saved to, and revealed on, the page that was named.
-        if (pageId != null && Number.isFinite(Number(pageId))
-            && (this.isAllPagesView() || Number(pageId) !== Number(this._widgetPageId))) {
-            this._widgetPageId = Number(pageId);
-            this._widgetLoadedFor = null;
-            await this.loadWidgetsEditor();
+        // The caller has already asked about unsaved settings
+        // (confirmWidgetPageSwitch); the switch is the list's own.
+        if (this.widgetAddMovesPage(pageId)) {
+            await this.switchWidgetPage(Number(pageId));
+            /*
+             * That page could not be read: the list stands empty, and saving
+             * it plus the new widget would replace whatever the page holds.
+             */
+            if (this._widgetLoadFailed) {
+                this.notify(this.t('config.widgetsSaveError', 'Could not save the widgets.'), 'error');
+                return false;
+            }
         }
         const payload = this.widgetPayloadFromBlocks();
         payload.widgets.push({ type, title: '', config: {} });
@@ -3774,6 +3775,50 @@
         await this.refreshDashboardBlocks();
         this.revealNewWidget(added);
         return true;
+    },
+
+    /*
+     * Move the list to another page (or the all-pages view), dropping what
+     * belonged to the old one: its drafts, and the open row, whose id means
+     * nothing on another page's list. Shared by the list's page select and by
+     * an add that names another page, so both leave the same state behind.
+     */
+    switchWidgetPage(pageId) {
+        this.stopCustomProbeLive?.();
+        this._widgetPageId = pageId;
+        this._widgetBlocks = null;
+        this._widgetLoadedFor = null;
+        this._widgetDrafts = {};
+        this._widgetOpenId = null;
+        this.repaintWidgetsBody();
+        return this.loadWidgetsEditor();
+    },
+
+    /** Would adding to this page move the list off the one it shows? */
+    widgetAddMovesPage(pageId) {
+        return pageId != null && Number.isFinite(Number(pageId))
+            && (this.isAllPagesView() || Number(pageId) !== Number(this._widgetPageId));
+    },
+
+    confirmDiscardWidgetDrafts() {
+        return this.confirmAction(
+            this.t('config.widgetsDiscardDraftsBody',
+                'Your unsaved widget changes on this page will be lost.'),
+            {
+                title: this.t('config.widgetsDiscardDraftsTitle', 'Discard unsaved changes?'),
+                confirmLabel: this.t('config.widgetsDiscardDraftsOk', 'Discard'),
+            }
+        );
+    },
+
+    /*
+     * Before an add that names another page: the move throws away unsaved
+     * settings on this one, so it asks first, as the page select does. Asked
+     * while the wizard is still open, so a refusal leaves the reader in it.
+     */
+    async confirmWidgetPageSwitch(pageId) {
+        if (!this.widgetAddMovesPage(pageId) || !this.widgetDraftsDirty()) return true;
+        return Boolean(await this.confirmDiscardWidgetDrafts());
     },
 
     /** Where the widget the server just appended sits in the block list. */

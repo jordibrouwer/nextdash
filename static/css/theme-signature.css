@@ -1425,59 +1425,59 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
     box-shadow: inset 0 0 26px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(10px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(0, 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(0, 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(14px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(22px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(16px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(6px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(16px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(20px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(28px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(4px * var(--theme-radius-applied, 1)), 14px);
 }
 
-html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-kind, .config-widget-custom-card, .config-tile, .config-update-bar) {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-tile, .config-update-bar) {
     border-radius: min(calc(3px * var(--theme-radius-applied, 1)), 14px);
 }
 
@@ -1489,11 +1489,11 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
    darkening of the pane with a hairline, so the pane shows through and the
    theme stays what you see. On a card surface the pane is the surface colour
    itself, so there the block is told apart by a light tint. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-cat-surface="open"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
     background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) 35%, transparent);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-cat-surface="card"] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-cat-surface="card"] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
     background-color: color-mix(in srgb, var(--text-primary) 4%, transparent);
 }
 

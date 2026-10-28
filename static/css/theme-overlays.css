@@ -734,7 +734,7 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([
 
 
 /* ── The config view: what stands on the plate ───────────────────────────────────────────────────── */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-backup-row, .config-attention-row, .config-crud-list--table, .config-tile, .config-update-bar, .config-crud-row):not(.config-panel--attention, .config-panel--danger) {
     background-color: var(--ov-fill-small);
     border: 0;
     border-radius: min(var(--ov-radius), 14px);

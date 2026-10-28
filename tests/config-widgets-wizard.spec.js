@@ -159,6 +159,117 @@ test.describe('the add picker names a page', () => {
     });
 });
 
+/*
+ * Adding to another page moves the list there, which is the list's own page
+ * switch -- and that one asks before it throws away unsaved settings. A widget
+ * on the first page carries an edit nobody has saved yet; the reader named
+ * the second page in the picker.
+ */
+test.describe('adding to another page with unsaved settings', () => {
+    async function dirtyFirstPage(page) {
+        await openWidgets(page);
+        const [first, second] = await arrange(page, 2);
+        await page.evaluate(async (id) => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const headers = { 'Content-Type': 'application/json',
+                ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            await f(`/api/pages/${id}/blocks`, { method: 'PUT', headers,
+                body: JSON.stringify({ widgets: [{ type: 'notes', title: '', config: {} }] }) });
+            const cfg = window.dashboardInstance.config._module;
+            cfg._widgetBlocks = null;
+            cfg._widgetLoadedFor = null;
+            cfg._widgetPageId = id;
+            await cfg.loadWidgetsEditor();
+            // An edit in the open settings, not yet saved.
+            cfg.widgetDraft(cfg.lastWidgetIndex()).config.unsavedMarker = 'kept';
+        }, first);
+        expect(await page.evaluate(() => window.dashboardInstance.config._module.widgetDraftsDirty())).toBe(true);
+        return [first, second];
+    }
+    const markerKept = (page) => page.evaluate(() => Object.values(
+        window.dashboardInstance.config._module._widgetDrafts || {})
+        .some((d) => d?.config?.unsavedMarker === 'kept'));
+    const confirm = (page) => page.locator('#config-confirm-modal');
+
+    test('from the picker: asks, a refusal adds nothing, a go-ahead adds and drops the draft', async ({ page }) => {
+        const [first, second] = await dirtyFirstPage(page);
+
+        await page.locator('[data-widget-catalogue]').click();
+        await page.locator('[data-widget-option="health"]').click();
+        await page.locator('[data-widget-wizard-page]').selectOption(String(second));
+        await page.locator('[data-widget-add="health"]').click();
+        await expect(confirm(page)).toBeVisible();
+        await confirm(page).locator('[data-confirm="cancel"]').click();
+        await expect(confirm(page)).toHaveCount(0);
+        // Still in the wizard, nothing added, the edit still there.
+        await expect(page.locator('.config-widget-picker')).toHaveCount(1);
+        await page.waitForTimeout(300);
+        expect(await widgetTypes(page, second)).toEqual([]);
+        expect(await markerKept(page)).toBe(true);
+
+        await page.locator('[data-widget-add="health"]').click();
+        await expect(confirm(page)).toBeVisible();
+        await confirm(page).locator('[data-confirm="ok"]').click();
+        await expect.poll(() => widgetTypes(page, second)).toEqual(['health']);
+        expect(await widgetTypes(page, first)).toEqual(['notes']);
+        expect(await markerKept(page)).toBe(false);
+        expect(await page.evaluate(() => window.dashboardInstance.config._module._widgetPageId)).toBe(second);
+    });
+
+    test('from the connect screen: a refusal stays on it, a go-ahead adds', async ({ page }) => {
+        const [, second] = await dirtyFirstPage(page);
+
+        await page.locator('[data-widget-catalogue]').click();
+        await page.locator('[data-widget-option="sonarr"]').first().click();
+        await page.locator('[data-widget-wizard-page]').selectOption(String(second));
+        await page.locator('[data-widget-add="sonarr"]').click();
+        await expect(page.locator('[data-widget-wizard-screen="connect"]')).toBeVisible();
+        await page.locator('[data-widget-wizard-finish]').click();
+        await expect(confirm(page)).toBeVisible();
+        await confirm(page).locator('[data-confirm="cancel"]').click();
+        await expect(page.locator('[data-widget-wizard-screen="connect"]')).toBeVisible();
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeEnabled();
+        await page.waitForTimeout(300);
+        expect(await widgetTypes(page, second)).toEqual([]);
+        expect(await markerKept(page)).toBe(true);
+
+        await page.locator('[data-widget-wizard-finish]').click();
+        await confirm(page).locator('[data-confirm="ok"]').click();
+        await expect.poll(() => widgetTypes(page, second)).toEqual(['sonarr']);
+        expect(await markerKept(page)).toBe(false);
+    });
+});
+
+test('adding to a page whose widgets could not be read adds nothing and keeps them', async ({ page }) => {
+    await openWidgets(page);
+    const [, second] = await arrange(page, 2);
+    await page.evaluate(async (id) => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+        await f(`/api/pages/${id}/blocks`, { method: 'PUT', headers,
+            body: JSON.stringify({ widgets: [{ type: 'health', title: '', config: {} }] }) });
+    }, second);
+    const blocksOfSecond = `**/api/pages/${second}/blocks`;
+    let puts = 0;
+    await page.route(blocksOfSecond, (route) => {
+        if (route.request().method() === 'GET') return route.fulfill({ status: 500 });
+        puts += 1;
+        return route.continue();
+    });
+
+    await page.locator('[data-widget-catalogue]').click();
+    await page.locator('[data-widget-option="notes"]').click();
+    await page.locator('[data-widget-wizard-page]').selectOption(String(second));
+    await page.locator('[data-widget-add="notes"]').click();
+    await expect(page.locator('.toast, .notification, [role="status"]').filter({ hasText: 'Could not save the widgets.' }).first())
+        .toBeVisible();
+    await page.waitForTimeout(300);
+    expect(puts).toBe(0);
+    await page.unroute(blocksOfSecond);
+    expect(await widgetTypes(page, second)).toEqual(['health']);
+});
+
 /** Answer Test (and the settings panel's own Connect) for Sonarr with `reply`. */
 async function mockSonarr(page, reply) {
     await page.route('**/api/widgets/sonarr/setup', (route) => (typeof reply === 'function'
@@ -339,10 +450,46 @@ test.describe('the connect screen for media kinds', () => {
         await page.locator('[data-widget-wizard-server]').fill('sonarr.local:8989');
         await expect(page.locator('[data-widget-wizard-problem]')).toHaveText('Start the address with http:// or https://');
         await expect(page.locator('[data-widget-wizard-test]')).toBeDisabled();
+        // The server would drop such an address on save: not added as if saved.
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeDisabled();
         await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
         await expect(page.locator('[data-widget-wizard-problem]')).toBeHidden();
         await expect(page.locator('[data-widget-wizard-test]')).toBeEnabled();
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeEnabled();
         expect(asked).toBe(0);
+    });
+
+    test('an address without its scheme keeps Add off until it is cleared', async ({ page }) => {
+        const only = await connectScreen(page);
+        await page.locator('[data-widget-wizard-server]').fill('sonarr.local:8989');
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeDisabled();
+        await page.locator('[data-widget-wizard-server]').fill('');
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeEnabled();
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add without testing');
+        await page.locator('[data-widget-wizard-finish]').click();
+        await expect.poll(() => widgetTypes(page, only)).toEqual(['sonarr']);
+        const [added] = await widgetsOn(page, only);
+        expect(added.config.server).toBeUndefined();
+    });
+
+    test('the empty problem line takes no room, and a failed test does not look like a pass', async ({ page }) => {
+        let ok = true;
+        await mockSonarr(page, (route) => route.fulfill({ status: 200, contentType: 'application/json',
+            body: JSON.stringify(ok ? { version: '4.0' } : { error: 'key refused' }) }));
+        await connectScreen(page);
+        const problem = page.locator('[data-widget-wizard-problem]');
+        expect(await problem.evaluate((el) => getComputedStyle(el).display)).toBe('none');
+
+        const result = page.locator('[data-widget-wizard-result]');
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(result).toContainText('Connected');
+        const passing = await result.evaluate((el) => getComputedStyle(el).color);
+        ok = false;
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(result).toContainText('Sonarr refused that key.');
+        const failing = await result.evaluate((el) => getComputedStyle(el).color);
+        expect(failing).not.toBe(passing);
     });
 
     test('an answer about text since changed is ignored', async ({ page }) => {
@@ -489,5 +636,35 @@ test.describe('the connect screen for Custom', () => {
         await page.locator('[data-widget-wizard-server]').fill('svc.example/api');
         await expect(page.locator('[data-widget-wizard-problem]')).toHaveText('Start the address with http:// or https://');
         await expect(page.locator('[data-widget-wizard-test]')).toBeDisabled();
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeDisabled();
+        await page.locator('[data-widget-wizard-server]').fill('');
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeEnabled();
+    });
+
+    test('a key that is only a scheme ("Bearer ") is no key', async ({ page }) => {
+        let body = null;
+        await mockCustom(page, (route) => {
+            body = JSON.parse(route.request().postData() || '{}');
+            return route.fulfill({ status: 200, contentType: 'application/json',
+                body: JSON.stringify({ status: 200, tookMs: 3, json: true }) });
+        });
+        const only = await connectScreen(page, 'custom');
+        const filed = [];
+        page.on('request', (req) => {
+            if (req.url().includes('/api/health/credentials') && req.method() !== 'GET') filed.push(req.method());
+        });
+        await page.locator('[data-widget-wizard-server]').fill('https://svc.example/api/stats');
+        await page.locator('[data-widget-wizard-header]').fill('Authorization');
+        await page.locator('[data-widget-wizard-secret]').fill('Bearer ');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('200');
+        expect(body.draftCredential).toBeUndefined();
+        await page.locator('[data-widget-wizard-finish]').click();
+        await expect.poll(async () => (await widgetsOn(page, only))
+            .map((w) => [w.type, w.config.url])).toEqual([['custom', 'https://svc.example/api/stats']]);
+        const [added] = await widgetsOn(page, only);
+        expect(added.config.credentialId).toBeUndefined();
+        await page.waitForTimeout(300);
+        expect(filed).toEqual([]);
     });
 });

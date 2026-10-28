@@ -85,7 +85,11 @@
          */
         widgetsDeepLink(hash) {
             if (this._widgetsDeepLinkDone) return;
-            const raw = String(hash || '').replace(/^#/, '');
+            // A link remembered while the files loaded wins over the address
+            // bar, which has been made canonical since.
+            const pending = this._widgetsPendingLink;
+            this._widgetsPendingLink = null;
+            const raw = String(pending ?? hash ?? '').replace(/^#/, '');
             if (raw === 'config/widgets/catalogue' || raw === 'config/widgets/types') {
                 this._widgetsDeepLinkDone = true;
                 this.openWidgetWizard();
@@ -310,7 +314,10 @@
             }
             if (test) test.disabled = w.busy || !w.server.trim() || problem.scheme || problem.user;
             if (finish) {
-                finish.disabled = w.busy || problem.user;
+                // An address without its scheme is one the server drops on
+                // save: adding would say "saved" over an empty address. Fixed
+                // or cleared, Add comes back.
+                finish.disabled = w.busy || problem.user || problem.scheme;
                 finish.textContent = w.test?.ok ? this.t('config.widgetWizardAdd', 'Add widget')
                     : w.test ? this.t('config.widgetWizardAddAnyway', 'Add anyway')
                         : this.t('config.widgetWizardAddUntested', 'Add without testing');
@@ -365,6 +372,16 @@
             this.syncWidgetWizardConnect();
         },
 
+        /*
+         * The custom key as it would be filed. A scheme on its own ("Bearer ")
+         * is no key: filed, it would send a header that looks filled in and
+         * authenticates as nothing.
+         */
+        widgetWizardCustomSecret() {
+            const secret = String(this._widgetWizard?.secret || '').trim();
+            return secret && this.isSchemeOnly?.(secret) ? '' : secret;
+        },
+
         /** The header the key travels in, as it would be filed. */
         widgetWizardHeaderName() {
             return String(this._widgetWizard?.header || '').trim() || 'X-Api-Key';
@@ -377,7 +394,7 @@
         async runWidgetWizardCustomTest() {
             const w = this._widgetWizard;
             const round = w.round;
-            const secret = w.secret.trim();
+            const secret = this.widgetWizardCustomSecret();
             const body = { url: w.server.trim(), method: 'GET' };
             if (secret) body.draftCredential = { headers: { [this.widgetWizardHeaderName()]: secret } };
             w.busy = true;
@@ -424,11 +441,22 @@
         async finishWidgetWizard() {
             const w = this._widgetWizard;
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
-            if (!w || (!service && w.type !== 'custom') || w.busy || this.widgetWizardProblem().user) return;
+            if (!w || (!service && w.type !== 'custom') || w.busy) return;
+            const problem = this.widgetWizardProblem();
+            if (problem.user || problem.scheme) return;
             w.busy = true;
+            // Another page with unsaved settings on this one: ask while the
+            // wizard is still open, so a refusal leaves the reader in it.
+            const go = await this.confirmWidgetPageSwitch(w.pageId);
+            if (this._widgetWizard !== w) return;
+            if (!go) {
+                w.busy = false;
+                this.syncWidgetWizardConnect();
+                return;
+            }
             if (!service) {
                 const server = w.server.trim();
-                const secret = w.secret.trim();
+                const secret = this.widgetWizardCustomSecret();
                 const headerName = this.widgetWizardHeaderName();
                 const { type, pageId } = w;
                 this._widgetWizard = null;

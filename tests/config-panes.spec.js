@@ -254,7 +254,7 @@ test.describe('a view is one pane', () => {
         await open(page, '#bookmarks');
         await page.waitForSelector('#dashboard-layout.library-layout .config-view--library', { timeout: 20_000 });
         await setSurface(page, 'glass');
-        const framed = await page.evaluate(() => [...document.querySelectorAll('#dashboard-layout.library-layout .config-view--library :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table)')]
+        const framed = await page.evaluate(() => [...document.querySelectorAll('#dashboard-layout.library-layout .config-view--library :is(.config-panel, .config-widget, .config-widget-row, .config-backup-row, .config-attention-row, .config-crud-list--table)')]
             .filter((el) => {
                 const cs = getComputedStyle(el);
                 const filtered = cs.backdropFilter && cs.backdropFilter !== 'none';
