@@ -7180,8 +7180,6 @@ body.no-animations .config-new-features-panel-star {
     margin-left: 0;
 }
 
-/* Catalogue tab: a new kind's card carries the accent before it is hovered. */
-
 .config-widget-list {
     display: flex;
     flex-direction: column;
@@ -7403,6 +7401,8 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-widget-kind-good { color: var(--accent-success); }
+.config-widget-kind-warn { color: var(--accent-warning); }
+.config-widget-kind-bad { color: var(--accent-error); }
 
 .config-widget-kind-spark {
     display: flex;

@@ -2903,7 +2903,7 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 - **Custom** is one of the kinds in the picker, under *And anything else*: any address that answers with JSON. Test the address on the Connect screen, add the widget, and choose its figures afterwards in the widget's settings ([§15.5](#155-the-custom-widget)).
 - Beszel, Home Assistant, Unraid and Glances keep their connection in the widget's settings for now; they are added straight away and filled in there.
 
-A widget added from the picker lands on **Your widgets**, with its settings open. The old addresses `/#config/widgets/catalogue`, `/#config/widgets/types` and `/#config/widgets/custom` still work: they open the Add widget picker.
+A widget added from the picker lands on **Your widgets**, with its settings open. The old addresses `/#config/widgets/catalogue`, `/#config/widgets/types` and `/#config/widgets/custom` still work: the first two open the Add widget picker, and `/custom` opens the wizard on Custom's Connect screen.
 
 The first visit to Config → Widgets offers a short tour (four steps: the list, the picker, Connect and Test, and Custom); the **Tour** button beside the **ℹ** plays it again.
 

@@ -106,6 +106,18 @@ test.describe('the add picker names a page', () => {
         await expect.poll(() => widgetTypes(page, only)).toEqual(['notes']);
     });
 
+    test('the preview keeps its amber and red sample tones', async ({ page }) => {
+        await openWidgets(page);
+        await arrange(page, 1);
+
+        await page.locator('[data-widget-catalogue]').click();
+        await page.locator('[data-widget-option="health"]').click();
+        const colour = (cls) => page.locator(`.${cls}`).first().evaluate((el) => getComputedStyle(el).color);
+        await expect(page.locator('.config-widget-kind-warn').first()).toBeVisible();
+        const [good, warn, bad] = [await colour('config-widget-kind-good'), await colour('config-widget-kind-warn'), await colour('config-widget-kind-bad')];
+        expect(new Set([good, warn, bad]).size).toBe(3);
+    });
+
     test('the picker names a page, and the widget lands on it', async ({ page }) => {
         await openWidgets(page);
         const [first, second] = await arrange(page, 2);
