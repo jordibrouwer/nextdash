@@ -7211,6 +7211,8 @@
     "widgetWizardAdd": "Add widget",
     "widgetWizardAddAnyway": "Add anyway",
     "widgetWizardAddUntested": "Add without testing",
+    "widgetWizardNeedsScheme": "Start the address with http:// or https://",
+    "widgetWizardNeedsUser": "Fill in the username as well",
     "statsScoreStaleView": "{count} not opened in {days} days ({pct}%)",
     "statsContentFailing": "Answering, but not as expected",
     "statsDrift": "Changed since you looked",

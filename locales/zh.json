@@ -6972,6 +6972,8 @@
     "widgetWizardAdd": "添加小组件",
     "widgetWizardAddAnyway": "仍然添加",
     "widgetWizardAddUntested": "不测试直接添加",
+    "widgetWizardNeedsScheme": "地址请以 http:// 或 https:// 开头",
+    "widgetWizardNeedsUser": "请同时填写用户名",
     "statsScoreStaleView": "{count} 个 {days} 天没打开（{pct}%）",
     "statsContentFailing": "有回应，但不是预期的样子",
     "statsDrift": "自你上次看过之后有变动",

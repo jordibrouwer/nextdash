@@ -6972,6 +6972,8 @@
     "widgetWizardAdd": "Ajouter le widget",
     "widgetWizardAddAnyway": "Ajouter quand même",
     "widgetWizardAddUntested": "Ajouter sans tester",
+    "widgetWizardNeedsScheme": "Commencez l’adresse par http:// ou https://",
+    "widgetWizardNeedsUser": "Indiquez aussi le nom d’utilisateur",
     "statsScoreStaleView": "{count} non ouverts depuis {days} jours ({pct}%)",
     "statsContentFailing": "Répond, mais pas comme attendu",
     "statsDrift": "Modifié depuis votre dernier passage",

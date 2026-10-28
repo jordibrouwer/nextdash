@@ -79,7 +79,7 @@
             if (!service || !text) return;
             this._widgetWizard = {
                 type, pageId: pageId ?? null, screen: 'connect',
-                server: '', user: '', secret: '', test: null, busy: false,
+                server: '', user: '', secret: '', test: null, busy: false, round: 0,
             };
             text.innerHTML = this.renderWidgetWizardConnect();
             const screen = text.querySelector('[data-widget-wizard-screen="connect"]');
@@ -93,8 +93,10 @@
                 else if (box.matches('[data-widget-wizard-user]')) w.user = box.value;
                 else if (box.matches('[data-widget-wizard-secret]')) w.secret = box.value;
                 else return;
-                // What was tested is no longer what is on screen.
+                // What was tested is no longer what is on screen, and an answer
+                // still on its way is about the old text.
                 w.test = null;
+                w.round += 1;
                 this.syncWidgetWizardConnect();
             });
             screen.addEventListener('change', (event) => {
@@ -160,6 +162,7 @@
                             esc(this.mediaWord(service, 'keyWhere'))}</span>`}
                     </div>
                 </div>
+                <p class="config-widget-note is-error" data-widget-wizard-problem role="alert" hidden></p>
                 <p class="config-widget-note" data-widget-wizard-result role="status"></p>
                 <div class="config-widget-picker-add">
                     ${this.widgetWizardPageSelect()}
@@ -172,6 +175,23 @@
             </div>`;
         },
 
+        /*
+         * What is wrong with the fields as typed, said before anything is sent:
+         * an address without its scheme is not one the server will try, and a
+         * password without its username is a sign-in Save would refuse.
+         */
+        widgetWizardProblem() {
+            const w = this._widgetWizard;
+            const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
+            if (!w || !service) return { scheme: false, user: false };
+            const server = w.server.trim();
+            const session = this.widgetWizardAuth(service).kind === 'session';
+            return {
+                scheme: Boolean(server) && !/^https?:\/\//i.test(server),
+                user: session && Boolean(w.secret.trim()) && !w.user.trim(),
+            };
+        },
+
         /** The parts of the screen that follow the state: the result line and the buttons. */
         syncWidgetWizardConnect() {
             const w = this._widgetWizard;
@@ -179,6 +199,16 @@
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
             if (!w || !screen || !service) return;
             const result = screen.querySelector('[data-widget-wizard-result]');
+            const problemLine = screen.querySelector('[data-widget-wizard-problem]');
+            const problem = this.widgetWizardProblem();
+            if (problemLine) {
+                const said = [
+                    problem.scheme ? this.t('config.widgetWizardNeedsScheme', 'Start the address with http:// or https://') : '',
+                    problem.user ? this.t('config.widgetWizardNeedsUser', 'Fill in the username as well') : '',
+                ].filter(Boolean).join(' ');
+                problemLine.textContent = said;
+                problemLine.hidden = !said;
+            }
             const test = screen.querySelector('[data-widget-wizard-test]');
             const finish = screen.querySelector('[data-widget-wizard-finish]');
             let said = '';
@@ -191,9 +221,9 @@
                 result.textContent = said;
                 result.classList.toggle('is-error', Boolean(w.test && !w.test.ok));
             }
-            if (test) test.disabled = w.busy || !w.server.trim();
+            if (test) test.disabled = w.busy || !w.server.trim() || problem.scheme || problem.user;
             if (finish) {
-                finish.disabled = w.busy;
+                finish.disabled = w.busy || problem.user;
                 finish.textContent = w.test?.ok ? this.t('config.widgetWizardAdd', 'Add widget')
                     : w.test ? this.t('config.widgetWizardAddAnyway', 'Add anyway')
                         : this.t('config.widgetWizardAddUntested', 'Add without testing');
@@ -210,6 +240,9 @@
             const w = this._widgetWizard;
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
             if (!w || !service || w.busy || !w.server.trim()) return;
+            const problem = this.widgetWizardProblem();
+            if (problem.scheme || problem.user) return;
+            const round = w.round;
             const shape = this.widgetWizardAuth(service);
             const auth = { ...shape, basicUser: w.user, secret: this.widgetWizardSecret(service, shape) };
             const payload = this.mediaSetupPayload(service, w.server.trim(), auth, '');
@@ -230,6 +263,11 @@
             // Closed, or gone Back, while it was asking: nothing to tell.
             if (this._widgetWizard !== w) return;
             w.busy = false;
+            // Typed over while it was asking: the answer is about other text.
+            if (w.round !== round) {
+                this.syncWidgetWizardConnect();
+                return;
+            }
             w.test = answer && !answer.error
                 ? { ok: true, answer }
                 : { ok: false, code: String(answer?.error || 'unreachable') };
@@ -244,7 +282,7 @@
         async finishWidgetWizard() {
             const w = this._widgetWizard;
             const service = global.DashboardConfig.MEDIA_SERVICES?.[w?.type];
-            if (!w || !service || w.busy) return;
+            if (!w || !service || w.busy || this.widgetWizardProblem().user) return;
             w.busy = true;
             const shape = this.widgetWizardAuth(service);
             const server = w.server.trim();
@@ -260,9 +298,9 @@
             const draft = this.widgetDraft(index);
             if (!draft || this._widgetBlocks[index]?.type !== type) return;
             if (server) draft.config.server = server;
-            // A sign-in without its username would be refused by Save, and the
-            // address with it; the address alone is still worth keeping.
-            if (secret && (shape.kind !== 'session' || user)) {
+            // A password without its username never gets here: the screen
+            // asks for it and keeps Add off until it is given or cleared.
+            if (secret) {
                 this.ensureMediaAuth(index, service);
                 draft.auth.secret = secret;
                 if (shape.kind === 'session') draft.auth.basicUser = user;

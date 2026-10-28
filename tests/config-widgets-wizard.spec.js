@@ -191,20 +191,34 @@ test.describe('the connect screen for media kinds', () => {
     });
 
     test('a good test says so and adds with the address saved', async ({ page }) => {
+        // Distinctive, so a match cannot be an asset hash that happens to contain it.
+        const KEY = 'abc-wizard-key-7f3q';
         await mockSonarr(page, { version: '4.0' });
         const only = await connectScreen(page);
 
         await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
-        await page.locator('[data-widget-wizard-secret]').fill('abc');
+        await page.locator('[data-widget-wizard-secret]').fill(KEY);
         await page.locator('[data-widget-wizard-test]').click();
         await expect(page.locator('[data-widget-wizard-result]')).toContainText('Connected');
         await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add widget');
+        // While the screen is open, the key is only the password box's value:
+        // never a text node, never an attribute.
+        expect(await page.evaluate((key) => {
+            const seen = [];
+            const walk = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_TEXT);
+            while (walk.nextNode()) if (walk.currentNode.nodeValue.includes(key)) seen.push('text');
+            document.querySelectorAll('*').forEach((el) => [...el.attributes].forEach((a) => {
+                if (a.value.includes(key)) seen.push(`${el.tagName}@${a.name}`);
+            }));
+            return seen;
+        }, KEY)).toEqual([]);
+        await expect(page.locator('[data-widget-wizard-secret]')).toHaveValue(KEY);
 
         const filed = page.waitForRequest((req) => req.url().includes('/api/health/credentials')
             && req.method() === 'PUT');
         await page.locator('[data-widget-wizard-finish]').click();
         const sent = JSON.parse((await filed).postData() || '{}');
-        expect(sent.headers).toEqual({ 'X-Api-Key': 'abc' });
+        expect(sent.headers).toEqual({ 'X-Api-Key': KEY });
 
         await expect.poll(async () => (await widgetsOn(page, only))
             .map((w) => [w.type, w.config.server])).toEqual([['sonarr', 'http://sonarr.local:8989']]);
@@ -212,8 +226,8 @@ test.describe('the connect screen for media kinds', () => {
         expect(added.config.credentialId).toBe(`widget:${added.id}`);
         await expect.poll(() => page.evaluate((id) => Object.keys(
             window.dashboardInstance.healthCredentialDetails || {}).includes(id), `widget:${added.id}`)).toBe(true);
-        expect(await page.evaluate(() => document.body.innerText.includes('abc'))).toBe(false);
-        expect(await page.evaluate(() => document.documentElement.outerHTML.includes('"abc"'))).toBe(false);
+        expect(await page.evaluate((k) => document.body.innerText.includes(k), KEY)).toBe(false);
+        expect(await page.evaluate((k) => document.documentElement.outerHTML.includes(k), KEY)).toBe(false);
     });
 
     test('a failed test shows why and still lets you add', async ({ page }) => {
@@ -288,6 +302,56 @@ test.describe('the connect screen for media kinds', () => {
         expect(filed).toBe(false);
     });
 
+    test('an address alone is saved, with no sign-in filed', async ({ page }) => {
+        const only = await connectScreen(page);
+        const calls = [];
+        page.on('request', (req) => {
+            if (req.url().includes('/api/health/credentials') && req.method() !== 'GET') calls.push(req.method());
+        });
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await page.locator('[data-widget-wizard-finish]').click();
+
+        await expect.poll(async () => (await widgetsOn(page, only))
+            .map((w) => [w.type, w.config.server])).toEqual([['sonarr', 'http://sonarr.local:8989']]);
+        const [added] = await widgetsOn(page, only);
+        expect(added.config.credentialId).toBeUndefined();
+        await page.waitForTimeout(300);
+        expect(calls).toEqual([]);
+    });
+
+    test('an address without its scheme says so and is not tested', async ({ page }) => {
+        let asked = 0;
+        await mockSonarr(page, (route) => { asked += 1; return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); });
+        await connectScreen(page);
+
+        await page.locator('[data-widget-wizard-server]').fill('sonarr.local:8989');
+        await expect(page.locator('[data-widget-wizard-problem]')).toHaveText('Start the address with http:// or https://');
+        await expect(page.locator('[data-widget-wizard-test]')).toBeDisabled();
+        await page.locator('[data-widget-wizard-server]').fill('http://sonarr.local:8989');
+        await expect(page.locator('[data-widget-wizard-problem]')).toBeHidden();
+        await expect(page.locator('[data-widget-wizard-test]')).toBeEnabled();
+        expect(asked).toBe(0);
+    });
+
+    test('an answer about text since changed is ignored', async ({ page }) => {
+        let release;
+        const held = new Promise((resolve) => { release = resolve; });
+        await mockSonarr(page, async (route) => {
+            await held;
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: '4.0' }) });
+        });
+        await connectScreen(page);
+
+        await page.locator('[data-widget-wizard-server]').fill('http://old.local:8989');
+        await page.locator('[data-widget-wizard-test]').click();
+        await expect(page.locator('[data-widget-wizard-result]')).toContainText('Connecting');
+        await page.locator('[data-widget-wizard-server]').fill('http://new.local:8989');
+        release();
+        await expect(page.locator('[data-widget-wizard-test]')).toBeEnabled();
+        await expect(page.locator('[data-widget-wizard-result]')).toHaveText('');
+        await expect(page.locator('[data-widget-wizard-finish]')).toHaveText('Add without testing');
+    });
+
     test('Back returns to the picker on the same kind', async ({ page }) => {
         const only = await connectScreen(page);
         await page.locator('[data-widget-wizard-back]').click();
@@ -301,6 +365,18 @@ test.describe('the connect screen for media kinds', () => {
         await expect(page.locator('[data-widget-wizard-user]')).toBeVisible();
         await expect(page.locator('[data-widget-wizard-secret]')).toHaveAttribute('type', 'password');
         await expect(page.locator('label[for="widget-wizard-secret"]')).toHaveText('Password');
+
+        // A password without its username is not dropped: the screen asks.
+        await page.locator('[data-widget-wizard-secret]').fill('pw');
+        await expect(page.locator('[data-widget-wizard-problem]')).toHaveText('Fill in the username as well');
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeDisabled();
+        await page.locator('[data-widget-wizard-user]').fill('admin');
+        await expect(page.locator('[data-widget-wizard-problem]')).toBeHidden();
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeEnabled();
+        await page.locator('[data-widget-wizard-user]').fill('');
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeDisabled();
+        await page.locator('[data-widget-wizard-secret]').fill('');
+        await expect(page.locator('[data-widget-wizard-finish]')).toBeEnabled();
     });
 
     test('a kind without a connection still adds in one click', async ({ page }) => {

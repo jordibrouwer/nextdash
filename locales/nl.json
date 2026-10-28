@@ -6972,6 +6972,8 @@
     "widgetWizardAdd": "Widget toevoegen",
     "widgetWizardAddAnyway": "Toch toevoegen",
     "widgetWizardAddUntested": "Toevoegen zonder testen",
+    "widgetWizardNeedsScheme": "Begin het adres met http:// of https://",
+    "widgetWizardNeedsUser": "Vul ook de gebruikersnaam in",
     "statsScoreStaleView": "{count} niet geopend in {days} dagen ({pct}%)",
     "statsContentFailing": "Antwoordt wel, maar niet zoals verwacht",
     "statsDrift": "Veranderd sinds je keek",
