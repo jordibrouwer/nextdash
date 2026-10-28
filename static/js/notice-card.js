@@ -237,6 +237,31 @@ canShow every time.
     // Every card defined, for busy(): whether one is still to come.
     const registry = [];
 
+    // When a corner card was last put up, kept across loads: a card may ask
+    // (`minGapAfterCardMs`) to come no sooner than that long after any other.
+    const LAST_CARD_KEY = 'nextdash:last-corner-card-at';
+    let gapTimer = null;
+
+    function lastCardAt() {
+        try { return Number(global.localStorage?.getItem(LAST_CARD_KEY)) || 0; } catch { return 0; }
+    }
+
+    function noteCardShown() {
+        try { global.localStorage?.setItem(LAST_CARD_KEY, String(Date.now())); } catch { /* the gap just is not kept */ }
+    }
+
+    /** True when the card must still wait out its gap; wakes the queue when it is over. */
+    function waitingOutGap(spec) {
+        const gap = Number(spec.minGapAfterCardMs) || 0;
+        if (gap <= 0) return false;
+        const remaining = lastCardAt() + gap - Date.now();
+        if (remaining <= 0) return false;
+        if (!gapTimer) {
+            gapTimer = setTimeout(() => { gapTimer = null; wakeQueue(); }, remaining + 50);
+        }
+        return true;
+    }
+
     /**
      * Whether a corner card is still on its way: up now, waiting out its own
      * delay, or queued and wanting to show. Essential cards (reports of
@@ -308,12 +333,14 @@ canShow every time.
         function gateSync() {
             if (cardEl) return false;
             if (!cornerIsFree(cardClass, { essential: spec.essential === true, view: spec.view })) return false;
+            if (waitingOutGap(spec)) return false;
             return spec.canShow?.() !== false;
         }
 
         async function shouldShow() {
             if (cardEl) return false;
             if (!cornerIsFree(cardClass, { essential: spec.essential === true, view: spec.view })) return false;
+            if (waitingOutGap(spec)) return false;
             // Async so a card may consult something that needs awaiting.
             return (await spec.canShow?.()) !== false;
         }
@@ -375,6 +402,7 @@ canShow every time.
 
             document.body.appendChild(el);
             cardEl = el;
+            noteCardShown();
             if (spec.essential === true) {
                 // Above the start guide bar when it holds the corner.
                 const checklist = document.querySelector('.quickstart-card:not(.notice-card)');
