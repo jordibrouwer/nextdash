@@ -664,31 +664,37 @@
             }
         }
 
-        return `<div class="config-widget-settings-body is-custom is-media is-${esc(service.id)}">
-            <div class="config-custom-group">
-                <h4 class="config-custom-group-title">${esc(service.name)}</h4>
-                ${service.hint ? `<span class="config-widget-note">${esc(this.t(service.hint[0], service.hint[1]))}</span>` : ''}
-                <div class="config-custom-grid">
-                    <div class="config-widget-field">
-                        <label for="${id('server')}">${esc(this.mediaWord(service, 'server'))}</label>
-                        <input type="text" id="${id('server')}" class="config-text" maxlength="2000"
-                            data-widget-setting="server" data-widget-index="${index}" data-widget-kind="text"
-                            value="${esc(config.server || '')}" placeholder="${esc(service.placeholder || '')}">
-                    </div>
-                    ${this.mediaAuthFields(service, index, draft, keyIsSaved, esc)}
-                </div>
+        // The generic fields (look, layout, refresh, click) sort into the same
+        // three sections as every other widget; `rows` arrives pre-joined, so
+        // they are drawn per field here.
+        const sorted = { connection: '', display: '', advanced: '' };
+        for (const field of DashboardConfig.WIDGET_SETTINGS[widget.type] || []) {
+            sorted[this.widgetFieldSection(field.key)] += this.renderWidgetField(field, widget, index);
+        }
+        const grid = (html) => (html ? `<div class="config-custom-grid">${html}</div>` : '');
+        const connection = `
+            ${service.hint ? `<span class="config-widget-note">${esc(this.t(service.hint[0], service.hint[1]))}</span>` : ''}
+            <div class="config-custom-grid">
                 <div class="config-widget-field">
-                    <button type="button" class="config-btn config-btn--small"
-                        data-media-connect="${index}">${esc(this.mediaWord(service, 'connect'))}</button>
-                    <span class="config-widget-note" data-media-status role="status">${esc(status)}</span>
+                    <label for="${id('server')}">${esc(this.mediaWord(service, 'server'))}</label>
+                    <input type="text" id="${id('server')}" class="config-text" maxlength="2000"
+                        data-widget-setting="server" data-widget-index="${index}" data-widget-kind="text"
+                        value="${esc(config.server || '')}" placeholder="${esc(service.placeholder || '')}">
                 </div>
-                ${choices}
+                ${this.mediaAuthFields(service, index, draft, keyIsSaved, esc)}
+                ${sorted.connection}
             </div>
-            <div class="config-custom-group">
-                <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid', 'On the dashboard'))}</h4>
-                <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
-                    this.renderWidgetWidth(widget, index)}${rows}</div>
-            </div>
+            <div class="config-widget-field">
+                <button type="button" class="config-btn config-btn--small"
+                    data-media-connect="${index}">${esc(this.mediaWord(service, 'connect'))}</button>
+                <span class="config-widget-note" data-media-status role="status">${esc(status)}</span>
+            </div>`;
+        const display = `${choices}
+            <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
+                this.renderWidgetWidth(widget, index)}${sorted.display}</div>`;
+
+        return `<div class="config-widget-settings-body is-custom is-media is-${esc(service.id)}">
+            ${this.renderWidgetSections(widget, index, { connection, display, advanced: grid(sorted.advanced) })}
             ${this.renderWidgetSaveBar(index)}
         </div>`;
     },
