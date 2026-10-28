@@ -52,43 +52,36 @@ async function openWithWidgets(page, width, { secondPage = false } = {}) {
 
 // By the title field's value: the title is an input, so hasText cannot see it.
 const row = (page, name) => page.locator(`.config-widget-row:has([data-widget="title"][value="${name}"])`);
-const title = (page) => page.locator('.config-widget-row.is-open .config-widget-detail-title');
+const sheet = (page) => page.locator('#config-widget-overlay');
+const title = (page) => sheet(page).locator('.config-widget-detail-title');
 
 for (const width of [820, 1600]) {
-    test.describe(`which card is open, at ${width}px`, () => {
+    test.describe(`which widget is open, at ${width}px`, () => {
         test('nothing is open at first', async ({ page }) => {
             await openWithWidgets(page, width);
             await expect(page.locator('.config-widget-row.is-open')).toHaveCount(0);
-            await expect(page.locator('.config-widget-detail')).toHaveCount(0);
+            await expect(sheet(page)).toHaveCount(0);
         });
 
-        test('a bulk delete of another widget keeps the open card open', async ({ page }) => {
-            await openWithWidgets(page, width);
-            await row(page, 'Memory').locator('[data-widget-settings]').click();
-            await row(page, 'Processor').locator('[data-widget-pick]').check();
-            await page.locator('[data-widget-bulk="delete"]').click();
-            await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
-            await expect(page.locator('.config-widget-row')).toHaveCount(2);
-            await expect(row(page, 'Memory').locator('.config-widget-detail')).toBeVisible();
-            await expect(page.locator('.config-widget-detail')).toHaveCount(1);
-        });
-
-        test('deleting the open widget closes its card rather than opening a neighbour', async ({ page }) => {
+        test('deleting the open widget closes its sheet rather than opening a neighbour', async ({ page }) => {
             await openWithWidgets(page, width);
             await row(page, 'Processor').locator('[data-widget-settings]').click();
-            await page.locator('.config-widget-detail [data-widget-delete]').click();
+            await sheet(page).locator('[data-widget-delete]').click();
             await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
             await expect(page.locator('.config-widget-row')).toHaveCount(2);
-            await expect(page.locator('.config-widget-detail')).toHaveCount(0);
+            await expect(sheet(page)).toHaveCount(0);
         });
 
-        test('clearing a search gives back the card that was chosen', async ({ page }) => {
+        test('the sheet is about the widget chosen, whatever the list shows', async ({ page }) => {
             await openWithWidgets(page, width);
             await row(page, 'Notes').locator('[data-widget-settings]').click();
-            await page.locator('#config-widget-search').fill('mem');
-            await expect(page.locator('.config-widget-detail')).toHaveCount(0);
-            await page.locator('#config-widget-search').fill('');
             await expect(title(page)).toContainText('Notes');
+            // The sheet stays modal: the list behind it is not reachable until it closes.
+            await sheet(page).locator('.config-widget-sheet-close').click();
+            await page.locator('#config-widget-search').fill('mem');
+            await expect(page.locator('.config-widget-row')).toHaveCount(1);
+            await page.locator('#config-widget-search').fill('');
+            await expect(page.locator('.config-widget-row')).toHaveCount(3);
         });
 
         test('a title half typed keeps its focus and text across a repaint', async ({ page }) => {
@@ -104,31 +97,32 @@ for (const width of [820, 1600]) {
     });
 }
 
-test.describe('cards over several pages', () => {
-    test('moving the open widget to another page closes its card', async ({ page }) => {
+test.describe('sheets over several pages', () => {
+    test('moving the open widget to another page closes its sheet', async ({ page }) => {
         const second = await openWithWidgets(page, 1600, { secondPage: true });
         expect(second).not.toBeNull();
         await row(page, 'Notes').locator('[data-widget-settings]').click();
-        await page.locator('.config-widget-row.is-open [data-widget-move-page]').selectOption(String(second));
+        await sheet(page).locator('[data-widget-move-page]').selectOption(String(second));
         await expect(page.locator('.config-widget-row')).toHaveCount(2);
-        await expect(page.locator('.config-widget-detail')).toHaveCount(0);
+        await expect(sheet(page)).toHaveCount(0);
     });
 
-    test('All pages: the card and its Delete act on the widget\'s own page', async ({ page }) => {
+    test('All pages: the sheet and its Delete act on the widget\'s own page', async ({ page }) => {
         const second = await openWithWidgets(page, 1600, { secondPage: true });
         expect(second).not.toBeNull();
         await page.locator('[data-widget-page]').selectOption('all');
         await expect(page.locator('.config-widget-row')).toHaveCount(4);
         await row(page, 'Memory').locator('[data-widget-settings]').click();
         await expect(title(page)).toContainText('Memory');
+        await sheet(page).locator('.config-widget-sheet-close').click();
         await row(page, 'Elsewhere').locator('[data-widget-settings]').click();
         await expect(title(page)).toContainText('Elsewhere');
-        await expect(page.locator('.config-widget-row.is-open [data-widget-move-page]')).toHaveValue(String(second));
+        await expect(sheet(page).locator('[data-widget-move-page]')).toHaveValue(String(second));
 
-        await page.locator('.config-widget-row.is-open [data-widget-delete]').click();
+        await sheet(page).locator('[data-widget-delete]').click();
         await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
         await expect(page.locator('.config-widget-row')).toHaveCount(3);
-        await expect(page.locator('.config-widget-detail')).toHaveCount(0);
+        await expect(sheet(page)).toHaveCount(0);
 
         const left = await page.evaluate(async (ids) => {
             const read = async (id) => (await (await fetch(`/api/pages/${id}/blocks`)).json()).widgets || [];
@@ -141,10 +135,9 @@ test.describe('cards over several pages', () => {
     test('switching page shows the new page with nothing open', async ({ page }) => {
         const second = await openWithWidgets(page, 1600, { secondPage: true });
         expect(second).not.toBeNull();
-        await row(page, 'Notes').locator('[data-widget-settings]').click();
         await page.locator('[data-widget-page]').selectOption(String(second));
         await expect(page.locator('.config-widget-row')).toHaveCount(1);
-        await expect(page.locator('.config-widget-detail')).toHaveCount(0);
+        await expect(sheet(page)).toHaveCount(0);
     });
 });
 
@@ -160,11 +153,13 @@ test.describe('the controls on a card say what they are', () => {
         await expect(r.locator('.config-widget-row-shown')).toContainText(/\S/);
     });
 
-    test('Settings expands the card in place', async ({ page }) => {
+    test('Settings says it opens a dialog', async ({ page }) => {
         await openWithWidgets(page, 1600);
         const settings = row(page, 'Memory').locator('[data-widget-settings]');
+        await expect(settings).toHaveAttribute('aria-haspopup', 'dialog');
         await expect(settings).toHaveAttribute('aria-expanded', 'false');
-        await expect(settings).toHaveAttribute('aria-controls', /config-widget-settings-/);
-        expect(await settings.getAttribute('aria-pressed')).toBeNull();
+        await settings.click();
+        await expect(settings).toHaveAttribute('aria-expanded', 'true');
+        await expect(sheet(page)).toHaveAttribute('class', /config-widget-overlay/);
     });
 });

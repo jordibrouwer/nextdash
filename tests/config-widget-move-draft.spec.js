@@ -91,7 +91,7 @@ test.describe('moving a widget from its settings', () => {
             for (const type of types) {
                 const { index } = await addAndOpen(page, type, snap.from);
                 if (index < 0) continue;
-                await page.click(`[data-widget-settings="${index}"]`);
+                await openCard(page, index);
                 const state = await page.evaluate(({ i }) => {
                     const cfg = window.dashboardInstance.config._module;
                     return cfg.widgetDraftDirty(i);
@@ -100,6 +100,9 @@ test.describe('moving a widget from its settings', () => {
                 await page.evaluate(({ i }) => {
                     const cfg = window.dashboardInstance.config._module;
                     delete (cfg._widgetDrafts || {})[cfg._widgetBlocks[i]?.id];
+                    // Close the sheet, so the next widget's button is reachable.
+                    cfg._widgetOpenId = null;
+                    cfg.repaintWidgetsBody();
                 }, { i: index });
             }
             expect(dirty, 'media widgets that read as changed with nothing typed').toEqual([]);

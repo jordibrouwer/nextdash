@@ -10163,3 +10163,126 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
         height: 24px;
     }
 }
+
+
+/* The open widget's settings: a sheet over the page, not a form that rearranges
+   the list. */
+.config-widget-overlay {
+    position: fixed;
+    inset: 0;
+    /* Above the page, below .modal-overlay (2000): confirmations and the info
+       dialogs open over the sheet. */
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.config-widget-backdrop {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, #000 55%, transparent);
+    backdrop-filter: blur(3px);
+}
+
+.config-widget-sheet {
+    position: relative;
+    box-sizing: border-box;
+    width: min(46rem, 100%);
+    max-height: min(92vh, 64rem);
+    overflow: auto;
+    padding: 20px 22px 18px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    border-radius: var(--radius-8, 14px);
+    background: var(--surface-1, var(--background-primary, #181a20));
+    color: var(--text-primary);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    outline: none;
+}
+
+.config-widget-sheet-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted, #888);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.config-widget-sheet-close:hover,
+.config-widget-sheet-close:focus-visible {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+}
+
+.config-widget-sheet .config-widget-detail {
+    padding: 0;
+}
+
+.config-widget-sheet .config-widget-detail-head {
+    padding-right: 2.4rem;
+}
+
+@media (max-width: 640px) {
+    .config-widget-overlay { padding: 0; }
+    .config-widget-sheet {
+        width: 100%;
+        max-height: 100vh;
+        height: 100%;
+        border-radius: 0;
+    }
+}
+
+/* The card: quiet. The title reads as text until it is hovered or focused, the
+   Settings button is a small ghost, and nothing on the card looks like a field. */
+.config-widget-row {
+    padding: 14px 16px 12px;
+}
+
+.config-widget-card-head {
+    align-items: flex-start;
+}
+
+.config-widget-card-head .config-widget-row-title {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    padding-inline: 4px;
+}
+
+.config-widget-card-head .config-widget-row-title:hover,
+.config-widget-card-head .config-widget-row-title:focus {
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    border-color: var(--border-color, rgba(128, 128, 128, 0.35));
+}
+
+.config-widget-card-head [data-widget-settings] {
+    margin-left: auto;
+    align-self: center;
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+}
+
+.config-widget-card-head [data-widget-settings]:hover,
+.config-widget-card-head [data-widget-settings]:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    color: var(--text-primary);
+}
+
+.config-widget-card-meta {
+    margin-top: 10px;
+    padding-left: calc(2.25rem + 1.6rem);
+}
+
+.config-widget-row.is-open {
+    grid-column: auto;
+}

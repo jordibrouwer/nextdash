@@ -480,8 +480,11 @@ test.describe('bug hunt 4: widget settings say what the tile does', () => {
         await openWidgets(page);
         const index = await addWidget(page, 'health');
         const row = page.locator(`[data-widget-detail="${index}"]`);
+        // The switch is on the card, behind the sheet: close it, switch, reopen.
+        await page.locator('.config-widget-sheet-close').click();
         await page.locator(`[data-widget-enabled="${index}"]`).uncheck();
         await expect.poll(async () => (await lastStored(page))?.config?.enabled, { timeout: 10_000 }).toBe(false);
+        await page.locator(`[data-widget-settings="${index}"]`).click();
         await row.locator('[data-widget-setting="show"][value="content"]').uncheck();
         await row.locator('[data-widget-save]').click();
         await expect.poll(async () => (await lastStored(page))?.config?.show, { timeout: 10_000 })

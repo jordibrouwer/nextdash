@@ -115,7 +115,9 @@ test.describe('the widget catalogue is a door, not the page', () => {
         await expect(page.locator('.config-widget-detail textarea[data-widget-setting="feedUrls"]')).toBeVisible();
 
         // A second one of the same kind opens its own panel rather than
-        // reopening the first, and each carries its own fields.
+        // reopening the first, and each carries its own fields. The first's
+        // sheet is closed to reach the Add button behind it.
+        await page.locator('.config-widget-sheet-close').click();
         await page.locator('[data-widget-catalogue]').click();
         await page.locator('.modal--widget-catalogue [data-widget-option="rss"]').first().click();
         await page.locator('.modal--widget-catalogue [data-widget-add="rss"]').click();

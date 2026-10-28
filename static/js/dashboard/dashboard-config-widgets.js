@@ -148,7 +148,8 @@
     repaintWidgetsKeepingFocus() {
         const active = document.activeElement;
         const body = document.getElementById('config-widgets-body');
-        const inside = active && body?.contains(active) ? active : null;
+        const sheet = document.getElementById('config-widget-overlay');
+        const inside = active && (body?.contains(active) || sheet?.contains(active)) ? active : null;
         if (inside) {
             // Whatever is being typed in, committed by the same path its change
             // event takes -- a figure's row, a sign-in field and the answer
@@ -185,7 +186,10 @@
             : '';
         const caret = typeof inside?.selectionStart === 'number' ? inside.selectionStart : null;
         this.repaintWidgetsBody();
-        const again = selector ? document.querySelector(`#config-widgets-body ${selector}`) : null;
+        const again = selector
+            ? (document.querySelector(`#config-widget-overlay ${selector}`)
+                || document.querySelector(`#config-widgets-body ${selector}`))
+            : null;
         if (!again) return;
         // A title is saved on change, straight to the server, so one half typed
         // has no draft to come back from: it is carried across by hand.
@@ -228,7 +232,8 @@
         // Read off the screen as well as from the toggle event: that event is
         // queued, and a repaint landing between a click and its dispatch would
         // otherwise drop the section the reader just opened.
-        body.querySelectorAll('details[data-widget-section]').forEach((el) => this.rememberWidgetSection(el));
+        document.querySelectorAll('#config-widgets-body details[data-widget-section], #config-widget-overlay details[data-widget-section]')
+            .forEach((el) => this.rememberWidgetSection(el));
         body.innerHTML = this.renderWidgetsTab();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindWidgetsEditor(container);
@@ -300,7 +305,7 @@
                      * one a reader meant as "select" was as likely to be Shown
                      * -- which writes to the server and hides the widget.
                      */
-                    const settingsState = `aria-expanded="${open ? 'true' : 'false'}" aria-controls="config-widget-settings-${index}"`;
+                    const settingsState = `aria-haspopup="dialog" aria-expanded="${open ? 'true' : 'false'}"`;
                     return `
                 <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
                     data-widget-row="${index}">
@@ -337,9 +342,6 @@
                             <span aria-hidden="true">${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
                         </label>
                     </div>
-                    <div class="config-widget-settings" id="config-widget-settings-${index}"
-                        ${open ? '' : 'hidden'}>${
-                        open ? this.renderWidgetDetail(widget, index) : ''}</div>
                 </li>`;
                 };
 
@@ -3327,9 +3329,19 @@
         const body = document.getElementById('config-widgets-body') || container;
         // Before the guard below: it answers a link, not a first bind.
         this.widgetsDeepLink?.(window.location.hash);
+        // The sheet over the page for the open widget, drawn after the list.
+        this.paintWidgetOverlay();
         if (!body || body.dataset.widgetsDelegated === 'true') return;
         body.dataset.widgetsDelegated = 'true';
+        this.bindWidgetsDelegates(body);
+    },
 
+    /*
+     * The delegated listeners of the Widgets section, on the list's body and
+     * on the sheet over it: the settings are drawn in the sheet, and they are
+     * the same controls.
+     */
+    bindWidgetsDelegates(body) {
         const indexOn = (el, attr) => Number(el.getAttribute(attr));
 
         // A section folded or opened by the reader, kept so a repaint draws it
@@ -3345,6 +3357,11 @@
         body.addEventListener('click', (event) => {
             const target = event.target;
             if (!target?.closest) return;
+
+            if (target.closest('[data-widget-overlay-close]')) {
+                void this.closeWidgetOverlay();
+                return;
+            }
 
             // The ℹ beside a widget setting, opening the same dialog every
             // other setting in config uses. Checked before the catalogue so a
@@ -3937,6 +3954,72 @@
     },
 
     /*
+     * The open widget's settings, as a sheet over the page.
+     *
+     * A card is a summary; editing happens in a sheet, so the list does not
+     * rearrange itself around a form. The sheet is a plain overlay on the body
+     * (not a native dialog: confirmations and the info dialogs open above it
+     * by z-index, and a top-layer element would hide them). Its events are
+     * delegated the same way the list's are.
+     */
+    paintWidgetOverlay() {
+        const open = this._widgetSettingsOpen;
+        const block = open != null ? (this._widgetBlocks || [])[open] : null;
+        let host = document.getElementById('config-widget-overlay');
+        if (!block?.isWidget || document.getElementById('config-widgets-body') == null) {
+            this.removeWidgetOverlay();
+            return;
+        }
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!host) {
+            host = document.createElement('div');
+            host.id = 'config-widget-overlay';
+            host.className = 'config-widget-overlay';
+            host.innerHTML = `
+                <div class="config-widget-backdrop" data-widget-overlay-close></div>
+                <div class="config-widget-sheet" role="dialog" aria-modal="true" tabindex="-1"></div>`;
+            document.body.appendChild(host);
+            this.bindWidgetsDelegates(host);
+            // Escape closes the sheet, wherever focus is -- but not while a
+            // confirmation or an info dialog is open over it: that one is
+            // answered first. Capture phase, so Config's own Escape (which
+            // would leave the whole view) never sees it.
+            this._widgetOverlayKey = (event) => {
+                if (event.key !== 'Escape') return;
+                if (document.getElementById('config-confirm-modal') || document.querySelector('#app-modal.show')) return;
+                event.preventDefault();
+                event.stopPropagation();
+                void this.closeWidgetOverlay();
+            };
+            window.addEventListener('keydown', this._widgetOverlayKey, true);
+            host.querySelector('.config-widget-sheet').focus({ preventScroll: true });
+        }
+        const sheet = host.querySelector('.config-widget-sheet');
+        const scroll = sheet.scrollTop;
+        sheet.setAttribute('aria-label', this.widgetRowLabel(block));
+        sheet.innerHTML = `
+            <button type="button" class="config-widget-sheet-close" data-widget-overlay-close
+                aria-label="${esc(this.t('dashboard.close', 'Close'))}">×</button>
+            ${this.renderWidgetDetail(block, open)}`;
+        sheet.scrollTop = scroll;
+    },
+
+    removeWidgetOverlay() {
+        document.getElementById('config-widget-overlay')?.remove();
+        if (this._widgetOverlayKey) {
+            window.removeEventListener('keydown', this._widgetOverlayKey, true);
+            this._widgetOverlayKey = null;
+        }
+    },
+
+    /** Close the sheet; unsaved edits are asked about first. */
+    async closeWidgetOverlay() {
+        const open = this._widgetSettingsOpen;
+        if (open == null) return;
+        await this.toggleWidgetCard(open);
+    },
+
+    /*
      * Open or close one widget's card.
      *
      * One card is open at a time. Opening another while the open one has
@@ -3948,7 +4031,9 @@
         const id = blocks[index]?.id ?? null;
         const openIndex = this._widgetSettingsOpen;
         const closing = openIndex === index;
-        if (!closing && openIndex != null && this.widgetDraftDirty(openIndex)) {
+        // Leaving the open widget, to close it or to open another, with unsaved
+        // edits asks first; refusing leaves everything as it was.
+        if (openIndex != null && this.widgetDraftDirty(openIndex)) {
             if (!await this.confirmDiscardWidgetDrafts()) return;
             delete (this._widgetDrafts || {})[blocks[openIndex]?.id];
         }

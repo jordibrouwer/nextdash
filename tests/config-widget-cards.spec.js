@@ -40,6 +40,7 @@ const THREE = [
 ];
 
 // The n-th card as shown (flat order), not the block index, which also counts categories.
+const sheet = (page) => page.locator('#config-widget-overlay');
 const settingsOf = (page, n) => page.locator('.config-widget-row').nth(n).locator('[data-widget-settings]');
 
 test.describe('widgets as cards', () => {
@@ -59,71 +60,81 @@ test.describe('widgets as cards', () => {
     test('nothing opens by itself, even on a wide screen', async ({ page }) => {
         await openWidgetsSection(page, { widgets: THREE });
         await expect(page.locator('.config-widget-row.is-open')).toHaveCount(0);
-        await expect(page.locator('.config-widgets-detailpanel')).toHaveCount(0);
+        await expect(sheet(page)).toHaveCount(0);
         await expect(page.locator('.config-widget-detail')).toHaveCount(0);
     });
 
-    test('Settings opens the card inline and it spans the row', async ({ page }) => {
+    test('Settings opens a sheet over the page, not a form in the list', async ({ page }) => {
         await openWidgetsSection(page, { widgets: THREE });
         await settingsOf(page, 1).click();
-        const open = page.locator('.config-widget-row.is-open');
-        await expect(open).toHaveCount(1);
-        await expect(open.locator('.config-widget-detail')).toBeVisible();
-        const list = await page.locator('.config-widget-list').first().boundingBox();
-        const box = await open.boundingBox();
-        expect(box.width).toBeGreaterThanOrEqual(list.width - 2);
+        await expect(sheet(page)).toBeVisible();
+        await expect(sheet(page).locator('.config-widget-detail')).toBeVisible();
+        await expect(page.locator('.config-widget-row .config-widget-detail')).toHaveCount(0);
         await expect(settingsOf(page, 1)).toHaveAttribute('aria-expanded', 'true');
+        await expect(page.locator('.config-widget-row.is-open')).toHaveCount(1);
+        // The cards did not move: still a grid, still in flow.
+        const display = await page.locator('.config-widget-list').first().evaluate((el) => getComputedStyle(el).display);
+        expect(display).toBe('grid');
     });
 
-    test('opening a second card closes the first', async ({ page }) => {
+    test('the sheet closes with its button, with Escape and with a click outside', async ({ page }) => {
         await openWidgetsSection(page, { widgets: THREE });
         await settingsOf(page, 0).click();
-        await expect(page.locator('.config-widget-row.is-open')).toHaveCount(1);
-        await settingsOf(page, 1).click();
-        await expect(page.locator('.config-widget-row.is-open')).toHaveCount(1);
+        await expect(sheet(page)).toBeVisible();
+        await sheet(page).locator('.config-widget-sheet-close').click();
+        await expect(sheet(page)).toHaveCount(0);
         await expect(settingsOf(page, 0)).toHaveAttribute('aria-expanded', 'false');
-        await expect(settingsOf(page, 1)).toHaveAttribute('aria-expanded', 'true');
+
+        await settingsOf(page, 0).click();
+        await expect(sheet(page)).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(sheet(page)).toHaveCount(0);
+        // Escape closed the sheet only, not Config.
+        await expect(page.locator('#config-widgets-body')).toBeVisible();
+
+        await settingsOf(page, 0).click();
+        await page.locator('.config-widget-backdrop').click({ position: { x: 5, y: 5 } });
+        await expect(sheet(page)).toHaveCount(0);
     });
 
-    test('opening another card with unsaved edits asks first', async ({ page }) => {
+    test('closing the sheet with unsaved edits asks first', async ({ page }) => {
         await openWidgetsSection(page, { widgets: THREE });
         await settingsOf(page, 2).click();
         // The feed addresses live in Connection, which starts folded once they are set.
-        await page.locator('details[data-widget-section="connection"] > summary').click();
-        const feeds = page.locator('[data-widget-setting="feedUrls"]');
+        await sheet(page).locator('details[data-widget-section="connection"] > summary').click();
+        const feeds = sheet(page).locator('[data-widget-setting="feedUrls"]');
         await expect(feeds).toBeVisible();
         await feeds.fill('https://example.org/other.xml');
         await feeds.blur();
 
-        // Refusing keeps the first card open with its edit.
-        await settingsOf(page, 0).click();
+        // Refusing keeps the sheet open with its edit.
+        await sheet(page).locator('.config-widget-sheet-close').click();
         const confirm = page.locator('#config-confirm-modal');
         await expect(confirm).toBeVisible();
         await confirm.getByRole('button', { name: /cancel|keep|no/i }).first().click();
-        await expect(settingsOf(page, 2)).toHaveAttribute('aria-expanded', 'true');
+        await expect(sheet(page)).toBeVisible();
         await expect(feeds).toHaveValue('https://example.org/other.xml');
 
-        // Accepting opens the other card and drops the edit.
-        await settingsOf(page, 0).click();
+        // Accepting closes it and drops the edit.
+        await sheet(page).locator('.config-widget-sheet-close').click();
         await expect(confirm).toBeVisible();
         await confirm.getByRole('button', { name: /discard/i }).click();
-        await expect(settingsOf(page, 0)).toHaveAttribute('aria-expanded', 'true');
-        await expect(settingsOf(page, 2)).toHaveAttribute('aria-expanded', 'false');
+        await expect(sheet(page)).toHaveCount(0);
         await settingsOf(page, 2).click();
-        await page.locator('details[data-widget-section="connection"] > summary').click();
-        await expect(page.locator('[data-widget-setting="feedUrls"]')).toHaveValue('https://example.com/feed.xml');
+        await sheet(page).locator('details[data-widget-section="connection"] > summary').click();
+        await expect(sheet(page).locator('[data-widget-setting="feedUrls"]')).toHaveValue('https://example.com/feed.xml');
     });
 
-    test('a repaint keeps the open card and its open section', async ({ page }) => {
+    test('a repaint keeps the sheet and its open section', async ({ page }) => {
         await openWidgetsSection(page, { widgets: THREE });
         await settingsOf(page, 2).click();
-        const display = page.locator('details[data-widget-section="display"]');
+        const display = sheet(page).locator('details[data-widget-section="display"]');
         await expect(display).toBeVisible();
         await display.locator('summary').click();
         await expect(display).not.toHaveAttribute('open', '');
-        await page.locator('#config-widget-search').fill('rss');
-        await expect(page.locator('.config-widget-row.is-open')).toHaveCount(1);
-        await expect(page.locator('details[data-widget-section="display"]')).not.toHaveAttribute('open', '');
+        await page.evaluate(() => window.dashboardInstance.config.repaintWidgetsBody());
+        await expect(sheet(page)).toBeVisible();
+        await expect(sheet(page).locator('details[data-widget-section="display"]')).not.toHaveAttribute('open', '');
     });
 
     test('no title shows the kind name as the placeholder', async ({ page }) => {
@@ -165,9 +176,9 @@ test.describe('widgets as cards', () => {
         await expect(page.locator('.config-widget-row').first().locator('.config-widget-chip')).toHaveText('Not set up');
         expect(asked).toEqual([]);
         await settingsOf(page, 0).click();
-        await page.locator('[data-media-connect]').click();
-        await expect(page.locator('[data-media-status]')).not.toHaveText('');
-        await settingsOf(page, 0).click();
+        await sheet(page).locator('[data-media-connect]').click();
+        await expect(sheet(page).locator('[data-media-status]')).not.toHaveText('');
+        await sheet(page).locator('.config-widget-sheet-close').click();
         await expect(page.locator('.config-widget-row').first().locator('.config-widget-chip')).toHaveText('Not reachable');
     });
 
@@ -183,6 +194,7 @@ test.describe('widgets as cards', () => {
         await page.setViewportSize({ width: 390, height: 844 });
         await openWidgetsSection(page, { widgets: THREE });
         await settingsOf(page, 2).click();
+        await expect(sheet(page)).toBeVisible();
         const m = await page.evaluate(() => {
             const list = document.querySelector('.config-widget-list').getBoundingClientRect();
             const cards = [...document.querySelectorAll('.config-widget-row')].map((el) => el.getBoundingClientRect());

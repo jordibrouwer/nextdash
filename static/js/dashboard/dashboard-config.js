@@ -1206,6 +1206,7 @@ class DashboardConfig {
         explicitSection = this.followMovedBehaviorTab(explicitSection);
         // Coming back to config is a new arrival for the widgets links.
         this._widgetsDeepLinkDone = false;
+        this.removeWidgetOverlay?.();
         const hash = window.location.hash;
         this.rememberWidgetsLink(hash);
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
@@ -2668,6 +2669,7 @@ class DashboardConfig {
         if (this.section !== 'widgets') {
             this._widgetsDeepLinkDone = false;
             this._widgetsPendingLink = null;
+            this.removeWidgetOverlay?.();
         }
         // Created up front, not on first save: a live region has to be in the
         // document before its text changes, or the change is not announced.
