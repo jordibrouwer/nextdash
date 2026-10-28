@@ -4011,8 +4011,6 @@
     "widgetCustomItemsPath": "Liste depuis (chemin, facultatif)",
     "widgetCustomPathPlaceholder": "server.recent[0].name",
     "widgetCustomFields": "Chiffres à lire",
-    "widgetCustomSource": "Où lire",
-    "widgetCustomOnTheGrid": "Sur le tableau de bord",
     "widgetCustomLabelPlaceholder": "Comment l’appeler",
     "widgetCustomRemoveField": "Retirer ce chiffre",
     "widgetCustomFieldsNote": "Un chemin dans la réponse, comment l’appeler, et comment l’afficher. « server.disk[0].used » lit cette valeur.",

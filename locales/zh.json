@@ -4011,8 +4011,6 @@
     "widgetCustomItemsPath": "列表来自（路径，可选）",
     "widgetCustomPathPlaceholder": "server.recent[0].name",
     "widgetCustomFields": "要读取的数值",
-    "widgetCustomSource": "从哪里读",
-    "widgetCustomOnTheGrid": "在仪表板上",
     "widgetCustomLabelPlaceholder": "给它起个名字",
     "widgetCustomRemoveField": "移除这个数值",
     "widgetCustomFieldsNote": "一条通往返回结果的路径、一个名字，以及怎么显示。「server.disk[0].used」读的就是那一个值。",

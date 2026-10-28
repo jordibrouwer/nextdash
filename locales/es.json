@@ -4011,8 +4011,6 @@
     "widgetCustomItemsPath": "Lista desde (ruta, opcional)",
     "widgetCustomPathPlaceholder": "server.recent[0].name",
     "widgetCustomFields": "Cifras que leer",
-    "widgetCustomSource": "De dónde leer",
-    "widgetCustomOnTheGrid": "En el panel",
     "widgetCustomLabelPlaceholder": "Cómo llamarlo",
     "widgetCustomRemoveField": "Quitar esta cifra",
     "widgetCustomFieldsNote": "Una ruta dentro de la respuesta, cómo llamarla y cómo mostrarla. \"server.disk[0].used\" lee ese valor concreto.",

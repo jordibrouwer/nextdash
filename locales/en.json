@@ -4011,8 +4011,6 @@
     "widgetCustomItemsPath": "List from (path, optional)",
     "widgetCustomPathPlaceholder": "server.recent[0].name",
     "widgetCustomFields": "Figures to read",
-    "widgetCustomSource": "Where to read from",
-    "widgetCustomOnTheGrid": "On the dashboard",
     "widgetCustomLabelPlaceholder": "What to call it",
     "widgetCustomRemoveField": "Remove this figure",
     "widgetCustomFieldsNote": "A path into the answer, what to call it, and how to show it. \"server.disk[0].used\" reads that one value.",

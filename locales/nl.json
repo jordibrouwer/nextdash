@@ -4011,8 +4011,6 @@
     "widgetCustomItemsPath": "Lijst uit (pad, optioneel)",
     "widgetCustomPathPlaceholder": "server.recent[0].name",
     "widgetCustomFields": "Cijfers om te lezen",
-    "widgetCustomSource": "Waar lezen",
-    "widgetCustomOnTheGrid": "Op het dashboard",
     "widgetCustomLabelPlaceholder": "Hoe je het noemt",
     "widgetCustomRemoveField": "Dit cijfer verwijderen",
     "widgetCustomFieldsNote": "Een pad in het antwoord, hoe je het noemt, en hoe je het toont. \"server.disk[0].used\" leest die ene waarde.",

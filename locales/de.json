@@ -4011,8 +4011,6 @@
     "widgetCustomItemsPath": "Liste aus (Pfad, optional)",
     "widgetCustomPathPlaceholder": "server.recent[0].name",
     "widgetCustomFields": "Zu lesende Zahlen",
-    "widgetCustomSource": "Woher lesen",
-    "widgetCustomOnTheGrid": "Auf dem Dashboard",
     "widgetCustomLabelPlaceholder": "Wie es heißen soll",
     "widgetCustomRemoveField": "Diese Zahl entfernen",
     "widgetCustomFieldsNote": "Ein Pfad in die Antwort, wie es heißt, und wie es gezeigt wird. \"server.disk[0].used\" liest genau diesen Wert.",
