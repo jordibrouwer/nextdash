@@ -67,14 +67,21 @@ test.describe('old links open the wizard', () => {
         });
     }
 
-    test('#config/widgets/custom opens the custom connect screen once', async ({ page }) => {
+    test('#config/widgets/custom opens the custom connect screen once per arrival', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/#config/widgets/custom');
         await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
         await expect(customScreen(page)).toBeVisible();
-        // The same link again, as a second visit to the section.
-        await page.goto('/#config/widgets/custom');
-        await expect(customScreen(page)).toHaveCount(1);
+        await expect(page.locator('#modal-text .config-widget-wizard')).toHaveCount(1);
+        await page.keyboard.press('Escape');
+        await expect(customScreen(page)).toHaveCount(0);
+
+        // Leave the section, then arrive by the same link a second time.
+        await page.evaluate(() => { window.location.hash = '#config/overview'; });
+        await expect(page.locator('#config-section-overview')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#config-widgets-body')).toHaveCount(0);
+        await page.evaluate(() => { window.location.hash = '#config/widgets/custom'; });
+        await expect(customScreen(page)).toBeVisible();
         await expect(page.locator('#modal-text .config-widget-wizard')).toHaveCount(1);
     });
 

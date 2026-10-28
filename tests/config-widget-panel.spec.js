@@ -58,6 +58,11 @@ async function addWidget(page, type) {
     await page.locator('[data-widget-catalogue]').click();
     await page.locator(`.modal--widget-catalogue [data-widget-option="${type}"]`).first().click();
     await page.locator(`.modal--widget-catalogue [data-widget-add="${type}"]`).click();
+    // A kind with a connection (Custom, the media services) asks for it first;
+    // nothing typed adds it with an empty config, as adding used to.
+    if (await page.locator('[data-widget-wizard-screen="connect"]').count()) {
+        await page.locator('[data-widget-wizard-finish]').click();
+    }
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
     // The count arriving is not the list settling: the dashboard redraws behind
     // config and the new row is then scrolled to and its title focused. The
