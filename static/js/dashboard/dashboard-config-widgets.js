@@ -2500,33 +2500,28 @@
         }
         if (widget.type === 'custom') {
             /*
-             * Two groups rather than one grid of six unrelated boxes.
+             * The same three sections as every other widget.
              *
-             * Where to read from and what to show are different questions, and
-             * a flat panel made the address, the credential and a dotted path
-             * read as equally weighted neighbours. The figures need the full
-             * width regardless: their rows are four controls wide, and in a
-             * third of the panel they overlapped each other.
+             * Where to read from (address, method, credential) and the probe
+             * that asks it are Connection; the figures table, the dotted path
+             * of a list, Page and Width are Display; the cache time is
+             * Advanced. The figures need the full width regardless: their rows
+             * are four controls wide, and in a third of the panel they
+             * overlapped each other. The probe's Watch is state in
+             * `customProbeState`, not in the DOM, and a folded <details> keeps
+             * its content in the page, so folding Connection never stops it.
              */
-            return `<div class="config-widget-settings-body is-custom">
-                ${this.renderWidgetPresets(widget, index)}
-                <div class="config-custom-group">
-                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
-                        'Where to read from'))}</h4>
-                    <div class="config-custom-grid">${rows}</div>
-                    ${this.renderAddressPlaceholderNote(widget, index)}
-                    ${this.renderWidgetCredential(widget, index)}
-                </div>
-                ${this.renderCustomWidgetFields(widget, index)}
-                ${this.renderCustomWidgetProbe(widget, index)}
-                <div class="config-custom-group">
-                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
-                        'On the dashboard'))}</h4>
-                    <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
-                        this.renderWidgetWidth(widget, index)}</div>
-                </div>
-                ${this.renderWidgetSaveBar(index)}
-            </div>`;
+            const sorted = { connection: '', display: '', advanced: '' };
+            drawn.forEach(([field, html]) => { sorted[this.widgetFieldSection(field.key)] += html; });
+            const customGrid = (html) => (html ? `<div class="config-custom-grid">${html}</div>` : '');
+            return `<div class="config-widget-settings-body is-custom">${this.renderWidgetSections(widget, index, {
+                connection: `${this.renderWidgetPresets(widget, index)}${customGrid(sorted.connection)}${
+                    this.renderAddressPlaceholderNote(widget, index)}${
+                    this.renderWidgetCredential(widget, index)}${this.renderCustomWidgetProbe(widget, index)}`,
+                display: `${this.renderCustomWidgetFields(widget, index)}${customGrid(`${sorted.display}${
+                    this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}`)}`,
+                advanced: customGrid(sorted.advanced),
+            })}${this.renderWidgetSaveBar(index)}</div>`;
         }
         const grouped = { connection: '', display: '', advanced: '' };
         drawn.forEach(([field, html]) => { grouped[this.widgetFieldSection(field.key)] += html; });

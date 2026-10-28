@@ -171,10 +171,18 @@ test.describe('the widgets panel remembers a saved widget', () => {
  * the value as out of range, the tile fell back to five minutes, and nothing
  * said any of that had happened — which reads as a setting that will not save.
  */
+// A section the panel folds by default (Connection once a widget is connected,
+// Advanced always) has to be opened before its fields can be reached.
+async function openSection(scope, name) {
+    const details = scope.locator(`[data-widget-section="${name}"]`);
+    if (await details.getAttribute('open') === null) await details.locator('summary').click();
+}
+
 test.describe('the custom widget explains its refresh interval', () => {
     test('the field carries its range, and an ℹ that explains the choice', async ({ page }) => {
         await openWidgets(page);
         await addWidget(page, 'custom');
+        await openSection(page, 'advanced');
 
         // The bounds and the default are on screen, not only in the validator.
         const hint = page.locator('[data-widget-field-hint="ttl"]');
@@ -363,6 +371,7 @@ test.describe('a stored widget key survives a save', () => {
             const toggle = page.locator(`[data-widget-settings="${index}"]`);
             if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
             const again = page.locator(`[data-widget-detail="${index}"]`);
+            await openSection(again, 'connection');
             if (repick) await again.locator('[data-widget-preset]').selectOption(service);
             const label = again.locator('[data-custom-field="label"]').first();
             await label.fill(`${service} figure`);
@@ -407,6 +416,7 @@ test('a key typed again keeps the preset header', async ({ page }) => {
     const toggle = page.locator(`[data-widget-settings="${index}"]`);
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
     const again = page.locator(`[data-widget-detail="${index}"]`);
+    await openSection(again, 'connection');
     await again.locator('[data-widget-auth="secret"]').fill('second-token');
     await again.locator('[data-widget-auth="secret"]').blur();
     // The key alone is the edit: Save comes on for it.

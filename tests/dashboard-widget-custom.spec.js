@@ -129,6 +129,8 @@ test.describe('the custom widget', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
         await page.waitForSelector('[data-widget-settings]', { timeout: 15_000 });
         await page.locator('[data-widget-settings]').first().click();
+        // A widget with an address starts with Connection folded.
+        await page.locator('[data-widget-section="connection"] summary').click();
 
         await expect(page.locator('[data-widget-setting="url"]')).toBeVisible({ timeout: 15_000 });
         await expect(page.locator('[data-custom-field="path"]')).toHaveValue('photos');
@@ -243,14 +245,14 @@ test.describe('the custom widget', () => {
         expect(geometry.overflowing).toBe(0);
         expect(geometry.overlapping).toBe(0);
         /*
-         * Five questions, said out loud rather than left as a wall of adjacent
-         * boxes. "Start from a service" is first: it is the one that fills the
-         * others in, so it comes before them. "Try it" sits between the figures
-         * and the grid, where it is read -- after the paths it checks, before
-         * the tile they end up on.
+         * The questions, said out loud rather than left as a wall of adjacent
+         * boxes, now under the three section titles. "Start from a service" is
+         * first in Connection: it is the one that fills the others in. "Try it"
+         * closes Connection, since the probe asks that address; the figures it
+         * checks sit in Display.
          */
-        expect(geometry.groups).toHaveLength(5);
-        expect(geometry.groups[0]).toBe('Start from a service');
+        expect(geometry.groups).toEqual(['Connection', 'Start from a service', 'Try it',
+            'Display', 'Figures to read', 'Advanced']);
         // Placeholders vanish once a row has a value; the header does not.
         expect(geometry.hasHeader).toBe(true);
     });
