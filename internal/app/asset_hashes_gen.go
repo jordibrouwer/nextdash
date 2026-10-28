@@ -385,7 +385,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/whats-new-stub.js":                                   "fe4ed2725003",
 	"js/widgets-tutorial.js":                                 "abf0620aeece",
 	"js/write-api.js":                                        "62fb852a5048",
-	"nextDash-cheatsheet.pdf":                                "5d08b0761c49",
+	"nextDash-cheatsheet.pdf":                                "3a5c58095cd9",
 	"status/status.css":                                      "a9ce0e7f22f9",
 	"status/status.js":                                       "02443ce43d7b",
 	"vendor/qrcode-generator/1.4.4/qrcode.js":                "18ae399f8118",
