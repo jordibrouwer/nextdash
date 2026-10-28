@@ -8167,6 +8167,93 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /*
+ * Connection, Display, Advanced: the three folding sections every widget's
+ * panel is made of. Each is a .config-custom-group too, so its title reads
+ * like every other group heading in the panel; the <details> itself is a
+ * block, and the body under the summary does the stacking, so whatever a
+ * caller puts in a section -- an auto-fit grid, the figures table, a sign-in
+ * form -- gets the full width and never more than it.
+ */
+.config-widget-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+.config-widget-section {
+    display: block;
+    min-width: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-primary);
+}
+
+.config-widget-section:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.config-widget-section > summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    border-radius: var(--radius-3, 0.25rem);
+}
+
+.config-widget-section > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* The marker: a chevron that points down when the section is open. */
+.config-widget-section > summary::before {
+    content: '';
+    flex: none;
+    width: 0.4em;
+    height: 0.4em;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+}
+
+.config-widget-section[open] > summary::before {
+    transform: rotate(45deg);
+}
+
+.config-widget-section > summary:hover {
+    color: var(--text-primary);
+}
+
+/* The fallback is load-bearing -- see the note on .lvs-filter:focus-visible. */
+.config-widget-section > summary:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
+.config-widget-section-body {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    min-width: 0;
+    margin-top: 10px;
+}
+
+/* The setup note keeps its own border; the section body spaces it. */
+.config-widget-section-body > .config-widget-setup {
+    margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-widget-section > summary::before {
+        transition: none;
+    }
+}
+
+/*
  * The sign-in, under the address it belongs to.
  *
  * Its own block rather than another cell in the grid above: the address, the

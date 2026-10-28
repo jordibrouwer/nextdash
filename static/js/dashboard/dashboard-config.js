@@ -1363,6 +1363,11 @@ class DashboardConfig {
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
+        // Which widget sections the reader folded or opened lasts one visit to
+        // Config and is never stored. Cleared on the way in rather than out:
+        // a repaint still in flight as the view closes reads the old panel
+        // and would put back what a clear on the way out removed.
+        this._widgetSectionOpen = {};
         // The dashboard may have written categories since the Structure table
         // last read them (a move to another page, say): read them again.
         this.forgetCategoryLists();
@@ -17106,6 +17111,19 @@ class DashboardConfig {
                   ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
               ] },
         ],
+    };
+
+    /*
+     * Which of the three sections of a widget's panel a setting sits in.
+     *
+     * One table for every kind, so a key means the same place on all of them:
+     * where to read from is Connection, how often and what a click does is
+     * Advanced, and everything else -- rows, the show* boxes, filters, a look
+     * -- is Display, which is where widgetFieldSection puts a key not listed.
+     */
+    static WIDGET_FIELD_SECTIONS = {
+        connection: ['url', 'method', 'feedUrls', 'host'],
+        advanced: ['refreshSeconds', 'ttl', 'click', 'target'],
     };
 
     /*

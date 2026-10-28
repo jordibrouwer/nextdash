@@ -86,6 +86,8 @@ test.describe('wide: list and detail side by side', () => {
 
     test('an unsaved draft survives selecting another widget and back', async ({ page }) => {
         await openWithWidgets(page, 1600);
+        // Refresh lives under Advanced, which starts folded.
+        await side(page).locator('[data-widget-section="advanced"] > summary').click();
         const field = side(page).locator('[data-widget-setting="refreshSeconds"]');
         await field.fill('45');
         await field.dispatchEvent('change');
@@ -170,6 +172,9 @@ test.describe('narrow: the detail opens under its row', () => {
     test('a field being typed in keeps its focus and value across the breakpoint', async ({ page }) => {
         await openWithWidgets(page, 820);
         await row(page, 'Processor').locator('[data-widget-settings]').click();
+        // Refresh lives under Advanced, which starts folded; opened, it stays
+        // open in both layouts.
+        await row(page, 'Processor').locator('[data-widget-section="advanced"] > summary').click();
         const inline = row(page, 'Processor').locator('[data-widget-setting="refreshSeconds"]');
         await inline.fill('45');
         await expect(inline).toBeFocused();

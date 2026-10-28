@@ -275,7 +275,8 @@ test.describe('the processor widget in config', () => {
             .evaluate((li) => li.classList.contains('is-open'));
         if (!isOpen) await page.locator(`[data-widget-settings="${idx}"]`).click();
         const detail = page.locator(`[data-widget-detail="${idx}"]`);
-        await expect(detail.locator('.config-widget-settings-body')).toBeVisible();
+        // The first grid: Display's. Advanced has a grid of its own, folded.
+        await expect(detail.locator('.config-widget-settings-body').first()).toBeVisible();
         await expect(detail.locator('.config-widget-setup')).toBeVisible();
         // The panel opens with a transition; read widths only once they agree.
         let lastWidths = '';

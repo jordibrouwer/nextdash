@@ -279,6 +279,10 @@
     repaintWidgetsBody() {
         const body = document.getElementById('config-widgets-body');
         if (!body) { this.render(); return; }
+        // Read off the screen as well as from the toggle event: that event is
+        // queued, and a repaint landing between a click and its dispatch would
+        // otherwise drop the section the reader just opened.
+        body.querySelectorAll('details[data-widget-section]').forEach((el) => this.rememberWidgetSection(el));
         body.innerHTML = this.renderWidgetsTab();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindWidgetsEditor(container);
@@ -2486,134 +2490,10 @@
          */
         const draft = this.widgetDraft(index);
         const widget = { ...stored, config: draft?.config || stored.config || {} };
-        const config = widget.config || {};
-        const rows = fields.map((field) => {
-            const label = esc(this.t(field.label[0], field.label[1]));
-            const id = `widget-${index}-${esc(field.key)}`;
-            if (field.kind === 'bool') {
-                return `
-                    <label class="config-toggle config-toggle--inline">
-                        <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
-                            data-widget-index="${index}" data-widget-kind="bool"
-                            ${(field.defaultOn ? config[field.key] !== false : Boolean(config[field.key])) ? 'checked' : ''}>
-                        <span>${label}${this.widgetFieldInfoButton(field, index)}</span>
-                    </label>`;
-            }
-            if (field.kind === 'int') {
-                /*
-                 * The bounds were on the input and nowhere a reader looks.
-                 *
-                 * Someone testing the refresh typed 5, the server brought it up
-                 * to 30, and with the range unwritten there was no way to know
-                 * that had happened or why. So the field says what it takes,
-                 * and where the choice needs more than a line, an ℹ opens the
-                 * same dialog every other setting in config uses.
-                 */
-                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                const info = this.widgetFieldInfoButton(field, index);
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${info}</label>
-                        <input type="number" id="${id}" class="config-text config-text--number"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="int" min="${field.min}" max="${field.max}"
-                            value="${esc(config[field.key] ?? '')}"
-                            placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
-                        ${hint ? `<p class="config-widget-field-hint" data-widget-field-hint="${esc(field.key)}">${esc(hint)}</p>` : ''}
-                    </div>`;
-            }
-            if (field.kind === 'choice') {
-                /*
-                 * A named choice from a short list, written into the draft as
-                 * text -- which is what it is, and means updateWidgetDraft
-                 * needs nothing new to read it.
-                 */
-                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                const optionList = typeof field.options === 'function' ? field.options(this) : field.options;
-                const current = String(config[field.key] || optionList[0][0]);
-                const choices = optionList.map(([value, text]) =>
-                    `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${
-                        esc(this.t(text[0], text[1]))}</option>`).join('');
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                        <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
-                            data-widget-index="${index}" data-widget-kind="text">${choices}</select>
-                        ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
-                    </div>`;
-            }
-            if (field.kind === 'text') {
-                const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                        <input type="text" id="${id}" class="config-text"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="text" maxlength="${field.maxlength || 200}"
-                            value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
-                    </div>`;
-            }
-            /*
-             * A list of addresses, one per line.
-             *
-             * Not the tags box: that is one comma-separated line capped at 400
-             * characters, which is a sentence's worth of tags and nowhere near
-             * a handful of feed addresses -- and a comma is legal inside a URL,
-             * so splitting on it would quietly cut one in half.
-             */
-            if (field.kind === 'urlList') {
-                const lines = Array.isArray(config[field.key]) ? config[field.key].join('\n') : '';
-                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                        <textarea id="${id}" class="config-text config-widget-urls" rows="4"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="urlList"
-                            placeholder="${esc(this.t('config.widgetFeedUrlsPlaceholder',
-                                'https://example.com/feed.xml'))}">${esc(lines)}</textarea>
-                        ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
-                    </div>`;
-            }
-            if (field.kind === 'tags') {
-                const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
-                // A field whose values are discoverable offers them: the disks
-                // this machine actually has, filled in after they are fetched.
-                const suggestions = field.suggest
-                    ? `<div class="config-widget-suggest" data-widget-suggest="${esc(field.suggest)}"
-                            data-widget-suggest-index="${index}"
-                            data-widget-suggest-key="${esc(field.key)}"></div>`
-                    : '';
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                        <input type="text" id="${id}" class="config-text"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="tags" maxlength="400" value="${esc(value)}"
-                            placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
-                        ${suggestions}
-                    </div>`;
-            }
-            // checkset: an absent list means all, which is the default for the
-            // health widget's figures and reads better than every box ticked.
-            // A field may name its own starting selection (`defaults`) when
-            // "everything" is not what the tile draws until it is told.
-            const chosen = Array.isArray(config[field.key]) ? config[field.key] : (field.defaults || null);
-            const boxes = (field.options || []).map(([value, text]) => `
-                <label class="config-toggle config-toggle--inline">
-                    <input type="checkbox" data-widget-setting="${esc(field.key)}"
-                        data-widget-index="${index}" data-widget-kind="checkset"
-                        ${(field.defaults || []).includes(value) ? 'data-widget-default' : ''}
-                        value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
-                    <span>${esc(this.t(text[0], text[1]))}</span>
-                </label>`).join('');
-            return `
-                <div class="config-widget-field">
-                    <span class="config-widget-field-label">${label}${
-                        this.widgetFieldInfoButton(field, index)}</span>
-                    <div class="config-widget-checkset">${boxes}</div>
-                </div>`;
-        }).join('');
+        // Each field drawn once; the media and Custom paths take them as one
+        // string, the generic path sorts them into its three sections.
+        const drawn = fields.map((field) => [field, this.renderWidgetField(field, widget, index)]);
+        const rows = drawn.map(([, html]) => html).join('');
         const mediaService = DashboardConfig.MEDIA_SERVICES?.[widget.type];
         if (mediaService && typeof this.renderMediaSettings === 'function') {
             return this.renderMediaSettings(widget, index, rows, mediaService);
@@ -2648,6 +2528,9 @@
                 ${this.renderWidgetSaveBar(index)}
             </div>`;
         }
+        const grouped = { connection: '', display: '', advanced: '' };
+        drawn.forEach(([field, html]) => { grouped[this.widgetFieldSection(field.key)] += html; });
+        const grid = (html) => (html ? `<div class="config-widget-settings-body">${html}</div>` : '');
         /*
          * The setup note sits outside the settings grid rather than in it.
          *
@@ -2655,11 +2538,239 @@
          * `grid-column: 1 / -1` cannot reliably claim the full row -- in Safari
          * the note landed as one narrow column beside Width and Refresh, with
          * the lines to copy wrapped down a strip. Above the grid it is simply a
-         * block, and needs nothing from the layout to be readable.
+         * block, and needs nothing from the layout to be readable. It is what
+         * the widget needs from the host before it can read anything, so it
+         * opens the Connection section.
+         *
+         * The Save bar stays outside the sections: it is about the whole panel,
+         * and folding a section must never fold it away with it.
          */
-        return `${this.renderWidgetSetupNote(widget.type)}<div class="config-widget-settings-body">${
-            this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}${rows}${
-            this.renderWidgetSaveBar(index)}</div>`;
+        return `<div class="config-widget-sections">${this.renderWidgetSections(widget, index, {
+            connection: `${this.renderWidgetSetupNote(widget.type)}${grid(grouped.connection)}`,
+            display: grid(`${this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}${
+                grouped.display}`),
+            advanced: grid(grouped.advanced),
+        })}${this.renderWidgetSaveBar(index)}</div>`;
+    },
+
+    /*
+     * One setting of a widget, as its kind draws it: a tickbox, a number, a
+     * choice, a line of text, a list of addresses, tags or a set of boxes.
+     *
+     * Its own function so every path through the panel -- the generic kinds,
+     * the media services, Custom -- draws a field the same way, whichever
+     * section it then lands in. `widget` carries the draft's config.
+     */
+    renderWidgetField(field, widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const config = widget?.config || {};
+        const label = esc(this.t(field.label[0], field.label[1]));
+        const id = `widget-${index}-${esc(field.key)}`;
+        if (field.kind === 'bool') {
+            return `
+                <label class="config-toggle config-toggle--inline">
+                    <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
+                        data-widget-index="${index}" data-widget-kind="bool"
+                        ${(field.defaultOn ? config[field.key] !== false : Boolean(config[field.key])) ? 'checked' : ''}>
+                    <span>${label}${this.widgetFieldInfoButton(field, index)}</span>
+                </label>`;
+        }
+        if (field.kind === 'int') {
+            /*
+             * The bounds were on the input and nowhere a reader looks.
+             *
+             * Someone testing the refresh typed 5, the server brought it up
+             * to 30, and with the range unwritten there was no way to know
+             * that had happened or why. So the field says what it takes,
+             * and where the choice needs more than a line, an ℹ opens the
+             * same dialog every other setting in config uses.
+             */
+            const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+            const info = this.widgetFieldInfoButton(field, index);
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${info}</label>
+                    <input type="number" id="${id}" class="config-text config-text--number"
+                        data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                        data-widget-kind="int" min="${field.min}" max="${field.max}"
+                        value="${esc(config[field.key] ?? '')}"
+                        placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
+                    ${hint ? `<p class="config-widget-field-hint" data-widget-field-hint="${esc(field.key)}">${esc(hint)}</p>` : ''}
+                </div>`;
+        }
+        if (field.kind === 'choice') {
+            /*
+             * A named choice from a short list, written into the draft as
+             * text -- which is what it is, and means updateWidgetDraft
+             * needs nothing new to read it.
+             */
+            const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+            const optionList = typeof field.options === 'function' ? field.options(this) : field.options;
+            const current = String(config[field.key] || optionList[0][0]);
+            const choices = optionList.map(([value, text]) =>
+                `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${
+                    esc(this.t(text[0], text[1]))}</option>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                    <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
+                        data-widget-index="${index}" data-widget-kind="text">${choices}</select>
+                    ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
+                </div>`;
+        }
+        if (field.kind === 'text') {
+            const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                    <input type="text" id="${id}" class="config-text"
+                        data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                        data-widget-kind="text" maxlength="${field.maxlength || 200}"
+                        value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
+                </div>`;
+        }
+        /*
+         * A list of addresses, one per line.
+         *
+         * Not the tags box: that is one comma-separated line capped at 400
+         * characters, which is a sentence's worth of tags and nowhere near
+         * a handful of feed addresses -- and a comma is legal inside a URL,
+         * so splitting on it would quietly cut one in half.
+         */
+        if (field.kind === 'urlList') {
+            const lines = Array.isArray(config[field.key]) ? config[field.key].join('\n') : '';
+            const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                    <textarea id="${id}" class="config-text config-widget-urls" rows="4"
+                        data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                        data-widget-kind="urlList"
+                        placeholder="${esc(this.t('config.widgetFeedUrlsPlaceholder',
+                            'https://example.com/feed.xml'))}">${esc(lines)}</textarea>
+                    ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
+                </div>`;
+        }
+        if (field.kind === 'tags') {
+            const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
+            // A field whose values are discoverable offers them: the disks
+            // this machine actually has, filled in after they are fetched.
+            const suggestions = field.suggest
+                ? `<div class="config-widget-suggest" data-widget-suggest="${esc(field.suggest)}"
+                        data-widget-suggest-index="${index}"
+                        data-widget-suggest-key="${esc(field.key)}"></div>`
+                : '';
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                    <input type="text" id="${id}" class="config-text"
+                        data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                        data-widget-kind="tags" maxlength="400" value="${esc(value)}"
+                        placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
+                    ${suggestions}
+                </div>`;
+        }
+        // checkset: an absent list means all, which is the default for the
+        // health widget's figures and reads better than every box ticked.
+        // A field may name its own starting selection (`defaults`) when
+        // "everything" is not what the tile draws until it is told.
+        const chosen = Array.isArray(config[field.key]) ? config[field.key] : (field.defaults || null);
+        const boxes = (field.options || []).map(([value, text]) => `
+            <label class="config-toggle config-toggle--inline">
+                <input type="checkbox" data-widget-setting="${esc(field.key)}"
+                    data-widget-index="${index}" data-widget-kind="checkset"
+                    ${(field.defaults || []).includes(value) ? 'data-widget-default' : ''}
+                    value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
+                <span>${esc(this.t(text[0], text[1]))}</span>
+            </label>`).join('');
+        return `
+            <div class="config-widget-field">
+                <span class="config-widget-field-label">${label}${
+                    this.widgetFieldInfoButton(field, index)}</span>
+                <div class="config-widget-checkset">${boxes}</div>
+            </div>`;
+    },
+
+    /** Which section a setting belongs in: Display unless the table says otherwise. */
+    widgetFieldSection(key) {
+        const table = DashboardConfig.WIDGET_FIELD_SECTIONS || {};
+        if ((table.connection || []).includes(key)) return 'connection';
+        if ((table.advanced || []).includes(key)) return 'advanced';
+        return 'display';
+    },
+
+    /*
+     * Whether the widget already has a saved way in: an address, feeds or a
+     * stored key. Read from what is stored, not from the draft -- typing the
+     * first address must not fold the section shut around the caret.
+     */
+    widgetHasConnection(widget, index) {
+        const stored = (this._widgetBlocks || [])[index];
+        const block = stored && String(stored.id) === String(widget?.id) ? stored : widget;
+        const config = block?.config || {};
+        if (config.server || config.url) return true;
+        if (Array.isArray(config.feedUrls) && config.feedUrls.length) return true;
+        return this.storedCredentialState(block).kind !== 'none';
+    },
+
+    /*
+     * Whether a section is drawn open.
+     *
+     * The reader's own toggle wins, kept per widget for as long as Config is
+     * open, so a repaint (typing, Connect, a preset) never folds a section
+     * somebody opened. Otherwise: Display open, Advanced shut, Connection open
+     * only while there is nothing to connect with yet.
+     */
+    widgetSectionIsOpen(widget, name, hasConnection) {
+        const chosen = this._widgetSectionOpen?.[widget?.id]?.[name];
+        if (typeof chosen === 'boolean') return chosen;
+        if (name === 'connection') return !hasConnection;
+        return name === 'display';
+    },
+
+    /*
+     * Keep a section's state when it is not what the panel would draw anyway.
+     *
+     * Only a difference is a choice: a section parsed with `open` fires toggle
+     * too, and recording that would pin today's default -- a Connection opened
+     * for a widget with no address yet would never fold once it had one.
+     */
+    rememberWidgetSection(details) {
+        const id = details.getAttribute('data-widget-section-of');
+        const name = details.getAttribute('data-widget-section');
+        if (!id || !name) return;
+        const index = this.widgetIndexOfId(id);
+        const block = index == null ? null : this._widgetBlocks[index];
+        if (block && details.open === this.widgetSectionIsOpen(block, name, this.widgetHasConnection(block, index))) return;
+        this._widgetSectionOpen = this._widgetSectionOpen || {};
+        this._widgetSectionOpen[id] = { ...this._widgetSectionOpen[id], [name]: details.open };
+    },
+
+    /*
+     * The three sections every widget's panel is made of, in a fixed order.
+     *
+     * Each part is markup its caller drew; an empty one is left out rather than
+     * drawn as a header over nothing. A <details> per section, so folding is
+     * the browser's own -- Enter and Space on the summary, and a folded
+     * section's fields out of the Tab order -- with nothing to bind.
+     */
+    renderWidgetSections(widget, index, parts = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const titles = {
+            connection: ['config.widgetSectionConnection', 'Connection'],
+            display: ['config.widgetSectionDisplay', 'Display'],
+            advanced: ['config.widgetSectionAdvanced', 'Advanced'],
+        };
+        const hasConnection = this.widgetHasConnection(widget, index);
+        return ['connection', 'display', 'advanced']
+            .filter((name) => String(parts[name] || '').trim() !== '')
+            .map((name) => `
+                <details class="config-widget-section config-custom-group" data-widget-section="${name}"
+                    data-widget-index="${index}" data-widget-section-of="${esc(widget?.id ?? '')}"${
+                        this.widgetSectionIsOpen(widget, name, hasConnection) ? ' open' : ''}>
+                    <summary class="config-custom-group-title">${esc(this.t(titles[name][0], titles[name][1]))}</summary>
+                    <div class="config-widget-section-body">${parts[name]}</div>
+                </details>`).join('');
     },
 
     /*
@@ -3182,6 +3293,12 @@
         body.dataset.widgetsDelegated = 'true';
 
         const indexOn = (el, attr) => Number(el.getAttribute(attr));
+
+        // A section folded or opened by the reader, kept so a repaint draws it
+        // the same way. In the capture phase because `toggle` does not bubble.
+        body.addEventListener('toggle', (event) => {
+            if (event.target?.matches?.('details[data-widget-section]')) this.rememberWidgetSection(event.target);
+        }, true);
 
         body.addEventListener('click', (event) => {
             const target = event.target;
