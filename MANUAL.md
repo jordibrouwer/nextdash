@@ -2249,7 +2249,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 **Fresh** shows whether a bookmarked site has published something since you last opened it.
 
-- Switch it on under **Behavior → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
+- Switch it on under **Bookmarks → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
 - A bookmark with news carries a count on its row, and the **Fresh** collection lists them, newest first. Opening the bookmark clears the count.
 - Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**, and **Retry all** when more than one has stopped.
 - The bookmark editor shows a **Feed** line when there is one. `status:feed` / `-status:feed` search for them. **Mark rows that publish** (off by default) puts a quiet dot on those rows.
@@ -4046,7 +4046,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 
 In the rail the Containers row opens a group labelled **Services** (Containers, Unraid, Glances, Monitoring, Status page) and Statistics one labelled **Info** (Statistics, Help, Logs, About); the labels are headings for the eye, not tabs.
 
-Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Behavior → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
+Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Bookmarks → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
 <details>
 <summary>📷 Screenshot — Config → Appearance, full page</summary>

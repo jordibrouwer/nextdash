@@ -491,6 +491,9 @@ class DashboardConfig {
         // Status & alerts left Behavior for a section of its own.
         if (DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
             && raw.startsWith('config/behavior/')) return 'monitoring';
+        // Fresh left Behavior for Bookmarks.
+        if (DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
+            && raw.startsWith('config/behavior/')) return 'bookmarks';
         if (raw === 'config') return 'overview';
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
@@ -527,7 +530,8 @@ class DashboardConfig {
         if (raw === 'config/behavior/datetime') return 'datetime';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw.startsWith('config/behavior/')) {
-            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
+            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
+                || DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
             if (moved) return moved;
         }
         // Branding lived on Display, then moved to Header with the browser tab.
@@ -995,6 +999,9 @@ class DashboardConfig {
             if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
                 return { section: 'appearance', subTab };
             }
+            if (section === 'behavior' && DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[subTab]) {
+                return { section: 'bookmarks', subTab: DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[subTab] };
+            }
             if (section === 'behavior' && DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab]) {
                 return { section: 'monitoring', subTab: DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab] };
             }
@@ -1217,7 +1224,12 @@ class DashboardConfig {
      * open of Behavior opens Behavior.
      */
     followMovedBehaviorTab(section) {
-        if (section !== 'behavior' || !this._behaviorTabMoved) return section;
+        if (section !== 'behavior') return section;
+        if (this._behaviorTabToBookmarks) {
+            this._behaviorTabToBookmarks = false;
+            return 'bookmarks';
+        }
+        if (!this._behaviorTabMoved) return section;
         this._behaviorTabMoved = false;
         return 'monitoring';
     }
@@ -6406,6 +6418,7 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             view: ['config.bmTabView', 'View'],
+            fresh: ['config.behaviorTabFresh', 'Fresh'],
             tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             'tag-rules': ['config.bmTabTagRules', 'Your rules'],
@@ -10566,7 +10579,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'bookmarks',
                 tab: 'fresh',
                 title: t('config.feedsTitle', 'Fresh'),
                 demoLocked: true,
@@ -12507,10 +12520,17 @@ class DashboardConfig {
     // on its own" is already answered.
     // The inbox's own settings moved to Config → Inbox; Fresh kept the tab.
     // Status & alerts was split in two, then left for Monitoring.
-    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'privacy'];
+    static BEHAVIOR_TABS = ['general', 'search', 'privacy'];
 
     /** Behavior tabs that were folded into another one still open it. */
-    static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh' };
+    static BEHAVIOR_TAB_ALIASES = {};
+
+    /**
+     * Behavior tabs that left for Bookmarks: Fresh sits between View and Tags
+     * there. 'inbox' was folded into Fresh before that, so it lands there too.
+     * Mirrored in dashboard-config-loader.js.
+     */
+    static BOOKMARKS_FROM_BEHAVIOR = { fresh: 'fresh', inbox: 'fresh' };
 
     /*
      * Monitoring: what is checked, how you hear of it, and when to keep
@@ -12527,7 +12547,6 @@ class DashboardConfig {
      * the new place from wherever it arrives.
      */
     static MONITORING_FROM_BEHAVIOR = { status: 'checks', checks: 'checks', notifications: 'notifications' };
-            fresh: ['config.behaviorTabFresh', 'Fresh'],
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -13492,8 +13511,18 @@ class DashboardConfig {
             else this._behaviorTabMoved = true;
             return;
         }
+        // Fresh now sits on Bookmarks: the tab is set there, and the section
+        // follows it the way Monitoring's does.
+        const toBookmarks = DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[tab];
+        if (toBookmarks) {
+            this.bmTab = toBookmarks;
+            if (this.section === 'behavior') this.section = 'bookmarks';
+            else this._behaviorTabToBookmarks = true;
+            return;
+        }
         this._behaviorTabMoved = false;
-        // An old id ('inbox') opens the tab that holds those settings now.
+        this._behaviorTabToBookmarks = false;
+        // An old id opens the tab that holds those settings now.
         tab = DashboardConfig.BEHAVIOR_TAB_ALIASES[tab] || tab;
         this._behaviorTab = tab;
         DashboardConfig.rememberTab('behavior', tab);
@@ -14023,7 +14052,7 @@ class DashboardConfig {
         }
         // Bookmarks → View and Settings: the panels redrawn, so ↺, the count
         // and "Only changed" follow the change just made.
-        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings')) {
+        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings' || this.bmTab === 'fresh')) {
             const body = document.getElementById('config-bm-body');
             if (body) {
                 body.innerHTML = this.renderBmTab();
@@ -14105,7 +14134,7 @@ class DashboardConfig {
      */
     static LIBRARY_TOUR_TIP_ID = 'bookmarksTutorialV1';
 
-    static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
+    static BM_TABS = ['view', 'fresh', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -18212,6 +18241,9 @@ class DashboardConfig {
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
         }
+        if (this.bmTab === 'fresh') {
+            return this.renderControlPanels(this.panelsFor('bookmarks', 'fresh'), 'behavior');
+        }
         if (this.bmTab === 'view') {
             return this.renderBookmarksViewTab();
         }
@@ -20807,7 +20839,7 @@ class DashboardConfig {
             this.bindTagRulesTab(container);
             return;
         }
-        if (this.bmTab === 'settings') {
+        if (this.bmTab === 'settings' || this.bmTab === 'fresh') {
             return;
         }
         if (this.bmTab === 'view') {
@@ -25245,7 +25277,7 @@ class DashboardConfig {
         },
         'config.helpFreshTitle': {
             isOn: (s) => s.feedsEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'fresh' },
+            go: { section: 'bookmarks', bmTab: 'fresh' },
         },
         'config.helpContainersTitle': {
             isOn: (s) => s.dockerViewEnabled !== false,

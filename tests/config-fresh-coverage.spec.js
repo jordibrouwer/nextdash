@@ -19,9 +19,8 @@ async function openFreshPanel(page) {
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
         const c = window.dashboardInstance.config;
-        (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
-        c.behaviorTab = 'fresh';
-        c.render();
+        c.bmTab = 'fresh';
+        c.openConfigView('bookmarks');
     });
     await page.waitForSelector('[data-config-action="findFeeds"]', { timeout: 15_000 });
 }

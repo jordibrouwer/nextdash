@@ -36,15 +36,13 @@ test('Appearance opens on its first tab, with the settings already there', async
     await expect(page.locator('.config-preview')).toHaveAttribute('data-preview-focus', 'all');
 });
 
-test('Behavior has four tabs, and the moved settings are where the tabs say', async ({ page }) => {
+test('Behavior has three tabs, and the moved settings are where the tabs say', async ({ page }) => {
     await open(page, '#config/behavior');
     await expect(page.locator('[data-behavior-tab]')).toHaveText(
-        ['General', 'Keyboard & search', 'Fresh', 'Privacy & sync']);
+        ['General', 'Keyboard & search', 'Privacy & sync']);
 
     await page.locator('[data-behavior-tab="search"]').click();
     await expect(page.locator('[data-behavior-field="globalShortcuts"]')).toBeVisible();
-    await page.locator('[data-behavior-tab="fresh"]').click();
-    await expect(page.locator('[data-behavior-field="feedsEnabled"]')).toBeVisible();
     await page.locator('[data-behavior-tab="privacy"]').click();
     await expect(page.locator('[data-behavior-field="enableSessionTips"]')).toBeVisible();
     await expect(page.locator('[data-behavior-field="deviceSpecificSettings"]')).toBeVisible();
@@ -70,10 +68,15 @@ test('Monitoring has Checks, Notifications and Schedules, each with its settings
 });
 
 test('an old tab link opens the tab that holds its settings now', async ({ page }) => {
-    // Inbox & Fresh was the tab's name while it held the inbox's settings too.
-    await open(page, '#config/behavior/inbox');
-    await expect(page.locator('[data-behavior-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
-    await expect.poll(() => hash(page)).toBe('#config/behavior/fresh');
+    // Inbox & Fresh was the tab's name while it held the inbox's settings too;
+    // Fresh itself left Behavior for Bookmarks, between View and Tags.
+    for (const old of ['inbox', 'fresh']) {
+        await open(page, `#config/behavior/${old}`);
+        await expect(page.locator('[data-bm-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('[data-behavior-field="feedsEnabled"]')).toBeVisible();
+        await expect.poll(() => hash(page)).toBe('#config/bookmarks/fresh');
+    }
+    await expect(page.locator('[data-bm-tab]')).toHaveText(['View', 'Fresh', 'Tags', 'Tag suggestions', 'Your rules', 'Settings', 'Local copies']);
 
     // Status & alerts was split in Behavior, then left for Monitoring: all
     // three of its old addresses land there, and the bar says where.

@@ -32,9 +32,10 @@ test.describe('where Tags lives', () => {
         const tabs = await tabNames(page, 'data-bm-tab');
 
         expect(tabs).toContain('tags');
-        // The order is the point: how the list looks, then the words on it, then
-        // what the app proposes adding to them.
-        expect(tabs.indexOf('tags')).toBe(tabs.indexOf('view') + 1);
+        // The order is the point: how the list looks, what is new on it, then the
+        // words on it, then what the app proposes adding to them.
+        expect(tabs.indexOf('fresh')).toBe(tabs.indexOf('view') + 1);
+        expect(tabs.indexOf('tags')).toBe(tabs.indexOf('fresh') + 1);
         expect(tabs.indexOf('tags')).toBe(tabs.indexOf('tag-suggestions') - 1);
     });
 

@@ -83,6 +83,8 @@ class DashboardConfigLoader {
         // Mirrors DashboardConfig.MONITORING_FROM_BEHAVIOR: Status & alerts
         // left Behavior for Monitoring.
         if (/^config\/behavior\/(status|checks|notifications)$/.test(raw)) return 'monitoring';
+        // Fresh (and the inbox tab folded into it) left Behavior for Bookmarks.
+        if (/^config\/behavior\/(fresh|inbox)$/.test(raw)) return 'bookmarks';
         if (raw === 'config') return 'overview';
         // Pages & tags is Structure now, and its Tags tab went to
         // Bookmarks. Both old shapes are still in people's links, and this
@@ -145,8 +147,8 @@ class DashboardConfigLoader {
             // Mirrors DashboardConfig.APPEARANCE_TAB_ALIASES: a location saved
             // while the header tab was called "toolbar" still opens it.
             if (section === 'appearance' && subTab === 'toolbar') subTab = 'header';
-            // Mirrors DashboardConfig.BEHAVIOR_TAB_ALIASES.
-            if (section === 'behavior' && subTab === 'inbox') subTab = 'fresh';
+            // Mirrors DashboardConfig.BOOKMARKS_FROM_BEHAVIOR.
+            if (section === 'behavior' && (subTab === 'fresh' || subTab === 'inbox')) return { section: 'bookmarks', subTab: 'fresh' };
             return { section, subTab: subTab || null };
         } catch {
             return null;

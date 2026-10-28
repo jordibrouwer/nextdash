@@ -96,12 +96,12 @@ test.describe('Config → Inbox', () => {
         await expect(page.locator('#config-inbox-body [data-behavior-field="inboxViewDblClick"]')).toBeVisible();
     });
 
-    test('Behavior keeps Fresh alone, and the old address still opens it', async ({ page }) => {
+    test('Bookmarks keeps Fresh alone, and the old address still opens it', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/#config/behavior/inbox');
-        await page.waitForSelector('[data-behavior-tab="fresh"]', { timeout: 15_000 });
-        await expect(page.locator('[data-behavior-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('[data-behavior-tab="fresh"]')).toContainText('Fresh');
+        await page.waitForSelector('[data-bm-tab="fresh"]', { timeout: 15_000 });
+        await expect(page.locator('[data-bm-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('[data-bm-tab="fresh"]')).toContainText('Fresh');
         await expect(page.locator('[data-behavior-field="feedsEnabled"]')).toHaveCount(1);
         await expect(page.locator('[data-behavior-field="inboxEnabled"]')).toHaveCount(0);
     });

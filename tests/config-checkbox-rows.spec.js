@@ -44,7 +44,8 @@ test.describe('checkboxes use one row shape', () => {
         const offenders = [];
         for (const [section, tabs, attr] of [
             ['appearance', ['general', 'layout', 'display', 'header', 'buttonbar', 'datetime'], 'data-appearance-tab'],
-            ['behavior', ['general', 'search', 'fresh', 'privacy'], 'data-behavior-tab'],
+            ['behavior', ['general', 'search', 'privacy'], 'data-behavior-tab'],
+            ['bookmarks', ['fresh'], 'data-bm-tab'],
             ['monitoring', ['checks', 'notifications', 'schedules'], 'data-monitoring-tab'],
             ['inbox', ['collecting', 'list', 'panel', 'icon'], 'data-inbox-tab'],
         ]) {
