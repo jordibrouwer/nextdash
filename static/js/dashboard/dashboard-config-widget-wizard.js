@@ -46,9 +46,13 @@
             const pages = this.widgetWizardPages();
             if (pages.length < 2) return '';
             const esc = (v) => this.dash.escapeHtml(v);
-            const chosen = this.isAllPagesView?.()
+            // A choice already made survives the preview being redrawn for
+            // another kind; it is forgotten when the picker opens afresh.
+            const remembered = pages.some((p) => p.id === this._widgetWizardPageId)
+                ? this._widgetWizardPageId : null;
+            const chosen = remembered ?? (this.isAllPagesView()
                 ? Number(this.dash.currentPageId ?? pages[0].id)
-                : this.widgetWizardDefaultPage();
+                : this.widgetWizardDefaultPage());
             return `<label class="config-widget-wizard-page">
                 <span>${esc(this.t('config.widgetsAddOnPage', 'On page'))}</span>
                 <select class="config-select" data-widget-wizard-page>${pages.map((p) =>

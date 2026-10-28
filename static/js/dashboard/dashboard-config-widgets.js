@@ -909,6 +909,7 @@
         const esc = (v) => this.dash.escapeHtml(v);
         if (!window.AppModal?.show) return;
         window.nextdashTrack?.('widget:picker-open');
+        this._widgetWizardPageId = null;
 
         const types = this.widgetCatalogueTypes();
         const fresh = this.newWidgetTypes?.() || [];
@@ -1033,6 +1034,10 @@
                 choose(option, { scroll: false });
                 search.focus({ preventScroll: true });
             }
+        });
+        picker.addEventListener('change', (event) => {
+            const wizardPage = event.target?.closest?.('[data-widget-wizard-page]');
+            if (wizardPage) this._widgetWizardPageId = Number(wizardPage.value);
         });
         picker.addEventListener('dblclick', (event) => {
             const option = event.target?.closest?.('[data-widget-option]');
