@@ -936,6 +936,7 @@ The header has three zones.
 | Pages | `,` | The pages panel |
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
+| Edit | `Shift + M` (no bookmark selected) | Edit mode ([see below](#edit-mode)) |
 
 Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
 
@@ -956,13 +957,33 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 
 While it is away, a small **handle** stands on that edge, so the place it came from stays visible. It grows and brightens as the pointer comes near, and a click on it brings the bar back. There is no handle for a bar in the header or behind the menu, and none on a touch screen, where nothing hovers.
 
-**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of nine chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
+**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of ten chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
 
 **Buttons that come into view.** **Animate the buttons as the bar appears** is off to begin with. Its cards offer five styles: **Swell** (each button grows past its size and settles back, left to right), **Swell from the middle**, **Swell together**, **Unfold** (the bar opens and the buttons pop in) and **Accordion** (the bar opens from the middle and the buttons pop out to both ends). Point at a card, or move the focus to it, and its small bar plays that style; pick one and the real bar plays it at once. From then on it plays each time the bar comes into view: after a load — once no window, card or tour covers the screen — and each time it comes back from the edge it slid into. With reduced motion set in your system, the buttons simply appear.
 
 `:buttons` and `:maxactions` change these from the command palette.
 
 The **★** button in the bottom-right corner opens the release notes. It is left out on a window as narrow as a phone; `:whatsnew` and Help still open them.
+
+<a id="edit-mode"></a>
+
+### ✏️ Edit mode
+
+Edit mode changes the dashboard itself without a trip to Config: names, icons, widths, views, sorting and a widget's settings, all in a panel beside the page.
+
+**Switching it on.** Press `Shift + M` when no bookmark is selected (with one selected, `Shift + M` still moves that bookmark), click the pencil in the action bar, type `:edit mode`, or pick **Edit in panel…** in the right-click menu of a category or widget, which also chooses that block. `Esc` or `Shift + M` switches it off. The mode is for computers and tablets with a wide window; a phone layout never enters it. **Show the edit-mode button** under Config → Appearance → Action bar hides the pencil; the key keeps working.
+
+**While it is on.** A bar at the top says so. A click on a bookmark selects its block instead of opening it, the grid's bare letters, arrows and `Enter` are left alone, and the link preview card stays away and comes back afterwards if you have it on. Clicking a page tab still switches page, and the panel shows that page. `Esc` goes from the inside out: a dialog or menu first, then a field in the panel gives the focus back, then the mode ends.
+
+**The panel.** It opens at the right when you click a block, drawn like the side panel of the views, and the grid gives way. Changes are saved as you make them; `Esc` in a text field puts the old text back.
+
+| You select | The panel offers |
+|------------|------------------|
+| A category | Name, icon, width (one column or spread), view (rows or tiles) and sorting |
+| A widget | Name, width and state; **Settings…** opens the sheet of Config → Widgets over the dashboard, with the same fields |
+| A page | Name, emoji and colour |
+
+A category or widget that is deleted somewhere else clears the panel, and the panel says so.
 
 <a id="the-grid"></a>
 
@@ -1241,6 +1262,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + G` | Glances, from every view (once it is set up in Config) |
 | `Shift + S` or `<` | Config (and back) |
 | `Shift + A` | The theme studio |
+| `Shift + M` | With no bookmark selected, edit mode ([§4](#edit-mode)); with one selected, Move |
 | `>` `:` `?` | Search, commands, finders — from every view |
 | `+` · `Shift + B` · `&` | Full bookmark form · from anywhere · quick add |
 | `/` | Tag cloud (type to find a tag, `Enter` opens its tag view, `Shift + Enter` stacks) |
@@ -1399,7 +1421,9 @@ Results are grouped by why they matched. **Best matches** — a name, or a word 
 
 Links still waiting in the inbox that match a name search appear in their own group at the end of the results; snoozed ones stay out, as they do in the inbox's own list.
 
-With the panel empty, your recent and saved searches show as chips (`←`/`→` and `Enter`).
+With the panel empty, the first group is **Usually now**: up to three bookmarks you tend to open around this time of day, on the same kind of day (weekday or weekend), going by the last eight weeks. It needs at least three opens in that window per bookmark, only appears when three qualify, is worked out in your browser from your own open history, and stays fixed while the panel is open. Under it, your recent and saved searches show as chips (`←`/`→` and `Enter`).
+
+**Actions on a result.** `→` on a bookmark result unfolds its actions under the row: open, open in a new tab, edit, copy the address, health and move to a page. `↑`/`↓` move through them, `Enter` runs one, `←` or `Esc` folds them. On a web result `→` still shows its text beside the list.
 
 **The keyboard tour.** Until you have seen it, the empty panel also lists *Take the keyboard tour* under a **Keyboard** heading (open from the start in Hypr mode, a closed group otherwise). It never opens by itself. Four steps: just start typing, commands start with a colon, finders search the web for you, and three more single keys — `/`, `*` and `!`. `:tour keyboard` plays it any time, and so does the Tour list in Behavior → Privacy & sync → Onboarding.
 
@@ -1513,6 +1537,8 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:collections` | Smart collections on or off |
 | `:telemetry on\|off` | Analytics (reloads the page) |
 | `:cheat` · `:help` · `:whatsnew` · `:digest` · `:reload` | Cheat sheet · release notes · latest weekly digest · reload |
+| `:checkup` | One guided round through what is worth tidying up ([§12](#the-checkup)) |
+| `:edit mode` | Switches edit mode on or off ([§4](#edit-mode)) |
 
 <details>
 <summary>📷 Screenshot — the command palette (<kbd>:</kbd>)</summary>
@@ -2209,13 +2235,18 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 <a id="weekly-digest"></a>
 
-**Weekly digest.** Once a week nextDash sums up what needs you: links that broke, certificates that run out soon, container updates, what you opened most, bookmarks nobody opens, and links waiting in the Inbox. It is on by default and goes out on **Monday at 08:00**, in the time zone of the quiet hours.
+**Weekly digest.** Once a week nextDash sums up what needs you: links that broke, certificates that run out soon, container updates, what is worth tidying up, bookmarks nobody opens, links waiting in the Inbox, and what you opened most. It goes out on **Monday at 08:00** by default, in the time zone of the quiet hours, and cannot be switched off. A fresh install gets its first digest after at least a week: a digest is only sent when its slot falls seven or more days after the install.
 
-- **Where it arrives** — as a browser notification when those are on, through the service under **Downtime alerts**, and once on the dashboard as a card, *Your week in nextDash*, that names the one or two things that matter most. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
-- **Reading it** — **Read the digest** opens a window with counts across the top — broken links, what runs out within 30 days, container updates, never opened — each a way into its view. Under them, in two columns, a part per subject: what it means, the names behind the count (certificates and domains as bars of days left; domains more than 200 days out as a count), and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Review** for never opened and long unopened bookmarks, **Open Inbox**. Last comes **New in nextDash** when a release came out that week: the releases with their highlights, and **Open What's new**. It is news, so it does not count as a part to work through. After a button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the following part. The bar goes once every part is opened, or with **×**. Clicking the push notification opens the same window (`/#digest`), and so do `:digest` and the **Weekly digest** panel on Config's overview, which counts the parts still to open.
-- **Setting it up** — Monitoring → Notifications → **Weekly digest**: **Send a weekly digest**, **On** (the day), **At** (the hour), and which parts go in — **Include broken links and certificates**, **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**. **The latest digest → Show** opens the last one again; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
+- **Where it arrives** — every week as a card in the corner of the dashboard, *Your week in nextDash*, that names the one or two things that matter most; and as a browser notification when those are on, through the service under **Downtime alerts**. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
+- **The card** — **Read the digest** opens the window. **Snooze 1 day** hides the card until tomorrow. **Got it** marks it seen; unless you opened the window, the card returns once the next day and once the day after, and then stays away until the next digest. Progress, snooze and reminders are kept per browser.
+- **Reading it** — the window lists the parts on the left in three groups: **Now** (broken links, certificates, domains, container updates), **Tidy up** (the checkup, never opened, not opened in 30 days) and **To know** (the Inbox, most opened, what is new in nextDash), with a sentence on top that names what matters most. The part you pick is shown in full on the right: what it means, the names behind the count (certificates and domains as bars of days left), and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Start the checkup**, **Review**, **Open Inbox**, **Open What's new**. The close button at the top and **Close** at the bottom are always in view; only the middle scrolls. After a part's button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the one after; it closes itself once every part is opened. Its **×** asks first, because the digest may still hold something important: **Keep it** or **Close until Monday**. Clicking the push notification opens the same window.
+- **Setting it up** — Monitoring → Notifications → **Weekly digest**: **On** (the day), **At** (the hour), and which parts go in — **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**; broken links and certificates always stay. **The latest digest → Show** opens the last one again, as does the digest panel in Config → Overview; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
 
 On the day the digest comes out it goes first, and the daily review card ([§4](#corner-cards)) waits — both offer the same broken and unopened links.
+
+<a id="the-checkup"></a>
+
+**The checkup.** One guided round through what is worth tidying up, on top of the Bookmarks view: type `:checkup`, pick **Checkup** in the Bookmarks view's menu, or press **Start the checkup** in the weekly digest. The steps are dead links, duplicates, bookmarks never opened or gone stale, categories and pages with nothing in them (hidden and snoozed bookmarks count as present, and a page with only widgets is not empty), and widgets that show an error or no data right now. A step with nothing to do is skipped, every step uses the actions you already know (delete, merge, move, edit) with their confirmation and undo, and nothing is removed before you have seen it.
 
 <a id="125-maintenance-windows"></a>
 
@@ -3612,7 +3643,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 **Label left, control right.** A setting's label and one-line explanation stand on the left and its control on the right, in one shared column. A longer explanation is cut with an ellipsis and stays whole in its tooltip and the ℹ. Under 600 px the control goes under its label.
 
-**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (nine buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
+**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (ten buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
 
 **The preview.** Beside the settings stands a small drawing of your dashboard — header, grid, a few rows and the action dock. It follows every change as you make it, in your own theme and font, and marks the part the open tab is about: the grid on Grid, the rows on Rows, the header on Header, the clock on Date & weather, the buttons on Action bar. On a narrow window it moves above the settings.
 
@@ -3884,7 +3915,7 @@ See [§4](#4-the-dashboard) for what each part does. The settings:
 Each chip group has **Show all / Hide all**.
 
 <p align="center"><img src="screenshots/manual.md/16-appearance-action-bar.jpg" alt="Config, Appearance on its Action bar tab: Show the action buttons, where the bar stands, Button size set to Medium, the key switch, the animation dropdown and the nine button chips" width="860"></p>
-<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the nine buttons are chips.</sub></p>
+<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the ten buttons are chips.</sub></p>
 
 <a id="168-date-and-weather"></a>
 
@@ -4215,7 +4246,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **Guided tours.** Eleven tours run over the real page rather than a picture of it: *What has changed*, *First steps*, *The dashboard*, *The keyboard*, *Inbox*, *Bookmarks view*, *Containers*, *Glances*, *Widgets*, *Monitoring* and *Unraid*. Each is short, four to nine steps, and covers the main things; the rest is in Help. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
-**The dashboard tour.** Nine steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its nine buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
+**The dashboard tour.** Ten steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its ten buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; edit mode; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
 
 
 <details>

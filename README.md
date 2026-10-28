@@ -439,7 +439,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Search and keyboard**
 
 - Everything is reachable from the keyboard: one rule for the shortcuts and a searchable cheat sheet on `!`. *[Manual §7](MANUAL.md#7-keyboard)*
-- A key legend under the grid keeps the main keys in sight (`Shift + Z` switches it off), a dashboard tour of nine steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
+- A key legend under the grid keeps the main keys in sight (`Shift + Z` switches it off), a dashboard tour of ten steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
 - One panel for search, commands and finders, plus search from the browser's address bar. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - Filters for tag, category, page, status, added and opened — each also in the negative. *[Manual §8.2](MANUAL.md#82-filters)*
 

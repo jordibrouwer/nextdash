@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.22.4 — 28 October 2026](#v1224--28-october-2026)
 - [v1.22.3 — 27 October 2026](#v1223--27-october-2026)
 - [v1.22.2 — 26 October 2026](#v1222--26-october-2026)
 - [v1.22.1 — 26 October 2026](#v1221--26-october-2026)
@@ -123,6 +124,50 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.22.4 — 28 October 2026
+
+Edit the dashboard in place, search that learns your hours, a checkup for what needs tidying, a reworked weekly digest and a guided way to add widgets. Every release held back from the What's new window since v1.20.2 (`hideFromModal`) is shown in it now, and nothing is flagged any more.
+
+### Edit mode
+
+- **new — Edit mode.** `DashboardEditMode` (`dashboard-edit-mode.js`) is switched on by `Shift + M` when no bookmark row is selected (with a row selected the bookmark's own `Shift + M`, Move, still answers), by the pencil in the action bar, by `:edit mode`, or by *Edit in panel…* in the category and widget menus. While it is on a bar says so, a click selects a block instead of opening a bookmark, the grid's bare letters, arrows and Enter are taken, the preview card stays away and comes back after, and Esc leaves from the inside out (dialog, panel field, mode). Desktop only; a phone layout ends it. The pure key rules are in `edit-mode-model.js`.
+- **new — The panel.** `DashboardEditModePanel` is a `ListViewDrawer` docked at the right like the views' panels, and the grid gives way with `padding-right`. A category: name, icon, width, view, sorting; a page: name, emoji, colour; a widget: name, width, state, and *Settings…*. Every change is saved as it is made; Esc in a text field gives the old text back; a category deleted elsewhere clears the panel; a save reloads the page first when `d.categories` no longer matches the server.
+- **new — A widget's sheet over the dashboard.** `openWidgetSheetOverDashboard` opens the Config → Widgets sheet on the dashboard, restores Config's page filter, search and drafts when it closes, and counts as a modal for the dashboard's keys. The sheet joined the overlay theming (`theme-overlays.css`, `BIG_LAYERS`), so it is drawn like the other dialogs in every theme, in Config as well.
+- **new — The pencil is the tenth action button.** `showEditModeButton` (on by default, also for old settings files), `maxHeaderActions` goes to 10, `:maxactions` offers 10, and the button carries its key for screen readers.
+- **new — A corner card** introduces edit mode and `Shift + M`, once, no sooner than three minutes after the latest corner card (`minGapAfterCardMs` in `NoticeCard`, kept across loads), and the dashboard tour has a step for it.
+
+### Search
+
+- **new — Usually now.** `search-usually-now.js` ranks bookmarks by opens within ±1.5 hours of the current time, on the same kind of day, over eight weeks (at least three), from each bookmark's `openLog`; it is the first group of the empty panel.
+- **new — Actions on a result.** `→` unfolds open, open in a new tab, edit, copy address, health and move under a bookmark result; `←` or Esc folds them. Enter chords fold the open actions in the phone's input.
+
+### Checkup
+
+- **new — `:checkup`.** `checkup.js` and `checkup_structure.go` walk dead links, duplicates, never-opened and stale bookmarks, empty categories and pages, and widgets that report an error, reusing the Bookmarks view's actions. `dashboard-widget-state.js` lets a widget report how it is doing. Deleting a category from the checkup, the menu or the panel goes through one `finishCategoryDelete`.
+
+### Weekly digest
+
+- **new — Reworked.** The digest is always on: the Config switch is gone and an old file that had it off is read as on. The window has a list of parts in three groups (Now, Tidy up, To know) beside a detail, with Close always in view; the corner card has *Read the digest*, *Snooze 1 day* and *Got it* with two reminders; the bar asks before it closes; a fresh install gets its first digest after at least seven days; *not opened* counts 30 days; and the checkup is a part of it.
+
+### Widgets
+
+- **new — The wizard.** One list of widgets, connect and test an address or key before a media widget is added, a page picker for the add, and the old catalogue and Custom links open the same guide. The tour and manual describe it.
+- **new — Three sections in every widget's settings** (what it shows, how it connects, where it sits). A section's default is stamped so only a real toggle is remembered, working inside a section pins it, and a media widget that fails to connect opens *Connection* and says so on its title.
+- **new — One card per widget** in Config → Widgets with kind, state and page.
+- **fix — Widget cards keep their surface in flat themes.**
+
+### Config
+
+- **new — Finders is a section of its own**, and **Fresh** moves from Behavior to Bookmarks.
+- **new — The demo has a Glances host that answers in-process** ("Tower").
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.22.4.json` and its index entry**; `whats-new-stub.js` moved to `DASHBOARD_RELEASE` v1.22.4 and `whats-new-v357`. `hideFromModal` is removed from every entry of the index, and `tests/whats-new-hidden-release.spec.js` now expects an empty list and every earlier release in the modal.
+- **docs — Config → Help** (edit mode panel; digest, search, keyboard, header and health texts), **Tips**, **Overview and About → News & features** (four entries), the **cheat sheet** with its PDF regenerated, MANUAL.md, and the six locale files.
 
 ---
 
