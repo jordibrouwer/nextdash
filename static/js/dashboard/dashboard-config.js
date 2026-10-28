@@ -140,10 +140,16 @@ class DashboardConfig {
                     datasetKey: 'dashboardConfigWidgetCatalogue',
                     ready: () => window.DashboardConfigWidgetCatalogueReady === true,
                 },
+                {
+                    file: 'js/dashboard/dashboard-config-widget-wizard.js',
+                    datasetKey: 'dashboardConfigWidgetWizard',
+                    ready: () => window.DashboardConfigWidgetWizardReady === true,
+                },
             ],
             ready: () => window.DashboardConfigWidgetsReady === true
                 && window.DashboardConfigMediaReady === true
-                && window.DashboardConfigWidgetCatalogueReady === true,
+                && window.DashboardConfigWidgetCatalogueReady === true
+                && window.DashboardConfigWidgetWizardReady === true,
         },
         /*
          * Appearance's own tabs and controls, its Background and Surface tabs,

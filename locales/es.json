@@ -6966,6 +6966,7 @@
     "widgetSavedNotice": "Widget guardado.",
     "widgetsEmptyHint": "Un widget es un bloque junto a tus categorías que contiene algo que no son marcadores.",
     "widgetsAddNamed": "Añadir {name}",
+    "widgetsAddOnPage": "En la página",
     "statsScoreStaleView": "{count} sin abrir en {days} días ({pct} %)",
     "statsContentFailing": "Responden, pero no como se esperaba",
     "statsDrift": "Cambiados desde que los miraste",

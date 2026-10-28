@@ -965,8 +965,10 @@
 
         const add = (type) => {
             if (!type) return;
+            // Read before the modal closes: hiding it takes the select with it.
+            const pageValue = picker.querySelector('[data-widget-wizard-page]')?.value;
             window.AppModal.hide();
-            void this.addWidget(type);
+            void this.addWidget(type, pageValue ? { pageId: Number(pageValue) } : undefined);
         };
 
         const filter = () => {
@@ -1137,8 +1139,11 @@
                         ? this.widgetTypeGroupLabel(group)
                         : this.t('config.widgetGroupCustom', 'And anything else: the Custom widget'))}</span>
                 </div>
-                <button type="button" class="config-btn config-btn--primary" data-widget-add="${esc(type)}">${
-                    esc(this.t('config.widgetsAddNamed', 'Add {name}').replace('{name}', name))}</button>
+                <div class="config-widget-picker-add">
+                    ${this.widgetWizardPageSelect?.() || ''}
+                    <button type="button" class="config-btn config-btn--primary" data-widget-add="${esc(type)}">${
+                        esc(this.t('config.widgetsAddNamed', 'Add {name}').replace('{name}', name))}</button>
+                </div>
             </div>
             <p class="config-widget-picker-about">${esc(this.widgetTypeAbout(type))}</p>
             ${sample ? `<span class="config-widget-kind-sample config-widget-picker-sample" aria-hidden="true">${sample}</span>` : ''}
@@ -3773,7 +3778,16 @@
      * The toast is gone with it. A row appearing under the pointer, named and
      * focused, says it better than a message elsewhere saying it happened.
      */
-    async addWidget(type) {
+    async addWidget(type, { pageId } = {}) {
+        // The picker may name a page other than the one the list shows (or
+        // any page at all, on the all-pages view): move the list there first,
+        // so the widget is saved to, and revealed on, the page that was named.
+        if (pageId != null && Number.isFinite(Number(pageId))
+            && (this.isAllPagesView() || Number(pageId) !== Number(this._widgetPageId))) {
+            this._widgetPageId = Number(pageId);
+            this._widgetLoadedFor = null;
+            await this.loadWidgetsEditor();
+        }
         const payload = this.widgetPayloadFromBlocks();
         payload.widgets.push({ type, title: '', config: {} });
         // No id: the server mints one. Inventing one here would be a second

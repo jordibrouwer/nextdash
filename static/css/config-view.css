@@ -7066,6 +7066,21 @@ body.no-animations .config-new-features-panel-star {
     gap: 12px;
 }
 
+.config-widget-picker-add {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.config-widget-wizard-page {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+}
+
 .config-widget-picker-title {
     display: flex;
     flex-direction: column;

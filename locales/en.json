@@ -7205,6 +7205,7 @@
     "widgetSavedNotice": "Widget saved.",
     "widgetsEmptyHint": "A widget is a block beside your categories that holds something other than bookmarks.",
     "widgetsAddNamed": "Add {name}",
+    "widgetsAddOnPage": "On page",
     "statsScoreStaleView": "{count} not opened in {days} days ({pct}%)",
     "statsContentFailing": "Answering, but not as expected",
     "statsDrift": "Changed since you looked",

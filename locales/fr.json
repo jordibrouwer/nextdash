@@ -6966,6 +6966,7 @@
     "widgetSavedNotice": "Widget enregistré.",
     "widgetsEmptyHint": "Un widget est un bloc à côté de vos catégories qui contient autre chose que des signets.",
     "widgetsAddNamed": "Ajouter {name}",
+    "widgetsAddOnPage": "Sur la page",
     "statsScoreStaleView": "{count} non ouverts depuis {days} jours ({pct}%)",
     "statsContentFailing": "Répond, mais pas comme attendu",
     "statsDrift": "Modifié depuis votre dernier passage",

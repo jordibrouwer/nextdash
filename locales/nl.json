@@ -6966,6 +6966,7 @@
     "widgetSavedNotice": "Widget opgeslagen.",
     "widgetsEmptyHint": "Een widget is een blok naast je categorieën dat iets anders bevat dan bookmarks.",
     "widgetsAddNamed": "{name} toevoegen",
+    "widgetsAddOnPage": "Op pagina",
     "statsScoreStaleView": "{count} niet geopend in {days} dagen ({pct}%)",
     "statsContentFailing": "Antwoordt wel, maar niet zoals verwacht",
     "statsDrift": "Veranderd sinds je keek",

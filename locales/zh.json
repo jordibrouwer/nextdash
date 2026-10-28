@@ -6966,6 +6966,7 @@
     "widgetSavedNotice": "小组件已保存。",
     "widgetsEmptyHint": "小组件是你分类旁边的一个区块，装的是书签之外的东西。",
     "widgetsAddNamed": "添加{name}",
+    "widgetsAddOnPage": "添加到页面",
     "statsScoreStaleView": "{count} 个 {days} 天没打开（{pct}%）",
     "statsContentFailing": "有回应，但不是预期的样子",
     "statsDrift": "自你上次看过之后有变动",
