@@ -54,7 +54,7 @@ func TestDigestUpdatesSkipHeldAndMissingDocker(t *testing.T) {
 
 func TestDigestUsageTopUnusedAndInbox(t *testing.T) {
 	recent := digestNow.Add(-24 * time.Hour).UnixMilli()
-	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), InboxCount: 4, StaleDays: 90,
+	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), InboxCount: 4,
 		Bookmarks: []Bookmark{
 			{Name: "A", URL: "https://a", OpenLog: []int64{recent, recent, recent}, LastOpened: recent},
 			{Name: "B", URL: "https://b", OpenLog: []int64{recent}, LastOpened: recent},
