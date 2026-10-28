@@ -144,26 +144,6 @@ func TestDigestStaleIsThirtyDaysAndSkipsNeverOpened(t *testing.T) {
 	}
 }
 
-// withCheckup stands in for the checkup being there: until it is, no snapshot or
-// push may point at it.
-func withCheckup(t *testing.T) {
-	t.Helper()
-	old := digestMentionsCheckup
-	digestMentionsCheckup = true
-	t.Cleanup(func() { digestMentionsCheckup = old })
-}
-
-func TestDigestSaysNothingOfTheCheckupBeforeItExists(t *testing.T) {
-	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: flaggedIssues(12, "duplicate")})
-	if d.Checkup != nil {
-		t.Fatalf("the checkup is not built yet: %+v", d.Checkup)
-	}
-	n := digestNotice(digestSnapshot{Health: &digestHealth{NewlyBroken: []string{"Wiki"}}, Checkup: &digestCheckup{Items: 14}})
-	if strings.Contains(n.Error, ":checkup") {
-		t.Fatalf("the push points at a command that does not exist: %q", n.Error)
-	}
-}
-
 func flaggedIssues(n int, flags ...string) []HealthIssue {
 	var out []HealthIssue
 	for i := 0; i < n; i++ {
@@ -173,7 +153,6 @@ func flaggedIssues(n int, flags ...string) []HealthIssue {
 }
 
 func TestDigestCheckupAppearsFromTenFindings(t *testing.T) {
-	withCheckup(t)
 	at := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: flaggedIssues(10, "duplicate")})
 	if at.Checkup == nil || at.Checkup.Items != 10 {
 		t.Fatalf("checkup at ten: %+v", at.Checkup)
@@ -185,7 +164,6 @@ func TestDigestCheckupAppearsFromTenFindings(t *testing.T) {
 }
 
 func TestDigestCheckupCountsABookmarkOnce(t *testing.T) {
-	withCheckup(t)
 	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: flaggedIssues(10, "duplicate", "unused", "broken")})
 	if d.Checkup == nil || d.Checkup.Items != 10 {
 		t.Fatalf("one bookmark with three flags must count once: %+v", d.Checkup)
@@ -200,7 +178,6 @@ func TestDigestCheckupAloneIsNotAWeekToSend(t *testing.T) {
 }
 
 func TestDigestNoticeAddsTheCheckupLineButNeverLeadsWithIt(t *testing.T) {
-	withCheckup(t)
 	n := digestNotice(digestSnapshot{
 		Health:  &digestHealth{NewlyBroken: []string{"Wiki"}},
 		Checkup: &digestCheckup{Items: 14},

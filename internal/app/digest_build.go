@@ -22,11 +22,6 @@ const (
 	digestCheckupMin = 10
 )
 
-// digestMentionsCheckup stays false until the checkup itself (the round and its
-// :checkup command) exists in the dashboard: a digest must not send readers to
-// a command that is not there. Switch it on in the change that adds it.
-var digestMentionsCheckup = false
-
 /*
 digestInput is what one digest is built from.
 
@@ -221,7 +216,7 @@ func buildDigest(in digestInput) digestSnapshot {
 			}
 		}
 	}
-	if digestMentionsCheckup && len(tidy) >= digestCheckupMin {
+	if len(tidy) >= digestCheckupMin {
 		snap.Checkup = &digestCheckup{Items: len(tidy)}
 	}
 	return snap
@@ -322,7 +317,7 @@ func digestNotice(d digestSnapshot) monitorNotification {
 		}
 		lines = append(lines, line+".")
 	}
-	if c := d.Checkup; c != nil && digestMentionsCheckup {
+	if c := d.Checkup; c != nil {
 		lines = append(lines, fmt.Sprintf("%d things worth tidying up. Run :checkup.", c.Items))
 	}
 	title := "Weekly digest"
