@@ -181,20 +181,20 @@ async function showEveryAction(page) {
             showAddBookmarkButton: true, showSearchButton: true, showCommandsButton: true,
             showFindersButton: true, showTagCloudButton: true, showRecentButton: true,
             showPagesButton: true, showCollapseAllButton: true, showCheatSheetButton: true,
-            // Room for all nine on the bar: past the reader's cap the rest fold
+            // Room for all ten on the bar: past the reader's cap the rest fold
             // behind one control, and this is about the order they stand in.
-            maxHeaderActions: 9,
+            maxHeaderActions: 10,
         });
         d.setupDOM?.();
         await d.saveSettings?.();
         window.DashboardTagCloud?.syncFromSettings?.();
         d.toolbar?.syncTagCloudButtonPlacement?.();
     });
-    // All nine are drawn on the bar, none folded away.
+    // All ten are drawn on the bar, none folded away.
     await expect.poll(() => page.evaluate(() =>
         [...document.querySelectorAll('.header-shortcuts button.search-button')]
             .filter((b) => !b.classList.contains('header-action-overflow'))
-            .filter((b) => window.getComputedStyle(b).display !== 'none').length)).toBe(9);
+            .filter((b) => window.getComputedStyle(b).display !== 'none').length)).toBe(10);
     await transitionsDone(page, '.header-shortcuts');
 }
 
@@ -222,7 +222,8 @@ test('the actions are always in the same order', async ({ page }) => {
 
     // Pages sits after recents: both open a panel you came for, and the sheet
     // that lists every key stays last.
-    expect(keys).toBe('+ > : ? / * , . !');
+    // The edit-mode pencil is the last: it sorts after the others, so it never pushes one into the fold.
+    expect(keys).toBe('+ > : ? / * , . ! ⇧M');
 });
 
 /*

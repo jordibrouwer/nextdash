@@ -5,6 +5,7 @@ body[data-mobile-layout="true"] #finders-button,
 body[data-mobile-layout="true"] #commands-button,
 body[data-mobile-layout="true"] #recent-bookmarks-button,
 body[data-mobile-layout="true"] #help-button,
+body[data-mobile-layout="true"] #edit-mode-button,
 body[data-mobile-layout="true"] #whats-new-btn,
 body[data-mobile-layout="true"] .btn-group-secondary {
     display: none !important;

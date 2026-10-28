@@ -269,6 +269,9 @@ class DashboardData {
             if (typeof d.settings.showCheatSheetButton === 'undefined') {
                 d.settings.showCheatSheetButton = true;
             }
+            if (typeof d.settings.showEditModeButton === 'undefined') {
+                d.settings.showEditModeButton = true;
+            }
             if (typeof d.settings.showCollapseAllButton === 'undefined') {
                 d.settings.showCollapseAllButton = true;
             }

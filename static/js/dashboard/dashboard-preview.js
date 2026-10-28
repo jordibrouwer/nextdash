@@ -54,6 +54,17 @@ class DashboardPreview {
         return this.previewMode() !== 'off';
     }
 
+    /**
+     * Edit mode takes the cards away: the rows are being edited, not read, and
+     * a card over the block that is being changed is in the way. Only the
+     * showing is held back -- the rows keep the handlers they were drawn with,
+     * so when the mode ends the same rows open cards again, if the reader's
+     * setting allows them, without a redraw.
+     */
+    suppressed() {
+        return document.body?.getAttribute('data-edit-mode') === 'on';
+    }
+
     /** Which rows this reader asked for; everything, unless they said otherwise. */
     previewParts() {
         const raw = this.dash.settings?.linkPreviewParts;
@@ -96,7 +107,7 @@ class DashboardPreview {
             }
             const hoverDelay = this.previewHoverDelay();
             openLink._previewHoverTimer = setTimeout(async () => {
-                if (!openLink._previewHoverActive || this.previewMode() !== 'hover') {
+                if (!openLink._previewHoverActive || this.previewMode() !== 'hover' || this.suppressed()) {
                     return;
                 }
                 const preview = await this.fetchBookmarkPreviewData(openLink, bookmark);
@@ -916,6 +927,7 @@ class DashboardPreview {
     }
 
     showBookmarkPreviewCard(preview, event = null, context = null) {
+        if (this.suppressed()) return;
         /*
          * No card for a row that is no longer on screen. A view that replaces
          * the grid takes the hovered row away without a mouseleave, so its

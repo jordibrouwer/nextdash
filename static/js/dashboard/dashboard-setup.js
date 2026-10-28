@@ -71,6 +71,7 @@ class DashboardSetup {
         document.body.setAttribute('data-show-inbox-button', d.settings.showInboxButton !== false);
         document.body.setAttribute('data-show-dashboard-button', d.settings.showDashboardButton !== false);
         document.body.setAttribute('data-show-cheatsheet-button', d.settings.showCheatSheetButton !== false);
+        document.body.setAttribute('data-show-edit-mode-button', d.settings.showEditModeButton !== false);
         document.body.setAttribute('data-show-collapse-all-button', d.settings.showCollapseAllButton !== false);
         document.body.setAttribute('data-show-add-bookmark-button', d.settings.showAddBookmarkButton !== false);
         document.body.setAttribute('data-show-search-button', d.settings.showSearchButton);

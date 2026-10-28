@@ -228,6 +228,9 @@
     /** Redraw the widgets section without refetching what it already has. */
     repaintWidgetsBody() {
         const body = document.getElementById('config-widgets-body');
+        // The sheet over the dashboard has no list behind it: only the sheet is
+        // painted, and Config's own view is not drawn over the page.
+        if (!body && this._sheetOverDashboard) { this.repaintSheetOverDashboard(); return; }
         if (!body) { this.render(); return; }
         // Read off the screen as well as from the toggle event: that event is
         // queued, and a repaint landing between a click and its dispatch would
@@ -3966,7 +3969,7 @@
         const open = this._widgetSettingsOpen;
         const block = open != null ? (this._widgetBlocks || [])[open] : null;
         let host = document.getElementById('config-widget-overlay');
-        if (!block?.isWidget || document.getElementById('config-widgets-body') == null) {
+        if (!block?.isWidget || (document.getElementById('config-widgets-body') == null && !this._sheetOverDashboard)) {
             this.removeWidgetOverlay();
             return;
         }
@@ -4004,7 +4007,56 @@
         sheet.scrollTop = scroll;
     },
 
+    /**
+     * One widget's settings, in the sheet Config → Widgets uses, over the
+     * dashboard that is showing. Nothing of Config's own view is drawn: the
+     * page's widgets are loaded, the widget is opened, and the sheet is
+     * painted. Closing it hands the page back refreshed.
+     */
+    async openWidgetSheetOverDashboard(widgetId) {
+        if (widgetId == null) return false;
+        if (!(await this.ensureSection('widgets'))) return false;
+        const d = this.dash;
+        this.stopCustomProbeLive?.();
+        this._sheetOverDashboard = true;
+        this.widgetQuery = '';
+        this._widgetPageId = Number(d.currentPageId);
+        this._widgetBlocks = null;
+        this._widgetLoadedFor = null;
+        this._widgetDrafts = {};
+        this._widgetOpenId = widgetId;
+        this._widgetJustSaved = null;
+        // The sheet's stylesheet is the views' bundle, which loads on demand.
+        await Promise.resolve(window.ViewStyles?.ensureViewStyles?.()).catch(() => {});
+        await this.loadWidgetsEditor();
+        this._widgetSettingsOpen = this.widgetIndexOfId(widgetId);
+        if (this._widgetSettingsOpen == null) {
+            this._sheetOverDashboard = false;
+            return false;
+        }
+        this.paintWidgetOverlay();
+        void this.fillWidgetSuggestions();
+        return true;
+    },
+
+    /** Paint, or take away, the sheet over the dashboard after a state change. */
+    repaintSheetOverDashboard() {
+        this._widgetSettingsOpen = this.widgetIndexOfId(this._widgetOpenId);
+        if (this._widgetSettingsOpen == null) {
+            // Closed: the page shows what was saved, and whoever opened the sheet is told.
+            this._sheetOverDashboard = false;
+            this.removeWidgetOverlay();
+            const pageId = this.dash.currentPageId;
+            void Promise.resolve(this.dash.loadPageBookmarks?.(pageId, { skipInlineEditConfirm: true }))
+                .then(() => document.dispatchEvent(new CustomEvent('nextdash:widget-sheet-closed')));
+            return;
+        }
+        this.paintWidgetOverlay();
+        void this.fillWidgetSuggestions();
+    },
+
     removeWidgetOverlay() {
+        this._sheetOverDashboard = false;
         document.getElementById('config-widget-overlay')?.remove();
         if (this._widgetOverlayKey) {
             window.removeEventListener('keydown', this._widgetOverlayKey, true);

@@ -26,6 +26,7 @@
     "validate:tag-patterns": "node scripts/validate-tag-patterns.cjs",
     "validate:test-waits": "node scripts/validate-test-waits.cjs",
     "test:news-stream": "node tests/news-stream-model.test.cjs",
+    "test:edit-mode-model": "node tests/edit-mode-model.test.cjs",
     "test:widget-state": "node tests/widget-state.test.cjs",
     "test:checkup-model": "node tests/checkup-model.test.cjs",
     "test:usually-now": "node tests/usually-now-model.test.cjs",

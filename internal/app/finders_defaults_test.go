@@ -173,3 +173,14 @@ func TestFreshInstallStaleLimitIsFifty(t *testing.T) {
 		t.Fatalf("SmartStaleLimit = %d, want 50", got)
 	}
 }
+
+func TestShowEditModeButtonIsOnForAnOldSettingsFile(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+	if !h.store.GetSettings().ShowEditModeButton {
+		t.Fatal("a settings file that never heard of the edit mode button must show it")
+	}
+	h2, _ := healthRecheckTestHandlers(t, `{"showEditModeButton":false}`)
+	if h2.store.GetSettings().ShowEditModeButton {
+		t.Fatal("an explicit off must stay off")
+	}
+}

@@ -9174,6 +9174,7 @@ class DashboardConfig {
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
         showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
+        showEditModeButton: { def: true },
         showCollapseAllButton: { info: ['showCollapseAllButtonInfoTitle', 'showCollapseAllButtonInfoMessage'], def: true },
         showConfigButton: { info: ['showConfigButtonInfoTitle', 'showConfigButtonInfoMessage'], def: true },
         showAddBookmarkButton: { info: ['showAddBookmarkButtonInfoTitle', 'showAddBookmarkButtonInfoMessage'], def: true },
@@ -10387,7 +10388,7 @@ class DashboardConfig {
                             opt('l', t('config.actionBarSizeL', 'Large')),
                             opt('xl', t('config.actionBarSizeXl', 'Extra large')),
                         ] },
-                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 9, step: 1, special: 'chrome',
+                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 10, step: 1, special: 'chrome',
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
                     // A select rather than six cards that each played the
@@ -10423,6 +10424,7 @@ class DashboardConfig {
                         chip('showPagesButton', 'chrome', 'config.chipPages', 'Pages', 'config.showPagesButtonLabel', 'Show the pages button'),
                         chip('showCollapseAllButton', 'chrome', 'config.chipCollapseAll', 'Fold all', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
                         chip('showCheatSheetButton', 'chrome', 'config.chipCheatSheet', 'Cheat sheet', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                        chip('showEditModeButton', 'chrome', 'config.chipEditMode', 'Edit mode', 'config.showEditModeButtonLabel', 'Show the edit-mode button'),
                     ] },
                 ],
             },

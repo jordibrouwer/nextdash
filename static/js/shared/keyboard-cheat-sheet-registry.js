@@ -110,6 +110,8 @@
                 { keys: '<', cheatKey: 'navOpenConfig', fallback: 'Open config (< is Shift+,; in config < returns here)' },
                 { keys: '.', cheatKey: 'navCollapseAll', fallback: 'Collapse or expand all categories' },
                 { keys: 'Shift + Z', cheatKey: 'navToggleGridLegend', fallback: 'Show or hide the key legend under the bookmarks' },
+                { keys: 'Shift + M (no row selected)', cheatKey: 'navEditMode', fallback: 'Edit mode — switch the dashboard into an editing state with a panel for categories, widgets and pages; with a row selected Shift + E edits the bookmark' },
+                { keys: 'Esc (in edit mode)', cheatKey: 'navEditModeEsc', fallback: 'In edit mode: close a dialog, then leave a panel field, then leave the mode' },
                 { keys: 'Shift + N', cheatKey: 'navAddCategory', fallback: 'Add a category to the current page' },
                 { keys: '↑ / ↓  ·  k / j', cheatKey: 'navFocusUpDown', fallback: 'Move focus up / down through bookmarks', print: true, printKeys: '↑ ↓ ← →  ·  k j', printFallback: 'Move focus' },
                 { keys: '← / →', cheatKey: 'navFocusLeftRight', fallback: 'Move focus left / right in grid' },

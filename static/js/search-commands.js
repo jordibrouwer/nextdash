@@ -988,6 +988,18 @@ class SearchCommandsComponent {
         const dash = window.dashboardInstance;
         if (!dash) return [];
 
+        // `:edit mode` switches the dashboard's edit mode; plain `:edit` edits the selected bookmark.
+        if ((args[0] || '').toLowerCase() === 'mode') {
+            return [{
+                name: this._t('commands.editModeLabel', 'Edit mode'),
+                shortcut: ':EDIT',
+                type: 'command',
+                action: () => this._runOverlayAction(async () => {
+                    dash.editMode?.toggle?.();
+                }),
+            }];
+        }
+
         const target = this._resolveBookmarkActionTarget();
         if (!target?.bookmark) {
             return this._noBookmarkSelectionRow(':EDIT');
@@ -2683,6 +2695,7 @@ class SearchCommandsComponent {
             recent: 'showRecentButton',
             finders: 'showFindersButton',
             cheatsheet: 'showCheatSheetButton',
+            edit: 'showEditModeButton',
             search: 'showSearchButton',
             tagcloud: 'showTagCloudButton',
             pages: 'showPagesButton',

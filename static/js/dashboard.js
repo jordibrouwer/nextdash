@@ -92,6 +92,7 @@ class Dashboard {
             showRecentButton: false,
 
             showCheatSheetButton: false,
+            showEditModeButton: true,
             showCollapseAllButton: false,
             showAddBookmarkButton: true,
             showStatus: true,
@@ -237,6 +238,7 @@ class Dashboard {
         this.structureCreate = new DashboardStructureCreate(this);
         this.categoryAdd = new DashboardCategoryAdd(this);
         this.categoryMenu = new DashboardCategoryMenu(this);
+        this.editMode = typeof DashboardEditMode === 'function' ? new DashboardEditMode(this) : null;
         this.inlineEdit = typeof window.createDashboardInlineEditLoader === 'function'
             ? window.createDashboardInlineEditLoader(this)
             : new DashboardInlineEdit(this);

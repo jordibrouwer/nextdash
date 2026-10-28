@@ -187,6 +187,13 @@ class DashboardCategoryMenu {
         });
     }
 
+    /** "Edit in panel…": desktop only, and only where the edit mode exists. */
+    editPanelEntry() {
+        const mode = this.dash?.editMode;
+        if (!mode || mode.isMobileLayout?.()) return [];
+        return [{ id: 'edit-panel', label: this.t('menuEditInPanel', 'Edit in panel…'), icon: '✎' }];
+    }
+
     /** The menu for a widget: its name, its width, and putting it away. */
     showWidget(titleEl, widget, point, rowEl = null) {
         const wide = this.widgetIsWide(widget);
@@ -195,6 +202,7 @@ class DashboardCategoryMenu {
         const entries = [
             ...rowEntries,
             { id: 'rename', label: this.t('widgetMenuRename', 'Rename'), icon: '✎', key: 'F2' },
+            ...this.editPanelEntry(),
             {
                 // The label says what the click will do, like the category's
                 // spread entry above -- this list is verbs, and a tick beside a
@@ -345,6 +353,11 @@ class DashboardCategoryMenu {
     async runWidgetAction(action, titleEl, widget, rowEl = null) {
         const d = this.dash;
         window.nextdashTrack?.('widget:context-menu', { action });
+
+        if (action === 'edit-panel') {
+            d.editMode?.openFor({ kind: 'widget', id: String(widget.id) });
+            return;
+        }
 
         if (action === 'row-open') {
             rowEl?.click();
@@ -542,6 +555,7 @@ class DashboardCategoryMenu {
                 icon: '+',
             }] : []),
             { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
+            ...this.editPanelEntry(),
             ...(stored ? [{
                 id: 'find-tags',
                 label: this.t('categoryMenuFindTags', 'Find tags for this category'),
@@ -951,6 +965,11 @@ class DashboardCategoryMenu {
     async runAction(action, titleEl, category) {
         const d = this.dash;
         window.nextdashTrack?.('category:context-menu', { action });
+
+        if (action === 'edit-panel') {
+            d.editMode?.openFor({ kind: 'category', id: String(category.id) });
+            return;
+        }
 
         if (action === 'add') {
             d.categoryAdd?.open();
