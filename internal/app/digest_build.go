@@ -14,7 +14,18 @@ const (
 	// How many names stand behind a count in the stored snapshot, for the
 	// dashboard's digest window. The count stays exact; the list is a sample.
 	digestNamesMax = 10
+	// "Not opened lately" in the digest is a fixed 30 days, not the reader's
+	// own stale threshold: a week-old threshold turned most of a dashboard into
+	// a candidate. Never-opened bookmarks have their own part and stay out.
+	digestStaleDays = 30
+	// The checkup is mentioned from this many findings up.
+	digestCheckupMin = 10
 )
+
+// digestMentionsCheckup stays false until the checkup itself (the round and its
+// :checkup command) exists in the dashboard: a digest must not send readers to
+// a command that is not there. Switch it on in the change that adds it.
+var digestMentionsCheckup = false
 
 /*
 digestInput is what one digest is built from.
@@ -46,6 +57,13 @@ type digestSnapshot struct {
 	Updates     *digestUpdates `json:"updates,omitempty"`
 	Usage       *digestUsage   `json:"usage,omitempty"`
 	News        *digestNews    `json:"news,omitempty"`
+	Checkup     *digestCheckup `json:"checkup,omitempty"`
+}
+
+// digestCheckup is how many bookmarks the checkup would walk through. It is
+// never a reason to send a digest on its own, see empty().
+type digestCheckup struct {
+	Items int `json:"items"`
 }
 type digestHealth struct {
 	NewlyBroken      []string `json:"newlyBroken,omitempty"`
@@ -140,13 +158,22 @@ func buildDigest(in digestInput) digestSnapshot {
 			case issueHasFlag(issue, "unused"):
 				u.NeverOpened++
 				u.NeverOpenedNames = append(u.NeverOpenedNames, digestIssueName(issue))
-			case issueHasFlag(issue, "stale"):
+			}
+		}
+		staleBefore := in.Now.Add(-digestStaleDays * 24 * time.Hour).UnixMilli()
+		for _, bm := range in.Bookmarks {
+			// Opened once, but not for 30 days. Never-opened bookmarks are the
+			// other part, and the unsorted page is not part of the dashboard.
+			if bm.PageID == unsortedPageID || bm.OpenCount == 0 || bm.LastOpened == 0 {
+				continue
+			}
+			if bm.LastOpened < staleBefore {
 				u.Stale++
-				u.StaleNames = append(u.StaleNames, digestIssueName(issue))
+				u.StaleNames = append(u.StaleNames, digestName(bm))
 			}
 		}
 		if u.Stale > 0 {
-			u.StaleDays = in.StaleDays
+			u.StaleDays = digestStaleDays
 		}
 		type opened struct {
 			name string
@@ -182,6 +209,20 @@ func buildDigest(in digestInput) digestSnapshot {
 
 	if in.Settings.DigestNews {
 		snap.News = buildDigestNews(in.Releases, in.Now)
+	}
+
+	// One bookmark with several findings is one thing to tidy up.
+	tidy := map[string]bool{}
+	for _, issue := range in.Issues {
+		for _, flag := range []string{"broken", "duplicate", "unused", "stale"} {
+			if issueHasFlag(issue, flag) {
+				tidy[fmt.Sprintf("%d:%d", issue.PageID, issue.Index)] = true
+				break
+			}
+		}
+	}
+	if digestMentionsCheckup && len(tidy) >= digestCheckupMin {
+		snap.Checkup = &digestCheckup{Items: len(tidy)}
 	}
 	return snap
 }
@@ -280,6 +321,9 @@ func digestNotice(d digestSnapshot) monitorNotification {
 			line += ": " + joinCapped(n.Highlights, digestListCap)
 		}
 		lines = append(lines, line+".")
+	}
+	if c := d.Checkup; c != nil && digestMentionsCheckup {
+		lines = append(lines, fmt.Sprintf("%d things worth tidying up. Run :checkup.", c.Items))
 	}
 	title := "Weekly digest"
 	if lead != "" {

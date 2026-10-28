@@ -18,7 +18,7 @@ async function openStatus(page) {
         c.monitoringTab = 'notifications';
         return c.openConfigView('monitoring');
     });
-    await page.waitForSelector('[data-behavior-field="digestEnabled"]', { timeout: 15_000 });
+    await page.waitForSelector('[data-behavior-field="digestWeekday"]', { timeout: 15_000 });
 }
 
 const saved = (page, field) => page.evaluate(async (f) => {
@@ -26,17 +26,12 @@ const saved = (page, field) => page.evaluate(async (f) => {
     return (await res.json())[f];
 }, field);
 
-test('the switch, the day and the hour are saved', async ({ page }) => {
+test('the digest has no switch, and the day and the hour are saved', async ({ page }) => {
     await openStatus(page);
     await expect(page.getByRole('heading', { name: /^Weekly digest/ })).toBeVisible();
-
-    const toggle = page.locator('[data-behavior-field="digestEnabled"]').first();
-    await expect(toggle).toBeChecked();
-    await toggle.uncheck();
-    await expect.poll(() => saved(page, 'digestEnabled')).toBe(false);
-    await page.reload();
-    await openStatus(page);
-    await expect(page.locator('[data-behavior-field="digestEnabled"]').first()).not.toBeChecked();
+    // It cannot be switched off, and its first group cannot be dropped.
+    await expect(page.locator('[data-behavior-field="digestEnabled"]')).toHaveCount(0);
+    await expect(page.locator('[data-behavior-field="digestHealth"]')).toHaveCount(0);
 
     await page.locator('[data-behavior-field="digestWeekday"]').first().selectOption('5');
     await expect.poll(() => saved(page, 'digestWeekday')).toBe(5);
@@ -44,8 +39,11 @@ test('the switch, the day and the hour are saved', async ({ page }) => {
     await expect.poll(() => saved(page, 'digestTime')).toBe('19:00');
 
     // Put it back for the specs that share this server.
-    await page.locator('[data-behavior-field="digestEnabled"]').first().check();
-    await expect.poll(() => saved(page, 'digestEnabled')).toBe(true);
+    await page.locator('[data-behavior-field="digestWeekday"]').first().selectOption('1');
+    await expect.poll(() => saved(page, 'digestWeekday')).toBe(1);
+    await page.locator('[data-behavior-field="digestTime"]').first().selectOption('08:00');
+    await expect.poll(() => saved(page, 'digestTime')).toBe('08:00');
+    expect(await saved(page, 'digestEnabled')).toBe(true);
 });
 
 test('the proof button sends one, and the card shows it', async ({ page, request }) => {

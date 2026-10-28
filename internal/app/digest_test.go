@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"net/http/httptest"
 	"os"
 	"strings"
@@ -99,13 +100,13 @@ func TestEmptyDigestSendsNothingButMarksTheWeek(t *testing.T) {
 	}
 }
 
-func TestDigestOffSendsNothing(t *testing.T) {
-	h, sent := digestTestHandlers(t, "")
-	h2, _ := healthRecheckTestHandlers(t, `{"digestEnabled":false}`)
-	_ = h
-	h2.digestTick(context.Background(), time.Date(2026, 10, 12, 9, 0, 0, 0, time.UTC))
-	if len(*sent) != 0 {
-		t.Fatal("sent while off")
+func TestDigestTickSendsWithAnOldOffSwitch(t *testing.T) {
+	h, sent := digestTestHandlers(t, `,"digestEnabled":false`)
+	mon := time.Date(2026, 10, 12, 9, 0, 0, 0, time.UTC)
+	seedBroken(h, mon)
+	h.digestTick(context.Background(), mon)
+	if len(*sent) != 1 {
+		t.Fatalf("an old off switch must not stop the digest, sent %d", len(*sent))
 	}
 }
 
@@ -182,5 +183,44 @@ func TestDigestFirstRunWaitsForTheNextSlot(t *testing.T) {
 	h.digestTick(context.Background(), time.Date(2026, 10, 19, 8, 1, 0, 0, time.UTC))
 	if len(*sent) != 1 {
 		t.Fatalf("next Monday should send, got %d", len(*sent))
+	}
+}
+
+func TestDigestSlotAllowed(t *testing.T) {
+	slot := time.Date(2026, 10, 12, 8, 0, 0, 0, time.UTC)
+	day := int64(24 * 60 * 60 * 1000)
+	cases := []struct {
+		name     string
+		firstRun int64
+		want     bool
+	}{
+		{"existing install, no first run", 0, true},
+		{"installed six days before the slot", slot.UnixMilli() - 6*day, false},
+		{"installed eight days before the slot", slot.UnixMilli() - 8*day, true},
+		{"installed exactly seven days before the slot", slot.UnixMilli() - 7*day, true},
+	}
+	for _, c := range cases {
+		if got := digestSlotAllowed(Settings{FirstRunAt: c.firstRun}, slot); got != c.want {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestDigestTickSkipsASlotBeforeTheFirstWeekIsOut(t *testing.T) {
+	mon := time.Date(2026, 10, 12, 9, 0, 0, 0, time.UTC)
+	firstRun := mon.Add(-6*24*time.Hour - time.Hour).UnixMilli() // installed six days before the slot
+	h, sent := digestTestHandlers(t, fmt.Sprintf(`,"firstRunAt":%d`, firstRun))
+	seedBroken(h, mon)
+	h.digestTick(context.Background(), mon)
+	if len(*sent) != 0 {
+		t.Fatalf("a new install got a digest in its first week: sent %d", len(*sent))
+	}
+	if readDigestState().DueKey != "2026-10-12" {
+		t.Fatalf("the skipped slot must be marked so it is not retried, got %q", readDigestState().DueKey)
+	}
+	next := mon.AddDate(0, 0, 7)
+	h.digestTick(context.Background(), next)
+	if len(*sent) != 1 {
+		t.Fatalf("the next slot should send, sent %d", len(*sent))
 	}
 }
