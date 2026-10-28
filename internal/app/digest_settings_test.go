@@ -13,11 +13,22 @@ func TestDigestSettingsDefaultsForAnOldFile(t *testing.T) {
 	}
 }
 
-func TestDigestSettingsKeepAnExplicitOff(t *testing.T) {
-	h, _ := healthRecheckTestHandlers(t, `{"digestEnabled":false,"digestWeekday":0,"digestTime":"21:30"}`)
+func TestDigestSettingsIgnoreAnOldOffSwitch(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{"digestEnabled":false,"digestHealth":false,"digestWeekday":0,"digestTime":"21:30"}`)
 	s := h.store.GetSettings()
-	if s.DigestEnabled || s.DigestWeekday != 0 || s.DigestTime != "21:30" {
-		t.Fatalf("explicit choices lost: %+v", s)
+	if !s.DigestEnabled || !s.DigestHealth {
+		t.Fatalf("the digest and its Now group cannot be switched off: enabled=%v health=%v", s.DigestEnabled, s.DigestHealth)
+	}
+	if s.DigestWeekday != 0 || s.DigestTime != "21:30" {
+		t.Fatalf("day and hour lost: %d %q", s.DigestWeekday, s.DigestTime)
+	}
+}
+
+func TestNormalizeDigestSettingsForcesOn(t *testing.T) {
+	s := Settings{DigestEnabled: false, DigestHealth: false, DigestWeekday: 3, DigestTime: "07:05"}
+	normalizeDigestSettings(&s)
+	if !s.DigestEnabled || !s.DigestHealth || s.DigestWeekday != 3 || s.DigestTime != "07:05" {
+		t.Fatalf("got enabled=%v health=%v %d %q", s.DigestEnabled, s.DigestHealth, s.DigestWeekday, s.DigestTime)
 	}
 }
 

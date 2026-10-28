@@ -92,12 +92,22 @@ var digestDeliver = func(h *Handlers, ctx context.Context, n monitorNotification
 	h.postMonitorTarget(ctx, []monitorNotification{n})
 }
 
+// digestSlotAllowed is false for a slot that falls less than a week after the
+// install (Settings.FirstRunAt). An install without that stamp, which is every
+// one that predates it, is never held back.
+func digestSlotAllowed(s Settings, due time.Time) bool {
+	if s.FirstRunAt == 0 {
+		return true
+	}
+	return due.UnixMilli() >= s.FirstRunAt+7*24*60*60*1000
+}
+
 func (h *Handlers) digestTick(ctx context.Context, now time.Time) {
 	settings := h.store.GetSettings()
-	if !settings.DigestEnabled || quietNow(settings, now) {
+	if quietNow(settings, now) {
 		return
 	}
-	_, key := digestDue(settings, now)
+	due, key := digestDue(settings, now)
 
 	digestMu.Lock()
 	defer digestMu.Unlock()
@@ -116,6 +126,13 @@ func (h *Handlers) digestTick(ctx context.Context, now time.Time) {
 	}
 	st := readDigestState()
 	if st.DueKey == key {
+		return
+	}
+	// A new install gets its first digest a week after it started: a slot
+	// that falls earlier is marked as handled and skipped, not sent late.
+	if !digestSlotAllowed(settings, due) {
+		st.DueKey = key
+		writeDigestState(st)
 		return
 	}
 	snap := buildDigest(h.collectDigestInput(now))

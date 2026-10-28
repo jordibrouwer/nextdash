@@ -58,17 +58,17 @@ func TestDigestUsageTopUnusedAndInbox(t *testing.T) {
 		Bookmarks: []Bookmark{
 			{Name: "A", URL: "https://a", OpenLog: []int64{recent, recent, recent}, LastOpened: recent},
 			{Name: "B", URL: "https://b", OpenLog: []int64{recent}, LastOpened: recent},
+			{Name: "Dust", URL: "https://dust", OpenCount: 1, LastOpened: digestNow.Add(-40 * 24 * time.Hour).UnixMilli()},
 		},
 		// The report's own flags decide, so "unused" means never opened, as
 		// the Bookmarks view's filter of that name does.
 		Issues: []HealthIssue{
-			{Name: "Dust", URL: "https://dust", Flags: []string{"stale"}},
 			{Name: "Never", URL: "https://never", Flags: []string{"unused"}},
 			{Name: "Also never", URL: "https://also", Flags: []string{"broken", "unused"}},
 		},
 	})
 	u := d.Usage
-	if u == nil || len(u.TopOpened) != 2 || u.TopOpened[0] != "A" || u.NeverOpened != 2 || u.Stale != 1 || u.StaleDays != 90 || u.Inbox != 4 {
+	if u == nil || len(u.TopOpened) != 2 || u.TopOpened[0] != "A" || u.NeverOpened != 2 || u.Stale != 1 || u.StaleDays != 30 || u.Inbox != 4 {
 		t.Fatalf("usage %+v", u)
 	}
 }
@@ -99,11 +99,12 @@ func TestDigestNoticeNamesTheCounts(t *testing.T) {
 func TestDigestKeepsTheNamesBehindTheCounts(t *testing.T) {
 	old := digestNow.Add(-40 * 24 * time.Hour).UnixMilli()
 	var issues []HealthIssue
+	var bookmarks []Bookmark
 	for i := 0; i < 12; i++ {
 		issues = append(issues, HealthIssue{Name: fmt.Sprintf("Dead %02d", i), URL: "https://dead", BrokenSince: old, Flags: []string{"broken"}})
-		issues = append(issues, HealthIssue{Name: fmt.Sprintf("Dust %02d", i), URL: "https://dust", Flags: []string{"stale"}})
+		bookmarks = append(bookmarks, Bookmark{Name: fmt.Sprintf("Dust %02d", i), URL: "https://dust", OpenCount: 1, LastOpened: old})
 	}
-	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: issues})
+	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: issues, Bookmarks: bookmarks})
 	if d.Health == nil || d.Health.StillBroken != 12 || len(d.Health.StillBrokenNames) != digestNamesMax || d.Health.StillBrokenNames[0] != "Dead 00" {
 		t.Fatalf("health %+v", d.Health)
 	}
@@ -126,5 +127,88 @@ func TestDigestNoticeLeadsWithTheWorstAndListsLines(t *testing.T) {
 	only := digestNotice(digestSnapshot{Usage: &digestUsage{Inbox: 2}})
 	if only.Title != "Weekly digest: 2 links in the Inbox" {
 		t.Fatalf("title %q", only.Title)
+	}
+}
+
+func TestDigestStaleIsThirtyDaysAndSkipsNeverOpened(t *testing.T) {
+	day := 24 * time.Hour
+	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Bookmarks: []Bookmark{
+		{Name: "Old", URL: "https://old", OpenCount: 2, LastOpened: digestNow.Add(-31 * day).UnixMilli()},
+		{Name: "Fresh", URL: "https://fresh", OpenCount: 2, LastOpened: digestNow.Add(-29 * day).UnixMilli()},
+		{Name: "Never", URL: "https://never"},
+		{Name: "Parked", URL: "https://parked", PageID: unsortedPageID, OpenCount: 1, LastOpened: digestNow.Add(-90 * day).UnixMilli()},
+	}})
+	u := d.Usage
+	if u == nil || u.Stale != 1 || len(u.StaleNames) != 1 || u.StaleNames[0] != "Old" || u.StaleDays != digestStaleDays {
+		t.Fatalf("usage %+v", u)
+	}
+}
+
+// withCheckup stands in for the checkup being there: until it is, no snapshot or
+// push may point at it.
+func withCheckup(t *testing.T) {
+	t.Helper()
+	old := digestMentionsCheckup
+	digestMentionsCheckup = true
+	t.Cleanup(func() { digestMentionsCheckup = old })
+}
+
+func TestDigestSaysNothingOfTheCheckupBeforeItExists(t *testing.T) {
+	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: flaggedIssues(12, "duplicate")})
+	if d.Checkup != nil {
+		t.Fatalf("the checkup is not built yet: %+v", d.Checkup)
+	}
+	n := digestNotice(digestSnapshot{Health: &digestHealth{NewlyBroken: []string{"Wiki"}}, Checkup: &digestCheckup{Items: 14}})
+	if strings.Contains(n.Error, ":checkup") {
+		t.Fatalf("the push points at a command that does not exist: %q", n.Error)
+	}
+}
+
+func flaggedIssues(n int, flags ...string) []HealthIssue {
+	var out []HealthIssue
+	for i := 0; i < n; i++ {
+		out = append(out, HealthIssue{Name: fmt.Sprintf("B%02d", i), URL: fmt.Sprintf("https://b%d", i), PageID: 1, Index: i, Flags: flags})
+	}
+	return out
+}
+
+func TestDigestCheckupAppearsFromTenFindings(t *testing.T) {
+	withCheckup(t)
+	at := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: flaggedIssues(10, "duplicate")})
+	if at.Checkup == nil || at.Checkup.Items != 10 {
+		t.Fatalf("checkup at ten: %+v", at.Checkup)
+	}
+	below := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: flaggedIssues(9, "duplicate")})
+	if below.Checkup != nil {
+		t.Fatalf("checkup below the threshold: %+v", below.Checkup)
+	}
+}
+
+func TestDigestCheckupCountsABookmarkOnce(t *testing.T) {
+	withCheckup(t)
+	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: flaggedIssues(10, "duplicate", "unused", "broken")})
+	if d.Checkup == nil || d.Checkup.Items != 10 {
+		t.Fatalf("one bookmark with three flags must count once: %+v", d.Checkup)
+	}
+}
+
+func TestDigestCheckupAloneIsNotAWeekToSend(t *testing.T) {
+	d := digestSnapshot{Checkup: &digestCheckup{Items: 14}}
+	if !d.empty() {
+		t.Fatal("a checkup on its own must not make a digest worth sending")
+	}
+}
+
+func TestDigestNoticeAddsTheCheckupLineButNeverLeadsWithIt(t *testing.T) {
+	withCheckup(t)
+	n := digestNotice(digestSnapshot{
+		Health:  &digestHealth{NewlyBroken: []string{"Wiki"}},
+		Checkup: &digestCheckup{Items: 14},
+	})
+	if !strings.Contains(n.Error, "14 things worth tidying up. Run :checkup.") {
+		t.Fatalf("body %q", n.Error)
+	}
+	if !strings.HasPrefix(n.Title, "Weekly digest: 1 link broke") {
+		t.Fatalf("title %q", n.Title)
 	}
 }

@@ -20,6 +20,11 @@ func parseDigestTime(s string) (hour, minute int) {
 }
 
 func normalizeDigestSettings(s *Settings) {
+	// The digest cannot be switched off, and its Now group (broken links,
+	// certificates, domains) cannot be dropped. The fields stay in the struct
+	// so an old settings file still loads.
+	s.DigestEnabled = true
+	s.DigestHealth = true
 	if s.DigestWeekday < 0 || s.DigestWeekday > 6 {
 		s.DigestWeekday = defaultDigestWeekday
 	}
