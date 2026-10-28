@@ -627,3 +627,96 @@ test.describe('edit mode: review fixes', () => {
         expect(open).toBe(true);
     });
 });
+
+test.describe('edit mode: the smaller review points', () => {
+    const { WRITE_TOKEN } = require('./e2e-helpers');
+    const headers = { 'X-NextDash-Token': WRITE_TOKEN };
+
+    async function seeded(request, name) {
+        const id = `em-s-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const list = await (await request.get('/api/categories?page=1')).json();
+        await request.post('/api/categories?page=1', { data: [...list, { id, name }], headers });
+        await request.post('/api/bookmarks/add', { data: { page: 1, bookmark: { name: `${name} link`, url: `https://${id}.example/`, category: id } }, headers });
+        return id;
+    }
+
+    test(':maxactions offers 10, and the pencil carries its key for screen readers', async ({ page }) => {
+        await loadDashboard(page);
+        await expect.poll(() => page.locator('#edit-mode-button').getAttribute('aria-keyshortcuts')).toContain('Shift+M');
+        await page.keyboard.press(':');
+        await page.keyboard.type('maxactions 1');
+        // Typing "1" matches the values 1 and 10, besides the command's own row.
+        await expect(page.getByText('MAXACTIONS')).toHaveCount(3);
+    });
+
+    test('the ring goes back on the chosen block after the grid is redrawn', async ({ page, request }) => {
+        const id = await seeded(request, 'Ringed');
+        await loadDashboard(page);
+        await page.keyboard.press('Shift+M');
+        await expect.poll(() => modeOn(page)).toBe(true);
+        await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
+        await expect(page.locator(`.category[data-category-id="${id}"].is-edit-selected`)).toHaveCount(1);
+        await page.evaluate(() => window.dashboardInstance.renderDashboard({ animate: false, forceFull: true }));
+        await expect(page.locator(`.category[data-category-id="${id}"].is-edit-selected`)).toHaveCount(1);
+    });
+
+    test('Esc in a name field gives the text back and saves nothing', async ({ page, request }) => {
+        const id = await seeded(request, 'Keepname');
+        await loadDashboard(page);
+        await page.keyboard.press('Shift+M');
+        await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
+        const field = page.locator('#edit-mode-panel [data-edit-field="name"]');
+        await field.fill('Changed by mistake');
+        await page.keyboard.press('Escape');
+        await expect(field).toHaveValue('Keepname');
+        await page.waitForTimeout(400);
+        const list = await (await request.get('/api/categories?page=1')).json();
+        expect(list.find((c) => c.id === id).name).toBe('Keepname');
+        expect(await modeOn(page)).toBe(true);
+    });
+
+    test('Esc after a saved rename gives back the new name, not the one from before', async ({ page, request }) => {
+        const id = await seeded(request, 'Firstname');
+        await loadDashboard(page);
+        await page.keyboard.press('Shift+M');
+        await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
+        const field = page.locator('#edit-mode-panel [data-edit-field="name"]');
+        await field.fill('Secondname');
+        await page.keyboard.press('Enter');
+        await expect.poll(async () => (await (await request.get('/api/categories?page=1')).json()).find((c) => c.id === id).name).toBe('Secondname');
+        await field.click();
+        await field.fill('Thirdname');
+        await page.keyboard.press('Escape');
+        await expect(field).toHaveValue('Secondname');
+        await page.waitForTimeout(400);
+        expect((await (await request.get('/api/categories?page=1')).json()).find((c) => c.id === id).name).toBe('Secondname');
+    });
+
+    test('any switch of page shows that page in the panel', async ({ page, request }) => {
+        const pages = await (await request.get('/api/pages')).json();
+        if (pages.filter((p) => p.id < 999999).length < 2) {
+            const next = Math.max(...pages.filter((p) => p.id < 999999).map((p) => p.id)) + 1;
+            await request.post('/api/pages', { data: [...pages, { id: next, name: 'EM second' }], headers });
+        }
+        await loadDashboard(page);
+        await page.keyboard.press('Shift+M');
+        await expect.poll(() => modeOn(page)).toBe(true);
+        const other = await page.evaluate(() => window.dashboardInstance.pages.find((p) => String(p.id) !== String(window.dashboardInstance.currentPageId) && Number(p.id) < 999999)?.id);
+        await page.evaluate((id) => window.dashboardInstance.loadPageBookmarks(id), other);
+        await expect(panel2(page).locator('[data-edit-section="page"]')).toBeVisible();
+        expect(await page.evaluate(() => String(window.dashboardInstance.editMode.selected.id))).toBe(String(other));
+    });
+
+    test('a widget sheet that cannot open leaves Config\'s choices alone', async ({ page }) => {
+        await loadDashboard(page);
+        const res = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            await d.config.ensureSection('widgets');
+            d.config.widgetQuery = 'keep me';
+            const opened = await d.config.openWidgetSheetOverDashboard('no-such-widget');
+            return { opened, query: d.config.widgetQuery, flag: d.config._sheetOverDashboard };
+        });
+        expect(res).toEqual({ opened: false, query: 'keep me', flag: false });
+    });
+});
+const panel2 = (page) => page.locator('#edit-mode-panel');

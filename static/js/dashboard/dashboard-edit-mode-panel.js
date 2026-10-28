@@ -149,6 +149,14 @@ class DashboardEditModePanel {
             if (res.ok) {
                 const list = await res.json();
                 if (Array.isArray(list) && !list.some((c) => String(c.id) === String(id))) return this.gone();
+                // The list that a save posts is d.categories: when it no longer
+                // matches the server (another tab, another session), load it
+                // again first, or the save would write the old list back.
+                if (Array.isArray(list)) {
+                    const local = (d.categories || []).filter((c) => c.isSmartCollection !== true && c.isVirtualCategory !== true).map((c) => String(c.id)).sort().join('|');
+                    const remote = list.map((c) => String(c.id)).sort().join('|');
+                    if (local !== remote) await d.loadPageBookmarks?.(d.currentPageId, { skipInlineEditConfirm: true, forceFetch: true });
+                }
             }
         } catch (_) { /* unreachable: the write will say so */ }
         if (!this.storedCategory(id)) return this.gone();

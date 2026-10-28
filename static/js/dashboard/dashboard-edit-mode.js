@@ -30,6 +30,11 @@ class DashboardEditMode {
         document.addEventListener('click', (e) => {
             if (e.target instanceof Element && e.target.closest('#edit-mode-button')) this.toggle();
         });
+        // What a panel field held when it got the focus: Esc gives that back, saved renames included.
+        document.addEventListener('focusin', (e) => {
+            const t = e.target;
+            if (t instanceof HTMLInputElement && t.closest('#edit-mode-panel, [data-lvs-drawer="edit-mode"]')) t.dataset.editOrig = t.value;
+        }, true);
         // The widget settings sheet was closed: the widget may have a new name.
         document.addEventListener('nextdash:widget-sheet-closed', () => {
             if (this.active && this.selected?.kind === 'widget') this.panel?.render(this.selected);
@@ -38,6 +43,22 @@ class DashboardEditMode {
         new MutationObserver(() => {
             if (this.active && document.body.getAttribute('data-active-view') !== 'bookmarks') void this.exit({ force: true });
         }).observe(document.body, { attributes: true, attributeFilter: ['data-active-view'] });
+        // A redraw of the grid (a sheet save, a refresh) replaces the blocks: the ring goes back on the chosen one.
+        const layout = document.getElementById('dashboard-layout');
+        if (layout) {
+            let frame = 0;
+            new MutationObserver(() => {
+                if (!this.active || !this.selected) return;
+                cancelAnimationFrame(frame);
+                frame = requestAnimationFrame(() => this._markSelected());
+            }).observe(layout, { childList: true, subtree: true });
+        }
+        // Switching page by any route (the +N list, a digit key) shows that page in the panel.
+        document.addEventListener('nextdash:page-switched', (e) => {
+            if (!this.active || this.isMobileLayout()) return;
+            const id = e.detail?.pageId;
+            if (id != null && !(this.selected?.kind === 'page' && String(this.selected.id) === String(id))) this.select({ kind: 'page', id });
+        });
         window.addEventListener('resize', this._onResize);
         window.addEventListener('orientationchange', this._onResize);
     }
@@ -191,7 +212,14 @@ class DashboardEditMode {
             if (action === 'let-dialog-close') return;
             e.preventDefault();
             e.stopImmediatePropagation();
-            if (action === 'focus-grid') target.blur();
+            if (action === 'focus-grid') {
+                // Esc gives back what was typed: put the field's value back
+                // before it blurs, so the blur has no change to save.
+                if (/^(INPUT|TEXTAREA)$/.test(target.tagName) && target.type !== 'checkbox' && target.type !== 'radio') {
+                    target.value = target.dataset.editOrig ?? target.defaultValue;
+                }
+                target.blur();
+            }
             else void this.exit();
             return;
         }

@@ -4018,6 +4018,8 @@
         if (!(await this.ensureSection('widgets'))) return false;
         const d = this.dash;
         this.stopCustomProbeLive?.();
+        // Config's own choices (page filter, search, drafts) come back when the sheet closes.
+        this._configWidgetState = { page: this._widgetPageId, query: this.widgetQuery, drafts: this._widgetDrafts };
         this._sheetOverDashboard = true;
         this.widgetQuery = '';
         this._widgetPageId = Number(d.currentPageId);
@@ -4028,15 +4030,32 @@
         this._widgetJustSaved = null;
         // The sheet's stylesheet is the views' bundle, which loads on demand.
         await Promise.resolve(window.ViewStyles?.ensureViewStyles?.()).catch(() => {});
-        await this.loadWidgetsEditor();
-        this._widgetSettingsOpen = this.widgetIndexOfId(widgetId);
+        try {
+            await this.loadWidgetsEditor();
+            this._widgetSettingsOpen = this.widgetIndexOfId(widgetId);
+        } catch (_) {
+            this._widgetSettingsOpen = null;
+        }
         if (this._widgetSettingsOpen == null) {
             this._sheetOverDashboard = false;
+            this.restoreConfigWidgetState();
             return false;
         }
         this.paintWidgetOverlay();
         void this.fillWidgetSuggestions();
         return true;
+    },
+
+    /** Config -> Widgets gets back its page filter and search; its list reloads on the next visit. */
+    restoreConfigWidgetState() {
+        const kept = this._configWidgetState;
+        this._configWidgetState = null;
+        if (!kept) return;
+        this._widgetPageId = kept.page;
+        this.widgetQuery = kept.query;
+        this._widgetDrafts = kept.drafts || {};
+        this._widgetBlocks = null;
+        this._widgetLoadedFor = null;
     },
 
     /** Paint, or take away, the sheet over the dashboard after a state change. */
@@ -4045,6 +4064,7 @@
         if (this._widgetSettingsOpen == null) {
             // Closed: the page shows what was saved, and whoever opened the sheet is told.
             this._sheetOverDashboard = false;
+            this.restoreConfigWidgetState();
             this.removeWidgetOverlay();
             const pageId = this.dash.currentPageId;
             void Promise.resolve(this.dash.loadPageBookmarks?.(pageId, { skipInlineEditConfirm: true }))

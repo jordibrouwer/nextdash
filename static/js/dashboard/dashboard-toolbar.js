@@ -29,6 +29,8 @@ class DashboardToolbar {
             // told people to press a key that does not exist.
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] },
             // An action button like the rest, not a header destination.
+            // Desktop only: the mode does not exist on a phone layout.
+            { id: 'edit-mode-button', labelKey: 'dashboard.editModeAria', keys: ['Shift+M'], when: () => d.editMode && !d.editMode.isMobileLayout?.() },
             { id: 'page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
             {
                 selector: '#page-nav-inbox-btn',
