@@ -176,6 +176,11 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **fix — A snoozed link comes back on the tile when it wakes.** The tile cached the list with the sleeping links already dropped and has no beat of its own; it caches every item, splits waiting from asleep on each draw, and sets one timer for the first to wake.
 - **new — "N asleep".** A line under the rows counts the snoozed links, so a short tile is not taken for the whole inbox.
 
+### Bookmarks view
+
+- **fix — The Collection menu is walked with the keys.** It opened with nothing focused and the arrow keys did nothing; the first item takes the focus, and `↑`/`↓`, Home and End move through it.
+- **fix — Merge duplicates says when there is nothing to merge.** When the report's groups had shrunk to one bookmark each, the action reloaded the list in silence; it says "No duplicates left to merge."
+
 ---
 
 ## v1.22.4 — 29 October 2026

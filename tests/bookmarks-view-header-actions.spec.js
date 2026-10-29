@@ -110,6 +110,29 @@ test.describe('bookmarks view: the band\'s actions', () => {
     await page.locator('.config-view--library .lvs-header-text').click();
     await expect(menu(page)).toBeHidden();
   });
+
+  test('the menu is walked with the arrow keys, Home and End, from the first item', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await band(page).locator('[data-bm-header-more]').click();
+    const items = menu(page).locator('[role="menuitem"]');
+    const focused = () => page.evaluate(() => {
+      const all = [...document.querySelectorAll('.config-view--library [data-bm-header-menu] [role="menuitem"]')];
+      return all.indexOf(document.activeElement);
+    });
+    const last = (await items.count()) - 1;
+    await expect.poll(focused).toBe(0);
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(focused).toBe(1);
+    await page.keyboard.press('End');
+    await expect.poll(focused).toBe(last);
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(focused).toBe(0);
+    await page.keyboard.press('ArrowUp');
+    await expect.poll(focused).toBe(last);
+    await page.keyboard.press('Home');
+    await expect.poll(focused).toBe(0);
+    await expect(menu(page)).toBeVisible();
+  });
 });
 
 test('the Bookmarks icon in the header carries the count of problems', async ({ page }) => {
@@ -178,5 +201,18 @@ test.describe('bookmarks view: the Collection menu\'s checks', () => {
     });
     await fromMenu(page, '[data-bm-header-action="merge"]');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmCleanupFilter)).toBe('duplicate');
+  });
+
+  test('Merge duplicates with no group of two left says so', async ({ page }) => {
+    await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    await page.evaluate(() => {
+      const health = window.dashboardInstance.config._bmHealthModule;
+      health.duplicateGroups = () => [{ bookmarks: [{}] }];
+      window.__merged = 0;
+      health.mergeDuplicateGroup = async () => { window.__merged += 1; };
+    });
+    await fromMenu(page, '[data-bm-header-action="merge"]');
+    await expect(page.locator('#app-notification.show')).toContainText('No duplicates left to merge.');
+    expect(await page.evaluate(() => window.__merged)).toBe(0);
   });
 });

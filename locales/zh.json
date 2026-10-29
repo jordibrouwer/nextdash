@@ -8215,6 +8215,7 @@
     "bmSparkTitleDays": "过去 {d} 天打开 {n} 次",
     "bmStructureBroken": "{n} 个失效",
     "bmStructureButton": "页面和分类",
+    "bmNoDuplicates": "No duplicates left to merge.",
     "bmStructureDeleteCategory": "删除分类…",
     "bmStructureDeletePage": "删除页面…",
     "bmStructureDrag": "拖动以调整顺序",

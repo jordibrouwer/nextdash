@@ -8215,6 +8215,7 @@
     "bmSparkTitleDays": "{n} ouvertures sur les {d} derniers jours",
     "bmStructureBroken": "{n} cassés",
     "bmStructureButton": "Pages et catégories",
+    "bmNoDuplicates": "No duplicates left to merge.",
     "bmStructureDeleteCategory": "Supprimer la catégorie…",
     "bmStructureDeletePage": "Supprimer la page…",
     "bmStructureDrag": "Glisser pour réordonner",

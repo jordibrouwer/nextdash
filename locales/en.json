@@ -5725,6 +5725,7 @@
     "bmStructureDeletePage": "Delete page…",
     "bmStructureDeleteCategory": "Delete category…",
     "bmStructureButton": "Pages & categories",
+    "bmNoDuplicates": "No duplicates left to merge.",
     "bmStructureEmptyPages": "Empty pages: {n}",
     "bmStructureRemoveEmpty": "Remove all empty pages",
     "bmStructureRemoveEmptyConfirm": "Remove {n} pages with no bookmarks on them? {names}",

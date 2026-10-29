@@ -155,6 +155,12 @@
                     if (this.bmCleanupFilter !== 'duplicate') this.toggleRailFilter('cleanup', 'duplicate');
                     return;
                 }
+                // The menu counts groups as the report has them; one that a
+                // merge elsewhere left with a single bookmark is not a duplicate.
+                if (!groups.length) {
+                    this.notify(this.t('config.bmNoDuplicates', 'No duplicates left to merge.'), 'info');
+                    return;
+                }
                 if (groups.length === 1) await health.mergeDuplicateGroup(groups[0]);
             } else if (action === 'retest') {
                 await health.retestAll();
@@ -183,8 +189,26 @@
             if (items) menu.innerHTML = items.innerHTML;
             menu.hidden = false;
             button.setAttribute('aria-expanded', 'true');
+            const menuItems = () => [...menu.querySelectorAll('[role="menuitem"]')];
             const away = (e) => {
                 if (e.type === 'keydown') {
+                    // Up and down walk the items, Home and End jump, as a menu
+                    // does: role="menu" promises it, and Tab took every item
+                    // one by one.
+                    if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
+                        const list = menuItems();
+                        if (!list.length) return;
+                        const last = list.length - 1;
+                        const i = list.indexOf(document.activeElement);
+                        const next = e.key === 'Home' ? 0
+                            : e.key === 'End' ? last
+                                : e.key === 'ArrowDown' ? (i >= last ? 0 : i + 1)
+                                    : (i <= 0 ? last : i - 1);
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        list[next].focus({ preventScroll: true });
+                        return;
+                    }
                     if (e.key !== 'Escape') return;
                     // Escape is the menu's alone while it is open.
                     e.preventDefault();
@@ -198,6 +222,9 @@
             document.addEventListener('pointerdown', away, true);
             window.addEventListener('keydown', away, true);
             this._libHeaderMenuAway = away;
+            // The first item takes the focus, so the keys above have a place
+            // to start from.
+            menuItems()[0]?.focus({ preventScroll: true });
         },
 
         closeLibraryHeaderMenu() {

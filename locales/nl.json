@@ -8215,6 +8215,7 @@
     "bmSparkTitleDays": "{n} keer geopend in de laatste {d} dagen",
     "bmStructureBroken": "{n} kapot",
     "bmStructureButton": "Pagina's & categorieën",
+    "bmNoDuplicates": "No duplicates left to merge.",
     "bmStructureDeleteCategory": "Categorie verwijderen…",
     "bmStructureDeletePage": "Pagina verwijderen…",
     "bmStructureDrag": "Sleep om te herschikken",

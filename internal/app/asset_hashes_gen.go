@@ -117,7 +117,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-bookmark-interactions-loader.js": "d33fd6b8cec4",
 	"js/dashboard/dashboard-bookmark-rows.js":                "988fbe2d1763",
 	"js/dashboard/dashboard-bookmarks-checking-modal.js":     "410bd6f1976b",
-	"js/dashboard/dashboard-bookmarks-header.js":             "8d9ea198fdff",
+	"js/dashboard/dashboard-bookmarks-header.js":             "b967d25e3225",
 	"js/dashboard/dashboard-bookmarks-health-large.js":       "2a8abca716b9",
 	"js/dashboard/dashboard-bookmarks-health-modal.js":       "605d5c3a1ae3",
 	"js/dashboard/dashboard-bookmarks-structure-modal.js":    "7be6491aad37",
