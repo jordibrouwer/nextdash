@@ -205,10 +205,6 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **fix — A setting changed on another device survives closing the theme studio.** While the studio is open such a change waits; a save from this tab before it was read sent every field back as it was, and put the other device's value back on the server. `saveSettings` now reads the waiting change first (`_settingsChangedElsewhere`, `dashboard-data.js`).
 - **new — Ocean is the theme a fresh install starts on.** Ocean [dark], with Ocean [light] for auto dark mode (`defaultThemeID`, `DEFAULT_THEME` in `theme-loader.js`, the Appearance ↺ default). Existing installs keep their theme; one still to run the v1.22.0 move lands on Aurora Glass as before, so its dialog stays right.
 
-### MCP
-
-- **new — The MCP endpoint reaches further.** `/mcp` gains `list_pages`; edit, move and delete bookmarks (deleting goes to the Trash) and add or rename categories; Health and Inbox reads; container list, detail and logs; and `container_action` (start, stop, restart, pause, unpause, remove, update, rollback). Four switches under **Data & backups → Webhooks → MCP access** (`mcpBookmarksWrite`, `mcpHealthInbox`, `mcpContainersRead`, `mcpContainersControl`) gate the groups; the write tools and container logs need the write token when one is set, and container control needs Docker control on. Changes appear in the activity log with source `mcp` and the client's User-Agent (`mcp*.go`, `MANUAL.md` §23.6).
-
 ### Docs
 
 - **MANUAL.md** describes the Recent sheet (tiles, pager, `[` `]`), the page filter's several words, `↓`/Enter and collapsed hits, the tag view's any/all switch (`?all`), *Add tag…*, Score sort and remembered sort, the Collection menu's keys, the Inbox tile's *asleep* line, the Glances Hosts table (trouble first, sorting, mount, last-hour line, °F) and Ocean as the fresh-install theme.
