@@ -11,11 +11,10 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * bookmarks filled a window, and the loudest thing on a panel about four
  * bookmarks was a full-width button about all of them.
  *
- * The spec draws it as a narrow panel of quiet rows in one slab -- icon, name,
- * category, time on a single line -- with the key that opens it beside the
- * name and a thin foot under the list. What these tests hold is the shape,
- * not the pixels: one line per bookmark, one ground under all of them, and
- * the panel narrow enough to read down.
+ * It is drawn as a column of two tiles across on one slab: each tile leads
+ * with the day it was opened, then the name and the key that opens it, the
+ * weekday and time, where it lives and how often. A thin foot holds the pager.
+ * What these tests hold is what a tile says, not its pixels.
  */
 
 async function seedRecent(page, count) {
@@ -74,44 +73,31 @@ async function openRecent(page) {
 }
 
 test.describe('the recent bookmarks panel', () => {
-    test('a bookmark is one line, not a card', async ({ page }) => {
+    test('a tile leads with the day it was opened, and says when and how often', async ({ page }) => {
         await openRecent(page);
 
-        const shape = await page.evaluate(() => {
-            const row = document.querySelector('.recent-bookmarks-modal-item');
-            const cs = window.getComputedStyle(row);
-            const name = row.querySelector('.recent-bookmarks-modal-name').getBoundingClientRect();
-            const detail = row.querySelector('.recent-bookmarks-modal-detail').getBoundingClientRect();
+        const seen = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const tile = document.querySelector('.recent-bookmarks-modal-item');
+            const name = tile.querySelector('.recent-bookmarks-modal-name').textContent.trim();
+            const bookmark = d.recent.recentPool().find((b) => b.name === name);
+            const opened = new Date(Number(bookmark.lastOpened));
+            const lang = d.settings?.language || undefined;
             return {
-                height: Math.round(row.getBoundingClientRect().height),
-                // Stacked, the category sat on its own line under the name.
-                sameLine: Math.abs(Math.round(name.top) - Math.round(detail.top)) <= 4,
-                borderWidth: parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth),
+                day: tile.querySelector('.recent-bookmarks-modal-date b')?.textContent?.trim(),
+                wantDay: opened.toLocaleDateString(lang, { day: 'numeric' }),
+                recency: tile.querySelector('.recent-bookmarks-modal-recency')?.textContent?.trim() || '',
+                wantTime: opened.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }),
+                title: tile.getAttribute('title') || '',
             };
         });
-
-        expect(shape.sameLine, 'the category is on its own line under the name').toBe(true);
-        // 52px: the row every list in the product draws, since the panel became
-        // a sheet across the page rather than a narrow column.
-        expect(shape.height, `a row is ${shape.height}px tall`).toBeLessThanOrEqual(54);
-        /*
-         * A hairline under a row is the list's own rule, the way the pages
-         * sheet draws it; what must not come back is the box around each one --
-         * ten outlined cards are ten borders competing with the panel's own.
-         */
-        const box = await page.evaluate(() => {
-            const cs = window.getComputedStyle(document.querySelector('.recent-bookmarks-modal-item'));
-            return {
-                top: parseFloat(cs.borderTopWidth),
-                left: parseFloat(cs.borderLeftWidth),
-                radius: parseFloat(cs.borderTopLeftRadius),
-            };
-        });
-        expect(box.top + box.left, 'the row draws its own box').toBe(0);
-        expect(box.radius, 'the row is a card again').toBe(0);
+        expect(seen.day, 'the date block shows another day').toBe(seen.wantDay);
+        expect(seen.recency, 'the tile does not say the time it was opened').toContain(seen.wantTime);
+        expect(seen.title.length, 'the full date is not on the tile').toBeGreaterThan(0);
+        await expect(page.locator('.recent-bookmarks-modal-item').first().locator('.recent-bookmarks-modal-opens')).toContainText('×');
     });
 
-    test('the rows share one slab rather than each bringing a box', async ({ page }) => {
+    test('the tiles share one slab', async ({ page }) => {
         await openRecent(page);
         // The slab is a depth cue, and the default depth is flat, which draws
         // none -- so this is asked of a step that draws depth at all.
@@ -130,14 +116,11 @@ test.describe('the recent bookmarks panel', () => {
             return {
                 listHasGround: bg(list) !== 'rgba(0, 0, 0, 0)' && bg(list) !== 'transparent',
                 differsFromPanel: bg(list) !== bg(panel),
-                rowsTransparent: [...document.querySelectorAll('.recent-bookmarks-modal-item')]
-                    .every((r) => bg(r) === 'rgba(0, 0, 0, 0)' || bg(r) === 'transparent'),
             };
         });
 
         expect(same.listHasGround, 'the list has no ground of its own').toBe(true);
         expect(same.differsFromPanel, 'the slab is the same colour as the panel').toBe(true);
-        expect(same.rowsTransparent, 'a resting row paints its own ground').toBe(true);
     });
 
     test('the row leads with the site, not with a number', async ({ page }) => {
@@ -156,9 +139,9 @@ test.describe('the recent bookmarks panel', () => {
         expect((chip || '').trim(), 'the header does not name the key that opens it').toBe('*');
 
         /*
-         * It was a 440px column you read down. It hangs from the header band
-         * now and takes that band's own width, because it is opened from the
-         * bar in it -- the same bargain the pages panel makes.
+         * It hangs from the header band, centred on it, the same bargain the
+         * pages panel makes -- but in a column of its own, 46rem at most,
+         * since a line across the whole band was too wide to read.
          *
          * Measured once the panel has finished rising in: read during the
          * rise its box is still drawn at the entrance scale, a few percent
@@ -178,7 +161,7 @@ test.describe('the recent bookmarks panel', () => {
                 rowMid: Math.round(row.x + row.width / 2),
             };
         });
-        expect(seen.width, `the panel is ${seen.width}px wide`).toBe(seen.rowWidth);
+        expect(seen.width, `the panel is ${seen.width}px wide`).toBeLessThanOrEqual(736);
         expect(seen.mid, 'the panel is not centred on the header row').toBe(seen.rowMid);
     });
 

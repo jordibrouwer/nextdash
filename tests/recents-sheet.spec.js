@@ -7,14 +7,12 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  *
  * It is opened from the bar in that band and answers a question about the page
  * under it -- what did I open last -- so it drops out of the band rather than
- * floating over a dimmed screen. Past three entries the rows lay out across the
- * page's own column; under that the sheet is as wide as what it holds.
+ * floating over a dimmed screen, in a column of its own: two tiles across, ten
+ * to a page, with a pager for what was opened before. Spanning the page's
+ * whole column, three rows of name, category and age were too wide to read.
  *
- * The rows are the rows the rest of the product draws: 52px, one line, led by
- * the key the reader would type. The panel was a 27rem column of 27px lines,
- * which is what a narrow panel wants and what a band across the page cannot
- * use -- and it printed the bookmark's category id, "// cat_mrjjzqik_o2rt0",
- * which is the store talking to itself.
+ * It printed the bookmark's category id once, "// cat_mrjjzqik_o2rt0", which
+ * is the store talking to itself.
  */
 
 async function openDashboard(page) {
@@ -38,8 +36,8 @@ async function openDashboard(page) {
 /**
  * Exactly `count` bookmarks with an opening behind them.
  *
- * Everything already in the store is reset to never-opened: recents reads the
- * page's own bookmarks, and a fixture that has been clicked would decide the
+ * Everything already in the store is reset to never-opened, on every page:
+ * recents reads them all, and a fixture that has been clicked would decide the
  * shape of the sheet instead of the test.
  */
 async function seedRecent(page, count) {
@@ -48,6 +46,15 @@ async function seedRecent(page, count) {
         const dash = window.dashboardInstance;
         const pageId = dash.currentPageId;
         const base = Date.now();
+        for (const other of (dash.pages || []).filter((p) => Number(p.id) !== Number(pageId))) {
+            const rows = await (await fetch(`/api/bookmarks?page=${other.id}`)).json();
+            if (!Array.isArray(rows) || !rows.some((b) => b.lastOpened)) continue;
+            await api(`/api/bookmarks?page=${other.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rows.map((b) => ({ ...b, lastOpened: 0, openCount: 0 }))),
+            });
+        }
         const existing = await (await fetch(`/api/bookmarks?page=${pageId}`)).json();
         const additions = Array.from({ length: n }, (_, index) => ({
             name: `Recent sheet ${index + 1}`,
@@ -72,6 +79,7 @@ async function seedRecent(page, count) {
             body: JSON.stringify([...cleared, ...additions]),
         });
         await dash.loadData();
+        await dash.loadAllBookmarks?.();
         dash.renderDashboard?.({ animate: false });
     }, count);
 }
@@ -119,7 +127,7 @@ const sheet = (page) => page.evaluate(() => {
     };
 });
 
-test('with entries enough it hangs from the band and spans the header row', async ({ page }) => {
+test('with entries enough it hangs from the band, a column of two tiles across', async ({ page }) => {
     await openDashboard(page);
     await seedRecent(page, 8);
     await openRecents(page);
@@ -131,7 +139,9 @@ test('with entries enough it hangs from the band and spans the header row', asyn
     expect(seen.gapToBand, `the panel sits ${seen.gapToBand}px from the band`).toBeLessThanOrEqual(0);
     expect(seen.gapToBand, 'the panel covers part of the band').toBeGreaterThanOrEqual(-2);
     expect(seen.mid, 'the panel is not centred on the header row').toBe(seen.rowMid);
-    expect(seen.width, 'the panel does not span the page’s column').toBe(seen.rowWidth);
+    // Narrower than the header row: 46rem at most, so a line is readable.
+    expect(seen.width, `the panel is ${seen.width}px wide`).toBeLessThanOrEqual(736);
+    expect(seen.width, 'the panel spans the page’s column again').toBeLessThan(seen.rowWidth);
     // Since v1.22.0 the Signature style (the default) draws the panel as a layer
     // of the material, round on every corner with the accent bar on top
     // (theme-overlays.css); square where it meets the band is the Classic drawing.
@@ -144,12 +154,12 @@ test('with entries enough it hangs from the band and spans the header row', asyn
     const classic = await sheet(page);
     expect(classic.topRadius, 'the panel is rounded against the band').toBe(0);
     expect(classic.bottomRadius, 'the panel has square bottom corners').toBeGreaterThan(0);
-    expect(seen.columns, `${seen.columns} columns of entries`).toBe(3);
-    // The row the rest of the product draws, not a 27px line.
-    expect(seen.rowHeight, `a row is ${seen.rowHeight}px tall`).toBeGreaterThanOrEqual(50);
+    expect(seen.columns, `${seen.columns} columns of entries`).toBe(2);
+    // A tile, not a 27px line.
+    expect(seen.rowHeight, `a tile is ${seen.rowHeight}px tall`).toBeGreaterThanOrEqual(50);
 });
 
-test('a row leads with the key and names the category rather than its id', async ({ page }) => {
+test('a tile shows the key it opens with and names the category rather than its id', async ({ page }) => {
     await openDashboard(page);
     await seedRecent(page, 6);
     await openRecents(page);
@@ -178,9 +188,8 @@ test('a row leads with the key and names the category rather than its id', async
     expect(rows.length, 'nothing to compare').toBeGreaterThan(1);
     expect(rows.every((r) => r.key !== null), 'a row has no key column at all').toBe(true);
     expect(rows.some((r) => r.key.length > 0), 'no row shows the key it would be opened with').toBe(true);
-    // The column stands whether or not there is a key in it.
+    // The names line up down the column, after the date block and the icon.
     expect(new Set(rows.map((r) => r.nameX)).size, 'the names start in different columns').toBe(1);
-    expect(new Set(rows.map((r) => r.keyX)).size, 'the key column drifts').toBe(1);
     expect(rows.some((r) => /cat_[a-z0-9_]+/i.test(r.detail)),
         `a row prints a category id: ${rows.map((r) => r.detail).join(' ')}`).toBe(false);
 });
@@ -264,4 +273,72 @@ test('the arrows walk the sheet in both directions', async ({ page }) => {
 
     await page.keyboard.press('ArrowLeft');
     await expect.poll(name, { message: 'left did not step back' }).toBe(order[0]);
+});
+
+/*
+ * Earlier bookmarks are a page away: ten to a page, the newest first, turned
+ * with ] and PageDown (older) and [ and PageUp (newer), or a page number.
+ * ← and → stay the line's.
+ */
+test('the pager turns through what was opened before', async ({ page }) => {
+    await openDashboard(page);
+    await seedRecent(page, 23);
+    await openRecents(page);
+
+    const range = page.locator('.recents-sheet .recent-bookmarks-page-range');
+    const names = () => page.locator('.recents-sheet .recent-bookmarks-modal-item .recent-bookmarks-modal-name').allInnerTexts();
+    await expect(range).toHaveText('1–10 of 23');
+    await expect.poll(names).toEqual(Array.from({ length: 10 }, (_, i) => `Recent sheet ${i + 1}`));
+
+    await page.keyboard.press(']');
+    await expect(range).toHaveText('11–20 of 23');
+    await expect.poll(async () => (await names())[0]).toBe('Recent sheet 11');
+
+    await page.keyboard.press('PageDown');
+    await expect(range).toHaveText('21–23 of 23');
+    await expect.poll(names).toEqual(['Recent sheet 21', 'Recent sheet 22', 'Recent sheet 23']);
+    // The last page stays the last.
+    await page.keyboard.press('PageDown');
+    await expect(range).toHaveText('21–23 of 23');
+
+    await page.keyboard.press('PageUp');
+    await expect(range).toHaveText('11–20 of 23');
+    await page.locator('.recents-sheet .recent-bookmarks-pager').getByRole('button', { name: 'Page 1', exact: true }).click();
+    await expect(range).toHaveText('1–10 of 23');
+    await expect(page.locator('.recents-sheet .recent-bookmarks-page-btn.is-current')).toHaveText('1');
+
+    // A new opening starts on the newest page again.
+    await page.keyboard.press(']');
+    await expect(range).toHaveText('11–20 of 23');
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.recent.isRecentBookmarksModalOpen())).toBe(false);
+    await openRecents(page);
+    await expect(range).toHaveText('1–10 of 23');
+});
+
+test('a bookmark opened on another page is in the list, under that page’s name', async ({ page }) => {
+    await openDashboard(page);
+    await seedRecent(page, 3);
+    const other = await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const dash = window.dashboardInstance;
+        const list = await (await api('/api/pages')).json();
+        let target = list.find((p) => p.name === 'Recents elsewhere');
+        if (!target) {
+            target = { id: Math.max(...list.filter((p) => p.id < 999999).map((p) => p.id)) + 1, name: 'Recents elsewhere' };
+            await api('/api/pages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify([...list, target]) });
+        }
+        await api('/api/bookmarks/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: target.id, bookmark: { name: 'Opened elsewhere', url: `https://example.com/elsewhere-${Date.now()}`, lastOpened: Date.now() + 60_000, openCount: 5 } }),
+        });
+        await dash.loadData();
+        await dash.loadAllBookmarks?.();
+        return target.name;
+    });
+    await openRecents(page);
+    const first = page.locator('.recents-sheet .recent-bookmarks-modal-item').first();
+    await expect(first.locator('.recent-bookmarks-modal-name')).toHaveText('Opened elsewhere');
+    await expect(first.locator('.recent-bookmarks-modal-detail')).toHaveText(other);
 });

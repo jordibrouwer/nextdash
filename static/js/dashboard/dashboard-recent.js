@@ -83,6 +83,8 @@ class DashboardRecent {
         }
 
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+        // Every opening starts on the newest page.
+        this._recentPage = 0;
 
         const skeletonCount = 5;
         // aria-hidden on the rows keeps screen readers from reading placeholder
@@ -160,6 +162,52 @@ class DashboardRecent {
         }
 
         requestAnimationFrame(() => this._fillRecentBookmarksModal());
+        /*
+         * Every page's bookmarks, not only this one's: startup skips the
+         * cross-page load when nothing asks for it, and the sheet does. Drawn
+         * again when it lands, with what this page has meanwhile.
+         */
+        if (!d._unsortedLoaded && typeof d.loadAllBookmarks === 'function') {
+            void Promise.resolve(d.loadAllBookmarks())
+                .then(() => {
+                    if (this.isRecentBookmarksModalOpen()) this._fillRecentBookmarksModal();
+                })
+                .catch(() => {});
+        }
+    }
+
+    /**
+     * What the sheet reads: this page from its own list, every other page from
+     * the cross-page one -- the current page's rows are where an open lands
+     * first, so they win over their copies there (as in the tag cloud's pool).
+     */
+    recentPool() {
+        const d = this.dash;
+        const current = Array.isArray(d.bookmarks) ? d.bookmarks : [];
+        const currentId = Number(d.currentPageId);
+        const others = (Array.isArray(d.allBookmarks) ? d.allBookmarks : [])
+            .filter((bookmark) => Number(bookmark?.pageId ?? bookmark?.pageID) !== currentId);
+        return [...current, ...others];
+    }
+
+    /** Ten to a page, the newest first; the page clamped to what there is. */
+    recentPageOf(all) {
+        const size = DashboardBookmarkRows.RECENT_MODAL_DISPLAY_LIMIT;
+        const pages = Math.max(1, Math.ceil(all.length / size));
+        const page = Math.min(Math.max(0, Number(this._recentPage) || 0), pages - 1);
+        this._recentPage = page;
+        return { page, pages, size, shown: all.slice(page * size, page * size + size) };
+    }
+
+    /** PgDn and ] go back in time, PgUp and [ forward; a page number goes there. */
+    goToRecentPage(page) {
+        const all = this.getRecentBookmarks(this.recentPool(), 0);
+        const pages = Math.max(1, Math.ceil(all.length / DashboardBookmarkRows.RECENT_MODAL_DISPLAY_LIMIT));
+        const next = Math.min(Math.max(0, page), pages - 1);
+        if (next === this._recentPage) return false;
+        this._recentPage = next;
+        this._fillRecentBookmarksModal();
+        return true;
     }
 
 
@@ -202,11 +250,18 @@ class DashboardRecent {
         const contentEl = document.getElementById('modal-text') || panel.querySelector('.modal-body');
         if (!contentEl) return;
 
-        const recentBookmarks = this.getRecentBookmarks(d.bookmarks, DashboardBookmarkRows.RECENT_MODAL_DISPLAY_LIMIT);
+        const pool = this.recentPool();
+        const allRecent = this.getRecentBookmarks(pool, 0);
+        const { page, pages, size, shown: recentBookmarks } = this.recentPageOf(allRecent);
         const openInNewTab = d.settings.openInNewTab;
         const noRecentText = d.language.t('dashboard.noRecentBookmarks') || 'No recent bookmarks yet.';
-        const shownWithUrls = this.getRecentBookmarksWithUrls(d.bookmarks, DashboardBookmarkRows.RECENT_MODAL_DISPLAY_LIMIT);
-        const lastWithUrls = this.getRecentBookmarksWithUrls(d.bookmarks, DashboardBookmarkRows.OPEN_LAST_DEFAULT);
+        // The open buttons act on the page on screen; "the last N" is always the newest.
+        const shownWithUrls = recentBookmarks.filter((bookmark) => bookmark && String(bookmark.url || '').trim());
+        const lastWithUrls = this.getRecentBookmarksWithUrls(pool, DashboardBookmarkRows.OPEN_LAST_DEFAULT);
+        // Dates in the app's language, not the browser's, as the stats do.
+        const lang = d.settings?.language || undefined;
+        // The bar under a tile: its opens against the most opened in the list.
+        const mostOpens = Math.max(1, ...allRecent.map((bookmark) => Number(bookmark.openCount) || 0));
 
         const openPlans = [
             ...this.buildOpenTabsPlans(shownWithUrls, { all: 'recentOpenShown', first: 'recentOpenShownFirst' }),
@@ -233,43 +288,44 @@ class DashboardRecent {
                    ${recentBookmarks.map((bookmark, index) => {
                        const safeName = d.escapeHtml(bookmark.name || d.bookmarkFallbackName());
                        const safeUrl = this.safeHttpBookmarkHref(bookmark.url);
-                       /*
-                        * A bookmark's category is an id. Printed raw it read as
-                        * "// cat_mrjjzqik_o2rt0", which is the store talking to
-                        * itself.
-                        */
-                       const category = (d.categories || [])
-                           .find((item) => String(item.id) === String(bookmark.category));
-                       const safeCategory = d.escapeHtml(category?.name
-                           || bookmark.category
-                           || (d.language.t('dashboard.uncategorized') || 'Other'));
-                       const recency = d.escapeHtml(this.formatRecentRecency(bookmark.lastOpened));
+                       const safeDetail = d.escapeHtml(this.recentPlaceLabel(bookmark));
+                       const opened = new Date(Number(bookmark.lastOpened) || 0);
+                       const day = opened.toLocaleDateString(lang, { day: 'numeric' });
+                       const month = opened.toLocaleDateString(lang, { month: 'short' }).replace(/\.$/, '');
+                       const recency = d.escapeHtml(this.formatRecentMoment(bookmark.lastOpened));
+                       const fullDate = d.escapeHtml(opened.toLocaleString(lang, { dateStyle: 'full', timeStyle: 'short' }));
                        const openCount = this.formatRecentOpenCount(bookmark.openCount);
                        const openCountHtml = openCount
                            ? `<span class="recent-bookmarks-modal-opens">${d.escapeHtml(openCount)}</span>`
                            : '';
+                       const share = Math.round(((Number(bookmark.openCount) || 0) / mostOpens) * 100);
                        const target = openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
-                       /*
-                        * The key the reader would type, where the pages sheet
-                        * puts its number. Reserved whether or not there is one,
-                        * so the names line up down the column instead of each
-                        * starting where the one above it ended.
-                        */
+                       // The key the reader would type, at the end of the name line.
                        const shortcut = String(bookmark.shortcut || '').toUpperCase();
-                       return `<a class="recent-bookmarks-modal-item" href="${safeUrl}" data-recent-index="${index}"${target}>
-                                   <span class="recent-bookmarks-modal-shortcut" aria-hidden="true">${d.escapeHtml(shortcut)}</span>
-                                   ${this.recentIconHtml(bookmark)}
-                                   <span class="recent-bookmarks-modal-name">${safeName}</span>
-                                   <span class="recent-bookmarks-modal-detail">// ${safeCategory}</span>
-                                   <span class="recent-bookmarks-modal-recency">${recency}</span>
-                                   ${openCountHtml}
+                       return `<a class="recent-bookmarks-modal-item" href="${safeUrl}" data-recent-index="${index}" title="${fullDate}"${target}>
+                                   <span class="recent-bookmarks-modal-date" aria-hidden="true"><b>${d.escapeHtml(day)}</b><small>${d.escapeHtml(month)}</small></span>
+                                   <span class="recent-bookmarks-modal-main">
+                                       <span class="recent-bookmarks-modal-top">
+                                           ${this.recentIconHtml(bookmark)}
+                                           <span class="recent-bookmarks-modal-name">${safeName}</span>
+                                           <span class="recent-bookmarks-modal-shortcut" aria-hidden="true">${d.escapeHtml(shortcut)}</span>
+                                       </span>
+                                       <span class="recent-bookmarks-modal-meta">
+                                           <span class="recent-bookmarks-modal-recency">${recency}</span>
+                                           <span class="recent-bookmarks-modal-detail">${safeDetail}</span>
+                                           ${openCountHtml}
+                                       </span>
+                                       <span class="recent-bookmarks-modal-bar" aria-hidden="true"><i style="width:${share}%"></i></span>
+                                   </span>
                                </a>`;
                    }).join('')}
                </div>
                ${openToolbarHtml}
                <div class="recent-bookmarks-modal-foot">
-                   <span>${d.escapeHtml(d.formatDashboardLabel('recentShowing', { n: recentBookmarks.length },
-                       'Showing the last {n}'))}</span>
+                   ${pages > 1
+                       ? this.recentPagerHtml(page, pages, size, allRecent.length)
+                       : `<span>${d.escapeHtml(d.formatDashboardLabel('recentShowing', { n: recentBookmarks.length },
+                           'Showing the last {n}'))}</span>`}
                    <span><span class="recent-bookmarks-modal-key">\u21B5</span> ${d.escapeHtml(
                        d.formatDashboardLabel('recentFootOpen', {}, 'open'))}</span>
                </div>`
@@ -287,6 +343,11 @@ class DashboardRecent {
                     if (bookmark) {
                         this.recordBookmarkOpened(bookmark, d.resolveBookmarkIndex(bookmark), 'recent');
                     }
+                });
+            });
+            contentEl.querySelectorAll('.recent-bookmarks-page-btn[data-recent-page]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    this.goToRecentPage(parseInt(btn.getAttribute('data-recent-page'), 10));
                 });
             });
             contentEl.querySelectorAll('.recent-bookmarks-open-btn[data-open-plan]').forEach((btn) => {
@@ -340,6 +401,14 @@ class DashboardRecent {
         d._recentModalKeyHandler = (e) => {
             if (!this.isRecentBookmarksModalOpen()) {
                 this._cleanupRecentModalKeyHandler();
+                return;
+            }
+            // Older and newer pages; ← and → are the line's.
+            const turn = e.key === 'PageDown' || e.key === ']' ? 1 : e.key === 'PageUp' || e.key === '[' ? -1 : 0;
+            if (turn && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.goToRecentPage((Number(this._recentPage) || 0) + turn);
                 return;
             }
             const walks = ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'];
@@ -439,6 +508,64 @@ class DashboardRecent {
         return d.formatPreviewLastOpened(diffDays);
     }
 
+
+    /**
+     * "Thu 15:08 · 2m ago": the weekday and the time it was opened, and how
+     * long ago while that is under a day. The date itself is the block beside it.
+     */
+    formatRecentMoment(lastOpened) {
+        const ts = Number(lastOpened) || 0;
+        if (!ts) return '';
+        const opened = new Date(ts);
+        const lang = this.dash.settings?.language || undefined;
+        const moment = `${opened.toLocaleDateString(lang, { weekday: 'short' })} ${opened.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}`;
+        const underADay = Date.now() - ts < 24 * 60 * 60 * 1000;
+        return underADay ? `${moment} · ${this.formatRecentRecency(ts)}` : moment;
+    }
+
+    /** Where it lives: its category on this page, its page's name on another. */
+    recentPlaceLabel(bookmark) {
+        const d = this.dash;
+        const pageId = Number(bookmark?.pageId ?? bookmark?.pageID);
+        if (Number.isFinite(pageId) && pageId > 0 && pageId !== Number(d.currentPageId)) {
+            const pageName = (d.pages || []).find((p) => Number(p.id) === pageId)?.name;
+            if (pageName) return pageName;
+        }
+        // A bookmark's category is an id; printed raw it read as "cat_mrjjzqik_o2rt0".
+        const category = (d.categories || []).find((item) => String(item.id) === String(bookmark?.category));
+        return category?.name
+            || (d.language.t('dashboard.uncategorized') || 'Other');
+    }
+
+    /**
+     * "11–20 of 34", the page numbers, and the keys. Long histories keep the
+     * first, the last and the ones around this page, with a gap between.
+     */
+    recentPagerHtml(page, pages, size, total) {
+        const d = this.dash;
+        const from = page * size + 1;
+        const to = Math.min(total, from + size - 1);
+        const wanted = new Set([0, pages - 1, page - 1, page, page + 1].filter((n) => n >= 0 && n < pages));
+        const numbers = [...wanted].sort((a, b) => a - b);
+        const button = (target, label, aria, current = false) => `<button type="button"
+            class="recent-bookmarks-page-btn${current ? ' is-current' : ''}"${current ? ' aria-current="page"' : ''}
+            data-recent-page="${target}" aria-label="${d.escapeHtml(aria)}"${target < 0 || target >= pages ? ' disabled' : ''}>${label}</button>`;
+        const parts = [];
+        numbers.forEach((n, i) => {
+            if (i > 0 && n - numbers[i - 1] > 1) parts.push('<span class="recent-bookmarks-page-gap" aria-hidden="true">…</span>');
+            parts.push(button(n, String(n + 1),
+                d.formatDashboardLabel('recentPageN', { n: n + 1 }, `Page ${n + 1}`),
+                n === page));
+        });
+        return `<nav class="recent-bookmarks-pager" aria-label="${d.escapeHtml(d.formatDashboardLabel('recentPagerLabel', {}, 'Earlier bookmarks'))}">
+                    <span class="recent-bookmarks-page-range">${d.escapeHtml(d.formatDashboardLabel('recentPageRange',
+                        { from, to, total }, `${from}–${to} of ${total}`))}</span>
+                    ${button(page - 1, '\u2039', d.formatDashboardLabel('recentPageNewer', {}, 'Newer'))}
+                    ${parts.join('')}
+                    ${button(page + 1, '\u203A', d.formatDashboardLabel('recentPageOlder', {}, 'Older'))}
+                    <span class="recent-bookmarks-page-keys" aria-hidden="true"><span class="recent-bookmarks-modal-key">[</span><span class="recent-bookmarks-modal-key">]</span></span>
+                </nav>`;
+    }
 
     formatRecentOpenCount(openCount) {
         const d = this.dash;

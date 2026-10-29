@@ -130,6 +130,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.22.5
 
+The tag view can show bookmarks with all of its tags, add a tag to a selection, sort by score and remember its sort; the page filter takes several words and opens collapsed categories with a hit; the Recent sheet is two tiles across with the date, a page at a time, from every page.
+
 ### Tag view
 
 - **new — Any or all.** With two or more tags the word between the pills is a switch: "or" shows the bookmarks with any of them, "and" only those with every one. `TagViewModel.matches(pool, tags, { mode })`; the address carries it as `#tag/a+b?all` (`hashFor`, `modeFromHash`), so a reload or a shared link opens the same view. An "and" view with no matches offers *Show any of them*.
@@ -147,6 +149,13 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — Down and Enter.** `↓` or Enter in the bar puts the keyboard cursor on the first row left; Enter on a query that leaves one bookmark opens it.
 - **fix — A hit in a collapsed category is shown.** The count included rows inside collapsed categories that stayed folded; such a category opens (`grid-filter-open`) while the query lasts, without touching its saved state, and its rows count for the keyboard.
 - **fix — The keyboard cursor skips rows the filter hides.** `_isNavigableRow` did not know `grid-filter-hidden`, so `j`/`k` could land on a row nobody could see.
+
+### Recent bookmarks
+
+- **new — Two tiles across, with the date.** The Recent sheet (`*`) is a column of its own, 46rem at most and centred on the header, instead of the page's whole width in three columns. Each bookmark is a tile: a calendar block with the day and month it was last opened, the name and its key, the weekday and time (and how long ago, under a day), its category — or its page's name when it lives on another page — and how often it was opened, with a bar against the most opened. The full date is in the tile's tooltip. Dates follow the app's language (`settings.language`).
+- **new — Earlier bookmarks, a page at a time.** Ten to a page with a pager in the foot ("11–20 of 34", the page numbers, first and last with a gap between on long histories). `]` and `PageDown` go back, `[` and `PageUp` forward; `←` and `→` still walk the line. *Open shown* opens the page on screen. Every opening starts on the newest page.
+- **new — Every page's bookmarks.** The sheet reads the current page and `allBookmarks` (`DashboardRecent.recentPool`), and asks for the cross-page load when startup skipped it.
+- **fix — Quieter open buttons,** centred over the pager.
 
 ---
 

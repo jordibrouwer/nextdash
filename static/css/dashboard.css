@@ -9382,38 +9382,115 @@ body[data-header-buttons="plain"] .header-zone-divider {
    floating over a dimmed screen. The chrome -- the anchor, the square top
    corners, the drop -- is .header-sheet in modal.css; what is here is the list.
 
-   And the list is drawn the way every list in the product is drawn: rows of
-   52px with the key the reader would type at the head of each one. It was a
-   27rem column of 27px lines, which is what a narrow panel wants and what a
-   band across the page cannot use.
+   The list is two columns of tiles, ten to a page, with a pager in the foot
+   for what was opened before.
    ────────────────────────────────────────────────────────────────────────── */
 
+/*
+ * The sheet is a column of its own, two tiles across: spanning the page's
+ * whole column, three rows of name, category and age were too wide to read.
+ * Each tile leads with the day it was opened, as a calendar block, and says
+ * the weekday, the time, where it lives and how often it was opened.
+ */
+.modal.header-sheet.recents-sheet.is-grid,
+.modal.header-sheet.recents-sheet.is-compact {
+    width: min(46rem, calc(100vw - 2.5rem));
+    min-width: 0;
+    max-width: calc(100vw - 2.5rem);
+}
+
+.modal.header-sheet.recents-sheet.is-single {
+    width: min(26rem, calc(100vw - 2.5rem));
+}
+
 .modal.recents-sheet .recent-bookmarks-modal-list {
-    gap: 0;
-    padding: 0;
-    max-height: min(52vh, 24rem);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem);
+    max-height: min(56vh, 28rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.modal.recents-sheet.is-single .recent-bookmarks-modal-list {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 720px) {
+    .modal.recents-sheet .recent-bookmarks-modal-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 .modal.recents-sheet .recent-bookmarks-modal-item {
-    min-height: 52px;
-    padding: 0 var(--space-3, 0.8rem);
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    align-items: center;
     gap: var(--space-3, 0.75rem);
-    /* key, favicon, name, category, how long ago, opens */
-    grid-template-columns: 4.5ch 1.1rem minmax(0, 1fr) auto auto auto;
+    min-height: 60px;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem) var(--space-2, 0.5rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+/* The calendar block: the day large, the month under it. */
+.recent-bookmarks-modal-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.05;
+    padding-right: var(--space-2, 0.5rem);
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.recent-bookmarks-modal-date b {
+    font-size: calc(var(--font-size-controls) * 1.15);
+    font-variant-numeric: tabular-nums;
+}
+
+.recent-bookmarks-modal-date small {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.recent-bookmarks-modal-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.recent-bookmarks-modal-top,
+.recent-bookmarks-modal-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
 }
 
 .modal.recents-sheet .recent-bookmarks-modal-name {
+    flex: 1 1 auto;
     font-size: var(--font-size-controls);
 }
 
-/*
- * The key column stands whether or not the bookmark has one, so the names line
- * up down the column instead of each starting where the one above it ended.
- */
+/* One line that gives way from the end: the place shortens before the time does. */
+.recent-bookmarks-modal-meta {
+    overflow: hidden;
+}
+
+.recent-bookmarks-modal-meta .recent-bookmarks-modal-detail {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+/* The key the reader would type, at the end of the name line. */
 .recent-bookmarks-modal-shortcut {
-    min-width: 4.5ch;
+    flex-shrink: 0;
     color: var(--accent-primary);
     font-size: calc(var(--font-size-controls) * 0.78);
     font-weight: var(--font-weight-bold);
@@ -9421,44 +9498,126 @@ body[data-header-buttons="plain"] .header-zone-divider {
     font-variant-numeric: tabular-nums;
 }
 
+.recent-bookmarks-modal-shortcut:empty {
+    display: none;
+}
+
 .modal.recents-sheet .recent-bookmarks-modal-recency,
 .modal.recents-sheet .recent-bookmarks-modal-opens {
+    flex-shrink: 0;
     font-variant-numeric: tabular-nums;
 }
 
-/* Wide: the rows lay out across the page's column, three at most. */
-.modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
+/* How often, against the most opened in the list. */
+.recent-bookmarks-modal-bar {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    overflow: hidden;
+}
+
+.recent-bookmarks-modal-bar i {
+    display: block;
+    height: 100%;
+    background: var(--accent-primary);
+    opacity: 0.8;
+}
+
+/* The open buttons are a quiet row under the tiles, not the loudest thing on the sheet. */
+.modal.recents-sheet .recent-bookmarks-open-btn.modal-button {
+    padding: 0.1rem 0.5rem;
+}
+
+.modal.recents-sheet .recent-bookmarks-open-btn .modal-button-name {
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: var(--font-weight-medium, 500);
+}
+
+/* The buttons centred over the pager, the command that does the same at the end. */
+.modal.recents-sheet .recent-bookmarks-modal-toolbar {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
-    overflow-y: auto;
-    min-height: 0;
+    grid-template-columns: 1fr auto 1fr;
 }
 
-.modal.recents-sheet.is-grid .recent-bookmarks-modal-item {
-    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+.modal.recents-sheet .recent-bookmarks-modal-toolbar .recent-bookmarks-open-actions {
+    grid-column: 2;
+    justify-content: center;
 }
 
-@media (max-width: 1100px) {
-    .modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
-        grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
-    }
+.modal.recents-sheet .recent-bookmarks-modal-toolbar .recent-bookmarks-open-hint {
+    grid-column: 3;
+    justify-self: end;
 }
 
-@media (max-width: 720px) {
-    .modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
-        grid-template-columns: minmax(0, 1fr);
-    }
+/* With a pager the foot has three parts: the pager in the middle, ↵ open at the end. */
+.modal.recents-sheet .recent-bookmarks-modal-foot:has(.recent-bookmarks-pager) {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
 }
 
-/* Narrow: as wide as what it holds, rows side by side while they fit. */
-.modal.recents-sheet.is-compact .recent-bookmarks-modal-list {
+.modal.recents-sheet .recent-bookmarks-modal-foot .recent-bookmarks-pager {
+    grid-column: 2;
+    justify-content: center;
+}
+
+.modal.recents-sheet .recent-bookmarks-modal-foot:has(.recent-bookmarks-pager) > :last-child {
+    grid-column: 3;
+    justify-self: end;
+}
+
+/* Earlier bookmarks: "11–20 of 34", the pages, and the keys that turn them. */
+.recent-bookmarks-pager {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
 }
 
-.modal.recents-sheet.is-compact .recent-bookmarks-modal-item {
-    flex: 1 1 18rem;
-    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+.recent-bookmarks-page-range {
+    margin-right: var(--space-2, 0.5rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.recent-bookmarks-page-btn {
+    min-width: 1.9em;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--radius-3, 4px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.recent-bookmarks-page-btn:hover:not(:disabled),
+.recent-bookmarks-page-btn:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.recent-bookmarks-page-btn.is-current {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+}
+
+.recent-bookmarks-page-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.recent-bookmarks-page-gap {
+    color: var(--text-tertiary);
+    padding: 0 0.15rem;
+}
+
+.recent-bookmarks-page-keys {
+    display: inline-flex;
+    gap: 0.2rem;
+    margin-left: var(--space-2, 0.5rem);
 }
 
 /*
