@@ -76,7 +76,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>A window that fits the screen.</strong> The parts are listed on the left in three groups, <em>Needs you</em>, <em>Tidy up</em> and <em>Good to know</em>, and the one you pick is shown on the right. Close is always in view, and the bar in the corner asks before you close it."
+          "text": "<strong>A window that fits the screen, and tells more.</strong> The week in figures sits along the top, each next to the week before: bookmarks opened, bookmarks added, uptime and outages, and the Inbox. The window opens on an <em>Overview</em> with a line for each part, and the parts are listed on the left in three groups, <em>Needs you</em>, <em>Tidy up</em> and <em>Good to know</em>. The one you pick is shown on the right with what matters about each name: where a broken link is, since when it is down and why, how often a bookmark was opened, how long an Inbox link has waited. Close is always in view, and the bar in the corner asks before you close it."
         },
         {
           "badge": "new",

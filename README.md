@@ -106,7 +106,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-digest.jpg" alt="Weekly digest" width="100%" />
       <br />
-      <sub><b>Weekly digest</b> <i>(Oceanic Steel)</i> — What needs you, what is worth tidying up and what is good to know, in one window: broken links, certificates and domains running out, container updates, the checkup, what nobody opens and what is new. Pick a part on the left, deal with it with the button on the right.</sub>
+      <sub><b>Weekly digest</b> <i>(Oceanic Steel)</i> — The week in figures — opens, new bookmarks, uptime, the Inbox — each next to the week before, then what needs you, what is worth tidying up and what is good to know: broken links with since when and why, certificates and domains running out, container updates, the checkup, what nobody opens and what is new. An overview first, a part per click.</sub>
     </td>
   </tr>
 </table>
