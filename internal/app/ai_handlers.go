@@ -101,7 +101,7 @@ func (h *Handlers) AIStatusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) AITestHandler(w http.ResponseWriter, r *http.Request) {
-	if aiDemoClosed(w) {
+	if aiDemoClosed(w) || !h.requireWriteAccess(w, r) {
 		return
 	}
 	s := h.store.GetSettings()
@@ -151,7 +151,7 @@ func (s *aiStreamWriter) beat() {
 }
 
 func (h *Handlers) AIAskHandler(w http.ResponseWriter, r *http.Request) {
-	if aiDemoClosed(w) {
+	if aiDemoClosed(w) || !h.requireWriteAccess(w, r) {
 		return
 	}
 	var body struct {
@@ -465,7 +465,7 @@ func (h *Handlers) AIApplyAllHandler(w http.ResponseWriter, r *http.Request) {
 	results := []aiProposal{}
 	skippedDestructive := []string{}
 	for _, id := range body.IDs {
-		if p, ok := aiFindProposal(id); ok && p.Destructive {
+		if p, ok := aiFindProposal(id); ok && (p.Destructive || mcpToolIsDestructive(p.Tool)) {
 			skippedDestructive = append(skippedDestructive, id)
 			continue
 		}

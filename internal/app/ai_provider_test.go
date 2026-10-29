@@ -725,3 +725,31 @@ func TestOpenAIWholeCallsAtIndexZeroStaySeparate(t *testing.T) {
 		t.Fatalf("calls: %+v %s / %+v %s", a, a.Arguments, b, b.Arguments)
 	}
 }
+
+func TestAPlainJSONAnswerToAStreamRequestIsAProviderError(t *testing.T) {
+	aiFake(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"choices":[{"message":{"content":"hi"}}]}`)
+	})
+	compat := testOpenAI()
+	compat.label = "OpenAI-compatible"
+	reply, err := compat.Chat(context.Background(), aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}}, nil)
+	var ae *aiError
+	if !errors.As(err, &ae) || ae.Kind != "provider" || reply.Text != "" {
+		t.Fatalf("plain json: %v %+v", err, reply)
+	}
+}
+
+func TestTheOutboundLimiterIsRateLimitedNotUnreachable(t *testing.T) {
+	aiFake(t, func(w http.ResponseWriter, r *http.Request) { t.Error("the request left") })
+	limiter := newSlidingWindowLimiter(1, time.Minute)
+	limiter.allow("global")
+	aiHTTPClient = func(bool) *http.Client {
+		return &http.Client{Transport: &rateLimitedTransport{base: http.DefaultTransport, limiter: limiter}}
+	}
+	_, err := testOpenAI().Chat(context.Background(), aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}}, nil)
+	var ae *aiError
+	if !errors.As(err, &ae) || ae.Kind != "rate_limited" {
+		t.Fatalf("limiter: %v", err)
+	}
+}

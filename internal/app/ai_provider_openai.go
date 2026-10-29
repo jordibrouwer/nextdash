@@ -131,7 +131,9 @@ func (p *openAIProvider) Chat(ctx context.Context, req aiChatRequest, onText fun
 	var calls []*pending
 	current := map[int]*pending{}
 	finished := false
+	events := 0
 	err = aiReadSSE(resp.Body, func(_, data string) error {
+		events++
 		if strings.TrimSpace(data) == "[DONE]" {
 			finished = true
 			return errAIStreamDone
@@ -181,7 +183,8 @@ func (p *openAIProvider) Chat(ctx context.Context, req aiChatRequest, onText fun
 	}
 	// Servers that copy the API vary in how they end a stream; OpenAI itself
 	// always sends [DONE].
-	if !finished && p.label == "OpenAI" {
+	// A server that ignored stream:true and sent plain JSON gives no events.
+	if !finished && (p.label == "OpenAI" || events == 0) {
 		return aiChatReply{}, aiStreamCut()
 	}
 	reply.Text = text.String()

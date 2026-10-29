@@ -160,6 +160,9 @@ func aiTransportError(err error) *aiError {
 	if errors.As(err, &ae) {
 		return ae
 	}
+	if errors.Is(err, errOutboundRateLimited) {
+		return &aiError{Kind: "rate_limited", Status: 429}
+	}
 	if errors.Is(err, context.DeadlineExceeded) {
 		return &aiError{Kind: "timeout"}
 	}

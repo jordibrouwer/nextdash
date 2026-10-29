@@ -204,10 +204,12 @@ func TestTheKeyNeverLeaves(t *testing.T) {
 	f.fail = 401
 	var bodies []string
 	logs := captureLog(t)
+	storeProposals(t, h, aiProposal{ID: "k1", Tool: "update_bookmark", Arguments: json.RawMessage(`{"url":"https://radarr.example/","note":"films"}`)})
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategoryMutate: true}})
 	activity := captureActivityLogs(t, func() {
 		for _, c := range [][3]string{
 			{"GET", "/api/ai/status", ""}, {"GET", "/api/ai/key", ""}, {"POST", "/api/ai/test", ""},
-			{"POST", "/api/ai/ask", `{"question":"hi"}`}, {"GET", "/api/ai/conversations", ""}, {"GET", "/api/settings", ""},
+			{"POST", "/api/ai/ask", `{"question":"hi"}`}, {"POST", "/api/ai/proposals/k1/apply", ""}, {"GET", "/api/ai/conversations", ""}, {"GET", "/api/settings", ""},
 		} {
 			bodies = append(bodies, askDo(h, c[0], c[1], c[2], "").Body.String())
 		}
@@ -219,6 +221,9 @@ func TestTheKeyNeverLeaves(t *testing.T) {
 	}
 	if f.requests() < 2 {
 		t.Fatalf("the provider was not reached (%d)", f.requests())
+	}
+	if len(activity) == 0 {
+		t.Fatal("the assistant's calls left no activity lines to check")
 	}
 	if strings.Contains(logs.String(), "SECRET-42") || strings.Contains(strings.Join(activity, "\n"), "SECRET-42") {
 		t.Fatal("a log holds the key")
@@ -250,6 +255,7 @@ func TestApplyRunsTheRealHandlerAndLogsTheAssistant(t *testing.T) {
 	h, page := applyInstall(t)
 	storeProposals(t, h, aiProposal{ID: "p1", Tool: "update_bookmark", Arguments: json.RawMessage(`{"url":"https://radarr.example/","note":"films"}`)})
 	var rec *httptest.ResponseRecorder
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategoryMutate: true}})
 	lines := captureActivityLogs(t, func() {
 		rec = askDo(h, "POST", "/api/ai/proposals/p1/apply", "", "")
 	})
@@ -431,5 +437,44 @@ func TestAssistantRoutesAreClosedInTheDemo(t *testing.T) {
 		if rec := askDo(h, c[0], c[1], "", ""); rec.Code != 404 || !strings.Contains(rec.Body.String(), "The assistant is not available in the demo") {
 			t.Errorf("%s %s: %d %s", c[0], c[1], rec.Code, rec.Body)
 		}
+	}
+}
+
+func TestAskAndTestNeedTheWriteToken(t *testing.T) {
+	h, f := newAskInstall(t)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	for _, c := range [][2]string{{"/api/ai/ask", `{"question":"hi"}`}, {"/api/ai/test", ""}} {
+		if rec := askDo(h, "POST", c[0], c[1], ""); rec.Code != 401 {
+			t.Fatalf("%s without token: %d", c[0], rec.Code)
+		}
+	}
+	if f.requests() != 0 {
+		t.Fatalf("the provider saw %d requests without a token", f.requests())
+	}
+	if rec := askDo(h, "POST", "/api/ai/ask", `{"question":"hi"}`, "tok"); rec.Code != 200 {
+		t.Fatalf("ask with token: %d %s", rec.Code, rec.Body)
+	}
+	if rec := askDo(h, "POST", "/api/ai/test", "", "tok"); rec.Code != 200 || !strings.Contains(rec.Body.String(), `"ok":true`) {
+		t.Fatalf("test with token: %d %s", rec.Code, rec.Body)
+	}
+	if f.requests() != 2 {
+		t.Fatalf("requests: %d", f.requests())
+	}
+}
+
+func TestApplyAllRecomputesDestructive(t *testing.T) {
+	h, page := applyInstall(t)
+	// A restored record that lost its flag.
+	if _, err := aiAppendTurn("", "q", aiMessage{Role: "assistant", Text: "a", Proposals: []aiProposal{
+		{ID: "d9", Tool: "delete_bookmark", Status: "pending", Destructive: false, Arguments: json.RawMessage(`{"url":"https://sonarr.example/"}`)},
+	}}, h.store.GetSettings(), time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	rec := askDo(h, "POST", "/api/ai/proposals/apply-all", `{"ids":["d9"]}`, "")
+	if !strings.Contains(rec.Body.String(), `"skippedDestructive":["d9"]`) {
+		t.Fatalf("%d %s", rec.Code, rec.Body)
+	}
+	if bookmarkOnPage(h, page, "https://sonarr.example/") == nil {
+		t.Fatal("the delete ran")
 	}
 }
