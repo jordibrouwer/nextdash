@@ -1043,3 +1043,162 @@ func TestHealthToolsOnAnEmptyInstall(t *testing.T) {
 		t.Errorf("inbox = %v", inbox)
 	}
 }
+
+// containerMCPHandlers is an MCP-enabled install with the Containers read
+// group on and the fake Docker daemon wired in.
+func containerMCPHandlers(t *testing.T) *Handlers {
+	t.Helper()
+	h := newMCPHandlers(t)
+	h.wireDockerSettings()
+	t.Cleanup(func() { dockerSettingsFrom.Store(nil) })
+	settings := h.store.GetSettings()
+	settings.MCPContainersRead = true
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
+
+// rawToolText is the whole tools/call answer as it goes over the wire, for a
+// test that must prove a string is nowhere in it.
+func rawToolText(t *testing.T, h *Handlers, name, args string) string {
+	t.Helper()
+	res, _ := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"`+name+`","arguments":`+args+`}}`)
+	return res.Body.String()
+}
+
+func TestListContainersShowsStateAndUpdates(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "sonarr", Image: "img:1", State: "running"})
+	f.add(fakeContainer{ID: strings.Repeat("b", 64), Name: "old", Image: "img:2", State: "exited"})
+	h := containerMCPHandlers(t)
+	payload := toolCall(t, h, "list_containers", `{}`)
+	list, _ := payload["containers"].([]any)
+	if len(list) != 2 {
+		t.Fatalf("payload = %v", payload)
+	}
+	states := map[string]string{}
+	for _, item := range list {
+		c := item.(map[string]any)
+		states[c["name"].(string)] = c["state"].(string)
+		if _, ok := c["update_available"].(bool); !ok {
+			t.Errorf("update_available missing or not a bool: %v", c)
+		}
+		if c["image"] == "" || c["id"] == "" {
+			t.Errorf("incomplete row: %v", c)
+		}
+	}
+	if states["sonarr"] != "running" || states["old"] != "exited" {
+		t.Fatalf("states = %v", states)
+	}
+	if payload["truncated"] != false {
+		t.Fatalf("truncated = %v", payload["truncated"])
+	}
+	one := toolCall(t, h, "list_containers", `{"limit":1}`)
+	if got, _ := one["containers"].([]any); len(got) != 1 || one["truncated"] != true {
+		t.Fatalf("limit not applied: %v", one)
+	}
+}
+
+func TestGetContainerNeverReturnsEnvironment(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "sonarr", Image: "img:1", ImageID: "sha256:1", State: "running",
+		Env: []string{"SECRET=hunter2", "PUID=99"}, RestartPolicy: "unless-stopped"})
+	h := containerMCPHandlers(t)
+	raw := rawToolText(t, h, "get_container", `{"container":"sonarr"}`)
+	if !strings.Contains(raw, "sonarr") || !strings.Contains(raw, "unless-stopped") {
+		t.Fatalf("detail missing: %s", raw)
+	}
+	if strings.Contains(raw, "hunter2") || strings.Contains(raw, "SECRET") || strings.Contains(strings.ToLower(raw), "env") {
+		t.Fatalf("environment leaked: %s", raw)
+	}
+}
+
+func TestLogsAreCappedAt200Lines(t *testing.T) {
+	f := startFakeDocker(t)
+	lines := make([]string, 5000)
+	for i := range lines {
+		lines[i] = "line " + strconv.Itoa(i)
+	}
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", State: "running", Logs: lines})
+	h := containerMCPHandlers(t)
+	payload := toolCall(t, h, "get_container_logs", `{"container":"web","lines":5000}`)
+	got, _ := payload["lines"].([]any)
+	if len(got) != 200 || got[199] != "line 4999" {
+		t.Fatalf("got %d lines, last %v", len(got), got[len(got)-1])
+	}
+	def := toolCall(t, h, "get_container_logs", `{"container":"web"}`)
+	if got, _ := def["lines"].([]any); len(got) != 100 {
+		t.Fatalf("default = %d lines", len(got))
+	}
+}
+
+func TestUnknownContainerIsAReadableError(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "sonarr", State: "running"})
+	f.add(fakeContainer{ID: strings.Repeat("a", 32) + strings.Repeat("b", 32), Name: "sonarr2", State: "running"})
+	h := containerMCPHandlers(t)
+	for _, ref := range []string{"nothing", "aaaa"} {
+		payload := toolCall(t, h, "get_container", `{"container":"`+ref+`"}`)
+		msg, _ := payload["error"].(string)
+		if msg == "" || !strings.Contains(mustJSON(t, payload["candidates"]), "sonarr") {
+			t.Fatalf("%s: payload = %v", ref, payload)
+		}
+	}
+}
+
+func TestNoDockerSocketIsAReadableError(t *testing.T) {
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", "")
+	h := containerMCPHandlers(t)
+	for _, call := range [][2]string{{"list_containers", `{}`}, {"get_container", `{"container":"x"}`}, {"get_container_logs", `{"container":"x"}`}} {
+		payload := toolCall(t, h, call[0], call[1])
+		if msg, _ := payload["error"].(string); msg == "" {
+			t.Fatalf("%s: payload = %v", call[0], payload)
+		}
+	}
+	settings := h.store.GetSettings()
+	settings.DockerViewEnabled = false
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	if msg, _ := toolCall(t, h, "list_containers", `{}`)["error"].(string); !strings.Contains(msg, "switched off") {
+		t.Fatalf("disabled view: %q", msg)
+	}
+}
+
+func TestContainerReadToolsAreHiddenWhenTheirSwitchIsOff(t *testing.T) {
+	tools := []string{"list_containers", "get_container", "get_container_logs"}
+	h := containerMCPHandlers(t)
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	listed := mustJSON(t, resp.Result)
+	for _, name := range tools {
+		if !strings.Contains(listed, `"`+name+`"`) {
+			t.Errorf("%s missing with the switch on", name)
+		}
+	}
+	settings := h.store.GetSettings()
+	settings.MCPContainersRead = false
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	_, resp = callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	listed = mustJSON(t, resp.Result)
+	for _, name := range tools {
+		if strings.Contains(listed, `"`+name+`"`) {
+			t.Errorf("%s listed with the switch off", name)
+		}
+		_, called := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"`+name+`","arguments":{}}}`)
+		if called.Error == nil || called.Error.Message != "Unknown tool: "+name {
+			t.Errorf("%s answered %+v with the switch off", name, called)
+		}
+	}
+}
+
+func mustJSON(t *testing.T, v any) string {
+	t.Helper()
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
