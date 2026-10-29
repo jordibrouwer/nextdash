@@ -4882,16 +4882,38 @@ HTML pages send a strict Content-Security-Policy. `NEXTDASH_CSP=off` switches it
 
 ### 23.6 The MCP endpoint
 
-nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks**, which then shows the address.
+nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks → MCP access**, which then shows the address. Under it are four group switches, all off until you tick them:
 
-| Tool | What it does |
-|---|---|
-| `search_bookmarks` | Search by name, URL, tag or note; each result names its page and category |
-| `get_bookmark` | Everything stored about one bookmark |
-| `list_tags` | Every tag with its count |
-| `add_bookmark` | Add a bookmark, with the usual duplicate check |
+| Tool | What it does | Group |
+|---|---|---|
+| `search_bookmarks` | Search by name, URL, tag or note; each result names its page and category | Always on |
+| `get_bookmark` | Everything stored about one bookmark | Always on |
+| `list_tags` | Every tag with its count | Always on |
+| `list_pages` | The pages with their categories and ids | Always on |
+| `add_bookmark` | Add a bookmark, with the usual duplicate check | Always on |
+| `update_bookmark` | Change a name or note, add or remove tags | *Bookmarks: edit and delete* |
+| `move_bookmark` | Move to another page or category; refused when the target page already holds the URL | *Bookmarks: edit and delete* |
+| `delete_bookmark` | Delete a bookmark; it goes to the Trash, where you can restore it | *Bookmarks: edit and delete* |
+| `create_category`, `rename_category` | Add a category to a page, or rename one | *Bookmarks: edit and delete* |
+| `get_health_summary` | Counts from the last link checks; it does not run a check | *Health and Inbox: read* |
+| `list_health_issues` | Bookmarks that are down or whose certificate is due to expire | *Health and Inbox: read* |
+| `list_inbox` | Unread links in the Inbox, newest first | *Health and Inbox: read* |
+| `list_containers` | The containers with state, image, update availability and the last CPU and memory reading | *Containers: read* |
+| `get_container` | One container's detail, as the Containers view shows it | *Containers: read* |
+| `get_container_logs` | The last lines of a log, at most 200 | *Containers: read* |
+| `container_action` | Start, stop, restart, pause, unpause, remove, update or rollback one container | *Containers: control* |
 
-It starts closed because it answers questions about every bookmark. The `Origin` of every request is checked against the host it arrived on, and with `NEXTDASH_WRITE_TOKEN` set, adding needs the token.
+Searching, looking up, listing tags and pages, and adding bookmarks are always on while the endpoint is. *Bookmarks: edit and delete* and *Containers: control* are marked **needs write token** in Config.
+
+**Write token.** With `NEXTDASH_WRITE_TOKEN` set, adding, editing, moving and deleting bookmarks and categories, and every container action, need it. Container logs need it too, because logs can contain secrets. Container environment variables are never returned. Without a token, the switches are the only gate.
+
+**Containers: control** also needs Docker control switched on for the server (`NEXTDASH_DOCKER_CONTROL`); the switch stays greyed out until it is. It acts exactly like the Containers view: nextDash cannot stop, restart, pause, remove or update itself, only a stopped container can be removed, and only one action runs on a container at a time.
+
+**Activity log.** Changes made this way show up in the activity log with the source `mcp` and the client's User-Agent. Container actions appear as the usual `docker.<action>` events, also with source `mcp`.
+
+**Which clients.** Claude Desktop and Claude Code can reach nextDash from your LAN. claude.ai, as a custom connector, needs an address it can reach: a public HTTPS one (sign-in with OAuth is not built).
+
+It starts closed because it answers questions about every bookmark. The `Origin` of every request is checked against the host it arrived on.
 
 <a id="237-what-nextdash-contacts"></a>
 
@@ -5365,7 +5387,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Maintenance window | A recurring period when downtime is expected: failures in it send no alert and do not count against uptime. | [§12.5](#125-maintenance-windows) |
-| MCP endpoint | An address at `/mcp` where MCP clients can search, read and add bookmarks; off until you switch it on. | [§23.6](#236-the-mcp-endpoint) |
+| MCP endpoint | An address at `/mcp` where MCP clients can search, add and (with switches) edit bookmarks, read Health, the Inbox and containers, and act on containers; off until you switch it on. | [§23.6](#236-the-mcp-endpoint) |
 | Monitor | The availability mode where the server checks a bookmark on its own interval and keeps 30 days of history, uptime, outages and alerts. | [§12.1](#121-availability-modes) |
 | Mute | Holds back the alerts for one bookmark, which is still checked and shows as down with a Muted badge; a container's notices can be muted too. | [§12.4](#muting-one-bookmark), [§14.9](#149-notices) |
 
