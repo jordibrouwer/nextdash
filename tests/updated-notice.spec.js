@@ -55,6 +55,8 @@ test.describe('the updated notice', () => {
     test('"What\'s new" reopens the notes', async ({ page }) => {
         await visitAfterUpgrade(page);
         await expect(page.locator('.whats-new-modal')).toBeVisible({ timeout: 20_000 });
+        // The notes have loaded: on a busy runner Escape could close them while they were still loading.
+        await expect(page.locator('.whats-new-modal [data-wn-content]')).toBeVisible({ timeout: 20_000 });
         await page.keyboard.press('Escape');
         await expect(card(page)).toBeVisible({ timeout: 15_000 });
         await card(page).locator('[data-updated-notice-action="open"]').click();
