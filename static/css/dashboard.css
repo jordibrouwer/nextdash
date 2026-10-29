@@ -6177,6 +6177,16 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
     display: none !important;
 }
 
+/* A collapsed category with a filter hit opens while the query lasts, so the
+   count and the page agree; data-collapsed (the saved state) is untouched. */
+.category.grid-filter-open[data-collapsed="true"] .category-body {
+    grid-template-rows: 1fr;
+}
+
+.category.grid-filter-open[data-collapsed="true"] .category-body > .bookmarks-list {
+    opacity: 1;
+}
+
 /* "Publishes, but nothing new" — the quiet half of Fresh, off unless asked for.
    A dot rather than a number, and dimmer than a count: it says this row takes
    part, which is worth a glance and never worth reading. */

@@ -148,3 +148,88 @@ test.describe('grid filter reads the address and the tags', () => {
         }
     });
 });
+
+test.describe('grid filter: words, collapsed categories and the keyboard', () => {
+    const N = `${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+    const ONE = `https://gfone-${N}.example/`;
+    const TWO = `https://gftwo-${N}.example/`;
+
+    test.beforeEach(async ({ page }) => {
+        await dashboard(page);
+        const pageId = await page.evaluate(() => window.dashboardInstance.currentPageId);
+        await page.evaluate(async ({ pageId, rows }) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            for (const bookmark of rows) {
+                await api('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: pageId, bookmark }),
+                });
+            }
+        }, { pageId, rows: [{ name: `Gfword ${N} one`, url: ONE }, { name: `Gfword ${N} two`, url: TWO }] });
+        await dashboard(page);
+    });
+
+    const ownRow = (page, url) => page.locator(`.category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${url}"]`);
+
+    test('every word must match, in any order', async ({ page }) => {
+        await page.keyboard.press('Shift+F');
+        const rows = page.locator('.category:not([data-smart-collection="true"]) .bookmark-link:not(.grid-filter-hidden)');
+        await page.locator('.grid-filter-input').fill(`one gfword ${N}`);
+        await expect(rows).toHaveCount(1);
+        await expect(ownRow(page, ONE)).toBeVisible();
+        await page.locator('.grid-filter-input').fill(`gfword ${N}`);
+        await expect(rows).toHaveCount(2);
+        await page.locator('.grid-filter-input').fill(`gfword ${N} three`);
+        await expect(rows).toHaveCount(0);
+    });
+
+    test('a hit in a collapsed category shows, and the category folds back after', async ({ page }) => {
+        const category = page.locator('.category:not([data-smart-collection="true"])', { has: page.locator(`.bookmark-link[data-bookmark-url="${ONE}"]`) });
+        await category.locator('.category-title').first().click();
+        await expect(category).toHaveAttribute('data-collapsed', 'true');
+        const listOpacity = () => ownRow(page, ONE).evaluate((el) => getComputedStyle(el.closest('.bookmarks-list')).opacity);
+        await expect.poll(listOpacity).toBe('0');
+
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('Shift+F');
+        await page.locator('.grid-filter-input').fill(`gfword ${N} one`);
+        await expect(category).toHaveClass(/grid-filter-open/);
+        await expect.poll(listOpacity).toBe('1');
+        // The saved state is not touched.
+        await expect(category).toHaveAttribute('data-collapsed', 'true');
+
+        await page.locator('.grid-filter-input').fill('');
+        await expect(category).not.toHaveClass(/grid-filter-open/);
+        await category.locator('.category-title').first().click();
+        await expect(category).toHaveAttribute('data-collapsed', 'false');
+    });
+
+    test('Down hands the keys to the first row left; Enter on a single hit opens it', async ({ page }) => {
+        await page.evaluate(() => {
+            window.__opened = [];
+            document.addEventListener('click', (e) => {
+                const a = e.target.closest?.('a.bookmark-open, a.bookmark-link');
+                if (a) { window.__opened.push(a.getAttribute('href')); e.preventDefault(); }
+            }, true);
+        });
+        await page.keyboard.press('Shift+F');
+        const input = page.locator('.grid-filter-input');
+        await input.fill(`gfword ${N}`);
+        await expect(ownRow(page, TWO)).toBeVisible();
+        await input.press('ArrowDown');
+        await expect(input).not.toBeFocused();
+        const selectedUrl = () => page.evaluate(() => document.querySelector('.bookmark-link.keyboard-selected')?.getAttribute('data-bookmark-url'));
+        await expect.poll(selectedUrl).toMatch(/gf(one|two)-/);
+        // Two hits: Enter selects, but opens nothing.
+        await input.focus();
+        await input.press('Enter');
+        expect(await page.evaluate(() => window.__opened)).toEqual([]);
+
+        await input.focus();
+        await input.fill(`gfword ${N} two`);
+        await expect(page.locator('.category:not([data-smart-collection="true"]) .bookmark-link:not(.grid-filter-hidden)')).toHaveCount(1);
+        await input.press('Enter');
+        await expect.poll(() => page.evaluate(() => window.__opened)).toEqual([TWO]);
+    });
+});

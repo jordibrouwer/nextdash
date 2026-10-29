@@ -141,6 +141,13 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — Open in the side panel counts as an open.** It called `window.open` directly, so opens, Last opened and Recent missed it; it goes through `recordBookmarkOpened` like the row's link.
 - **fix — Health is asked again after a failed load.** `ensureHealth` kept its guard when `health.load()` returned nothing, so the scores stayed away until a reload.
 
+### Page filter (Shift + F)
+
+- **new — Several words.** Every word must match the row, in any order; each is marked in the name.
+- **new — Down and Enter.** `↓` or Enter in the bar puts the keyboard cursor on the first row left; Enter on a query that leaves one bookmark opens it.
+- **fix — A hit in a collapsed category is shown.** The count included rows inside collapsed categories that stayed folded; such a category opens (`grid-filter-open`) while the query lasts, without touching its saved state, and its rows count for the keyboard.
+- **fix — The keyboard cursor skips rows the filter hides.** `_isNavigableRow` did not know `grid-filter-hidden`, so `j`/`k` could land on a row nobody could see.
+
 ---
 
 ## v1.22.4 — 29 October 2026
