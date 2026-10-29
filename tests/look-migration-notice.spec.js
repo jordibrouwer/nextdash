@@ -102,7 +102,8 @@ test.describe('the look migration dialog', () => {
         await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
         await dismissOnboardingIfPresent(page);
         await expect(dialog(page)).toBeVisible({ timeout: 20_000 });
-        await page.getByRole('button', { name: 'Open the Theme Studio' }).click();
+        // In the dialog: the action bar has a theme studio button of the same name.
+        await dialog(page).getByRole('button', { name: 'Open the Theme Studio' }).click();
         await expect(dialog(page)).toHaveCount(0);
         await expect.poll(() => page.evaluate(() => window.ThemeBrowser?.isOpen?.()), { timeout: 15_000 }).toBe(true);
         await expect(page.locator('[data-studio-tab="surface"][aria-selected="true"]')).toBeVisible();

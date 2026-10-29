@@ -63,6 +63,8 @@ async function openRecents(page) {
      * registered under (search.js), and openInRecentMode() is the entry point
      * the panel itself uses for it.
      */
+    // The search component is set up after the first paint; on a busy runner it can still be null here.
+    await page.waitForFunction(() => window.dashboardInstance?.searchComponent);
     await page.evaluate(() => window.dashboardInstance.searchComponent.openInRecentMode());
     await page.waitForSelector('.search-recent-tile', { timeout: 20_000 });
 }

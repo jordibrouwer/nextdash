@@ -212,7 +212,8 @@ test('an empty page starts from a template in place', async ({ page, browserName
 
 test('Share this page and Import a page are themed buttons, not underlined links', async ({ page }) => {
     await openDashboard(page);
-    await page.getByRole('button', { name: 'Choose a page' }).click();
+    // The key, not the button: a docked action bar has slid away by now.
+    await page.keyboard.press(',');
     for (const id of ['#page-overview-share', '#page-overview-import']) {
         const style = await page.locator(id).evaluate((el) => {
             const cs = getComputedStyle(el);

@@ -219,6 +219,7 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 
 - **fix — Two Docker timeline tests no longer age out.** `TestDockerTimelineRecordsEvents` and `TestContainerNotifierOwnStopSignal` recorded their events on 29 September 2026, and the timeline prunes against the wall clock at 30 days, so from 29 October they found an empty timeline. Their clock starts an hour before now.
 - **fix — `:maxactions` offers 11** in `edit-mode.spec.js`, and `whats-new-hidden-release.spec.js` expects v1.22.5 to lead the modal.
+- **fix — Specs follow the action bar and the centred modals.** `config-page-templates` opens the pages panel with `,` (a docked bar has slid away), `look-migration-notice` looks for *Open the Theme Studio* inside its dialog (the action bar has a button of that name now), `header-sheet-reduced-motion` measures against the window's centre line, `overlay-views` lets the five card materials give their view plate a layer (paper's grain), and `recents-tiles` waits for the search component before it opens recents mode.
 
 ---
 

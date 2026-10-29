@@ -5,13 +5,14 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 /**
  * Less motion still puts the header sheets where they belong.
  *
- * The pages panel and the recents panel hang from the header band, centred on
- * the strip by `left: <mid>` plus `translateX(-50%)`. The reduced-motion rule
+ * The pages panel and the recents panel once hung from the header band, centred
+ * on the strip by `left: <mid>` plus `translateX(-50%)`. The reduced-motion rule
  * for every modal cleared `transform` to stop the open animation, and took the
  * centring with it: the sheet's left edge landed on the strip's centre line and
  * the pages panel ran off the right of the window. The in-app animations
- * switch did the same through its own rule. Without motion the sheet should
- * not move -- not on open, and not off its line.
+ * switch did the same through its own rule. Since v1.22.5 every dashboard
+ * modal opens in the middle of the window; without motion the sheet should
+ * still not move -- not on open, and not off the window's centre line.
  */
 
 async function openDashboard(page) {
@@ -45,12 +46,11 @@ async function openWithKey(page, key, selector) {
 const measure = (page, selector) => page.evaluate((sel) => {
     const el = document.querySelector(sel);
     const r = el.getBoundingClientRect();
-    const row = document.querySelector('.header-top').getBoundingClientRect();
     return {
         left: Math.round(r.left),
         right: Math.round(r.right),
         mid: Math.round(r.x + r.width / 2),
-        rowMid: Math.round(row.x + row.width / 2),
+        windowMid: Math.round(window.innerWidth / 2),
         viewport: window.innerWidth,
         animation: getComputedStyle(el).animationName,
     };
@@ -67,7 +67,7 @@ async function expectInPlace(page, sheet) {
     expect(seen.left, `the ${sheet.name} starts off the left edge`).toBeGreaterThanOrEqual(0);
     expect(seen.right, `the ${sheet.name} runs ${seen.right - seen.viewport}px off the right edge`)
         .toBeLessThanOrEqual(seen.viewport);
-    expect(Math.abs(seen.mid - seen.rowMid), `the ${sheet.name} is off the strip's centre line`)
+    expect(Math.abs(seen.mid - seen.windowMid), `the ${sheet.name} is off the window's centre line`)
         .toBeLessThanOrEqual(1);
     expect(seen.animation, `the ${sheet.name} still animates`).toBe('none');
     await page.keyboard.press('Escape');

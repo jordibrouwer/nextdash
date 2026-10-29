@@ -129,9 +129,9 @@ test.describe('view plates per material', () => {
             if (m.ovImageBig && m.ovImageBig !== 'none') {
                 expect.soft(m.image, material + ': the plate has no surface layer').not.toBe('none');
             } else {
-                // Terminal and ink draw their plate like their category, which carries the
-                // theme's own sheen (--surface-sheen) as a layer of its own.
-                if (!['terminal', 'ink'].includes(material)) {
+                // Enamel, paper, velvet, ink and terminal give their views the category card,
+                // which can carry a layer of its own: the theme's sheen, paper's grain.
+                if (!['enamel', 'paper', 'velvet', 'terminal', 'ink'].includes(material)) {
                     expect.soft(m.image, material + ': the plate draws a layer the material does not have').toBe('none');
                 }
             }
