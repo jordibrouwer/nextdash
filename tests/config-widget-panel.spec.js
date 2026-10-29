@@ -137,6 +137,8 @@ test.describe('the widgets panel remembers a saved widget', () => {
         ['traefik', 'nothing', null],
     ]) {
         test(`the picker still names ${service}, which signs in with ${auth}`, async ({ page }) => {
+            // Two openWidgets, each waiting its 6 s out, and a reload between them: 30 s is too tight on a loaded runner.
+            test.setTimeout(60_000);
             await openWidgets(page);
             const index = await addWidget(page, 'custom');
             const row = page.locator(`[data-widget-detail="${index}"]`);
