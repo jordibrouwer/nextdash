@@ -88,7 +88,8 @@ async function mockGlances(page) {
             body = { ...STATE.config, server: now.server, collected: { ...STATE.config.collected, since: NOW_MS - 30 * 24 * HOUR }, trackedHistory: tracked, paused: false, ...bits };
             if (request.method() !== 'GET') body = { ...body, ...JSON.parse(request.postData() || '{}') };
         } else if (rest === 'hosts') {
-            body = { hosts: STATE.hosts.map((h) => ({ id: h.id, name: h.name, configured: true, paused: false, level: h.level, ok: h.ok, at: NOW_MS - 8000, lastOk: NOW_MS - 8000, every: 30, cpu: h.cpu, mem: h.mem, disk: h.disk, diskMount: h.diskMount, temp: h.temp })) };
+            // cpuHour is the row's small graph: the last hour of the same recipe, quiet on the other hosts.
+            body = { hosts: STATE.hosts.map((h, i) => ({ id: h.id, name: h.name, configured: true, paused: false, level: h.level, ok: h.ok, at: NOW_MS - 8000, lastOk: NOW_MS - 8000, every: 30, cpu: h.cpu, mem: h.mem, disk: h.disk, diskMount: h.diskMount, temp: h.temp, cpuHour: points('cpu', NOW_MS - HOUR, NOW_MS, i, i > 0) })) };
         } else if (rest === 'insights') {
             body = { ...STATE.insights, at: NOW_MS, since: NOW_MS - 24 * HOUR };
             const start = NOW_MS - STATE.history.incident.hoursAgo * HOUR;

@@ -207,6 +207,9 @@ function tidyDemoData(dir, patch) {
     const settingsFile = path.join(dir, 'settings.json');
     const settings = readJSON(settingsFile);
     settings.weatherLocation = 'Leiden';
+    // The demo seed is New York in Fahrenheit; Leiden and the fixture's figures are Celsius,
+    // and the Glances page writes its temperatures in the weather's unit.
+    settings.weatherUnit = 'celsius';
     // No session tips: a toast would sit over the corner of whatever is shot.
     settings.enableSessionTips = false;
     // ... and has been through the tours, so no tour or card is waiting in the corner.
