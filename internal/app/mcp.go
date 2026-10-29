@@ -210,12 +210,12 @@ func mcpErrorFrom(rec *bufferedResponse) map[string]any {
 	message := strings.TrimSpace(rec.body.String())
 	var refusal map[string]any
 	if json.Unmarshal(rec.body.Bytes(), &refusal) == nil {
-		refusal["error"] = firstString(refusal["message"], "The bookmark was refused.")
+		refusal["error"] = firstString(refusal["message"], "The request was refused.")
 		delete(refusal, "message")
 		return refusal
 	}
 	if message == "" {
-		message = fmt.Sprintf("The bookmark was refused (HTTP %d).", rec.status)
+		message = fmt.Sprintf("The request was refused (HTTP %d).", rec.status)
 	}
 	return map[string]any{"error": message}
 }
@@ -241,6 +241,10 @@ func mcpToolDefinitions(s Settings) []map[string]any {
 }
 
 func mcpAllToolDefinitions() []map[string]any {
+	return append(mcpCoreToolDefinitions(), mcpBookmarksWriteDefinitions()...)
+}
+
+func mcpCoreToolDefinitions() []map[string]any {
 	return []map[string]any{
 		{
 			"name":        "search_bookmarks",
@@ -450,6 +454,16 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return mcpToolResult(h.mcpListTags()), nil
 	case "add_bookmark":
 		return mcpToolResult(h.mcpAddBookmark(r, body.Arguments)), nil
+	case "update_bookmark":
+		return mcpToolResult(h.mcpUpdateBookmark(r, body.Arguments)), nil
+	case "move_bookmark":
+		return mcpToolResult(h.mcpMoveBookmark(r, body.Arguments)), nil
+	case "delete_bookmark":
+		return mcpToolResult(h.mcpDeleteBookmark(r, body.Arguments)), nil
+	case "create_category":
+		return mcpToolResult(h.mcpCreateCategory(r, body.Arguments)), nil
+	case "rename_category":
+		return mcpToolResult(h.mcpRenameCategory(r, body.Arguments)), nil
 	}
 	return nil, &jsonRPCError{Code: jsonRPCInvalidParams, Message: "Unknown tool: " + body.Name}
 }

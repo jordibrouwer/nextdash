@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -403,10 +404,29 @@ func TestGroupedToolsAreHiddenUntilTheirSwitchIsOn(t *testing.T) {
 		t.Errorf("%s is not offered", name)
 	}
 
+	writeTools := []string{"update_bookmark", "move_bookmark", "delete_bookmark", "create_category", "rename_category"}
+	turnOnBookmarksWrite(t, h)
+	listed := map[string]bool{}
+	for _, name := range listedToolNames(t, h) {
+		listed[name] = true
+	}
+	for _, name := range writeTools {
+		if !listed[name] {
+			t.Errorf("%s is not offered with the bookmarks switch on", name)
+		}
+	}
 	settings := h.store.GetSettings()
+	settings.MCPBookmarksWrite = false
 	settings.MCPHealthInbox = true
 	if err := h.store.SaveSettings(settings); err != nil {
 		t.Fatal(err)
+	}
+	for _, name := range listedToolNames(t, h) {
+		for _, w := range writeTools {
+			if name == w {
+				t.Errorf("%s is listed with the bookmarks switch off", name)
+			}
+		}
 	}
 	healthTools := map[string]bool{"get_health_summary": true, "list_health_issues": true, "list_inbox": true}
 	for name := range healthTools {
@@ -414,8 +434,8 @@ func TestGroupedToolsAreHiddenUntilTheirSwitchIsOn(t *testing.T) {
 			t.Errorf("%s is in group %q", name, mcpToolGroup(name))
 		}
 	}
-	// The tools themselves arrive in later steps; whatever is listed beyond the
-	// always-on ones must belong to the switch that was just turned on.
+	// Whatever is listed beyond the always-on ones must belong to the switch
+	// that was just turned on.
 	for _, name := range listedToolNames(t, h) {
 		if g := mcpToolGroup(name); g != "" && g != mcpGroupHealthInbox {
 			t.Errorf("%s (group %q) is listed with only the health switch on", name, g)
@@ -430,10 +450,17 @@ func TestGroupedToolsAreHiddenUntilTheirSwitchIsOn(t *testing.T) {
 }
 
 func TestAHiddenToolCannotBeCalledByName(t *testing.T) {
-	h := newMCPHandlers(t)
-	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_inbox","arguments":{}}}`)
-	if resp.Error == nil || resp.Error.Message != "Unknown tool: list_inbox" {
-		t.Fatalf("got %+v", resp.Error)
+	h, first, _ := twoPageMCPInstall(t)
+	before, _ := json.Marshal(h.store.GetAllBookmarks())
+	for _, name := range []string{"list_inbox", "delete_bookmark"} {
+		_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"`+name+`","arguments":{"url":"https://radarr.example/","page":`+strconv.Itoa(first)+`}}}`)
+		if resp.Error == nil || resp.Error.Message != "Unknown tool: "+name {
+			t.Fatalf("%s: got %+v", name, resp.Error)
+		}
+	}
+	after, _ := json.Marshal(h.store.GetAllBookmarks())
+	if string(before) != string(after) {
+		t.Error("a hidden tool changed the data")
 	}
 }
 
@@ -468,21 +495,304 @@ func TestListPagesGivesIdsAndCategories(t *testing.T) {
 
 func TestToolsCarryReadOnlyAnnotations(t *testing.T) {
 	h := newMCPHandlers(t)
+	turnOnBookmarksWrite(t, h)
 	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
 	result, _ := resp.Result.(map[string]any)
 	tools, _ := result["tools"].([]any)
+	writers := map[string]bool{
+		"add_bookmark": true, "update_bookmark": true, "move_bookmark": true,
+		"delete_bookmark": true, "create_category": true, "rename_category": true,
+	}
+	seenDelete := false
 	for _, entry := range tools {
 		tool, _ := entry.(map[string]any)
+		name, _ := tool["name"].(string)
 		ann, _ := tool["annotations"].(map[string]any)
 		readOnly, _ := ann["readOnlyHint"].(bool)
-		if tool["name"] == "add_bookmark" {
+		destructive, _ := ann["destructiveHint"].(bool)
+		if writers[name] {
 			if readOnly {
-				t.Error("add_bookmark claims to be read only")
+				t.Errorf("%s claims to be read only", name)
+			}
+			if name == "delete_bookmark" {
+				seenDelete = true
+				if !destructive {
+					t.Error("delete_bookmark is not marked destructive")
+				}
+			} else if destructive {
+				t.Errorf("%s is marked destructive", name)
 			}
 			continue
 		}
 		if !readOnly {
-			t.Errorf("%v has no readOnlyHint", tool["name"])
+			t.Errorf("%v has no readOnlyHint", name)
+		}
+	}
+	if !seenDelete {
+		t.Error("delete_bookmark is not offered")
+	}
+}
+
+// twoPageMCPInstall is the seeded install plus a second page "Work", with the
+// first page's categories "Media" (id media) and "Docs" (id docs).
+func twoPageMCPInstall(t *testing.T) (*Handlers, int, int) {
+	t.Helper()
+	h := newMCPHandlers(t)
+	seedMCPBookmarks(t, h)
+	first := h.store.GetPages()[0].ID
+	second := first + 1
+	body, _ := json.Marshal(append(h.store.GetPages(), Page{ID: second, Name: "Work"}))
+	rec := httptest.NewRecorder()
+	h.SavePages(rec, httptest.NewRequest(http.MethodPost, "/api/pages", strings.NewReader(string(body))))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("save pages: %d %s", rec.Code, rec.Body.String())
+	}
+	if err := h.store.SaveCategoriesByPage(first, []Category{{ID: "media", Name: "Media"}, {ID: "docs", Name: "Docs"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.store.SaveCategoriesByPage(second, []Category{{ID: "inbox", Name: "Inbox"}}); err != nil {
+		t.Fatal(err)
+	}
+	return h, first, second
+}
+
+func bookmarkOnPage(h *Handlers, page int, url string) *Bookmark {
+	return findBookmarkByURLKeyOnPage(h.store, page, canonicalBookmarkURLKey(url))
+}
+
+func turnOnBookmarksWrite(t *testing.T, h *Handlers) {
+	t.Helper()
+	settings := h.store.GetSettings()
+	settings.MCPBookmarksWrite = true
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUpdateBookmarkChangesNoteAndTagsOnly(t *testing.T) {
+	h, first, _ := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+
+	out := toolCall(t, h, "update_bookmark", `{"url":"https://sonarr.example/","name":"Sonarr TV","note":"tv shows","tags_add":["tv"],"tags_remove":["selfhosted"]}`)
+	if out["updated"] != true {
+		t.Fatalf("answered %v", out)
+	}
+	bm := bookmarkOnPage(h, first, "https://sonarr.example/")
+	if bm == nil {
+		t.Fatal("the bookmark is gone")
+	}
+	if bm.Name != "Sonarr TV" || bm.Note != "tv shows" {
+		t.Errorf("name %q note %q", bm.Name, bm.Note)
+	}
+	if strings.Join(bm.Tags, ",") != "media,tv" {
+		t.Errorf("tags %v", bm.Tags)
+	}
+	if bm.URL != "https://sonarr.example/" {
+		t.Errorf("the URL changed to %q", bm.URL)
+	}
+	if other := bookmarkOnPage(h, first, "https://radarr.example/"); other == nil || other.Name != "Radarr" {
+		t.Errorf("another bookmark was touched: %v", other)
+	}
+	if missing := toolCall(t, h, "update_bookmark", `{"url":"https://nothing.example/","note":"x"}`); missing["error"] == nil {
+		t.Errorf("an unknown URL was accepted: %v", missing)
+	}
+}
+
+func TestMoveBookmarkLandsInTheTargetCategory(t *testing.T) {
+	h, first, second := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+
+	out := toolCall(t, h, "move_bookmark", `{"url":"https://radarr.example/","to_page":`+strconv.Itoa(second)+`,"to_category":"inbox"}`)
+	if out["moved"] != true {
+		t.Fatalf("answered %v", out)
+	}
+	if bookmarkOnPage(h, first, "https://radarr.example/") != nil {
+		t.Error("it is still on the first page")
+	}
+	moved := bookmarkOnPage(h, second, "https://radarr.example/")
+	if moved == nil || moved.Category != "inbox" {
+		t.Fatalf("on the second page: %v", moved)
+	}
+
+	// The category may be named instead of identified.
+	byName := toolCall(t, h, "move_bookmark", `{"url":"https://sonarr.example/","to_page":`+strconv.Itoa(second)+`,"to_category":"Inbox"}`)
+	if byName["moved"] != true {
+		t.Fatalf("by name: %v", byName)
+	}
+	if got := bookmarkOnPage(h, second, "https://sonarr.example/"); got == nil || got.Category != "inbox" {
+		t.Errorf("by name landed in %v", got)
+	}
+
+	// A category the target page does not have is refused, and nothing moves.
+	bad := toolCall(t, h, "move_bookmark", `{"url":"https://go.dev/doc/","to_page":`+strconv.Itoa(second)+`,"to_category":"nope"}`)
+	if bad["error"] == nil || bookmarkOnPage(h, first, "https://go.dev/doc/") == nil {
+		t.Errorf("a made-up category: %v", bad)
+	}
+}
+
+func TestDeleteBookmarkIsLoggedAndRestorable(t *testing.T) {
+	h, first, _ := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+
+	lines := captureActivityLogs(t, func() {
+		cfg := activityConfig()
+		cfg.enabled = map[string]bool{activityCategoryMutate: true}
+		resetActivityLogForTest(cfg)
+		out := toolCall(t, h, "delete_bookmark", `{"url":"https://radarr.example/"}`)
+		if out["deleted"] != true {
+			t.Fatalf("answered %v", out)
+		}
+	})
+	if bookmarkOnPage(h, first, "https://radarr.example/") != nil {
+		t.Error("the bookmark is still there")
+	}
+	found := false
+	for _, line := range lines {
+		if strings.Contains(line, `"event":"bookmark.delete"`) && strings.Contains(line, `"source":"mcp"`) && strings.Contains(line, `"name":"Radarr"`) {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("no bookmark.delete entry with source mcp in %v", lines)
+	}
+	if again := toolCall(t, h, "delete_bookmark", `{"url":"https://radarr.example/"}`); again["error"] == nil {
+		t.Errorf("deleting twice answered %v", again)
+	}
+}
+
+func TestAmbiguousUrlNeedsAPage(t *testing.T) {
+	h, first, second := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+	if err := h.store.SaveBookmarksByPage(second, []Bookmark{{Name: "Radarr again", URL: "https://radarr.example/", PageID: second}}); err != nil {
+		t.Fatal(err)
+	}
+	before := len(h.store.GetAllBookmarks())
+
+	for tool, args := range map[string]string{
+		"update_bookmark": `{"url":"https://radarr.example/","note":"x"}`,
+		"move_bookmark":   `{"url":"https://radarr.example/","to_page":` + strconv.Itoa(second) + `}`,
+		"delete_bookmark": `{"url":"https://radarr.example/"}`,
+	} {
+		out := toolCall(t, h, tool, args)
+		if out["error"] == nil {
+			t.Errorf("%s picked a page on its own: %v", tool, out)
+			continue
+		}
+		pages, _ := out["pages"].([]any)
+		if len(pages) != 2 {
+			t.Errorf("%s listed %v", tool, out["pages"])
+		}
+	}
+	if len(h.store.GetAllBookmarks()) != before {
+		t.Error("the data changed")
+	}
+	if bm := bookmarkOnPage(h, first, "https://radarr.example/"); bm == nil || bm.Note != "" {
+		t.Errorf("the first copy is %v", bm)
+	}
+	// With a page it goes through.
+	if out := toolCall(t, h, "delete_bookmark", `{"url":"https://radarr.example/","page":`+strconv.Itoa(second)+`}`); out["deleted"] != true {
+		t.Errorf("with a page: %v", out)
+	}
+	if bookmarkOnPage(h, first, "https://radarr.example/") == nil {
+		t.Error("the other page's copy went too")
+	}
+}
+
+func TestWriteToolsRefuseWithoutTheToken(t *testing.T) {
+	h, first, second := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "secret")
+	before, _ := json.Marshal(h.store.GetAllBookmarks())
+	cats, _ := json.Marshal(h.store.GetCategoriesByPage(first))
+
+	calls := map[string]string{
+		"update_bookmark": `{"url":"https://radarr.example/","note":"x"}`,
+		"move_bookmark":   `{"url":"https://radarr.example/","to_page":` + strconv.Itoa(second) + `}`,
+		"delete_bookmark": `{"url":"https://radarr.example/"}`,
+		"create_category": `{"page":` + strconv.Itoa(first) + `,"name":"New"}`,
+		"rename_category": `{"page":` + strconv.Itoa(first) + `,"category":"media","name":"Shows"}`,
+	}
+	for tool, args := range calls {
+		_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"`+tool+`","arguments":`+args+`}}`)
+		result, _ := resp.Result.(map[string]any)
+		if resp.Error != nil || result["isError"] != true {
+			t.Errorf("%s without the token: %+v %v", tool, resp.Error, result)
+		}
+		// The refusal is ours and says what to do, not the inner handler's bare
+		// "Unauthorized".
+		if payload, _ := result["structuredContent"].(map[string]any); payload["error"] != "This tool needs the write token." {
+			t.Errorf("%s refused with %v", tool, payload["error"])
+		}
+	}
+	after, _ := json.Marshal(h.store.GetAllBookmarks())
+	catsAfter, _ := json.Marshal(h.store.GetCategoriesByPage(first))
+	if string(before) != string(after) || string(cats) != string(catsAfter) {
+		t.Error("data changed without the token")
+	}
+
+	// With the token the same call works.
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"delete_bookmark","arguments":{"url":"https://radarr.example/"}}}`, [2]string{"X-NextDash-Token", "secret"})
+	result, _ := resp.Result.(map[string]any)
+	if result["isError"] == true {
+		t.Errorf("with the token: %v", result)
+	}
+}
+
+func TestCategoryToolsRefuseADuplicateName(t *testing.T) {
+	h, first, _ := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+
+	out := toolCall(t, h, "create_category", `{"page":`+strconv.Itoa(first)+`,"name":"Games"}`)
+	if out["created"] != true || out["category"] != "games" {
+		t.Fatalf("answered %v", out)
+	}
+	if categoryNameForID(h.store, first, "games") != "Games" {
+		t.Error("the category was not stored")
+	}
+	if dup := toolCall(t, h, "create_category", `{"page":`+strconv.Itoa(first)+`,"name":" media "}`); dup["error"] == nil {
+		t.Errorf("a duplicate was created: %v", dup)
+	}
+	if n := len(h.store.GetCategoriesByPage(first)); n != 3 {
+		t.Errorf("%d categories", n)
+	}
+
+	// Rename keeps the id, so the bookmarks in it stay in it.
+	if renamed := toolCall(t, h, "rename_category", `{"page":`+strconv.Itoa(first)+`,"category":"Docs","name":"Reference"}`); renamed["renamed"] != true {
+		t.Fatalf("rename answered %v", renamed)
+	}
+	if categoryNameForID(h.store, first, "docs") != "Reference" {
+		t.Error("the name did not change")
+	}
+	if dup := toolCall(t, h, "rename_category", `{"page":`+strconv.Itoa(first)+`,"category":"docs","name":"media"}`); dup["error"] == nil {
+		t.Errorf("renamed onto an existing name: %v", dup)
+	}
+	if missing := toolCall(t, h, "rename_category", `{"page":`+strconv.Itoa(first)+`,"category":"zzz","name":"X"}`); missing["error"] == nil {
+		t.Errorf("renamed a category that is not there: %v", missing)
+	}
+}
+
+func TestWriteToolsAreHiddenWhenTheirSwitchIsOff(t *testing.T) {
+	h := newMCPHandlers(t)
+	tools := []string{"update_bookmark", "move_bookmark", "delete_bookmark", "create_category", "rename_category"}
+	has := func() map[string]bool {
+		seen := map[string]bool{}
+		for _, n := range listedToolNames(t, h) {
+			seen[n] = true
+		}
+		return seen
+	}
+	for n := range has() {
+		for _, tool := range tools {
+			if n == tool {
+				t.Errorf("%s is listed with the switch off", n)
+			}
+		}
+	}
+	turnOnBookmarksWrite(t, h)
+	seen := has()
+	for _, tool := range tools {
+		if !seen[tool] {
+			t.Errorf("%s is missing with the switch on", tool)
 		}
 	}
 }
