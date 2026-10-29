@@ -1992,6 +1992,7 @@
     "widgetFeedsRetiredHint": "This feed failed repeatedly and is no longer checked.",
     "widgetFeedsWaiting": "Loading…",
     "widgetInboxEmpty": "Nothing waiting.",
+    "widgetInboxAsleep": "{n} asleep",
     "widgetInboxOldest": "oldest {n}d",
     "widgetInboxToday": "all from today",
     "widgetInboxWaiting": "Loading…",

@@ -727,6 +727,13 @@ class DashboardData {
         if (!changed) {
             return false;
         }
+        // inbox.json and trash.json are in the revision, and their tiles keep
+        // one answer until something clears it: a link saved from the
+        // extension or another device stayed off the Inbox tile until a reload.
+        delete d._widgetInbox;
+        delete d._widgetTrash;
+        d.renderCore?.refreshWidgets?.('inbox');
+        d.renderCore?.refreshWidgets?.('trash');
         // A block in the hand belongs to the layout that is about to be redrawn.
         window.DashboardBlockMover?.finish?.(false);
         if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {

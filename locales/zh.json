@@ -1876,6 +1876,7 @@
     "widgetFeedsRetiredHint": "这个订阅源多次失败，已不再检查。",
     "widgetFeedsWaiting": "正在加载…",
     "widgetInboxEmpty": "没有待处理的。",
+    "widgetInboxAsleep": "{n} asleep",
     "widgetInboxOldest": "最早 {n} 天",
     "widgetInboxToday": "全部来自今天",
     "widgetInboxWaiting": "正在加载…",

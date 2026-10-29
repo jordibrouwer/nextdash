@@ -1876,6 +1876,7 @@
     "widgetFeedsRetiredHint": "Ce flux a échoué à répétition et n’est plus vérifié.",
     "widgetFeedsWaiting": "Chargement…",
     "widgetInboxEmpty": "Rien en attente.",
+    "widgetInboxAsleep": "{n} asleep",
     "widgetInboxOldest": "plus ancien {n}j",
     "widgetInboxToday": "tout date d’aujourd’hui",
     "widgetInboxWaiting": "Chargement…",

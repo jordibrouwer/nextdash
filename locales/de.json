@@ -1876,6 +1876,7 @@
     "widgetFeedsRetiredHint": "Dieser Feed schlug wiederholt fehl und wird nicht mehr geprüft.",
     "widgetFeedsWaiting": "Lädt…",
     "widgetInboxEmpty": "Nichts wartet.",
+    "widgetInboxAsleep": "{n} asleep",
     "widgetInboxOldest": "ältestes {n}T",
     "widgetInboxToday": "alles von heute",
     "widgetInboxWaiting": "Lädt…",

@@ -1876,6 +1876,7 @@
     "widgetFeedsRetiredHint": "Deze feed faalde herhaaldelijk en wordt niet meer gecontroleerd.",
     "widgetFeedsWaiting": "Laden…",
     "widgetInboxEmpty": "Niets in de wachtrij.",
+    "widgetInboxAsleep": "{n} asleep",
     "widgetInboxOldest": "oudste {n}d",
     "widgetInboxToday": "alles van vandaag",
     "widgetInboxWaiting": "Laden…",

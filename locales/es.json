@@ -1876,6 +1876,7 @@
     "widgetFeedsRetiredHint": "Esta fuente falló una y otra vez y ya no se comprueba.",
     "widgetFeedsWaiting": "Cargando…",
     "widgetInboxEmpty": "No hay nada esperando.",
+    "widgetInboxAsleep": "{n} asleep",
     "widgetInboxOldest": "el más antiguo, {n} d",
     "widgetInboxToday": "todo de hoy",
     "widgetInboxWaiting": "Cargando…",

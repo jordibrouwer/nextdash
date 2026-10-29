@@ -18,25 +18,60 @@
         return value && value !== key ? value : fallback;
     }
 
+    /**
+     * Every item, sleeping ones included. The cache holds the whole list and
+     * the split into waiting and asleep is made on each draw: filtered once at
+     * load, a link that woke while the dashboard stayed open never came back.
+     */
     async function load(dash) {
         if (dash._widgetInbox) return dash._widgetInbox;
         try {
             const res = await fetch('/api/inbox');
             if (!res.ok) return null;
             const data = await res.json();
-            const items = Array.isArray(data?.items) ? data.items
+            dash._widgetInbox = Array.isArray(data?.items) ? data.items
                 : Array.isArray(data) ? data : [];
-            // Sleeping links are not waiting: the view, the tab badge and the
-            // tiles leave them out, and the widget disagreed with all three.
-            const now = Date.now();
-            dash._widgetInbox = items.filter((item) => !(Number(item?.snoozedUntil) > now));
             return dash._widgetInbox;
         } catch (_error) {
             return null;
         }
     }
 
-    function render(body, widget, dash, items) {
+    function isAsleep(item, now) {
+        return Number(item?.snoozedUntil) > now;
+    }
+
+    /**
+     * One timer for the dashboard, set for the first sleeping link to wake.
+     * These tiles have no beat of their own, so without it the woken link
+     * waited for the next redraw of the grid.
+     */
+    function scheduleWake(dash, all, now) {
+        clearTimeout(dash._widgetInboxWake);
+        dash._widgetInboxWake = null;
+        const next = all.map((item) => Number(item?.snoozedUntil) || 0)
+            .filter((at) => at > now)
+            .sort((a, b) => a - b)[0];
+        if (!next) return;
+        // Capped as the Inbox view caps its own: a far snooze is set again on
+        // a later draw long before then.
+        const delay = Math.min(next - now + 250, 6 * 3600000);
+        dash._widgetInboxWake = setTimeout(() => {
+            dash._widgetInboxWake = null;
+            dash.renderCore?.refreshWidgets?.('inbox');
+        }, delay);
+    }
+
+    /** "3 asleep": the links that are not waiting yet, so a short tile is not mistaken for the whole inbox. */
+    function asleepNote(dash, asleep) {
+        if (!asleep) return null;
+        const text = label(dash, 'dashboard.widgetInboxAsleep', '{n} asleep').replace('{n}', String(asleep));
+        const note = window.DashboardWidgetUtils?.footnote?.(text);
+        if (note) note.setAttribute('data-widget-inbox-asleep', String(asleep));
+        return note || null;
+    }
+
+    function render(body, widget, dash, items, asleep = 0) {
         const utils = window.DashboardWidgetUtils;
         // The container-query root the blocks below answer to.
         const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
@@ -49,6 +84,8 @@
             empty.className = 'dashboard-widget-empty';
             empty.textContent = label(dash, 'dashboard.widgetInboxEmpty', 'Nothing waiting.');
             wrap.appendChild(empty);
+            const note = asleepNote(dash, asleep);
+            if (note) wrap.appendChild(note);
             return;
         }
 
@@ -149,11 +186,13 @@
         window.DashboardWidgetUtils?.appendOverflowRow(
             list, dash, sorted.length - maxRows, () => { dash.showView?.('inbox'); });
         wrap.appendChild(list);
+        const note = asleepNote(dash, asleep);
+        if (note) wrap.appendChild(note);
     }
 
     async function renderInbox(body, widget, dash) {
-        const items = await load(dash);
-        if (!items) {
+        const all = await load(dash);
+        if (!all) {
             body.replaceChildren();
             const waiting = document.createElement('p');
             // A failed read: these tiles have no beat of their own, so
@@ -163,7 +202,12 @@
             body.appendChild(waiting);
             return;
         }
-        render(body, widget, dash, items);
+        // Sleeping links are not waiting: the view, the tab badge and the
+        // tiles leave them out, and the widget disagreed with all three.
+        const now = Date.now();
+        const items = all.filter((item) => !isAsleep(item, now));
+        scheduleWake(dash, all, now);
+        render(body, widget, dash, items, all.length - items.length);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

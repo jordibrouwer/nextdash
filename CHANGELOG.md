@@ -170,6 +170,12 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **new — The last hour of the processor** is a small line beside its meter: `glancesHostRow.cpuHour`, the coarse points of the last hour, copied out of the ring (`glancesHost.cpuHour`).
 - **new — Temperatures follow the weather's unit.** With Fahrenheit picked for the weather, every Glances temperature is written in °F (`DashboardGlances.formatTemp`/`tempNumber`); the yellow and red lines stay in Celsius.
 
+### Inbox tile
+
+- **fix — A link saved elsewhere shows without a reload.** `inbox.json` and `trash.json` move the data revision, but the Inbox and Trash tiles kept their cached answer; the revision check clears both and redraws them.
+- **fix — A snoozed link comes back on the tile when it wakes.** The tile cached the list with the sleeping links already dropped and has no beat of its own; it caches every item, splits waiting from asleep on each draw, and sets one timer for the first to wake.
+- **new — "N asleep".** A line under the rows counts the snoozed links, so a short tile is not taken for the whole inbox.
+
 ---
 
 ## v1.22.4 — 29 October 2026
