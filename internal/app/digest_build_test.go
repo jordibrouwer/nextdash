@@ -189,3 +189,109 @@ func TestDigestNoticeAddsTheCheckupLineButNeverLeadsWithIt(t *testing.T) {
 		t.Fatalf("title %q", n.Title)
 	}
 }
+
+func TestDigestWeekCountsThisWeekAgainstLast(t *testing.T) {
+	day := 24 * time.Hour
+	at := func(d time.Duration) int64 { return digestNow.Add(-d).UnixMilli() }
+	in := digestInput{
+		Now: digestNow, Settings: allOn(),
+		Bookmarks: []Bookmark{
+			{Name: "A", URL: "https://a", OpenCount: 5, CreatedAt: at(2 * day), OpenLog: []int64{at(1 * day), at(2 * day), at(9 * day)}},
+			{Name: "B", URL: "https://b", OpenCount: 2, CreatedAt: at(10 * day), OpenLog: []int64{at(8 * day), at(20 * day)}},
+			// Older than both weeks, and on the unsorted page: neither counts as added.
+			{Name: "C", URL: "https://c", PageID: unsortedPageID, CreatedAt: at(1 * day)},
+			{Name: "D", URL: "https://d", CreatedAt: at(30 * day)},
+		},
+		InboxAddedAt: []int64{at(1 * day), at(3 * day), at(40 * day)},
+	}
+	w := buildDigest(in).Week
+	if w == nil {
+		t.Fatal("a week with opens has week figures")
+	}
+	if w.Opens != 2 || w.OpensPrev != 2 {
+		t.Fatalf("opens %d / %d, want 2 / 2", w.Opens, w.OpensPrev)
+	}
+	if w.Added != 1 || w.AddedPrev != 1 {
+		t.Fatalf("added %d / %d, want 1 / 1", w.Added, w.AddedPrev)
+	}
+	if w.InboxNew != 2 {
+		t.Fatalf("inbox new %d, want 2", w.InboxNew)
+	}
+}
+
+func TestDigestWeekUptimeAndOutagesFromTheHistory(t *testing.T) {
+	day := 24 * time.Hour
+	at := func(d time.Duration) int64 { return digestNow.Add(-d).UnixMilli() }
+	in := digestInput{Now: digestNow, Settings: allOn(), Samples: map[string][]HealthSample{
+		"https://a": {
+			{T: at(10 * day), Up: true}, {T: at(9 * day), Up: false, Alerted: true},
+			{T: at(3 * day), Up: true}, {T: at(2 * day), Up: true}, {T: at(1 * day), Up: true}, {T: at(12 * time.Hour), Up: false, Alerted: true},
+			// Maintenance does not count against the uptime.
+			{T: at(6 * time.Hour), Up: false, Maint: true},
+		},
+	}}
+	w := buildDigest(in).Week
+	if w == nil {
+		t.Fatal("checks make week figures")
+	}
+	if w.Uptime != 75 || w.UptimePrev != 50 {
+		t.Fatalf("uptime %.1f / %.1f, want 75 / 50", w.Uptime, w.UptimePrev)
+	}
+	if w.Outages != 1 || w.OutagesPrev != 1 {
+		t.Fatalf("outages %d / %d, want 1 / 1", w.Outages, w.OutagesPrev)
+	}
+}
+
+func TestDigestWeekHonoursTheSwitches(t *testing.T) {
+	day := 24 * time.Hour
+	at := func(d time.Duration) int64 { return digestNow.Add(-d).UnixMilli() }
+	in := digestInput{
+		Now: digestNow, Settings: Settings{DigestHealth: false, DigestUsage: false},
+		Bookmarks: []Bookmark{{Name: "A", URL: "https://a", OpenCount: 1, OpenLog: []int64{at(day)}}},
+		Samples:   map[string][]HealthSample{"https://a": {{T: at(day), Up: true}}},
+	}
+	if buildDigest(in).Week != nil {
+		t.Fatal("with both parts off there are no week figures")
+	}
+}
+
+func TestDigestBrokenItemsSayWhereSinceWhenAndWhy(t *testing.T) {
+	since := digestNow.Add(-3 * 24 * time.Hour).UnixMilli()
+	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Issues: []HealthIssue{
+		{Name: "Wiki", URL: "https://wiki", PageName: "Homelab", BrokenSince: since, LastError: "connection refused", Flags: []string{"broken"}},
+	}})
+	if d.Health == nil || len(d.Health.BrokenItems) != 1 {
+		t.Fatalf("health %+v", d.Health)
+	}
+	it := d.Health.BrokenItems[0]
+	if it.Name != "Wiki" || it.Where != "Homelab" || it.Since != since || it.Error != "connection refused" {
+		t.Fatalf("item %+v", it)
+	}
+}
+
+func TestDigestUsageItemsCarryCountsAgesAndPages(t *testing.T) {
+	day := 24 * time.Hour
+	at := func(d time.Duration) int64 { return digestNow.Add(-d).UnixMilli() }
+	d := buildDigest(digestInput{
+		Now: digestNow, Settings: allOn(),
+		Bookmarks: []Bookmark{
+			{Name: "Top", URL: "https://top", OpenCount: 9, LastOpened: at(day), OpenLog: []int64{at(day), at(2 * day), at(3 * day)}},
+			{Name: "Old", URL: "https://old", OpenCount: 1, LastOpened: at(45 * day)},
+		},
+		Issues:       []HealthIssue{{Name: "Never", URL: "https://never", PageName: "Reading", Flags: []string{"unused"}}},
+		InboxAddedAt: []int64{at(12 * day), at(2 * day)},
+	})
+	u := d.Usage
+	if u == nil || len(u.TopOpenedItems) != 1 || u.TopOpenedItems[0].Name != "Top" || u.TopOpenedItems[0].Count != 3 {
+		t.Fatalf("top %+v", u)
+	}
+	if len(u.NeverOpenedItems) != 1 || u.NeverOpenedItems[0].Where != "Reading" {
+		t.Fatalf("never %+v", u.NeverOpenedItems)
+	}
+	if len(u.StaleItems) != 1 || u.StaleItems[0].Name != "Old" || u.StaleItems[0].Days != 45 {
+		t.Fatalf("stale %+v", u.StaleItems)
+	}
+	if u.InboxOldestDays != 12 {
+		t.Fatalf("oldest inbox item %d days, want 12", u.InboxOldestDays)
+	}
+}

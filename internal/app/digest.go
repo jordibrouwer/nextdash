@@ -66,12 +66,21 @@ func digestDue(s Settings, now time.Time) (time.Time, string) {
 func (h *Handlers) collectDigestInput(now time.Time) digestInput {
 	settings := h.store.GetSettings()
 	report := h.loadBookmarkHealthReport(false)
+	history := readHealthHistoryFile()
+	inbox := h.store.GetInboxItems()
+	inboxAddedAt := make([]int64, 0, len(inbox))
+	for _, link := range inbox {
+		inboxAddedAt = append(inboxAddedAt, link.AddedAt)
+	}
 	return digestInput{
+		Samples:         history.Samples,
+		Days:            history.Days,
+		InboxAddedAt:    inboxAddedAt,
 		Now:             now,
 		Settings:        settings,
 		Issues:          report.Issues,
 		Bookmarks:       h.store.GetAllBookmarks(),
-		InboxCount:      len(h.store.GetInboxItems()),
+		InboxCount:      len(inbox),
 		Updates:         h.dockerUpdateSnapshot(),
 		CertsExpiring:   digestCertLines(report.Certificates, now),
 		DomainsExpiring: digestDomainLines(report.Domains, now),

@@ -43,6 +43,12 @@ type digestInput struct {
 	CertsExpiring   []string                      // "host (5 days)" lines, already formatted
 	DomainsExpiring []string                      // "domain (5 days)" lines, already formatted
 	Releases        []whatsNewRelease             // nextDash's own recent releases, newest first
+	// The week in figures. Samples and Days are the check history by URL, the
+	// way health-history.json keeps it; InboxAddedAt is when each waiting link
+	// arrived.
+	Samples      map[string][]HealthSample
+	Days         map[string][]HealthDay
+	InboxAddedAt []int64
 }
 type digestSnapshot struct {
 	DueKey      string         `json:"dueKey"`
@@ -52,6 +58,50 @@ type digestSnapshot struct {
 	Usage       *digestUsage   `json:"usage,omitempty"`
 	News        *digestNews    `json:"news,omitempty"`
 	Checkup     *digestCheckup `json:"checkup,omitempty"`
+	Week        *digestWeek    `json:"week,omitempty"`
+}
+
+// digestWeek is the last seven days in figures, each next to the seven before
+// it so the window can say which way it went. A figure that is zero is left
+// out of the JSON and out of the window: no checks is not "0% up".
+type digestWeek struct {
+	Opens       int     `json:"opens,omitempty"`
+	OpensPrev   int     `json:"opensPrev,omitempty"`
+	Added       int     `json:"added,omitempty"`
+	AddedPrev   int     `json:"addedPrev,omitempty"`
+	Uptime      float64 `json:"uptime,omitempty"`
+	UptimePrev  float64 `json:"uptimePrev,omitempty"`
+	Outages     int     `json:"outages,omitempty"`
+	OutagesPrev int     `json:"outagesPrev,omitempty"`
+	InboxNew    int     `json:"inboxNew,omitempty"`
+}
+
+func (w digestWeek) empty() bool {
+	return w == digestWeek{}
+}
+
+// digestBroken is one broken link with what the window says about it: where it
+// lives, since when it has been down and what the last check said.
+type digestBroken struct {
+	Name  string `json:"name"`
+	Where string `json:"where,omitempty"`
+	Since int64  `json:"since,omitempty"`
+	Error string `json:"error,omitempty"`
+}
+
+type digestCounted struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+type digestWhere struct {
+	Name  string `json:"name"`
+	Where string `json:"where,omitempty"`
+}
+
+type digestStaleItem struct {
+	Name string `json:"name"`
+	Days int    `json:"days"`
 }
 
 // digestCheckup is how many bookmarks the checkup would walk through. It is
@@ -63,8 +113,10 @@ type digestHealth struct {
 	NewlyBroken      []string `json:"newlyBroken,omitempty"`
 	StillBroken      int      `json:"stillBroken,omitempty"`
 	StillBrokenNames []string `json:"stillBrokenNames,omitempty"`
-	CertsExpiring    []string `json:"certsExpiring,omitempty"`
-	DomainsExpiring  []string `json:"domainsExpiring,omitempty"`
+	// BrokenItems is the same links with their detail, newest breakage first.
+	BrokenItems     []digestBroken `json:"brokenItems,omitempty"`
+	CertsExpiring   []string       `json:"certsExpiring,omitempty"`
+	DomainsExpiring []string       `json:"domainsExpiring,omitempty"`
 }
 type digestUpdates struct {
 	Available []string `json:"available"`
@@ -79,6 +131,11 @@ type digestUsage struct {
 	StaleNames       []string `json:"staleNames,omitempty"`
 	StaleDays        int      `json:"staleDays,omitempty"`
 	Inbox            int      `json:"inbox,omitempty"`
+	// The same lists with what the window shows beside each name.
+	TopOpenedItems   []digestCounted   `json:"topOpenedItems,omitempty"`
+	NeverOpenedItems []digestWhere     `json:"neverOpenedItems,omitempty"`
+	StaleItems       []digestStaleItem `json:"staleItems,omitempty"`
+	InboxOldestDays  int               `json:"inboxOldestDays,omitempty"`
 }
 
 func digestName(bm Bookmark) string {
@@ -126,6 +183,24 @@ func buildDigest(in digestInput) digestSnapshot {
 		}
 		sort.Strings(h.NewlyBroken)
 		h.StillBrokenNames = digestSample(h.StillBrokenNames)
+		for _, issue := range in.Issues {
+			if issueHasFlag(issue, "broken") {
+				h.BrokenItems = append(h.BrokenItems, digestBroken{Name: digestIssueName(issue), Where: issue.PageName, Since: issue.BrokenSince, Error: issue.LastError})
+			}
+		}
+		sort.SliceStable(h.BrokenItems, func(i, j int) bool {
+			a, b := h.BrokenItems[i], h.BrokenItems[j]
+			if (a.Since == 0) != (b.Since == 0) {
+				return b.Since == 0
+			}
+			if a.Since != b.Since {
+				return a.Since > b.Since
+			}
+			return a.Name < b.Name
+		})
+		if len(h.BrokenItems) > digestNamesMax {
+			h.BrokenItems = h.BrokenItems[:digestNamesMax]
+		}
 		if len(h.NewlyBroken) > 0 || h.StillBroken > 0 || len(h.CertsExpiring) > 0 || len(h.DomainsExpiring) > 0 {
 			snap.Health = h
 		}
@@ -152,6 +227,7 @@ func buildDigest(in digestInput) digestSnapshot {
 			case issueHasFlag(issue, "unused"):
 				u.NeverOpened++
 				u.NeverOpenedNames = append(u.NeverOpenedNames, digestIssueName(issue))
+				u.NeverOpenedItems = append(u.NeverOpenedItems, digestWhere{Name: digestIssueName(issue), Where: issue.PageName})
 			}
 		}
 		staleBefore := in.Now.Add(-digestStaleDays * 24 * time.Hour).UnixMilli()
@@ -164,6 +240,7 @@ func buildDigest(in digestInput) digestSnapshot {
 			if bm.LastOpened < staleBefore {
 				u.Stale++
 				u.StaleNames = append(u.StaleNames, digestName(bm))
+				u.StaleItems = append(u.StaleItems, digestStaleItem{Name: digestName(bm), Days: int(in.Now.Sub(time.UnixMilli(bm.LastOpened)).Hours() / 24)})
 			}
 		}
 		if u.Stale > 0 {
@@ -193,6 +270,26 @@ func buildDigest(in digestInput) digestSnapshot {
 		})
 		for i := 0; i < len(top) && i < digestTopOpenedMax; i++ {
 			u.TopOpened = append(u.TopOpened, top[i].name)
+			u.TopOpenedItems = append(u.TopOpenedItems, digestCounted{Name: top[i].name, Count: top[i].n})
+		}
+		sort.Slice(u.NeverOpenedItems, func(i, j int) bool { return u.NeverOpenedItems[i].Name < u.NeverOpenedItems[j].Name })
+		if len(u.NeverOpenedItems) > digestNamesMax {
+			u.NeverOpenedItems = u.NeverOpenedItems[:digestNamesMax]
+		}
+		// Longest unopened first, the one most worth a look.
+		sort.Slice(u.StaleItems, func(i, j int) bool {
+			if u.StaleItems[i].Days != u.StaleItems[j].Days {
+				return u.StaleItems[i].Days > u.StaleItems[j].Days
+			}
+			return u.StaleItems[i].Name < u.StaleItems[j].Name
+		})
+		if len(u.StaleItems) > digestNamesMax {
+			u.StaleItems = u.StaleItems[:digestNamesMax]
+		}
+		for _, added := range in.InboxAddedAt {
+			if days := int(in.Now.Sub(time.UnixMilli(added)).Hours() / 24); days > u.InboxOldestDays {
+				u.InboxOldestDays = days
+			}
 		}
 		u.NeverOpenedNames = digestSample(u.NeverOpenedNames)
 		u.StaleNames = digestSample(u.StaleNames)
@@ -204,6 +301,8 @@ func buildDigest(in digestInput) digestSnapshot {
 	if in.Settings.DigestNews {
 		snap.News = buildDigestNews(in.Releases, in.Now)
 	}
+
+	snap.Week = buildDigestWeek(in)
 
 	// One bookmark with several findings is one thing to tidy up.
 	tidy := map[string]bool{}
@@ -219,6 +318,80 @@ func buildDigest(in digestInput) digestSnapshot {
 		snap.Checkup = &digestCheckup{Items: len(tidy)}
 	}
 	return snap
+}
+
+/*
+buildDigestWeek counts the last seven days and the seven before them. Opens and
+added come with the usage part, uptime and outages with the health part, so a
+reader who switched a part off does not get its figures anyway.
+*/
+func buildDigestWeek(in digestInput) *digestWeek {
+	w := digestWeek{}
+	weekAgo := in.Now.Add(-digestNewWindow)
+	twoWeeksAgo := in.Now.Add(-2 * digestNewWindow)
+	now := in.Now.UnixMilli()
+	if in.Settings.DigestUsage {
+		for _, bm := range in.Bookmarks {
+			for _, ts := range bm.OpenLog {
+				switch {
+				case ts >= weekAgo.UnixMilli() && ts <= now:
+					w.Opens++
+				case ts >= twoWeeksAgo.UnixMilli() && ts < weekAgo.UnixMilli():
+					w.OpensPrev++
+				}
+			}
+			if bm.PageID == unsortedPageID || bm.CreatedAt == 0 {
+				continue
+			}
+			switch {
+			case bm.CreatedAt >= weekAgo.UnixMilli() && bm.CreatedAt <= now:
+				w.Added++
+			case bm.CreatedAt >= twoWeeksAgo.UnixMilli() && bm.CreatedAt < weekAgo.UnixMilli():
+				w.AddedPrev++
+			}
+		}
+		for _, added := range in.InboxAddedAt {
+			if added >= weekAgo.UnixMilli() && added <= now {
+				w.InboxNew++
+			}
+		}
+	}
+	if in.Settings.DigestHealth {
+		inputs := make([]fleetMonitorInput, 0, len(in.Samples))
+		for url, samples := range in.Samples {
+			inputs = append(inputs, fleetMonitorInput{url: url, samples: samples, days: in.Days[url]})
+			for _, s := range samples {
+				if !s.Alerted {
+					continue
+				}
+				switch {
+				case s.T >= weekAgo.UnixMilli() && s.T <= now:
+					w.Outages++
+				case s.T >= twoWeeksAgo.UnixMilli() && s.T < weekAgo.UnixMilli():
+					w.OutagesPrev++
+				}
+			}
+		}
+		this := pooledUptime(inputs, digestNewWindow, in.Now)
+		both := pooledUptime(inputs, 2*digestNewWindow, in.Now)
+		thisUp := int(this.Ratio*float64(this.Samples) + 0.5)
+		bothUp := int(both.Ratio*float64(both.Samples) + 0.5)
+		if this.Samples > 0 {
+			w.Uptime = digestPercent(thisUp, this.Samples)
+		}
+		if prev := both.Samples - this.Samples; prev > 0 {
+			w.UptimePrev = digestPercent(bothUp-thisUp, prev)
+		}
+	}
+	if w.empty() {
+		return nil
+	}
+	return &w
+}
+
+// digestPercent is up over total as a percentage with one decimal.
+func digestPercent(up, total int) float64 {
+	return float64(int(float64(up)/float64(total)*1000+0.5)) / 10
 }
 
 func (d digestSnapshot) empty() bool {
