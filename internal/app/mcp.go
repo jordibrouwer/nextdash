@@ -255,7 +255,8 @@ func mcpToolDefinitions(s Settings) []map[string]any {
 func mcpAllToolDefinitions() []map[string]any {
 	all := append(mcpCoreToolDefinitions(), mcpBookmarksWriteDefinitions()...)
 	all = append(all, mcpHealthInboxDefinitions()...)
-	return append(all, mcpContainersReadDefinitions()...)
+	all = append(all, mcpContainersReadDefinitions()...)
+	return append(all, mcpContainersControlDefinitions()...)
 }
 
 func mcpCoreToolDefinitions() []map[string]any {
@@ -490,6 +491,8 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return mcpToolResult(h.mcpGetContainer(r, body.Arguments)), nil
 	case "get_container_logs":
 		return mcpToolResult(h.mcpContainerLogs(r, body.Arguments)), nil
+	case "container_action":
+		return mcpToolResult(h.mcpContainerAction(r, body.Arguments)), nil
 	}
 	return nil, &jsonRPCError{Code: jsonRPCInvalidParams, Message: "Unknown tool: " + body.Name}
 }

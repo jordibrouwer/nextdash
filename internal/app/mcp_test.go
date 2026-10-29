@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func newMCPHandlers(t *testing.T) *Handlers {
@@ -1201,4 +1203,181 @@ func mustJSON(t *testing.T, v any) string {
 		t.Fatal(err)
 	}
 	return string(b)
+}
+
+// controlMCPHandlers is containerMCPHandlers with the Containers control group
+// on and Docker control switched on in the environment.
+func controlMCPHandlers(t *testing.T) *Handlers {
+	t.Helper()
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "1")
+	h := containerMCPHandlers(t)
+	settings := h.store.GetSettings()
+	settings.MCPContainersControl = true
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
+
+func TestContainerActionRunsThroughTheRealHandler(t *testing.T) {
+	f := startFakeDocker(t)
+	id := strings.Repeat("a", 64)
+	f.add(fakeContainer{ID: id, Name: "web", State: "running"})
+	h := controlMCPHandlers(t)
+	payload := toolCall(t, h, "container_action", `{"container":"web","action":"restart"}`)
+	if payload["done"] != true || payload["container"] != "web" || payload["action"] != "restart" {
+		t.Fatalf("payload = %v", payload)
+	}
+	if !f.called("POST /containers/" + id + "/restart") {
+		t.Fatalf("the daemon never saw the restart; calls = %v", f.calls)
+	}
+}
+
+func TestContainerActionPassesTheRefusalsThrough(t *testing.T) {
+	id := strings.Repeat("a", 64)
+	own := strings.Repeat("e", 64)
+	cases := []struct {
+		name   string
+		args   string
+		reason string
+		setup  func(h *Handlers)
+	}{
+		{"control off", `{"container":"web","action":"stop"}`, reasonDockerControlOff, func(h *Handlers) { t.Setenv("NEXTDASH_DOCKER_CONTROL", "") }},
+		{"own container", `{"container":"nextdash","action":"restart"}`, reasonDockerSelf, func(h *Handlers) {
+			dockerSelfOverride = own[:12]
+			t.Cleanup(func() { dockerSelfOverride = "" })
+		}},
+		{"remove while running", `{"container":"web","action":"remove"}`, "running", nil},
+		{"busy", `{"container":"web","action":"stop"}`, "busy", func(h *Handlers) {
+			release, _ := h.dockerLock(id)
+			t.Cleanup(release)
+		}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := startFakeDocker(t)
+			f.add(fakeContainer{ID: id, Name: "web", State: "running"})
+			f.add(fakeContainer{ID: own, Name: "nextdash", State: "running"})
+			h := controlMCPHandlers(t)
+			if c.setup != nil {
+				c.setup(h)
+			}
+			// What the handler itself answers to the same request.
+			var action struct{ Container, Action string }
+			_ = json.Unmarshal([]byte(c.args), &action)
+			target := id
+			if action.Container == "nextdash" {
+				target = own
+			}
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("POST", "/api/docker/containers/"+target+"/"+action.Action, nil)
+			req = mux.SetURLVars(req, map[string]string{"id": target, "action": action.Action})
+			h.DockerActionHandler(rec, req)
+			var want struct{ Reason string }
+			_ = json.Unmarshal(rec.Body.Bytes(), &want)
+			if want.Reason != c.reason {
+				t.Fatalf("handler answered %q, fixture expects %q", want.Reason, c.reason)
+			}
+			f.calls = nil
+			payload := toolCall(t, h, "container_action", c.args)
+			if payload["reason"] != want.Reason {
+				t.Fatalf("payload = %v, want reason %q", payload, want.Reason)
+			}
+			if msg, _ := payload["error"].(string); msg == "" || payload["done"] != nil {
+				t.Fatalf("payload = %v", payload)
+			}
+			if f.called("POST /containers/") || f.called("DELETE /containers/") {
+				t.Fatalf("a refusal reached the daemon: %v", f.calls)
+			}
+		})
+	}
+}
+
+func TestContainerActionNeedsTheToken(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", State: "running"})
+	h := controlMCPHandlers(t)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	payload := toolCall(t, h, "container_action", `{"container":"web","action":"restart"}`)
+	if msg, _ := payload["error"].(string); msg != "This tool needs the write token." {
+		t.Fatalf("payload = %v", payload)
+	}
+	if f.called("POST /containers/") {
+		t.Fatal("a call without the token reached the daemon")
+	}
+}
+
+func TestKillIsNotAnAction(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", State: "running"})
+	h := controlMCPHandlers(t)
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	tools, _ := resp.Result.(map[string]any)["tools"].([]any)
+	var enum []any
+	for _, tool := range tools {
+		m := tool.(map[string]any)
+		if m["name"] == "container_action" {
+			props := m["inputSchema"].(map[string]any)["properties"].(map[string]any)
+			enum, _ = props["action"].(map[string]any)["enum"].([]any)
+			ann := m["annotations"].(map[string]any)
+			if ann["readOnlyHint"] != false || ann["destructiveHint"] != true {
+				t.Errorf("annotations = %v", ann)
+			}
+		}
+	}
+	want := []string{"start", "stop", "restart", "pause", "unpause", "remove", "update", "rollback"}
+	if len(enum) != len(want) {
+		t.Fatalf("enum = %v", enum)
+	}
+	for i, w := range want {
+		if enum[i] != w {
+			t.Errorf("enum[%d] = %v, want %s", i, enum[i], w)
+		}
+	}
+	payload := toolCall(t, h, "container_action", `{"container":"web","action":"kill"}`)
+	if msg, _ := payload["error"].(string); msg == "" || payload["done"] != nil {
+		t.Fatalf("payload = %v", payload)
+	}
+	if len(f.calls) != 0 {
+		t.Fatalf("a refused action touched the daemon: %v", f.calls)
+	}
+}
+
+func TestContainerControlIsHiddenWhenItsSwitchIsOff(t *testing.T) {
+	h := controlMCPHandlers(t)
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	if !strings.Contains(mustJSON(t, resp.Result), `"container_action"`) {
+		t.Fatal("container_action missing with the switch on")
+	}
+	settings := h.store.GetSettings()
+	settings.MCPContainersControl = false
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	_, resp = callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	if strings.Contains(mustJSON(t, resp.Result), `"container_action"`) {
+		t.Error("container_action listed with the switch off")
+	}
+	_, called := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"container_action","arguments":{"container":"web","action":"stop"}}}`)
+	if called.Error == nil || called.Error.Message != "Unknown tool: container_action" {
+		t.Errorf("answered %+v with the switch off", called)
+	}
+}
+
+func TestContainerActionIsLogged(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", State: "running"})
+	h := controlMCPHandlers(t)
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategoryMutate: true}})
+	lines := captureActivityLogs(t, func() {
+		toolCall(t, h, "container_action", `{"container":"web","action":"restart"}`)
+	})
+	if len(lines) != 1 {
+		t.Fatalf("expected 1 activity line, got %v", lines)
+	}
+	for _, want := range []string{`"event":"docker.restart"`, `"container":"web"`, `"source":"mcp"`} {
+		if !strings.Contains(lines[0], want) {
+			t.Errorf("line lacks %s: %s", want, lines[0])
+		}
+	}
 }

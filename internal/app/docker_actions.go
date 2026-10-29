@@ -170,10 +170,16 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		result["update"] = outcome
 	}
 
-	logActivity(activityCategoryMutate, "docker."+action, map[string]any{
+	logFields := map[string]any{
 		"container": name,
 		"ok":        err == nil,
-	}, "docker "+action+" "+name)
+	}
+	// A call that came through the MCP endpoint says so; the browser's own
+	// buttons log exactly what they always did.
+	if requestFromMCP(r) {
+		logFields = mergeActivityFields(activityFieldsFromRequest(r), logFields)
+	}
+	logActivity(activityCategoryMutate, "docker."+action, logFields, "docker "+action+" "+name)
 
 	var refusal *dockerRefusalError
 	if errors.As(err, &refusal) {
