@@ -3202,7 +3202,8 @@ class SearchComponent {
         const query = String(this.currentQuery || '').trim();
         // A session that asked the web is left out: that query went to the
         // engine on purpose, and to nowhere else.
-        if (query && !this._webSearchRanThisSession) {
+        // A question for the assistant is left out for the same reason.
+        if (query && !this._webSearchRanThisSession && !/^:ask(\s|$)/i.test(query)) {
             window.nextdashTrackSearch?.(query, this._lastSearchResultCount || 0, Boolean(this._searchOpened));
         }
         this._webSearchRanThisSession = false;
@@ -4608,10 +4609,12 @@ class SearchComponent {
     }
 
     recordRecentCommand(query) {
-        const cleanedQuery = (query || '').trim();
+        let cleanedQuery = (query || '').trim();
         if (!cleanedQuery.startsWith(':') || cleanedQuery === ':') {
             return;
         }
+        // The question stays out of storage: only the command is remembered.
+        if (/^:ask(\s|$)/i.test(cleanedQuery)) cleanedQuery = ':ask';
 
         this.recentCommands = [cleanedQuery, ...this.recentCommands.filter((entry) => entry !== cleanedQuery)].slice(0, 5);
         this.saveRecentCommands();

@@ -603,7 +603,15 @@
                 body = await res.json().catch(() => null);
             } catch { /* handled below */ }
             await this.settleOne(proposal, res, body);
+            if (proposal.status === 'applied') this.refreshDashboard();
             this.renderThread();
+        }
+
+        /** The dashboard behind the panel reads the change now, not on the next focus. */
+        refreshDashboard() {
+            try {
+                global.dashboardInstance?.data?.refreshIfDataRevisionChanged?.()?.catch?.(() => {});
+            } catch { /* the dashboard catches up on the next focus */ }
         }
 
         async skipOne(id) {
@@ -652,6 +660,7 @@
             }
             // Whatever the answer did not settle is still waiting for a click.
             chosen.forEach((p) => { if (p.status === 'applying') p.status = 'pending'; });
+            if (chosen.some((p) => p.status === 'applied')) this.refreshDashboard();
             this.renderThread();
         }
     }

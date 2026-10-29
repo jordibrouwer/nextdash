@@ -162,6 +162,18 @@ test.describe('Assistant panel', () => {
         await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
     });
 
+    test('the question never lands in the palette recents', async ({ page }) => {
+        const tracked = [];
+        page.on('request', (r) => { if (r.url().includes('/api/track-search')) tracked.push(r.postData() || ''); });
+        await askFromPalette(page);
+        const stored = await page.evaluate(() => JSON.stringify([
+            localStorage.getItem('dashboardRecentCommands'), localStorage.getItem('dashboardSearchHistory'),
+        ]));
+        expect(stored).toContain(':ask');
+        expect(stored).not.toContain('containers');
+        expect(tracked.join('')).not.toContain('containers');
+    });
+
     test('a proposal card applies and the bookmark changes', async ({ page }) => {
         await askFromPalette(page);
         const card = panel(page).locator('[data-ai-proposal]');
@@ -174,6 +186,16 @@ test.describe('Assistant panel', () => {
             const list = await (await page.request.get('/api/bookmarks?page=1')).json();
             return list.find((b) => b.url === BOOKMARK_URL)?.note;
         }).toBe(NEW_NOTE);
+    });
+
+    test('after Apply the dashboard behind the panel shows the change without a reload', async ({ page }) => {
+        mode = 'two';
+        await askFromPalette(page);
+        await panel(page).locator('[data-ai-apply-all]').click();
+        await expect(panel(page).locator('[data-ai-proposal]').first()).toContainText('Done');
+        await panel(page).locator('[data-ai-close]').first().click();
+        await expect(panel(page)).toBeHidden();
+        await expect(page.locator('#dashboard-layout').getByText('Assistant spec renamed').first()).toBeVisible({ timeout: 10_000 });
     });
 
     test('after a reload the conversation is in the sidebar and opens with its card', async ({ page }) => {
