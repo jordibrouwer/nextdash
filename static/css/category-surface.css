@@ -458,7 +458,8 @@ html[data-theme] body[data-cat-surface="card"] #dashboard-layout.config-layout:n
  *     smaller than 12px.
  * The title of the active section and tab keep their accent.
  */
-html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view,
+html[data-theme] body .config-widget-overlay {
     --text-muted: color-mix(in srgb, var(--text-secondary) 60%, var(--text-primary));
 }
 

@@ -10172,6 +10172,20 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 
 /* The open widget's settings: a sheet over the page, not a form that rearranges
    the list. */
+/* The sheet hangs on <body>, outside #dashboard-layout.config-layout, so it
+   never received the names that block maps onto the variables the themes
+   publish: every var(--text-muted, #888) inside it fell back to the grey
+   literal, on a light theme as well as a dark one. The same map, here. */
+.config-widget-overlay {
+    --card-bg: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+    --border-color: var(--border-primary);
+    --accent-color: var(--accent-primary);
+    --accent-soft: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    --hover-bg: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+    --text-muted: var(--text-secondary);
+    --button-bg: transparent;
+}
+
 .config-widget-overlay {
     position: fixed;
     inset: 0;

@@ -316,6 +316,19 @@ test.describe('edit mode: a widget in the panel', () => {
         expect(await page.evaluate((wid) => (window.dashboardInstance.widgets || []).find((w) => w.id === wid)?.title, id)).toBe('Edit mode widget');
     });
 
+    test('the sheet over the dashboard takes its text colour from the theme, not a grey literal', async ({ page }) => {
+        await loadDashboard(page);
+        await selectWidget(page);
+        await panel(page).locator('[data-edit-action="widget-settings"]').click();
+        const sheet = page.locator('#config-widget-overlay .config-widget-sheet');
+        await expect(sheet).toBeVisible({ timeout: 15_000 });
+        // var(--text-muted, #888) fell back to #888 when nothing defined --text-muted out here.
+        expect(await sheet.evaluate((el) => getComputedStyle(el).getPropertyValue('--text-muted').trim())).not.toBe('');
+        const note = sheet.locator('.config-widget-note, .config-widget-detail-about').first();
+        await expect(note).toBeVisible();
+        expect(await note.evaluate((el) => getComputedStyle(el).color)).not.toBe('rgb(136, 136, 136)');
+    });
+
     test('Settings opens the same sheet Config → Widgets uses, over the dashboard, and the mode stays on', async ({ page }) => {
         await loadDashboard(page);
         await selectWidget(page);
