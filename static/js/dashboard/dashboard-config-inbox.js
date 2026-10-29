@@ -71,7 +71,6 @@
      * collected or the header icon, which it has nothing to say about.
      */
     renderInboxBody() {
-        const esc = (v) => this.dash.escapeHtml(v);
         const tab = this.inboxTab;
         const withPreview = (tab === 'list' || tab === 'panel') && !this.changedOnly
             && !String(this.settingsFilter || '').trim();
