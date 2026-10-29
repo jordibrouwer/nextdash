@@ -583,7 +583,8 @@
         async settleOne(proposal, res, body) {
             if (res?.ok && body?.id) { Object.assign(proposal, body); return; }
             // A repeat the server refused: show what it holds, not a failure.
-            if (res?.status === 409 && await this.refreshProposal(proposal)) return;
+            if (res?.status === 409 && await this.refreshProposal(proposal)
+                && ['applied', 'skipped'].includes(proposal.status)) return;
             proposal.status = 'failed';
             proposal.error = res ? this.applyFailure(res, body) : t('applyFailed', 'The change could not be made.');
         }

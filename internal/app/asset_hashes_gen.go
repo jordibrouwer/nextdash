@@ -88,7 +88,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/app-notification.js":                                 "cd87051077d6",
 	"js/app-version-guard.js":                                "b1f7b6da6a8a",
 	"js/asset-map.js":                                        "1057407474ef",
-	"js/assistant-panel.js":                                  "7ea256ab1d49",
+	"js/assistant-panel.js":                                  "806c30bf207f",
 	"js/bookmark-form/bookmark-form-card.js":                 "7fc24ea4763e",
 	"js/bookmark-form/bookmark-form-place.js":                "20ec52bcd3fd",
 	"js/bookmark-form/bookmark-form-preview.js":              "2dc9f82d926e",

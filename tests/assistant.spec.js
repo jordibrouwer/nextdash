@@ -323,4 +323,15 @@ test.describe('Assistant panel', () => {
         await expect(panel(page).locator('[data-ai-thread]')).toContainText('Two containers need an update.');
         await expect(panel(page).locator('.assistant-msg--user')).toHaveCount(1);
     });
+
+    test('a refused Apply for a switched-off group shows the server message and stays applicable', async ({ page }) => {
+        await askFromPalette(page);
+        const current = await (await page.request.get('/api/settings')).json();
+        await page.request.post('/api/settings', { data: { ...current, mcpBookmarksWrite: false }, headers: AUTH });
+        const card = panel(page).locator('[data-ai-proposal]');
+        await card.locator('[data-ai-apply]').click();
+        await expect(card).toContainText('That group is switched off under MCP access.');
+        await expect(card.locator('[data-ai-apply]')).toBeVisible();
+        await expect(card.locator('[data-ai-skip]')).toBeVisible();
+    });
 });
