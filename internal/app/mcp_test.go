@@ -369,3 +369,120 @@ func TestARefusedToolCallIsMarkedAsSuchNotAsATransportFailure(t *testing.T) {
 		t.Error("an unknown tool was treated as a call that ran")
 	}
 }
+
+func listedToolNames(t *testing.T, h *Handlers) []string {
+	t.Helper()
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	result, _ := resp.Result.(map[string]any)
+	tools, _ := result["tools"].([]any)
+	names := []string{}
+	for _, entry := range tools {
+		tool, _ := entry.(map[string]any)
+		name, _ := tool["name"].(string)
+		names = append(names, name)
+	}
+	return names
+}
+
+/*
+A group that is off is absent from the list, not merely refused when called.
+
+A model that sees a tool will try it, so the switch has to hide it.
+*/
+func TestGroupedToolsAreHiddenUntilTheirSwitchIsOn(t *testing.T) {
+	h := newMCPHandlers(t)
+	base := map[string]bool{"search_bookmarks": true, "get_bookmark": true, "list_tags": true, "add_bookmark": true, "list_pages": true}
+
+	for _, name := range listedToolNames(t, h) {
+		if !base[name] {
+			t.Errorf("%s is listed with every group off", name)
+		}
+		delete(base, name)
+	}
+	for name := range base {
+		t.Errorf("%s is not offered", name)
+	}
+
+	settings := h.store.GetSettings()
+	settings.MCPHealthInbox = true
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	healthTools := map[string]bool{"get_health_summary": true, "list_health_issues": true, "list_inbox": true}
+	for name := range healthTools {
+		if mcpToolGroup(name) != mcpGroupHealthInbox {
+			t.Errorf("%s is in group %q", name, mcpToolGroup(name))
+		}
+	}
+	// The tools themselves arrive in later steps; whatever is listed beyond the
+	// always-on ones must belong to the switch that was just turned on.
+	for _, name := range listedToolNames(t, h) {
+		if g := mcpToolGroup(name); g != "" && g != mcpGroupHealthInbox {
+			t.Errorf("%s (group %q) is listed with only the health switch on", name, g)
+		}
+	}
+	if mcpGroupEnabled(settings, mcpGroupContainersControl) {
+		t.Error("an unrelated group counts as enabled")
+	}
+	if !mcpGroupEnabled(settings, mcpGroupHealthInbox) || !mcpGroupEnabled(settings, "") {
+		t.Error("the switched-on group or the always-on group counts as disabled")
+	}
+}
+
+func TestAHiddenToolCannotBeCalledByName(t *testing.T) {
+	h := newMCPHandlers(t)
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_inbox","arguments":{}}}`)
+	if resp.Error == nil || resp.Error.Message != "Unknown tool: list_inbox" {
+		t.Fatalf("got %+v", resp.Error)
+	}
+}
+
+func TestListPagesGivesIdsAndCategories(t *testing.T) {
+	h := newMCPHandlers(t)
+	seedMCPBookmarks(t, h)
+	pages := h.store.GetPages()
+	if err := h.store.SaveCategoriesByPage(pages[0].ID, []Category{{ID: "media", Name: "Media"}}); err != nil {
+		t.Fatal(err)
+	}
+	out := toolCall(t, h, "list_pages", `{}`)
+	list, _ := out["pages"].([]any)
+	if len(list) != len(pages) {
+		t.Fatalf("%d pages came back, want %d", len(list), len(pages))
+	}
+	first, _ := list[0].(map[string]any)
+	if int(first["id"].(float64)) != pages[0].ID || first["name"] != pages[0].Name {
+		t.Errorf("first page is %v", first)
+	}
+	cats, _ := first["categories"].([]any)
+	found := false
+	for _, c := range cats {
+		cm, _ := c.(map[string]any)
+		if cm["id"] == "media" && cm["name"] == "Media" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("category media missing from %v", cats)
+	}
+}
+
+func TestToolsCarryReadOnlyAnnotations(t *testing.T) {
+	h := newMCPHandlers(t)
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	result, _ := resp.Result.(map[string]any)
+	tools, _ := result["tools"].([]any)
+	for _, entry := range tools {
+		tool, _ := entry.(map[string]any)
+		ann, _ := tool["annotations"].(map[string]any)
+		readOnly, _ := ann["readOnlyHint"].(bool)
+		if tool["name"] == "add_bookmark" {
+			if readOnly {
+				t.Error("add_bookmark claims to be read only")
+			}
+			continue
+		}
+		if !readOnly {
+			t.Errorf("%v has no readOnlyHint", tool["name"])
+		}
+	}
+}

@@ -861,8 +861,14 @@ type Settings struct {
 	 * this server can read the whole dashboard" is not a thing to add to a
 	 * default install quietly.
 	 */
-	MCPEnabled        bool `json:"mcpEnabled"`
-	AutoBackupEnabled bool `json:"autoBackupEnabled"` // Automatically create a local backup (keeps the latest few)
+	MCPEnabled bool `json:"mcpEnabled"`
+	// The MCP tool groups. Each is off until switched on and only matters
+	// while MCPEnabled is on; see mcpToolGroup for which tools belong where.
+	MCPBookmarksWrite    bool `json:"mcpBookmarksWrite"`
+	MCPHealthInbox       bool `json:"mcpHealthInbox"`
+	MCPContainersRead    bool `json:"mcpContainersRead"`
+	MCPContainersControl bool `json:"mcpContainersControl"`
+	AutoBackupEnabled    bool `json:"autoBackupEnabled"` // Automatically create a local backup (keeps the latest few)
 	// AutoBackupIntervalDays is how often that runs. 0 means the built-in
 	// weekly default, which is what every install carried before this was a
 	// choice — so an absent key keeps the old behaviour rather than reading as
