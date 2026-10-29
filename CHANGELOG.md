@@ -149,6 +149,7 @@ Edit the dashboard in place, search that learns your hours, a checkup for what n
 ### Checkup
 
 - **new — `:checkup`.** `checkup.js` and `checkup_structure.go` walk dead links, duplicates, never-opened and stale bookmarks, empty categories and pages, and widgets that report an error, reusing the Bookmarks view's actions. `dashboard-widget-state.js` lets a widget report how it is doing. Deleting a category from the checkup, the menu or the panel goes through one `finishCategoryDelete`.
+- **fix — A page of uncategorised bookmarks is not an empty page.** `findEmptyStructure` counted a page with no categories and no widgets as empty, bookmarks or not, so the checkup offered to delete a page that still held links.
 
 ### Weekly digest
 

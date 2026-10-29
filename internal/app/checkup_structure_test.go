@@ -36,6 +36,15 @@ func TestFindEmptyStructureEmptyPage(t *testing.T) {
 	}
 }
 
+func TestFindEmptyStructurePageWithUncategorisedBookmarksIsNotEmpty(t *testing.T) {
+	// No categories, but bookmarks filed under none: deleting the page would bin them.
+	pages := []PageWithBookmarks{structurePage(5, nil, nil)}
+	bookmarks := map[int][]Bookmark{5: {{Name: "Loose", URL: "https://loose"}}}
+	if got := findEmptyStructure(pages, bookmarks); len(got) != 0 {
+		t.Fatalf("a page of uncategorised bookmarks is not empty: %+v", got)
+	}
+}
+
 func TestFindEmptyStructurePageWithOnlyWidgetsIsNotEmpty(t *testing.T) {
 	pages := []PageWithBookmarks{structurePage(3, nil, []Widget{{ID: "w_x", Type: "notes"}})}
 	if got := findEmptyStructure(pages, nil); len(got) != 0 {

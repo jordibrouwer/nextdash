@@ -29,7 +29,7 @@ findEmptyStructure lists the empty categories and pages.
 
 A category is empty when no bookmark on its page is filed under its id; a
 bookmark that is ignored, snoozed or unchecked is still in it. A page is empty
-when it has no categories and no widgets, so a page of widgets only is not
+when it has no categories, no widgets and no bookmarks, so a page of widgets only is not
 empty, and a page whose categories are all empty lists those categories rather
 than itself. The reserved Unsorted page is never reported: it is hidden and has
 no categories of its own.
@@ -40,7 +40,9 @@ func findEmptyStructure(pages []PageWithBookmarks, bookmarks map[int][]Bookmark)
 		if page.Page.Hidden || page.Page.ID == unsortedPageID {
 			continue
 		}
-		if len(page.Categories) == 0 && len(page.Widgets) == 0 {
+		// Uncategorised bookmarks are on the page without a category: a page
+		// of only those is not empty, and deleting it would bin them.
+		if len(page.Categories) == 0 && len(page.Widgets) == 0 && len(bookmarks[page.Page.ID]) == 0 {
 			out = append(out, EmptyStructure{Kind: "page", PageID: page.Page.ID, PageName: page.Page.Name})
 			continue
 		}
