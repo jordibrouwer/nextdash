@@ -87,7 +87,10 @@ func TestDockerTimelineRoute(t *testing.T) {
 	f := startFakeDocker(t)
 	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", State: "running"})
 	h := dockerTestHandlers(t)
-	base := time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC)
+	// A day back from now, not a fixed date: the timeline keeps thirty days, so
+	// a date that was recent when the test was written stopped being kept on its
+	// thirtieth day and the first start fell out of the route.
+	base := time.Now().UTC().Truncate(time.Hour).Add(-24 * time.Hour)
 	ms := func(d time.Duration) int64 { return base.Add(d).UnixMilli() }
 	tl := newDockerTimeline()
 	tl.add("web", dockerTimelineEntry{At: ms(0), Kind: "start"})
