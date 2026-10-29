@@ -2,6 +2,56 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureTagViewAnyAllTitle",
+      "titleFallback": "Any tag or every tag, and a tag for a selection",
+      "whatKey": "config.overviewNewFeatureTagViewAnyAllWhat",
+      "whatFallback": "Two tags in the tag view showed the bookmarks with either one. To find what carried both you had to read the list yourself, and putting a tag on several bookmarks meant opening each one.",
+      "howKey": "config.overviewNewFeatureTagViewAnyAllHow",
+      "howFallback": "With two or more tags the word between the pills is a switch: or shows the bookmarks with any of them, and only those with every one, and the address keeps it (#tag/a+b?all). Tick rows and Add tag… puts one or more tags on all of them, with undo. The Score column sorts too, the view remembers your sort, and its search reads tags as well as names.",
+      "enableKey": "config.overviewNewFeatureTagViewAnyAllEnable",
+      "enableFallback": "Nothing to switch on. Press / for the tag cloud, Shift+click a second tag, and click the word between them.",
+      "ctaKey": "config.overviewNewFeatureTagViewAnyAllCta",
+      "ctaFallback": "How tags work →",
+      "go": {
+        "section": "help",
+        "helpTab": "organizing"
+      },
+      "since": "v1.22.5"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureRecentSheetTitle",
+      "titleFallback": "Recent bookmarks, with the day you opened them",
+      "whatKey": "config.overviewNewFeatureRecentSheetWhat",
+      "whatFallback": "The recent panel showed the last few bookmarks of the page you were on, in three narrow columns, without a date. What you opened on another page, or last week, was out of reach.",
+      "howKey": "config.overviewNewFeatureRecentSheetHow",
+      "howFallback": "* opens a sheet in the middle of the window with tiles two across, from every page: a calendar block with the day, the weekday and time, the category or page, and how often you opened it. Ten fit on a page; [ and ] page back and forward, and Open shown opens the tiles on screen.",
+      "enableKey": "config.overviewNewFeatureRecentSheetEnable",
+      "enableFallback": "Nothing to switch on. Press * on the dashboard.",
+      "ctaKey": "config.overviewNewFeatureRecentSheetCta",
+      "ctaFallback": "Back to the dashboard →",
+      "go": {
+        "closeConfig": true
+      },
+      "since": "v1.22.5"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureThemeStudioButtonTitle",
+      "titleFallback": "The theme studio, one click from the dashboard",
+      "whatKey": "config.overviewNewFeatureThemeStudioButtonWhat",
+      "whatFallback": "The theme studio was behind Shift+A or a button deep in Config → Appearance, so many people never found the place where nextDash changes its looks.",
+      "howKey": "config.overviewNewFeatureThemeStudioButtonHow",
+      "howFallback": "The action bar has an eleventh button, a palette, last in the bar. It opens the theme studio beside the dashboard, where every theme previews on your own page before you apply it. It is left out on a phone layout.",
+      "enableKey": "config.overviewNewFeatureThemeStudioButtonEnable",
+      "enableFallback": "On by default. Config → Appearance → Action bar → Buttons shown, or :buttons theme, switches it off.",
+      "ctaKey": "config.overviewNewFeatureThemeStudioButtonCta",
+      "ctaFallback": "Open the Action bar settings →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "buttonbar"
+      },
+      "since": "v1.22.5"
+    },
+    {
       "titleKey": "config.overviewNewFeatureEditModeTitle",
       "titleFallback": "Edit the dashboard right where it is",
       "whatKey": "config.overviewNewFeatureEditModeWhat",
