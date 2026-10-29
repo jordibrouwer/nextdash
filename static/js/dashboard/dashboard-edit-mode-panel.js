@@ -442,7 +442,7 @@ class DashboardEditModePanel {
         const blocked = locked || cannotWiden;
         const widthWhy = locked
             ? this.t('editMode.widthLocked', 'The layout is locked')
-            : this.t('widgetMenuWidthUnavailable', 'There is only one column to work with — a widget needs at least two to span.');
+            : this.t('dashboard.widgetMenuWidthUnavailable', 'There is only one column to work with — a widget needs at least two to span.');
         const entry = (window.WidgetState?.snapshot?.() || []).find((e) => e.widgetId === String(selection.id));
         const state = entry
             ? (entry.state === 'error'
