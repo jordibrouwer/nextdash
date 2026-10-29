@@ -100,9 +100,10 @@ body.no-view-animations .shortcut-search.show .search-container.from-origin {
  * two parts rather than one column of things.
  */
 .search-prompt {
+    --search-prompt-gap: 0.85rem;
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: var(--search-prompt-gap);
     padding: var(--space-4, 1rem);
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
     font-size: var(--font-size-bookmark);
@@ -172,8 +173,13 @@ body.no-view-animations .shortcut-search.show .search-container.from-origin {
 .search-cursor {
     font-family: var(--font-family-main);
     animation: blink 1s infinite;
-    margin-left: var(--space-1, 0.25rem);
     color: var(--text-primary);
+}
+
+/* Right after the last typed character, as in a terminal: the row's gap is
+   for the pill and the clear button, not for the text and its cursor. */
+.search-query:not(:empty) + .search-cursor {
+    margin-left: calc(-1 * var(--search-prompt-gap));
 }
 
 @keyframes blink {
