@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.22.5](#v1225)
+- [v1.22.5 — 29 October 2026](#v1225--29-october-2026)
 - [v1.22.4 — 29 October 2026](#v1224--29-october-2026)
 - [v1.22.3 — 27 October 2026](#v1223--27-october-2026)
 - [v1.22.2 — 26 October 2026](#v1222--26-october-2026)
@@ -128,9 +128,9 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.22.5
+## v1.22.5 — 29 October 2026
 
-The tag view can show bookmarks with all of its tags, add a tag to a selection, sort by score and remember its sort; the page filter takes several words and opens collapsed categories with a hit; the Recent sheet is two tiles across with the date, a page at a time, from every page.
+The tag view can show bookmarks with all of its tags, add a tag to a selection, sort by score and remember its sort; the page filter takes several words and opens collapsed categories with a hit; the Recent sheet is two tiles across with the date, a page at a time, from every page. The action bar gets an eleventh button for the theme studio and answers the mouse better, every dashboard modal opens in the middle of the window, the edit-mode panel says what is in a block and offers its actions, the Glances Hosts table puts trouble first, and a fresh install starts on Ocean.
 
 ### Tag view
 
@@ -142,6 +142,7 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **fix — Page sorts in the order of the page tabs.** `TagViewModel.sort` sorted by page id, so after reordering pages the column agreed with neither the tabs nor the rail; it takes `pageOrder` now.
 - **fix — Open in the side panel counts as an open.** It called `window.open` directly, so opens, Last opened and Recent missed it; it goes through `recordBookmarkOpened` like the row's link.
 - **fix — Health is asked again after a failed load.** `ensureHealth` kept its guard when `health.load()` returned nothing, so the scores stayed away until a reload.
+- **fix — The new tag view texts are translated.** The eleven strings of the any/all switch, its hints, *Show any of them* and the *Add tag…* dialog were only fallbacks in `dashboard-tag-view.js`, so they read in English in every language; they are in all six locale files now (`dashboard.tagViewAnd`, `tagViewMode*Hint`, `tagViewEmptyAll`, `tagViewShowAny`, `tagViewAddTag*`).
 
 ### Page filter (Shift + F)
 
@@ -185,14 +186,21 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 
 - **new — A theme studio button.** The palette is the eleventh action button and opens the theme studio, as `Shift + A` does. It sits last in the bar, is switched on and off under Config → Appearance → Action bar → Buttons shown (`showThemeStudioButton`, on by default, also for old settings files) and with `:buttons theme`, and stays off a phone layout. `maxHeaderActions` and `:maxactions` go to 11.
 - **new — A docked bar answers the mouse better.** It comes back from anywhere along its edge, within 24px of it rather than 6px beside the bar, after the pointer rests there for 150ms, so a quick pass on the way to the Dock or the scrollbar leaves it away; resting on the handle does the same. Leaving the window through the edge beside the bar counts as reaching it. Called by the pointer it goes 700ms after the pointer leaves a 40px margin around it, or 1.5s after it came if the pointer never got there, instead of the full delay; a pointer parked on the edge has to leave it before the bar comes again (`action-bar-autohide.js`). A frame now reads the latest pointer position, so a move that left the edge before the frame ran is no longer missed.
-- **fix — The slide-away setting says what it still decides.** Config → Appearance → Action bar reads "Slide a docked bar away after loading", and its explanation says the delay is for after a load or keyboard use, while a bar called back with the mouse goes shortly after the pointer leaves it whatever is picked (`actionBarAutoHideLabel`, `actionBarAutoHideInfoMessage`; English only until the docs round).
+- **fix — The slide-away setting says what it still decides.** Config → Appearance → Action bar reads "Slide a docked bar away after loading", and its explanation says the delay is for after a load or keyboard use, while a bar called back with the mouse goes shortly after the pointer leaves it whatever is picked (`actionBarAutoHideLabel`, `actionBarAutoHideInfoMessage`).
 - **fix — Every dashboard modal opens in the middle of the window.** The search panel (search, commands, finders, the cheat sheet), Recent bookmarks, the pages panel, what's new and the quick-add omnibox sat above where the bottom dock used to be, or hung from the header (`.header-sheet`); the tag cloud sat a little above the middle. They are all centred now, with the same 2rem margin above and below (`search.css`, `modal.css`, `dashboard.css`, `positionModal` in `dashboard-tag-cloud.js`). The theme studio stays docked at the side, so the page it previews stays in view. The overlays are `100vw` wide instead of `100%`, because the stable scrollbar gutter made them a scrollbar narrower than the window and put every modal 5px left of centre.
 - **fix — The search cursor follows the last typed character.** The prompt row's gap and a margin stood between the text and the blinking `_`; with text in the prompt the cursor now sits right after it.
 - **fix — The search panel's side rail is readable.** The scopes you are not in were drawn in the tertiary ink, and a scope the query does not reach dropped to 35% on top of that; they take the secondary ink now and dim to 60%. The scope you are in is never dimmed, even when it has no results yet.
-- **fix — "tab switches" lines up with the rail.** The hint under the scopes is a row in their grid now: `⇥` under the keys, "switches" under the names. The key is no longer part of the translated string (`scopeRailHint` became `scopeRailHintLabel`, English only until the docs round).
+- **fix — "tab switches" lines up with the rail.** The hint under the scopes is a row in their grid now: `⇥` under the keys, "switches" under the names. The key is no longer part of the translated string (`scopeRailHint` became `scopeRailHintLabel`).
+
+### Edit mode
+
+- **new — The panel says what is in a block and offers its actions.** A category shows its bookmarks, how many were opened this week and how many are broken, with *Add bookmark*, *Move to page…* and *Delete*; a widget its type and what it shows, with *Settings…*, *Move to page…* and *Delete*; a page its categories, bookmarks and widgets, with *Add category* and *Delete page* (not on the first page). The buttons do what the block's right-click menu does, with the same question before a delete (`dashboard-edit-mode-panel.js`). The panel's text is a step larger.
+- **new — A width that cannot be chosen says why.** Spreading needs a limit on items per category, at least two columns and a layout that is not locked; the greyed-out choice names the missing one under the field. The one-column message used a key without its `dashboard.` path and stayed English; it reads in every language now.
+- **fix — The widget settings sheet takes its text colours from the theme.** It hangs on `<body>`, outside the Config layout that maps the theme's colours onto `--text-muted` and friends, so its muted text fell back to a fixed grey on light and dark themes alike; `.config-widget-overlay` gets the same map (`config-view.css`, `category-surface.css`).
 
 ### Themes
 
+- **fix — The views take the category surface and the glint.** Under the Signature style with the category surface on *Open*, the Bookmarks, tag, inbox, containers and Glances views drew one plate in the material whatever it was; enamel, paper, velvet, ink and terminal now give their views the category card they draw, and a view's plate catches the same shine as a column (`theme-overlays.css`, `theme-signature.css`).
 - **new — Ocean is the theme a fresh install starts on.** Ocean [dark], with Ocean [light] for auto dark mode (`defaultThemeID`, `DEFAULT_THEME` in `theme-loader.js`, the Appearance ↺ default). Existing installs keep their theme; one still to run the v1.22.0 move lands on Aurora Glass as before, so its dialog stays right.
 
 ### Docs
@@ -200,6 +208,11 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **MANUAL.md** describes the Recent sheet (tiles, pager, `[` `]`), the page filter's several words, `↓`/Enter and collapsed hits, the tag view's any/all switch (`?all`), *Add tag…*, Score sort and remembered sort, the Collection menu's keys, the Inbox tile's *asleep* line, the Glances Hosts table (trouble first, sorting, mount, last-hour line, °F) and Ocean as the fresh-install theme.
 - **Manual screenshots** retaken on a fresh seed: the Recent sheet, the edit-mode panel, Glances Hosts and every dashboard modal in the dashboard font. The shot kit now sets Celsius (the demo seed is Fahrenheit, which put "16°F" in Leiden's header and °F on the Glances page), and the Glances mock sends `cpuHour` for the Hosts graph.
 - **MANUAL.md** has the theme studio button (the eleventh), the slide-away setting's new name and how a docked bar answers the mouse, Recent and the search panel in the middle of the window, and the search panel's rail. The screenshots are retaken with the eleven-button bar, the centred modals and the readable rail; the action-bar shot presses `'` only when the bar has gone, since on a bar still out it sends it away.
+- **README screenshots** retaken: every picture with the action bar now has its eleventh button, and search and commands open in the middle of the window.
+- **Config → Help** in six languages: Themes (Ocean for a fresh install, the palette button), Search (the panel in the middle, the rail, the page filter's words and keys), Tags (any or all, *Add tag…*, sorting), Header (the theme studio button, how a docked bar slides away and comes back), Keyboard (`[` `]` in Recent) and Glances hosts (trouble first, sorting, mount, last-hour line). The tips on the action bar and on Recent follow.
+- **Config → Overview and About → News & features** have three new cards since v1.22.5: any tag or every tag, Recent with the day you opened it, and the theme studio button.
+- **Cheat sheet:** rows for paging Recent (`[` `]`, Page Up/Down) and for `↓`/Enter in the page filter; the HTML and PDF are regenerated.
+- **Translations:** every key added or changed in this release is in Dutch, German, French, Spanish and Chinese.
 
 ---
 
