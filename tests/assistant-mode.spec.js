@@ -184,4 +184,36 @@ test.describe('Assistant search mode', () => {
         expect(stored).not.toContain('containers');
         expect(tracked.join('')).not.toContain('containers');
     });
+
+    test('with a web engine on, =question offers no web search and Shift+Enter asks nothing', async ({ page }) => {
+        const engine = [];
+        const stub = http.createServer((req, res) => {
+            engine.push(req.url);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ results: [], infoboxes: [] }));
+        });
+        await new Promise((resolve) => stub.listen(0, '127.0.0.1', resolve));
+        try {
+            const s = await (await page.request.get('/api/settings')).json();
+            Object.assign(s, { webSearchEngine: 'searxng', webSearchSearxngUrl: `http://127.0.0.1:${/** @type {any} */ (stub.address()).port}` });
+            expect((await page.request.post('/api/settings', { data: s, headers: AUTH })).ok()).toBe(true);
+            await openApp(page);
+            await typeInBar(page, `=${QUESTION}`);
+            await expect(bar(page).locator('.search-match')).toHaveText(/Ask: /);
+            await expect(bar(page)).not.toContainText('Search the web');
+            await page.keyboard.press('Shift+Enter');
+            await page.waitForTimeout(600);
+            // Shift+Enter is plain Enter here: the assistant gets the question, the engine nothing.
+            expect(engine).toHaveLength(0);
+        } finally {
+            await new Promise((resolve) => stub.close(resolve));
+        }
+    });
+
+    test('= followed only by a space still redraws when the conversations arrive', async ({ page }) => {
+        await ask(page, 'space mode question');
+        await openApp(page);
+        await typeInBar(page, '= ');
+        await expect(bar(page).locator('.search-match').first()).toContainText('space mode question');
+    });
 });

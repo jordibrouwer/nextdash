@@ -545,7 +545,7 @@ class SearchComponent {
         }
         this._assistantConversationsLoading = false;
         this._assistantConversations = list;
-        if (this.searchActive && this.currentQuery === SearchComponent.ASSISTANT_MODE_QUERY) {
+        if (this.searchActive && this.currentQuery.trim() === SearchComponent.ASSISTANT_MODE_QUERY) {
             this.updateSearch();
         }
     }
@@ -4399,7 +4399,7 @@ class SearchComponent {
     /** The query as the web would get it, or '' where the panel is not searching. */
     _webQuery() {
         const raw = String(this.currentQuery || '').trim();
-        if (!raw || raw.startsWith(':') || raw.startsWith('?')) return '';
+        if (!raw || raw.startsWith(':') || raw.startsWith('?') || this._isAssistantMode(raw)) return '';
         const text = raw.replace(/^[/>*@]+/, '').trim();
         // A filter (tag mode's "tag:", "status:dead", a half-typed
         // "category:") is a question for this dashboard, not for the web.
