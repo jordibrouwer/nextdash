@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.22.4 — 28 October 2026](#v1224--28-october-2026)
+- [v1.22.4 — 29 October 2026](#v1224--29-october-2026)
 - [v1.22.3 — 27 October 2026](#v1223--27-october-2026)
 - [v1.22.2 — 26 October 2026](#v1222--26-october-2026)
 - [v1.22.1 — 26 October 2026](#v1221--26-october-2026)
@@ -127,7 +127,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.22.4 — 28 October 2026
+## v1.22.4 — 29 October 2026
 
 Edit the dashboard in place, search that learns your hours, a checkup for what needs tidying, a reworked weekly digest and a guided way to add widgets. Every release held back from the What's new window since v1.20.2 (`hideFromModal`) is shown in it now, and nothing is flagged any more.
 
