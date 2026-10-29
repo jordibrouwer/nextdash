@@ -10413,7 +10413,7 @@ class DashboardConfig {
                             opt('accordion', t('config.actionBarIntroAccordion', 'Accordion')),
                         ] },
                     { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
-                        label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),
+                        label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after loading'),
                         options: [
                             opt(0, t('config.actionBarAutoHideNever', 'Always in view')),
                             opt(2, t('config.actionBarAutoHide2', '2 seconds')),
