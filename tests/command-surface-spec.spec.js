@@ -66,16 +66,13 @@ test.describe('the command surface', () => {
         // the rule under the prompt run the full width.
         expect(surface.padding, 'the surface still pads its own contents').toBe('0px');
         /*
-         * Against the token rather than a number of pixels.
-         *
-         * A theme's character now moves every corner: the fresh-install theme
-         * is brushed, which asks for 0.7 of the radius scale, so --radius-5 is
-         * 5.6px there and 8px on a theme that asks for nothing. What the sheet
-         * has to be is that token, not a constant.
+         * Against the token rather than a number of pixels, and the token the
+         * other modals use (.modal in modal.css): the panel is drawn as they
+         * are. A theme's character moves every corner, so what the sheet has
+         * to be is that token, not a constant.
          */
-        expect(surface.borderRadius, 'the sheet has a card corner')
-            .toBe(await radiusPx(page, '--radius-5'));
-        expect(surface.backdropFilter).toContain('blur(8px)');
+        expect(surface.borderRadius, 'the sheet has another corner than the modals')
+            .toBe(await radiusPx(page, '--layout-radius-md'));
         // Lifted off the page, not resting on it: the third elevation level (theme-overlays.css).
         expect(surface.boxShadow, `no deep drop under the sheet: ${surface.boxShadow}`)
             .toMatch(/0px 44px 80px/);

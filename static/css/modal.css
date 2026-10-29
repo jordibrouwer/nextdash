@@ -1932,13 +1932,14 @@ body.no-animations .modal-button.danger.selected {
  * separates the other way: its own surface step, the lit top edge, the shaded
  * bottom edge, and a small lift off the sheet it stands on.
  *
- * The cheat sheet's sections, the recents list and the tag cloud's field all
- * want the same thing, so they share one rule rather than three copies.
+ * The cheat sheet's sections, the recents list, the search results and the
+ * tag cloud's field all want the same thing, so they share one rule.
  *
  * Not on flat, like every other depth cue in the app.
  */
 body:not([data-depth="flat"]) :is(
     .recent-bookmarks-modal-list,
+    .shortcut-search .search-matches,
     .page-overview-modal-slab,
     .tag-cloud-modal-body,
     .wn-entries,

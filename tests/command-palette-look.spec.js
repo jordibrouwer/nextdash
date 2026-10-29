@@ -3,12 +3,12 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The palette is drawn like a category (a wash, so the material still shows), with the
- * ring and the cast of a layer on top. Set on <body> the way the settings write
- * it; nothing is saved.
+ * The palette is drawn as the other overlays are: the same fill as Recent
+ * bookmarks, with the ring and the cast of a layer on top. Set on <body> the way
+ * the settings write it; nothing is saved.
  */
 for (const material of ['glass', 'brushed', 'lacquer']) {
-    test(`the palette lets the ${material} show through and keeps its ring and cast`, async ({ page }) => {
+    test(`the palette on ${material} keeps its mark, ring and cast`, async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 900 });
         await markWhatsNewSeen(page);
         await page.goto('/');
@@ -29,8 +29,6 @@ for (const material of ['glass', 'brushed', 'lacquer']) {
             const mark = getComputedStyle(document.querySelector('.search-prompt'), '::before');
             return { alpha: m ? Number(m[1]) : 1, shadow: cs.boxShadow, mark: mark.content, markWidth: parseFloat(mark.width), titleCase: getComputedStyle(document.querySelector('.search-prompt .search-prefix')).textTransform, titleSpacing: parseFloat(getComputedStyle(document.querySelector('.search-prompt .search-prefix')).letterSpacing) || 0 };
         });
-        expect(seen.alpha, 'the palette is a dense slab again').toBeLessThanOrEqual(0.8);
-        expect(seen.alpha, 'the palette is see-through again').toBeGreaterThanOrEqual(0.6);
         // The mark every column head opens with.
         expect(seen.mark).toBe('""');
         expect(seen.markWidth).toBeGreaterThan(10);
@@ -45,32 +43,39 @@ for (const material of ['glass', 'brushed', 'lacquer']) {
     });
 }
 
-test('an opaque theme gets an opaque palette, a glass one a veil', async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 900 });
-    await markWhatsNewSeen(page);
-    await page.goto('/');
-    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
-    await dismissOnboardingIfPresent(page);
-    await dismissBlockingOverlays(page);
-    await page.evaluate(() => {
-        document.body.dataset.materialStyle = 'signature';
-        document.body.dataset.material = 'brushed';
+/*
+ * As opaque as Recent bookmarks, on every material: the palette took its fill
+ * from the categories once (their alpha plus a tenth, never under 0.7), and on
+ * glass read as a thinner veil than the panels it opens beside.
+ */
+for (const material of ['glass', 'brushed', 'lacquer']) {
+    test(`on ${material} the palette is as opaque as Recent bookmarks, whatever the categories are`, async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate((m) => {
+            document.body.dataset.materialStyle = 'signature';
+            document.body.dataset.material = m;
+            // Categories as glass: the old rule thinned the palette to follow them.
+            document.body.style.setProperty('--cat-glass-alpha', '0.5');
+        }, material);
+        const fill = (selector) => page.evaluate(async (sel) => {
+            await new Promise((r) => setTimeout(r, 450));
+            return getComputedStyle(document.querySelector(sel)).backgroundColor;
+        }, selector);
+
+        await page.keyboard.press(':');
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5_000 });
+        const palette = await fill('.search-container');
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+
+        await page.evaluate(() => window.dashboardInstance.toggleRecentBookmarksModal());
+        await expect(page.locator('#app-modal.show .recent-bookmarks-modal')).toBeVisible({ timeout: 5_000 });
+        const recent = await fill('.recent-bookmarks-modal');
+        expect(palette, 'the palette and Recent bookmarks are filled differently').toBe(recent);
     });
-    await page.keyboard.press(':');
-    await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5_000 });
-    const alpha = () => page.evaluate(async () => {
-        await new Promise((r) => setTimeout(r, 450));
-        const m = /\/\s*([\d.]+)\)/.exec(getComputedStyle(document.querySelector('.search-container')).backgroundColor);
-        return m ? Number(m[1]) : 1;
-    });
-    // The categories as glass (alpha 0.5): the palette a tenth over them, never under 0.7.
-    await page.evaluate(() => {
-        document.body.style.setProperty('--cat-glass-alpha', '0.5');
-    });
-    const veil = await alpha();
-    expect(veil).toBeGreaterThanOrEqual(0.69);
-    expect(veil).toBeLessThan(0.8);
-    // Categories lifted to opaque: the palette follows.
-    await page.evaluate(() => document.body.style.setProperty('--cat-glass-alpha', '1'));
-    expect(await alpha()).toBeGreaterThanOrEqual(0.99);
-});
+}

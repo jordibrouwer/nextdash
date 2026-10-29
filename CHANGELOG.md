@@ -157,6 +157,10 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **new — Every page's bookmarks.** The sheet reads the current page and `allBookmarks` (`DashboardRecent.recentPool`), and asks for the cross-page load when startup skipped it.
 - **fix — Quieter open buttons,** centred over the pager.
 
+### Search
+
+- **fix — The search panel looks like the other overlays.** On the Signature style it takes the overlay fill (`--ov-fill`), so it is as opaque as Recent bookmarks; it used to follow the categories (`--palette-fill`, their alpha plus a tenth, never under 70%) and read as a thinner veil on glass. On Classic it has the modal's ground, corner and cast (`search.css`). Its results sit on the same slab as the recents list (`modal.css`), inset from the panel's edge.
+
 ---
 
 ## v1.22.4 — 29 October 2026

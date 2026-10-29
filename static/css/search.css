@@ -45,12 +45,11 @@
 .search-container {
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
+    /* The panel every modal is (.modal in modal.css): same ground, corner and cast. */
     border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
-    border-radius: var(--radius-5, 8px);
-    background: color-mix(in srgb, var(--background-modal) 90%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 24px 64px color-mix(in srgb, black 60%, transparent);
+    border-radius: var(--layout-radius-md, 12px);
+    background: var(--background-modal);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
     max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
@@ -209,6 +208,20 @@ body.no-view-animations .shortcut-search.show .search-container.from-origin {
     position: relative;
     width: 100%;
     scrollbar-width: none;
+}
+
+/* On the slab the other overlays put their lists on (modal.css), inset from
+   the panel's edge as the recents list is. The gap at the top is the body's,
+   so the rail and the list still start on one line. */
+body:not([data-depth="flat"]) .shortcut-search .search-body {
+    padding-top: var(--space-3, 0.75rem);
+}
+
+body:not([data-depth="flat"]) .shortcut-search .search-matches {
+    width: auto;
+    margin: 0 var(--space-3, 0.75rem) var(--space-3, 0.75rem) 0;
+    padding-left: var(--space-1, 0.3rem);
+    padding-right: var(--space-1, 0.3rem);
 }
 
 @media (max-width: 575px) {
