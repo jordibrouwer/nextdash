@@ -174,6 +174,49 @@ func mcpLogRequest(r *http.Request) *http.Request {
 	return r.WithContext(context.WithValue(r.Context(), mcpCtxKey, true))
 }
 
+type aiContextKey struct{}
+
+// aiAssistantRequest marks a request as the in-app assistant's. mcpInner
+// derives its inner context from r.Context(), so the mark reaches the
+// browser's handlers unchanged.
+func aiAssistantRequest(r *http.Request) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), aiContextKey{}, true))
+}
+
+func requestFromAssistant(r *http.Request) bool {
+	v, _ := r.Context().Value(aiContextKey{}).(bool)
+	return v
+}
+
+// mcpToolSource names who ran a tool, for the activity log.
+func mcpToolSource(r *http.Request) string {
+	if requestFromAssistant(r) {
+		return "assistant"
+	}
+	return "mcp"
+}
+
+// mcpToolIsWrite reads the definition's own annotations. A missing hint counts
+// as a write, which is also what the MCP spec defaults readOnlyHint to.
+func mcpToolIsWrite(def map[string]any) bool {
+	ann, _ := def["annotations"].(map[string]any)
+	readOnly, ok := ann["readOnlyHint"].(bool)
+	return !ok || !readOnly
+}
+
+// mcpToolIsDestructive reads destructiveHint from the tool's definition,
+// whether or not its group is on. An unknown name is not destructive.
+func mcpToolIsDestructive(name string) bool {
+	for _, def := range mcpAllToolDefinitions() {
+		if def["name"] == name {
+			ann, _ := def["annotations"].(map[string]any)
+			destructive, _ := ann["destructiveHint"].(bool)
+			return destructive
+		}
+	}
+	return false
+}
+
 // mcpNeedsToken is nil when the caller may write, otherwise the refusal.
 func mcpNeedsToken(r *http.Request) map[string]any {
 	if hasWriteAccess(r) {
