@@ -1409,3 +1409,81 @@ func TestContainerActionExtendsTheOuterWriteDeadline(t *testing.T) {
 		t.Fatal("another tool had its deadline moved")
 	}
 }
+
+func TestUpdateBookmarkIsLogged(t *testing.T) {
+	h, _, _ := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategoryMutate: true}})
+	lines := captureActivityLogs(t, func() {
+		out := toolCall(t, h, "update_bookmark", `{"url":"https://radarr.example/","note":"movies"}`)
+		if out["updated"] != true {
+			t.Fatalf("answered %v", out)
+		}
+	})
+	found := false
+	for _, line := range lines {
+		if strings.Contains(line, `"event":"bookmark.update"`) && strings.Contains(line, `"source":"mcp"`) && strings.Contains(line, `"note"`) {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("no bookmark.update entry with source mcp in %v", lines)
+	}
+}
+
+func TestMoveBookmarkIsLogged(t *testing.T) {
+	h, _, second := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategoryMutate: true}})
+	lines := captureActivityLogs(t, func() {
+		out := toolCall(t, h, "move_bookmark", `{"url":"https://radarr.example/","to_page":`+strconv.Itoa(second)+`}`)
+		if out["moved"] != true {
+			t.Fatalf("answered %v", out)
+		}
+	})
+	found := false
+	for _, line := range lines {
+		if strings.Contains(line, `"event":"bookmark.update"`) && strings.Contains(line, `"source":"mcp"`) && strings.Contains(line, `"page"`) {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("no move entry with source mcp in %v", lines)
+	}
+}
+
+func TestCreateCategoryWithoutLettersGetsAFallbackId(t *testing.T) {
+	h, first, _ := twoPageMCPInstall(t)
+	turnOnBookmarksWrite(t, h)
+	a := toolCall(t, h, "create_category", `{"page":`+strconv.Itoa(first)+`,"name":"工具"}`)
+	b := toolCall(t, h, "create_category", `{"page":`+strconv.Itoa(first)+`,"name":"木工"}`)
+	if a["category"] != "category" || b["category"] != "category-2" {
+		t.Fatalf("answers %v and %v", a, b)
+	}
+}
+
+func TestContainerLogsNeedTheWriteTokenInPlainWords(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", State: "running"})
+	h := containerMCPHandlers(t)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	payload := toolCall(t, h, "get_container_logs", `{"container":"web"}`)
+	if msg, _ := payload["error"].(string); msg != "This tool needs the write token." {
+		t.Fatalf("payload = %v", payload)
+	}
+	if _, has := payload["lines"]; has {
+		t.Fatalf("log lines leaked: %v", payload)
+	}
+}
+
+func TestContainerActionUpdateReportsThePhaseAndResolvedName(t *testing.T) {
+	f := startFakeDocker(t)
+	id := strings.Repeat("a", 64)
+	f.add(fakeContainer{ID: id, Name: "sonarr", Image: "img:latest", ImageID: "sha256:old", State: "running", NetworkMode: "bridge"})
+	f.images["img:latest"] = fakeImage{ID: "sha256:old"}
+	h := controlMCPHandlers(t)
+	payload := toolCall(t, h, "container_action", `{"container":"`+id[:12]+`","action":"update"}`)
+	if payload["done"] != true || payload["phase"] != "already-current" || payload["container"] != "sonarr" || payload["state"] != "running" {
+		t.Fatalf("payload = %v", payload)
+	}
+}

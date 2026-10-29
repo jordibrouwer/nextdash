@@ -101,6 +101,9 @@ func mcpDockerReasonText(reason, message string) string {
 	return text
 }
 
+// mcpWriteTokenSentence is what a refused write token reads as.
+const mcpWriteTokenSentence = "This tool needs the write token."
+
 func mcpDockerFailure(rec *bufferedResponse) map[string]any {
 	var body struct {
 		Reason  string `json:"reason"`
@@ -118,7 +121,7 @@ func mcpDockerFailure(rec *bufferedResponse) map[string]any {
 
 func (h *Handlers) mcpDockerViewOff() map[string]any {
 	if !h.store.GetSettings().DockerViewEnabled {
-		return map[string]any{"error": "The Containers view is switched off in Config, so container tools are unavailable."}
+		return map[string]any{"error": "The Containers view is switched off in Config, so the container read tools are unavailable."}
 	}
 	return nil
 }
@@ -252,6 +255,9 @@ func (h *Handlers) mcpContainerLogs(r *http.Request, args json.RawMessage) map[s
 	if err != nil {
 		return map[string]any{"error": "Could not read the logs."}
 	}
+	if rec.status == http.StatusUnauthorized {
+		return map[string]any{"error": mcpWriteTokenSentence}
+	}
 	if rec.status >= 400 {
 		return mcpDockerFailure(rec)
 	}
@@ -274,19 +280,25 @@ func (h *Handlers) mcpContainerLogs(r *http.Request, args json.RawMessage) map[s
 // mcpResolveContainer finds one container by exact name or by the start of its
 // id. An unknown or ambiguous reference answers with what it could have been.
 func (h *Handlers) mcpResolveContainer(ref string) (string, map[string]any) {
+	id, _, failure := h.mcpResolveContainerNamed(ref)
+	return id, failure
+}
+
+// mcpResolveContainerNamed is mcpResolveContainer that also answers the name.
+func (h *Handlers) mcpResolveContainerNamed(ref string) (string, string, map[string]any) {
 	ref = strings.TrimSpace(ref)
 	if ref == "" {
-		return "", map[string]any{"error": "Say which container: a name or the start of an id."}
+		return "", "", map[string]any{"error": "Say which container: a name or the start of an id."}
 	}
 	api, reason := newDockerAPI()
 	if api == nil {
-		return "", map[string]any{"error": mcpDockerReasonText(reason, "")}
+		return "", "", map[string]any{"error": mcpDockerReasonText(reason, "")}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	list, err := api.listContainers(ctx)
 	if err != nil {
-		return "", map[string]any{"error": mcpDockerReasonText(dockerDialReason(err), "")}
+		return "", "", map[string]any{"error": mcpDockerReasonText(dockerDialReason(err), "")}
 	}
 	label := func(c dockerContainerSummary) string {
 		short := c.ID
@@ -306,10 +318,10 @@ func (h *Handlers) mcpResolveContainer(ref string) (string, map[string]any) {
 	}
 	matches := append(byName, byID...)
 	if len(byName) == 1 {
-		return byName[0].ID, nil
+		return byName[0].ID, byName[0].name(), nil
 	}
 	if len(matches) == 1 {
-		return matches[0].ID, nil
+		return matches[0].ID, matches[0].name(), nil
 	}
 	candidates := []string{}
 	if len(matches) > 1 {
@@ -317,7 +329,7 @@ func (h *Handlers) mcpResolveContainer(ref string) (string, map[string]any) {
 			candidates = append(candidates, label(c))
 		}
 		sort.Strings(candidates)
-		return "", map[string]any{"error": "More than one container matches \"" + ref + "\"; use the full name or more of the id.", "candidates": candidates}
+		return "", "", map[string]any{"error": "More than one container matches \"" + ref + "\"; use the full name or more of the id.", "candidates": candidates}
 	}
 	lower := strings.ToLower(ref)
 	for _, c := range list {
@@ -334,5 +346,5 @@ func (h *Handlers) mcpResolveContainer(ref string) (string, map[string]any) {
 	if len(candidates) > 20 {
 		candidates = candidates[:20]
 	}
-	return "", map[string]any{"error": "No container matches \"" + ref + "\".", "candidates": candidates}
+	return "", "", map[string]any{"error": "No container matches \"" + ref + "\".", "candidates": candidates}
 }

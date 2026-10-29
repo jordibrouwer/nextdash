@@ -28,6 +28,7 @@ func mcpContainersControlDefinitions() []map[string]any {
 			"annotations": mcpAnnotations(false, true),
 			"description": "Run one action on a Docker container: start, stop, restart, pause, unpause, remove, update or rollback. " +
 				"This changes what is running. remove only works on a stopped container and keeps its volumes; update pulls the newest image and recreates the container; rollback returns to the image before the last update. " +
+				"Update and rollback can take several minutes: wait for the answer and do not retry meanwhile. An update answers with a phase (done, already-current, rolled-back). " +
 				"nextDash refuses to stop, restart, pause, remove or update itself. Needs the write token when one is set, and Docker control switched on for nextDash.",
 			"inputSchema": map[string]any{
 				"type": "object",
@@ -78,7 +79,7 @@ func (h *Handlers) mcpContainerAction(r *http.Request, args json.RawMessage) map
 	if !allowed {
 		return map[string]any{"error": "Unknown action \"" + body.Action + "\". Use one of: " + strings.Join(mcpContainerActions, ", ") + "."}
 	}
-	id, failure := h.mcpResolveContainer(body.Container)
+	id, resolvedName, failure := h.mcpResolveContainerNamed(body.Container)
 	if failure != nil {
 		return failure
 	}
@@ -88,7 +89,7 @@ func (h *Handlers) mcpContainerAction(r *http.Request, args json.RawMessage) map
 		return map[string]any{"error": "Could not run the action."}
 	}
 	if rec.status == http.StatusUnauthorized {
-		return map[string]any{"error": "This tool needs the write token."}
+		return map[string]any{"error": mcpWriteTokenSentence}
 	}
 	if rec.status >= 400 {
 		var refusal struct {
@@ -104,5 +105,20 @@ func (h *Handlers) mcpContainerAction(r *http.Request, args json.RawMessage) map
 		}
 		return failure
 	}
-	return map[string]any{"done": true, "container": body.Container, "action": body.Action}
+	out := map[string]any{"done": true, "container": resolvedName, "action": body.Action}
+	var answer struct {
+		State  string `json:"state"`
+		Update *struct {
+			Phase string `json:"phase"`
+		} `json:"update"`
+	}
+	if json.Unmarshal(rec.body.Bytes(), &answer) == nil && answer.Update != nil {
+		if answer.Update.Phase != "" {
+			out["phase"] = answer.Update.Phase
+		}
+		if answer.State != "" {
+			out["state"] = answer.State
+		}
+	}
+	return out
 }

@@ -168,6 +168,12 @@ func requestFromMCP(r *http.Request) bool {
 	return v
 }
 
+// mcpLogRequest is the caller's request marked as coming through MCP, for the
+// activity log of a handler that does not log by itself.
+func mcpLogRequest(r *http.Request) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), mcpCtxKey, true))
+}
+
 // mcpNeedsToken is nil when the caller may write, otherwise the refusal.
 func mcpNeedsToken(r *http.Request) map[string]any {
 	if hasWriteAccess(r) {

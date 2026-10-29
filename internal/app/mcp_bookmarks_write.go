@@ -204,6 +204,18 @@ func (h *Handlers) mcpUpdateBookmark(r *http.Request, args json.RawMessage) map[
 	if answer.Updated == 0 {
 		return map[string]any{"error": "No bookmark with that URL."}
 	}
+	var changed []string
+	if body.Name != nil {
+		changed = append(changed, "name")
+		bm.Name = *body.Name
+	}
+	if body.Note != nil {
+		changed = append(changed, "note")
+	}
+	if len(body.TagsAdd) > 0 || len(body.TagsRemove) > 0 {
+		changed = append(changed, "tags")
+	}
+	logBookmarkUpdate(bm, changed, mcpLogRequest(r))
 	return map[string]any{"updated": true, "url": bm.URL, "page": pageNameForID(h.store, page)}
 }
 
@@ -283,6 +295,13 @@ func (h *Handlers) mcpMoveBookmark(r *http.Request, args json.RawMessage) map[st
 		}
 		return out
 	}
+	changed := []string{"page"}
+	if page == body.ToPage {
+		changed = []string{"category"}
+	} else if category != "" {
+		changed = append(changed, "category")
+	}
+	logBookmarkUpdate(bm, changed, mcpLogRequest(r))
 	out := map[string]any{
 		"moved": true, "url": bm.URL,
 		"page": pageNameForID(h.store, body.ToPage), "pageId": body.ToPage,
@@ -386,7 +405,8 @@ func (h *Handlers) mcpCreateCategory(r *http.Request, args json.RawMessage) map[
 	}
 	base := slugify(name)
 	if base == "" {
-		return map[string]any{"error": "A category name needs at least one letter or digit."}
+		// The Categories dialog does the same for a name with no letters or digits.
+		base = "category"
 	}
 	id := base
 	for n := 2; ; n++ {
