@@ -184,3 +184,14 @@ func TestShowEditModeButtonIsOnForAnOldSettingsFile(t *testing.T) {
 		t.Fatal("an explicit off must stay off")
 	}
 }
+
+func TestShowThemeStudioButtonIsOnForAnOldSettingsFile(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+	if !h.store.GetSettings().ShowThemeStudioButton {
+		t.Fatal("a settings file that never heard of the theme studio button must show it")
+	}
+	h2, _ := healthRecheckTestHandlers(t, `{"showThemeStudioButton":false}`)
+	if h2.store.GetSettings().ShowThemeStudioButton {
+		t.Fatal("an explicit off must stay off")
+	}
+}

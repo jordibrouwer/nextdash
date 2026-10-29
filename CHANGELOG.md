@@ -181,6 +181,10 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **fix — The Collection menu is walked with the keys.** It opened with nothing focused and the arrow keys did nothing; the first item takes the focus, and `↑`/`↓`, Home and End move through it.
 - **fix — Merge duplicates says when there is nothing to merge.** When the report's groups had shrunk to one bookmark each, the action reloaded the list in silence; it says "No duplicates left to merge."
 
+### Action bar
+
+- **new — A theme studio button.** The palette is the eleventh action button and opens the theme studio, as `Shift + A` does. It sits last in the bar, is switched on and off under Config → Appearance → Action bar → Buttons shown (`showThemeStudioButton`, on by default, also for old settings files) and with `:buttons theme`, and stays off a phone layout. `maxHeaderActions` and `:maxactions` go to 11.
+
 ### Themes
 
 - **new — Ocean is the theme a fresh install starts on.** Ocean [dark], with Ocean [light] for auto dark mode (`defaultThemeID`, `DEFAULT_THEME` in `theme-loader.js`, the Appearance ↺ default). Existing installs keep their theme; one still to run the v1.22.0 move lands on Aurora Glass as before, so its dialog stays right.

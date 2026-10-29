@@ -93,6 +93,7 @@ class Dashboard {
 
             showCheatSheetButton: false,
             showEditModeButton: true,
+            showThemeStudioButton: true,
             showCollapseAllButton: false,
             showAddBookmarkButton: true,
             showStatus: true,

@@ -839,7 +839,8 @@ body[data-show-recent-button="false"] .header-shortcuts .recent-button,
 body[data-show-pages-button="false"] .header-shortcuts #page-overview-header-btn,
 body[data-show-collapse-all-button="false"] .header-shortcuts #collapse-all-button,
 body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button,
-body[data-show-edit-mode-button="false"] .header-shortcuts #edit-mode-button {
+body[data-show-edit-mode-button="false"] .header-shortcuts #edit-mode-button,
+body[data-show-theme-studio-button="false"] .header-shortcuts #theme-studio-button {
     display: none;
 }
 
@@ -943,6 +944,7 @@ body[data-show-edit-mode-button="false"] .header-shortcuts #edit-mode-button {
 .header-actions .header-shortcuts #collapse-all-button     { order: 8; }
 .header-actions .header-shortcuts #help-button             { order: 9; }
 .header-actions .header-shortcuts #edit-mode-button        { order: 10; }
+.header-actions .header-shortcuts #theme-studio-button     { order: 11; }
 
 /*
  * The groups dissolve, so every button is a sibling of every other.

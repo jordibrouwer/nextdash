@@ -272,6 +272,9 @@ class DashboardData {
             if (typeof d.settings.showEditModeButton === 'undefined') {
                 d.settings.showEditModeButton = true;
             }
+            if (typeof d.settings.showThemeStudioButton === 'undefined') {
+                d.settings.showThemeStudioButton = true;
+            }
             if (typeof d.settings.showCollapseAllButton === 'undefined') {
                 d.settings.showCollapseAllButton = true;
             }
