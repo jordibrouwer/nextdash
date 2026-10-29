@@ -13,7 +13,7 @@ My bookmark bar had become a graveyard, so I built a self-hosted dashboard that 
 Run it on any machine or container, open it in your browser, organise bookmarks across pages, and reach everything from the keyboard. Beside your bookmarks, **widgets** show what is going on: uptime of the services you watch, what waits in the inbox, which certificate runs out, the weather, your calendar, your feeds, your machines — and any self-hosted service that answers with JSON.
 
 <p align="center">
-  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Aurora Glass: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
+  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Oceanic Steel: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
 </p>
 
 🎨 **384 themes and a theme studio.** 192 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic. **Aurora Glass** is the default, and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 75 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#16a-the-new-look)* · *[Manual: Appearance](MANUAL.md#16-appearance)*
@@ -27,6 +27,8 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
 🗂️ **[Cheat sheet](nextDash-cheatsheet.pdf?raw=true)** — every keyboard shortcut, printable ([HTML](nextDash-cheatsheet.html?raw=true)). Press **!** or **F1** on the dashboard for the live list. Regenerate with `npm run generate:cheatsheet`.
 
 🌐 **Website:** [nextdash.cc](https://nextdash.cc)
+
+🌐 **Dev log:** [www.jordibrw.nl](https://www.jordibrw.nl)
 
 🌐 **Demo:** [demo.nextdash.cc](https://demo.nextdash.cc)
 
@@ -75,12 +77,12 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> <i>(Aurora Glass)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
+      <sub><b>Dashboard</b> <i>(Oceanic Steel)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
       <br />
-      <sub><b>Bookmarks view</b> <i>(Aurora Glass, light)</i> — The whole collection in one place: a rail with the health score, views, health filters, pages and categories; one row per bookmark with its tags, shortcut, a month of use and when it was last opened; a side panel with Details, Health and Usage that saves as you type.</sub>
+      <sub><b>Bookmarks view</b> <i>(Oceanic Steel, light)</i> — The whole collection in one place: a rail with the health score, views, health filters, pages and categories; one row per bookmark with its tags, shortcut, a month of use and when it was last opened; a side panel with Details, Health and Usage that saves as you type.</sub>
     </td>
   </tr>
   <tr>
@@ -93,6 +95,18 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
       <img src="screenshots/nextdash-inbox.jpg" alt="Inbox view" width="100%" />
       <br />
       <sub><b>Inbox</b> <i>(Paper Ink, light)</i> — Links saved before you knew where they belong, grouped by when they arrived, with the keys for every action under the list. The side panel holds the note and the tags; open, promote or keep a link without leaving the list.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-edit-mode.jpg" alt="Edit mode" width="100%" />
+      <br />
+      <sub><b>Edit mode</b> <i>(Oceanic Steel)</i> — <kbd>Shift</kbd> + <kbd>M</kbd> or the pencil in the action bar: every block gets an outline, a click chooses one, and a panel beside the page changes its name, icon, width, view and sorting, or a widget's settings, and saves as you type. <kbd>Esc</kbd> leaves.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-digest.jpg" alt="Weekly digest" width="100%" />
+      <br />
+      <sub><b>Weekly digest</b> <i>(Oceanic Steel)</i> — The week in figures — opens, new bookmarks, uptime, the Inbox — each next to the week before, then what needs you, what is worth tidying up and what is good to know: broken links with since when and why, certificates and domains running out, container updates, the checkup, what nobody opens and what is new. An overview first, a part per click.</sub>
     </td>
   </tr>
 </table>
@@ -303,7 +317,7 @@ More is on the way: deeper Unraid integration is being worked on for future vers
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-unraid-config.jpg" alt="Config: Unraid" width="100%" />
       <br />
-      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid: the server's address and a read-only API key, a connection test that reports which of the six areas answers, and the seven widgets under it, each with an Add that opens it in Widgets → Catalogue.</sub>
+      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid: the server's address and a read-only API key, a connection test that reports which of the six areas answers, and the seven widgets under it, each with an Add that opens it in the Add widget picker.</sub>
     </td>
   </tr>
 </table>
@@ -425,6 +439,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Bookmarks and pages**
 
 - Pages and categories, each with an icon, a colour and a sort; drag categories and widgets into place — wide across two columns, or onto another page — and spread a category across columns. Share a page as a template file: your own addresses become names the importer fills in. *[Manual §9](MANUAL.md#9-pages-categories-and-collections)*
+- **Edit mode** changes the dashboard in place: `Shift + M` (or the pencil in the action bar, or *Edit in panel…* in a category's or widget's menu) puts an outline on every block, a click chooses one, and a panel beside the page edits its name, icon, width, view and sorting, a widget's settings included. Double-click a title to rename it. *[Manual §4](MANUAL.md#edit-mode)*
 - Add a link with one key, the full form, a paste, the extension, the share sheet or a bookmarklet — or right-click a category header and choose **Add new bookmark**, with that category already chosen. *[Manual §5](MANUAL.md#5-adding-bookmarks)*
 - Tags, notes, shortcuts and pins, a preview card that says what a page is without opening it, and a QR code (`Shift + J`) to open a bookmark on your phone. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
 - A **tag cloud** (`/`) and a **tag view** per tag: every bookmark with that tag from every page in one table, with related tags, bulk actions, and rename, merge or remove for the tag. *[Manual §10](MANUAL.md#10-tags)*
@@ -437,8 +452,9 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Search and keyboard**
 
 - Everything is reachable from the keyboard: one rule for the shortcuts and a searchable cheat sheet on `!`. *[Manual §7](MANUAL.md#7-keyboard)*
-- A key legend under the grid keeps the main keys in sight (`Shift + Z` switches it off), a dashboard tour of nine steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
+- A key legend under the grid keeps the main keys in sight (`Shift + Z` switches it off), a dashboard tour of ten steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
 - One panel for search, commands and finders, plus search from the browser's address bar. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
+- **Usually now** puts the bookmarks you tend to open around this time of day at the top of the empty search panel, and `→` on a result unfolds what you can do with it: open, open in a new tab, edit, copy the address, show in the list, move. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - Filters for tag, category, page, status, added and opened — each also in the negative. *[Manual §8.2](MANUAL.md#82-filters)*
 
 **Health and monitoring**
@@ -446,6 +462,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors, Trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11-the-bookmarks-view)*
 - **Domain expiry.** nextDash looks up when the domains of your checked bookmarks run out, through the registries' public RDAP service, and warns at 60, 7 and 3 days — in a Domains widget, as a badge in the Bookmarks view, through your alert channels and in the weekly digest. One request per domain a day; a switch under **Config → Monitoring** turns it off. *[Manual §12.4](MANUAL.md#124-alerts)*
 - **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §11.8](MANUAL.md#118-collection-health)*
+- A **checkup** walks you through what is worth tidying up — dead links, duplicates, bookmarks nobody opens, empty categories and pages, widgets that show an error — one step at a time, with nothing removed before you have seen it. Type `:checkup`. *[Manual §12](MANUAL.md#the-checkup)*
 - **A status page** for the people who use your services: a read-only page behind a secret link with your groups of services, whether each one works, since when one is down, planned maintenance and 30 days of history. It shows no error details or internal addresses, refreshes itself every minute and follows the visitor’s language and light or dark. *[Manual §12.8](MANUAL.md#128-the-status-page)*
 - Alerts, set under **Config → Monitoring** (tabs Checks, Notifications and Schedules), to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows, quiet hours with one summary at the end, reminders for an outage that goes on, per-bookmark muting, and a weekly digest of what broke, what can be updated and what nobody opens. *[Manual §12.4](MANUAL.md#124-alerts)*
 - **Fresh** shows which bookmarked sites published something new. *[Manual §12.6](MANUAL.md#126-fresh)*

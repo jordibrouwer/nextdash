@@ -28,24 +28,14 @@
      */
     renderWidgetsSection() {
         const esc = (v) => this.dash.escapeHtml(v);
-        // An old link or a stored 'types' meant the list of kinds, which is
-        // the Catalogue now; anything else unknown opens on your widgets.
-        if (!DashboardConfig.WIDGETS_TABS.includes(this.widgetsTab)) {
-            this.widgetsTab = this.widgetsTab === 'types' ? 'catalogue' : 'widgets';
-        }
-        // A redraw of a section already on screen knows its width; a first
-        // paint does not, and the observer bound after it settles the layout.
-        const current = document.getElementById('config-widgets-body');
-        if (current?.clientWidth) this._widgetWide = this.widgetsWideAt(current.clientWidth);
-        const tabs = DashboardConfig.WIDGETS_TABS.map((tab) => {
-            const active = tab === this.widgetsTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-widgets-body" data-widgets-tab="${esc(tab)}">${esc(this.widgetsTabLabel(tab))}</button>`;
-        }).join('');
+        // One tab, drawn like the strip every other section has, so the
+        // sections read alike (Finders does the same).
+        const tabs = `<button type="button" class="config-subtab is-active" role="tab" aria-selected="true" tabindex="0" aria-controls="config-widgets-body" data-widgets-tab="widgets">${esc(this.t('config.widgetsTabList', 'Your widgets'))}</button>`;
         return `
             <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
                 'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
-            ${this.renderSectionTabNote('widgets', this.widgetsTab)}
+            ${this.renderSectionTabNote('widgets', 'widgets')}
             <div class="config-tabpage">
                 <div class="config-tabpage-main">
                     <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
@@ -55,39 +45,7 @@
     },
 
     renderWidgetsTab() {
-        if (this.widgetsTab === 'catalogue') return this.renderWidgetCatalogueTab();
-        if (this.widgetsTab === 'custom') return this.renderCustomWidgetTab();
         return this.renderWidgetsEditor();
-    },
-
-    widgetsTabLabel(tab) {
-        const map = {
-            widgets: ['config.widgetsTabList', 'Your widgets'],
-            catalogue: ['config.widgetsTabCatalogue', 'Catalogue'],
-            custom: ['config.widgetsTabCustom', 'Custom widget'],
-        };
-        const [key, fallback] = map[tab] || [tab, tab];
-        return this.t(key, fallback);
-    },
-
-    /*
-     * Switch tabs. Only the body and the line under the strip change: the
-     * strip stays, so the button just clicked keeps its focus.
-     */
-    showWidgetsTab(tab) {
-        if (!DashboardConfig.WIDGETS_TABS.includes(tab) || tab === this.widgetsTab) return;
-        this.stopCustomProbeLive();
-        this.widgetsTab = tab;
-        this.restoreConfigHash();
-        this.repaintWidgetsBody();
-        this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
-        const strip = document.querySelector('[data-widgets-tab]')?.closest('.config-subtabs');
-        this.syncSectionTabNote('widgets', this.widgetsTab, strip?.parentElement);
-    },
-
-    bindWidgetsTabs(container) {
-        if (!container.querySelector('[data-widgets-tab]')) return;
-        this.bindSubTabStrip(container, 'data-widgets-tab', (tab) => this.showWidgetsTab(tab));
     },
 
     widgetTypeGroupLabel(group) {
@@ -181,52 +139,7 @@
     },
 
     /*
-     * Wide or narrow, for a section this many px across. The 40px of slack
-     * keeps a width sitting on the line from flipping back and forth: once
-     * wide, it takes a clear step under the line to go narrow again.
-     */
-    widgetsWideAt(width) {
-        const min = DashboardConfig.WIDGETS_WIDE_MIN;
-        return this._widgetWide ? width >= min - 40 : width >= min;
-    },
-
-    /*
-     * Wide or narrow, from the width the section actually has rather than the
-     * window's: the config rail and the reader's font size both take from it.
-     * Repaints only when the answer changes, so dragging a window edge is not
-     * a repaint per pixel.
-     *
-     * A full render replaces the body, so a new body is observed in place of
-     * the old one; a repaint keeps it, and is left alone.
-     */
-    observeWidgetsWidth(body) {
-        if (typeof ResizeObserver === 'undefined') return;
-        if (this._widgetsWidthObserved === body && body.isConnected) return;
-        this._widgetsWidthObserver?.disconnect();
-        this._widgetsWidthObserved = body;
-
-        const settle = (width) => {
-            const wide = this.widgetsWideAt(width);
-            if (wide === Boolean(this._widgetWide)) return;
-            this._widgetWide = wide;
-            this.repaintWidgetsKeepingFocus();
-        };
-        this._widgetsWidthObserver = new ResizeObserver(([entry]) => {
-            if (!entry || !body.isConnected) {
-                this._widgetsWidthObserver?.disconnect();
-                this._widgetsWidthObserver = null;
-                this._widgetsWidthObserved = null;
-                return;
-            }
-            settle(entry.contentRect.width);
-        });
-        this._widgetsWidthObserver.observe(body);
-        // The first paint came before anything had measured the body.
-        if (body.clientWidth) settle(body.clientWidth);
-    },
-
-    /*
-     * Move between the two layouts without losing the field being typed in.
+     * Repaint without losing the field being typed in.
      *
      * The detail is drawn from the draft, so a value typed but not yet
      * committed by a change event is put into the draft first; then the field
@@ -235,7 +148,8 @@
     repaintWidgetsKeepingFocus() {
         const active = document.activeElement;
         const body = document.getElementById('config-widgets-body');
-        const inside = active && body?.contains(active) ? active : null;
+        const sheet = document.getElementById('config-widget-overlay');
+        const inside = active && (body?.contains(active) || sheet?.contains(active)) ? active : null;
         if (inside) {
             // Whatever is being typed in, committed by the same path its change
             // event takes -- a figure's row, a sign-in field and the answer
@@ -257,8 +171,14 @@
             }
         }
         // By id where the field has one, else by the attributes that name it:
-        // the row title and a figure's fields have no id of their own.
-        const selector = inside?.id ? `#${CSS.escape(inside.id)}`
+        // the row title and a figure's fields have no id of their own. A
+        // section's title has neither; it is found by its section.
+        const summaryOf = inside?.matches('summary') && inside.parentElement?.matches('details[data-widget-section]')
+            ? inside.parentElement : null;
+        const selector = summaryOf ? `details[data-widget-section-of="${
+            CSS.escape(summaryOf.getAttribute('data-widget-section-of') || '')}"][data-widget-section="${
+            CSS.escape(summaryOf.getAttribute('data-widget-section') || '')}"] > summary`
+            : inside?.id ? `#${CSS.escape(inside.id)}`
             : inside ? ['data-widget', 'data-index', 'data-custom-field', 'data-custom-index',
                 'data-custom-row', 'data-widget-auth', 'data-widget-index', 'data-custom-find']
                 .filter((attr) => inside.hasAttribute(attr))
@@ -266,7 +186,10 @@
             : '';
         const caret = typeof inside?.selectionStart === 'number' ? inside.selectionStart : null;
         this.repaintWidgetsBody();
-        const again = selector ? document.querySelector(`#config-widgets-body ${selector}`) : null;
+        const again = selector
+            ? (document.querySelector(`#config-widget-overlay ${selector}`)
+                || document.querySelector(`#config-widgets-body ${selector}`))
+            : null;
         if (!again) return;
         // A title is saved on change, straight to the server, so one half typed
         // has no draft to come back from: it is carried across by hand.
@@ -297,18 +220,7 @@
         return this.widgetRowsForDisplay().flatMap((g) => g.rows.map((r) => r.block.id));
     },
 
-    /*
-     * The widget the side panel shows: the one chosen, if it is still in the
-     * list as filtered, else the first row shown. Worked out, never stored --
-     * a search that hides the chosen one gives it back when it is cleared.
-     */
-    widgetDetailIndex(chosen) {
-        const shown = this.widgetRowsForDisplay().flatMap((g) => g.rows.map((r) => r.index));
-        if (!shown.length) return null;
-        return shown.includes(chosen) ? chosen : shown[0];
-    },
-
-    /** Whether the reader opened this widget, as opposed to the panel showing it by default. */
+    /** Whether the reader opened this widget's card. */
     widgetIsChosen(widget) {
         return widget?.id != null && String(widget.id) === String(this._widgetOpenId);
     },
@@ -316,13 +228,20 @@
     /** Redraw the widgets section without refetching what it already has. */
     repaintWidgetsBody() {
         const body = document.getElementById('config-widgets-body');
+        // The sheet over the dashboard has no list behind it: only the sheet is
+        // painted, and Config's own view is not drawn over the page.
+        if (!body && this._sheetOverDashboard) { this.repaintSheetOverDashboard(); return; }
         if (!body) { this.render(); return; }
+        // Read off the screen as well as from the toggle event: that event is
+        // queued, and a repaint landing between a click and its dispatch would
+        // otherwise drop the section the reader just opened.
+        document.querySelectorAll('#config-widgets-body details[data-widget-section], #config-widget-overlay details[data-widget-section]')
+            .forEach((el) => this.rememberWidgetSection(el));
         body.innerHTML = this.renderWidgetsTab();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindWidgetsEditor(container);
-        // Wide, a detail is on screen without anyone pressing Settings, so the
-        // disk chips that press would have asked for are asked for here.
-        if (this._widgetWide && this.widgetsTab === 'widgets') void this.fillWidgetSuggestions();
+        // An open card's disk chips are asked for again after a repaint.
+        if (this._widgetSettingsOpen != null) void this.fillWidgetSuggestions();
     },
 
     /*
@@ -354,15 +273,10 @@
                 esc(this.t('config.widgetsAllPages', 'All pages'))}</option>`
             : '');
 
-        // Wide, one widget is always open beside the list: the one chosen, or
-        // the first shown while that one is hidden or gone. Marked as the open
-        // row too, so the list says which one the panel is about. Narrow, only
-        // a chosen one opens -- the default the side panel showed does not
-        // follow the reader into the narrow layout.
+        // One card is open at a time, inline: the one the reader chose. Nothing
+        // opens by itself.
         const chosen = this.widgetIndexOfId(this._widgetOpenId);
-        const detailIndex = this._widgetWide && Array.isArray(this._widgetBlocks)
-            ? this.widgetDetailIndex(chosen) : null;
-        this._widgetSettingsOpen = this._widgetWide ? detailIndex : chosen;
+        this._widgetSettingsOpen = chosen;
 
         let body;
         if (this._widgetBlocks == null) {
@@ -394,33 +308,34 @@
                      * one a reader meant as "select" was as likely to be Shown
                      * -- which writes to the server and hides the widget.
                      */
-                    const settingsState = this._widgetWide
-                        ? `aria-pressed="${open ? 'true' : 'false'}"`
-                        : `aria-expanded="${open ? 'true' : 'false'}" aria-controls="config-widget-settings-${index}"`;
+                    const settingsState = `aria-haspopup="dialog" aria-expanded="${open ? 'true' : 'false'}"`;
                     return `
                 <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
                     data-widget-row="${index}">
-                    <div class="config-widget-row-line">
+                    <div class="config-widget-row-line config-widget-card-head">
                         <label class="config-widget-row-pick"
                             title="${esc(this.t('config.widgetsSelectRow', 'Select this widget'))}">
                             <input type="checkbox" data-widget-pick="${esc(widget.id)}"
                                 aria-label="${esc(this.t('config.widgetsSelectNamed', 'Select {name}').replace('{name}', name))}"
                                 ${this.widgetSelection.has(widget.id) ? 'checked' : ''}>
                         </label>
+                        ${this.widgetCardBadge(widget.type)}
+                        <div class="config-widget-row-main">
+                            <input type="text" class="config-text config-widget-row-title" data-widget="title"
+                                id="config-widget-title-${index}" data-index="${index}" value="${esc(widget.title || '')}"
+                                aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
+                                placeholder="${esc(this.widgetTypeName(widget.type))}">
+                            <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                        </div>
                         <label class="config-toggle config-toggle--inline config-widget-row-shown"
                             title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
                             <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}
                                 aria-label="${esc(this.t('config.widgetsEnabledNamed', 'Show {name} on the dashboard').replace('{name}', name))}">
                             <span aria-hidden="true">${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
                         </label>
-                        <div class="config-widget-row-main">
-                            <input type="text" class="config-text config-widget-row-title" data-widget="title"
-                                id="config-widget-title-${index}" data-index="${index}" value="${esc(widget.title || '')}"
-                                aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
-                                placeholder="${esc(this.widgetTypeName(widget.type))}">
-                            <span class="config-widget-row-about">${esc(this.widgetTypeAbout(widget.type))}</span>
-                        </div>
-                        <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                    </div>
+                    <div class="config-widget-card-meta">
+                        ${this.renderWidgetCardChip(widget, index)}
                         ${this.isAllPagesView() && widget.pageName
                             ? `<span class="config-widget-row-page" title="${
                                 esc(this.t('config.widgetsPageLabel', 'Page'))}">${
@@ -430,9 +345,6 @@
                             ${settingsState}>${esc(
                             this.t('config.widgetsConfigure', 'Settings'))}</button>
                     </div>
-                    <div class="config-widget-settings" id="config-widget-settings-${index}"
-                        ${open && !this._widgetWide ? '' : 'hidden'}>${
-                        open && !this._widgetWide ? this.renderWidgetDetail(widget, index) : ''}</div>
                 </li>`;
                 };
 
@@ -514,14 +426,7 @@
                 ${toolbar}
                 ${body}
             </section>`;
-        if (detailIndex == null) return list;
-        return `
-            <div class="config-widgets-split">
-                ${list}
-                <section class="config-panel config-widgets-detailpanel" aria-live="polite">
-                    ${this.renderWidgetDetail(this._widgetBlocks[detailIndex], detailIndex)}
-                </section>
-            </div>`;
+        return list;
     },
 
     /*
@@ -606,6 +511,61 @@
      * a select rather than a button, because the question is not "move" but
      * "where to", and only pages other than this one are worth offering.
      */
+    /*
+     * The badge on a card: the first letter of the kind's name on a tint that
+     * says which group the kind belongs to. Letters rather than icons, so
+     * there is no asset to keep in step with forty-nine kinds.
+     */
+    widgetCardBadge(type) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const group = type === 'custom'
+            ? 'custom'
+            : (DashboardConfig.WIDGET_TYPE_GROUPS.find(([, types]) => types.includes(type))?.[0] || 'links');
+        const letter = (String(this.widgetTypeName(type)).match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
+        return `<span class="config-widget-badge" data-widget-group="${esc(group)}" aria-hidden="true">${esc(letter)}</span>`;
+    },
+
+    /** Whether this kind has anything to connect to (an address, a key, feeds, a host). */
+    widgetKindConnects(type) {
+        if (DashboardConfig.MEDIA_SERVICES?.[type] || type === 'custom') return true;
+        return (DashboardConfig.WIDGET_SETTINGS[type] || [])
+            .some((field) => this.widgetFieldSection(field.key) === 'connection');
+    },
+
+    /*
+     * The state a card shows as a chip, from what is already known: the stored
+     * widget, the answer Connect gave this visit, the custom probe. It never
+     * asks anything, so a widget that was never connected says "set up" or
+     * "not set up", not "connected".
+     */
+    widgetCardStatus(widget, index) {
+        if (!this.widgetKindConnects(widget.type)) return { tone: 'none', text: '' };
+        const cap = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+        // What Connect answered this visit comes first: a refusal is more to
+        // the point than "not set up", which is only what a missing key reads as.
+        if (DashboardConfig.MEDIA_SERVICES?.[widget.type]) {
+            const setup = this.mediaSetupFor?.(widget);
+            if (setup && !setup.error) return { tone: 'ok', text: cap(this.t('config.widgetSectionConnected', 'connected')) };
+            if (setup?.error === 'unreachable') return { tone: 'bad', text: cap(this.t('config.widgetSectionUnreachable', 'not reachable')) };
+            if (setup?.error) return { tone: 'warn', text: cap(this.t('config.widgetSectionNotConnected', 'not connected')) };
+        } else if (widget.type === 'custom') {
+            const probe = this.customProbeState(widget.id);
+            if (probe?.failed) return { tone: 'bad', text: cap(this.t('config.widgetSectionUnreachable', 'not reachable')) };
+            if (probe?.data) return { tone: 'ok', text: cap(this.t('config.widgetSectionConnected', 'connected')) };
+        }
+        if (!this.widgetHasConnection(widget, index)) {
+            return { tone: 'idle', text: this.t('config.widgetCardNotSetUp', 'Not set up') };
+        }
+        return { tone: 'idle', text: this.t('config.widgetCardSetUp', 'Set up') };
+    },
+
+    renderWidgetCardChip(widget, index) {
+        const status = this.widgetCardStatus(widget, index);
+        if (status.tone === 'none') return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<span class="config-widget-chip" data-widget-chip="${esc(status.tone)}">${esc(status.text)}</span>`;
+    },
+
     renderWidgetBulkBar() {
         const esc = (v) => this.dash.escapeHtml(v);
         const picked = this.selectedWidgetIds();
@@ -905,10 +865,12 @@
      * theme browser answers the same question the same way, for the same
      * reason.
      */
-    openWidgetCatalogue({ focusType } = {}) {
+    openWidgetCatalogue({ focusType, pageId = null, again = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!window.AppModal?.show) return;
-        window.nextdashTrack?.('widget:picker-open');
+        // Back from the connect screen is the same visit, not a new one.
+        if (!again) window.nextdashTrack?.('widget:picker-open');
+        this._widgetWizardPageId = pageId;
 
         const types = this.widgetCatalogueTypes();
         const fresh = this.newWidgetTypes?.() || [];
@@ -927,6 +889,12 @@
             // The modal moves focus itself a frame or two after it opens, so
             // the field is named here rather than focused afterwards.
             initialFocusSelector: '[data-widget-search]',
+            // However it closes -- Escape, Close, the backdrop, Back -- what
+            // the connect screen held (the key with it) is forgotten.
+            onHide: () => {
+                this._widgetWizard = null;
+                document.querySelector('#modal-text [data-widget-wizard-screen="connect"]')?.remove();
+            },
         });
 
         /*
@@ -963,10 +931,24 @@
             if (scroll) option.scrollIntoView({ block: 'nearest' });
         };
 
-        const add = (type) => {
-            if (!type) return;
+        let asking = false;
+        const add = async (type) => {
+            if (!type || asking) return;
+            // Read before the modal closes: hiding it takes the select with it.
+            const pageValue = picker.querySelector('[data-widget-wizard-page]')?.value;
+            // A kind that connects to a service, or Custom, asks where and how first.
+            if (this.widgetWizardKind?.(type)) {
+                this._widgetWizardPageId = pageValue ? Number(pageValue) : null;
+                this.openWidgetWizardConnect(type, pageValue ? Number(pageValue) : null);
+                return;
+            }
+            const pageId = pageValue ? Number(pageValue) : null;
+            asking = true;
+            const go = await this.confirmWidgetPageSwitch(pageId);
+            asking = false;
+            if (!go) return;
             window.AppModal.hide();
-            void this.addWidget(type);
+            void this.addWidget(type, pageId != null ? { pageId } : undefined);
         };
 
         const filter = () => {
@@ -1031,6 +1013,10 @@
                 choose(option, { scroll: false });
                 search.focus({ preventScroll: true });
             }
+        });
+        picker.addEventListener('change', (event) => {
+            const wizardPage = event.target?.closest?.('[data-widget-wizard-page]');
+            if (wizardPage) this._widgetWizardPageId = Number(wizardPage.value);
         });
         picker.addEventListener('dblclick', (event) => {
             const option = event.target?.closest?.('[data-widget-option]');
@@ -1137,8 +1123,11 @@
                         ? this.widgetTypeGroupLabel(group)
                         : this.t('config.widgetGroupCustom', 'And anything else: the Custom widget'))}</span>
                 </div>
-                <button type="button" class="config-btn config-btn--primary" data-widget-add="${esc(type)}">${
-                    esc(this.t('config.widgetsAddNamed', 'Add {name}').replace('{name}', name))}</button>
+                <div class="config-widget-picker-add">
+                    ${this.widgetWizardPageSelect?.() || ''}
+                    <button type="button" class="config-btn config-btn--primary" data-widget-add="${esc(type)}">${
+                        esc(this.t('config.widgetsAddNamed', 'Add {name}').replace('{name}', name))}</button>
+                </div>
             </div>
             <p class="config-widget-picker-about">${esc(this.widgetTypeAbout(type))}</p>
             ${sample ? `<span class="config-widget-kind-sample config-widget-picker-sample" aria-hidden="true">${sample}</span>` : ''}
@@ -2495,168 +2484,42 @@
          */
         const draft = this.widgetDraft(index);
         const widget = { ...stored, config: draft?.config || stored.config || {} };
-        const config = widget.config || {};
-        const rows = fields.map((field) => {
-            const label = esc(this.t(field.label[0], field.label[1]));
-            const id = `widget-${index}-${esc(field.key)}`;
-            if (field.kind === 'bool') {
-                return `
-                    <label class="config-toggle config-toggle--inline">
-                        <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
-                            data-widget-index="${index}" data-widget-kind="bool"
-                            ${(field.defaultOn ? config[field.key] !== false : Boolean(config[field.key])) ? 'checked' : ''}>
-                        <span>${label}${this.widgetFieldInfoButton(field, index)}</span>
-                    </label>`;
-            }
-            if (field.kind === 'int') {
-                /*
-                 * The bounds were on the input and nowhere a reader looks.
-                 *
-                 * Someone testing the refresh typed 5, the server brought it up
-                 * to 30, and with the range unwritten there was no way to know
-                 * that had happened or why. So the field says what it takes,
-                 * and where the choice needs more than a line, an ℹ opens the
-                 * same dialog every other setting in config uses.
-                 */
-                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                const info = this.widgetFieldInfoButton(field, index);
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${info}</label>
-                        <input type="number" id="${id}" class="config-text config-text--number"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="int" min="${field.min}" max="${field.max}"
-                            value="${esc(config[field.key] ?? '')}"
-                            placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
-                        ${hint ? `<p class="config-widget-field-hint" data-widget-field-hint="${esc(field.key)}">${esc(hint)}</p>` : ''}
-                    </div>`;
-            }
-            if (field.kind === 'choice') {
-                /*
-                 * A named choice from a short list, written into the draft as
-                 * text -- which is what it is, and means updateWidgetDraft
-                 * needs nothing new to read it.
-                 */
-                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                const optionList = typeof field.options === 'function' ? field.options(this) : field.options;
-                const current = String(config[field.key] || optionList[0][0]);
-                const choices = optionList.map(([value, text]) =>
-                    `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${
-                        esc(this.t(text[0], text[1]))}</option>`).join('');
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                        <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
-                            data-widget-index="${index}" data-widget-kind="text">${choices}</select>
-                        ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
-                    </div>`;
-            }
-            if (field.kind === 'text') {
-                const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                        <input type="text" id="${id}" class="config-text"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="text" maxlength="${field.maxlength || 200}"
-                            value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
-                    </div>`;
-            }
-            /*
-             * A list of addresses, one per line.
-             *
-             * Not the tags box: that is one comma-separated line capped at 400
-             * characters, which is a sentence's worth of tags and nowhere near
-             * a handful of feed addresses -- and a comma is legal inside a URL,
-             * so splitting on it would quietly cut one in half.
-             */
-            if (field.kind === 'urlList') {
-                const lines = Array.isArray(config[field.key]) ? config[field.key].join('\n') : '';
-                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                        <textarea id="${id}" class="config-text config-widget-urls" rows="4"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="urlList"
-                            placeholder="${esc(this.t('config.widgetFeedUrlsPlaceholder',
-                                'https://example.com/feed.xml'))}">${esc(lines)}</textarea>
-                        ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
-                    </div>`;
-            }
-            if (field.kind === 'tags') {
-                const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
-                // A field whose values are discoverable offers them: the disks
-                // this machine actually has, filled in after they are fetched.
-                const suggestions = field.suggest
-                    ? `<div class="config-widget-suggest" data-widget-suggest="${esc(field.suggest)}"
-                            data-widget-suggest-index="${index}"
-                            data-widget-suggest-key="${esc(field.key)}"></div>`
-                    : '';
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                        <input type="text" id="${id}" class="config-text"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="tags" maxlength="400" value="${esc(value)}"
-                            placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
-                        ${suggestions}
-                    </div>`;
-            }
-            // checkset: an absent list means all, which is the default for the
-            // health widget's figures and reads better than every box ticked.
-            // A field may name its own starting selection (`defaults`) when
-            // "everything" is not what the tile draws until it is told.
-            const chosen = Array.isArray(config[field.key]) ? config[field.key] : (field.defaults || null);
-            const boxes = (field.options || []).map(([value, text]) => `
-                <label class="config-toggle config-toggle--inline">
-                    <input type="checkbox" data-widget-setting="${esc(field.key)}"
-                        data-widget-index="${index}" data-widget-kind="checkset"
-                        ${(field.defaults || []).includes(value) ? 'data-widget-default' : ''}
-                        value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
-                    <span>${esc(this.t(text[0], text[1]))}</span>
-                </label>`).join('');
-            return `
-                <div class="config-widget-field">
-                    <span class="config-widget-field-label">${label}${
-                        this.widgetFieldInfoButton(field, index)}</span>
-                    <div class="config-widget-checkset">${boxes}</div>
-                </div>`;
-        }).join('');
+        // Each field drawn once; the media and Custom paths take them as one
+        // string, the generic path sorts them into its three sections.
+        const drawn = fields.map((field) => [field, this.renderWidgetField(field, widget, index)]);
+        const rows = drawn.map(([, html]) => html).join('');
         const mediaService = DashboardConfig.MEDIA_SERVICES?.[widget.type];
         if (mediaService && typeof this.renderMediaSettings === 'function') {
             return this.renderMediaSettings(widget, index, rows, mediaService);
         }
         if (widget.type === 'custom') {
             /*
-             * Two groups rather than one grid of six unrelated boxes.
+             * The same three sections as every other widget.
              *
-             * Where to read from and what to show are different questions, and
-             * a flat panel made the address, the credential and a dotted path
-             * read as equally weighted neighbours. The figures need the full
-             * width regardless: their rows are four controls wide, and in a
-             * third of the panel they overlapped each other.
+             * Where to read from (address, method, credential) and the probe
+             * that asks it are Connection; the figures table, the dotted path
+             * of a list, Page and Width are Display; the cache time is
+             * Advanced. The figures need the full width regardless: their rows
+             * are four controls wide, and in a third of the panel they
+             * overlapped each other. The probe's Watch is state in
+             * `customProbeState`, not in the DOM, and a folded <details> keeps
+             * its content in the page, so folding Connection never stops it.
              */
-            return `<div class="config-widget-settings-body is-custom">
-                ${this.renderWidgetPresets(widget, index)}
-                <div class="config-custom-group">
-                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
-                        'Where to read from'))}</h4>
-                    <div class="config-custom-grid">${rows}</div>
-                    ${this.renderAddressPlaceholderNote(widget, index)}
-                    ${this.renderWidgetCredential(widget, index)}
-                </div>
-                ${this.renderCustomWidgetFields(widget, index)}
-                ${this.renderCustomWidgetProbe(widget, index)}
-                <div class="config-custom-group">
-                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
-                        'On the dashboard'))}</h4>
-                    <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
-                        this.renderWidgetWidth(widget, index)}</div>
-                </div>
-                ${this.renderWidgetSaveBar(index)}
-            </div>`;
+            const sorted = { connection: '', display: '', advanced: '' };
+            drawn.forEach(([field, html]) => { sorted[this.widgetFieldSection(field.key)] += html; });
+            const customGrid = (html) => (html ? `<div class="config-custom-grid">${html}</div>` : '');
+            return `<div class="config-widget-settings-body is-custom">${this.renderWidgetSections(widget, index, {
+                connection: `${this.renderWidgetPresets(widget, index)}${customGrid(sorted.connection)}${
+                    this.renderAddressPlaceholderNote(widget, index)}${
+                    this.renderWidgetCredential(widget, index)}${this.renderCustomWidgetProbe(widget, index)}`,
+                display: `${this.renderCustomWidgetFields(widget, index)}${customGrid(`${
+                    this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}${sorted.display}`)}`,
+                advanced: customGrid(sorted.advanced),
+            })}${this.renderWidgetSaveBar(index)}</div>`;
         }
+        const grouped = { connection: '', display: '', advanced: '' };
+        drawn.forEach(([field, html]) => { grouped[this.widgetFieldSection(field.key)] += html; });
+        const grid = (html) => (html ? `<div class="config-widget-settings-body">${html}</div>` : '');
         /*
          * The setup note sits outside the settings grid rather than in it.
          *
@@ -2664,11 +2527,296 @@
          * `grid-column: 1 / -1` cannot reliably claim the full row -- in Safari
          * the note landed as one narrow column beside Width and Refresh, with
          * the lines to copy wrapped down a strip. Above the grid it is simply a
-         * block, and needs nothing from the layout to be readable.
+         * block, and needs nothing from the layout to be readable. It is what
+         * the widget needs from the host before it can read anything, so it
+         * opens the Connection section.
+         *
+         * The Save bar stays outside the sections: it is about the whole panel,
+         * and folding a section must never fold it away with it.
          */
-        return `${this.renderWidgetSetupNote(widget.type)}<div class="config-widget-settings-body">${
-            this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}${rows}${
-            this.renderWidgetSaveBar(index)}</div>`;
+        return `<div class="config-widget-sections">${this.renderWidgetSections(widget, index, {
+            connection: `${this.renderWidgetSetupNote(widget.type)}${grid(grouped.connection)}`,
+            display: grid(`${this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}${
+                grouped.display}`),
+            advanced: grid(grouped.advanced),
+        })}${this.renderWidgetSaveBar(index)}</div>`;
+    },
+
+    /*
+     * One setting of a widget, as its kind draws it: a tickbox, a number, a
+     * choice, a line of text, a list of addresses, tags or a set of boxes.
+     *
+     * Its own function so every path through the panel -- the generic kinds,
+     * the media services, Custom -- draws a field the same way, whichever
+     * section it then lands in. `widget` carries the draft's config.
+     */
+    renderWidgetField(field, widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const config = widget?.config || {};
+        const label = esc(this.t(field.label[0], field.label[1]));
+        const id = `widget-${index}-${esc(field.key)}`;
+        if (field.kind === 'bool') {
+            return `
+                <label class="config-toggle config-toggle--inline">
+                    <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
+                        data-widget-index="${index}" data-widget-kind="bool"
+                        ${(field.defaultOn ? config[field.key] !== false : Boolean(config[field.key])) ? 'checked' : ''}>
+                    <span>${label}${this.widgetFieldInfoButton(field, index)}</span>
+                </label>`;
+        }
+        if (field.kind === 'int') {
+            /*
+             * The bounds were on the input and nowhere a reader looks.
+             *
+             * Someone testing the refresh typed 5, the server brought it up
+             * to 30, and with the range unwritten there was no way to know
+             * that had happened or why. So the field says what it takes,
+             * and where the choice needs more than a line, an ℹ opens the
+             * same dialog every other setting in config uses.
+             */
+            const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+            const info = this.widgetFieldInfoButton(field, index);
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${info}</label>
+                    <input type="number" id="${id}" class="config-text config-text--number"
+                        data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                        data-widget-kind="int" min="${field.min}" max="${field.max}"
+                        value="${esc(config[field.key] ?? '')}"
+                        placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
+                    ${hint ? `<p class="config-widget-field-hint" data-widget-field-hint="${esc(field.key)}">${esc(hint)}</p>` : ''}
+                </div>`;
+        }
+        if (field.kind === 'choice') {
+            /*
+             * A named choice from a short list, written into the draft as
+             * text -- which is what it is, and means updateWidgetDraft
+             * needs nothing new to read it.
+             */
+            const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+            const optionList = typeof field.options === 'function' ? field.options(this) : field.options;
+            const current = String(config[field.key] || optionList[0][0]);
+            const choices = optionList.map(([value, text]) =>
+                `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${
+                    esc(this.t(text[0], text[1]))}</option>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                    <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
+                        data-widget-index="${index}" data-widget-kind="text">${choices}</select>
+                    ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
+                </div>`;
+        }
+        if (field.kind === 'text') {
+            const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                    <input type="text" id="${id}" class="config-text"
+                        data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                        data-widget-kind="text" maxlength="${field.maxlength || 200}"
+                        value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
+                </div>`;
+        }
+        /*
+         * A list of addresses, one per line.
+         *
+         * Not the tags box: that is one comma-separated line capped at 400
+         * characters, which is a sentence's worth of tags and nowhere near
+         * a handful of feed addresses -- and a comma is legal inside a URL,
+         * so splitting on it would quietly cut one in half.
+         */
+        if (field.kind === 'urlList') {
+            const lines = Array.isArray(config[field.key]) ? config[field.key].join('\n') : '';
+            const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                    <textarea id="${id}" class="config-text config-widget-urls" rows="4"
+                        data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                        data-widget-kind="urlList"
+                        placeholder="${esc(this.t('config.widgetFeedUrlsPlaceholder',
+                            'https://example.com/feed.xml'))}">${esc(lines)}</textarea>
+                    ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
+                </div>`;
+        }
+        if (field.kind === 'tags') {
+            const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
+            // A field whose values are discoverable offers them: the disks
+            // this machine actually has, filled in after they are fetched.
+            const suggestions = field.suggest
+                ? `<div class="config-widget-suggest" data-widget-suggest="${esc(field.suggest)}"
+                        data-widget-suggest-index="${index}"
+                        data-widget-suggest-key="${esc(field.key)}"></div>`
+                : '';
+            return `
+                <div class="config-widget-field">
+                    <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                    <input type="text" id="${id}" class="config-text"
+                        data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                        data-widget-kind="tags" maxlength="400" value="${esc(value)}"
+                        placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
+                    ${suggestions}
+                </div>`;
+        }
+        // checkset: an absent list means all, which is the default for the
+        // health widget's figures and reads better than every box ticked.
+        // A field may name its own starting selection (`defaults`) when
+        // "everything" is not what the tile draws until it is told.
+        const chosen = Array.isArray(config[field.key]) ? config[field.key] : (field.defaults || null);
+        const boxes = (field.options || []).map(([value, text]) => `
+            <label class="config-toggle config-toggle--inline">
+                <input type="checkbox" data-widget-setting="${esc(field.key)}"
+                    data-widget-index="${index}" data-widget-kind="checkset"
+                    ${(field.defaults || []).includes(value) ? 'data-widget-default' : ''}
+                    value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
+                <span>${esc(this.t(text[0], text[1]))}</span>
+            </label>`).join('');
+        return `
+            <div class="config-widget-field">
+                <span class="config-widget-field-label">${label}${
+                    this.widgetFieldInfoButton(field, index)}</span>
+                <div class="config-widget-checkset">${boxes}</div>
+            </div>`;
+    },
+
+    /** Which section a setting belongs in: Display unless the table says otherwise. */
+    widgetFieldSection(key) {
+        const table = DashboardConfig.WIDGET_FIELD_SECTIONS || {};
+        if ((table.connection || []).includes(key)) return 'connection';
+        if ((table.advanced || []).includes(key)) return 'advanced';
+        return 'display';
+    },
+
+    /*
+     * Whether the widget already has a saved way in: an address, a host,
+     * feeds or a stored key -- or has nothing to connect at all. Read from what is stored, not from the draft -- typing the
+     * first address must not fold the section shut around the caret.
+     *
+     * A media service needs both its address and its key, and is not
+     * connected while its last Connect answered an error: the panel asks on
+     * its own when a saved one opens, and an answer of "could not be reached"
+     * sits in Connection's status line -- folded away, Display would simply
+     * lack its choices with no reason in sight. The default moving to open
+     * re-opens the section through the stamp, unless the reader chose.
+     */
+    widgetHasConnection(widget, index) {
+        const stored = (this._widgetBlocks || [])[index];
+        const block = stored && String(stored.id) === String(widget?.id) ? stored : widget;
+        const config = block?.config || {};
+        if (DashboardConfig.MEDIA_SERVICES?.[block?.type]) {
+            if (this.mediaSetupFor?.(block)?.error) return false;
+            return Boolean(config.server) && this.storedCredentialState(block).kind !== 'none';
+        }
+        if (config.server || config.url || config.host) return true;
+        if (Array.isArray(config.feedUrls) && config.feedUrls.length) return true;
+        // Processor, memory, disks, Docker: nothing to connect, only the setup
+        // note about the host. It is there to read when needed, not a step
+        // still to take, so it is drawn folded like a connected one.
+        if (block?.type !== 'custom' && !(DashboardConfig.WIDGET_SETTINGS[block?.type] || [])
+            .some((field) => this.widgetFieldSection(field.key) === 'connection')) return true;
+        return this.storedCredentialState(block).kind !== 'none';
+    },
+
+    /*
+     * Whether a section is drawn open.
+     *
+     * The reader's own toggle wins, kept per widget for as long as Config is
+     * open, so a repaint (typing, Connect, a preset) never folds a section
+     * somebody opened. Otherwise: Display open, Advanced shut, Connection open
+     * only while there is nothing to connect with yet.
+     */
+    widgetSectionIsOpen(widget, name, hasConnection) {
+        const chosen = this._widgetSectionOpen?.[widget?.id]?.[name];
+        if (typeof chosen === 'boolean') return chosen;
+        return this.widgetSectionDefaultOpen(name, hasConnection);
+    },
+
+    /** What a section is drawn as when nobody has chosen: the default alone. */
+    widgetSectionDefaultOpen(name, hasConnection) {
+        if (name === 'connection') return !hasConnection;
+        return name === 'display';
+    },
+
+    /*
+     * Keep a section's state when it is not what it was drawn as by default.
+     *
+     * Only a difference is a choice. Each section carries the default it was
+     * drawn with (data-widget-section-default), because the default can move
+     * after the paint -- a key-only widget's Connection is drawn open until its
+     * credential list arrives -- and comparing with today's default would pin
+     * the old one as if the reader had toggled. Matching the stamp again clears
+     * the choice, so closing what you opened goes back to the default too --
+     * unless the section is pinned: see pinWidgetSection.
+     */
+    rememberWidgetSection(details) {
+        const id = details.getAttribute('data-widget-section-of');
+        const name = details.getAttribute('data-widget-section');
+        if (!id || !name) return;
+        if (this.widgetIndexOfId(id) == null) return;
+        const drawnOpen = details.getAttribute('data-widget-section-default') === 'open';
+        this._widgetSectionOpen = this._widgetSectionOpen || {};
+        const pinned = this._widgetSectionPinned?.[id]?.[name] === true;
+        if (details.open === drawnOpen && !pinned) {
+            if (this._widgetSectionOpen[id]) delete this._widgetSectionOpen[id][name];
+            return;
+        }
+        this._widgetSectionOpen[id] = { ...this._widgetSectionOpen[id], [name]: details.open };
+    },
+
+    /*
+     * Working inside a section is a choice to have it the way it is.
+     *
+     * A reader typing an address in an open Connection has not toggled it, so
+     * nothing records it -- and the Save that makes the widget connected moves
+     * the default to folded, which then shut the section under them: the key's
+     * state and its eye, a Try-it answer, all gone from sight. Pinned, the
+     * section keeps its current state through every repaint, even where that
+     * state matches the default it was drawn with. A summary is not "inside":
+     * focusing one is moving past it, and toggling it is recorded anyway.
+     */
+    pinWidgetSection(target) {
+        const details = target?.closest?.('details[data-widget-section]');
+        if (!details || target.closest('summary')?.parentElement === details) return;
+        const id = details.getAttribute('data-widget-section-of');
+        const name = details.getAttribute('data-widget-section');
+        if (!id || !name || this.widgetIndexOfId(id) == null) return;
+        this._widgetSectionPinned = this._widgetSectionPinned || {};
+        this._widgetSectionPinned[id] = { ...this._widgetSectionPinned[id], [name]: true };
+        this._widgetSectionOpen = this._widgetSectionOpen || {};
+        this._widgetSectionOpen[id] = { ...this._widgetSectionOpen[id], [name]: details.open };
+    },
+
+    /*
+     * The three sections every widget's panel is made of, in a fixed order.
+     *
+     * Each part is markup its caller drew; an empty one is left out rather than
+     * drawn as a header over nothing. A <details> per section, so folding is
+     * the browser's own -- Enter and Space on the summary, and a folded
+     * section's fields out of the Tab order -- with nothing to bind.
+     *
+     * `states` puts a word after a section's title, so a folded section still
+     * says how it stands (a media service's "connected" / "not reachable").
+     */
+    renderWidgetSections(widget, index, parts = {}, states = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const titles = {
+            connection: ['config.widgetSectionConnection', 'Connection'],
+            display: ['config.widgetSectionDisplay', 'Display'],
+            advanced: ['config.widgetSectionAdvanced', 'Advanced'],
+        };
+        const hasConnection = this.widgetHasConnection(widget, index);
+        return ['connection', 'display', 'advanced']
+            .filter((name) => String(parts[name] || '').trim() !== '')
+            .map((name) => `
+                <details class="config-widget-section config-custom-group" data-widget-section="${name}"
+                    data-widget-index="${index}" data-widget-section-of="${esc(widget?.id ?? '')}"
+                    data-widget-section-default="${this.widgetSectionDefaultOpen(name, hasConnection) ? 'open' : 'closed'}"${
+                        this.widgetSectionIsOpen(widget, name, hasConnection) ? ' open' : ''}>
+                    <summary class="config-custom-group-title">${esc(this.t(titles[name][0], titles[name][1]))}${
+                        states[name] ? `<span class="config-widget-section-state"> · ${esc(states[name])}</span>` : ''}</summary>
+                    <div class="config-widget-section-body">${parts[name]}</div>
+                </details>`).join('');
     },
 
     /*
@@ -3099,9 +3247,12 @@
                 const category = categoryById.get(String(id));
                 return { id, isWidget: false, name: category?.name || id };
             });
+            this._widgetLoadFailed = false;
         } catch {
             this._widgetBlocks = [];
             this._widgetOrder = [];
+            // Read by addWidget: an empty list here is not the page's own.
+            this._widgetLoadFailed = true;
         }
         this._widgetLoadedFor = this._widgetPageId;
         this.repaintWidgetsBody();
@@ -3179,17 +3330,41 @@
      */
     bindWidgetsEditor(container) {
         const body = document.getElementById('config-widgets-body') || container;
-        // Before the guard: a full render brings a fresh body to observe.
-        const section = document.getElementById('config-widgets-body');
-        if (section) this.observeWidgetsWidth(section);
+        // Before the guard below: it answers a link, not a first bind.
+        this.widgetsDeepLink?.(window.location.hash);
+        // The sheet over the page for the open widget, drawn after the list.
+        this.paintWidgetOverlay();
         if (!body || body.dataset.widgetsDelegated === 'true') return;
         body.dataset.widgetsDelegated = 'true';
+        this.bindWidgetsDelegates(body);
+    },
 
+    /*
+     * The delegated listeners of the Widgets section, on the list's body and
+     * on the sheet over it: the settings are drawn in the sheet, and they are
+     * the same controls.
+     */
+    bindWidgetsDelegates(body) {
         const indexOn = (el, attr) => Number(el.getAttribute(attr));
+
+        // A section folded or opened by the reader, kept so a repaint draws it
+        // the same way. In the capture phase because `toggle` does not bubble.
+        body.addEventListener('toggle', (event) => {
+            if (event.target?.matches?.('details[data-widget-section]')) this.rememberWidgetSection(event.target);
+        }, true);
+        // Typing or focusing a control inside a section pins it as it is.
+        const pin = (event) => this.pinWidgetSection(event.target);
+        body.addEventListener('input', pin, true);
+        body.addEventListener('focusin', pin, true);
 
         body.addEventListener('click', (event) => {
             const target = event.target;
             if (!target?.closest) return;
+
+            if (target.closest('[data-widget-overlay-close]')) {
+                void this.closeWidgetOverlay();
+                return;
+            }
 
             // The ℹ beside a widget setting, opening the same dialog every
             // other setting in config uses. Checked before the catalogue so a
@@ -3203,29 +3378,6 @@
 
             const catalogue = target.closest('[data-widget-catalogue]');
             if (catalogue) { this.openWidgetCatalogue(); return; }
-
-            // The Catalogue's group chips narrow the cards without a refetch.
-            const kindFilter = target.closest('[data-widget-kind-filter]');
-            if (kindFilter) {
-                this.widgetKindFilter = kindFilter.getAttribute('data-widget-kind-filter') || 'all';
-                this.repaintWidgetsBody();
-                body.querySelector(`[data-widget-kind-filter="${CSS.escape(this.widgetKindFilter)}"]`)?.focus();
-                return;
-            }
-
-            // A link from one tab to another, as the strip would.
-            const goto = target.closest('[data-widgets-goto]');
-            if (goto) { this.showWidgetsTab(goto.getAttribute('data-widgets-goto')); return; }
-
-            const add = target.closest('[data-widget-add]');
-            if (add) {
-                // The kind is on the control that was clicked -- a card in the
-                // catalogue overlay, wherever it was opened from. It used to be
-                // read from a dropdown beside a single Add button, which is
-                // what made choosing and adding two steps instead of one.
-                void this.addWidget(add.getAttribute('data-widget-add') || 'health');
-                return;
-            }
 
             const remove = target.closest('[data-widget-delete]');
             if (remove) { void this.deleteWidget(indexOn(remove, 'data-widget-delete')); return; }
@@ -3243,30 +3395,7 @@
 
             const toggle = target.closest('[data-widget-settings]');
             if (toggle) {
-                const index = indexOn(toggle, 'data-widget-settings');
-                const id = (this._widgetBlocks || [])[index]?.id ?? null;
-                // Wide, choosing the widget already beside the list changes
-                // nothing -- and must not stop the probe running in it.
-                if (this._widgetWide && index === this._widgetSettingsOpen) {
-                    // Shown by default until now: choosing it is what lets it
-                    // do what an opened widget does, such as asking Jellyfin.
-                    if (String(this._widgetOpenId) !== String(id)) {
-                        this._widgetOpenId = id;
-                        this.repaintWidgetsBody();
-                    }
-                    return;
-                }
-                // Whatever was being watched, its panel is about to close or
-                // another is about to open over it.
-                this.stopCustomProbeLive();
-                // Wide, the button selects which widget the side panel shows;
-                // narrow, it folds that widget's detail in and out under the row.
-                this._widgetOpenId = this._widgetWide || this._widgetSettingsOpen !== index ? id : null;
-                this._widgetJustSaved = null;
-                this.repaintWidgetsBody();
-                // The disks live on the machine, not in the panel's own state,
-                // so they are asked for after the markup exists.
-                void this.fillWidgetSuggestions();
+                void this.toggleWidgetCard(indexOn(toggle, 'data-widget-settings'));
                 return;
             }
 
@@ -3403,30 +3532,15 @@
                  */
                 const previousPageId = this._widgetPageId;
                 const goToPage = () => {
-                    this.stopCustomProbeLive();
-                    this._widgetPageId = page.value === WIDGETS_ALL_PAGES
+                    void this.switchWidgetPage(page.value === WIDGETS_ALL_PAGES
                         ? WIDGETS_ALL_PAGES
-                        : Number(page.value);
-                    this._widgetBlocks = null;
-                    this._widgetLoadedFor = null;
-                    this._widgetDrafts = {};
-                    // An index means nothing on another page's list.
-                    this._widgetOpenId = null;
-                    this.repaintWidgetsBody();
-                    void this.loadWidgetsEditor();
+                        : Number(page.value));
                 };
                 if (!this.widgetDraftsDirty()) {
                     goToPage();
                     return;
                 }
-                void this.confirmAction(
-                    this.t('config.widgetsDiscardDraftsBody',
-                        'Your unsaved widget changes on this page will be lost.'),
-                    {
-                        title: this.t('config.widgetsDiscardDraftsTitle', 'Discard unsaved changes?'),
-                        confirmLabel: this.t('config.widgetsDiscardDraftsOk', 'Discard'),
-                    }
-                ).then((ok) => {
+                void this.confirmDiscardWidgetDrafts().then((ok) => {
                     if (ok) {
                         goToPage();
                         return;
@@ -3773,23 +3887,30 @@
      * The toast is gone with it. A row appearing under the pointer, named and
      * focused, says it better than a message elsewhere saying it happened.
      */
-    async addWidget(type) {
+    async addWidget(type, { pageId } = {}) {
+        // The picker may name a page other than the one the list shows (or
+        // any page at all, on the all-pages view): move the list there first,
+        // so the widget is saved to, and revealed on, the page that was named.
+        // The caller has already asked about unsaved settings
+        // (confirmWidgetPageSwitch); the switch is the list's own.
+        if (this.widgetAddMovesPage(pageId)) {
+            await this.switchWidgetPage(Number(pageId));
+            /*
+             * That page could not be read: the list stands empty, and saving
+             * it plus the new widget would replace whatever the page holds.
+             */
+            if (this._widgetLoadFailed) {
+                this.notify(this.t('config.widgetsSaveError', 'Could not save the widgets.'), 'error');
+                return false;
+            }
+        }
         const payload = this.widgetPayloadFromBlocks();
         payload.widgets.push({ type, title: '', config: {} });
         // No id: the server mints one. Inventing one here would be a second
         // place that decides what a widget id looks like.
-        if (!await this.saveWidgetBlocks(payload)) return;
+        if (!await this.saveWidgetBlocks(payload)) return false;
         // The type is one of WIDGET_TYPES; the title and config never go out.
         window.nextdashTrack?.('widget:add', { type });
-        // Added from the Catalogue or the Custom tab: the new widget is filled
-        // in on Your widgets, so that is where this lands.
-        if (this.widgetsTab !== 'widgets') {
-            this.widgetsTab = 'widgets';
-            this.restoreConfigHash();
-            this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
-            const strip = document.querySelector('[data-widgets-tab]')?.closest('.config-subtabs');
-            this.syncSectionTabNote('widgets', this.widgetsTab, strip?.parentElement);
-        }
         this._widgetLoadedFor = null;
         await this.loadWidgetsEditor();
         /*
@@ -3809,6 +3930,215 @@
         // caret back on <body> and the mark gone within the same tick.
         await this.refreshDashboardBlocks();
         this.revealNewWidget(added);
+        return true;
+    },
+
+    /*
+     * Move the list to another page (or the all-pages view), dropping what
+     * belonged to the old one: its drafts, and the open row, whose id means
+     * nothing on another page's list. Shared by the list's page select and by
+     * an add that names another page, so both leave the same state behind.
+     */
+    switchWidgetPage(pageId) {
+        this.stopCustomProbeLive?.();
+        this._widgetPageId = pageId;
+        this._widgetBlocks = null;
+        this._widgetLoadedFor = null;
+        this._widgetDrafts = {};
+        this._widgetOpenId = null;
+        this.repaintWidgetsBody();
+        return this.loadWidgetsEditor();
+    },
+
+    /** Would adding to this page move the list off the one it shows? */
+    widgetAddMovesPage(pageId) {
+        return pageId != null && Number.isFinite(Number(pageId))
+            && (this.isAllPagesView() || Number(pageId) !== Number(this._widgetPageId));
+    },
+
+    /*
+     * The open widget's settings, as a sheet over the page.
+     *
+     * A card is a summary; editing happens in a sheet, so the list does not
+     * rearrange itself around a form. The sheet is a plain overlay on the body
+     * (not a native dialog: confirmations and the info dialogs open above it
+     * by z-index, and a top-layer element would hide them). Its events are
+     * delegated the same way the list's are.
+     */
+    paintWidgetOverlay() {
+        const open = this._widgetSettingsOpen;
+        const block = open != null ? (this._widgetBlocks || [])[open] : null;
+        let host = document.getElementById('config-widget-overlay');
+        if (!block?.isWidget || (document.getElementById('config-widgets-body') == null && !this._sheetOverDashboard)) {
+            this.removeWidgetOverlay();
+            return;
+        }
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!host) {
+            host = document.createElement('div');
+            host.id = 'config-widget-overlay';
+            host.className = 'config-widget-overlay';
+            host.innerHTML = `
+                <div class="config-widget-backdrop" data-widget-overlay-close></div>
+                <div class="config-widget-sheet" role="dialog" aria-modal="true" tabindex="-1"></div>`;
+            document.body.appendChild(host);
+            this.bindWidgetsDelegates(host);
+            // Escape closes the sheet, wherever focus is -- but not while a
+            // confirmation or an info dialog is open over it: that one is
+            // answered first. Capture phase, so Config's own Escape (which
+            // would leave the whole view) never sees it.
+            this._widgetOverlayKey = (event) => {
+                if (event.key !== 'Escape') return;
+                if (document.getElementById('config-confirm-modal') || document.querySelector('#app-modal.show')) return;
+                event.preventDefault();
+                event.stopPropagation();
+                void this.closeWidgetOverlay();
+            };
+            window.addEventListener('keydown', this._widgetOverlayKey, true);
+            host.querySelector('.config-widget-sheet').focus({ preventScroll: true });
+        }
+        const sheet = host.querySelector('.config-widget-sheet');
+        const scroll = sheet.scrollTop;
+        sheet.setAttribute('aria-label', this.widgetRowLabel(block));
+        sheet.innerHTML = `
+            <button type="button" class="config-widget-sheet-close" data-widget-overlay-close
+                aria-label="${esc(this.t('dashboard.close', 'Close'))}">×</button>
+            ${this.renderWidgetDetail(block, open)}`;
+        sheet.scrollTop = scroll;
+    },
+
+    /**
+     * One widget's settings, in the sheet Config → Widgets uses, over the
+     * dashboard that is showing. Nothing of Config's own view is drawn: the
+     * page's widgets are loaded, the widget is opened, and the sheet is
+     * painted. Closing it hands the page back refreshed.
+     */
+    async openWidgetSheetOverDashboard(widgetId) {
+        if (widgetId == null) return false;
+        if (!(await this.ensureSection('widgets'))) return false;
+        const d = this.dash;
+        this.stopCustomProbeLive?.();
+        // Config's own choices (page filter, search, drafts) come back when the sheet closes.
+        this._configWidgetState = { page: this._widgetPageId, query: this.widgetQuery, drafts: this._widgetDrafts };
+        this._sheetOverDashboard = true;
+        this.widgetQuery = '';
+        this._widgetPageId = Number(d.currentPageId);
+        this._widgetBlocks = null;
+        this._widgetLoadedFor = null;
+        this._widgetDrafts = {};
+        this._widgetOpenId = widgetId;
+        this._widgetJustSaved = null;
+        // The sheet's stylesheet is the views' bundle, which loads on demand.
+        await Promise.resolve(window.ViewStyles?.ensureViewStyles?.()).catch(() => {});
+        try {
+            await this.loadWidgetsEditor();
+            this._widgetSettingsOpen = this.widgetIndexOfId(widgetId);
+        } catch (_) {
+            this._widgetSettingsOpen = null;
+        }
+        if (this._widgetSettingsOpen == null) {
+            this._sheetOverDashboard = false;
+            this.restoreConfigWidgetState();
+            return false;
+        }
+        this.paintWidgetOverlay();
+        void this.fillWidgetSuggestions();
+        return true;
+    },
+
+    /** Config -> Widgets gets back its page filter and search; its list reloads on the next visit. */
+    restoreConfigWidgetState() {
+        const kept = this._configWidgetState;
+        this._configWidgetState = null;
+        if (!kept) return;
+        this._widgetPageId = kept.page;
+        this.widgetQuery = kept.query;
+        this._widgetDrafts = kept.drafts || {};
+        this._widgetBlocks = null;
+        this._widgetLoadedFor = null;
+    },
+
+    /** Paint, or take away, the sheet over the dashboard after a state change. */
+    repaintSheetOverDashboard() {
+        this._widgetSettingsOpen = this.widgetIndexOfId(this._widgetOpenId);
+        if (this._widgetSettingsOpen == null) {
+            // Closed: the page shows what was saved, and whoever opened the sheet is told.
+            this._sheetOverDashboard = false;
+            this.restoreConfigWidgetState();
+            this.removeWidgetOverlay();
+            const pageId = this.dash.currentPageId;
+            void Promise.resolve(this.dash.loadPageBookmarks?.(pageId, { skipInlineEditConfirm: true }))
+                .then(() => document.dispatchEvent(new CustomEvent('nextdash:widget-sheet-closed')));
+            return;
+        }
+        this.paintWidgetOverlay();
+        void this.fillWidgetSuggestions();
+    },
+
+    removeWidgetOverlay() {
+        this._sheetOverDashboard = false;
+        document.getElementById('config-widget-overlay')?.remove();
+        if (this._widgetOverlayKey) {
+            window.removeEventListener('keydown', this._widgetOverlayKey, true);
+            this._widgetOverlayKey = null;
+        }
+    },
+
+    /** Close the sheet; unsaved edits are asked about first. */
+    async closeWidgetOverlay() {
+        const open = this._widgetSettingsOpen;
+        if (open == null) return;
+        await this.toggleWidgetCard(open);
+    },
+
+    /*
+     * Open or close one widget's card.
+     *
+     * One card is open at a time. Opening another while the open one has
+     * unsaved edits asks first, the way the page selector does; refusing
+     * leaves both as they were.
+     */
+    async toggleWidgetCard(index) {
+        const blocks = this._widgetBlocks || [];
+        const id = blocks[index]?.id ?? null;
+        const openIndex = this._widgetSettingsOpen;
+        const closing = openIndex === index;
+        // Leaving the open widget, to close it or to open another, with unsaved
+        // edits asks first; refusing leaves everything as it was.
+        if (openIndex != null && this.widgetDraftDirty(openIndex)) {
+            if (!await this.confirmDiscardWidgetDrafts()) return;
+            delete (this._widgetDrafts || {})[blocks[openIndex]?.id];
+        }
+        // Whatever was being watched, its card is about to close or another
+        // is about to open over it.
+        this.stopCustomProbeLive();
+        this._widgetOpenId = closing ? null : id;
+        this._widgetJustSaved = null;
+        this.repaintWidgetsBody();
+        // The disks live on the machine, not in the card's own state, so they
+        // are asked for after the markup exists.
+        void this.fillWidgetSuggestions();
+    },
+
+    confirmDiscardWidgetDrafts() {
+        return this.confirmAction(
+            this.t('config.widgetsDiscardDraftsBody',
+                'Your unsaved widget changes on this page will be lost.'),
+            {
+                title: this.t('config.widgetsDiscardDraftsTitle', 'Discard unsaved changes?'),
+                confirmLabel: this.t('config.widgetsDiscardDraftsOk', 'Discard'),
+            }
+        );
+    },
+
+    /*
+     * Before an add that names another page: the move throws away unsaved
+     * settings on this one, so it asks first, as the page select does. Asked
+     * while the wizard is still open, so a refusal leaves the reader in it.
+     */
+    async confirmWidgetPageSwitch(pageId) {
+        if (!this.widgetAddMovesPage(pageId) || !this.widgetDraftsDirty()) return true;
+        return Boolean(await this.confirmDiscardWidgetDrafts());
     },
 
     /** Where the widget the server just appended sits in the block list. */
@@ -3833,7 +4163,6 @@
         if (widgetId == null) return false;
         const d = this.dash;
         this.stopCustomProbeLive?.();
-        this.widgetsTab = 'widgets';
         this.widgetQuery = '';
         const pageId = d.currentPageId != null ? Number(d.currentPageId) : null;
         const listed = (this._widgetBlocks || []).some((b) => String(b.id) === String(widgetId));
@@ -4513,18 +4842,10 @@
 
         delete (this._widgetDrafts || {})[block.id];
 
-        /*
-         * What is open afterwards. Narrow, nothing: the detail was under the
-         * row that is gone, and opening a neighbour nobody asked for was a
-         * form appearing somewhere else on the page. Wide, the panel moves to
-         * the row that takes its place on screen, or the one above at the end.
-         */
+        // Nothing opens in its place: a form appearing on a neighbour nobody
+        // asked for would be a surprise.
         if (this.widgetIsChosen(block) || this._widgetSettingsOpen === index) {
-            const shown = this.shownWidgetIds();
-            const at = shown.findIndex((id) => String(id) === String(block.id));
-            this._widgetOpenId = this._widgetWide && at >= 0
-                ? (shown[at + 1] ?? shown[at - 1] ?? null)
-                : null;
+            this._widgetOpenId = null;
         }
 
         // The page is read off the block before it goes: saveWidgetRow would

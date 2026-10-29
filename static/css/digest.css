@@ -1,15 +1,17 @@
 /*
  * The weekly digest's window (static/js/digest-notice.js).
  *
- * Counts across the top, each a way into its view; under them a part per
- * subject in two columns: a title with the button to the view that deals with
- * it, one line of what it means, and the names behind the count -- as bars of
- * days left for certificates and domains, as chips for the rest. Two columns
- * so a full week fits the window without scrolling; one on a narrow screen.
+ * A list of the parts on the left, in three groups (needs you, tidy up, good
+ * to know), each with its count; the chosen part in full on the right: a
+ * title with the button to the view that deals with it, one line of what it
+ * means, and the names behind the count -- as bars of days left for
+ * certificates and domains, as chips for the rest. The head (with the close
+ * button) and the foot (Close) stay put and only the middle scrolls, so a
+ * full week never pushes the buttons out of the window. On a narrow screen
+ * the detail sits under the list.
  *
  * Each subject has a tone (bad, warn, ok, info, accent, quiet) that colours
- * its dot and its tile. The window comes in once: tiles and parts rise in
- * turn, the counts count up (in the script) and the bars grow. Reduced motion
+ * its dot. The window comes in once: the chosen part rises and the bars grow. Reduced motion
  * is handled globally (reduced-motion.css); the in-app switch is below.
  */
 .digest-window {
@@ -47,90 +49,9 @@
     to { transform: scaleX(1); }
 }
 
-.digest-tiles {
-    display: grid;
-    grid-template-columns: repeat(var(--digest-tiles, 4), minmax(0, 1fr));
-    gap: var(--space-2, 0.6rem);
-    margin: var(--space-3, 0.8rem) 0 var(--space-1, 0.3rem);
-}
-
-.digest-tile {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 0;
-    padding: 0.7rem 0.8rem 0.75rem;
-    overflow: hidden;
-    border: 1px solid var(--hairline, var(--border-primary));
-    border-radius: var(--radius-6, 12px);
-    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
-    color: var(--text-primary);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: transform 0.15s ease, background-color 0.15s ease;
-    animation: digest-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
-    animation-delay: calc(var(--digest-i, 0) * 70ms + 80ms);
-}
-
-/* The tone as a strip along the bottom. */
-.digest-tile::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 3px;
-    background: var(--digest-tone);
-}
-
-.digest-tile:hover {
-    background: color-mix(in srgb, var(--text-primary) 9%, transparent);
-    transform: translateY(-2px);
-}
-
-.digest-tile:focus-visible {
-    outline: 2px solid var(--accent-primary, var(--accent-color, #4a90d9));
-    outline-offset: 2px;
-}
-
-.digest-tile-count {
-    font-size: 1.75rem;
-    font-weight: 700;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-}
-
-.digest-tile-label {
-    font-size: var(--font-size-small, 0.78rem);
-    color: var(--text-secondary);
-}
-
-.digest-tile-done {
-    position: absolute;
-    top: 0.55rem;
-    right: 0.7rem;
-    color: var(--digest-tone);
-    font-weight: 700;
-}
-
-.digest-tile.is-done .digest-tile-count,
-.digest-tile.is-done .digest-tile-label {
-    opacity: 0.5;
-}
-
-.digest-parts {
-    columns: 2;
-    column-gap: 1.9rem;
-}
-
 .digest-part {
-    break-inside: avoid;
-    padding: var(--space-3, 0.8rem) 0;
-    border-top: 1px solid var(--hairline, var(--border-primary));
+    padding: 0;
     animation: digest-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
-    animation-delay: calc(var(--digest-i, 0) * 60ms + 260ms);
 }
 
 .digest-part-dot {
@@ -211,20 +132,9 @@
 }
 
 /* The in-app "animations off"; the OS setting is reduced-motion.css's. */
-body.no-animations .digest-tile,
 body.no-animations .digest-part,
 body.no-animations .digest-days-fill {
     animation: none;
-}
-
-@media (max-width: 760px) {
-    .digest-parts {
-        columns: 1;
-    }
-
-    .digest-tiles {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
 }
 
 .digest-part-head {
@@ -419,4 +329,272 @@ body.no-animations .digest-days-fill {
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.35rem;
+}
+
+/* The window: head and foot fixed, the middle scrolls. */
+.modal.digest-modal {
+    display: flex;
+    flex-direction: column;
+    max-height: min(92vh, 46rem);
+    overflow: hidden;
+}
+
+.modal.digest-modal .modal-header {
+    flex: none;
+    gap: var(--space-2, 0.5rem);
+}
+
+.modal.digest-modal .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: var(--space-3, 0.8rem);
+    margin-bottom: var(--space-3, 0.8rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.modal.digest-modal .modal-actions,
+.modal.digest-modal .modal-esc-hint {
+    flex: none;
+}
+
+.modal.digest-modal .modal-title {
+    white-space: nowrap;
+}
+
+.digest-progress {
+    margin-left: auto;
+    font-size: var(--font-size-small, 0.78rem);
+    font-weight: 400;
+    color: var(--text-tertiary);
+}
+
+.digest-header-close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.digest-header-close:hover {
+    border-color: var(--border-secondary, var(--border-primary));
+    color: var(--text-primary);
+}
+
+.digest-summary {
+    margin: var(--space-2, 0.4rem) 0 var(--space-3, 0.8rem);
+    font-size: var(--font-size-text);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* The week in figures, above the list: each next to the week before. */
+.digest-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin: 0 0 var(--space-3, 0.8rem);
+}
+
+.digest-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.digest-stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.digest-stat-delta {
+    margin-left: 0.45rem;
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 500;
+    color: var(--text-tertiary);
+}
+
+.digest-stat-delta.is-good { color: var(--digest-ok); }
+.digest-stat-delta.is-bad { color: var(--digest-bad); }
+
+.digest-stat-label {
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-tertiary);
+}
+
+/* A part's detail: a name with what sits under it, and a value on the right. */
+.digest-lines {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-2, 0.55rem);
+}
+
+.digest-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3, 0.8rem);
+    padding: 0.4rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.82rem);
+    text-align: left;
+}
+
+.digest-line:last-child { border-bottom: 0; }
+
+.digest-line-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.digest-line-name {
+    overflow-wrap: anywhere;
+    font-weight: 500;
+}
+
+.digest-line-sub {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.72rem);
+    overflow-wrap: anywhere;
+}
+
+.digest-line-value {
+    flex: none;
+    max-width: 55%;
+    color: var(--text-secondary);
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+/* The Overview's lines are buttons into the part they describe. */
+.digest-line--part {
+    width: 100%;
+    cursor: pointer;
+    align-items: center;
+}
+
+.digest-line--part .digest-line-main {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+}
+
+.digest-line--part:hover .digest-line-name { color: var(--digest-tone, var(--text-primary)); }
+.digest-line--part.is-done .digest-line-name,
+.digest-line--part.is-done .digest-line-value { color: var(--text-tertiary); }
+
+.digest-split {
+    display: grid;
+    grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr);
+    gap: var(--space-4, 1.4rem);
+    align-items: start;
+}
+
+.digest-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.8rem);
+}
+
+.digest-list-label {
+    margin: 0 0 0.2rem 0.6rem;
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.digest-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-5, 8px);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.82rem);
+    text-align: left;
+    cursor: pointer;
+}
+
+.digest-row:hover {
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.digest-row.is-selected {
+    border-color: color-mix(in srgb, var(--digest-tone) 55%, transparent);
+    background: color-mix(in srgb, var(--digest-tone) 12%, transparent);
+}
+
+.digest-row:focus-visible {
+    outline: 2px solid var(--accent-primary, var(--accent-color, #4a90d9));
+    outline-offset: 1px;
+}
+
+.digest-row-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.digest-row-count {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.digest-row.is-done .digest-row-title,
+.digest-row.is-done .digest-row-count {
+    opacity: 0.55;
+}
+
+.digest-detail {
+    min-width: 0;
+    padding-top: 0.2rem;
+}
+
+@media (max-width: 700px) {
+    .digest-split {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3, 0.8rem);
+    }
+
+    .digest-detail {
+        padding-top: var(--space-3, 0.8rem);
+        border-top: 1px solid var(--hairline, var(--border-primary));
+    }
+}
+
+/* What the subject is, and why there is a notice: above the figures. */
+.digest-part-intro {
+    margin: var(--space-2, 0.5rem) 0 var(--space-1, 0.3rem);
+    font-size: var(--font-size-small, 0.82rem);
+    line-height: 1.5;
+    color: var(--text-secondary);
 }

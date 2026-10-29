@@ -269,6 +269,9 @@ class DashboardData {
             if (typeof d.settings.showCheatSheetButton === 'undefined') {
                 d.settings.showCheatSheetButton = true;
             }
+            if (typeof d.settings.showEditModeButton === 'undefined') {
+                d.settings.showEditModeButton = true;
+            }
             if (typeof d.settings.showCollapseAllButton === 'undefined') {
                 d.settings.showCollapseAllButton = true;
             }
@@ -1083,7 +1086,11 @@ class DashboardData {
         if (d.currentPageId !== 'default' && d.currentPageId !== targetPageId) {
             window.nextdashTrackNav?.('page');
         }
+        const switchedFrom = d.currentPageId;
         d.currentPageId = targetPageId;
+        if (switchedFrom !== 'default' && switchedFrom !== targetPageId) {
+            document.dispatchEvent(new CustomEvent('nextdash:page-switched', { detail: { pageId: targetPageId } }));
+        }
         if (!preserveView) {
             d.setActiveView('bookmarks');
         }

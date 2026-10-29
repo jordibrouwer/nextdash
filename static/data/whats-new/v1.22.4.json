@@ -1,0 +1,129 @@
+{
+  "tag": "v1.22.4",
+  "date": "29 October 2026",
+  "releasedAt": "2026-10-29",
+  "modalLead": "Edit the dashboard right where it is, search that knows your habits, a checkup for what needs tidying, and a weekly digest on your dashboard. Adding a widget is now a guided step.",
+  "sections": [
+    {
+      "title": "Edit mode",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Edit mode.</strong> Press <code>Shift+M</code> with no bookmark selected, or click the pencil in the action bar. Click a category, widget or page and a panel opens beside the page: name, icon, width, view and sorting, saved as you go. <code>Esc</code> leaves.",
+          "link": "#bookmarks",
+          "linkLabel": "Try it",
+          "highlight": true,
+          "title": "Edit the dashboard in place",
+          "media": {
+            "image": "media/v1.22.4-edit-mode.jpg",
+            "alt": "The dashboard in edit mode with a category chosen and its panel at the right"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A widget's settings open over the dashboard</strong> from the edit panel, as the same sheet Config → Widgets uses, themed like your other dialogs."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Edit in panel…</strong> in the right-click menu of a category or widget switches edit mode on with that block chosen."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The action bar can hold ten buttons</strong>, with the pencil as the newest. <code>:maxactions</code> and Config → Appearance → Action bar go up to 10."
+        }
+      ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Usually now.</strong> The empty search panel opens with up to three bookmarks you tend to open around this time of day, on this kind of day.",
+          "highlight": true,
+          "title": "Search that knows your habits",
+          "media": {
+            "image": "media/v1.22.4-search-usually-now.jpg",
+            "alt": "The search panel with a Usually now group and the actions of a result unfolded"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Actions on a result.</strong> Press <code>→</code> on a bookmark in the results to unfold open, open in a new tab, edit, copy the address, show in the list and move to a page. <code>←</code> or <code>Esc</code> folds them again."
+        }
+      ]
+    },
+    {
+      "title": "Tidying up",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The checkup.</strong> Type <code>:checkup</code>, or pick Checkup in the Bookmarks view, for one round through dead links, duplicates, forgotten bookmarks, empty categories and pages, and widgets that show an error. Nothing goes before you have seen it.",
+          "link": "#bookmarks",
+          "linkLabel": "Open Bookmarks"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Widgets show how they are doing.</strong> A widget that cannot reach its service says so on its card, and the checkup lists it."
+        }
+      ]
+    },
+    {
+      "title": "Weekly digest",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The digest comes to you.</strong> It comes every week as a card in the corner with <em>Read the digest</em>, <em>Snooze 1 day</em> and <em>Got it</em>, and two reminders if you never opened it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A window that fits the screen, and tells more.</strong> The week in figures sits along the top, each next to the week before: bookmarks opened, bookmarks added, uptime and outages, and the Inbox. The window opens on an <em>Overview</em> with a line for each part, and the parts are listed on the left in three groups, <em>Needs you</em>, <em>Tidy up</em> and <em>Good to know</em>. The one you pick is shown on the right with what matters about each name: where a broken link is, since when it is down and why, how often a bookmark was opened, how long an Inbox link has waited. Close is always in view, and the bar in the corner asks before you close it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A new install gets its first digest after a week</strong>, and the digest counts bookmarks not opened in 30 days."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Adding a widget is a guided step.</strong> Pick it from one list, connect it and test the address or key before it is added, and say which page it goes on. The old catalogue and the Custom links open the same guide.",
+          "link": "#config/widgets",
+          "linkLabel": "Open Widgets"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Three sections in every widget's settings.</strong> What it shows, how it connects and where it sits each have their own place, and a media widget that fails to connect opens <em>Connection</em> and says so on its title."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>One card per widget</strong> in Config → Widgets, showing its kind, its state and its page, and opening in place."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Finders have a section of their own</strong> in the Config menu, and <strong>Fresh</strong> moved from Behavior to Bookmarks."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Enter and the arrow keys behave in the phone's search field</strong> when a result's actions are open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Widget cards keep their surface in flat themes.</strong>"
+        }
+      ]
+    }
+  ]
+}

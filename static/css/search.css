@@ -1494,3 +1494,28 @@ body:not([data-depth="flat"]) .button-container:has(> *) {
 }
 /* On a phone the entry row is the button: there is no Shift+Enter there. */
 body[data-mobile-layout="true"] .search-web-entry { min-height: 48px; font-size: 1.05em; }
+
+/* The actions unfolded under a result (Right arrow). */
+.search-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.1rem 0 0.4rem 2.2rem;
+}
+
+.search-row-action {
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.8rem);
+    cursor: pointer;
+}
+
+.search-row-action:hover,
+.search-row-action.is-selected {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}

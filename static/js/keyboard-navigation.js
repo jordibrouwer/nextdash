@@ -78,6 +78,8 @@ class KeyboardNavigation {
     setupEventListeners() {
         // Capture phase so we can intercept '[' before the search handler sees it.
         this._keydownHandler = (e) => {
+            // Edit mode has no row cursor and opens nothing: its own keys are handled there.
+            if (document.body.getAttribute('data-edit-mode') === 'on') return;
             if (!this.isEnabled) {
                 return;
             }

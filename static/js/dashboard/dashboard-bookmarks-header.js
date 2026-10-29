@@ -40,6 +40,7 @@
             const untaggedCount = this.tagSearchCounts?.().untagged || 0;
             const organise = [
                 item('data-bm-open-structure', t('config.bmStructureButton', 'Pages & categories'), '⇧P'),
+                item('data-bm-checkup', `${t('checkup.title', 'Checkup')}…`),
                 untaggedCount ? item('data-bm-header-action="tags-untagged"', `${t('config.bmFindTagsUntagged', 'Find tags for bookmarks without tags')}…`, String(untaggedCount)) : '',
                 item('data-bm-header-action="tags-all"', `${t('config.bmFindTagsAll', 'Find tags for all bookmarks')}…`),
                 dupes ? item('data-bm-header-action="merge"', `${t('dashboard.mergeDuplicateGroup', 'Merge duplicate group')}…`, String(dupes)) : '',
@@ -116,6 +117,7 @@
             else if (on('[data-bm-rot-report]')) this._bmHealthModule?.showRotReport?.();
             else if (on('[data-bm-export]')) this.bulkExportCsv?.(this.visibleBookmarks());
             else if (on('[data-bm-help]')) this.showLibraryExplainer();
+            else if (on('[data-bm-checkup]')) void window.Checkup?.open?.();
             else if (on('[data-bm-tour]')) void this.openLibraryTour();
             else if (on('[data-bm-header-more]')) {
                 const button = on('[data-bm-header-more]');

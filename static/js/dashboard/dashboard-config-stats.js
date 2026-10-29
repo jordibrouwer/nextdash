@@ -2663,8 +2663,6 @@
                 if (d.updates?.available?.length) bits.push(this.t('config.statsDigestUpdates', '{n} updates').replace('{n}', this.statsNumber(d.updates.available.length)));
                 if (d.usage?.stale) bits.push(this.t('config.statsDigestStale', '{n} unused lately').replace('{n}', this.statsNumber(d.usage.stale)));
                 rows.push([this.t('config.statsNotifyDigest', 'Last weekly digest'), this.statsRelativeTime(d.generatedAt), '', bits.join(' · ')]);
-            } else if (st.digestEnabled === false) {
-                rows.push([this.t('config.statsNotifyDigest', 'Last weekly digest'), this.t('config.statsLibraryOff', 'switched off')]);
             }
             return this.statsPanel({
                 title,

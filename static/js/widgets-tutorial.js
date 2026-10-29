@@ -5,10 +5,11 @@
  * their guards, so a session with tips switched off, or a phone, sees none of
  * them.
  *
- * Why it exists: the Widgets tab opens on a list of your own widgets and a
- * button, which says nothing about the two things worth knowing -- that the
- * catalogue holds ready-made widgets, many needing no setup, and that the
- * custom widget points at any address answering JSON. Four short steps.
+ * Why it exists: Config → Widgets opens on a list of your own widgets and an
+ * Add widget button, which says nothing about what is worth knowing -- that the
+ * picker holds ready-made widgets, many needing no setup, that media kinds are
+ * connected and tested first, and that Custom points at any address answering
+ * JSON. Four short steps that follow the wizard.
  *
  * The first step is deliberately an animation rather than prose. What a custom
  * widget does — ask an address, put the answer on the grid — is a movement, and
@@ -19,7 +20,7 @@
 
     // Also named in dashboard-config.js, which checks it before fetching this
     // file at all. Both must agree.
-    const TIP_ID = 'widgetsTutorialV1';
+    const TIP_ID = 'widgetsTutorialV2';
 
     function t(key, fallback, params) {
         const lang = global.dashboardInstance?.language;
@@ -42,10 +43,6 @@
     /** A chip, the shape the config panel and the tiles already use. */
     const chip = (label, extra = '') =>
         `<span class="widgets-tutorial-chip${extra}">${esc(label)}</span>`;
-
-    /** A key hint, matching the chips under the grid. */
-    const key = (k, label) =>
-        `<span class="widgets-tutorial-key"><kbd>${esc(k)}</kbd>${esc(label)}</span>`;
 
     /*
      * The opening animation: an address, a request travelling along the wire,
@@ -92,28 +89,46 @@
     function steps() {
         return [
             {
-                title: t('widgetsTour2WhatTitle', 'A block that shows what is going on'),
+                title: t('widgetsTour3ListTitle', 'Your widgets, in one list'),
                 visual: heroVisual(),
-                body: `<p>${esc(t('widgetsTour2WhatBody1',
+                body: `<p>${esc(t('widgetsTour3ListBody1',
                     'A widget sits among your categories and shows what is going on: how much is waiting, what is down, how full the disk is.'))}</p>
-                <p>${esc(t('widgetsTour2WhatBody2',
-                    'Many need nothing set up at all. Click a figure and you land on the rows behind it.'))}</p>`,
+                <p>${esc(t('widgetsTour3ListBody2',
+                    'Config → Widgets lists every one you have, with Shown to take it off the page and Settings to change it. Click a figure on the page and you land on the rows behind it.'))}</p>`,
             },
             {
-                title: t('widgetsTour2CatalogueTitle', 'A catalogue of ready-made widgets'),
+                title: t('widgetsTour3AddTitle', 'Add widget opens a picker'),
                 visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--presets">
-                    ${[t('widgetsTour2KindHealth', 'Health'), t('widgetsTour2KindInbox', 'Inbox'), t('widgetsTour2KindWeather', 'Weather'),
-                        t('widgetsTour2KindCalendar', 'Calendar'), t('widgetsTour2KindFeeds', 'Feeds'), t('widgetsTour2KindDisks', 'Disks'),
-                        'Jellyfin', 'Sonarr', 'Radarr', 'Seerr', 'qBittorrent', 'SABnzbd', 'Unraid', 'Home Assistant']
+                    ${chip(t('widgetsTour3Search', 'Search kinds'))}
+                    ${[t('widgetsTour3KindHealth', 'Health'), t('widgetsTour3KindInbox', 'Inbox'), t('widgetsTour3KindWeather', 'Weather'),
+                        t('widgetsTour3KindCalendar', 'Calendar'), t('widgetsTour3KindFeeds', 'Feeds'), t('widgetsTour3KindDisks', 'Disks'),
+                        'Jellyfin', 'Sonarr', 'Radarr', 'Seerr', 'qBittorrent']
                         .map((name) => chip(name)).join('')}
                 </div>`,
-                body: `<p>${esc(t('widgetsTour2CatalogueBody1',
-                    'Some widgets read what nextDash already keeps: health, uptime, the inbox and feeds. Others show the machine, the weather or a calendar.'))}</p>
-                <p>${esc(t('widgetsTour2CatalogueBody2',
-                    'Media and home widgets read Jellyfin, Sonarr, Radarr, qBittorrent, Unraid or Home Assistant once you connect them. Add a widget opens the catalogue, with search.'))}</p>`,
+                body: `<p>${esc(t('widgetsTour3AddBody1',
+                    'Search by name, then choose a kind. Many need nothing set up at all: health, uptime, the inbox, feeds, disks, the weather or a calendar.'))}</p>
+                <p>${esc(t('widgetsTour3AddBody2',
+                    'Last, choose the page it goes on. Media kinds such as Jellyfin, Plex or Sonarr ask you to connect first.'))}</p>`,
             },
             {
-                title: t('widgetsTour2CustomTitle', 'The custom widget: any address that answers JSON'),
+                title: t('widgetsTour3ConnectTitle', 'Connect, then Test'),
+                visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--map">
+                    <pre class="widgets-tutorial-json">${esc(t('widgetsTour3Address', 'Address'))}  http://sonarr:8989
+${esc(t('widgetsTour3Key', 'Key'))}      ••••••••</pre>
+                    <span class="widgets-tutorial-arrow" aria-hidden="true">→</span>
+                    <span class="widgets-tutorial-paths">
+                        ${chip(t('widgetsTour3Test', 'Test'))}
+                        ${chip(t('widgetsTour3Failed', 'Could not connect'))}
+                        ${chip(t('widgetsTour3AddAnyway', 'Add anyway'))}
+                    </span>
+                </div>`,
+                body: `<p>${esc(t('widgetsTour3ConnectBody1',
+                    'Media widgets (Jellyfin, Emby, Plex, Sonarr, Radarr, Seerr, qBittorrent, SABnzbd) ask for an address and, where needed, a key. Test asks the service right now and tells you what to fix before anything is added.'))}</p>
+                <p>${esc(t('widgetsTour3ConnectBody2',
+                    'A failed test never blocks you: Add anyway still adds the widget, for a service that is down or not on yet. The key stays on the server.'))}</p>`,
+            },
+            {
+                title: t('widgetsTour3CustomTitle', 'Custom is a kind too: any address that answers JSON'),
                 visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--map">
                     <pre class="widgets-tutorial-json">{ "totalRecords": <b>7</b>,
   "cpu": { "load": <b>38</b> } }</pre>
@@ -123,23 +138,10 @@
                         ${chip('cpu.load')}
                     </span>
                 </div>`,
-                body: `<p>${esc(t('widgetsTour2CustomBody1',
-                    'Give it an address, then name the fields you want by their path, such as cpu.load. Presets fill this in for dozens of common services.'))}</p>
-                <p>${esc(t('widgetsTour2CustomBody2',
-                    'nextDash fetches the address itself, not your browser. The key stays on the server, and a service your browser cannot reach still works.'))}</p>`,
-            },
-            {
-                title: t('widgetsTour2PageTitle', 'On the page it behaves like a category'),
-                visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--keys">
-                    ${key('F2', t('widgetsTutorialKeyRename', 'rename'))}
-                    ${key('Shift+W', t('widgetsTutorialKeyWidth', 'one column or two'))}
-                    ${key('Delete', t('widgetsTutorialKeyClose', 'close'))}
-                    ${key('Enter', t('widgetsTutorialKeyFold', 'fold'))}
-                </div>`,
-                body: `<p>${esc(t('widgetsTour2PageBody1',
-                    'Drag the // in its title to move it, click the header to fold it, and right-click it for rename, width, settings and close.'))}</p>
-                <p>${esc(t('widgetsTour2PageBody2',
-                    'Shown, in Config → Widgets, takes a widget off the page without losing its settings. The Tour button above the list brings this tour back.'))}</p>`,
+                body: `<p>${esc(t('widgetsTour3CustomBody1',
+                    'Pick Custom in the picker and give it an address. nextDash fetches it itself, not your browser, so a service your browser cannot reach still works.'))}</p>
+                <p>${esc(t('widgetsTour3CustomBody2',
+                    "Add it first, then choose the figures you want by their path, such as cpu.load, in the widget's settings."))}</p>`,
             },
         ];
     }
@@ -194,7 +196,7 @@
                 state.index -= 1;
                 render();
             },
-            // Escape, the backdrop and walking away all count as seen: the catalogue
+            // Escape, the backdrop and walking away all count as seen: the picker
             // covers the same ground on demand, so reopening this on every
             // visit to the section would be nagging.
             // Only a real dismissal: Next and Back close the window too, and

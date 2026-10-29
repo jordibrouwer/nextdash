@@ -360,6 +360,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/health/history", handlers.HealthHistoryView).Methods("GET")
 	r.HandleFunc("/badge/uptime.svg", handlers.UptimeBadge).Methods("GET")
 	r.HandleFunc("/api/notify/quiet", handlers.QuietStatus).Methods("GET")
+	r.HandleFunc("/api/checkup/structure", handlers.CheckupStructure).Methods("GET")
 	r.HandleFunc("/api/digest/latest", handlers.DigestLatest).Methods("GET")
 	r.HandleFunc("/api/digest/test", handlers.DigestTest).Methods("POST")
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")

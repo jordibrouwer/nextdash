@@ -1,0 +1,92 @@
+/*
+ * Edit mode (static/js/dashboard/dashboard-edit-mode.js).
+ *
+ * The bar at the top says that the dashboard is in an editing state, so it is
+ * not left on by mistake, and the grid dims what is about to be selected.
+ */
+#edit-mode-bar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-edit-mode-bar, 900);
+    padding: 0.3rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    border-top: 0;
+    border-radius: 0 0 var(--radius-5, 8px) var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-primary, #111));
+    color: var(--text-primary);
+    font-size: var(--font-size-small, 0.82rem);
+    pointer-events: none;
+}
+
+body[data-edit-mode="on"] #dashboard-layout .bookmark-link,
+body[data-edit-mode="on"] #dashboard-layout .dashboard-widget-row {
+    cursor: default;
+}
+
+/*
+ * The panel at the right is the side panel the views use (list-view-drawer.js,
+ * styled by list-view-shell.css): a slab 24rem wide with a step of margin. The
+ * grid gives up that width while it is open, so the panel does not sit over
+ * the blocks that are being edited.
+ */
+body {
+    --edit-mode-panel-width: calc(24rem + 2 * var(--space-4, 1rem));
+}
+
+/* On the container around the grid: the grid has a width of its own, and a margin on it did not shrink it. */
+body[data-edit-panel="open"] .container {
+    box-sizing: border-box;
+    padding-right: var(--edit-mode-panel-width);
+}
+
+.edit-panel-note {
+    margin: 0 0 0.5rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+.edit-panel-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.edit-panel-swatch {
+    position: relative;
+}
+
+.edit-panel-swatch input {
+    position: absolute;
+    opacity: 0;
+}
+
+.edit-panel-swatch span {
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid var(--border-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.edit-panel-swatch input:checked + span {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}
+
+.edit-panel-swatch input:focus-visible + span {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* The block that is selected. */
+body[data-edit-mode="on"] #dashboard-layout .category {
+    outline: 2px dashed color-mix(in srgb, var(--text-tertiary) 60%, transparent);
+    outline-offset: 2px;
+}
+
+body[data-edit-mode="on"] #dashboard-layout .category.is-edit-selected {
+    outline: 2px solid var(--accent-primary);
+}

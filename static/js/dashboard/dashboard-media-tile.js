@@ -171,20 +171,28 @@
         dash._widgetMedia = dash._widgetMedia || {};
         const key = `${service.id}:${pageId}:${widget.id}`;
         const held = dash._widgetMedia[key];
-        if (held && held.until > Date.now()) return held.result;
+        if (held && held.until > Date.now()) {
+            window.WidgetState?.fromResult(widget.id, held.result, held.result?.items, window.WidgetState.meta(widget, pageId, false));
+            return held.result;
+        }
         try {
             // With the write token: Home Assistant says from it whether this
             // reader may switch, and a bare fetch would always read "no".
             const send = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
             const res = await send(`/api/widgets/${service.id}?pageId=${encodeURIComponent(pageId)}`
                 + `&id=${encodeURIComponent(widget.id)}`);
-            if (!res.ok) return null;
+            if (!res.ok) {
+                window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, false));
+                return null;
+            }
             const result = await res.json();
             // A half answer is looked at again soon, as the server does.
             const keep = result.partial ? Math.min(ttlMs(widget, service), 30_000) : ttlMs(widget, service);
             dash._widgetMedia[key] = { result, until: Date.now() + keep };
+            window.WidgetState?.fromResult(widget.id, result, result?.items, window.WidgetState.meta(widget, pageId, false));
             return result;
         } catch (error) {
+            window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, false));
             return null;
         }
     }

@@ -29,6 +29,8 @@ class DashboardToolbar {
             // told people to press a key that does not exist.
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] },
             // An action button like the rest, not a header destination.
+            // Desktop only: the mode does not exist on a phone layout.
+            { id: 'edit-mode-button', labelKey: 'dashboard.editModeAria', keys: ['Shift+M'], when: () => d.editMode && !d.editMode.isMobileLayout?.() },
             { id: 'page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
             {
                 selector: '#page-nav-inbox-btn',
@@ -509,8 +511,8 @@ class DashboardToolbar {
         if (place === 'menu') return 1;
         const raw = Math.round(Number(d.settings?.maxHeaderActions));
         const chosen = Number.isFinite(raw) ? raw : DashboardToolbar.HEADER_ACTION_DEFAULT;
-        // Nine: every action button, so a full bar needs no control at all.
-        const capped = Math.min(9, Math.max(DashboardToolbar.HEADER_ACTION_MIN, chosen));
+        // Ten: every action button, so a full bar needs no control at all.
+        const capped = Math.min(10, Math.max(DashboardToolbar.HEADER_ACTION_MIN, chosen));
         /*
          * A narrow row folds one more away per rung of the header's own
          * ladder: fitHeaderZones has already decided the row is too full, and

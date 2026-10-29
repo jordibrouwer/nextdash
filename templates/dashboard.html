@@ -122,6 +122,8 @@
     <link rel="stylesheet" href="{{asset "css/feed-row.css"}}">
     <link rel="stylesheet" href="{{asset "css/changes-tour.css"}}">
     <link rel="stylesheet" href="{{asset "css/digest.css"}}">
+    <link rel="stylesheet" href="{{asset "css/edit-mode.css"}}">
+    <link rel="stylesheet" href="{{asset "css/checkup.css"}}">
     <!-- The dashboard tour opens over the dashboard itself, before any view has
          loaded the views bundle, so its sheet travels with the dashboard. -->
     <link rel="stylesheet" href="{{asset "css/dashboard-tutorial.css"}}">
@@ -338,6 +340,14 @@
                         </svg>
                         <span class="search-button-label" data-i18n="dashboard.headerCheatLabel">cheat</span>
                         <span class="search-button-icon" aria-hidden="true">!</span>
+                    </button>
+                    <button id="edit-mode-button" type="button" class="search-button edit-mode-button" aria-pressed="false" data-i18n-aria="dashboard.editModeAria" aria-label="Edit the dashboard" title="Edit the dashboard (Shift + M)">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.headerEditLabel">edit</span>
+                        <span class="search-button-icon" aria-hidden="true">⇧M</span>
                     </button>
                 </div>
                     </div>
@@ -591,10 +601,14 @@
     <script src="{{asset "js/changes-tour.js"}}" defer></script>
     <script src="{{asset "js/keyboard-tutorial.js"}}" defer></script>
     <script src="{{asset "js/theme-studio-notice.js"}}" defer></script>
+    <script src="{{asset "js/edit-mode-notice.js"}}" defer></script>
     <script src="{{asset "js/health-review-notice.js"}}" defer></script>
     <script src="{{asset "js/docker-update-notice.js"}}" defer></script>
     <script src="{{asset "js/inbox-extension-notice.js"}}" defer></script>
     <script src="{{asset "js/updated-notice.js"}}" defer></script>
+    <script src="{{asset "js/digest-card-state.js"}}" defer></script>
+    <script src="{{asset "js/checkup-model.js"}}" defer></script>
+    <script src="{{asset "js/checkup.js"}}" defer></script>
     <script src="{{asset "js/digest-notice.js"}}" defer></script>
     <script src="{{asset "js/app-discovery-notice.js"}}" defer></script>
     <script src="{{asset "js/tag-suggestions-notice.js"}}" defer></script>
@@ -635,6 +649,7 @@
     <script src="{{asset "js/shared/list-view-shell.js"}}" defer></script>
     <script src="{{asset "js/shared/list-view-drawer.js"}}" defer></script>
     <script src="{{asset "js/shared/side-panel-layout.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-state.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-utils.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-health.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-sources.js"}}" defer></script>
@@ -718,6 +733,9 @@
     <script src="{{asset "js/dashboard/dashboard-structure-create.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-category-add.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-title-icons.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/edit-mode-model.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-edit-mode-panel.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-edit-mode.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-category-menu.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-bookmark-interactions-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-toolbar.js"}}" defer></script>
@@ -770,6 +788,7 @@
     <script src="{{asset "js/search-commands/search-commands-note.js"}}" defer></script>
     <script src="{{asset "js/search-commands.js"}}" defer></script>
     <script src="{{asset "js/search-finders.js"}}" defer></script>
+    <script src="{{asset "js/search-usually-now.js"}}" defer></script>
     <script src="{{asset "js/search.js"}}" defer></script>
     <!-- /bundle:js-search -->
 </body>

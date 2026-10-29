@@ -127,9 +127,14 @@ func glancesTier(age int64) string {
 // files cannot be read as raises it, with a conversion here.
 const glancesHistoryVersion = 1
 
+// capPoints keeps the newest limit points. It reslices rather than copies: a
+// full ring takes a point on every beat, and copying all of it each time made
+// the demo's seven-day seed cost seconds of CPU at start and at every reset
+// (over thirty on a busy CI runner). The dropped head goes with the old array
+// once append outgrows it.
 func capPoints(points []glancesPoint, limit int) []glancesPoint {
 	if len(points) > limit {
-		return append(points[:0:0], points[len(points)-limit:]...)
+		return points[len(points)-limit:]
 	}
 	return points
 }
@@ -534,17 +539,14 @@ func glancesLevel(cfg GlancesConfig, quick glancesQuicklook, fs []glancesFS, sen
 // ---- the sampler ----
 
 // StartGlancesSampler runs a sampler for every host until stop closes. Each
-// reads its settings on every beat: switched off, without an address, or in
-// the public demo it does nothing, and not one request goes out. A panic in one
+// reads its settings on every beat: switched off, or without an address
+// it does nothing, and not one request goes out. The public demo reads Tower,
+// which answers in-process (glances_demo.go). A panic in one
 // beat is logged and the next one goes on: this runs for the life of the
 // process. Hosts added or removed in Config start or stop theirs
 // (glancesWakeSampler).
 func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) <-chan struct{} {
 	finished := make(chan struct{})
-	if demoMode() {
-		close(finished)
-		return finished
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		<-stop
@@ -1102,10 +1104,6 @@ func (h *Handlers) glancesStatusHandler(w http.ResponseWriter, r *http.Request) 
 	}
 	cfg, hs := glancesResolve(r)
 	hosts := glancesHostSummaries()
-	if demoMode() {
-		// Glances is not part of the demo: nothing is set up, whatever a data folder holds.
-		cfg, hosts = defaultGlancesConfig(), []glancesHostSummary{}
-	}
 	// The page and its icon exist when Glances is on and any host has an address.
 	anySetUp := false
 	for _, host := range hosts {

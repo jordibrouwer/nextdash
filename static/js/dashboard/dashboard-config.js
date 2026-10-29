@@ -58,6 +58,7 @@ class DashboardConfig {
         'bookmarks',
         'structure',
         'behavior',
+        'finders',
         'inbox',
         'data-backups',
         'widgets',
@@ -81,6 +82,9 @@ class DashboardConfig {
      * section with no entry is one that still lives in this file, which is how
      * this list grows one section at a time.
      */
+    /** Addresses of the widgets tabs the Add wizard replaced; they open it. */
+    static OLD_WIDGETS_LINKS = ['config/widgets/catalogue', 'config/widgets/types', 'config/widgets/custom'];
+
     static SECTION_MODULES = {
         inbox: {
             file: 'js/dashboard/dashboard-config-inbox.js',
@@ -139,10 +143,16 @@ class DashboardConfig {
                     datasetKey: 'dashboardConfigWidgetCatalogue',
                     ready: () => window.DashboardConfigWidgetCatalogueReady === true,
                 },
+                {
+                    file: 'js/dashboard/dashboard-config-widget-wizard.js',
+                    datasetKey: 'dashboardConfigWidgetWizard',
+                    ready: () => window.DashboardConfigWidgetWizardReady === true,
+                },
             ],
             ready: () => window.DashboardConfigWidgetsReady === true
                 && window.DashboardConfigMediaReady === true
-                && window.DashboardConfigWidgetCatalogueReady === true,
+                && window.DashboardConfigWidgetCatalogueReady === true
+                && window.DashboardConfigWidgetWizardReady === true,
         },
         /*
          * Appearance's own tabs and controls, its Background and Surface tabs,
@@ -490,10 +500,15 @@ class DashboardConfig {
         // Status & alerts left Behavior for a section of its own.
         if (DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
             && raw.startsWith('config/behavior/')) return 'monitoring';
+        // Fresh left Behavior for Bookmarks.
+        if (DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
+            && raw.startsWith('config/behavior/')) return 'bookmarks';
         if (raw === 'config') return 'overview';
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
         // stops working is worse than a name that lingers.
+        // Finders left Structure for a section of its own.
+        if (raw === 'config/pages-tags/finders' || raw === 'config/structure/finders') return 'finders';
         if (raw === 'config/pages-tags') return 'structure';
         if (raw === 'config/pages-tags/tags') return 'bookmarks';
         if (raw.startsWith('config/pages-tags/')) return 'structure';
@@ -524,13 +539,12 @@ class DashboardConfig {
         if (raw === 'config/behavior/datetime') return 'datetime';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw.startsWith('config/behavior/')) {
-            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
+            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
+                || DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
             if (moved) return moved;
         }
         // Branding lived on Display, then moved to Header with the browser tab.
         if (raw === 'config/appearance/branding') return 'header';
-        // Widgets → Types listed every kind; the Catalogue draws them now.
-        if (raw === 'config/widgets/types') return 'catalogue';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw === 'config/data-backups/logs') return 'server';
         // Tags left Pages & tags for Bookmarks; an old link to it lands on the
@@ -992,6 +1006,9 @@ class DashboardConfig {
             if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
                 return { section: 'appearance', subTab };
             }
+            if (section === 'behavior' && DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[subTab]) {
+                return { section: 'bookmarks', subTab: DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[subTab] };
+            }
             if (section === 'behavior' && DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab]) {
                 return { section: 'monitoring', subTab: DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab] };
             }
@@ -1187,7 +1204,11 @@ class DashboardConfig {
      */
     resolveConfigOpenTarget(explicitSection) {
         explicitSection = this.followMovedBehaviorTab(explicitSection);
+        // Coming back to config is a new arrival for the widgets links.
+        this._widgetsDeepLinkDone = false;
+        this.removeWidgetOverlay?.();
         const hash = window.location.hash;
+        this.rememberWidgetsLink(hash);
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
         const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
         const stored = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
@@ -1214,7 +1235,12 @@ class DashboardConfig {
      * open of Behavior opens Behavior.
      */
     followMovedBehaviorTab(section) {
-        if (section !== 'behavior' || !this._behaviorTabMoved) return section;
+        if (section !== 'behavior') return section;
+        if (this._behaviorTabToBookmarks) {
+            this._behaviorTabToBookmarks = false;
+            return 'bookmarks';
+        }
+        if (!this._behaviorTabMoved) return section;
         this._behaviorTabMoved = false;
         return 'monitoring';
     }
@@ -1241,9 +1267,27 @@ class DashboardConfig {
         });
     }
 
+    /*
+     * An old widgets link (the Catalogue and Custom widget tabs the wizard
+     * replaced), kept until the section binds. The address is made canonical
+     * straight away, but the widgets files may still be on their way, and by
+     * the time they run the hash no longer says what was asked for.
+     */
+    rememberWidgetsLink(hash) {
+        const raw = String(hash || '').replace(/^#/, '');
+        if (!DashboardConfig.OLD_WIDGETS_LINKS.includes(raw)) return false;
+        this._widgetsPendingLink = `#${raw}`;
+        this._widgetsDeepLinkDone = false;
+        return true;
+    }
+
     /** Re-apply the section from the hash while the view is already open. */
     restoreConfigSectionFromHash() {
         const hash = window.location.hash;
+        const widgetsLink = this.rememberWidgetsLink(hash);
+        // Already on Widgets with its files in: nothing repaints for a link
+        // that names no tab, so it is answered here.
+        const answerNow = widgetsLink && this.section === 'widgets' && this.inSection('widgets');
         if (DashboardConfig.isGenericConfigHash(hash)) {
             const stored = this.loadLastConfigLocation();
             if (stored?.section) {
@@ -1282,6 +1326,7 @@ class DashboardConfig {
         // and `/display` links resolve to Appearance, and without this the old
         // address stayed in the bar — so copying the URL handed on a dead link.
         this.restoreConfigHash();
+        if (answerNow) this.widgetsDeepLink?.(window.location.hash);
     }
 
     /* ── View lifecycle ────────────────────────────────────────────────────── */
@@ -1319,6 +1364,12 @@ class DashboardConfig {
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
+        // Which widget sections the reader folded or opened lasts one visit to
+        // Config and is never stored. Cleared on the way in rather than out:
+        // a repaint still in flight as the view closes reads the old panel
+        // and would put back what a clear on the way out removed.
+        this._widgetSectionOpen = {};
+        this._widgetSectionPinned = {};
         // The dashboard may have written categories since the Structure table
         // last read them (a move to another page, say): read them again.
         this.forgetCategoryLists();
@@ -1770,6 +1821,7 @@ class DashboardConfig {
      */
     listKeyboardBodyId() {
         if (this.section === 'structure') return 'config-pt-body';
+        if (this.section === 'finders') return 'config-finders-body';
         if (this.section === 'bookmarks' && this.bmTab === 'tags') return 'config-bm-body';
         return null;
     }
@@ -2230,6 +2282,7 @@ class DashboardConfig {
             inbox: ['config.sectionInbox', 'Inbox'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
+            finders: ['config.sectionFinders', 'Finders'],
             monitoring: ['config.sectionMonitoring', 'Monitoring'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             widgets: ['config.sectionWidgets', 'Widgets'],
@@ -2611,6 +2664,13 @@ class DashboardConfig {
         // binds to them: both move rather than being copied, so a handler bound
         // to the original would be bound to a node that is no longer there.
         this._fillShellHeadFromSection(container, { reset: true });
+        // An old widgets link is answered once per arrival; leaving the
+        // section is what lets the next one be.
+        if (this.section !== 'widgets') {
+            this._widgetsDeepLinkDone = false;
+            this._widgetsPendingLink = null;
+            this.removeWidgetOverlay?.();
+        }
         // Created up front, not on first save: a live region has to be in the
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();
@@ -2641,7 +2701,6 @@ class DashboardConfig {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
         } else if (this.section === 'widgets') {
-            this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
             void this.loadWidgetsEditor();
             // The custom widget offers a credential by name; the names are two
@@ -2670,6 +2729,11 @@ class DashboardConfig {
             void this.maybeShowMonitoringTutorial();
         } else if (this.section === 'structure') {
             this.bindPagesTags(container);
+        } else if (this.section === 'finders') {
+            this.bindFinders(container);
+            this.bindPtToolbar(container);
+            this.bindListKeyboard(container);
+            void this.loadFinders();
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
             // The section carries schema panels of its own now, which bind the
@@ -2908,7 +2972,7 @@ class DashboardConfig {
 
     clearListKeyboardSelection() {
         this._listKeyboardKey = null;
-        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected, #config-bm-body .config-crud-row.keyboard-selected').forEach((row) => {
+        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected, #config-finders-body .config-crud-row.keyboard-selected, #config-bm-body .config-crud-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
             row.removeAttribute('aria-selected');
         });
@@ -3857,7 +3921,7 @@ class DashboardConfig {
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
         remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
-        digestEnabled: ['digest', 'weekly', 'summary', 'report', 'monday', 'broken', 'updates', 'unused'],
+        digestWeekday: ['digest', 'weekly', 'summary', 'report', 'monday', 'broken', 'updates', 'unused'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
         inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
         inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
@@ -4677,6 +4741,9 @@ class DashboardConfig {
         if (this.section === 'structure') {
             return this.renderPagesTags();
         }
+        if (this.section === 'finders') {
+            return this.renderFindersSection();
+        }
         if (this.section === 'widgets') {
             return this.renderWidgetsSection();
         }
@@ -5346,7 +5413,7 @@ class DashboardConfig {
 
     /**
      * The latest weekly digest for the overview's panel. Repaints once when it
-     * lands; no digest yet, or the digest switched off, leaves the panel out.
+     * lands; no digest yet leaves the panel out.
      */
     loadOverviewDigest() {
         const notice = window.DigestNotice;
@@ -5948,6 +6015,12 @@ class DashboardConfig {
             void this.playViewTour(target.tour);
             return;
         }
+        // Edit mode lives on the dashboard: leave Config and switch it on.
+        if (target.editMode) {
+            this.closeConfigView();
+            window.dashboardInstance?.editMode?.enter?.();
+            return;
+        }
         // The overview's digest panel: the digest's own window, over Config.
         if (target.digest) {
             void window.DigestNotice?.openDigest?.();
@@ -6393,6 +6466,7 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             view: ['config.bmTabView', 'View'],
+            fresh: ['config.behaviorTabFresh', 'Fresh'],
             tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             'tag-rules': ['config.bmTabTagRules', 'Your rules'],
@@ -8956,7 +9030,6 @@ class DashboardConfig {
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         // Weekly digest (digest.go)
-        digestEnabled: { info: ['digestEnabledInfoTitle', 'digestEnabledInfoMessage'], def: true },
         digestWeekday: { def: 1 },
         digestTime: { def: '08:00' },
         digestHealth: { def: true },
@@ -9107,6 +9180,7 @@ class DashboardConfig {
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
         showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
+        showEditModeButton: { info: ['showEditModeButtonInfoTitle', 'showEditModeButtonInfoMessage'], def: true },
         showCollapseAllButton: { info: ['showCollapseAllButtonInfoTitle', 'showCollapseAllButtonInfoMessage'], def: true },
         showConfigButton: { info: ['showConfigButtonInfoTitle', 'showConfigButtonInfoMessage'], def: true },
         showAddBookmarkButton: { info: ['showAddBookmarkButtonInfoTitle', 'showAddBookmarkButtonInfoMessage'], def: true },
@@ -10320,7 +10394,7 @@ class DashboardConfig {
                             opt('l', t('config.actionBarSizeL', 'Large')),
                             opt('xl', t('config.actionBarSizeXl', 'Extra large')),
                         ] },
-                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 9, step: 1, special: 'chrome',
+                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 10, step: 1, special: 'chrome',
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
                     // A select rather than six cards that each played the
@@ -10356,6 +10430,7 @@ class DashboardConfig {
                         chip('showPagesButton', 'chrome', 'config.chipPages', 'Pages', 'config.showPagesButtonLabel', 'Show the pages button'),
                         chip('showCollapseAllButton', 'chrome', 'config.chipCollapseAll', 'Fold all', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
                         chip('showCheatSheetButton', 'chrome', 'config.chipCheatSheet', 'Cheat sheet', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                        chip('showEditModeButton', 'chrome', 'config.chipEditMode', 'Edit mode', 'config.showEditModeButtonLabel', 'Show the edit-mode button'),
                     ] },
                 ],
             },
@@ -10553,7 +10628,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'bookmarks',
                 tab: 'fresh',
                 title: t('config.feedsTitle', 'Fresh'),
                 demoLocked: true,
@@ -10778,7 +10853,6 @@ class DashboardConfig {
                 note: t('config.digestNote', 'One message a week: links that broke, container updates and bookmarks nobody opens. Sent to your push and alert channels and shown once on the dashboard. Held until quiet hours end. Nothing is sent when there is nothing to say.'),
                 appliesTo: t('config.appliesToDigest', 'Monitors, containers, usage'),
                 controls: [
-                    bool('digestEnabled', 'config.digestEnabledLabel', 'Send a weekly digest'),
                     { field: 'digestWeekday', type: 'select', numeric: true, label: t('config.digestWeekdayLabel', 'On'), options: [
                         opt(1, t('config.weekdayMon', 'Monday')), opt(2, t('config.weekdayTue', 'Tuesday')),
                         opt(3, t('config.weekdayWed', 'Wednesday')), opt(4, t('config.weekdayThu', 'Thursday')),
@@ -10792,7 +10866,6 @@ class DashboardConfig {
                           const value = `${String(hour).padStart(2, '0')}:00`;
                           return opt(value, value);
                       }) },
-                    bool('digestHealth', 'config.digestHealthLabel', 'Include broken links and certificates'),
                     bool('digestUpdates', 'config.digestUpdatesLabel', 'Include container updates'),
                     bool('digestUsage', 'config.digestUsageLabel', 'Include most opened, unused and Inbox'),
                     bool('digestNews', 'config.digestNewsLabel', 'Include what is new in nextDash this week'),
@@ -12494,10 +12567,17 @@ class DashboardConfig {
     // on its own" is already answered.
     // The inbox's own settings moved to Config → Inbox; Fresh kept the tab.
     // Status & alerts was split in two, then left for Monitoring.
-    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'privacy'];
+    static BEHAVIOR_TABS = ['general', 'search', 'privacy'];
 
     /** Behavior tabs that were folded into another one still open it. */
-    static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh' };
+    static BEHAVIOR_TAB_ALIASES = {};
+
+    /**
+     * Behavior tabs that left for Bookmarks: Fresh sits between View and Tags
+     * there. 'inbox' was folded into Fresh before that, so it lands there too.
+     * Mirrored in dashboard-config-loader.js.
+     */
+    static BOOKMARKS_FROM_BEHAVIOR = { fresh: 'fresh', inbox: 'fresh' };
 
     /*
      * Monitoring: what is checked, how you hear of it, and when to keep
@@ -12527,7 +12607,6 @@ class DashboardConfig {
             general: ['config.behaviorTabGeneral', 'General'],
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
             search: ['config.behaviorTabKeyboardSearch', 'Keyboard & search'],
-            fresh: ['config.behaviorTabFresh', 'Fresh'],
             privacy: ['config.behaviorTabPrivacySync', 'Privacy & sync'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -12904,7 +12983,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1', 'monitoringTutorialV1', 'unraidTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV2', 'monitoringTutorialV1', 'unraidTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -13191,7 +13270,7 @@ class DashboardConfig {
                 if ((await d.glances?.openGlancesView?.({})) === false) return true;
                 await d.glances?.instance?.openTour?.();
                 return true;
-            case 'widgetsTutorialV1':
+            case 'widgetsTutorialV2':
                 await this.openConfigView('widgets');
                 await this.openWidgetsTour?.();
                 return true;
@@ -13479,8 +13558,18 @@ class DashboardConfig {
             else this._behaviorTabMoved = true;
             return;
         }
+        // Fresh now sits on Bookmarks: the tab is set there, and the section
+        // follows it the way Monitoring's does.
+        const toBookmarks = DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[tab];
+        if (toBookmarks) {
+            this.bmTab = toBookmarks;
+            if (this.section === 'behavior') this.section = 'bookmarks';
+            else this._behaviorTabToBookmarks = true;
+            return;
+        }
         this._behaviorTabMoved = false;
-        // An old id ('inbox') opens the tab that holds those settings now.
+        this._behaviorTabToBookmarks = false;
+        // An old id opens the tab that holds those settings now.
         tab = DashboardConfig.BEHAVIOR_TAB_ALIASES[tab] || tab;
         this._behaviorTab = tab;
         DashboardConfig.rememberTab('behavior', tab);
@@ -13516,8 +13605,6 @@ class DashboardConfig {
     static SECTION_TAB_NOTES = {
         widgets: {
             'widgets': ['config.widgetsNoteWidgets', 'The widgets on each page: show or hide them, rename them, and change what they count.'],
-            'catalogue': ['config.widgetsNoteCatalogue', 'Every kind nextDash can draw, with example figures. Add one to the page you are on.'],
-            'custom': ['config.widgetsNoteCustom', 'Read a figure out of any service that answers JSON, and show it as a tile.'],
         },
         bookmarks: {
             /*
@@ -14010,7 +14097,7 @@ class DashboardConfig {
         }
         // Bookmarks → View and Settings: the panels redrawn, so ↺, the count
         // and "Only changed" follow the change just made.
-        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings')) {
+        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings' || this.bmTab === 'fresh')) {
             const body = document.getElementById('config-bm-body');
             if (body) {
                 body.innerHTML = this.renderBmTab();
@@ -14054,7 +14141,7 @@ class DashboardConfig {
      * and stopped being a list of names — and the thing it is arranged with,
      * the block order, lives on the categories tab regardless.
      */
-    static PT_TABS = ['categories', 'pages', 'finders', 'collections'];
+    static PT_TABS = ['categories', 'pages', 'collections'];
 
     /**
      * Data & backups keeps its destructive actions on a separate tab, and icon
@@ -14092,7 +14179,7 @@ class DashboardConfig {
      */
     static LIBRARY_TOUR_TIP_ID = 'bookmarksTutorialV1';
 
-    static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
+    static BM_TABS = ['view', 'fresh', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -14160,7 +14247,6 @@ class DashboardConfig {
 
     ptTabLabel(tab) {
         const map = {
-            finders: ['config.findersTab', 'Finders'],
             tags: ['config.tagsTab', 'Tags'],
             collections: ['config.collectionsTab', 'Collections'],
             pages: ['config.pagesTab', 'Pages'],
@@ -14211,7 +14297,6 @@ class DashboardConfig {
         // panel for a heading list, which the editors below do not carry.
         const heading = `<h3 class="sr-only">${this.dash.escapeHtml(this.ptTabLabel(this.ptTab))}</h3>`;
         switch (this.ptTab) {
-            case 'finders': return heading + this.renderFinders();
             case 'collections': return heading + this.renderCollections();
             case 'pages': return heading + this.renderPagesEditor();
             case 'categories': return heading + this.renderCategoriesEditor();
@@ -14235,6 +14320,9 @@ class DashboardConfig {
     }
 
     repaintPtBody() {
+        // Finders left Structure for a section of its own; the list's search,
+        // sort, add and delete handlers still repaint through here.
+        if (this.section === 'finders') { this.repaintFindersBody(); return; }
         const body = document.getElementById('config-pt-body');
         if (!body) { this.render(); return; }
         body.innerHTML = this.renderPtTab();
@@ -14247,8 +14335,7 @@ class DashboardConfig {
     }
 
     bindPtTabControls(container) {
-        if (this.ptTab === 'finders') { this.bindFinders(container); void this.loadFinders(); }
-        else if (this.ptTab === 'collections') { this.bindCollections(container); }
+        if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
         this.bindPtToolbar(container);
@@ -14406,6 +14493,35 @@ class DashboardConfig {
 
     /* ── Finders (native) ──────────────────────────────────────────────────── */
 
+    /**
+     * Finders, as a section rather than a tab under Structure.
+     *
+     * They are search shortcuts, not part of what a page is made of, so they sit
+     * in the rail between Behavior (where the search settings live) and Inbox.
+     * The list itself is the one that was a Structure tab.
+     */
+    renderFindersSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // One tab, drawn like the strip every other section has, so the sections
+        // read alike. Named for what a finder is: the section already says "Finders".
+        const tabs = `<button type="button" class="config-subtab is-active" role="tab" aria-selected="true" tabindex="0" aria-controls="config-finders-body">${esc(this.t('config.findersListTab', 'Search shortcuts'))}</button>`;
+        return `
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-finders-body" role="tabpanel" tabindex="0">${this.renderFinders()}</div>`;
+    }
+
+    /** Redraw the finders list without refetching it. */
+    repaintFindersBody() {
+        const body = document.getElementById('config-finders-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderFinders();
+        const container = document.getElementById('dashboard-layout');
+        if (!container) return;
+        this.bindFinders(container);
+        this.bindPtToolbar(container);
+        this.bindListKeyboard(container);
+    }
+
     renderFinders() {
         const esc = (v) => this.dash.escapeHtml(v);
         if (this._finders == null) {
@@ -14482,7 +14598,7 @@ class DashboardConfig {
             this._finders = [];
             this._findersLoadFailed = true;
         }
-        if (this.ptTab === 'finders') this.repaintPtBody();
+        if (this.section === 'finders') this.repaintFindersBody();
     }
 
     bindFinders(container) {
@@ -16343,17 +16459,8 @@ class DashboardConfig {
     /* ── Categories (native, per page) ─────────────────────────────────────── */
 
 
-    /*
-     * The width of the Widgets section, in px, from which the list and the
-     * opened widget sit side by side. Measured against the section rather than
-     * the window: Config gives it about 890px in a 1280px window and 1080px in
-     * a 1500px one, and the list needs about 380px of that before a detail
-     * beside it leaves the row titles room to read.
-     */
-    static WIDGETS_WIDE_MIN = 960;
-
-    /** Config → Widgets: the ones you have, every kind there is, and the Custom one at length. */
-    static WIDGETS_TABS = ['widgets', 'catalogue', 'custom'];
+    /** Config → Widgets: the list. Its old Catalogue and Custom widget tabs are the Add wizard. */
+    static WIDGETS_TABS = ['widgets'];
 
     /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];
@@ -16372,7 +16479,7 @@ class DashboardConfig {
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
-    static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
+    static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV2';
 
     // Repeated from monitoring-tutorial.js, for the same reason.
     static MONITORING_TUTORIAL_TIP_ID = 'monitoringTutorialV1';
@@ -16411,7 +16518,7 @@ class DashboardConfig {
           whereKey: 'config.tourWhereContainers', where: 'the next time you open the Containers view' },
         { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances',
           whereKey: 'config.tourWhereGlances', where: 'the next time you open the Glances page' },
-        { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
+        { id: 'widgetsTutorialV2', labelKey: 'config.tourWidgets', label: 'Widgets',
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
         { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring',
           whereKey: 'config.tourWhereMonitoring', where: 'the next time you open Config → Monitoring' },
@@ -17003,6 +17110,19 @@ class DashboardConfig {
                   ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
               ] },
         ],
+    };
+
+    /*
+     * Which of the three sections of a widget's panel a setting sits in.
+     *
+     * One table for every kind, so a key means the same place on all of them:
+     * where to read from is Connection, how often and what a click does is
+     * Advanced, and everything else -- rows, the show* boxes, filters, a look
+     * -- is Display, which is where widgetFieldSection puts a key not listed.
+     */
+    static WIDGET_FIELD_SECTIONS = {
+        connection: ['url', 'method', 'feedUrls', 'host'],
+        advanced: ['refreshSeconds', 'ttl', 'click', 'target'],
     };
 
     /*
@@ -18169,6 +18289,9 @@ class DashboardConfig {
         }
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
+        }
+        if (this.bmTab === 'fresh') {
+            return this.renderControlPanels(this.panelsFor('bookmarks', 'fresh'), 'behavior');
         }
         if (this.bmTab === 'view') {
             return this.renderBookmarksViewTab();
@@ -20765,7 +20888,7 @@ class DashboardConfig {
             this.bindTagRulesTab(container);
             return;
         }
-        if (this.bmTab === 'settings') {
+        if (this.bmTab === 'settings' || this.bmTab === 'fresh') {
             return;
         }
         if (this.bmTab === 'view') {
@@ -25187,10 +25310,6 @@ class DashboardConfig {
             isOn: (s) => s.monitorNotifyEnabled === true,
             go: { section: 'monitoring', monitoringTab: 'notifications' },
         },
-        'config.helpDigestTitle': {
-            isOn: (s) => s.digestEnabled !== false,
-            go: { section: 'monitoring', monitoringTab: 'notifications' },
-        },
         'config.helpStatsPrivacyTitle': {
             isOn: (s) => s.analyticsOptIn === true,
             go: { section: 'behavior', behaviorTab: 'privacy' },
@@ -25203,7 +25322,7 @@ class DashboardConfig {
         },
         'config.helpFreshTitle': {
             isOn: (s) => s.feedsEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'fresh' },
+            go: { section: 'bookmarks', bmTab: 'fresh' },
         },
         'config.helpContainersTitle': {
             isOn: (s) => s.dockerViewEnabled !== false,
@@ -26553,7 +26672,7 @@ class DashboardConfig {
     }
 }
 
-// Glances is not part of the demo: the section is not there to open or to jump to.
+// The demo watches Tower, but its Glances settings are not the visitor's to change: the section is not there to open or to jump to.
 if (document.querySelector('meta[name="nextdash-demo"]')) {
     DashboardConfig.SECTIONS = DashboardConfig.SECTIONS.filter((section) => section !== 'glances');
 }

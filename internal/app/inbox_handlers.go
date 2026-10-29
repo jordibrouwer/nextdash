@@ -186,52 +186,65 @@ func (h *Handlers) backfillInboxIconsAsync() {
 	if os.Getenv("NEXTDASH_DISABLE_PREFETCH") == "1" {
 		return
 	}
-	go func() {
-		items := h.store.GetInboxItems()
-		allowLocal := h.allowLocalBookmarks()
-		applied := 0
-		for _, item := range items {
-			if !inboxItemNeedsIconFetch(item) {
-				continue
+	go h.backfillInboxIcons(downloadIconFromURL)
+}
+
+// backfillInboxIcons is the backfill's loop, with the download passed in so a
+// test can stand in for the network.
+func (h *Handlers) backfillInboxIcons(download func(string, bool) (string, error)) {
+	items := h.store.GetInboxItems()
+	allowLocal := h.allowLocalBookmarks()
+	applied := 0
+	for _, item := range items {
+		if !inboxItemNeedsIconFetch(item) {
+			continue
+		}
+		iconFile := ""
+		// A refusal by the outbound limit is not "this site has no icon":
+		// a startup with more waiting links than the limit allows stamped
+		// the rest as tried, and they never got one.
+		limited := false
+		if fallback := deriveFaviconURL(item.URL); fallback != "" {
+			if name, err := download(fallback, allowLocal); err == nil {
+				iconFile = name
+			} else if errors.Is(err, errOutboundRateLimited) {
+				limited = true
 			}
-			iconFile := ""
-			if fallback := deriveFaviconURL(item.URL); fallback != "" {
-				if name, err := downloadIconFromURL(fallback, allowLocal); err == nil {
-					iconFile = name
-				}
+		}
+		id := item.ID
+		file := iconFile
+		// The name an item had for a file that is gone: replaced by the
+		// new one, or dropped when nothing could be fetched, so the row
+		// shows its glyph instead of asking for the missing file again.
+		gone := ""
+		if inboxIconMissing(item.Icon) {
+			gone = strings.TrimSpace(item.Icon)
+		}
+		attemptedAt := time.Now().UnixMilli()
+		// Stamped whether or not the fetch produced a file: the stamp records
+		// that the attempt happened, which is exactly what a failure needs to
+		// leave behind. A success stamps it too, so the field always means
+		// "last attempted" rather than "last failed". Only a fetch the limit
+		// refused is left unstamped: it did not happen, and is asked again.
+		if _, err := h.store.UpdateInboxLink(id, func(link *InboxLink) error {
+			// Re-check under the store lock: another path may have set it since.
+			if gone != "" && strings.TrimSpace(link.Icon) == gone {
+				link.Icon = ""
 			}
-			id := item.ID
-			file := iconFile
-			// The name an item had for a file that is gone: replaced by the
-			// new one, or dropped when nothing could be fetched, so the row
-			// shows its glyph instead of asking for the missing file again.
-			gone := ""
-			if inboxIconMissing(item.Icon) {
-				gone = strings.TrimSpace(item.Icon)
+			if file != "" && strings.TrimSpace(link.Icon) == "" {
+				link.Icon = file
 			}
-			attemptedAt := time.Now().UnixMilli()
-			// Stamped whether or not the fetch produced a file: the stamp records
-			// that the attempt happened, which is exactly what a failure needs to
-			// leave behind. A success stamps it too, so the field always means
-			// "last attempted" rather than "last failed".
-			if _, err := h.store.UpdateInboxLink(id, func(link *InboxLink) error {
-				// Re-check under the store lock: another path may have set it since.
-				if gone != "" && strings.TrimSpace(link.Icon) == gone {
-					link.Icon = ""
-				}
-				if file != "" && strings.TrimSpace(link.Icon) == "" {
-					link.Icon = file
-				}
+			if file != "" || !limited {
 				link.IconFetchedAt = attemptedAt
-				return nil
-			}); err == nil && file != "" {
-				applied++
 			}
+			return nil
+		}); err == nil && file != "" {
+			applied++
 		}
-		if applied > 0 {
-			logInfo(logComponentServer, "fetched icons for %s in the inbox", plural(applied, "item", "items"))
-		}
-	}()
+	}
+	if applied > 0 {
+		logInfo(logComponentServer, "fetched icons for %s in the inbox", plural(applied, "item", "items"))
+	}
 }
 
 func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {

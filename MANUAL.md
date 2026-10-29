@@ -936,6 +936,7 @@ The header has three zones.
 | Pages | `,` | The pages panel |
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
+| Edit | `Shift + M` (no bookmark selected) | Edit mode ([see below](#edit-mode)) |
 
 Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
 
@@ -956,13 +957,39 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 
 While it is away, a small **handle** stands on that edge, so the place it came from stays visible. It grows and brightens as the pointer comes near, and a click on it brings the bar back. There is no handle for a bar in the header or behind the menu, and none on a touch screen, where nothing hovers.
 
-**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of nine chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
+**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of ten chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
 
 **Buttons that come into view.** **Animate the buttons as the bar appears** is off to begin with. Its cards offer five styles: **Swell** (each button grows past its size and settles back, left to right), **Swell from the middle**, **Swell together**, **Unfold** (the bar opens and the buttons pop in) and **Accordion** (the bar opens from the middle and the buttons pop out to both ends). Point at a card, or move the focus to it, and its small bar plays that style; pick one and the real bar plays it at once. From then on it plays each time the bar comes into view: after a load — once no window, card or tour covers the screen — and each time it comes back from the edge it slid into. With reduced motion set in your system, the buttons simply appear.
 
 `:buttons` and `:maxactions` change these from the command palette.
 
 The **★** button in the bottom-right corner opens the release notes. It is left out on a window as narrow as a phone; `:whatsnew` and Help still open them.
+
+<a id="edit-mode"></a>
+
+### ✏️ Edit mode
+
+Edit mode changes the dashboard itself without a trip to Config: names, icons, widths, views, sorting and a widget's settings, all in a panel beside the page.
+
+**Switching it on.** Press `Shift + M` when no bookmark is selected (with one selected, `Shift + M` still moves that bookmark), click the pencil in the action bar, type `:edit mode`, or pick **Edit in panel…** in the right-click menu of a category or widget, which also chooses that block. `Esc` or `Shift + M` switches it off. The mode is for computers and tablets with a wide window; a phone layout never enters it. **Show the edit-mode button** under Config → Appearance → Action bar hides the pencil; the key keeps working.
+
+**While it is on.** A bar at the top says so. A click on a bookmark selects its block instead of opening it, the grid's bare letters, arrows and `Enter` are left alone, and the link preview card stays away and comes back afterwards if you have it on. Clicking a page tab still switches page, and the panel shows that page. `Esc` goes from the inside out: a dialog or menu first, then a field in the panel gives the focus back, then the mode ends.
+
+**The panel.** It opens at the right when you click a block, drawn like the side panel of the views, and the grid gives way. Changes are saved as you make them; `Esc` in a text field puts the old text back.
+
+| You select | The panel offers |
+|------------|------------------|
+| A category | Name, icon, width (one column or spread), view (rows or tiles) and sorting |
+| A widget | Name, width and state; **Settings…** opens the sheet of Config → Widgets over the dashboard, with the same fields |
+| A page | Name, emoji and colour |
+
+A category or widget that is deleted somewhere else clears the panel, and the panel says so.
+
+<p align="center"><img src="screenshots/manual.md/04-edit-mode.jpg" alt="The dashboard in edit mode: a bar at the top, a dashed outline on every block, the Code category chosen and its panel at the right with name, icon, width, view and sorting" width="860"></p>
+<p align="center"><sub>Edit mode with the Code category chosen: its panel opens at the right.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/04-edit-mode-widget-sheet.jpg" alt="The settings sheet of a widget opened over the dashboard from the edit panel: Connection, Display and Advanced" width="700"></p>
+<p align="center"><sub><b>Settings…</b> on a widget opens its sheet over the dashboard.</sub></p>
 
 <a id="the-grid"></a>
 
@@ -1241,6 +1268,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + G` | Glances, from every view (once it is set up in Config) |
 | `Shift + S` or `<` | Config (and back) |
 | `Shift + A` | The theme studio |
+| `Shift + M` | With no bookmark selected, edit mode ([§4](#edit-mode)); with one selected, Move |
 | `>` `:` `?` | Search, commands, finders — from every view |
 | `+` · `Shift + B` · `&` | Full bookmark form · from anywhere · quick add |
 | `/` | Tag cloud (type to find a tag, `Enter` opens its tag view, `Shift + Enter` stacks) |
@@ -1399,7 +1427,15 @@ Results are grouped by why they matched. **Best matches** — a name, or a word 
 
 Links still waiting in the inbox that match a name search appear in their own group at the end of the results; snoozed ones stay out, as they do in the inbox's own list.
 
-With the panel empty, your recent and saved searches show as chips (`←`/`→` and `Enter`).
+With the panel empty, the first group is **Usually now**: up to three bookmarks you tend to open around this time of day, on the same kind of day (weekday or weekend), going by the last eight weeks. It needs at least three opens in that window per bookmark, only appears when three qualify, is worked out in your browser from your own open history, and stays fixed while the panel is open. Under it, your recent and saved searches show as chips (`←`/`→` and `Enter`).
+
+<p align="center"><img src="screenshots/manual.md/08-search-usually-now.jpg" alt="The empty search panel with a Usually now group of three bookmarks above Commands, Filters and Finders" width="860"></p>
+<p align="center"><sub>Usually now: three bookmarks you tend to open around this time of day.</sub></p>
+
+**Actions on a result.** `→` on a bookmark result unfolds its actions under the row: open, open in a new tab, edit, copy the address, show in the list and move to a page. `↑`/`↓` move through them, `Enter` runs one, `←` or `Esc` folds them. On a web result `→` still shows its text beside the list.
+
+<p align="center"><img src="screenshots/manual.md/08-search-actions.jpg" alt="A bookmark result in the search panel with its actions unfolded: Open, Open in new tab, Copy URL, Edit, Show in list and Move to" width="860"></p>
+<p align="center"><sub>Right arrow on a result unfolds its actions under the row.</sub></p>
 
 **The keyboard tour.** Until you have seen it, the empty panel also lists *Take the keyboard tour* under a **Keyboard** heading (open from the start in Hypr mode, a closed group otherwise). It never opens by itself. Four steps: just start typing, commands start with a colon, finders search the web for you, and three more single keys — `/`, `*` and `!`. `:tour keyboard` plays it any time, and so does the Tour list in Behavior → Privacy & sync → Onboarding.
 
@@ -1513,6 +1549,8 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:collections` | Smart collections on or off |
 | `:telemetry on\|off` | Analytics (reloads the page) |
 | `:cheat` · `:help` · `:whatsnew` · `:digest` · `:reload` | Cheat sheet · release notes · latest weekly digest · reload |
+| `:checkup` | One guided round through what is worth tidying up ([§12](#the-checkup)) |
+| `:edit mode` | Switches edit mode on or off ([§4](#edit-mode)) |
 
 <details>
 <summary>📷 Screenshot — the command palette (<kbd>:</kbd>)</summary>
@@ -1532,7 +1570,7 @@ The palette is drawn like the dashboard: its fill follows how solid the categori
 <p align="center"><img src="screenshots/manual.md/08-finders.jpg" alt="The search panel on its finders tab: a question mark typed, and the two finders Brave Search and DuckDuckGo with their shortcuts" width="840"></p>
 <p align="center"><sub><kbd>?</kbd> lists the finders with their shortcuts.</sub></p>
 
-**Structure → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used; the ones you use most are suggested first. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
+**Config → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used; the ones you use most are suggested first. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
 
 With that setting on (it is by default), a search that matches nothing lists your three most-used finders under the *no matches* line — **Search on …**, with what you typed already filled in. Click one, or reach it with `↓`, to ask that site instead.
 
@@ -2209,13 +2247,24 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 <a id="weekly-digest"></a>
 
-**Weekly digest.** Once a week nextDash sums up what needs you: links that broke, certificates that run out soon, container updates, what you opened most, bookmarks nobody opens, and links waiting in the Inbox. It is on by default and goes out on **Monday at 08:00**, in the time zone of the quiet hours.
+**Weekly digest.** Once a week nextDash sums up what needs you: links that broke, certificates that run out soon, container updates, what is worth tidying up, bookmarks nobody opens, links waiting in the Inbox, and what you opened most. It goes out on **Monday at 08:00** by default, in the time zone of the quiet hours, and cannot be switched off. A fresh install gets its first digest after at least a week: a digest is only sent when its slot falls seven or more days after the install.
 
-- **Where it arrives** — as a browser notification when those are on, through the service under **Downtime alerts**, and once on the dashboard as a card, *Your week in nextDash*, that names the one or two things that matter most. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
-- **Reading it** — **Read the digest** opens a window with counts across the top — broken links, what runs out within 30 days, container updates, never opened — each a way into its view. Under them, in two columns, a part per subject: what it means, the names behind the count (certificates and domains as bars of days left; domains more than 200 days out as a count), and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Review** for never opened and long unopened bookmarks, **Open Inbox**. Last comes **New in nextDash** when a release came out that week: the releases with their highlights, and **Open What's new**. It is news, so it does not count as a part to work through. After a button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the following part. The bar goes once every part is opened, or with **×**. Clicking the push notification opens the same window (`/#digest`), and so do `:digest` and the **Weekly digest** panel on Config's overview, which counts the parts still to open.
-- **Setting it up** — Monitoring → Notifications → **Weekly digest**: **Send a weekly digest**, **On** (the day), **At** (the hour), and which parts go in — **Include broken links and certificates**, **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**. **The latest digest → Show** opens the last one again; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
+- **Where it arrives** — every week as a card in the corner of the dashboard, *Your week in nextDash*, that names the one or two things that matter most; and as a browser notification when those are on, through the service under **Downtime alerts**. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
+- **The card** — **Read the digest** opens the window. **Snooze 1 day** hides the card until tomorrow. **Got it** marks it seen; unless you opened the window, the card returns once the next day and once the day after, and then stays away until the next digest. Progress, snooze and reminders are kept per browser.
+- **Reading it** — along the top is **the week in figures**: bookmarks opened, bookmarks added, uptime with the number of outages, and the links in the Inbox with how many are new, each next to the week before (▲ and ▼, green when it went the better way). A figure with nothing behind it is left out, so a new install shows a short row. The window opens on an **Overview**, one line per part saying where it stands, and lists the parts on the left in three groups: **Needs you** (broken links, certificates, domains, container updates), **Tidy up** (the checkup, never opened, not opened in 30 days) and **Good to know** (the Inbox, most opened, what is new in nextDash), with a sentence on top that names what matters most. The part you pick is shown in full on the right: what it means, the names behind the count with what matters about each — a broken link with its page, since when it is down and what the last check said; the most opened with how often; never opened with their page; not opened lately with how long ago; the Inbox with how long its oldest link has waited — certificates and domains as bars of days left, and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Start the checkup**, **Review**, **Open Inbox**, **Open What's new**. The close button at the top and **Close** at the bottom are always in view; only the middle scrolls. After a part's button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the one after; it closes itself once every part is opened. Its **×** asks first, because the digest may still hold something important: **Keep it** or **Close until Monday**. Clicking the push notification opens the same window.
+- **Setting it up** — Monitoring → Notifications → **Weekly digest**: **On** (the day), **At** (the hour), and which parts go in — **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**; broken links and certificates always stay. The figures along the top follow the parts: uptime and outages stay with the broken links, while the opens, the added bookmarks and the Inbox go with **Include most opened, unused and Inbox**. **The latest digest → Show** opens the last one again, as does the digest panel in Config → Overview; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
+
+<p align="center"><img src="screenshots/manual.md/12-weekly-digest.jpg" alt="The weekly digest window: the week in figures along the top, the Overview chosen on the left above three groups of parts (Needs you, Tidy up, Good to know), and on the right one line per part saying where it stands" width="860"></p>
+<p align="center"><sub>The weekly digest: the week in figures on top, the Overview on the right.</sub></p>
 
 On the day the digest comes out it goes first, and the daily review card ([§4](#corner-cards)) waits — both offer the same broken and unopened links.
+
+<a id="the-checkup"></a>
+
+**The checkup.** One guided round through what is worth tidying up, on top of the Bookmarks view: type `:checkup`, pick **Checkup** in the Bookmarks view's menu, or press **Start the checkup** in the weekly digest. The steps are dead links, duplicates, bookmarks never opened or gone stale, categories and pages with nothing in them (hidden and snoozed bookmarks count as present, and a page with only widgets is not empty), and widgets that show an error or no data right now. A step with nothing to do is skipped, every step uses the actions you already know (delete, merge, move, edit) with their confirmation and undo, and nothing is removed before you have seen it.
+
+<p align="center"><img src="screenshots/manual.md/12-checkup.jpg" alt="The checkup window listing three steps: broken links, doubled bookmarks and never opened, each with an Open in Bookmarks button" width="760"></p>
+<p align="center"><sub>The checkup lists the steps that have something to do.</sub></p>
 
 <a id="125-maintenance-windows"></a>
 
@@ -2249,7 +2298,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 **Fresh** shows whether a bookmarked site has published something since you last opened it.
 
-- Switch it on under **Behavior → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
+- Switch it on under **Bookmarks → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
 - A bookmark with news carries a count on its row, and the **Fresh** collection lists them, newest first. Opening the bookmark clears the count.
 - Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**, and **Retry all** when more than one has stopped.
 - The bookmark editor shows a **Feed** line when there is one. `status:feed` / `-status:feed` search for them. **Mark rows that publish** (off by default) puts a quiet dot on those rows.
@@ -2894,19 +2943,30 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 
 ### 15.2 Adding and arranging
 
-**Config → Widgets** has three tabs:
+**Config → Widgets** is one list: **Your widgets**, one line for each widget you have. Above it are a search (title and type), a page picker (including **All pages**), a sort (grouped, page order, name, type) and, once rows are selected, a bar with **Show**, **Hide**, **Move to page…** and **Delete**.
 
-| Tab | What it holds |
-|---|---|
-| **Your widgets** | The widgets you have, one line each. **Add a widget** opens a picker: type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the pane beside the list shows the kind you are on. The first `Escape` empties the search, the next closes the picker. A search (title and type), a page picker (including **All pages**), a sort (grouped, page order, name, type) and a selection bar with **Show**, **Hide**, **Move to page…** and **Delete** |
-| **Catalogue** | Every kind on one page, each with a small drawing of what it shows (made of example figures) and an **Add** button. The chips above the cards show one group. Kinds added in the current release carry a **New** badge, and a **New** chip and strip gather them at the top |
-| **Custom widget** | What the Custom widget does and will not do, with an **Add** button ([§15.5](#155-the-custom-widget)) |
+**Add widget** opens the picker. Type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the kinds are grouped, and the pane beside the list shows the kind you are on, with a small drawing of what it shows. With more than one page, a **page select** in the picker says where the widget goes. The first `Escape` empties the search, the next closes the picker.
 
-A widget added from the Catalogue or the Custom widget tab lands on **Your widgets**, ready to be filled in. An old `/#config/widgets/types` address opens the Catalogue.
+- A kind that needs nothing, such as Notes, is added at once, on the page you picked.
+- A kind that talks to a service (the media kinds: Jellyfin, Emby, Plex, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd) opens a **Connect** screen: the address and, where it has one, the key. **Test** tries them and says what it found, or what to fix. A failed test never blocks you: **Add anyway** (or **Add without testing**) adds the widget as it is, and you can correct it in its settings.
+- **Custom** is one of the kinds in the picker, under *And anything else*: any address that answers with JSON. Test the address on the Connect screen, add the widget, and choose its figures afterwards in the widget's settings ([§15.5](#155-the-custom-widget)).
+- Beszel, Home Assistant, Unraid and Glances keep their connection in the widget's settings for now; they are added straight away and filled in there.
 
-On a wide screen the list and the open widget stand side by side: one widget is always open beside the list — the one you chose, or the first shown. Narrower, **Settings** on a row opens the widget under it. **Settings** in a widget's own menu on the dashboard opens that widget's settings with every other row closed. The width that counts is the section's own, not the window's.
+A widget added from the picker lands on **Your widgets**, with its settings open. The old addresses `/#config/widgets/catalogue`, `/#config/widgets/types` and `/#config/widgets/custom` still work: the first two open the Add widget picker, and `/custom` opens the wizard on Custom's Connect screen.
+
+The first visit to Config → Widgets offers a short tour (four steps: the list, the picker, Connect and Test, and Custom); the **Tour** button beside the **ℹ** plays it again.
+
+Each widget is a card: a badge with the first letter of its kind, the title (click it to rename) with the kind under it, a small chip for the state of a kind that connects (**Not set up**, **Set up**, and after a Connect or a test **Connected** or **Not reachable**), the **Shown** switch, and — while the list spans all pages — its page. The chip only shows what is already known; it never asks a server by itself. **Settings** opens the card in place, across the whole row, with the three sections below; one card is open at a time, and opening another while the first has unsaved edits asks before it drops them. **Settings** in a widget's own menu on the dashboard opens that widget's card with every other one closed. The width that counts is the section's own, not the window's.
 
 Each widget has a title, a width (one or two columns), the page it counts, a row count and the settings of its kind. With more than one page, **Page** above the width moves the widget to another page straight away, at the end of that page, with its sign-in and folded state; unsaved changes in the panel ask first. An **ℹ** explains the harder settings and **↺** resets them. The title and **Shown** save at once; the rest waits for **Save**.
+
+Every widget's settings come in the same three folding sections, in this order, and a section with nothing in it is left out:
+
+- **Connection** — how the widget reaches what it shows: an address, a host, the feed addresses, a key or sign-in, and **Connect** or **Test** where there is one. It opens on a widget that has no saved way in yet — and on a media service whose key is missing or whose server did not answer, with the reason in it — and starts folded on one that has; a media service's title adds how it stands, such as *connected*. Saving or connecting while you work in it leaves it open. For the processor, memory, disks and Docker it holds only the note on what the host needs, and starts folded.
+- **Display** — what you see on the tile: the page, the width, what to show, the order, how many rows, the style and, for Custom, the figures. It is open.
+- **Advanced** — how often it refreshes, how long an answer is kept, and where a click goes. It is folded.
+
+Open or shut a section yourself, or work in one, and it stays that way while Config is open, even as the panel redraws; close Config and they go back to these starting states. Save and Discard stay below the sections and cover all three.
 
 Widgets share one order with the categories and are moved on the dashboard: drag the `//` in the title, or use the keys in [§7.4](#74-acting-on-a-category-or-widget). On a one-column dashboard — and on a phone — a wide widget narrows itself and keeps the important half.
 
@@ -3031,7 +3091,7 @@ Start from one of the 42 presets ([Presets](#custom-widget-presets)) or from an 
 
 #### 🪜 Step by step
 
-1. Open **Config → Widgets** and press **Add a widget**. Choose **Custom**, under *And anything else: the Custom widget*. The widget lands at the end of the page with its settings open.
+1. Open **Config → Widgets** and press **Add widget**. Choose **Custom**, under *And anything else: the Custom widget*. The widget lands at the end of the page with its settings open.
 2. Under **Start from a service**, pick one in **Service** — or leave it empty for a service that is not in the list. A preset fills in the address, the figures, the sign-in type and the refresh interval, and a notice says what is still left to do. See [Presets](#custom-widget-presets).
 3. Under **Where to read from**, type the **Address to read**. If a preset put a sample address there (`*.local`), replace the host and leave the path. A word such as `YOUR_NODE` in the address or the figures is a placeholder for something of your own; the panel says which. **How to ask** is `GET`, or `POST` for the few services that only answer that. Nothing is sent with either.
 4. Still there, **Refresh every (seconds)** takes 30 seconds to 24 hours; empty means five minutes. **List from (path, optional)** points at an array to show as rows instead of figures, up to twenty.
@@ -3601,7 +3661,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 **Label left, control right.** A setting's label and one-line explanation stand on the left and its control on the right, in one shared column. A longer explanation is cut with an ellipsis and stays whole in its tooltip and the ℹ. Under 600 px the control goes under its label.
 
-**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (nine buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
+**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (ten buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
 
 **The preview.** Beside the settings stands a small drawing of your dashboard — header, grid, a few rows and the action dock. It follows every change as you make it, in your own theme and font, and marks the part the open tab is about: the grid on Grid, the rows on Rows, the header on Header, the clock on Date & weather, the buttons on Action bar. On a narrow window it moves above the settings.
 
@@ -3873,7 +3933,7 @@ See [§4](#4-the-dashboard) for what each part does. The settings:
 Each chip group has **Show all / Hide all**.
 
 <p align="center"><img src="screenshots/manual.md/16-appearance-action-bar.jpg" alt="Config, Appearance on its Action bar tab: Show the action buttons, where the bar stands, Button size set to Medium, the key switch, the animation dropdown and the nine button chips" width="860"></p>
-<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the nine buttons are chips.</sub></p>
+<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the ten buttons are chips.</sub></p>
 
 <a id="168-date-and-weather"></a>
 
@@ -4034,7 +4094,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Monitoring** | Checks · Notifications · Schedules ([§17.5](#monitoring)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§17.6](#176-config-inbox)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
-| **Widgets** | Your widgets · Catalogue · Custom widget ([§15.2](#152-adding-and-arranging)) |
+| **Widgets** | Your widgets, with **Add widget** ([§15.2](#152-adding-and-arranging)) |
 | **Containers** | Connection · View · Updates · Alerts ([§17.7](#177-config-containers)) |
 | **Unraid** | Connection · How it works — the one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
 | **Glances** | Connection · Page · Recording · Notices · Advanced, for up to five hosts — the Glances page and the Glances widget ([§15A.10](#15a10-config-glances)) |
@@ -4046,7 +4106,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 
 In the rail the Containers row opens a group labelled **Services** (Containers, Unraid, Glances, Monitoring, Status page) and Statistics one labelled **Info** (Statistics, Help, Logs, About); the labels are headings for the eye, not tabs.
 
-Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Behavior → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
+Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Bookmarks → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
 <details>
 <summary>📷 Screenshot — Config → Appearance, full page</summary>
@@ -4181,7 +4241,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. A **Tour** 
 <p align="center"><img src="screenshots/manual.md/14-connection.jpg" alt="The Connection panel under Config, Containers: Docker socket Connected, Actions On, Write token Not set with a warning, and This container nextdash" width="860"></p>
 <p align="center"><sub>Config → Containers → Connection: what the environment set, read only.</sub></p>
 
-The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It has two tabs and opens on **Connection**: the address and key, then **Widgets** — the seven kinds as chips, each with an **Add** that opens Widgets → Catalogue on that kind. **How it works** draws nextDash and the server as two boxes with data running between them, with three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done; it also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
+The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It has two tabs and opens on **Connection**: the address and key, then **Widgets** — the seven kinds as chips, each with an **Add** that opens the Add widget picker on that kind. **How it works** draws nextDash and the server as two boxes with data running between them, with three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done; it also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
 
 <details>
 <summary>📷 Screenshot — Config → Containers, full page</summary>
@@ -4204,7 +4264,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **Guided tours.** Eleven tours run over the real page rather than a picture of it: *What has changed*, *First steps*, *The dashboard*, *The keyboard*, *Inbox*, *Bookmarks view*, *Containers*, *Glances*, *Widgets*, *Monitoring* and *Unraid*. Each is short, four to nine steps, and covers the main things; the rest is in Help. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
-**The dashboard tour.** Nine steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its nine buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
+**The dashboard tour.** Ten steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its ten buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; edit mode; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
 
 
 <details>
@@ -4216,7 +4276,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 <a id="view-tours"></a>
 
-**The view tours.** The Bookmarks view, Containers, the Inbox and Config → Widgets each have a tour of their own, drawn in a window and offered once, the first time you visit. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has five steps: the list and its rail, the three ways to check a link, charts and collection health, alerts, and clearing the backlog. The Containers tour has six: the list, acting on containers, the side panel, updates with a way back, Disk, and settings and alerts. The Inbox tour has four and the Widgets tour four: what a widget shows, the catalogue, the Custom widget, and how a widget behaves on the page. **Behavior → Privacy & sync → Onboarding** replays each of them.
+**The view tours.** The Bookmarks view, Containers, the Inbox and Config → Widgets each have a tour of their own, drawn in a window and offered once, the first time you visit. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has five steps: the list and its rail, the three ways to check a link, charts and collection health, alerts, and clearing the backlog. The Containers tour has six: the list, acting on containers, the side panel, updates with a way back, Disk, and settings and alerts. The Inbox tour has four and the Widgets tour four: your widgets in one list, the Add widget picker, Connect and Test, and the Custom widget. **Behavior → Privacy & sync → Onboarding** replays each of them.
 
 <a id="config-tours"></a>
 

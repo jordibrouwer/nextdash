@@ -187,6 +187,13 @@ class DashboardCategoryMenu {
         });
     }
 
+    /** "Edit in panel…": desktop only, and only where the edit mode exists. */
+    editPanelEntry() {
+        const mode = this.dash?.editMode;
+        if (!mode || mode.isMobileLayout?.()) return [];
+        return [{ id: 'edit-panel', label: this.t('menuEditInPanel', 'Edit in panel…'), icon: '✎' }];
+    }
+
     /** The menu for a widget: its name, its width, and putting it away. */
     showWidget(titleEl, widget, point, rowEl = null) {
         const wide = this.widgetIsWide(widget);
@@ -195,6 +202,7 @@ class DashboardCategoryMenu {
         const entries = [
             ...rowEntries,
             { id: 'rename', label: this.t('widgetMenuRename', 'Rename'), icon: '✎', key: 'F2' },
+            ...this.editPanelEntry(),
             {
                 // The label says what the click will do, like the category's
                 // spread entry above -- this list is verbs, and a tick beside a
@@ -345,6 +353,11 @@ class DashboardCategoryMenu {
     async runWidgetAction(action, titleEl, widget, rowEl = null) {
         const d = this.dash;
         window.nextdashTrack?.('widget:context-menu', { action });
+
+        if (action === 'edit-panel') {
+            d.editMode?.openFor({ kind: 'widget', id: String(widget.id) });
+            return;
+        }
 
         if (action === 'row-open') {
             rowEl?.click();
@@ -542,6 +555,7 @@ class DashboardCategoryMenu {
                 icon: '+',
             }] : []),
             { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
+            ...this.editPanelEntry(),
             ...(stored ? [{
                 id: 'find-tags',
                 label: this.t('categoryMenuFindTags', 'Find tags for this category'),
@@ -952,6 +966,11 @@ class DashboardCategoryMenu {
         const d = this.dash;
         window.nextdashTrack?.('category:context-menu', { action });
 
+        if (action === 'edit-panel') {
+            d.editMode?.openFor({ kind: 'category', id: String(category.id) });
+            return;
+        }
+
         if (action === 'add') {
             d.categoryAdd?.open();
             return;
@@ -1027,47 +1046,62 @@ class DashboardCategoryMenu {
             if (!ok) {
                 return;
             }
-            const result = await d.structureCreate.deleteCategory(pageId, category.id);
-            if (result.error) {
-                d.showErrorNotification?.(result.error);
-                return;
-            }
-            await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
-
-            // Deleting from a right-click menu is one slip away from a misclick,
-            // so the confirm is not the only safety net.
-            d.showNotification?.(
-                this.t('categoryDeleted', 'Category deleted.'),
-                'success',
-                {
-                    duration: 8000,
-                    undoCallback: async () => {
-                        const undone = await d.structureCreate.restoreCategories(pageId, result.before);
-                        if (undone.error) {
-                            d.showErrorNotification?.(undone.error);
-                            return;
-                        }
-                        // Only redraw the page it is on: loading pageId from
-                        // another page jumped the reader back to it.
-                        if (Number(d.currentPageId) === Number(pageId)) {
-                            await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
-                        } else {
-                            d.data?.invalidatePageDataCache?.(pageId);
-                        }
-                        // Restored through the categories endpoint, so its trash
-                        // entry now shadows a live category. Dropping it goes
-                        // straight through the trash module, which config does
-                        // not need to be loaded for.
-                        await this._dropCategoryTrashEntry(pageId, category.id);
-                        await d.config?.instance?.refreshTrashIfVisible?.();
-                        d.showNotification?.(
-                            this.t('categoryDeleteUndone', 'Category restored.'),
-                            'success',
-                        );
-                    },
-                },
-            );
+            await this.finishCategoryDelete(pageId, category);
         }
+    }
+
+    /**
+     * What follows a confirmed category delete, for every caller of it: the
+     * write, the redraw of the page in view, and the Undo that restores the
+     * list. Resolves true when the category is gone.
+     */
+    async finishCategoryDelete(pageId, category) {
+        const d = this.dash;
+        const result = await d.structureCreate.deleteCategory(pageId, category.id);
+        if (result.error) {
+            d.showErrorNotification?.(result.error);
+            return false;
+        }
+        if (Number(d.currentPageId) === Number(pageId)) {
+            await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
+        } else {
+            d.data?.invalidatePageDataCache?.(pageId);
+        }
+
+        // Deleting from a right-click menu is one slip away from a misclick,
+        // so the confirm is not the only safety net.
+        d.showNotification?.(
+            this.t('categoryDeleted', 'Category deleted.'),
+            'success',
+            {
+                duration: 8000,
+                undoCallback: async () => {
+                    const undone = await d.structureCreate.restoreCategories(pageId, result.before);
+                    if (undone.error) {
+                        d.showErrorNotification?.(undone.error);
+                        return;
+                    }
+                    // Only redraw the page it is on: loading pageId from
+                    // another page jumped the reader back to it.
+                    if (Number(d.currentPageId) === Number(pageId)) {
+                        await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
+                    } else {
+                        d.data?.invalidatePageDataCache?.(pageId);
+                    }
+                    // Restored through the categories endpoint, so its trash
+                    // entry now shadows a live category. Dropping it goes
+                    // straight through the trash module, which config does
+                    // not need to be loaded for.
+                    await this._dropCategoryTrashEntry(pageId, category.id);
+                    await d.config?.instance?.refreshTrashIfVisible?.();
+                    d.showNotification?.(
+                        this.t('categoryDeleteUndone', 'Category restored.'),
+                        'success',
+                    );
+                },
+            },
+        );
+        return true;
     }
 }
 

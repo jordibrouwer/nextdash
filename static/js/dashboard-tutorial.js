@@ -389,6 +389,27 @@
                     ${example ? `<p class="dtv-try">${esc(f('dashTourS3Try', 'On this page: type {key} for {name}.')
                         .replace('{key}', String(example.shortcut).toLowerCase()).replace('{name}', example.name))}</p>` : ''}`,
             },
+            // 3b — edit mode
+            {
+                title: f('dashTour4EditTitle', 'Edit mode: change it right here'),
+                visual: svg(`
+                    <rect x="12" y="8" width="458" height="22" rx="6" class="dtv-box"/>
+                    ${label(24, 23, f('dashTour4EditBar', 'Editing'), 'dtv-title')}
+                    ${keycap(300, 10, 'Shift+M')}${label(372, 24, f('dashTour4EditLeave', 'on / off'))}
+                    ${category(12, 40, 190, f('dashTourCatDev', 'Development'), [['GitHub', 'ok', ''], ['GitLab', 'ok', '']], anim('bump', 0.2))}
+                    <g class="dtv-anim dtv-a-panel">
+                        <rect x="250" y="40" width="220" height="104" rx="8" class="dtv-panel"/>
+                        ${label(262, 60, f('dashTour4EditName', 'Name'), 'dtv-label')}
+                        <rect x="262" y="66" width="196" height="20" rx="5" class="dtv-box"/>
+                        ${label(262, 104, f('dashTour4EditWidth', 'Width'), 'dtv-label')}
+                        ${label(262, 130, f('dashTour4EditView', 'View'), 'dtv-label')}
+                    </g>
+                `, f('dashTour4EditAlt', 'The dashboard in edit mode: a category chosen, and its panel on the right')),
+                body: `<p>${esc(f('dashTour4EditBody1',
+                    'Press Shift+M with no bookmark selected, or click the pencil in the action bar, to edit the dashboard itself. Click a category, widget or page tab and a panel opens on the right.'))}</p>
+                    <p>${esc(f('dashTour4EditBody2',
+                    'Rename it, change its width, view and sorting, or open a widget\'s settings: all of it right here, saved as you go. Right-click a category or widget and choose Edit in panel to start there. Esc or Shift+M leaves.'))}</p>`,
+            },
             // 4 — adding
             {
                 title: f('dashTour4AddTitle', 'Adding: paste, + or the extension'),

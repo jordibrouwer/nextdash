@@ -62,15 +62,23 @@
         dash._widgetRss = dash._widgetRss || {};
         const key = `${pageId}:${widget.id}`;
         const held = dash._widgetRss[key];
-        if (held && held.until > Date.now()) return held.result;
+        if (held && held.until > Date.now()) {
+            window.WidgetState?.fromResult(widget.id, held.result, held.result?.items, window.WidgetState.meta(widget, pageId, true));
+            return held.result;
+        }
         try {
             const res = await fetch(`/api/widgets/rss?pageId=${encodeURIComponent(pageId)}`
                 + `&id=${encodeURIComponent(widget.id)}`);
-            if (!res.ok) return null;
+            if (!res.ok) {
+                window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, true));
+                return null;
+            }
             const result = await res.json();
             dash._widgetRss[key] = { result, until: Date.now() + 5 * 60 * 1000 };
+            window.WidgetState?.fromResult(widget.id, result, result?.items, window.WidgetState.meta(widget, pageId, true));
             return result;
         } catch (error) {
+            window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, true));
             return null;
         }
     }

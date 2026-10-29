@@ -264,29 +264,6 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
     padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
 }
 
-.widgets-tutorial-visual--keys {
-    gap: var(--space-2, 0.55rem);
-}
-
-.widgets-tutorial-key {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.3rem);
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-tertiary);
-    white-space: nowrap;
-}
-
-.widgets-tutorial-key kbd {
-    font-family: var(--font-mono, monospace);
-    font-size: var(--text-xs, 0.7rem);
-    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.35rem);
-    border-radius: var(--radius-3, 0.3rem);
-    border: 1px solid var(--border-secondary);
-    background: var(--background-primary);
-    color: var(--text-primary);
-}
-
 .widgets-tutorial-dots {
     display: flex;
     justify-content: center;

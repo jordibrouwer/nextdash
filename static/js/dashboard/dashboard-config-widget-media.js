@@ -664,33 +664,68 @@
             }
         }
 
-        return `<div class="config-widget-settings-body is-custom is-media is-${esc(service.id)}">
-            <div class="config-custom-group">
-                <h4 class="config-custom-group-title">${esc(service.name)}</h4>
-                ${service.hint ? `<span class="config-widget-note">${esc(this.t(service.hint[0], service.hint[1]))}</span>` : ''}
-                <div class="config-custom-grid">
-                    <div class="config-widget-field">
-                        <label for="${id('server')}">${esc(this.mediaWord(service, 'server'))}</label>
-                        <input type="text" id="${id('server')}" class="config-text" maxlength="2000"
-                            data-widget-setting="server" data-widget-index="${index}" data-widget-kind="text"
-                            value="${esc(config.server || '')}" placeholder="${esc(service.placeholder || '')}">
-                    </div>
-                    ${this.mediaAuthFields(service, index, draft, keyIsSaved, esc)}
-                </div>
+        // The generic fields (look, layout, refresh, click) sort into the same
+        // three sections as every other widget; `rows` arrives pre-joined, so
+        // they are drawn per field here.
+        const sorted = { connection: '', display: '', advanced: '' };
+        for (const field of DashboardConfig.WIDGET_SETTINGS[widget.type] || []) {
+            sorted[this.widgetFieldSection(field.key)] += this.renderWidgetField(field, widget, index);
+        }
+        const grid = (html) => (html ? `<div class="config-custom-grid">${html}</div>` : '');
+        const connection = `
+            <p class="config-widget-note">${esc(service.name)}</p>
+            ${service.hint ? `<span class="config-widget-note">${esc(this.t(service.hint[0], service.hint[1]))}</span>` : ''}
+            <div class="config-custom-grid">
                 <div class="config-widget-field">
-                    <button type="button" class="config-btn config-btn--small"
-                        data-media-connect="${index}">${esc(this.mediaWord(service, 'connect'))}</button>
-                    <span class="config-widget-note" data-media-status role="status">${esc(status)}</span>
+                    <label for="${id('server')}">${esc(this.mediaWord(service, 'server'))}</label>
+                    <input type="text" id="${id('server')}" class="config-text" maxlength="2000"
+                        data-widget-setting="server" data-widget-index="${index}" data-widget-kind="text"
+                        value="${esc(config.server || '')}" placeholder="${esc(service.placeholder || '')}">
                 </div>
-                ${choices}
+                ${this.mediaAuthFields(service, index, draft, keyIsSaved, esc)}
+                ${sorted.connection}
             </div>
-            <div class="config-custom-group">
-                <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid', 'On the dashboard'))}</h4>
-                <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
-                    this.renderWidgetWidth(widget, index)}${rows}</div>
-            </div>
+            <div class="config-widget-field">
+                <button type="button" class="config-btn config-btn--small"
+                    data-media-connect="${index}">${esc(this.mediaWord(service, 'connect'))}</button>
+                <span class="config-widget-note" data-media-status role="status">${esc(status)}</span>
+            </div>`;
+        const display = `${choices}
+            <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
+                this.renderWidgetWidth(widget, index)}${sorted.display}</div>`;
+
+        // How the last Connect went, on Connection's own title: once the
+        // section is folded that line is the only place it can be read.
+        let state = '';
+        if (setup?.error === 'unreachable') state = this.t('config.widgetSectionUnreachable', 'not reachable');
+        else if (setup?.error) state = this.t('config.widgetSectionNotConnected', 'not connected');
+        else if (setup) state = this.t('config.widgetSectionConnected', 'connected');
+
+        return `<div class="config-widget-settings-body is-custom is-media is-${esc(service.id)}">
+            ${this.renderWidgetSections(widget, index, { connection, display, advanced: grid(sorted.advanced) },
+                { connection: state })}
             ${this.renderWidgetSaveBar(index)}
         </div>`;
+    },
+
+    /*
+     * What Connect (and the Add wizard's Test) sends: the address, and either
+     * the key just typed in the shape this service signs in with, or the
+     * credential already filed when nothing was typed.
+     */
+    mediaSetupPayload(service, server, auth, fallbackCredentialId) {
+        const secret = String(auth?.secret || '').trim();
+        const payload = { server: String(server || '') };
+        const shape = auth || {};
+        if (secret && shape.kind === 'session') {
+            payload.draftCredential = { session: {
+                ...(shape.session || {}), user: String(shape.basicUser || '').trim(), password: secret } };
+        } else if (secret && shape.kind === 'query') {
+            payload.draftCredential = { query: { [shape.queryName]: secret } };
+        } else if (secret) {
+            payload.draftCredential = { headers: { [shape.headerName || service.header]: secret } };
+        } else if (fallbackCredentialId) payload.credentialId = fallbackCredentialId;
+        return payload;
     },
 
     async connectMedia(index) {
@@ -700,16 +735,8 @@
         if (!block || !draft || !service) return;
         this.ensureMediaAuth(index, service);
         const secret = String(draft.auth?.secret || '').trim();
-        const payload = { server: String(draft.config?.server || '') };
-        const auth = draft.auth || {};
-        if (secret && auth.kind === 'session') {
-            payload.draftCredential = { session: {
-                ...(auth.session || {}), user: String(auth.basicUser || '').trim(), password: secret } };
-        } else if (secret && auth.kind === 'query') {
-            payload.draftCredential = { query: { [auth.queryName]: secret } };
-        } else if (secret) {
-            payload.draftCredential = { headers: { [auth.headerName || service.header]: secret } };
-        } else payload.credentialId = block.config?.credentialId || this.widgetCredentialId(block);
+        const payload = this.mediaSetupPayload(service, draft.config?.server, draft.auth,
+            block.config?.credentialId || this.widgetCredentialId(block));
 
         const status = document.querySelector(`[data-media-connect="${index}"]`)
             ?.parentElement?.querySelector('[data-media-status]');

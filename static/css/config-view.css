@@ -6047,11 +6047,6 @@ body.no-animations .config-new-features-panel-star {
     padding-top: 8px;
 }/* ─── CRUD lists ────────────────────────────────────────────────────────── *//* ─── Backup list ───────────────────────────────────────────────────────── */
 
-/* ─── Motion preferences ────────────────────────────────────────────────── */
-
-@media (prefers-reduced-motion: reduce) {
-}
-
 /* ── Server logs toolbar ──────────────────────────────────────────────────── */
 
 /*
@@ -7066,6 +7061,33 @@ body.no-animations .config-new-features-panel-star {
     gap: 12px;
 }
 
+.config-widget-picker-add {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* The connect screen's problem line is a .config-widget-note, whose display
+   would otherwise beat [hidden] and keep an empty line's room. */
+.config-widget-wizard [hidden] {
+    display: none;
+}
+
+/* A failed Test, and a field that needs fixing, read as such -- not only in
+   their words. */
+.config-widget-wizard .config-widget-note.is-error {
+    color: var(--accent-error, #d1493f);
+}
+
+.config-widget-wizard-page {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+}
+
 .config-widget-picker-title {
     display: flex;
     flex-direction: column;
@@ -7170,21 +7192,12 @@ body.no-animations .config-new-features-panel-star {
     margin-left: 0;
 }
 
-/* Catalogue tab: a new kind's card carries the accent before it is hovered. */
-.config-widget-kind.is-new {
-    border-color: color-mix(in srgb, var(--accent-primary) 70%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 6%, var(--surface-2, var(--card-bg, transparent)));
-}
-
-.config-widget-kind-group--new .config-widget-kind-group-title {
-    color: var(--accent-primary);
-}
-
 .config-widget-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    /* One card per widget; an open card spans the whole row. */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
+    align-items: start;
+    gap: 14px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -7245,24 +7258,100 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-widget-row.is-open {
+    grid-column: 1 / -1;
     border-color: var(--accent-primary, rgba(128, 128, 128, 0.5));
     background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
 }
 
 /* Switched off is a state worth seeing in the list, not only in the checkbox. */
-.config-widget-row.is-off .config-widget-row-line > :not([data-widget-settings]):not(.config-widget-row-shown) {
+.config-widget-row.is-off .config-widget-row-line > :not([data-widget-settings]):not(.config-widget-row-pick),
+.config-widget-row.is-off .config-widget-chip {
     opacity: 0.55;
 }
 
-/* The type, as a quiet chip at the end of the line. */
-.config-widget-row-kind {
+/* The card: a head (pick, badge, title and kind, Settings) and a meta line
+   under it (state, page, Shown). */
+.config-widget-card-head {
+    gap: 10px;
+}
+
+.config-widget-card-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    min-height: 1.6rem;
+}
+
+.config-widget-card-head .config-widget-row-shown {
+    margin: 0 0 0 auto;
+    align-self: center;
+}
+
+.config-widget-card-meta [data-widget-settings] {
+    margin-left: auto;
+}
+
+/* The kind's first letter on a tint for its group: the face of the card. */
+.config-widget-badge {
     flex: none;
-    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-6, 10px);
+    font-weight: 700;
+    font-size: calc(var(--font-size-text) * 1.05);
+    color: var(--badge-ink, var(--accent-primary));
+    background: color-mix(in srgb, var(--badge-ink, var(--accent-primary)) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--badge-ink, var(--accent-primary)) 30%, transparent);
+}
+
+.config-widget-badge[data-widget-group="links"] { --badge-ink: var(--accent-primary); }
+.config-widget-badge[data-widget-group="incoming"] { --badge-ink: var(--accent-info, var(--accent-primary)); }
+.config-widget-badge[data-widget-group="upkeep"] { --badge-ink: var(--accent-warning); }
+.config-widget-badge[data-widget-group="system"] { --badge-ink: var(--accent-success); }
+.config-widget-badge[data-widget-group="unraid"] { --badge-ink: var(--accent-error); }
+.config-widget-badge[data-widget-group="ambient"] { --badge-ink: var(--accent-info, var(--accent-primary)); }
+.config-widget-badge[data-widget-group="media"] { --badge-ink: var(--accent-color, var(--accent-primary)); }
+.config-widget-badge[data-widget-group="custom"] { --badge-ink: var(--text-secondary); }
+
+/* The state, as a small chip: set up, connected, not reachable. */
+.config-widget-chip {
+    flex: none;
+    padding: 2px 9px;
     border-radius: var(--radius-pill, 999px);
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    font-size: calc(var(--font-size-text) * 0.78);
+    white-space: nowrap;
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+}
+
+.config-widget-chip[data-widget-chip="ok"] {
+    color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 14%, transparent);
+}
+
+.config-widget-chip[data-widget-chip="warn"] {
+    color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 16%, transparent);
+}
+
+.config-widget-chip[data-widget-chip="bad"] {
+    color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 14%, transparent);
+}
+
+/* The kind, as a quiet line under the title. */
+.config-widget-row-kind {
+    padding-inline: 4px;
     font-size: calc(var(--font-size-text) * 0.8);
     color: var(--text-muted, #888);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Reads as the row's name until it is focused, the way bookmark names do. */
@@ -7299,10 +7388,6 @@ body.no-animations .config-new-features-panel-star {
     white-space: nowrap;
     font-size: calc(var(--font-size-text) * 0.88);
     color: var(--text-muted, #888);
-}
-
-@media (max-width: 640px) {
-    .config-widget-row-kind { display: none; }
 }
 
 /* One widget, opened: description, settings, and the way out. */
@@ -7343,159 +7428,6 @@ body.no-animations .config-new-features-panel-star {
     padding-top: 10px;
     font-size: calc(var(--font-size-text) * 0.88);
     color: var(--text-muted, #888);
-}
-
-/* Wide: the list and the opened widget side by side. Which layout is drawn is
-   decided in JS from the section's width (WIDGETS_WIDE_MIN), since the detail
-   is one node that moves between the row and this column. */
-.config-widgets-split {
-    display: grid;
-    grid-template-columns: minmax(20rem, 2fr) minmax(0, 3fr);
-    gap: 16px;
-    align-items: start;
-}
-
-.config-widgets-split > .config-panel {
-    min-width: 0;
-}
-
-/* Stays in view while a long list scrolls beside it. */
-.config-widgets-detailpanel {
-    position: sticky;
-    top: 16px;
-    max-height: calc(100vh - 32px);
-    overflow: auto;
-}
-
-.config-widgets-detailpanel .config-widget-detail {
-    padding-top: 0;
-}
-
-/* Beside a detail panel the list is narrower: the type chip gives way first.
-   The page chip stays -- it only appears in All pages, where it is the one
-   thing a row says that the detail beside it does not. */
-.config-widgets-split .config-widget-row .config-widget-row-kind { display: none; }
-
-/* ── Widgets → Catalogue: every kind, drawn ─────────────────────────────── */
-
-.config-widget-kinds-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.config-widget-kinds-head .config-panel-title {
-    margin: 0;
-}
-
-.config-widget-kinds-count {
-    margin-left: 6px;
-    font-weight: 400;
-    font-size: calc(var(--font-size-text) * 0.86);
-    color: var(--text-muted, #888);
-}
-
-.config-widget-kinds-page {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: calc(var(--font-size-text) * 0.88);
-    color: var(--text-muted, #888);
-}
-
-.config-widget-kind-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 4px;
-}
-
-.config-widget-kind-chip {
-    padding: 2px 10px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
-    border-radius: var(--radius-pill, 999px);
-    background: transparent;
-    color: var(--text-muted, #888);
-    font: inherit;
-    font-size: calc(var(--font-size-text) * 0.86);
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
-}
-
-.config-widget-kind-chip:hover,
-.config-widget-kind-chip.is-active {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-}
-
-.config-widget-kind-group-title {
-    margin: 18px 0 8px;
-    font-size: calc(var(--font-size-text) * 0.8);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--text-muted, #888);
-}
-
-.config-widget-kind-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-    gap: 10px;
-}
-
-/* A card per kind. They arrive one after another rather than all at once,
-   and lift under the pointer: a page to browse, so it can feel like one. */
-.config-widget-kind {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-6, 10px);
-    background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
-    animation: config-widget-kind-rise 0.35s ease both;
-    animation-delay: calc(var(--i, 0) * 35ms);
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.config-widget-kind:hover,
-.config-widget-kind:focus-within {
-    transform: translateY(-2px);
-    border-color: var(--accent-primary);
-    box-shadow: 0 6px 18px color-mix(in srgb, #000 30%, transparent);
-}
-
-@keyframes config-widget-kind-rise {
-    from { opacity: 0; transform: translateY(6px); }
-}
-
-.config-widget-kind-name {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 0.86);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-secondary, inherit);
-}
-
-.config-widget-kind-have {
-    flex: none;
-    padding: 0 6px;
-    border: 1px solid color-mix(in srgb, var(--accent-success) 50%, transparent);
-    border-radius: var(--radius-pill, 999px);
-    font-size: calc(var(--font-size-text) * 0.72);
-    font-weight: 400;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--accent-success);
 }
 
 /* The drawing: the Unraid preview's tile, rows and bars, one per kind. */
@@ -7549,198 +7481,7 @@ body.no-animations .config-new-features-panel-star {
     from { transform: scaleY(0); }
 }
 
-.config-widget-kind-about {
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 0.86);
-    line-height: 1.45;
-    color: var(--text-muted, #888);
-}
-
-.config-widget-kind-foot {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: auto;
-}
-
-/* ── Widgets → Custom widget: where a figure comes from ─────────────────── */
-
-.config-widget-custom-flow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 3.5rem minmax(0, 1fr) 3.5rem minmax(0, 1fr);
-    align-items: center;
-    margin-top: 14px;
-}
-
-.config-widget-custom-node {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-height: 6rem;
-    padding: 10px;
-    border: 1px solid var(--border-secondary, var(--border-primary));
-    border-radius: var(--radius-6, 10px);
-    background: var(--background-secondary);
-    font-size: var(--text-xs, 0.75rem);
-    color: var(--text-secondary);
-    animation: config-widget-kind-rise 0.4s ease both;
-}
-
-.config-widget-custom-node:nth-of-type(2) { animation-delay: 0.15s; }
-.config-widget-custom-node:nth-of-type(3) { animation-delay: 0.3s; }
-
-.config-widget-custom-node-label {
-    font-size: 0.66rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-tertiary, var(--text-muted, #888));
-}
-
-.config-widget-custom-node-path { color: var(--accent-primary); }
-.config-widget-custom-node-host { color: var(--text-muted, #888); }
-
-.config-widget-custom-json {
-    white-space: pre;
-    overflow: hidden;
-}
-
 /* The two figures the paths pick out, lit in turn with the dot on the wire. */
-.config-widget-custom-json mark {
-    padding: 0 2px;
-    border-radius: 3px;
-    background: transparent;
-    color: var(--accent-primary);
-    animation: config-widget-custom-pick 2.4s ease-in-out infinite;
-}
-
-@keyframes config-widget-custom-pick {
-    0%, 35% { background: transparent; }
-    50%, 100% { background: color-mix(in srgb, var(--accent-primary) 20%, transparent); }
-}
-
-.config-widget-custom-wire {
-    position: relative;
-    height: 2px;
-    margin: 0 6px;
-    background: var(--border-primary);
-}
-
-.config-widget-custom-wire::after {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: 0;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    box-shadow: 0 0 8px var(--accent-primary);
-    animation: config-widget-custom-run 2.4s linear infinite;
-}
-
-.config-widget-custom-wire.is-second::after { animation-delay: 1.2s; }
-
-@keyframes config-widget-custom-run {
-    from { left: 0; }
-    to { left: calc(100% - 8px); }
-}
-
-.config-widget-custom-figures {
-    display: flex;
-    gap: 16px;
-}
-
-.config-widget-custom-figures b {
-    display: block;
-    font-size: calc(var(--font-size-text) * 1.5);
-    color: var(--text-primary, inherit);
-}
-
-.config-widget-custom-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: 10px;
-    margin: 16px 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-.config-widget-custom-card {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px 14px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-6, 10px);
-    background: var(--card-bg, rgba(127, 127, 127, 0.03));
-    animation: config-widget-kind-rise 0.35s ease both;
-    animation-delay: calc(var(--i, 0) * 60ms + 0.3s);
-}
-
-.config-widget-custom-icon {
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-    margin-bottom: 4px;
-    border-radius: 7px;
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-    color: var(--accent-primary);
-}
-
-.config-widget-custom-formats,
-.config-widget-custom-presets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 6px;
-}
-
-.config-widget-custom-format {
-    padding: 1px 7px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
-    border-radius: 6px;
-    font-size: calc(var(--font-size-text) * 0.8);
-    color: var(--text-muted, #888);
-}
-
-.config-widget-custom-format.is-on {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-}
-
-.config-widget-custom-preset {
-    padding: 3px 9px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 7px;
-    background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
-    font-size: calc(var(--font-size-text) * 0.88);
-    animation: config-widget-kind-rise 0.3s ease both;
-    animation-delay: calc(var(--j, 0) * 40ms);
-}
-
-.config-widget-custom-preset.is-more { color: var(--text-muted, #888); }
-
-.config-widget-custom-limits {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 22px;
-    color: var(--text-muted, #888);
-}
-
-.config-widget-custom-limits b {
-    color: var(--text-primary, inherit);
-}
-
-/* Stacked on a phone: three boxes one above the other, the wires dropped. */
-@media (max-width: 720px) {
-    .config-widget-custom-flow {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 10px;
-    }
-    .config-widget-custom-wire { display: none; }
-}
 
 /* The settings, folded out under the row they belong to. Full width, since a
    checkset needs the room, and separated by a rule rather than a box so the row
@@ -8438,7 +8179,8 @@ body.no-animations .config-new-features-panel-star {
 .config-widget-settings-body.is-custom {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    /* The same gap as .config-widget-sections: one rhythm between sections. */
+    gap: 14px;
     /* The grid rule this overrides also sets align-items: start, which in a
        column flex box is the horizontal axis -- so every group shrank to its
        content and sat in a third of the panel it had been given. */
@@ -8466,6 +8208,103 @@ body.no-animations .config-new-features-panel-star {
     grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
     gap: 12px 18px;
     align-items: start;
+}
+
+/*
+ * Connection, Display, Advanced: the three folding sections every widget's
+ * panel is made of. Each is a .config-custom-group too, so its title reads
+ * like every other group heading in the panel; the <details> itself is a
+ * block, and the body under the summary does the stacking, so whatever a
+ * caller puts in a section -- an auto-fit grid, the figures table, a sign-in
+ * form -- gets the full width and never more than it.
+ */
+.config-widget-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+.config-widget-section {
+    display: block;
+    min-width: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-primary);
+}
+
+.config-widget-section:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+/* A step above the group titles inside it ("Start from a service"). */
+.config-widget-section > summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(var(--font-size-text) * 0.92);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    border-radius: var(--radius-3, 0.25rem);
+}
+
+.config-widget-section > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* The marker: a chevron that points down when the section is open. */
+.config-widget-section > summary::before {
+    content: '';
+    flex: none;
+    width: 0.4em;
+    height: 0.4em;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+}
+
+.config-widget-section[open] > summary::before {
+    transform: rotate(45deg);
+}
+
+/* How a section stands ("connected"), after its title: read, not shouted. */
+.config-widget-section-state {
+    font-weight: var(--font-weight-normal);
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.config-widget-section > summary:hover {
+    color: var(--text-primary);
+}
+
+/* The fallback is load-bearing -- see the note on .lvs-filter:focus-visible. */
+.config-widget-section > summary:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
+.config-widget-section-body {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    min-width: 0;
+    margin-top: 10px;
+}
+
+/* The setup note keeps its own border; the section body spaces it. */
+.config-widget-section-body > .config-widget-setup {
+    margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-widget-section > summary::before {
+        transition: none;
+    }
 }
 
 /*
@@ -9009,43 +8848,6 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /* ── Widgets: choosing one, and what each one is ─────────────────────────── */
-/*
- * The picker and the reference are built from the same parts on purpose.
- *
- * Adding a widget used to be a dropdown, a button, and one line that changed
- * as the dropdown did — so comparing two kinds meant looking at them one at a
- * time and remembering. Both screens now put every kind on the page under the
- * question it answers; the only difference is that one of them is clickable.
- */
-.config-widget-pick-group {
-    margin: 0 0 18px;
-}
-
-.config-widget-pick-group:last-child {
-    margin-bottom: 0;
-}
-
-.config-widget-pick-group-title {
-    margin: 0 0 8px;
-    font-size: var(--font-size-small);
-    font-weight: var(--font-weight-semibold, 600);
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
-}
-
-/*
- * As many across as the panel has room for, never fewer than one.
- *
- * auto-fill with a minimum rather than a fixed count: config is a column
- * inside a page that is itself a column, so the width here is whatever is
- * left after the rail — a number of columns chosen in advance is wrong at
- * some window size.
- */
-.config-widget-pick-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
-    gap: 8px;
-}
 
 .config-widget-pick {
     display: flex;
@@ -9067,17 +8869,6 @@ body.no-animations .config-new-features-panel-star {
 .config-widget-pick:focus-visible {
     border-color: var(--accent-primary);
     box-shadow: inset 0 0 0 1px var(--accent-primary);
-}
-
-.config-widget-pick-name {
-    font-weight: var(--font-weight-semibold, 600);
-}
-
-.config-widget-pick-about {
-    color: var(--text-tertiary);
-    font-size: var(--font-size-small);
-    line-height: 1.5;
-    text-wrap: pretty;
 }
 
 .config-widget-pick-footnote {
@@ -9423,7 +9214,6 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-field-check[data-state="ok"] { color: var(--accent-success, var(--accent-primary)); }
 .config-field-check[data-state="fixable"] { color: var(--accent-warning); }
 .config-field-check[data-state="bad"] { color: var(--accent-error); }
-
 
 /* ── Appearance → Background and Surface ─────────────────────────────────── */
 
@@ -10354,16 +10144,16 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-widget-go,
 .config-widget-step,
 .config-widget-link,
-#config-pt-body .structure-chip,
-#config-pt-body .structure-group-toggle {
+:is(#config-pt-body, #config-finders-body) .structure-chip,
+:is(#config-pt-body, #config-finders-body) .structure-group-toggle {
     position: relative;
 }
 
 .config-widget-go::after,
 .config-widget-step::after,
 .config-widget-link::after,
-#config-pt-body .structure-chip::after,
-#config-pt-body .structure-group-toggle::after {
+:is(#config-pt-body, #config-finders-body) .structure-chip::after,
+:is(#config-pt-body, #config-finders-body) .structure-group-toggle::after {
     content: "";
     position: absolute;
     inset: 50% 0 auto 0;
@@ -10377,4 +10167,154 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
         width: 24px;
         height: 24px;
     }
+}
+
+
+/* The open widget's settings: a sheet over the page, not a form that rearranges
+   the list. */
+.config-widget-overlay {
+    position: fixed;
+    inset: 0;
+    /* Above the page, below .modal-overlay (2000): confirmations and the info
+       dialogs open over the sheet. */
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.config-widget-backdrop {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, #000 55%, transparent);
+    backdrop-filter: blur(3px);
+}
+
+.config-widget-sheet {
+    position: relative;
+    box-sizing: border-box;
+    width: min(46rem, 100%);
+    max-height: min(92vh, 64rem);
+    overflow: auto;
+    padding: 20px 22px 18px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    border-radius: var(--radius-8, 14px);
+    background: var(--surface-1, var(--background-primary, #181a20));
+    color: var(--text-primary);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    outline: none;
+}
+
+.config-widget-sheet-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted, #888);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.config-widget-sheet-close:hover,
+.config-widget-sheet-close:focus-visible {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+}
+
+.config-widget-sheet .config-widget-detail {
+    padding: 0;
+}
+
+.config-widget-sheet .config-widget-detail-head {
+    padding-right: 2.4rem;
+}
+
+@media (max-width: 640px) {
+    .config-widget-overlay { padding: 0; }
+    .config-widget-sheet {
+        width: 100%;
+        max-height: 100vh;
+        height: 100%;
+        border-radius: 0;
+    }
+}
+
+/* The card: quiet. The title reads as text until it is hovered or focused, the
+   Settings button is a small ghost, and nothing on the card looks like a field. */
+.config-widget-row {
+    padding: 14px 16px 12px;
+}
+
+.config-widget-card-head {
+    align-items: flex-start;
+}
+
+.config-widget-card-head .config-widget-row-title {
+    /* Text, not a field: themes style every .config-text as a box. */
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    padding-inline: 4px;
+}
+
+.config-widget-card-head .config-widget-row-title:hover,
+.config-widget-card-head .config-widget-row-title:focus {
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent) !important;
+    border-color: color-mix(in srgb, var(--text-primary) 25%, transparent) !important;
+}
+
+.config-widget-card-meta [data-widget-settings] {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+}
+
+.config-widget-card-meta [data-widget-settings]:hover,
+.config-widget-card-meta [data-widget-settings]:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    color: var(--text-primary);
+}
+
+.config-widget-card-meta {
+    margin-top: 10px;
+    padding-left: calc(2.25rem + 1.6rem);
+}
+
+.config-widget-row.is-open {
+    grid-column: auto;
+}
+
+/* The card's surface is a pseudo-element, so the flat row styling some themes
+   apply to .config-widget-row cannot take it away: a card is always a card. */
+.config-widget-row {
+    position: relative;
+    isolation: isolate;
+}
+
+.config-widget-row::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: var(--radius-8, 12px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-primary) 13%, transparent);
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.config-widget-row:hover::before,
+.config-widget-row:focus-within::before {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}
+
+.config-widget-row.is-open::before {
+    border-color: var(--accent-primary);
 }

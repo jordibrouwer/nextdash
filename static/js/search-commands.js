@@ -16,7 +16,7 @@ class SearchCommandsComponent {
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers' },
         { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances' },
-        { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
+        { id: 'widgetsTutorialV2', labelKey: 'config.tourWidgets', label: 'Widgets' },
         { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring' },
         { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid' },
     ];
@@ -51,7 +51,7 @@ class SearchCommandsComponent {
                 labelKey: 'commands.groupBookmarks',
                 commands: [
                     'new', 'add', 'remove', 'note', 'pin', 'move', 'edit', 'copy', 'tag',
-                    'open', 'goto', 'find', 'stale', 'duplicates', 'archive',
+                    'open', 'goto', 'find', 'stale', 'duplicates', 'checkup', 'archive',
                 ],
             },
             {
@@ -148,6 +148,7 @@ class SearchCommandsComponent {
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
             'duplicates': this.handleDuplicateCommand.bind(this),
+            'checkup': this.handleCheckupCommand.bind(this),
             'note': this.handleNoteCommand.bind(this),
             'pin': this.handlePinCommand.bind(this),
             'unpin': this.handlePinCommand.bind(this),
@@ -329,6 +330,7 @@ class SearchCommandsComponent {
         { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
         { id: 'structure', labelKey: 'commands.configStructure', fallback: 'Structure' },
         { id: 'behavior', labelKey: 'commands.configBehavior', fallback: 'Behavior' },
+        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders' },
         { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'containers', labelKey: 'commands.configContainers', fallback: 'Containers' },
@@ -344,7 +346,6 @@ class SearchCommandsComponent {
         // what you remember still arrives somewhere sensible.
         { id: 'categories', labelKey: 'commands.configCategories', fallback: 'Categories', section: 'structure', tab: 'categories' },
         { id: 'tags', labelKey: 'commands.configTags', fallback: 'Tags', section: 'bookmarks', tab: 'tags' },
-        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders', section: 'structure', tab: 'finders' },
         { id: 'pages', labelKey: 'commands.configPages', fallback: 'Pages', section: 'structure', tab: 'pages' },
         { id: 'backups', labelKey: 'commands.configBackups', fallback: 'Backups', section: 'data-backups', tab: 'backups' },
         { id: 'themes', labelKey: 'commands.configThemes', fallback: 'Themes', section: 'appearance', tab: 'general' },
@@ -987,6 +988,18 @@ class SearchCommandsComponent {
         const dash = window.dashboardInstance;
         if (!dash) return [];
 
+        // `:edit mode` switches the dashboard's edit mode; plain `:edit` edits the selected bookmark.
+        if ((args[0] || '').toLowerCase() === 'mode') {
+            return [{
+                name: this._t('commands.editModeLabel', 'Edit mode'),
+                shortcut: ':EDIT',
+                type: 'command',
+                action: () => this._runOverlayAction(async () => {
+                    dash.editMode?.toggle?.();
+                }),
+            }];
+        }
+
         const target = this._resolveBookmarkActionTarget();
         if (!target?.bookmark) {
             return this._noBookmarkSelectionRow(':EDIT');
@@ -1254,6 +1267,18 @@ class SearchCommandsComponent {
             type: 'command',
             action: () => this._runOverlayAction(() => {
                 window.openWhatsNewModal?.({ force: true });
+            }),
+        }];
+    }
+
+    // The checkup: a round through what is worth tidying on the dashboard.
+    handleCheckupCommand(args, fullQuery) {
+        return [{
+            name: this._t('commands.checkupLabel', 'Start the checkup'),
+            shortcut: ':CHECKUP',
+            type: 'command',
+            action: () => this._runOverlayAction(async () => {
+                await window.Checkup?.open?.();
             }),
         }];
     }
@@ -2670,6 +2695,7 @@ class SearchCommandsComponent {
             recent: 'showRecentButton',
             finders: 'showFindersButton',
             cheatsheet: 'showCheatSheetButton',
+            edit: 'showEditModeButton',
             search: 'showSearchButton',
             tagcloud: 'showTagCloudButton',
             pages: 'showPagesButton',
@@ -2891,8 +2917,8 @@ class SearchCommandsComponent {
         if (!dashboard) return [];
         const typed = (args[0] || '').trim();
         const stored = Math.round(Number(dashboard.settings.maxHeaderActions));
-        const current = Math.min(9, Math.max(0, Number.isFinite(stored) ? stored : 2));
-        const values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => !typed || String(n).startsWith(typed));
+        const current = Math.min(10, Math.max(0, Number.isFinite(stored) ? stored : 2));
+        const values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((n) => !typed || String(n).startsWith(typed));
         return values.map((n) => ({
             name: `${n}${n === current ? ` (${this._t('commands.stateCurrent', 'current')})` : ''}`,
             shortcut: ':MAXACTIONS',

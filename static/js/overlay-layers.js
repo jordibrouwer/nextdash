@@ -22,6 +22,7 @@
         { root: '#app-modal', panel: '.modal', open: (r) => r.classList.contains('show') },
         { root: '#bookmark-form-modal', panel: '.bookmark-form-modal-dialog', open: (r) => r.classList.contains('show') },
         { root: '.notes-modal-overlay', panel: '.notes-modal', open: () => true },
+        { root: '.config-widget-overlay', panel: '.config-widget-sheet', open: () => true },
         { root: '#tag-cloud-modal', panel: null, open: (r) => r.classList.contains('is-open') && !r.hasAttribute('hidden') },
         { root: '#omnibox-overlay', panel: '.omnibox-box', open: () => true },
         { root: '#shortcut-search', panel: '.search-container', open: (r) => r.classList.contains('show') },

@@ -79,6 +79,8 @@ class DashboardUiHelpers {
         if (appModal?.classList.contains('show')) return true;
         if (window.DashboardTagCloud?.modalOpen) return true;
         if (document.getElementById('omnibox-overlay')) return true;
+        // The widget settings sheet, over the dashboard or in Config.
+        if (document.getElementById('config-widget-overlay')) return true;
         if (document.getElementById('date-popover')) return true;
         if (document.getElementById('move-popover')) return true;
         if (document.getElementById('delete-popover')) return true;

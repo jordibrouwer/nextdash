@@ -23,6 +23,9 @@
     // closed. Per browser, like the seen mark, and keyed by the snapshot so a
     // new digest starts over.
     const PROGRESS_KEY = 'nextdashDigestProgress';
+    // When the card shows: snoozed, seen, and the two reminders after "Got it".
+    // The rules are DigestCardState's; this only keeps them per browser.
+    const CARD_KEY = 'nextdashDigestCard';
     let latest = null;
     let barEl = null;
 
@@ -51,12 +54,29 @@
     function seenAt() {
         try { return Number(global.localStorage?.getItem(SEEN_KEY)) || 0; } catch (_) { return 0; }
     }
-    function markSeen() {
-        try { if (latest) global.localStorage?.setItem(SEEN_KEY, String(latest.generatedAt)); } catch (_) { /* private mode */ }
+    /** The card's state for this digest. A digest seen before the card kept state is taken as read: no reminders. */
+    function readCard(s) {
+        let stored = null;
+        try { stored = JSON.parse(global.localStorage?.getItem(CARD_KEY) || 'null'); } catch (_) { /* private mode, or a value from elsewhere */ }
+        const state = global.DigestCardState.forSnapshot(stored, s.generatedAt);
+        if (state === stored || !seenAt() || seenAt() < s.generatedAt) return state;
+        return { ...state, seenAt: Date.now(), windowClosed: true };
+    }
+    function writeCard(state) {
+        try { global.localStorage?.setItem(CARD_KEY, JSON.stringify(state)); } catch (_) { /* private mode */ }
+    }
+    function updateCard(change) {
+        if (!latest) return;
+        writeCard(change(readCard(latest), Date.now()));
     }
 
-    function shouldShow(snapshot, seen) {
-        return Boolean(snapshot && snapshot.generatedAt > seen);
+    function markSeen() {
+        try { if (latest) global.localStorage?.setItem(SEEN_KEY, String(latest.generatedAt)); } catch (_) { /* private mode */ }
+        updateCard(global.DigestCardState.gotIt);
+    }
+
+    function shouldShow(snapshot) {
+        return Boolean(snapshot && global.DigestCardState.shouldShow(readCard(snapshot), Date.now()));
     }
 
     async function fetchLatest() {
@@ -132,8 +152,84 @@
             await global.openWhatsNewModal?.({ force: true });
             return;
         }
+        if (target === 'checkup') {
+            await global.Checkup?.open?.();
+            return;
+        }
         history.replaceState(history.state, '', `${global.location.pathname}${global.location.search}#bookmarks?health=${encodeURIComponent(target)}`);
         await d.config?.openLibraryView?.();
+    }
+
+    /** Whole days since a moment, never negative. */
+    function daysSince(ms) {
+        return Math.max(0, Math.floor((Date.now() - Number(ms)) / 86400000));
+    }
+
+    /** "down 12 d", or nothing when the check never said since when. */
+    function downFor(since) {
+        if (!since) return '';
+        const days = daysSince(since);
+        return days < 1
+            ? t('dashboard.digestDownToday', 'down today')
+            : t('dashboard.digestDownDays', 'down {days} d', { days });
+    }
+
+    /** One line of detail: a name, what sits under it, and a value on the right. */
+    function rowsHtml(rows) {
+        if (!rows?.length) return '';
+        const lines = rows.map(({ name, sub, value }) => `
+            <div class="digest-line">
+                <span class="digest-line-main">
+                    <span class="digest-line-name" title="${esc(name)}">${esc(name)}</span>
+                    ${sub ? `<small class="digest-line-sub">${esc(sub)}</small>` : ''}
+                </span>
+                ${value ? `<span class="digest-line-value">${esc(value)}</span>` : ''}
+            </div>`).join('');
+        return `<div class="digest-lines">${lines}</div>`;
+    }
+
+    /**
+     * The week in figures, each next to the week before. A figure with nothing
+     * behind it is left out, so a new install shows a short strip, not zeroes.
+     * `good` says which way is better: up for opens and uptime, neither for
+     * what only counts.
+     */
+    function statsHtml(s) {
+        const w = s.week || {};
+        const inbox = s.usage?.inbox || 0;
+        const cards = [];
+        const arrow = (now, prev, good, unit = '') => {
+            const diff = Math.round((now - prev) * 10) / 10;
+            if (!diff) return `<span class="digest-stat-delta is-same">= ${prev}${unit}</span>`;
+            const tone = good ? ((diff > 0) === (good === 'up') ? 'is-good' : 'is-bad') : 'is-same';
+            return `<span class="digest-stat-delta ${tone}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff)}${unit}</span>`;
+        };
+        if (w.opens || w.opensPrev) {
+            cards.push({ value: w.opens || 0, delta: arrow(w.opens || 0, w.opensPrev || 0, 'up'), label: t('dashboard.digestStatOpens', 'bookmarks opened') });
+        }
+        if (w.added || w.addedPrev) {
+            cards.push({ value: w.added || 0, delta: arrow(w.added || 0, w.addedPrev || 0, ''), label: t('dashboard.digestStatAdded', 'added this week') });
+        }
+        if (w.uptime) {
+            const outages = w.outages ? ' · ' + count(w.outages, 'dashboard.digestOutage', '1 outage', '{count} outages') : '';
+            cards.push({
+                value: `${w.uptime}%`,
+                delta: w.uptimePrev ? arrow(w.uptime, w.uptimePrev, 'up') : '',
+                label: t('dashboard.digestStatUptime', 'uptime') + outages,
+            });
+        }
+        if (inbox) {
+            cards.push({
+                value: inbox, delta: '',
+                label: t('dashboard.digestStatInbox', 'in the Inbox') + (w.inboxNew ? ' · ' + t('dashboard.digestStatInboxNew', '{count} new this week', { count: w.inboxNew }) : ''),
+            });
+        }
+        if (!cards.length) return '';
+        return `<div class="digest-stats" role="group" aria-label="${esc(t('dashboard.digestStatsLabel', 'The week in figures'))}">${cards.map((c) => `
+            <div class="digest-stat">
+                <span class="digest-stat-value">${esc(String(c.value))}${c.delta}</span>
+                <span class="digest-stat-label">${esc(c.label)}</span>
+            </div>`).join('')}</div>`;
     }
 
     function chips(names, total, extra = '') {
@@ -180,7 +276,7 @@
         return `<div class="digest-days">${rows}</div>`;
     }
 
-    function partHtml({ id, tone, title, note, names, total, more, bars: barsHtml, action, target, work }, state, i) {
+    function partHtml({ id, tone, title, intro, note, names, total, more, bars: barsHtml, rows, action, target, work }, state, i) {
         const done = state.visited.includes(id);
         const next = !done && state.next === id;
         let button = '';
@@ -197,8 +293,10 @@
                     <h3 class="digest-part-title"><span class="digest-part-dot" aria-hidden="true">${done ? '✓' : ''}</span>${esc(title)}</h3>
                     ${button}
                 </div>
+                ${intro ? `<p class="digest-part-intro">${esc(intro)}</p>` : ''}
                 <p class="digest-part-note">${esc(note)}</p>
                 ${barsHtml || ''}
+                ${rowsHtml(rows)}
                 ${chips(names, total, more)}
             </section>`;
     }
@@ -224,36 +322,15 @@
         return out;
     }
 
-    function tilesHtml(tiles, state) {
-        if (!tiles.length) return '';
-        return `<div class="digest-tiles" style="--digest-tiles:${tiles.length}">${tiles.map((tile, i) => {
-            const done = state.visited.includes(tile.part);
-            return `
-                <button type="button" class="digest-tile digest-tone--${tile.tone}${done ? ' is-done' : ''}" data-digest-tile="${esc(tile.target)}" data-digest-part-id="${esc(tile.part)}" style="--digest-i:${i}">
-                    <span class="digest-tile-count" data-digest-count="${tile.count}">${tile.count}</span>
-                    <span class="digest-tile-label">${esc(tile.label)}</span>
-                    ${done ? '<span class="digest-tile-done" aria-hidden="true">✓</span>' : ''}
-                </button>`;
-        }).join('')}</div>`;
-    }
-
-    /** The tiles count up from nothing, once, unless motion is turned down. */
-    function countUp(root) {
-        const still = document.body.classList.contains('no-animations')
-            || global.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-        if (still || typeof global.requestAnimationFrame !== 'function') return;
-        root.querySelectorAll('[data-digest-count]').forEach((el, i) => {
-            const to = Number(el.getAttribute('data-digest-count')) || 0;
-            const start = performance.now() + 150 + i * 80;
-            const length = 800;
-            el.textContent = '0';
-            const step = (now) => {
-                const p = Math.min(1, Math.max(0, (now - start) / length));
-                el.textContent = String(Math.round(to * (1 - (1 - p) ** 3)));
-                if (p < 1) global.requestAnimationFrame(step);
-            };
-            global.requestAnimationFrame(step);
-        });
+    /**
+     * The digest counts "not opened" at a fixed 30 days; the Bookmarks view's
+     * own filter follows the reader's setting, so the list behind the button
+     * can differ. Say so rather than let the two numbers look like a mistake.
+     */
+    function staleLimitNote(digestDays) {
+        const own = Number(dash()?.settings?.bookmarkStaleDays) || 90;
+        if (own === digestDays) return '';
+        return ` ${t('dashboard.digestStaleLimit', 'The Bookmarks view uses your own limit of {days} days, so its list can differ.', { days: own })}`;
     }
 
     /** The parts, in order; the ones with a view to open are the to-do list. */
@@ -272,6 +349,8 @@
             }
             out.push({
                 id: 'broken', tone: 'bad', title: t('dashboard.digestBrokenTitle', 'Broken links'), note,
+                intro: t('dashboard.digestBrokenIntro', 'A broken link is a bookmark whose address did not answer at the last check: the site is down, the page moved, or the address is wrong. You are told because a link you rely on may not open.'),
+                count: (newly.length || 0) + (h.stillBroken || 0),
                 names: newly.length ? newly : h.stillBrokenNames, total: newly.length ? newly.length : h.stillBroken,
                 more: newly.length && h.stillBroken ? t('dashboard.digestOlder', '+{count} older', { count: h.stillBroken }) : '',
                 action: t('dashboard.digestOpenBookmarks', 'Open in Bookmarks'), target: 'broken',
@@ -283,6 +362,8 @@
             const certs = expiries(h.certsExpiring);
             out.push({
                 id: 'certificates', tone: 'warn', title: t('dashboard.digestCertsTitle', 'Certificates'),
+                intro: t('dashboard.digestCertsIntro', 'A certificate is what lets the browser trust a site. When it runs out, the browser shows a warning instead of the site. You are told because these run out within 30 days, or already have.'),
+                count: h.certsExpiring.length,
                 note: t('dashboard.digestCertsBarsNote', 'Days left before the browser shows a warning instead of the site.'),
                 bars: bars(certs, { scale: 30, warnBelow: 30 }),
                 // Lines the bars could not read stay as names.
@@ -298,6 +379,8 @@
             const far = domains.length - near.length;
             out.push({
                 id: 'domains', tone: 'ok', title: t('dashboard.digestDomainsTitle', 'Domains'),
+                intro: t('dashboard.digestDomainsIntro', 'A domain is a name you rent, and it has to be renewed. You are told about the ones that run out soonest, so a site does not disappear because a renewal was missed.'),
+                count: h.domainsExpiring.length,
                 note: near.length
                     ? t('dashboard.digestDomainsBarsNote', 'Days left before the site, its certificate and its mail go with the domain.')
                     : t('dashboard.digestDomainsNote', 'When a domain runs out, the site, its certificate and its mail go with it.'),
@@ -310,6 +393,8 @@
         if (u.available?.length) {
             out.push({
                 id: 'updates', tone: 'info', title: t('dashboard.digestUpdatesTitle', 'Container updates'),
+                intro: t('dashboard.digestUpdatesIntro', 'Your containers run an image. These have a newer image available. You are told so you can update them when it suits you; nothing changes by itself.'),
+                count: u.available.length,
                 note: t('dashboard.digestUpdatesNote', 'A newer image is available for these. Containers you hold back are left out.'),
                 names: u.available, action: t('dashboard.digestOpenContainers', 'Open Containers'), target: 'updates',
             });
@@ -317,8 +402,20 @@
         if (g.topOpened?.length) {
             out.push({
                 id: 'top', tone: 'accent', title: t('dashboard.digestTopTitle', 'Most opened'),
+                intro: t('dashboard.digestTopIntro', 'The bookmarks you opened most in the last 7 days. Only for your information: there is nothing to do here.'),
+                count: g.topOpened.length,
                 note: t('dashboard.digestTopNote', 'What you opened most in the last 7 days.'),
                 names: g.topOpened.map((name, i) => `${i + 1} · ${name}`),
+            });
+        }
+        // The checkup, when it is there and the week has enough for it.
+        if (s.checkup?.items && global.Checkup?.open) {
+            out.push({
+                id: 'checkup', tone: 'accent', title: t('dashboard.digestCheckupTitle', 'Checkup'),
+                intro: t('dashboard.digestCheckupIntro', 'The checkup walks you through what is worth tidying on your dashboard: dead and doubled links, and bookmarks you never or rarely open. You are told because there is enough to do to be worth a few minutes.'),
+                count: s.checkup.items,
+                note: count(s.checkup.items, 'dashboard.digestCheckupNote', '1 bookmark is broken, doubled, never opened or not opened for a while.', '{count} bookmarks are broken, doubled, never opened or not opened for a while.'),
+                action: t('dashboard.digestStartCheckup', 'Start the checkup'), target: 'checkup',
             });
         }
         // The Bookmarks view's own two filters, so the count is the list the
@@ -327,16 +424,21 @@
         if (g.neverOpened) {
             out.push({
                 id: 'never', tone: 'quiet', title: t('dashboard.digestNeverTitle', 'Never opened'),
+                intro: t('dashboard.digestNeverIntro', 'These bookmarks have been on your dashboard but were never opened. You are told because a link nobody uses is a candidate to move, archive or delete.'),
+                count: g.neverOpened,
                 note: count(g.neverOpened, 'dashboard.digestNeverNote', '1 bookmark nobody has opened yet.', '{count} bookmarks nobody has opened yet.'),
                 names: g.neverOpenedNames, total: g.neverOpened,
                 action: t('dashboard.digestReview', 'Review'), target: 'unused',
             });
         }
         if (g.stale) {
-            const days = String(g.staleDays || 90);
+            const days = String(g.staleDays || 30);
             out.push({
                 id: 'stale', tone: 'quiet', title: t('dashboard.digestStaleTitle', 'Not opened in {days} days').replace('{days}', days),
-                note: count(g.stale, 'dashboard.digestStaleNote', '1 bookmark. A candidate to move, archive or delete.', '{count} bookmarks. Candidates to move, archive or delete.'),
+                intro: t('dashboard.digestStaleIntro', 'You opened these once, but not for the last {days} days. You are told because they may no longer be worth keeping.', { days }),
+                count: g.stale,
+                note: count(g.stale, 'dashboard.digestStaleNote', '1 bookmark. A candidate to move, archive or delete.', '{count} bookmarks. Candidates to move, archive or delete.')
+                    + staleLimitNote(g.staleDays || 30),
                 names: g.staleNames, total: g.stale,
                 action: t('dashboard.digestReview', 'Review'), target: 'stale',
             });
@@ -344,6 +446,8 @@
         if (g.inbox) {
             out.push({
                 id: 'inbox', tone: 'accent', title: t('dashboard.digestInboxTitle', 'Inbox'),
+                intro: t('dashboard.digestInboxIntro', 'The Inbox holds links you saved but have not filed on a page yet. You are told so they do not pile up unread.'),
+                count: g.inbox,
                 note: count(g.inbox, 'dashboard.digestInboxNote', '1 link waiting to be sorted.', '{count} links waiting to be sorted.'),
                 action: t('dashboard.digestOpenInbox', 'Open Inbox'), target: 'inbox',
             });
@@ -353,12 +457,156 @@
         if (news.releases?.length) {
             out.push({
                 id: 'news', tone: 'accent', title: t('dashboard.digestNewsTitle', 'New in nextDash'),
+                intro: t('dashboard.digestNewsIntro', 'nextDash itself was updated this week. Only for your information: these are the highlights.'),
+                count: news.releases.length,
                 note: t('dashboard.digestNewsNote', '{releases} came out this week.', { releases: news.releases.join(', ') }),
                 names: news.highlights,
                 action: t('dashboard.digestOpenWhatsNew', "Open What's new"), target: 'whats-new', info: true,
             });
         }
+        enrichParts(out, s);
         return out;
+    }
+
+    /**
+     * The window's list, in the order a reader should deal with it: what needs
+     * action, what is worth tidying, and what is only good to know.
+     */
+    const GROUPS = [
+        { id: 'now', label: () => t('dashboard.digestGroupNow', 'Needs you'), parts: ['broken', 'certificates', 'domains', 'updates'] },
+        { id: 'tidy', label: () => t('dashboard.digestGroupTidy', 'Tidy up'), parts: ['checkup', 'never', 'stale'] },
+        { id: 'know', label: () => t('dashboard.digestGroupKnow', 'Good to know'), parts: ['inbox', 'top', 'news'] },
+    ];
+
+    /**
+     * What the newer snapshot knows beyond names: rows with their detail, and
+     * the one line the Overview shows for the part. A snapshot from before that
+     * keeps its chips, and a part with nothing more to say shows its own note.
+     */
+    function enrichParts(parts, s) {
+        const h = s.health || {}, g = s.usage || {}, u = s.updates || {};
+        const by = (id) => parts.find((p) => p.id === id);
+        const left = (p, shown) => {
+            const rest = (p.count || 0) - shown;
+            return rest > 0 ? t('dashboard.digestMore', 'and {count} more', { count: rest }) : '';
+        };
+        const broken = by('broken');
+        if (broken && h.brokenItems?.length) {
+            const items = h.brokenItems;
+            broken.rows = items.map((b) => ({ name: b.name, sub: [b.where, b.error].filter(Boolean).join(' · '), value: downFor(b.since) }));
+            broken.names = null;
+            broken.more = left(broken, items.length);
+            broken.summary = [items[0].name, downFor(items[0].since)].filter(Boolean).join(' · ') + (broken.count > 1 ? ` +${broken.count - 1}` : '');
+        }
+        const certs = by('certificates');
+        if (certs) {
+            const first = expiries(h.certsExpiring)[0];
+            if (first) certs.summary = `${first.name} · ${t('dashboard.digestDaysLeft', '{days} d', { days: first.days })}`;
+        }
+        const domains = by('domains');
+        if (domains) {
+            const first = expiries(h.domainsExpiring)[0];
+            if (first) domains.summary = `${first.name} · ${t('dashboard.digestDaysLeft', '{days} d', { days: first.days })}`;
+        }
+        const updates = by('updates');
+        if (updates && u.available?.length) {
+            // The image's own name and tag, not the registry path in front of it.
+            updates.summary = u.available.slice(0, 2).map((image) => String(image).split('/').pop()).join(' · ') + (u.available.length > 2 ? ` +${u.available.length - 2}` : '');
+        }
+        const top = by('top');
+        if (top && !g.topOpenedItems?.length && g.topOpened?.length) top.summary = g.topOpened.join(' · ');
+        if (top && g.topOpenedItems?.length) {
+            const items = g.topOpenedItems;
+            top.rows = items.map((it, i) => ({ name: `${i + 1} · ${it.name}`, value: count(it.count, 'dashboard.digestOpens', '1 open', '{count} opens') }));
+            top.names = null;
+            top.summary = items.map((it) => `${it.name} ${it.count}`).join(' · ');
+        }
+        const checkup = by('checkup');
+        if (checkup) checkup.summary = count(checkup.count, 'dashboard.digestSumCheckup', '1 worth a look', '{count} worth a look');
+        const news = by('news');
+        if (news && s.news?.releases?.length) {
+            const releases = s.news.releases;
+            news.summary = releases.slice(0, 2).join(' · ') + (releases.length > 2 ? ` +${releases.length - 2}` : '');
+        }
+        const never = by('never');
+        if (never) never.summary = count(never.count, 'dashboard.digestSumNever', '1 never opened', '{count} never opened');
+        if (never && g.neverOpenedItems?.length) {
+            const items = g.neverOpenedItems;
+            never.rows = items.map((it) => ({ name: it.name, sub: it.where || '' }));
+            never.names = null;
+            never.more = left(never, items.length);
+        }
+        const stale = by('stale');
+        if (stale && g.staleItems?.length) {
+            const items = g.staleItems;
+            stale.rows = items.map((it) => ({ name: it.name, value: t('dashboard.digestAgoDays', '{days} d ago', { days: it.days }) }));
+            stale.names = null;
+            stale.more = left(stale, items.length);
+            stale.summary = `${items[0].name} · ${t('dashboard.digestAgoDays', '{days} d ago', { days: items[0].days })}`;
+        }
+        const inbox = by('inbox');
+        if (inbox && g.inboxOldestDays >= 1) {
+            inbox.summary = t('dashboard.digestSumInbox', '{count} waiting, the oldest {days} d', { count: g.inbox, days: g.inboxOldestDays });
+            inbox.note += ' ' + t('dashboard.digestInboxOldest', 'The oldest has waited {days} days.', { days: g.inboxOldestDays });
+        }
+    }
+
+    /** The Overview: every part with the one line that says where it stands. */
+    function overviewHtml(parts, state) {
+        const rows = GROUPS.flatMap((g) => g.parts).map((id) => parts.find((p) => p.id === id)).filter(Boolean).map((p) => {
+            const done = state.visited.includes(p.id);
+            return `
+                <button type="button" class="digest-line digest-line--part digest-tone--${esc(p.tone)}${done ? ' is-done' : ''}" data-digest-row="${esc(p.id)}">
+                    <span class="digest-line-main"><span class="digest-part-dot" aria-hidden="true">${done ? '✓' : ''}</span><span class="digest-line-name">${esc(p.title)}</span></span>
+                    <span class="digest-line-value">${esc(p.summary || p.note || '')}</span>
+                </button>`;
+        }).join('');
+        return `
+            <section class="digest-part digest-tone--accent" data-digest-part="overview">
+                <div class="digest-part-head"><h3 class="digest-part-title">${esc(t('dashboard.digestOverview', 'Overview'))}</h3></div>
+                <div class="digest-lines digest-lines--overview">${rows}</div>
+            </section>`;
+    }
+
+    function rowHtml(p, state, selected) {
+        const done = state.visited.includes(p.id);
+        return `
+            <button type="button" class="digest-row digest-tone--${esc(p.tone)}${done ? ' is-done' : ''}${p.id === selected ? ' is-selected' : ''}" data-digest-row="${esc(p.id)}" aria-pressed="${p.id === selected}">
+                <span class="digest-part-dot" aria-hidden="true">${done ? '✓' : ''}</span>
+                <span class="digest-row-title">${esc(p.title)}</span>
+                <span class="digest-row-count">${esc(String(p.count ?? ''))}</span>
+            </button>`;
+    }
+
+    function listHtml(parts, state, selected) {
+        const overview = `
+            <div class="digest-list-group">
+                <button type="button" class="digest-row digest-tone--accent${selected === 'overview' ? ' is-selected' : ''}" data-digest-row="overview" aria-pressed="${selected === 'overview'}">
+                    <span class="digest-part-dot" aria-hidden="true"></span>
+                    <span class="digest-row-title">${esc(t('dashboard.digestOverview', 'Overview'))}</span>
+                </button>
+            </div>`;
+        return overview + GROUPS.map((g) => {
+            const rows = g.parts.map((id) => parts.find((p) => p.id === id)).filter(Boolean);
+            if (!rows.length) return '';
+            return `
+                <div class="digest-list-group">
+                    <div class="digest-list-label">${esc(g.label())}</div>
+                    ${rows.map((p) => rowHtml(p, state, selected)).join('')}
+                </div>`;
+        }).join('');
+    }
+
+    /** What to show first: the first part that needs you and has not been opened, else the first part. */
+    function firstSelected(parts, state) {
+        const ordered = GROUPS.flatMap((g) => g.parts).map((id) => parts.find((p) => p.id === id)).filter(Boolean);
+        return (ordered.find((p) => p.action && !p.info && !state.visited.includes(p.id)) || ordered[0] || {}).id || null;
+    }
+
+    function progressText(s, state) {
+        const list = todo(s);
+        const done = list.filter((p) => state.visited.includes(p.id)).length;
+        return t('dashboard.digestProgress', '{done} of {total} looked at', { done, total: list.length });
     }
 
     // News carries a button but is not something to work through.
@@ -386,25 +634,31 @@
     async function openDigest() {
         const s = latest || await fetchLatest();
         if (!s || !global.AppModal?.show) return false;
+        // Opening the digest is reading it: seen, and no reminders after.
         markSeen();
+        updateCard((state) => global.DigestCardState.closeWindow(state));
         card.close();
         removeBar();
         const progress = readProgress(s);
         const state = { visited: progress.visited, next: nextPart(s, progress)?.id };
-        // The tiles first, then the parts in two columns, so a full week fits
-        // the window without scrolling down through it.
+        // A list of the parts on the left, the chosen one in full on the right,
+        // so a full week never grows the window: only the middle scrolls.
+        const parts = partList(s);
+        let selected = parts.length ? 'overview' : firstSelected(parts, state);
         const html = `
             <div class="digest-window">
                 <p class="digest-window-when">${esc(when(s))}</p>
-                ${tilesHtml(tileList(s), state)}
-                <div class="digest-parts">
-                    ${partList(s).map((p, i) => partHtml(p, state, i)).join('')}
+                <p class="digest-summary">${esc(cardBody(s))}</p>
+                ${statsHtml(s)}
+                <div class="digest-split">
+                    <nav class="digest-list" aria-label="${esc(t('dashboard.digestListLabel', 'Parts of the digest'))}">${listHtml(parts, state, selected)}</nav>
+                    <div class="digest-detail"></div>
                 </div>
             </div>`;
         global.AppModal.show({
             title: t('dashboard.digestWindowTitle', 'Weekly digest'),
             htmlMessage: html,
-            confirmText: t('dashboard.digestDone', 'Done'),
+            confirmText: t('dashboard.digestClose', 'Close'),
             showCancel: false,
             modalClass: 'digest-modal',
             modalMaxWidth: 'min(66rem, calc(100vw - 2.5rem))',
@@ -413,32 +667,60 @@
                 if (readProgress(s).visited.length) showBar(s);
             },
         });
-        document.querySelectorAll('.digest-modal [data-digest-go]').forEach((btn) => {
-            btn.addEventListener('click', () => {
+        const win = document.querySelector('.digest-modal .digest-window');
+        if (!win) return true;
+        const detail = win.querySelector('.digest-detail');
+        const showDetail = (id) => {
+            selected = id;
+            const index = Math.max(0, parts.findIndex((p) => p.id === id));
+            detail.innerHTML = id === 'overview' ? overviewHtml(parts, state) : (parts[index] ? partHtml(parts[index], state, 0) : '');
+            win.querySelectorAll('.digest-row').forEach((row) => {
+                const on = row.getAttribute('data-digest-row') === id;
+                row.classList.toggle('is-selected', on);
+                row.setAttribute('aria-pressed', String(on));
+            });
+        };
+        showDetail(selected);
+        // The head: where the reader is, and a way out that is always in view.
+        const header = document.querySelector('.digest-modal .modal-header');
+        if (header) {
+            // Marked, so the next caller of the shared modal does not inherit them.
+            const progress = document.createElement('span');
+            progress.setAttribute('data-modal-header-extra', '');
+            progress.className = 'digest-progress';
+            progress.textContent = progressText(s, state);
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'digest-header-close';
+            close.setAttribute('data-modal-header-extra', '');
+            close.setAttribute('data-digest-close', '');
+            close.setAttribute('aria-label', t('dashboard.digestCloseLabel', 'Close the digest window'));
+            close.textContent = '×';
+            close.addEventListener('click', () => { global.AppModal.hide?.(); });
+            header.append(progress, close);
+        }
+        // One listener for the rows and the parts' buttons: the detail is drawn
+        // again whenever another row is chosen. On the window, which is made
+        // anew every time, not on the modal, which stays.
+        win.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            if (!target) return;
+            const row = target.closest('[data-digest-row]');
+            if (row) { showDetail(row.getAttribute('data-digest-row')); return; }
+            const open = target.closest('[data-digest-go]');
+            if (open) {
                 global.AppModal.hide?.();
                 // News opens What's new and leaves the to-do list as it was.
-                if (btn.getAttribute('data-digest-go') === 'whats-new') {
-                    void go('whats-new');
-                    return;
-                }
-                void visit(s, btn.getAttribute('data-digest-part-id'), btn.getAttribute('data-digest-go'));
-            });
-        });
-        document.querySelectorAll('.digest-modal [data-digest-work]').forEach((btn) => {
-            btn.addEventListener('click', () => {
+                if (open.getAttribute('data-digest-go') === 'whats-new') { void go('whats-new'); return; }
+                void visit(s, open.getAttribute('data-digest-part-id'), open.getAttribute('data-digest-go'));
+                return;
+            }
+            const work = target.closest('[data-digest-work]');
+            if (work) {
                 global.AppModal.hide?.();
-                void visit(s, btn.getAttribute('data-digest-part-id'), btn.getAttribute('data-digest-work'), { work: true });
-            });
+                void visit(s, work.getAttribute('data-digest-part-id'), work.getAttribute('data-digest-work'), { work: true });
+            }
         });
-        // A tile is its part's Open button, counted.
-        document.querySelectorAll('.digest-modal [data-digest-tile]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                global.AppModal.hide?.();
-                void visit(s, btn.getAttribute('data-digest-part-id'), btn.getAttribute('data-digest-tile'));
-            });
-        });
-        const win = document.querySelector('.digest-modal .digest-window');
-        if (win) countUp(win);
         return true;
     }
 
@@ -460,6 +742,64 @@
             config?.startLibraryWorkThrough?.();
         }
         showBar(s);
+    }
+
+    /**
+     * What the question on closing the bar names: the two largest things in
+     * the first group, "7 broken links, 4 certificates", or, with nothing
+     * there, only that parts are still unopened.
+     */
+    function itemCount(id, n) {
+        switch (id) {
+            case 'broken': return count(n, 'dashboard.digestCloseBroken', '1 broken link', '{count} broken links');
+            case 'certificates': return count(n, 'dashboard.digestCloseCerts', '1 certificate', '{count} certificates');
+            case 'domains': return count(n, 'dashboard.digestCloseDomains', '1 domain', '{count} domains');
+            default: return count(n, 'dashboard.digestCloseUpdates', '1 container update', '{count} container updates');
+        }
+    }
+
+    /** The day the next digest comes, by the name the reader's language gives it. */
+    function nextDigestDay() {
+        const weekday = Number(dash()?.settings?.digestWeekday);
+        const day = Number.isInteger(weekday) && weekday >= 0 && weekday <= 6 ? weekday : 1;
+        // 2026-10-25 was a Sunday, so day 0 is that date and 1 is the Monday after it.
+        const sample = new Date(2026, 9, 25 + day);
+        try {
+            return sample.toLocaleDateString(dash()?.settings?.language || undefined, { weekday: 'long' });
+        } catch (_) {
+            return sample.toLocaleDateString(undefined, { weekday: 'long' });
+        }
+    }
+
+    function bodyLine(s) {
+        const parts = partList(s);
+        const now = GROUPS[0].parts
+            .map((id) => parts.find((p) => p.id === id))
+            .filter((p) => p && p.count)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 2)
+            .map((p) => itemCount(p.id, p.count));
+        if (!now.length) return t('dashboard.digestCloseGeneral', 'Some parts have not been opened yet.');
+        return t('dashboard.digestCloseNamed', 'It still holds, for example, {items}.', { items: now.join(', ') });
+    }
+
+    /** Closing the bar loses the digest until next week, so it asks first. */
+    function confirmCloseBar(s) {
+        if (!global.AppModal?.show) return Promise.resolve(true);
+        const day = nextDigestDay();
+        return new Promise((resolve) => {
+            let answered = false;
+            const answer = (value) => { if (!answered) { answered = true; resolve(value); } };
+            global.AppModal.show({
+                title: t('dashboard.digestCloseTitle', 'Close this digest until {day}?', { day }),
+                message: `${bodyLine(s)} ${t('dashboard.digestCloseWarn', 'This is important information. Config → Overview opens it again.')}`,
+                confirmText: t('dashboard.digestCloseConfirm', 'Close until {day}', { day }),
+                cancelText: t('dashboard.digestCloseKeep', 'Keep it'),
+                onConfirm: () => answer(true),
+                onCancel: () => answer(false),
+                onHide: () => answer(false),
+            });
+        });
     }
 
     function removeBar() {
@@ -496,7 +836,8 @@
             <button type="button" class="digest-bar-close" data-digest-bar="close" aria-label="${esc(t('dashboard.digestBarClose', 'Close the digest'))}">×</button>`;
         el.querySelector('[data-digest-bar="open"]').addEventListener('click', () => { void openDigest(); });
         el.querySelector('[data-digest-bar="next"]')?.addEventListener('click', () => { void visit(s, next.id, next.target); });
-        el.querySelector('[data-digest-bar="close"]').addEventListener('click', () => {
+        el.querySelector('[data-digest-bar="close"]').addEventListener('click', async () => {
+            if (!(await confirmCloseBar(s))) return;
             const p = readProgress(s);
             p.closed = true;
             writeProgress(p);
@@ -514,7 +855,6 @@
      */
     async function holdsTheWeek() {
         if (barEl) return true;
-        if (dash()?.settings?.digestEnabled === false) return false;
         const s = latest || await fetchLatest();
         if (!s) return false;
         if (s.generatedAt > seenAt()) return true;
@@ -544,10 +884,10 @@
         body: () => (latest ? cardBody(latest) : ''),
         dismissLabel: () => t('dashboard.digestDismiss', 'Got it'),
         dismissName: 'seen',
-        canShow: async () => {
-            if (dash()?.settings?.digestEnabled === false) return false;
-            return shouldShow(await fetchLatest(), seenAt());
-        },
+        canShow: async () => shouldShow(await fetchLatest()),
+        // A reminder day is used up once the card is drawn, so a reload the
+        // same day stays quiet.
+        onShown: () => updateCard(global.DigestCardState.shown),
         onDismiss: markSeen,
         actionAttr: 'data-digest-action',
         actions: [
@@ -556,6 +896,11 @@
                 label: () => t('dashboard.digestRead', 'Read the digest'),
                 primary: true,
                 onClick: () => { void openDigest(); },
+            },
+            {
+                name: 'snooze',
+                label: () => t('dashboard.digestSnooze', 'Snooze 1 day'),
+                onClick: (handle) => { updateCard(global.DigestCardState.snooze); handle.close(); },
             },
             {
                 name: 'seen',
@@ -602,10 +947,9 @@
     /**
      * The latest digest in brief, for Config's overview panel: when it came
      * out, its tiles, and how many of its parts are still to be opened. Null
-     * while there is none, or with the digest switched off.
+     * while there is none.
      */
     async function summary() {
-        if (dash()?.settings?.digestEnabled === false) return null;
         const s = latest || await fetchLatest();
         if (!s) return null;
         const progress = readProgress(s);

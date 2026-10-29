@@ -23,23 +23,36 @@
      * The server caches too, on its own TTL; this stops a repaint — a health
      * figure arriving, a drag ending — from being a round trip at all.
      */
+    /** What a custom answer is made of: values and items, either. */
+    function customRows(result) {
+        return [...(Array.isArray(result?.values) ? result.values : []), ...(Array.isArray(result?.items) ? result.items : [])];
+    }
+
     async function load(dash, widget, pageId) {
         dash._widgetCustom = dash._widgetCustom || {};
         const key = `${pageId}:${widget.id}`;
         const held = dash._widgetCustom[key];
-        if (held && held.until > Date.now()) return held.result;
+        if (held && held.until > Date.now()) {
+            window.WidgetState?.fromResult(widget.id, held.result, customRows(held.result), window.WidgetState.meta(widget, pageId, true));
+            return held.result;
+        }
         try {
             const res = await fetch(`/api/widgets/custom?pageId=${encodeURIComponent(pageId)}`
                 + `&id=${encodeURIComponent(widget.id)}`);
-            if (!res.ok) return null;
+            if (!res.ok) {
+                window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, true));
+                return null;
+            }
             const result = await res.json();
             // An error is held as long as the server holds it, 30 s: kept for
             // the widget's TTL, a service that was restarting read as down for
             // up to a day.
             const ttl = result?.error ? 30000 : Math.max(Number(widget?.config?.ttl) || 300, 30) * 1000;
             dash._widgetCustom[key] = { result, until: Date.now() + ttl };
+            window.WidgetState?.fromResult(widget.id, result, customRows(result), window.WidgetState.meta(widget, pageId, true));
             return result;
         } catch (_error) {
+            window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, true));
             return null;
         }
     }

@@ -472,6 +472,7 @@ type Settings struct {
 	HeaderActionsDefaultTwoMigrated bool           `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
 	ShowSearchFlowBanner            bool           `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool           `json:"showCheatSheetButton"`
+	ShowEditModeButton              bool           `json:"showEditModeButton"`
 	ShowCollapseAllButton           bool           `json:"showCollapseAllButton"`
 	ShowStatus                      bool           `json:"showStatus"`
 	ColorizeStatus                  bool           `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
@@ -493,7 +494,7 @@ type Settings struct {
 	ShowPageInTitle                 bool           `json:"showPageInTitle"`                         // Show current page name in title
 	ShowPageNamesInTabs             bool           `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
 	MaxPageTabs                     int            `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
-	MaxHeaderActions                int            `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-9)
+	MaxHeaderActions                int            `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-10)
 	PageSwitcherTextMigrated        bool           `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
 	PageSwitcherClassicMigrated     bool           `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
 	HeaderClockPlacement            string         `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
@@ -1789,6 +1790,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowTagCloudButton:              true,
 			ShowSearchFlowBanner:            true,
 			ShowCheatSheetButton:            true,
+			ShowEditModeButton:              true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
@@ -3604,7 +3606,7 @@ Zero is a real answer: every action behind the one control.
 */
 const (
 	minHeaderActions        = 0
-	maxHeaderActionsCap     = 9
+	maxHeaderActionsCap     = 10
 	defaultMaxHeaderActions = 2
 )
 
@@ -4447,6 +4449,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowTagCloudButton:              true,
 			ShowSearchFlowBanner:            true,
 			ShowCheatSheetButton:            true,
+			ShowEditModeButton:              true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
@@ -4653,6 +4656,10 @@ func (fs *FileStore) GetSettings() Settings {
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
 		if _, ok := rawSettings["showCheatSheetButton"]; !ok {
 			settings.ShowCheatSheetButton = true
+		}
+		// On unless turned off: a file written before the button existed never answered.
+		if _, ok := rawSettings["showEditModeButton"]; !ok {
+			settings.ShowEditModeButton = true
 		}
 		// The Bookmarks view's switches that are on unless turned off: a file
 		// written before they existed never answered.
