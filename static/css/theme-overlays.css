@@ -693,9 +693,11 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 
 /* ── The views: the plate is one card in the material, no elevation ─────────────────────────────── */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-cat-surface="open"] #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-cat-surface="open"] #dashboard-layout.library-layout > .config-view--library,
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-cat-surface="open"] #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+/* Enamel, paper, velvet, ink and terminal draw a category card under open too; their views
+   take that card (theme-signature.css) and not this plate. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-material="enamel"], [data-material="paper"], [data-material="velvet"], [data-material="ink"], [data-material="terminal"])[data-cat-surface="open"] #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-material="enamel"], [data-material="paper"], [data-material="velvet"], [data-material="ink"], [data-material="terminal"])[data-cat-surface="open"] #dashboard-layout.library-layout > .config-view--library,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:not([data-material="enamel"], [data-material="paper"], [data-material="velvet"], [data-material="ink"], [data-material="terminal"])[data-cat-surface="open"] #dashboard-layout.config-layout:not(.library-layout) > .config-view {
     background-color: var(--ov-fill);
     background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none);
     border-radius: var(--ov-radius);
