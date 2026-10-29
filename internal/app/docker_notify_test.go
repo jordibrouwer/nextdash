@@ -352,6 +352,8 @@ func TestContainerNotifierCrashLoopUnderDockerBackoff(t *testing.T) {
 // was stopped, not crashed: the stop event after the die says so.
 func TestContainerNotifierOwnStopSignal(t *testing.T) {
 	r := newNotifierRun(t)
+	// The timeline prunes against the wall clock, so its events have to be recent.
+	r.now = time.Now().UTC().Add(-time.Hour)
 	tl := newDockerTimeline()
 	r.n.timeline = tl
 	r.ev("kill", "app", "signal", "2").at(time.Second).ev("die", "app", "exitCode", "130").ev("stop", "app")

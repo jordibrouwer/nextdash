@@ -27,7 +27,8 @@ func TestDockerTimelineRecordsEvents(t *testing.T) {
 	tl := newDockerTimeline()
 	n := newContainerNotifier()
 	n.timeline = tl
-	now := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	// The timeline prunes against the wall clock, so its events have to be recent.
+	now := time.Now().UTC().Add(-time.Hour)
 	no := func(string, string) bool { return false } // notices off: recording goes on
 	step := func(d time.Duration, action string, attrs ...string) {
 		now = now.Add(d)
