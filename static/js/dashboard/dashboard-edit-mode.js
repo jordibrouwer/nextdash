@@ -271,6 +271,10 @@ class DashboardEditMode {
         // A click inside a block selects it for the panel.
         const block = target.closest('.category[data-category-id]');
         if (block) this.select(this._blockSelection(block));
+        // The title's own click folds the block and saves that; here it only chooses.
+        if (block && target.closest('.category-title') && !target.closest('button, input, select, [data-category-menu]')) {
+            e.stopImmediatePropagation();
+        }
     }
 
     _blockSelection(block) {

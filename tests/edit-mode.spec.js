@@ -168,6 +168,13 @@ test.describe('edit mode: the panel', () => {
         await expect(panel(page).locator('[data-edit-section="category"]')).toBeVisible();
     }
 
+    test('a click on a category title chooses the category and leaves it open', async ({ page, request }) => {
+        const id = await makeCategory(request, 'EM Open');
+        await loadDashboard(page);
+        await select(page, id);
+        await expect(page.locator(`.category[data-category-id="${id}"]`)).not.toHaveAttribute('data-collapsed', 'true');
+    });
+
     test('a click on a category selects it and the panel shows its fields, saved as they change', async ({ page, request }) => {
         const id = await makeCategory(request, 'EM Alpha');
         await loadDashboard(page);
