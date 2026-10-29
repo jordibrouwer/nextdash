@@ -170,6 +170,10 @@ Edit the dashboard in place, search that learns your hours, a checkup for what n
 - **new — Finders is a section of its own**, and **Fresh** moves from Behavior to Bookmarks.
 - **new — The demo has a Glances host that answers in-process** ("Tower").
 
+### Inbox
+
+- **fix — Icons the outbound limit refused are fetched again.** The startup icon backfill stamped a link as tried when the limit turned the request away, so on an Inbox larger than the limit the rest never got an icon. It now leaves those unstamped, as the add path already did.
+
 ### Docs
 
 - **docs — `static/data/whats-new/v1.22.4.json` and its index entry**; `whats-new-stub.js` moved to `DASHBOARD_RELEASE` v1.22.4 and `whats-new-v357`. `hideFromModal` is removed from every entry of the index, and `tests/whats-new-hidden-release.spec.js` now expects an empty list and every earlier release in the modal.

@@ -1,8 +1,10 @@
 package app
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -119,4 +121,36 @@ func TestIconFetchedAtPersists(t *testing.T) {
 		}
 	}
 	t.Error("item not found after stamping")
+}
+
+// A fetch the outbound limit refused did not happen: the item stays unstamped
+// and is tried again, while one that really failed is stamped as before.
+func TestBackfillLeavesARateLimitedItemUnstamped(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+	for _, link := range []InboxLink{
+		{ID: "inl_limited", URL: "https://limited.example", AddedAt: time.Now().UnixMilli()},
+		{ID: "inl_failed", URL: "https://failed.example", AddedAt: time.Now().UnixMilli()},
+	} {
+		if _, _, err := h.store.AddInboxLink(link, false, 500); err != nil {
+			t.Fatalf("seed %s: %v", link.ID, err)
+		}
+	}
+	h.backfillInboxIcons(func(source string, _ bool) (string, error) {
+		if strings.Contains(source, "limited.example") {
+			return "", errOutboundRateLimited
+		}
+		return "", errors.New("404")
+	})
+	for _, item := range h.store.GetInboxItems() {
+		switch item.ID {
+		case "inl_limited":
+			if !inboxItemNeedsIconFetch(item) {
+				t.Errorf("a fetch the limit refused was stamped as tried: %+v", item)
+			}
+		case "inl_failed":
+			if inboxItemNeedsIconFetch(item) {
+				t.Errorf("a fetch that failed was not stamped: %+v", item)
+			}
+		}
+	}
 }
