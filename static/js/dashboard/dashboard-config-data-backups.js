@@ -1380,6 +1380,15 @@
         } catch (err) {
             this._webhookEndpoints = [];
         }
+        // The control group is only worth ticking where the server lets
+        // containers be acted on; the Containers tab reads the same answer.
+        try {
+            const res = await fetch('/api/docker/status');
+            const status = res.ok ? await res.json() : null;
+            this._dockerControl = status?.control === true;
+        } catch (err) {
+            this._dockerControl = false;
+        }
         this.repaintWebhooks();
     },
 
@@ -2177,6 +2186,31 @@
         const esc = (v) => this.dash.escapeHtml(v);
         const on = this.dash.settings?.mcpEnabled === true;
         const address = `${window.location.origin}/mcp`;
+        const needsToken = this.t('config.mcpNeedsToken', 'needs write token');
+        const dockerOn = this._dockerControl === true;
+        const groups = [
+            { key: 'mcpBookmarksWrite', label: 'Bookmarks: edit and delete', labelKey: 'mcpGroupBookmarksWrite',
+                note: 'Change or remove bookmarks you have filed.', noteKey: 'mcpGroupBookmarksWriteNote', write: true },
+            { key: 'mcpHealthInbox', label: 'Health and Inbox: read', labelKey: 'mcpGroupHealthInbox',
+                note: 'See which links are broken and what is waiting in the Inbox.', noteKey: 'mcpGroupHealthInboxNote' },
+            { key: 'mcpContainersRead', label: 'Containers: read', labelKey: 'mcpGroupContainersRead',
+                note: 'See the containers and their state. Their logs need the write token when one is set.', noteKey: 'mcpGroupContainersReadNote' },
+        ];
+        const control = {
+            key: 'mcpContainersControl', label: 'Containers: control', labelKey: 'mcpGroupContainersControl',
+            note: 'Can start, stop, update and remove containers.', noteKey: 'mcpGroupContainersControlNote', write: true,
+            blocked: !dockerOn,
+            blockedNote: 'Docker control is off on this server (NEXTDASH_DOCKER_CONTROL).', blockedKey: 'mcpControlOff',
+        };
+        const group = (g) => {
+            const off = !on || g.blocked === true;
+            return `
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="${g.key}" ${this.dash.settings?.[g.key] === true ? 'checked' : ''} ${off ? 'disabled' : ''}>
+                    <span>${esc(this.t(`config.${g.labelKey}`, g.label))}${g.write ? ` <small class="config-field-note">(${esc(needsToken)})</small>` : ''}</span>
+                </label>
+                <p class="config-field-hint">${esc(this.t(`config.${g.noteKey}`, g.note))}${g.blocked ? ` ${esc(this.t(`config.${g.blockedKey}`, g.blockedNote))}` : ''}</p>`;
+        };
         return `
             <details class="config-panel config-source-panel"
                 data-fold="mcp" ${this.foldIsOpen('mcp') ? 'open' : ''}>
@@ -2184,11 +2218,11 @@
                     <span class="config-source-summary-text">
                         <span class="config-panel-title">${esc(this.t('config.mcpTitle', 'MCP access'))}</span>
                         <span class="config-source-summary-note">${esc(this.t('config.mcpSummary',
-                            'Let a script or another tool search your bookmarks and add new ones.'))}</span>
+                            'Let a script or another tool search your bookmarks and add new ones, with more tools you can switch on.'))}</span>
                     </span>
                 </summary>
                 <p class="config-panel-note">${esc(this.t('config.mcpNote',
-                    'A tool that speaks MCP can search this collection, look one bookmark up and add another. It reads everything you have filed here, so it is off until you turn it on.'))}</p>
+                    'A tool that speaks MCP can search this collection, look one bookmark up and add another. It reads everything you have filed here, so it is off until you turn it on. More tools can be switched on below.'))}</p>
                 <label class="config-toggle">
                     <input type="checkbox" data-backup-toggle="mcpEnabled" ${on ? 'checked' : ''}>
                     <span>${esc(this.t('config.mcpEnabledLabel', 'Answer MCP clients at this address'))}</span>
@@ -2196,6 +2230,10 @@
                 ${on ? `
                     <p class="config-field-note">${esc(this.t('config.mcpAddressLabel', 'Give the tool this address:'))}</p>
                     <p class="config-field-note config-mcp-address">${esc(address)}</p>` : ''}
+                <p class="config-field-note">${esc(this.t('config.mcpAlwaysOn', 'Searching, looking up and adding bookmarks is always on.'))}</p>
+                ${groups.map(group).join('')}
+                <p class="config-panel-title">${esc(this.t('config.mcpControlHeading', 'Acting on containers'))}</p>
+                ${group(control)}
             </details>
         `;
     },
@@ -2827,6 +2865,12 @@
             d.settings.mcpEnabled = value;
             void this.saveSettingsWithFeedback();
             this.repaintWebhooks();
+            return;
+        }
+        // The MCP tool groups: plain booleans, saved as they are ticked.
+        if (['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpContainersControl'].includes(name)) {
+            d.settings[name] = value;
+            void this.saveSettingsWithFeedback();
             return;
         }
         if (name === 'autoBackupEnabled' || name === 'healthAutoRecheckEnabled') {
