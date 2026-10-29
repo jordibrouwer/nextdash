@@ -150,7 +150,7 @@ Edit the dashboard in place, search that learns your hours, a checkup for what n
 
 ### Weekly digest
 
-- **new — Reworked.** The digest is always on: the Config switch is gone and an old file that had it off is read as on. The window has a list of parts in three groups (Now, Tidy up, To know) beside a detail, with Close always in view; the corner card has *Read the digest*, *Snooze 1 day* and *Got it* with two reminders; the bar asks before it closes; a fresh install gets its first digest after at least seven days; *not opened* counts 30 days; and the checkup is a part of it.
+- **new — Reworked.** The digest is always on: the Config switch is gone and an old file that had it off is read as on. The window has a list of parts in three groups (Needs you, Tidy up, Good to know) beside a detail, with Close always in view; the corner card has *Read the digest*, *Snooze 1 day* and *Got it* with two reminders; the bar asks before it closes; a fresh install gets its first digest after at least seven days; *not opened* counts 30 days; and the checkup is a part of it.
 
 ### Widgets
 

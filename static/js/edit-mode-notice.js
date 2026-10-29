@@ -3,7 +3,7 @@
  *
  * Renaming a category, changing its width or opening a widget's settings used
  * to mean a trip to Config. Edit mode keeps all of it on the dashboard: the
- * pencil in the header or Shift+M (with no bookmark selected) turns it on,
+ * pencil in the action bar or Shift+M (with no bookmark selected) turns it on,
  * and a click on a block opens its panel. The card names the key and offers to
  * switch the mode on.
  *
@@ -67,7 +67,7 @@
         minGapAfterCardMs: GAP_AFTER_CARD_MS,
         title: () => t('dashboard.editModeNoticeTitle', 'Edit the dashboard right where it is'),
         body: () => t('dashboard.editModeNoticeBody',
-            'Press Shift+M, with no bookmark selected, or click the pencil in the header. Then click a category, widget or page to rename it, change its width or view, or open a widget\'s settings in a panel beside the page. Esc leaves.'),
+            'Press Shift+M, with no bookmark selected, or click the pencil in the action bar. Then click a category, widget or page to rename it, change its width or view, or open a widget\'s settings in a panel beside the page. Esc leaves.'),
         dismissLabel: () => t('dashboard.editModeNoticeDismiss', 'Dismiss'),
         dismissName: 'dismiss',
         canShow: () => !hasAnswered() && oldEnough() && available(),

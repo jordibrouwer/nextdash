@@ -9,7 +9,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Edit mode.</strong> Press <code>Shift+M</code> with no bookmark selected, or click the pencil in the header. Click a category, widget or page and a panel opens beside the page: name, icon, width, view and sorting, saved as you go. <code>Esc</code> leaves.",
+          "text": "<strong>Edit mode.</strong> Press <code>Shift+M</code> with no bookmark selected, or click the pencil in the action bar. Click a category, widget or page and a panel opens beside the page: name, icon, width, view and sorting, saved as you go. <code>Esc</code> leaves.",
           "link": "#bookmarks",
           "linkLabel": "Try it",
           "highlight": true,
@@ -76,7 +76,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>A window that fits the screen.</strong> The parts are listed on the left in three groups, <em>Now</em>, <em>Tidy up</em> and <em>To know</em>, and the one you pick is shown on the right. Close is always in view, and the bar in the corner asks before you close it."
+          "text": "<strong>A window that fits the screen.</strong> The parts are listed on the left in three groups, <em>Needs you</em>, <em>Tidy up</em> and <em>Good to know</em>, and the one you pick is shown on the right. Close is always in view, and the bar in the corner asks before you close it."
         },
         {
           "badge": "new",

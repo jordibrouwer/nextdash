@@ -406,7 +406,7 @@
                     </g>
                 `, f('dashTour4EditAlt', 'The dashboard in edit mode: a category chosen, and its panel on the right')),
                 body: `<p>${esc(f('dashTour4EditBody1',
-                    'Press Shift+M with no bookmark selected, or click the pencil in the header, to edit the dashboard itself. Click a category, widget or page tab and a panel opens on the right.'))}</p>
+                    'Press Shift+M with no bookmark selected, or click the pencil in the action bar, to edit the dashboard itself. Click a category, widget or page tab and a panel opens on the right.'))}</p>
                     <p>${esc(f('dashTour4EditBody2',
                     'Rename it, change its width, view and sorting, or open a widget\'s settings: all of it right here, saved as you go. Right-click a category or widget and choose Edit in panel to start there. Esc or Shift+M leaves.'))}</p>`,
             },

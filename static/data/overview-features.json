@@ -9,7 +9,7 @@
       "howKey": "config.overviewNewFeatureEditModeHow",
       "howFallback": "Edit mode puts a panel beside the page: click a category, widget or page and change its name, icon, width, view or sorting there. A widget's Settings open as a sheet over the dashboard.",
       "enableKey": "config.overviewNewFeatureEditModeEnable",
-      "enableFallback": "Press Shift+M with no bookmark selected, or click the pencil in the header.",
+      "enableFallback": "Press Shift+M with no bookmark selected, or click the pencil in the action bar.",
       "ctaKey": "config.overviewNewFeatureEditModeCta",
       "ctaFallback": "Try edit mode →",
       "go": {
