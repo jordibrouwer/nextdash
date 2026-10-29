@@ -5030,8 +5030,6 @@ location /               { return 404; }
 
 ---
 
-<a id="24-troubleshooting"></a>
-
 <a id="2311-the-assistant"></a>
 
 ### 23.11 The assistant
@@ -5046,7 +5044,7 @@ The assistant answers questions about your bookmarks in plain words, for example
 | OpenAI | An **API key**. **Model** is optional in the same way |
 | OpenAI-compatible (Ollama, LM Studio…) | The **Server address**, for example `http://ollama.lan:11434/v1`, and a **Model**. The key is optional; most home servers take none. Local and LAN addresses are allowed here |
 
-**Save key** keeps the key on the server in `data/ai-secrets.json`, apart from your settings; it is never shown again, only *Key saved.*, and **Remove key** deletes it. A key per provider is kept, so switching back and forth does not lose one. **Test connection** sends a tiny test request to the provider and reports the model that answered or what went wrong. Nothing else leaves nextDash until you ask something.
+**Save key** keeps the key on the server in `data/ai-secrets.json`, apart from your settings; it is never shown again, only *Key saved.*, and **Remove key** deletes it. A key per provider is kept, so switching back and forth does not lose one. **Test connection** sends a tiny test request to the provider and reports the model it used or what went wrong. Nothing else leaves nextDash until you ask something.
 
 **What the provider receives.** Only when you ask a question or press **Test connection**; there are no background calls. A question carries:
 
@@ -5060,11 +5058,13 @@ Nothing else is sent: not your whole collection, not your settings, and not your
 
 **What it can change.** Nothing by itself. When it thinks something should change, it adds a **proposal card** under its answer: a bookmark to add, edit, move or delete, a category to create or rename, or a container action. Adding is always possible; editing, moving, deleting and the categories need *Bookmarks: edit and delete* to be ticked, container actions need *Containers: control*. Each card shows what would happen, with **Apply** and **Skip**. Nothing is touched until you press Apply, and the change is checked again at that moment: the group must still be ticked, and with `NEXTDASH_WRITE_TOKEN` set Apply needs the write token ([§23.2](#232-the-write-token)). **Apply all** applies the pending cards of an answer in one go, but it skips deletes and container actions: those you apply one at a time. A card that failed can be tried again or skipped; an applied or skipped one is final. Applied changes appear in the activity log with the source `assistant`, and a deleted bookmark goes to the Trash as usual.
 
-**What is stored.** Conversations are kept in `data/ai-conversations.json`: the texts, which tools were used and how large their answers were, the proposals with what became of them, and the token counts. The full answers of the lookups are never stored. nextDash keeps the **Conversations to keep** most recent (50 by default) for **Days to keep them** (90 by default); older ones go on their own, and both numbers can be changed. Delete one conversation from the trash button next to it in the panel, or all of them with **Delete all conversations** in the Assistant section. Deleting conversations needs the write token when one is set; asking a question and **Test connection** do not.
+**What is stored.** Conversations are kept in `data/ai-conversations.json`: the texts, which tools were used and how large their answers were, the proposals with what became of them, and the token counts. The full answers of the lookups are never stored. nextDash keeps the **Conversations to keep** most recent (50 by default) for **Days to keep them** (90 by default); older ones are removed when a new answer is saved, and both numbers can be changed. Delete one conversation with the × button next to it in the panel, or all of them with **Delete all conversations** in the Assistant section. With `NEXTDASH_WRITE_TOKEN` set, asking a question, **Test connection** and deleting conversations all need the write token ([§23.2](#232-the-write-token)), because asking spends your key; reading conversations and the assistant's status do not.
 
-**Limits and cost.** One question runs at most 8 rounds of lookups, 20 lookups in all, and two minutes; if it hits one, you get the partial answer with a line saying where it stopped. A provider error saves nothing and puts your question back in the box. Every answer shows the provider, the model and the tokens it used, so you can see what a question costs on your account.
+**Limits and cost.** One question runs at most 8 rounds of lookups, 20 lookups in all, and two minutes; if it hits the rounds or the lookups, you get the partial answer with a line saying where it stopped. The two minutes are different: if the time runs out the whole question is dropped, with the lookups and proposals so far, and you see *The provider took too long to answer.* A provider error saves nothing and puts your question back in the box. Every answer shows the provider, the model and the tokens it used, so you can see what a question costs on your account.
 
 **Backups.** The conversation file travels in every backup. The key travels only with **Tokens and passwords** ([§19.1](#191-backups-data)); without it, a restore keeps the key in use.
+
+<a id="24-troubleshooting"></a>
 
 ## 24. 🛠️ Troubleshooting
 
