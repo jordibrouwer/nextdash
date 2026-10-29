@@ -102,3 +102,19 @@ test.describe('tidying up', () => {
         await crop(page, page.locator('#app-modal.show, .modal.show').first(), '12-checkup.jpg', 24);
     });
 });
+
+test.describe('weekly digest', () => {
+    test('12 weekly digest window', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        // A proof digest from the seed's data, the way Config -> Monitoring -> Notifications -> Send does it.
+        const res = await page.request.post('/api/digest/test');
+        test.skip(res.status() === 204, 'the seed has nothing to put in a digest');
+        await page.keyboard.press(':');
+        await page.keyboard.type('digest');
+        await page.keyboard.press('Enter');
+        await page.locator('.digest-modal .digest-window').waitFor({ timeout: 15_000 });
+        await page.waitForTimeout(1_200);
+        await crop(page, page.locator('.modal.digest-modal'), '12-weekly-digest.jpg', 24);
+    });
+});

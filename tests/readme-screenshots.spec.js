@@ -225,6 +225,33 @@ pic('dashboard', 'oceanic-steel-dark', async (page) => {
     await full(page, 'nextdash-dashboard.jpg');
 }, { tweak: dashboardWidgets });
 
+pic('edit-mode', 'oceanic-steel-dark', async (page) => {
+    await setup(page);
+    await openDashboard(page);
+    await page.keyboard.press('Shift+M');
+    await page.locator('body[data-edit-mode="on"]').waitFor();
+    // A stored category: the first blocks on the page are collections, which have no panel of their own.
+    await page.locator('#dashboard-layout .category[data-category-id="code"] .category-title').first().click();
+    await page.locator('#edit-mode-panel [data-edit-section="category"]').waitFor();
+    await settle(page);
+    await page.waitForTimeout(600);
+    await full(page, 'nextdash-edit-mode.jpg');
+}, { tweak: dashboardWidgets });
+
+pic('digest', 'oceanic-steel-dark', async (page) => {
+    await setup(page);
+    await openDashboard(page);
+    // A proof digest from the demo's data, as Config -> Monitoring -> Notifications -> Send builds it.
+    const res = await page.request.post('/api/digest/test');
+    test.skip(res.status() === 204, 'the demo has nothing to put in a digest');
+    await page.keyboard.press(':');
+    await page.keyboard.type('digest');
+    await page.keyboard.press('Enter');
+    await page.locator('.digest-modal .digest-window').waitFor({ timeout: 15_000 });
+    await page.waitForTimeout(1_200);
+    await full(page, 'nextdash-digest.jpg');
+});
+
 pic('dashboard-homelab', 'terminal-amber-dark', async (page) => {
     await setup(page);
     await openDashboard(page, '#2');

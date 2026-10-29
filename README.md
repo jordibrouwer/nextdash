@@ -97,6 +97,18 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
       <sub><b>Inbox</b> <i>(Paper Ink, light)</i> — Links saved before you knew where they belong, grouped by when they arrived, with the keys for every action under the list. The side panel holds the note and the tags; open, promote or keep a link without leaving the list.</sub>
     </td>
   </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-edit-mode.jpg" alt="Edit mode" width="100%" />
+      <br />
+      <sub><b>Edit mode</b> <i>(Oceanic Steel)</i> — <kbd>Shift</kbd> + <kbd>M</kbd> or the pencil in the action bar: every block gets an outline, a click chooses one, and a panel beside the page changes its name, icon, width, view and sorting, or a widget's settings, and saves as you type. <kbd>Esc</kbd> leaves.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-digest.jpg" alt="Weekly digest" width="100%" />
+      <br />
+      <sub><b>Weekly digest</b> <i>(Oceanic Steel)</i> — What needs you, what is worth tidying up and what is good to know, in one window: broken links, certificates and domains running out, container updates, the checkup, what nobody opens and what is new. Pick a part on the left, deal with it with the button on the right.</sub>
+    </td>
+  </tr>
 </table>
 
 <details>
@@ -427,6 +439,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Bookmarks and pages**
 
 - Pages and categories, each with an icon, a colour and a sort; drag categories and widgets into place — wide across two columns, or onto another page — and spread a category across columns. Share a page as a template file: your own addresses become names the importer fills in. *[Manual §9](MANUAL.md#9-pages-categories-and-collections)*
+- **Edit mode** changes the dashboard in place: `Shift + M` (or the pencil in the action bar, or *Edit in panel…* in a category's or widget's menu) puts an outline on every block, a click chooses one, and a panel beside the page edits its name, icon, width, view and sorting, a widget's settings included. Double-click a title to rename it. *[Manual §4](MANUAL.md#edit-mode)*
 - Add a link with one key, the full form, a paste, the extension, the share sheet or a bookmarklet — or right-click a category header and choose **Add new bookmark**, with that category already chosen. *[Manual §5](MANUAL.md#5-adding-bookmarks)*
 - Tags, notes, shortcuts and pins, a preview card that says what a page is without opening it, and a QR code (`Shift + J`) to open a bookmark on your phone. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
 - A **tag cloud** (`/`) and a **tag view** per tag: every bookmark with that tag from every page in one table, with related tags, bulk actions, and rename, merge or remove for the tag. *[Manual §10](MANUAL.md#10-tags)*
@@ -441,6 +454,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Everything is reachable from the keyboard: one rule for the shortcuts and a searchable cheat sheet on `!`. *[Manual §7](MANUAL.md#7-keyboard)*
 - A key legend under the grid keeps the main keys in sight (`Shift + Z` switches it off), a dashboard tour of ten steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
 - One panel for search, commands and finders, plus search from the browser's address bar. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
+- **Usually now** puts the bookmarks you tend to open around this time of day at the top of the empty search panel, and `→` on a result unfolds what you can do with it: open, open in a new tab, edit, copy the address, show in the list, move. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - Filters for tag, category, page, status, added and opened — each also in the negative. *[Manual §8.2](MANUAL.md#82-filters)*
 
 **Health and monitoring**
@@ -448,6 +462,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors, Trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11-the-bookmarks-view)*
 - **Domain expiry.** nextDash looks up when the domains of your checked bookmarks run out, through the registries' public RDAP service, and warns at 60, 7 and 3 days — in a Domains widget, as a badge in the Bookmarks view, through your alert channels and in the weekly digest. One request per domain a day; a switch under **Config → Monitoring** turns it off. *[Manual §12.4](MANUAL.md#124-alerts)*
 - **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §11.8](MANUAL.md#118-collection-health)*
+- A **checkup** walks you through what is worth tidying up — dead links, duplicates, bookmarks nobody opens, empty categories and pages, widgets that show an error — one step at a time, with nothing removed before you have seen it. Type `:checkup`. *[Manual §12](MANUAL.md#the-checkup)*
 - **A status page** for the people who use your services: a read-only page behind a secret link with your groups of services, whether each one works, since when one is down, planned maintenance and 30 days of history. It shows no error details or internal addresses, refreshes itself every minute and follows the visitor’s language and light or dark. *[Manual §12.8](MANUAL.md#128-the-status-page)*
 - Alerts, set under **Config → Monitoring** (tabs Checks, Notifications and Schedules), to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows, quiet hours with one summary at the end, reminders for an outage that goes on, per-bookmark muting, and a weekly digest of what broke, what can be updated and what nobody opens. *[Manual §12.4](MANUAL.md#124-alerts)*
 - **Fresh** shows which bookmarked sites published something new. *[Manual §12.6](MANUAL.md#126-fresh)*
