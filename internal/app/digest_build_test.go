@@ -144,6 +144,20 @@ func TestDigestStaleIsThirtyDaysAndSkipsNeverOpened(t *testing.T) {
 	}
 }
 
+func TestDigestStaleLeavesOutAnIgnoredStale(t *testing.T) {
+	old := digestNow.Add(-60 * 24 * time.Hour).UnixMilli()
+	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), Bookmarks: []Bookmark{
+		{Name: "Old", URL: "https://old", OpenCount: 2, LastOpened: old},
+		{Name: "Muted", URL: "https://muted", OpenCount: 2, LastOpened: old, HealthIgnored: []HealthIgnore{{Flag: "stale"}}},
+		// An ignore that has run out no longer holds.
+		{Name: "Lapsed", URL: "https://lapsed", OpenCount: 2, LastOpened: old, HealthIgnored: []HealthIgnore{{Flag: "stale", Until: digestNow.Add(-time.Hour).UnixMilli()}}},
+	}})
+	u := d.Usage
+	if u == nil || u.Stale != 2 || len(u.StaleNames) != 2 || u.StaleNames[0] != "Lapsed" || u.StaleNames[1] != "Old" {
+		t.Fatalf("usage %+v", u)
+	}
+}
+
 func flaggedIssues(n int, flags ...string) []HealthIssue {
 	var out []HealthIssue
 	for i := 0; i < n; i++ {

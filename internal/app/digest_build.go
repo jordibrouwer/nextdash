@@ -237,6 +237,11 @@ func buildDigest(in digestInput) digestSnapshot {
 			if bm.PageID == unsortedPageID || bm.OpenCount == 0 || bm.LastOpened == 0 {
 				continue
 			}
+			// Counted from the bookmarks, so the report's ignore does not reach
+			// here by itself: a bookmark told it may sit unopened stays out.
+			if _, muted := healthIgnoreSet(bm.HealthIgnored, in.Now)["stale"]; muted {
+				continue
+			}
 			if bm.LastOpened < staleBefore {
 				u.Stale++
 				u.StaleNames = append(u.StaleNames, digestName(bm))
