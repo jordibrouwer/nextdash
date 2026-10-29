@@ -1024,3 +1024,116 @@ test('rows show the favicon, and the letter only without one', async ({ page }) 
     await expect(row('No icon').locator('img')).toHaveCount(0);
     await expect(row('No icon').locator('.tag-view-icon')).toHaveText('N');
 });
+
+test.describe('sorting, search, any or all, and adding a tag to a selection', () => {
+    let T; let T2; let N; let ids;
+    test.beforeEach(async ({ page }) => {
+        N = `${STAMP}${Math.random().toString(36).slice(2, 7)}`;
+        T = `tvmore${N}`;
+        T2 = `tvmore2${N}`;
+        await openDashboard(page);
+        ids = await seed(page, [
+            { url: `https://more-bravo-${N}.example.com/`, name: 'Bravo', tags: [T, T2], page: 'here', openCount: 7, lastOpened: Date.now() - 60_000 },
+            { url: `https://more-alpha-${N}.example.com/`, name: 'Alpha', tags: [T], page: 'other', openCount: 2, lastOpened: Date.now() - 3_600_000 },
+            { url: `https://more-charlie-${N}.example.com/`, name: 'Charlie', tags: [T], page: 'here' },
+        ]);
+        await openDashboard(page);
+        await openTagView(page, [T]);
+        await expect.poll(async () => (await rowNames(page)).length).toBe(3);
+    });
+
+    const heads = (page) => page.locator('.tag-view .tag-view-colhead [data-sort]');
+
+    test('Page sorts in the order of the page tabs, not by page id', async ({ page }) => {
+        await heads(page).filter({ hasText: 'Page' }).click();
+        await expect.poll(() => rowNames(page)).toEqual(['Bravo', 'Charlie', 'Alpha']);
+        // The other page moved in front: its rows lead now.
+        await page.evaluate((other) => {
+            const d = window.dashboardInstance;
+            d.pages = [...d.pages.filter((p) => Number(p.id) === other), ...d.pages.filter((p) => Number(p.id) !== other)];
+            d.tagView.render();
+        }, ids.other);
+        await expect.poll(() => rowNames(page)).toEqual(['Alpha', 'Bravo', 'Charlie']);
+    });
+
+    test('Score sorts, highest first, unchecked last; the header and the select agree', async ({ page }) => {
+        await page.evaluate((n) => {
+            const view = window.dashboardInstance.tagView._module;
+            view.scoreOf = (b) => ({ [`https://more-bravo-${n}.example.com/`]: 60, [`https://more-alpha-${n}.example.com/`]: 95 }[b.url] ?? null);
+        }, N);
+        await heads(page).filter({ hasText: 'Score' }).click();
+        await expect.poll(() => rowNames(page)).toEqual(['Alpha', 'Bravo', 'Charlie']);
+        await heads(page).filter({ hasText: 'Score' }).click();
+        await expect.poll(() => rowNames(page)).toEqual(['Bravo', 'Alpha', 'Charlie']);
+        await expect(page.locator('.tag-view select[data-tag-view-sort]')).toHaveValue('score');
+    });
+
+    test('the sort picked is there again the next time the view opens', async ({ page }) => {
+        await page.locator('.tag-view select[data-tag-view-sort]').selectOption('name');
+        await expect.poll(() => rowNames(page)).toEqual(['Alpha', 'Bravo', 'Charlie']);
+        await openDashboard(page);
+        await openTagView(page, [T]);
+        await expect(page.locator('.tag-view select[data-tag-view-sort]')).toHaveValue('name');
+        await expect.poll(() => rowNames(page)).toEqual(['Alpha', 'Bravo', 'Charlie']);
+    });
+
+    test('the search reads the tags, and every word must match', async ({ page }) => {
+        const search = page.locator('.tag-view input[data-tag-view-search]');
+        await search.fill(T2);
+        await expect.poll(() => rowNames(page)).toEqual(['Bravo']);
+        await search.fill(`charlie more-charlie`);
+        await expect.poll(() => rowNames(page)).toEqual(['Charlie']);
+        await search.fill('bravo charlie');
+        await expect(page.locator('.tag-view .tag-view-nomatch')).toBeVisible();
+    });
+
+    test('"or" between two tags turns to "and": only the bookmarks with both, and the address keeps it', async ({ page }) => {
+        await openTagView(page, [T, T2]);
+        await expect.poll(async () => (await rowNames(page)).sort()).toEqual(['Alpha', 'Bravo', 'Charlie']);
+        const toggle = page.locator('.tag-view [data-tag-view-mode]');
+        await expect(toggle).toHaveText('or');
+        await toggle.click();
+        await expect(page.locator('.tag-view [data-tag-view-mode]')).toHaveText('and');
+        await expect.poll(() => rowNames(page)).toEqual(['Bravo']);
+        await expect.poll(() => hash(page)).toBe(`#tag/${[T, T2].sort().join('+')}?all`);
+
+        // A reload of that address is the same view.
+        await openDashboard(page, `/#tag/${[T, T2].sort().join('+')}?all`);
+        await expect(view(page)).toBeVisible();
+        await expect.poll(() => rowNames(page)).toEqual(['Bravo']);
+        await page.locator('.tag-view [data-tag-view-mode]').click();
+        await expect.poll(async () => (await rowNames(page)).length).toBe(3);
+        await expect.poll(() => hash(page)).toBe(`#tag/${[T, T2].sort().join('+')}`);
+    });
+
+    test('Add tag… puts a tag of your own on every ticked row, each on its own page', async ({ page }) => {
+        const NEW = `tvbulk${N}`;
+        await page.locator('.tag-view-row', { hasText: 'Alpha' }).locator('.tag-view-check').click();
+        await page.locator('.tag-view-row', { hasText: 'Charlie' }).locator('.tag-view-check').click();
+        await page.locator('.tag-view .tag-view-selbar').getByRole('button', { name: 'Add tag…' }).click();
+        const input = page.locator('#app-modal input[data-tag-bulk-add]');
+        await expect(input).toBeFocused();
+        await input.fill(`#${NEW.toUpperCase()}`);
+        await page.locator('#modal-actions').getByRole('button', { name: 'Add' }).click();
+        await expect.poll(() => readTags(page, ids.other, `https://more-alpha-${N}.example.com/`)).toContain(NEW);
+        await expect.poll(() => readTags(page, ids.here, `https://more-charlie-${N}.example.com/`)).toContain(NEW);
+        // Added beside the tags it had, not in their place; the row not ticked has none.
+        expect(await readTags(page, ids.other, `https://more-alpha-${N}.example.com/`)).toContain(T);
+        expect(await readTags(page, ids.here, `https://more-bravo-${N}.example.com/`)).not.toContain(NEW);
+    });
+
+    test('Open in the side panel counts as an open', async ({ page }) => {
+        await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; });
+        const opens = (url) => page.evaluate((u) => (window.DashboardTagCloud?.getBookmarkPool?.() || [])
+            .filter((b) => b.url === u).map((b) => Number(b.openCount) || 0)[0], url);
+        const url = `https://more-charlie-${N}.example.com/`;
+        expect(await opens(url)).toBe(0);
+        await page.locator('.tag-view-row', { hasText: 'Charlie' }).locator('.tag-view-page').click();
+        await page.keyboard.press('i');
+        const panel = page.locator('[data-lvs-drawer="tag-view"] .lvs-drawer');
+        await expect(panel.locator('.lvs-drawer-title')).toHaveText('Charlie');
+        await panel.getByRole('button', { name: 'Open', exact: true }).click();
+        await expect.poll(() => page.evaluate(() => window.__opened)).toEqual([url]);
+        await expect.poll(() => opens(url)).toBe(1);
+    });
+});

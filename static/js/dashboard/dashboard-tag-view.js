@@ -35,7 +35,11 @@
             this.filter = { page: null, health: null, untagged: false };
             this.query = '';
             this._relatedOpen = false;
-            this.sort = { key: 'lastOpened', dir: null };
+            this.sort = DashboardTagView.readSort();
+            // Several tags: the bookmarks with any of them, or ('all') with
+            // every one. Kept while the view is open, so a tag added with
+            // Shift+click narrows an 'all' view further.
+            this.mode = 'any';
             this.focusIndex = -1;
             this.rows = [];
             // Ticked rows, by page, URL and name: an index would point at
@@ -48,6 +52,27 @@
         t(key, fallback) {
             const v = this.dash?.language?.t?.(key);
             return v && v !== key ? v : fallback;
+        }
+
+        static SORT_KEY = 'nextdash:tag-view-sort';
+
+        /** The sort last picked on this device; Last opened when none, or storage is out. */
+        static readSort() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(DashboardTagView.SORT_KEY) || 'null');
+                if (saved && DashboardTagView.SORTS.some(([key]) => key === saved.key)) {
+                    return { key: saved.key, dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : null };
+                }
+            } catch { /* private window, blocked storage: the default */ }
+            return { key: 'lastOpened', dir: null };
+        }
+
+        setSort(sort) {
+            this.sort = sort;
+            try {
+                localStorage.setItem(DashboardTagView.SORT_KEY, JSON.stringify(sort));
+            } catch { /* not remembered, still applied */ }
+            this.render();
         }
 
         isActiveView() {
@@ -65,7 +90,7 @@
 
         /** The tags' bookmarks, before the rail and the search narrow them. */
         matches() {
-            return this.all ? Model().everything(this.pool()) : Model().matches(this.pool(), this.tags);
+            return this.all ? Model().everything(this.pool()) : Model().matches(this.pool(), this.tags, { mode: this.mode });
         }
 
         setTags(tags) {
@@ -86,20 +111,20 @@
 
         /** The address for the current tags; pushed when the view opens, replaced on a change. */
         writeHash({ push }) {
-            const hash = Model().hashFor(this.all ? [] : this.tags);
+            const hash = Model().hashFor(this.all ? [] : this.tags, { mode: this.mode });
             if (window.location.hash === hash) return;
             const url = `${window.location.pathname}${window.location.search}${hash}`;
             if (push && window.DashboardHistory?.pushLocation?.(url)) return;
             history.replaceState(history.state, '', url);
         }
 
-        async openTagView(tags, { returnPageId = null, fromHash = false, all = false } = {}) {
+        async openTagView(tags, { returnPageId = null, fromHash = false, all = false, mode = null } = {}) {
             const d = this.dash;
             const next = all ? [] : this.normalize(tags);
             if (!next.length && !all) return false;
             if (this.isActiveView()) {
                 if (all) return this.showAll({ fromHash });
-                return this.updateTags(next, { fromHash });
+                return this.updateTags(next, { fromHash, mode });
             }
             if (d.isInlineEditActive?.() && !(await d.confirmInlineEditBeforeNavigation?.())) {
                 return false;
@@ -115,6 +140,7 @@
             d.pageNav?.updatePageTitle?.();
             d.updateDocumentTitle?.();
             this.all = all;
+            if (mode) this.mode = mode === 'all' ? 'all' : 'any';
             this.setTags(next);
             if (!fromHash) this.writeHash({ push: true });
             this.render();
@@ -130,12 +156,13 @@
             return true;
         }
 
-        updateTags(tags, { fromHash = false } = {}) {
+        updateTags(tags, { fromHash = false, mode = null } = {}) {
             const next = this.normalize(tags);
             if (!next.length) {
                 this.closeTagView();
                 return false;
             }
+            if (mode) this.mode = mode === 'all' ? 'all' : 'any';
             // A tag picked from every bookmark is a step in: Back returns to #tags.
             const fromAll = this.all;
             this.all = false;
@@ -171,11 +198,6 @@
             return restored;
         }
 
-        /**
-         * The view arrives: header first, then the rows one after another,
-         * and then it holds still. Once per opening -- a redraw after a filter
-         * or a keystroke is not an arrival.
-         */
         /** Another view, or the grid, took the layout: the tags go with the view. */
         onLeave() {
             this.drawer?.destroy?.();
@@ -188,6 +210,7 @@
             container?.classList.remove('tag-view-layout');
             this.tags = [];
             this.all = false;
+            this.mode = 'any';
             this.dash._tagFilters = [];
             this.dash.tagFilter?._syncTagFilterDomAttributes?.();
             window.DashboardTagCloud?.setActiveTags?.([]);
@@ -241,7 +264,10 @@
                 shell.body.replaceChildren(this.buildNoMatch(), this.buildLegend());
                 return;
             }
-            this.rows = Model().sort(shown, this.sort.key, this.sort.dir);
+            this.rows = Model().sort(shown, this.sort.key, this.sort.dir, {
+                pageOrder: (this.dash.pages || []).map((p) => p.id),
+                scoreOf: (b) => this.scoreOf(b),
+            });
             if (this.focusIndex >= this.rows.length) this.focusIndex = this.rows.length - 1;
             const table = this.el('div', 'tag-view-table');
             table.style.setProperty('--tag-view-rows', String(this.rows.length));
@@ -263,6 +289,7 @@
             ['name', 'dashboard.tagViewSortName', 'Name'],
             ['opens', 'dashboard.tagViewSortOpens', 'Opens'],
             ['page', 'dashboard.tagViewSortPage', 'Page'],
+            ['score', 'dashboard.tagViewSortScore', 'Score'],
         ];
 
         /** Built once per shell: the search box keeps its focus while the list redraws. */
@@ -303,10 +330,7 @@
                 opt.value = key;
                 sort.appendChild(opt);
             });
-            sort.addEventListener('change', () => {
-                this.sort = { key: sort.value, dir: null };
-                this.render();
-            });
+            sort.addEventListener('change', () => this.setSort({ key: sort.value, dir: null }));
             host.replaceChildren(search, count, sort);
             this.searchEl = search;
             this.countEl = count;
@@ -331,7 +355,7 @@
             ['page', 'dashboard.tagViewColPage', 'Page', 'page'],
             ['opens', 'dashboard.tagViewColOpens', 'Opens', 'opens'],
             ['last', 'dashboard.tagViewColLast', 'Last opened', 'lastOpened'],
-            ['score', 'dashboard.tagViewColScore', 'Score', null],
+            ['score', 'dashboard.tagViewColScore', 'Score', 'score'],
         ];
 
         buildColHead() {
@@ -355,12 +379,9 @@
                     cell.setAttribute('aria-sort', on ? (dir === 'asc' ? 'ascending' : 'descending') : 'none');
                     if (on) cell.appendChild(this.el('span', 'tag-view-col-arrow', dir === 'asc' ? '↑' : '↓'));
                     cell.addEventListener('click', () => {
-                        if (this.sort.key === sortKey) {
-                            this.sort = { key: sortKey, dir: dir === 'asc' ? 'desc' : 'asc' };
-                        } else {
-                            this.sort = { key: sortKey, dir: null };
-                        }
-                        this.render();
+                        this.setSort(this.sort.key === sortKey
+                            ? { key: sortKey, dir: dir === 'asc' ? 'desc' : 'asc' }
+                            : { key: sortKey, dir: null });
                     });
                 }
                 head.appendChild(cell);
@@ -1083,6 +1104,9 @@
                     },
                 });
             });
+            button(this.t('dashboard.tagViewAddTagSelected', 'Add tag…'), 'tag-view-selbar-add', () => {
+                void this.addTagToSelected();
+            });
             button(this.t('dashboard.tagViewFindSelected', 'Find tags'), 'tag-view-selbar-find', () => {
                 track('find-tags');
                 void this.findTags(this.selectedBookmarks());
@@ -1098,6 +1122,36 @@
                 this.render();
             });
             return bar;
+        }
+
+        /**
+         * One or more tags of the reader's own on every ticked row: the
+         * suggestions' PATCH, so it adds rather than replaces, and its undo.
+         */
+        async addTagToSelected() {
+            const list = this.selectedBookmarks();
+            if (!list.length) return;
+            const esc = (v) => this.dash.escapeHtml?.(v) ?? String(v);
+            const known = (window.TagCloudModel?.countTags?.(this.pool()) || [])
+                .map(({ tag }) => `<option value="${esc(tag)}"></option>`).join('');
+            const label = (list.length === 1
+                ? this.t('dashboard.tagViewAddTagLabelOne', 'Tag for 1 bookmark')
+                : this.t('dashboard.tagViewAddTagLabelMany', 'Tag for {n} bookmarks').replace('{n}', String(list.length)));
+            const raw = await this.askForTag({
+                title: this.t('dashboard.tagViewAddTagTitle', 'Add tag'),
+                html: `<label class="tag-view-modal-field">${esc(label)}
+                    <input type="text" data-tag-bulk-add list="tag-view-bulk-tags" autocomplete="off"
+                        placeholder="${esc(this.t('dashboard.tagViewAddTagHint', 'tag, or several with commas'))}"></label>
+                    <datalist id="tag-view-bulk-tags">${known}</datalist>`,
+                confirmText: this.t('dashboard.tagViewAddTagConfirm', 'Add'),
+                read: () => String(document.querySelector('#app-modal [data-tag-bulk-add]')?.value || ''),
+            });
+            const tags = [...new Set(String(raw || '').split(',')
+                .map((t) => t.trim().replace(/^#+/, '').trim().toLowerCase())
+                .filter(Boolean))];
+            if (!tags.length) return;
+            window.nextdashTrack?.('tag-view:bulk', { action: 'add-tag', count: list.length });
+            await this.addSuggestions(list.map((b) => [b, tags.map((tag) => ({ tag }))]));
         }
 
         /* ── Side panel ──────────────────────────────────────────────────── */
@@ -1118,7 +1172,11 @@
                     };
                     action(this.t('dashboard.tagViewPanelOpen', 'Open'), () => {
                         const href = d.safeBookmarkOpenHref?.(b.url);
-                        if (href) window.open(href, d.settings?.openInNewTab ? '_blank' : '_self', 'noopener');
+                        if (!href || href === '#') return;
+                        // Counted as the row's link counts it: opens, Last opened, Recent.
+                        const newTab = Boolean(d.settings?.openInNewTab);
+                        d.recordBookmarkOpened?.(b, undefined, 'tag-view', 'mouse', { newTab });
+                        window.open(href, newTab ? '_blank' : '_self', 'noopener');
                     }, true);
                     action(this.t('dashboard.tagViewPanelEdit', 'Edit'), () => this.editBookmark(b));
 
@@ -1395,7 +1453,11 @@
             if (d.settings?.healthViewEnabled === false || this._healthLoading) return;
             this._healthLoading = (async () => {
                 const health = await d.health?.load?.();
-                if (!health) return;
+                if (!health) {
+                    // Not there this time: the next opening asks again.
+                    this._healthLoading = null;
+                    return;
+                }
                 if (!this._healthListening) {
                     this._healthListening = true;
                     health.onReportLoaded?.(() => {
@@ -1497,7 +1559,7 @@
                 wrap.appendChild(this.el('span', 'tag-view-title', `#${this.tags[0]}`));
             } else {
                 this.tags.forEach((tag, i) => {
-                    if (i > 0) wrap.appendChild(this.el('span', 'tag-view-or', this.t('dashboard.tagViewOr', 'or')));
+                    if (i > 0) wrap.appendChild(this.buildModeToggle());
                     const pill = this.el('span', 'tag-view-pill');
                     pill.appendChild(this.el('span', 'tag-view-pill-label', `#${tag}`));
                     const x = this.el('button', 'tag-view-pill-x', '×');
@@ -1512,6 +1574,35 @@
             }
             wrap.appendChild(this.buildAddTag());
             return wrap;
+        }
+
+        /**
+         * The word between the pills is the switch: "or" shows the bookmarks
+         * with any of the tags, "and" only those with every one.
+         */
+        buildModeToggle() {
+            const all = this.mode === 'all';
+            const btn = this.el('button', `tag-view-or tag-view-mode${all ? ' is-all' : ''}`,
+                all ? this.t('dashboard.tagViewAnd', 'and') : this.t('dashboard.tagViewOr', 'or'));
+            btn.type = 'button';
+            btn.setAttribute('data-tag-view-mode', this.mode);
+            btn.setAttribute('aria-pressed', String(all));
+            btn.title = all
+                ? this.t('dashboard.tagViewModeAllHint', 'Showing bookmarks with every tag. Click for any of them.')
+                : this.t('dashboard.tagViewModeAnyHint', 'Showing bookmarks with any of these tags. Click for every tag.');
+            btn.addEventListener('click', () => this.setMode(all ? 'any' : 'all'));
+            return btn;
+        }
+
+        setMode(mode) {
+            const next = mode === 'all' ? 'all' : 'any';
+            if (next === this.mode) return;
+            this.mode = next;
+            this.selected = new Set();
+            this.focusIndex = -1;
+            window.nextdashTrack?.('tag-view:mode', { mode: next });
+            this.writeHash({ push: false });
+            this.render();
         }
 
         /**
@@ -1742,7 +1833,7 @@
                     title,
                     htmlMessage: html,
                     confirmText,
-                    initialFocusSelector: '[data-tag-rename], [data-tag-merge]',
+                    initialFocusSelector: '[data-tag-rename], [data-tag-merge], [data-tag-bulk-add]',
                     onConfirm: () => {
                         value = read();
                     },
@@ -1814,7 +1905,16 @@
 
         buildEmpty() {
             const box = this.el('div', 'tag-view-empty');
-            box.appendChild(this.el('p', '', this.t('dashboard.tagViewEmpty', 'No bookmarks have this tag any more.')));
+            const none = this.mode === 'all' && this.tags.length > 1
+                ? this.t('dashboard.tagViewEmptyAll', 'No bookmark has all of these tags.')
+                : this.t('dashboard.tagViewEmpty', 'No bookmarks have this tag any more.');
+            box.appendChild(this.el('p', '', none));
+            if (this.mode === 'all' && this.tags.length > 1) {
+                const any = this.el('button', 'lvs-action', this.t('dashboard.tagViewShowAny', 'Show any of them'));
+                any.type = 'button';
+                any.addEventListener('click', () => this.setMode('any'));
+                box.appendChild(any);
+            }
             const name = this.pageName(this.returnPageId);
             const back = this.el('button', 'lvs-action', name
                 ? this.t('dashboard.tagViewBackTo', 'Back to {page}').replace('{page}', name)

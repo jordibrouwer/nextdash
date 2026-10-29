@@ -32,6 +32,10 @@ const pool = [
     assert.strictEqual(list[0].pageId, 1);
     assert.deepStrictEqual(m.matches(pool, ['news', 'monitoring']).map((x) => x.name), ['Grafana', 'Elsewhere']);
     assert.deepStrictEqual(m.matches(pool, []), []);
+    // mode 'all': only the bookmarks that carry every tag.
+    assert.deepStrictEqual(m.matches(pool, ['homelab', 'docker'], { mode: 'all' }).map((x) => x.name), ['Proxmox', 'Portainer']);
+    assert.deepStrictEqual(m.matches(pool, ['docker', 'monitoring'], { mode: 'all' }), []);
+    assert.deepStrictEqual(m.matches(pool, ['docker', 'monitoring']).map((x) => x.name), ['Proxmox', 'Portainer', 'Grafana']);
 }
 
 // everything: every bookmark once, for #tags; untagged narrows to the ones without.
@@ -78,6 +82,11 @@ const pool = [
     assert.deepStrictEqual(names(m.applyFilters(list, { query: 'graf' })), ['Grafana']);
     assert.deepStrictEqual(names(m.applyFilters(list, { page: 1, query: 'port' })), []);
     assert.deepStrictEqual(names(m.applyFilters(list, {})), names(list));
+    // The search reads the tags too, and every word must match somewhere.
+    assert.deepStrictEqual(names(m.applyFilters(list, { query: 'monitoring' })), ['Grafana']);
+    assert.deepStrictEqual(names(m.applyFilters(list, { query: 'docker portainer' })), ['Portainer']);
+    assert.deepStrictEqual(names(m.applyFilters(list, { query: '  grafana   monitoring ' })), ['Grafana']);
+    assert.deepStrictEqual(names(m.applyFilters(list, { query: 'grafana docker' })), []);
 }
 
 // sort: every key, both directions, stable.
@@ -90,6 +99,14 @@ const pool = [
     assert.deepStrictEqual(names(m.sort(list, 'name', 'desc')), ['Proxmox', 'Portainer', 'Grafana']);
     assert.deepStrictEqual(names(m.sort(list, 'opens')), ['Proxmox', 'Portainer', 'Grafana']);
     assert.deepStrictEqual(names(m.sort(list, 'page')), ['Proxmox', 'Grafana', 'Portainer']);
+    // Page follows the tabs' order, not the id; a page not in it goes last.
+    assert.deepStrictEqual(names(m.sort(list, 'page', null, { pageOrder: [2, 1] })), ['Portainer', 'Proxmox', 'Grafana']);
+    assert.deepStrictEqual(names(m.sort(list, 'page', 'desc', { pageOrder: [2, 1] })), ['Proxmox', 'Grafana', 'Portainer']);
+    assert.deepStrictEqual(names(m.sort(list, 'page', null, { pageOrder: [1] })), ['Proxmox', 'Grafana', 'Portainer']);
+    // Score: lowest first on asc, highest on desc; not checked yet last both ways.
+    const scoreOf = (x) => ({ Proxmox: 100, Portainer: 60 }[x.name] ?? null);
+    assert.deepStrictEqual(names(m.sort(list, 'score', null, { scoreOf })), ['Proxmox', 'Portainer', 'Grafana']);
+    assert.deepStrictEqual(names(m.sort(list, 'score', 'asc', { scoreOf })), ['Portainer', 'Proxmox', 'Grafana']);
 }
 
 // hash round trip, with the characters a tag may hold.
@@ -100,5 +117,13 @@ for (const tags of [['homelab'], ['a+b', 'c'], ['c/d'], ['e f'], ['#g', 'h']]) {
 }
 assert.deepStrictEqual(m.tagsFromHash('#tag/a%2Bb+c'), ['a+b', 'c']);
 assert.deepStrictEqual(m.tagsFromHash('tag/Homelab'), ['homelab']);
+// ?all rides after the tags and is read back apart from them.
+assert.strictEqual(m.hashFor(['a', 'b'], { mode: 'all' }), '#tag/a+b?all');
+assert.strictEqual(m.hashFor(['a'], { mode: 'all' }), '#tag/a');
+assert.deepStrictEqual(m.tagsFromHash('#tag/a+b?all'), ['a', 'b']);
+assert.strictEqual(m.modeFromHash('#tag/a+b?all'), 'all');
+assert.strictEqual(m.modeFromHash('#tag/a+b'), 'any');
+assert.deepStrictEqual(m.tagsFromHash(m.hashFor(['what?', 'b'])), ['what?', 'b']);
+assert.strictEqual(m.modeFromHash(m.hashFor(['what?all'])), 'any');
 
 console.log('tag-view-model: ok');

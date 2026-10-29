@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.22.5](#v1225)
 - [v1.22.4 — 29 October 2026](#v1224--29-october-2026)
 - [v1.22.3 — 27 October 2026](#v1223--27-october-2026)
 - [v1.22.2 — 26 October 2026](#v1222--26-october-2026)
@@ -124,6 +125,21 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.22.5
+
+### Tag view
+
+- **new — Any or all.** With two or more tags the word between the pills is a switch: "or" shows the bookmarks with any of them, "and" only those with every one. `TagViewModel.matches(pool, tags, { mode })`; the address carries it as `#tag/a+b?all` (`hashFor`, `modeFromHash`), so a reload or a shared link opens the same view. An "and" view with no matches offers *Show any of them*.
+- **new — Add tag… on a selection.** The selection bar gets *Add tag…*: one or more tags (commas) with the tags in use as autocomplete, put on every ticked row on its own page through the same `PATCH /api/bookmarks` `addTags` the suggestions use, with its undo.
+- **new — Score sorts.** The Score column header and the sort select sort by health score, highest first; bookmarks not checked yet go last in both directions.
+- **new — The sort is remembered** per device (`nextdash:tag-view-sort`), so the view opens on the sort last picked.
+- **new — The search reads the tags, and takes several words.** `applyFilters` matches name, address, host and tags, and every word must match somewhere, in any order.
+- **fix — Page sorts in the order of the page tabs.** `TagViewModel.sort` sorted by page id, so after reordering pages the column agreed with neither the tabs nor the rail; it takes `pageOrder` now.
+- **fix — Open in the side panel counts as an open.** It called `window.open` directly, so opens, Last opened and Recent missed it; it goes through `recordBookmarkOpened` like the row's link.
+- **fix — Health is asked again after a failed load.** `ensureHealth` kept its guard when `health.load()` returned nothing, so the scores stayed away until a reload.
 
 ---
 
