@@ -339,6 +339,7 @@ class SearchCommandsComponent {
         ...(document.querySelector('meta[name="nextdash-demo"]') ? [] : [{ id: 'glances', labelKey: 'commands.configGlances', fallback: 'Glances' }]),
         { id: 'monitoring', labelKey: 'commands.configMonitoring', fallback: 'Monitoring' },
         { id: 'status-page', labelKey: 'commands.configStatusPage', fallback: 'Status page' },
+        { id: 'assistant', labelKey: 'commands.configAssistant', fallback: 'Assistant' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
         { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
         { id: 'logs', labelKey: 'commands.configLogs', fallback: 'Logs' },

@@ -215,15 +215,14 @@ test.describe('Assistant panel', () => {
         expect(requests).toBe(2);
     });
 
-    test('with the assistant off the palette says so and opens the Config fold', async ({ page }) => {
+    test('with the assistant off the palette says so and opens Config → Assistant', async ({ page }) => {
         await configure(page, false);
         await openApp(page);
         await palette(page, 'ask what is new');
         await expect(page.locator('#shortcut-search')).toContainText('The assistant is off. Set it up in Config');
         await page.keyboard.press('Enter');
-        const fold = page.locator('[data-fold="assistant"]');
-        await expect(fold).toBeVisible();
-        await expect(fold).toHaveAttribute('open', '');
+        await expect(page.locator('[data-ai-panel]')).toBeVisible();
+        await expect(page).toHaveURL(/#config\/assistant\/settings$/);
         await expect(panel(page)).toHaveCount(0);
         expect(requests).toBe(0);
     });

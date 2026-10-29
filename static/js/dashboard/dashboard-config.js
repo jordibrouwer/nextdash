@@ -67,6 +67,7 @@ class DashboardConfig {
         'glances',
         'monitoring',
         'status-page',
+        'assistant',
         'stats',
         'help',
         'logs',
@@ -110,6 +111,11 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-status-page.js',
             datasetKey: 'dashboardConfigStatusPage',
             ready: () => window.DashboardConfigStatusPageReady === true,
+        },
+        assistant: {
+            file: 'js/dashboard/dashboard-config-assistant.js',
+            datasetKey: 'dashboardConfigAssistant',
+            ready: () => window.DashboardConfigAssistantReady === true,
         },
         'data-backups': {
             file: 'js/dashboard/dashboard-config-data-backups.js',
@@ -229,7 +235,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['widgets', 'status-page', 'glances'];
+    static NEW_SECTIONS = ['widgets', 'status-page', 'glances', 'assistant'];
 
     /** The sections that open a named group in the rail. */
     static NAV_GROUP_LABELS = {
@@ -314,6 +320,8 @@ class DashboardConfig {
         this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'connection';
         // Glances sub-tab, remembered the same way.
         this._glancesTab = DashboardConfig.readRememberedTab('glances') || 'connection';
+        // Assistant has one tab; remembered the same way for consistency.
+        this._assistantTab = DashboardConfig.readRememberedTab('assistant') || 'settings';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -642,6 +650,7 @@ class DashboardConfig {
             'status-page': DashboardConfig.STATUS_PAGE_TABS,
             unraid: DashboardConfig.UNRAID_TABS,
             glances: DashboardConfig.GLANCES_TABS,
+            assistant: DashboardConfig.ASSISTANT_TABS,
         };
     }
 
@@ -677,7 +686,7 @@ class DashboardConfig {
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
 
-    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances'];
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances', 'assistant'];
 
     static readRememberedTab(section) {
         try {
@@ -750,6 +759,7 @@ class DashboardConfig {
         'status-page': 'statusPageTab',
         unraid: 'unraidTab',
         glances: 'glancesTab',
+        assistant: 'assistantTab',
     };
 
     /**
@@ -774,6 +784,7 @@ class DashboardConfig {
         'data-sp-tab': 'status-page',
         'data-unraid-tab': 'unraid',
         'data-glances-tab': 'glances',
+        'data-assistant-tab': 'assistant',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -792,6 +803,7 @@ class DashboardConfig {
         containers: 'data-containers-tab',
         'status-page': 'data-sp-tab',
         unraid: 'data-unraid-tab',
+        assistant: 'data-assistant-tab',
     };
 
     /**
@@ -2290,6 +2302,7 @@ class DashboardConfig {
             unraid: ['config.sectionUnraid', 'Unraid'],
             glances: ['config.sectionGlances', 'Glances'],
             'status-page': ['config.sectionStatusPage', 'Status page'],
+            assistant: ['config.sectionAssistant', 'Assistant'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
@@ -2339,6 +2352,7 @@ class DashboardConfig {
             case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             case 'glances': return this.glancesTabLabel?.(tab) || tab;
+            case 'assistant': return this.assistantTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2697,6 +2711,8 @@ class DashboardConfig {
             void this.bindGlancesSection?.(container);
         } else if (this.section === 'status-page') {
             void this.bindStatusPageSection?.(container);
+        } else if (this.section === 'assistant') {
+            this.bindAssistantSection?.(container);
         } else if (this.section === 'inbox') {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
@@ -3833,6 +3849,7 @@ class DashboardConfig {
             case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             case 'glances': return this.glancesTabLabel?.(tab) || tab;
+            case 'assistant': return this.assistantTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -3893,6 +3910,16 @@ class DashboardConfig {
         { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
         { field: 'backupExcludeArchives', labelKey: 'backupIncludeArchivesLabel', fallback: 'Local copies of pages', section: 'data-backups', subTab: 'backups' },
         { field: 'backupExcludeSecrets', labelKey: 'backupIncludeSecretsLabel', fallback: 'Tokens and passwords', section: 'data-backups', subTab: 'backups' },
+        // The Assistant page is drawn by its own file, not from the schema.
+        { field: 'aiEnabled', labelKey: 'assistantEnabled', fallback: 'Turn the assistant on', section: 'assistant', subTab: 'settings' },
+        { field: 'aiProvider', labelKey: 'assistantProvider', fallback: 'Provider', section: 'assistant', subTab: 'settings' },
+        { field: 'aiKey', labelKey: 'assistantKey', fallback: 'API key', section: 'assistant', subTab: 'settings' },
+        { field: 'aiBaseURL', labelKey: 'assistantBaseURL', fallback: 'Server address', section: 'assistant', subTab: 'settings' },
+        { field: 'aiModel', labelKey: 'assistantModel', fallback: 'Model', section: 'assistant', subTab: 'settings' },
+        { field: 'aiTest', labelKey: 'assistantTest', fallback: 'Test connection', section: 'assistant', subTab: 'settings' },
+        { field: 'aiHistoryMax', labelKey: 'assistantHistoryMax', fallback: 'Conversations to keep', section: 'assistant', subTab: 'settings' },
+        { field: 'aiHistoryDays', labelKey: 'assistantHistoryDays', fallback: 'Days to keep them', section: 'assistant', subTab: 'settings' },
+        { field: 'aiDeleteAll', labelKey: 'assistantDeleteAll', fallback: 'Delete all conversations', section: 'assistant', subTab: 'settings' },
     ];
 
     /**
@@ -3951,6 +3978,15 @@ class DashboardConfig {
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
         discoverApps: ['docker', 'containers', 'discover', 'discovery', 'suggest', 'new', 'apps', 'found', 'inbox'],
         discoveryNewApps: ['docker', 'containers', 'discover', 'discovery', 'new', 'apps', 'ask', 'confirm', 'add', 'inbox', 'propose'],
+        aiEnabled: ['assistant', 'ai', 'chat', 'ask', 'claude', 'openai', 'llm'],
+        aiProvider: ['assistant', 'ai', 'claude', 'anthropic', 'openai', 'ollama', 'lm studio', 'llm'],
+        aiKey: ['assistant', 'ai', 'api key', 'token', 'secret', 'claude', 'openai'],
+        aiBaseURL: ['assistant', 'ai', 'ollama', 'lm studio', 'compatible', 'local', 'address', 'url', 'llm'],
+        aiModel: ['assistant', 'ai', 'model', 'llm', 'claude', 'gpt'],
+        aiTest: ['assistant', 'ai', 'test', 'connection', 'check'],
+        aiHistoryMax: ['assistant', 'ai', 'history', 'conversations', 'keep', 'limit'],
+        aiHistoryDays: ['assistant', 'ai', 'history', 'conversations', 'keep', 'days', 'expire'],
+        aiDeleteAll: ['assistant', 'ai', 'history', 'conversations', 'delete', 'clear', 'remove'],
         webSearchEngine: ['web', 'search', 'searxng', 'brave', 'internet', 'engine', 'privacy'],
         webSearchSearxngUrl: ['searxng', 'web', 'search', 'address', 'url', 'instance'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
@@ -4466,6 +4502,7 @@ class DashboardConfig {
             `[data-appearance-range="${escaped}"]`,
             `[data-backup-select="${escaped}"]`,
             `[data-backup-toggle="${escaped}"]`,
+            `[data-ai-setting="${escaped}"]`,
         ];
         // Controls rendered as a group of buttons carry the value, not the
         // field, so they are addressed by the attribute that names the group.
@@ -4477,6 +4514,9 @@ class DashboardConfig {
             theme: '[data-appearance-select="theme"]',
             backdropTuning: '[data-backdrop-tuning="strength"]',
             cardGlass: '[data-glass-range="alpha"]',
+            aiKey: '[data-ai-key]',
+            aiTest: '[data-ai-action="test"]',
+            aiDeleteAll: '[data-ai-action="delete-all"]',
         };
         if (groups[field]) candidates.push(groups[field]);
 
@@ -4761,6 +4801,9 @@ class DashboardConfig {
         }
         if (this.section === 'status-page') {
             return this.renderStatusPageSection();
+        }
+        if (this.section === 'assistant') {
+            return this.renderAssistantSection();
         }
         if (this.section === 'inbox') {
             return this.renderInboxSection();
@@ -12643,11 +12686,8 @@ class DashboardConfig {
             ? this.renderOnboardingActions() : '';
         const webPanel = (this.behaviorTab === 'search' && !this.changedOnly && !String(this.settingsFilter || '').trim())
             ? this.renderWebSearchPanel() : '';
-        const assistant = (this.behaviorTab === 'privacy' && !this.changedOnly && !String(this.settingsFilter || '').trim())
-            ? this.renderAssistantPanel() : '';
         return this.renderControlPanels(panels, 'behavior')
             + webPanel
-            + assistant
             + trailing;
     }
 
@@ -12840,188 +12880,11 @@ class DashboardConfig {
         });
     }
 
-    /** Models the server falls back to; the field's placeholder, never sent. */
-    static AI_DEFAULT_MODELS = { anthropic: 'claude-sonnet-5-5', openai: 'gpt-5.6-terra', compatible: '' };
-
-    /** The in-app assistant: switch, provider, a write-only key, limits. */
-    renderAssistantPanel() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const s = this.dash.settings || {};
-        const provider = ['anthropic', 'openai', 'compatible'].includes(s.aiProvider) ? s.aiProvider : 'anthropic';
-        const demo = window.DemoLock?.on === true;
-        const opt = (value, label) => `<option value="${value}" ${provider === value ? 'selected' : ''}>${esc(label)}</option>`;
-        const num = (key, fallback) => (Number(s[key]) > 0 ? Number(s[key]) : '');
-        const body = `
-                <p class="config-panel-note">${esc(this.t('config.assistantNote',
-                    'Ask questions about your bookmarks and let the assistant propose changes you approve one by one. Your questions and the bookmark data it looks up go to the provider you pick below.'))}</p>
-                <label class="config-toggle">
-                    <input type="checkbox" data-ai-setting="aiEnabled" ${s.aiEnabled === true ? 'checked' : ''}>
-                    <span>${esc(this.t('config.assistantEnabled', 'Turn the assistant on'))}</span>
-                </label>
-                <div class="config-field">
-                    <label class="config-field-label" for="config-ai-provider">${esc(this.t('config.assistantProvider', 'Provider'))}</label>
-                    <select id="config-ai-provider" class="config-select" data-ai-setting="aiProvider">
-                        ${opt('anthropic', 'Claude')}${opt('openai', 'OpenAI')}${opt('compatible', this.t('config.assistantProviderCompatible', 'OpenAI-compatible (Ollama, LM Studio…)'))}
-                    </select>
-                </div>
-                <div class="config-field">
-                    <label class="config-field-label" for="config-ai-key">${esc(this.t('config.assistantKey', 'API key'))}</label>
-                    <input type="password" id="config-ai-key" class="config-text" data-ai-key autocomplete="off" spellcheck="false">
-                    <p class="config-field-hint">${esc(this.t('config.assistantKeyNote',
-                        'Stored on this server and never shown again. Keyless servers on your own network can leave it empty.'))}</p>
-                </div>
-                <p class="config-field-hint" data-ai-key-state></p>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-ai-action="save-key">${esc(this.t('config.assistantKeySave', 'Save key'))}</button>
-                    <button type="button" class="config-btn config-btn--danger" data-ai-action="remove-key" hidden>${esc(this.t('config.assistantKeyRemove', 'Remove key'))}</button>
-                </div>
-                ${provider === 'compatible' ? `
-                <div class="config-field">
-                    <label class="config-field-label" for="config-ai-url">${esc(this.t('config.assistantBaseURL', 'Server address'))}</label>
-                    <input type="url" id="config-ai-url" class="config-text" data-ai-setting="aiBaseURL" autocomplete="off" spellcheck="false"
-                        placeholder="http://localhost:11434/v1" value="${esc(s.aiBaseURL || '')}">
-                </div>` : ''}
-                <div class="config-field">
-                    <label class="config-field-label" for="config-ai-model">${esc(this.t('config.assistantModel', 'Model'))}</label>
-                    <input type="text" id="config-ai-model" class="config-text" data-ai-setting="aiModel" autocomplete="off" spellcheck="false"
-                        placeholder="${esc(DashboardConfig.AI_DEFAULT_MODELS[provider] || '')}" value="${esc(s.aiModel || '')}">
-                </div>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-ai-action="test">${esc(this.t('config.assistantTest', 'Test connection'))}</button>
-                </div>
-                <p class="config-field-hint" data-ai-test-state role="status"></p>
-                <div class="config-field">
-                    <label class="config-field-label" for="config-ai-history-max">${esc(this.t('config.assistantHistoryMax', 'Conversations to keep'))}</label>
-                    <input type="number" min="1" id="config-ai-history-max" class="config-text" data-ai-setting="aiHistoryMax" placeholder="50" value="${num('aiHistoryMax')}">
-                </div>
-                <div class="config-field">
-                    <label class="config-field-label" for="config-ai-history-days">${esc(this.t('config.assistantHistoryDays', 'Days to keep them'))}</label>
-                    <input type="number" min="1" id="config-ai-history-days" class="config-text" data-ai-setting="aiHistoryDays" placeholder="90" value="${num('aiHistoryDays')}">
-                </div>
-                <div class="config-actions">
-                    <button type="button" class="config-btn config-btn--danger" data-ai-action="delete-all">${esc(this.t('config.assistantDeleteAll', 'Delete all conversations'))}</button>
-                </div>`;
-        return `
-            <details class="config-panel config-source-panel" data-fold="assistant" ${this._assistantFoldOpen ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.assistantTitle', 'Assistant'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.assistantSummary',
-                            'Ask about your bookmarks in plain words, with Claude, OpenAI or a server of your own.'))}</span>
-                    </span>
-                </summary>
-                ${demo ? `<div>${window.DemoLock.chip('privacy')}</div><fieldset class="config-demo-lock" disabled>${body}</fieldset>` : body}
-            </details>`;
-    }
-
-    bindAssistantPanel(container) {
-        const panel = container.querySelector('[data-fold="assistant"]');
-        if (!panel || panel.dataset.bound === 'true') return;
-        panel.dataset.bound = 'true';
-        panel.addEventListener('toggle', () => { this._assistantFoldOpen = panel.open; });
-        if (window.DemoLock?.on === true) return;
-        const provider = () => this.dash.settings?.aiProvider || 'anthropic';
-        const input = panel.querySelector('[data-ai-key]');
-        const keyState = panel.querySelector('[data-ai-key-state]');
-        const removeBtn = panel.querySelector('[data-ai-action="remove-key"]');
-        const testState = panel.querySelector('[data-ai-test-state]');
-        const showKey = (keySet) => {
-            const isSet = keySet?.[provider()] === true;
-            if (keyState) {
-                keyState.textContent = isSet
-                    ? this.t('config.assistantKeyIsSet', 'Key saved.')
-                    : this.t('config.assistantKeyNotSet', 'No key saved.');
-            }
-            if (removeBtn) removeBtn.hidden = !isSet;
-        };
-        const loadKeys = () => fetch('/api/ai/key', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null))
-            .then((body) => { if (panel.isConnected && body) showKey(body.keySet); }).catch(() => {});
-        void loadKeys();
-
-        const redraw = () => {
-            const open = panel.open;
-            this._assistantFoldOpen = open;
-            panel.outerHTML = this.renderAssistantPanel();
-            this.bindAssistantPanel(container);
-        };
-        panel.querySelectorAll('[data-ai-setting]').forEach((el) => {
-            el.addEventListener('change', () => {
-                const key = el.getAttribute('data-ai-setting');
-                const settings = this.dash.settings;
-                if (!settings) return;
-                if (el.type === 'checkbox') settings[key] = el.checked;
-                else if (el.type === 'number') settings[key] = Math.max(0, Math.floor(Number(el.value)) || 0);
-                else settings[key] = String(el.value || '').trim();
-                void this.saveSettingsWithFeedback();
-                if (key === 'aiProvider') redraw();
-            });
-        });
-
-        const keyCall = async (method, body) => {
-            const url = method === 'DELETE' ? `/api/ai/key?provider=${encodeURIComponent(provider())}` : '/api/ai/key';
-            const res = await this.writeFetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: method === 'PUT' ? JSON.stringify(body) : undefined,
-            });
-            if (!res.ok) throw new Error((await res.text().catch(() => '')).trim() || String(res.status));
-            return res.json();
-        };
-        panel.querySelector('[data-ai-action="save-key"]')?.addEventListener('click', async () => {
-            const key = String(input?.value || '').trim();
-            if (!key) { input?.focus(); return; }
-            try {
-                const body = await keyCall('PUT', { provider: provider(), key });
-                if (input) input.value = '';
-                showKey(body?.keySet);
-            } catch (err) {
-                this.notify(this.t('config.assistantKeyFailed', 'The key could not be saved: {reason}').replace('{reason}', err.message), 'error');
-            }
-        });
-        removeBtn?.addEventListener('click', async () => {
-            try { showKey((await keyCall('DELETE'))?.keySet); } catch (_e) { /* the state line stays as it was */ }
-        });
-
-        panel.querySelector('[data-ai-action="test"]')?.addEventListener('click', async () => {
-            if (!testState) return;
-            testState.textContent = '…';
-            try {
-                const res = await this.writeFetch('/api/ai/test', { method: 'POST' });
-                const body = await res.json().catch(() => ({}));
-                testState.textContent = body.ok
-                    ? this.t('config.assistantTestOk', 'Working: {label}, model {model}.')
-                        .replace('{label}', body.label || '').replace('{model}', body.model || '')
-                    : this.t('config.assistantTestFailed', 'Not working: {reason}')
-                        .replace('{reason}', body.error || body.reason || String(res.status));
-            } catch (err) {
-                testState.textContent = this.t('config.assistantTestFailed', 'Not working: {reason}').replace('{reason}', err.message);
-            }
-        });
-
-        panel.querySelector('[data-ai-action="delete-all"]')?.addEventListener('click', async () => {
-            const ok = await this.confirmAction(
-                this.t('config.assistantDeleteConfirm', 'Delete every stored conversation with the assistant? This cannot be undone.'),
-                { confirmLabel: this.t('config.assistantDeleteOk', 'Delete all'), danger: true });
-            if (!ok) return;
-            try {
-                const res = await this.writeFetch('/api/ai/conversations', { method: 'DELETE' });
-                if (!res.ok) throw new Error(String(res.status));
-                this.notify(this.t('config.assistantDeleted', 'Conversations deleted.'), 'success');
-            } catch (err) {
-                this.notify(this.t('config.assistantDeleteFailed', 'The conversations could not be deleted: {reason}').replace('{reason}', err.message), 'error');
-            }
-        });
-    }
-
-    /** Open Behavior -> Privacy & sync with the Assistant fold open and in view. */
+    /** Open Config -> Assistant -> Settings. Kept under its old name for the callers. */
     async openAssistantFold() {
-        this._assistantFoldOpen = true;
-        this.behaviorTab = 'privacy';
-        await this.openConfigView('behavior');
-        const fold = document.querySelector('[data-fold="assistant"]');
-        if (!fold) return;
-        fold.open = true;
-        fold.scrollIntoView({ block: 'start', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
+        this.assistantTab = 'settings';
+        await this.openConfigView('assistant');
+        document.querySelector('[data-ai-panel]')?.scrollIntoView({ block: 'start', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
     }
 
     renderOnboardingActions() {
@@ -13342,7 +13205,6 @@ class DashboardConfig {
      */
     bindBehaviorActions(container) {
         this.bindWebSearchPanel(container);
-        this.bindAssistantPanel(container);
         container.querySelectorAll('[data-behavior-action]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-behavior-action');
@@ -13719,6 +13581,13 @@ class DashboardConfig {
     set statusPageTab(tab) {
         this._statusPageTab = tab;
         DashboardConfig.rememberTab('status-page', tab);
+    }
+
+    get assistantTab() { return this._assistantTab; }
+
+    set assistantTab(tab) {
+        this._assistantTab = tab;
+        DashboardConfig.rememberTab('assistant', tab);
     }
 
     get glancesTab() { return this._glancesTab; }
@@ -14245,7 +14114,6 @@ class DashboardConfig {
                 this.bindControlPanels(container, 'behavior');
                 // The body was replaced, so the key panel's handlers went with it.
                 this.bindWebSearchPanel(container);
-                this.bindAssistantPanel(container);
                 this.labelSettingsControls();
                 restoreFocus();
             }
@@ -16661,6 +16529,8 @@ class DashboardConfig {
 
     /** The Status page section's sub-tabs; 'all' shows every card at once. */
     static STATUS_PAGE_TABS = ['all', 'link', 'top', 'groups', 'maintenance'];
+
+    static ASSISTANT_TABS = ['settings'];
 
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
     static UNRAID_TABS = ['connection', 'how'];

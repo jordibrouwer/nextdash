@@ -149,15 +149,14 @@ test.describe('Assistant search mode', () => {
         await expect(page.locator('.search-mode-tab[data-mode="search"]')).toHaveClass(/active/);
     });
 
-    test('with the assistant off the row says so and Enter opens the Config fold', async ({ page }) => {
+    test('with the assistant off the row says so and Enter opens Config → Assistant', async ({ page }) => {
         await configure(page, false);
         await openApp(page);
         await typeInBar(page, '=');
         await expect(bar(page).locator('.search-match')).toHaveText(/The assistant is off\. Set it up in Config/);
         await page.keyboard.press('Enter');
-        const fold = page.locator('[data-fold="assistant"]');
-        await expect(fold).toBeVisible();
-        await expect(fold).toHaveAttribute('open', '');
+        await expect(page.locator('[data-ai-panel]')).toBeVisible();
+        await expect(page).toHaveURL(/#config\/assistant\/settings$/);
         await expect(panel(page)).toHaveCount(0);
         expect(received).toHaveLength(0);
     });

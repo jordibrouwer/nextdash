@@ -8,7 +8,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * broke between the material's mark and the word, or the description wrapped.
  */
 const SECTIONS = ['overview', 'appearance', 'bookmarks', 'structure', 'behavior', 'inbox', 'data',
-    'widgets', 'containers', 'unraid', 'glances', 'monitoring', 'status-page', 'statistics', 'help', 'logs'];
+    'widgets', 'containers', 'unraid', 'glances', 'monitoring', 'status-page', 'assistant', 'statistics', 'help', 'logs'];
 
 for (const width of [1180, 1400]) {
     test(`the band and the rail stay put across every section at ${width}px`, async ({ page }) => {

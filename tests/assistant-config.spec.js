@@ -3,27 +3,27 @@ const { test, expect } = require('./fixtures');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
- * Behavior -> Privacy & sync -> Assistant: the switch, the provider, the key
- * (write-only), the test button, and the MCP groups the assistant shares.
+ * Config -> Assistant -> Settings: the switch, the provider, the key
+ * (write-only), the test button, and the MCP groups the assistant shares. The
+ * page is a section of its own, under Status page in the rail, with one tab.
  */
 const AUTH = { 'X-NextDash-Token': WRITE_TOKEN };
 
-async function openFold(page) {
+async function openApp(page) {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
-    await page.evaluate(() => {
-        const c = window.dashboardInstance.config;
-        c.behaviorTab = 'privacy';
-        return c.openConfigView('behavior');
-    });
-    const fold = page.locator('[data-fold="assistant"]');
+}
+
+/** Opens Config -> Assistant by its address and returns the panel. */
+async function openFold(page, hash = '#config/assistant/settings') {
+    await openApp(page);
+    await page.evaluate((h) => { location.hash = h; }, hash);
+    const fold = page.locator('[data-ai-panel]');
     await expect(fold).toBeVisible();
-    if (!(await fold.evaluate((el) => el.open))) await fold.locator('summary').click();
-    await expect(fold).toHaveAttribute('open', '');
     return fold;
 }
 
@@ -54,6 +54,80 @@ test.describe('Assistant settings', () => {
         for (const p of ['anthropic', 'openai', 'compatible']) {
             if (!keysBefore[p]) await page.request.delete(`/api/ai/key?provider=${p}`, { headers: AUTH });
         }
+    });
+
+    test('the section sits under Status page in the rail, new, with one tab in the same place as Status page', async ({ page }) => {
+        await openApp(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('status-page'));
+        const order = await page.evaluate(() =>
+            [...document.querySelectorAll('[data-config-section]')].map((b) => b.getAttribute('data-config-section')));
+        const at = order.indexOf('status-page');
+        expect(at).toBeGreaterThan(-1);
+        expect(order[at + 1]).toBe('assistant');
+        const item = page.locator('[data-config-section="assistant"]');
+        await expect(item).toHaveAttribute('data-config-new', 'new');
+        await expect(item).toContainText('Assistant');
+
+        const stripTop = () => page.evaluate(() => {
+            const head = document.querySelector('.config-view-head').getBoundingClientRect();
+            const strip = document.querySelector('#config-view-body .config-subtabs').getBoundingClientRect();
+            return Math.round(strip.top - head.bottom);
+        });
+        await page.waitForSelector('#config-view-body .config-subtabs');
+        const onStatus = await stripTop();
+        await item.click();
+        await expect(page.locator('[data-ai-panel]')).toBeVisible();
+        const tabs = page.locator('#config-view-body .config-subtabs .config-subtab');
+        await expect(tabs).toHaveCount(1);
+        await expect(tabs.first()).toHaveText('Settings');
+        await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+        expect(Math.abs((await stripTop()) - onStatus)).toBeLessThanOrEqual(2);
+        await expect(page).toHaveURL(/#config\/assistant\/settings$/);
+    });
+
+    test('#config/assistant and #config/assistant/settings both open the page', async ({ page }) => {
+        await openFold(page, '#config/assistant');
+        await expect(page.locator('[data-config-section="assistant"]')).toHaveAttribute('aria-selected', 'true');
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await expect(page.locator('[data-ai-panel]')).toHaveCount(0);
+        await page.evaluate(() => { location.hash = '#config/assistant/settings'; });
+        await expect(page.locator('[data-ai-panel]')).toBeVisible();
+    });
+
+    test('Behavior -> Privacy & sync no longer holds the assistant', async ({ page }) => {
+        await openApp(page);
+        await page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            c.behaviorTab = 'privacy';
+            return c.openConfigView('behavior');
+        });
+        await expect(page.locator('[data-behavior-action="reset-onboarding"]')).toBeVisible();
+        await expect(page.locator('[data-fold="assistant"], [data-ai-panel], [data-ai-setting]')).toHaveCount(0);
+        expect(await page.evaluate(() => window.dashboardInstance.config._assistantFoldOpen)).toBeUndefined();
+    });
+
+    test('openAssistantFold lands on the page', async ({ page }) => {
+        await openApp(page);
+        await page.evaluate(() => window.dashboardInstance.config.openAssistantFold());
+        await expect(page.locator('[data-ai-panel]')).toBeVisible();
+        await expect(page).toHaveURL(/#config\/assistant\/settings$/);
+    });
+
+    test('the assistant settings are found by the settings search and jump to the page', async ({ page }) => {
+        await openApp(page);
+        // The config module is loaded on first open; the index is its.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        const fields = await page.evaluate(() => window.dashboardInstance.config.settingsJumpFieldEntries()
+            .filter((e) => e.section === 'assistant').map((e) => e.field));
+        for (const f of ['aiEnabled', 'aiProvider', 'aiBaseURL', 'aiModel', 'aiKey', 'aiHistoryMax', 'aiHistoryDays', 'aiDeleteAll', 'aiTest']) {
+            expect(fields).toContain(f);
+        }
+        await page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            return c.activateSettingsJumpEntry(c.settingsJumpFieldEntries().find((e) => e.field === 'aiModel'));
+        });
+        await expect(page.locator('[data-ai-panel]')).toBeVisible();
+        await expect(page.locator('[data-ai-setting="aiModel"]')).toBeFocused();
     });
 
     test('the switch and the compatible provider survive a reload', async ({ page }) => {
