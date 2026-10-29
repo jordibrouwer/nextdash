@@ -985,6 +985,12 @@ Edit mode changes the dashboard itself without a trip to Config: names, icons, w
 
 A category or widget that is deleted somewhere else clears the panel, and the panel says so.
 
+<p align="center"><img src="screenshots/manual.md/04-edit-mode.jpg" alt="The dashboard in edit mode: a bar at the top, a dashed outline on every block, the Code category chosen and its panel at the right with name, icon, width, view and sorting" width="860"></p>
+<p align="center"><sub>Edit mode with the Code category chosen: its panel opens at the right.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/04-edit-mode-widget-sheet.jpg" alt="The settings sheet of a widget opened over the dashboard from the edit panel: Connection, Display and Advanced" width="700"></p>
+<p align="center"><sub><b>Settings…</b> on a widget opens its sheet over the dashboard.</sub></p>
+
 <a id="the-grid"></a>
 
 ### 🗂️ The grid
@@ -1423,7 +1429,13 @@ Links still waiting in the inbox that match a name search appear in their own gr
 
 With the panel empty, the first group is **Usually now**: up to three bookmarks you tend to open around this time of day, on the same kind of day (weekday or weekend), going by the last eight weeks. It needs at least three opens in that window per bookmark, only appears when three qualify, is worked out in your browser from your own open history, and stays fixed while the panel is open. Under it, your recent and saved searches show as chips (`←`/`→` and `Enter`).
 
-**Actions on a result.** `→` on a bookmark result unfolds its actions under the row: open, open in a new tab, edit, copy the address, health and move to a page. `↑`/`↓` move through them, `Enter` runs one, `←` or `Esc` folds them. On a web result `→` still shows its text beside the list.
+<p align="center"><img src="screenshots/manual.md/08-search-usually-now.jpg" alt="The empty search panel with a Usually now group of three bookmarks above Commands, Filters and Finders" width="860"></p>
+<p align="center"><sub>Usually now: three bookmarks you tend to open around this time of day.</sub></p>
+
+**Actions on a result.** `→` on a bookmark result unfolds its actions under the row: open, open in a new tab, edit, copy the address, show in the list and move to a page. `↑`/`↓` move through them, `Enter` runs one, `←` or `Esc` folds them. On a web result `→` still shows its text beside the list.
+
+<p align="center"><img src="screenshots/manual.md/08-search-actions.jpg" alt="A bookmark result in the search panel with its actions unfolded: Open, Open in new tab, Copy URL, Edit, Show in list and Move to" width="860"></p>
+<p align="center"><sub>Right arrow on a result unfolds its actions under the row.</sub></p>
 
 **The keyboard tour.** Until you have seen it, the empty panel also lists *Take the keyboard tour* under a **Keyboard** heading (open from the start in Hypr mode, a closed group otherwise). It never opens by itself. Four steps: just start typing, commands start with a colon, finders search the web for you, and three more single keys — `/`, `*` and `!`. `:tour keyboard` plays it any time, and so does the Tour list in Behavior → Privacy & sync → Onboarding.
 
@@ -2247,6 +2259,9 @@ On the day the digest comes out it goes first, and the daily review card ([§4](
 <a id="the-checkup"></a>
 
 **The checkup.** One guided round through what is worth tidying up, on top of the Bookmarks view: type `:checkup`, pick **Checkup** in the Bookmarks view's menu, or press **Start the checkup** in the weekly digest. The steps are dead links, duplicates, bookmarks never opened or gone stale, categories and pages with nothing in them (hidden and snoozed bookmarks count as present, and a page with only widgets is not empty), and widgets that show an error or no data right now. A step with nothing to do is skipped, every step uses the actions you already know (delete, merge, move, edit) with their confirmation and undo, and nothing is removed before you have seen it.
+
+<p align="center"><img src="screenshots/manual.md/12-checkup.jpg" alt="The checkup window listing three steps: broken links, doubled bookmarks and never opened, each with an Open in Bookmarks button" width="760"></p>
+<p align="center"><sub>The checkup lists the steps that have something to do.</sub></p>
 
 <a id="125-maintenance-windows"></a>
 
