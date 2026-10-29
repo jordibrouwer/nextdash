@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unicode/utf8"
 )
 
 func aiTestStoreDir(t *testing.T) string {
@@ -107,11 +108,11 @@ func TestDeleteOneAndAll(t *testing.T) {
 	now := time.Now()
 	a, _ := aiAppendTurn("", "one", aiMessage{Role: "assistant", Text: "x"}, Settings{}, now)
 	b, _ := aiAppendTurn("", "two", aiMessage{Role: "assistant", Text: "y"}, Settings{}, now)
-	if !aiDeleteConversation(a.ID) {
-		t.Fatal("delete reported false")
+	if ok, err := aiDeleteConversation(a.ID); !ok || err != nil {
+		t.Fatalf("delete: %v %v", ok, err)
 	}
-	if aiDeleteConversation(a.ID) {
-		t.Fatal("second delete reported true")
+	if ok, err := aiDeleteConversation(a.ID); ok || err != nil {
+		t.Fatalf("second delete: %v %v", ok, err)
 	}
 	if _, ok := aiGetConversation(a.ID); ok {
 		t.Fatal("deleted conversation still there")
@@ -218,5 +219,71 @@ func TestAProposalClaimIsExclusive(t *testing.T) {
 	p, ok := aiFindProposal("p1")
 	if !ok || p.Status != "applying" {
 		t.Fatalf("%+v %v", p, ok)
+	}
+}
+
+func TestApplyingIsRecoveredAfterARestart(t *testing.T) {
+	dir := aiTestStoreDir(t)
+	now := time.Now()
+	conv, err := aiAppendTurn("", "q", aiMessage{Role: "assistant", Text: "x", Proposals: []aiProposal{{ID: "p1", Tool: "t", Status: "applying"}, {ID: "p2", Tool: "t", Status: "pending"}}}, Settings{}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = conv
+	aiResetRecoveryForTest()
+	p, ok := aiFindProposal("p1")
+	if !ok || p.Status != "failed" || p.Error != "Interrupted by a restart. You can apply it again or skip it." {
+		t.Fatalf("not recovered: %+v", p)
+	}
+	raw, _ := os.ReadFile(filepath.Join(dir, "ai-conversations.json"))
+	if !strings.Contains(string(raw), `"status":"failed"`) || strings.Contains(string(raw), `"status":"applying"`) {
+		t.Fatalf("disk not updated: %s", raw)
+	}
+	if p2, _ := aiFindProposal("p2"); p2.Status != "pending" {
+		t.Fatalf("p2 touched: %+v", p2)
+	}
+	// A claim made in this process survives later loads.
+	if _, ok, err := aiUpdateProposal("p2", []string{"pending"}, aiProposal{Tool: "t", Status: "applying"}); !ok || err != nil {
+		t.Fatalf("claim: %v %v", ok, err)
+	}
+	if p2, _ := aiFindProposal("p2"); p2.Status != "applying" {
+		t.Fatalf("live claim reset: %+v", p2)
+	}
+}
+
+func TestConversationGoneAndProposalMisses(t *testing.T) {
+	aiTestStoreDir(t)
+	if _, err := aiAppendTurn("nope", "q", aiMessage{Role: "assistant"}, Settings{}, time.Now()); err != errAIConversationGone {
+		t.Fatalf("err = %v", err)
+	}
+	if _, err := aiAppendTurn("", "q", aiMessage{Role: "assistant", Proposals: []aiProposal{{ID: "p1", Status: "applied"}}}, Settings{}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, err := aiUpdateProposal("missing", []string{"pending"}, aiProposal{Status: "applying"}); ok || err != nil {
+		t.Fatalf("missing: %v %v", ok, err)
+	}
+	prev, ok, err := aiUpdateProposal("p1", []string{"pending", "failed"}, aiProposal{Status: "applying"})
+	if ok || err != nil || prev.Status != "applied" {
+		t.Fatalf("wrong status: %+v %v %v", prev, ok, err)
+	}
+	if p, _ := aiFindProposal("p1"); p.Status != "applied" {
+		t.Fatalf("changed: %+v", p)
+	}
+}
+
+func TestMultibyteTruncationIsUTF8Safe(t *testing.T) {
+	aiTestStoreDir(t)
+	long := strings.Repeat("é", 20<<10) // 40 KiB
+	conv, err := aiAppendTurn("", strings.Repeat("日", 200), aiMessage{Role: "assistant", Text: long}, Settings{}, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _ := aiGetConversation(conv.ID)
+	txt := got.Messages[1].Text
+	if len(txt) > 32<<10 || !utf8.ValidString(txt) || len(txt) < 32<<10-3 {
+		t.Fatalf("text len %d valid %v", len(txt), utf8.ValidString(txt))
+	}
+	if !utf8.ValidString(got.Title) || utf8.RuneCountInString(got.Title) != 81 || !strings.HasSuffix(got.Title, "…") {
+		t.Fatalf("title %q", got.Title)
 	}
 }

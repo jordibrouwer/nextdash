@@ -78,8 +78,50 @@ func aiSetAside(path, why string) {
 	logWarn("assistant", "conversation file %s; set aside as ai-conversations.json.broken", why)
 }
 
-// aiLoadConversations needs aiStoreMu held by callers that go on to write.
+// aiRecoveryDone is guarded by aiStoreMu. The first load of a process maps any
+// proposal still "applying" to "failed": such a claim can only be left over
+// from a process that died between claiming and applying.
+var aiRecoveryDone bool
+
+const aiInterruptedText = "Interrupted by a restart. You can apply it again or skip it."
+
+// aiResetRecoveryForTest makes the next load behave like the first of a process.
+func aiResetRecoveryForTest() {
+	aiStoreMu.Lock()
+	aiRecoveryDone = false
+	aiStoreMu.Unlock()
+}
+
+// aiLoadConversations has side effects (it may rename a bad file aside and
+// recover interrupted proposals), so aiStoreMu MUST be held by the caller.
+// Tests may call it unlocked.
 func aiLoadConversations() []aiConversation {
+	convs := aiReadConversations()
+	if !aiRecoveryDone {
+		aiRecoveryDone = true
+		changed := false
+		for ci := range convs {
+			for mi := range convs[ci].Messages {
+				props := convs[ci].Messages[mi].Proposals
+				for pi := range props {
+					if props[pi].Status == "applying" {
+						props[pi].Status = "failed"
+						props[pi].Error = aiInterruptedText
+						changed = true
+					}
+				}
+			}
+		}
+		if changed {
+			if err := writeAIConvs(convs); err != nil {
+				logWarn("assistant", "could not save recovered proposals: %v", err)
+			}
+		}
+	}
+	return convs
+}
+
+func aiReadConversations() []aiConversation {
 	path := aiConversationsFilePath()
 	fi, err := os.Stat(path)
 	if err != nil {
@@ -109,11 +151,7 @@ func aiSaveConversations(convs []aiConversation, s Settings, now time.Time) erro
 	if convs == nil {
 		convs = []aiConversation{}
 	}
-	data, err := json.Marshal(convs)
-	if err != nil {
-		return err
-	}
-	return writeFileAtomic(aiConversationsFilePath(), data, 0644)
+	return writeAIConvs(convs)
 }
 
 func aiPrune(convs []aiConversation, max, days int, now time.Time) []aiConversation {
@@ -241,26 +279,31 @@ func aiGetConversation(id string) (aiConversation, bool) {
 	return aiConversation{}, false
 }
 
-func aiDeleteConversation(id string) bool {
+// aiDeleteConversation returns (found, error); not found is (false, nil).
+func aiDeleteConversation(id string) (bool, error) {
 	aiStoreMu.Lock()
 	defer aiStoreMu.Unlock()
 	convs := aiLoadConversations()
 	for i := range convs {
 		if convs[i].ID == id {
 			convs = append(convs[:i], convs[i+1:]...)
-			return writeAIConvs(convs) == nil
+			if err := writeAIConvs(convs); err != nil {
+				return false, err
+			}
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
-// writeAIConvs writes without pruning, for deletes.
+// writeAIConvs is the one writer; it does not prune. 0600 because the file
+// holds the person's conversation text.
 func writeAIConvs(convs []aiConversation) error {
 	data, err := json.Marshal(convs)
 	if err != nil {
 		return err
 	}
-	return writeFileAtomic(aiConversationsFilePath(), data, 0644)
+	return writeFileAtomic(aiConversationsFilePath(), data, 0600)
 }
 
 func aiDeleteAllConversations() error {
@@ -275,6 +318,7 @@ func aiDeleteAllConversations() error {
 
 // aiUpdateProposal replaces the proposal only when its status is in from. The
 // check and the write happen under aiStoreMu, which is what lets Apply run once.
+// err != nil means the proposal was NOT claimed.
 func aiUpdateProposal(id string, from []string, to aiProposal) (aiProposal, bool, error) {
 	aiStoreMu.Lock()
 	defer aiStoreMu.Unlock()
