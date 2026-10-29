@@ -184,6 +184,7 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 ### Action bar
 
 - **new — A theme studio button.** The palette is the eleventh action button and opens the theme studio, as `Shift + A` does. It sits last in the bar, is switched on and off under Config → Appearance → Action bar → Buttons shown (`showThemeStudioButton`, on by default, also for old settings files) and with `:buttons theme`, and stays off a phone layout. `maxHeaderActions` and `:maxactions` go to 11.
+- **fix — Every dashboard modal opens in the middle of the window.** The search panel (search, commands, finders, the cheat sheet), Recent bookmarks, the pages panel, what's new and the quick-add omnibox sat above where the bottom dock used to be, or hung from the header (`.header-sheet`); the tag cloud sat a little above the middle. They are all centred now, with the same 2rem margin above and below (`search.css`, `modal.css`, `dashboard.css`, `positionModal` in `dashboard-tag-cloud.js`). The theme studio stays docked at the side, so the page it previews stays in view. The overlays are `100vw` wide instead of `100%`, because the stable scrollbar gutter made them a scrollbar narrower than the window and put every modal 5px left of centre.
 
 ### Themes
 

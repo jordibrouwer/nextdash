@@ -139,9 +139,9 @@ test.describe('the recent bookmarks panel', () => {
         expect((chip || '').trim(), 'the header does not name the key that opens it').toBe('*');
 
         /*
-         * It hangs from the header band, centred on it, the same bargain the
-         * pages panel makes -- but in a column of its own, 46rem at most,
-         * since a line across the whole band was too wide to read.
+         * It opens in the middle of the window like every dashboard modal,
+         * in a column of its own, 46rem at most, since a line across the
+         * whole band was too wide to read.
          *
          * Measured once the panel has finished rising in: read during the
          * rise its box is still drawn at the entrance scale, a few percent
@@ -158,11 +158,11 @@ test.describe('the recent bookmarks panel', () => {
                 width: Math.round(panel.width),
                 rowWidth: Math.round(row.width),
                 mid: Math.round(panel.x + panel.width / 2),
-                rowMid: Math.round(row.x + row.width / 2),
+                winMid: Math.round(document.documentElement.clientWidth / 2),
             };
         });
         expect(seen.width, `the panel is ${seen.width}px wide`).toBeLessThanOrEqual(736);
-        expect(seen.mid, 'the panel is not centred on the header row').toBe(seen.rowMid);
+        expect(Math.abs(seen.mid - seen.winMid), 'the panel is not centred in the window').toBeLessThanOrEqual(1);
     });
 
     test('the foot says what is on screen instead of a button saying close', async ({ page }) => {

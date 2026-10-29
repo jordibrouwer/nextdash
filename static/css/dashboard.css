@@ -5352,27 +5352,27 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     text-align: center;
 }
 
-/* Dashboard toolbar modals — same placement and chrome as search overlay */
+/* Dashboard toolbar modals — centred in the window, as the search overlay is */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal),
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
-    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    padding: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px)) max(1.25rem, 2vw) max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     backdrop-filter: blur(var(--modal-scrim-blur));
     -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
-/* Not a sheet: one that hangs from the header sizes itself against the header
-   row, and a selector this specific would out-shout it. */
+/* Not a sheet: a sheet sizes itself against the header row's width, and a
+   selector this specific would out-shout it. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
     margin: 0;
-    max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
+    max-height: min(70vh, calc(100vh - 4rem));
     transform: var(--modal-enter-from);
     transition: var(--modal-enter-transition);
 }
@@ -5392,8 +5392,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
    search borrows its class and keeps the narrow shell above. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal:not(.config-settings-jump-modal)) .modal {
     width: min(1040px, 94vw);
-    height: min(46rem, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
-    max-height: calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem);
+    height: min(46rem, calc(100vh - 4rem));
+    max-height: calc(100vh - 4rem);
 }
 
 /* The release notes themselves, as against the notices that borrow the shell:
@@ -5402,24 +5402,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-m
    short because the cards and the two columns of fixes divide the width. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal:not(.analytics-notice-modal)) .modal {
     width: min(64rem, calc(100vw - 2.5rem));
-    height: min(52rem, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 4rem));
-    max-height: calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 4rem);
-}
-
-/*
- * Room above the modal as well as below it.
- *
- * The block above leaves 2rem under the modal and nothing over it, and caps the
- * height at 100vh - 2rem — so a modal tall enough to reach its own limit runs
- * into the top edge of the window while sitting a comfortable distance off the
- * bottom. Measured on a 900px window: 868 tall, 32px below, 0 above.
- *
- * The padding is symmetric and the height leaves room for both. Scoped to
- * what's new; recent bookmarks and the cheat sheet share the block above and
- * the same lopsidedness, but neither was what anybody was looking at.
- */
-body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
-    padding-top: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px));
+    height: min(52rem, calc(100vh - 4rem));
+    max-height: calc(100vh - 4rem);
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
@@ -5429,7 +5413,7 @@ body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) 
     transition: var(--modal-enter-transition);
 }
 
-/* The header sheets keep their transform: it is their centring, not motion. */
+/* The sheets move with modalRise (modal.css), not with this transition. */
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
@@ -5523,7 +5507,7 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) {
     -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
-/* Not the sheet: it sizes itself against the header row it hangs from, and a
+/* Not the sheet: it sizes itself against the header row's width, and a
    selector this specific would out-shout it. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
     width: min(22rem, calc(100vw - 2.5rem));
@@ -5676,12 +5660,17 @@ body.no-animations .bookmark-move-out {
 
 .omnibox-overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    /* 100vw, not 100%: html's stable scrollbar gutter makes the containing
+       block a scrollbar short, which put the modal off the window's centre. */
+    width: 100vw;
+    height: 100vh;
     z-index: var(--layer-omnibox);
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    padding: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px)) max(1.25rem, 2vw) max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     pointer-events: none;
     opacity: 0;
@@ -9378,11 +9367,9 @@ body[data-header-buttons="plain"] .header-zone-divider {
 /* Last on the row, whatever the buttons in front of it are ordered to. */
 .header-actions .header-shortcuts .header-action-overflow { order: 99; }
 
-/* ── Recents as a sheet under the header ──────────────────────────────────────
-   Same bargain the pages panel makes: it is opened from the band and answers a
-   question about the page under it, so it hangs from the band rather than
-   floating over a dimmed screen. The chrome -- the anchor, the square top
-   corners, the drop -- is .header-sheet in modal.css; what is here is the list.
+/* ── Recents as a sheet ───────────────────────────────────────────────────────
+   Centred like the pages panel; the shared chrome is .header-sheet in
+   modal.css, what is here is the list.
 
    The list is two columns of tiles, ten to a page, with a pager in the foot
    for what was opened before.

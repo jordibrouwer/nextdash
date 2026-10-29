@@ -3,12 +3,9 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The pages panel drops out of the header rather than floating over the page.
+ * The pages panel opens in the middle of the window, like every dashboard modal.
  *
- * It is opened from the strip and answers the question the strip asks -- which
- * page am I going to -- so it hangs from the band the strip stands in: the
- * band's bottom edge and the sheet's top edge are one line, and the sheet is
- * centred on the strip. Past a handful of pages it spans the page's own column
+ * Past a handful of pages it spans the page's own column
  * and lays the rows out across it, because one column of nine rows is a list
  * you scroll to read. Under that it is as wide as what it holds: a 1300px band
  * holding two names is a table with nothing in it.
@@ -87,6 +84,9 @@ const sheet = (page) => page.evaluate(() => {
         classes: el.className,
         gapToBand: Math.round(r.top - b.bottom),
         mid: Math.round(r.x + r.width / 2),
+        midY: Math.round(r.y + r.height / 2),
+        winMid: Math.round(document.documentElement.clientWidth / 2),
+        winMidY: Math.round(window.innerHeight / 2),
         rowMid: Math.round(rowBox.x + rowBox.width / 2),
         width: Math.round(r.width),
         rowWidth: Math.round(rowBox.width),
@@ -107,14 +107,12 @@ test('with pages enough it spans the header row and lays them out across it', as
     const seen = await sheet(page);
 
     expect(seen.classes, 'the sheet is not in its wide shape').toContain('is-grid');
-    // One line, not a gap and not an overlap.
-    expect(seen.gapToBand, `the sheet sits ${seen.gapToBand}px from the band`).toBeLessThanOrEqual(0);
-    expect(seen.gapToBand, 'the sheet covers part of the band').toBeGreaterThanOrEqual(-2);
-    expect(seen.mid, 'the sheet is not centred on the header row').toBe(seen.rowMid);
+    // In the middle of the window, not hanging from the header.
+    expect(Math.abs(seen.midY - seen.winMidY), 'the sheet is not centred top to bottom').toBeLessThanOrEqual(1);
+    expect(Math.abs(seen.mid - seen.winMid), 'the sheet is not centred left to right').toBeLessThanOrEqual(1);
+    expect(seen.gapToBand, 'the sheet still hangs from the band').toBeGreaterThan(8);
     expect(seen.width, 'the sheet does not span the page’s column').toBe(seen.rowWidth);
-    // Since v1.22.0 the Signature style (the default) draws the sheet as a layer
-    // of the material, round on every corner with the accent bar on top
-    // (theme-overlays.css); square where it meets the band is the Classic drawing.
+    // Round on every corner, in the Signature style and the Classic one.
     expect(seen.bottomRadius, 'the sheet has square bottom corners').toBeGreaterThan(0);
     expect(seen.topRadius, 'the sheet is not drawn as a layer of the material').toBe(seen.bottomRadius);
     await page.evaluate(async () => {
@@ -122,9 +120,8 @@ test('with pages enough it spans the header row and lays them out across it', as
             { ...window.dashboardInstance.settings, materialStyle: 'classic', themeSurfacesForceAll: true });
     });
     const classic = await sheet(page);
-    // Square where it meets the band, round where it leaves the page.
-    expect(classic.topRadius, 'the sheet is rounded against the band').toBe(0);
     expect(classic.bottomRadius, 'the sheet has square bottom corners').toBeGreaterThan(0);
+    expect(classic.topRadius, 'the sheet has square top corners').toBe(classic.bottomRadius);
     // Three across the page's column: a minimum in rem would fit five, and five
     // names side by side is a table again.
     expect(seen.columns, `${seen.columns} columns of pages`).toBe(3);
@@ -164,9 +161,9 @@ test('with a handful of pages it is as wide as what it holds', async ({ page }) 
     expect(seen.classes, 'the sheet stayed in its wide shape').toContain('is-compact');
     expect(seen.width, 'the sheet spans the column for two pages')
         .toBeLessThan(seen.rowWidth);
-    // Still hanging from the band, still on the strip's centre line.
-    expect(seen.gapToBand, `the sheet sits ${seen.gapToBand}px from the band`).toBeLessThanOrEqual(0);
-    expect(Math.abs(seen.mid - seen.rowMid), 'the narrow sheet is off centre').toBeLessThanOrEqual(1);
+    // Still in the middle of the window.
+    expect(Math.abs(seen.midY - seen.winMidY), 'the narrow sheet is not centred top to bottom').toBeLessThanOrEqual(1);
+    expect(Math.abs(seen.mid - seen.winMid), 'the narrow sheet is off centre').toBeLessThanOrEqual(1);
 });
 
 test('a row keeps its height whichever shape the sheet is in', async ({ page }) => {

@@ -1,17 +1,19 @@
 /* Search Component Styles */
 
-/* Shortcut Search - anchored above bottom toolbar (classic + shared) */
+/* Shortcut Search - centred in the window, like every dashboard modal */
 .shortcut-search {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    /* 100vw, not 100%: html's stable scrollbar gutter makes the containing
+       block a scrollbar short, which put the modal off the window's centre. */
+    width: 100vw;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    justify-content: center;
+    padding: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px)) max(1.25rem, 2vw) max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     z-index: 2000;
     opacity: 0;
@@ -52,7 +54,7 @@
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
-    max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
+    max-height: min(70vh, calc(100vh - 4rem));
     overflow: hidden;
     box-sizing: border-box;
     /* Rises and grows in like the add-bookmark form (modal.css). */

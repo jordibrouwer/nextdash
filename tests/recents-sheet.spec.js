@@ -3,11 +3,9 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * Recents hangs from the header, the way the pages panel does.
+ * Recents opens in the middle of the window, like every dashboard modal.
  *
- * It is opened from the bar in that band and answers a question about the page
- * under it -- what did I open last -- so it drops out of the band rather than
- * floating over a dimmed screen, in a column of its own: two tiles across, ten
+ * It is a column of its own: two tiles across, ten
  * to a page, with a pager for what was opened before. Spanning the page's
  * whole column, three rows of name, category and age were too wide to read.
  *
@@ -116,6 +114,9 @@ const sheet = (page) => page.evaluate(() => {
         classes: el.className,
         gapToBand: Math.round(r.top - b.bottom),
         mid: Math.round(r.x + r.width / 2),
+        midY: Math.round(r.y + r.height / 2),
+        winMid: Math.round(document.documentElement.clientWidth / 2),
+        winMidY: Math.round(window.innerHeight / 2),
         rowMid: Math.round(rowBox.x + rowBox.width / 2),
         width: Math.round(r.width),
         rowWidth: Math.round(rowBox.width),
@@ -127,7 +128,7 @@ const sheet = (page) => page.evaluate(() => {
     };
 });
 
-test('with entries enough it hangs from the band, a column of two tiles across', async ({ page }) => {
+test('with entries enough it is centred in the window, a column of two tiles across', async ({ page }) => {
     await openDashboard(page);
     await seedRecent(page, 8);
     await openRecents(page);
@@ -135,16 +136,14 @@ test('with entries enough it hangs from the band, a column of two tiles across',
     const seen = await sheet(page);
 
     expect(seen.classes, 'the panel is not in its wide shape').toContain('is-grid');
-    // One line, not a gap and not an overlap.
-    expect(seen.gapToBand, `the panel sits ${seen.gapToBand}px from the band`).toBeLessThanOrEqual(0);
-    expect(seen.gapToBand, 'the panel covers part of the band').toBeGreaterThanOrEqual(-2);
-    expect(seen.mid, 'the panel is not centred on the header row').toBe(seen.rowMid);
+    // In the middle of the window, not hanging from the header.
+    expect(Math.abs(seen.midY - seen.winMidY), 'the panel is not centred top to bottom').toBeLessThanOrEqual(1);
+    expect(Math.abs(seen.mid - seen.winMid), 'the panel is not centred left to right').toBeLessThanOrEqual(1);
+    expect(seen.gapToBand, 'the panel still hangs from the band').toBeGreaterThan(8);
     // Narrower than the header row: 46rem at most, so a line is readable.
     expect(seen.width, `the panel is ${seen.width}px wide`).toBeLessThanOrEqual(736);
     expect(seen.width, 'the panel spans the page’s column again').toBeLessThan(seen.rowWidth);
-    // Since v1.22.0 the Signature style (the default) draws the panel as a layer
-    // of the material, round on every corner with the accent bar on top
-    // (theme-overlays.css); square where it meets the band is the Classic drawing.
+    // Round on every corner, in the Signature style and the Classic one.
     expect(seen.bottomRadius, 'the panel has square bottom corners').toBeGreaterThan(0);
     expect(seen.topRadius, 'the panel is not drawn as a layer of the material').toBe(seen.bottomRadius);
     await page.evaluate(async () => {
@@ -152,8 +151,8 @@ test('with entries enough it hangs from the band, a column of two tiles across',
             { ...window.dashboardInstance.settings, materialStyle: 'classic', themeSurfacesForceAll: true });
     });
     const classic = await sheet(page);
-    expect(classic.topRadius, 'the panel is rounded against the band').toBe(0);
     expect(classic.bottomRadius, 'the panel has square bottom corners').toBeGreaterThan(0);
+    expect(classic.topRadius, 'the panel has square top corners').toBe(classic.bottomRadius);
     expect(seen.columns, `${seen.columns} columns of entries`).toBe(2);
     // A tile, not a 27px line.
     expect(seen.rowHeight, `a tile is ${seen.rowHeight}px tall`).toBeGreaterThanOrEqual(50);
@@ -204,9 +203,9 @@ test('a handful of entries makes it as wide as what it holds', async ({ page }) 
     expect(seen.entries, `${seen.entries} entries, so this is not the narrow case`).toBe(2);
     expect(seen.classes, 'the panel stayed in its wide shape').toContain('is-compact');
     expect(seen.width, 'the panel spans the column for two entries').toBeLessThan(seen.rowWidth);
-    // Still hanging from the band, still on the strip's centre line.
-    expect(seen.gapToBand, 'the narrow panel came loose from the band').toBeLessThanOrEqual(0);
-    expect(Math.abs(seen.mid - seen.rowMid), 'the narrow panel is off centre').toBeLessThanOrEqual(1);
+    // Still in the middle of the window.
+    expect(Math.abs(seen.midY - seen.winMidY), 'the narrow panel is not centred top to bottom').toBeLessThanOrEqual(1);
+    expect(Math.abs(seen.mid - seen.winMid), 'the narrow panel is off centre').toBeLessThanOrEqual(1);
 });
 
 test('one entry drops the bulk buttons, because the row is the action', async ({ page }) => {
