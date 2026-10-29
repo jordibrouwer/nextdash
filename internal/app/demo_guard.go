@@ -95,7 +95,7 @@ var demoDeniedWrites = []string{
 	"/api/tags/lookup",
 	"/mcp",
 	// Secrets.
-	"/api/health/credentials", "/api/web-search/brave-key",
+	"/api/health/credentials", "/api/web-search/brave-key", "/api/ai/key",
 	"/api/status-page", "/api/status-page/token",
 }
 

@@ -274,6 +274,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/updates", handlers.DockerUpdatesHandler).Methods("GET")
 	r.HandleFunc("/api/docker/github-token", handlers.DockerGitHubTokenHandler).Methods("GET", "PUT", "DELETE")
 	r.HandleFunc("/api/web-search/brave-key", handlers.WebSearchBraveKeyHandler).Methods("GET", "PUT", "DELETE")
+	r.HandleFunc("/api/ai/key", handlers.AIKeyHandler).Methods("GET", "PUT", "DELETE")
 	// Web search through the reader's chosen engine; see web_search.go.
 	r.HandleFunc("/api/web-search", handlers.WebSearchHandler).Methods("GET")
 	r.HandleFunc("/api/web-search/status", handlers.WebSearchStatusHandler).Methods("GET")

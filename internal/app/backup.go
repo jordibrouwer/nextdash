@@ -203,6 +203,8 @@ var dataFiles = map[string]dataFilePolicy{
 	"docker-secrets.json":     dataSecret,
 	"web-search-secrets.json": dataSecret,
 	"unraid-secrets.json":     dataSecret,
+	"ai-secrets.json":         dataSecret,
+	"ai-conversations.json":   dataKeep,
 	"glances-secrets.json":    dataSecret,
 
 	"preview-cache.json":    dataCache,
