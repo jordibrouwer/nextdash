@@ -30,7 +30,7 @@ func TestInstallOnAuroraGlassGetsNoDialog(t *testing.T) {
 	}
 }
 
-// A fresh install starts on Aurora Glass with the marker, and is told nothing.
+// A fresh install starts on the default theme with the marker, and is told nothing.
 func TestFreshInstallIsNotToldAboutTheMove(t *testing.T) {
 	got := gridSettings(t, nil)
 	if got.Theme != defaultThemeID || got.LookMigration != nil || !got.AuroraGlassMigrated {
@@ -43,5 +43,14 @@ func TestTheMoveHappensOnce(t *testing.T) {
 	got := gridSettings(t, gridFile(map[string]any{"theme": "slate-dark", "auroraGlassMigrated": true}))
 	if got.Theme != "slate-dark" || got.LookMigration != nil {
 		t.Errorf("an answered install moved again: %q %+v", got.Theme, got.LookMigration)
+	}
+}
+
+// An install on the default theme is not moved off it: a file that names no theme is given the
+// default before the move runs, and ends where a fresh install does.
+func TestAnInstallOnTheDefaultThemeStaysThere(t *testing.T) {
+	got := gridSettings(t, gridFile(map[string]any{"theme": defaultThemeLightID}))
+	if got.Theme != defaultThemeLightID || got.LookMigration != nil || !got.AuroraGlassMigrated {
+		t.Errorf("an install on %s: %q %+v", defaultThemeLightID, got.Theme, got.LookMigration)
 	}
 }

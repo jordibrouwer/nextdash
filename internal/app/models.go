@@ -1204,10 +1204,18 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "aurora-glass-dark"
+const defaultThemeID = "look-ocean-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "aurora-glass-light"
+const defaultThemeLightID = "look-ocean-light"
+
+// auroraGlassThemeID and auroraGlassThemeLightID are where the one-time move of
+// v1.22.0 puts an install (migrateToAuroraGlass). They were the defaults then;
+// the move keeps them so its dialog still tells the truth.
+const (
+	auroraGlassThemeID      = "aurora-glass-dark"
+	auroraGlassThemeLightID = "aurora-glass-light"
+)
 
 /*
 The fallback depth and glow.
@@ -7320,17 +7328,19 @@ type LookMigration struct {
 
 // migrateToAuroraGlass puts an install on Aurora Glass, on the half it was on, and records the
 // theme it had. An install already on Aurora Glass has nothing to explain and gets no dialog.
+// Neither does one on the default theme: a file that names no theme is given the default before
+// this runs, and should end where a fresh install does.
 func migrateToAuroraGlass(settings *Settings, now int64) {
 	settings.AuroraGlassMigrated = true
 	from := settings.Theme
-	if strings.HasPrefix(from, "aurora-glass-") {
+	if from == "" || from == defaultThemeID || from == defaultThemeLightID || strings.HasPrefix(from, "aurora-glass-") {
 		return
 	}
 	light := strings.HasSuffix(from, "-light") || from == "light"
 	if light {
-		settings.Theme = defaultThemeLightID
+		settings.Theme = auroraGlassThemeLightID
 	} else {
-		settings.Theme = defaultThemeID
+		settings.Theme = auroraGlassThemeID
 	}
 	settings.LookMigration = &LookMigration{From: from, Pending: true, At: now}
 }

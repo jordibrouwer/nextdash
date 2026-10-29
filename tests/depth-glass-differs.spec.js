@@ -98,7 +98,7 @@ test.describe('glass against rich', () => {
         expect(glass.blur, `glass draws no blur: ${glass.blur}`).toMatch(/blur\((?!0px)/);
     });
 
-    // A fresh install starts on Aurora Glass since v1.22.0, a glass theme, so the
+    // A fresh install starts on a glass theme (Ocean since v1.22.5), so the
     // theme that never mentions glass is put on the page by hand now.
     test('on the theme a fresh install starts on, not only on the glass ones', async ({ page }) => {
         await dashboard(page);
