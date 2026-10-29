@@ -26,6 +26,13 @@ async function visitAfterUpgrade(page, lastSeen = OLD_RELEASE) {
         window.DiscoverabilityState?.resetSettingPromoSeen?.(`updated-${String(window.NEXTDASH_WHATS_NEW_RELEASE).replace(/^.*-(v)/, '$1')}`, { persist: false });
     }, lastSeen);
     await dismissOnboardingIfPresent(page);
+    // The analytics invitation wants the same corner a second later; when it won
+    // the race, this card waited behind it and never came. Answered here, so only
+    // the card under test is in the queue (saved with the setting below).
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.quickStart = { ...(d.settings.quickStart || {}), analyticsChoiceMade: true };
+    });
     await page.evaluate(() => window.dashboardInstance.config.setBehavior('onboardingCompleted', true, ''));
     await expect.poll(() => page.evaluate(async () =>
         (await (await fetch('/api/settings')).json()).onboardingCompleted)).toBe(true);
