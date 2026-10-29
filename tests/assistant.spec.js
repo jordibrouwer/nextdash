@@ -356,4 +356,23 @@ test.describe('Assistant panel', () => {
         await expect(card.locator('[data-ai-apply]')).toBeVisible();
         await expect(card.locator('[data-ai-skip]')).toBeVisible();
     });
+    test('the panel is drawn by the shared overlay system: a glass material blurs it, classic does not', async ({ page }) => {
+        await askFromPalette(page);
+        const filters = async (material, style) => page.evaluate(([m, st]) => {
+            document.body.dataset.materialStyle = st;
+            document.body.dataset.material = m;
+            const panelEl = document.querySelector('.assistant-panel');
+            const overlayEl = document.querySelector('.assistant-overlay');
+            return {
+                panel: getComputedStyle(panelEl).backdropFilter,
+                scrim: getComputedStyle(overlayEl).backgroundColor,
+            };
+        }, [material, style]);
+        const glass = await filters('glass', 'signature');
+        expect(glass.panel).toContain('blur(');
+        const classic = await filters('', 'classic');
+        expect(classic.panel).toBe('none');
+        // The scrim is the shared token, not the old fixed black at 55%.
+        expect(glass.scrim).not.toBe('rgba(0, 0, 0, 0.55)');
+    });
 });
