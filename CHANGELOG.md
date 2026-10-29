@@ -169,6 +169,7 @@ Edit the dashboard in place, search that learns your hours, a checkup for what n
 
 - **new — Finders is a section of its own**, and **Fresh** moves from Behavior to Bookmarks.
 - **new — The demo has a Glances host that answers in-process** ("Tower").
+- **fix — The demo starts in a fraction of the time.** `capPoints` in `glances_history.go` copied a whole history ring on every point, so seeding the Tower's seven days cost seconds of CPU at every start and every reset of the public demo, and more than thirty on a busy CI runner, where it timed out the demo server of `tests/demo-analytics.spec.js`. It reslices now: 4.0 s becomes 0.3 s on one CPU.
 
 ### Inbox
 
