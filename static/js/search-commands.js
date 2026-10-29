@@ -1322,7 +1322,7 @@ class SearchCommandsComponent {
         const question = (args || []).join(' ').trim();
         return [{
             name: question
-                ? this._t('commands.askQuestion', 'Ask: {question}').replace('{question}', question)
+                ? this._t('commands.askQuestion', 'Ask: {question}').replace('{question}', () => question)
                 : this._t('commands.askOpen', 'Open the assistant'),
             shortcut: ':ASK',
             type: 'command',

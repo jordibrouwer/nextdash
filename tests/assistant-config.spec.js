@@ -31,19 +31,28 @@ test.describe('Assistant settings', () => {
     // One server, one settings file: these tests change the same keys.
     test.describe.configure({ mode: 'serial' });
 
-    test.afterEach(async ({ page }) => {
-        // Put back what a test may have changed, whether or not it passed.
+    /** What the data folder held before, put back afterwards. */
+    let prior = null;
+    let keysBefore = {};
+
+    test.beforeEach(async ({ page }) => {
         const res = await page.request.get('/api/settings');
         if (res.ok()) {
             const s = await res.json();
-            s.aiEnabled = false;
-            s.aiProvider = 'anthropic';
-            s.aiBaseURL = '';
-            s.aiModel = '';
-            await page.request.post('/api/settings', { data: s, headers: AUTH });
+            prior = { aiEnabled: s.aiEnabled, aiProvider: s.aiProvider, aiBaseURL: s.aiBaseURL, aiModel: s.aiModel };
         }
+        keysBefore = (await (await page.request.get('/api/ai/key')).json()).keySet || {};
+    });
+
+    test.afterEach(async ({ page }) => {
+        // Put back what a test may have changed, whether or not it passed.
+        const res = await page.request.get('/api/settings');
+        if (res.ok() && prior) {
+            await page.request.post('/api/settings', { data: { ...(await res.json()), ...prior }, headers: AUTH });
+        }
+        // Only the keys a test stored; a key that was there stays.
         for (const p of ['anthropic', 'openai', 'compatible']) {
-            await page.request.delete(`/api/ai/key?provider=${p}`, { headers: AUTH });
+            if (!keysBefore[p]) await page.request.delete(`/api/ai/key?provider=${p}`, { headers: AUTH });
         }
     });
 

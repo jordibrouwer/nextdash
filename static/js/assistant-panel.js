@@ -108,6 +108,7 @@
             this.convId = '';
             this.messages = [];
             this.busy = false;
+            this.stream = null;
             this.searchTimer = 0;
             this.keyHandler = (event) => this.onKey(event);
         }
@@ -121,6 +122,8 @@
                 return;
             }
             this.returnFocus = document.activeElement;
+            this.status = null;
+            this.newConversation();
             this.build();
             await Promise.all([this.loadStatus(), this.loadList()]);
             this.renderSide();
@@ -133,6 +136,7 @@
 
         close() {
             if (!this.overlay) return;
+            this.abortStream();
             clearTimeout(this.searchTimer);
             document.removeEventListener('keydown', this.keyHandler, true);
             if (this.lock != null) { global.ScrollLock?.release?.(this.lock); this.lock = null; }
@@ -257,13 +261,25 @@
             }
         }
 
+        /** Lets go of the request in flight; its events are ignored from here on. */
+        abortStream() {
+            const stream = this.stream;
+            this.stream = null;
+            this.busy = false;
+            stream?.controller.abort();
+            const send = this.panel?.querySelector('[data-ai-send]');
+            if (send) send.disabled = false;
+        }
+
         newConversation() {
+            this.abortStream();
             this.convId = '';
             this.messages = [];
         }
 
         async select(id) {
-            if (!id || this.busy) return;
+            if (!id) return;
+            this.abortStream();
             try {
                 const res = await api(`/api/ai/conversations/${encodeURIComponent(id)}`, { cache: 'no-store' });
                 if (!res.ok) throw new Error(String(res.status));
@@ -281,6 +297,7 @@
 
         async remove(id) {
             if (!id) return;
+            if (id === this.convId) this.abortStream();
             try {
                 const res = await api(`/api/ai/conversations/${encodeURIComponent(id)}`, { method: 'DELETE' });
                 if (!res.ok && res.status !== 404) throw new Error(String(res.status));
@@ -411,6 +428,9 @@
 
         async send(question) {
             if (this.busy || !this.panel || !this.ready()) return;
+            const stream = { controller: new AbortController() };
+            this.stream = stream;
+            const current = () => this.stream === stream;
             this.busy = true;
             this.panel.querySelector('[data-ai-send]').disabled = true;
             this.messages = this.messages.filter((m) => m.role !== 'error');
@@ -422,17 +442,21 @@
             this.focusInput();
             let finished = false;
             let failed = '';
+            let broke = false;
             try {
                 const res = await api('/api/ai/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ conversationId: this.convId, question }),
+                    signal: stream.controller.signal,
                 });
+                if (!current()) return;
                 if (!res.ok) {
                     const body = await res.json().catch(() => null);
                     failed = body?.error || t('failed', 'The assistant could not answer.');
                 } else {
                     await this.readStream(res, (ev) => {
+                        if (!current()) return;
                         if (ev.type === 'start') {
                             if (ev.conversationId) this.convId = ev.conversationId;
                         } else if (ev.type === 'text') {
@@ -456,14 +480,19 @@
                     });
                 }
             } catch {
-                failed = failed || t('failed', 'The assistant could not answer.');
+                if (!current()) return;
+                // A read that breaks after some text is a cut answer; before any, a failure.
+                if (live.text && !failed) broke = true;
+                else failed = failed || t('failed', 'The assistant could not answer.');
             }
+            if (!current()) return;
+            this.stream = null;
             if (failed) {
                 this.messages = this.messages.filter((m) => m !== live && m !== asked);
                 this.messages.push({ role: 'error', text: failed });
                 const input = this.panel?.querySelector('[data-ai-input]');
                 if (input && !input.value) input.value = question;
-            } else if (!finished) {
+            } else if (!finished || broke) {
                 live.status = '';
                 live.cut = true;
             }
@@ -473,7 +502,7 @@
             this.renderThread();
             this.focusInput();
             await this.loadList();
-            this.renderSide();
+            if (current() || !this.stream) this.renderSide();
         }
 
         /** Updates the live message in place, so the page does not rebuild per token. */
@@ -537,39 +566,58 @@
             return body?.error || t('applyFailed', 'The change could not be made.');
         }
 
+        /** The server's own copy of a proposal, for a repeat it refused. */
+        async refreshProposal(proposal) {
+            try {
+                const res = await api(`/api/ai/conversations/${encodeURIComponent(this.convId)}`, { cache: 'no-store' });
+                if (!res.ok) return false;
+                const conv = await res.json();
+                for (const m of conv.messages || []) {
+                    const fresh = (m.proposals || []).find((x) => x.id === proposal.id);
+                    if (fresh) { Object.assign(proposal, fresh); return true; }
+                }
+            } catch { /* handled by the caller */ }
+            return false;
+        }
+
+        async settleOne(proposal, res, body) {
+            if (res?.ok && body?.id) { Object.assign(proposal, body); return; }
+            // A repeat the server refused: show what it holds, not a failure.
+            if (res?.status === 409 && await this.refreshProposal(proposal)) return;
+            proposal.status = 'failed';
+            proposal.error = res ? this.applyFailure(res, body) : t('applyFailed', 'The change could not be made.');
+        }
+
         async applyOne(id) {
             const found = this.findProposal(id);
-            if (!found || found.proposal.status === 'applying') return;
+            if (!found || ['applying', 'applied', 'skipped'].includes(found.proposal.status)) return;
             const { message, proposal } = found;
             message.applyError = '';
+            proposal.status = 'applying';
+            this.renderThread();
             let res = null;
             let body = null;
             try {
                 res = await api(`/api/ai/proposals/${encodeURIComponent(id)}/apply`, { method: 'POST' });
                 body = await res.json().catch(() => null);
             } catch { /* handled below */ }
-            if (res?.ok && body?.id) Object.assign(proposal, body);
-            else {
-                proposal.status = 'failed';
-                proposal.error = res ? this.applyFailure(res, body) : t('applyFailed', 'The change could not be made.');
-            }
+            await this.settleOne(proposal, res, body);
             this.renderThread();
         }
 
         async skipOne(id) {
             const found = this.findProposal(id);
-            if (!found) return;
+            if (!found || ['applying', 'applied', 'skipped'].includes(found.proposal.status)) return;
+            const { proposal } = found;
+            proposal.status = 'applying';
+            this.renderThread();
             let res = null;
             let body = null;
             try {
                 res = await api(`/api/ai/proposals/${encodeURIComponent(id)}/skip`, { method: 'POST' });
                 body = await res.json().catch(() => null);
             } catch { /* handled below */ }
-            if (res?.ok && body?.id) Object.assign(found.proposal, body);
-            else {
-                found.proposal.status = 'failed';
-                found.proposal.error = res ? this.applyFailure(res, body) : t('applyFailed', 'The change could not be made.');
-            }
+            await this.settleOne(proposal, res, body);
             this.renderThread();
         }
 
@@ -577,11 +625,12 @@
             const message = this.messages.find((m) => m.id && m.id === messageId);
             if (!message) return;
             // Destructive ones are never in this call: they need their own click.
-            const ids = (message.proposals || [])
-                .filter((p) => p.status === 'pending' && !p.destructive)
-                .map((p) => p.id);
+            const chosen = (message.proposals || []).filter((p) => p.status === 'pending' && !p.destructive);
+            const ids = chosen.map((p) => p.id);
             if (!ids.length) return;
             message.applyError = '';
+            chosen.forEach((p) => { p.status = 'applying'; });
+            this.renderThread();
             let res = null;
             let body = null;
             try {
@@ -594,12 +643,14 @@
             } catch { /* handled below */ }
             if (res?.ok && Array.isArray(body?.results)) {
                 body.results.forEach((r) => {
-                    const p = (message.proposals || []).find((x) => x.id === r.id);
+                    const p = chosen.find((x) => x.id === r.id);
                     if (p) Object.assign(p, r);
                 });
             } else {
                 message.applyError = res ? this.applyFailure(res, body) : t('applyFailed', 'The change could not be made.');
             }
+            // Whatever the answer did not settle is still waiting for a click.
+            chosen.forEach((p) => { if (p.status === 'applying') p.status = 'pending'; });
             this.renderThread();
         }
     }

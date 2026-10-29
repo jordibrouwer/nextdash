@@ -29,13 +29,18 @@ function proposal(args, reason) {
     return { tool: 'update_bookmark', arguments: args, reason };
 }
 
-let withMore = false;
+const EVIL = '<img src=x onerror="window.__xss=1">';
 
-/** The changes the stub proposes; Apply all adds a second change and a deletion. */
+/** 'one' change; 'two' adds a second; 'three' also a deletion; 'evil' puts markup in the answer and an argument. */
+let mode = 'one';
+
 function proposedChanges() {
-    const changes = [proposal({ url: BOOKMARK_URL, note: NEW_NOTE }, 'The note was empty.')];
-    if (withMore) {
+    const note = mode === 'evil' ? EVIL : NEW_NOTE;
+    const changes = [proposal({ url: BOOKMARK_URL, note }, 'The note was empty.')];
+    if (mode === 'two' || mode === 'three') {
         changes.push(proposal({ url: BOOKMARK_URL, name: 'Assistant spec renamed' }, 'The name was vague.'));
+    }
+    if (mode === 'three') {
         changes.push({ tool: 'delete_bookmark', arguments: { url: BOOKMARK_URL }, reason: 'It is a duplicate.' });
     }
     return changes;
@@ -62,8 +67,8 @@ test.beforeAll(async () => {
                 return;
             }
             sse(res, [
-                { choices: [{ delta: { content: 'Two containers' } }] },
-                { choices: [{ delta: { content: ' need an update.' } }] },
+                { choices: [{ delta: { content: mode === 'evil' ? EVIL : 'Two containers' } }] },
+                { choices: [{ delta: { content: mode === 'evil' ? '' : ' need an update.' } }] },
                 { choices: [], usage: { prompt_tokens: 1000, completion_tokens: 240 } },
             ]);
         });
@@ -76,13 +81,13 @@ test.afterAll(async () => {
     await new Promise((resolve) => server.close(resolve));
 });
 
+// A compatible server needs no key, so the spec never stores one.
 async function configure(page, enabled) {
     const s = await (await page.request.get('/api/settings')).json();
     Object.assign(s, {
         aiEnabled: enabled, aiProvider: 'compatible', aiBaseURL: baseURL, aiModel: 'stub-model', mcpBookmarksWrite: true,
     });
     expect((await page.request.post('/api/settings', { data: s, headers: AUTH })).ok()).toBe(true);
-    expect((await page.request.put('/api/ai/key', { data: { provider: 'compatible', key: 'stub-key' }, headers: AUTH })).ok()).toBe(true);
 }
 
 async function removeBookmark(page) {
@@ -127,27 +132,27 @@ async function askFromPalette(page) {
 test.describe('Assistant panel', () => {
     test.describe.configure({ mode: 'serial' });
 
+    /** What the data folder held before the spec touched it, put back afterwards. */
+    let priorSettings = null;
+    let priorConversations = new Set();
+
     test.beforeEach(async ({ page }) => {
         requests = 0;
-        withMore = false;
-        await page.request.delete('/api/ai/conversations', { headers: AUTH });
+        mode = 'one';
+        priorSettings = await (await page.request.get('/api/settings')).json();
+        priorConversations = new Set((await (await page.request.get('/api/ai/conversations')).json()).map((c) => c.id));
         await seedBookmark(page);
         await configure(page, true);
         await openApp(page);
     });
 
     test.afterEach(async ({ page }) => {
-        // Put back what a test changed, whether or not it passed.
-        const res = await page.request.get('/api/settings');
-        if (res.ok()) {
-            const s = await res.json();
-            Object.assign(s, { aiEnabled: false, aiProvider: 'anthropic', aiBaseURL: '', aiModel: '', mcpBookmarksWrite: false });
-            await page.request.post('/api/settings', { data: s, headers: AUTH });
+        if (priorSettings) await page.request.post('/api/settings', { data: priorSettings, headers: AUTH });
+        // Only the conversations this spec made.
+        const now = await (await page.request.get('/api/ai/conversations')).json();
+        for (const c of now) {
+            if (!priorConversations.has(c.id)) await page.request.delete(`/api/ai/conversations/${c.id}`, { headers: AUTH });
         }
-        for (const p of ['anthropic', 'openai', 'compatible']) {
-            await page.request.delete(`/api/ai/key?provider=${p}`, { headers: AUTH });
-        }
-        await page.request.delete('/api/ai/conversations', { headers: AUTH });
         await removeBookmark(page);
     });
 
@@ -180,9 +185,8 @@ test.describe('Assistant panel', () => {
         await palette(page, 'ask');
         await page.keyboard.press('Enter');
         await expect(panel(page)).toBeVisible();
-        const conv = panel(page).locator('[data-ai-conv]');
+        const conv = panel(page).locator('[data-ai-conv]', { hasText: 'which containers need an update' });
         await expect(conv).toHaveCount(1);
-        await expect(conv).toContainText('which containers need an update');
         await conv.locator('[data-ai-open]').click();
         await expect(panel(page).locator('[data-ai-thread]')).toContainText('Two containers need an update.');
         await expect(panel(page).locator('[data-ai-proposal]')).toContainText('Done');
@@ -213,7 +217,7 @@ test.describe('Assistant panel', () => {
     });
 
     test('Apply all leaves the deletion for its own click', async ({ page }) => {
-        withMore = true;
+        mode = 'three';
         await askFromPalette(page);
         const cards = panel(page).locator('[data-ai-proposal]');
         await expect(cards).toHaveCount(3);
@@ -231,7 +235,92 @@ test.describe('Assistant panel', () => {
         await expect(destructive.locator('[data-ai-apply]')).toBeVisible();
         await expect(panel(page).locator('[data-ai-apply-all]')).toHaveCount(0);
         const list = await (await page.request.get('/api/bookmarks?page=1')).json();
-        expect(list.some((b) => b.name === 'Assistant spec renamed' || b.note === NEW_NOTE)).toBe(true);
-        expect(list.some((b) => b.url === BOOKMARK_URL)).toBe(true);
+        const bookmark = list.find((b) => b.url === BOOKMARK_URL);
+        // Both changes were made, and the deletion was not.
+        expect(bookmark?.note).toBe(NEW_NOTE);
+        expect(bookmark?.name).toBe('Assistant spec renamed');
+    });
+
+    test('Apply all is hidden with one pending proposal and shown with two', async ({ page }) => {
+        await askFromPalette(page);
+        await expect(panel(page).locator('[data-ai-proposal]')).toHaveCount(1);
+        await expect(panel(page).locator('[data-ai-apply-all]')).toHaveCount(0);
+
+        mode = 'two';
+        await panel(page).locator('[data-ai-new]').click();
+        await panel(page).locator('[data-ai-input]').fill('and again');
+        await panel(page).locator('[data-ai-input]').press('Enter');
+        await expect(panel(page).locator('[data-ai-proposal]')).toHaveCount(2);
+        await expect(panel(page).locator('[data-ai-apply-all]')).toHaveCount(1);
+    });
+
+    test('markup in an answer, a title and an argument stays text', async ({ page }) => {
+        mode = 'evil';
+        await page.evaluate(() => { delete window.__xss; });
+        await palette(page, `ask ${EVIL}`);
+        await page.keyboard.press('Enter');
+        await expect(panel(page).locator('[data-ai-proposal]')).toBeVisible();
+        await expect(panel(page).locator('[data-ai-text]')).toContainText('<img src=x');
+        await expect(panel(page).locator('[data-ai-proposal] dd', { hasText: '<img src=x' })).toHaveCount(1);
+        await expect(panel(page).locator('[data-ai-conv]')).toContainText('<img src=x');
+        await expect(panel(page).locator('img')).toHaveCount(0);
+        expect(await page.evaluate(() => window.__xss)).toBeUndefined();
+    });
+
+    test('a 401 on Apply says the write token is needed', async ({ page }) => {
+        await page.route('**/api/ai/proposals/*/apply', (route) => route.fulfill({
+            status: 401, contentType: 'application/json', body: '{"error":"Unauthorized"}',
+        }));
+        await askFromPalette(page);
+        const card = panel(page).locator('[data-ai-proposal]');
+        await card.locator('[data-ai-apply]').click();
+        await expect(card).toContainText('Applying needs the write token.');
+    });
+
+    test('a stream that ends before done says the answer was cut off', async ({ page }) => {
+        await page.route('**/api/ai/ask', (route) => route.fulfill({
+            status: 200,
+            contentType: 'application/x-ndjson',
+            body: '{"type":"start","conversationId":""}\n{"type":"text","text":"Half an ans"}\n',
+        }));
+        await palette(page, 'ask cut me off');
+        await page.keyboard.press('Enter');
+        await expect(panel(page).locator('[data-ai-thread]')).toContainText('Half an ans');
+        await expect(panel(page).locator('[data-ai-thread]')).toContainText('The answer was cut off.');
+    });
+
+    test('with the demo flag set the palette says the assistant is not available', async ({ page }) => {
+        // The e2e server is not a demo; the row reads window.DemoLock, so set it there.
+        await page.evaluate(() => { window.DemoLock = { ...(window.DemoLock || {}), on: true }; });
+        await palette(page, 'ask anything');
+        await expect(page.locator('#shortcut-search')).toContainText('The assistant is not available in the demo');
+        await page.keyboard.press('Enter');
+        await expect(panel(page)).toHaveCount(0);
+        expect(requests).toBe(0);
+    });
+
+    test('Apply twice quickly applies once and the card stays Done', async ({ page }) => {
+        await askFromPalette(page);
+        const card = panel(page).locator('[data-ai-proposal]');
+        await card.locator('[data-ai-apply]').dblclick();
+        await expect(card).toContainText('Done');
+        await expect(card.locator('[data-ai-proposal-error]')).toHaveCount(0);
+    });
+
+    test('closing the panel while it answers leaves a clean panel next time', async ({ page }) => {
+        await page.route('**/api/ai/ask', async (route) => {
+            await new Promise((r) => setTimeout(r, 1500));
+            await route.abort().catch(() => {});
+        });
+        await palette(page, 'ask slow one');
+        await page.keyboard.press('Enter');
+        await expect(panel(page)).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(panel(page)).toHaveCount(0);
+        await page.unroute('**/api/ai/ask');
+        await palette(page, 'ask which containers need an update');
+        await page.keyboard.press('Enter');
+        await expect(panel(page).locator('[data-ai-thread]')).toContainText('Two containers need an update.');
+        await expect(panel(page).locator('.assistant-msg--user')).toHaveCount(1);
     });
 });
