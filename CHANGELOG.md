@@ -215,6 +215,11 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **Cheat sheet:** rows for paging Recent (`[` `]`, Page Up/Down) and for `↓`/Enter in the page filter; the HTML and PDF are regenerated.
 - **Translations:** every key added or changed in this release is in Dutch, German, French, Spanish and Chinese.
 
+### Tests
+
+- **fix — Two Docker timeline tests no longer age out.** `TestDockerTimelineRecordsEvents` and `TestContainerNotifierOwnStopSignal` recorded their events on 29 September 2026, and the timeline prunes against the wall clock at 30 days, so from 29 October they found an empty timeline. Their clock starts an hour before now.
+- **fix — `:maxactions` offers 11** in `edit-mode.spec.js`, and `whats-new-hidden-release.spec.js` expects v1.22.5 to lead the modal.
+
 ---
 
 ## v1.22.4 — 29 October 2026
