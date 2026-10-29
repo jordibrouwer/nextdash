@@ -13,8 +13,10 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    /* 100vw, not 100%: html's stable scrollbar gutter makes the containing
+       block a scrollbar short, which put the modal off the window's centre. */
+    width: 100vw;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1932,13 +1934,14 @@ body.no-animations .modal-button.danger.selected {
  * separates the other way: its own surface step, the lit top edge, the shaded
  * bottom edge, and a small lift off the sheet it stands on.
  *
- * The cheat sheet's sections, the recents list and the tag cloud's field all
- * want the same thing, so they share one rule rather than three copies.
+ * The cheat sheet's sections, the recents list, the search results and the
+ * tag cloud's field all want the same thing, so they share one rule.
  *
  * Not on flat, like every other depth cue in the app.
  */
 body:not([data-depth="flat"]) :is(
     .recent-bookmarks-modal-list,
+    .shortcut-search .search-matches,
     .page-overview-modal-slab,
     .tag-cloud-modal-body,
     .wn-entries,
@@ -2121,42 +2124,23 @@ body:not([data-depth="flat"]) .wn-earlier {
     background: color-mix(in srgb, var(--text-primary) 12%, transparent);
 }
 
-/* ── The pages sheet ──────────────────────────────────────────────────────────
-   The panel is opened from the page strip and answers the question the strip
-   asks, so it drops out of the band the strip stands in rather than floating
-   in the middle of the screen: the band's bottom edge and the sheet's top edge
-   are one line, the sheet is centred on the strip, and only its bottom corners
-   are round. Past a handful of pages it spans the page's own column and lays
-   the rows out in a grid; under that it is as wide as what it holds.
+/* ── The pages and recents sheets ─────────────────────────────────────────────
+   They open in the middle of the window like every other dashboard modal; the
+   overlay centres them. Past a handful of pages the sheet spans the page's own
+   column (--header-sheet-width) and lays the rows out in a grid; under that it
+   is as wide as what it holds.
    ────────────────────────────────────────────────────────────────────────── */
 
-.modal-overlay:has(.header-sheet) {
-    /* The sheet places itself against the band; the overlay stops centring it. */
-    justify-content: flex-start;
-    align-items: stretch;
-}
-
 .modal.header-sheet {
-    position: fixed;
-    top: var(--header-sheet-top, 96px);
-    /* On the strip's own centre line, which is the header row's: published by
-       showPageOverlay so the sheet follows the row at every width. */
-    left: var(--header-sheet-mid, 50%);
-    /* Centred with `translate`, not `transform`: the rise below owns transform. */
-    translate: -50% 0;
+    position: relative;
     margin: 0;
-    /* Square where it meets the band, round where it leaves the page. */
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-top: 0;
-    max-height: min(70vh, calc(100vh - var(--header-sheet-top, 96px) - 2rem));
+    max-height: min(70vh, calc(100vh - 4rem));
     padding: var(--space-3, 0.8rem) var(--space-4, 1.15rem) var(--space-3, 0.8rem);
 }
 
 /*
  * The sheet rises like every other modal (modalRise), the add-bookmark form and
- * the search panel included. Its centring is the `translate` above, so the
- * shared animation can own `transform` without pushing the sheet off the strip.
+ * the search panel included.
  */
 .modal-overlay.show .modal.header-sheet,
 .modal-overlay.show .modal.header-sheet.from-origin {

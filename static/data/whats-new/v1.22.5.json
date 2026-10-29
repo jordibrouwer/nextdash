@@ -1,0 +1,100 @@
+{
+  "tag": "v1.22.5",
+  "date": "29 October 2026",
+  "releasedAt": "2026-10-29",
+  "modalLead": "Recent bookmarks show the day you opened them, from every page. The tag view finds bookmarks with every tag, not just any of them. The action bar gets a theme studio button, and every window on the dashboard opens in the middle.",
+  "sections": [
+    {
+      "title": "Recent bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Recent bookmarks, with the day you opened them.</strong> Press <code>*</code>: tiles two across, from every page, each with the day, the time, its category or page and how often you opened it. Ten fit on a page; <code>[</code> and <code>]</code> page back and forward.",
+          "highlight": true,
+          "title": "Recent bookmarks, with the day you opened them",
+          "media": {
+            "image": "media/v1.22.5-recent-sheet.jpg",
+            "alt": "The Recent bookmarks sheet: tiles two across, each with the day it was opened, its time and category, and a pager below"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Tags",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Any tag or every tag.</strong> With two or more tags in the tag view, click the word between them: <em>or</em> shows bookmarks with any of them, <em>and</em> only those with every one.",
+          "link": "#tags",
+          "linkLabel": "Open the tag view",
+          "highlight": true,
+          "title": "Any tag or every tag",
+          "media": {
+            "image": "media/v1.22.5-tag-view-any-all.jpg",
+            "video": "media/v1.22.5-tag-view-any-all.webm",
+            "alt": "The tag view with news and security: the word between them turns from or to and, the list narrows, and Add tag… appears for a ticked row"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Add tag…</strong> Tick rows in the tag view and put one or more tags on all of them at once."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Sort by score</strong>, and the tag view remembers the sort you picked. Its search reads tags as well as names."
+        }
+      ]
+    },
+    {
+      "title": "Action bar and search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A theme studio button.</strong> The palette at the end of the action bar opens the theme studio, as <code>Shift+A</code> does. Switch it off under Config → Appearance → Action bar."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Every window on the dashboard opens in the middle</strong>: search, commands, Recent bookmarks, the pages panel and the tag cloud."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A docked action bar comes back when you rest the pointer on its edge</strong>, not on a quick pass on the way to the Dock, and goes again soon after you leave it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The page filter</strong> (<code>Shift+F</code>) takes several words, opens a folded category with a hit, and <code>↓</code> or <code>Enter</code> jumps to the first row left."
+        }
+      ]
+    },
+    {
+      "title": "Edit mode",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The edit panel says what is in a block</strong> and offers its actions: add a bookmark, move to another page, delete. A width you cannot pick says why."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A right-click menu stays open in edit mode.</strong>"
+        }
+      ]
+    },
+    {
+      "title": "Also new",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Glances Hosts</strong> lists the hosts in trouble first, sorts by any heading, names the fullest disk's mount and draws the processor's last hour."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The Inbox tile</strong> counts the links you snoozed, and shows a new or woken link without a reload."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Ocean</strong> is the theme a fresh install starts on. Your own theme stays as it is."
+        }
+      ]
+    }
+  ]
+}

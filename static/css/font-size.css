@@ -28,6 +28,24 @@ body[data-active-view="bookmarks"] .dashboard-section.section-content {
     font-family: var(--font-family-main);
 }
 
+/* The modals opened on the dashboard read in its font too, as the search panel
+   does: Recent bookmarks, the bookmark form, the tag cloud, notes, a widget's
+   sheet and the rest. In Config and the other views they stay in Inter. */
+:is(body:not([data-active-view]), body[data-active-view="bookmarks"]) :is(
+    .modal-overlay,
+    .notes-modal-overlay,
+    #tag-cloud-modal,
+    .config-widget-sheet,
+    .omnibox-box,
+    .start-guide-modal,
+    .progress-overlay-panel,
+    .health-focus-card,
+    dialog
+) {
+    --font-family-main: var(--font-family-dashboard);
+    font-family: var(--font-family-main);
+}
+
 /* Font Size Variables - Default (Medium/m - Level 3) */
 :root {
     /* Main Categories - Only 5 core variables */

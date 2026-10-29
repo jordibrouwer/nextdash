@@ -8,6 +8,15 @@
  * focus moves into it, or on ' / Shift+O. In the header or behind the menu
  * nothing slides: the bar is part of the band there.
  *
+ * The edge is a band, not a line: the pointer has to rest in it for a moment
+ * (DWELL_MS), so a quick pass on the way to the Dock or the scrollbar leaves
+ * the bar where it is. Leaving the window through that edge beside the bar
+ * counts as reaching it, since a fast move never reports the last few pixels.
+ *
+ * Called by the pointer it goes again soon after the pointer leaves it, with
+ * a margin around it (MARGIN) so a slight overshoot does not count as leaving.
+ * Called but never reached, it goes after SUMMON_GRACE_MS.
+ *
  * Brought back by ' / Shift+O it stays: the reader asked for it with a key and
  * may be about to use it with the keys, so no timer runs. It goes when the key
  * is pressed again, or when the pointer has been over the bar and leaves it --
@@ -31,10 +40,18 @@
     'use strict';
 
     const DOCKS = ['bottom', 'left', 'right'];
-    /** How close to the edge the pointer has to come, in pixels. */
-    const EDGE = 6;
-    /** How far past the ends of the bar the edge still counts. */
+    /** How close to the edge the pointer has to come, in pixels: the whole edge counts. */
+    const EDGE = 24;
+    /** How long the pointer rests in that band before the bar comes. */
+    const DWELL_MS = 150;
+    /** For leaving the window: how far past the ends of the bar the edge still counts. */
     const SLACK = 24;
+    /** Around a bar the pointer called: still "on it" this far out, in pixels. */
+    const MARGIN = 40;
+    /** Called by the pointer, it goes this long after the pointer leaves the margin. */
+    const LEAVE_MS = 700;
+    /** Called by the pointer and never reached, it goes after this long. */
+    const SUMMON_GRACE_MS = 1500;
     /** From how far away the handle starts to grow, in pixels. */
     const NEAR = 340;
     /** How long after the load the intro waits for pending release notes. */
@@ -46,6 +63,14 @@
     let hidden = false;
     /** Called by a key: stays until the key again, or the pointer passes over and leaves. */
     let pinned = false;
+    /** Called by the pointer: goes soon after the pointer leaves it. */
+    let summoned = false;
+    /** The pointer has been within the margin since the bar was called. */
+    let reached = false;
+    let dwellTimer = null;
+    let leaveTimer = null;
+    /** Sent away while the pointer rests on the edge: it has to leave the band first. */
+    let edgeSpent = false;
     let bound = false;
     let frame = 0;
     let handle = null;
@@ -79,6 +104,8 @@
         // The keys and the edge already bring the bar back; this is a picture
         // of where, not a control of its own.
         handle.setAttribute('aria-hidden', 'true');
+        // Resting on it calls the bar too: it lies inside the band along the
+        // edge, so the same short rest applies and a quick pass does nothing.
         handle.addEventListener('click', () => show());
         document.body.appendChild(handle);
         return handle;
@@ -94,6 +121,12 @@
             slideTimer = setTimeout(() => document.body.removeAttribute('data-action-bar-sliding'), SLIDE_MS);
         }
         hidden = value;
+        clearTimeout(dwellTimer);
+        dwellTimer = null;
+        clearTimeout(leaveTimer);
+        leaveTimer = null;
+        summoned = false;
+        reached = false;
         edgeHandle().style.setProperty('--edge-proximity', '0');
         document.body.toggleAttribute('data-action-bar-hidden', value);
         const el = bar();
@@ -134,6 +167,47 @@
             if (screenIsFree()) playIntro();
         }
         arm();
+    }
+
+    /**
+     * The pointer called the bar. No long delay: it goes LEAVE_MS after the
+     * pointer leaves the margin, or SUMMON_GRACE_MS after it came if the
+     * pointer never got that far.
+     */
+    function summon() {
+        if (!hidden || !docked() || !enabled() || touchOnly()) return;
+        show();
+        clearTimeout(timer);
+        timer = null;
+        if (!seconds()) return;
+        summoned = true;
+        reached = false;
+        scheduleLeave(SUMMON_GRACE_MS);
+    }
+
+    function scheduleLeave(wait) {
+        if (leaveTimer) return;
+        leaveTimer = setTimeout(() => {
+            leaveTimer = null;
+            if (!summoned || hidden) return;
+            // A menu open or focus inside: the reader is still using it.
+            if (inUse()) {
+                scheduleLeave(LEAVE_MS);
+                return;
+            }
+            setHidden(true);
+            // Otherwise a pointer parked on the edge would call it straight back.
+            edgeSpent = true;
+        }, wait);
+    }
+
+    /** Within the bar or the margin around it. */
+    function nearBar(x, y) {
+        const el = bar();
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        return x >= r.left - MARGIN && x <= r.right + MARGIN
+            && y >= r.top - MARGIN && y <= r.bottom + MARGIN;
     }
 
     /** Nothing else has the screen: no modal, card, tour or onboarding. */
@@ -253,24 +327,35 @@
         requestAnimationFrame(() => requestAnimationFrame(check));
     }
 
-    /** Is the pointer on the edge the bar is docked to, beside the bar? */
+    /**
+     * Is the pointer in the band along the edge the bar is docked to? The
+     * whole edge, not only the stretch beside the bar: aiming a few
+     * centimetres above or below it is still aiming at it.
+     */
     function atEdge(x, y) {
-        const el = bar();
-        if (!el) return false;
-        const r = el.getBoundingClientRect();
         // The page's own width, not the window's: a classic scrollbar stands
         // between the two, and the page hears no pointer over it -- so the
         // right edge measured from innerWidth could never be reached.
         const { clientWidth: width, clientHeight: height } = document.documentElement;
         switch (place()) {
-            case 'left':
-                return x <= EDGE && y >= r.top - SLACK && y <= r.bottom + SLACK;
-            case 'right':
-                return x >= width - EDGE && y >= r.top - SLACK && y <= r.bottom + SLACK;
-            case 'bottom':
-                return y >= height - EDGE && x >= r.left - SLACK && x <= r.right + SLACK;
-            default:
-                return false;
+            case 'left': return x <= EDGE;
+            case 'right': return x >= width - EDGE;
+            case 'bottom': return y >= height - EDGE;
+            default: return false;
+        }
+    }
+
+    /** Left the window through the docked edge, beside the bar? */
+    function leftThroughEdge(x, y) {
+        const el = bar();
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const { clientWidth: width, clientHeight: height } = document.documentElement;
+        switch (place()) {
+            case 'left': return x <= EDGE && y >= r.top - SLACK && y <= r.bottom + SLACK;
+            case 'right': return x >= width - EDGE && y >= r.top - SLACK && y <= r.bottom + SLACK;
+            case 'bottom': return y >= height - EDGE && x >= r.left - SLACK && x <= r.right + SLACK;
+            default: return false;
         }
     }
 
@@ -287,15 +372,39 @@
         return Math.max(0, Math.min(1, 1 - distance / NEAR));
     }
 
+    /** The latest pointer position: a frame reads where the pointer is, not where it was. */
+    let pointerX = 0;
+    let pointerY = 0;
+
     function onPointerMove(e) {
-        if (!hidden || frame) return;
-        const { clientX: x, clientY: y } = e;
+        if (!hidden && !summoned) return;
+        pointerX = e.clientX;
+        pointerY = e.clientY;
+        if (frame) return;
         frame = requestAnimationFrame(() => {
             frame = 0;
-            if (!hidden || !docked()) return;
-            if (atEdge(x, y)) {
-                show();
+            const x = pointerX;
+            const y = pointerY;
+            if (!docked()) return;
+            if (summoned && !hidden) {
+                if (nearBar(x, y)) {
+                    reached = true;
+                    clearTimeout(leaveTimer);
+                    leaveTimer = null;
+                } else if (reached) {
+                    scheduleLeave(LEAVE_MS);
+                }
                 return;
+            }
+            if (!hidden) return;
+            const onEdge = atEdge(x, y);
+            if (!onEdge) edgeSpent = false;
+            if (onEdge && !edgeSpent) {
+                // A moment's rest in the band, so a pass on the way past does nothing.
+                if (!dwellTimer) dwellTimer = setTimeout(() => { dwellTimer = null; summon(); }, DWELL_MS);
+            } else {
+                clearTimeout(dwellTimer);
+                dwellTimer = null;
             }
             edgeHandle().style.setProperty('--edge-proximity', nearness(x, y).toFixed(3));
         });
@@ -305,9 +414,14 @@
         if (bound) return;
         bound = true;
         document.addEventListener('pointermove', onPointerMove, { passive: true });
-        // Leaving the window is being far from every edge.
-        document.documentElement.addEventListener('pointerleave', () => {
+        // Leaving the window is being far from every edge -- unless it was
+        // through the docked edge beside the bar: a fast move overshoots the
+        // last pixels, and that is reaching the edge, not passing it.
+        document.documentElement.addEventListener('pointerleave', (e) => {
+            clearTimeout(dwellTimer);
+            dwellTimer = null;
             if (handle) handle.style.setProperty('--edge-proximity', '0');
+            if (hidden && docked() && leftThroughEdge(e.clientX, e.clientY)) summon();
         });
         // Over the bar the wait stops; leaving it, or tabbing out, starts it again.
         document.addEventListener('pointerover', (e) => {
@@ -321,7 +435,8 @@
             if (el && el.contains(e.target) && !el.contains(e.relatedTarget)) {
                 // Passing over a bar a key called, and leaving it, is done with it.
                 pinned = false;
-                arm();
+                // Called by the pointer: the margin decides (onPointerMove).
+                if (!summoned) arm();
             }
         });
         document.addEventListener('focusin', (e) => {

@@ -272,6 +272,9 @@ class DashboardData {
             if (typeof d.settings.showEditModeButton === 'undefined') {
                 d.settings.showEditModeButton = true;
             }
+            if (typeof d.settings.showThemeStudioButton === 'undefined') {
+                d.settings.showThemeStudioButton = true;
+            }
             if (typeof d.settings.showCollapseAllButton === 'undefined') {
                 d.settings.showCollapseAllButton = true;
             }
@@ -707,8 +710,12 @@ class DashboardData {
         // the first poll after the studio closes applies the change.
         if (settingsChanged && d._lookStudioCommitted) {
             settingsChanged = false;
+            // Remembered for saveSettings: until this change is read, a save
+            // from this tab would send the other device's fields back as they were.
+            d._settingsChangedElsewhere = true;
         } else {
             d._serverSettingsRevision = this._lastSettingsRevision || d._serverSettingsRevision;
+            if (settingsChanged) d._settingsChangedElsewhere = false;
         }
 
         // A config change on another device used to be invisible here: this poll
@@ -727,6 +734,13 @@ class DashboardData {
         if (!changed) {
             return false;
         }
+        // inbox.json and trash.json are in the revision, and their tiles keep
+        // one answer until something clears it: a link saved from the
+        // extension or another device stayed off the Inbox tile until a reload.
+        delete d._widgetInbox;
+        delete d._widgetTrash;
+        d.renderCore?.refreshWidgets?.('inbox');
+        d.renderCore?.refreshWidgets?.('trash');
         // A block in the hand belongs to the layout that is about to be redrawn.
         window.DashboardBlockMover?.finish?.(false);
         if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
@@ -1537,6 +1551,11 @@ class DashboardData {
     async saveSettings() {
         const d = this.dash;
         try {
+            // A change from another device waited while the look studio was open.
+            // Read it first: this save sends every field, and would put it back.
+            if (d._settingsChangedElsewhere && !d._lookStudioCommitted) {
+                await this.refreshIfDataRevisionChanged();
+            }
             let payload = typeof sanitizeSettingsForPersist === 'function'
                 ? sanitizeSettingsForPersist(d.settings)
                 : d.settings;

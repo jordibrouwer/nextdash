@@ -13,13 +13,18 @@
         try { return new URL(url).host; } catch { return ''; }
     };
 
-    /** Bookmarks with any of the tags; the first copy of a url|name wins, as in the tag filter. */
-    function matches(pool, tags) {
-        const want = new Set((tags || []).map(norm).filter(Boolean));
+    /**
+     * Bookmarks with any of the tags -- or, with mode 'all', every one of
+     * them; the first copy of a url|name wins, as in the tag filter.
+     */
+    function matches(pool, tags, { mode = 'any' } = {}) {
+        const want = [...new Set((tags || []).map(norm).filter(Boolean))];
         const seen = new Set();
         const out = [];
         for (const b of pool || []) {
-            if (!tagsOf(b).some((t) => want.has(t))) continue;
+            const has = new Set(tagsOf(b));
+            if (!want.length) continue;
+            if (mode === 'all' ? !want.every((t) => has.has(t)) : !want.some((t) => has.has(t))) continue;
             const key = `${String(b.url || '').trim()}|${String(b.name || '').trim()}`;
             if (seen.has(key)) continue;
             seen.add(key);
@@ -76,13 +81,17 @@
 
     /** The rail's page and health filters and the search box, together. */
     function applyFilters(list, { page = null, health = null, untagged = false, query = '', isBroken = () => false } = {}) {
-        const q = norm(query);
+        const words = norm(query).split(/\s+/).filter(Boolean);
         return (list || []).filter((b) => {
             if (untagged && tagsOf(b).length) return false;
             if (page !== null && page !== undefined && pageOf(b) !== Number(page)) return false;
             if (health === 'broken' && !isBroken(b)) return false;
             if (health === 'never' && Number(b.openCount) > 0) return false;
-            if (q && !`${b.name || ''} ${b.url || ''} ${host(b.url)}`.toLowerCase().includes(q)) return false;
+            // Every word somewhere in the name, the address or the tags.
+            if (words.length) {
+                const hay = `${b.name || ''} ${b.url || ''} ${host(b.url)} ${tagsOf(b).join(' ')}`.toLowerCase();
+                if (!words.every((w) => hay.includes(w))) return false;
+            }
             return true;
         });
     }
@@ -94,9 +103,20 @@
         page: (b) => pageOf(b),
     };
 
-    /** Name and page read A–Z first; the figures read biggest first. Stable. */
-    function sort(list, key = 'lastOpened', dir = null) {
-        const get = KEYS[key] || KEYS.lastOpened;
+    /**
+     * Name and page read A–Z first; the figures read biggest first. Stable.
+     * Page follows pageOrder (the tabs) when given, not the page id; score
+     * comes from scoreOf, and a bookmark not checked yet goes last either way.
+     */
+    function sort(list, key = 'lastOpened', dir = null, { pageOrder = null, scoreOf = () => null } = {}) {
+        const rank = Array.isArray(pageOrder) ? new Map(pageOrder.map((id, i) => [Number(id), i])) : null;
+        const score = (b) => {
+            const s = scoreOf(b);
+            return s === null || s === undefined || !Number.isFinite(Number(s)) ? null : Number(s);
+        };
+        const get = key === 'page' && rank
+            ? (b) => (rank.has(pageOf(b)) ? rank.get(pageOf(b)) : Number.MAX_SAFE_INTEGER)
+            : key === 'score' ? score : (KEYS[key] || KEYS.lastOpened);
         const direction = dir || (key === 'name' || key === 'page' ? 'asc' : 'desc');
         const sign = direction === 'asc' ? 1 : -1;
         return (list || [])
@@ -104,18 +124,25 @@
             .sort(([a, ia], [c, ic]) => {
                 const x = get(a);
                 const y = get(c);
+                if (x === null || y === null) return (x === null) - (y === null) || ia - ic;
                 return (x < y ? -1 : x > y ? 1 : 0) * sign || ia - ic;
             })
             .map(([b]) => b);
     }
 
-    /** `#tag/a+b`: each tag encoded, so a `+` inside one cannot split it. */
-    const hashFor = (tags) => ((tags || []).length
-        ? `#tag/${tags.map((t) => encodeURIComponent(norm(t))).join('+')}`
+    /**
+     * `#tag/a+b`: each tag encoded, so a `+` inside one cannot split it.
+     * `?all` after it when the bookmarks must carry every tag; a `?` in a
+     * tag is encoded too, so it cannot be mistaken for that.
+     */
+    const hashFor = (tags, { mode = 'any' } = {}) => ((tags || []).length
+        ? `#tag/${tags.map((t) => encodeURIComponent(norm(t))).join('+')}${mode === 'all' && tags.length > 1 ? '?all' : ''}`
         : '#tags');
 
+    const modeFromHash = (hash) => (/\?all$/.test(String(hash || '')) ? 'all' : 'any');
+
     function tagsFromHash(hash) {
-        const raw = String(hash || '').replace(/^#?tag\//, '');
+        const raw = String(hash || '').replace(/^#?tag\//, '').replace(/\?.*$/, '');
         return raw.split('+')
             .map((part) => {
                 try { return norm(decodeURIComponent(part)); } catch { return norm(part); }
@@ -123,5 +150,5 @@
             .filter(Boolean);
     }
 
-    window.TagViewModel = { matches, everything, related, stats, applyFilters, sort, hashFor, tagsFromHash };
+    window.TagViewModel = { matches, everything, related, stats, applyFilters, sort, hashFor, tagsFromHash, modeFromHash };
 })();

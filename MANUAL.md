@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and **Aurora Glass** is the default; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16A The new look](#16a-the-new-look), [§16 Appearance](#16-appearance) and [the theme studio](#the-theme-studio) |
+| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Ocean**; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16A The new look](#16a-the-new-look), [§16 Appearance](#16-appearance) and [the theme studio](#the-theme-studio) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 | 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
@@ -937,6 +937,7 @@ The header has three zones.
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
 | Edit | `Shift + M` (no bookmark selected) | Edit mode ([see below](#edit-mode)) |
+| Theme studio | `Shift + A` | The theme studio ([§16.1](#the-theme-studio)); last in the bar, and left out on a phone |
 
 Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
 
@@ -953,15 +954,15 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 
 **How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§16A](#16a-the-new-look)). A docked bar stands apart from the cards it slides over: a layer of the surface colour goes over the material's paint, with an edge that leans to the accent. A button that is on is filled with the accent, as the lit view in the header is.
 
-**A bar that slides away.** **Slide a docked bar away after** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The bar comes back when the pointer touches that edge or when focus moves into it, and then slides away again after the delay. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
+**A bar that slides away.** **Slide a docked bar away after loading** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The delay counts after a load and after you used the keyboard. The bar comes back when the pointer rests for a moment anywhere along that edge (or on its handle), or when focus moves into it; a quick pass on the way to the Dock or the scrollbar leaves it away. Called back with the mouse, it slides away shortly after the pointer leaves it, whatever the delay is. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
 
 While it is away, a small **handle** stands on that edge, so the place it came from stays visible. It grows and brightens as the pointer comes near, and a click on it brings the bar back. There is no handle for a bar in the header or behind the menu, and none on a touch screen, where nothing hovers.
 
-**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of ten chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
+**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of eleven chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
 
 **Buttons that come into view.** **Animate the buttons as the bar appears** is off to begin with. Its cards offer five styles: **Swell** (each button grows past its size and settles back, left to right), **Swell from the middle**, **Swell together**, **Unfold** (the bar opens and the buttons pop in) and **Accordion** (the bar opens from the middle and the buttons pop out to both ends). Point at a card, or move the focus to it, and its small bar plays that style; pick one and the real bar plays it at once. From then on it plays each time the bar comes into view: after a load — once no window, card or tour covers the screen — and each time it comes back from the edge it slid into. With reduced motion set in your system, the buttons simply appear.
 
-`:buttons` and `:maxactions` change these from the command palette.
+`:buttons` and `:maxactions` change these from the command palette; `:buttons theme` switches the theme studio button.
 
 The **★** button in the bottom-right corner opens the release notes. It is left out on a window as narrow as a phone; `:whatsnew` and Help still open them.
 
@@ -979,13 +980,13 @@ Edit mode changes the dashboard itself without a trip to Config: names, icons, w
 
 | You select | The panel offers |
 |------------|------------------|
-| A category | Name, icon, width (one column or spread), view (rows or tiles) and sorting |
-| A widget | Name, width and state; **Settings…** opens the sheet of Config → Widgets over the dashboard, with the same fields |
-| A page | Name, emoji and colour |
+| A category | What is in it (bookmarks, opened this week, broken), then name, icon, width (one column or spread), view (rows or tiles) and sorting; buttons **Add bookmark**, **Move to page…** and **Delete** |
+| A widget | Its type and what it shows, the main things set on it, then name, width and state; buttons **Settings…** (the sheet of Config → Widgets over the dashboard, with the same fields), **Move to page…** and **Delete** |
+| A page | How many categories, bookmarks and widgets it has, then name, emoji and colour; buttons **Add category** (on the page in view) and **Delete page** (every page but the first) |
 
-A category or widget that is deleted somewhere else clears the panel, and the panel says so.
+The buttons do what the right-click menu of the block does, with the same question before a delete. A width that cannot be chosen is greyed out and says why under the field: spreading needs a limit on items per category (Config → Appearance), at least two columns, and a layout that is not locked. A category or widget that is deleted somewhere else clears the panel, and the panel says so.
 
-<p align="center"><img src="screenshots/manual.md/04-edit-mode.jpg" alt="The dashboard in edit mode: a bar at the top, a dashed outline on every block, the Code category chosen and its panel at the right with name, icon, width, view and sorting" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/04-edit-mode.jpg" alt="The dashboard in edit mode: a bar at the top, a dashed outline on every block, the Code category chosen and its panel at the right with its figures, then name, icon, width, view and sorting, and the buttons Add bookmark, Move to page and Delete" width="860"></p>
 <p align="center"><sub>Edit mode with the Code category chosen: its panel opens at the right.</sub></p>
 
 <p align="center"><img src="screenshots/manual.md/04-edit-mode-widget-sheet.jpg" alt="The settings sheet of a widget opened over the dashboard from the edit panel: Connection, Display and Advanced" width="700"></p>
@@ -1230,9 +1231,19 @@ Every open — from the grid, search, the recent panel or the Bookmarks view —
 
 ### 🕘 Recent bookmarks (`*`)
 
-A narrow panel with what you opened recently on this page: one row per bookmark, with its category, when and how often. The arrow keys move, `Enter` opens. `:open last 5` opens several at once.
+A sheet in the middle of the window with what you opened recently, from **every page**, newest first. Each bookmark is a tile, two across:
 
-<p align="center"><img src="screenshots/manual.md/06-recent.jpg" alt="The recent bookmarks panel: eight bookmarks in three columns, each with its shortcut, category, when it was opened and how often, and buttons to open all of them or the last five" width="860"></p>
+- a calendar block with the day and month it was last opened;
+- the name and its shortcut;
+- the weekday and time, and how long ago when it was less than a day;
+- its category, or the name of its page when it lives on another page;
+- how often it was opened, with a bar against the most opened.
+
+Pointing at a tile shows the full date. Dates follow the app's language.
+
+Ten tiles fit on a page; a pager in the foot says where you are ("11–20 of 34") and has the page numbers. `]` or `PageDown` goes back to earlier bookmarks, `[` or `PageUp` forward again. The arrow keys move from tile to tile, `Enter` opens. **Open shown** opens the tiles on screen in tabs, and **Open last 5** the five newest when they are not the ones on screen. The sheet always opens on the newest page. `:open last 5` opens several at once.
+
+<p align="center"><img src="screenshots/manual.md/06-recent.jpg" alt="The Recent bookmarks sheet: tiles two across, each with a calendar block for the day it was opened, the name and shortcut, weekday and time, its category or page and how often, a pager in the foot and buttons to open what is shown" width="860"></p>
 <p align="center"><sub>Recent bookmarks (<kbd>*</kbd>): what you opened last, and how often.</sub></p>
 
 <a id="hypr-mode"></a>
@@ -1402,7 +1413,7 @@ While a panel is open, the grid behind it does not react. `Tab` stays inside the
 > [!NOTE]
 > **In short:** one panel with three modes: type to search your bookmarks, `:` for commands, `?` for finders that search another site. Filters narrow it, and it can reach other pages and the web.
 
-Search, commands and finders are three modes of one panel.
+Search, commands and finders are three modes of one panel, which opens in the middle of the window like every other dashboard modal (only the theme studio stays docked at the side, so the page it previews stays in view). A rail on its left lists the modes; the one you are in is marked, and a mode your words do not reach is dimmed. `Tab` switches between them.
 
 ```
 >  search     — your bookmarks, with filters
@@ -1474,7 +1485,7 @@ Filters combine with each other and with plain words: `tag:dev -status:pinned ap
 ### 8.3 Beyond the current page
 
 - **`@`** at the start searches every page; each result names its page.
-- **`Shift + F`** is the opposite: a bar above the grid that hides non-matching rows on this page and keeps the layout and cursor. Widgets step aside while it filters, and the matching letters are marked in the names that are left. `Escape` clears it, a second `Escape` closes it.
+- **`Shift + F`** is the opposite: a bar above the grid that hides non-matching rows on this page and keeps the layout and cursor. Widgets step aside while it filters, and the matching letters are marked in the names that are left. Several words narrow it further: every word must match, in any order. A collapsed category with a hit opens while you filter and folds again afterwards. `↓` or `Enter` puts the cursor on the first row left, so `j`/`k` walk only what you can see; `Enter` on a filter that leaves one bookmark opens it. `Escape` clears it, a second `Escape` closes it.
 - **`:find text`** does the same from the command palette.
 
 <a id="searching-the-web"></a>
@@ -1753,17 +1764,17 @@ A file is at most 2 MB.
 
 <p align="center"><img src="screenshots/manual.md/08-tag-cloud-example.jpg" alt="The example tag cloud: ten words such as docs, homelab, dev and media with their counts, the note These are example tags, and the button Open the Tags view" width="512"></p>
 
-**The tag view.** It lists the bookmarks that carry the tag, from **all pages**, in one table. A tag you stacked shows as pills, each with a **×** to take it out, and **+ tag** adds another, with suggestions.
+**The tag view.** It lists the bookmarks that carry the tag, from **all pages**, in one table. A tag you stacked shows as pills, each with a **×** to take it out, and **+ tag** adds another, with suggestions. With two or more tags the word between the pills is a switch: **or** shows the bookmarks with any of them, **and** only those with every one. An **and** view that finds nothing offers **Show any of them**.
 
 - The **header** shows where you came from, the tag (or tags), and a line of figures: how many bookmarks, on how many pages, what was opened last and most, and how many are broken. **Open all** opens every bookmark shown, **Copy links** copies their addresses, and **Manage tag** can **Rename** the tag, **Merge into another tag**, or **Remove from all bookmarks**. Each of these can be undone.
 - The **rail** on the side lists **Related tags** (click one to switch to it, `Shift`+click to add it), the **Pages** the bookmarks live on, and a **Health** filter for broken or never opened bookmarks.
-- The **toolbar** has a search box (`/` jumps to it), a count such as "12 of 40", and a sort menu. Clicking a column head sorts by it too. The table shows each bookmark's name and site, its other tags, its page, how often and when it was last opened, and its score.
+- The **toolbar** has a search box (`/` jumps to it), a count such as "12 of 40", and a sort menu. The search reads names, addresses, sites and tags; with several words, every word must match somewhere, in any order. Clicking a column head sorts by it too. The table shows each bookmark's name and site, its other tags, its page, how often and when it was last opened, and its score. **Score** sorts by health score, highest first, with bookmarks not checked yet last; **Page** follows the order of your page tabs. The view remembers the sort you picked last, on this device.
 - Move with `↑` `↓`, `g` and `End` jump to the first and last row, `Enter` opens the bookmark, `i` opens its side panel (details, tags, health, with **Open** and **Edit**), and `e` opens the bookmark form. `a` adds the suggested tags of the focused row ([§10.4](#104-tag-suggestions)). Each row carries the site's icon.
 - On a row, `Shift` plus `E`, `P`, `T`, `M`, `D`, `C`, `R`, `L` or `J` does what it does on the dashboard: edit, pin, tags, move, delete, check mode, health, share link and QR code. `Delete` deletes, `Ctrl/Cmd + C` copies the address, and the row menu is the dashboard's. The cheat sheet has a **Tag view** section with all of it ([§7.6](#76-the-cheat-sheet)).
-- `x` ticks a row. `Alt`+click ticks one, `Shift`+click ticks a range, and the tick in the header ticks everything shown. A bar then offers **Open**, **Move to…**, **Delete** and **Clear**. **Move to…** takes a page; categories belong to one page, so they are offered only when every bookmark is on the same one.
+- `x` ticks a row. `Alt`+click ticks one, `Shift`+click ticks a range, and the tick in the header ticks everything shown. A bar then offers **Open**, **Add tag…**, **Move to…**, **Delete** and **Clear**. **Add tag…** puts one or more tags (separate them with commas; the tags in use are suggested) on every ticked bookmark, and can be undone. **Move to…** takes a page; categories belong to one page, so they are offered only when every bookmark is on the same one.
 - `Escape` lets go of one thing at a time: the side panel, then the selection. After that it leaves the view and takes you back to the page you opened it from. In the search box, `Escape` first clears what you typed. The home icon and your browser's Back button do the same.
 - Ways in: the tag cloud, `t` on a selected bookmark (it opens the view for that bookmark's tag), `:filter <tag>`, or `Shift + T` with no bookmark selected (below).
-- The view's address is `#tag/<tag>` (several tags are joined with `+`). Bookmark it or share it, and it opens on the same tag.
+- The view's address is `#tag/<tag>` (several tags are joined with `+`, and `?all` marks an **and** view, as in `#tag/linux+security?all`). Bookmark it or share it, and it opens on the same tags.
 
 **The tag view of every bookmark.** `Shift + T` with no bookmark selected opens the tag view with no tag picked: every bookmark from every page in one table. The header says how many have no tags, and the rail starts with a **Without tags** filter that keeps the list to those, followed by the tags in use. Click a tag there to open its own tag view; Back returns here. The address is `#tags`. With a bookmark selected, `Shift + T` still opens that bookmark's Tags popover.
 - Tag chips on dashboard rows are labels only; they are not clickable.
@@ -2000,6 +2011,8 @@ Beside it, the **Collection ▾** menu gathers what a whole-collection toolbar u
 - **Organise** — **Pages & categories** (`Shift + P`), **Merge duplicate group…** when exactly one group exists, **Turn on checking…** for everything still Off.
 - **Checks** — **Retest all**, **Open broken links…**, **Fetch previews…**, **Checking off…**.
 - **Export CSV**, **Refresh report** (`Shift + R`), and **Health settings**.
+
+The menu opens with its first item focused; `↑`/`↓`, `Home` and `End` move through it. When the duplicate groups have shrunk to one bookmark each, **Merge duplicate group…** says *No duplicates left to merge.*
 
 An **ⓘ** beside the menu explains the view, and **Tour** next to it plays a five-step walkthrough of it ([§17](#view-tours)).
 
@@ -2841,7 +2854,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 
 | Kind | Shows |
 |---|---|
-| **Inbox** | How much is waiting, and how old the oldest is |
+| **Inbox** | How much is waiting, and how old the oldest is. A line under the rows counts the snoozed links (*3 asleep*); a link saved from another tab or the extension shows without a reload, and a snoozed link comes back when it wakes |
 | **Unsorted** | Links kept from the inbox without a page yet — newest first, at random, by one tag or grouped under every tag, with each address under its title. A row opens the Bookmarks view on Unsorted, with that bookmark's side panel; the overflow row reads **Open Unsorted**. |
 | **Feeds** | Feeds with news, and feeds that stopped after repeated failures; a stopped feed has a **Retry** button that tries it again now instead of tomorrow, and **Retry all** tries every stopped feed at once |
 | **Sources** | What each import source last did |
@@ -3422,7 +3435,7 @@ The menu on the left has one section per screen. Each has a key:
 | **Alerts** | `a` | The alerts Glances itself raised, ongoing and recent |
 | **Hosts** | `m` | Every host in one table; only with more than one host |
 
-Which blocks the Overview draws is a choice in Config → Glances → Page (**Overview shows**). A block the host cannot fill is left out. Colour follows two lines, **Yellow from** and **Red from**, which Config sets for the processor, memory, swap, disks and temperature; a sensor that reports limits of its own uses those. They colour the page, the dot on the icon and the incidents.
+Which blocks the Overview draws is a choice in Config → Glances → Page (**Overview shows**). A block the host cannot fill is left out. Colour follows two lines, **Yellow from** and **Red from**, which Config sets for the processor, memory, swap, disks and temperature; a sensor that reports limits of its own uses those. They colour the page, the dot on the icon and the incidents. Temperatures are written in the weather's unit: with Fahrenheit picked in Appearance → Date & weather, the page shows °F, while the temperature lines in Config stay in Celsius.
 
 **Processes** has a search bar (`/`), and a click on a heading sorts by it. A row opens a side panel with two tabs:
 
@@ -3506,11 +3519,11 @@ With more than one host:
 
 - the head of the page has a **Host** menu, and the address carries the choice: `/#glances/overview?host=nas`;
 - the Overview starts with a strip with a chip for each host;
-- the **Hosts** section (`m`) lists every host in one table — how it is, processor, memory, the fullest disk, temperature and when it was last read. It comes from the record, so it costs the hosts nothing. A click on a row opens that host; `:glances host <name>` does the same;
+- the **Hosts** section (`m`) lists every host in one table — how it is, processor (with a small line of its last hour beside the meter), memory, the fullest disk and where it is mounted, temperature and when it was last read. It comes from the record, so it costs the hosts nothing. Trouble comes first: a host that stopped answering, then red, yellow and healthy ones, and last what is switched off or has no address. The headings sort, as in the other Glances tables. A click on a row opens that host; `:glances host <name>` does the same;
 - a host without an address is a row that says so; the others keep working.
 
 <p align="center">
-  <img src="screenshots/manual.md/15a-glances-hosts.jpg" alt="The Hosts section of the Glances page: three hosts in one table with processor, memory, fullest disk, temperature and last reading, the first one amber for its disk at 89 %" width="860">
+  <img src="screenshots/manual.md/15a-glances-hosts.jpg" alt="The Hosts section of the Glances page: three hosts in one table with processor and its last hour as a small line, memory, fullest disk with its mount, temperature and last reading, the first one amber for its disk at 89 % on /mnt/media" width="860">
 </p>
 <p align="center"><sub>Hosts: three machines side by side.</sub></p>
 
@@ -3645,7 +3658,7 @@ The ones that change something need the write token.
 > **In short:** Appearance changes how the dashboard looks: themes, background, surfaces, type, layout, rows, link previews, header and action bar. Pick, preview and apply, or build a theme of your own.
 
 > [!TIP]
-> The look changed in this release: every material has a surface of its own and Aurora Glass is the default. What changed, why, and how to get your old look back is in [§16A The new look](#16a-the-new-look).
+> The look changed in version 1.22: every material has a surface of its own, and every install that ran an earlier release moved onto Aurora Glass once. What changed, why, and how to get your old look back is in [§16A The new look](#16a-the-new-look).
 
 **Config → Appearance** opens straight on its settings, on the tab you had open if that was in the last five minutes, and on **Theme** otherwise. Nine tabs in three labelled groups:
 
@@ -3661,7 +3674,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 **Label left, control right.** A setting's label and one-line explanation stand on the left and its control on the right, in one shared column. A longer explanation is cut with an ellipsis and stays whole in its tooltip and the ℹ. Under 600 px the control goes under its label.
 
-**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (ten buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
+**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (eleven buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
 
 **The preview.** Beside the settings stands a small drawing of your dashboard — header, grid, a few rows and the action dock. It follows every change as you make it, in your own theme and font, and marks the part the open tab is about: the grid on Grid, the rows on Rows, the header on Header, the clock on Date & weather, the buttons on Action bar. On a narrow window it moves above the settings.
 
@@ -3669,7 +3682,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 ### 16.1 Themes
 
-nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Aurora Glass**, a calm theme of northern light behind a pane you can see through, drawn in the **Signature** material style ([§16A](#16a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§16A.3](#16a3-everyone-gets-aurora-glass-and-the-way-back)).
+nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Ocean** — deep water lit from far above, behind a pane you can see through — dark, with Ocean light for auto dark mode. It is drawn in the **Signature** material style ([§16A](#16a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§16A.3](#16a3-everyone-gets-aurora-glass-and-the-way-back)).
 
 **Theme** on the Theme tab lists every theme by name. Beside it:
 
@@ -3928,12 +3941,12 @@ Small drawings beside the shape settings show what a value looks like.
 See [§4](#4-the-dashboard) for what each part does. The settings:
 
 - **Header** tab, panels **Header** and **Browser tab & branding** — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and chips for the dashboard, inbox, config and Bookmarks-view buttons. The browser tab sits in the second panel: the page name in the browser title, a custom title and the favicon upload, also used when nextDash is installed as an app. Where the clock and weather stand is set on Date & weather ([§16.8](#168-date-and-weather)).
-- **Action bar** tab — **Show the action buttons** leads, since it decides whether the rest matters; then where the fixed buttons stand (a column on the right by default), **Button size** (extra small to extra large; medium by default, one step up from the 28 px squares the bar had, which are now *small*), action buttons before *+N*, show the key on each button (off for new installs), slide a docked bar away (2 seconds by default), how the buttons come into view each time the bar appears (off by default; a dropdown — picking a style plays it on the real bar at once), and one chip per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
+- **Action bar** tab — **Show the action buttons** leads, since it decides whether the rest matters; then where the fixed buttons stand (a column on the right by default), **Button size** (extra small to extra large; medium by default, one step up from the 28 px squares the bar had, which are now *small*), action buttons before *+N*, show the key on each button (off for new installs), slide a docked bar away after loading (2 seconds by default), how the buttons come into view each time the bar appears (off by default; a dropdown — picking a style plays it on the real bar at once), and one chip per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
 
 Each chip group has **Show all / Hide all**.
 
 <p align="center"><img src="screenshots/manual.md/16-appearance-action-bar.jpg" alt="Config, Appearance on its Action bar tab: Show the action buttons, where the bar stands, Button size set to Medium, the key switch, the animation dropdown and the nine button chips" width="860"></p>
-<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the ten buttons are chips.</sub></p>
+<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the eleven buttons are chips.</sub></p>
 
 <a id="168-date-and-weather"></a>
 
@@ -3941,7 +3954,7 @@ Each chip group has **Show all / Hide all**.
 
 - **Clock & weather** — leads the tab: where they stand — beside the view name, in a column of their own, or on their own line.
 - **Date & time** — show date, show time (chips), date format, 12- or 24-hour clock.
-- **Weather** — on or off, **Location source** (a city you type, or *Automatic (by IP)*), Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings.
+- **Weather** — on or off, **Location source** (a city you type, or *Automatic (by IP)*), Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings, and with Fahrenheit the Glances page writes its temperatures in °F too.
 - **Calendar** — **Calendar URL** (the link in the date popover) and **Calendar feed URL (.ics)** (what the Calendar widget reads).
 
 <a id="169-finding-and-resetting"></a>
@@ -3959,7 +3972,7 @@ Each tab has a filter beside **Only changed**. When the filter — or **Only cha
 ## 16A. 🪞 The new look
 
 > [!NOTE]
-> **In short:** every material now has a surface of its own, and cards, headers, menus, dialogs and the side panel are drawn as one design. **Aurora Glass** is the default theme, and every install that ran an earlier release moved onto it once. Your bookmarks, settings and own themes stayed exactly as they were, and the old look is one choice away.
+> **In short:** every material now has a surface of its own, and cards, headers, menus, dialogs and the side panel are drawn as one design. Every install that ran an earlier release moved onto **Aurora Glass** once; a fresh install now starts on Ocean. Your bookmarks, settings and own themes stayed exactly as they were, and the old look is one choice away.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -4014,9 +4027,9 @@ The new look is drawn per material, and the themes were redrawn with it. Keeping
 
 ### 16A.3 Everyone gets Aurora Glass, and the way back
 
-**Aurora Glass** — northern light behind a pane you can see through — is the default theme.
+**Aurora Glass** — northern light behind a pane you can see through — was the default theme of version 1.22.0, and that release moved every existing install onto it.
 
-- **A fresh install** starts on Aurora Glass and sees nothing of what follows.
+- **A fresh install** started on Aurora Glass and saw nothing of what follows. A fresh install now starts on **Ocean** instead, and still sees no dialog.
 - **An existing install** moved onto it **once**, when it first ran this release. It stays on the half it was on: a dark theme became Aurora Glass dark, a light one Aurora Glass light. An install that was already on Aurora Glass moved nowhere and sees no dialog.
 - **What stays.** Your bookmarks, categories, pages, settings and your own themes are exactly as you left them. Only the theme changed, and the theme you had is remembered.
 - **A dialog says so, once.** It names the theme you had and the theme you have now, tells you what changed, and ends with *This message appears once.* It comes before any corner card. The corner cards that invited you to a theme browser, to the clock and weather and to Berry are gone; Berry is no longer the default, so there is nobody to invite.
@@ -4264,7 +4277,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **Guided tours.** Eleven tours run over the real page rather than a picture of it: *What has changed*, *First steps*, *The dashboard*, *The keyboard*, *Inbox*, *Bookmarks view*, *Containers*, *Glances*, *Widgets*, *Monitoring* and *Unraid*. Each is short, four to nine steps, and covers the main things; the rest is in Help. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
-**The dashboard tour.** Ten steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its ten buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; edit mode; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
+**The dashboard tour.** Ten steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; edit mode; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
 
 
 <details>

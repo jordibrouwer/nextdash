@@ -14,6 +14,11 @@
     const ROW_HIDDEN = 'grid-filter-hidden';
     const BLOCK_HIDDEN = 'grid-filter-empty';
     const HIGHLIGHT = 'grid-filter-hit';
+    // A collapsed category with a hit in it, opened while the query lasts.
+    const BLOCK_OPEN = 'grid-filter-open';
+
+    /** The query as words; a row must hold every one of them. */
+    const wordsOf = (query) => String(query || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
 
     class DashboardGridFilter {
         constructor(dashboard) {
@@ -138,6 +143,13 @@
             // not cost you the bar as well as the query.
             input.addEventListener('keydown', (e) => {
                 e.stopPropagation();
+                // Down, or Enter, hands the keyboard to the rows that are left;
+                // Enter on a query that leaves one row opens it.
+                if (e.key === 'ArrowDown' || (e.key === 'Enter' && !e.isComposing)) {
+                    e.preventDefault();
+                    this.toRows({ open: e.key === 'Enter' });
+                    return;
+                }
                 if (e.key === 'Escape') {
                     e.preventDefault();
                     if (this.query) {
@@ -224,6 +236,24 @@
             }
         }
 
+        /** The first row left, selected for the keyboard; opened when it is the only one. */
+        toRows({ open = false } = {}) {
+            const container = document.getElementById('dashboard-layout');
+            const nav = this.dash?.keyboardNavigation;
+            if (!container || !nav?.selectBookmarkRow) return false;
+            const rows = [...container.querySelectorAll('.bookmark-link')].filter((row) => !row.classList.contains(ROW_HIDDEN));
+            nav.updateNavigableElements?.();
+            const first = rows.find((row) => nav.navigableElements?.includes(row));
+            if (!first) return false;
+            document.querySelector('#grid-filter-bar .grid-filter-input')?.blur();
+            nav.selectBookmarkRow(first);
+            // One bookmark, counted by address: a smart collection (Today) can
+            // show the same row a second time.
+            const one = new Set(rows.map((row) => row.getAttribute('data-bookmark-url') || row)).size === 1;
+            if (open && this.query.trim() && one) nav.selectCurrentElement?.();
+            return true;
+        }
+
         /** The text a row is matched against: what you can see, plus its tags. */
         haystack(row) {
             // The row's own text — name, shortcut, whatever else it prints — plus
@@ -250,11 +280,13 @@
             const container = document.getElementById('dashboard-layout');
             if (!container) return 0;
             const query = String(this.query || '').trim().toLowerCase();
+            const words = wordsOf(query);
             const rows = [...container.querySelectorAll('.bookmark-link')];
 
             let shown = 0;
             rows.forEach((row) => {
-                const hit = !query || this.haystack(row).includes(query);
+                const hay = words.length ? this.haystack(row) : '';
+                const hit = words.every((w) => hay.includes(w));
                 row.classList.toggle(ROW_HIDDEN, !hit);
                 if (hit) shown += 1;
             });
@@ -270,6 +302,11 @@
                 const visible = [...block.querySelectorAll('.bookmark-link')]
                     .some((row) => !row.classList.contains(ROW_HIDDEN));
                 block.classList.toggle(BLOCK_HIDDEN, Boolean(query) && !visible);
+                // Collapsed, it would keep its hits out of sight while the
+                // count claims them. Opened by class only: the saved state
+                // stays, and comes back with the empty query.
+                block.classList.toggle(BLOCK_OPEN, Boolean(query) && visible
+                    && block.getAttribute('data-collapsed') === 'true');
             });
 
             /*
@@ -283,7 +320,7 @@
                 block.classList.toggle(BLOCK_HIDDEN, Boolean(query));
             });
 
-            this.highlight(rows, query);
+            this.highlight(rows, words);
 
             const label = document.querySelector('#grid-filter-bar .grid-filter-count');
             if (label) {
@@ -306,10 +343,10 @@
          * its address or a tag, and then there is nothing on it to point at.
          * Without the API (older browsers) the rows just go unmarked.
          */
-        highlight(rows, query) {
+        highlight(rows, words) {
             const registry = typeof CSS !== 'undefined' ? CSS.highlights : null;
             if (!registry || typeof Highlight !== 'function') return;
-            if (!query) {
+            if (!words.length) {
                 registry.delete(HIGHLIGHT);
                 return;
             }
@@ -318,12 +355,16 @@
                 if (row.classList.contains(ROW_HIDDEN)) return;
                 const node = row.querySelector('.bookmark-text')?.firstChild;
                 if (!node || node.nodeType !== Node.TEXT_NODE) return;
-                const at = node.data.toLowerCase().indexOf(query);
-                if (at < 0) return;
-                const range = document.createRange();
-                range.setStart(node, at);
-                range.setEnd(node, at + query.length);
-                ranges.push(range);
+                const text = node.data.toLowerCase();
+                // Each word where it first appears in the name.
+                words.forEach((word) => {
+                    const at = text.indexOf(word);
+                    if (at < 0) return;
+                    const range = document.createRange();
+                    range.setStart(node, at);
+                    range.setEnd(node, at + word.length);
+                    ranges.push(range);
+                });
             });
             registry.set(HIGHLIGHT, new Highlight(...ranges));
         }

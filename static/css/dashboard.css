@@ -839,7 +839,8 @@ body[data-show-recent-button="false"] .header-shortcuts .recent-button,
 body[data-show-pages-button="false"] .header-shortcuts #page-overview-header-btn,
 body[data-show-collapse-all-button="false"] .header-shortcuts #collapse-all-button,
 body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button,
-body[data-show-edit-mode-button="false"] .header-shortcuts #edit-mode-button {
+body[data-show-edit-mode-button="false"] .header-shortcuts #edit-mode-button,
+body[data-show-theme-studio-button="false"] .header-shortcuts #theme-studio-button {
     display: none;
 }
 
@@ -943,6 +944,7 @@ body[data-show-edit-mode-button="false"] .header-shortcuts #edit-mode-button {
 .header-actions .header-shortcuts #collapse-all-button     { order: 8; }
 .header-actions .header-shortcuts #help-button             { order: 9; }
 .header-actions .header-shortcuts #edit-mode-button        { order: 10; }
+.header-actions .header-shortcuts #theme-studio-button     { order: 11; }
 
 /*
  * The groups dissolve, so every button is a sibling of every other.
@@ -5350,27 +5352,27 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     text-align: center;
 }
 
-/* Dashboard toolbar modals — same placement and chrome as search overlay */
+/* Dashboard toolbar modals — centred in the window, as the search overlay is */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal),
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
-    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    padding: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px)) max(1.25rem, 2vw) max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     backdrop-filter: blur(var(--modal-scrim-blur));
     -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
-/* Not a sheet: one that hangs from the header sizes itself against the header
-   row, and a selector this specific would out-shout it. */
+/* Not a sheet: a sheet sizes itself against the header row's width, and a
+   selector this specific would out-shout it. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
     margin: 0;
-    max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
+    max-height: min(70vh, calc(100vh - 4rem));
     transform: var(--modal-enter-from);
     transition: var(--modal-enter-transition);
 }
@@ -5390,8 +5392,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
    search borrows its class and keeps the narrow shell above. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal:not(.config-settings-jump-modal)) .modal {
     width: min(1040px, 94vw);
-    height: min(46rem, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
-    max-height: calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem);
+    height: min(46rem, calc(100vh - 4rem));
+    max-height: calc(100vh - 4rem);
 }
 
 /* The release notes themselves, as against the notices that borrow the shell:
@@ -5400,24 +5402,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-m
    short because the cards and the two columns of fixes divide the width. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal:not(.analytics-notice-modal)) .modal {
     width: min(64rem, calc(100vw - 2.5rem));
-    height: min(52rem, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 4rem));
-    max-height: calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 4rem);
-}
-
-/*
- * Room above the modal as well as below it.
- *
- * The block above leaves 2rem under the modal and nothing over it, and caps the
- * height at 100vh - 2rem — so a modal tall enough to reach its own limit runs
- * into the top edge of the window while sitting a comfortable distance off the
- * bottom. Measured on a 900px window: 868 tall, 32px below, 0 above.
- *
- * The padding is symmetric and the height leaves room for both. Scoped to
- * what's new; recent bookmarks and the cheat sheet share the block above and
- * the same lopsidedness, but neither was what anybody was looking at.
- */
-body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
-    padding-top: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px));
+    height: min(52rem, calc(100vh - 4rem));
+    max-height: calc(100vh - 4rem);
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
@@ -5427,7 +5413,7 @@ body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) 
     transition: var(--modal-enter-transition);
 }
 
-/* The header sheets keep their transform: it is their centring, not motion. */
+/* The sheets move with modalRise (modal.css), not with this transition. */
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
@@ -5521,7 +5507,7 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) {
     -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
 }
 
-/* Not the sheet: it sizes itself against the header row it hangs from, and a
+/* Not the sheet: it sizes itself against the header row's width, and a
    selector this specific would out-shout it. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
     width: min(22rem, calc(100vw - 2.5rem));
@@ -5674,12 +5660,17 @@ body.no-animations .bookmark-move-out {
 
 .omnibox-overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    /* 100vw, not 100%: html's stable scrollbar gutter makes the containing
+       block a scrollbar short, which put the modal off the window's centre. */
+    width: 100vw;
+    height: 100vh;
     z-index: var(--layer-omnibox);
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    padding: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px)) max(1.25rem, 2vw) max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     pointer-events: none;
     opacity: 0;
@@ -6175,6 +6166,16 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
 .category.grid-filter-empty,
 .dashboard-widget.grid-filter-empty {
     display: none !important;
+}
+
+/* A collapsed category with a filter hit opens while the query lasts, so the
+   count and the page agree; data-collapsed (the saved state) is untouched. */
+.category.grid-filter-open[data-collapsed="true"] .category-body {
+    grid-template-rows: 1fr;
+}
+
+.category.grid-filter-open[data-collapsed="true"] .category-body > .bookmarks-list {
+    opacity: 1;
 }
 
 /* "Publishes, but nothing new" — the quiet half of Fresh, off unless asked for.
@@ -9366,44 +9367,119 @@ body[data-header-buttons="plain"] .header-zone-divider {
 /* Last on the row, whatever the buttons in front of it are ordered to. */
 .header-actions .header-shortcuts .header-action-overflow { order: 99; }
 
-/* ── Recents as a sheet under the header ──────────────────────────────────────
-   Same bargain the pages panel makes: it is opened from the band and answers a
-   question about the page under it, so it hangs from the band rather than
-   floating over a dimmed screen. The chrome -- the anchor, the square top
-   corners, the drop -- is .header-sheet in modal.css; what is here is the list.
+/* ── Recents as a sheet ───────────────────────────────────────────────────────
+   Centred like the pages panel; the shared chrome is .header-sheet in
+   modal.css, what is here is the list.
 
-   And the list is drawn the way every list in the product is drawn: rows of
-   52px with the key the reader would type at the head of each one. It was a
-   27rem column of 27px lines, which is what a narrow panel wants and what a
-   band across the page cannot use.
+   The list is two columns of tiles, ten to a page, with a pager in the foot
+   for what was opened before.
    ────────────────────────────────────────────────────────────────────────── */
 
+/*
+ * The sheet is a column of its own, two tiles across: spanning the page's
+ * whole column, three rows of name, category and age were too wide to read.
+ * Each tile leads with the day it was opened, as a calendar block, and says
+ * the weekday, the time, where it lives and how often it was opened.
+ */
+.modal.header-sheet.recents-sheet.is-grid,
+.modal.header-sheet.recents-sheet.is-compact {
+    width: min(46rem, calc(100vw - 2.5rem));
+    min-width: 0;
+    max-width: calc(100vw - 2.5rem);
+}
+
+.modal.header-sheet.recents-sheet.is-single {
+    width: min(26rem, calc(100vw - 2.5rem));
+}
+
 .modal.recents-sheet .recent-bookmarks-modal-list {
-    gap: 0;
-    padding: 0;
-    max-height: min(52vh, 24rem);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem);
+    max-height: min(56vh, 28rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.modal.recents-sheet.is-single .recent-bookmarks-modal-list {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 720px) {
+    .modal.recents-sheet .recent-bookmarks-modal-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 .modal.recents-sheet .recent-bookmarks-modal-item {
-    min-height: 52px;
-    padding: 0 var(--space-3, 0.8rem);
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    align-items: center;
     gap: var(--space-3, 0.75rem);
-    /* key, favicon, name, category, how long ago, opens */
-    grid-template-columns: 4.5ch 1.1rem minmax(0, 1fr) auto auto auto;
+    min-height: 60px;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem) var(--space-2, 0.5rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+/* The calendar block: the day large, the month under it. */
+.recent-bookmarks-modal-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.05;
+    padding-right: var(--space-2, 0.5rem);
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.recent-bookmarks-modal-date b {
+    font-size: calc(var(--font-size-controls) * 1.15);
+    font-variant-numeric: tabular-nums;
+}
+
+.recent-bookmarks-modal-date small {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.recent-bookmarks-modal-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.recent-bookmarks-modal-top,
+.recent-bookmarks-modal-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
 }
 
 .modal.recents-sheet .recent-bookmarks-modal-name {
+    flex: 1 1 auto;
     font-size: var(--font-size-controls);
 }
 
-/*
- * The key column stands whether or not the bookmark has one, so the names line
- * up down the column instead of each starting where the one above it ended.
- */
+/* One line that gives way from the end: the place shortens before the time does. */
+.recent-bookmarks-modal-meta {
+    overflow: hidden;
+}
+
+.recent-bookmarks-modal-meta .recent-bookmarks-modal-detail {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+/* The key the reader would type, at the end of the name line. */
 .recent-bookmarks-modal-shortcut {
-    min-width: 4.5ch;
+    flex-shrink: 0;
     color: var(--accent-primary);
     font-size: calc(var(--font-size-controls) * 0.78);
     font-weight: var(--font-weight-bold);
@@ -9411,44 +9487,126 @@ body[data-header-buttons="plain"] .header-zone-divider {
     font-variant-numeric: tabular-nums;
 }
 
+.recent-bookmarks-modal-shortcut:empty {
+    display: none;
+}
+
 .modal.recents-sheet .recent-bookmarks-modal-recency,
 .modal.recents-sheet .recent-bookmarks-modal-opens {
+    flex-shrink: 0;
     font-variant-numeric: tabular-nums;
 }
 
-/* Wide: the rows lay out across the page's column, three at most. */
-.modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
+/* How often, against the most opened in the list. */
+.recent-bookmarks-modal-bar {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    overflow: hidden;
+}
+
+.recent-bookmarks-modal-bar i {
+    display: block;
+    height: 100%;
+    background: var(--accent-primary);
+    opacity: 0.8;
+}
+
+/* The open buttons are a quiet row under the tiles, not the loudest thing on the sheet. */
+.modal.recents-sheet .recent-bookmarks-open-btn.modal-button {
+    padding: 0.1rem 0.5rem;
+}
+
+.modal.recents-sheet .recent-bookmarks-open-btn .modal-button-name {
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: var(--font-weight-medium, 500);
+}
+
+/* The buttons centred over the pager, the command that does the same at the end. */
+.modal.recents-sheet .recent-bookmarks-modal-toolbar {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
-    overflow-y: auto;
-    min-height: 0;
+    grid-template-columns: 1fr auto 1fr;
 }
 
-.modal.recents-sheet.is-grid .recent-bookmarks-modal-item {
-    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+.modal.recents-sheet .recent-bookmarks-modal-toolbar .recent-bookmarks-open-actions {
+    grid-column: 2;
+    justify-content: center;
 }
 
-@media (max-width: 1100px) {
-    .modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
-        grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
-    }
+.modal.recents-sheet .recent-bookmarks-modal-toolbar .recent-bookmarks-open-hint {
+    grid-column: 3;
+    justify-self: end;
 }
 
-@media (max-width: 720px) {
-    .modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
-        grid-template-columns: minmax(0, 1fr);
-    }
+/* With a pager the foot has three parts: the pager in the middle, ↵ open at the end. */
+.modal.recents-sheet .recent-bookmarks-modal-foot:has(.recent-bookmarks-pager) {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
 }
 
-/* Narrow: as wide as what it holds, rows side by side while they fit. */
-.modal.recents-sheet.is-compact .recent-bookmarks-modal-list {
+.modal.recents-sheet .recent-bookmarks-modal-foot .recent-bookmarks-pager {
+    grid-column: 2;
+    justify-content: center;
+}
+
+.modal.recents-sheet .recent-bookmarks-modal-foot:has(.recent-bookmarks-pager) > :last-child {
+    grid-column: 3;
+    justify-self: end;
+}
+
+/* Earlier bookmarks: "11–20 of 34", the pages, and the keys that turn them. */
+.recent-bookmarks-pager {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
 }
 
-.modal.recents-sheet.is-compact .recent-bookmarks-modal-item {
-    flex: 1 1 18rem;
-    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+.recent-bookmarks-page-range {
+    margin-right: var(--space-2, 0.5rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.recent-bookmarks-page-btn {
+    min-width: 1.9em;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--radius-3, 4px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.recent-bookmarks-page-btn:hover:not(:disabled),
+.recent-bookmarks-page-btn:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.recent-bookmarks-page-btn.is-current {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+}
+
+.recent-bookmarks-page-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.recent-bookmarks-page-gap {
+    color: var(--text-tertiary);
+    padding: 0 0.15rem;
+}
+
+.recent-bookmarks-page-keys {
+    display: inline-flex;
+    gap: 0.2rem;
+    margin-left: var(--space-2, 0.5rem);
 }
 
 /*

@@ -473,6 +473,7 @@ type Settings struct {
 	ShowSearchFlowBanner            bool           `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool           `json:"showCheatSheetButton"`
 	ShowEditModeButton              bool           `json:"showEditModeButton"`
+	ShowThemeStudioButton           bool           `json:"showThemeStudioButton"`
 	ShowCollapseAllButton           bool           `json:"showCollapseAllButton"`
 	ShowStatus                      bool           `json:"showStatus"`
 	ColorizeStatus                  bool           `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
@@ -494,7 +495,7 @@ type Settings struct {
 	ShowPageInTitle                 bool           `json:"showPageInTitle"`                         // Show current page name in title
 	ShowPageNamesInTabs             bool           `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
 	MaxPageTabs                     int            `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
-	MaxHeaderActions                int            `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-10)
+	MaxHeaderActions                int            `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-11)
 	PageSwitcherTextMigrated        bool           `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
 	PageSwitcherClassicMigrated     bool           `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
 	HeaderClockPlacement            string         `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
@@ -1204,10 +1205,18 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "aurora-glass-dark"
+const defaultThemeID = "look-ocean-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "aurora-glass-light"
+const defaultThemeLightID = "look-ocean-light"
+
+// auroraGlassThemeID and auroraGlassThemeLightID are where the one-time move of
+// v1.22.0 puts an install (migrateToAuroraGlass). They were the defaults then;
+// the move keeps them so its dialog still tells the truth.
+const (
+	auroraGlassThemeID      = "aurora-glass-dark"
+	auroraGlassThemeLightID = "aurora-glass-light"
+)
 
 /*
 The fallback depth and glow.
@@ -1791,6 +1800,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowSearchFlowBanner:            true,
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
+			ShowThemeStudioButton:           true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
@@ -3597,16 +3607,16 @@ const (
 /*
 How many actions the header shows before it folds the rest away.
 
-The bar holds up to nine buttons and most readers use three or four of
+The bar holds up to eleven buttons and most readers use three or four of
 them. Past this many the rest go behind one control that says how many it
 holds -- the same bargain the page tabs make with their "+N" chip, and for
-the same reason: a row of nine identical glyphs is a row nobody reads.
+the same reason: a row of eleven identical glyphs is a row nobody reads.
 
 Zero is a real answer: every action behind the one control.
 */
 const (
 	minHeaderActions        = 0
-	maxHeaderActionsCap     = 10
+	maxHeaderActionsCap     = 11
 	defaultMaxHeaderActions = 2
 )
 
@@ -4450,6 +4460,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowSearchFlowBanner:            true,
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
+			ShowThemeStudioButton:           true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
@@ -4660,6 +4671,9 @@ func (fs *FileStore) GetSettings() Settings {
 		// On unless turned off: a file written before the button existed never answered.
 		if _, ok := rawSettings["showEditModeButton"]; !ok {
 			settings.ShowEditModeButton = true
+		}
+		if _, ok := rawSettings["showThemeStudioButton"]; !ok {
+			settings.ShowThemeStudioButton = true
 		}
 		// The Bookmarks view's switches that are on unless turned off: a file
 		// written before they existed never answered.
@@ -7320,17 +7334,19 @@ type LookMigration struct {
 
 // migrateToAuroraGlass puts an install on Aurora Glass, on the half it was on, and records the
 // theme it had. An install already on Aurora Glass has nothing to explain and gets no dialog.
+// Neither does one on the default theme: a file that names no theme is given the default before
+// this runs, and should end where a fresh install does.
 func migrateToAuroraGlass(settings *Settings, now int64) {
 	settings.AuroraGlassMigrated = true
 	from := settings.Theme
-	if strings.HasPrefix(from, "aurora-glass-") {
+	if from == "" || from == defaultThemeID || from == defaultThemeLightID || strings.HasPrefix(from, "aurora-glass-") {
 		return
 	}
 	light := strings.HasSuffix(from, "-light") || from == "light"
 	if light {
-		settings.Theme = defaultThemeLightID
+		settings.Theme = auroraGlassThemeLightID
 	} else {
-		settings.Theme = defaultThemeID
+		settings.Theme = auroraGlassThemeID
 	}
 	settings.LookMigration = &LookMigration{From: from, Pending: true, At: now}
 }

@@ -1,17 +1,19 @@
 /* Search Component Styles */
 
-/* Shortcut Search - anchored above bottom toolbar (classic + shared) */
+/* Shortcut Search - centred in the window, like every dashboard modal */
 .shortcut-search {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    /* 100vw, not 100%: html's stable scrollbar gutter makes the containing
+       block a scrollbar short, which put the modal off the window's centre. */
+    width: 100vw;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    padding: 0 max(1.25rem, 2vw) calc(var(--dashboard-toolbar-stack, 5.75rem) + env(safe-area-inset-bottom, 0px));
+    justify-content: center;
+    padding: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px)) max(1.25rem, 2vw) max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     z-index: 2000;
     opacity: 0;
@@ -45,15 +47,14 @@
 .search-container {
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
+    /* The panel every modal is (.modal in modal.css): same ground, corner and cast. */
     border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
-    border-radius: var(--radius-5, 8px);
-    background: color-mix(in srgb, var(--background-modal) 90%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 24px 64px color-mix(in srgb, black 60%, transparent);
+    border-radius: var(--layout-radius-md, 12px);
+    background: var(--background-modal);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
-    max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
+    max-height: min(70vh, calc(100vh - 4rem));
     overflow: hidden;
     box-sizing: border-box;
     /* Rises and grows in like the add-bookmark form (modal.css). */
@@ -99,9 +100,10 @@ body.no-view-animations .shortcut-search.show .search-container.from-origin {
  * two parts rather than one column of things.
  */
 .search-prompt {
+    --search-prompt-gap: 0.85rem;
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: var(--search-prompt-gap);
     padding: var(--space-4, 1rem);
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
     font-size: var(--font-size-bookmark);
@@ -171,8 +173,13 @@ body.no-view-animations .shortcut-search.show .search-container.from-origin {
 .search-cursor {
     font-family: var(--font-family-main);
     animation: blink 1s infinite;
-    margin-left: var(--space-1, 0.25rem);
     color: var(--text-primary);
+}
+
+/* Right after the last typed character, as in a terminal: the row's gap is
+   for the pill and the clear button, not for the text and its cursor. */
+.search-query:not(:empty) + .search-cursor {
+    margin-left: calc(-1 * var(--search-prompt-gap));
 }
 
 @keyframes blink {
@@ -209,6 +216,20 @@ body.no-view-animations .shortcut-search.show .search-container.from-origin {
     position: relative;
     width: 100%;
     scrollbar-width: none;
+}
+
+/* On the slab the other overlays put their lists on (modal.css), inset from
+   the panel's edge as the recents list is. The gap at the top is the body's,
+   so the rail and the list still start on one line. */
+body:not([data-depth="flat"]) .shortcut-search .search-body {
+    padding-top: var(--space-3, 0.75rem);
+}
+
+body:not([data-depth="flat"]) .shortcut-search .search-matches {
+    width: auto;
+    margin: 0 var(--space-3, 0.75rem) var(--space-3, 0.75rem) 0;
+    padding-left: var(--space-1, 0.3rem);
+    padding-right: var(--space-1, 0.3rem);
 }
 
 @media (max-width: 575px) {
@@ -1303,12 +1324,15 @@ body:not([data-depth="flat"]) .button-container:has(> *) {
     text-align: left;
     box-shadow: none;
     background: transparent;
+    /* Secondary, not tertiary: the rail is a list to read and aim at, and in
+       the tertiary ink the scopes you are not in all but disappeared. */
+    color: var(--text-secondary);
 }
 
 .search-scope.search-mode-tab:hover {
     border: 0;
     background: color-mix(in srgb, var(--text-primary) 5%, transparent);
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 /* The one it is in: a bar on the edge it is attached to, not an outline. */
@@ -1329,7 +1353,7 @@ body:not([data-depth="flat"]) .button-container:has(> *) {
 }
 
 .search-scope .search-mode-tab-key {
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-size: calc(var(--font-size-controls) * 0.85);
 }
 
@@ -1345,8 +1369,8 @@ body:not([data-depth="flat"]) .button-container:has(> *) {
 
 /* A kind the query does not reach is dimmed rather than removed: a rail that
    changes length while you type is a rail you cannot aim at. */
-.search-scope.is-empty {
-    opacity: 0.35;
+.search-scope.is-empty:not(.active) {
+    opacity: 0.6;
 }
 
 .search-scope-rule {
@@ -1355,11 +1379,28 @@ body:not([data-depth="flat"]) .button-container:has(> *) {
     background: color-mix(in srgb, var(--border-primary) 45%, transparent);
 }
 
+/* A row like the scopes above it: same columns, same padding, quieter ink. */
 .search-scope-hint {
-    padding: var(--space-1, 0.2rem) var(--space-3, 0.8rem);
+    display: grid;
+    grid-template-columns: 1.2rem minmax(0, 1fr);
+    gap: var(--space-2, 0.45rem);
+    align-items: center;
+    padding: 0.3rem var(--space-3, 0.8rem);
     color: var(--text-tertiary);
-    font-size: calc(var(--font-size-controls) * 0.75);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.8);
     line-height: 1.35;
+}
+
+/* Bare like the keys above it, not the boxed <kbd> of the legends. */
+.search-scope-hint kbd {
+    font-family: inherit;
+    color: var(--text-tertiary);
+    background: none;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    min-width: 0;
 }
 
 /* The heading over a kind's rows: what they are, and how many there are in all. */

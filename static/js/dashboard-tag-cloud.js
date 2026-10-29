@@ -814,7 +814,7 @@
             return area;
         },
 
-        /** Centred in what the window leaves it, a little above the middle. */
+        /** Centred in the window like every dashboard modal, kept clear of the bar. */
         positionModal() {
             if (!this.modal) return;
             const margin = 16;
@@ -830,8 +830,9 @@
 
             this.syncModalSize(Math.min(areaH, Math.round(window.innerHeight * 0.8)));
             const height = this.modal.offsetHeight || 240;
-            const left = area.left + (areaW - width) / 2;
-            const top = area.top + Math.max(0, (areaH - height) * 0.42);
+            const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), Math.max(lo, hi));
+            const left = clamp((window.innerWidth - width) / 2, area.left, area.right - width);
+            const top = clamp((window.innerHeight - height) / 2, area.top, area.bottom - height);
 
             this.modal.style.left = `${Math.round(left)}px`;
             this.modal.style.right = 'auto';

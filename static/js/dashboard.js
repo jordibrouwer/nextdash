@@ -79,7 +79,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'aurora-glass-dark',
+            theme: 'look-ocean-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
@@ -93,6 +93,7 @@ class Dashboard {
 
             showCheatSheetButton: false,
             showEditModeButton: true,
+            showThemeStudioButton: true,
             showCollapseAllButton: false,
             showAddBookmarkButton: true,
             showStatus: true,
@@ -530,7 +531,8 @@ class Dashboard {
             } else if (bootHash.startsWith('tag/') && this.activeView !== 'tags') {
                 // A tag's view, from a shared link or a reload.
                 const tags = window.TagViewModel?.tagsFromHash?.(bootHash) || [];
-                if (tags.length) await this.tagView?.openTagView?.(tags, { fromHash: true });
+                const mode = window.TagViewModel?.modeFromHash?.(bootHash) || 'any';
+                if (tags.length) await this.tagView?.openTagView?.(tags, { fromHash: true, mode });
             }
 
             if (this.config?.isEnabled?.()
@@ -1110,11 +1112,12 @@ class Dashboard {
             // set of tags, not a new view.
             if (hash.startsWith('tag/')) {
                 const tags = window.TagViewModel?.tagsFromHash?.(hash) || [];
+                const mode = window.TagViewModel?.modeFromHash?.(hash) || 'any';
                 if (!tags.length) return;
                 if (this.activeView === 'tags') {
-                    return this.tagView?.updateTags?.(tags, { fromHash: true });
+                    return this.tagView?.updateTags?.(tags, { fromHash: true, mode });
                 }
-                return this.tagView?.openTagView?.(tags, { fromHash: true });
+                return this.tagView?.openTagView?.(tags, { fromHash: true, mode });
             }
             // The Health view's old address: the Bookmarks view, on its filter.
             if (hash === 'health' || hash.startsWith('health/')) {

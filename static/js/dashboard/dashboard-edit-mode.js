@@ -257,6 +257,9 @@ class DashboardEditMode {
 
     _handleClick(e) {
         if (!this.active || !this._onGrid()) return;
+        // The right button's auxclick comes after its contextmenu: selecting the
+        // block then redraws the panel, and that closes the menu just opened.
+        if (e.type === 'auxclick' && e.button === 2) return;
         const target = e.target instanceof Element ? e.target : null;
         if (!target || !target.closest('#dashboard-layout')) return;
         // What opens something: a bookmark, a widget row, any link. Taken, so

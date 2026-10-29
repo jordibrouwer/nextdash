@@ -715,7 +715,8 @@ class KeyboardNavigation {
         if (!row || row.classList.contains('bookmark-inline-editing')) {
             return false;
         }
-        if (row.classList.contains('recent-bookmark-link') || row.classList.contains('launcher-dim') || row.classList.contains('find-hidden')) {
+        if (row.classList.contains('recent-bookmark-link') || row.classList.contains('launcher-dim') || row.classList.contains('find-hidden')
+            || row.classList.contains('grid-filter-hidden')) {
             return false;
         }
         // Rows past the category item limit are display:none; selecting one would
@@ -725,7 +726,8 @@ class KeyboardNavigation {
             return false;
         }
         const category = row.closest('.category');
-        if (category && category.getAttribute('data-collapsed') === 'true') {
+        // A collapsed category the page filter opened for its hits counts as open.
+        if (category && category.getAttribute('data-collapsed') === 'true' && !category.classList.contains('grid-filter-open')) {
             return false;
         }
         return true;

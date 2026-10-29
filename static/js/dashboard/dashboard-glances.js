@@ -187,6 +187,26 @@
             return '';
         }
 
+        /**
+         * A temperature as the reader reads them. Glances reports Celsius and
+         * the lines (G.tone) stay in Celsius; only what is written changes,
+         * following the weather's unit -- the one temperature setting there is.
+         */
+        static formatTemp(celsius, { unit = false } = {}) {
+            const value = DashboardGlances.tempNumber(celsius);
+            if (value === null) return DashboardGlances.DASH;
+            const fahrenheit = window.dashboardInstance?.settings?.weatherUnit === 'fahrenheit';
+            return `${value}°${unit ? (fahrenheit ? 'F' : 'C') : ''}`;
+        }
+
+        /** formatTemp's number alone, for a sentence that writes its own degree sign. */
+        static tempNumber(celsius) {
+            const c = DashboardGlances.num(celsius);
+            if (c === null) return null;
+            const fahrenheit = window.dashboardInstance?.settings?.weatherUnit === 'fahrenheit';
+            return Math.round(fahrenheit ? c * 9 / 5 + 32 : c);
+        }
+
         static formatBytes(bytes) {
             const n0 = DashboardGlances.num(bytes);
             if (n0 === null) return DashboardGlances.DASH;
@@ -1333,7 +1353,7 @@
                 ? sensors.filter((s) => String(s?.type || '').startsWith('temperature')).map((s) => G.num(s.value)).filter((n) => n !== null) : [];
             if (temps.length) {
                 const hottest = Math.max(...temps);
-                entries.push({ key: 'temp', label: this.t('dashboard.glancesSummaryTemp', 'Hottest sensor'), value: `${Math.round(hottest)} °C`, tone: G.tone(hottest, 'temp') });
+                entries.push({ key: 'temp', label: this.t('dashboard.glancesSummaryTemp', 'Hottest sensor'), value: G.formatTemp(hottest, { unit: true }), tone: G.tone(hottest, 'temp') });
             }
             const alerts = this._alertCount || 0;
             entries.push({ key: 'alerts', label: this.t('dashboard.glancesSectionAlerts', 'Alerts'), value: String(alerts), tone: alerts ? 'bad' : 'good' });

@@ -9100,7 +9100,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'aurora-glass-dark' },
+        theme: { def: 'look-ocean-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -9181,6 +9181,7 @@ class DashboardConfig {
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
         showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
         showEditModeButton: { info: ['showEditModeButtonInfoTitle', 'showEditModeButtonInfoMessage'], def: true },
+        showThemeStudioButton: { info: ['showThemeStudioButtonInfoTitle', 'showThemeStudioButtonInfoMessage'], def: true },
         showCollapseAllButton: { info: ['showCollapseAllButtonInfoTitle', 'showCollapseAllButtonInfoMessage'], def: true },
         showConfigButton: { info: ['showConfigButtonInfoTitle', 'showConfigButtonInfoMessage'], def: true },
         showAddBookmarkButton: { info: ['showAddBookmarkButtonInfoTitle', 'showAddBookmarkButtonInfoMessage'], def: true },
@@ -10394,7 +10395,7 @@ class DashboardConfig {
                             opt('l', t('config.actionBarSizeL', 'Large')),
                             opt('xl', t('config.actionBarSizeXl', 'Extra large')),
                         ] },
-                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 10, step: 1, special: 'chrome',
+                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 11, step: 1, special: 'chrome',
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
                     // A select rather than six cards that each played the
@@ -10412,7 +10413,7 @@ class DashboardConfig {
                             opt('accordion', t('config.actionBarIntroAccordion', 'Accordion')),
                         ] },
                     { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
-                        label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),
+                        label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after loading'),
                         options: [
                             opt(0, t('config.actionBarAutoHideNever', 'Always in view')),
                             opt(2, t('config.actionBarAutoHide2', '2 seconds')),
@@ -10431,6 +10432,7 @@ class DashboardConfig {
                         chip('showCollapseAllButton', 'chrome', 'config.chipCollapseAll', 'Fold all', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
                         chip('showCheatSheetButton', 'chrome', 'config.chipCheatSheet', 'Cheat sheet', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
                         chip('showEditModeButton', 'chrome', 'config.chipEditMode', 'Edit mode', 'config.showEditModeButtonLabel', 'Show the edit-mode button'),
+                        chip('showThemeStudioButton', 'chrome', 'config.chipThemeStudio', 'Theme studio', 'config.showThemeStudioButtonLabel', 'Show the theme-studio button'),
                     ] },
                 ],
             },

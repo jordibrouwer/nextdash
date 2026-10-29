@@ -349,6 +349,16 @@
                         <span class="search-button-label" data-i18n="dashboard.headerEditLabel">edit</span>
                         <span class="search-button-icon" aria-hidden="true">⇧M</span>
                     </button>
+                    <button id="theme-studio-button" type="button" class="search-button theme-studio-button" data-i18n-aria="dashboard.themeStudioAria" aria-label="Open the theme studio" title="Open the theme studio (Shift + A)">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8Z"/>
+                            <circle cx="7.5" cy="11.5" r="1"/>
+                            <circle cx="10.5" cy="7.5" r="1"/>
+                            <circle cx="15.5" cy="8.5" r="1"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.headerThemeLabel">theme</span>
+                        <span class="search-button-icon" aria-hidden="true">⇧A</span>
+                    </button>
                 </div>
                     </div>
                     <span class="header-zone-divider" aria-hidden="true"></span>
@@ -480,7 +490,13 @@
                         <span class="search-mode-tab-label" data-i18n="dashboard.headerCheatLabel">keys</span>
                         <span class="search-scope-count"></span>
                     </button>
-                    <span class="search-scope-hint" data-i18n="dashboard.scopeRailHint">tab switches</span>
+                    <!-- In the rows' own grid, so the key stands under the keys and the
+                         word under the names. The key is what is on the keyboard and
+                         stays untranslated; only the word is a locale string. -->
+                    <span class="search-scope-hint" aria-hidden="true">
+                        <kbd class="search-mode-tab-key">⇥</kbd>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.scopeRailHintLabel">switches</span>
+                    </span>
                 </nav>
                 <div id="search-matches" class="search-matches"></div>
             </div>
