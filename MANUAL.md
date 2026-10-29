@@ -937,6 +937,7 @@ The header has three zones.
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
 | Edit | `Shift + M` (no bookmark selected) | Edit mode ([see below](#edit-mode)) |
+| Theme studio | `Shift + A` | The theme studio ([§16.1](#the-theme-studio)); last in the bar, and left out on a phone |
 
 Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
 
@@ -953,15 +954,15 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 
 **How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§16A](#16a-the-new-look)). A docked bar stands apart from the cards it slides over: a layer of the surface colour goes over the material's paint, with an edge that leans to the accent. A button that is on is filled with the accent, as the lit view in the header is.
 
-**A bar that slides away.** **Slide a docked bar away after** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The bar comes back when the pointer touches that edge or when focus moves into it, and then slides away again after the delay. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
+**A bar that slides away.** **Slide a docked bar away after loading** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The delay counts after a load and after you used the keyboard. The bar comes back when the pointer rests for a moment anywhere along that edge (or on its handle), or when focus moves into it; a quick pass on the way to the Dock or the scrollbar leaves it away. Called back with the mouse, it slides away shortly after the pointer leaves it, whatever the delay is. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
 
 While it is away, a small **handle** stands on that edge, so the place it came from stays visible. It grows and brightens as the pointer comes near, and a click on it brings the bar back. There is no handle for a bar in the header or behind the menu, and none on a touch screen, where nothing hovers.
 
-**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of ten chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
+**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of eleven chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
 
 **Buttons that come into view.** **Animate the buttons as the bar appears** is off to begin with. Its cards offer five styles: **Swell** (each button grows past its size and settles back, left to right), **Swell from the middle**, **Swell together**, **Unfold** (the bar opens and the buttons pop in) and **Accordion** (the bar opens from the middle and the buttons pop out to both ends). Point at a card, or move the focus to it, and its small bar plays that style; pick one and the real bar plays it at once. From then on it plays each time the bar comes into view: after a load — once no window, card or tour covers the screen — and each time it comes back from the edge it slid into. With reduced motion set in your system, the buttons simply appear.
 
-`:buttons` and `:maxactions` change these from the command palette.
+`:buttons` and `:maxactions` change these from the command palette; `:buttons theme` switches the theme studio button.
 
 The **★** button in the bottom-right corner opens the release notes. It is left out on a window as narrow as a phone; `:whatsnew` and Help still open them.
 
@@ -1230,7 +1231,7 @@ Every open — from the grid, search, the recent panel or the Bookmarks view —
 
 ### 🕘 Recent bookmarks (`*`)
 
-A sheet under the header with what you opened recently, from **every page**, newest first. Each bookmark is a tile, two across:
+A sheet in the middle of the window with what you opened recently, from **every page**, newest first. Each bookmark is a tile, two across:
 
 - a calendar block with the day and month it was last opened;
 - the name and its shortcut;
@@ -1412,7 +1413,7 @@ While a panel is open, the grid behind it does not react. `Tab` stays inside the
 > [!NOTE]
 > **In short:** one panel with three modes: type to search your bookmarks, `:` for commands, `?` for finders that search another site. Filters narrow it, and it can reach other pages and the web.
 
-Search, commands and finders are three modes of one panel.
+Search, commands and finders are three modes of one panel, which opens in the middle of the window like every other dashboard modal (only the theme studio stays docked at the side, so the page it previews stays in view). A rail on its left lists the modes; the one you are in is marked, and a mode your words do not reach is dimmed. `Tab` switches between them.
 
 ```
 >  search     — your bookmarks, with filters
@@ -3673,7 +3674,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 **Label left, control right.** A setting's label and one-line explanation stand on the left and its control on the right, in one shared column. A longer explanation is cut with an ellipsis and stays whole in its tooltip and the ℹ. Under 600 px the control goes under its label.
 
-**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (ten buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
+**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (eleven buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
 
 **The preview.** Beside the settings stands a small drawing of your dashboard — header, grid, a few rows and the action dock. It follows every change as you make it, in your own theme and font, and marks the part the open tab is about: the grid on Grid, the rows on Rows, the header on Header, the clock on Date & weather, the buttons on Action bar. On a narrow window it moves above the settings.
 
@@ -3940,12 +3941,12 @@ Small drawings beside the shape settings show what a value looks like.
 See [§4](#4-the-dashboard) for what each part does. The settings:
 
 - **Header** tab, panels **Header** and **Browser tab & branding** — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and chips for the dashboard, inbox, config and Bookmarks-view buttons. The browser tab sits in the second panel: the page name in the browser title, a custom title and the favicon upload, also used when nextDash is installed as an app. Where the clock and weather stand is set on Date & weather ([§16.8](#168-date-and-weather)).
-- **Action bar** tab — **Show the action buttons** leads, since it decides whether the rest matters; then where the fixed buttons stand (a column on the right by default), **Button size** (extra small to extra large; medium by default, one step up from the 28 px squares the bar had, which are now *small*), action buttons before *+N*, show the key on each button (off for new installs), slide a docked bar away (2 seconds by default), how the buttons come into view each time the bar appears (off by default; a dropdown — picking a style plays it on the real bar at once), and one chip per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
+- **Action bar** tab — **Show the action buttons** leads, since it decides whether the rest matters; then where the fixed buttons stand (a column on the right by default), **Button size** (extra small to extra large; medium by default, one step up from the 28 px squares the bar had, which are now *small*), action buttons before *+N*, show the key on each button (off for new installs), slide a docked bar away after loading (2 seconds by default), how the buttons come into view each time the bar appears (off by default; a dropdown — picking a style plays it on the real bar at once), and one chip per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
 
 Each chip group has **Show all / Hide all**.
 
 <p align="center"><img src="screenshots/manual.md/16-appearance-action-bar.jpg" alt="Config, Appearance on its Action bar tab: Show the action buttons, where the bar stands, Button size set to Medium, the key switch, the animation dropdown and the nine button chips" width="860"></p>
-<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the ten buttons are chips.</sub></p>
+<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the eleven buttons are chips.</sub></p>
 
 <a id="168-date-and-weather"></a>
 
@@ -4276,7 +4277,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **Guided tours.** Eleven tours run over the real page rather than a picture of it: *What has changed*, *First steps*, *The dashboard*, *The keyboard*, *Inbox*, *Bookmarks view*, *Containers*, *Glances*, *Widgets*, *Monitoring* and *Unraid*. Each is short, four to nine steps, and covers the main things; the rest is in Help. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
-**The dashboard tour.** Ten steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its ten buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; edit mode; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
+**The dashboard tour.** Ten steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; the mouse, with the menus of the right button on a bookmark and on a category title; typing to search; two keys to open and Shift to act; edit mode; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
 
 
 <details>

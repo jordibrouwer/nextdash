@@ -199,6 +199,7 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 
 - **MANUAL.md** describes the Recent sheet (tiles, pager, `[` `]`), the page filter's several words, `↓`/Enter and collapsed hits, the tag view's any/all switch (`?all`), *Add tag…*, Score sort and remembered sort, the Collection menu's keys, the Inbox tile's *asleep* line, the Glances Hosts table (trouble first, sorting, mount, last-hour line, °F) and Ocean as the fresh-install theme.
 - **Manual screenshots** retaken on a fresh seed: the Recent sheet, the edit-mode panel, Glances Hosts and every dashboard modal in the dashboard font. The shot kit now sets Celsius (the demo seed is Fahrenheit, which put "16°F" in Leiden's header and °F on the Glances page), and the Glances mock sends `cpuHour` for the Hosts graph.
+- **MANUAL.md** has the theme studio button (the eleventh), the slide-away setting's new name and how a docked bar answers the mouse, Recent and the search panel in the middle of the window, and the search panel's rail. The screenshots are retaken with the eleven-button bar, the centred modals and the readable rail; the action-bar shot presses `'` only when the bar has gone, since on a bar still out it sends it away.
 
 ---
 
