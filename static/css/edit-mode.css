@@ -27,12 +27,12 @@ body[data-edit-mode="on"] #dashboard-layout .dashboard-widget-row {
 
 /*
  * The panel at the right is the side panel the views use (list-view-drawer.js,
- * styled by list-view-shell.css): a slab 24rem wide with a step of margin. The
+ * styled by list-view-shell.css): a slab 27rem wide (wider than the views' 24rem: it holds forms) with a step of margin. The
  * grid gives up that width while it is open, so the panel does not sit over
  * the blocks that are being edited.
  */
 body {
-    --edit-mode-panel-width: calc(24rem + 2 * var(--space-4, 1rem));
+    --edit-mode-panel-width: calc(27rem + 2 * var(--space-4, 1rem));
 }
 
 /* On the container around the grid: the grid has a width of its own, and a margin on it did not shrink it. */
@@ -89,4 +89,78 @@ body[data-edit-mode="on"] #dashboard-layout .category {
 
 body[data-edit-mode="on"] #dashboard-layout .category.is-edit-selected {
     outline: 2px solid var(--accent-primary);
+}
+
+/*
+ * The panel reads at the size of the rest of Config, not the small print of the
+ * Bookmarks view's side panel: labels, fields, notes and buttons at the text
+ * size, labels in plain case so they do not shrink to capitals.
+ */
+[data-lvs-drawer="edit-mode"] .lvs-drawer-frame {
+    width: 27rem;
+}
+
+#edit-mode-panel {
+    font-size: var(--font-size-text);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.8rem);
+}
+
+#edit-mode-panel [data-edit-section] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.8rem);
+}
+
+#edit-mode-panel .config-bm-field-label {
+    font-size: var(--font-size-text);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-primary);
+}
+
+#edit-mode-panel :is(.config-text, .config-select, .config-btn) {
+    font-size: var(--font-size-text);
+}
+
+#edit-mode-panel .edit-panel-note {
+    margin: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+}
+
+/* What is known about the block, as label and value. */
+.edit-panel-facts {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding-bottom: var(--space-3, 0.8rem);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.edit-panel-facts > div {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr);
+    gap: 0.6rem;
+}
+
+.edit-panel-facts dt {
+    color: var(--text-secondary);
+}
+
+.edit-panel-facts dd {
+    margin: 0;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+
+/* What the block's menu offers, one press away. */
+.edit-panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: var(--space-3, 0.8rem);
+    border-top: 1px solid var(--border-primary);
 }

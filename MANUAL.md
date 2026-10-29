@@ -979,11 +979,11 @@ Edit mode changes the dashboard itself without a trip to Config: names, icons, w
 
 | You select | The panel offers |
 |------------|------------------|
-| A category | Name, icon, width (one column or spread), view (rows or tiles) and sorting |
-| A widget | Name, width and state; **Settings…** opens the sheet of Config → Widgets over the dashboard, with the same fields |
-| A page | Name, emoji and colour |
+| A category | What is in it (bookmarks, opened this week, broken), then name, icon, width (one column or spread), view (rows or tiles) and sorting; buttons **Add bookmark**, **Move to page…** and **Delete** |
+| A widget | Its type and what it shows, the main things set on it, then name, width and state; buttons **Settings…** (the sheet of Config → Widgets over the dashboard, with the same fields), **Move to page…** and **Delete** |
+| A page | How many categories, bookmarks and widgets it has, then name, emoji and colour; buttons **Add category** (on the page in view) and **Delete page** (every page but the first) |
 
-A category or widget that is deleted somewhere else clears the panel, and the panel says so.
+The buttons do what the right-click menu of the block does, with the same question before a delete. A width that cannot be chosen is greyed out and says why under the field: spreading needs a limit on items per category (Config → Appearance), at least two columns, and a layout that is not locked. A category or widget that is deleted somewhere else clears the panel, and the panel says so.
 
 <p align="center"><img src="screenshots/manual.md/04-edit-mode.jpg" alt="The dashboard in edit mode: a bar at the top, a dashed outline on every block, the Code category chosen and its panel at the right with name, icon, width, view and sorting" width="860"></p>
 <p align="center"><sub>Edit mode with the Code category chosen: its panel opens at the right.</sub></p>

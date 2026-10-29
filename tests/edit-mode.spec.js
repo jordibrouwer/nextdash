@@ -177,6 +177,68 @@ test.describe('edit mode: the panel', () => {
         await expect(page.locator(`.category[data-category-id="${id}"]`)).not.toHaveAttribute('data-collapsed', 'true');
     });
 
+    test('a category shows what is in it, and has the buttons its menu has', async ({ page, request }) => {
+        const id = await makeCategory(request, 'EM Facts');
+        await loadDashboard(page);
+        await select(page, id);
+        const facts = panel(page).locator('.edit-panel-facts');
+        await expect(facts).toContainText('Bookmarks');
+        await expect(facts.locator('div', { hasText: 'Bookmarks' }).locator('dd')).toHaveText('1');
+        await expect(facts).toContainText('Opened this week');
+        // The count of broken links comes from the Health report, a moment later.
+        await expect(facts.locator('[data-edit-broken]')).toHaveText(/^\d+$/);
+        for (const action of ['add-bookmark', 'delete']) {
+            await expect(panel(page).locator(`[data-edit-action="${action}"]`)).toBeVisible();
+        }
+    });
+
+    test('Delete in the panel asks, deletes the category and closes the panel', async ({ page, request }) => {
+        const id = await makeCategory(request, 'EM Gone');
+        await loadDashboard(page);
+        await select(page, id);
+        // The question is asked the way the menu asks it; answered yes here, as the other delete specs do.
+        await page.evaluate(() => { window.__asked = null; window.AppModal.danger = async (opts) => { window.__asked = opts?.message || true; return true; }; });
+        await panel(page).locator('[data-edit-action="delete"]').click();
+        await expect.poll(() => page.evaluate(() => window.__asked)).toBeTruthy();
+        // Its bookmark stays, under "unknown category" with the same id: the category is what is gone.
+        await expect.poll(() => stored(request, id)).toBeUndefined();
+        await expect(panel(page)).toHaveCount(0);
+    });
+
+    test('a page shows how many categories, bookmarks and widgets it has; page 1 cannot be deleted', async ({ page }) => {
+        await loadDashboard(page);
+        await page.keyboard.press('Shift+M');
+        await expect.poll(() => modeOn(page)).toBe(true);
+        await page.evaluate(() => window.dashboardInstance.editMode.openFor({ kind: 'page', id: window.dashboardInstance.currentPageId }));
+        const facts = panel(page).locator('.edit-panel-facts');
+        await expect(facts).toContainText('Categories');
+        await expect(facts).toContainText('Bookmarks');
+        await expect(facts).toContainText('Widgets');
+        await expect(panel(page).locator('[data-edit-action="add-category"]')).toBeVisible();
+        if ((await page.evaluate(() => Number(window.dashboardInstance.currentPageId))) === 1) {
+            await expect(panel(page).locator('[data-edit-action="delete-page"]')).toHaveCount(0);
+        }
+    });
+
+    test('a width that cannot be chosen says why, and the field is off', async ({ page, request }) => {
+        const id = await makeCategory(request, 'EM Narrow');
+        await loadDashboard(page);
+        // The menu says the same in its entry: spreading needs a limit on items per category.
+        await page.evaluate(() => { window.dashboardInstance.settings.categoryItemLimit = 0; });
+        await select(page, id);
+        await expect(panel(page).locator('[data-edit-field="width"]')).toBeDisabled();
+        await expect(panel(page).locator('[data-edit-width-note]')).toContainText('Needs an items-per-category limit');
+    });
+
+    test('a width that can be chosen has no note', async ({ page, request }) => {
+        const id = await makeCategory(request, 'EM Free');
+        await loadDashboard(page);
+        await page.evaluate(() => { window.dashboardInstance.settings.categoryItemLimit = 4; });
+        await select(page, id);
+        await expect(panel(page).locator('[data-edit-field="width"]')).toBeEnabled();
+        await expect(panel(page).locator('[data-edit-width-note]')).toHaveCount(0);
+    });
+
     test('a click on a category selects it and the panel shows its fields, saved as they change', async ({ page, request }) => {
         const id = await makeCategory(request, 'EM Alpha');
         await loadDashboard(page);
@@ -314,6 +376,32 @@ test.describe('edit mode: a widget in the panel', () => {
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?.editMode && (window.dashboardInstance.widgets || []).length, null, { timeout: 15_000 });
         expect(await page.evaluate((wid) => (window.dashboardInstance.widgets || []).find((w) => w.id === wid)?.title, id)).toBe('Edit mode widget');
+    });
+
+    test('a widget shows its type and what it shows, and has Move and Delete beside Settings', async ({ page }) => {
+        await loadDashboard(page);
+        await selectWidget(page);
+        const section = panel(page).locator('[data-edit-section="widget"]');
+        await expect(section.locator('.edit-panel-facts')).toContainText('Type');
+        await expect(section.locator('.edit-panel-facts')).toContainText('Shows');
+        await expect(section.locator('[data-edit-action="widget-settings"]')).toBeVisible();
+        await expect(section.locator('[data-edit-action="widget-delete"]')).toBeVisible();
+    });
+
+    test('Delete on a widget goes through the sheet\'s own question and removes it', async ({ page, request }) => {
+        const { WRITE_TOKEN } = require('./e2e-helpers');
+        const headers = { 'X-NextDash-Token': WRITE_TOKEN };
+        const id = `w_emdel${Date.now()}`.slice(0, 20);
+        const blocks = await (await request.get('/api/pages/1/blocks')).json();
+        const put = await request.put('/api/pages/1/blocks', { data: { ...blocks, widgets: [...(blocks.widgets || []), { id, type: 'notes' }] }, headers });
+        expect(put.ok()).toBeTruthy();
+        await loadDashboard(page);
+        await page.keyboard.press('Shift+M');
+        await expect.poll(() => modeOn(page)).toBe(true);
+        await page.locator(`#dashboard-layout .category.dashboard-widget[data-widget-id="${id}"] .category-title`).first().click();
+        await panel(page).locator('[data-edit-action="widget-delete"]').click();
+        await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
+        await expect.poll(async () => ((await (await request.get('/api/pages/1/blocks')).json()).widgets || []).some((w) => w.id === id)).toBe(false);
     });
 
     test('the sheet over the dashboard takes its text colour from the theme, not a grey literal', async ({ page }) => {
