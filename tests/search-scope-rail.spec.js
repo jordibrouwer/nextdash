@@ -98,7 +98,7 @@ test('the rail says what each kind answers, and dims the kinds that answer nothi
     const shape = await listShape(page);
     const by = (mode) => shape.rail.find((r) => r.mode === mode);
 
-    expect(shape.rail.length, 'the rail lost a rung').toBe(6);
+    expect(shape.rail.length, 'the rail lost a rung').toBe(7);
     expect(by('search')?.active, 'the rail does not say which scope is in force').toBe(true);
     expect(by('search')?.count, 'the rail counts nothing at all').not.toBe('');
     expect(Number(by('command')?.count || 0), 'the rail does not count the commands').toBeGreaterThan(0);

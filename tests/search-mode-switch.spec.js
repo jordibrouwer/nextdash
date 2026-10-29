@@ -67,12 +67,12 @@ test.describe('the mode switch', () => {
         });
 
         /*
-         * Six positions: search, commands and finders, then the two modes that
-         * used to be buttons in the header -- tags and recents -- and the door
-         * to the cheat sheet. Only the five modes can be lit; the door never
-         * is, which is why the count below still finds exactly one.
+         * Seven positions: search, commands and finders, then the two modes that
+         * used to be buttons in the header -- tags and recents --, the assistant
+         * and the door to the cheat sheet. Only the six modes can be lit; the
+         * door never is, which is why the count below still finds exactly one.
          */
-        expect(active.count, 'the rail lost a rung').toBe(6);
+        expect(active.count, 'the rail lost a rung').toBe(7);
         expect(active.lit, 'more than one position is lit at once').toBe(1);
         expect(active.mode, 'the key that opened the panel is not the lit one').toBe('search');
     });

@@ -115,10 +115,11 @@
 
         isOpen() { return Boolean(this.overlay); }
 
-        async open({ question } = {}) {
+        async open({ question, conversationId } = {}) {
             const text = String(question || '').trim();
             if (this.overlay) {
                 if (text) { this.newConversation(); await this.send(text); }
+                else if (conversationId) await this.select(conversationId);
                 return;
             }
             this.returnFocus = document.activeElement;
@@ -129,6 +130,7 @@
             this.renderSide();
             if (!this.ready()) { this.renderThread(); return; }
             if (text) { this.newConversation(); await this.send(text); }
+            else if (conversationId) await this.select(conversationId);
             else this.renderThread();
         }
 

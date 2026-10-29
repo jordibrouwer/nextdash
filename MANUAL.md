@@ -1420,6 +1420,7 @@ Search, commands and finders are three modes of one panel, which opens in the mi
 >  search     — your bookmarks, with filters
 :  commands   — actions: :theme, :open last 5, …
 ?  finders    — ?g query → another site
+=  assistant  — ask a question; your latest conversations at a lone =
 @  everywhere — search all pages at once
 ⇧↵ the web    — the same words, asked of a search engine
 ```
@@ -5034,7 +5035,7 @@ location /               { return 404; }
 
 ### 23.11 The assistant
 
-The assistant answers questions about your bookmarks in plain words, for example *which of my Docker bookmarks are down?* or *tag everything about Proxmox*. It runs on a model you choose: Claude, OpenAI, or a server of your own such as Ollama. It is **off** until you turn it on, and it is off in the demo. Open it with `:ask` in the command palette, with or without a question after it: with one, it starts a new conversation and asks it straight away.
+The assistant answers questions about your bookmarks in plain words, for example *which of my Docker bookmarks are down?* or *tag everything about Proxmox*. It runs on a model you choose: Claude, OpenAI, or a server of your own such as Ollama. It is **off** until you turn it on, and it is off in the demo. Open it with `:ask` in the command palette, with or without a question after it: with one, it starts a new conversation and asks it straight away. `=` in the search bar does the same: `=` on its own lists your latest conversations (`Enter` opens one), and `=` followed by a question asks it as a new conversation. Like `:ask`, what follows the `=` is never stored in the search history or the recents.
 
 **Setting it up.** Under **Behavior → Privacy & sync → Assistant**, tick **Turn the assistant on** and pick a **Provider**:
 
