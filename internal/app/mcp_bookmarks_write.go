@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 /*
@@ -68,8 +69,7 @@ func mcpBookmarksWriteDefinitions() []map[string]any {
 		{
 			"name":        "delete_bookmark",
 			"annotations": mcpAnnotations(false, true),
-			"description": "Delete a bookmark. The deletion is written to the activity log, " +
-				"which is where it can be found again. Ask the person before calling this unless they asked for the deletion.",
+			"description": "Delete a bookmark. It moves to the Trash, where it can be restored, and the deletion is written to the activity log. Ask the person before calling this unless they asked for the deletion.",
 			"inputSchema": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -308,6 +308,14 @@ func (h *Handlers) mcpDeleteBookmark(r *http.Request, args json.RawMessage) map[
 	if refused != nil {
 		return refused
 	}
+	// Where it sat, so a restore can put it back in the same place.
+	index := 0
+	for i, row := range h.store.GetBookmarksByPage(page) {
+		if canonicalBookmarkURLKey(row.URL) == canonicalBookmarkURLKey(bm.URL) {
+			index = i
+			break
+		}
+	}
 	rec, err := h.mcpInner(r, http.MethodDelete, "/api/bookmarks", map[string]any{
 		"page": page, "bookmark": bm,
 	}, nil, h.DeleteBookmark)
@@ -317,7 +325,19 @@ func (h *Handlers) mcpDeleteBookmark(r *http.Request, args json.RawMessage) map[
 	if rec.status >= 400 {
 		return mcpErrorFrom(rec)
 	}
-	return map[string]any{"deleted": true, "name": bm.Name, "url": bm.URL, "page": pageNameForID(h.store, page)}
+	out := map[string]any{"deleted": true, "name": bm.Name, "url": bm.URL, "page": pageNameForID(h.store, page)}
+	// The server cannot capture a trash entry on its own: the dashboard reports
+	// what it removed. This does the same, through the same handler, so the
+	// Trash holds it and RestoreTrashItem can bring it back.
+	bm.PageID = page
+	trash, err := h.mcpInner(r, http.MethodPost, "/api/trash", map[string]any{
+		"source": "mcp",
+		"items":  []map[string]any{{"pageId": page, "index": index, "bookmark": bm, "deletedAt": time.Now().UnixMilli()}},
+	}, nil, h.AddTrashItems)
+	if err != nil || trash.status >= 400 {
+		out["warning"] = "The bookmark was deleted but could not be put in the Trash, so it cannot be restored from there."
+	}
+	return out
 }
 
 // mcpSaveCategories writes the whole list for a page through the browser's own

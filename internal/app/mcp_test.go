@@ -633,6 +633,7 @@ func TestMoveBookmarkLandsInTheTargetCategory(t *testing.T) {
 func TestDeleteBookmarkIsLoggedAndRestorable(t *testing.T) {
 	h, first, _ := twoPageMCPInstall(t)
 	turnOnBookmarksWrite(t, h)
+	toolCall(t, h, "update_bookmark", `{"url":"https://radarr.example/","note":"movies"}`)
 
 	lines := captureActivityLogs(t, func() {
 		cfg := activityConfig()
@@ -655,7 +656,20 @@ func TestDeleteBookmarkIsLoggedAndRestorable(t *testing.T) {
 	if !found {
 		t.Errorf("no bookmark.delete entry with source mcp in %v", lines)
 	}
-	if again := toolCall(t, h, "delete_bookmark", `{"url":"https://radarr.example/"}`); again["error"] == nil {
+	items := h.store.GetTrashItems()
+	if len(items) != 1 || items[0].Bookmark.URL != "https://radarr.example/" || items[0].PageID != first {
+		t.Fatalf("the trash holds %+v", items)
+	}
+	rec := httptest.NewRecorder()
+	h.RestoreTrashItem(rec, httptest.NewRequest(http.MethodPost, "/api/trash/restore", strings.NewReader(`{"id":"`+items[0].ID+`"}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("restore: %d %s", rec.Code, rec.Body.String())
+	}
+	back := bookmarkOnPage(h, first, "https://radarr.example/")
+	if back == nil || back.Name != "Radarr" || strings.Join(back.Tags, ",") != "media" || back.Note != "movies" {
+		t.Fatalf("restored as %+v", back)
+	}
+	if again := toolCall(t, h, "delete_bookmark", `{"url":"https://nothing.example/"}`); again["error"] == nil {
 		t.Errorf("deleting twice answered %v", again)
 	}
 }
