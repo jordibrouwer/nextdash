@@ -491,11 +491,11 @@
                 if (g.tone) li.setAttribute('data-tone', g.tone);
                 this.view.tip(li, `temp:${g.name}`, () => Tip().rows(g.name, g.sensors.slice().sort((a, b) => b.value - a.value).map((sn) => [
                     sn.label,
-                    `${Math.round(sn.value)}°${sn.warn !== null || sn.crit !== null ? ` (${sn.warn !== null ? Math.round(sn.warn) : '–'} / ${sn.crit !== null ? Math.round(sn.crit) : '–'})` : ''}`,
+                    `${window.DashboardGlances.formatTemp(sn.value)}${sn.warn !== null || sn.crit !== null ? ` (${sn.warn !== null ? window.DashboardGlances.formatTemp(sn.warn) : '–'} / ${sn.crit !== null ? window.DashboardGlances.formatTemp(sn.crit) : '–'})` : ''}`,
                 ]), this.view.t('dashboard.glancesTipTempNote', 'The limits the sensor reports, warning / critical, are in brackets.')));
                 li.append(
                     el('span', 'glances-temp-name', g.count > 1 ? `${g.name} ×${g.count}` : g.name),
-                    el('span', 'glances-temp-value', `${Math.round(g.value)}°`),
+                    el('span', 'glances-temp-value', window.DashboardGlances.formatTemp(g.value)),
                 );
                 list.appendChild(li);
             });

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -186,6 +187,29 @@ type glancesHostRow struct {
 	Disk      *float64 `json:"disk"`
 	DiskMount string   `json:"diskMount,omitempty"`
 	Temp      *float64 `json:"temp"`
+	// CPUHour is the processor over the last hour from the coarse ring, for
+	// the row's small graph: [Unix ms, percent] pairs.
+	CPUHour []glancesPoint `json:"cpuHour,omitempty"`
+}
+
+// glancesSparkSpan is how far back a hosts-table graph reaches.
+const glancesSparkSpan = time.Hour
+
+// cpuHour is the processor's coarse points of the last hour, copied out of the
+// ring so the caller holds no slice the sampler appends to.
+func (hs *glancesHost) cpuHour(now time.Time) []glancesPoint {
+	since := float64(now.Add(-glancesSparkSpan).UnixMilli())
+	hs.rings.Lock()
+	defer hs.rings.Unlock()
+	ring := hs.rings.series["cpu"]
+	if ring == nil {
+		return nil
+	}
+	start := sort.Search(len(ring.Coarse), func(i int) bool { return ring.Coarse[i][0] >= since })
+	if len(ring.Coarse)-start < 2 {
+		return nil
+	}
+	return append([]glancesPoint(nil), ring.Coarse[start:]...)
 }
 
 // lastValues are the newest points of the series a row needs.
@@ -245,7 +269,7 @@ func glancesHostRows() []glancesHostRow {
 		hs.beat.Unlock()
 		rows = append(rows, glancesHostRow{
 			ID: c.ID, Name: glancesHostName(c), Configured: c.configured(), Paused: c.Paused, Level: level, OK: ok, At: at, LastOK: lastOK, Every: every,
-			CPU: cpu, Mem: mem, Disk: disk, DiskMount: mount, Temp: temp,
+			CPU: cpu, Mem: mem, Disk: disk, DiskMount: mount, Temp: temp, CPUHour: hs.cpuHour(time.Now()),
 		})
 	}
 	return rows

@@ -1247,6 +1247,10 @@ button.glances-row-link {
 .glances-hosts-cell[data-tone="bad"] { color: var(--accent-error); }
 .glances-hosts-note { color: var(--text-secondary); }
 .glances-hosts-note--bad { color: var(--accent-error); }
+.glances-hosts-cpu, .glances-hosts-disk { display: inline-flex; align-items: center; gap: 0.5rem; }
+.glances-hosts-spark { display: inline-block; width: 4.5rem; height: 1.1rem; }
+.glances-hosts-spark svg { display: block; width: 100%; height: 100%; }
+.glances-hosts-mount { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); font-size: 0.85em; }
 
 .glances-incident-layer { position: absolute; inset: 0; pointer-events: none; }
 

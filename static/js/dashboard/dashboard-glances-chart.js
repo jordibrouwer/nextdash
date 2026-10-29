@@ -367,6 +367,7 @@
         if (def.percent) return `${Math.round(value)}%`;
         if (def.bytes) return window.DashboardGlances.formatBytes(value);
         if (def.rate) return `${window.DashboardGlances.formatBytes(value)}/s`;
+        if (def.unit === '°') return window.DashboardGlances.formatTemp(value);
         if (def.unit) return `${Math.round(value)}${def.unit}`;
         return value.toFixed(def.fixed ?? 1);
     }

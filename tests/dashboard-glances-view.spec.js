@@ -1935,6 +1935,37 @@ test.describe('several hosts', () => {
         await expect(page.locator('[data-glances-host]')).toHaveValue('nas');
     });
 
+    test('Hosts: trouble first, headings sort, the disk is named, the last hour is a line, °F follows the weather', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = [{ id: 'main', name: 'Home' }, { id: 'nas', name: 'NAS' }, { id: 'pi', name: 'Pi', configured: false }, { id: 'tower', name: 'Tower' }];
+        const now = Date.now();
+        const hour = Array.from({ length: 10 }, (_, i) => [now - (10 - i) * 300000, 10 + i * 3]);
+        state.overrides.hosts = { hosts: [
+            { id: 'main', name: 'Home', configured: true, paused: false, level: 'ok', ok: true, at: now, cpu: 22, mem: 40, disk: 91, diskMount: '/mnt/disk1', temp: 54, cpuHour: hour },
+            { id: 'nas', name: 'NAS', configured: true, paused: false, level: 'bad', ok: true, at: now, cpu: 95, mem: 50, disk: 30, diskMount: '/', temp: 40 },
+            { id: 'pi', name: 'Pi', configured: false, paused: false, level: 'unknown', ok: false, at: 0, cpu: null, mem: null, disk: null, temp: null },
+            { id: 'tower', name: 'Tower', configured: true, paused: false, level: 'unknown', ok: false, at: now, lastOk: now - 600000, cpu: null, mem: null, disk: null, temp: null },
+        ] };
+        await openView(page, '#glances/hosts');
+        const ids = () => page.locator('[data-glances-host-row]').evaluateAll((rows) => rows.map((r) => r.getAttribute('data-glances-host-row')));
+        await expect.poll(ids).toEqual(['tower', 'nas', 'main', 'pi']);
+
+        const home = page.locator('[data-glances-host-row="main"]');
+        await expect(home.locator('[data-glances-host-mount]')).toHaveText('/mnt/disk1');
+        await expect(home.locator('[data-glances-host-spark="main"] svg')).toHaveCount(1);
+        await expect(page.locator('[data-glances-host-row="nas"] [data-glances-host-spark]')).toHaveCount(0);
+
+        await page.locator('[data-glances-table="hosts"] [data-glances-sort-col="cpu"]').click();
+        // Rows without a reading keep their order, after the ones with one.
+        await expect.poll(ids).toEqual(['nas', 'main', 'tower', 'pi']);
+        await expect(page.locator('[data-glances-table="hosts"] th[aria-sort="descending"] [data-glances-sort-col]')).toHaveAttribute('data-glances-sort-col', 'cpu');
+
+        await expect(home).toContainText('54°');
+        await page.evaluate(() => { window.dashboardInstance.settings.weatherUnit = 'fahrenheit'; });
+        await page.locator('[data-glances-table="hosts"] [data-glances-sort-col="cpu"]').click();
+        await expect(home).toContainText('129°');
+    });
+
     test('the Overview has a strip of the hosts, and a chip looks at that host', async ({ page }) => {
         const state = await mockGlances(page);
         await openView(page);

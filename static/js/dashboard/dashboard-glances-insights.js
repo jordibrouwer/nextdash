@@ -134,7 +134,7 @@
             const G = window.DashboardGlances;
             if (v === null || v === undefined || v < 0) return G.DASH;
             if (unit === 'B/s') return `${G.formatBytes(v)}/s`;
-            if (unit === '°C') return `${Math.round(v)}°`;
+            if (unit === '°C') return G.formatTemp(v);
             return `${Math.round(v)}%`;
         }
 
@@ -222,7 +222,7 @@
                 factors.forEach((f) => {
                     const li = el('li', 'glances-ins-factor');
                     li.append(el('span', '', this.tl(FACTOR_LABELS[f.key] || [`dashboard.glancesInsFactor_${f.key}`, f.key])),
-                        el('span', 'glances-ins-factor-value', `${f.value}${f.key === 'temp' ? '°' : '%'} · −${f.penalty}`));
+                        el('span', 'glances-ins-factor-value', `${f.key === 'temp' ? window.DashboardGlances.formatTemp(f.value) : `${f.value}%`} · −${f.penalty}`));
                     list.appendChild(li);
                 });
                 block.appendChild(list);
@@ -283,7 +283,7 @@
             if (t) {
                 block.appendChild(this.note(this.t('dashboard.glancesInsTemp',
                     'Hottest sensor: up to {max}°, {avg}° on average; {warn} h over the yellow line, {bad} h over the red one.',
-                    { max: t.max, avg: t.avg, warn: t.hoursWarn, bad: t.hoursBad })));
+                    { max: window.DashboardGlances.tempNumber(t.max), avg: window.DashboardGlances.tempNumber(t.avg), warn: t.hoursWarn, bad: t.hoursBad })));
                 if (typeof t.correlationCpu === 'number') {
                     const r = t.correlationCpu;
                     block.appendChild(this.note(this.t('dashboard.glancesInsCorrelation', 'Heat follows processor load: correlation {r} over the last day.', { r })));
@@ -691,8 +691,8 @@
             const block = this.block('sensors', 'dashboard.glancesInsSensors', 'Temperature per sensor');
             block.appendChild(this.table('ins-sensors', [
                 { key: 'name', label: ['dashboard.glancesInsSensor', 'Sensor'], value: (r) => r.name, cell: (r) => r.name, numeric: false },
-                { key: 'avg', label: ['dashboard.glancesStatAvg', 'Average'], value: (r) => r.avg, cell: (r) => `${Math.round(r.avg)}°` },
-                { key: 'max', label: ['dashboard.glancesStatMax', 'High'], value: (r) => r.max, cell: (r) => `${Math.round(r.max)}°` },
+                { key: 'avg', label: ['dashboard.glancesStatAvg', 'Average'], value: (r) => r.avg, cell: (r) => window.DashboardGlances.formatTemp(r.avg) },
+                { key: 'max', label: ['dashboard.glancesStatMax', 'High'], value: (r) => r.max, cell: (r) => window.DashboardGlances.formatTemp(r.max) },
                 { key: 'warn', label: ['dashboard.glancesInsOverYellow', 'Over yellow'], value: (r) => r.hoursWarn,
                     cell: (r) => (r.hoursWarn > 0 ? this.t('dashboard.glancesInsHoursShort', '{n} h', { n: r.hoursWarn }) : window.DashboardGlances.DASH) },
             ], rows, { key: 'max', dir: 'desc' }));

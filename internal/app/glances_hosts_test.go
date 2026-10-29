@@ -418,3 +418,26 @@ func TestGlancesForecastNoticesAreOnceAndHourly(t *testing.T) {
 		t.Errorf("clear: %+v", clear)
 	}
 }
+
+// The hosts table's small graph is the last hour of the processor's coarse
+// points, and a copy: the sampler appending afterwards does not reach it.
+func TestGlancesHostCPUHourIsTheLastHourCopied(t *testing.T) {
+	hs := newGlancesHost("spark")
+	now := time.Now()
+	at := func(ago time.Duration) float64 { return float64(now.Add(-ago).UnixMilli()) }
+	hs.rings.series["cpu"] = &glancesRing{Coarse: []glancesPoint{
+		{at(2 * time.Hour), 90}, {at(50 * time.Minute), 10}, {at(20 * time.Minute), 30}, {at(time.Minute), 50},
+	}}
+	got := hs.cpuHour(now)
+	if len(got) != 3 || got[0][1] != 10 || got[2][1] != 50 {
+		t.Fatalf("cpuHour = %v, want the three points of the last hour", got)
+	}
+	hs.rings.series["cpu"].Coarse[1][1] = 99
+	if got[0][1] != 10 {
+		t.Errorf("cpuHour shares the ring's array")
+	}
+	hs.rings.series["cpu"].Coarse = hs.rings.series["cpu"].Coarse[:2]
+	if hs.cpuHour(now) != nil {
+		t.Errorf("one point is not a graph")
+	}
+}

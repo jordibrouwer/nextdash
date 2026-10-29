@@ -162,6 +162,14 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 - **fix — The search panel looks like the other overlays.** On the Signature style it takes the overlay fill (`--ov-fill`), so it is as opaque as Recent bookmarks; it used to follow the categories (`--palette-fill`, their alpha plus a tenth, never under 70%) and read as a thinner veil on glass. On Classic it has the modal's ground, corner and cast (`search.css`). Its results sit on the same slab as the recents list (`modal.css`), inset from the panel's edge.
 - **fix — The modals on the dashboard read in its font.** Recent bookmarks, the bookmark form, the tag cloud, notes, confirmations and the other modals opened on the bookmarks view take `--font-family-dashboard` (Source Code Pro by default), as the search panel already did (`font-size.css`). In Config and the other views they stay in Inter.
 
+### Glances: Hosts
+
+- **new — Trouble first.** Until a heading is pressed, the Hosts table lists a host that stopped answering first, then red, yellow and healthy ones, and last what is switched off or has no address; Config's order within each.
+- **new — The headings sort,** as the other Glances tables do (`DashboardGlancesTable.build`, id `hosts`); rows without a reading keep their order after the rest.
+- **new — The fullest disk is named.** The mount (`diskMount`, sent all along and never drawn) stands beside its meter.
+- **new — The last hour of the processor** is a small line beside its meter: `glancesHostRow.cpuHour`, the coarse points of the last hour, copied out of the ring (`glancesHost.cpuHour`).
+- **new — Temperatures follow the weather's unit.** With Fahrenheit picked for the weather, every Glances temperature is written in °F (`DashboardGlances.formatTemp`/`tempNumber`); the yellow and red lines stay in Celsius.
+
 ---
 
 ## v1.22.4 — 29 October 2026
