@@ -4892,6 +4892,8 @@
     "showCollapseAllButtonInfoMessage": "Folds every category on the page at once, and unfolds them again. `.` does the same, so this ships off — it is a key you press rarely and a button you pass constantly.",
     "showCheatSheetButtonInfoTitle": "The cheat-sheet button",
     "showCheatSheetButtonInfoMessage": "Opens the list of every key the dashboard answers to. `!` does the same, and this is the button that teaches the others, so it ships on.",
+    "showEditModeButtonInfoTitle": "The edit-mode button",
+    "showEditModeButtonInfoMessage": "Switches edit mode on and off: a panel beside the page for names, icons, widths and a widget's settings. `Shift+M` does the same, and the key keeps working when this is off.",
     "showPageTabsInfoTitle": "Page Tabs Information",
     "showPageTabsInfoMessage": "Controls whether page navigation tabs are visible.\n\n• On: click/tap tabs to switch pages\n• Off: switch pages using keyboard shortcuts only",
     "showPageNamesInTabsInfoTitle": "Page Names in Tabs Information",

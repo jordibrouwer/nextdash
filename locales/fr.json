@@ -4889,6 +4889,8 @@
     "showCollapseAllButtonInfoMessage": "Replie toutes les catégories de la page d'un coup, et les redéplie de même. `.` fait de même, donc ce réglage est désactivé par défaut — c'est une touche sur laquelle vous appuyez rarement et un bouton devant lequel vous passez sans cesse.",
     "showCheatSheetButtonInfoTitle": "Le bouton aide-mémoire",
     "showCheatSheetButtonInfoMessage": "Ouvre la liste de toutes les touches auxquelles le tableau de bord répond. `!` fait de même, et c'est le bouton qui enseigne les autres, donc il est activé par défaut.",
+    "showEditModeButtonInfoTitle": "Le bouton du mode édition",
+    "showEditModeButtonInfoMessage": "Active et désactive le mode édition : un panneau à côté de la page pour les noms, les icônes, les largeurs et les réglages d’un widget. `Shift+M` fait la même chose, et la touche continue de fonctionner quand ce bouton est masqué.",
     "showPageTabsInfoTitle": "Informations sur les onglets de page",
     "showPageTabsInfoMessage": "Contrôle la visibilité des onglets de navigation de page.",
     "showPageNamesInTabsInfoTitle": "Informations sur les noms de page dans les onglets",

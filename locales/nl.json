@@ -4889,6 +4889,8 @@
     "showCollapseAllButtonInfoMessage": "Vouwt elke categorie op de pagina in één keer dicht, en weer open. `.` doet hetzelfde, dus deze staat standaard uit — een toets die je zelden indrukt en een knop waar je steeds langs kijkt.",
     "showCheatSheetButtonInfoTitle": "De cheat-sheet-knop",
     "showCheatSheetButtonInfoMessage": "Opent de lijst met elke toets waar het dashboard op reageert. `!` doet hetzelfde, en dit is de knop die de andere leert, dus hij staat standaard aan.",
+    "showEditModeButtonInfoTitle": "De bewerkmodus-knop",
+    "showEditModeButtonInfoMessage": "Zet de bewerkmodus aan en uit: een paneel naast de pagina voor namen, iconen, breedtes en de instellingen van een widget. `Shift+M` doet hetzelfde, en die toets blijft werken als dit uit staat.",
     "showPageTabsInfoTitle": "Informatie over paginatabbladen",
     "showPageTabsInfoMessage": "Bepaalt of paginanavigatie-tabbladen zichtbaar zijn.\n\n• Aan: klik/tik tabs om pagina te wisselen\n• Uit: alleen wisselen via sneltoetsen",
     "showPageNamesInTabsInfoTitle": "Informatie over paginanamen in tabs",

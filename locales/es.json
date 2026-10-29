@@ -4889,6 +4889,8 @@
     "showCollapseAllButtonInfoMessage": "Pliega todas las categorías de la página a la vez, y las despliega de nuevo. `.` hace lo mismo, así que este viene desactivado por defecto: es una tecla que pulsas poco y un botón por el que pasas constantemente.",
     "showCheatSheetButtonInfoTitle": "El botón de la chuleta",
     "showCheatSheetButtonInfoMessage": "Abre la lista de todas las teclas a las que responde el panel. `!` hace lo mismo, y este es el botón que enseña los demás, así que viene activado por defecto.",
+    "showEditModeButtonInfoTitle": "El botón del modo de edición",
+    "showEditModeButtonInfoMessage": "Activa y desactiva el modo de edición: un panel junto a la página para nombres, iconos, anchuras y los ajustes de un widget. `Shift+M` hace lo mismo, y la tecla sigue funcionando cuando esto está desactivado.",
     "showPageTabsInfoTitle": "Información sobre las pestañas de página",
     "showPageTabsInfoMessage": "Controla si se ven las pestañas de navegación entre páginas.\n\n• Activado: haz clic o toca las pestañas para cambiar de página\n• Desactivado: cambia de página solo con atajos de teclado",
     "showPageNamesInTabsInfoTitle": "Información sobre los nombres en las pestañas",

@@ -4889,6 +4889,8 @@
     "showCollapseAllButtonInfoMessage": "Klappt alle Kategorien der Seite auf einmal ein und wieder auf. `.` tut dasselbe, daher ist dies standardmäßig aus — eine Taste, die du selten drückst, aber eine Schaltfläche, an der du ständig vorbeikommst.",
     "showCheatSheetButtonInfoTitle": "Die Cheatsheet-Schaltfläche",
     "showCheatSheetButtonInfoMessage": "Öffnet die Liste aller Tasten, auf die das Dashboard reagiert. `!` tut dasselbe, und weil diese Schaltfläche die anderen erst erklärt, ist sie standardmäßig an.",
+    "showEditModeButtonInfoTitle": "Die Bearbeitungsmodus-Schaltfläche",
+    "showEditModeButtonInfoMessage": "Schaltet den Bearbeitungsmodus ein und aus: ein Panel neben der Seite für Namen, Symbole, Breiten und die Einstellungen eines Widgets. `Shift+M` tut dasselbe, und die Taste funktioniert weiter, wenn dies aus ist.",
     "showPageTabsInfoTitle": "Informationen zu Seitentabs",
     "showPageTabsInfoMessage": "Steuert, ob Seitennavigation-Tabs sichtbar sind.\n\n• An: per Klick/Tipp wechseln\n• Aus: nur per Tastenkürzel wechseln",
     "showPageNamesInTabsInfoTitle": "Informationen zu Seitennamen in Tabs",

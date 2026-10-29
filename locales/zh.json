@@ -4889,6 +4889,8 @@
     "showCollapseAllButtonInfoMessage": "一次性折叠页面上的所有分类，再按一次展开。`.` 也能做到同样的事，所以它默认关闭——这是一个你很少按的键，却是一个你经常路过的按钮。",
     "showCheatSheetButtonInfoTitle": "速查表按钮",
     "showCheatSheetButtonInfoMessage": "打开列出仪表板响应的每一个按键的列表。`!` 也能做到同样的事，而这个按钮正是用来教会你其他按钮的，所以它默认开启。",
+    "showEditModeButtonInfoTitle": "编辑模式按钮",
+    "showEditModeButtonInfoMessage": "开启或关闭编辑模式：在页面旁打开一个面板，用来修改名称、图标、宽度和小组件的设置。`Shift+M` 作用相同，关闭此按钮后该快捷键仍然有效。",
     "showPageTabsInfoTitle": "页面标签说明",
     "showPageTabsInfoMessage": "控制页面导航标签是否可见。\n\n• 开：点击／轻触标签即可切换页面\n• 关：只能用键盘快捷键切换页面",
     "showPageNamesInTabsInfoTitle": "标签中的页面名称说明",
