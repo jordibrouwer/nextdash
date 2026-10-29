@@ -85,7 +85,8 @@ test.describe('action buttons', () => {
         await prepare(page);
         await openDashboard(page);
         // The bar slides into the edge after two seconds; ' brings it back and keeps it.
-        await page.keyboard.press("'");
+        // Pressed while the bar is still out, ' sends it away instead, so press it only when the bar went.
+        if (await page.locator('body[data-action-bar-hidden]').count()) await page.keyboard.press("'");
         const bar = page.locator('.dashboard-section.section-controls .header-shortcuts');
         await page.waitForTimeout(600);
         await crop(page, bar, '04-action-buttons.jpg', 16);
