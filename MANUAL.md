@@ -4886,7 +4886,7 @@ nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for exam
 
 | Tool | What it does | Group |
 |---|---|---|
-| `search_bookmarks` | Search by name, URL, tag or note; each result names its page and category | Always on |
+| `search_bookmarks` | Search by name, URL, tag or note; each result names its page and category; 20 by default, at most 100, with `truncated` when more match | Always on |
 | `get_bookmark` | Everything stored about one bookmark | Always on |
 | `list_tags` | Every tag with its count | Always on |
 | `list_pages` | The pages with their categories and ids | Always on |
@@ -4896,22 +4896,22 @@ nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for exam
 | `delete_bookmark` | Delete a bookmark; it goes to the Trash, where you can restore it | *Bookmarks: edit and delete* |
 | `create_category`, `rename_category` | Add a category to a page, or rename one | *Bookmarks: edit and delete* |
 | `get_health_summary` | Counts from the last link checks; it does not run a check | *Health and Inbox: read* |
-| `list_health_issues` | Bookmarks that are down or whose certificate is due to expire | *Health and Inbox: read* |
-| `list_inbox` | Unread links in the Inbox, newest first | *Health and Inbox: read* |
-| `list_containers` | The containers with state, image, update availability and the last CPU and memory reading | *Containers: read* |
+| `list_health_issues` | Bookmarks that are down or whose certificate is due to expire; 25 by default, at most 100, with `truncated` when more exist | *Health and Inbox: read* |
+| `list_inbox` | Unread links in the Inbox, newest first; 25 by default, at most 100, with `truncated` when more exist | *Health and Inbox: read* |
+| `list_containers` | The containers with state, image, update availability and the last CPU and memory reading; 50 by default, at most 200, with `truncated` when more exist | *Containers: read* |
 | `get_container` | One container's detail, as the Containers view shows it | *Containers: read* |
-| `get_container_logs` | The last lines of a log, at most 200 | *Containers: read* |
+| `get_container_logs` | The last lines of a log; 100 by default, at most 200 | *Containers: read* |
 | `container_action` | Start, stop, restart, pause, unpause, remove, update or rollback one container | *Containers: control* |
 
 Searching, looking up, listing tags and pages, and adding bookmarks are always on while the endpoint is. *Bookmarks: edit and delete* and *Containers: control* are marked **needs write token** in Config.
 
 **Write token.** With `NEXTDASH_WRITE_TOKEN` set, adding, editing, moving and deleting bookmarks and categories, and every container action, need it. Container logs need it too, because logs can contain secrets. Container environment variables are never returned. Without a token, the switches are the only gate.
 
-**Containers: control** also needs Docker control switched on for the server (`NEXTDASH_DOCKER_CONTROL`); the switch stays greyed out until it is. It acts exactly like the Containers view: nextDash cannot stop, restart, pause, remove or update itself, only a stopped container can be removed, and only one action runs on a container at a time.
+The container read tools need the Containers view switched on; **Containers: control** also needs Docker control switched on for the server (`NEXTDASH_DOCKER_CONTROL`); the switch stays greyed out until it is. It acts exactly like the Containers view: nextDash cannot stop, restart, pause, remove or update itself, only a stopped container can be removed, and only one action runs on a container at a time.
 
 **Activity log.** Changes made this way show up in the activity log with the source `mcp` and the client's User-Agent. Container actions appear as the usual `docker.<action>` events, also with source `mcp`.
 
-**Which clients.** Claude Desktop and Claude Code can reach nextDash from your LAN. claude.ai, as a custom connector, needs an address it can reach: a public HTTPS one (sign-in with OAuth is not built).
+**Which clients.** Claude Desktop and Claude Code can reach nextDash from your LAN. claude.ai, as a custom connector, needs an address it can reach: a public HTTPS one (sign-in with OAuth is not built). Do not put `/mcp` on a public address until sign-in exists: anyone who can reach it can use every tool you switched on, and without a write token that includes the write tools.
 
 It starts closed because it answers questions about every bookmark. The `Origin` of every request is checked against the host it arrived on.
 
