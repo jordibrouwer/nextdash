@@ -27,6 +27,8 @@ Key features:
 • Extensive theme and layout customization, with a look studio beside the dashboard and a theme editor
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
+• Edit mode: change categories, widgets and pages right on the dashboard
+• A checkup and a weekly digest that tell you what needs attention
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
 • Widgets beside your bookmarks: 48 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
 • Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library
@@ -52,6 +54,15 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.22.4 (2026-10-29)
+- Edit mode: Shift+M or the pencil in the action bar edits names, icons, widths, views and a widget's settings in a panel beside the page
+- Search: a Usually now group in the empty panel, and the right arrow on a result unfolds open, edit, copy and move
+- Checkup: :checkup walks through dead links, duplicates, bookmarks never opened, empty pages and widgets that show an error
+- Weekly digest: it opens on an Overview with the week in figures, and says since when a link is down and why
+- Widgets: adding one is a guided step that tests the address or key first
+- Config: Finders is a section of its own
+- Fixes: the demo server starts faster, icons the outbound limit refused are fetched again, and a page of uncategorised bookmarks no longer counts as empty
+
 ### v1.22.3 (2026-10-28)
 - First start: the Quick start asks whether to keep the example links, offers ready-made pages (Homelab, Media server, Developer) and a CSV import, and lists ten steps
 - Tours and tips: a keyboard tour, tours for Config Monitoring and Unraid, tips that can come weekly, and a settings search that remembers what you opened
@@ -88,7 +99,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-28</Date>
+  <Date>2026-10-29</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
