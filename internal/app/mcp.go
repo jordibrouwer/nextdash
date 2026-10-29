@@ -65,6 +65,18 @@ const (
 	mcpSearchMaxLimit     = 100
 )
 
+// clampLimit turns whatever a client sent into a usable page size: zero,
+// negative or missing means the default, and anything above max is max.
+func clampLimit(n, def, max int) int {
+	if n <= 0 {
+		return def
+	}
+	if n > max {
+		return max
+	}
+	return n
+}
+
 type jsonRPCRequest struct {
 	JSONRPC string          `json:"jsonrpc"`
 	ID      json.RawMessage `json:"id"`
@@ -241,7 +253,8 @@ func mcpToolDefinitions(s Settings) []map[string]any {
 }
 
 func mcpAllToolDefinitions() []map[string]any {
-	return append(mcpCoreToolDefinitions(), mcpBookmarksWriteDefinitions()...)
+	all := append(mcpCoreToolDefinitions(), mcpBookmarksWriteDefinitions()...)
+	return append(all, mcpHealthInboxDefinitions()...)
 }
 
 func mcpCoreToolDefinitions() []map[string]any {
@@ -464,6 +477,12 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return mcpToolResult(h.mcpCreateCategory(r, body.Arguments)), nil
 	case "rename_category":
 		return mcpToolResult(h.mcpRenameCategory(r, body.Arguments)), nil
+	case "get_health_summary":
+		return mcpToolResult(h.mcpHealthSummary(r)), nil
+	case "list_health_issues":
+		return mcpToolResult(h.mcpHealthIssues(r, body.Arguments)), nil
+	case "list_inbox":
+		return mcpToolResult(h.mcpListInbox(r, body.Arguments)), nil
 	}
 	return nil, &jsonRPCError{Code: jsonRPCInvalidParams, Message: "Unknown tool: " + body.Name}
 }
@@ -503,13 +522,7 @@ func (h *Handlers) mcpSearchBookmarks(args json.RawMessage) map[string]any {
 	}
 	_ = json.Unmarshal(args, &body)
 
-	limit := body.Limit
-	if limit <= 0 {
-		limit = mcpSearchDefaultLimit
-	}
-	if limit > mcpSearchMaxLimit {
-		limit = mcpSearchMaxLimit
-	}
+	limit := clampLimit(body.Limit, mcpSearchDefaultLimit, mcpSearchMaxLimit)
 
 	// Every word has to appear somewhere in the bookmark. Matching any word
 	// instead would make a two-word search broader than a one-word search,

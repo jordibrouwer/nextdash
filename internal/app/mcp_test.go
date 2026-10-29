@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func newMCPHandlers(t *testing.T) *Handlers {
@@ -808,5 +809,237 @@ func TestWriteToolsAreHiddenWhenTheirSwitchIsOff(t *testing.T) {
 		if !seen[tool] {
 			t.Errorf("%s is missing with the switch on", tool)
 		}
+	}
+}
+
+func turnOnHealthInbox(t *testing.T, h *Handlers) {
+	t.Helper()
+	settings := h.store.GetSettings()
+	settings.MCPHealthInbox = true
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// seedHealthInstall files four bookmarks: two that answered, one that failed
+// and one whose certificate is about to run out, plus three inbox links of
+// which one is read.
+func seedHealthInstall(t *testing.T, h *Handlers) {
+	t.Helper()
+	pages := h.store.GetPages()
+	page := pages[0].ID
+	now := time.Now()
+	checked := now.Add(-time.Hour).UnixMilli()
+	if err := h.store.SaveCategoriesByPage(page, []Category{{ID: "media", Name: "Media"}}); err != nil {
+		t.Fatal(err)
+	}
+	err := h.store.SaveBookmarksByPage(page, []Bookmark{
+		{Name: "Sonarr", URL: "https://sonarr.example/", PageID: page, CheckStatus: true, LastChecked: checked},
+		{Name: "Radarr", URL: "https://radarr.example/", PageID: page, Category: "media", CheckStatus: true, LastChecked: checked,
+			LastError: "connection refused", BrokenSince: now.Add(-3 * time.Hour).UnixMilli()},
+		{Name: "Go docs", URL: "https://go.dev/doc/", PageID: page, CheckStatus: true, LastChecked: checked, CertHost: "go.dev"},
+		{Name: "Never checked", URL: "https://new.example/", PageID: page},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := writeHealthCacheFile(HealthScanCacheFile{
+		Cache: map[string]HealthScanCache{},
+		Certificates: map[string]HostCertificate{
+			"go.dev":       {Host: "go.dev", ExpiresAt: now.AddDate(0, 0, 5).UnixMilli()},
+			"fine.example": {Host: "fine.example", ExpiresAt: now.AddDate(0, 0, 90).UnixMilli()},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	base := now.Add(-10 * time.Hour).UnixMilli()
+	for i, link := range []InboxLink{
+		{URL: "https://old.example/", Title: "Oldest", AddedAt: base},
+		{URL: "https://read.example/", Title: "Already read", AddedAt: base + 1000, ReadAt: base + 2000},
+		{URL: "https://new.example/read", Title: "Newest", AddedAt: base + 5000},
+	} {
+		if _, _, err := h.store.AddInboxLink(link, false, 0); err != nil {
+			t.Fatalf("inbox %d: %v", i, err)
+		}
+	}
+}
+
+func TestHealthSummaryCountsDownAndCertificates(t *testing.T) {
+	h := newMCPHandlers(t)
+	turnOnHealthInbox(t, h)
+	seedHealthInstall(t, h)
+	got := toolCall(t, h, "get_health_summary", `{}`)
+	want := map[string]float64{"checked": 3, "up": 2, "down": 1, "certificates_due": 1, "inbox_unread": 2}
+	for key, n := range want {
+		if v, ok := got[key].(float64); !ok || v != n {
+			t.Errorf("%s = %v, want %v (all: %v)", key, got[key], n, got)
+		}
+	}
+	// The same figures the browser's report gives.
+	report := h.loadBookmarkHealthReport(false)
+	if report.Summary.BrokenCount != 1 {
+		t.Errorf("report disagrees: %+v", report.Summary)
+	}
+}
+
+func TestHealthIssuesListOnlyTheBroken(t *testing.T) {
+	h := newMCPHandlers(t)
+	turnOnHealthInbox(t, h)
+	seedHealthInstall(t, h)
+	got := toolCall(t, h, "list_health_issues", `{}`)
+	issues, _ := got["issues"].([]any)
+	byName := map[string]map[string]any{}
+	for _, entry := range issues {
+		issue, _ := entry.(map[string]any)
+		byName[issue["name"].(string)] = issue
+	}
+	if len(byName) != 2 || byName["Radarr"] == nil || byName["Go docs"] == nil {
+		t.Fatalf("issues = %v", issues)
+	}
+	radarr := byName["Radarr"]
+	if radarr["status"] != "down" || radarr["category"] != "Media" || radarr["page"] == "" || radarr["since"] == "" || radarr["certificate_due"] != false {
+		t.Errorf("radarr = %v", radarr)
+	}
+	if _, err := time.Parse(time.RFC3339, radarr["since"].(string)); err != nil {
+		t.Errorf("since is not a timestamp: %v", radarr["since"])
+	}
+	docs := byName["Go docs"]
+	if docs["certificate_due"] != true || docs["status"] == "down" {
+		t.Errorf("go docs = %v", docs)
+	}
+	if got["truncated"] != false {
+		t.Errorf("truncated = %v", got["truncated"])
+	}
+	// Nothing that belongs to the checks themselves leaves the server.
+	raw, _ := json.Marshal(got)
+	for _, banned := range []string{"credential", "expect", "connection refused", "lastError"} {
+		if strings.Contains(string(raw), banned) {
+			t.Errorf("the answer carries %q: %s", banned, raw)
+		}
+	}
+}
+
+func TestInboxListsUnreadNewestFirst(t *testing.T) {
+	h := newMCPHandlers(t)
+	turnOnHealthInbox(t, h)
+	seedHealthInstall(t, h)
+	got := toolCall(t, h, "list_inbox", `{}`)
+	items, _ := got["items"].([]any)
+	if len(items) != 2 {
+		t.Fatalf("items = %v", items)
+	}
+	first, _ := items[0].(map[string]any)
+	second, _ := items[1].(map[string]any)
+	if first["title"] != "Newest" || second["title"] != "Oldest" {
+		t.Errorf("order = %v, %v", first["title"], second["title"])
+	}
+	if first["url"] != "https://new.example/read" {
+		t.Errorf("url = %v", first["url"])
+	}
+	if s, _ := first["added"].(string); s == "" {
+		t.Errorf("added = %v", first["added"])
+	}
+	if got["truncated"] != false {
+		t.Errorf("truncated = %v", got["truncated"])
+	}
+}
+
+func TestLimitsAreClamped(t *testing.T) {
+	for _, c := range []struct{ n, want int }{{0, 25}, {-5, 25}, {7, 7}, {100000, 100}} {
+		if got := clampLimit(c.n, 25, 100); got != c.want {
+			t.Errorf("clampLimit(%d) = %d, want %d", c.n, got, c.want)
+		}
+	}
+
+	h := newMCPHandlers(t)
+	turnOnHealthInbox(t, h)
+	pages := h.store.GetPages()
+	var bookmarks []Bookmark
+	for i := 0; i < 130; i++ {
+		bookmarks = append(bookmarks, Bookmark{
+			Name: "Down " + strconv.Itoa(i), URL: "https://down" + strconv.Itoa(i) + ".example/", PageID: pages[0].ID,
+			CheckStatus: true, LastChecked: time.Now().UnixMilli(), LastError: "timeout",
+		})
+		if _, _, err := h.store.AddInboxLink(InboxLink{URL: "https://in" + strconv.Itoa(i) + ".example/"}, false, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := h.store.SaveBookmarksByPage(pages[0].ID, bookmarks); err != nil {
+		t.Fatal(err)
+	}
+	for _, tool := range []struct{ name, key string }{{"list_health_issues", "issues"}, {"list_inbox", "items"}} {
+		for limit, want := range map[string]int{"0": 25, "-5": 25, "100000": 100, "3": 3} {
+			got := toolCall(t, h, tool.name, `{"limit":`+limit+`}`)
+			list, _ := got[tool.key].([]any)
+			if len(list) != want {
+				t.Errorf("%s limit %s: %d entries, want %d", tool.name, limit, len(list), want)
+			}
+			if got["truncated"] != true {
+				t.Errorf("%s limit %s: not marked truncated", tool.name, limit)
+			}
+		}
+	}
+}
+
+func TestHealthToolsAreHiddenWhenTheirSwitchIsOff(t *testing.T) {
+	h := newMCPHandlers(t)
+	tools := []string{"get_health_summary", "list_health_issues", "list_inbox"}
+	listed := func() map[string]bool {
+		seen := map[string]bool{}
+		for _, n := range listedToolNames(t, h) {
+			seen[n] = true
+		}
+		return seen
+	}
+	seen := listed()
+	for _, name := range tools {
+		if seen[name] {
+			t.Errorf("%s is listed with the switch off", name)
+		}
+		_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"`+name+`","arguments":{}}}`)
+		if resp.Error == nil || resp.Error.Message != "Unknown tool: "+name {
+			t.Errorf("%s called while off: %+v", name, resp.Error)
+		}
+	}
+	turnOnHealthInbox(t, h)
+	seen = listed()
+	for _, name := range tools {
+		if !seen[name] {
+			t.Errorf("%s is missing with the switch on", name)
+		}
+	}
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	result, _ := resp.Result.(map[string]any)
+	list, _ := result["tools"].([]any)
+	for _, entry := range list {
+		tool, _ := entry.(map[string]any)
+		name, _ := tool["name"].(string)
+		for _, want := range tools {
+			if name == want {
+				ann, _ := tool["annotations"].(map[string]any)
+				if ann["readOnlyHint"] != true {
+					t.Errorf("%s is not read only", name)
+				}
+			}
+		}
+	}
+}
+
+func TestHealthToolsOnAnEmptyInstall(t *testing.T) {
+	h := newMCPHandlers(t)
+	turnOnHealthInbox(t, h)
+	got := toolCall(t, h, "get_health_summary", `{}`)
+	for _, key := range []string{"checked", "up", "down", "certificates_due", "inbox_unread"} {
+		if v, ok := got[key].(float64); !ok || v != 0 {
+			t.Errorf("%s = %v", key, got[key])
+		}
+	}
+	issues := toolCall(t, h, "list_health_issues", `{}`)
+	if list, ok := issues["issues"].([]any); !ok || len(list) != 0 || issues["truncated"] != false {
+		t.Errorf("issues = %v", issues)
+	}
+	inbox := toolCall(t, h, "list_inbox", `{}`)
+	if list, ok := inbox["items"].([]any); !ok || len(list) != 0 || inbox["truncated"] != false {
+		t.Errorf("inbox = %v", inbox)
 	}
 }
