@@ -1324,12 +1324,15 @@ body:not([data-depth="flat"]) .button-container:has(> *) {
     text-align: left;
     box-shadow: none;
     background: transparent;
+    /* Secondary, not tertiary: the rail is a list to read and aim at, and in
+       the tertiary ink the scopes you are not in all but disappeared. */
+    color: var(--text-secondary);
 }
 
 .search-scope.search-mode-tab:hover {
     border: 0;
     background: color-mix(in srgb, var(--text-primary) 5%, transparent);
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 /* The one it is in: a bar on the edge it is attached to, not an outline. */
@@ -1350,7 +1353,7 @@ body:not([data-depth="flat"]) .button-container:has(> *) {
 }
 
 .search-scope .search-mode-tab-key {
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-size: calc(var(--font-size-controls) * 0.85);
 }
 
@@ -1366,8 +1369,8 @@ body:not([data-depth="flat"]) .button-container:has(> *) {
 
 /* A kind the query does not reach is dimmed rather than removed: a rail that
    changes length while you type is a rail you cannot aim at. */
-.search-scope.is-empty {
-    opacity: 0.35;
+.search-scope.is-empty:not(.active) {
+    opacity: 0.6;
 }
 
 .search-scope-rule {
