@@ -234,7 +234,9 @@ test('the handle grows as the pointer nears the edge', async ({ page }) => {
 test('a click on the handle brings the bar back', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
-    await handle(page).click();
+    // Dispatched rather than clicked: the pointer on the handle already
+    // brings the bar back, and this is about the click on its own.
+    await handle(page).dispatchEvent('click');
     await expect.poll(() => hidden(page)).toBe(false);
 });
 
@@ -300,17 +302,108 @@ test('a page switch leaves a slid-away bar where it is', async ({ page }) => {
     }
 });
 
-test('called by the edge, it keeps its delay before sliding off', async ({ page }) => {
-    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
-    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+/*
+ * Called by the pointer, the bar answers the pointer: a band along the edge
+ * rather than a line, a moment's rest before it comes, a margin around it
+ * that still counts as on it, and a short wait once the pointer has left.
+ */
+const settle = (page) => restingBox(bar(page));
+
+test('called by the edge, it goes soon after the pointer leaves it', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 10 });
+    await page.keyboard.press("'");
+    await expect.poll(() => hidden(page)).toBe(true);
     const edge = await page.evaluate(() => document.documentElement.clientWidth - 1);
     await page.mouse.move(edge, 450);
     await expect.poll(() => hidden(page)).toBe(false);
+    const box = await settle(page);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.move(750, 450);
-    // A fixed wait: the delay starts again on leaving, and part-way through it the bar must still be out.
-    await page.waitForTimeout(1200);
-    expect(await hidden(page), 'gone before its time').toBe(false);
+    // Not the ten second delay: well under two seconds.
+    await expect.poll(() => hidden(page), { timeout: 2000 }).toBe(true);
+});
+
+test('the edge is a band: a little way in still calls the bar', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    await page.mouse.move(18, 450);
+    await expect.poll(() => hidden(page)).toBe(false);
+});
+
+test('the whole edge counts, not only the stretch beside the bar', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    await page.mouse.move(2, 60);
+    await expect.poll(() => hidden(page)).toBe(false);
+});
+
+test('a quick pass across the edge leaves the bar away', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'bottom', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    // Down into the band and straight back out, faster than the rest it asks for.
+    await page.mouse.move(750, 895);
+    await page.mouse.move(750, 450);
+    // A fixed wait: a pass must do nothing, so there is no change to wait for.
+    await page.waitForTimeout(400);
+    expect(await hidden(page), 'a quick pass called the bar').toBe(true);
+});
+
+test('resting on the handle brings the bar back without a click', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    // Onto the handle and no further: no click.
+    const box = await handle(page).boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect.poll(() => hidden(page)).toBe(false);
+});
+
+test('leaving the window through the edge beside the bar calls it', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    const edge = await page.evaluate(() => document.documentElement.clientWidth);
+    // Two moves: inside, short of the band, then past the window's edge.
+    await page.mouse.move(edge - 60, 450);
+    await page.mouse.move(edge + 40, 450);
+    await expect.poll(() => hidden(page)).toBe(false);
+});
+
+test('a slight overshoot past the bar does not send it away', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    await page.mouse.move(1, 450);
+    await expect.poll(() => hidden(page)).toBe(false);
+    const box = await settle(page);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // Just past its right side, inside the margin.
+    await page.mouse.move(box.x + box.width + 25, box.y + box.height / 2);
+    // A fixed wait: longer than the wait after leaving, so a bar that went shows.
+    await page.waitForTimeout(1200);
+    expect(await hidden(page), 'an overshoot counted as leaving').toBe(false);
+});
+
+test('called but never reached, it goes again', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 10 });
+    await page.keyboard.press("'");
+    await expect.poll(() => hidden(page)).toBe(true);
+    await page.mouse.move(1, 450);
+    await expect.poll(() => hidden(page)).toBe(false);
+    await page.mouse.move(750, 450);
+    await expect.poll(() => hidden(page), { timeout: 3000 }).toBe(true);
+});
+
+test('a pointer parked on the edge does not call the bar again and again', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    // On the edge far above the bar: it comes, is never reached, and goes.
+    await page.mouse.move(2, 20);
+    await expect.poll(() => hidden(page)).toBe(false);
+    await expect.poll(() => hidden(page), { timeout: 3000 }).toBe(true);
+    // Small moves along the edge do not bring it straight back.
+    await page.mouse.move(3, 24);
+    await page.mouse.move(2, 28);
+    // A fixed wait: longer than the rest the band asks for.
+    await page.waitForTimeout(500);
+    expect(await hidden(page), 'it came back without the pointer leaving the edge').toBe(true);
 });
 
 // Called by a key, the bar stays: the reader may be about to use it with the
