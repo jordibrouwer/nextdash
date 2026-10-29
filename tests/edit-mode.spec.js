@@ -28,6 +28,7 @@ async function clickOpens(page) {
     const onRequest = (request) => { if (request.url().includes('/api/track-open')) opened = true; };
     page.on('request', onRequest);
     await firstBookmark(page).click({ noWaitAfter: true }).catch(() => {});
+    // A check that something does NOT happen: the click must log no open, so the request gets time to show up if it were sent.
     await page.waitForTimeout(900);
     page.off('request', onRequest);
     return opened;
@@ -97,6 +98,7 @@ test.describe('edit mode: the state and its keys', () => {
         await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('overview'); });
         await page.waitForSelector('#config-view-body', { timeout: 15_000 });
         await page.keyboard.press('Shift+M');
+        // A check that something does NOT happen: the key must not switch the mode on, so the switch gets time to show up if it were made.
         await page.waitForTimeout(400);
         expect(await modeOn(page)).toBe(false);
     });
@@ -436,6 +438,7 @@ test.describe('edit mode: the bookmark preview is off while it is on', () => {
         await row.hover();
         await page.mouse.move(0, 0);
         await row.hover();
+        // The preview card opens after its hover delay: the clock is what is under test.
         await page.waitForTimeout(900);
     }
 
@@ -449,6 +452,7 @@ test.describe('edit mode: the bookmark preview is off while it is on', () => {
         await hoverFirstBookmark(page);
         expect(await cardShown(page)).toBe(true);
         await page.mouse.move(0, 0);
+        // The card closes after its own delay once the pointer leaves: nothing to poll until that has passed.
         await page.waitForTimeout(500);
         expect(await cardShown(page)).toBe(false);
 
@@ -532,6 +536,7 @@ test.describe('edit mode: what the review found', () => {
         const onRequest = (r) => { if (r.url().includes('/api/track-open')) opened = true; };
         page.on('request', onRequest);
         await page.keyboard.type('qz');
+        // A check that something does NOT happen: typing must log no open, so the request gets time to show up if it were sent.
         await page.waitForTimeout(900);
         page.off('request', onRequest);
         expect(opened).toBe(false);
@@ -566,6 +571,7 @@ test.describe('edit mode: what the review found', () => {
         const inbox = page.locator('#page-nav-inbox-btn');
         if (await inbox.count() === 0) test.skip(true, 'no inbox tab on this install');
         await inbox.click();
+        // A check that something does NOT happen: the inbox view must not choose a page, so the choice gets time to show up if it were made.
         await page.waitForTimeout(500);
         expect(await page.evaluate(() => window.dashboardInstance.editMode.selected?.kind === 'page')).toBe(false);
     });
@@ -676,6 +682,7 @@ test.describe('edit mode: the smaller review points', () => {
         await field.fill('Changed by mistake');
         await page.keyboard.press('Escape');
         await expect(field).toHaveValue('Keepname');
+        // A check that something does NOT happen: the cancelled text must not be saved, so a save gets time to show up if it were sent.
         await page.waitForTimeout(400);
         const list = await (await request.get('/api/categories?page=1')).json();
         expect(list.find((c) => c.id === id).name).toBe('Keepname');
@@ -695,6 +702,7 @@ test.describe('edit mode: the smaller review points', () => {
         await field.fill('Thirdname');
         await page.keyboard.press('Escape');
         await expect(field).toHaveValue('Secondname');
+        // A check that something does NOT happen: the cancelled text must not be saved, so a save gets time to show up if it were sent.
         await page.waitForTimeout(400);
         expect((await (await request.get('/api/categories?page=1')).json()).find((c) => c.id === id).name).toBe('Secondname');
     });

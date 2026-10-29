@@ -55,6 +55,7 @@ test.describe('closing the digest bar', () => {
         await expect(page.locator('.digest-bar')).toHaveCount(0);
         await page.reload();
         await page.waitForFunction(() => window.DigestNotice, null, { timeout: 15_000 });
+        // A check that something does NOT happen: the bar must stay away after a reload, so it gets time to be drawn if it were.
         await page.waitForTimeout(1000);
         await expect(page.locator('.digest-bar')).toHaveCount(0);
     });

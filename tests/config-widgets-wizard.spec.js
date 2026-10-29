@@ -203,6 +203,7 @@ test.describe('adding to another page with unsaved settings', () => {
         await expect(confirm(page)).toHaveCount(0);
         // Still in the wizard, nothing added, the edit still there.
         await expect(page.locator('.config-widget-picker')).toHaveCount(1);
+        // A check that something does NOT happen: cancelling must add nothing, so an add gets time to land if it were sent.
         await page.waitForTimeout(300);
         expect(await widgetTypes(page, second)).toEqual([]);
         expect(await markerKept(page)).toBe(true);
@@ -229,6 +230,7 @@ test.describe('adding to another page with unsaved settings', () => {
         await confirm(page).locator('[data-confirm="cancel"]').click();
         await expect(page.locator('[data-widget-wizard-screen="connect"]')).toBeVisible();
         await expect(page.locator('[data-widget-wizard-finish]')).toBeEnabled();
+        // A check that something does NOT happen: cancelling must add nothing, so an add gets time to land if it were sent.
         await page.waitForTimeout(300);
         expect(await widgetTypes(page, second)).toEqual([]);
         expect(await markerKept(page)).toBe(true);
@@ -264,6 +266,7 @@ test('adding to a page whose widgets could not be read adds nothing and keeps th
     await page.locator('[data-widget-add="notes"]').click();
     await expect(page.locator('.toast, .notification, [role="status"]').filter({ hasText: 'Could not save the widgets.' }).first())
         .toBeVisible();
+    // A check that something does NOT happen: no save may follow the failed one, so a second request gets time to show up if it were sent.
     await page.waitForTimeout(300);
     expect(puts).toBe(0);
     await page.unroute(blocksOfSecond);
@@ -377,6 +380,7 @@ test.describe('the connect screen for media kinds', () => {
         await expect(page.locator('[data-widget-wizard-screen="connect"]')).toHaveCount(0);
         await expect(page.locator('[data-widget-wizard-secret]')).toHaveCount(0);
         expect(await page.evaluate(() => window.dashboardInstance.config._module._widgetWizard)).toBeNull();
+        // A check that something does NOT happen: closing the wizard must add nothing, so an add gets time to land if it were sent.
         await page.waitForTimeout(300);
         expect(await widgetTypes(page, only)).toEqual([]);
     });
@@ -391,6 +395,7 @@ test.describe('the connect screen for media kinds', () => {
         await page.locator('[data-widget-wizard-finish]').dblclick();
 
         await expect.poll(() => widgetTypes(page, only)).toEqual(['sonarr']);
+        // A check that something does NOT happen: the double click must add the widget once, so a second add gets time to land if it were sent.
         await page.waitForTimeout(500);
         expect(await widgetTypes(page, only)).toEqual(['sonarr']);
     });
@@ -438,6 +443,7 @@ test.describe('the connect screen for media kinds', () => {
             .map((w) => [w.type, w.config.server])).toEqual([['sonarr', 'http://sonarr.local:8989']]);
         const [added] = await widgetsOn(page, only);
         expect(added.config.credentialId).toBeUndefined();
+        // A check that something does NOT happen: no credential call may follow, so one gets time to show up if it were made.
         await page.waitForTimeout(300);
         expect(calls).toEqual([]);
     });
@@ -626,6 +632,7 @@ test.describe('the connect screen for Custom', () => {
         });
         await page.locator('[data-widget-wizard-finish]').dblclick();
         await expect.poll(() => widgetTypes(page, only)).toEqual(['custom']);
+        // A check that something does NOT happen: the double click must add the widget once and file no credential, so a second add gets time to land if it were sent.
         await page.waitForTimeout(400);
         expect(await widgetTypes(page, only)).toEqual(['custom']);
         expect(filed).toBe(false);
@@ -664,6 +671,7 @@ test.describe('the connect screen for Custom', () => {
             .map((w) => [w.type, w.config.url])).toEqual([['custom', 'https://svc.example/api/stats']]);
         const [added] = await widgetsOn(page, only);
         expect(added.config.credentialId).toBeUndefined();
+        // A check that something does NOT happen: no credential may be filed, so a call gets time to show up if it were made.
         await page.waitForTimeout(300);
         expect(filed).toEqual([]);
     });

@@ -35,6 +35,7 @@ const EXEMPT = new Map([
     ['manual-screenshots-glances.spec.js', 'screenshots for the manual, never run in CI'],
     ['manual-screenshots-v1-21.spec.js', 'screenshots for the manual, never run in CI'],
     ['readme-screenshots.spec.js', 'screenshots for the README, never run in CI'],
+    ['manual-screenshots-v1-22-4.spec.js', 'screenshots for the manual, never run in CI'],
 ]);
 
 const SLEEP = /\bwaitForTimeout\s*\(/;
