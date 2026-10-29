@@ -185,6 +185,11 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 
 - **new — Ocean is the theme a fresh install starts on.** Ocean [dark], with Ocean [light] for auto dark mode (`defaultThemeID`, `DEFAULT_THEME` in `theme-loader.js`, the Appearance ↺ default). Existing installs keep their theme; one still to run the v1.22.0 move lands on Aurora Glass as before, so its dialog stays right.
 
+### Docs
+
+- **MANUAL.md** describes the Recent sheet (tiles, pager, `[` `]`), the page filter's several words, `↓`/Enter and collapsed hits, the tag view's any/all switch (`?all`), *Add tag…*, Score sort and remembered sort, the Collection menu's keys, the Inbox tile's *asleep* line, the Glances Hosts table (trouble first, sorting, mount, last-hour line, °F) and Ocean as the fresh-install theme.
+- **Manual screenshots** retaken on a fresh seed: the Recent sheet, the edit-mode panel, Glances Hosts and every dashboard modal in the dashboard font. The shot kit now sets Celsius (the demo seed is Fahrenheit, which put "16°F" in Leiden's header and °F on the Glances page), and the Glances mock sends `cpuHour` for the Hosts graph.
+
 ---
 
 ## v1.22.4 — 29 October 2026
