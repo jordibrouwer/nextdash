@@ -1240,15 +1240,15 @@ func TestContainerActionPassesTheRefusalsThrough(t *testing.T) {
 		name   string
 		args   string
 		reason string
-		setup  func(h *Handlers)
+		setup  func(t *testing.T, h *Handlers)
 	}{
-		{"control off", `{"container":"web","action":"stop"}`, reasonDockerControlOff, func(h *Handlers) { t.Setenv("NEXTDASH_DOCKER_CONTROL", "") }},
-		{"own container", `{"container":"nextdash","action":"restart"}`, reasonDockerSelf, func(h *Handlers) {
+		{"control off", `{"container":"web","action":"stop"}`, reasonDockerControlOff, func(t *testing.T, h *Handlers) { t.Setenv("NEXTDASH_DOCKER_CONTROL", "") }},
+		{"own container", `{"container":"nextdash","action":"restart"}`, reasonDockerSelf, func(t *testing.T, h *Handlers) {
 			dockerSelfOverride = own[:12]
 			t.Cleanup(func() { dockerSelfOverride = "" })
 		}},
 		{"remove while running", `{"container":"web","action":"remove"}`, "running", nil},
-		{"busy", `{"container":"web","action":"stop"}`, "busy", func(h *Handlers) {
+		{"busy", `{"container":"web","action":"stop"}`, "busy", func(t *testing.T, h *Handlers) {
 			release, _ := h.dockerLock(id)
 			t.Cleanup(release)
 		}},
@@ -1260,7 +1260,7 @@ func TestContainerActionPassesTheRefusalsThrough(t *testing.T) {
 			f.add(fakeContainer{ID: own, Name: "nextdash", State: "running"})
 			h := controlMCPHandlers(t)
 			if c.setup != nil {
-				c.setup(h)
+				c.setup(t, h)
 			}
 			// What the handler itself answers to the same request.
 			var action struct{ Container, Action string }
@@ -1379,5 +1379,33 @@ func TestContainerActionIsLogged(t *testing.T) {
 		if !strings.Contains(lines[0], want) {
 			t.Errorf("line lacks %s: %s", want, lines[0])
 		}
+	}
+}
+
+// deadlineRecorder is a ResponseWriter that remembers the write deadline set on it.
+type deadlineRecorder struct {
+	*httptest.ResponseRecorder
+	deadline time.Time
+}
+
+func (d *deadlineRecorder) SetWriteDeadline(t time.Time) error { d.deadline = t; return nil }
+
+func TestContainerActionExtendsTheOuterWriteDeadline(t *testing.T) {
+	f := startFakeDocker(t)
+	f.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", State: "running"})
+	h := controlMCPHandlers(t)
+	call := func(body string) *deadlineRecorder {
+		w := &deadlineRecorder{ResponseRecorder: httptest.NewRecorder()}
+		req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+		h.MCPHandler(w, req)
+		return w
+	}
+	w := call(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"container_action","arguments":{"container":"web","action":"restart"}}}`)
+	if until := time.Until(w.deadline); until < dockerActionTimeout {
+		t.Fatalf("outer write deadline is %v away, want past the action timeout", until)
+	}
+	other := call(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_containers","arguments":{}}}`)
+	if !other.deadline.IsZero() {
+		t.Fatal("another tool had its deadline moved")
 	}
 }

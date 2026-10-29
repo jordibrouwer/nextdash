@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -384,7 +385,22 @@ func (h *Handlers) MCPHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// An update pulls an image and can run for minutes; the inner handler cannot
+	// stretch this writer's deadline (it only sees a buffer), so it is done here.
+	if mcpIsContainerAction(req) {
+		_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerActionTimeout + time.Minute))
+	}
 	writeJSONRPC(w, h.dispatchMCP(r, req))
+}
+
+func mcpIsContainerAction(req jsonRPCRequest) bool {
+	if req.Method != "tools/call" {
+		return false
+	}
+	var p struct {
+		Name string `json:"name"`
+	}
+	return json.Unmarshal(req.Params, &p) == nil && p.Name == "container_action"
 }
 
 func writeJSONRPC(w http.ResponseWriter, resp jsonRPCResponse) {
