@@ -350,7 +350,7 @@ func (h *Handlers) mcpDeleteBookmark(r *http.Request, args json.RawMessage) map[
 	// Trash holds it and RestoreTrashItem can bring it back.
 	bm.PageID = page
 	trash, err := h.mcpInner(r, http.MethodPost, "/api/trash", map[string]any{
-		"source": "mcp",
+		"source": mcpToolSource(r),
 		"items":  []map[string]any{{"pageId": page, "index": index, "bookmark": bm, "deletedAt": time.Now().UnixMilli()}},
 	}, nil, h.AddTrashItems)
 	if err != nil || trash.status >= 400 {
