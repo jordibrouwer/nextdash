@@ -490,7 +490,13 @@
                         <span class="search-mode-tab-label" data-i18n="dashboard.headerCheatLabel">keys</span>
                         <span class="search-scope-count"></span>
                     </button>
-                    <span class="search-scope-hint" data-i18n="dashboard.scopeRailHint">tab switches</span>
+                    <!-- In the rows' own grid, so the key stands under the keys and the
+                         word under the names. The key is what is on the keyboard and
+                         stays untranslated; only the word is a locale string. -->
+                    <span class="search-scope-hint" aria-hidden="true">
+                        <kbd class="search-mode-tab-key">⇥</kbd>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.scopeRailHintLabel">switches</span>
+                    </span>
                 </nav>
                 <div id="search-matches" class="search-matches"></div>
             </div>
