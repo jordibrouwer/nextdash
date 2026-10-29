@@ -1,0 +1,363 @@
+/* The assistant panel (assistant-panel.js): a modal, the conversations on the
+   left and the thread on the right. Sized with top/left and 100vw/100vh rather
+   than inset:0, so the scrollbar gutter is covered too. */
+.assistant-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 2000; /* the modal overlay's layer (modal.css) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4, 1rem);
+    background: color-mix(in srgb, #000 55%, transparent);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.assistant-overlay.show {
+    opacity: 1;
+}
+
+.assistant-panel {
+    width: min(60rem, 100%);
+    height: min(40rem, 100%);
+    display: flex;
+    overflow: hidden;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color, color-mix(in srgb, var(--text-primary) 18%, transparent));
+    border-radius: var(--radius-5, 0.6rem);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    color: var(--text-primary);
+    font-family: var(--font-family-main, inherit);
+}
+
+.assistant-side {
+    flex: none;
+    width: 15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-right: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    min-height: 0;
+}
+
+.assistant-new,
+.assistant-send,
+.assistant-apply,
+.assistant-apply-all,
+.assistant-setup {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-4, 0.4rem);
+    background: var(--accent-primary);
+    color: var(--on-accent, var(--background-primary));
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.assistant-skip,
+.assistant-close,
+.assistant-conv-delete {
+    border: 1px solid transparent;
+    border-radius: var(--radius-4, 0.4rem);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.assistant-skip {
+    padding: 0.45rem 0.8rem;
+    border-color: color-mix(in srgb, var(--text-primary) 22%, transparent);
+}
+
+.assistant-search,
+.assistant-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid color-mix(in srgb, var(--text-primary) 22%, transparent);
+    border-radius: var(--radius-4, 0.4rem);
+    background: var(--background-primary, transparent);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.assistant-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.assistant-conv {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: var(--radius-4, 0.4rem);
+}
+
+.assistant-conv.is-active,
+.assistant-conv:hover {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+
+.assistant-conv-open {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.assistant-conv-title {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
+.assistant-conv-time {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.assistant-conv-delete {
+    flex: none;
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.assistant-main {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.assistant-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+.assistant-title {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.assistant-close {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.assistant-thread {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.assistant-hint,
+.assistant-status,
+.assistant-meta,
+.assistant-skipped {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.assistant-msg p {
+    margin: 0;
+}
+
+.assistant-msg--user {
+    align-self: flex-end;
+    max-width: 85%;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-5, 0.6rem);
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.assistant-msg--assistant {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-width: 100%;
+}
+
+.assistant-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.assistant-text:empty {
+    display: none;
+}
+
+.assistant-error {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--accent-error, #e5484d);
+}
+
+.assistant-proposals {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.assistant-proposal {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--text-primary) 20%, transparent);
+    border-radius: var(--radius-4, 0.5rem);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.assistant-proposal.is-destructive {
+    border-color: var(--accent-error, #e5484d);
+}
+
+.assistant-proposal-title {
+    margin: 0 0 0.3rem;
+    font-weight: 600;
+}
+
+.assistant-proposal-flag {
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-error, #e5484d) 22%, transparent);
+    color: var(--accent-error, #e5484d);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.assistant-proposal-args {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.15rem 0.7rem;
+    margin: 0 0 0.3rem;
+    font-size: 0.85rem;
+}
+
+.assistant-proposal-args dt {
+    color: var(--text-secondary);
+}
+
+.assistant-proposal-args dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.assistant-proposal-reason {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.assistant-proposal-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.assistant-done {
+    color: var(--accent-success, var(--accent-primary));
+    font-weight: 600;
+}
+
+.assistant-apply-all {
+    align-self: flex-start;
+}
+
+.assistant-empty {
+    margin: auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.assistant-compose {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+.assistant-input {
+    resize: none;
+    flex: 1;
+}
+
+.assistant-send:disabled,
+.assistant-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.assistant-panel button:focus-visible,
+.assistant-panel input:focus-visible,
+.assistant-panel textarea:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* A narrow screen: the conversations fold above the thread. */
+@media (max-width: 640px) {
+    .assistant-overlay {
+        padding: 0;
+    }
+
+    .assistant-panel {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        flex-direction: column;
+    }
+
+    .assistant-side {
+        width: auto;
+        max-height: 11rem;
+        border-right: none;
+        border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .assistant-overlay {
+        transition: none;
+    }
+}

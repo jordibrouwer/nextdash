@@ -83,7 +83,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'digest', 'changes', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'digest', 'changes', 'telemetry', 'ask'],
             },
         ];
         // Which groups are open. None is, until the reader opens one: the
@@ -163,6 +163,7 @@ class SearchCommandsComponent {
             'help': this.handleCheatCommand.bind(this),
             'whatsnew': this.handleWhatsNewCommand.bind(this),
             'digest': this.handleDigestCommand.bind(this),
+            'ask': this.handleAskCommand.bind(this),
             'changes': this.handleChangesTourCommand.bind(this),
             'add': this.handleAddCommand.bind(this),
             'config': this.handleConfigCommand.bind(this),
@@ -1295,6 +1296,37 @@ class SearchCommandsComponent {
                     window.dashboardInstance?.notifications?.notifyConfig?.('digestShowNone', 'No digest yet.', 'info');
                 }
             }),
+        }];
+    }
+
+    // :ask [question] -- the assistant panel; with text it opens a new
+    // conversation and sends the question.
+    handleAskCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        if (window.DemoLock?.on) {
+            return [{
+                name: this._t('commands.askDemo', 'The assistant is not available in the demo'),
+                shortcut: ':ASK',
+                type: 'command',
+                action: () => ({ refresh: false }),
+            }];
+        }
+        if (dash?.settings?.aiEnabled !== true) {
+            return [{
+                name: this._t('commands.askOff', 'The assistant is off. Set it up in Config'),
+                shortcut: ':ASK',
+                type: 'command',
+                action: () => this._runOverlayAction(() => dash?.config?.openAssistantFold?.()),
+            }];
+        }
+        const question = (args || []).join(' ').trim();
+        return [{
+            name: question
+                ? this._t('commands.askQuestion', 'Ask: {question}').replace('{question}', question)
+                : this._t('commands.askOpen', 'Open the assistant'),
+            shortcut: ':ASK',
+            type: 'command',
+            action: () => this._runOverlayAction(() => window.AssistantPanel?.open?.({ question })),
         }];
     }
 
