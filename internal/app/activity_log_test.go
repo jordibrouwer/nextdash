@@ -266,3 +266,30 @@ func TestActivityRespectsItsChannels(t *testing.T) {
 		t.Fatalf("a disabled channel still wrote: %q", buf.String())
 	}
 }
+
+func TestAnMCPWriteIsLoggedWithItsSource(t *testing.T) {
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategoryMutate: true}})
+	bm := Bookmark{PageID: 1, Name: "Example", URL: "https://example.com"}
+
+	lines := captureActivityLogs(t, func() {
+		outer := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+		outer.Header.Set("User-Agent", "claude-code/9.9")
+		h := &Handlers{}
+		_, err := h.mcpInner(outer, http.MethodPost, "/api/bookmarks/add", nil, nil, func(w http.ResponseWriter, r *http.Request) {
+			logBookmarkAdd(bm, r)
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		logBookmarkAdd(bm, httptest.NewRequest(http.MethodPost, "/api/bookmarks/add", nil))
+	})
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 activity lines, got %d (%v)", len(lines), lines)
+	}
+	if !strings.Contains(lines[0], `"source":"mcp"`) || !strings.Contains(lines[0], `"client":"claude-code/9.9"`) {
+		t.Fatalf("MCP write lacks source/client: %s", lines[0])
+	}
+	if strings.Contains(lines[1], `"source":"mcp"`) || strings.Contains(lines[1], `"client"`) {
+		t.Fatalf("plain write must not claim mcp: %s", lines[1])
+	}
+}

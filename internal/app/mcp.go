@@ -191,6 +191,9 @@ func (h *Handlers) mcpInner(r *http.Request, method, path string, body any, vars
 	if token := r.Header.Get("X-NextDash-Token"); token != "" {
 		inner.Header.Set("X-NextDash-Token", token)
 	}
+	if agent := r.Header.Get("User-Agent"); agent != "" {
+		inner.Header.Set("User-Agent", agent)
+	}
 	inner.RemoteAddr = r.RemoteAddr
 	if vars != nil {
 		inner = mux.SetURLVars(inner, vars)
