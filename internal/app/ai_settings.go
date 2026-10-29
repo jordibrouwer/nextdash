@@ -21,7 +21,7 @@ const (
 // aiDefaultModels: compatible has none, the field is required there.
 var aiDefaultModels = map[string]string{
 	aiProviderAnthropic:  "claude-sonnet-5-5",
-	aiProviderOpenAI:     "gpt-5-mini",
+	aiProviderOpenAI:     "gpt-5.6-terra",
 	aiProviderCompatible: "",
 }
 
