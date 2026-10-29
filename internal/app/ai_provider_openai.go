@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"sort"
 	"strings"
 )
 
@@ -128,9 +127,13 @@ func (p *openAIProvider) Chat(ctx context.Context, req aiChatRequest, onText fun
 		id, name string
 		args     strings.Builder
 	}
-	calls := map[int]*pending{}
+	// In arrival order; current maps a stream index to the call it is filling.
+	var calls []*pending
+	current := map[int]*pending{}
+	finished := false
 	err = aiReadSSE(resp.Body, func(_, data string) error {
 		if strings.TrimSpace(data) == "[DONE]" {
+			finished = true
 			return errAIStreamDone
 		}
 		var chunk openAIChunk
@@ -155,10 +158,13 @@ func (p *openAIProvider) Chat(ctx context.Context, req aiChatRequest, onText fun
 			}
 		}
 		for _, tc := range delta.ToolCalls {
-			c := calls[tc.Index]
-			if c == nil {
+			c := current[tc.Index]
+			// A new id at a used index is a new call: some compatible
+			// servers send whole calls, all at index 0.
+			if c == nil || (tc.ID != "" && c.id != "" && tc.ID != c.id) {
 				c = &pending{}
-				calls[tc.Index] = c
+				current[tc.Index] = c
+				calls = append(calls, c)
 			}
 			if c.id == "" {
 				c.id = tc.ID
@@ -173,14 +179,13 @@ func (p *openAIProvider) Chat(ctx context.Context, req aiChatRequest, onText fun
 	if err != nil {
 		return aiChatReply{}, aiTransportError(err)
 	}
-	reply.Text = text.String()
-	indexes := make([]int, 0, len(calls))
-	for i := range calls {
-		indexes = append(indexes, i)
+	// Servers that copy the API vary in how they end a stream; OpenAI itself
+	// always sends [DONE].
+	if !finished && p.label == "OpenAI" {
+		return aiChatReply{}, aiStreamCut()
 	}
-	sort.Ints(indexes)
-	for _, i := range indexes {
-		c := calls[i]
+	reply.Text = text.String()
+	for _, c := range calls {
 		reply.ToolCalls = append(reply.ToolCalls, aiToolCall{ID: c.id, Name: c.name, Arguments: aiArgumentsOrEmpty(c.args.String())})
 	}
 	return reply, nil

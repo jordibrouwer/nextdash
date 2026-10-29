@@ -113,7 +113,7 @@ func newAIProvider(s Settings) (aiProvider, error) {
 		return &openAIProvider{base: aiOpenAIBaseURL, key: key, model: model, label: "OpenAI", client: aiHTTPClient(false)}, nil
 	case aiProviderCompatible:
 		// Home servers such as Ollama live on the LAN or loopback.
-		base := strings.TrimRight(strings.TrimSpace(s.AIBaseURL), "/")
+		base := normalizeSearxngURL(s.AIBaseURL)
 		return &openAIProvider{base: base, key: key, model: model, label: "OpenAI-compatible", client: aiHTTPClient(true)}, nil
 	}
 	return &anthropicProvider{base: aiAnthropicBaseURL, key: key, model: model, client: aiHTTPClient(false)}, nil
@@ -294,12 +294,20 @@ func aiToolSchema(schema map[string]any) map[string]any {
 	return out
 }
 
+// aiArgumentsOrEmpty keeps only arguments that parse: a call cut off mid-way
+// (max_tokens during tool use) comes back as {}, and the tool loop then
+// reports what is missing.
 func aiArgumentsOrEmpty(raw string) json.RawMessage {
-	if strings.TrimSpace(raw) == "" {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || !json.Valid([]byte(raw)) {
 		return json.RawMessage(`{}`)
 	}
 	return json.RawMessage(raw)
 }
+
+// aiStreamCut is a stream that ended before its end marker: the answer is
+// partial, so it is not passed on as if it were whole.
+func aiStreamCut() *aiError { return &aiError{Kind: "provider", Status: 502} }
 
 func aiMaxTokensOf(req aiChatRequest) int {
 	if req.MaxTokens <= 0 {

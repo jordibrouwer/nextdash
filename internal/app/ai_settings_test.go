@@ -115,7 +115,6 @@ func TestAIReadyReasons(t *testing.T) {
 	if ok, why := aiReady(Settings{AIEnabled: true}); ok || why != "no-key" {
 		t.Fatalf("no-key: %v %q", ok, why)
 	}
-	_ = saveAIKey("compatible", "k")
 	if ok, why := aiReady(Settings{AIEnabled: true, AIProvider: "compatible"}); ok || why != "no-address" {
 		t.Fatalf("no-address: %v %q", ok, why)
 	}

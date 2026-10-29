@@ -144,6 +144,7 @@ func (p *anthropicProvider) Chat(ctx context.Context, req aiChatRequest, onText 
 	}
 	calls := map[int]*pending{}
 	var order []int
+	finished := false
 	err = aiReadSSE(resp.Body, func(event, data string) error {
 		var ev anthropicEvent
 		if json.Unmarshal([]byte(data), &ev) != nil {
@@ -175,6 +176,7 @@ func (p *anthropicProvider) Chat(ctx context.Context, req aiChatRequest, onText 
 		case "message_delta":
 			reply.TokensOut = ev.Usage.OutputTokens
 		case "message_stop":
+			finished = true
 			return errAIStreamDone
 		case "error":
 			status := 500
@@ -187,6 +189,9 @@ func (p *anthropicProvider) Chat(ctx context.Context, req aiChatRequest, onText 
 	})
 	if err != nil {
 		return aiChatReply{}, aiTransportError(err)
+	}
+	if !finished {
+		return aiChatReply{}, aiStreamCut()
 	}
 	reply.Text = text.String()
 	for _, i := range order {

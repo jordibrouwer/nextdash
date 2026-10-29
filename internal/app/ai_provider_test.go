@@ -369,6 +369,7 @@ func TestToolSchemasLeaveAnnotationsBehind(t *testing.T) {
 		var raw []byte
 		aiFake(t, func(w http.ResponseWriter, r *http.Request) {
 			raw, _ = io.ReadAll(r.Body)
+			sseWrite(w, "message_stop", `{"type":"message_stop"}`)
 			sseWrite(w, "", `[DONE]`)
 		})
 		req := aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}, Tools: specs}
@@ -600,5 +601,127 @@ func TestSSEReaderJoinsDataLinesAndHandlesCRLF(t *testing.T) {
 	}
 	if strings.Join(got, ";") != "a=one\ntwo;=three" {
 		t.Fatalf("events: %q", got)
+	}
+}
+
+// A home server such as Ollama takes no key: the assistant is ready without
+// one, and the request carries no Authorization header. A query or fragment
+// on the saved address stays out of the request path.
+func TestCompatibleWithoutAKeyIsReadyAndSendsNoAuthorization(t *testing.T) {
+	var gotPath, gotQuery string
+	var hadAuth bool
+	srv := aiFake(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath, gotQuery = r.URL.Path, r.URL.RawQuery
+		_, hadAuth = r.Header["Authorization"]
+		sseWrite(w, "", `{"choices":[{"index":0,"delta":{"content":"hi"}}]}`)
+		sseWrite(w, "", `[DONE]`)
+	})
+	newTestHandlers(t)
+	np, err := newAIProvider(Settings{AIEnabled: true, AIProvider: aiProviderCompatible, AIBaseURL: srv.URL + "/v1?x=1#frag", AIModel: "llama3"})
+	if err != nil {
+		t.Fatalf("keyless compatible: %v", err)
+	}
+	if op := np.(*openAIProvider); op.base != srv.URL+"/v1" || op.key != "" {
+		t.Fatalf("base %q key %q", op.base, op.key)
+	}
+	reply, err := np.Chat(context.Background(), aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}}, nil)
+	if err != nil || reply.Text != "hi" {
+		t.Fatalf("chat: %v %+v", err, reply)
+	}
+	if gotPath != "/v1/chat/completions" || gotQuery != "" || hadAuth {
+		t.Fatalf("path %q query %q auth %v", gotPath, gotQuery, hadAuth)
+	}
+}
+
+func TestAnthropicStreamCutBeforeMessageStopIsAnError(t *testing.T) {
+	aiFake(t, func(w http.ResponseWriter, r *http.Request) {
+		sseWrite(w, "message_start", `{"type":"message_start","message":{"usage":{"input_tokens":5}}}`)
+		sseWrite(w, "content_block_start", `{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`)
+		sseWrite(w, "content_block_delta", `{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Half an ans"}}`)
+	})
+	reply, err := testAnthropic().Chat(context.Background(), aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}}, nil)
+	var ae *aiError
+	if !errors.As(err, &ae) || ae.Kind != "provider" || reply.Text != "" {
+		t.Fatalf("cut stream: %v %+v", err, reply)
+	}
+}
+
+func TestOpenAIStreamCutBeforeDoneIsAnError(t *testing.T) {
+	aiFake(t, func(w http.ResponseWriter, r *http.Request) {
+		sseWrite(w, "", `{"choices":[{"index":0,"delta":{"content":"Half an ans"}}]}`)
+	})
+	req := aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}}
+	reply, err := testOpenAI().Chat(context.Background(), req, nil)
+	var ae *aiError
+	if !errors.As(err, &ae) || ae.Kind != "provider" || reply.Text != "" {
+		t.Fatalf("openai cut stream: %v %+v", err, reply)
+	}
+	// A compatible server may end without [DONE]; that stays an answer.
+	compat := testOpenAI()
+	compat.label = "OpenAI-compatible"
+	reply, err = compat.Chat(context.Background(), req, nil)
+	if err != nil || reply.Text != "Half an ans" {
+		t.Fatalf("compatible lenient: %v %+v", err, reply)
+	}
+}
+
+func TestOpenAITruncatedToolArgumentsBecomeAnEmptyObject(t *testing.T) {
+	var bodies [][]byte
+	aiFake(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		bodies = append(bodies, raw)
+		sseWrite(w, "", `{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_A","type":"function","function":{"name":"search_bookmarks","arguments":"{\"query\":\"x"}}]}}]}`)
+		sseWrite(w, "", `{"choices":[{"index":0,"delta":{},"finish_reason":"length"}]}`)
+		sseWrite(w, "", `[DONE]`)
+	})
+	p := testOpenAI()
+	reply, err := p.Chat(context.Background(), aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}}, nil)
+	if err != nil || len(reply.ToolCalls) != 1 {
+		t.Fatalf("reply: %v %+v", err, reply)
+	}
+	if c := reply.ToolCalls[0]; c.ID != "call_A" || string(c.Arguments) != `{}` {
+		t.Fatalf("truncated call: %+v %s", c, c.Arguments)
+	}
+	// A hand-built bad call never reaches the wire as broken JSON either.
+	_, err = p.Chat(context.Background(), aiChatRequest{Messages: []aiWireMessage{
+		{Role: "user", Text: "q"},
+		{Role: "assistant", ToolCalls: []aiToolCall{{ID: "call_A", Name: "search_bookmarks", Arguments: json.RawMessage(`{"query":"x`)}}},
+		{Role: "tool", ToolCallID: "call_A", Text: "bad arguments"},
+	}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(bodies[1]), `"arguments":"{}"`) {
+		t.Fatalf("resend: %s", bodies[1])
+	}
+}
+
+func TestAnthropicTruncatedToolInputBecomesAnEmptyObject(t *testing.T) {
+	aiFake(t, func(w http.ResponseWriter, r *http.Request) {
+		sseWrite(w, "message_start", `{"type":"message_start","message":{"usage":{"input_tokens":5}}}`)
+		sseWrite(w, "content_block_start", `{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"search_bookmarks","input":{}}}`)
+		sseWrite(w, "content_block_delta", `{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"query\": \"x"}}`)
+		sseWrite(w, "message_delta", `{"type":"message_delta","delta":{"stop_reason":"max_tokens"},"usage":{"output_tokens":9}}`)
+		sseWrite(w, "message_stop", `{"type":"message_stop"}`)
+	})
+	reply, err := testAnthropic().Chat(context.Background(), aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}}, nil)
+	if err != nil || len(reply.ToolCalls) != 1 || string(reply.ToolCalls[0].Arguments) != `{}` || reply.ToolCalls[0].ID != "toolu_1" {
+		t.Fatalf("reply: %v %+v", err, reply)
+	}
+}
+
+func TestOpenAIWholeCallsAtIndexZeroStaySeparate(t *testing.T) {
+	aiFake(t, func(w http.ResponseWriter, r *http.Request) {
+		sseWrite(w, "", `{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"list_tags","arguments":"{}"}}]}}]}`)
+		sseWrite(w, "", `{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_2","type":"function","function":{"name":"search_bookmarks","arguments":"{\"query\":\"y\"}"}}]}}]}`)
+		sseWrite(w, "", `[DONE]`)
+	})
+	reply, err := testOpenAI().Chat(context.Background(), aiChatRequest{Messages: []aiWireMessage{{Role: "user", Text: "q"}}}, nil)
+	if err != nil || len(reply.ToolCalls) != 2 {
+		t.Fatalf("calls: %v %+v", err, reply.ToolCalls)
+	}
+	a, b := reply.ToolCalls[0], reply.ToolCalls[1]
+	if a.ID != "call_1" || a.Name != "list_tags" || string(a.Arguments) != `{}` || b.ID != "call_2" || b.Name != "search_bookmarks" || string(b.Arguments) != `{"query":"y"}` {
+		t.Fatalf("calls: %+v %s / %+v %s", a, a.Arguments, b, b.Arguments)
 	}
 }

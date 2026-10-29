@@ -146,7 +146,8 @@ func aiReady(s Settings) (bool, string) {
 		return false, "off"
 	}
 	p := aiProviderOf(s)
-	if aiKeyFor(p) == "" {
+	// A home server such as Ollama takes no key.
+	if p != aiProviderCompatible && aiKeyFor(p) == "" {
 		return false, "no-key"
 	}
 	if p == aiProviderCompatible {
