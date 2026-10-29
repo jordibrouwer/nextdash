@@ -2185,6 +2185,9 @@
     renderMCPPanel() {
         const esc = (v) => this.dash.escapeHtml(v);
         const on = this.dash.settings?.mcpEnabled === true;
+        // The in-app assistant draws on the same tool groups, so they can be
+        // ticked when either the endpoint or the assistant is on.
+        const assistantOn = this.dash.settings?.aiEnabled === true;
         const address = `${window.location.origin}/mcp`;
         const needsToken = this.t('config.mcpNeedsToken', 'needs write token');
         const dockerOn = this._dockerControl === true;
@@ -2203,7 +2206,7 @@
             blockedNote: 'Docker control is off on this server (NEXTDASH_DOCKER_CONTROL).', blockedKey: 'mcpControlOff',
         };
         const group = (g) => {
-            const off = !on || g.blocked === true;
+            const off = !(on || assistantOn) || g.blocked === true;
             return `
                 <label class="config-toggle">
                     <input type="checkbox" data-backup-toggle="${g.key}" ${this.dash.settings?.[g.key] === true ? 'checked' : ''} ${off ? 'disabled' : ''}>
@@ -2231,6 +2234,7 @@
                     <p class="config-field-note">${esc(this.t('config.mcpAddressLabel', 'Give the tool this address:'))}</p>
                     <p class="config-field-note config-mcp-address">${esc(address)}</p>` : ''}
                 <p class="config-field-note">${esc(this.t('config.mcpAlwaysOn', 'Searching, looking up and adding bookmarks is always on.'))}</p>
+                <p class="config-field-note">${esc(this.t('config.mcpAssistantNote', 'The assistant uses these switches too.'))}</p>
                 ${groups.map(group).join('')}
                 <p class="config-panel-title">${esc(this.t('config.mcpControlHeading', 'Acting on containers'))}</p>
                 ${group(control)}
