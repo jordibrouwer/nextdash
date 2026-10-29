@@ -11,7 +11,13 @@
           "badge": "new",
           "text": "<strong>Edit mode.</strong> Press <code>Shift+M</code> with no bookmark selected, or click the pencil in the header. Click a category, widget or page and a panel opens beside the page: name, icon, width, view and sorting, saved as you go. <code>Esc</code> leaves.",
           "link": "#bookmarks",
-          "linkLabel": "Try it"
+          "linkLabel": "Try it",
+          "highlight": true,
+          "title": "Edit the dashboard in place",
+          "media": {
+            "image": "media/v1.22.4-edit-mode.jpg",
+            "alt": "The dashboard in edit mode with a category chosen and its panel at the right"
+          }
         },
         {
           "badge": "new",
@@ -32,11 +38,17 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Usually now.</strong> The empty search panel opens with up to three bookmarks you tend to open around this time of day, on this kind of day."
+          "text": "<strong>Usually now.</strong> The empty search panel opens with up to three bookmarks you tend to open around this time of day, on this kind of day.",
+          "highlight": true,
+          "title": "Search that knows your habits",
+          "media": {
+            "image": "media/v1.22.4-search-usually-now.jpg",
+            "alt": "The search panel with a Usually now group and the actions of a result unfolded"
+          }
         },
         {
           "badge": "new",
-          "text": "<strong>Actions on a result.</strong> Press <code>→</code> on a bookmark in the results to unfold open, open in a new tab, edit, copy the address, health and move to a page. <code>←</code> or <code>Esc</code> folds them again."
+          "text": "<strong>Actions on a result.</strong> Press <code>→</code> on a bookmark in the results to unfold open, open in a new tab, edit, copy the address, show in the list and move to a page. <code>←</code> or <code>Esc</code> folds them again."
         }
       ]
     },
