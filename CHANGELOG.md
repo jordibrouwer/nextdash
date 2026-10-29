@@ -137,6 +137,7 @@ Edit the dashboard in place, search that learns your hours, a checkup for what n
 - **new — The panel.** `DashboardEditModePanel` is a `ListViewDrawer` docked at the right like the views' panels, and the grid gives way with `padding-right`. A category: name, icon, width, view, sorting; a page: name, emoji, colour; a widget: name, width, state, and *Settings…*. Every change is saved as it is made; Esc in a text field gives the old text back; a category deleted elsewhere clears the panel; a save reloads the page first when `d.categories` no longer matches the server.
 - **new — A widget's sheet over the dashboard.** `openWidgetSheetOverDashboard` opens the Config → Widgets sheet on the dashboard, restores Config's page filter, search and drafts when it closes, and counts as a modal for the dashboard's keys. The sheet joined the overlay theming (`theme-overlays.css`, `BIG_LAYERS`), so it is drawn like the other dialogs in every theme, in Config as well.
 - **new — The pencil is the tenth action button.** `showEditModeButton` (on by default, also for old settings files), `maxHeaderActions` goes to 10, `:maxactions` offers 10, and the button carries its key for screen readers.
+- **new — A click on a block's title chooses the block and leaves it as it is.** In the mode the capture handler stops the title's own click, which would otherwise fold the block and save that.
 - **new — A corner card** introduces edit mode and `Shift + M`, once, no sooner than three minutes after the latest corner card (`minGapAfterCardMs` in `NoticeCard`, kept across loads), and the dashboard tour has a step for it.
 
 ### Search
@@ -168,6 +169,8 @@ Edit the dashboard in place, search that learns your hours, a checkup for what n
 
 - **docs — `static/data/whats-new/v1.22.4.json` and its index entry**; `whats-new-stub.js` moved to `DASHBOARD_RELEASE` v1.22.4 and `whats-new-v357`. `hideFromModal` is removed from every entry of the index, and `tests/whats-new-hidden-release.spec.js` now expects an empty list and every earlier release in the modal.
 - **docs — Config → Help** (edit mode panel; digest, search, keyboard, header and health texts), **Tips**, **Overview and About → News & features** (four entries), the **cheat sheet** with its PDF regenerated, MANUAL.md, and the six locale files.
+- **docs — README.md and MANUAL.md** describe edit mode, Usually now with result actions, the checkup and the weekly digest, with new shots (`nextdash-edit-mode.jpg`, `nextdash-digest.jpg`, `04-edit-mode*.jpg`, `08-search-*.jpg`, `12-checkup.jpg`, `12-weekly-digest.jpg`); every README shot that shows the action bar is retaken with the pencil as its tenth button (`tests/readme-screenshots.spec.js`, `tests/manual-screenshots-v1-22-4.spec.js`).
+- **docs — Texts say "action bar" for the pencil** (it is not in the header) and the digest's own group names, *Needs you*, *Tidy up* and *Good to know*, in Help, the manual, the What's new item and the five translations; two Dutch checkup labels are translated.
 
 ---
 
