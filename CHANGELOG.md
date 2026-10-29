@@ -160,6 +160,7 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 ### Search
 
 - **fix — The search panel looks like the other overlays.** On the Signature style it takes the overlay fill (`--ov-fill`), so it is as opaque as Recent bookmarks; it used to follow the categories (`--palette-fill`, their alpha plus a tenth, never under 70%) and read as a thinner veil on glass. On Classic it has the modal's ground, corner and cast (`search.css`). Its results sit on the same slab as the recents list (`modal.css`), inset from the panel's edge.
+- **fix — The modals on the dashboard read in its font.** Recent bookmarks, the bookmark form, the tag cloud, notes, confirmations and the other modals opened on the bookmarks view take `--font-family-dashboard` (Source Code Pro by default), as the search panel already did (`font-size.css`). In Config and the other views they stay in Inter.
 
 ---
 
