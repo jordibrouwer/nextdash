@@ -142,7 +142,7 @@ Edit the dashboard in place, search that learns your hours, a checkup for what n
 ### Search
 
 - **new — Usually now.** `search-usually-now.js` ranks bookmarks by opens within ±1.5 hours of the current time, on the same kind of day, over eight weeks (at least three), from each bookmark's `openLog`; it is the first group of the empty panel.
-- **new — Actions on a result.** `→` unfolds open, open in a new tab, edit, copy address, health and move under a bookmark result; `←` or Esc folds them. Enter chords fold the open actions in the phone's input.
+- **new — Actions on a result.** `→` unfolds open, open in a new tab, edit, copy address, show in the list and move under a bookmark result; `←` or Esc folds them. Enter chords fold the open actions in the phone's input.
 
 ### Checkup
 

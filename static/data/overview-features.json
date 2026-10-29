@@ -39,7 +39,7 @@
       "whatKey": "config.overviewNewFeatureUsuallyNowWhat",
       "whatFallback": "The empty search panel offered recent searches, but not the three links you open every morning.",
       "howKey": "config.overviewNewFeatureUsuallyNowHow",
-      "howFallback": "A Usually now group lists bookmarks you tend to open around this time of day, and → on a result unfolds what you can do with it: open in a new tab, edit, copy the address, health, move.",
+      "howFallback": "A Usually now group lists bookmarks you tend to open around this time of day, and → on a result unfolds what you can do with it: open in a new tab, edit, copy the address, show in the list, move.",
       "enableKey": "config.overviewNewFeatureUsuallyNowEnable",
       "enableFallback": "Open the search panel with > on an empty line.",
       "ctaKey": "config.overviewNewFeatureUsuallyNowCta",
