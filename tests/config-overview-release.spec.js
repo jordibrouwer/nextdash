@@ -123,7 +123,10 @@ test.describe('the current release as the reader meets it', () => {
         // Two shapes lead somewhere different: a section stays inside config,
         // while a view leaves it for health or the inbox. Which one the top
         // feature uses is the release's business, not this spec's.
-        if (target.openBookmarkForm) {
+        if (target.editMode) {
+            // The feature is edit mode itself: the button leaves config and switches the mode on.
+            await expect(page.locator('body[data-edit-mode="on"]')).toHaveCount(1, { timeout: 10_000 });
+        } else if (target.openBookmarkForm) {
             // A third shape: the feature is the bookmark form itself, so the
             // button leaves config and opens it.
             await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/, { timeout: 10_000 });

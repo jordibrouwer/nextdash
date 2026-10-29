@@ -122,14 +122,15 @@ test.describe('typing a bookmark shortcut', () => {
 });
 
 test.describe('Inbox is its own section in Config', () => {
-    test('the section exists and carries the inbox settings; Behavior keeps Fresh', async ({ page }) => {
+    test('the section exists and carries the inbox settings; Behavior no longer carries Fresh', async ({ page }) => {
         await dashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.waitForSelector('[data-behavior-tab]', { timeout: 15_000 });
 
         const tabs = await page.locator('[data-behavior-tab]').evaluateAll(
             (els) => els.map((el) => el.getAttribute('data-behavior-tab')));
-        expect(tabs).toContain('fresh');
+        // Fresh moved to the Bookmarks section; Behavior keeps neither it nor the inbox.
+        expect(tabs).not.toContain('fresh');
         expect(tabs).not.toContain('inbox');
         // Search keeps its name for what it is now, without the inbox tacked on.
         const searchLabel = await page.locator('[data-behavior-tab="search"]').innerText();

@@ -238,7 +238,9 @@ test.describe('Config overview — from nextDash', () => {
         await expect(rows.first().locator('.config-overview-feature-since')).toHaveText(first.since);
 
         await rows.first().locator('.config-overview-feature-link').click();
-        if (first.go.openBookmarkForm) {
+        if (first.go.editMode) {
+            await expect(page.locator('body[data-edit-mode="on"]')).toHaveCount(1, { timeout: 10_000 });
+        } else if (first.go.openBookmarkForm) {
             await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/, { timeout: 10_000 });
         } else if (first.go.view) {
             await expect.poll(() => page.evaluate(() =>

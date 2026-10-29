@@ -88,7 +88,7 @@ test.describe('the config commands name the config that exists', () => {
 
         const labels = {
             overview: 'Overview', bookmarks: 'Bookmarks', inbox: 'Inbox', appearance: 'Appearance',
-            structure: 'Structure', behavior: 'Behavior',
+            structure: 'Structure', behavior: 'Behavior', finders: 'Finders',
             'data-backups': 'Data & backups', widgets: 'Widgets', containers: 'Containers',
             unraid: 'Unraid', glances: 'Glances', monitoring: 'Monitoring', 'status-page': 'Status page', stats: 'Statistics',
             help: 'Help', logs: 'Logs', about: 'About',
