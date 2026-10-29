@@ -202,6 +202,7 @@ The tag view can show bookmarks with all of its tags, add a tag to a selection, 
 ### Themes
 
 - **fix — The views take the category surface and the glint.** Under the Signature style with the category surface on *Open*, the Bookmarks, tag, inbox, containers and Glances views drew one plate in the material whatever it was; enamel, paper, velvet, ink and terminal now give their views the category card they draw, and a view's plate catches the same shine as a column (`theme-overlays.css`, `theme-signature.css`).
+- **fix — A setting changed on another device survives closing the theme studio.** While the studio is open such a change waits; a save from this tab before it was read sent every field back as it was, and put the other device's value back on the server. `saveSettings` now reads the waiting change first (`_settingsChangedElsewhere`, `dashboard-data.js`).
 - **new — Ocean is the theme a fresh install starts on.** Ocean [dark], with Ocean [light] for auto dark mode (`defaultThemeID`, `DEFAULT_THEME` in `theme-loader.js`, the Appearance ↺ default). Existing installs keep their theme; one still to run the v1.22.0 move lands on Aurora Glass as before, so its dialog stays right.
 
 ### Docs

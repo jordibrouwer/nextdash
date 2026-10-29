@@ -710,8 +710,12 @@ class DashboardData {
         // the first poll after the studio closes applies the change.
         if (settingsChanged && d._lookStudioCommitted) {
             settingsChanged = false;
+            // Remembered for saveSettings: until this change is read, a save
+            // from this tab would send the other device's fields back as they were.
+            d._settingsChangedElsewhere = true;
         } else {
             d._serverSettingsRevision = this._lastSettingsRevision || d._serverSettingsRevision;
+            if (settingsChanged) d._settingsChangedElsewhere = false;
         }
 
         // A config change on another device used to be invisible here: this poll
@@ -1547,6 +1551,11 @@ class DashboardData {
     async saveSettings() {
         const d = this.dash;
         try {
+            // A change from another device waited while the look studio was open.
+            // Read it first: this save sends every field, and would put it back.
+            if (d._settingsChangedElsewhere && !d._lookStudioCommitted) {
+                await this.refreshIfDataRevisionChanged();
+            }
             let payload = typeof sanitizeSettingsForPersist === 'function'
                 ? sanitizeSettingsForPersist(d.settings)
                 : d.settings;

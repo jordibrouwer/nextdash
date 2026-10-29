@@ -113,6 +113,11 @@ test('a settings change from another device waits until the studio closes', asyn
     await page.locator('[data-studio-cancel]').click();
     await expect(studio(page)).toHaveCount(0);
     expect(await local(page, 'categoryHeaderStyle')).toBe('clean');
+    // A save before the next poll sends every field: it reads the waiting change
+    // first, or it puts the other device's value back on the server.
+    await page.evaluate(() => window.dashboardInstance.saveSettings());
+    const stored = await (await request.get('/api/settings')).json();
+    expect(stored.inboxViewUnreadMark, 'a save after Cancel kept the other device\'s change').toBe(false);
     // Asked again on every try: a refresh already running when the studio closed
     // is handed back to the caller as it is, and it settled the change as
     // "wait" before the studio closed, so the first answer can still be the old
