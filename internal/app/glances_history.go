@@ -127,9 +127,14 @@ func glancesTier(age int64) string {
 // files cannot be read as raises it, with a conversion here.
 const glancesHistoryVersion = 1
 
+// capPoints keeps the newest limit points. It reslices rather than copies: a
+// full ring takes a point on every beat, and copying all of it each time made
+// the demo's seven-day seed cost seconds of CPU at start and at every reset
+// (over thirty on a busy CI runner). The dropped head goes with the old array
+// once append outgrows it.
 func capPoints(points []glancesPoint, limit int) []glancesPoint {
 	if len(points) > limit {
-		return append(points[:0:0], points[len(points)-limit:]...)
+		return points[len(points)-limit:]
 	}
 	return points
 }
