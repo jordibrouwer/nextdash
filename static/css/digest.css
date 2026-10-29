@@ -398,6 +398,111 @@ body.no-animations .digest-days-fill {
     color: var(--text-primary);
 }
 
+/* The week in figures, above the list: each next to the week before. */
+.digest-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin: 0 0 var(--space-3, 0.8rem);
+}
+
+.digest-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.digest-stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.digest-stat-delta {
+    margin-left: 0.45rem;
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 500;
+    color: var(--text-tertiary);
+}
+
+.digest-stat-delta.is-good { color: var(--digest-ok); }
+.digest-stat-delta.is-bad { color: var(--digest-bad); }
+
+.digest-stat-label {
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-tertiary);
+}
+
+/* A part's detail: a name with what sits under it, and a value on the right. */
+.digest-lines {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-2, 0.55rem);
+}
+
+.digest-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3, 0.8rem);
+    padding: 0.4rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.82rem);
+    text-align: left;
+}
+
+.digest-line:last-child { border-bottom: 0; }
+
+.digest-line-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.digest-line-name {
+    overflow-wrap: anywhere;
+    font-weight: 500;
+}
+
+.digest-line-sub {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.72rem);
+    overflow-wrap: anywhere;
+}
+
+.digest-line-value {
+    flex: none;
+    max-width: 55%;
+    color: var(--text-secondary);
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+/* The Overview's lines are buttons into the part they describe. */
+.digest-line--part {
+    width: 100%;
+    cursor: pointer;
+    align-items: center;
+}
+
+.digest-line--part .digest-line-main {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+}
+
+.digest-line--part:hover .digest-line-name { color: var(--digest-tone, var(--text-primary)); }
+.digest-line--part.is-done .digest-line-name,
+.digest-line--part.is-done .digest-line-value { color: var(--text-tertiary); }
+
 .digest-split {
     display: grid;
     grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr);

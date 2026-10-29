@@ -160,6 +160,78 @@
         await d.config?.openLibraryView?.();
     }
 
+    /** Whole days since a moment, never negative. */
+    function daysSince(ms) {
+        return Math.max(0, Math.floor((Date.now() - Number(ms)) / 86400000));
+    }
+
+    /** "down 12 d", or nothing when the check never said since when. */
+    function downFor(since) {
+        if (!since) return '';
+        const days = daysSince(since);
+        return days < 1
+            ? t('dashboard.digestDownToday', 'down today')
+            : t('dashboard.digestDownDays', 'down {days} d', { days });
+    }
+
+    /** One line of detail: a name, what sits under it, and a value on the right. */
+    function rowsHtml(rows) {
+        if (!rows?.length) return '';
+        const lines = rows.map(({ name, sub, value }) => `
+            <div class="digest-line">
+                <span class="digest-line-main">
+                    <span class="digest-line-name" title="${esc(name)}">${esc(name)}</span>
+                    ${sub ? `<small class="digest-line-sub">${esc(sub)}</small>` : ''}
+                </span>
+                ${value ? `<span class="digest-line-value">${esc(value)}</span>` : ''}
+            </div>`).join('');
+        return `<div class="digest-lines">${lines}</div>`;
+    }
+
+    /**
+     * The week in figures, each next to the week before. A figure with nothing
+     * behind it is left out, so a new install shows a short strip, not zeroes.
+     * `good` says which way is better: up for opens and uptime, neither for
+     * what only counts.
+     */
+    function statsHtml(s) {
+        const w = s.week || {};
+        const inbox = s.usage?.inbox || 0;
+        const cards = [];
+        const arrow = (now, prev, good, unit = '') => {
+            const diff = Math.round((now - prev) * 10) / 10;
+            if (!diff) return `<span class="digest-stat-delta is-same">= ${prev}${unit}</span>`;
+            const tone = good ? ((diff > 0) === (good === 'up') ? 'is-good' : 'is-bad') : 'is-same';
+            return `<span class="digest-stat-delta ${tone}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff)}${unit}</span>`;
+        };
+        if (w.opens || w.opensPrev) {
+            cards.push({ value: w.opens || 0, delta: arrow(w.opens || 0, w.opensPrev || 0, 'up'), label: t('dashboard.digestStatOpens', 'bookmarks opened') });
+        }
+        if (w.added || w.addedPrev) {
+            cards.push({ value: w.added || 0, delta: arrow(w.added || 0, w.addedPrev || 0, ''), label: t('dashboard.digestStatAdded', 'added this week') });
+        }
+        if (w.uptime) {
+            const outages = w.outages ? ' · ' + count(w.outages, 'dashboard.digestOutage', '1 outage', '{count} outages') : '';
+            cards.push({
+                value: `${w.uptime}%`,
+                delta: w.uptimePrev ? arrow(w.uptime, w.uptimePrev, 'up') : '',
+                label: t('dashboard.digestStatUptime', 'uptime') + outages,
+            });
+        }
+        if (inbox) {
+            cards.push({
+                value: inbox, delta: '',
+                label: t('dashboard.digestStatInbox', 'in the Inbox') + (w.inboxNew ? ' · ' + t('dashboard.digestStatInboxNew', '{count} new this week', { count: w.inboxNew }) : ''),
+            });
+        }
+        if (!cards.length) return '';
+        return `<div class="digest-stats" role="group" aria-label="${esc(t('dashboard.digestStatsLabel', 'The week in figures'))}">${cards.map((c) => `
+            <div class="digest-stat">
+                <span class="digest-stat-value">${esc(String(c.value))}${c.delta}</span>
+                <span class="digest-stat-label">${esc(c.label)}</span>
+            </div>`).join('')}</div>`;
+    }
+
     function chips(names, total, extra = '') {
         if (!names?.length && !extra) return '';
         const list = names || [];
@@ -204,7 +276,7 @@
         return `<div class="digest-days">${rows}</div>`;
     }
 
-    function partHtml({ id, tone, title, intro, note, names, total, more, bars: barsHtml, action, target, work }, state, i) {
+    function partHtml({ id, tone, title, intro, note, names, total, more, bars: barsHtml, rows, action, target, work }, state, i) {
         const done = state.visited.includes(id);
         const next = !done && state.next === id;
         let button = '';
@@ -224,6 +296,7 @@
                 ${intro ? `<p class="digest-part-intro">${esc(intro)}</p>` : ''}
                 <p class="digest-part-note">${esc(note)}</p>
                 ${barsHtml || ''}
+                ${rowsHtml(rows)}
                 ${chips(names, total, more)}
             </section>`;
     }
@@ -391,6 +464,7 @@
                 action: t('dashboard.digestOpenWhatsNew', "Open What's new"), target: 'whats-new', info: true,
             });
         }
+        enrichParts(out, s);
         return out;
     }
 
@@ -404,6 +478,96 @@
         { id: 'know', label: () => t('dashboard.digestGroupKnow', 'Good to know'), parts: ['inbox', 'top', 'news'] },
     ];
 
+    /**
+     * What the newer snapshot knows beyond names: rows with their detail, and
+     * the one line the Overview shows for the part. A snapshot from before that
+     * keeps its chips, and a part with nothing more to say shows its own note.
+     */
+    function enrichParts(parts, s) {
+        const h = s.health || {}, g = s.usage || {}, u = s.updates || {};
+        const by = (id) => parts.find((p) => p.id === id);
+        const left = (p, shown) => {
+            const rest = (p.count || 0) - shown;
+            return rest > 0 ? t('dashboard.digestMore', 'and {count} more', { count: rest }) : '';
+        };
+        const broken = by('broken');
+        if (broken && h.brokenItems?.length) {
+            const items = h.brokenItems;
+            broken.rows = items.map((b) => ({ name: b.name, sub: [b.where, b.error].filter(Boolean).join(' · '), value: downFor(b.since) }));
+            broken.names = null;
+            broken.more = left(broken, items.length);
+            broken.summary = [items[0].name, downFor(items[0].since)].filter(Boolean).join(' · ') + (broken.count > 1 ? ` +${broken.count - 1}` : '');
+        }
+        const certs = by('certificates');
+        if (certs) {
+            const first = expiries(h.certsExpiring)[0];
+            if (first) certs.summary = `${first.name} · ${t('dashboard.digestDaysLeft', '{days} d', { days: first.days })}`;
+        }
+        const domains = by('domains');
+        if (domains) {
+            const first = expiries(h.domainsExpiring)[0];
+            if (first) domains.summary = `${first.name} · ${t('dashboard.digestDaysLeft', '{days} d', { days: first.days })}`;
+        }
+        const updates = by('updates');
+        if (updates && u.available?.length) {
+            // The image's own name and tag, not the registry path in front of it.
+            updates.summary = u.available.slice(0, 2).map((image) => String(image).split('/').pop()).join(' · ') + (u.available.length > 2 ? ` +${u.available.length - 2}` : '');
+        }
+        const top = by('top');
+        if (top && !g.topOpenedItems?.length && g.topOpened?.length) top.summary = g.topOpened.join(' · ');
+        if (top && g.topOpenedItems?.length) {
+            const items = g.topOpenedItems;
+            top.rows = items.map((it, i) => ({ name: `${i + 1} · ${it.name}`, value: count(it.count, 'dashboard.digestOpens', '1 open', '{count} opens') }));
+            top.names = null;
+            top.summary = items.map((it) => `${it.name} ${it.count}`).join(' · ');
+        }
+        const checkup = by('checkup');
+        if (checkup) checkup.summary = count(checkup.count, 'dashboard.digestSumCheckup', '1 worth a look', '{count} worth a look');
+        const news = by('news');
+        if (news && s.news?.releases?.length) {
+            const releases = s.news.releases;
+            news.summary = releases.slice(0, 2).join(' · ') + (releases.length > 2 ? ` +${releases.length - 2}` : '');
+        }
+        const never = by('never');
+        if (never) never.summary = count(never.count, 'dashboard.digestSumNever', '1 never opened', '{count} never opened');
+        if (never && g.neverOpenedItems?.length) {
+            const items = g.neverOpenedItems;
+            never.rows = items.map((it) => ({ name: it.name, sub: it.where || '' }));
+            never.names = null;
+            never.more = left(never, items.length);
+        }
+        const stale = by('stale');
+        if (stale && g.staleItems?.length) {
+            const items = g.staleItems;
+            stale.rows = items.map((it) => ({ name: it.name, value: t('dashboard.digestAgoDays', '{days} d ago', { days: it.days }) }));
+            stale.names = null;
+            stale.more = left(stale, items.length);
+            stale.summary = `${items[0].name} · ${t('dashboard.digestAgoDays', '{days} d ago', { days: items[0].days })}`;
+        }
+        const inbox = by('inbox');
+        if (inbox && g.inboxOldestDays >= 1) {
+            inbox.summary = t('dashboard.digestSumInbox', '{count} waiting, the oldest {days} d', { count: g.inbox, days: g.inboxOldestDays });
+            inbox.note += ' ' + t('dashboard.digestInboxOldest', 'The oldest has waited {days} days.', { days: g.inboxOldestDays });
+        }
+    }
+
+    /** The Overview: every part with the one line that says where it stands. */
+    function overviewHtml(parts, state) {
+        const rows = GROUPS.flatMap((g) => g.parts).map((id) => parts.find((p) => p.id === id)).filter(Boolean).map((p) => {
+            const done = state.visited.includes(p.id);
+            return `
+                <button type="button" class="digest-line digest-line--part digest-tone--${esc(p.tone)}${done ? ' is-done' : ''}" data-digest-row="${esc(p.id)}">
+                    <span class="digest-line-main"><span class="digest-part-dot" aria-hidden="true">${done ? '✓' : ''}</span><span class="digest-line-name">${esc(p.title)}</span></span>
+                    <span class="digest-line-value">${esc(p.summary || p.note || '')}</span>
+                </button>`;
+        }).join('');
+        return `
+            <section class="digest-part digest-tone--accent" data-digest-part="overview">
+                <div class="digest-part-head"><h3 class="digest-part-title">${esc(t('dashboard.digestOverview', 'Overview'))}</h3></div>
+                <div class="digest-lines digest-lines--overview">${rows}</div>
+            </section>`;
+    }
+
     function rowHtml(p, state, selected) {
         const done = state.visited.includes(p.id);
         return `
@@ -415,7 +579,14 @@
     }
 
     function listHtml(parts, state, selected) {
-        return GROUPS.map((g) => {
+        const overview = `
+            <div class="digest-list-group">
+                <button type="button" class="digest-row digest-tone--accent${selected === 'overview' ? ' is-selected' : ''}" data-digest-row="overview" aria-pressed="${selected === 'overview'}">
+                    <span class="digest-part-dot" aria-hidden="true"></span>
+                    <span class="digest-row-title">${esc(t('dashboard.digestOverview', 'Overview'))}</span>
+                </button>
+            </div>`;
+        return overview + GROUPS.map((g) => {
             const rows = g.parts.map((id) => parts.find((p) => p.id === id)).filter(Boolean);
             if (!rows.length) return '';
             return `
@@ -473,11 +644,12 @@
         // A list of the parts on the left, the chosen one in full on the right,
         // so a full week never grows the window: only the middle scrolls.
         const parts = partList(s);
-        let selected = firstSelected(parts, state);
+        let selected = parts.length ? 'overview' : firstSelected(parts, state);
         const html = `
             <div class="digest-window">
                 <p class="digest-window-when">${esc(when(s))}</p>
                 <p class="digest-summary">${esc(cardBody(s))}</p>
+                ${statsHtml(s)}
                 <div class="digest-split">
                     <nav class="digest-list" aria-label="${esc(t('dashboard.digestListLabel', 'Parts of the digest'))}">${listHtml(parts, state, selected)}</nav>
                     <div class="digest-detail"></div>
@@ -501,7 +673,7 @@
         const showDetail = (id) => {
             selected = id;
             const index = Math.max(0, parts.findIndex((p) => p.id === id));
-            detail.innerHTML = parts[index] ? partHtml(parts[index], state, 0) : '';
+            detail.innerHTML = id === 'overview' ? overviewHtml(parts, state) : (parts[index] ? partHtml(parts[index], state, 0) : '');
             win.querySelectorAll('.digest-row').forEach((row) => {
                 const on = row.getAttribute('data-digest-row') === id;
                 row.classList.toggle('is-selected', on);

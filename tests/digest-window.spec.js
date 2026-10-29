@@ -69,12 +69,13 @@ test.describe('the digest window layout', () => {
         });
     }
 
-    test('the list has three groups and a row per part', async ({ page }) => {
+    test('the list has the Overview, three groups and a row per part', async ({ page }) => {
         const win = await openWindow(page, snapshot());
-        await expect(win.locator('.digest-list-group')).toHaveCount(3);
-        await expect(win.locator('.digest-list-group').nth(0)).toContainText('Needs you');
-        await expect(win.locator('.digest-list-group').nth(1)).toContainText('Tidy up');
-        await expect(win.locator('.digest-list-group').nth(2)).toContainText('Good to know');
+        await expect(win.locator('.digest-list-group')).toHaveCount(4);
+        await expect(win.locator('.digest-list-group').nth(0)).toContainText('Overview');
+        await expect(win.locator('.digest-list-group').nth(1)).toContainText('Needs you');
+        await expect(win.locator('.digest-list-group').nth(2)).toContainText('Tidy up');
+        await expect(win.locator('.digest-list-group').nth(3)).toContainText('Good to know');
         for (const id of ['broken', 'certificates', 'domains', 'updates', 'never', 'stale', 'inbox', 'top', 'news']) {
             await expect(win.locator(`.digest-row[data-digest-row="${id}"]`)).toHaveCount(1);
         }
@@ -83,6 +84,7 @@ test.describe('the digest window layout', () => {
 
     test('a row shows its part in the detail', async ({ page }) => {
         const win = await openWindow(page, snapshot());
+        await win.locator('.digest-row[data-digest-row="broken"]').click();
         await expect(win.locator('.digest-detail [data-digest-part="broken"]')).toBeVisible();
         await win.locator('.digest-row[data-digest-row="certificates"]').click();
         await expect(win.locator('.digest-detail [data-digest-part="certificates"]')).toBeVisible();
@@ -150,5 +152,87 @@ test.describe('the digest window layout', () => {
         await page.evaluate(() => window.DigestNotice.openDigest());
         await page.locator('.digest-modal [data-digest-close]').first().click();
         await expect(page.locator('.digest-modal .digest-window')).toHaveCount(0);
+    });
+});
+
+test.describe('the digest window: the week in figures, the Overview and the detail', () => {
+    const DAY = 86_400_000;
+    const week = { opens: 142, opensPrev: 124, added: 7, addedPrev: 7, uptime: 99.6, uptimePrev: 99.9, outages: 2, inboxNew: 4 };
+
+    test('it opens on the Overview, a line per part with where it stands', async ({ page }) => {
+        const win = await openWindow(page, snapshot());
+        await expect(win.locator('.digest-row[data-digest-row="overview"]')).toHaveClass(/is-selected/);
+        const overview = win.locator('.digest-detail [data-digest-part="overview"]');
+        await expect(overview).toBeVisible();
+        await expect(overview.locator('.digest-line--part')).toHaveCount(9);
+        await expect(overview.locator('[data-digest-row="top"]')).toContainText('GitHub');
+    });
+
+    test('a line in the Overview opens its part', async ({ page }) => {
+        const win = await openWindow(page, snapshot());
+        await win.locator('.digest-detail [data-digest-row="certificates"]').click();
+        await expect(win.locator('.digest-detail [data-digest-part="certificates"]')).toBeVisible();
+        await expect(win.locator('.digest-row[data-digest-row="certificates"]')).toHaveClass(/is-selected/);
+    });
+
+    test('the figures sit next to the week before, and only the ones with data show', async ({ page }) => {
+        const win = await openWindow(page, snapshot({ week }));
+        const stats = win.locator('.digest-stats .digest-stat');
+        await expect(stats).toHaveCount(4);
+        await expect(stats.nth(0)).toContainText('142');
+        await expect(stats.nth(0).locator('.digest-stat-delta')).toHaveText('▲ 18');
+        await expect(stats.nth(0).locator('.digest-stat-delta')).toHaveClass(/is-good/);
+        await expect(stats.nth(1).locator('.digest-stat-delta')).toHaveText('= 7');
+        await expect(stats.nth(2)).toContainText('99.6%');
+        await expect(stats.nth(2)).toContainText('2 outages');
+        await expect(stats.nth(2).locator('.digest-stat-delta')).toHaveText('▼ 0.3');
+        await expect(stats.nth(2).locator('.digest-stat-delta')).toHaveClass(/is-bad/);
+        await expect(stats.nth(3)).toContainText('4 new this week');
+    });
+
+    test('a snapshot without week figures shows only what it has: the Inbox', async ({ page }) => {
+        const win = await openWindow(page, snapshot());
+        const stats = win.locator('.digest-stats .digest-stat');
+        await expect(stats).toHaveCount(1);
+        await expect(stats.first()).toContainText('in the Inbox');
+        await expect(stats.first().locator('.digest-stat-delta')).toHaveCount(0);
+    });
+
+    test('a snapshot with nothing for the strip draws none', async ({ page }) => {
+        const snap = snapshot();
+        snap.usage.inbox = 0;
+        const win = await openWindow(page, snap);
+        await expect(win.locator('.digest-stats')).toHaveCount(0);
+    });
+
+    test('a broken link says where, since when and why', async ({ page }) => {
+        const brokenItems = [
+            { name: 'Old homelab wiki', where: 'Homelab', since: Date.now() - 12 * DAY, error: 'connection refused' },
+            { name: 'Ghost blog', where: 'Reading', since: Date.now() - 3 * DAY, error: '404 not found' },
+        ];
+        const snap = snapshot();
+        snap.health.brokenItems = brokenItems;
+        const win = await openWindow(page, snap);
+        await win.locator('.digest-row[data-digest-row="broken"]').click();
+        const lines = win.locator('.digest-detail [data-digest-part="broken"] .digest-line');
+        await expect(lines).toHaveCount(2);
+        await expect(lines.nth(0)).toContainText('Old homelab wiki');
+        await expect(lines.nth(0)).toContainText('Homelab · connection refused');
+        await expect(lines.nth(0)).toContainText('down 12 d');
+        await expect(win.locator('.digest-detail [data-digest-part="broken"]')).toContainText('and 5 more');
+    });
+
+    test('the most opened show their counts, the Inbox its oldest', async ({ page }) => {
+        const snap = snapshot();
+        snap.usage.topOpenedItems = [{ name: 'GitHub', count: 31 }, { name: 'Proxmox', count: 1 }];
+        snap.usage.inboxOldestDays = 42;
+        const win = await openWindow(page, snap);
+        await win.locator('.digest-row[data-digest-row="top"]').click();
+        const top = win.locator('.digest-detail [data-digest-part="top"] .digest-line');
+        await expect(top.nth(0)).toContainText('1 · GitHub');
+        await expect(top.nth(0)).toContainText('31 opens');
+        await expect(top.nth(1)).toContainText('1 open');
+        await win.locator('.digest-row[data-digest-row="inbox"]').click();
+        await expect(win.locator('.digest-detail [data-digest-part="inbox"]')).toContainText('The oldest has waited 42 days.');
     });
 });

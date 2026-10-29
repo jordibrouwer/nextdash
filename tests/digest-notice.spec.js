@@ -314,6 +314,7 @@ test.describe('the digest and the review card', () => {
         await page.evaluate(() => window.localStorage.removeItem('nextdashDigestProgress'));
         await page.evaluate(() => window.DigestNotice.openDigest());
         const win = page.locator('.digest-modal .digest-window');
+        await choose(win, 'broken');
         await expect(win.locator('[data-digest-part="broken"]')).toContainText('Gone');
 
         await win.locator('[data-digest-work="broken"]').click();
@@ -368,6 +369,7 @@ test.describe('tiles, bars and the ways in', () => {
             await expect(win.locator(`.digest-row[data-digest-row="${id}"] .digest-row-count`)).toHaveText(count);
         }
 
+        await choose(win, 'broken');
         await expect(win.locator('[data-digest-part="broken"] .digest-chip')).toHaveText(['Forgejo', '+2 older']);
 
         await choose(win, 'certificates');
