@@ -754,13 +754,13 @@ test.describe('edit mode: the smaller review points', () => {
         return id;
     }
 
-    test(':maxactions offers 10, and the pencil carries its key for screen readers', async ({ page }) => {
+    test(':maxactions offers 11, and the pencil carries its key for screen readers', async ({ page }) => {
         await loadDashboard(page);
         await expect.poll(() => page.locator('#edit-mode-button').getAttribute('aria-keyshortcuts')).toContain('Shift+M');
         await page.keyboard.press(':');
         await page.keyboard.type('maxactions 1');
-        // Typing "1" matches the values 1 and 10, besides the command's own row.
-        await expect(page.getByText('MAXACTIONS')).toHaveCount(3);
+        // Typing "1" matches the values 1, 10 and 11, besides the command's own row.
+        await expect(page.getByText('MAXACTIONS')).toHaveCount(4);
     });
 
     test('the ring goes back on the chosen block after the grid is redrawn', async ({ page, request }) => {
