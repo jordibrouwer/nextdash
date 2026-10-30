@@ -2348,6 +2348,9 @@ The status page is one page behind a secret link, for your household and friends
 
 **Setting it up.**
 
+<p align="center"><img src="screenshots/manual.md/23-assistant-settings.jpg" alt="Config, AI Assistant: the panels Turn it on, Provider with Claude and a saved key, Conversations and What it can see and do" width="560"></p>
+<p align="center"><sub>Config → AI Assistant.</sub></p>
+
 1. Under **Link and access**, tick **Turn the status page on**. The link appears with **Copy**, **Open** and a QR code to scan with a phone.
 2. Under **Top of the page**, give it a **Title** and, if you like, a **Notice** shown under it.
 3. Under **Groups and services**, **+ Add group**, then **+ Add service** in each group. The picker lists monitored bookmarks and containers; a bookmark without monitoring has no history to show, so it is not listed. A bookmark linked to a container (the same pairing as in the Containers view, [§14](#14-containers)) is offered as one service, and the worse of the two counts. The pairing is fixed when you add it. Give each service a **Public name**, and tick **Link** and **Speed** where you want them.
@@ -4893,6 +4896,9 @@ HTML pages send a strict Content-Security-Policy. `NEXTDASH_CSP=off` switches it
 
 nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks → MCP access**, which then shows the address. Under it are four group switches, all off until you tick them:
 
+<p align="center"><img src="screenshots/manual.md/23-mcp-access.jpg" alt="The MCP access panel under Data & backups, Webhooks: the switch Answer MCP clients at this address ticked with its address, and four group switches: Bookmarks edit and delete and Containers control off, Health and Inbox read and Containers read on" width="640"></p>
+<p align="center"><sub>MCP access: the endpoint switch, its address and the four tool groups.</sub></p>
+
 | Tool | What it does | Group |
 |---|---|---|
 | `search_bookmarks` | Search by name, URL, tag or note; each result names its page and category; 20 by default, at most 100, with `truncated` when more match | Always on |
@@ -5043,7 +5049,13 @@ location /               { return 404; }
 
 The assistant answers questions about your bookmarks in plain words, for example *which of my Docker bookmarks are down?* or *tag everything about Proxmox*. It runs on a model you choose: Claude, OpenAI, or a server of your own such as Ollama. It is **off** until you turn it on, and it is off in the demo. Open it with `:ask` in the command palette, with or without a question after it: with one, it starts a new conversation and asks it straight away. `=` in the search bar does the same: `=` on its own lists your latest conversations (`Enter` opens one), and `=` followed by a question asks it as a new conversation. Like `:ask`, what follows the `=` is never stored in the search history or the recents.
 
+<p align="center"><img src="screenshots/manual.md/23-assistant-conversations.jpg" alt="The search bar after typing a single equals sign: the latest three conversations listed, newest first" width="560"></p>
+<p align="center"><sub>`=` on its own lists your latest conversations.</sub></p>
+
 The panel is laid out like the command palette: you type your question in the line at the top (`Enter` sends, `Shift+Enter` starts a new line), your conversations are listed on the left and the open one is shown on the right. With the question line empty, `↑` and `↓` walk the list and `Enter` opens the conversation you are on; `Esc` closes the panel.
+
+<p align="center"><img src="screenshots/manual.md/23-assistant-panel.jpg" alt="The assistant panel: a question about links that are down, the answer as a short list of three bookmarks, and two proposals underneath, a tag change and a deletion marked Destructive, each with Apply and Skip, with the conversations on the left" width="620"></p>
+<p align="center"><sub>An answer with its proposals: nothing changes until you press Apply.</sub></p>
 
 **Setting it up.** Under **Config → AI Assistant** (a page of its own in the Services group, with one tab, **Settings**) four panels follow each other: **Turn it on**, **Provider**, **Conversations** and **What it can see and do**. Each opens with a line saying what it is for, and the controls that need more than a label have an **ℹ** button beside them that explains them: the switch, the provider, the key, the server address, the model, **Test connection**, the two limits, **Delete all conversations** and the last panel. Under **Test connection** a line says what is still missing (the assistant is off, no key is saved, no address or no model). The fields stay open while the assistant is off, so you can fill them in first. To set it up, tick **Turn the assistant on** and pick a **Provider**:
 
