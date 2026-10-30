@@ -450,34 +450,68 @@ body:not([data-depth="flat"]) .assistant-side {
     min-width: 0;
 }
 
+/* The answer reads as prose: the UI sans, or the dashboard font when the person chose a
+   sans preset (font-presets.js sets data-font-preset), at a measure that stays readable.
+   Code and the question line keep the palette's monospace. */
 .assistant-text {
+    --ai-prose: var(--font-family-ui, system-ui, sans-serif);
     overflow-wrap: anywhere;
+    max-width: 70ch;
+    font-family: var(--ai-prose);
+    font-size: calc(var(--font-size-text) * 1.08);
+    line-height: 1.55;
 }
 
-/* The answer's Markdown (assistant-panel.js, renderMarkdown): blocks stack with the thread's gap. */
+:is(
+    html[data-font-preset="inter"],
+    html[data-font-preset="ibm-plex-sans"],
+    html[data-font-preset="dm-sans"],
+    html[data-font-preset="system"]
+) .assistant-text {
+    --ai-prose: var(--font-family-main);
+}
+
+/* The answer's Markdown (assistant-panel.js, renderMarkdown): blocks stack with the paragraph gap. */
 .assistant-text > * {
     margin: 0;
 }
 
 .assistant-text > * + * {
-    margin-top: var(--space-2, 0.5rem);
+    margin-top: 0.6em;
 }
 
 .assistant-text ul,
 .assistant-text ol {
-    padding-left: 1.4em;
+    padding-left: 1.6em;
 }
 
 .assistant-text li + li {
-    margin-top: 0.15em;
+    margin-top: 0.25em;
 }
 
+.assistant-text strong {
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+/* A heading is body-sized and semibold, with room above. */
+.assistant-text > .assistant-md-heading {
+    margin-top: 0.9em;
+    margin-bottom: -0.2em;
+    color: var(--text-secondary);
+}
+
+.assistant-text > .assistant-md-heading:first-child {
+    margin-top: 0;
+}
+
+/* Inline code and keys: a soft chip in the monospace. */
 .assistant-text code {
     font-family: var(--font-family-mono, ui-monospace, monospace);
-    font-size: 0.92em;
-    padding: 0.05em 0.35em;
+    font-size: 0.86em;
+    padding: 0.1em 0.4em;
     border-radius: var(--layout-radius-sm, 4px);
     background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    overflow-wrap: anywhere;
 }
 
 .assistant-text pre {
@@ -487,11 +521,13 @@ body:not([data-depth="flat"]) .assistant-side {
     border-radius: var(--layout-radius-sm, 4px);
     background: color-mix(in srgb, var(--text-primary) 5%, transparent);
     white-space: pre-wrap;
+    line-height: 1.45;
 }
 
 .assistant-text pre code {
     padding: 0;
     background: none;
+    font-size: 0.9em;
 }
 
 /* A link to a place in the app: the accent, underlined, and a ring on focus. */

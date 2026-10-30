@@ -4,7 +4,7 @@ package app
 var precomputedAssetHashes = map[string]string{
 	"css/action-btn-tokens.css":                              "8b860626d507",
 	"css/app-notification.css":                               "9be184e937bf",
-	"css/assistant.css":                                      "f1061902a299",
+	"css/assistant.css":                                      "0fbfb9d56b2a",
 	"css/bookmark-form-modal.css":                            "218db4cf32e8",
 	"css/bookmark-form-preview.css":                          "55d219f09044",
 	"css/bookmarks-tutorial.css":                             "acd8d28a738d",

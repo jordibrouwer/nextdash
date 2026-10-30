@@ -105,6 +105,38 @@ test.describe('Assistant answers', () => {
         expect(shown).toContain('snake_case_name');
     });
 
+    test('the answer reads in the UI font at a limited measure, code stays mono', async ({ page }) => {
+        await ask(page, 'Press `Shift + M` to **open** it, then read on.\n\n- one\n- two');
+        const t = text(page);
+        await expect(t.locator('code')).toHaveText('Shift + M');
+        const read = () => page.evaluate(() => {
+            const answer = /** @type {HTMLElement} */ (document.querySelector('.assistant-panel .assistant-msg--assistant:last-child .assistant-text'));
+            const cs = (n) => getComputedStyle(n);
+            return {
+                prose: cs(answer).fontFamily,
+                mono: getComputedStyle(document.documentElement).getPropertyValue('--font-family-mono').trim(),
+                ui: getComputedStyle(document.documentElement).getPropertyValue('--font-family-ui').trim(),
+                code: cs(/** @type {Element} */ (answer.querySelector('code'))).fontFamily,
+                maxWidth: cs(answer).maxWidth,
+                preset: document.documentElement.getAttribute('data-font-preset'),
+            };
+        });
+        const norm = (v) => v.replace(/["']/g, '').replace(/\s+/g, ' ');
+        const mono = await read();
+        // A monospace dashboard font: the answer takes the UI sans, code the mono.
+        expect(['source-code-pro', 'jetbrains-mono', 'ibm-plex-mono']).toContain(mono.preset);
+        expect(norm(mono.prose)).toBe(norm(mono.ui));
+        expect(norm(mono.prose)).not.toBe(norm(mono.code));
+        expect(norm(mono.code)).toContain(norm(mono.mono).split(',')[0]);
+        expect(mono.maxWidth).not.toBe('none');
+        // A sans dashboard font: the answer follows it.
+        await page.evaluate(() => window.DashboardFont.applyMainFont({ fontPreset: 'dm-sans' }));
+        const sans = await read();
+        expect(sans.preset).toBe('dm-sans');
+        expect(norm(sans.prose)).toContain('DM Sans');
+        expect(norm(sans.code)).not.toContain('DM Sans');
+    });
+
     test('a link to a place in the app opens it and closes the panel', async ({ page }) => {
         await ask(page, 'Open [Config → Containers](#config/containers) to see it.');
         const link = text(page).locator('a.assistant-link');
