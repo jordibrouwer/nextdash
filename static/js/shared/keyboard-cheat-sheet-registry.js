@@ -428,7 +428,7 @@
                 { keys: '=', cheatKey: 'smAssistant', fallback: 'AI Assistant — ask a question; latest conversations at a lone =', print: true, printFallback: 'Assistant' },
                 { keys: '*', cheatKey: 'smRecentPanel', fallback: 'Recent bookmarks panel', print: true, printFallback: 'Recent bookmarks' },
                 { keys: '[ / ] or Page Up / Page Down (recent)', cheatKey: 'smRecentPages', fallback: 'Recent bookmarks — an earlier or later page of ten' },
-                { keys: 'mode chips', cheatKey: 'smModeChips', fallback: 'Click › search · : commands · ? finders · = assistant at the top of the overlay to switch mode instantly', printFallback: 'Click › search · : commands · ? finders · = assistant to switch mode' },
+                { keys: 'mode chips', cheatKey: 'smModeChips', fallback: 'Click › search · : commands · ? finders · = assistant at the top of the overlay to switch mode instantly', printFallback: 'Click ›, :, ? or = to switch mode' },
                 { keys: '→ / ← (bookmark result)', cheatKey: 'smResultActions', fallback: 'On a bookmark result, unfold its actions — open, open in a new tab, copy URL, edit, show in list, move; ← or Esc folds them' },
                 { keys: '← / → (chip row)', cheatKey: 'smEmptyStateChips', fallback: 'Empty overlay — with a recent-search or recent-command chip row highlighted, cycle chips and Enter applies' },
                 { keys: 'category: / tag: / page: / status:', cheatKey: 'smFieldFilters', fallback: 'Filter results by field directly in the search bar — status: also takes untagged, tagged, noted, unnoted' },

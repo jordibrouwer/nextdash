@@ -15,6 +15,7 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
 - **Containers and homelab.** A Containers view for the Docker host: logs, start, stop, update with a rollback, and each container linked to its bookmark. Widgets for Unraid, Jellyfin, Sonarr, Home Assistant, Beszel and Glances.
 - **Widgets** for what is going on: weather, calendar, feeds, inbox, your machine, and any service that answers with JSON.
 - **Looks.** 384 themes, 75 backdrops and a theme studio, in six languages.
+- **An assistant, if you want one.** Ask in plain words with Claude, OpenAI or a model of your own, and decide what happens to what it suggests. Off until you turn it on.
 - **Yours to keep.** One Go binary and plain JSON files, automatic backups, a 30-day trash, and imports from every browser, Pocket, Raindrop, linkding and more.
 
 <p align="center">
@@ -525,7 +526,8 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - **[`integrations/`](integrations/)** — a shell one-liner, two Raycast commands, a **Dropzone 5** action, a Ulauncher extension, and recipes for Alfred and Apple Shortcuts, all built on that route. The [Dropzone 5 action](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos) also has its own repository. *[`integrations/README.md`](integrations/README.md)*
 - **A bookmarklet and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet for your install; installed as an app, nextDash joins the share sheet. *[Manual §22](MANUAL.md#22-phones-tablets-and-the-installed-app)*
 - **Outgoing webhooks** — seven events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme. *[Manual §19.3](MANUAL.md#193-webhooks)*
-- **An MCP endpoint** — four tools for MCP clients to search and add bookmarks, off until you switch it on. *[Manual §23.6](MANUAL.md#236-the-mcp-endpoint)*
+- **An MCP endpoint** — 17 tools for MCP clients: search, add, edit and delete bookmarks, read Health, the Inbox and the containers, and control them. Off until you switch it on, with a switch for each group of tools. *[Manual §23.6](MANUAL.md#236-the-mcp-endpoint)*
+- **An assistant** — ask about your bookmarks, Health or containers in plain words, with Claude, OpenAI or a server of your own such as Ollama. It changes nothing by itself: what it suggests waits under its answer for your click. Off until you turn it on. *[Manual §23.11](MANUAL.md#2311-the-assistant)*
 - **What nextDash asks for by itself** — three things, each with a switch under **Config → Behavior → Privacy & sync** and a variable that turns it off for the whole server: a daily **install count** (a random install id and the release you run; on Unraid also the word Unraid; `DISABLE_TELEMETRY`), a daily check on GitHub for a **newer release** (`DISABLE_UPDATE_CHECK`), and the **nextdash.cc news feed**, every 90 minutes (`DISABLE_NEWS_FEED`). None of them carries bookmarks, settings or addresses. The optional usage analytics (off until you turn them on) add a random install code, and send a hostname of just `lan`, `domain` or `localhost` instead of your address. *[Manual §23.7](MANUAL.md#237-what-nextdash-contacts)*
 - **The machine it runs on** — the system widgets read `/proc`, the disks you name and optionally the Docker socket, read-only unless you set `NEXTDASH_DOCKER_CONTROL=1`, which also uses the socket to write. Update checks reach the image registries, and optionally GitHub. *[Manual §15.4](MANUAL.md#154-system-widgets-and-what-they-need)*
 
