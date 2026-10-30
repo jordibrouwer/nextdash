@@ -9285,6 +9285,28 @@ class DashboardConfig {
         backupExcludeArchives: { def: false },
         backupExcludeSecrets: { def: false },
         healthCheckTimeoutSeconds: { hint: 'healthCheckTimeoutHint', def: 0 },
+        // AI Assistant: no `def` (the page has no ↺), only the ℹ. aiAccess
+        // is not a setting but the "What it can see and do" panel's own ℹ.
+        aiEnabled: { info: ['assistantInfoEnabledTitle', 'assistantInfoEnabledMessage', 'Turn the assistant on',
+            'The assistant is off until you turn it on. While it is off no question can be asked and nothing is sent to a provider. Turning it on sends nothing by itself: a request goes out only when you ask a question or press Test connection. In the public demo it stays off.'] },
+        aiProvider: { info: ['assistantInfoProviderTitle', 'assistantInfoProviderMessage', 'Provider',
+            'Claude and OpenAI each need an API key from your own account there; the model is optional, nextDash has a default for each.\nOpenAI-compatible is any server that speaks the OpenAI chat format, such as Ollama or LM Studio. It needs a server address and a model, and the key is optional. Addresses on your own network are allowed.\nA key is kept per provider, so switching between them does not lose one.'] },
+        aiKey: { info: ['assistantInfoKeyTitle', 'assistantInfoKeyMessage', 'API key',
+            'The key is stored on this server, in ai-secrets.json in the data folder, apart from your settings. It is never shown again: this page only says whether a key is saved. One key is kept per provider, and Save key and Remove key act on the provider selected above.\nIt goes into a backup only when Tokens and passwords is included (Data & backups → Backups). With the write token set, saving and removing a key need it.'] },
+        aiBaseURL: { info: ['assistantInfoBaseURLTitle', 'assistantInfoBaseURLMessage', 'Server address',
+            'Where your own server listens, for example http://ollama.lan:11434/v1. It must start with http:// or https://, and nextDash adds /chat/completions to it, so include the /v1 part when your server uses one. Addresses on your own network are allowed.\nA server that needs no key is fine: leave the key empty and nextDash sends none.'] },
+        aiModel: { info: ['assistantInfoModelTitle', 'assistantInfoModelMessage', 'Model',
+            'The model to ask. Left empty, nextDash uses its default: claude-sonnet-5-5 for Claude and gpt-5.6-terra for OpenAI, shown in the field as a hint. An OpenAI-compatible server has no default, so a model name is required there, written as your server names it.'] },
+        aiTest: { info: ['assistantInfoTestTitle', 'assistantInfoTestMessage', 'Test connection',
+            'Sends one tiny request (the word ping, with room for a single token back) to the provider with the settings above, and shows the model that answered or what went wrong. It spends a few tokens at most, stores nothing, and gives up after 30 seconds.\nIt says why it cannot run when the assistant is off or something is missing, and with the write token set it needs it.'] },
+        aiHistoryMax: { info: ['assistantInfoHistoryMaxTitle', 'assistantInfoHistoryMaxMessage', 'Conversations to keep',
+            'Conversations are kept on this server. When a new answer is saved, only this many of the newest are kept and the oldest are removed. Empty keeps the default of 50; the most you can keep is 500.'] },
+        aiHistoryDays: { info: ['assistantInfoHistoryDaysTitle', 'assistantInfoHistoryDaysMessage', 'Days to keep them',
+            'When a new answer is saved, conversations that were last used longer ago than this are removed. Empty keeps the default of 90 days; the most is 3650.'] },
+        aiDeleteAll: { info: ['assistantInfoDeleteAllTitle', 'assistantInfoDeleteAllMessage', 'Delete all conversations',
+            'Removes every stored conversation from this server, together with the proposals inside them and what became of each one. A proposal you have not applied yet is gone too. It cannot be undone.\nChanges you already applied to your bookmarks or containers stay as they are. With the write token set, deleting needs it.'] },
+        aiAccess: { info: ['assistantInfoAccessTitle', 'assistantInfoAccessMessage', 'What it can see and do',
+            'The assistant reads through the same switches as the MCP endpoint, under Data & backups → Webhooks → MCP access. Looking up bookmarks, tags and pages is always on. Health and Inbox: read and Containers: read add those lookups when they are on. It does not need the MCP address itself to be switched on.\nIt never changes anything by itself: it proposes changes, shown under its answer, and nothing happens until you press Apply. Adding a bookmark is always possible; editing, moving and deleting bookmarks and categories need Bookmarks: edit and delete, and container actions need Containers: control. The switch is checked again when you press Apply.\nWith the write token set, asking, Test connection and Apply need it. One question stops after 8 rounds of lookups, 20 lookups or two minutes.'] },
     };
 
     fieldMeta(field) {

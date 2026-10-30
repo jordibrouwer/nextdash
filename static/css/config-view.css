@@ -10332,3 +10332,56 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-widget-row.is-open::before {
     border-color: var(--accent-primary);
 }
+
+/* ── Config → AI Assistant ──────────────────────────────────────────────── */
+
+/* Four panels one under the other, each with its own heading and a line of
+   text; the rows inside are the shared .config-field / .config-field-row. */
+/* A heading with its ℹ beside it, outside the h3 so the heading stays plain text. */
+.config-ai-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 12px;
+}
+.config-ai-head > .config-panel-title { margin: 0; }
+/* The Save / Remove row and the state text beside it wrap on a narrow panel. */
+.config-ai-key-row { flex-wrap: wrap; }
+.config-ai-key-row > .config-field-hint { margin: 0; }
+/* The Test result is a live region that stays in the page; empty, it takes no room. */
+.config-ai-panels .config-field-hint:empty { margin: 0; }
+.config-ai-panels [data-ai-ready-line] { margin-bottom: 4px; }
+.config-ai-panels [data-ai-test-state]:not(:empty) { margin-bottom: 0; }
+
+/* The MCP switches, read-only: name and state. The state is a word as well as
+   a colour, so it reads without the colour. */
+.config-ai-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+}
+.config-ai-group {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: 3px 4px 3px 12px;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: 999px;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font-size: calc(var(--font-size-text) * 0.971);
+}
+.config-ai-group-state {
+    padding: 1px 9px;
+    border-radius: 999px;
+    color: var(--text-muted, #888);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    font-size: calc(var(--font-size-text) * 0.857);
+}
+.config-ai-group.is-on .config-ai-group-state {
+    color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 16%, transparent);
+}
