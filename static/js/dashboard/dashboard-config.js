@@ -3793,6 +3793,11 @@ class DashboardConfig {
         { tab: 'glances', titleKey: 'config.helpGlancesContainersTitle', fallback: 'Glances and the Containers view' },
         { tab: 'glances', titleKey: 'config.helpGlancesNoticesTitle', fallback: 'Notices and commands' },
         { tab: 'glances', titleKey: 'config.helpGlancesMoreTitle', fallback: 'Compare, forecast and the widget' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantTitle', fallback: 'Asking the assistant' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantSetupTitle', fallback: 'Setting it up' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantChangesTitle', fallback: 'What it can read and change' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantDataTitle', fallback: 'What leaves and what is kept' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantMcpTitle', fallback: 'MCP: other tools' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
         { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
@@ -13738,6 +13743,7 @@ class DashboardConfig {
             'stats': ['config.helpNoteStats', 'What the figures in Statistics count, and what they do not.'],
             'data': ['config.helpNoteData', 'Backups, imports, and running nextDash on your own machine.'],
             'logs': ['config.helpNoteLogs', 'The server log and the activity trail: what is recorded, and for how long.'],
+            'assistant': ['config.helpNoteAssistant', 'Questions in plain words, the changes that wait for your click, and the address other tools can use.'],
         },
     };
 
@@ -24310,7 +24316,7 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'glances', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'glances', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs', 'assistant'];
 
     /*
      * Fifteen tabs on one scrolling line hid most of them past the edge, and
@@ -24321,7 +24327,7 @@ class DashboardConfig {
         { key: 'basics', label: ['config.helpGroupBasics', 'Basics'], tabs: ['start', 'tips', 'config', 'search'] },
         { key: 'dashboard', label: ['config.helpGroupDashboard', 'Dashboard'], tabs: ['appearance', 'organizing', 'bookmarks', 'widgets'] },
         { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'glances', 'health', 'monitoring'] },
-        { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs'] },
+        { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs', 'assistant'] },
     ];
 
     /** Sections whose strip is drawn in labelled groups. */
@@ -24350,6 +24356,7 @@ class DashboardConfig {
             stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
             logs: ['config.helpTabLogs', 'Logs'],
+            assistant: ['config.helpTabAssistant', 'Assistant'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -24539,6 +24546,7 @@ class DashboardConfig {
             case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
             case 'logs': return this.renderHelpLogs();
+            case 'assistant': return this.renderHelpAssistant();
             default: return this.renderHelpStart();
         }
     }
@@ -25630,6 +25638,18 @@ class DashboardConfig {
             + this.helpPanel('config.helpGlancesContainersTitle', 'Glances and the Containers view', 'config.helpGlancesContainersBody', '')
             + this.helpPanel('config.helpGlancesNoticesTitle', 'Notices and commands', 'config.helpGlancesNoticesBody', '')
             + this.helpPanel('config.helpGlancesMoreTitle', 'Compare, forecast and the widget', 'config.helpGlancesMoreBody', '');
+    }
+
+    renderHelpAssistant() {
+        const open = `<div class="config-actions">
+            <button type="button" class="config-btn" data-overview-go='{"section":"assistant"}'>${
+    this.dash.escapeHtml(this.t('config.helpAssistantOpen', 'Open Config → AI Assistant'))}</button>
+        </div>`;
+        return this.helpPanel('config.helpAssistantTitle', 'Asking the assistant', 'config.helpAssistantBody', '', open)
+            + this.helpPanel('config.helpAssistantSetupTitle', 'Setting it up', 'config.helpAssistantSetupBody', '')
+            + this.helpPanel('config.helpAssistantChangesTitle', 'What it can read and change', 'config.helpAssistantChangesBody', '')
+            + this.helpPanel('config.helpAssistantDataTitle', 'What leaves and what is kept', 'config.helpAssistantDataBody', '')
+            + this.helpPanel('config.helpAssistantMcpTitle', 'MCP: other tools', 'config.helpAssistantMcpBody', '');
     }
 
     renderHelpSearch() {
