@@ -500,6 +500,85 @@ test.describe('Assistant panel', () => {
         await expect(panel(page).locator('[data-ai-conv]')).not.toHaveCount(0);
     });
 
+    // ---- Delete all while filtered, refused, or put away (Task 14) -------
+
+    test('Delete all is not offered while the list is filtered, and comes back when the search is cleared', async ({ page }) => {
+        await askFromPalette(page);
+        const foot = panel(page).locator('[data-ai-side-foot]');
+        const search = panel(page).locator('[data-ai-search]');
+        await expect(foot.locator('[data-ai-delete-all]')).toBeVisible();
+        await search.fill('which containers');
+        await expect(foot.locator('[data-ai-delete-all]')).toHaveCount(0);
+        // The list itself still filters: the matching conversation is there.
+        await expect(panel(page).locator('[data-ai-conv]')).not.toHaveCount(0);
+        await search.fill('');
+        await expect(foot.locator('[data-ai-delete-all]')).toBeVisible();
+        // An open question goes as soon as the list is filtered.
+        await foot.locator('[data-ai-delete-all]').click();
+        await expect(foot.locator('[data-ai-delete-all-confirm]')).toBeVisible();
+        await search.fill('which');
+        await expect(foot.locator('[data-ai-delete-all-confirm]')).toHaveCount(0);
+    });
+
+    test('a refused Delete all keeps the thread and the answer on its way', async ({ page }) => {
+        await askFromPalette(page);
+        let releaseDelete = () => {};
+        const deleteHeld = new Promise((resolve) => { releaseDelete = resolve; });
+        await page.route('**/api/ai/conversations', async (route) => {
+            if (route.request().method() !== 'DELETE') { await route.continue(); return; }
+            await deleteHeld;
+            await route.fulfill({ status: 401, contentType: 'application/json', body: '{"error":"Unauthorized"}' });
+        });
+        // A second question whose answer is still on its way.
+        await page.route('**/api/ai/ask', async (route) => {
+            await new Promise((r) => setTimeout(r, 1500));
+            await route.continue().catch(() => {});
+        });
+        const input = panel(page).locator('[data-ai-input]');
+        await input.fill('and which are running');
+        await page.keyboard.press('Enter');
+        await expect(panel(page).locator('.assistant-msg--user')).toHaveCount(2);
+
+        const foot = panel(page).locator('[data-ai-side-foot]');
+        await foot.locator('[data-ai-delete-all]').click();
+        await foot.locator('[data-ai-delete-all-confirm]').click();
+        // One request at a time: the button waits for the answer.
+        await expect(foot.locator('[data-ai-delete-all-confirm]')).toBeDisabled();
+        releaseDelete();
+        await expect(foot).toContainText('Deleting needs the write token.');
+        await expect(foot.locator('[data-ai-delete-all-confirm]')).toBeEnabled();
+        const thread = panel(page).locator('[data-ai-thread]');
+        await expect(thread).toContainText('and which are running');
+        // The answer still arrives: the stream was not let go.
+        await expect(panel(page).locator('.assistant-msg--assistant').last()).toContainText('Two containers need an update.');
+        await expect(thread).not.toContainText('The answer was cut off.');
+    });
+
+    test('Escape with Delete all open cancels the question first, and the next Escape closes the panel', async ({ page }) => {
+        await askFromPalette(page);
+        const foot = panel(page).locator('[data-ai-side-foot]');
+        await foot.locator('[data-ai-delete-all]').click();
+        await expect(foot.locator('[data-ai-delete-all-confirm]')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(foot.locator('[data-ai-delete-all-confirm]')).toHaveCount(0);
+        await expect(foot.locator('[data-ai-delete-all]')).toBeVisible();
+        await expect(panel(page)).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(panel(page)).toHaveCount(0);
+    });
+
+    test('Enter that ends an IME composition (keyCode 229, as Safari sends it) does not send', async ({ page }) => {
+        await askFromPalette(page);
+        const input = panel(page).locator('[data-ai-input]');
+        await input.fill('かな');
+        await input.evaluate((node) => node.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter', keyCode: 229, bubbles: true, cancelable: true,
+        })));
+        await page.waitForTimeout(300);
+        await expect(panel(page).locator('.assistant-msg--user')).toHaveCount(1);
+        await expect(input).toHaveValue('かな');
+    });
+
     test('the panel is drawn by the shared overlay system: a glass material blurs it, classic does not', async ({ page }) => {
         await askFromPalette(page);
         const filters = async (material, style) => page.evaluate(([m, st]) => {

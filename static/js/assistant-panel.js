@@ -153,6 +153,7 @@
             this.status = null;
             this.selected = -1;
             this.confirmingDeleteAll = false;
+            this.deletingAll = false;
             this.deleteAllError = '';
             this.newConversation();
             this.build();
@@ -259,6 +260,8 @@
             input.addEventListener('input', () => this.fitInput());
             this.panel.querySelector('[data-ai-list]').addEventListener('keydown', (event) => this.onListKey(event));
             this.panel.querySelector('[data-ai-search]').addEventListener('input', () => {
+                // At once, not after the list: Delete all goes while the list is filtered.
+                this.renderFoot();
                 clearTimeout(this.searchTimer);
                 const generation = this.generation;
                 this.searchTimer = setTimeout(async () => {
@@ -294,6 +297,11 @@
             if (event.key === 'Escape') {
                 event.preventDefault();
                 event.stopPropagation();
+                // An open Delete all question goes first; the next Escape closes the panel.
+                if (this.confirmingDeleteAll && !this.deletingAll) {
+                    this.cancelDeleteAll();
+                    return;
+                }
                 this.close();
                 return;
             }
@@ -310,7 +318,8 @@
                 this.moveSelection(event.key === 'ArrowDown' ? 1 : -1);
                 return;
             }
-            if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+            // keyCode 229 too: Safari ends a composition with an Enter whose isComposing is false.
+            if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
                 event.preventDefault();
                 if (empty && this.selected >= 0) this.activateSelected();
                 else void this.submitInput();
@@ -385,12 +394,7 @@
                 this.panel.querySelector('[data-ai-delete-all-cancel]')?.focus({ preventScroll: true });
                 return;
             }
-            if (target.hasAttribute('data-ai-delete-all-cancel')) {
-                this.confirmingDeleteAll = false;
-                this.renderFoot();
-                this.focusInput();
-                return;
-            }
+            if (target.hasAttribute('data-ai-delete-all-cancel')) { this.cancelDeleteAll(); return; }
             if (target.hasAttribute('data-ai-delete-all-confirm')) { void this.removeAll(); return; }
             if (target.hasAttribute('data-ai-setup')) {
                 this.close();
@@ -548,18 +552,24 @@
 
         /** Every conversation at once, after the confirm in the foot of the column. */
         async removeAll() {
+            if (this.deletingAll) return;
             const generation = this.generation;
-            this.abortStream();
+            // The answer on its way is let go only once the delete went through:
+            // a refused one leaves the thread as it was.
+            this.deletingAll = true;
+            this.renderFoot();
             let res = null;
             try {
                 res = await api('/api/ai/conversations', { method: 'DELETE' });
             } catch { /* handled below */ }
+            this.deletingAll = false;
             if (generation !== this.generation) return;
             if (!res?.ok) {
                 this.deleteAllError = res?.status === 401
                     ? t('needsTokenDelete', 'Deleting needs the write token.')
                     : t('deleteAllFailed', 'The conversations could not be deleted.');
                 this.renderFoot();
+                this.panel?.querySelector('[data-ai-delete-all-cancel]')?.focus({ preventScroll: true });
                 return;
             }
             this.confirmingDeleteAll = false;
@@ -573,15 +583,26 @@
             this.focusInput();
         }
 
+        cancelDeleteAll() {
+            this.confirmingDeleteAll = false;
+            this.renderFoot();
+            this.focusInput();
+        }
+
         // ---- Rendering -----------------------------------------------------
 
-        /** The foot of the column: "Delete all" while there is something to delete, or its confirm. */
+        /**
+         * The foot of the column: "Delete all" while there is something to
+         * delete, or its confirm. Not while the list is filtered: it would
+         * delete everything while showing only what matches.
+         */
         renderFoot() {
             const foot = this.panel?.querySelector('[data-ai-side-foot]');
             if (!foot) return;
             const query = this.panel.querySelector('[data-ai-search]')?.value.trim();
             const count = this.conversations.length;
-            if (!count && !query && !this.confirmingDeleteAll) { foot.replaceChildren(); return; }
+            if (query && !this.deletingAll) this.confirmingDeleteAll = false;
+            if ((!count || query) && !this.confirmingDeleteAll) { foot.replaceChildren(); return; }
             if (!this.confirmingDeleteAll) {
                 foot.replaceChildren(...[
                     el('button', { type: 'button', class: 'assistant-action assistant-delete-all', 'data-ai-delete-all': true },
@@ -590,14 +611,15 @@
                 ].filter(Boolean));
                 return;
             }
-            // While the list is filtered the count is only of what matches, so it is left out.
-            const question = query
-                ? t('deleteAllConfirmAny', 'Delete all conversations?')
-                : t('deleteAllConfirm', 'Delete all {n} conversations?', { n: count });
+            const question = t('deleteAllConfirm', 'Delete all {n} conversations?', { n: count });
             foot.replaceChildren(...[
                 el('span', { class: 'assistant-side-foot-text' }, question),
-                el('button', { type: 'button', class: 'assistant-action', 'data-ai-delete-all-confirm': true }, t('delete', 'Delete')),
-                el('button', { type: 'button', class: 'assistant-action assistant-skip', 'data-ai-delete-all-cancel': true }, t('cancel', 'Cancel')),
+                el('button', {
+                    type: 'button', class: 'assistant-action', 'data-ai-delete-all-confirm': true, disabled: Boolean(this.deletingAll),
+                }, t('delete', 'Delete')),
+                el('button', {
+                    type: 'button', class: 'assistant-action assistant-skip', 'data-ai-delete-all-cancel': true, disabled: Boolean(this.deletingAll),
+                }, t('cancel', 'Cancel')),
                 this.deleteAllError ? el('p', { class: 'assistant-error', role: 'alert' }, this.deleteAllError) : null,
             ].filter(Boolean));
         }
