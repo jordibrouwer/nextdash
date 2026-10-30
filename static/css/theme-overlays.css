@@ -14,8 +14,9 @@
  * The numbers per material follow the card rules in theme-signature.css; theme_overlays_css_test.go
  * keeps the two in line (same set of materials, same variables, same corner).
  *
- * Out of scope on purpose: the Theme Studio and the config view (next round), the drag chip and
- * What's New (it has its own decoration).
+ * The Theme Studio (Shift+A) is the last block: a side panel in the same material as the views.
+ *
+ * Out of scope on purpose: the drag chip and What's New (it has its own decoration).
  */
 
 /* ── Levels and the scrim (both styles) ─────────────────────────────────── */
@@ -1534,4 +1535,130 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
 html[data-theme] body[data-material-style="signature"][data-material="ink"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 800;
     letter-spacing: -0.01em;
+}
+
+
+/* ── The Theme Studio: a side panel in the material of the views ───────────────────────────────── */
+/* Classic keeps its flat panel and takes the elevation, cast to the left since it lies on the right edge. */
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .look-studio {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), -18px 0 44px -12px color-mix(in srgb, var(--ov-cast-ink) calc(40% + 35% * var(--ov-k)), transparent);
+}
+
+/* Signature: the fill, rim and corner of the plate. Only the corners on the page side are round. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio {
+    background-color: var(--ov-fill);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+    border: 0;
+    border-radius: var(--ov-radius) 0 0 var(--ov-radius);
+    box-shadow: var(--ov-edge-big), var(--ov-cast), -18px 0 44px -12px color-mix(in srgb, var(--ov-cast-ink) calc(40% + 35% * var(--ov-k)), transparent);
+    -webkit-backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+    backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+}
+
+@media (max-width: 767px) {
+    /* The sheet over the lower part of the screen rounds its top corners instead. */
+    html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio {
+        border-radius: var(--ov-radius) var(--ov-radius) 0 0;
+    }
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio :is(.look-studio-tabs, .look-studio-foot) {
+    border-color: var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-tab {
+    border-radius: var(--ov-r-item) var(--ov-r-item) 0 0;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-tab:not(.is-on):hover {
+    background: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-tab.is-on {
+    background: var(--ov-hot);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-close {
+    border-radius: var(--ov-r-control);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-close:is(:hover, :focus-visible) {
+    background: var(--ov-hot);
+}
+
+/* Controls take the corner and the rule of the material. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-seg {
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-btn:not(.look-studio-btn--primary) {
+    background-color: var(--ov-fill-small);
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-btn--primary {
+    border-radius: var(--ov-r-control);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-look {
+    background-color: var(--ov-fill-small);
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+/* The dialog over the panel is a small layer of its own. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-dialog-box {
+    background-color: var(--ov-fill);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+    border: 0;
+    border-radius: min(var(--ov-radius), 18px);
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e3);
+}
+
+/* What stands on the pane is what stands on the config plate. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-panel, .config-widget, .config-tile):not(.config-panel--attention, .config-panel--danger) {
+    background-color: var(--ov-fill-small);
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(select, .config-select) {
+    background-color: var(--background-secondary);
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-text, .config-choices) {
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    background-color: var(--ov-fill-small);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane .config-btn:not(.config-btn--icon):not(.config-btn--primary):not(.config-btn--danger) {
+    border-radius: var(--ov-r-control);
+    border-color: var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-choice, .config-subtab, .config-toggle) {
+    border-radius: var(--ov-r-item);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-subtab, .config-choice):not(.is-active):hover {
+    background-color: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio {
+        background-color: var(--surface-2, var(--background-secondary));
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
 }
