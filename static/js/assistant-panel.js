@@ -49,6 +49,140 @@
         return node;
     }
 
+    /*
+     * Answers as text: a small, safe subset of Markdown, built from DOM nodes.
+     *
+     * Paragraphs and line breaks, **bold**, *italic* and _italic_, `code`,
+     * fenced code blocks, - and * bullet lists, 1. numbered lists and # headings
+     * (as bold lines). A link is [label](#hash) and only for the hashes the app
+     * itself routes: #config, #config/<section>, #config/<section>/<tab> and a
+     * page number. Everything else, links to other addresses and any HTML
+     * included, stays on the page as the characters it was sent as. Rendered
+     * again from the whole text on every chunk, so a marker that is not closed
+     * yet is just text until the closing one arrives.
+     */
+    const LINK_HASH = /^#(config(\/[a-z0-9-]+){0,2}|[0-9]{1,3})$/;
+
+    function linkEl(label, hash) {
+        return el('a', { class: 'assistant-link', href: hash, 'data-ai-link': hash }, label);
+    }
+
+    function inlineNodes(src) {
+        const out = [];
+        let buf = '';
+        const flush = () => { if (buf) { out.push(document.createTextNode(buf)); buf = ''; } };
+        const isSpace = (ch) => ch === undefined || /\s/.test(ch);
+        const isWord = (ch) => ch !== undefined && /[\p{L}\p{N}]/u.test(ch);
+        let i = 0;
+        while (i < src.length) {
+            const c = src[i];
+            if (c === '`') {
+                const end = src.indexOf('`', i + 1);
+                if (end > i + 1) {
+                    flush();
+                    out.push(el('code', null, src.slice(i + 1, end)));
+                    i = end + 1;
+                    continue;
+                }
+            } else if (c === '[') {
+                const m = /^\[([^\]]{1,120})\]\((#[^)\s]{1,60})\)/.exec(src.slice(i));
+                if (m && LINK_HASH.test(m[2])) {
+                    flush();
+                    out.push(linkEl(m[1], m[2]));
+                    i += m[0].length;
+                    continue;
+                }
+            } else if (c === '*' && src[i + 1] === '*' && !isSpace(src[i + 2])) {
+                const end = src.indexOf('**', i + 2);
+                if (end > i + 2 && !isSpace(src[end - 1])) {
+                    flush();
+                    out.push(el('strong', null, ...inlineNodes(src.slice(i + 2, end))));
+                    i = end + 2;
+                    continue;
+                }
+            } else if ((c === '*' || c === '_') && src[i + 1] !== c && !isSpace(src[i + 1]) && !(c === '_' && isWord(src[i - 1]))) {
+                let end = i + 1;
+                for (;;) {
+                    end = src.indexOf(c, end + 1);
+                    if (end < 0) break;
+                    if (src[end + 1] === c || src[end - 1] === c) { end += 1; continue; }
+                    if (isSpace(src[end - 1]) || (c === '_' && isWord(src[end + 1]))) continue;
+                    break;
+                }
+                if (end > i + 1) {
+                    flush();
+                    out.push(el('em', null, ...inlineNodes(src.slice(i + 1, end))));
+                    i = end + 1;
+                    continue;
+                }
+            }
+            buf += c;
+            i += 1;
+        }
+        flush();
+        return out;
+    }
+
+    /** The text of an answer as a fragment of block elements. */
+    function renderMarkdown(text) {
+        const frag = document.createDocumentFragment();
+        const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+        let para = [];
+        let list = null;
+        const endPara = () => {
+            if (!para.length) return;
+            const p = el('p', null);
+            para.forEach((line, n) => {
+                if (n) p.append(document.createElement('br'));
+                p.append(...inlineNodes(line));
+            });
+            frag.append(p);
+            para = [];
+        };
+        for (let i = 0; i < lines.length; i += 1) {
+            const line = lines[i];
+            if (/^\s*```/.test(line)) {
+                endPara();
+                list = null;
+                const code = [];
+                // An unclosed fence (the answer is still arriving) is a code block so far.
+                for (i += 1; i < lines.length && !/^\s*```\s*$/.test(lines[i]); i += 1) code.push(lines[i]);
+                frag.append(el('pre', { class: 'assistant-code' }, el('code', null, code.join('\n'))));
+                continue;
+            }
+            if (!line.trim()) { endPara(); list = null; continue; }
+            const heading = /^\s{0,3}#{1,6}\s+(\S.*)$/.exec(line);
+            if (heading) {
+                endPara();
+                list = null;
+                frag.append(el('p', { class: 'assistant-md-heading' }, el('strong', null, ...inlineNodes(heading[1].trim()))));
+                continue;
+            }
+            const item = /^\s*([-*]|\d{1,3}[.)])\s+(\S.*)$/.exec(line);
+            if (item) {
+                endPara();
+                const tag = /\d/.test(item[1]) ? 'ol' : 'ul';
+                if (!list || list.tag !== tag) {
+                    const node = document.createElement(tag);
+                    if (tag === 'ol' && parseInt(item[1], 10) > 1) node.setAttribute('start', String(parseInt(item[1], 10)));
+                    list = { tag, node };
+                    frag.append(node);
+                }
+                list.node.append(el('li', null, ...inlineNodes(item[2].trim())));
+                continue;
+            }
+            if (list && /^\s{2,}\S/.test(line)) {
+                const li = list.node.lastElementChild;
+                li.append(document.createElement('br'), ...inlineNodes(line.trim()));
+                continue;
+            }
+            list = null;
+            para.push(line.trimEnd());
+        }
+        endPara();
+        return frag;
+    }
+
     const NOT_READY = {
         off: ['notReadyOff', 'The assistant is off.'],
         'no-key': ['notReadyNoKey', 'No key is saved for this provider.'],
@@ -60,6 +194,7 @@
         '': ['statusBookmarks', 'Looking at your bookmarks…'],
         healthInbox: ['statusHealth', 'Looking at Health and the Inbox…'],
         containersRead: ['statusContainers', 'Looking at your containers…'],
+        docs: ['statusDocs', 'Looking in the manual…'],
     };
 
     const TOOL_WORDS = {
@@ -377,7 +512,23 @@
             if (generation === this.generation) this.focusInput();
         }
 
+        /** A link in an answer: close the panel and go there, the way a hash link does. */
+        followLink(hash) {
+            if (!LINK_HASH.test(hash)) return;
+            this.close();
+            setTimeout(() => {
+                if (global.location.hash === hash) global.dispatchEvent(new HashChangeEvent('hashchange'));
+                else global.location.hash = hash;
+            }, 0);
+        }
+
         onClick(event) {
+            const link = event.target.closest('a[data-ai-link]');
+            if (link && this.panel.contains(link)) {
+                event.preventDefault();
+                this.followLink(link.getAttribute('data-ai-link'));
+                return;
+            }
             const target = event.target.closest('button');
             if (!target || !this.panel.contains(target)) {
                 // The arguments of a change are one line; a click on them shows them whole.
@@ -688,7 +839,8 @@
                     el('span', { class: 'assistant-msg-mark', 'aria-hidden': 'true' }, '›'), el('p', null, m.text));
             }
             const node = el('div', { class: 'assistant-msg assistant-msg--assistant', 'data-ai-message': m.id || '' });
-            const body = el('div', { class: 'assistant-text', 'data-ai-text': true }, m.text || '');
+            const body = el('div', { class: 'assistant-text', 'data-ai-text': true });
+            body.append(renderMarkdown(m.text));
             node.append(body);
             if (m.status) node.append(el('p', { class: 'assistant-status', 'data-ai-status': true, role: 'status' }, m.status));
             if (m.cut) node.append(el('p', { class: 'assistant-error', role: 'alert' }, t('cutOff', 'The answer was cut off.')));
@@ -846,7 +998,7 @@
             const nodes = this.threadEl()?.querySelectorAll('.assistant-msg--assistant');
             const node = nodes?.[nodes.length - 1];
             if (!node) return;
-            node.querySelector('[data-ai-text]').textContent = live.text;
+            node.querySelector('[data-ai-text]').replaceChildren(renderMarkdown(live.text));
             let status = node.querySelector('[data-ai-status]');
             if (live.status) {
                 if (!status) {

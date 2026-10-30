@@ -451,8 +451,65 @@ body:not([data-depth="flat"]) .assistant-side {
 }
 
 .assistant-text {
-    white-space: pre-wrap;
     overflow-wrap: anywhere;
+}
+
+/* The answer's Markdown (assistant-panel.js, renderMarkdown): blocks stack with the thread's gap. */
+.assistant-text > * {
+    margin: 0;
+}
+
+.assistant-text > * + * {
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.assistant-text ul,
+.assistant-text ol {
+    padding-left: 1.4em;
+}
+
+.assistant-text li + li {
+    margin-top: 0.15em;
+}
+
+.assistant-text code {
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+    font-size: 0.92em;
+    padding: 0.05em 0.35em;
+    border-radius: var(--layout-radius-sm, 4px);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.assistant-text pre {
+    overflow-x: auto;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--ai-rule);
+    border-radius: var(--layout-radius-sm, 4px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    white-space: pre-wrap;
+}
+
+.assistant-text pre code {
+    padding: 0;
+    background: none;
+}
+
+/* A link to a place in the app: the accent, underlined, and a ring on focus. */
+.assistant-link {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.assistant-link:hover {
+    text-decoration-thickness: 2px;
+}
+
+.assistant-link:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
 }
 
 .assistant-text:empty {

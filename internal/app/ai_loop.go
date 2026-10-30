@@ -17,8 +17,8 @@ import (
 /*
 The assistant's tool loop.
 
-The model is offered the read-only MCP tools and one tool of its own,
-propose_changes. Read tools run in-process through mcpCallTool, the same path
+The model is offered the read-only MCP tools and tools of its own:
+propose_changes, and search_docs and read_doc over the embedded manual. Read tools run in-process through mcpCallTool, the same path
 an MCP client takes, with the request marked as the assistant's. Write tools are
 never callable: the model can only propose them, the proposals are checked
 against the tool's schema and switch, and the person applies them with a click.
@@ -88,8 +88,21 @@ func aiSystemPrompt(now time.Time, pages []Page) string {
 	if len(names) > 0 {
 		b.WriteString("The pages are: " + strings.Join(names, ", ") + ".\n")
 	}
-	b.WriteString(aiSystemFixedLine)
+	b.WriteString(aiSystemFixedLine + "\n")
+	b.WriteString(aiSystemDocsBlock())
 	return b.String()
+}
+
+// aiSystemDocsBlock says what nextDash is, where its documentation is and how
+// to link inside the app. It holds no user data.
+func aiSystemDocsBlock() string {
+	return "nextDash is a keyboard-first dashboard for bookmarks that also shows containers, widgets, health checks and more, and it ships with its own manual.\n" +
+		"For any question about how nextDash works, what it can do or where a setting lives, call search_docs first, read the best hit with read_doc, and answer from what they return. " +
+		"Do not invent features or menu paths. If the manual does not say, say so.\n" +
+		"Answer in the language the person writes in. You may use basic Markdown: **bold**, lists and `code`.\n" +
+		"To point to a place in the app, write a link whose target is a hash, for example [Config → Containers](#config/containers). " +
+		"Valid targets: #config/<section> or #config/<section>/<tab>, where section is one of " + strings.Join(aiConfigSections, ", ") + ", and the dashboard pages #1, #2 and so on. " +
+		"Only link to places you are sure exist. Any other link is shown as plain text."
 }
 
 const aiProposeChangesTool = "propose_changes"
@@ -111,6 +124,7 @@ func aiOfferedTools(s Settings) []aiToolSpec {
 	}
 	desc := "Suggest changes. Nothing changes until the person applies a change with a click, so describe each one plainly in reason. " +
 		"Each change names one tool and gives that tool's arguments. The tools you can name now:\n" + strings.Join(writes, "\n")
+	out = append(out, aiDocsToolSpecs()...)
 	out = append(out, aiToolSpec{
 		Name:        aiProposeChangesTool,
 		Description: desc,
@@ -264,6 +278,10 @@ func (h *Handlers) aiRunTurn(ctx context.Context, r *http.Request, p aiProvider,
 				accepted, told := h.aiCheckProposals(h.store.GetSettings(), call.Arguments)
 				res.Proposals = append(res.Proposals, accepted...)
 				out = aiJSONText(told)
+			case aiIsDocsTool(call.Name) && offeredSet[call.Name]:
+				emit(aiTurnEvent{Type: "tool", Group: aiDocsGroup})
+				out = aiCutText(aiRunDocsTool(call), aiToolResultMax)
+				res.Tools = append(res.Tools, aiToolSummary{Name: call.Name, Bytes: len(out)})
 			case !offeredSet[call.Name]:
 				out = aiJSONText(map[string]any{"error": "Unknown tool: " + call.Name + ". Only the tools you were given can be called."})
 			default:

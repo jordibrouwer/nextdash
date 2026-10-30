@@ -458,3 +458,95 @@ func TestAssistantRequestsAreMarked(t *testing.T) {
 		t.Fatal("the mark did not stick")
 	}
 }
+
+func TestDocsToolsAreTheAssistantsOwn(t *testing.T) {
+	h := newMCPHandlers(t)
+	// Offered with every MCP group off, and never as a write tool.
+	names := offeredNames(aiOfferedTools(h.store.GetSettings()))
+	for _, want := range []string{aiDocsSearchTool, aiDocsReadTool} {
+		if !names[want] {
+			t.Errorf("%s is not offered", want)
+		}
+	}
+	turnOnEveryMCPGroup(t, h)
+	for _, def := range mcpToolDefinitions(h.store.GetSettings()) {
+		if aiIsDocsTool(def["name"].(string)) {
+			t.Errorf("%v is in the MCP tool list", def["name"])
+		}
+	}
+	for _, def := range mcpAllToolDefinitions() {
+		if aiIsDocsTool(def["name"].(string)) {
+			t.Errorf("%v is in the MCP definitions", def["name"])
+		}
+	}
+	_, resp := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	raw, _ := json.Marshal(resp.Result)
+	if strings.Contains(string(raw), aiDocsSearchTool) || strings.Contains(string(raw), aiDocsReadTool) {
+		t.Errorf("/mcp tools/list exposes the docs tools: %s", raw)
+	}
+	// The MCP endpoint does not run them either.
+	_, call := callMCP(t, h, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_docs","arguments":{"query":"token"}}}`)
+	if call.Error == nil {
+		t.Error("tools/call ran search_docs")
+	}
+	// The write tools stay out of the offered set.
+	for _, spec := range aiOfferedTools(h.store.GetSettings()) {
+		if spec.Name == "delete_bookmark" || spec.Name == "container_action" {
+			t.Errorf("%s offered", spec.Name)
+		}
+	}
+}
+
+func TestAScriptedTurnSearchesReadsAndAnswers(t *testing.T) {
+	h := newMCPHandlers(t)
+	fake := &fakeAIProvider{replies: []aiChatReply{
+		{ToolCalls: []aiToolCall{aiCall("c1", "search_docs", `{"query":"what is the write token"}`)}},
+		{ToolCalls: []aiToolCall{aiCall("c2", "read_doc", `{"id":"manual:232-the-write-token"}`)}},
+		{Text: "It is a secret that guards changes. See [Config → Containers](#config/containers)."},
+	}}
+	res, events, err := runAITurn(t, h, fake, "What is the write token?")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fake.seen) != 3 {
+		t.Fatalf("the fake saw %d requests", len(fake.seen))
+	}
+	first := toolMessages(fake.seen[1])
+	if len(first) != 1 || !strings.Contains(first[0].Text, "manual:232-the-write-token") {
+		t.Fatalf("search result sent on: %+v", first)
+	}
+	second := toolMessages(fake.seen[2])
+	if len(second) != 2 || !strings.Contains(second[1].Text, "X-NextDash-Token") || !strings.Contains(second[1].Text, "23.2 The write token") {
+		t.Fatalf("read result sent on: %+v", second)
+	}
+	if len(res.Tools) != 2 || res.Tools[0].Name != "search_docs" || res.Tools[1].Name != "read_doc" || res.Tools[1].Bytes != len(second[1].Text) {
+		t.Fatalf("tool summaries %+v", res.Tools)
+	}
+	te := toolEvents(events)
+	if len(te) != 2 || te[0].Group != aiDocsGroup {
+		t.Fatalf("tool events %+v", te)
+	}
+	if !strings.Contains(res.Text, "[Config → Containers](#config/containers)") || res.Limit != "" {
+		t.Fatalf("result %+v", res)
+	}
+}
+
+func TestSystemPromptTeachesTheDocsAndTheLinks(t *testing.T) {
+	h, _, _ := twoPageMCPInstall(t)
+	prompt := aiSystemPrompt(time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC), h.store.GetPages())
+	for _, want := range []string{"search_docs", "read_doc", "Do not invent features", "language the person writes in", "[Config → Containers](#config/containers)", "#config/<section>/<tab>", "#1, #2"} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("the prompt lacks %q", want)
+		}
+	}
+	for _, section := range aiConfigSections {
+		if !strings.Contains(prompt, section) {
+			t.Errorf("section %s missing from the prompt", section)
+		}
+	}
+	for _, leak := range []string{"sonarr.example", "radarr", "Media"} {
+		if strings.Contains(prompt, leak) {
+			t.Errorf("the prompt carries %q", leak)
+		}
+	}
+}
