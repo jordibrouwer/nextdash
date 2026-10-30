@@ -208,8 +208,9 @@
             return new Set(Array.isArray(done) ? done : []);
         }
 
-        save() {
-            Promise.resolve(this.dash.saveSettings?.()).catch(() => {});
+        /** `keys` when only those changed (the guide's progress); the whole copy otherwise. */
+        save(keys) {
+            Promise.resolve(this.dash.saveSettings?.(keys ? { keys } : undefined)).catch(() => {});
         }
 
         /** Count these steps as done, and say so on the bar. */
@@ -217,7 +218,7 @@
             const set = this.doneSet();
             (Array.isArray(ids) ? ids : [ids]).forEach((id) => set.add(id));
             this.state().stepsDone = [...set];
-            this.save();
+            this.save(['quickStart']);
             this.refresh();
         }
 
@@ -893,7 +894,7 @@
 
         recordAnswer(picked) {
             this.state().templatePicked = picked;
-            this.save();
+            this.save(['quickStart']);
         }
 
         async answer(picked) {
@@ -988,7 +989,7 @@
             if (!this.state().tagDemoShown && cloud?.openDemo) {
                 this.tagDemoDone = true;
                 this.state();
-                this.save();
+                this.save(['quickStart']);
                 // The example is nobody's tags: the step is done when the
                 // reader goes on to the Tags view, which this offers as the
                 // example closes.

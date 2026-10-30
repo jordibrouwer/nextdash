@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, markWhatsNewSeen, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
  * The dialog that explains the move onto Aurora Glass.
@@ -10,12 +10,20 @@ const { dismissOnboardingIfPresent, markWhatsNewSeen } = require('./e2e-helpers'
  * not a corner card. A fresh install has no lookMigration and sees nothing.
  */
 async function withMigration(page, migration, theme) {
+    /*
+     * The theme for real, not in the page's copy only: a save the page makes
+     * on its own (a tip seen) takes the server's answer for the settings it
+     * did not touch, so a theme that only the page held went back.
+     */
+    if (theme) {
+        const res = await page.request.post('/api/settings', { data: { theme }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        if (!res.ok()) throw new Error(`theme not set: HTTP ${res.status()}`);
+    }
     await page.route('**/api/settings', async (route) => {
         if (route.request().method() !== 'GET') return route.continue();
         const response = await route.fetch();
         const body = await response.json();
         if (migration) body.lookMigration = migration;
-        if (theme) body.theme = theme;
         await route.fulfill({ response, json: body });
     });
     await markWhatsNewSeen(page);

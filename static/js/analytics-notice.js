@@ -86,7 +86,7 @@
         if (!qs || qs.analyticsChoiceMade === true) return;
         qs.analyticsChoiceMade = true;
         qs.analyticsAskAfter = 0; // answered; no snooze left to honour
-        Promise.resolve(dash()?.saveSettings?.()).catch(() => {});
+        Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
     }
 
     /**
@@ -110,7 +110,7 @@
         if (until > (Number(qs.analyticsAskAfter) || 0)) {
             qs.analyticsAskAfter = until;
         }
-        Promise.resolve(dash()?.saveSettings?.()).catch(() => {});
+        Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
     }
 
     /**
@@ -133,7 +133,7 @@
         const until = nowSeconds() + SHOWN_COOLDOWN_DAYS * 86400;
         if (until <= (Number(qs.analyticsAskAfter) || 0)) return;
         qs.analyticsAskAfter = until;
-        Promise.resolve(dash()?.saveSettings?.()).catch(() => {});
+        Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
     }
 
     /**
@@ -215,7 +215,7 @@
             window.location.replace(target);
         };
         if (typeof d.saveSettings === 'function') {
-            Promise.resolve(d.saveSettings()).then(done).catch(done);
+            Promise.resolve(d.saveSettings({ keys: ['analyticsOptIn', 'quickStart'] })).then(done).catch(done);
         } else {
             done();
         }

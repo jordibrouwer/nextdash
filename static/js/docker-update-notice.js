@@ -87,7 +87,7 @@
         const before = d.settings.dockerUpdateInterval;
         d.settings.dockerUpdateInterval = '24h';
         try {
-            if ((await d.saveSettings()) === false) throw new Error('not saved');
+            if ((await d.saveSettings({ keys: ['dockerUpdateInterval'] })) === false) throw new Error('not saved');
         } catch {
             d.settings.dockerUpdateInterval = before;
             handle.showError(t('dashboard.dockerUpdateNoticeFailed', 'Could not turn this on. Try again in Config.'));

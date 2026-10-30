@@ -162,7 +162,7 @@ class DashboardUiHelpers {
             const qs = d.settings.quickStart || (d.settings.quickStart = {});
             if (qs.seenCheatsheet !== true) {
                 qs.seenCheatsheet = true;
-                Promise.resolve(d.saveSettings?.()).catch(() => {});
+                Promise.resolve(d.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
                 // Update the checklist immediately instead of waiting for the next poll.
                 d.quickStart?.refresh?.();
             }

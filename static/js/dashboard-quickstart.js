@@ -42,7 +42,9 @@
         }
 
         persistState() {
-            Promise.resolve(this.dash?.saveSettings?.()).catch(() => {});
+            // Its own two keys: the card writes on its own, often in a tab
+            // loaded long before, and the whole copy put older settings back.
+            Promise.resolve(this.dash?.saveSettings?.({ keys: ['quickStart', 'onboardingCompleted'] })).catch(() => {});
         }
 
         // Only first-run installs (onboardingCompleted !== true) see quick-start.
@@ -177,9 +179,8 @@
         saveKeepAlive() {
             const d = this.dash;
             try {
-                const payload = typeof window.sanitizeSettingsForPersist === 'function'
-                    ? window.sanitizeSettingsForPersist(d.settings)
-                    : d.settings;
+                // The flag it sets, not the whole copy (see persistState).
+                const payload = { quickStart: d.settings.quickStart };
                 const fetchFn = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
                 fetchFn('/api/settings', {
                     method: 'POST',

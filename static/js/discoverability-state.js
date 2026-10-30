@@ -384,7 +384,9 @@
 
         const dash = global.dashboardInstance;
         if (dash && typeof dash.saveSettings === 'function') {
-            await dash.saveSettings();
+            // This key only: the whole copy put back whatever another tab or
+            // the API had changed since this one loaded.
+            await dash.saveSettings({ keys: ['discoverabilityState'] });
             return true;
         }
 

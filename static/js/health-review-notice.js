@@ -280,7 +280,7 @@
         if (!d?.settings) return;
         d.settings.healthAutoRecheckEnabled = true;
         d.settings.healthAutoRecheckIntervalHours = 24;
-        try { await d.saveSettings?.(); } catch { /* the setting stays visible in Behavior */ }
+        try { await d.saveSettings?.({ keys: ['healthAutoRecheckEnabled', 'healthAutoRecheckIntervalHours'] }); } catch { /* the setting stays visible in Behavior */ }
     }
 
     const recheckCard = global.NoticeCard.define({

@@ -163,7 +163,9 @@
             delete dash.settings.sortMethod;
             delete dash.settings._sortMigratedPageIds;
             dash.settings.categorySortModesMigrated = true;
-            await dash.saveSettings?.();
+            // The deletes above never reached the server: it keeps a key a
+            // save leaves out. The marker is what this pass owns.
+            await dash.saveSettings?.({ keys: ['categorySortModesMigrated'] });
         })();
 
         return migrateLegacySortAllPages._inFlight.finally(() => {

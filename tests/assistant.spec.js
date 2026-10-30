@@ -351,19 +351,9 @@ test.describe('Assistant panel', () => {
 
     test('a refused Apply for a switched-off group shows the server message and stays applicable', async ({ page }) => {
         await askFromPalette(page);
-        /*
-         * Switched off through the page's own settings, as Config does it. A
-         * POST straight to the server raced the page: the dashboard saves its
-         * whole settings copy (the discoverability state, 700 ms after the
-         * palette was used), and that copy still had the group on -- so the
-         * change was applied and the card said Done.
-         */
-        await page.evaluate(async () => {
-            const d = window.dashboardInstance;
-            d.settings.mcpBookmarksWrite = false;
-            await d.saveSettings();
-        });
-        await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).mcpBookmarksWrite).toBe(false);
+        // Switched off behind the page's back: its own saves (a tip seen) no
+        // longer send its whole settings copy, so they cannot switch it back on.
+        expect((await page.request.post('/api/settings', { data: { mcpBookmarksWrite: false }, headers: AUTH })).ok()).toBe(true);
         const card = panel(page).locator('[data-ai-proposal]');
         await card.locator('[data-ai-apply]').click();
         await expect(card).toContainText('That group is switched off under MCP access.');

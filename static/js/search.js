@@ -2073,7 +2073,7 @@ class SearchComponent {
         clearTimeout(this._searchPicksTimer);
         this._searchPicksTimer = setTimeout(() => {
             this._searchPicksTimer = null;
-            void d.saveSettings?.();
+            void d.saveSettings?.({ keys: ['searchPicks'] });
         }, 2000);
         if (!this._searchPicksFlushBound) {
             this._searchPicksFlushBound = true;
@@ -2082,7 +2082,7 @@ class SearchComponent {
                 if (document.visibilityState !== 'hidden' || !this._searchPicksTimer) return;
                 clearTimeout(this._searchPicksTimer);
                 this._searchPicksTimer = null;
-                void window.dashboardInstance?.saveSettings?.();
+                void window.dashboardInstance?.saveSettings?.({ keys: ['searchPicks'] });
             });
         }
     }
