@@ -395,6 +395,7 @@ test.describe('Assistant panel', () => {
         await panel(page).locator('[data-ai-conv] [data-ai-open]').first().focus();
         await page.keyboard.press('Escape');
         await expect(panel(page)).toHaveCount(0);
+        // Checks that something does NOT happen: a stray handler would open the search a moment after the panel closes.
         await page.waitForTimeout(300);
         await expect(page.locator('#shortcut-search')).not.toHaveClass(/\bshow\b/);
         await expect.poll(() => page.evaluate(() => [...window.ScrollLock.holders])).toEqual([]);
@@ -426,6 +427,7 @@ test.describe('Assistant panel', () => {
             void window.AssistantPanel.open({});
         }, id);
         await expect(panel(page)).toBeVisible();
+        // Checks that something does NOT happen: the closed conversation's answer must not arrive in the new panel, so give it time to.
         await page.waitForTimeout(1800);
         await expect(panel(page).locator('[data-ai-proposal]')).toHaveCount(0);
         await expect(panel(page).locator('[data-ai-thread]')).not.toContainText('Two containers');
@@ -574,6 +576,7 @@ test.describe('Assistant panel', () => {
         await input.evaluate((node) => node.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'Enter', keyCode: 229, bubbles: true, cancelable: true,
         })));
+        // Checks that something does NOT happen: the IME Enter must not send, so give a send time to show.
         await page.waitForTimeout(300);
         await expect(panel(page).locator('.assistant-msg--user')).toHaveCount(1);
         await expect(input).toHaveValue('かな');

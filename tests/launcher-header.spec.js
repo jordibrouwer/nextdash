@@ -63,8 +63,8 @@ test('the panel names the modes that used to be buttons', async ({ page }) => {
             key: el.querySelector('.search-mode-tab-key')?.textContent?.trim(),
         })));
 
-    expect(pills.map((p) => p.mode)).toEqual(['search', 'command', 'finder', 'tag', 'recent', 'keys']);
-    expect(pills.map((p) => p.key)).toEqual(['>', ':', '?', '/', '*', '!']);
+    expect(pills.map((p) => p.mode)).toEqual(['search', 'command', 'finder', 'tag', 'recent', 'assistant', 'keys']);
+    expect(pills.map((p) => p.key)).toEqual(['>', ':', '?', '/', '*', '=', '!']);
 });
 
 /*

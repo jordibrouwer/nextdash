@@ -214,6 +214,7 @@ test.describe('Assistant search mode', () => {
             await expect(bar(page).locator('.search-match')).toHaveText(/Ask: /);
             await expect(bar(page)).not.toContainText('Search the web');
             await page.keyboard.press('Shift+Enter');
+            // Time is the point: a search engine request would arrive within this wait, and the next line checks that none did.
             await page.waitForTimeout(600);
             // Shift+Enter is plain Enter here: the assistant gets the question, the engine nothing.
             expect(engine).toHaveLength(0);

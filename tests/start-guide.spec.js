@@ -272,30 +272,35 @@ test.describe('closing', () => {
 });
 
 test.describe('inside the modal', () => {
-    test('on a wide screen the guide is two columns and still folds the steps after three', async ({ page, request }) => {
+    test('on a wide screen the three small blocks sit side by side and the steps fold after three', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);
-        const box = await modal(page).evaluate((el) => ({
-            scroll: el.scrollHeight, client: el.clientHeight,
-            left: el.querySelector('.sg-col').getBoundingClientRect().left,
-            right: el.querySelectorAll('.sg-col')[1].getBoundingClientRect().left,
-        }));
-        expect(box.right).toBeGreaterThan(box.left + 200);
+        const box = await modal(page).evaluate((el) => {
+            const minis = [...el.querySelectorAll('.sg-mini')].map((n) => n.getBoundingClientRect());
+            return {
+                scroll: el.scrollHeight, client: el.clientHeight, count: minis.length,
+                sameRow: minis.every((m) => Math.abs(m.top - minis[0].top) < 4),
+                apart: minis[1].left - minis[0].left,
+            };
+        });
+        expect(box.count).toBe(3);
+        expect(box.sameRow).toBe(true);
+        expect(box.apart).toBeGreaterThan(100);
         expect(box.scroll).toBeLessThanOrEqual(box.client);
         await expect(modal(page).locator('[data-sg-step]:visible')).toHaveCount(3);
     });
 
-    test('all the steps open as a grid under the two columns, and Show fewer folds them again', async ({ page, request }) => {
+    test('all the steps open as a grid under the small blocks, and Show fewer folds them again', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);
         await modal(page).locator('[data-sg-more]').click();
         const steps = modal(page).locator('[data-sg-step]:visible');
         await expect(steps).toHaveCount(10);
-        // A grid: the first two steps sit side by side, and the list is under the columns.
+        // A grid: the first two steps sit side by side, and the list is under the small blocks.
         const spots = await modal(page).evaluate((el) => {
             const [a, b] = [...el.querySelectorAll('[data-sg-step]')].slice(0, 2).map((n) => n.getBoundingClientRect());
             return { sameRow: Math.abs(a.top - b.top) < 4, apart: b.left - a.left,
-                below: a.top > el.querySelector('.sg-cols').getBoundingClientRect().bottom - 2 };
+                below: a.top > el.querySelector('.sg-minis').getBoundingClientRect().bottom - 2 };
         });
         expect(spots.sameRow).toBe(true);
         expect(spots.apart).toBeGreaterThan(150);
@@ -415,10 +420,10 @@ test.describe('review findings', () => {
         await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('cheatsheet');
     });
 
-    test('the manual has its own block: why there is one, and a button to nextdash.cc/docs', async ({ page, request }) => {
+    test('the manual is a link under Look & learn, to nextdash.cc/docs', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);
-        await expect(modal(page).locator('.sg-manual')).toContainText('overwhelming');
+        await expect(modal(page).locator('.sg-mini', { hasText: 'Look & learn' })).toContainText('Open the manual');
         await page.evaluate(() => { window.__opened = []; window.open = (url) => { window.__opened.push(url); return null; }; });
         await modal(page).getByRole('button', { name: /Open the manual/ }).click();
         expect(await page.evaluate(() => window.__opened)).toEqual(['https://nextdash.cc/docs/']);
