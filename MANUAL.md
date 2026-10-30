@@ -649,13 +649,18 @@ The full list is in [§14.4](#144-keys) and on `!`.
 
 ## 1. ✨ What is nextDash?
 
-nextDash is a **self-hosted bookmark dashboard** you open in your browser.
+nextDash is a **self-hosted dashboard** you open in your browser. It keeps your links, shows how your services and machines are doing, and puts both on one screen.
 
 - **No accounts.** One installation, one set of data on disk.
-- **No cloud.** Your bookmarks live as plain JSON files in a directory you control.
+- **No cloud.** Your data lives as plain JSON files in a directory you control.
 - **Keyboard first.** Search, switch pages, add, edit and run commands without the mouse.
 
-Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Around that sit search, a command palette, a Bookmarks view with link health checks and uptime monitoring, an inbox for links you have not filed yet, a Containers view for the machine's own Docker containers, and widgets that show something other than links.
+It began as a place for bookmarks, and bookmarks are still the core: grouped by **page** (Work, Home) and **category** (Dev, News), with search, a command palette, an inbox for links you have not filed yet and a Bookmarks view. Around them sit more tools:
+
+- **Monitoring.** Link health checks, uptime, certificate and domain expiry, page drift, a status page and alerts.
+- **Containers.** A Containers view for the machine's own Docker containers, linked to the bookmarks of their web UIs.
+- **Widgets.** Weather, calendar, feeds, your machine, media and home services, and any service that answers with JSON.
+- **A look of your own.** Themes, backdrops and a theme studio.
 
 <a id="what-you-can-do"></a>
 

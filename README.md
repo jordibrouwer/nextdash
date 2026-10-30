@@ -6,11 +6,16 @@
 
 > 🇨🇳 **本应用支持简体中文。** nextDash 的界面提供中文语言选项 — 在设置中将语言切换为「中文」即可。
 
-**A keyboard-first, self-hosted bookmark dashboard. No accounts, no cloud, no noise.**
+**A keyboard-first, self-hosted dashboard for your links, your services and your homelab. No accounts, no cloud, no noise.**
 
-My bookmark bar had become a graveyard, so I built a self-hosted dashboard that tells me which links are already dead.
+It started because my bookmark bar had become a graveyard, and grew into one place that shows how your whole setup is doing. Run it on any machine or container, open it in your browser, and reach everything from the keyboard.
 
-Run it on any machine or container, open it in your browser, organise bookmarks across pages, and reach everything from the keyboard. Beside your bookmarks, **widgets** show what is going on: uptime of the services you watch, what waits in the inbox, which certificate runs out, the weather, your calendar, your feeds, your machines — and any self-hosted service that answers with JSON.
+- **Bookmarks** across pages and categories, with tags, notes, an inbox for links you have not filed yet, smart collections, and search, commands and finders in one panel.
+- **Health and monitoring.** Dead links, uptime with 30 days of history, certificate and domain expiry, page drift and a public status page, with alerts to ntfy, Slack, Discord, Telegram and more, or a push notification on your phone.
+- **Containers and homelab.** A Containers view for the Docker host: logs, start, stop, update with a rollback, and each container linked to its bookmark. Widgets for Unraid, Jellyfin, Sonarr, Home Assistant, Beszel and Glances.
+- **Widgets** for what is going on: weather, calendar, feeds, inbox, your machine, and any service that answers with JSON.
+- **Looks.** 384 themes, 75 backdrops and a theme studio, in six languages.
+- **Yours to keep.** One Go binary and plain JSON files, automatic backups, a 30-day trash, and imports from every browser, Pocket, Raindrop, linkding and more.
 
 <p align="center">
   <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Oceanic Steel: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
