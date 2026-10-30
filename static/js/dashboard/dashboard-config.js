@@ -235,7 +235,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['widgets', 'status-page', 'glances', 'assistant'];
+    static NEW_SECTIONS = ['status-page', 'glances', 'assistant'];
 
     /** The sections that open a named group in the rail. */
     static NAV_GROUP_LABELS = {
@@ -2302,7 +2302,7 @@ class DashboardConfig {
             unraid: ['config.sectionUnraid', 'Unraid'],
             glances: ['config.sectionGlances', 'Glances'],
             'status-page': ['config.sectionStatusPage', 'Status page'],
-            assistant: ['config.sectionAssistant', 'Assistant'],
+            assistant: ['config.sectionAssistant', 'AI Assistant'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],

@@ -295,7 +295,7 @@ test('the rail marks the new and reworked sections with "new", and only those', 
         .filter(([, content]) => content && content !== 'none' && content !== 'normal')
         // "new" / "" — the drawn text, then its (empty) alt text.
         .map(([section, content]) => `${section}:${content.split(' / ')[0]}`));
-    expect(badges.sort()).toEqual(['assistant:"new"', 'glances:"new"', 'status-page:"new"', 'widgets:"new"']);
+    expect(badges.sort()).toEqual(['assistant:"new"', 'glances:"new"', 'status-page:"new"']);
     // The badge is drawn, not written: the tab keeps its own name.
     await expect(page.getByRole('tab', { name: 'Status page', exact: true })).toHaveCount(1);
 });

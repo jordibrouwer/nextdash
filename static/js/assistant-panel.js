@@ -166,7 +166,7 @@
                 el('ul', { class: 'assistant-list', 'data-ai-list': true }));
             const main = el('div', { class: 'assistant-main' },
                 el('header', { class: 'assistant-head' },
-                    el('h2', { class: 'assistant-title', id: 'assistant-title' }, t('title', 'Assistant')),
+                    el('h2', { class: 'assistant-title', id: 'assistant-title' }, t('title', 'AI Assistant')),
                     el('button', { type: 'button', class: 'assistant-close', 'data-ai-close': true, 'aria-label': t('close', 'Close') }, '×')),
                 el('div', { class: 'assistant-thread', 'data-ai-thread': true, role: 'log', 'aria-live': 'polite' }),
                 el('form', { class: 'assistant-compose', 'data-ai-compose': true },

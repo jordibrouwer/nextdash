@@ -4114,7 +4114,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Unraid** | Connection · How it works — the one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
 | **Glances** | Connection · Page · Recording · Notices · Advanced, for up to five hosts — the Glances page and the Glances widget ([§15A.10](#15a10-config-glances)) |
 | **Status page** | The read-only page for the people who use your services: its link, its top, groups and services, and linked maintenance ([§12.8](#128-the-status-page)) |
-| **Assistant** | One tab, Settings: the switch, the provider, the key, the model and the conversations it keeps ([§23.11](#2311-the-assistant)) |
+| **AI Assistant** | One tab, Settings: the switch, the provider, the key, the model and the conversations it keeps ([§23.11](#2311-the-assistant)) |
 | **Statistics** | Summary · Usage · Collection · Inbox · Health · Server ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
@@ -4933,7 +4933,7 @@ The in-app assistant ([§23.11](#2311-the-assistant)) reads through the same gro
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
 | Container image registries and GitHub | Image update checks, when switched on | Config → Containers → Updates |
 | Your own services | Custom widgets, webhooks, alerts | Per widget or receiver |
-| Your assistant provider (Anthropic, OpenAI or your own server) | Only when you ask a question or press Test connection | Config → Assistant |
+| Your assistant provider (Anthropic, OpenAI or your own server) | Only when you ask a question or press Test connection | Config → AI Assistant |
 | Install count | Once a day: a random install id and the version (on Unraid, also the word Unraid) | Behavior → Privacy & sync → *Count this install*; `DISABLE_TELEMETRY=true`; `NEXTDASH_DISABLE_INSTALL_PING=1` for the count alone |
 | Analytics | Only when switched on, with a random install code (**v1.22.3**) | See below |
 
@@ -5038,7 +5038,7 @@ location /               { return 404; }
 
 The assistant answers questions about your bookmarks in plain words, for example *which of my Docker bookmarks are down?* or *tag everything about Proxmox*. It runs on a model you choose: Claude, OpenAI, or a server of your own such as Ollama. It is **off** until you turn it on, and it is off in the demo. Open it with `:ask` in the command palette, with or without a question after it: with one, it starts a new conversation and asks it straight away. `=` in the search bar does the same: `=` on its own lists your latest conversations (`Enter` opens one), and `=` followed by a question asks it as a new conversation. Like `:ask`, what follows the `=` is never stored in the search history or the recents.
 
-**Setting it up.** Under **Config → Assistant** (a page of its own in the Services group, with one tab, **Settings**), tick **Turn the assistant on** and pick a **Provider**:
+**Setting it up.** Under **Config → AI Assistant** (a page of its own in the Services group, with one tab, **Settings**), tick **Turn the assistant on** and pick a **Provider**:
 
 | Provider | What you fill in |
 |---|---|

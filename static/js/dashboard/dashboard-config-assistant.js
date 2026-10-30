@@ -105,7 +105,7 @@
                 </div>`;
         return `
             <div class="config-panel" data-ai-panel>
-                <h3 class="config-panel-title">${esc(this.t('config.assistantTitle', 'Assistant'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.assistantTitle', 'AI Assistant'))}</h3>
                 ${demo ? `<div>${global.DemoLock.chip('privacy')}</div><fieldset class="config-demo-lock" disabled>${body}</fieldset>` : body}
             </div>`;
     },

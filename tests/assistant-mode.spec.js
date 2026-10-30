@@ -120,6 +120,16 @@ test.describe('Assistant search mode', () => {
         expect(received).toHaveLength(2);
     });
 
+    test('= pressed on the dashboard opens the assistant mode by itself', async ({ page }) => {
+        await ask(page, 'dashboard key question');
+        await openApp(page);
+        await page.evaluate(() => { document.body.focus(); });
+        await page.keyboard.press('=');
+        await expect(page.locator('#search-scope-rail')).toBeVisible();
+        await expect(page.locator('.search-mode-tab[data-mode="assistant"]')).toHaveClass(/active/);
+        await expect(bar(page).locator('.search-match').first()).toContainText('dashboard key question');
+    });
+
     test('a lone = with no conversations offers to ask', async ({ page }) => {
         await openApp(page);
         const count = await page.evaluate(async () => (await (await fetch('/api/ai/conversations')).json()).length);
@@ -149,7 +159,7 @@ test.describe('Assistant search mode', () => {
         await expect(page.locator('.search-mode-tab[data-mode="search"]')).toHaveClass(/active/);
     });
 
-    test('with the assistant off the row says so and Enter opens Config → Assistant', async ({ page }) => {
+    test('with the assistant off the row says so and Enter opens Config → AI Assistant', async ({ page }) => {
         await configure(page, false);
         await openApp(page);
         await typeInBar(page, '=');

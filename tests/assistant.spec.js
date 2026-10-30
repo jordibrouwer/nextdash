@@ -215,7 +215,7 @@ test.describe('Assistant panel', () => {
         expect(requests).toBe(2);
     });
 
-    test('with the assistant off the palette says so and opens Config → Assistant', async ({ page }) => {
+    test('with the assistant off the palette says so and opens Config → AI Assistant', async ({ page }) => {
         await configure(page, false);
         await openApp(page);
         await palette(page, 'ask what is new');

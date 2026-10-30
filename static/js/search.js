@@ -950,6 +950,7 @@ class SearchComponent {
             || key === ':'
             || key === '?'
             || e.key === '@'
+            || e.key === '='
             || e.key === ','
             || e.key === '+'
             || e.key === '&'
@@ -1352,6 +1353,17 @@ class SearchComponent {
         if (e.key === '@') {
             e.preventDefault();
             this.addToQuery('@');
+            return;
+        }
+
+        // Handle = key to start the assistant
+        //
+        // From the dashboard, like ":" and "?" open their modes. Once the bar is
+        // open it is a mode key at the entry point (handled above) and text
+        // anywhere else, so a "=" in a query stays a character.
+        if (e.key === '=' && !this.searchActive) {
+            e.preventDefault();
+            this.addToQuery('=');
             return;
         }
 
