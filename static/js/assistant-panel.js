@@ -1,6 +1,7 @@
 /**
- * The assistant panel: a modal with the conversations on the left and the
- * thread on the right. `:ask` opens it.
+ * The assistant panel: a modal built like the command palette. The question
+ * field is the prompt row at the top; under it the conversations on the left
+ * and the thread on the right. `:ask` and `=` open it.
  *
  * Everything the model or the server says is put on the page as text, never as
  * HTML: answers, titles, errors and the arguments of a proposal. The question
@@ -85,7 +86,8 @@
         const diff = Math.round((millis - Date.now()) / 1000);
         const abs = Math.abs(diff);
         let rtf;
-        try { rtf = new Intl.RelativeTimeFormat(document.documentElement.lang || undefined, { numeric: 'auto' }); } catch { return ''; }
+        // Narrow ("3m ago"): it is the shortcut column of a row, not a sentence.
+        try { rtf = new Intl.RelativeTimeFormat(document.documentElement.lang || undefined, { numeric: 'auto', style: 'narrow' }); } catch { return ''; }
         if (abs < 60) return rtf.format(diff, 'second');
         if (abs < 3600) return rtf.format(Math.round(diff / 60), 'minute');
         if (abs < 86400) return rtf.format(Math.round(diff / 3600), 'hour');
@@ -96,6 +98,9 @@
         if (typeof value === 'string') return value;
         try { return JSON.stringify(value); } catch { return String(value); }
     }
+
+    /** The question field grows with its text up to this many lines. */
+    const INPUT_MAX_LINES = 5;
 
     class AssistantPanel {
         constructor() {
@@ -110,37 +115,88 @@
             this.busy = false;
             this.stream = null;
             this.searchTimer = 0;
+            /** Which row of the left column the arrow keys are on: -1 none, 0 "New conversation", 1.. a conversation. */
+            this.selected = -1;
+            /*
+             * One number per time the panel is opened. Everything that awaits the
+             * server checks it afterwards: a panel closed (and perhaps opened
+             * again) in the meantime is not the one the answer was for, so the
+             * answer is dropped instead of painted into the new one.
+             */
+            this.generation = 0;
+            /** While the first open reads the status and the list: the request the panel is to show once it has them. */
+            this.loading = null;
+            this.pending = null;
             this.keyHandler = (event) => this.onKey(event);
+            this.resizeHandler = () => this.fitInput();
         }
 
         isOpen() { return Boolean(this.overlay); }
 
+        /**
+         * Opens the panel, or brings an open one to what is asked: a question to
+         * send, a conversation to show, or just the field. A second call while
+         * the first is still reading the status takes its place (the last ask
+         * wins) rather than being lost against a status that is not there yet.
+         */
         async open({ question, conversationId } = {}) {
-            const text = String(question || '').trim();
+            const request = { text: String(question || '').trim(), conversationId: conversationId || '' };
             if (this.overlay) {
-                if (text) { this.newConversation(); await this.send(text); }
-                else if (conversationId) await this.select(conversationId);
-                return;
+                if (this.loading) {
+                    this.pending = request;
+                    this.focusInput();
+                    return this.loading;
+                }
+                return this.show(request);
             }
             this.returnFocus = document.activeElement;
             this.status = null;
+            this.selected = -1;
+            this.confirmingDeleteAll = false;
+            this.deleteAllError = '';
             this.newConversation();
             this.build();
-            await Promise.all([this.loadStatus(), this.loadList()]);
+            const generation = this.generation;
+            this.pending = request;
+            const loading = Promise.all([this.loadStatus(), this.loadList()]);
+            this.loading = loading;
+            await loading;
+            if (generation !== this.generation) return undefined;
+            this.loading = null;
+            const next = this.pending;
+            this.pending = null;
             this.renderSide();
-            if (!this.ready()) { this.renderThread(); return; }
-            if (text) { this.newConversation(); await this.send(text); }
-            else if (conversationId) await this.select(conversationId);
-            else this.renderThread();
+            return this.show(next);
+        }
+
+        /** What an open, loaded panel does with one request. Focus ends in the field either way. */
+        async show({ text, conversationId }) {
+            const generation = this.generation;
+            if (!this.ready()) {
+                this.renderThread();
+            } else if (text) {
+                this.newConversation();
+                this.renderSide();
+                await this.send(text);
+            } else if (conversationId) {
+                await this.select(conversationId);
+            } else {
+                this.renderThread();
+            }
+            if (generation === this.generation) this.focusInput();
         }
 
         ready() { return this.status?.ready === true; }
 
         close() {
             if (!this.overlay) return;
+            this.generation += 1;
+            this.loading = null;
+            this.pending = null;
             this.abortStream();
             clearTimeout(this.searchTimer);
             document.removeEventListener('keydown', this.keyHandler, true);
+            global.removeEventListener('resize', this.resizeHandler);
             if (this.lock != null) { global.ScrollLock?.release?.(this.lock); this.lock = null; }
             this.overlay.remove();
             this.overlay = null;
@@ -152,55 +208,85 @@
 
         // ---- Frame ---------------------------------------------------------
 
+        /*
+         * The palette's layout: the prompt row first, across the whole panel,
+         * with the mode pill on its left (the palette's own .search-prompt and
+         * .search-prefix, so every material draws both alike); under it the
+         * conversations on the left, as the palette's rail, and the thread on
+         * the right. The close button comes last in the document, so Tab runs
+         * field, Send, rows, row actions, close; the grid puts it back at the
+         * end of the prompt row.
+         */
         build() {
             this.overlay = el('div', { class: 'assistant-overlay' });
             this.panel = el('section', {
                 class: 'assistant-panel', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'assistant-title',
             });
+            const prompt = el('form', { class: 'search-prompt assistant-prompt', 'data-ai-compose': true },
+                el('span', { class: 'search-prefix assistant-badge', 'data-mode': 'assistant', id: 'assistant-title' }, t('title', 'AI Assistant')),
+                el('textarea', {
+                    class: 'assistant-input', 'data-ai-input': true, rows: 1,
+                    placeholder: t('inputPlaceholder', 'Ask about your bookmarks'), 'aria-label': t('inputLabel', 'Your question'),
+                }),
+                el('button', {
+                    type: 'submit', class: 'assistant-send', 'data-ai-send': true,
+                    'aria-label': t('send', 'Send'), title: t('send', 'Send'),
+                }, el('span', { 'aria-hidden': 'true' }, '↵')));
             const side = el('aside', { class: 'assistant-side' },
-                el('button', { type: 'button', class: 'assistant-new', 'data-ai-new': true }, t('newConversation', 'New conversation')),
                 el('input', {
                     type: 'search', class: 'assistant-search', 'data-ai-search': true,
                     placeholder: t('searchPlaceholder', 'Search conversations'), 'aria-label': t('searchLabel', 'Search conversations'),
                 }),
-                el('ul', { class: 'assistant-list', 'data-ai-list': true }));
-            const main = el('div', { class: 'assistant-main' },
-                el('header', { class: 'assistant-head' },
-                    el('h2', { class: 'assistant-title', id: 'assistant-title' }, t('title', 'AI Assistant')),
-                    el('button', { type: 'button', class: 'assistant-close', 'data-ai-close': true, 'aria-label': t('close', 'Close') }, '×')),
-                el('div', { class: 'assistant-thread', 'data-ai-thread': true, role: 'log', 'aria-live': 'polite' }),
-                el('form', { class: 'assistant-compose', 'data-ai-compose': true },
-                    el('textarea', {
-                        class: 'assistant-input', 'data-ai-input': true, rows: 2,
-                        placeholder: t('inputPlaceholder', 'Ask about your bookmarks'), 'aria-label': t('inputLabel', 'Your question'),
-                    }),
-                    el('button', { type: 'submit', class: 'assistant-send', 'data-ai-send': true }, t('send', 'Send'))));
-            this.panel.append(side, main);
+                el('ul', { class: 'assistant-list', 'data-ai-list': true }),
+                el('div', { class: 'assistant-side-foot', 'data-ai-side-foot': true }));
+            const body = el('div', { class: 'assistant-body' },
+                side,
+                el('div', { class: 'assistant-thread', 'data-ai-thread': true, role: 'log', 'aria-live': 'polite' }));
+            const close = el('button', {
+                type: 'button', class: 'assistant-close', 'data-ai-close': true, 'aria-label': t('close', 'Close'), title: t('close', 'Close'),
+            }, '×');
+            this.panel.append(prompt, body, close);
             this.overlay.append(this.panel);
 
             this.overlay.addEventListener('mousedown', (event) => { if (event.target === this.overlay) this.close(); });
             this.panel.addEventListener('click', (event) => this.onClick(event));
-            this.panel.querySelector('[data-ai-compose]').addEventListener('submit', (event) => {
+            prompt.addEventListener('submit', (event) => {
                 event.preventDefault();
                 void this.submitInput();
             });
             const input = this.panel.querySelector('[data-ai-input]');
-            input.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
-                    event.preventDefault();
-                    void this.submitInput();
-                }
-            });
+            input.addEventListener('keydown', (event) => this.onInputKey(event));
+            input.addEventListener('input', () => this.fitInput());
+            this.panel.querySelector('[data-ai-list]').addEventListener('keydown', (event) => this.onListKey(event));
             this.panel.querySelector('[data-ai-search]').addEventListener('input', () => {
                 clearTimeout(this.searchTimer);
-                this.searchTimer = setTimeout(async () => { await this.loadList(); this.renderSide(); }, SEARCH_DEBOUNCE_MS);
+                const generation = this.generation;
+                this.searchTimer = setTimeout(async () => {
+                    await this.loadList();
+                    if (generation === this.generation) this.renderSide();
+                }, SEARCH_DEBOUNCE_MS);
             });
 
             document.body.appendChild(this.overlay);
             this.lock = global.ScrollLock?.acquire?.('assistant-panel') ?? null;
             document.addEventListener('keydown', this.keyHandler, true);
-            requestAnimationFrame(() => this.overlay?.classList.add('show'));
-            input.focus({ preventScroll: true });
+            global.addEventListener('resize', this.resizeHandler);
+            /*
+             * Shown at once rather than a frame later. The overlay is
+             * visibility:hidden until it has .show, and a hidden field cannot
+             * take focus: with the class waiting for a frame, the focus below
+             * went nowhere, and when the answer came back before that frame
+             * every later focus missed too. One style read first, so the fade
+             * still has a painted start to run from.
+             */
+            void this.overlay.offsetWidth;
+            this.overlay.classList.add('show');
+            const overlay = this.overlay;
+            overlay.addEventListener('transitionend', (event) => {
+                if (event.target === overlay && this.overlay === overlay) this.keepFocus();
+            }, { once: true });
+            this.fitInput();
+            this.focusInput();
         }
 
         onKey(event) {
@@ -214,11 +300,98 @@
             if (event.key === 'Tab') global.FocusTrapUtils?.trapTabKey?.(event, this.panel);
         }
 
+        /** The question field: Enter sends, Shift+Enter is a new line, the arrows walk the rows while it is empty. */
+        onInputKey(event) {
+            const input = event.currentTarget;
+            const empty = !input.value.trim();
+            if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && (empty || event.altKey)
+                    && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+                event.preventDefault();
+                this.moveSelection(event.key === 'ArrowDown' ? 1 : -1);
+                return;
+            }
+            if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+                event.preventDefault();
+                if (empty && this.selected >= 0) this.activateSelected();
+                else void this.submitInput();
+            }
+        }
+
+        /** On a row itself the arrows move between rows, as in the palette. */
+        onListKey(event) {
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+            const rows = this.rowEls();
+            const at = rows.findIndex((row) => row.contains(event.target));
+            if (at < 0) return;
+            event.preventDefault();
+            const next = Math.max(0, Math.min(rows.length - 1, at + (event.key === 'ArrowDown' ? 1 : -1)));
+            this.selected = next;
+            this.paintSelection();
+            rows[next].querySelector('[data-ai-open], [data-ai-new]')?.focus({ preventScroll: true });
+        }
+
+        rowEls() { return [...(this.panel?.querySelectorAll('[data-ai-list] > li') || [])]; }
+
+        moveSelection(step) {
+            const count = this.rowEls().length;
+            if (!count) return;
+            this.selected = this.selected < 0
+                ? (step > 0 ? 0 : count - 1)
+                : Math.max(0, Math.min(count - 1, this.selected + step));
+            this.paintSelection();
+        }
+
+        paintSelection() {
+            this.rowEls().forEach((row, index) => {
+                row.classList.toggle('is-selected', index === this.selected);
+                if (index === this.selected) row.scrollIntoView?.({ block: 'nearest' });
+            });
+        }
+
+        activateSelected() {
+            const row = this.rowEls()[this.selected];
+            if (!row) return;
+            if (row.hasAttribute('data-ai-conv')) void this.openConversation(row.getAttribute('data-ai-conv'));
+            else this.startNew();
+        }
+
+        startNew() {
+            this.newConversation();
+            this.renderSide();
+            this.renderThread();
+            this.focusInput();
+        }
+
+        async openConversation(id) {
+            const generation = this.generation;
+            await this.select(id);
+            if (generation === this.generation) this.focusInput();
+        }
+
         onClick(event) {
             const target = event.target.closest('button');
-            if (!target || !this.panel.contains(target)) return;
+            if (!target || !this.panel.contains(target)) {
+                // The arguments of a change are one line; a click on them shows them whole.
+                const main = event.target.closest('.assistant-proposal-main');
+                if (main && this.panel.contains(main)) main.classList.toggle('is-expanded');
+                return;
+            }
             if (target.hasAttribute('data-ai-close')) { this.close(); return; }
-            if (target.hasAttribute('data-ai-new')) { this.newConversation(); this.renderSide(); this.renderThread(); this.focusInput(); return; }
+            if (target.hasAttribute('data-ai-new')) { this.selected = 0; this.startNew(); return; }
+            if (target.hasAttribute('data-ai-delete-all')) {
+                this.confirmingDeleteAll = true;
+                this.deleteAllError = '';
+                this.renderFoot();
+                this.panel.querySelector('[data-ai-delete-all-cancel]')?.focus({ preventScroll: true });
+                return;
+            }
+            if (target.hasAttribute('data-ai-delete-all-cancel')) {
+                this.confirmingDeleteAll = false;
+                this.renderFoot();
+                this.focusInput();
+                return;
+            }
+            if (target.hasAttribute('data-ai-delete-all-confirm')) { void this.removeAll(); return; }
             if (target.hasAttribute('data-ai-setup')) {
                 this.close();
                 global.dashboardInstance?.config?.openAssistantFold?.();
@@ -226,7 +399,11 @@
             }
             const row = target.closest('[data-ai-conv]');
             if (row && target.hasAttribute('data-ai-delete')) { void this.remove(row.getAttribute('data-ai-conv')); return; }
-            if (row && target.hasAttribute('data-ai-open')) { void this.select(row.getAttribute('data-ai-conv')); return; }
+            if (row && target.hasAttribute('data-ai-open')) {
+                this.selected = this.rowEls().indexOf(row);
+                void this.openConversation(row.getAttribute('data-ai-conv'));
+                return;
+            }
             if (target.hasAttribute('data-ai-apply-all')) {
                 void this.applyAll(target.closest('[data-ai-message]')?.getAttribute('data-ai-message'));
                 return;
@@ -239,7 +416,49 @@
             }
         }
 
-        focusInput() { this.panel?.querySelector('[data-ai-input]')?.focus({ preventScroll: true }); }
+        /** Where the keyboard belongs: the question field, or the setup button when the assistant cannot answer. */
+        focusTarget() {
+            if (!this.panel) return null;
+            const setup = this.panel.querySelector('[data-ai-setup]');
+            if (setup) return setup;
+            return this.panel.querySelector('[data-ai-input]');
+        }
+
+        /**
+         * Puts the keyboard in the field, now and once more on the next frame:
+         * whatever closed on the way here (the palette gives focus back to the
+         * page as it goes) may still move it after this call. The second pass
+         * only acts when focus has left the panel, so a row the reader moved to
+         * in that frame keeps it.
+         */
+        focusInput() {
+            const target = this.focusTarget();
+            if (!target) return;
+            target.focus({ preventScroll: true });
+            requestAnimationFrame(() => this.keepFocus());
+        }
+
+        keepFocus() {
+            if (!this.panel) return;
+            const active = document.activeElement;
+            if (active && active !== document.body && this.panel.contains(active)) return;
+            this.focusTarget()?.focus({ preventScroll: true });
+        }
+
+        /** One row that grows with the question, up to a few lines; then it scrolls. */
+        fitInput() {
+            const input = this.panel?.querySelector('[data-ai-input]');
+            if (!input) return;
+            input.style.height = 'auto';
+            const cs = getComputedStyle(input);
+            const line = parseFloat(cs.lineHeight) || 20;
+            const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+            const border = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+            const max = line * INPUT_MAX_LINES + padY;
+            // box-sizing is border-box (assistant.css): scrollHeight is content and padding.
+            input.style.height = `${Math.min(input.scrollHeight, max) + border}px`;
+            input.style.overflowY = input.scrollHeight > max + 1 ? 'auto' : 'hidden';
+        }
 
         // ---- Data ----------------------------------------------------------
 
@@ -282,16 +501,27 @@
         async select(id) {
             if (!id) return;
             this.abortStream();
+            const generation = this.generation;
+            // A later pick wins over one still on its way: only the last asked is painted.
+            const ticket = (this.selectTicket = (this.selectTicket || 0) + 1);
+            const stale = () => generation !== this.generation || ticket !== this.selectTicket;
+            let conv = null;
             try {
                 const res = await api(`/api/ai/conversations/${encodeURIComponent(id)}`, { cache: 'no-store' });
                 if (!res.ok) throw new Error(String(res.status));
-                const conv = await res.json();
+                conv = await res.json();
+            } catch {
+                conv = null;
+            }
+            if (stale()) return;
+            if (conv) {
                 this.convId = conv.id;
                 this.messages = (conv.messages || []).map((m) => ({ ...m, proposals: m.proposals || [] }));
-            } catch {
+            } else {
                 this.newConversation();
                 this.messages = [{ role: 'error', text: t('gone', 'That conversation no longer exists.') }];
                 await this.loadList();
+                if (stale()) return;
             }
             this.renderSide();
             this.renderThread();
@@ -300,26 +530,90 @@
         async remove(id) {
             if (!id) return;
             if (id === this.convId) this.abortStream();
+            const generation = this.generation;
             try {
                 const res = await api(`/api/ai/conversations/${encodeURIComponent(id)}`, { method: 'DELETE' });
                 if (!res.ok && res.status !== 404) throw new Error(String(res.status));
             } catch {
                 return;
             }
+            if (generation !== this.generation) return;
             if (id === this.convId) this.newConversation();
             await this.loadList();
+            if (generation !== this.generation) return;
             this.renderSide();
             this.renderThread();
+            this.focusInput();
+        }
+
+        /** Every conversation at once, after the confirm in the foot of the column. */
+        async removeAll() {
+            const generation = this.generation;
+            this.abortStream();
+            let res = null;
+            try {
+                res = await api('/api/ai/conversations', { method: 'DELETE' });
+            } catch { /* handled below */ }
+            if (generation !== this.generation) return;
+            if (!res?.ok) {
+                this.deleteAllError = res?.status === 401
+                    ? t('needsTokenDelete', 'Deleting needs the write token.')
+                    : t('deleteAllFailed', 'The conversations could not be deleted.');
+                this.renderFoot();
+                return;
+            }
+            this.confirmingDeleteAll = false;
+            this.deleteAllError = '';
+            this.selected = -1;
+            this.newConversation();
+            await this.loadList();
+            if (generation !== this.generation) return;
+            this.renderSide();
+            this.renderThread();
+            this.focusInput();
         }
 
         // ---- Rendering -----------------------------------------------------
 
+        /** The foot of the column: "Delete all" while there is something to delete, or its confirm. */
+        renderFoot() {
+            const foot = this.panel?.querySelector('[data-ai-side-foot]');
+            if (!foot) return;
+            const query = this.panel.querySelector('[data-ai-search]')?.value.trim();
+            const count = this.conversations.length;
+            if (!count && !query && !this.confirmingDeleteAll) { foot.replaceChildren(); return; }
+            if (!this.confirmingDeleteAll) {
+                foot.replaceChildren(...[
+                    el('button', { type: 'button', class: 'assistant-action assistant-delete-all', 'data-ai-delete-all': true },
+                        t('deleteAll', 'Delete all')),
+                    this.deleteAllError ? el('p', { class: 'assistant-error', role: 'alert' }, this.deleteAllError) : null,
+                ].filter(Boolean));
+                return;
+            }
+            // While the list is filtered the count is only of what matches, so it is left out.
+            const question = query
+                ? t('deleteAllConfirmAny', 'Delete all conversations?')
+                : t('deleteAllConfirm', 'Delete all {n} conversations?', { n: count });
+            foot.replaceChildren(...[
+                el('span', { class: 'assistant-side-foot-text' }, question),
+                el('button', { type: 'button', class: 'assistant-action', 'data-ai-delete-all-confirm': true }, t('delete', 'Delete')),
+                el('button', { type: 'button', class: 'assistant-action assistant-skip', 'data-ai-delete-all-cancel': true }, t('cancel', 'Cancel')),
+                this.deleteAllError ? el('p', { class: 'assistant-error', role: 'alert' }, this.deleteAllError) : null,
+            ].filter(Boolean));
+        }
+
         renderSide() {
             const list = this.panel?.querySelector('[data-ai-list]');
             if (!list) return;
-            list.replaceChildren(...this.conversations.map((c) => {
-                const open = el('button', { type: 'button', class: 'assistant-conv-open', 'data-ai-open': true },
-                    el('span', { class: 'assistant-conv-title' }, c.title || t('untitled', 'Untitled')),
+            // The first row starts a new conversation, as the palette's top row is the one Enter takes.
+            const fresh = el('li', { class: `assistant-conv assistant-conv--new${this.convId ? '' : ' is-active'}` },
+                el('button', { type: 'button', class: 'assistant-conv-open', 'data-ai-new': true },
+                    el('span', { class: 'assistant-conv-title' }, t('newConversation', 'New conversation')),
+                    el('span', { class: 'assistant-conv-time', 'aria-hidden': 'true' }, '+')));
+            list.replaceChildren(fresh, ...this.conversations.map((c) => {
+                const title = c.title || t('untitled', 'Untitled');
+                const open = el('button', { type: 'button', class: 'assistant-conv-open', 'data-ai-open': true, title },
+                    el('span', { class: 'assistant-conv-title' }, title),
                     el('span', { class: 'assistant-conv-time' }, relativeTime(c.updated)));
                 const del = el('button', {
                     type: 'button', class: 'assistant-conv-delete', 'data-ai-delete': true,
@@ -330,6 +624,9 @@
                     'aria-current': c.id === this.convId ? 'true' : false,
                 }, open, del);
             }));
+            if (this.selected >= list.children.length) this.selected = list.children.length - 1;
+            this.paintSelection();
+            this.renderFoot();
         }
 
         threadEl() { return this.panel?.querySelector('[data-ai-thread]'); }
@@ -341,7 +638,7 @@
                 const [key, fallback] = NOT_READY[this.status?.reason] || NOT_READY.off;
                 thread.replaceChildren(el('div', { class: 'assistant-empty', 'data-ai-empty': true },
                     el('p', null, t(key, fallback)),
-                    el('button', { type: 'button', class: 'assistant-setup', 'data-ai-setup': true }, t('setup', 'Set it up in Config'))));
+                    el('button', { type: 'button', class: 'assistant-action assistant-setup', 'data-ai-setup': true }, t('setup', 'Set it up in Config'))));
                 this.panel.querySelector('[data-ai-input]').disabled = true;
                 this.panel.querySelector('[data-ai-send]').disabled = true;
                 return;
@@ -363,7 +660,11 @@
 
         messageEl(m) {
             if (m.role === 'error') return el('p', { class: 'assistant-error', role: 'alert' }, m.text);
-            if (m.role === 'user') return el('div', { class: 'assistant-msg assistant-msg--user' }, el('p', null, m.text));
+            // The question as the line it was typed on: the prompt's mark, then the text.
+            if (m.role === 'user') {
+                return el('div', { class: 'assistant-msg assistant-msg--user' },
+                    el('span', { class: 'assistant-msg-mark', 'aria-hidden': 'true' }, '›'), el('p', null, m.text));
+            }
             const node = el('div', { class: 'assistant-msg assistant-msg--assistant', 'data-ai-message': m.id || '' });
             const body = el('div', { class: 'assistant-text', 'data-ai-text': true }, m.text || '');
             node.append(body);
@@ -372,13 +673,15 @@
             const proposals = m.proposals || [];
             if (proposals.length) {
                 const box = el('div', { class: 'assistant-proposals' });
-                proposals.forEach((p) => box.append(this.cardEl(p)));
                 const pending = proposals.filter((p) => p.status === 'pending' && !p.destructive);
                 const pendingAll = proposals.filter((p) => p.status === 'pending');
+                // "Apply all" heads the list, as a row action of the list itself.
                 if (pendingAll.length >= 2 && pending.length) {
-                    box.append(el('button', { type: 'button', class: 'assistant-apply-all', 'data-ai-apply-all': true },
-                        t('applyAll', 'Apply all')));
+                    box.append(el('div', { class: 'assistant-proposals-head' },
+                        el('button', { type: 'button', class: 'assistant-action assistant-apply-all', 'data-ai-apply-all': true },
+                            t('applyAll', 'Apply all'))));
                 }
+                proposals.forEach((p) => box.append(this.cardEl(p)));
                 if (m.applyError) box.append(el('p', { class: 'assistant-error', role: 'alert' }, m.applyError));
                 node.append(box);
             }
@@ -386,19 +689,30 @@
             return node;
         }
 
+        /**
+         * A change as one row of the palette: what it does and why on the
+         * first line, its arguments on a short second one (cut to the width,
+         * whole on hover and on a click), Apply and Skip at the right edge.
+         */
         cardEl(p) {
             const card = el('div', {
                 class: `assistant-proposal${p.destructive ? ' is-destructive' : ''}`,
                 'data-ai-proposal': p.id, 'data-status': p.status, 'data-destructive': p.destructive ? 'true' : false,
             });
-            card.append(el('p', { class: 'assistant-proposal-title' }, toolWords(p),
-                p.destructive ? el('span', { class: 'assistant-proposal-flag' }, t('destructive', 'Destructive')) : null));
+            const main = el('div', { class: 'assistant-proposal-main' });
+            main.append(el('p', { class: 'assistant-proposal-line' },
+                el('span', { class: 'assistant-proposal-title' }, toolWords(p)),
+                p.destructive ? el('span', { class: 'assistant-proposal-flag' }, t('destructive', 'Destructive')) : null,
+                p.reason ? el('span', { class: 'assistant-proposal-reason', title: p.reason }, p.reason) : null));
             const args = p.arguments && typeof p.arguments === 'object' ? Object.entries(p.arguments) : [];
             if (args.length) {
-                card.append(el('dl', { class: 'assistant-proposal-args' },
+                const whole = args.map(([key, value]) => `${key}: ${argumentValue(value)}`).join('  ·  ');
+                main.append(el('dl', { class: 'assistant-proposal-args', title: whole },
                     args.flatMap(([key, value]) => [el('dt', null, key), el('dd', null, argumentValue(value))])));
             }
-            if (p.reason) card.append(el('p', { class: 'assistant-proposal-reason' }, p.reason));
+            if (p.status === 'failed' && p.error) {
+                main.append(el('p', { class: 'assistant-error', role: 'alert', 'data-ai-proposal-error': true }, p.error));
+            }
             const actions = el('div', { class: 'assistant-proposal-actions' });
             if (p.status === 'applied') {
                 actions.append(el('span', { class: 'assistant-done', 'data-ai-done': true }, t('done', 'Done')));
@@ -407,14 +721,11 @@
             } else if (p.status === 'applying') {
                 actions.append(el('span', { class: 'assistant-skipped', role: 'status' }, t('applying', 'Applying…')));
             } else {
-                if (p.status === 'failed' && p.error) {
-                    card.append(el('p', { class: 'assistant-error', role: 'alert', 'data-ai-proposal-error': true }, p.error));
-                }
                 actions.append(
-                    el('button', { type: 'button', class: 'assistant-apply', 'data-ai-apply': true }, t('apply', 'Apply')),
-                    el('button', { type: 'button', class: 'assistant-skip', 'data-ai-skip': true }, t('skip', 'Skip')));
+                    el('button', { type: 'button', class: 'assistant-action assistant-apply', 'data-ai-apply': true }, t('apply', 'Apply')),
+                    el('button', { type: 'button', class: 'assistant-action assistant-skip', 'data-ai-skip': true }, t('skip', 'Skip')));
             }
-            card.append(actions);
+            card.append(main, actions);
             return card;
         }
 
@@ -425,6 +736,7 @@
             const text = input?.value.trim();
             if (!text || this.busy || !this.ready()) return;
             input.value = '';
+            this.fitInput();
             await this.send(text);
         }
 
@@ -493,7 +805,7 @@
                 this.messages = this.messages.filter((m) => m !== live && m !== asked);
                 this.messages.push({ role: 'error', text: failed });
                 const input = this.panel?.querySelector('[data-ai-input]');
-                if (input && !input.value) input.value = question;
+                if (input && !input.value) { input.value = question; this.fitInput(); }
             } else if (!finished || broke) {
                 live.status = '';
                 live.cut = true;
@@ -595,6 +907,7 @@
             const found = this.findProposal(id);
             if (!found || ['applying', 'applied', 'skipped'].includes(found.proposal.status)) return;
             const { message, proposal } = found;
+            const generation = this.generation;
             message.applyError = '';
             proposal.status = 'applying';
             this.renderThread();
@@ -606,7 +919,14 @@
             } catch { /* handled below */ }
             await this.settleOne(proposal, res, body);
             if (proposal.status === 'applied') this.refreshDashboard();
+            this.afterProposal(generation);
+        }
+
+        /** A change settled: the thread shows it, and the keyboard goes back to the field. */
+        afterProposal(generation) {
+            if (generation !== this.generation) return;
             this.renderThread();
+            this.focusInput();
         }
 
         /** The dashboard behind the panel reads the change now, not on the next focus. */
@@ -620,6 +940,7 @@
             const found = this.findProposal(id);
             if (!found || ['applying', 'applied', 'skipped'].includes(found.proposal.status)) return;
             const { proposal } = found;
+            const generation = this.generation;
             proposal.status = 'applying';
             this.renderThread();
             let res = null;
@@ -629,7 +950,7 @@
                 body = await res.json().catch(() => null);
             } catch { /* handled below */ }
             await this.settleOne(proposal, res, body);
-            this.renderThread();
+            this.afterProposal(generation);
         }
 
         async applyAll(messageId) {
@@ -639,6 +960,7 @@
             const chosen = (message.proposals || []).filter((p) => p.status === 'pending' && !p.destructive);
             const ids = chosen.map((p) => p.id);
             if (!ids.length) return;
+            const generation = this.generation;
             message.applyError = '';
             chosen.forEach((p) => { p.status = 'applying'; });
             this.renderThread();
@@ -663,7 +985,7 @@
             // Whatever the answer did not settle is still waiting for a click.
             chosen.forEach((p) => { if (p.status === 'applying') p.status = 'pending'; });
             if (chosen.some((p) => p.status === 'applied')) this.refreshDashboard();
-            this.renderThread();
+            this.afterProposal(generation);
         }
     }
 

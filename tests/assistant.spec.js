@@ -182,6 +182,8 @@ test.describe('Assistant panel', () => {
         await card.locator('[data-ai-apply]').click();
         await expect(card).toContainText('Done');
         await expect(card.locator('[data-ai-apply]')).toHaveCount(0);
+        // Apply hands the keyboard back to the question field.
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
         await expect.poll(async () => {
             const list = await (await page.request.get('/api/bookmarks?page=1')).json();
             return list.find((b) => b.url === BOOKMARK_URL)?.note;
@@ -212,6 +214,7 @@ test.describe('Assistant panel', () => {
         await conv.locator('[data-ai-open]').click();
         await expect(panel(page).locator('[data-ai-thread]')).toContainText('Two containers need an update.');
         await expect(panel(page).locator('[data-ai-proposal]')).toContainText('Done');
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
         expect(requests).toBe(2);
     });
 
@@ -269,6 +272,7 @@ test.describe('Assistant panel', () => {
 
         mode = 'two';
         await panel(page).locator('[data-ai-new]').click();
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
         await panel(page).locator('[data-ai-input]').fill('and again');
         await panel(page).locator('[data-ai-input]').press('Enter');
         await expect(panel(page).locator('[data-ai-proposal]')).toHaveCount(2);
@@ -347,14 +351,165 @@ test.describe('Assistant panel', () => {
 
     test('a refused Apply for a switched-off group shows the server message and stays applicable', async ({ page }) => {
         await askFromPalette(page);
-        const current = await (await page.request.get('/api/settings')).json();
-        await page.request.post('/api/settings', { data: { ...current, mcpBookmarksWrite: false }, headers: AUTH });
+        /*
+         * Switched off through the page's own settings, as Config does it. A
+         * POST straight to the server raced the page: the dashboard saves its
+         * whole settings copy (the discoverability state, 700 ms after the
+         * palette was used), and that copy still had the group on -- so the
+         * change was applied and the card said Done.
+         */
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.settings.mcpBookmarksWrite = false;
+            await d.saveSettings();
+        });
+        await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).mcpBookmarksWrite).toBe(false);
         const card = panel(page).locator('[data-ai-proposal]');
         await card.locator('[data-ai-apply]').click();
         await expect(card).toContainText('That group is switched off under MCP access.');
         await expect(card.locator('[data-ai-apply]')).toBeVisible();
         await expect(card.locator('[data-ai-skip]')).toBeVisible();
     });
+    // ---- The open and close lifecycle (Task 11) -------------------------
+
+    test('the field has the keyboard while the panel is still reading the status', async ({ page }) => {
+        // The overlay was visibility:hidden until a frame after it was built, so
+        // the first focus went nowhere; a status that answers slowly left the
+        // reader typing into the page behind.
+        await page.route('**/api/ai/status', async (route) => {
+            await new Promise((r) => setTimeout(r, 3000));
+            await route.continue().catch(() => {});
+        });
+        await palette(page, 'ask');
+        await page.keyboard.press('Enter');
+        await expect(panel(page)).toBeVisible();
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused({ timeout: 1000 });
+    });
+
+    test('Escape at once after opening closes the panel and nothing opens behind it', async ({ page }) => {
+        await palette(page, 'ask');
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Escape');
+        await expect(panel(page)).toHaveCount(0);
+        // The grid's own Escape ("nothing open: open search") used to run under
+        // the panel's and opened the palette, holding a scroll lock.
+        await page.waitForTimeout(300);
+        await expect(page.locator('#shortcut-search')).not.toHaveClass(/\bshow\b/);
+        await expect.poll(() => page.evaluate(() => [...window.ScrollLock.holders])).toEqual([]);
+    });
+
+    test('Escape on a row of the panel closes it and does not open the palette behind', async ({ page }) => {
+        await askFromPalette(page);
+        // Off the field: the grid's own Escape handler only skips key presses
+        // in text fields, so it has to know the panel is open.
+        await panel(page).locator('[data-ai-conv] [data-ai-open]').first().focus();
+        await page.keyboard.press('Escape');
+        await expect(panel(page)).toHaveCount(0);
+        await page.waitForTimeout(300);
+        await expect(page.locator('#shortcut-search')).not.toHaveClass(/\bshow\b/);
+        await expect.poll(() => page.evaluate(() => [...window.ScrollLock.holders])).toEqual([]);
+    });
+
+    test('two opens in quick succession show the last one asked, once', async ({ page }) => {
+        await page.evaluate(() => {
+            void window.AssistantPanel.open({ question: 'the first question' });
+            void window.AssistantPanel.open({ question: 'which containers need an update' });
+        });
+        await expect(panel(page).locator('[data-ai-thread]')).toContainText('Two containers need an update.');
+        await expect(panel(page).locator('.assistant-msg--user')).toHaveCount(1);
+        await expect(panel(page).locator('.assistant-msg--user')).toContainText('which containers need an update');
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
+    });
+
+    test('a conversation still loading when the panel closes does not appear in the next one', async ({ page }) => {
+        await askFromPalette(page);
+        const id = await panel(page).locator('[data-ai-conv].is-active').getAttribute('data-ai-conv');
+        await page.keyboard.press('Escape');
+        await expect(panel(page)).toHaveCount(0);
+        await page.route(`**/api/ai/conversations/${id}`, async (route) => {
+            await new Promise((r) => setTimeout(r, 1200));
+            await route.continue().catch(() => {});
+        });
+        await page.evaluate((conversationId) => {
+            void window.AssistantPanel.open({ conversationId });
+            window.AssistantPanel.close();
+            void window.AssistantPanel.open({});
+        }, id);
+        await expect(panel(page)).toBeVisible();
+        await page.waitForTimeout(1800);
+        await expect(panel(page).locator('[data-ai-proposal]')).toHaveCount(0);
+        await expect(panel(page).locator('[data-ai-thread]')).not.toContainText('Two containers');
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
+    });
+
+    test('the arrows walk the conversations from an empty field and Enter opens one', async ({ page }) => {
+        await askFromPalette(page);
+        await panel(page).locator('[data-ai-new]').click();
+        await expect(panel(page).locator('[data-ai-thread]')).not.toContainText('Two containers');
+        const input = panel(page).locator('[data-ai-input]');
+        await expect(input).toBeFocused();
+        // The clicked row is the one the arrows start from.
+        await expect(panel(page).locator('.assistant-conv--new')).toHaveClass(/is-selected/);
+        await page.keyboard.press('ArrowDown');
+        await expect(panel(page).locator('[data-ai-conv]').first()).toHaveClass(/is-selected/);
+        await page.keyboard.press('ArrowUp');
+        await expect(panel(page).locator('.assistant-conv--new')).toHaveClass(/is-selected/);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Enter');
+        await expect(panel(page).locator('[data-ai-thread]')).toContainText('Two containers need an update.');
+        await expect(input).toBeFocused();
+    });
+
+    test('when the assistant cannot answer the setup button has the keyboard', async ({ page }) => {
+        await page.route('**/api/ai/status', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: '{"ready":false,"reason":"no-model"}',
+        }));
+        await palette(page, 'ask');
+        await page.keyboard.press('Enter');
+        await expect(panel(page).locator('[data-ai-empty]')).toContainText('No model is set');
+        await expect(panel(page).locator('[data-ai-setup]')).toBeFocused();
+    });
+
+    test('Delete all asks first, Cancel keeps them, Delete empties the list', async ({ page }) => {
+        // Every conversation goes, so only on a data folder holding none of its own.
+        test.skip(priorConversations.size > 0, 'the data folder already holds conversations');
+        for (const q of ['first to delete', 'second to delete']) {
+            const res = await page.request.post('/api/ai/ask', { data: { conversationId: '', question: q }, headers: AUTH });
+            expect(res.ok()).toBe(true);
+            await res.text();
+        }
+        await palette(page, 'ask');
+        await page.keyboard.press('Enter');
+        const rows = panel(page).locator('[data-ai-conv]');
+        await expect(rows).toHaveCount(2);
+
+        await panel(page).locator('[data-ai-delete-all]').click();
+        await expect(panel(page).locator('[data-ai-side-foot]')).toContainText('Delete all 2 conversations?');
+        await panel(page).locator('[data-ai-delete-all-cancel]').click();
+        await expect(rows).toHaveCount(2);
+        await expect(panel(page).locator('[data-ai-delete-all]')).toBeVisible();
+        expect(await (await page.request.get('/api/ai/conversations')).json()).toHaveLength(2);
+
+        await panel(page).locator('[data-ai-delete-all]').click();
+        await panel(page).locator('[data-ai-delete-all-confirm]').click();
+        await expect(rows).toHaveCount(0);
+        await expect(panel(page).locator('[data-ai-delete-all]')).toHaveCount(0);
+        expect(await (await page.request.get('/api/ai/conversations')).json()).toEqual([]);
+        await expect(panel(page).locator('.assistant-hint')).toBeVisible();
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
+    });
+
+    test('a 401 on Delete all says the write token is needed', async ({ page }) => {
+        await page.route('**/api/ai/conversations', (route) => (route.request().method() === 'DELETE'
+            ? route.fulfill({ status: 401, contentType: 'application/json', body: '{"error":"Unauthorized"}' })
+            : route.continue()));
+        await askFromPalette(page);
+        await panel(page).locator('[data-ai-delete-all]').click();
+        await panel(page).locator('[data-ai-delete-all-confirm]').click();
+        await expect(panel(page).locator('[data-ai-side-foot]')).toContainText('Deleting needs the write token.');
+        await expect(panel(page).locator('[data-ai-conv]')).not.toHaveCount(0);
+    });
+
     test('the panel is drawn by the shared overlay system: a glass material blurs it, classic does not', async ({ page }) => {
         await askFromPalette(page);
         const filters = async (material, style) => page.evaluate(([m, st]) => {

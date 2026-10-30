@@ -1,7 +1,14 @@
-/* The assistant panel (assistant-panel.js): a modal, the conversations on the
-   left and the thread on the right. Sized with top/left and 100vw/100vh rather
-   than inset:0, so the scrollbar gutter is covered too. */
+/* The assistant panel (assistant-panel.js), built like the command palette:
+   the question is the prompt row at the top (the palette's own .search-prompt
+   and .search-prefix, so every material draws both alike), under it the
+   conversations as the palette's rail and the thread beside them.
+
+   One hairline (the palette's), one ink for quiet text, and the palette's
+   sizes: the row text and one small dim line in the thread, the rail's two
+   smaller ones in the left column. */
 .assistant-overlay {
+    /* Sized with top/left and 100vw/100vh rather than inset:0, so the
+       scrollbar gutter is covered too. */
     position: fixed;
     top: 0;
     left: 0;
@@ -22,9 +29,12 @@
     transition: var(--modal-scrim-transition);
 }
 
+/* Visible the moment it is shown, as the palette is: only the fade runs. A
+   field inside a layer that is still visibility:hidden cannot take focus. */
 .assistant-overlay.show {
     opacity: 1;
     visibility: visible;
+    transition-property: opacity;
 }
 
 /* The Quick start card and the other corner cards sit above every layer; they step out of
@@ -37,9 +47,18 @@ body:has(.assistant-overlay.show) :is(.quickstart-card, .notice-card, [data-hold
 }
 
 .assistant-panel {
+    /* The rule of the palette's prompt: the material's own where it has one. */
+    --ai-rule: var(--ov-rule, color-mix(in srgb, var(--border-primary) 45%, transparent));
+    /* The palette's sizes: the small dim line of the thread, and the rail's
+       label and count (search.css, .search-scope). */
+    --ai-small: calc(var(--font-size-controls) * 0.85);
+    --ai-rail: calc(var(--font-size-controls) * 0.9);
+    --ai-rail-dim: calc(var(--font-size-controls) * 0.8);
     width: min(60rem, 100%);
     height: min(40rem, 100%);
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden;
     /* The surface of a modal; theme-overlays.css redraws it per material (and its shadow, rim and level). */
     background: var(--background-modal, var(--background-secondary));
@@ -47,101 +66,156 @@ body:has(.assistant-overlay.show) :is(.quickstart-card, .notice-card, [data-hold
     border-radius: var(--layout-radius-md, 12px);
     color: var(--text-primary);
     font-family: var(--font-family-main, inherit);
+    font-size: var(--font-size-text);
 }
 
-.assistant-side {
-    flex: none;
-    width: 15rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    border-right: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
-    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
-    min-height: 0;
+/* ── The prompt row ─────────────────────────────────────────────────────── */
+
+/* The palette's prompt (search.css, theme-overlays.css) across the whole
+   panel; the close button lies over its right end, and Send keeps clear of it. */
+.assistant-panel .assistant-prompt {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin: 0;
+    align-items: center;
 }
 
-/* Buttons: the action-button tokens every modal and card shares. The main one of a group
-   is tinted with the accent instead of being a solid block of it. */
-.assistant-new,
-.assistant-send,
-.assistant-apply,
-.assistant-apply-all,
-.assistant-setup,
-.assistant-skip {
-    padding: 0.45rem 0.8rem;
-    border: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--action-btn-bg);
+.assistant-badge {
+    align-self: center;
+}
+
+.assistant-input {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0.2rem 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--text-primary);
+    caret-color: var(--text-primary);
+    font: inherit;
+    line-height: 1.45;
+    resize: none;
+    overflow-y: hidden;
+}
+
+.assistant-input::placeholder {
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+/* An empty field is one line however narrow: the hint is cut, not wrapped. */
+.assistant-input:placeholder-shown {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The row draws the focus (its accent underline, theme-overlays.css), not the field. */
+.assistant-panel .assistant-input:focus,
+.assistant-panel .assistant-input:focus-visible {
+    outline: none;
+}
+
+/* Send: the key it stands for, as tall as the field and a comfortable target. */
+.assistant-send {
+    flex: none;
+    align-self: stretch;
+    min-width: 2.5rem;
+    min-height: 2rem;
+    margin-right: 2.4rem;
+    padding: 0 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ai-rule);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+    color: var(--accent-success);
     font: inherit;
     cursor: pointer;
 }
 
-.assistant-new,
-.assistant-send,
-.assistant-apply,
-.assistant-apply-all,
-.assistant-setup {
-    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 16%, var(--action-btn-bg));
-    font-weight: 600;
+.assistant-send:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent-success) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent-success) 35%, transparent);
 }
 
-.assistant-new:hover,
-.assistant-send:hover:not(:disabled),
-.assistant-apply:hover,
-.assistant-apply-all:hover,
-.assistant-setup:hover,
-.assistant-skip:hover {
-    background: var(--action-btn-bg-hover);
+.assistant-send:disabled,
+.assistant-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.assistant-new:hover,
-.assistant-send:hover:not(:disabled),
-.assistant-apply:hover,
-.assistant-apply-all:hover,
-.assistant-setup:hover {
-    background: color-mix(in srgb, var(--accent-primary) 26%, var(--action-btn-bg-hover));
-}
-
-.assistant-skip {
-    color: var(--action-btn-color);
-}
-
-/* The close and delete buttons: one icon size, the notes modal's quiet hover. */
-.assistant-close,
-.assistant-conv-delete {
-    flex: none;
+.assistant-close {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    z-index: 1;
     width: 1.8rem;
     height: 1.8rem;
+    margin-right: 0.6rem;
     padding: 0;
-    border: none;
-    border-radius: 6px;
+    border: 0;
+    border-radius: var(--layout-radius-sm, 8px);
     background: none;
-    color: var(--action-btn-color);
+    color: var(--text-tertiary, var(--text-secondary));
     font: inherit;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     line-height: 1;
     cursor: pointer;
 }
 
-.assistant-close:hover,
-.assistant-conv-delete:hover {
-    background: var(--action-btn-bg-hover);
+.assistant-close:hover {
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
     color: var(--text-primary);
 }
 
-.assistant-search,
-.assistant-input {
-    width: 100%;
+/* ── The two columns ────────────────────────────────────────────────────── */
+
+.assistant-body {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    min-height: 0;
+}
+
+/* The palette's rail: no ground of its own, one rule on its right. */
+.assistant-side {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: var(--space-2, 0.45rem) 0;
+    border-right: 1px solid var(--ai-rule);
+}
+
+/* Filtering the list is a line, not a box: the rule under it is the only edge. */
+.assistant-search {
+    flex: none;
     box-sizing: border-box;
-    padding: 0.45rem 0.6rem;
-    border: 1px solid color-mix(in srgb, var(--text-primary) 18%, transparent);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--action-btn-bg);
+    width: auto;
+    margin: 0 var(--space-3, 0.8rem) var(--space-1, 0.3rem);
+    padding: 0.3rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--ai-rule);
+    border-radius: 0;
+    background: transparent;
     color: var(--text-primary);
     font: inherit;
+    font-size: var(--ai-rail);
+}
+
+.assistant-search::placeholder {
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.assistant-search:focus,
+.assistant-search:focus-visible {
+    outline: none;
+    border-bottom-color: var(--accent-primary);
 }
 
 .assistant-list {
@@ -151,126 +225,229 @@ body:has(.assistant-overlay.show) :is(.quickstart-card, .notice-card, [data-hold
     flex: 1;
     min-height: 0;
     overflow: auto;
+    /* Scrolls inside itself, with a quiet bar. */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-primary) 18%, transparent) transparent;
 }
 
+/* Delete all: a quiet line at the foot of the column, a two-step confirm in place. */
+.assistant-side-foot {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    margin: var(--space-1, 0.3rem) var(--space-3, 0.8rem) 0;
+    padding-top: var(--space-1, 0.3rem);
+    border-top: 1px solid var(--ai-rule);
+    color: var(--text-secondary);
+    font-size: var(--ai-rail-dim);
+}
+
+.assistant-side-foot:empty {
+    display: none;
+}
+
+.assistant-side-foot .assistant-action {
+    min-height: 1.5rem;
+    padding: 0.1rem 0.4rem;
+    font-size: var(--ai-rail-dim);
+}
+
+.assistant-side-foot .assistant-delete-all {
+    margin-left: -0.4rem;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-weight: var(--font-weight-normal, 400);
+}
+
+.assistant-side-foot .assistant-delete-all:hover,
+.assistant-side-foot [data-ai-delete-all-confirm] {
+    color: var(--accent-error);
+}
+
+.assistant-side-foot [data-ai-delete-all-confirm]:hover {
+    background: color-mix(in srgb, var(--accent-error) 12%, transparent);
+}
+
+.assistant-side-foot-text {
+    flex-basis: 100%;
+}
+
+.assistant-side-foot .assistant-error {
+    flex-basis: 100%;
+    font-size: var(--ai-rail-dim);
+}
+
+/* A row as the palette's: full width, the 2px on its left edge the only thing that moves. */
 .assistant-conv {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    border-radius: var(--layout-radius-sm, 8px);
+    border-left: 2px solid transparent;
+    transition: background 0.1s ease;
 }
 
-.assistant-conv.is-active,
 .assistant-conv:hover {
-    background: var(--action-btn-bg-hover);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
 
+/* The conversation on the right: the rail's current scope. */
 .assistant-conv.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
     box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+/* The row the arrows are on: the palette's selected row. */
+.assistant-conv.is-selected {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    border-left-color: var(--accent-primary);
+    box-shadow: inset 4px 0 12px -4px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
 .assistant-conv-open {
     flex: 1;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.1rem;
-    padding: 0.4rem 0.5rem;
-    border: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    padding: 0.3rem 0.3rem 0.3rem var(--space-3, 0.8rem);
+    line-height: 1.35;
+    border: 0;
     background: transparent;
-    color: inherit;
+    color: var(--text-secondary);
     font: inherit;
     text-align: left;
     cursor: pointer;
 }
 
+.assistant-conv:hover .assistant-conv-open,
+.assistant-conv.is-active .assistant-conv-open,
+.assistant-conv.is-selected .assistant-conv-open {
+    color: var(--text-primary);
+}
+
 .assistant-conv-title {
-    max-width: 100%;
+    font-size: var(--ai-rail);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 0.9rem;
 }
 
+/* Right-aligned, small and dim: the palette's shortcut column. */
 .assistant-conv-time {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--ai-rail-dim);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
-.assistant-main {
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+/* The top row starts a conversation: its "+" in the palette's shortcut ink. */
+.assistant-conv--new .assistant-conv-time {
+    color: var(--accent-success);
+    font-weight: var(--font-weight-bold, 700);
 }
 
-.assistant-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.5rem 0.75rem 0.5rem 0.9rem;
-    border-bottom: 1px solid var(--border-primary);
+/* A quiet row action, there on hover, on the row you are on and on the open one. */
+.assistant-conv-delete {
+    flex: none;
+    width: 1.4rem;
+    height: 1.4rem;
+    margin-right: 0.3rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--layout-radius-sm, 8px);
+    background: none;
+    color: var(--text-tertiary, var(--text-secondary));
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
 }
 
-.assistant-title {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 600;
+.assistant-conv:hover .assistant-conv-delete,
+.assistant-conv:focus-within .assistant-conv-delete,
+.assistant-conv.is-active .assistant-conv-delete,
+.assistant-conv.is-selected .assistant-conv-delete {
+    opacity: 1;
 }
+
+.assistant-conv-delete:hover,
+.assistant-conv-delete:focus-visible {
+    color: var(--accent-error);
+}
+
+/* ── The thread ─────────────────────────────────────────────────────────── */
 
 .assistant-thread {
-    flex: 1;
+    min-width: 0;
     min-height: 0;
     overflow: auto;
-    padding: 0.9rem;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem) var(--space-4, 1rem);
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: var(--space-3, 0.75rem);
+    line-height: 1.5;
 }
 
+/* On the palette's slab (modal.css), inset from the panel's edge as the
+   palette's results are, the rail beside it plain. Not on flat. */
+body:not([data-depth="flat"]) .assistant-thread {
+    margin: var(--space-3, 0.75rem) var(--space-3, 0.75rem) var(--space-3, 0.75rem) 0;
+}
+
+body:not([data-depth="flat"]) .assistant-side {
+    padding-top: var(--space-3, 0.75rem);
+}
+
+.assistant-thread p {
+    margin: 0;
+}
+
+/* Small and dim: the hint, the status, the token line, the states of a change. */
 .assistant-hint,
 .assistant-status,
+.assistant-meta,
 .assistant-skipped {
     margin: 0;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-/* "Label · model · n tokens": quieter than the answer. */
-.assistant-meta {
-    margin: 0;
-    font-size: 0.72rem;
     color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--ai-small);
 }
 
 /* "Looking at ...": a line of its own height, so the answer does not jump when it comes and goes. */
 .assistant-status {
-    min-height: 1.2em;
-    font-style: italic;
+    min-height: 1.5em;
 }
 
-.assistant-msg p {
-    margin: 0;
+/* "Label · model · n tokens": never squeezed by the list above it. */
+.assistant-meta {
+    flex: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+/* The question as the prompt line it was typed on: the mark, then the text, dimmed. */
 .assistant-msg--user {
-    align-self: flex-end;
-    max-width: 85%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
-    border-radius: var(--layout-radius-md, 12px);
-    background: var(--action-btn-bg-hover);
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+}
+
+.assistant-msg-mark {
+    flex: none;
+    color: var(--accent-success);
+    font-weight: var(--font-weight-bold, 700);
 }
 
 .assistant-msg--assistant {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
-    max-width: 100%;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
 }
 
 .assistant-text {
@@ -284,78 +461,148 @@ body:has(.assistant-overlay.show) :is(.quickstart-card, .notice-card, [data-hold
 
 .assistant-error {
     margin: 0;
-    font-size: 0.85rem;
-    color: var(--accent-error, #e5484d);
+    color: var(--accent-error);
+    font-size: var(--ai-small);
 }
+
+/* ── Changes: rows of the palette's list ───────────────────────────────── */
 
 .assistant-proposals {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    border-top: 1px solid var(--ai-rule);
+}
+
+.assistant-proposals-head {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.15rem 0;
+    border-bottom: 1px solid var(--ai-rule);
 }
 
 .assistant-proposal {
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--action-btn-bg);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--ai-rule);
 }
 
-.assistant-proposal.is-destructive {
-    border-color: color-mix(in srgb, var(--accent-error, #e5484d) 60%, var(--border-primary));
-    box-shadow: inset 3px 0 0 var(--accent-error, #e5484d);
+.assistant-proposal-main {
+    min-width: 0;
+    cursor: default;
+}
+
+.assistant-proposal-line,
+.assistant-proposal-args {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .assistant-proposal-title {
-    margin: 0 0 0.3rem;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold, 600);
 }
 
+/* Destructive: a small muted-red word with a dot, not a coloured box. */
 .assistant-proposal-flag {
-    margin-left: 0.5rem;
-    padding: 0.05rem 0.4rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--accent-error, #e5484d) 22%, transparent);
-    color: var(--accent-error, #e5484d);
-    font-size: 0.72rem;
-    font-weight: 600;
+    margin-left: var(--space-2, 0.5rem);
+    color: color-mix(in srgb, var(--accent-error) 80%, var(--text-secondary));
+    font-size: var(--ai-small);
 }
 
-.assistant-proposal-args {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 0.15rem 0.7rem;
-    margin: 0 0 0.3rem;
-    font-size: 0.85rem;
-}
-
-.assistant-proposal-args dt {
-    color: var(--text-secondary);
-}
-
-.assistant-proposal-args dd {
-    margin: 0;
-    overflow-wrap: anywhere;
+.assistant-proposal-flag::before {
+    content: "";
+    display: inline-block;
+    width: 0.4em;
+    height: 0.4em;
+    margin-right: 0.35em;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: 0.15em;
 }
 
 .assistant-proposal-reason {
-    margin: 0 0 0.5rem;
-    font-size: 0.85rem;
+    margin-left: var(--space-2, 0.5rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--ai-small);
+}
+
+/* "key value · key value" on one line, cut to the width. */
+.assistant-proposal-args {
+    margin: 0.1rem 0 0;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--ai-small);
+}
+
+.assistant-proposal-args dt,
+.assistant-proposal-args dd {
+    display: inline;
+    margin: 0;
+}
+
+.assistant-proposal-args dt::after {
+    content: " ";
+}
+
+.assistant-proposal-args dd {
     color: var(--text-secondary);
+}
+
+.assistant-proposal-args dd:not(:last-child)::after {
+    content: "  ·  ";
+    white-space: pre;
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.assistant-proposal-main.is-expanded :is(.assistant-proposal-line, .assistant-proposal-args) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.assistant-proposal-main .assistant-error {
+    margin-top: 0.1rem;
 }
 
 .assistant-proposal-actions {
     display: flex;
-    gap: 0.5rem;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+}
+
+/* Actions as text, in the palette's ink: no boxes. */
+.assistant-action {
+    min-height: 1.75rem;
+    padding: 0.15rem 0.5rem;
+    border: 0;
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--ai-small);
+    font-weight: var(--font-weight-semibold, 600);
+    cursor: pointer;
+}
+
+.assistant-action:hover {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.assistant-skip {
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-normal, 400);
+}
+
+.assistant-skip:hover {
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    color: var(--text-primary);
 }
 
 .assistant-done {
-    color: var(--accent-success, var(--accent-primary));
-    font-weight: 600;
-}
-
-.assistant-apply-all {
-    align-self: flex-start;
+    color: var(--accent-success);
+    font-size: var(--ai-small);
+    font-weight: var(--font-weight-semibold, 600);
 }
 
 .assistant-empty {
@@ -364,45 +611,16 @@ body:has(.assistant-overlay.show) :is(.quickstart-card, .notice-card, [data-hold
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.8rem;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
 }
 
-.assistant-compose {
-    display: flex;
-    gap: 0.5rem;
-    align-items: stretch;
-    padding: 0.7rem 0.9rem;
-    border-top: 1px solid var(--border-primary);
-}
-
-.assistant-input {
-    resize: none;
-    flex: 1;
-}
-
-/* Send: beside the field, as tall as it (also when it grows), a comfortable target. */
-.assistant-send {
-    flex: none;
-    align-self: stretch;
-    min-width: 5.5rem;
-    min-height: 2.75rem;
-    padding: 0.6rem 1.2rem;
-}
-
-.assistant-send:disabled,
-.assistant-input:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.assistant-panel button:focus-visible,
-.assistant-panel input:focus-visible,
-.assistant-panel textarea:focus-visible {
+.assistant-panel button:focus-visible {
     outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
+    outline-offset: -2px;
 }
 
-/* A narrow screen: the conversations fold above the thread. */
+/* A narrow screen: the conversations fold above the thread; the prompt stays one row. */
 @media (max-width: 640px) {
     .assistant-overlay {
         padding: 0;
@@ -412,19 +630,51 @@ body:has(.assistant-overlay.show) :is(.quickstart-card, .notice-card, [data-hold
         width: 100%;
         height: 100%;
         border-radius: 0;
-        flex-direction: column;
+    }
+
+    .assistant-body {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
     }
 
     .assistant-side {
-        width: auto;
         max-height: 11rem;
-        border-right: none;
-        border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
+        border-right: 0;
+        border-bottom: 1px solid var(--ai-rule);
+    }
+
+    body:not([data-depth="flat"]) .assistant-thread {
+        margin: var(--space-3, 0.75rem);
+    }
+
+    .assistant-panel .assistant-prompt {
+        flex-wrap: nowrap;
+    }
+}
+
+/* A phone: the field needs the width, so the pill is read out but not drawn
+   (it still names the dialog), and Send sits closer to the close button. */
+@media (max-width: 480px) {
+    .assistant-panel .assistant-badge {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .assistant-send {
+        margin-right: 2rem;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .assistant-overlay {
+    .assistant-overlay,
+    .assistant-conv {
         transition: none;
     }
 

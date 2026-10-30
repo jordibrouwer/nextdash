@@ -110,6 +110,10 @@ class DashboardUiHelpers {
         if (document.querySelector('dialog[open]')) return true;
         // The theme browser's docked panel: the page beside it is a preview.
         if (document.querySelector('[data-look-studio]')) return true;
+        // The assistant panel. Without it the grid's Escape ("nothing open: go
+        // home or open search") ran under the panel's own Escape and opened the
+        // palette behind the closing panel, holding a scroll lock nobody saw.
+        if (window.AssistantPanel?.isOpen?.()) return true;
         return false;
     }
 

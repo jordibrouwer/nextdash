@@ -117,6 +117,7 @@ test.describe('Assistant search mode', () => {
         await expect(panel(page)).toBeVisible();
         await expect(panel(page).locator('[data-ai-thread]')).toContainText('first mode question');
         await expect(panel(page).locator('[data-ai-thread]')).toContainText('Stub answer.');
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
         expect(received).toHaveLength(2);
     });
 
@@ -138,6 +139,7 @@ test.describe('Assistant search mode', () => {
         await expect(bar(page).locator('.search-match')).toHaveText(/Ask the assistant/);
         await page.keyboard.press('Enter');
         await expect(panel(page)).toBeVisible();
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
         expect(received).toHaveLength(0);
     });
 
@@ -148,6 +150,7 @@ test.describe('Assistant search mode', () => {
         await page.keyboard.press('Enter');
         await expect(panel(page)).toBeVisible();
         await expect(panel(page).locator('[data-ai-thread]')).toContainText('Stub answer.');
+        await expect(panel(page).locator('[data-ai-input]')).toBeFocused();
         expect(received).toEqual([QUESTION]);
     });
 

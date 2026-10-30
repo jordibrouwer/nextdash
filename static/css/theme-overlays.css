@@ -579,7 +579,6 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"] {
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .modal-header:has(.modal-title:not(:empty)),
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal-header,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal-toolbar,
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .assistant-head,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card-head {
     border-bottom: 1px solid var(--ov-rule);
     padding-bottom: 0.6rem;
@@ -605,12 +604,12 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"]:no
 }
 
 /* The material's own type for the head. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="terminal"] :is(.modal-title, .tag-cloud-modal-title, .search-prompt, .assistant-title) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="terminal"] :is(.modal-title, .tag-cloud-modal-title, .search-prompt) {
     text-transform: uppercase;
     letter-spacing: 0.14em;
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal-title, .tag-cloud-modal-title, .assistant-title) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal-title, .tag-cloud-modal-title) {
     font-variant: small-caps;
     letter-spacing: 0.06em;
 }
@@ -1471,7 +1470,7 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([
  * Terminal and ink head their categories with a `$` and a bar of their own, and
  * keep the prompt as it is.
  */
-html[data-theme] body[data-material-style="signature"][data-material][data-material]:not([data-material=""]):is([data-material="lacquer"], [data-material="glass"], [data-material="frost"], [data-material="aurora"], [data-material="neon"], [data-material="velvet"], [data-material="enamel"], [data-material="brushed"], [data-material="carbon"], [data-material="paper"]) .shortcut-search .search-prompt::before {
+html[data-theme] body[data-material-style="signature"][data-material][data-material]:not([data-material=""]):is([data-material="lacquer"], [data-material="glass"], [data-material="frost"], [data-material="aurora"], [data-material="neon"], [data-material="velvet"], [data-material="enamel"], [data-material="brushed"], [data-material="carbon"], [data-material="paper"]) :is(.shortcut-search, .assistant-panel) .search-prompt::before {
     content: "";
     flex: none;
     width: 1.05em;
@@ -1488,51 +1487,51 @@ html[data-theme] body[data-material-style="signature"][data-material][data-mater
  * head) is in each material: the same capitals, spacing and weight. The word is
  * the mode pill; what is typed after it is the reader's own and stays plain.
  */
-html[data-theme] body[data-material-style="signature"][data-material="neon"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="neon"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: var(--accent-primary);
     text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 70%, transparent), 0 0 18px color-mix(in srgb, var(--accent-primary) 40%, transparent);
 }
-html[data-theme] body[data-material-style="signature"][data-material="carbon"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="carbon"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-weight: 700;
 }
-html[data-theme] body[data-material-style="signature"][data-material="lacquer"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 800;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
-html[data-theme] body[data-material-style="signature"][data-material="glass"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="glass"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 600;
     letter-spacing: 0.02em;
 }
-html[data-theme] body[data-material-style="signature"][data-material="frost"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="frost"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 400;
     letter-spacing: 0.14em;
     text-transform: uppercase;
 }
-html[data-theme] body[data-material-style="signature"][data-material="brushed"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     text-transform: uppercase;
     letter-spacing: 0.16em;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22), 0 -1px 0 rgba(0, 0, 0, 0.45);
 }
-html[data-theme] body[data-material-style="signature"][data-material="enamel"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 800;
 }
-html[data-theme] body[data-material-style="signature"][data-material="aurora"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 600;
 }
-html[data-theme] body[data-material-style="signature"][data-material="paper"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="paper"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-variant: small-caps;
     font-weight: 700;
     letter-spacing: 0.06em;
 }
-html[data-theme] body[data-material-style="signature"][data-material="terminal"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     text-transform: uppercase;
     letter-spacing: 0.18em;
 }
-html[data-theme] body[data-material-style="signature"][data-material="ink"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="ink"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 800;
     letter-spacing: -0.01em;
 }

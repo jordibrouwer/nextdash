@@ -1944,6 +1944,7 @@ body.no-animations .modal-button.danger.selected {
 body:not([data-depth="flat"]) :is(
     .recent-bookmarks-modal-list,
     .shortcut-search .search-matches,
+    .assistant-panel .assistant-thread,
     .page-overview-modal-slab,
     .tag-cloud-modal-body,
     .wn-entries,
