@@ -208,8 +208,9 @@
             return new Set(Array.isArray(done) ? done : []);
         }
 
-        save() {
-            Promise.resolve(this.dash.saveSettings?.()).catch(() => {});
+        /** `keys` when only those changed (the guide's progress); the whole copy otherwise. */
+        save(keys) {
+            Promise.resolve(this.dash.saveSettings?.(keys ? { keys } : undefined)).catch(() => {});
         }
 
         /** Count these steps as done, and say so on the bar. */
@@ -217,7 +218,7 @@
             const set = this.doneSet();
             (Array.isArray(ids) ? ids : [ids]).forEach((id) => set.add(id));
             this.state().stepsDone = [...set];
-            this.save();
+            this.save(['quickStart']);
             this.refresh();
         }
 
@@ -602,59 +603,55 @@
                 <p class="sg-error" data-sg-error role="alert" hidden></p>` : '';
             panel.innerHTML = `
                 <div class="sg-head">
-                    <h2 id="sg-title" data-sg-title>${esc(hasChoice ? tf('titleWant', 'Welcome to nextDash') : tq('title', 'Quick start'))}</h2>
-                    <label class="sg-lang">
-                        <span>${esc(tq('guideLanguage', 'Language'))}</span>
-                        <select data-sg-language aria-label="${esc(tq('guideLanguage', 'Language'))}">
-                            ${LANGUAGES.map(([code, name]) => `<option value="${code}"${code === lang ? ' selected' : ''}>${esc(name)}</option>`).join('')}
-                        </select>
-                    </label>
+                    <div class="sg-head-main">
+                        <h2 id="sg-title" data-sg-title>${esc(hasChoice ? tf('titleWant', 'Welcome to nextDash') : tq('title', 'Quick start'))}</h2>
+                        <p class="sg-sub">${esc(hasChoice ? tf('introWant', 'Your start page comes with example links. Keep them to look around, or clear them first and make it yours.') : tq('guideIntroPicked', 'Pick a ready-made page to add, or go on with your own.'))}</p>
+                    </div>
+                    <div class="sg-head-side">
+                        <label class="sg-lang">
+                            <span>${esc(tq('guideLanguage', 'Language'))}</span>
+                            <select data-sg-language aria-label="${esc(tq('guideLanguage', 'Language'))}">
+                                ${LANGUAGES.map(([code, name]) => `<option value="${code}"${code === lang ? ' selected' : ''}>${esc(name)}</option>`).join('')}
+                            </select>
+                        </label>
+                        ${langHint ? `<p class="sg-lang-hint" data-sg-lang-hint>${esc(tq('guideLanguageDetected', '{language} detected', { language: langHint[1] }))} <button type="button" class="sg-link" data-sg-lang-switch="${esc(langHint[0])}">${esc(tq('guideLanguageSwitch', 'Switch'))}</button></p>` : ''}
+                    </div>
                 </div>
-                ${hasChoice ? `<p class="sg-sub">${esc(tf('introWant', 'Your start page comes with example links. Keep them to look around, or clear them first and make it yours.'))}</p>` : ''}
-                ${langHint ? `<p class="sg-lang-hint" data-sg-lang-hint>${esc(tq('guideLanguageDetected', '{language} detected', { language: langHint[1] }))} <button type="button" class="sg-link" data-sg-lang-switch="${esc(langHint[0])}">${esc(tq('guideLanguageSwitch', 'Switch'))}</button></p>` : ''}
-                <div class="sg-cols">
-                <div class="sg-col">
-                ${choices}
-                <p class="sg-links">
-                    <button type="button" class="sg-link" data-sg-studio>${esc(tf('openStudio', 'Open the theme studio'))}</button>
-                </p>
-                <hr class="sg-rule">
-                <p class="sg-label">${esc(tq('guideSetUp', 'Set up'))}</p>
-                <div class="sg-weather">
-                    <label for="sg-city">${esc(tq('guideWeather', 'Weather'))}</label>
-                    <input id="sg-city" type="text" data-sg-city autocomplete="off" value="${esc(city)}" placeholder="${esc(tq('guideCityPlaceholder', 'City, e.g. Amsterdam'))}">
-                    <span class="sg-seg" role="group" aria-label="${esc(tq('guideUnit', 'Temperature unit'))}">
-                        <button type="button" data-sg-unit="celsius" aria-pressed="${unit === 'celsius'}">°C</button>
-                        <button type="button" data-sg-unit="fahrenheit" aria-pressed="${unit === 'fahrenheit'}">°F</button>
-                    </span>
-                </div>
-                <hr class="sg-rule">
-                <p class="sg-label">${esc(tq('guideManual', 'A lot to explore'))}</p>
-                <div class="sg-manual">
-                    <p class="sg-sub">${esc(tq('guideManualText', 'nextDash can do a lot, and that can feel overwhelming. That is why there is a good manual: look things up when you need them, no need to take it all in at once.'))}</p>
-                    <button type="button" class="sg-btn" data-sg-manual>${esc(tq('guideManualButton', 'Open the manual'))} ↗</button>
-                </div>
-                </div>
-                <div class="sg-col">
-                <p class="sg-label">${esc(tq('guideImport', 'Bring your bookmarks'))}</p>
-                <div class="sg-import">
-                    <button type="button" class="sg-btn" data-sg-csv>${esc(tq('guideImportCsv', 'Import a CSV file'))}</button>
-                    <input type="file" accept=".csv,text/csv" data-sg-csv-input hidden>
-                    <p class="sg-sub">${esc(tq('guideImportHint', 'Needs a url column; name, category, tags and notes are optional.'))}
-                        <button type="button" class="sg-link" data-sg-import-more>${esc(tq('guideImportMore', 'More ways to import: Config → Data & backups'))}</button></p>
-                </div>
-                ${starter}
-                </div>
+                <div class="sg-mid">
+                ${hasChoice ? `<p class="sg-label sg-label-top">${esc(tq('guideExampleLinks', 'Example links'))}</p>${choices}` : starter}
+                <div class="sg-minis">
+                    <div class="sg-mini">
+                        <p class="sg-label">${esc(tq('guideWeather', 'Weather'))}</p>
+                        <div class="sg-weather">
+                            <input id="sg-city" type="text" data-sg-city autocomplete="off" value="${esc(city)}" placeholder="${esc(tq('guideCityPlaceholder', 'City, e.g. Amsterdam'))}" aria-label="${esc(tq('guideWeather', 'Weather'))}">
+                            <span class="sg-seg" role="group" aria-label="${esc(tq('guideUnit', 'Temperature unit'))}">
+                                <button type="button" data-sg-unit="celsius" aria-pressed="${unit === 'celsius'}">°C</button>
+                                <button type="button" data-sg-unit="fahrenheit" aria-pressed="${unit === 'fahrenheit'}">°F</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="sg-mini sg-import">
+                        <p class="sg-label">${esc(tq('guideYourBookmarks', 'Your bookmarks'))}</p>
+                        <button type="button" class="sg-btn" data-sg-csv title="${esc(tq('guideImportHint', 'Needs a url column; name, category, tags and notes are optional.'))}">${esc(tq('guideImportCsv', 'Import a CSV file'))}</button>
+                        <input type="file" accept=".csv,text/csv" data-sg-csv-input hidden>
+                        <p class="sg-links"><button type="button" class="sg-link" data-sg-import-more>${esc(tq('guideImportMoreShort', 'More ways to import'))}</button></p>
+                    </div>
+                    <div class="sg-mini">
+                        <p class="sg-label">${esc(tq('guideLookLearn', 'Look & learn'))}</p>
+                        <p class="sg-links"><button type="button" class="sg-link" data-sg-studio>${esc(tf('openStudio', 'Open the theme studio'))}</button></p>
+                        <p class="sg-links"><button type="button" class="sg-link" data-sg-manual>${esc(tq('guideManualButton', 'Open the manual'))} ↗</button></p>
+                    </div>
                 </div>
                 <div class="sg-next">
                 <p class="sg-label">${esc(tq('guideNextSteps', 'Next steps'))}</p>
                 <ul class="sg-steps">${steps.map((s) => this.renderStep(s, done.has(s.id), !shown.has(s.id))).join('')}</ul>
                 ${hiddenCount > 0 && !this.showAll ? `<button type="button" class="sg-more" data-sg-more>${esc(tq('guideShowMore', 'Show {n} more', { n: hiddenCount }))} ▾</button>` : ''}
                 ${this.showAll && steps.length > VISIBLE_STEPS ? `<button type="button" class="sg-more" data-sg-less>${esc(tq('guideShowFewer', 'Show fewer'))} ▴</button>` : ''}
-                <p class="sg-back" data-sg-back-hint><kbd>Esc</kbd> ${esc(tq('guideOr', 'or'))} <kbd>1</kbd> ${esc(tq('guideBackHint', 'brings you back to the dashboard from anywhere'))}</p>
+                </div>
                 </div>
                 <div class="sg-foot">
                     <span class="sg-foot-progress" data-sg-progress>${esc(tq('progress', '{done} of {total} done', { done: this.progress().count, total: steps.length }))}</span>
+                    <span class="sg-back" data-sg-back-hint><kbd>Esc</kbd> ${esc(tq('guideOr', 'or'))} <kbd>1</kbd> ${esc(tq('guideBackHint', 'brings you back to the dashboard from anywhere'))}</span>
                     ${this.progress().count >= steps.length
         ? `<button type="button" class="sg-btn sg-btn-primary" data-sg-all-set>${esc(tq('guideAllSet', 'All set'))}</button>`
         : `<button type="button" class="sg-btn" data-sg-minimise>${esc(tq('guideCloseForNow', 'Close for now'))}</button>`}
@@ -747,27 +744,25 @@
             const list = this.starterTemplates();
             if (!list.length) return '';
             const { locked, target } = this.starterState();
-            const sub = locked
-                ? tq('guideStarterLocked', 'First decide about the example links: keep them or start with an empty page.')
-                : target === 'main'
-                    ? tq('guideStarterMain', 'Fills your empty page.')
-                    : tq('guideStarterNew', 'Added as a new page.');
+            if (locked) return '';
+            const sub = target === 'main'
+                ? tq('guideStarterMain', 'Fills your empty page.')
+                : tq('guideStarterNew', 'Added as a new page.');
             const cards = list.map((t) => `
-                    <button type="button" class="sg-choice${t.id === this.starterId ? ' sg-choice-primary' : ''}" data-sg-starter="${esc(t.id)}" aria-pressed="${t.id === this.starterId}"${locked ? ' disabled' : ''}>
+                    <button type="button" class="sg-choice${t.id === this.starterId ? ' sg-choice-primary' : ''}" data-sg-starter="${esc(t.id)}" aria-pressed="${t.id === this.starterId}">
                         <b>${esc(t.name)}</b>
                         <span>${(Array.isArray(t.services) ? t.services.slice(0, 3) : []).map((n) => `<i class="sg-chip">${esc(n)}</i>`).join('')}</span>
                     </button>`).join('');
             const open = !locked && this.starterId && list.some((t) => t.id === this.starterId);
             return `
-                <hr class="sg-rule">
-                <p class="sg-label">${esc(tq('guideStarter', 'Start from a ready-made page'))}</p>
-                <p class="sg-sub" data-sg-starter-sub>${esc(sub)}</p>
+                <p class="sg-label sg-label-top">${esc(tq('guideStarter', 'Start from a ready-made page'))}</p>
                 <div class="sg-choices" data-sg-starters>${cards}</div>
+                <p class="sg-sub" data-sg-starter-sub>${esc(sub)}</p>
                 <div class="sg-starter-form" data-sg-starter-form${open ? '' : ' hidden'}>
                     <label for="sg-starter-server">${esc(tq('guideStarterServer', 'Your server address'))}</label>
                     <input id="sg-starter-server" type="text" data-sg-starter-server autocomplete="off" value="${esc(this.starterServer)}" placeholder="192.168.1.10">
-                    <p class="sg-sub">${esc(tq('guideStarterHint', 'One address fills every service; change single links later.'))}</p>
                     <button type="button" class="sg-btn sg-btn-primary" data-sg-starter-create${this.busy ? ' disabled' : ''}>${esc(tq('guideStarterCreate', 'Create page'))}</button>
+                    <p class="sg-sub">${esc(tq('guideStarterHint', 'One address fills every service; change single links later.'))}</p>
                     <p class="sg-error" data-sg-starter-error role="alert"${this.starterError ? '' : ' hidden'}>${esc(this.starterError)}</p>
                 </div>`;
         }
@@ -893,7 +888,7 @@
 
         recordAnswer(picked) {
             this.state().templatePicked = picked;
-            this.save();
+            this.save(['quickStart']);
         }
 
         async answer(picked) {
@@ -988,7 +983,7 @@
             if (!this.state().tagDemoShown && cloud?.openDemo) {
                 this.tagDemoDone = true;
                 this.state();
-                this.save();
+                this.save(['quickStart']);
                 // The example is nobody's tags: the step is done when the
                 // reader goes on to the Tags view, which this offers as the
                 // example closes.

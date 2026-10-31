@@ -88,7 +88,7 @@ const ListDensity = {
         const dash = window.dashboardInstance;
         if (dash?.settings) {
             dash.settings.densityMode = stored;
-            dash.saveSettings?.();
+            dash.saveSettings?.({ keys: ['densityMode'] });
         }
         if (document.body) document.body.dataset.densityMode = stored;
         window.dispatchEvent(new CustomEvent('nextdash:list-density', { detail: stored }));

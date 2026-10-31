@@ -67,6 +67,7 @@ class DashboardConfig {
         'glances',
         'monitoring',
         'status-page',
+        'assistant',
         'stats',
         'help',
         'logs',
@@ -110,6 +111,11 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-status-page.js',
             datasetKey: 'dashboardConfigStatusPage',
             ready: () => window.DashboardConfigStatusPageReady === true,
+        },
+        assistant: {
+            file: 'js/dashboard/dashboard-config-assistant.js',
+            datasetKey: 'dashboardConfigAssistant',
+            ready: () => window.DashboardConfigAssistantReady === true,
         },
         'data-backups': {
             file: 'js/dashboard/dashboard-config-data-backups.js',
@@ -229,7 +235,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['widgets', 'status-page', 'glances'];
+    static NEW_SECTIONS = ['status-page', 'glances', 'assistant'];
 
     /** The sections that open a named group in the rail. */
     static NAV_GROUP_LABELS = {
@@ -314,6 +320,8 @@ class DashboardConfig {
         this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'connection';
         // Glances sub-tab, remembered the same way.
         this._glancesTab = DashboardConfig.readRememberedTab('glances') || 'connection';
+        // Assistant has one tab; remembered the same way for consistency.
+        this._assistantTab = DashboardConfig.readRememberedTab('assistant') || 'settings';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -642,6 +650,7 @@ class DashboardConfig {
             'status-page': DashboardConfig.STATUS_PAGE_TABS,
             unraid: DashboardConfig.UNRAID_TABS,
             glances: DashboardConfig.GLANCES_TABS,
+            assistant: DashboardConfig.ASSISTANT_TABS,
         };
     }
 
@@ -677,7 +686,7 @@ class DashboardConfig {
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
 
-    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances'];
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances', 'assistant'];
 
     static readRememberedTab(section) {
         try {
@@ -750,6 +759,7 @@ class DashboardConfig {
         'status-page': 'statusPageTab',
         unraid: 'unraidTab',
         glances: 'glancesTab',
+        assistant: 'assistantTab',
     };
 
     /**
@@ -774,6 +784,7 @@ class DashboardConfig {
         'data-sp-tab': 'status-page',
         'data-unraid-tab': 'unraid',
         'data-glances-tab': 'glances',
+        'data-assistant-tab': 'assistant',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -792,6 +803,7 @@ class DashboardConfig {
         containers: 'data-containers-tab',
         'status-page': 'data-sp-tab',
         unraid: 'data-unraid-tab',
+        assistant: 'data-assistant-tab',
     };
 
     /**
@@ -2290,6 +2302,7 @@ class DashboardConfig {
             unraid: ['config.sectionUnraid', 'Unraid'],
             glances: ['config.sectionGlances', 'Glances'],
             'status-page': ['config.sectionStatusPage', 'Status page'],
+            assistant: ['config.sectionAssistant', 'AI Assistant'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
@@ -2339,6 +2352,7 @@ class DashboardConfig {
             case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             case 'glances': return this.glancesTabLabel?.(tab) || tab;
+            case 'assistant': return this.assistantTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2697,6 +2711,8 @@ class DashboardConfig {
             void this.bindGlancesSection?.(container);
         } else if (this.section === 'status-page') {
             void this.bindStatusPageSection?.(container);
+        } else if (this.section === 'assistant') {
+            this.bindAssistantSection?.(container);
         } else if (this.section === 'inbox') {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
@@ -3777,6 +3793,11 @@ class DashboardConfig {
         { tab: 'glances', titleKey: 'config.helpGlancesContainersTitle', fallback: 'Glances and the Containers view' },
         { tab: 'glances', titleKey: 'config.helpGlancesNoticesTitle', fallback: 'Notices and commands' },
         { tab: 'glances', titleKey: 'config.helpGlancesMoreTitle', fallback: 'Compare, forecast and the widget' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantTitle', fallback: 'Asking the assistant' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantSetupTitle', fallback: 'Setting it up' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantChangesTitle', fallback: 'What it can read and change' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantDataTitle', fallback: 'What leaves and what is kept' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantMcpTitle', fallback: 'MCP: other tools' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
         { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
@@ -3833,6 +3854,7 @@ class DashboardConfig {
             case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             case 'glances': return this.glancesTabLabel?.(tab) || tab;
+            case 'assistant': return this.assistantTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -3893,6 +3915,16 @@ class DashboardConfig {
         { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
         { field: 'backupExcludeArchives', labelKey: 'backupIncludeArchivesLabel', fallback: 'Local copies of pages', section: 'data-backups', subTab: 'backups' },
         { field: 'backupExcludeSecrets', labelKey: 'backupIncludeSecretsLabel', fallback: 'Tokens and passwords', section: 'data-backups', subTab: 'backups' },
+        // The Assistant page is drawn by its own file, not from the schema.
+        { field: 'aiEnabled', labelKey: 'assistantEnabled', fallback: 'Turn the assistant on', section: 'assistant', subTab: 'settings' },
+        { field: 'aiProvider', labelKey: 'assistantProvider', fallback: 'Provider', section: 'assistant', subTab: 'settings' },
+        { field: 'aiKey', labelKey: 'assistantKey', fallback: 'API key', section: 'assistant', subTab: 'settings' },
+        { field: 'aiBaseURL', labelKey: 'assistantBaseURL', fallback: 'Server address', section: 'assistant', subTab: 'settings' },
+        { field: 'aiModel', labelKey: 'assistantModel', fallback: 'Model', section: 'assistant', subTab: 'settings' },
+        { field: 'aiTest', labelKey: 'assistantTest', fallback: 'Test connection', section: 'assistant', subTab: 'settings' },
+        { field: 'aiHistoryMax', labelKey: 'assistantHistoryMax', fallback: 'Conversations to keep', section: 'assistant', subTab: 'settings' },
+        { field: 'aiHistoryDays', labelKey: 'assistantHistoryDays', fallback: 'Days to keep them', section: 'assistant', subTab: 'settings' },
+        { field: 'aiDeleteAll', labelKey: 'assistantDeleteAll', fallback: 'Delete all conversations', section: 'assistant', subTab: 'settings' },
     ];
 
     /**
@@ -3951,6 +3983,15 @@ class DashboardConfig {
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
         discoverApps: ['docker', 'containers', 'discover', 'discovery', 'suggest', 'new', 'apps', 'found', 'inbox'],
         discoveryNewApps: ['docker', 'containers', 'discover', 'discovery', 'new', 'apps', 'ask', 'confirm', 'add', 'inbox', 'propose'],
+        aiEnabled: ['assistant', 'ai', 'chat', 'ask', 'claude', 'openai', 'llm'],
+        aiProvider: ['assistant', 'ai', 'claude', 'anthropic', 'openai', 'ollama', 'lm studio', 'llm'],
+        aiKey: ['assistant', 'ai', 'api key', 'token', 'secret', 'claude', 'openai'],
+        aiBaseURL: ['assistant', 'ai', 'ollama', 'lm studio', 'compatible', 'local', 'address', 'url', 'llm'],
+        aiModel: ['assistant', 'ai', 'model', 'llm', 'claude', 'gpt'],
+        aiTest: ['assistant', 'ai', 'test', 'connection', 'check'],
+        aiHistoryMax: ['assistant', 'ai', 'history', 'conversations', 'keep', 'limit'],
+        aiHistoryDays: ['assistant', 'ai', 'history', 'conversations', 'keep', 'days', 'expire'],
+        aiDeleteAll: ['assistant', 'ai', 'history', 'conversations', 'delete', 'clear', 'remove'],
         webSearchEngine: ['web', 'search', 'searxng', 'brave', 'internet', 'engine', 'privacy'],
         webSearchSearxngUrl: ['searxng', 'web', 'search', 'address', 'url', 'instance'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
@@ -4466,6 +4507,7 @@ class DashboardConfig {
             `[data-appearance-range="${escaped}"]`,
             `[data-backup-select="${escaped}"]`,
             `[data-backup-toggle="${escaped}"]`,
+            `[data-ai-setting="${escaped}"]`,
         ];
         // Controls rendered as a group of buttons carry the value, not the
         // field, so they are addressed by the attribute that names the group.
@@ -4477,6 +4519,9 @@ class DashboardConfig {
             theme: '[data-appearance-select="theme"]',
             backdropTuning: '[data-backdrop-tuning="strength"]',
             cardGlass: '[data-glass-range="alpha"]',
+            aiKey: '[data-ai-key]',
+            aiTest: '[data-ai-action="test"]',
+            aiDeleteAll: '[data-ai-action="delete-all"]',
         };
         if (groups[field]) candidates.push(groups[field]);
 
@@ -4761,6 +4806,9 @@ class DashboardConfig {
         }
         if (this.section === 'status-page') {
             return this.renderStatusPageSection();
+        }
+        if (this.section === 'assistant') {
+            return this.renderAssistantSection();
         }
         if (this.section === 'inbox') {
             return this.renderInboxSection();
@@ -9242,6 +9290,28 @@ class DashboardConfig {
         backupExcludeArchives: { def: false },
         backupExcludeSecrets: { def: false },
         healthCheckTimeoutSeconds: { hint: 'healthCheckTimeoutHint', def: 0 },
+        // AI Assistant: no `def` (the page has no ↺), only the ℹ. aiAccess
+        // is not a setting but the "What it can see and do" panel's own ℹ.
+        aiEnabled: { info: ['assistantInfoEnabledTitle', 'assistantInfoEnabledMessage', 'Turn the assistant on',
+            'The assistant is off until you turn it on. While it is off no question can be asked and nothing is sent to a provider. Turning it on sends nothing by itself: a request goes out only when you ask a question or press Test connection. In the public demo it stays off.'] },
+        aiProvider: { info: ['assistantInfoProviderTitle', 'assistantInfoProviderMessage', 'Provider',
+            'Claude and OpenAI each need an API key from your own account there; the model is optional, nextDash has a default for each.\nOpenAI-compatible is any server that speaks the OpenAI chat format, such as Ollama or LM Studio. It needs a server address and a model, and the key is optional. Addresses on your own network are allowed.\nA key is kept per provider, so switching between them does not lose one.'] },
+        aiKey: { info: ['assistantInfoKeyTitle', 'assistantInfoKeyMessage', 'API key',
+            'The key is stored on this server, in ai-secrets.json in the data folder, apart from your settings. It is never shown again: this page only says whether a key is saved. One key is kept per provider, and Save key and Remove key act on the provider selected above.\nIt goes into a backup only when Tokens and passwords is included (Data & backups → Backups). With the write token set, saving and removing a key need it.'] },
+        aiBaseURL: { info: ['assistantInfoBaseURLTitle', 'assistantInfoBaseURLMessage', 'Server address',
+            'Where your own server listens, for example http://ollama.lan:11434/v1. It must start with http:// or https://, and nextDash adds /chat/completions to it, so include the /v1 part when your server uses one. Addresses on your own network are allowed.\nA server that needs no key is fine: leave the key empty and nextDash sends none.'] },
+        aiModel: { info: ['assistantInfoModelTitle', 'assistantInfoModelMessage', 'Model',
+            'The model to ask. Left empty, nextDash uses its default: claude-sonnet-5-5 for Claude and gpt-5.6-terra for OpenAI, shown in the field as a hint. An OpenAI-compatible server has no default, so a model name is required there, written as your server names it.'] },
+        aiTest: { info: ['assistantInfoTestTitle', 'assistantInfoTestMessage', 'Test connection',
+            'Sends one tiny request (the word ping, with room for a single token back) to the provider with the settings above, and shows the model that answered or what went wrong. It spends a few tokens at most, stores nothing, and gives up after 30 seconds.\nIt says why it cannot run when the assistant is off or something is missing, and with the write token set it needs it.'] },
+        aiHistoryMax: { info: ['assistantInfoHistoryMaxTitle', 'assistantInfoHistoryMaxMessage', 'Conversations to keep',
+            'Conversations are kept on this server. When a new answer is saved, only this many of the newest are kept and the oldest are removed. Empty keeps the default of 50; the most you can keep is 500.'] },
+        aiHistoryDays: { info: ['assistantInfoHistoryDaysTitle', 'assistantInfoHistoryDaysMessage', 'Days to keep them',
+            'When a new answer is saved, conversations that were last used longer ago than this are removed. Empty keeps the default of 90 days; the most is 3650.'] },
+        aiDeleteAll: { info: ['assistantInfoDeleteAllTitle', 'assistantInfoDeleteAllMessage', 'Delete all conversations',
+            'Removes every stored conversation from this server, together with the proposals inside them and what became of each one. A proposal you have not applied yet is gone too. It cannot be undone.\nChanges you already applied to your bookmarks or containers stay as they are. With the write token set, deleting needs it.'] },
+        aiAccess: { info: ['assistantInfoAccessTitle', 'assistantInfoAccessMessage', 'What it can see and do',
+            'The assistant reads through the same switches as the MCP endpoint, under Data & backups → Webhooks → MCP access. Looking up bookmarks, tags and pages is always on. Health and Inbox: read and Containers: read add those lookups when they are on. It does not need the MCP address itself to be switched on.\nIt never changes anything by itself: it proposes changes, shown under its answer, and nothing happens until you press Apply. Adding a bookmark is always possible; editing, moving and deleting bookmarks and categories need Bookmarks: edit and delete, and container actions need Containers: control. The switch is checked again when you press Apply.\nWith the write token set, asking, Test connection and Apply need it. One question stops after 8 rounds of lookups, 20 lookups or two minutes.'] },
     };
 
     fieldMeta(field) {
@@ -12837,6 +12907,13 @@ class DashboardConfig {
         });
     }
 
+    /** Open Config -> Assistant -> Settings. Kept under its old name for the callers. */
+    async openAssistantFold() {
+        this.assistantTab = 'settings';
+        await this.openConfigView('assistant');
+        document.querySelector('[data-ai-panel]')?.scrollIntoView({ block: 'start', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
+    }
+
     renderOnboardingActions() {
         const esc = (v) => this.dash.escapeHtml(v);
         const body = `
@@ -13533,6 +13610,13 @@ class DashboardConfig {
         DashboardConfig.rememberTab('status-page', tab);
     }
 
+    get assistantTab() { return this._assistantTab; }
+
+    set assistantTab(tab) {
+        this._assistantTab = tab;
+        DashboardConfig.rememberTab('assistant', tab);
+    }
+
     get glancesTab() { return this._glancesTab; }
 
     set glancesTab(tab) {
@@ -13659,6 +13743,7 @@ class DashboardConfig {
             'stats': ['config.helpNoteStats', 'What the figures in Statistics count, and what they do not.'],
             'data': ['config.helpNoteData', 'Backups, imports, and running nextDash on your own machine.'],
             'logs': ['config.helpNoteLogs', 'The server log and the activity trail: what is recorded, and for how long.'],
+            'assistant': ['config.helpNoteAssistant', 'Questions in plain words, the changes that wait for your click, and the address other tools can use.'],
         },
     };
 
@@ -16472,6 +16557,8 @@ class DashboardConfig {
 
     /** The Status page section's sub-tabs; 'all' shows every card at once. */
     static STATUS_PAGE_TABS = ['all', 'link', 'top', 'groups', 'maintenance'];
+
+    static ASSISTANT_TABS = ['settings'];
 
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
     static UNRAID_TABS = ['connection', 'how'];
@@ -24229,7 +24316,7 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'glances', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'glances', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs', 'assistant'];
 
     /*
      * Fifteen tabs on one scrolling line hid most of them past the edge, and
@@ -24240,7 +24327,7 @@ class DashboardConfig {
         { key: 'basics', label: ['config.helpGroupBasics', 'Basics'], tabs: ['start', 'tips', 'config', 'search'] },
         { key: 'dashboard', label: ['config.helpGroupDashboard', 'Dashboard'], tabs: ['appearance', 'organizing', 'bookmarks', 'widgets'] },
         { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'glances', 'health', 'monitoring'] },
-        { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs'] },
+        { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs', 'assistant'] },
     ];
 
     /** Sections whose strip is drawn in labelled groups. */
@@ -24269,6 +24356,7 @@ class DashboardConfig {
             stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
             logs: ['config.helpTabLogs', 'Logs'],
+            assistant: ['config.helpTabAssistant', 'Assistant'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -24458,6 +24546,7 @@ class DashboardConfig {
             case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
             case 'logs': return this.renderHelpLogs();
+            case 'assistant': return this.renderHelpAssistant();
             default: return this.renderHelpStart();
         }
     }
@@ -25549,6 +25638,18 @@ class DashboardConfig {
             + this.helpPanel('config.helpGlancesContainersTitle', 'Glances and the Containers view', 'config.helpGlancesContainersBody', '')
             + this.helpPanel('config.helpGlancesNoticesTitle', 'Notices and commands', 'config.helpGlancesNoticesBody', '')
             + this.helpPanel('config.helpGlancesMoreTitle', 'Compare, forecast and the widget', 'config.helpGlancesMoreBody', '');
+    }
+
+    renderHelpAssistant() {
+        const open = `<div class="config-actions">
+            <button type="button" class="config-btn" data-overview-go='{"section":"assistant"}'>${
+    this.dash.escapeHtml(this.t('config.helpAssistantOpen', 'Open Config → AI Assistant'))}</button>
+        </div>`;
+        return this.helpPanel('config.helpAssistantTitle', 'Asking the assistant', 'config.helpAssistantBody', '', open)
+            + this.helpPanel('config.helpAssistantSetupTitle', 'Setting it up', 'config.helpAssistantSetupBody', '')
+            + this.helpPanel('config.helpAssistantChangesTitle', 'What it can read and change', 'config.helpAssistantChangesBody', '')
+            + this.helpPanel('config.helpAssistantDataTitle', 'What leaves and what is kept', 'config.helpAssistantDataBody', '')
+            + this.helpPanel('config.helpAssistantMcpTitle', 'MCP: other tools', 'config.helpAssistantMcpBody', '');
     }
 
     renderHelpSearch() {

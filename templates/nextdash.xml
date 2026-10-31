@@ -24,7 +24,7 @@ NextDash is a lightweight, self-hosted bookmark dashboard that features a minima
 
 Key features:
 • Keyboard-driven navigation for fast access to all your bookmarks
-• Extensive theme and layout customization, with a look studio beside the dashboard and a theme editor
+• Extensive theme and layout customization, with a theme studio beside the dashboard and a theme editor
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Edit mode: change categories, widgets and pages right on the dashboard
@@ -54,6 +54,16 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.22.5 (2026-10-29)
+- Recent bookmarks: * shows tiles with the day you opened them, from every page, ten at a time
+- Tag view: show bookmarks with any tag or with every tag, put a tag on ticked rows with Add tag, and sort by score
+- Action bar: a theme studio button, and a docked bar comes back when you rest the pointer on its edge
+- Dashboard: every window opens in the middle, and the page filter (Shift+F) takes several words
+- Edit mode: the panel says what is in a block and offers its actions
+- Glances: the Hosts table puts hosts in trouble first, sorts, names the fullest disk's mount and draws the processor's last hour
+- Appearance: Ocean is the theme a new install starts on
+- Fixes: a setting changed on another device survives closing the theme studio, and a right-click menu stays open in edit mode
+
 ### v1.22.4 (2026-10-29)
 - Edit mode: Shift+M or the pencil in the action bar edits names, icons, widths, views and a widget's settings in a panel beside the page
 - Search: a Usually now group in the empty panel, and the right arrow on a result unfolds open, edit, copy and move
@@ -89,9 +99,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Bookmarks: the add and edit form has two columns with a live preview of the card
 - Config: Overview lists the new features since v1.20.3, and its manual link goes to nextdash.cc/docs
 - Fixes: Export CSV and the imports work before Data &amp; backups is opened, Home and End work on tabs and charts, and a focused block title shows its focus
-
-### v1.21.3 (2026-10-23)
-- Fixes: the Containers view keeps its place in Safari when it refreshes
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>

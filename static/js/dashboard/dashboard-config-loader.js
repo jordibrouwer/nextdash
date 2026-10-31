@@ -33,6 +33,7 @@ class DashboardConfigLoader {
         'glances',
         'monitoring',
         'status-page',
+        'assistant',
         'stats',
         'help',
         'logs',

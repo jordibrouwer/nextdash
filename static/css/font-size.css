@@ -34,10 +34,10 @@ body[data-active-view="bookmarks"] .dashboard-section.section-content {
 :is(body:not([data-active-view]), body[data-active-view="bookmarks"]) :is(
     .modal-overlay,
     .notes-modal-overlay,
+    .assistant-overlay,
     #tag-cloud-modal,
     .config-widget-sheet,
     .omnibox-box,
-    .start-guide-modal,
     .progress-overlay-panel,
     .health-focus-card,
     dialog

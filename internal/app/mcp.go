@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -9,6 +10,9 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
+
+	"github.com/gorilla/mux"
 )
 
 /*
@@ -62,6 +66,18 @@ const (
 	mcpSearchMaxLimit     = 100
 )
 
+// clampLimit turns whatever a client sent into a usable page size: zero,
+// negative or missing means the default, and anything above max is max.
+func clampLimit(n, def, max int) int {
+	if n <= 0 {
+		return def
+	}
+	if n > max {
+		return max
+	}
+	return n
+}
+
 type jsonRPCRequest struct {
 	JSONRPC string          `json:"jsonrpc"`
 	ID      json.RawMessage `json:"id"`
@@ -91,6 +107,181 @@ const (
 	jsonRPCInternalError  = -32603
 )
 
+// The switches a tool can sit behind. A tool in no group is always on while the
+// endpoint itself is.
+const (
+	mcpGroupBookmarksWrite    = "bookmarksWrite"
+	mcpGroupHealthInbox       = "healthInbox"
+	mcpGroupContainersRead    = "containersRead"
+	mcpGroupContainersControl = "containersControl"
+)
+
+// mcpToolGroup says which switch a tool belongs to; "" means always on.
+func mcpToolGroup(name string) string {
+	switch name {
+	case "update_bookmark", "move_bookmark", "delete_bookmark", "create_category", "rename_category":
+		return mcpGroupBookmarksWrite
+	case "get_health_summary", "list_health_issues", "list_inbox":
+		return mcpGroupHealthInbox
+	case "list_containers", "get_container", "get_container_logs":
+		return mcpGroupContainersRead
+	case "container_action":
+		return mcpGroupContainersControl
+	}
+	return ""
+}
+
+func mcpGroupEnabled(s Settings, group string) bool {
+	switch group {
+	case "":
+		return true
+	case mcpGroupBookmarksWrite:
+		return s.MCPBookmarksWrite
+	case mcpGroupHealthInbox:
+		return s.MCPHealthInbox
+	case mcpGroupContainersRead:
+		return s.MCPContainersRead
+	case mcpGroupContainersControl:
+		return s.MCPContainersControl
+	}
+	return false
+}
+
+// mcpAnnotations is the MCP annotations object: hints a client uses to decide
+// whether a call needs a confirmation.
+func mcpAnnotations(readOnly, destructive bool) map[string]any {
+	out := map[string]any{"readOnlyHint": readOnly}
+	if !readOnly {
+		out["destructiveHint"] = destructive
+	}
+	return out
+}
+
+type mcpContextKey struct{}
+
+var mcpCtxKey = mcpContextKey{}
+
+// requestFromMCP is true for a request built by mcpInner, so a handler can tell
+// an assistant's call from a browser's.
+func requestFromMCP(r *http.Request) bool {
+	v, _ := r.Context().Value(mcpCtxKey).(bool)
+	return v
+}
+
+// mcpLogRequest is the caller's request marked as coming through MCP, for the
+// activity log of a handler that does not log by itself.
+func mcpLogRequest(r *http.Request) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), mcpCtxKey, true))
+}
+
+type aiContextKey struct{}
+
+// aiAssistantRequest marks a request as the in-app assistant's. mcpInner
+// derives its inner context from r.Context(), so the mark reaches the
+// browser's handlers unchanged.
+func aiAssistantRequest(r *http.Request) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), aiContextKey{}, true))
+}
+
+func requestFromAssistant(r *http.Request) bool {
+	v, _ := r.Context().Value(aiContextKey{}).(bool)
+	return v
+}
+
+// mcpToolSource names who ran a tool, for the activity log.
+func mcpToolSource(r *http.Request) string {
+	if requestFromAssistant(r) {
+		return "assistant"
+	}
+	return "mcp"
+}
+
+// mcpToolIsWrite reads the definition's own annotations. A missing hint counts
+// as a write, which is also what the MCP spec defaults readOnlyHint to.
+func mcpToolIsWrite(def map[string]any) bool {
+	ann, _ := def["annotations"].(map[string]any)
+	readOnly, ok := ann["readOnlyHint"].(bool)
+	return !ok || !readOnly
+}
+
+// mcpToolIsDestructive reads destructiveHint from the tool's definition,
+// whether or not its group is on. An unknown name is not destructive.
+func mcpToolIsDestructive(name string) bool {
+	for _, def := range mcpAllToolDefinitions() {
+		if def["name"] == name {
+			ann, _ := def["annotations"].(map[string]any)
+			destructive, _ := ann["destructiveHint"].(bool)
+			return destructive
+		}
+	}
+	return false
+}
+
+// mcpNeedsToken is nil when the caller may write, otherwise the refusal.
+func mcpNeedsToken(r *http.Request) map[string]any {
+	if hasWriteAccess(r) {
+		return nil
+	}
+	return map[string]any{"error": "This tool needs the write token."}
+}
+
+/*
+mcpInner runs one of the browser's own handlers on behalf of a tool call.
+
+The write token and the caller's address travel on, so the handler's own checks
+see the same caller the MCP endpoint did.
+*/
+func (h *Handlers) mcpInner(r *http.Request, method, path string, body any, vars map[string]string, handler http.HandlerFunc) (*bufferedResponse, error) {
+	var reader *bytes.Reader
+	if body != nil {
+		payload, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		reader = bytes.NewReader(payload)
+	} else {
+		reader = bytes.NewReader(nil)
+	}
+	ctx := context.WithValue(r.Context(), mcpCtxKey, true)
+	inner, err := http.NewRequestWithContext(ctx, method, path, reader)
+	if err != nil {
+		return nil, err
+	}
+	if body != nil {
+		inner.Header.Set("Content-Type", "application/json")
+	}
+	if token := r.Header.Get("X-NextDash-Token"); token != "" {
+		inner.Header.Set("X-NextDash-Token", token)
+	}
+	if agent := r.Header.Get("User-Agent"); agent != "" {
+		inner.Header.Set("User-Agent", agent)
+	}
+	inner.RemoteAddr = r.RemoteAddr
+	if vars != nil {
+		inner = mux.SetURLVars(inner, vars)
+	}
+	recorder := &bufferedResponse{header: http.Header{}}
+	handler(recorder, inner)
+	return recorder, nil
+}
+
+// mcpErrorFrom turns a refused inner response into a tool error. The duplicate
+// refusal answers in JSON and says where the link already lives, which is the
+// useful half of it; anything else is the plain text the handler wrote.
+func mcpErrorFrom(rec *bufferedResponse) map[string]any {
+	message := strings.TrimSpace(rec.body.String())
+	var refusal map[string]any
+	if json.Unmarshal(rec.body.Bytes(), &refusal) == nil {
+		refusal["error"] = firstString(refusal["message"], "The request was refused.")
+		delete(refusal, "message")
+		return refusal
+	}
+	if message == "" {
+		message = fmt.Sprintf("The request was refused (HTTP %d).", rec.status)
+	}
+	return map[string]any{"error": message}
+}
+
 /*
 mcpToolDefinitions is what tools/list answers.
 
@@ -99,10 +290,30 @@ is a different reader from the one the config screen is written for: it needs
 to know what the tool returns and when it is the wrong one, and it has no
 screen to look at while it decides.
 */
-func mcpToolDefinitions() []map[string]any {
+func mcpToolDefinitions(s Settings) []map[string]any {
+	all := mcpAllToolDefinitions()
+	out := make([]map[string]any, 0, len(all))
+	for _, tool := range all {
+		name, _ := tool["name"].(string)
+		if mcpGroupEnabled(s, mcpToolGroup(name)) {
+			out = append(out, tool)
+		}
+	}
+	return out
+}
+
+func mcpAllToolDefinitions() []map[string]any {
+	all := append(mcpCoreToolDefinitions(), mcpBookmarksWriteDefinitions()...)
+	all = append(all, mcpHealthInboxDefinitions()...)
+	all = append(all, mcpContainersReadDefinitions()...)
+	return append(all, mcpContainersControlDefinitions()...)
+}
+
+func mcpCoreToolDefinitions() []map[string]any {
 	return []map[string]any{
 		{
-			"name": "search_bookmarks",
+			"name":        "search_bookmarks",
+			"annotations": mcpAnnotations(true, false),
 			"description": "Search the bookmarks in this nextDash install by name, URL, tag or note. " +
 				"Returns the matching bookmarks with the page and category they are filed under. " +
 				"Use an empty query to list what is there.",
@@ -125,7 +336,8 @@ func mcpToolDefinitions() []map[string]any {
 			},
 		},
 		{
-			"name": "get_bookmark",
+			"name":        "get_bookmark",
+			"annotations": mcpAnnotations(true, false),
 			"description": "Look up one bookmark by its exact URL, with everything stored about it: " +
 				"note, tags, when it was added, when it was last opened, and whether its last check succeeded.",
 			"inputSchema": map[string]any{
@@ -137,13 +349,23 @@ func mcpToolDefinitions() []map[string]any {
 			},
 		},
 		{
-			"name": "list_tags",
+			"name":        "list_tags",
+			"annotations": mcpAnnotations(true, false),
 			"description": "Every tag in use, with how many bookmarks carry it. " +
 				"Useful before searching, since tags are the reader's own vocabulary and cannot be guessed.",
 			"inputSchema": map[string]any{"type": "object", "properties": map[string]any{}},
 		},
 		{
-			"name": "add_bookmark",
+			"name":        "list_pages",
+			"annotations": mcpAnnotations(true, false),
+			"description": "The pages in this install with their categories, each with its id. " +
+				"Call this before add_bookmark when the bookmark should land somewhere other than the first page, " +
+				"since page and category ids cannot be guessed.",
+			"inputSchema": map[string]any{"type": "object", "properties": map[string]any{}},
+		},
+		{
+			"name":        "add_bookmark",
+			"annotations": mcpAnnotations(false, false),
 			"description": "Add a bookmark. Fails if the URL is already filed on the page it would land on. " +
 				"Leave page empty to use the first page.",
 			"inputSchema": map[string]any{
@@ -212,7 +434,22 @@ func (h *Handlers) MCPHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// An update pulls an image and can run for minutes; the inner handler cannot
+	// stretch this writer's deadline (it only sees a buffer), so it is done here.
+	if mcpIsContainerAction(req) {
+		_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerActionTimeout + time.Minute))
+	}
 	writeJSONRPC(w, h.dispatchMCP(r, req))
+}
+
+func mcpIsContainerAction(req jsonRPCRequest) bool {
+	if req.Method != "tools/call" {
+		return false
+	}
+	var p struct {
+		Name string `json:"name"`
+	}
+	return json.Unmarshal(req.Params, &p) == nil && p.Name == "container_action"
 }
 
 func writeJSONRPC(w http.ResponseWriter, resp jsonRPCResponse) {
@@ -232,7 +469,7 @@ func (h *Handlers) dispatchMCP(r *http.Request, req jsonRPCRequest) jsonRPCRespo
 		// The spec's keepalive. An empty object is the whole answer.
 		resp.Result = map[string]any{}
 	case "tools/list":
-		resp.Result = map[string]any{"tools": mcpToolDefinitions()}
+		resp.Result = map[string]any{"tools": mcpToolDefinitions(h.store.GetSettings())}
 	case "tools/call":
 		result, err := h.mcpCallTool(r, req.Params)
 		if err != nil {
@@ -282,7 +519,13 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return nil, &jsonRPCError{Code: jsonRPCInvalidParams, Message: "Could not read the tool call"}
 	}
 
+	if !mcpGroupEnabled(h.store.GetSettings(), mcpToolGroup(body.Name)) {
+		return nil, &jsonRPCError{Code: jsonRPCInvalidParams, Message: "Unknown tool: " + body.Name}
+	}
+
 	switch body.Name {
+	case "list_pages":
+		return mcpToolResult(h.mcpListPages()), nil
 	case "search_bookmarks":
 		return mcpToolResult(h.mcpSearchBookmarks(body.Arguments)), nil
 	case "get_bookmark":
@@ -291,6 +534,30 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return mcpToolResult(h.mcpListTags()), nil
 	case "add_bookmark":
 		return mcpToolResult(h.mcpAddBookmark(r, body.Arguments)), nil
+	case "update_bookmark":
+		return mcpToolResult(h.mcpUpdateBookmark(r, body.Arguments)), nil
+	case "move_bookmark":
+		return mcpToolResult(h.mcpMoveBookmark(r, body.Arguments)), nil
+	case "delete_bookmark":
+		return mcpToolResult(h.mcpDeleteBookmark(r, body.Arguments)), nil
+	case "create_category":
+		return mcpToolResult(h.mcpCreateCategory(r, body.Arguments)), nil
+	case "rename_category":
+		return mcpToolResult(h.mcpRenameCategory(r, body.Arguments)), nil
+	case "get_health_summary":
+		return mcpToolResult(h.mcpHealthSummary(r)), nil
+	case "list_health_issues":
+		return mcpToolResult(h.mcpHealthIssues(r, body.Arguments)), nil
+	case "list_inbox":
+		return mcpToolResult(h.mcpListInbox(r, body.Arguments)), nil
+	case "list_containers":
+		return mcpToolResult(h.mcpListContainers(r, body.Arguments)), nil
+	case "get_container":
+		return mcpToolResult(h.mcpGetContainer(r, body.Arguments)), nil
+	case "get_container_logs":
+		return mcpToolResult(h.mcpContainerLogs(r, body.Arguments)), nil
+	case "container_action":
+		return mcpToolResult(h.mcpContainerAction(r, body.Arguments)), nil
 	}
 	return nil, &jsonRPCError{Code: jsonRPCInvalidParams, Message: "Unknown tool: " + body.Name}
 }
@@ -330,13 +597,7 @@ func (h *Handlers) mcpSearchBookmarks(args json.RawMessage) map[string]any {
 	}
 	_ = json.Unmarshal(args, &body)
 
-	limit := body.Limit
-	if limit <= 0 {
-		limit = mcpSearchDefaultLimit
-	}
-	if limit > mcpSearchMaxLimit {
-		limit = mcpSearchMaxLimit
-	}
+	limit := clampLimit(body.Limit, mcpSearchDefaultLimit, mcpSearchMaxLimit)
 
 	// Every word has to appear somewhere in the bookmark. Matching any word
 	// instead would make a two-word search broader than a one-word search,
@@ -454,6 +715,18 @@ func (h *Handlers) mcpGetBookmark(args json.RawMessage) map[string]any {
 	return out
 }
 
+func (h *Handlers) mcpListPages() map[string]any {
+	pages := []map[string]any{}
+	for _, page := range h.store.GetPages() {
+		categories := []map[string]any{}
+		for _, c := range h.store.GetCategoriesByPage(page.ID) {
+			categories = append(categories, map[string]any{"id": c.ID, "name": c.Name})
+		}
+		pages = append(pages, map[string]any{"id": page.ID, "name": page.Name, "categories": categories})
+	}
+	return map[string]any{"pages": pages}
+}
+
 func (h *Handlers) mcpListTags() map[string]any {
 	counts := map[string]int{}
 	for _, bm := range h.store.GetAllBookmarks() {
@@ -523,48 +796,19 @@ func (h *Handlers) mcpAddBookmark(r *http.Request, args json.RawMessage) map[str
 		}
 	}
 
-	payload, err := json.Marshal(map[string]any{
+	recorder, err := h.mcpInner(r, http.MethodPost, "/api/bookmarks/add", map[string]any{
 		"page": page,
 		"bookmark": map[string]any{
 			"name": name, "url": strings.TrimSpace(body.URL),
 			"category": strings.TrimSpace(body.Category),
 			"tags":     body.Tags, "note": strings.TrimSpace(body.Note),
 		},
-	})
-	if err != nil {
-		return map[string]any{"error": "Could not encode the bookmark."}
-	}
-
-	inner, err := http.NewRequestWithContext(r.Context(), http.MethodPost, "/api/bookmarks/add", bytes.NewReader(payload))
+	}, nil, h.AddBookmark)
 	if err != nil {
 		return map[string]any{"error": "Could not build the request."}
 	}
-	inner.Header.Set("Content-Type", "application/json")
-	// The write token travels with the MCP call, so it has to travel on to the
-	// handler that checks it -- otherwise an install that demands one would
-	// refuse every write through here regardless of what the caller sent.
-	if token := r.Header.Get("X-NextDash-Token"); token != "" {
-		inner.Header.Set("X-NextDash-Token", token)
-	}
-	inner.RemoteAddr = r.RemoteAddr
-
-	recorder := &bufferedResponse{header: http.Header{}}
-	h.AddBookmark(recorder, inner)
-
 	if recorder.status >= 400 {
-		message := strings.TrimSpace(recorder.body.String())
-		// The duplicate refusal answers in JSON and says where the link already
-		// lives, which is the useful half of it.
-		var refusal map[string]any
-		if json.Unmarshal(recorder.body.Bytes(), &refusal) == nil {
-			refusal["error"] = firstString(refusal["message"], "The bookmark was refused.")
-			delete(refusal, "message")
-			return refusal
-		}
-		if message == "" {
-			message = fmt.Sprintf("The bookmark was refused (HTTP %d).", recorder.status)
-		}
-		return map[string]any{"error": message}
+		return mcpErrorFrom(recorder)
 	}
 	return map[string]any{
 		"added": true,

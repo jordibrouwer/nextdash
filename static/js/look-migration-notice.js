@@ -68,7 +68,7 @@
         const d = dash();
         if (!d?.settings?.lookMigration) return;
         d.settings.lookMigration.pending = false;
-        Promise.resolve(d.saveSettings?.()).catch(() => {});
+        Promise.resolve(d.saveSettings?.({ keys: ['lookMigration'] })).catch(() => {});
     }
 
     function goBack(from) {

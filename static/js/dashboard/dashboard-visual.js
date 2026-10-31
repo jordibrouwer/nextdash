@@ -221,7 +221,7 @@ class DashboardVisual {
         // Update settings if migration occurred
         if (d.settings.fontSize !== fontSize) {
             d.settings.fontSize = fontSize;
-            d.saveSettings();
+            d.saveSettings({ keys: ['fontSize'] });
         }
         
         // Add current font size class

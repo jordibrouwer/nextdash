@@ -861,8 +861,21 @@ type Settings struct {
 	 * this server can read the whole dashboard" is not a thing to add to a
 	 * default install quietly.
 	 */
-	MCPEnabled        bool `json:"mcpEnabled"`
-	AutoBackupEnabled bool `json:"autoBackupEnabled"` // Automatically create a local backup (keeps the latest few)
+	MCPEnabled bool `json:"mcpEnabled"`
+	// The MCP tool groups. Each is off until switched on and only matters
+	// while MCPEnabled is on; see mcpToolGroup for which tools belong where.
+	MCPBookmarksWrite    bool `json:"mcpBookmarksWrite"`
+	MCPHealthInbox       bool `json:"mcpHealthInbox"`
+	MCPContainersRead    bool `json:"mcpContainersRead"`
+	MCPContainersControl bool `json:"mcpContainersControl"`
+	// The in-app assistant. The key lives in ai-secrets.json, never here.
+	AIEnabled         bool   `json:"aiEnabled"`
+	AIProvider        string `json:"aiProvider"`
+	AIBaseURL         string `json:"aiBaseURL,omitempty"`
+	AIModel           string `json:"aiModel,omitempty"`
+	AIHistoryMax      int    `json:"aiHistoryMax"`
+	AIHistoryDays     int    `json:"aiHistoryDays"`
+	AutoBackupEnabled bool   `json:"autoBackupEnabled"` // Automatically create a local backup (keeps the latest few)
 	// AutoBackupIntervalDays is how often that runs. 0 means the built-in
 	// weekly default, which is what every install carried before this was a
 	// choice — so an absent key keeps the old behaviour rather than reading as
@@ -5566,6 +5579,7 @@ func (fs *FileStore) GetSettings() Settings {
 	}
 	normalizeDockerSettings(&settings)
 	normalizeWebSearchSettings(&settings)
+	normalizeAISettings(&settings)
 	normalizeUnraidSettings(&settings)
 	// 0 stays 0 — it means "the built-in default" — and anything else is held
 	// inside the range a bounded sweep can afford.

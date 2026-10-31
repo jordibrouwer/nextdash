@@ -14,8 +14,9 @@
  * The numbers per material follow the card rules in theme-signature.css; theme_overlays_css_test.go
  * keeps the two in line (same set of materials, same variables, same corner).
  *
- * Out of scope on purpose: the Theme Studio and the config view (next round), the drag chip and
- * What's New (it has its own decoration).
+ * The Theme Studio (Shift+A) is the last block: a side panel in the same material as the views.
+ *
+ * Out of scope on purpose: the drag chip and What's New (it has its own decoration).
  */
 
 /* ── Levels and the scrim (both styles) ─────────────────────────────────── */
@@ -50,13 +51,15 @@ html[data-theme] body {
 /* The layer on top of another one has the darker scrim. */
 html[data-theme] body [data-ov-level="4"].modal-overlay,
 html[data-theme] body [data-ov-level="4"].shortcut-search,
-html[data-theme] body [data-ov-level="4"].omnibox-overlay {
+html[data-theme] body [data-ov-level="4"].omnibox-overlay,
+html[data-theme] body [data-ov-level="4"].assistant-overlay {
     --modal-scrim: var(--ov-scrim-4);
     --modal-scrim-blur: var(--ov-scrim-blur-4);
 }
 
 /* Two scrims that had their own colour: the same one as the rest, and the tag cloud's without blur (Safari). */
 html[data-theme] body .notes-modal-overlay,
+html[data-theme] body .assistant-overlay,
 html[data-theme] body .app-discovery-overlay,
 html[data-theme] body .start-guide-overlay,
 html[data-theme] body .progress-overlay,
@@ -81,6 +84,7 @@ html[data-theme] body:is([data-material-style="classic"], :not([data-material]),
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-cloud-modal,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notes-modal,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .assistant-panel,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .config-widget-sheet,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-preview-card,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-discovery-card,
@@ -125,6 +129,7 @@ html[data-theme] body:is([data-material-style="classic"], :not([data-material]),
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box[data-ov-covered],
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-cloud-modal[data-ov-covered],
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notes-modal[data-ov-covered],
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .assistant-panel[data-ov-covered],
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .config-widget-sheet[data-ov-covered],
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-preview-card[data-ov-covered],
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-discovery-card[data-ov-covered],
@@ -144,6 +149,7 @@ html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :no
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .tag-cloud-modal,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notes-modal,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .assistant-panel,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .config-widget-sheet,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-preview-card,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .app-discovery-card,
@@ -448,6 +454,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-box,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .assistant-panel,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-widget-sheet,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-discovery-card,
@@ -472,6 +479,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-box[data-ov-covered],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal[data-ov-covered],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal[data-ov-covered],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .assistant-panel[data-ov-covered],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-widget-sheet[data-ov-covered],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card[data-ov-covered],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-discovery-card[data-ov-covered],
@@ -491,6 +499,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-box[data-ov-level="4"],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .tag-cloud-modal[data-ov-level="4"],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notes-modal[data-ov-level="4"],
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .assistant-panel[data-ov-level="4"],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-widget-sheet[data-ov-level="4"],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card[data-ov-level="4"],
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-discovery-card[data-ov-level="4"],
@@ -624,7 +633,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     }
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .config-widget-sheet, .omnibox-box) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
     animation: ovIn calc(var(--ov-ease-in) * var(--enter-scale, 0.5) / 0.5) ease-out both;
 }
 
@@ -641,19 +650,19 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     transition-duration: calc(var(--ov-ease-out) * var(--enter-scale, 0.5) / 0.5);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .config-widget-sheet, .omnibox-box),
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-view-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .config-widget-sheet, .omnibox-box) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box),
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-view-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
     animation: none;
 }
 
 /* ── The decoration that belongs to a material ────────────────────────────────────────────────── */
 /* Neon: the glow only on the topmost big layer, and none on a light page. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card):not([data-ov-covered]) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card):not([data-ov-covered]) {
     box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e3), var(--ov-bar), 0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent);
 }
 
 /* Paper: the double rule along the top of a big layer. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card)::after {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card)::after {
     content: "";
     position: absolute;
     left: 0;
@@ -666,7 +675,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 /* Ink: the corner ticks of the column, on both ends of a big layer. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card)::after {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card)::after {
     content: "";
     position: absolute;
     inset: 4px;
@@ -680,13 +689,13 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 /* Effects off: no decoration and no glow, the rim and the bar stay. */
-html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card)::after {
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card)::after {
     content: none;
 }
 
 
 /* The decoration is a pseudo-element: the three panels that are not positioned today become the context for it. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.modal:not(.header-sheet):not(.modal--mobile-sheet), .search-container, .notes-modal),
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.modal:not(.header-sheet):not(.modal--mobile-sheet), .search-container, .notes-modal, .assistant-panel),
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.modal:not(.header-sheet):not(.modal--mobile-sheet), .search-container, .config-widget-sheet) {
     position: relative;
 }
@@ -1238,7 +1247,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 /* Paper: the grain of the card, the double rule along its top, a soft cast and no ring. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
     --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
@@ -1249,14 +1258,14 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     background-color: var(--ov-fill-small);
     box-shadow: var(--ov-cast);
 }
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog):not([data-ov-covered]) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog):not([data-ov-covered]) {
     background-image: var(--paper-grain), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
 }
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
     background-image: var(--paper-grain), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
 }
 /* The rules of a big layer are the column's (text colour, not the red head rule). */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card)::after {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card)::after {
     top: 5px;
     border-color: color-mix(in srgb, var(--text-primary) 55%, transparent);
 }
@@ -1282,14 +1291,14 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 /* ── Ink ───────────────────────────────────────────────────────────────────────────────────────── */
 /* A big layer: the column's warm tint, the long crop marks at all four corners, the bar above the head, no accent ring. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog) {
     background-color: color-mix(in srgb, var(--text-primary) 8%, var(--ov-fill));
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent), 0 40px 70px -22px color-mix(in srgb, var(--ov-cast-ink) calc(65% * (0.55 + 0.45 * var(--ov-k))), transparent);
 }
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent), 0 26px 50px -16px color-mix(in srgb, var(--ov-cast-ink) calc(60% * (0.55 + 0.45 * var(--ov-k))), transparent);
 }
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
     content: "";
     position: absolute;
     inset: 3px;
@@ -1325,13 +1334,13 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 /* ── Neon ──────────────────────────────────────────────────────────────────────────────────────── */
 /* A big layer: only the glowing top edge (the light fades down in the fill), no ring all round. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog):not([data-ov-covered]) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog):not([data-ov-covered]) {
     box-shadow:
         0 -1px 0 var(--accent-primary),
         0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent),
         0 40px 70px -22px color-mix(in srgb, var(--ov-cast-ink) calc(80% * (0.55 + 0.45 * var(--ov-k))), transparent);
 }
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
     box-shadow: 0 -1px 0 color-mix(in srgb, var(--accent-primary) 60%, transparent), 0 26px 50px -16px color-mix(in srgb, var(--ov-cast-ink) calc(70% * (0.55 + 0.45 * var(--ov-k))), transparent);
 }
 /* The head glows like the head of a column: capitals, accent, spaced, with a halo. */
@@ -1353,7 +1362,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 
-html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
     content: none;
 }
 
@@ -1419,7 +1428,7 @@ html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :no
 }
 
 /* Ink draws the bar above the head on the topmost layer only; a covered layer keeps the crop marks. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered]::after {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered]::after {
     background:
         linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 11px 1px no-repeat,
         linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 1px 11px no-repeat,
@@ -1433,14 +1442,14 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 
 /* ── Effects off: the layers are flat. No blur, no grain, no crop marks, no fade; the fill, the rim and the level stay. ── */
-html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification),
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification),
 html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
     --paper-grain: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
 }
 
-html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification) {
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification) {
     background-image: linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
 }
 
@@ -1462,7 +1471,7 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([
  * Terminal and ink head their categories with a `$` and a bar of their own, and
  * keep the prompt as it is.
  */
-html[data-theme] body[data-material-style="signature"][data-material][data-material]:not([data-material=""]):is([data-material="lacquer"], [data-material="glass"], [data-material="frost"], [data-material="aurora"], [data-material="neon"], [data-material="velvet"], [data-material="enamel"], [data-material="brushed"], [data-material="carbon"], [data-material="paper"]) .shortcut-search .search-prompt::before {
+html[data-theme] body[data-material-style="signature"][data-material][data-material]:not([data-material=""]):is([data-material="lacquer"], [data-material="glass"], [data-material="frost"], [data-material="aurora"], [data-material="neon"], [data-material="velvet"], [data-material="enamel"], [data-material="brushed"], [data-material="carbon"], [data-material="paper"]) :is(.shortcut-search, .assistant-panel) .search-prompt::before {
     content: "";
     flex: none;
     width: 1.05em;
@@ -1479,51 +1488,177 @@ html[data-theme] body[data-material-style="signature"][data-material][data-mater
  * head) is in each material: the same capitals, spacing and weight. The word is
  * the mode pill; what is typed after it is the reader's own and stays plain.
  */
-html[data-theme] body[data-material-style="signature"][data-material="neon"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="neon"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: var(--accent-primary);
     text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 70%, transparent), 0 0 18px color-mix(in srgb, var(--accent-primary) 40%, transparent);
 }
-html[data-theme] body[data-material-style="signature"][data-material="carbon"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="carbon"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-weight: 700;
 }
-html[data-theme] body[data-material-style="signature"][data-material="lacquer"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 800;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
-html[data-theme] body[data-material-style="signature"][data-material="glass"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="glass"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 600;
     letter-spacing: 0.02em;
 }
-html[data-theme] body[data-material-style="signature"][data-material="frost"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="frost"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 400;
     letter-spacing: 0.14em;
     text-transform: uppercase;
 }
-html[data-theme] body[data-material-style="signature"][data-material="brushed"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="brushed"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     text-transform: uppercase;
     letter-spacing: 0.16em;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22), 0 -1px 0 rgba(0, 0, 0, 0.45);
 }
-html[data-theme] body[data-material-style="signature"][data-material="enamel"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="enamel"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 800;
 }
-html[data-theme] body[data-material-style="signature"][data-material="aurora"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="aurora"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 600;
 }
-html[data-theme] body[data-material-style="signature"][data-material="paper"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="paper"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-variant: small-caps;
     font-weight: 700;
     letter-spacing: 0.06em;
 }
-html[data-theme] body[data-material-style="signature"][data-material="terminal"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="terminal"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     text-transform: uppercase;
     letter-spacing: 0.18em;
 }
-html[data-theme] body[data-material-style="signature"][data-material="ink"] .shortcut-search .search-prompt .search-prefix {
+html[data-theme] body[data-material-style="signature"][data-material="ink"] :is(.shortcut-search, .assistant-panel) .search-prompt .search-prefix {
     font-weight: 800;
     letter-spacing: -0.01em;
+}
+
+
+/* ── The Theme Studio: a side panel in the material of the views ───────────────────────────────── */
+/* Classic keeps its flat panel and takes the elevation, cast to the left since it lies on the right edge. */
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .look-studio {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), -18px 0 44px -12px color-mix(in srgb, var(--ov-cast-ink) calc(40% + 35% * var(--ov-k)), transparent);
+}
+
+/* Signature: the fill, rim and corner of the plate. Only the corners on the page side are round. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio {
+    background-color: var(--ov-fill);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+    border: 0;
+    border-radius: var(--ov-radius) 0 0 var(--ov-radius);
+    box-shadow: var(--ov-edge-big), var(--ov-cast), -18px 0 44px -12px color-mix(in srgb, var(--ov-cast-ink) calc(40% + 35% * var(--ov-k)), transparent);
+    -webkit-backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+    backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+}
+
+@media (max-width: 767px) {
+    /* The sheet over the lower part of the screen rounds its top corners instead. */
+    html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio {
+        border-radius: var(--ov-radius) var(--ov-radius) 0 0;
+    }
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio :is(.look-studio-tabs, .look-studio-foot) {
+    border-color: var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-tab {
+    border-radius: var(--ov-r-item) var(--ov-r-item) 0 0;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-tab:not(.is-on):hover {
+    background: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-tab.is-on {
+    background: var(--ov-hot);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-close {
+    border-radius: var(--ov-r-control);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-close:is(:hover, :focus-visible) {
+    background: var(--ov-hot);
+}
+
+/* Controls take the corner and the rule of the material. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-seg {
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-btn:not(.look-studio-btn--primary) {
+    background-color: var(--ov-fill-small);
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-btn--primary {
+    border-radius: var(--ov-r-control);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-look {
+    background-color: var(--ov-fill-small);
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+/* The dialog over the panel is a small layer of its own. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-dialog-box {
+    background-color: var(--ov-fill);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+    border: 0;
+    border-radius: min(var(--ov-radius), 18px);
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e3);
+}
+
+/* What stands on the pane is what stands on the config plate. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-panel, .config-widget, .config-tile):not(.config-panel--attention, .config-panel--danger) {
+    background-color: var(--ov-fill-small);
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(select, .config-select) {
+    background-color: var(--background-secondary);
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-text, .config-choices) {
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    background-color: var(--ov-fill-small);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane .config-btn:not(.config-btn--icon):not(.config-btn--primary):not(.config-btn--danger) {
+    border-radius: var(--ov-r-control);
+    border-color: var(--ov-rule-soft);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-choice, .config-subtab, .config-toggle) {
+    border-radius: var(--ov-r-item);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-subtab, .config-choice):not(.is-active):hover {
+    background-color: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio {
+        background-color: var(--surface-2, var(--background-secondary));
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
 }

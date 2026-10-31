@@ -13,7 +13,7 @@ import (
 	"github.com/jordibrouwer/nextDash/internal/app"
 )
 
-//go:embed static/* templates/* locales/*
+//go:embed static/* templates/* locales/* MANUAL.md README.md
 var embeddedFiles embed.FS
 
 func main() {

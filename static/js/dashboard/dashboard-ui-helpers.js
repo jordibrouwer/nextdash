@@ -110,6 +110,10 @@ class DashboardUiHelpers {
         if (document.querySelector('dialog[open]')) return true;
         // The theme browser's docked panel: the page beside it is a preview.
         if (document.querySelector('[data-look-studio]')) return true;
+        // The assistant panel. Without it the grid's Escape ("nothing open: go
+        // home or open search") ran under the panel's own Escape and opened the
+        // palette behind the closing panel, holding a scroll lock nobody saw.
+        if (window.AssistantPanel?.isOpen?.()) return true;
         return false;
     }
 
@@ -158,7 +162,7 @@ class DashboardUiHelpers {
             const qs = d.settings.quickStart || (d.settings.quickStart = {});
             if (qs.seenCheatsheet !== true) {
                 qs.seenCheatsheet = true;
-                Promise.resolve(d.saveSettings?.()).catch(() => {});
+                Promise.resolve(d.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
                 // Update the checklist immediately instead of waiting for the next poll.
                 d.quickStart?.refresh?.();
             }

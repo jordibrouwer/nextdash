@@ -103,7 +103,7 @@ class DashboardData {
         d._deferredAllBookmarksLoadInFlight = this.loadAllBookmarks()
             .then(() => {
                 if (window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(d.settings, d.allBookmarks)) {
-                    this.saveSettings().catch(() => {});
+                    this.saveSettings({ keys: ['allowLocalBookmarks'] }).catch(() => {});
                 }
                 if (d.settings?.showSmartTodayCollection !== false) {
                     d.renderDashboard({ animate: false });
@@ -169,8 +169,10 @@ class DashboardData {
              * Which way it went depends on when the write left. Sent after the
              * read, it reached the server after whatever the read saw, and it
              * carries the whole object: what this tab holds is what the server
-             * holds, so keep it. Already on its way when the read left, either
-             * could have landed first, so wait for the write and read again.
+             * holds, so keep it. (A save of some keys only brings the rest back
+             * from its answer: see adoptSettingsAnswer.) Already on its way
+             * when the read left, either could have landed first, so wait for
+             * the write and read again.
              * Not on the first load: until then this tab holds only defaults.
              */
             let settingsOutrun = false;
@@ -186,6 +188,8 @@ class DashboardData {
             }
 
             if (!settingsOutrun) {
+                // Before anything on the page changes them in place.
+                this.rememberServerSettings(serverSettings);
                 // Load settings from localStorage or server based on device-specific flag
                 // isDeviceSpecificEnabled already reads the flag and survives a
                 // browser that refuses storage; the bare read behind it threw
@@ -227,7 +231,7 @@ class DashboardData {
                     localStorage.removeItem('nextdash.tagSearch.applyNow');
                     if (applyNow === 'true' && d.settings.tagSearchApplyNow !== true) {
                         d.settings.tagSearchApplyNow = true;
-                        void d.saveSettings?.();
+                        void d.saveSettings?.({ keys: ['tagSearchApplyNow'] });
                     }
                 }
             } catch { /* a browser refusing storage had nothing kept */ }
@@ -446,7 +450,7 @@ class DashboardData {
 
                 if (this.needsCrossPageBookmarksAtStartup()
                     && window.BookmarkUrlUtils?.healAllowLocalBookmarksSetting?.(d.settings, d.allBookmarks)) {
-                    this.saveSettings().catch(() => {});
+                    this.saveSettings({ keys: ['allowLocalBookmarks'] }).catch(() => {});
                 }
 
                 // Deliberately not consumed here. A deep link points at DOM —
@@ -1548,8 +1552,32 @@ class DashboardData {
         return this.refreshAfterBookmarkMutation({ ...options, pageId });
     }
 
-    async saveSettings() {
+    /**
+     * What the server last said each setting was, as JSON, for saveSettings.
+     *
+     * Kept as strings, not as the object: d.settings is that object on the
+     * first load, and the page goes on to change it in place.
+     */
+    rememberServerSettings(settings) {
+        this._serverSettingsCopy = new Map();
+        if (!settings || typeof settings !== 'object') return;
+        for (const [key, value] of Object.entries(settings)) {
+            this._serverSettingsCopy.set(key, JSON.stringify(value));
+        }
+    }
+
+    /**
+     * Save the settings.
+     *
+     * With no options every field goes out, as Config has always saved. With
+     * `{ keys: [...] }` only those do: for the saves the page makes on its own
+     * (a tip seen, a migration, the search picks), which used to post this
+     * tab's whole copy, so a tab loaded earlier put back whatever had been
+     * changed since in another tab, through the API or the MCP switches.
+     */
+    async saveSettings(options) {
         const d = this.dash;
+        const onlyKeys = Array.isArray(options?.keys) ? options.keys : null;
         try {
             // A change from another device waited while the look studio was open.
             // Read it first: this save sends every field, and would put it back.
@@ -1594,10 +1622,19 @@ class DashboardData {
              * leaves out, and this device's own keys go to the local copy below.
              */
             let serverPayload = payload;
-            if (window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true) {
+            if (onlyKeys) {
+                // The server keeps what a save leaves out (mergeSettingsFromBody).
+                serverPayload = {};
+                for (const key of onlyKeys) {
+                    if (Object.prototype.hasOwnProperty.call(payload, key)) serverPayload[key] = payload[key];
+                }
+            }
+            const deviceOnly = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true;
+            if (deviceOnly) {
+                const wide = serverPayload;
                 serverPayload = {};
                 for (const key of window.DeviceSettingsMerge.GLOBAL_SERVER_SETTING_KEYS) {
-                    if (Object.prototype.hasOwnProperty.call(payload, key)) serverPayload[key] = payload[key];
+                    if (Object.prototype.hasOwnProperty.call(wide, key)) serverPayload[key] = wide[key];
                 }
             }
             const write = dashFetch('/api/settings', {
@@ -1627,6 +1664,7 @@ class DashboardData {
             // half-filled collection is the normal state between clicking "Add
             // collection" and typing the rule value, and removing it there
             // would take the editor away mid-edit.
+            let movedElsewhere = false;
             try {
                 const body = await response.clone().json();
                 const dropped = Array.isArray(body?.droppedCollections) ? body.droppedCollections : [];
@@ -1655,6 +1693,9 @@ class DashboardData {
                             d.settings[key] = value;
                         }
                     }
+                    movedElsewhere = this.adoptSettingsAnswer(body.settings, serverPayload, {
+                        partial: Boolean(onlyKeys), deviceOnly,
+                    });
                 }
             } catch { /* a body we cannot read must not fail an accepted save */ }
 
@@ -1689,10 +1730,15 @@ class DashboardData {
              *
              * Awaited before publishing, so a listener that polls on the message
              * sees the updated value rather than the one it replaces.
+             *
+             * Not when the answer showed settings changed elsewhere since this
+             * tab read them: the old fingerprint is kept, so the next focus or
+             * tab-switch reloads them and redraws, as for any change made on
+             * another device.
              */
             try {
                 await this.fetchDataRevision();
-                if (this._lastSettingsRevision) {
+                if (this._lastSettingsRevision && !movedElsewhere) {
                     d._serverSettingsRevision = this._lastSettingsRevision;
                 }
             } catch { /* the poll corrects itself on its next pass */ }
@@ -1710,6 +1756,47 @@ class DashboardData {
             return false;
         }
     }
+
+    /**
+     * Bring the server's answer to a save into this tab. Returns whether a
+     * setting turned out to have changed elsewhere.
+     *
+     * The sent keys are now what the server holds. After a save of only some
+     * keys, the rest of the answer is news too: a setting this tab has not
+     * touched since it last read it takes the server's value, so a later save
+     * of the whole object (Config) does not put the old one back. One changed
+     * here and not yet saved keeps this tab's value.
+     *
+     * The three switches below are left out: GET reports them as in effect
+     * (off under DISABLE_TELEMETRY and in the demo), the save answers with
+     * what is stored.
+     */
+    adoptSettingsAnswer(answer, sent, { partial = false, deviceOnly = false } = {}) {
+        const d = this.dash;
+        const copy = this._serverSettingsCopy;
+        if (!copy || !answer || typeof answer !== 'object' || !d.settings) return false;
+        const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+        for (const key of Object.keys(sent || {})) {
+            copy.set(key, JSON.stringify(has(answer, key) ? answer[key] : sent[key]));
+        }
+        if (!partial || copy.size === 0) return false;
+        const effective = DashboardData.EFFECTIVE_SETTING_KEYS;
+        const shared = deviceOnly ? new Set(window.DeviceSettingsMerge?.GLOBAL_SERVER_SETTING_KEYS || []) : null;
+        let moved = false;
+        for (const [key, value] of Object.entries(answer)) {
+            if (has(sent || {}, key) || effective.has(key) || (shared && !shared.has(key))) continue;
+            const known = copy.get(key);
+            const now = JSON.stringify(value);
+            if (now === known) continue;
+            if (JSON.stringify(d.settings[key]) !== known) continue;
+            d.settings[key] = value;
+            copy.set(key, now);
+            moved = true;
+        }
+        return moved;
+    }
 }
+
+DashboardData.EFFECTIVE_SETTING_KEYS = new Set(['analyticsOptIn', 'installPingEnabled', 'updateCheckEnabled']);
 
 window.DashboardData = DashboardData;

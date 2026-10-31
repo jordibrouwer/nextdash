@@ -415,6 +415,9 @@ class SearchComponent {
                 } else if (mode === 'recent') {
                     this.currentQuery = SearchComponent.RECENT_MODE_QUERY;
                     this.commandsComponent.resetState();
+                } else if (mode === 'assistant') {
+                    this.currentQuery = SearchComponent.ASSISTANT_MODE_QUERY;
+                    this.commandsComponent.resetState();
                 } else {
                     this.currentQuery = '';
                     this.commandsComponent.resetState();
@@ -437,7 +440,7 @@ class SearchComponent {
      * than a mode, has no pill in the switch, and reads as a variant of search
      * rather than as a fourth place to be.
      */
-    static MODE_ENTRY = { '>': '', ':': ':', '?': '?', '/': 'tag:', '*': '*' };
+    static MODE_ENTRY = { '>': '', ':': ':', '?': '?', '/': 'tag:', '*': '*', '=': '=' };
 
     static WEB_RECENT_KEY = 'nextdash.webSearchRecent';
 
@@ -457,6 +460,12 @@ class SearchComponent {
     /** How many of the last-opened bookmarks the recents mode lists. */
     static RECENT_MODE_LIMIT = 20;
 
+    /** The assistant mode: `=` alone lists conversations, `=text` asks. */
+    static ASSISTANT_MODE_QUERY = '=';
+
+    /** How many conversations the bare `=` lists. */
+    static ASSISTANT_MODE_LIMIT = 5;
+
     /**
      * True while the panel is open on a mode and nothing has been typed into
      * it yet.
@@ -470,12 +479,75 @@ class SearchComponent {
         const q = this.currentQuery;
         if (q === '' || q === ':' || q === '?') return true;
         if (q === SearchComponent.TAG_MODE_QUERY || q === SearchComponent.RECENT_MODE_QUERY) return true;
+        if (q === SearchComponent.ASSISTANT_MODE_QUERY) return true;
         return /^\?[A-Za-z0-9]*\s?$/.test(q) && q !== '?';
     }
 
     /** The query a mode key opens its mode with. */
     _modeEntryQuery(key) {
         return key === '?' ? this.finderModeQuery() : (SearchComponent.MODE_ENTRY[key] ?? '');
+    }
+
+    /** Whether the query is in the assistant mode: it starts with `=`. */
+    _isAssistantMode(query = this.currentQuery) {
+        return String(query || '').startsWith(SearchComponent.ASSISTANT_MODE_QUERY);
+    }
+
+    /**
+     * The rows of the assistant mode.
+     *
+     * Text after the `=` is a question and goes through the same command as
+     * `:ask`, so the off and demo states and the panel hand-over are one piece
+     * of code. A bare `=` lists the latest conversations, read once per entry
+     * and drawn again when they arrive.
+     */
+    _assistantModeMatches() {
+        const cc = this.commandsComponent;
+        const dash = window.dashboardInstance;
+        const question = this.currentQuery.slice(1).trim();
+        const asRow = (row) => ({ ...row, shortcut: '=' });
+        const ready = !window.DemoLock?.on && dash?.settings?.aiEnabled === true;
+        if (!ready || question) {
+            return cc.handleAskCommand(question ? [question] : [], this.currentQuery).map(asRow);
+        }
+        const conversations = this._assistantConversations;
+        if (!Array.isArray(conversations)) {
+            this._loadAssistantConversations();
+        } else if (conversations.length) {
+            return conversations.slice(0, SearchComponent.ASSISTANT_MODE_LIMIT).map((c) => ({
+                name: c.title || cc._t('commands.askUntitled', 'Untitled'),
+                shortcut: '=',
+                type: 'command',
+                recent: true,
+                lastOpened: c.updated,
+                action: () => cc._runOverlayAction(() => window.AssistantPanel?.open?.({ conversationId: c.id })),
+            }));
+        }
+        return [asRow({
+            name: cc._t('commands.askMode', 'Ask the assistant'),
+            type: 'command',
+            action: () => cc._runOverlayAction(() => window.AssistantPanel?.open?.({})),
+        })];
+    }
+
+    /** Fetch the conversation list once for this visit to the mode. */
+    async _loadAssistantConversations() {
+        if (this._assistantConversationsLoading) return;
+        this._assistantConversationsLoading = true;
+        let list = [];
+        try {
+            const fetcher = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+            const res = await fetcher('/api/ai/conversations', { cache: 'no-store' });
+            const body = res.ok ? await res.json() : [];
+            list = Array.isArray(body) ? body : [];
+        } catch {
+            list = [];
+        }
+        this._assistantConversationsLoading = false;
+        this._assistantConversations = list;
+        if (this.searchActive && this.currentQuery.trim() === SearchComponent.ASSISTANT_MODE_QUERY) {
+            this.updateSearch();
+        }
     }
 
     /** Whether the query is the recents mode rather than a search for "*". */
@@ -878,6 +950,7 @@ class SearchComponent {
             || key === ':'
             || key === '?'
             || e.key === '@'
+            || e.key === '='
             || e.key === ','
             || e.key === '+'
             || e.key === '&'
@@ -1153,6 +1226,17 @@ class SearchComponent {
         }
 
         /*
+         * Inside a question to the assistant, a printable character is text.
+         * Same reason as the command branch below: a question holds "?", ":"
+         * and "/" like any sentence.
+         */
+        if (this._isAssistantMode() && e.key.length === 1 && SearchComponent.isTypedChar(e.key)) {
+            e.preventDefault();
+            this.addToQuery(e.key);
+            return;
+        }
+
+        /*
          * Inside a command, a printable character is text.
          *
          * Ahead of the launcher keys for the same reason the finder branch
@@ -1269,6 +1353,17 @@ class SearchComponent {
         if (e.key === '@') {
             e.preventDefault();
             this.addToQuery('@');
+            return;
+        }
+
+        // Handle = key to start the assistant
+        //
+        // From the dashboard, like ":" and "?" open their modes. Once the bar is
+        // open it is a mode key at the entry point (handled above) and text
+        // anywhere else, so a "=" in a query stays a character.
+        if (e.key === '=' && !this.searchActive) {
+            e.preventDefault();
+            this.addToQuery('=');
             return;
         }
 
@@ -1606,6 +1701,9 @@ class SearchComponent {
             }
             e.preventDefault();
             e.stopPropagation();
+            // A keystroke still waiting for its update changes which row this
+            // is: Enter right after the last letter must act on that query.
+            if (e.key === 'Enter') this._flushSearchUpdate();
             // Ctrl/Cmd+Enter forces a new tab, as on the grid. The focused row
             // takes Enter before the document handler that honoured it, so
             // the chord opened in the same tab.
@@ -1707,7 +1805,8 @@ class SearchComponent {
     _isNormalSearchMode() {
         return !this.currentQuery.startsWith(':')
             && !this.currentQuery.startsWith('?')
-            && !this.currentQuery.startsWith('@');
+            && !this.currentQuery.startsWith('@')
+            && !this._isAssistantMode();
     }
 
     _collectFilterBookmarkPool() {
@@ -1974,7 +2073,7 @@ class SearchComponent {
         clearTimeout(this._searchPicksTimer);
         this._searchPicksTimer = setTimeout(() => {
             this._searchPicksTimer = null;
-            void d.saveSettings?.();
+            void d.saveSettings?.({ keys: ['searchPicks'] });
         }, 2000);
         if (!this._searchPicksFlushBound) {
             this._searchPicksFlushBound = true;
@@ -1983,7 +2082,7 @@ class SearchComponent {
                 if (document.visibilityState !== 'hidden' || !this._searchPicksTimer) return;
                 clearTimeout(this._searchPicksTimer);
                 this._searchPicksTimer = null;
-                void window.dashboardInstance?.saveSettings?.();
+                void window.dashboardInstance?.saveSettings?.({ keys: ['searchPicks'] });
             });
         }
     }
@@ -2466,6 +2565,8 @@ class SearchComponent {
 
     updateSearch() {
         this._trackModeOpen();
+        // The conversation list is read afresh each time the mode is entered.
+        if (!this._isAssistantMode()) this._assistantConversations = null;
 
         // Find matching shortcuts
         this.searchMatches = [];
@@ -2533,6 +2634,8 @@ class SearchComponent {
         } else if (this.currentQuery.startsWith('?')) {
             // Handle finders
             this.searchMatches = this.findersComponent.handleQuery(this.currentQuery);
+        } else if (this._isAssistantMode()) {
+            this.searchMatches = this._assistantModeMatches();
         } else {
             const query = this._stripModeSwitchPrefix(this.currentQuery);
             const switched = this._hasModeSwitchPrefix(this.currentQuery);
@@ -2672,7 +2775,7 @@ class SearchComponent {
             if (String(query || '').trim()) this.lastNonCommandQuery = this.currentQuery;
         }
 
-        if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?') && this.currentQuery.length > 0) {
+        if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?') && !this._isAssistantMode() && this.currentQuery.length > 0) {
             const raw = this._stripModeSwitchPrefix(this.currentQuery);
             const filterAutocompleteMatches = this._isCompleteFilterQuery(raw)
                 ? []
@@ -2770,6 +2873,7 @@ class SearchComponent {
         if (this._isRecentMode()) return 'recent';
         if (q.startsWith(':')) return 'commands';
         if (q.startsWith('?')) return 'finders';
+        if (this._isAssistantMode(q)) return 'assistant';
         if (q.startsWith(SearchComponent.TAG_MODE_QUERY)) return 'tags';
         return 'all';
     }
@@ -2885,7 +2989,7 @@ class SearchComponent {
             el.textContent = value ? String(value) : '';
             el.closest('.search-scope')?.classList.toggle(
                 'is-empty',
-                this.currentQuery.length > 0 && !value && scope !== 'all' && scope !== 'recent',
+                this.currentQuery.length > 0 && !value && scope !== 'all' && scope !== 'recent' && scope !== 'assistant',
             );
         });
     }
@@ -3202,7 +3306,8 @@ class SearchComponent {
         const query = String(this.currentQuery || '').trim();
         // A session that asked the web is left out: that query went to the
         // engine on purpose, and to nowhere else.
-        if (query && !this._webSearchRanThisSession) {
+        // A question for the assistant is left out for the same reason.
+        if (query && !this._webSearchRanThisSession && !/^:ask(\s|$)/i.test(query) && !query.startsWith('=')) {
             window.nextdashTrackSearch?.(query, this._lastSearchResultCount || 0, Boolean(this._searchOpened));
         }
         this._webSearchRanThisSession = false;
@@ -3410,6 +3515,9 @@ class SearchComponent {
         } else if (q.startsWith('?')) {
             mode = 'finder';
             label = this.language ? this.language.t('dashboard.searchModeFinder', 'FIND') : 'FIND';
+        } else if (this._isAssistantMode(q)) {
+            mode = 'assistant';
+            label = this.dashboardLabel('searchModeAssistant', 'ASK');
         } else if (this._isRecentMode(q)) {
             mode = 'recent';
             label = this.language ? this.language.t('dashboard.searchModeRecent', 'RECENT') : 'RECENT';
@@ -3435,7 +3543,7 @@ class SearchComponent {
         // to press when a single-letter bookmark shortcut would fire instead.
         const chevron = document.querySelector('.search-chevron');
         if (chevron) {
-            const KEYS = { search: '>', command: ':', finder: '?', global: '@', fuzzy: '/', tag: '/', recent: '*' };
+            const KEYS = { search: '>', command: ':', finder: '?', global: '@', fuzzy: '/', tag: '/', recent: '*', assistant: '=' };
             chevron.textContent = KEYS[mode] || '>';
             chevron.dataset.mode = mode;
         }
@@ -4303,7 +4411,7 @@ class SearchComponent {
     /** The query as the web would get it, or '' where the panel is not searching. */
     _webQuery() {
         const raw = String(this.currentQuery || '').trim();
-        if (!raw || raw.startsWith(':') || raw.startsWith('?')) return '';
+        if (!raw || raw.startsWith(':') || raw.startsWith('?') || this._isAssistantMode(raw)) return '';
         const text = raw.replace(/^[/>*@]+/, '').trim();
         // A filter (tag mode's "tag:", "status:dead", a half-typed
         // "category:") is a question for this dashboard, not for the web.
@@ -4580,7 +4688,7 @@ class SearchComponent {
 
     recordSearchHistory(query) {
         const cleanedQuery = (query || '').trim();
-        if (!cleanedQuery || cleanedQuery.startsWith(':') || cleanedQuery.startsWith('?') || cleanedQuery === '/') {
+        if (!cleanedQuery || cleanedQuery.startsWith(':') || cleanedQuery.startsWith('?') || cleanedQuery.startsWith('=') || cleanedQuery === '/') {
             return;
         }
         const normalized = cleanedQuery.toLowerCase();
@@ -4608,10 +4716,12 @@ class SearchComponent {
     }
 
     recordRecentCommand(query) {
-        const cleanedQuery = (query || '').trim();
+        let cleanedQuery = (query || '').trim();
         if (!cleanedQuery.startsWith(':') || cleanedQuery === ':') {
             return;
         }
+        // The question stays out of storage: only the command is remembered.
+        if (/^:ask(\s|$)/i.test(cleanedQuery)) cleanedQuery = ':ask';
 
         this.recentCommands = [cleanedQuery, ...this.recentCommands.filter((entry) => entry !== cleanedQuery)].slice(0, 5);
         this.saveRecentCommands();

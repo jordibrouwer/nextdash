@@ -27,6 +27,9 @@ main
 
 # Docs and assets not needed in the image
 *.md
+# The assistant searches these two; main.go embeds them.
+!MANUAL.md
+!README.md
 screenshots/
 extension/
 site/

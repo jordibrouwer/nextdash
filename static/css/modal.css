@@ -76,19 +76,21 @@ body.no-view-animations {
  */
 .bookmark-form-modal.show .bookmark-form-modal-dialog,
 .notes-modal,
+.assistant-panel,
 .docker-logs-modal[open] {
     animation: modalRise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) backwards;
     transform-origin: 50% 40%;
 }
 
-body.no-view-animations :is(.bookmark-form-modal.show .bookmark-form-modal-dialog, .notes-modal, .docker-logs-modal[open]),
-body.no-animations :is(.bookmark-form-modal.show .bookmark-form-modal-dialog, .notes-modal, .docker-logs-modal[open]) {
+body.no-view-animations :is(.bookmark-form-modal.show .bookmark-form-modal-dialog, .notes-modal, .assistant-panel, .docker-logs-modal[open]),
+body.no-animations :is(.bookmark-form-modal.show .bookmark-form-modal-dialog, .notes-modal, .assistant-panel, .docker-logs-modal[open]) {
     animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .bookmark-form-modal.show .bookmark-form-modal-dialog,
     .notes-modal,
+    .assistant-panel,
     .docker-logs-modal[open] {
         animation: none;
     }
@@ -1942,6 +1944,7 @@ body.no-animations .modal-button.danger.selected {
 body:not([data-depth="flat"]) :is(
     .recent-bookmarks-modal-list,
     .shortcut-search .search-matches,
+    .assistant-panel .assistant-thread,
     .page-overview-modal-slab,
     .tag-cloud-modal-body,
     .wn-entries,

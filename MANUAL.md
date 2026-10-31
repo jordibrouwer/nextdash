@@ -363,6 +363,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Analytics](#238-analytics)
 - [Operations](#239-operations)
 - [Sharing the status page over the internet](#2310-sharing-the-status-page-over-the-internet)
+- [The assistant](#2311-the-assistant)
 
 </details>
 
@@ -648,13 +649,18 @@ The full list is in [§14.4](#144-keys) and on `!`.
 
 ## 1. ✨ What is nextDash?
 
-nextDash is a **self-hosted bookmark dashboard** you open in your browser.
+nextDash is a **self-hosted dashboard** you open in your browser. It keeps your links, shows how your services and machines are doing, and puts both on one screen.
 
 - **No accounts.** One installation, one set of data on disk.
-- **No cloud.** Your bookmarks live as plain JSON files in a directory you control.
+- **No cloud.** Your data lives as plain JSON files in a directory you control.
 - **Keyboard first.** Search, switch pages, add, edit and run commands without the mouse.
 
-Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Around that sit search, a command palette, a Bookmarks view with link health checks and uptime monitoring, an inbox for links you have not filed yet, a Containers view for the machine's own Docker containers, and widgets that show something other than links.
+It began as a place for bookmarks, and bookmarks are still the core: grouped by **page** (Work, Home) and **category** (Dev, News), with search, a command palette, an inbox for links you have not filed yet and a Bookmarks view. Around them sit more tools:
+
+- **Monitoring.** Link health checks, uptime, certificate and domain expiry, page drift, a status page and alerts.
+- **Containers.** A Containers view for the machine's own Docker containers, linked to the bookmarks of their web UIs.
+- **Widgets.** Weather, calendar, feeds, your machine, media and home services, and any service that answers with JSON.
+- **A look of your own.** Themes, backdrops and a theme studio.
 
 <a id="what-you-can-do"></a>
 
@@ -1419,6 +1425,7 @@ Search, commands and finders are three modes of one panel, which opens in the mi
 >  search     — your bookmarks, with filters
 :  commands   — actions: :theme, :open last 5, …
 ?  finders    — ?g query → another site
+=  assistant  — ask a question; your latest conversations at a lone =
 @  everywhere — search all pages at once
 ⇧↵ the web    — the same words, asked of a search engine
 ```
@@ -2340,6 +2347,9 @@ The status page is one page behind a secret link, for your household and friends
 **What a visitor never sees.** Error details, container images, bookmark ids, internal addresses (unless **Link** is on for that service), or anything else of your dashboard. The page loads none of the dashboard's files.
 
 **Setting it up.**
+
+<p align="center"><img src="screenshots/manual.md/23-assistant-settings.jpg" alt="Config, AI Assistant: the panels Turn it on, Provider with Claude and a saved key, Conversations and What it can see and do" width="560"></p>
+<p align="center"><sub>Config → AI Assistant.</sub></p>
 
 1. Under **Link and access**, tick **Turn the status page on**. The link appears with **Copy**, **Open** and a QR code to scan with a phone.
 2. Under **Top of the page**, give it a **Title** and, if you like, a **Notice** shown under it.
@@ -4112,12 +4122,13 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Unraid** | Connection · How it works — the one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
 | **Glances** | Connection · Page · Recording · Notices · Advanced, for up to five hosts — the Glances page and the Glances widget ([§15A.10](#15a10-config-glances)) |
 | **Status page** | The read-only page for the people who use your services: its link, its top, groups and services, and linked maintenance ([§12.8](#128-the-status-page)) |
+| **AI Assistant** | One tab, Settings: the switch, the provider, the key, the model and the conversations it keeps ([§23.11](#2311-the-assistant)) |
 | **Statistics** | Summary · Usage · Collection · Inbox · Health · Server ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
 | **About** | Project · Install · News & features ([§17.8](#178-overview-help-and-about)) |
 
-In the rail the Containers row opens a group labelled **Services** (Containers, Unraid, Glances, Monitoring, Status page) and Statistics one labelled **Info** (Statistics, Help, Logs, About); the labels are headings for the eye, not tabs.
+In the rail the Containers row opens a group labelled **Services** (Containers, Unraid, Glances, Monitoring, Status page, Assistant) and Statistics one labelled **Info** (Statistics, Help, Logs, About); the labels are headings for the eye, not tabs.
 
 Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Bookmarks → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
@@ -4422,7 +4433,8 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 - **Protect → Create a backup automatically** and **How often** — every day, week (default), two weeks or month. A run happens whenever the newest backup is older than that, so frequent restarts do not skip it. The newest **three** are kept; `NEXTDASH_AUTO_BACKUP_KEEP` (1–50) changes that and `NEXTDASH_AUTO_BACKUP_DIR` (an absolute path) stores them elsewhere. The default place is `data/auto-backups/`, which is left out of backups. **The panel names the directory it is actually using**, and warns when that is inside the data directory — backups kept there are lost with the thing they back up.
 - **What a backup carries** (two switches under **Protect**) — a backup holds the whole data directory: bookmarks, pages, categories, finders, the inbox, settings, custom themes, check history, icons and uploads, and the images held or skipped in the Containers view. Two switches decide the rest:
   - **Local copies of pages** — the largest part of a backup.
-  - **Tokens and passwords** — source tokens, stored sign-ins, webhook keys, the Containers view's GitHub token, the Unraid and Brave keys, and the secrets in the alert settings (the alert address with its bot token, Pushover's keys, the archive keys and the iCal address). Without them, those settings go into the backup blanked, and restoring it keeps the ones in use. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
+  - **Tokens and passwords** — source tokens, stored sign-ins, webhook keys, the Containers view's GitHub token, the Unraid and Brave keys, the assistant's keys, and the secrets in the alert settings (the alert address with its bot token, Pushover's keys, the archive keys and the iCal address). Without them, those settings go into the backup blanked, and restoring it keeps the ones in use. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
+- The assistant's conversations travel in every backup, whatever the two switches say.
 - Left out on purpose: cached previews and pictures, the health cache, and browser push subscriptions — all rebuilt or re-registered after a restore. The Containers view's timeline, update history, disk sizes and logs stay out too: they belong to the Docker host, not to the data.
 - **Restore → Stored backups** — each with its age, size and contents (*1.7 MB · 412 bookmarks on 5 pages*), and **Download**, **Restore** and **Delete**. **Download all** saves them all.
 - **Restore → From a file** → **Import backup…** — restores a ZIP.
@@ -4882,16 +4894,43 @@ HTML pages send a strict Content-Security-Policy. `NEXTDASH_CSP=off` switches it
 
 ### 23.6 The MCP endpoint
 
-nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks**, which then shows the address.
+nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks → MCP access**, which then shows the address. Under it are four group switches, all off until you tick them:
 
-| Tool | What it does |
-|---|---|
-| `search_bookmarks` | Search by name, URL, tag or note; each result names its page and category |
-| `get_bookmark` | Everything stored about one bookmark |
-| `list_tags` | Every tag with its count |
-| `add_bookmark` | Add a bookmark, with the usual duplicate check |
+<p align="center"><img src="screenshots/manual.md/23-mcp-access.jpg" alt="The MCP access panel under Data & backups, Webhooks: the switch Answer MCP clients at this address ticked with its address, and four group switches: Bookmarks edit and delete and Containers control off, Health and Inbox read and Containers read on" width="640"></p>
+<p align="center"><sub>MCP access: the endpoint switch, its address and the four tool groups.</sub></p>
 
-It starts closed because it answers questions about every bookmark. The `Origin` of every request is checked against the host it arrived on, and with `NEXTDASH_WRITE_TOKEN` set, adding needs the token.
+| Tool | What it does | Group |
+|---|---|---|
+| `search_bookmarks` | Search by name, URL, tag or note; each result names its page and category; 20 by default, at most 100, with `truncated` when more match | Always on |
+| `get_bookmark` | Everything stored about one bookmark | Always on |
+| `list_tags` | Every tag with its count | Always on |
+| `list_pages` | The pages with their categories and ids | Always on |
+| `add_bookmark` | Add a bookmark, with the usual duplicate check | Always on |
+| `update_bookmark` | Change a name or note, add or remove tags | *Bookmarks: edit and delete* |
+| `move_bookmark` | Move to another page or category; refused when the target page already holds the URL | *Bookmarks: edit and delete* |
+| `delete_bookmark` | Delete a bookmark; it goes to the Trash, where you can restore it | *Bookmarks: edit and delete* |
+| `create_category`, `rename_category` | Add a category to a page, or rename one | *Bookmarks: edit and delete* |
+| `get_health_summary` | Counts from the last link checks; it does not run a check | *Health and Inbox: read* |
+| `list_health_issues` | Bookmarks that are down or whose certificate is due to expire; 25 by default, at most 100, with `truncated` when more exist | *Health and Inbox: read* |
+| `list_inbox` | Unread links in the Inbox, newest first; 25 by default, at most 100, with `truncated` when more exist | *Health and Inbox: read* |
+| `list_containers` | The containers with state, image, update availability and the last CPU and memory reading; 50 by default, at most 200, with `truncated` when more exist | *Containers: read* |
+| `get_container` | One container's detail, as the Containers view shows it | *Containers: read* |
+| `get_container_logs` | The last lines of a log; 100 by default, at most 200 | *Containers: read* |
+| `container_action` | Start, stop, restart, pause, unpause, remove, update or rollback one container | *Containers: control* |
+
+Searching, looking up, listing tags and pages, and adding bookmarks are always on while the endpoint is. *Bookmarks: edit and delete* and *Containers: control* are marked **needs write token** in Config.
+
+**Write token.** With `NEXTDASH_WRITE_TOKEN` set, adding, editing, moving and deleting bookmarks and categories, and every container action, need it. Container logs need it too, because logs can contain secrets. Container environment variables are never returned. Without a token, the switches are the only gate.
+
+The container read tools need the Containers view switched on; **Containers: control** also needs Docker control switched on for the server (`NEXTDASH_DOCKER_CONTROL`); the switch stays greyed out until it is. It acts exactly like the Containers view: nextDash cannot stop, restart, pause, remove or update itself, only a stopped container can be removed, and only one action runs on a container at a time.
+
+**Activity log.** Changes made this way show up in the activity log with the source `mcp` and the client's User-Agent. Container actions appear as the usual `docker.<action>` events, also with source `mcp`.
+
+**Which clients.** Claude Desktop and Claude Code can reach nextDash from your LAN. claude.ai, as a custom connector, needs an address it can reach: a public HTTPS one (sign-in with OAuth is not built). Do not put `/mcp` on a public address until sign-in exists: anyone who can reach it can use every tool you switched on, and without a write token that includes the write tools.
+
+It starts closed because it answers questions about every bookmark. The `Origin` of every request is checked against the host it arrived on.
+
+The in-app assistant ([§23.11](#2311-the-assistant)) reads through the same group switches, whether or not this endpoint is switched on.
 
 <a id="237-what-nextdash-contacts"></a>
 
@@ -4905,6 +4944,7 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
 | Container image registries and GitHub | Image update checks, when switched on | Config → Containers → Updates |
 | Your own services | Custom widgets, webhooks, alerts | Per widget or receiver |
+| Your assistant provider (Anthropic, OpenAI or your own server) | Only when you ask a question or press Test connection | Config → AI Assistant |
 | Install count | Once a day: a random install id and the version (on Unraid, also the word Unraid) | Behavior → Privacy & sync → *Count this install*; `DISABLE_TELEMETRY=true`; `NEXTDASH_DISABLE_INSTALL_PING=1` for the count alone |
 | Analytics | Only when switched on, with a random install code (**v1.22.3**) | See below |
 
@@ -5002,6 +5042,50 @@ location /               { return 404; }
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
+
+<a id="2311-the-assistant"></a>
+
+### 23.11 The assistant
+
+The assistant answers questions about your bookmarks in plain words, for example *which of my Docker bookmarks are down?* or *tag everything about Proxmox*. It runs on a model you choose: Claude, OpenAI, or a server of your own such as Ollama. It is **off** until you turn it on, and it is off in the demo. Open it with `:ask` in the command palette, with or without a question after it: with one, it starts a new conversation and asks it straight away. `=` in the search bar does the same: `=` on its own lists your latest conversations (`Enter` opens one), and `=` followed by a question asks it as a new conversation. Like `:ask`, what follows the `=` is never stored in the search history or the recents.
+
+<p align="center"><img src="screenshots/manual.md/23-assistant-conversations.jpg" alt="The search bar after typing a single equals sign: the latest three conversations listed, newest first" width="560"></p>
+<p align="center"><sub>`=` on its own lists your latest conversations.</sub></p>
+
+The panel is laid out like the command palette: you type your question in the line at the top (`Enter` sends, `Shift+Enter` starts a new line), your conversations are listed on the left and the open one is shown on the right. With the question line empty, `↑` and `↓` walk the list and `Enter` opens the conversation you are on; `Esc` closes the panel.
+
+<p align="center"><img src="screenshots/manual.md/23-assistant-panel.jpg" alt="The assistant panel: a question about links that are down, the answer as a short list of three bookmarks, and two proposals underneath, a tag change and a deletion marked Destructive, each with Apply and Skip, with the conversations on the left" width="620"></p>
+<p align="center"><sub>An answer with its proposals: nothing changes until you press Apply.</sub></p>
+
+**Setting it up.** Under **Config → AI Assistant** (a page of its own in the Services group, with one tab, **Settings**) four panels follow each other: **Turn it on**, **Provider**, **Conversations** and **What it can see and do**. Each opens with a line saying what it is for, and the controls that need more than a label have an **ℹ** button beside them that explains them: the switch, the provider, the key, the server address, the model, **Test connection**, the two limits, **Delete all conversations** and the last panel. Under **Test connection** a line says what is still missing (the assistant is off, no key is saved, no address or no model). The fields stay open while the assistant is off, so you can fill them in first. To set it up, tick **Turn the assistant on** and pick a **Provider**:
+
+| Provider | What you fill in |
+|---|---|
+| Claude | An **API key**. **Model** is optional; left empty, nextDash uses its built-in default, shown as the field's placeholder |
+| OpenAI | An **API key**. **Model** is optional in the same way |
+| OpenAI-compatible (Ollama, LM Studio…) | The **Server address**, for example `http://ollama.lan:11434/v1`, and a **Model**. The key is optional; most home servers take none. Local and LAN addresses are allowed here |
+
+**Save key** keeps the key on the server in `data/ai-secrets.json`, apart from your settings; it is never shown again, only *Key saved.*, and **Remove key** deletes it. A key per provider is kept, so switching back and forth does not lose one. **Test connection** sends a tiny test request to the provider and reports the model it used or what went wrong. Nothing else leaves nextDash until you ask something.
+
+**What the provider receives.** Only when you ask a question or press **Test connection**; there are no background calls. A question carries:
+
+- your question, and the earlier messages of that conversation (the last 20);
+- today's date and the names of your pages;
+- the answers of the lookups the assistant makes while it works on that question, for example the bookmarks a search found.
+
+Nothing else is sent: not your whole collection, not your settings, and not your key to anyone but the provider.
+
+**What it can read.** The same read tools as the MCP endpoint ([§23.6](#236-the-mcp-endpoint)), following the same group switches under **Data & backups → Webhooks → MCP access**. Searching and looking up bookmarks, tags and pages are always available; *Health and Inbox: read* and *Containers: read* add those lookups when ticked. The group checkboxes can be ticked when either the MCP endpoint or the assistant is on, and the assistant does not need the `/mcp` address to be switched on. Container logs still need the write token when one is set, and environment variables are never returned. The assistant does not run container actions itself, whatever *Containers: control* says. The last panel of the settings page shows the four switches as On or Off, read-only, with an **Open MCP access** button that takes you to them.
+
+**What it knows about nextDash.** Ask it how something works, what nextDash can do or where a setting lives and it looks the answer up in the manual and the README that ship with your install; the lookup happens inside nextDash and sends nothing to the web, and the passages it finds travel with the question like the other lookups above. Its answers can contain links that open a page, such as *Config → Containers*, and they open without leaving the dashboard. Where the manual does not say, it tells you so rather than guessing.
+
+**What it can change.** Nothing by itself. When it thinks something should change, it adds a **proposal** under its answer, one row per change: a bookmark to add, edit, move or delete, a category to create or rename, or a container action. Adding is always possible; editing, moving, deleting and the categories need *Bookmarks: edit and delete* to be ticked, container actions need *Containers: control*. Each row shows what would happen and why, with **Apply** and **Skip** at its right end. Nothing is touched until you press Apply, and the change is checked again at that moment: the group must still be ticked, and with `NEXTDASH_WRITE_TOKEN` set Apply needs the write token ([§23.2](#232-the-write-token)). **Apply all** applies the pending changes of an answer in one go, but it skips deletes and container actions: those you apply one at a time. A change that failed can be tried again or skipped; an applied or skipped one is final. Applied changes appear in the activity log with the source `assistant`, and a deleted bookmark goes to the Trash as usual.
+
+**What is stored.** Conversations are kept in `data/ai-conversations.json`: the texts, which tools were used and how large their answers were, the proposals with what became of them, and the token counts. The full answers of the lookups are never stored. nextDash keeps the **Conversations to keep** most recent (50 by default) for **Days to keep them** (90 by default); older ones are removed when a new answer is saved, and both numbers can be changed. Delete one conversation with the × button next to it in the panel, or all of them with **Delete all** at the foot of the list (it asks once more first) or **Delete all conversations** in the Assistant section. With `NEXTDASH_WRITE_TOKEN` set, asking a question, **Test connection** and deleting conversations all need the write token ([§23.2](#232-the-write-token)), because asking spends your key; reading conversations and the assistant's status do not.
+
+**Limits and cost.** One question runs at most 8 rounds of lookups, 20 lookups in all, and two minutes; if it hits the rounds or the lookups, you get the partial answer with a line saying where it stopped. The two minutes are different: if the time runs out the whole question is dropped, with the lookups and proposals so far, and you see *The provider took too long to answer.* A provider error saves nothing and puts your question back in the box. Every answer shows the provider, the model and the tokens it used, so you can see what a question costs on your account.
+
+**Backups.** The conversation file travels in every backup. The key travels only with **Tokens and passwords** ([§19.1](#191-backups-data)); without it, a restore keeps the key in use.
 
 <a id="24-troubleshooting"></a>
 
@@ -5365,7 +5449,8 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Maintenance window | A recurring period when downtime is expected: failures in it send no alert and do not count against uptime. | [§12.5](#125-maintenance-windows) |
-| MCP endpoint | An address at `/mcp` where MCP clients can search, read and add bookmarks; off until you switch it on. | [§23.6](#236-the-mcp-endpoint) |
+| MCP endpoint | An address at `/mcp` where MCP clients can search, add and (with switches) edit bookmarks, read Health, the Inbox and containers, and act on containers; off until you switch it on. | [§23.6](#236-the-mcp-endpoint) |
+| Assistant | Ask about your bookmarks in plain words with Claude, OpenAI or a server of your own; it looks things up and proposes changes you apply one by one; off until you switch it on. | [§23.11](#2311-the-assistant) |
 | Monitor | The availability mode where the server checks a bookmark on its own interval and keeps 30 days of history, uptime, outages and alerts. | [§12.1](#121-availability-modes) |
 | Mute | Holds back the alerts for one bookmark, which is still checked and shows as down with a Muted badge; a container's notices can be muted too. | [§12.4](#muting-one-bookmark), [§14.9](#149-notices) |
 

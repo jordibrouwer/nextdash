@@ -1,0 +1,86 @@
+{
+  "tag": "v1.23.0",
+  "date": "30 October 2026",
+  "releasedAt": "2026-10-30",
+  "modalLead": "nextDash gets an assistant: ask about your bookmarks, Health and containers in plain words, and decide what happens to what it suggests. The MCP endpoint grows into seventeen tools in groups you switch on, the theme studio looks like the rest, and the Quick start fits shorter windows.",
+  "sections": [
+    {
+      "title": "Assistant",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>An assistant for your bookmarks.</strong> Ask in plain words, with Claude, OpenAI or a server of your own such as Ollama: <code>:ask</code> in the command palette, or <code>=</code> in the search bar. A change it suggests waits under its answer with <strong>Apply</strong> and <strong>Skip</strong>, and nothing happens until you press Apply. It is off until you turn it on.",
+          "highlight": true,
+          "title": "An assistant for your bookmarks",
+          "link": "#config/assistant/settings",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.23.0-assistant.jpg",
+            "alt": "The assistant panel: an answer about three links that are down, with a tag change and a deletion waiting under it, each with Apply and Skip"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>It knows the manual.</strong> Ask how nextDash works or where a setting lives and it looks it up in the manual that comes with your install, without sending anything to the web."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Conversations on your server.</strong> A lone <code>=</code> lists the latest ones. The newest 50 are kept for 90 days, and you can delete one or all of them.",
+          "link": "#config/assistant/settings"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config → AI Assistant.</strong> The switch, the provider, the key (kept on the server and never shown again), the model and a Test connection button, on a page of its own."
+        }
+      ]
+    },
+    {
+      "title": "MCP",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>More MCP tools, in groups you switch on.</strong> The endpoint went from four tools to seventeen: edit and delete bookmarks, read Health and the Inbox, read the containers, and control them. Each group is a switch under Data &amp; backups, Webhooks, MCP access, and all are off until you tick them.",
+          "highlight": true,
+          "title": "More MCP tools, in groups you switch on",
+          "link": "#config/data-backups/webhooks",
+          "linkLabel": "Open MCP access",
+          "media": {
+            "image": "media/v1.23.0-mcp-access.jpg",
+            "alt": "MCP access under Data & backups: the switch for the address and four groups of tools, two of them switched on"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Writes through MCP are marked</strong> in the activity log, and a deleted bookmark goes to the Trash."
+        }
+      ]
+    },
+    {
+      "title": "Looks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The theme studio looks like the views.</strong> It takes the same material: glass on a glass theme, solid on classic.",
+          "link": "#config/appearance"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Quick start fits shorter windows.</strong> The head and foot stay put and only the middle scrolls."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The preview card stays off the row you point at,</strong> so it no longer covers what the pointer is on."
+        }
+      ]
+    },
+    {
+      "title": "Settings",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A setting changed in one tab is no longer put back by another.</strong> A tip seen or a search pick in an older tab used to save its whole copy of the settings; now it saves only what it changed."
+        }
+      ]
+    }
+  ]
+}

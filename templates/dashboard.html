@@ -124,6 +124,7 @@
     <link rel="stylesheet" href="{{asset "css/digest.css"}}">
     <link rel="stylesheet" href="{{asset "css/edit-mode.css"}}">
     <link rel="stylesheet" href="{{asset "css/checkup.css"}}">
+    <link rel="stylesheet" href="{{asset "css/assistant.css"}}">
     <!-- The dashboard tour opens over the dashboard itself, before any view has
          loaded the views bundle, so its sheet travels with the dashboard. -->
     <link rel="stylesheet" href="{{asset "css/dashboard-tutorial.css"}}">
@@ -479,6 +480,11 @@
                         <span class="search-mode-tab-label" data-i18n="dashboard.headerRecentsLabel">recents</span>
                         <span class="search-scope-count" data-scope-count="recent"></span>
                     </button>
+                    <button class="search-mode-tab search-scope" data-mode="assistant" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">=</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.assistantLabel">assistant</span>
+                        <span class="search-scope-count" data-scope-count="assistant"></span>
+                    </button>
                     <span class="search-scope-rule" aria-hidden="true"></span>
                     <!--
                         The cheat sheet is documentation rather than a list of
@@ -625,6 +631,7 @@
     <script src="{{asset "js/digest-card-state.js"}}" defer></script>
     <script src="{{asset "js/checkup-model.js"}}" defer></script>
     <script src="{{asset "js/checkup.js"}}" defer></script>
+    <script src="{{asset "js/assistant-panel.js"}}" defer></script>
     <script src="{{asset "js/digest-notice.js"}}" defer></script>
     <script src="{{asset "js/app-discovery-notice.js"}}" defer></script>
     <script src="{{asset "js/tag-suggestions-notice.js"}}" defer></script>

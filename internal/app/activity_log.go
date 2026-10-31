@@ -569,6 +569,19 @@ func activityFieldsFromRequest(r *http.Request) map[string]any {
 	if reqID := activityRequestID(r); reqID != "" {
 		fields["requestId"] = reqID
 	}
+	// The in-app assistant's own call says so, with no client to name.
+	if r != nil && requestFromAssistant(r) {
+		fields["source"] = "assistant"
+		return fields
+	}
+	// A call that came through the MCP endpoint says so, and names the
+	// assistant by the User-Agent it connected with.
+	if r != nil && requestFromMCP(r) {
+		fields["source"] = "mcp"
+		if agent := strings.TrimSpace(r.Header.Get("User-Agent")); agent != "" {
+			fields["client"] = agent
+		}
+	}
 	return fields
 }
 

@@ -27,6 +27,7 @@
         { root: '#omnibox-overlay', panel: '.omnibox-box', open: () => true },
         { root: '#shortcut-search', panel: '.search-container', open: (r) => r.classList.contains('show') },
         { root: '.app-discovery-overlay', panel: '.app-discovery-card', open: (r) => r.classList.contains('show') },
+        { root: '.assistant-overlay', panel: '.assistant-panel', open: (r) => r.classList.contains('show') },
     ];
 
     const ROOT_SELECTOR = BIG_LAYERS.map((layer) => layer.root).join(',');

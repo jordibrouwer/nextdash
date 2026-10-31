@@ -53,7 +53,7 @@
         const d = dash();
         if (d?.settings) {
             d.settings.installPingEnabled = false;
-            Promise.resolve(d.saveSettings?.()).catch(() => {});
+            Promise.resolve(d.saveSettings?.({ keys: ['installPingEnabled'] })).catch(() => {});
         }
         global.nextdashTrack?.('install-count-notice:off');
         markAnswered();
