@@ -69,6 +69,9 @@
         // The public demo shows no corner cards: every visitor is new, and a
         // stack of invitations is not the product.
         if (global.DemoLock?.on) return false;
+        // Hide corner cards on phones. Nothing is marked as answered: the card
+        // is only not shown, so it comes back when the setting is turned off.
+        if (global.isPhoneDevice?.() && d.settings.hideCornerCardsMobile === true) return false;
         // An essential card reports something that already happened and offers
         // its undo; it is not an invitation, so the phone layout and an
         // unfinished onboarding do not hold it back.

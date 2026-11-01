@@ -197,7 +197,7 @@
             ? `<img class="feed-news-image" src="${esc(item.image)}" alt="" decoding="async">`
             : '';
         const link = item.link
-            ? `<a class="feed-news-link" href="${esc(item.link)}" target="_blank" rel="noopener noreferrer" data-feed-news-article>${esc(item.title)}</a>`
+            ? `<a class="feed-news-link" href="${esc(item.link)}"${window.opensInNewTabUnlessPhone(dash()?.settings) ? ' target="_blank" rel="noopener noreferrer"' : ''} data-feed-news-article>${esc(item.title)}</a>`
             : esc(item.title);
         return `<article class="feed-news-article${large ? ' is-large' : ''}">${image}`
             + `<div class="feed-news-time">${esc([item.feedTitle, ago(item.publishedAt || item.foundAt)].filter(Boolean).join(' · '))}</div>`
@@ -406,7 +406,7 @@
         const url = item.bookmarkUrl || bookmark?.url;
         if (!url) return;
         if (bookmark) d.recordBookmarkOpened?.(bookmark, undefined, 'feed-news');
-        window.open(url, '_blank', 'noopener,noreferrer');
+        window.openUrl(url, d.settings);
     }
 
     /** Rebuilding the panel loses focus; put it back on the same control. */

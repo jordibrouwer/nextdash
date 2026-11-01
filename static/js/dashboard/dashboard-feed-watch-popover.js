@@ -151,7 +151,7 @@
     function openBookmark(bookmark) {
         const d = dash();
         d.recordBookmarkOpened?.(bookmark, undefined, 'feed-popover');
-        global.open(bookmark.url, '_blank', 'noopener,noreferrer');
+        global.openUrl(bookmark.url, d.settings);
     }
 
     function build(bookmark, items, more) {
@@ -186,7 +186,7 @@
             const d = dash();
             if (itemButton) {
                 const item = items[Number(itemButton.dataset.popItem)];
-                if (item?.link) global.open(item.link, '_blank', 'noopener,noreferrer');
+                if (item?.link) global.openUrl(item.link, d.settings);
                 // Only the headline that was opened is read; the others stay new.
                 if (item?.id && item.feedUrl) void d.feedWatch.markItems(bookmark.url, item.feedUrl, [item.id], true);
                 else d.feedWatch.markSeen(bookmark);

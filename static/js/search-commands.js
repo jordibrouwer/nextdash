@@ -3852,7 +3852,7 @@ class SearchCommandsComponent {
             const isDomain = /^[a-z0-9-]+\.[a-z]{2,}/i.test(rawTarget);
             if (isUrl || isDomain) {
                 const href = isUrl ? rawTarget : `https://${rawTarget}`;
-                const openInNewTab = dashboard.settings?.openInNewTab !== false;
+                const openInNewTab = window.opensInNewTab(dashboard.settings, true);
                 return [{
                     name: `Navigate to ${rawTarget}`,
                     shortcut: ':GOTO',

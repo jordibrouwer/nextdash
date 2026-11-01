@@ -4270,7 +4270,7 @@ class SearchComponent {
         if (!(window.hyprMode && window.hyprMode.isEnabled())) {
             window.dashboardInstance?.visual?.markBookmarkOpening?.({
                 bookmark,
-                newTab: Boolean(newTab || this.settings.openInNewTab),
+                newTab: Boolean(newTab || window.opensInNewTab(this.settings)),
             });
         }
 
@@ -4287,7 +4287,7 @@ class SearchComponent {
                 link.style.display = 'none'; // Hide the link
                 // newTab forces it whatever the setting says — the same
                 // promise Ctrl/Cmd+Enter makes on the grid.
-                if (newTab || this.settings.openInNewTab) {
+                if (newTab || window.opensInNewTab(this.settings)) {
                     link.target = '_blank';
                     link.rel = 'noopener noreferrer';
                 } else {

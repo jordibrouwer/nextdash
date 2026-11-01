@@ -172,6 +172,9 @@ const AppNotification = {
         // 'promo' is every unprompted tip; the public demo shows none of them
         // (shared/demo-lock.js). Answers to what the visitor did still show.
         if (type === 'promo' && window.DemoLock?.on) return;
+        // Hide notifications on phones: every toast passes here. An error stays,
+        // so a failure is never silent.
+        if (type !== 'error' && window.isPhoneDevice?.() && window.dashboardInstance?.settings?.hideToastsMobile === true) return;
         // An answer that makes the toast on screen beside the point takes its
         // place at once instead of queueing behind it.
         if (this._busy && options.replace === true) {

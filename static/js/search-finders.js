@@ -195,7 +195,7 @@ class SearchFindersComponent {
         const link = document.createElement('a');
         link.href = url;
         link.style.display = 'none'; // Hide the link
-        if (this.settings.openInNewTab) {
+        if (window.opensInNewTab(this.settings)) {
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
         } else {

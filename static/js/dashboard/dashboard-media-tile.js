@@ -250,7 +250,7 @@
     function targetFor(dash, widget) {
         const chosen = String(widget?.config?.target || 'inherit');
         if (chosen === '_blank' || chosen === '_self') return chosen;
-        return dash?.settings?.openInNewTab ? '_blank' : '_self';
+        return window.opensInNewTab(dash?.settings) ? '_blank' : '_self';
     }
 
     function go(dash, widget, link) {

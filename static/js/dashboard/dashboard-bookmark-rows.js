@@ -648,7 +648,7 @@ class DashboardBookmarkRows {
 
         this.ensureBookmarkOpenDelegation();
 
-        if (d.settings.openInNewTab) {
+        if (window.opensInNewTab(d.settings)) {
             openLink.target = '_blank';
             openLink.rel = 'noopener noreferrer';
         }
@@ -1245,7 +1245,7 @@ class DashboardBookmarkRows {
         meta.textContent = bookmark.category || d.configLabel('noCategory', 'No category');
         link.appendChild(meta);
 
-        if (d.settings.openInNewTab) {
+        if (window.opensInNewTab(d.settings)) {
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
         }

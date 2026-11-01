@@ -816,6 +816,8 @@
      */
     function showBar(s) {
         removeBar();
+        // Hide corner cards on phones: the bar stands in the same corner.
+        if (global.isPhoneDevice?.() && dash()?.settings?.hideCornerCardsMobile === true) return;
         const progress = readProgress(s);
         const list = todo(s);
         const done = list.filter((p) => progress.visited.includes(p.id)).length;

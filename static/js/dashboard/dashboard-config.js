@@ -3410,7 +3410,7 @@ class DashboardConfig {
         // Honour the openInNewTab preference, which the dashboard grid already
         // respects: opening from Config used to force a new tab whatever it
         // said, so the setting only half applied. "Open in new tab" says so.
-        if (!newTab && this.dash?.settings?.openInNewTab === false) {
+        if (!newTab && !window.opensInNewTab(this.dash?.settings, true)) {
             window.location.href = href;
             return;
         }
@@ -4071,6 +4071,9 @@ class DashboardConfig {
         calendarUrl: ['calendar', 'ical', 'ics', 'agenda'],
         calendarIcsUrl: ['calendar', 'ical', 'ics', 'agenda', 'feed', 'widget'],
         openInNewTab: ['tab', 'window', 'target'],
+        openLinksNewTabMobile: ['tab', 'window', 'target', 'phone', 'mobile', 'touch'],
+        hideToastsMobile: ['toast', 'notification', 'phone', 'mobile', 'touch', 'hide', 'quiet'],
+        hideCornerCardsMobile: ['card', 'corner', 'notice', 'phone', 'mobile', 'touch', 'hide', 'quiet'],
         globalShortcuts: ['keyboard', 'shortcut', 'hotkey'],
         enableFuzzySuggestions: ['fuzzy', 'search', 'suggestion'],
         shortcutOpenMode: ['shortcut', 'enter', 'open', 'typing', 'instant'],
@@ -9002,6 +9005,9 @@ class DashboardConfig {
         // General
         language: { info: ['languageInfoTitle', 'languageInfoMessage'], def: 'en' },
         openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'], def: true },
+        openLinksNewTabMobile: { info: ['openLinksNewTabMobileInfoTitle', 'openLinksNewTabMobileInfoMessage'], def: false },
+        hideToastsMobile: { info: ['hideToastsMobileInfoTitle', 'hideToastsMobileInfoMessage'], def: true },
+        hideCornerCardsMobile: { info: ['hideCornerCardsMobileInfoTitle', 'hideCornerCardsMobileInfoMessage'], def: true },
         globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'], def: true },
         showShortcutTooltips: { info: ['shortcutTooltipsInfoTitle', 'shortcutTooltipsInfoMessage'], def: false },
         showGridKeyLegend: { info: ['showGridKeyLegendInfoTitle', 'showGridKeyLegendInfoMessage'], hint: 'gridKeyLegendHint', def: true },
@@ -10037,6 +10043,17 @@ class DashboardConfig {
                 controls: [
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupPhones', 'On phones and tablets'),
+                note: t('config.generalGroupPhonesNote', 'Only for a touch screen. On a computer these change nothing.'),
+                controls: [
+                    bool('openLinksNewTabMobile', 'config.openLinksNewTabMobile', 'Open links in a new tab on phones'),
+                    bool('hideToastsMobile', 'config.hideToastsMobile', 'Hide notifications on phones (errors stay)'),
+                    bool('hideCornerCardsMobile', 'config.hideCornerCardsMobile', 'Hide corner cards on phones'),
                 ],
             },
             {

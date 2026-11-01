@@ -103,7 +103,7 @@
     }
 
     function openItem(dash, link) {
-        if (dash?.settings?.openInNewTab) {
+        if (window.opensInNewTab(dash?.settings)) {
             window.open(link, '_blank', 'noopener,noreferrer');
             return;
         }
