@@ -149,7 +149,6 @@ class Dashboard {
             smartRecentPageIds: [],
             smartStalePageIds: [],
             smartMostUsedPageIds: [],
-            smartFreshPageIds: [],
             // Collections drawn two columns wide, by id; absent is one column.
             collectionColumns: {},
             dateFormat: 'short-slash',
@@ -245,7 +244,7 @@ class Dashboard {
             : new DashboardInlineEdit(this);
         this.toolbar = new DashboardToolbar(this);
         this.smartCollections = new DashboardSmartCollections(this);
-        this.feeds = typeof DashboardFeeds === 'function' ? new DashboardFeeds(this) : null;
+        this.feedWatch = typeof DashboardFeedWatch === 'function' ? new DashboardFeedWatch(this) : null;
         this.bookmarkRows = new DashboardBookmarkRows(this);
         this.renderCore = new DashboardRenderCore(this);
         this.renderIncremental = new DashboardRenderIncremental(this);
@@ -343,15 +342,9 @@ class Dashboard {
                 this.pageNav?.updateInboxTabBadge?.();
             });
             this.renderDashboard({ animate: true });
-            // Freshness arrives after the first paint on purpose: it is a small
-            // count on a row and a collection that is empty on most installs,
-            // and neither is worth holding the grid for. Rows are repainted only
-            // when something actually came back.
-            void this.feeds?.load().then((ok) => {
-                if (ok && this.feeds.enabled && this.feeds.byKey.size) {
-                    this.renderDashboard();
-                }
-            });
+            // Watched news arrives after the first paint on purpose: it is a small
+            // count on a row, and not worth holding the grid for.
+            void this.feedWatch?.load().then(() => this.feedWatch.start());
             // After the grid exists, not during loadData(). A deep link resolves
             // against the DOM — a category element, a bookmark row — so running
             // it before the first render could only ever fail, and did: it

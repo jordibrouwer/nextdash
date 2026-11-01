@@ -170,7 +170,6 @@
                 'tipTunePreview',
                 'tipTuneVideoCard',
                 'tipTuneSmartCollections',
-                'tipTuneFresh',
                 'tipTuneReviewOffers',
                 'tipTuneWidgets',
                 'tipTuneWidgetFold',

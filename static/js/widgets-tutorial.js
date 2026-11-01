@@ -101,7 +101,7 @@
                 visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--presets">
                     ${chip(t('widgetsTour3Search', 'Search kinds'))}
                     ${[t('widgetsTour3KindHealth', 'Health'), t('widgetsTour3KindInbox', 'Inbox'), t('widgetsTour3KindWeather', 'Weather'),
-                        t('widgetsTour3KindCalendar', 'Calendar'), t('widgetsTour3KindFeeds', 'Feeds'), t('widgetsTour3KindDisks', 'Disks'),
+                        t('widgetsTour3KindCalendar', 'Calendar'), t('widgetsTour3KindDisks', 'Disks'),
                         'Jellyfin', 'Sonarr', 'Radarr', 'Seerr', 'qBittorrent']
                         .map((name) => chip(name)).join('')}
                 </div>`,

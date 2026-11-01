@@ -1987,24 +1987,6 @@
       "since": "v1.3.0"
     },
     {
-      "titleKey": "config.overviewNewFeatureFreshTitle",
-      "titleFallback": "Fresh — the bookmarks that have something new",
-      "whatKey": "config.overviewNewFeatureFreshWhat",
-      "whatFallback": "Today, Recently opened, Most used and Stale all answer a question about what you did. None of them could answer the one you actually have in front of a wall of links: which of these is worth opening right now?",
-      "howKey": "config.overviewNewFeatureFreshHow",
-      "howFallback": "When a page you saved offers a feed, nextDash notes where it is while fetching previews and checks it on the background re-check interval. A bookmark then carries a small count of what has been published since you last opened it, and a Fresh collection lists those newest first. Opening the bookmark clears it — that is the whole of the read state. No article list, no titles: this is not a feed reader.",
-      "enableKey": "config.overviewNewFeatureFreshEnable",
-      "enableFallback": "Off by default, under Behavior → Status & health → Fresh. Switching it on checks once immediately; the feeds themselves were already found while previews were fetched, so nothing has to be re-fetched.",
-      "ctaKey": "config.overviewNewFeatureFreshCta",
-      "ctaFallback": "Open the setting →",
-      "go": {
-        "view": "config",
-        "section": "behavior",
-        "subTab": "status"
-      },
-      "since": "v1.3.0"
-    },
-    {
       "titleKey": "config.overviewNewFeatureHealthStableListTitle",
       "titleFallback": "The health list stays still while you work through it",
       "whatKey": "config.overviewNewFeatureHealthStableListWhat",

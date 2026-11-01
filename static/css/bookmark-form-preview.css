@@ -378,6 +378,22 @@
     color: var(--text-tertiary, #888);
 }
 
+.bookmark-form-feed-watch {
+    margin-left: auto;
+    flex: 0 0 auto;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font: inherit;
+    color: var(--accent-primary);
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-secondary));
+    cursor: pointer;
+}
+
+.bookmark-form-feed-watch:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
 .bookmark-form-feed-url {
     flex: 1 1 auto;
     min-width: 0;

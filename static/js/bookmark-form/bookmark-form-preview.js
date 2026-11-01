@@ -296,22 +296,35 @@
         renderFeedLine(bookmark) {
             const line = document.getElementById(this.ids().feedLine);
             if (!line) return;
-            const feeds = global.dashboardInstance?.feeds;
+            const dash = global.dashboardInstance;
             const url = String(bookmark?.url || '').trim();
-            const entry = feeds?.enabled === true && url
-                ? feeds.byKey?.get(feeds.key(url))
-                : null;
-            const feedURL = String(entry?.feedUrl || '').trim();
-            if (!feedURL) {
+            /*
+             * Watching needs a saved bookmark: the server keeps a watch against
+             * the bookmark it was started from. A bookmark still being created
+             * has no such row, so it gets no button until it is saved.
+             */
+            const watch = dash?.feedWatch;
+            const saved = Boolean(watch && url && (dash.allBookmarks || []).some(
+                (b) => watch.key(b.url) === watch.key(url)));
+            if (!saved) {
                 line.hidden = true;
                 line.textContent = '';
                 return;
             }
             line.hidden = false;
-            line.innerHTML = `<span class="bookmark-form-feed-label">${escHtml(this.t('config.bookmarkFeedLabel', 'Feed'))}</span>`
-                + `<code class="bookmark-form-feed-url">${escHtml(feedURL)}</code>`;
-            line.title = this.t('config.bookmarkFeedHint',
-                'Fresh reads this feed to count what has been published since you last opened the bookmark.');
+            const watched = watch.watchFor(bookmark)?.feeds || [];
+            const label = watched.length
+                ? this.t('config.bookmarkFeedWatching', 'Watching · every {interval}', {
+                    interval: global.FeedWatchPicker?.intervalWords?.(watched[0].intervalMinutes) || '',
+                })
+                : this.t('config.bookmarkFeedWatch', 'Watch this feed…');
+            line.innerHTML = `<span class="bookmark-form-feed-label">${escHtml(this.t('config.feedWatchLabel', 'Watch feeds'))}</span>`
+                + `<button type="button" class="bookmark-form-feed-watch" data-feed-watch-open>${escHtml(label)}</button>`;
+            line.title = '';
+            line.onclick = (event) => {
+                if (!event.target.closest('[data-feed-watch-open]')) return;
+                void global.FeedWatchPicker?.open({ bookmark }).then(() => this.renderFeedLine(bookmark));
+            };
         }
 
         async refreshLinkPreview(bookmark) {

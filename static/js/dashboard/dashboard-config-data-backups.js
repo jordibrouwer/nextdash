@@ -2279,7 +2279,7 @@
                     <span>${esc(this.t('config.sourceAsRows', 'Import each item as its own bookmark'))}</span>
                 </label>
                 <p class="config-field-hint">${esc(this.t('config.sourceAsRowsHint',
-                    'Off: one bookmark to the source itself, which Fresh can then count new items on.'))}</p>` : '';
+                    'Off: one bookmark to the source itself, which Watch feeds can then count new items on.'))}</p>` : '';
 
         /*
          * Folded shut, as <details> rather than a panel of our own.

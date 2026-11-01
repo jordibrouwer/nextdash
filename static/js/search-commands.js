@@ -77,7 +77,7 @@ class SearchCommandsComponent {
                 id: 'collections',
                 label: 'Smart collections',
                 labelKey: 'commands.groupCollections',
-                commands: ['collections', 'fresh'],
+                commands: ['collections'],
             },
             {
                 id: 'settings-tools',
@@ -133,7 +133,6 @@ class SearchCommandsComponent {
             'collapse': this.handleCollapseCommand.bind(this),
             'empty': this.handleEmptyCategoriesCommand.bind(this),
             'tags': this.handleRowTagsCommand.bind(this),
-            'fresh': this.handleFreshCommand.bind(this),
             'header': this.handleHeaderCommand.bind(this),
             'glow': this.handleGlowCommand.bind(this),
             'buttonstyle': this.handleButtonStyleCommand.bind(this),
@@ -3352,18 +3351,6 @@ class SearchCommandsComponent {
             offLabel: t('commands.rowTagsOff', 'Hide tags on the rows'),
         }, args);
     }
-
-    handleFreshCommand(args) {
-        const t = (key, fb) => this._t(key, fb);
-        return this._toggleSettingCommand({
-            field: 'feedsEnabled',
-            shortcut: ':FRESH',
-            apply: 'render',
-            onLabel: t('commands.freshOn', 'Count what the pages you saved have published'),
-            offLabel: t('commands.freshOff', 'Stop counting new items'),
-        }, args);
-    }
-
 
     /*
      * The guided tours, replayed from the palette.

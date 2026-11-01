@@ -813,6 +813,38 @@ class DashboardInlineEdit {
         cardHost.className = 'bookmark-form-card';
         colWhat.appendChild(cardHost);
 
+        /*
+         * Watching a feed starts here as well as in the right-click menu. Only
+         * for a bookmark that exists: the server keeps a watch against the
+         * bookmark it was started from, and one being created has no row yet.
+         */
+        if (!isCreate && d.feedWatch && String(bookmark.url || '').trim()) {
+            const watchLine = document.createElement('p');
+            watchLine.className = 'bookmark-form-feed-line';
+            colWhat.appendChild(watchLine);
+            const renderWatchLine = () => {
+                const watched = d.feedWatch.watchFor(bookmark)?.feeds || [];
+                const label = watched.length
+                    ? cfg('feedWatchWatching', 'Watching · every {interval}')
+                        .replace('{interval}', () => window.FeedWatchPicker?.intervalWords?.(watched[0].intervalMinutes) || '')
+                    : cfg('feedWatchStart', 'Watch this feed…');
+                watchLine.replaceChildren();
+                const caption = document.createElement('span');
+                caption.className = 'bookmark-form-feed-label';
+                caption.textContent = cfg('feedWatchLabel', 'Watch feeds');
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'bookmark-form-feed-watch';
+                button.dataset.feedWatchOpen = '';
+                button.textContent = label;
+                button.addEventListener('click', () => {
+                    void window.FeedWatchPicker?.open({ bookmark }).then(renderWatchLine);
+                });
+                watchLine.append(caption, button);
+            };
+            renderWatchLine();
+        }
+
         let pendingIcon = String(bookmark.icon || '').trim();
         // A favicon found for the address, not stored yet: its addresses, best
         // first. Stored on save (runSave), so an address typed and never saved

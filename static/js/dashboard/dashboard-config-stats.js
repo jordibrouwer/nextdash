@@ -1381,8 +1381,7 @@
                 if (value === null || value === undefined) return;
                 rows.push([label, format ? this.statsNumber(value) : value, '', detail || '']);
             };
-            add(this.t('config.statsLibraryFeeds', 'Feeds'), lib.feeds,
-                lib.feedsEnabled === false ? this.t('config.statsLibraryOff', 'switched off') : '');
+            add(this.t('config.statsLibraryFeeds', 'Watched feeds'), lib.feeds);
             add(this.t('config.statsLibrarySources', 'Import sources'), lib.sources);
             add(this.t('config.statsLibraryTrash', 'Waiting in the trash'), lib.trash);
             add(this.t('config.statsLibraryBackups', 'Automatic backups kept'), lib.backups,

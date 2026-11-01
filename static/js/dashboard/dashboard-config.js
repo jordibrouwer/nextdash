@@ -2340,6 +2340,7 @@ class DashboardConfig {
 
     subTabHeaderLabel(section, tab) {
         switch (section) {
+            case 'bookmarks': return this.bmTabLabel?.(tab) || tab;
             case 'behavior': return this.behaviorTabLabel?.(tab) || tab;
             case 'monitoring': return this.monitoringTabLabel?.(tab) || tab;
             case 'structure': return this.ptTabLabel?.(tab) || tab;
@@ -3941,10 +3942,12 @@ class DashboardConfig {
         pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
         pushNotifyBackup: ['push', 'notification', 'backup'],
         pushNotifyGlances: ['push', 'notification', 'glances', 'host', 'incident'],
+        pushNotifyNews: ['push', 'notification', 'news', 'feed', 'watch'],
         pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
-        feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
+        feedWatchWindowMinutes: ['feed', 'watch', 'news', 'modal', 'minutes', 'window'],
+        feedWatchNewsView: ['feed', 'watch', 'news', 'newspaper', 'columns', 'layout', 'modal'],
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
         remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
@@ -4090,7 +4093,7 @@ class DashboardConfig {
                     return;
                 }
                 if (!c.field || c.type === 'note' || c.type === 'pushDevice'
-                    || c.type === 'maintenanceWindows') return;
+                    || c.type === 'maintenanceWindows' || c.type === 'feedWatchList') return;
                 push(c.field, c.label, section, panel.tab || 'general');
             });
         });
@@ -6509,7 +6512,7 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             view: ['config.bmTabView', 'View'],
-            fresh: ['config.behaviorTabFresh', 'Fresh'],
+            fresh: ['config.behaviorTabFresh', 'Watch feeds'],
             tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             'tag-rules': ['config.bmTabTagRules', 'Your rules'],
@@ -9069,8 +9072,8 @@ class DashboardConfig {
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: true },
-        feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
-        feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
+        feedWatchWindowMinutes: { def: 30 },
+        feedWatchNewsView: { def: 'paper' },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         // Weekly digest (digest.go)
         digestWeekday: { def: 1 },
@@ -9219,6 +9222,7 @@ class DashboardConfig {
         pushNotifyBackup: { hint: 'pushNotifyBackupHint', def: false },
         pushNotifyContainers: { def: false },
         pushNotifyGlances: { def: false },
+        pushNotifyNews: { def: true },
         pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
@@ -9474,7 +9478,7 @@ class DashboardConfig {
         if (!c) return [];
         if (c.type === 'chips') return (c.items || []).map((i) => i.field);
         if (!c.field || c.type === 'note' || c.type === 'pushDevice'
-            || c.type === 'maintenanceWindows') return [];
+            || c.type === 'maintenanceWindows' || c.type === 'feedWatchList') return [];
         return [c.field];
     }
 
@@ -10368,7 +10372,6 @@ class DashboardConfig {
                             { value: 'tags', label: t('config.linkPreviewPartTags', 'Tags') },
                             { value: 'status', label: t('config.linkPreviewPartStatus', 'Status & uptime') },
                             { value: 'opens', label: t('config.linkPreviewPartOpens', 'Opens & last opened') },
-                            { value: 'fresh', label: t('config.linkPreviewPartFresh', 'Fresh count') },
                             { value: 'location', label: t('config.linkPreviewPartLocation', 'Shortcut & location') },
                         ] },
                     { type: 'previewSample' },
@@ -10697,22 +10700,35 @@ class DashboardConfig {
             {
                 section: 'bookmarks',
                 tab: 'fresh',
-                title: t('config.feedsTitle', 'Fresh'),
+                title: t('config.feedWatchListTitle', 'Watched feeds'),
                 demoLocked: true,
-                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
+                controls: [{ type: 'feedWatchList' }],
+            },
+            {
+                section: 'bookmarks',
+                tab: 'fresh',
+                title: t('config.feedsTitle', 'Watch feeds'),
+                demoLocked: true,
+                note: t('config.feedsNote', 'Feeds you follow from a bookmark (Watch this feed…) are asked on their own interval. When something new appears, the bookmark gets a purple count, a toast and the news window. Both settings below are per install; the window says how long the news stays in view once you are back.'),
                 controls: [
-                    { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
-                    // Off by default on purpose: most rows with a feed are
-                    // silent most of the time, and a mark on twenty of them is
-                    // the noise Fresh exists to avoid. For the reader who would
-                    // rather see who is taking part than ask one row at a time.
-                    { ...bool('feedsMarkQuiet', 'config.feedsMarkQuietLabel', 'Mark rows that publish, even when nothing is new'), special: 'render' },
-                    // Most bookmarks have no feed, so an empty Fresh is the
-                    // normal state and looks exactly like a broken feature.
-                    // This line is the difference: it says how many pages have
-                    // been asked and how many of them publish anything at all.
-                    { type: 'action', label: t('config.feedsCoverageLabel', 'Feeds found'),
-                      button: t('config.feedsFindNow', 'Find feeds now'), action: 'findFeeds' },
+                    // Feeds you chose to follow, from Watch this feed… on a
+                    // bookmark: their news gets a toast, a purple mark and the
+                    // news modal, for as long as this window.
+                    { field: 'feedWatchWindowMinutes', type: 'select', label: t('config.feedWatchWindowLabel', 'Keep the news modal open for'), options: [
+                        opt(15, t('config.feedWatchWindow15', '15 minutes')), opt(30, t('config.feedWatchWindow30', '30 minutes')),
+                        opt(60, t('config.feedWatchWindow60', '1 hour')), opt(120, t('config.feedWatchWindow120', '2 hours')),
+                    ] },
+                    {
+                        type: 'note',
+                        text: t('config.feedWatchWindowNote', 'After news arrives, the news modal and the purple mark stay for this long once you are back in nextDash.'),
+                    },
+                    { field: 'feedWatchNewsView', type: 'select', label: t('config.feedWatchNewsViewLabel', 'Show news as'), options: [
+                        opt('paper', t('config.feedWatchNewsViewPaper', 'Newspaper')),
+                        opt('wide', t('config.feedWatchNewsViewWide', 'Two columns')),
+                        opt('single', t('config.feedWatchNewsViewSingle', 'One column')),
+                    ] },
+                    { type: 'action', label: t('config.feedWatchedLabel', 'Watched feeds'),
+                      button: t('config.feedWatchCheckNow', 'Check watched feeds now'), action: 'checkWatched' },
                 ],
             },
             {
@@ -10871,6 +10887,7 @@ class DashboardConfig {
                     bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
                     bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
                     bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
+                    bool('pushNotifyNews', 'config.pushNotifyNewsLabel', 'Notify when a watched feed has news'),
                     bool('pushNotifyGlances', 'config.pushNotifyGlancesLabel', 'Notify when a Glances host has an incident (kinds are chosen in Config → Glances)'),
                     { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
                     { type: 'pushDevice' },
@@ -11201,6 +11218,12 @@ class DashboardConfig {
                         <button type="button" class="config-btn" data-push-test hidden>${esc(this.t('config.pushNotifyTestButton', 'Send test notification'))}</button>
                         <button type="button" class="config-btn" data-push-reask hidden>${esc(this.t('config.pushNotifyAskAgain', 'Show the invitation again'))}</button>
                     </div>`;
+            }
+            // The feeds being followed, one row each, filled in once the watch list
+            // has loaded (bindFeedWatchList).
+            if (c.type === 'feedWatchList') {
+                return '<div class="feed-watch-overview" data-feed-watch-overview><p class="feed-watch-note">'
+                    + esc(this.t('dashboard.feedWatchLoading', 'Looking for feeds…')) + '</p></div>';
             }
             if (c.type === 'maintenanceWindows') {
                 return this.renderMaintenanceWindows(c.windowsField || 'maintenanceWindows', c.emptyText || '');
@@ -11632,6 +11655,7 @@ class DashboardConfig {
         this.bindPanelResetActions(container);
         this.bindGroupResetActions(container);
         this.bindPushDeviceControls(container);
+        this.bindFeedWatchList(container);
         this.bindMaintenanceWindows(container);
         this.bindMonitorNotifyTest(container);
         this.bindPanelActions(container);
@@ -12277,20 +12301,37 @@ class DashboardConfig {
      * a number is easier to read where the button that produced it is.
      */
     bindPanelActions(container) {
-        // Fresh: look for feeds now, and say what the round found.
-        const findFeeds = container.querySelector('[data-config-action="findFeeds"]');
-        if (findFeeds) {
-            this.paintFeedCoverage();
-            findFeeds.addEventListener('click', async () => {
-                findFeeds.disabled = true;
-                const status = container.querySelector('[data-config-action-status="findFeeds"]');
+        // Watched feeds: how many, and check them now.
+        const checkWatched = container.querySelector('[data-config-action="checkWatched"]');
+        if (checkWatched) {
+            // Looked up each time: a round repaints the dashboard, and the
+            // panel with it, so a node held from before is no longer on screen.
+            const statusEl = () => document.querySelector('[data-config-action-status="checkWatched"]');
+            // What the last round said, kept so a late answer to the first load
+            // cannot paint over it.
+            // Kept on the config object: the panel is built again whenever the
+            // dashboard repaints, and the new one must still show the result.
+            let roundText = this._feedWatchRoundText || '';
+            const paintCount = (suffix = roundText) => {
+                roundText = suffix;
+                this._feedWatchRoundText = suffix;
+                const watch = this.dash.feedWatch;
+                const status = statusEl();
+                if (!status || !watch) return;
+                status.textContent = this.t('config.feedWatchedCount', '{n} of {limit} watched')
+                    .replace('{n}', String(watch.total)).replace('{limit}', String(watch.limit)) + roundText;
+            };
+            void this.dash.feedWatch?.load().then(() => paintCount());
+            checkWatched.addEventListener('click', async () => {
+                checkWatched.disabled = true;
+                const status = statusEl();
                 if (status) status.textContent = this.t('config.feedsFindingNow', 'Looking…');
                 try {
-                    const round = await this.dash.feeds?.pollNow();
-                    this.paintFeedCoverage(round);
-                    this.dash.renderDashboard?.({ animate: false });
+                    const round = await this.dash.feedWatch?.pollNow();
+                    paintCount(round ? ` · ${this.t('config.feedWatchedRound', '{fresh} with news').replace('{fresh}', String(round.fresh))}` : '');
                 } finally {
-                    findFeeds.disabled = false;
+                    document.querySelector('[data-config-action="checkWatched"]')?.removeAttribute('disabled');
+                    checkWatched.disabled = false;
                 }
             });
         }
@@ -12366,41 +12407,6 @@ class DashboardConfig {
         });
     }
 
-    /**
-     * What the last look for feeds found, beside the button that repeats it.
-     *
-     * Fresh spent a release looking broken on installs where it was working
-     * perfectly: most pages carry no feed, so the honest result is an empty
-     * dashboard, and an empty dashboard is indistinguishable from a feature
-     * that does nothing. Three numbers fix that — how many bookmarks there are,
-     * how many have been asked, and how many publish anything at all.
-     */
-    paintFeedCoverage(round = null) {
-        const status = document.querySelector('[data-config-action-status="findFeeds"]');
-        if (!status) return;
-        const feeds = this.dash?.feeds;
-        if (!feeds) return;
-        if (feeds.enabled !== true) {
-            status.textContent = this.t('config.feedsCoverageOff', 'Switched off — nothing is being asked.');
-            return;
-        }
-        const coverage = round || feeds.coverage || {};
-        const bookmarks = Number(coverage.bookmarks) || 0;
-        const checked = Number(coverage.checked) || 0;
-        const withFeed = Number(coverage.withFeed) || 0;
-        const text = this.t('config.feedsCoverageCount', '{checked} of {bookmarks} bookmarks asked · {withFeed} publish a feed')
-            .replace('{checked}', String(checked))
-            .replace('{bookmarks}', String(bookmarks))
-            .replace('{withFeed}', String(withFeed));
-        // The "and none of them publishes anything" case is the one worth a
-        // sentence rather than a number: it is the answer to "why is my
-        // dashboard not changing", and it is not a fault.
-        const none = checked > 0 && withFeed === 0
-            ? ` ${this.t('config.feedsCoverageNone', 'None of them publishes a feed, so there is nothing for Fresh to count.')}`
-            : '';
-        status.textContent = text + none;
-    }
-
     bindMonitorNotifyTest(container) {
         const btn = container.querySelector('[data-monitor-notify-test]');
         if (!btn) return;
@@ -12443,6 +12449,116 @@ class DashboardConfig {
                 btn.disabled = false;
             }
         });
+    }
+
+    /**
+     * The "Watched feeds" panel: what is followed, how often, when it was last
+     * asked and how it is doing, with a way to change or stop each one.
+     */
+    bindFeedWatchList(container) {
+        const host = container.querySelector('[data-feed-watch-overview]');
+        const watch = this.dash.feedWatch;
+        if (!host || !watch) return;
+        const esc = (v) => this.dash.escapeHtml(String(v ?? ''));
+        const picker = window.FeedWatchPicker;
+        const ago = (ms) => {
+            const m = Math.max(0, Math.round((Date.now() - Number(ms)) / 60000));
+            if (!ms) return this.t('config.feedWatchNeverChecked', 'not checked yet');
+            if (m < 1) return this.t('dashboard.previewAgoNow', 'just now');
+            if (m < 60) return this.t('dashboard.previewAgoMinutes', '{count} min ago').replace('{count}', String(m));
+            const h = Math.round(m / 60);
+            if (h < 24) return this.t('dashboard.previewAgoHours', '{count} h ago').replace('{count}', String(h));
+            return this.t('dashboard.previewAgoDays', '{count} d ago').replace('{count}', String(Math.round(h / 24)));
+        };
+        const hostOf = (url) => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return String(url || ''); } };
+        const reasonOf = (feed) => {
+            const code = String(feed.lastError || '');
+            if (!code) return '';
+            const status = Number(feed.lastStatus) || 0;
+            if (code === 'http-404') return this.t('config.feedWatchErr404', 'Not found (404)');
+            if (code === 'http-410') return this.t('config.feedWatchErr410', 'Gone (410)');
+            if (code === 'timeout') return this.t('config.feedWatchErrTimeout', 'Timed out');
+            if (code === 'unreachable') return this.t('config.feedWatchErrUnreachable', 'Could not connect');
+            if (code === 'not-a-feed') return this.t('config.feedWatchErrNotFeed', 'No longer a feed');
+            if (code === 'refused') return this.t('config.feedWatchErrRefused', 'Address not allowed');
+            if (code.startsWith('http-')) return this.t('config.feedWatchErrHttp', 'Server error ({status})').replace('{status}', String(status || code.slice(5)));
+            return '';
+        };
+        const movedNote = (feed) => {
+            const at = Number(feed.movedAt) || 0;
+            if (!feed.movedFrom || !at || Date.now() - at > 7 * 24 * 3600 * 1000) return '';
+            return this.t('config.feedWatchMoved', 'Moved from {host}').replace('{host}', hostOf(feed.movedFrom));
+        };
+
+        const paint = () => {
+            const live = document.querySelector('[data-feed-watch-overview]');
+            if (!live) return;
+            const rows = [];
+            let news = 0;
+            let newest = 0;
+            watch.byKey.forEach((entry, key) => {
+                const bookmark = (this.dash.allBookmarks || []).find((b) => watch.key(b.url) === key);
+                if (!bookmark) return;
+                const count = Number(entry.newCount) || 0;
+                if (count > 0) news += 1;
+                (entry.feeds || []).forEach((feed) => {
+                    newest = Math.max(newest, Number(feed.checkedAt) || 0);
+                    const paused = feed.retired === true;
+                    const failing = !paused && Number(feed.failures) > 0;
+                    const reason = reasonOf(feed);
+                    const withReason = (text) => (reason ? `${text} · ${reason}` : text);
+                    const state = paused ? ['is-bad', withReason(this.t('config.feedWatchPaused', 'Paused after repeated failures'))]
+                        : failing ? ['is-warn', withReason(this.t('config.feedWatchFailing', 'Last check failed'))]
+                            : count > 0 ? ['is-news', this.t('config.feedWatchNewState', '{n} new').replace('{n}', String(count))]
+                                : ['is-ok', this.t('config.feedWatchQuiet', 'Nothing new')];
+                    rows.push(`<div class="feed-watch-list-row" data-key="${esc(key)}">`
+                        + `<div class="feed-watch-list-main"><strong>${esc(bookmark.name || bookmark.url)}</strong>`
+                        + `<span class="feed-watch-list-feed" title="${esc(feed.feedUrl)}">${esc(feed.title || hostOf(feed.feedUrl))} · ${esc(hostOf(feed.feedUrl))}${movedNote(feed) ? ` · ${esc(movedNote(feed))}` : ''}</span></div>`
+                        + `<span class="feed-watch-list-meta">${esc(window.FeedWatchPicker?.intervalWords ? this.t('config.feedWatchEvery', 'every {interval}').replace('{interval}', window.FeedWatchPicker.intervalWords(feed.intervalMinutes)) : '')}<br>${esc(ago(feed.checkedAt))}</span>`
+                        + `<span class="feed-watch-list-state ${state[0]}">${esc(state[1])}</span>`
+                        + `<span class="feed-watch-list-actions">`
+                        + (paused ? `<button type="button" class="config-btn config-btn--small" data-fwl-retry="${esc(bookmark.url)}" data-fwl-feed="${esc(feed.feedUrl)}">${esc(this.t('config.feedWatchRetry', 'Retry'))}</button>` : '')
+                        + `<button type="button" class="config-btn config-btn--small" data-fwl-edit="${esc(bookmark.url)}">${esc(this.t('config.feedWatchChange', 'Change…'))}</button>`
+                        + `<button type="button" class="config-btn config-btn--small" data-fwl-stop="${esc(bookmark.url)}">${esc(this.t('config.feedWatchStop', 'Stop'))}</button>`
+                        + `</span></div>`);
+                });
+            });
+            const summary = `<p class="feed-watch-list-summary">${esc(this.t('config.feedWatchSummary', '{n} of {limit} watched · {news} with news · last check {ago}')
+                .replace('{n}', String(watch.total)).replace('{limit}', String(watch.limit)).replace('{news}', String(news))
+                .replace('{ago}', newest ? ago(newest) : this.t('config.feedWatchNever', 'never')))}</p>`;
+            live.innerHTML = rows.length
+                ? summary + rows.join('')
+                : `<p class="feed-watch-note">${esc(this.t('config.feedWatchEmpty', 'You are not watching any feed yet. Right-click a bookmark and choose Watch this feed…'))}</p>`;
+        };
+
+        host.addEventListener('click', async (event) => {
+            const edit = event.target.closest('[data-fwl-edit]');
+            const stop = event.target.closest('[data-fwl-stop]');
+            const retry = event.target.closest('[data-fwl-retry]');
+            if (retry) {
+                retry.disabled = true;
+                await watch.retry(retry.dataset.fwlRetry, retry.dataset.fwlFeed);
+                paint();
+                return;
+            }
+            const url = (edit || stop)?.dataset.fwlEdit || (edit || stop)?.dataset.fwlStop;
+            if (!url) return;
+            const bookmark = (this.dash.allBookmarks || []).find((b) => b.url === url);
+            if (!bookmark) return;
+            if (edit) {
+                await picker?.open({ bookmark });
+            } else if (await watch.unwatch(url)) {
+                this.dash.showNotification?.(this.t('dashboard.feedWatchStopped', 'Stopped watching {name}').replace('{name}', bookmark.name || url), 'success', { duration: 3000 });
+            }
+            paint();
+        });
+        if (!this._feedWatchListBound) {
+            this._feedWatchListBound = true;
+            document.addEventListener('feedwatch:changed', () => this.paintFeedWatchList?.());
+        }
+        this.paintFeedWatchList = paint;
+        paint();
+        void watch.load({ force: true }).then(paint);
     }
 
     bindPushDeviceControls(container) {
@@ -13516,26 +13632,6 @@ class DashboardConfig {
                 this._newsStream = undefined;
                 void this.loadNewsStream({ force: true }).then(() => this.repaintOverview());
                 break;
-            case 'feeds':
-                // Switching this on looks for feeds and polls once now, rather
-                // than leaving the dashboard blank until the scheduler's next
-                // wake — turning a feature on and seeing nothing happen reads
-                // as broken. Off just drops what is painted.
-                if (value) {
-                    // The same line "Find feeds now" writes while it looks, so
-                    // switching on does not sit silent for the length of a round.
-                    const feedStatus = document.querySelector('[data-config-action-status="findFeeds"]');
-                    if (feedStatus) feedStatus.textContent = this.t('config.feedsFindingNow', 'Looking…');
-                    void d.feeds?.pollNow().then((round) => {
-                        this.paintFeedCoverage(round);
-                        d.renderDashboard?.({ animate: false });
-                    });
-                } else if (d.feeds) {
-                    d.feeds.enabled = false;
-                    d.feeds.byKey = new Map();
-                    d.renderDashboard?.({ animate: false });
-                }
-                break;
             case 'search':
                 // The search component holds its own copy of the pool, built
                 // when the data loads -- a setting that decides what goes into
@@ -14352,7 +14448,7 @@ class DashboardConfig {
      */
     static WIDGET_TYPE_GROUPS = [
         ['links', ['health', 'uptime', 'certs', 'domains', 'trend']],
-        ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
+        ['incoming', ['inbox', 'unsorted', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
@@ -15477,7 +15573,6 @@ class DashboardConfig {
         ['smartAddedPageIds', 'config.smartAddedScope', '“Recently added” pages'],
         ['smartStalePageIds', 'config.smartStaleScope', '“Stale” pages'],
         ['smartMostUsedPageIds', 'config.smartMostUsedScope', '“Most used” pages'],
-        ['smartFreshPageIds', 'config.smartFreshScope', '“Fresh” pages'],
     ];
 
     renderCollectionScopes() {
@@ -16610,7 +16705,7 @@ class DashboardConfig {
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
         'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
@@ -16947,11 +17042,6 @@ class DashboardConfig {
               label: ['config.widgetKeptTag', 'Tag to show'],
               hint: ['config.widgetKeptTagHint',
                      'With Order on By tag: one tag shows only that tag, none groups every tag under its own heading.'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
-        feeds: [
-            { key: 'freshOnly', kind: 'bool', label: ['config.widgetFreshOnly', 'Only feeds with fresh items'] },
-            { key: 'showRetired', kind: 'bool', defaultOn: true, label: ['config.widgetShowRetired', 'Show feeds that stopped after repeated failures'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         sources: [
@@ -23085,7 +23175,7 @@ class DashboardConfig {
         };
         const pages = this.dash.pages || [];
         const [feeds, sources, trash, backups, ...blocks] = await Promise.all([
-            get('/api/feeds'),
+            get('/api/feeds/watch'),
             get('/api/sources'),
             get('/api/trash'),
             get('/api/auto-backups'),
@@ -23108,13 +23198,11 @@ class DashboardConfig {
             });
         }
 
-        const feedMap = feeds?.feeds && typeof feeds.feeds === 'object' ? feeds.feeds : null;
         this._statsLibrary = {
             widgets: widgetCount,
             widgetTypes: [...widgetTypes.entries()].sort((a, b) => b[1] - a[1]),
             widgetPages,
-            feedsEnabled: feeds ? feeds.enabled === true : null,
-            feeds: feedMap ? Object.keys(feedMap).length : null,
+            feeds: feeds && Number.isFinite(Number(feeds.total)) ? Number(feeds.total) : null,
             sources: Array.isArray(sources) ? sources.length : null,
             trash: trash && Number.isFinite(Number(trash.count)) ? Number(trash.count) : null,
             backups: Array.isArray(backups?.backups) ? backups.backups.length : null,
@@ -24759,7 +24847,7 @@ class DashboardConfig {
                     { k: 'config.helpArtLifeCapture', d: 'Capture' },
                     { k: 'config.helpArtLifeCheck', d: 'Check' },
                     { k: 'config.helpArtLifeTidy', d: 'Tidy' },
-                    { k: 'config.feedsTitle', d: 'Fresh' },
+                    { k: 'config.feedsTitle', d: 'Watch feeds' },
                 ],
                 captionKey: 'config.helpArtLifeOfLink', caption: 'The life of a link',
             },
@@ -25175,15 +25263,6 @@ class DashboardConfig {
                 kind: 'bookmarkRow', value: ['icon', 'key'],
                 captionKey: 'config.helpArtFreshRow', caption: 'A count on the row',
             },
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtFreshPreview', d: 'Link preview' },
-                    { k: 'config.helpArtFreshFeed', d: 'Feed address' },
-                    '304',
-                ],
-                captionKey: 'config.helpArtFreshCost', caption: 'Found once, then asked cheaply',
-            },
         ],
         'config.helpHealthMaintenanceTitle': [
             {
@@ -25404,7 +25483,7 @@ class DashboardConfig {
             go: { section: 'logs', logsTab: 'server' },
         },
         'config.helpFreshTitle': {
-            isOn: (s) => s.feedsEnabled === true,
+            isOn: () => true,
             go: { section: 'bookmarks', bmTab: 'fresh' },
         },
         'config.helpContainersTitle': {
@@ -25692,7 +25771,7 @@ class DashboardConfig {
             // Fresh sat in a paragraph of the Behavior article, which is where
             // its switch is rather than where its subject is: it is a thing the
             // dashboard does with a bookmark, like everything else on this tab.
-            + this.helpPanel('config.helpFreshTitle', 'Fresh',
+            + this.helpPanel('config.helpFreshTitle', 'Watch feeds',
                 'config.helpFreshBody', '')
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
@@ -25943,51 +26022,9 @@ class DashboardConfig {
                 void this.copyDiagnostics();
                 return;
             }
-            if (e.target.closest('[data-about-action="track-fresh"]')) {
-                void this.trackSiteInFresh();
-                return;
-            }
             const go = e.target.closest('[data-overview-go]');
             if (go) this.handleOverviewGo(go);
         });
-    }
-
-    /**
-     * Save nextdash.cc as a bookmark, so Fresh can count its posts.
-     *
-     * Added through the same endpoint the add-bookmark form uses, on the page
-     * you are looking at, and it says where it went — a button that silently
-     * writes a bookmark somewhere is worse than one that does nothing.
-     */
-    async trackSiteInFresh() {
-        const d = this.dash;
-        const pageId = Number(d.currentPageId) || 1;
-        try {
-            const res = await this.writeFetch('/api/bookmarks/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    page: pageId,
-                    bookmark: {
-                        name: 'nextDash',
-                        url: 'https://nextdash.cc/',
-                        category: '',
-                        tags: [],
-                        note: '',
-                        icon: '',
-                        shortcut: '',
-                        createdAt: Date.now(),
-                    },
-                }),
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [pageId] });
-            this.notify(this.t('config.aboutTrackAdded',
-                'nextdash.cc is on your dashboard. Turn Fresh on under Behavior → Inbox & Fresh to see what it publishes.'), 'success');
-            this.render();
-        } catch (_error) {
-            this.notify(this.t('config.aboutTrackFailed', 'Could not add the bookmark.'), 'error');
-        }
     }
 
     aboutTabLabel(tab) {
@@ -26324,30 +26361,6 @@ class DashboardConfig {
                     at: 0,
                 })).join('')}</ul>
             </div>` : ''}
-            ${this.renderTrackInFresh()}
-            </div>`;
-    }
-
-    /**
-     * Follow the project's own feed with the product's own feature.
-     *
-     * Fresh polls the pages you have saved and counts what they published
-     * since you last looked. Pointing it at nextdash.cc is both the shortest
-     * way to keep up and the clearest demonstration of what Fresh is for.
-     */
-    renderTrackInFresh() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const already = (this.dash.allBookmarks || [])
-            .some((b) => String(b?.url || '').includes('nextdash.cc'));
-        return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.aboutTrackTitle', 'Follow it from your own dashboard'))}</h3>
-                <p class="config-panel-note">${esc(already
-                    ? this.t('config.aboutTrackDone', 'nextdash.cc is already one of your bookmarks — Fresh will count new posts on it like any other page.')
-                    : this.t('config.aboutTrackNote', 'Save nextdash.cc as a bookmark and Fresh counts what it publishes, the same way it does for every other page you keep.'))}</p>
-                ${already ? '' : `<div class="config-actions">
-                    <button type="button" class="config-btn config-btn--small" data-about-action="track-fresh">${esc(this.t('config.aboutTrackCta', 'Add nextdash.cc to my bookmarks'))}</button>
-                </div>`}
             </div>`;
     }
 

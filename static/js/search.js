@@ -56,11 +56,8 @@ class SearchComponent {
         // filter, and was the one tidy-up question the search bar could not ask.
         // noted is its twin: a note is the thing you left to explain the link.
         'untagged', 'tagged', 'noted', 'unnoted',
-        // feed answers "which of these can ever tell me something is new". A row
-        // with a feed and nothing new looks exactly like a row with no feed, so
-        // without this the only way to find out was to read the count on the
-        // Fresh tab and guess which bookmarks it meant.
-        'feed', 'unfed',
+        // watched answers "which of these am I following a feed of".
+        'watched', 'unwatched',
     ]);
 
     /**
@@ -2222,7 +2219,7 @@ class SearchComponent {
         const hints = {
             category: ['filterByCategory', 'Filter by category (example: category:work)'],
             status: ['filterByStatusFull',
-                'Filter by status (online/offline/broken/ok/pinned/unpinned/checked/unchecked/tagged/untagged/noted/unnoted/feed/unfed)'],
+                'Filter by status (online/offline/broken/ok/pinned/unpinned/checked/unchecked/tagged/untagged/noted/unnoted/watched/unwatched)'],
             page: ['filterByPage', 'Filter by page (current/all/number)'],
             tag: ['filterByTag', 'Filter by tag (example: tag:work)'],
             opened: ['filterByOpened', 'Filter by when it was last opened (never/today/week/month/year)'],
@@ -2338,8 +2335,8 @@ class SearchComponent {
                 ['unpinned', t('filterStatusUnpinned', 'Not pinned')],
                 ['checked', t('filterStatusChecked', 'Status check enabled')],
                 ['unchecked', t('filterStatusUnchecked', 'Status check disabled')],
-                ['feed', t('filterStatusFeed', 'Publishes a feed Fresh can read')],
-                ['unfed', t('filterStatusUnfed', 'No feed behind it')],
+                ['watched', t('filterStatusWatched', 'A feed of it is watched')],
+                ['unwatched', t('filterStatusUnwatched', 'No feed of it is watched')],
                 // The parser has known these four all along; the completion
                 // list was the one place that never offered them.
                 ['untagged', t('filterStatusUntagged', 'Without tags')],
@@ -2481,12 +2478,7 @@ class SearchComponent {
             const isBroken = Boolean(String(bookmark.lastError || '').trim());
             const tagCount = (bookmark.tags || []).filter((tag) => String(tag).trim()).length;
             const hasNote = Boolean(String(bookmark.note || '').trim());
-            // Known only while Fresh is on: with it off the server answers with
-            // an empty map, and every bookmark would read as "no feed" — an
-            // answer about the setting rather than about the bookmark.
-            const feeds = window.dashboardInstance?.feeds;
-            const hasFeed = feeds?.enabled === true
-                && Boolean(feeds.byKey?.get(feeds.key(bookmark.url))?.feedUrl);
+            const isWatched = window.dashboardInstance?.feedWatch?.isWatched?.(bookmark) === true;
             const monitor = window.dashboardInstance?.statusMonitor;
             const reachability = typeof monitor?.getBookmarkReachability === 'function'
                 ? monitor.getBookmarkReachability(bookmark)
@@ -2514,8 +2506,8 @@ class SearchComponent {
                 case 'tagged': return tagCount > 0;
                 case 'noted': return hasNote;
                 case 'unnoted': return !hasNote;
-                case 'feed': return hasFeed;
-                case 'unfed': return !hasFeed;
+                case 'watched': return isWatched;
+                case 'unwatched': return !isWatched;
                 default: return true;
             }
         }

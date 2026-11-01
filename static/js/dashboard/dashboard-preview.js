@@ -19,7 +19,7 @@ class DashboardPreview {
      * monitors nothing should never see a status row — the checklist under
      * Appearance is stored as a subset of these names.
      */
-    static PARTS = ['image', 'byline', 'embed', 'description', 'note', 'tags', 'status', 'opens', 'fresh', 'location'];
+    static PARTS = ['image', 'byline', 'embed', 'description', 'note', 'tags', 'status', 'opens', 'location'];
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -331,7 +331,7 @@ class DashboardPreview {
             publishedAt: Number(preview?.publishedAt || 0) || 0,
             embedHtml: String(preview?.embedHtml || ''),
             checked: this.bookmarkCheckState(bookmark),
-            fresh: this.bookmarkFreshState(bookmark),
+            news: this.bookmarkNewsState(bookmark),
             health: this.bookmarkHealthState(bookmark),
             archive: this.bookmarkArchiveState(bookmark),
         };
@@ -391,18 +391,72 @@ class DashboardPreview {
         };
     }
 
-    /** The feed count Fresh already keeps for this bookmark, if it has one. */
-    bookmarkFreshState(bookmark) {
-        const feeds = this.dash.feeds;
-        if (!feeds?.enabled) return null;
-        const entry = typeof feeds.freshFor === 'function' ? feeds.freshFor(bookmark) : null;
-        if (entry) {
-            return { newCount: Number(entry.newCount || 0), lastItemAt: Number(entry.lastItemAt || 0) || 0, hasFeed: true };
+    /**
+     * The newest item of a feed the reader watches, while its window is open.
+     * Desktop only: a touch screen has no hover, and gets the strip under the
+     * row instead.
+     */
+    bookmarkNewsState(bookmark) {
+        const watch = this.dash.feedWatch;
+        if (!watch || window.FeedWatchPopover?.isTouch?.()) return null;
+        if (window.matchMedia?.('(hover: none) and (pointer: coarse)').matches) return null;
+        const news = watch.newsFor(bookmark);
+        if (!news?.newest) return null;
+        const phase = watch.windowPhase();
+        if (phase !== 'open' && phase !== 'pending') return null;
+        return { newCount: news.newCount, newest: news.newest, key: watch.key(bookmark?.url) };
+    }
+
+    /**
+     * The newest item at the top of the card: picture, headline, lead, and the
+     * two ways on. Built once and refilled, like the rest of the card.
+     */
+    paintPreviewNews(card, preview) {
+        let el = card.querySelector('.bookmark-preview-card-news');
+        const news = preview?.news;
+        card.classList.toggle('has-feed-news', Boolean(news?.newest));
+        if (!news?.newest) {
+            if (el) el.hidden = true;
+            return;
         }
-        if (typeof feeds.hasFeed === 'function' && feeds.hasFeed(bookmark)) {
-            return { newCount: 0, lastItemAt: 0, hasFeed: true };
+        const d = this.dash;
+        const esc = (v) => window.NextDashHtml.escapeHtml(String(v ?? ''));
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'bookmark-preview-card-news';
+            card.prepend(el);
+            el.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-feed-news-action]');
+                if (!button) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const ctx = card._previewContext;
+                const action = button.dataset.feedNewsAction;
+                const key = el.dataset.key;
+                this.hideBookmarkPreviewCard();
+                if (action === 'read') void window.FeedWatchNews?.open({ focusKey: key });
+                else ctx?.openLink?.click();
+            });
         }
-        return null;
+        const item = news.newest;
+        el.dataset.key = news.key;
+        const image = item.image ? `<img class="bookmark-preview-card-news-image" src="${esc(item.image)}" alt="" decoding="async">` : '';
+        const when = item.publishedAt ? ` · ${esc(this.formatPreviewAgo(item.publishedAt))}` : '';
+        el.innerHTML = image
+            + `<div class="bookmark-preview-card-news-meta">${esc(d.formatDashboardLabel('feedWatchNewCount', { count: news.newCount }, `${news.newCount} new`))}${when}</div>`
+            + `<div class="bookmark-preview-card-news-title">${esc(item.title)}</div>`
+            + (item.summary ? `<div class="bookmark-preview-card-news-lead">${item.summary}</div>` : '')
+            + `<div class="bookmark-preview-card-news-actions">`
+            + `<button type="button" class="bookmark-preview-card-action" data-feed-news-action="read">${esc(d.formatDashboardLabel('feedWatchReadFull', {}, 'Read in full'))}</button>`
+            + `<button type="button" class="bookmark-preview-card-action" data-feed-news-action="open">${esc(d.formatDashboardLabel('feedWatchOpenPage', {}, 'Open page'))}</button>`
+            + `</div>`;
+        el.hidden = false;
+        // The picture changes the card's height when it arrives; place the card
+        // again then, so it never ends below the screen.
+        el.querySelector('img')?.addEventListener('load', () => {
+            const ctx = card._previewContext;
+            if (ctx && card.classList.contains('is-visible')) this.positionBookmarkPreviewCard(ctx.openLink);
+        }, { once: true });
     }
 
     /**
@@ -1364,6 +1418,7 @@ class DashboardPreview {
 
         this.paintPreviewByline(card, preview, want);
         this.paintPreviewEmbed(card, preview, want, title, mode);
+        this.paintPreviewNews(card, preview);
 
         const description = want.has('description') ? String(preview?.description || '').trim() : '';
         text('.bookmark-preview-card-description', description);
@@ -1581,20 +1636,6 @@ class DashboardPreview {
                     tone: days <= 14 ? 'bad' : 'warn',
                 });
             }
-        }
-        const fresh = want.has('fresh') ? preview?.fresh : null;
-        if (fresh?.newCount > 0) {
-            rows.push({
-                label: d.formatDashboardLabel('previewFactFresh', {}, 'Fresh'),
-                value: d.formatDashboardLabel('previewFactFreshCount', { count: fresh.newCount }, `${fresh.newCount} new`),
-                muted: fresh.lastItemAt ? this.formatPreviewAgo(fresh.lastItemAt) : '',
-                tone: 'good',
-            });
-        } else if (fresh?.hasFeed) {
-            rows.push({
-                label: d.formatDashboardLabel('previewFactFresh', {}, 'Fresh'),
-                value: d.formatDashboardLabel('previewFactFreshNone', {}, 'Nothing new'),
-            });
         }
         if (want.has('opens')) {
             const openCount = Number(preview?.openCount || 0);
