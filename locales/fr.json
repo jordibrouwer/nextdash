@@ -10242,7 +10242,18 @@
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Notifier quand un flux suivi a des nouveautés",
     "notifyNewsTargetLabel": "Envoyer aussi les nouveautés au canal d'alerte (ntfy, Gotify, Discord…)",
-    "digestFeedsLabel": "Inclure ce que les flux suivis ont publié"
+    "digestFeedsLabel": "Inclure ce que les flux suivis ont publié",
+    "generalGroupPhones": "Sur téléphones et tablettes",
+    "generalGroupPhonesNote": "Uniquement pour un écran tactile. Sur un ordinateur, ces options ne changent rien.",
+    "openLinksNewTabMobile": "Ouvrir les liens dans un nouvel onglet sur téléphone",
+    "hideToastsMobile": "Masquer les notifications sur téléphone (les erreurs restent)",
+    "hideCornerCardsMobile": "Masquer les cartes de coin sur téléphone",
+    "openLinksNewTabMobileInfoTitle": "Ouvrir dans un nouvel onglet sur téléphone",
+    "openLinksNewTabMobileInfoMessage": "Les liens des favoris et des résultats s'ouvrent dans le même onglet sur un téléphone, sauf si cette option est activée. Sur un ordinateur, c'est Ouvrir les liens dans un nouvel onglet qui décide.",
+    "hideToastsMobileInfoTitle": "Masquer les notifications sur téléphone",
+    "hideToastsMobileInfoMessage": "Les notifications ne s'affichent pas sur un écran tactile, afin que rien ne recouvre la page. Les erreurs s'affichent toujours, de sorte qu'un échec ne passe jamais inaperçu. Activé par défaut.",
+    "hideCornerCardsMobileInfoTitle": "Masquer les cartes de coin sur téléphone",
+    "hideCornerCardsMobileInfoMessage": "Les invitations et les rapports qui apparaissent en bas à gauche restent masqués sur un écran tactile. Ils ne sont pas écartés : ils réapparaissent si vous désactivez cette option ou ouvrez nextDash sur un ordinateur. Activé par défaut."
   },
   "colors": {
     "title": "personnalisation du thème",

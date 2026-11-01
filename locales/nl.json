@@ -10242,7 +10242,18 @@
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Melden als een gevolgde feed nieuws heeft",
     "notifyNewsTargetLabel": "Nieuws ook naar het meldingskanaal sturen (ntfy, Gotify, Discord…)",
-    "digestFeedsLabel": "Opnemen wat de gevolgde feeds hebben gepubliceerd"
+    "digestFeedsLabel": "Opnemen wat de gevolgde feeds hebben gepubliceerd",
+    "generalGroupPhones": "Op telefoons en tablets",
+    "generalGroupPhonesNote": "Alleen voor een touchscreen. Op een computer veranderen deze niets.",
+    "openLinksNewTabMobile": "Links op telefoons in een nieuw tabblad openen",
+    "hideToastsMobile": "Meldingen op telefoons verbergen (fouten blijven)",
+    "hideCornerCardsMobile": "Hoekkaarten op telefoons verbergen",
+    "openLinksNewTabMobileInfoTitle": "Openen in een nieuw tabblad op telefoons",
+    "openLinksNewTabMobileInfoMessage": "Links van bookmarks en zoekresultaten openen op een telefoon in hetzelfde tabblad, tenzij dit aan staat. Op een computer bepaalt Links in een nieuw tabblad openen dat.",
+    "hideToastsMobileInfoTitle": "Meldingen op telefoons verbergen",
+    "hideToastsMobileInfoMessage": "Meldingen worden niet getoond op een touchscreen, zodat er niets over de pagina valt. Fouten verschijnen wel, zodat een mislukking nooit onopgemerkt blijft. Staat standaard aan.",
+    "hideCornerCardsMobileInfoTitle": "Hoekkaarten op telefoons verbergen",
+    "hideCornerCardsMobileInfoMessage": "De uitnodigingen en meldingen die linksonder verschijnen blijven weg op een touchscreen. Ze worden niet weggeklikt, dus ze komen terug als je dit uitzet of nextDash op een computer opent. Staat standaard aan."
   },
   "colors": {
     "title": "thema-aanpassing",

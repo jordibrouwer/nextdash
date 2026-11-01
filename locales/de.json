@@ -10242,7 +10242,18 @@
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Benachrichtigen, wenn ein beobachteter Feed Neuigkeiten hat",
     "notifyNewsTargetLabel": "Neuigkeiten auch an den Alarmkanal senden (ntfy, Gotify, Discord…)",
-    "digestFeedsLabel": "Aufnehmen, was die beobachteten Feeds veröffentlicht haben"
+    "digestFeedsLabel": "Aufnehmen, was die beobachteten Feeds veröffentlicht haben",
+    "generalGroupPhones": "Auf Smartphones und Tablets",
+    "generalGroupPhonesNote": "Nur für Touchscreens. Auf einem Computer ändern diese Optionen nichts.",
+    "openLinksNewTabMobile": "Links auf Smartphones in einem neuen Tab öffnen",
+    "hideToastsMobile": "Benachrichtigungen auf Smartphones ausblenden (Fehler bleiben)",
+    "hideCornerCardsMobile": "Eckkarten auf Smartphones ausblenden",
+    "openLinksNewTabMobileInfoTitle": "Auf Smartphones in neuem Tab öffnen",
+    "openLinksNewTabMobileInfoMessage": "Links von Lesezeichen und Suchergebnissen öffnen sich auf einem Smartphone im selben Tab, solange dies nicht aktiviert ist. Auf einem Computer entscheidet Links in neuem Tab öffnen.",
+    "hideToastsMobileInfoTitle": "Benachrichtigungen auf Smartphones ausblenden",
+    "hideToastsMobileInfoMessage": "Benachrichtigungen werden auf einem Touchscreen nicht angezeigt, damit nichts die Seite verdeckt. Fehler erscheinen weiterhin, sodass ein Fehlschlag nie unbemerkt bleibt. Standardmäßig aktiviert.",
+    "hideCornerCardsMobileInfoTitle": "Eckkarten auf Smartphones ausblenden",
+    "hideCornerCardsMobileInfoMessage": "Die Einladungen und Hinweise in der unteren linken Ecke bleiben auf einem Touchscreen aus. Sie werden nicht verworfen und erscheinen wieder, wenn Sie dies ausschalten oder nextDash auf einem Computer öffnen. Standardmäßig aktiviert."
   },
   "colors": {
     "title": "themenanpassung",

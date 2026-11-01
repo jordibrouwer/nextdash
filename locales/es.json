@@ -10242,7 +10242,18 @@
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Avisar cuando un feed vigilado tenga noticias",
     "notifyNewsTargetLabel": "Enviar también las noticias al canal de alertas (ntfy, Gotify, Discord…)",
-    "digestFeedsLabel": "Incluir lo que han publicado los feeds vigilados"
+    "digestFeedsLabel": "Incluir lo que han publicado los feeds vigilados",
+    "generalGroupPhones": "En móviles y tabletas",
+    "generalGroupPhonesNote": "Solo para pantallas táctiles. En un ordenador no cambian nada.",
+    "openLinksNewTabMobile": "Abrir enlaces en una pestaña nueva en móviles",
+    "hideToastsMobile": "Ocultar notificaciones en móviles (los errores se quedan)",
+    "hideCornerCardsMobile": "Ocultar tarjetas de la esquina en móviles",
+    "openLinksNewTabMobileInfoTitle": "Abrir en pestaña nueva en móviles",
+    "openLinksNewTabMobileInfoMessage": "Los enlaces de marcadores y resultados se abren en la misma pestaña en un móvil, salvo que esto esté activado. En un ordenador decide Abrir enlaces en una pestaña nueva.",
+    "hideToastsMobileInfoTitle": "Ocultar notificaciones en móviles",
+    "hideToastsMobileInfoMessage": "Las notificaciones no se muestran en una pantalla táctil, para que nada tape la página. Los errores sí aparecen, así un fallo nunca pasa en silencio. Activado por defecto.",
+    "hideCornerCardsMobileInfoTitle": "Ocultar tarjetas de la esquina en móviles",
+    "hideCornerCardsMobileInfoMessage": "Las invitaciones y avisos que aparecen abajo a la izquierda no salen en una pantalla táctil. No se descartan, así que vuelven a mostrarse cuando lo desactives o abras nextDash en un ordenador. Activado por defecto."
   },
   "colors": {
     "title": "personalización del tema",

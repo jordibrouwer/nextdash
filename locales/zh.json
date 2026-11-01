@@ -10242,7 +10242,18 @@
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "关注的订阅源有新消息时通知我",
     "notifyNewsTargetLabel": "同时把新消息发送到告警渠道（ntfy、Gotify、Discord…）",
-    "digestFeedsLabel": "包含所关注订阅源发布的内容"
+    "digestFeedsLabel": "包含所关注订阅源发布的内容",
+    "generalGroupPhones": "在手机和平板上",
+    "generalGroupPhonesNote": "仅适用于触摸屏。在电脑上这些选项不起作用。",
+    "openLinksNewTabMobile": "在手机上用新标签页打开链接",
+    "hideToastsMobile": "在手机上隐藏通知（错误除外）",
+    "hideCornerCardsMobile": "在手机上隐藏角落卡片",
+    "openLinksNewTabMobileInfoTitle": "在手机上用新标签页打开",
+    "openLinksNewTabMobileInfoMessage": "在手机上，书签和搜索结果的链接默认在当前标签页打开，开启此项后才会用新标签页。在电脑上由“在新标签页中打开链接”决定。",
+    "hideToastsMobileInfoTitle": "在手机上隐藏通知",
+    "hideToastsMobileInfoMessage": "触摸屏上不显示通知，避免遮挡页面。错误仍会显示，因此失败不会悄无声息。默认开启。",
+    "hideCornerCardsMobileInfoTitle": "在手机上隐藏角落卡片",
+    "hideCornerCardsMobileInfoMessage": "左下角出现的邀请和提示在触摸屏上不显示。它们不会被标为已处理，关闭此项或在电脑上打开 nextDash 时会再次出现。默认开启。"
   },
   "colors": {
     "title": "主题自定义",

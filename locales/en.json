@@ -10242,7 +10242,18 @@
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Notify when a watched feed has news",
     "notifyNewsTargetLabel": "Also send news to the alert channel (ntfy, Gotify, Discord…)",
-    "digestFeedsLabel": "Include what the watched feeds published"
+    "digestFeedsLabel": "Include what the watched feeds published",
+    "generalGroupPhones": "On phones and tablets",
+    "generalGroupPhonesNote": "Only for a touch screen. On a computer these change nothing.",
+    "openLinksNewTabMobile": "Open links in a new tab on phones",
+    "hideToastsMobile": "Hide notifications on phones (errors stay)",
+    "hideCornerCardsMobile": "Hide corner cards on phones",
+    "openLinksNewTabMobileInfoTitle": "Open in a new tab on phones",
+    "openLinksNewTabMobileInfoMessage": "Bookmark and result links open in the same tab on a phone unless this is on. On a computer, Open links in a new tab decides.",
+    "hideToastsMobileInfoTitle": "Hide notifications on phones",
+    "hideToastsMobileInfoMessage": "Notifications are not shown on a touch screen, so nothing covers the page. Errors still appear, so a failure is never silent. On by default.",
+    "hideCornerCardsMobileInfoTitle": "Hide corner cards on phones",
+    "hideCornerCardsMobileInfoMessage": "The invitations and reports that appear in the bottom-left corner stay away on a touch screen. They are not dismissed, so they show again when you turn this off or open nextDash on a computer. On by default."
   },
   "colors": {
     "title": "theme customization",
