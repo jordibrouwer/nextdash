@@ -38,9 +38,15 @@
     padding: 0.45rem 0.6rem; border-radius: 8px; color: var(--text-primary);
     background: var(--background-secondary); border: 1px solid var(--border-secondary);
 }
-.feed-watch-foot { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+/* As the bookmark form does it: the one that undoes sits on the left, the pair that
+   decides sits together on the right, Save filled. */
+.feed-watch-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .feed-watch-foot .modal-button { flex: 0 1 auto; width: auto; }
-.feed-watch-stop { margin-left: auto; }
+.feed-watch-foot-end { display: flex; gap: 0.5rem; margin-left: auto; }
+.feed-watch-foot .feed-watch-save {
+    background: var(--accent-primary); border-color: var(--accent-primary); color: var(--background-primary);
+    font-weight: var(--font-weight-semibold, 600);
+}
 
 /* The signal on a row: the theme's own accent, so it reads in every theme.
    A count in the accent colour with a ring in the page colour (it stays apart
