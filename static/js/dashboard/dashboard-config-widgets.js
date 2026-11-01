@@ -3173,6 +3173,7 @@
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
             calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
+            'feed-news': 'The sites with new items from the feeds you watch.',
             notes: 'A few lines of your own, with checkboxes for the ones that are tasks.',
             jellyfin: 'What was added to Jellyfin lately — films, series and anime, with posters.',
             'jellyfin-playing': 'What is playing on Jellyfin right now — who, where and how far.',

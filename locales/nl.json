@@ -4012,7 +4012,7 @@
     "feedWatchNext": "Volgende",
     "feedWatchOpenPage": "Pagina openen",
     "feedWatchKeyMove": "volgende / vorige",
-    "feedWatchKeyEsc": "terug / sluiten",
+    "feedWatchKeyEsc": "sluiten",
     "feedWatchNewsUnread": "Nieuws, {n} ongelezen",
     "feedWatchTitle": "Watch feeds",
     "feedWatchAddress": "Feedadres",
@@ -4063,7 +4063,17 @@
     "feedWatchEvery4": "Elke 4 uur",
     "feedWatchEvery6": "Elke 6 uur",
     "feedWatchEvery12": "Elke 12 uur",
-    "feedWatchEveryDay": "Elke dag"
+    "feedWatchEveryDay": "Elke dag",
+    "widgetType.feed-news": "Watch feeds-nieuws",
+    "widgetFeedNewsHeading": "Nieuws",
+    "widgetFeedNewsCount": "{n} nieuw",
+    "widgetFeedNewsWaiting": "Laden…",
+    "widgetFeedNewsNoFeeds": "Je volgt nog geen feed. Klik met rechts op een bookmark en kies Deze feed volgen…",
+    "widgetFeedNewsNone": "Niets nieuws uit de feeds die je volgt",
+    "widgetFeedNewsOpenPaper": "Open de krant",
+    "widgetFeedNewsReadAll": "Alles lezen",
+    "widgetFeedNewsOpenSite": "Lees het nieuws van deze site",
+    "widgetFeedNewsOpenArticle": "Open het artikel"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -10253,7 +10263,12 @@
     "hideToastsMobileInfoTitle": "Meldingen op telefoons verbergen",
     "hideToastsMobileInfoMessage": "Meldingen worden niet getoond op een touchscreen, zodat er niets over de pagina valt. Fouten verschijnen wel, zodat een mislukking nooit onopgemerkt blijft. Staat standaard aan.",
     "hideCornerCardsMobileInfoTitle": "Hoekkaarten op telefoons verbergen",
-    "hideCornerCardsMobileInfoMessage": "De uitnodigingen en meldingen die linksonder verschijnen blijven weg op een touchscreen. Ze worden niet weggeklikt, dus ze komen terug als je dit uitzet of nextDash op een computer opent. Staat standaard aan."
+    "hideCornerCardsMobileInfoMessage": "De uitnodigingen en meldingen die linksonder verschijnen blijven weg op een touchscreen. Ze worden niet weggeklikt, dus ze komen terug als je dit uitzet of nextDash op een computer opent. Staat standaard aan.",
+    "widgetAbout.feed-news": "De sites met nieuwe items uit de feeds die je volgt.",
+    "widgetFeedNewsLayout": "Indeling",
+    "widgetFeedNewsLayoutList": "Sites, één rij per site",
+    "widgetFeedNewsLayoutHeadlines": "Koppen met afbeeldingen",
+    "widgetFeedNewsLayoutChips": "Compacte chips"
   },
   "colors": {
     "title": "thema-aanpassing",

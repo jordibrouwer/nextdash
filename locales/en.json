@@ -4012,7 +4012,7 @@
     "feedWatchNext": "Next",
     "feedWatchOpenPage": "Open page",
     "feedWatchKeyMove": "next / previous",
-    "feedWatchKeyEsc": "back / close",
+    "feedWatchKeyEsc": "close",
     "feedWatchNewsUnread": "News, {n} unread",
     "feedWatchTitle": "Watch feeds",
     "feedWatchAddress": "Feed address",
@@ -4063,7 +4063,17 @@
     "feedWatchEvery4": "Every 4 hours",
     "feedWatchEvery6": "Every 6 hours",
     "feedWatchEvery12": "Every 12 hours",
-    "feedWatchEveryDay": "Every day"
+    "feedWatchEveryDay": "Every day",
+    "widgetType.feed-news": "Watch feeds news",
+    "widgetFeedNewsHeading": "News",
+    "widgetFeedNewsCount": "{n} new",
+    "widgetFeedNewsWaiting": "Loading…",
+    "widgetFeedNewsNoFeeds": "You do not watch any feed yet. Right-click a bookmark and choose Watch this feed…",
+    "widgetFeedNewsNone": "Nothing new from the feeds you watch",
+    "widgetFeedNewsOpenPaper": "Open the paper",
+    "widgetFeedNewsReadAll": "Read all",
+    "widgetFeedNewsOpenSite": "Read this site’s news",
+    "widgetFeedNewsOpenArticle": "Open the article"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -10253,7 +10263,12 @@
     "hideToastsMobileInfoTitle": "Hide notifications on phones",
     "hideToastsMobileInfoMessage": "Notifications are not shown on a touch screen, so nothing covers the page. Errors still appear, so a failure is never silent. On by default.",
     "hideCornerCardsMobileInfoTitle": "Hide corner cards on phones",
-    "hideCornerCardsMobileInfoMessage": "The invitations and reports that appear in the bottom-left corner stay away on a touch screen. They are not dismissed, so they show again when you turn this off or open nextDash on a computer. On by default."
+    "hideCornerCardsMobileInfoMessage": "The invitations and reports that appear in the bottom-left corner stay away on a touch screen. They are not dismissed, so they show again when you turn this off or open nextDash on a computer. On by default.",
+    "widgetAbout.feed-news": "The sites with new items from the feeds you watch.",
+    "widgetFeedNewsLayout": "Layout",
+    "widgetFeedNewsLayoutList": "Sites, one row each",
+    "widgetFeedNewsLayoutHeadlines": "Headlines with pictures",
+    "widgetFeedNewsLayoutChips": "Compact chips"
   },
   "colors": {
     "title": "theme customization",

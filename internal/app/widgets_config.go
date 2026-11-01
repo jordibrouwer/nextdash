@@ -279,6 +279,11 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "feedUrls", Kind: "urlList", Max: widgetMaxFeedsPerWidget},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
+	WidgetTypeFeedNews: {
+		// How the news is drawn: a row per site, the newest headlines with
+		// their pictures, or a chip per site. Absent means a row per site.
+		{Key: "layout", Kind: "string", Allowed: []string{"list", "headlines", "chips"}},
+	},
 	WidgetTypeCustom: {
 		{Key: "url", Kind: "url"},
 		{Key: "method", Kind: "string", Allowed: []string{"GET", "POST"}},
@@ -690,7 +695,7 @@ func widgetTypeNames() []string {
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,
-		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeNotes,
+		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,

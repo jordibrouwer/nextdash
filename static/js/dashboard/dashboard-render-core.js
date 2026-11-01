@@ -971,6 +971,7 @@ class DashboardRenderCore {
     static WIDGET_TYPE_NAMES = {
         containers: 'Container list',
         notes: 'Notes',
+        'feed-news': 'Watch feeds news',
         jellyfin: 'Jellyfin',
         emby: 'Emby',
         plex: 'Plex',

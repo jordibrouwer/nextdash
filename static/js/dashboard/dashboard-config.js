@@ -14383,7 +14383,7 @@ class DashboardConfig {
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
-        ['ambient', ['weather', 'calendar', 'rss', 'notes']],
+        ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
@@ -16638,7 +16638,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -17033,6 +17033,14 @@ class DashboardConfig {
               label: ['config.widgetRows', 'Rows to show'],
               hint: ['config.widgetRssRowsHint',
                      'What is past this count folds into a “more” row that opens in place.'] },
+        ],
+        'feed-news': [
+            { key: 'layout', kind: 'choice', label: ['config.widgetFeedNewsLayout', 'Layout'],
+              options: [
+                  ['list', ['config.widgetFeedNewsLayoutList', 'Sites, one row each']],
+                  ['headlines', ['config.widgetFeedNewsLayoutHeadlines', 'Headlines with pictures']],
+                  ['chips', ['config.widgetFeedNewsLayoutChips', 'Compact chips']],
+              ] },
         ],
         jellyfin: [
             { key: 'layout', kind: 'choice', label: ['config.widgetJellyfinLayout', 'Layout'],

@@ -4012,7 +4012,7 @@
     "feedWatchNext": "Suivant",
     "feedWatchOpenPage": "Ouvrir la page",
     "feedWatchKeyMove": "suivant / précédent",
-    "feedWatchKeyEsc": "retour / fermer",
+    "feedWatchKeyEsc": "fermer",
     "feedWatchNewsUnread": "Nouveautés, {n} non lus",
     "feedWatchTitle": "Watch feeds",
     "feedWatchAddress": "Adresse du flux",
@@ -4063,7 +4063,17 @@
     "feedWatchEvery4": "Toutes les 4 heures",
     "feedWatchEvery6": "Toutes les 6 heures",
     "feedWatchEvery12": "Toutes les 12 heures",
-    "feedWatchEveryDay": "Chaque jour"
+    "feedWatchEveryDay": "Chaque jour",
+    "widgetType.feed-news": "Actualités Watch feeds",
+    "widgetFeedNewsHeading": "Actualités",
+    "widgetFeedNewsCount": "{n} nouveaux",
+    "widgetFeedNewsWaiting": "Chargement…",
+    "widgetFeedNewsNoFeeds": "Vous ne suivez encore aucun flux. Faites un clic droit sur un signet et choisissez Suivre ce flux…",
+    "widgetFeedNewsNone": "Rien de nouveau dans les flux que vous suivez",
+    "widgetFeedNewsOpenPaper": "Ouvrir le journal",
+    "widgetFeedNewsReadAll": "Tout lire",
+    "widgetFeedNewsOpenSite": "Lire les actualités de ce site",
+    "widgetFeedNewsOpenArticle": "Ouvrir l’article"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -10253,7 +10263,12 @@
     "hideToastsMobileInfoTitle": "Masquer les notifications sur téléphone",
     "hideToastsMobileInfoMessage": "Les notifications ne s'affichent pas sur un écran tactile, afin que rien ne recouvre la page. Les erreurs s'affichent toujours, de sorte qu'un échec ne passe jamais inaperçu. Activé par défaut.",
     "hideCornerCardsMobileInfoTitle": "Masquer les cartes de coin sur téléphone",
-    "hideCornerCardsMobileInfoMessage": "Les invitations et les rapports qui apparaissent en bas à gauche restent masqués sur un écran tactile. Ils ne sont pas écartés : ils réapparaissent si vous désactivez cette option ou ouvrez nextDash sur un ordinateur. Activé par défaut."
+    "hideCornerCardsMobileInfoMessage": "Les invitations et les rapports qui apparaissent en bas à gauche restent masqués sur un écran tactile. Ils ne sont pas écartés : ils réapparaissent si vous désactivez cette option ou ouvrez nextDash sur un ordinateur. Activé par défaut.",
+    "widgetAbout.feed-news": "Les sites ayant de nouveaux éléments dans les flux que vous suivez.",
+    "widgetFeedNewsLayout": "Disposition",
+    "widgetFeedNewsLayoutList": "Sites, une ligne chacun",
+    "widgetFeedNewsLayoutHeadlines": "Titres avec images",
+    "widgetFeedNewsLayoutChips": "Puces compactes"
   },
   "colors": {
     "title": "personnalisation du thème",

@@ -4012,7 +4012,7 @@
     "feedWatchNext": "Weiter",
     "feedWatchOpenPage": "Seite öffnen",
     "feedWatchKeyMove": "nächster / vorheriger",
-    "feedWatchKeyEsc": "zurück / schließen",
+    "feedWatchKeyEsc": "schließen",
     "feedWatchNewsUnread": "News, {n} ungelesen",
     "feedWatchTitle": "Watch feeds",
     "feedWatchAddress": "Feed-Adresse",
@@ -4063,7 +4063,17 @@
     "feedWatchEvery4": "Alle 4 Stunden",
     "feedWatchEvery6": "Alle 6 Stunden",
     "feedWatchEvery12": "Alle 12 Stunden",
-    "feedWatchEveryDay": "Jeden Tag"
+    "feedWatchEveryDay": "Jeden Tag",
+    "widgetType.feed-news": "Watch-feeds-Nachrichten",
+    "widgetFeedNewsHeading": "Nachrichten",
+    "widgetFeedNewsCount": "{n} neu",
+    "widgetFeedNewsWaiting": "Wird geladen…",
+    "widgetFeedNewsNoFeeds": "Sie beobachten noch keinen Feed. Klicken Sie mit der rechten Maustaste auf ein Lesezeichen und wählen Sie Diesen Feed beobachten…",
+    "widgetFeedNewsNone": "Nichts Neues aus den Feeds, die Sie beobachten",
+    "widgetFeedNewsOpenPaper": "Zeitung öffnen",
+    "widgetFeedNewsReadAll": "Alle lesen",
+    "widgetFeedNewsOpenSite": "Nachrichten dieser Website lesen",
+    "widgetFeedNewsOpenArticle": "Artikel öffnen"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -10253,7 +10263,12 @@
     "hideToastsMobileInfoTitle": "Benachrichtigungen auf Smartphones ausblenden",
     "hideToastsMobileInfoMessage": "Benachrichtigungen werden auf einem Touchscreen nicht angezeigt, damit nichts die Seite verdeckt. Fehler erscheinen weiterhin, sodass ein Fehlschlag nie unbemerkt bleibt. Standardmäßig aktiviert.",
     "hideCornerCardsMobileInfoTitle": "Eckkarten auf Smartphones ausblenden",
-    "hideCornerCardsMobileInfoMessage": "Die Einladungen und Hinweise in der unteren linken Ecke bleiben auf einem Touchscreen aus. Sie werden nicht verworfen und erscheinen wieder, wenn Sie dies ausschalten oder nextDash auf einem Computer öffnen. Standardmäßig aktiviert."
+    "hideCornerCardsMobileInfoMessage": "Die Einladungen und Hinweise in der unteren linken Ecke bleiben auf einem Touchscreen aus. Sie werden nicht verworfen und erscheinen wieder, wenn Sie dies ausschalten oder nextDash auf einem Computer öffnen. Standardmäßig aktiviert.",
+    "widgetAbout.feed-news": "Die Websites mit neuen Einträgen aus den Feeds, die Sie beobachten.",
+    "widgetFeedNewsLayout": "Layout",
+    "widgetFeedNewsLayoutList": "Websites, eine Zeile pro Website",
+    "widgetFeedNewsLayoutHeadlines": "Schlagzeilen mit Bildern",
+    "widgetFeedNewsLayoutChips": "Kompakte Chips"
   },
   "colors": {
     "title": "themenanpassung",

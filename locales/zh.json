@@ -4012,7 +4012,7 @@
     "feedWatchNext": "下一条",
     "feedWatchOpenPage": "打开页面",
     "feedWatchKeyMove": "下一条 / 上一条",
-    "feedWatchKeyEsc": "返回 / 关闭",
+    "feedWatchKeyEsc": "关闭",
     "feedWatchNewsUnread": "新消息，{n} 条未读",
     "feedWatchTitle": "Watch feeds",
     "feedWatchAddress": "订阅源地址",
@@ -4063,7 +4063,17 @@
     "feedWatchEvery4": "每 4 小时",
     "feedWatchEvery6": "每 6 小时",
     "feedWatchEvery12": "每 12 小时",
-    "feedWatchEveryDay": "每天"
+    "feedWatchEveryDay": "每天",
+    "widgetType.feed-news": "Watch feeds 新闻",
+    "widgetFeedNewsHeading": "新闻",
+    "widgetFeedNewsCount": "{n} 条新内容",
+    "widgetFeedNewsWaiting": "加载中…",
+    "widgetFeedNewsNoFeeds": "你还没有关注任何订阅源。右键点击书签，然后选择“关注此订阅源…”",
+    "widgetFeedNewsNone": "你关注的订阅源暂无新内容",
+    "widgetFeedNewsOpenPaper": "打开报纸",
+    "widgetFeedNewsReadAll": "全部阅读",
+    "widgetFeedNewsOpenSite": "阅读此网站的新闻",
+    "widgetFeedNewsOpenArticle": "打开文章"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -10253,7 +10263,12 @@
     "hideToastsMobileInfoTitle": "在手机上隐藏通知",
     "hideToastsMobileInfoMessage": "触摸屏上不显示通知，避免遮挡页面。错误仍会显示，因此失败不会悄无声息。默认开启。",
     "hideCornerCardsMobileInfoTitle": "在手机上隐藏角落卡片",
-    "hideCornerCardsMobileInfoMessage": "左下角出现的邀请和提示在触摸屏上不显示。它们不会被标为已处理，关闭此项或在电脑上打开 nextDash 时会再次出现。默认开启。"
+    "hideCornerCardsMobileInfoMessage": "左下角出现的邀请和提示在触摸屏上不显示。它们不会被标为已处理，关闭此项或在电脑上打开 nextDash 时会再次出现。默认开启。",
+    "widgetAbout.feed-news": "你关注的订阅源中有新内容的网站。",
+    "widgetFeedNewsLayout": "布局",
+    "widgetFeedNewsLayoutList": "网站，每个一行",
+    "widgetFeedNewsLayoutHeadlines": "带图片的标题",
+    "widgetFeedNewsLayoutChips": "紧凑标签"
   },
   "colors": {
     "title": "主题自定义",

@@ -4012,7 +4012,7 @@
     "feedWatchNext": "Siguiente",
     "feedWatchOpenPage": "Abrir página",
     "feedWatchKeyMove": "siguiente / anterior",
-    "feedWatchKeyEsc": "atrás / cerrar",
+    "feedWatchKeyEsc": "cerrar",
     "feedWatchNewsUnread": "Noticias, {n} sin leer",
     "feedWatchTitle": "Watch feeds",
     "feedWatchAddress": "Dirección del feed",
@@ -4063,7 +4063,17 @@
     "feedWatchEvery4": "Cada 4 horas",
     "feedWatchEvery6": "Cada 6 horas",
     "feedWatchEvery12": "Cada 12 horas",
-    "feedWatchEveryDay": "Cada día"
+    "feedWatchEveryDay": "Cada día",
+    "widgetType.feed-news": "Noticias de Watch feeds",
+    "widgetFeedNewsHeading": "Noticias",
+    "widgetFeedNewsCount": "{n} nuevos",
+    "widgetFeedNewsWaiting": "Cargando…",
+    "widgetFeedNewsNoFeeds": "Aún no vigilas ningún feed. Haz clic derecho en un marcador y elige Vigilar este feed…",
+    "widgetFeedNewsNone": "Nada nuevo en los feeds que vigilas",
+    "widgetFeedNewsOpenPaper": "Abrir el periódico",
+    "widgetFeedNewsReadAll": "Leer todo",
+    "widgetFeedNewsOpenSite": "Leer las noticias de este sitio",
+    "widgetFeedNewsOpenArticle": "Abrir el artículo"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -10253,7 +10263,12 @@
     "hideToastsMobileInfoTitle": "Ocultar notificaciones en móviles",
     "hideToastsMobileInfoMessage": "Las notificaciones no se muestran en una pantalla táctil, para que nada tape la página. Los errores sí aparecen, así un fallo nunca pasa en silencio. Activado por defecto.",
     "hideCornerCardsMobileInfoTitle": "Ocultar tarjetas de la esquina en móviles",
-    "hideCornerCardsMobileInfoMessage": "Las invitaciones y avisos que aparecen abajo a la izquierda no salen en una pantalla táctil. No se descartan, así que vuelven a mostrarse cuando lo desactives o abras nextDash en un ordenador. Activado por defecto."
+    "hideCornerCardsMobileInfoMessage": "Las invitaciones y avisos que aparecen abajo a la izquierda no salen en una pantalla táctil. No se descartan, así que vuelven a mostrarse cuando lo desactives o abras nextDash en un ordenador. Activado por defecto.",
+    "widgetAbout.feed-news": "Los sitios con elementos nuevos de los feeds que vigilas.",
+    "widgetFeedNewsLayout": "Diseño",
+    "widgetFeedNewsLayoutList": "Sitios, una fila cada uno",
+    "widgetFeedNewsLayoutHeadlines": "Titulares con imágenes",
+    "widgetFeedNewsLayoutChips": "Chips compactos"
   },
   "colors": {
     "title": "personalización del tema",

@@ -26,8 +26,9 @@ import (
 
 var (
 	widgetSettingsBlock = regexp.MustCompile(`(?m)^\s*static WIDGET_SETTINGS = \{$`)
-	widgetSettingsType  = regexp.MustCompile(`^\s{8}([A-Za-z_][A-Za-z0-9_]*):\s*\[`)
-	widgetSettingsKey   = regexp.MustCompile(`\{\s*key:\s*'([^']+)'`)
+	// A hyphenated type is quoted ('feed-news'), and is read like any other.
+	widgetSettingsType = regexp.MustCompile(`^\s{8}'?([A-Za-z_][A-Za-z0-9_-]*)'?:\s*\[`)
+	widgetSettingsKey  = regexp.MustCompile(`\{\s*key:\s*'([^']+)'`)
 )
 
 // widgetSettingsFromConfigPanel reads DashboardConfig.WIDGET_SETTINGS out of the

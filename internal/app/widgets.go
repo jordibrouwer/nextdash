@@ -125,6 +125,9 @@ const (
 	 * because Fresh is a checker and not a reader. This is the reader.
 	 */
 	WidgetTypeRSS WidgetType = "rss"
+	// WidgetTypeFeedNews lists the sites whose watched feeds have unread
+	// items. It fetches nothing: it reads the watch list the dashboard holds.
+	WidgetTypeFeedNews WidgetType = "feed-news"
 
 	/*
 	 * WidgetTypeJellyfin shows what was added to a Jellyfin server lately,
@@ -208,6 +211,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeWeather:         {},
 	WidgetTypeCalendar:        {},
 	WidgetTypeRSS:             {},
+	WidgetTypeFeedNews:        {},
 	WidgetTypeCustom:          {},
 	WidgetTypeNotes:           {},
 	WidgetTypeJellyfin:        {},
