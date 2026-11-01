@@ -543,3 +543,79 @@ body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn[data-unread="0"] { 
 @media (pointer: coarse), (max-width: 767px) {
     .feed-watch-bulk-actions button, .feed-watch-bulk-field select { min-height: 44px; }
 }
+
+/* Keyboard legend in the news foot: the config legends' chip row. */
+.feed-news-keys { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 0 0 0 auto; font-size: var(--text-xs, 0.75rem); color: var(--text-tertiary); }
+.feed-news-keys kbd {
+    font-size: var(--text-xs, 0.7rem); padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border-radius: var(--radius-3, 0.25rem); border: 1px solid var(--border-secondary);
+    background: var(--background-secondary); color: var(--text-secondary);
+}
+.is-paper .feed-news-keys, .is-paper .feed-news-keys kbd { color: #1d1a14; }
+.is-paper .feed-news-keys kbd { background: #e4dcc6; border-color: #b9ad8c; }
+.is-paper .feed-news-entry:focus-visible .feed-news-entry-title { text-decoration: underline; }
+@media (pointer: coarse), (max-width: 767px) { .feed-news-keys { display: none; } }
+
+/* The news header: the title on the left, every control together at the top
+   right. A narrow screen wraps the controls under each other, still on the
+   right, instead of dropping them below the title. */
+.modal.feed-news-modal .modal-header { display: none; }
+.feed-news-head {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 0.75rem; row-gap: 0;
+    padding: 0.1rem 0.25rem 0.7rem; border-bottom: 1px solid var(--border-secondary); margin-bottom: 0.6rem;
+}
+.feed-news-head .feed-news-site { align-self: center; font-size: var(--text-lg, 1.05rem); }
+.feed-news-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 0.4rem; min-width: 0; max-width: 100%; }
+.feed-news-head .feed-news-mark,
+.feed-news-head .feed-news-mark + .feed-news-views,
+.feed-news-head .feed-news-mark + .feed-news-close { margin-left: 0; order: 0; }
+.is-paper .feed-news-head { border-bottom: 0; padding-bottom: 0.2rem; margin-bottom: 0; }
+
+/* Two columns: each item is a card of its own, so the list reads as items and
+   the section name says whose they are. */
+.feed-news:not(.is-paper-skin) .feed-news-section-head { padding: 0.35rem 0.1rem 0.4rem; border-bottom: 1px solid var(--border-secondary); }
+.modal.feed-news-modal.is-wide:not(.is-paper) .feed-news-entry {
+    border: 1px solid var(--border-secondary); border-radius: 10px; padding: 0.65rem 0.75rem;
+    background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+.modal.feed-news-modal.is-wide:not(.is-paper) .feed-news-index { gap: 0.6rem; }
+.modal.feed-news-modal.is-wide:not(.is-paper) .feed-news-section { gap: 0.5rem; margin-top: 0.6rem; }
+.modal.feed-news-modal:not(.is-paper) .feed-news-section-name { font-size: var(--text-md, 1rem); }
+
+/* Scrollbars inside the news and picker windows. The page's own scrollbar
+   colours inherit into every scroller and paint a dark track (the page
+   background) over the modal; here the track is clear and the thumb is a
+   hairline of the surroundings, so the bar reads as part of the panel. */
+.modal.feed-news-modal .modal-body,
+.modal.feed-watch-modal .modal-body,
+.feed-news-side,
+.feed-watch-list,
+.fwm-chooser-list {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-primary) 28%, transparent) transparent;
+    scrollbar-gutter: stable;
+}
+.modal.feed-news-modal.is-paper .modal-body,
+.is-paper .feed-news-side {
+    scrollbar-color: #b9ad8c transparent;
+}
+.modal.feed-news-modal .modal-body::-webkit-scrollbar,
+.modal.feed-watch-modal .modal-body::-webkit-scrollbar,
+.feed-news-side::-webkit-scrollbar,
+.feed-watch-list::-webkit-scrollbar,
+.fwm-chooser-list::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+.modal.feed-news-modal .modal-body::-webkit-scrollbar-track,
+.modal.feed-watch-modal .modal-body::-webkit-scrollbar-track,
+.feed-news-side::-webkit-scrollbar-track,
+.feed-watch-list::-webkit-scrollbar-track,
+.fwm-chooser-list::-webkit-scrollbar-track { background: transparent; }
+.modal.feed-news-modal .modal-body::-webkit-scrollbar-thumb,
+.modal.feed-watch-modal .modal-body::-webkit-scrollbar-thumb,
+.feed-news-side::-webkit-scrollbar-thumb,
+.feed-watch-list::-webkit-scrollbar-thumb,
+.fwm-chooser-list::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-primary) 28%, transparent);
+    border: 3px solid transparent; background-clip: padding-box; border-radius: 999px;
+}
+.modal.feed-news-modal.is-paper .modal-body::-webkit-scrollbar-thumb,
+.is-paper .feed-news-side::-webkit-scrollbar-thumb { background: #b9ad8c; background-clip: padding-box; }

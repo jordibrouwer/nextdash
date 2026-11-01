@@ -12,7 +12,12 @@ test.beforeEach(async ({ request }) => {
     site = await startStubSite();
     await installWithBookmark(request, site);
 });
-test.afterEach(async () => { await site.close(); });
+test.afterEach(async ({ request }) => {
+    await site.close();
+    // The server is shared with whoever runs the dev server on this data: put the
+    // news layout and window back, so a test never leaves the reader's choice changed.
+    await request.post('/api/settings', { data: { feedWatchNewsView: 'paper', feedWatchWindowMinutes: 30 }, headers });
+});
 
 const modal = (page) => page.locator('#app-modal .modal.feed-news-modal');
 const link = (page) => row(page, 'Stub Blog');
@@ -126,14 +131,12 @@ test('the newspaper lists more than what was found: the feed\'s earlier entries 
     await expect(modal(page).locator('.feed-news-title')).toHaveText('Earlier entry 3');
     await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('5 of 14');
 
-    // One column is the article alone, with no list beside it; the paper's
-    // front page is still one Esc away.
+    // One column is one article at a time: no list beside it, no earlier
+    // entries, no front page; Esc closes.
     await modal(page).locator('[data-feed-news-view="single"]').click();
     await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
-    await expect(modal(page).locator('.feed-news-title')).toHaveText('Earlier entry 3');
-    await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('5 of 14');
-    await page.keyboard.press('Escape');
-    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(14);
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 1');
+    await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 2');
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();
 });
@@ -167,19 +170,23 @@ test('the header switches between newspaper, two columns and one column, and the
     await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
     await expect.poll(async () => (await (await request.get('/api/settings')).json()).feedWatchNewsView).toBe('single');
 
-    // Esc steps back to the front page in one column too, then closes.
-    await page.keyboard.press('Escape');
-    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(3);
+    // One column is one article: no front page, no index button, no earlier
+    // entries. Esc closes at once.
+    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(0);
+    await expect(modal(page).locator('[data-feed-news-index]')).toHaveCount(0);
+    await expect(modal(page).locator('.feed-news-title')).toHaveCount(1);
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();
 
-    // The choice is the setting, so it comes back the next time.
+    // The choice is the setting, so it comes back the next time, straight on one article.
     await openFromCard(page);
     await expect(modal(page).locator('[data-feed-news-view="single"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(modal(page).locator('.feed-news-index.is-wide')).toHaveCount(0);
-    await modal(page).locator('.feed-news-entry').first().click();
+    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(0);
     await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 1');
     await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
+    await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 3');
+    await modal(page).getByRole('button', { name: 'Next' }).click();
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 2');
 
     // A narrow viewport keeps the chosen layout (the newspaper by default) and
     // all three layouts stay on offer.
@@ -196,7 +203,6 @@ test('the header switches between newspaper, two columns and one column, and the
     await expect(modal(page).locator('[data-feed-news-view="single"]')).toHaveAttribute('aria-pressed', 'true');
     await modal(page).locator('[data-feed-news-view="paper"]').click();
     await expect(modal(page)).toHaveClass(/is-paper/);
-    await modal(page).locator('.feed-news-entry').first().click();
     await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 1');
 });
 

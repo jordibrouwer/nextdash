@@ -15,7 +15,12 @@ test.beforeEach(async ({ request }) => {
     site = await startStubSite();
     await installWithBookmark(request, site);
 });
-test.afterEach(async () => { await site.close(); });
+test.afterEach(async ({ request }) => {
+    await site.close();
+    // The server is shared with whoever runs the dev server on this data: put the
+    // news layout and window back, so a test never leaves the reader's choice changed.
+    await request.post('/api/settings', { data: { feedWatchNewsView: 'paper', feedWatchWindowMinutes: 30 }, headers });
+});
 
 async function openFresh(page) {
     await markWhatsNewSeen(page);

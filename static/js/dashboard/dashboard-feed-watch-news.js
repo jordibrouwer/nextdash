@@ -178,7 +178,14 @@
      */
     function listed() {
         if (!state) return [];
-        return [...sections().flatMap((section) => section.items), ...state.earlier];
+        const fresh = sections().flatMap((section) => section.items);
+        // One column is one article at a time: the new ones, no front page and
+        // no earlier entries.
+        if (currentView() !== 'single') return [...fresh, ...state.earlier];
+        // Walking one by one, the unread come first and every site is mixed in
+        // by time, so no single site fills the first screens.
+        // The order is fixed when the news opens: reading an item must not move it.
+        return fresh.slice().sort((a, b) => (Number(b.openUnread) - Number(a.openUnread)) || newerFirst(a, b));
     }
 
     function unreadCount() {
@@ -231,8 +238,9 @@
     function headHtml({ title, chip, chipAttr = '', extra = '', switcher, closeButton }) {
         return `<div class="feed-news-head">`
             + `<span class="feed-news-site">${esc(title)}</span>`
-            + `<span class="feed-news-chip"${chipAttr}>${esc(chip)}</span>`
-            + extra + switcher + closeButton + `</div>`;
+            // The controls sit together at the top right, whatever the width.
+            + `<span class="feed-news-tools"><span class="feed-news-chip"${chipAttr}>${esc(chip)}</span>`
+            + extra + switcher + closeButton + `</span></div>`;
     }
 
     function render() {
@@ -252,6 +260,7 @@
         const items = listed();
         if (state.index >= items.length) state.index = 0;
         if (!items.length) state.mode = 'index';
+        else if (view === 'single') state.mode = 'article';
         const total = items.length;
         const timed = Boolean(state.timed);
         const windowMs = watch?.windowMs() || 1;
@@ -303,7 +312,7 @@
                 + headHtml({ title: t('dashboard.feedWatchNews', 'News'), chip: t('dashboard.feedWatchUnreadCount', '{n} unread', { n: unread }), extra: markAll, switcher, closeButton })
                 + bar
                 + `<div class="feed-news-body"><div class="feed-news-paper">${empty}${blocks}${earlier}</div></div>`
-                + (timed ? `<div class="feed-news-foot">${caption}</div>` : '');
+                + `<div class="feed-news-foot">${caption}${legendHtml()}</div>`;
             return;
         }
 
@@ -334,12 +343,13 @@
             + `<div class="feed-news-body${wide ? ' is-wide' : ''}">`
             + `<div class="feed-news-main">${articleHtml(item, { large: wide })}</div>${side}</div>`
             + `<div class="feed-news-foot">`
-            + (total > 1 ? `<button type="button" class="modal-button" data-feed-news-index><span class="modal-button-name">${esc(t('dashboard.feedWatchIndex', 'Index'))}</span></button>` : '')
+            + (total > 1 && view !== 'single' ? `<button type="button" class="modal-button" data-feed-news-index><span class="modal-button-name">${esc(t('dashboard.feedWatchIndex', 'Index'))}</span></button>` : '')
             + `<button type="button" class="modal-button" data-feed-news-step="-1" aria-label="${esc(t('dashboard.feedWatchPrev', 'Previous'))}"><span class="modal-button-name">‹</span></button>`
             + `<button type="button" class="modal-button" data-feed-news-step="1" aria-label="${esc(t('dashboard.feedWatchNext', 'Next'))}"><span class="modal-button-name">›</span></button>`
             + caption
             + toggle
             + `<button type="button" class="modal-button feed-news-open" data-feed-news-open><span class="modal-button-name">${esc(t('dashboard.feedWatchOpenPage', 'Open page'))}</span></button>`
+            + legendHtml()
             + `</div>`;
     }
 
@@ -408,9 +418,40 @@
         again?.focus({ preventScroll: true });
     }
 
+    /** Keys the paper's own reading keys leave alone: typing, another modal, a chord. */
+    function readingKeysFree(event) {
+        if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return false;
+        const target = event.target;
+        if (target?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) return false;
+        // Another modal on top of this one owns the keyboard.
+        return !target?.closest?.('.modal') || Boolean(target.closest('.feed-news-modal'));
+    }
+
+    /** j / k on the front page: the highlighted row is the focused one, so Enter opens it. */
+    function moveRow(delta) {
+        const rows = [...document.querySelectorAll('[data-feed-news] [data-feed-news-pick]')];
+        if (!rows.length) return;
+        const at = rows.indexOf(document.activeElement);
+        const next = at < 0 ? (delta > 0 ? 0 : rows.length - 1) : Math.max(0, Math.min(rows.length - 1, at + delta));
+        rows[next].focus();
+    }
+
+    function legendHtml() {
+        return `<p class="feed-news-keys" aria-hidden="true">`
+            + `<span><kbd>j / k</kbd> ${esc(t('dashboard.feedWatchKeyMove', 'next / previous'))}</span>`
+            + `<span><kbd>Esc</kbd> ${esc(t('dashboard.feedWatchKeyEsc', 'back / close'))}</span></p>`;
+    }
+
     function onKey(event) {
         if (!state || !document.querySelector('[data-feed-news]')) return;
-        if (event.key === 'Escape' && state.mode === 'article' && listed().length > 1) {
+        if ((event.key === 'j' || event.key === 'k') && readingKeysFree(event)) {
+            event.preventDefault();
+            const delta = event.key === 'j' ? 1 : -1;
+            if (state.mode === 'article') step(delta);
+            else moveRow(delta);
+            return;
+        }
+        if (event.key === 'Escape' && state.mode === 'article' && listed().length > 1 && currentView() !== 'single') {
             // From an article, Esc goes back to the front page; from there it closes.
             event.preventDefault();
             event.stopImmediatePropagation();
@@ -485,6 +526,7 @@
         const { items: fresh, earlier } = await watch.news(focusKey);
         const order = sectionOrder(fresh);
         const fill = (target) => {
+            fresh.forEach((item) => { item.openUnread = isUnread(item); });
             target.fresh = fresh;
             target.earlier = earlier;
             target.order = order;
@@ -493,7 +535,7 @@
             target.index = focusItemId ? Math.max(0, everything.findIndex((i) => i.id === focusItemId)) : 0;
             // Several items open on the front page; one asked for by item, or a
             // single one, opens on the article.
-            target.mode = everything.length > 1 && !focusItemId ? 'index' : 'article';
+            target.mode = everything.length > 1 && !focusItemId && currentView() !== 'single' ? 'index' : 'article';
         };
         // Already showing (a push landed on ?news=1 and the toast was clicked
         // too): refill it in place. Showing the panel again would replace the
