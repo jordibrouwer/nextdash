@@ -4415,7 +4415,12 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	return nil
 }
 
+// GetSettings returns a copy the caller may change freely; see cloneSettings.
 func (fs *FileStore) GetSettings() Settings {
+	return cloneSettings(fs.getSettingsShared())
+}
+
+func (fs *FileStore) getSettingsShared() Settings {
 	fs.mutex.RLock()
 	if fs.readCache.settingsOK {
 		settings := fs.readCache.settings
@@ -4674,7 +4679,8 @@ func (fs *FileStore) GetSettings() Settings {
 	}
 
 	var settings Settings
-	if err := json.Unmarshal(data, &settings); err != nil && fs.lastGoodSettingsOK {
+	decodeErr := json.Unmarshal(data, &settings)
+	if decodeErr != nil && fs.lastGoodSettingsOK {
 		return fs.lastGoodSettings
 	}
 	// An install from before the setting, or one holding a style since
@@ -5651,6 +5657,12 @@ func (fs *FileStore) GetSettings() Settings {
 	clampInboxViewSettings(&settings)
 	clampNotesProcessing(&settings)
 
+	// A file that does not decode, with nothing good read before it, still
+	// answers with what it could give -- but is not kept, so the next read
+	// tries the file again instead of serving the half-read one until restart.
+	if decodeErr != nil {
+		return settings
+	}
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true
 	fs.lastGoodSettings, fs.lastGoodSettingsOK = settings, true

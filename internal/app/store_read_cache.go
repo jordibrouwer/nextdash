@@ -2,7 +2,9 @@ package app
 
 import (
 	"encoding/json"
+	"maps"
 	"os"
+	"slices"
 )
 
 // storeReadCache holds in-memory copies of frequently read JSON files so the
@@ -117,6 +119,72 @@ func (fs *FileStore) writeStoreJSONFile(path string, v any, pageID int) error {
 	}
 	fs.noteDataMutation(pageID)
 	return nil
+}
+
+// cloneSettings gives a caller its own maps, slices and pointed-to structs.
+// Settings is a value, but those fields are references: handed out from the
+// read cache as-is, one handler writing DockerBookmarkLinks[name] while
+// another encodes the same map for GET /api/settings is Go's fatal
+// "concurrent map iteration and map write", which recover cannot catch.
+// TestCloneSettingsSharesNoReferences fails when a new reference field is
+// added to Settings without a line here.
+func cloneSettings(in Settings) Settings {
+	out := in
+	out.LinkPreviewParts = slices.Clone(in.LinkPreviewParts)
+	out.CategorySortModes = cloneNestedMap(in.CategorySortModes)
+	out.ThemeSurfacePrefs = maps.Clone(in.ThemeSurfacePrefs)
+	out.FavoriteThemes = slices.Clone(in.FavoriteThemes)
+	out.CategorySpreads = cloneNestedMap(in.CategorySpreads)
+	out.SmartAddedPageIds = slices.Clone(in.SmartAddedPageIds)
+	out.SmartTodayPageIds = slices.Clone(in.SmartTodayPageIds)
+	out.SmartRecentPageIds = slices.Clone(in.SmartRecentPageIds)
+	out.SmartStalePageIds = slices.Clone(in.SmartStalePageIds)
+	out.SmartMostUsedPageIds = slices.Clone(in.SmartMostUsedPageIds)
+	out.SmartFreshPageIds = slices.Clone(in.SmartFreshPageIds)
+	out.Collections = slices.Clone(in.Collections)
+	out.CollectionColumns = maps.Clone(in.CollectionColumns)
+	out.TagRules = slices.Clone(in.TagRules)
+	out.DismissedTagSuggestions = slices.Clone(in.DismissedTagSuggestions)
+	out.ThemeIconStyling = maps.Clone(in.ThemeIconStyling)
+	out.DockerHiddenContainers = slices.Clone(in.DockerHiddenContainers)
+	out.DiscoveryIgnored = slices.Clone(in.DiscoveryIgnored)
+	out.DockerWebUIs = maps.Clone(in.DockerWebUIs)
+	out.DockerBookmarkLinks = maps.Clone(in.DockerBookmarkLinks)
+	out.DockerContainerIcons = maps.Clone(in.DockerContainerIcons)
+	out.DockerNotifyMuted = slices.Clone(in.DockerNotifyMuted)
+	out.UnraidServers = slices.Clone(in.UnraidServers)
+	out.DockerAutoUpdate = slices.Clone(in.DockerAutoUpdate)
+	out.ActivityChannels = slices.Clone(in.ActivityChannels)
+	out.MaintenanceWindows = slices.Clone(in.MaintenanceWindows)
+	out.QuietHours = slices.Clone(in.QuietHours)
+	out.QuietHoursAllow = slices.Clone(in.QuietHoursAllow)
+	out.SavedSearches = slices.Clone(in.SavedSearches)
+	out.SearchPicks = slices.Clone(in.SearchPicks)
+	out.BmViewColumns = slices.Clone(in.BmViewColumns)
+	out.BmViewRailBlocks = slices.Clone(in.BmViewRailBlocks)
+	if in.LookMigration != nil {
+		lm := *in.LookMigration
+		out.LookMigration = &lm
+	}
+	if in.DiscoverabilityState != nil {
+		ds := *in.DiscoverabilityState
+		ds.TipsShownAt = slices.Clone(ds.TipsShownAt)
+		ds.SeenTips = slices.Clone(ds.SeenTips)
+		ds.SeenSettingPromos = slices.Clone(ds.SeenSettingPromos)
+		out.DiscoverabilityState = &ds
+	}
+	return out
+}
+
+func cloneNestedMap[V any](in map[string]map[string]V) map[string]map[string]V {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]map[string]V, len(in))
+	for k, v := range in {
+		out[k] = maps.Clone(v)
+	}
+	return out
 }
 
 func cloneBookmarks(in []Bookmark) []Bookmark {

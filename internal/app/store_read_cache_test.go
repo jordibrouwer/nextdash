@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -178,5 +179,71 @@ func TestDefaultPageOrderIsByID(t *testing.T) {
 	}
 	if order := store.GetPageOrder(); fmt.Sprint(order) != "[1 2 3 4 5 6 7 8 9]" {
 		t.Fatalf("saved order = %v", order)
+	}
+}
+
+// Every reference field of Settings must come back as the caller's own: a
+// shared map written by one handler while another encodes it is a fatal
+// error. Filling each field through reflection makes this fail as soon as a
+// new map, slice or pointer field is added without a line in cloneSettings.
+func TestCloneSettingsSharesNoReferences(t *testing.T) {
+	var in Settings
+	v := reflect.ValueOf(&in).Elem()
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		switch f.Kind() {
+		case reflect.Map:
+			f.Set(reflect.MakeMapWithSize(f.Type(), 1))
+			f.SetMapIndex(reflect.Zero(f.Type().Key()), reflect.Zero(f.Type().Elem()))
+		case reflect.Slice:
+			f.Set(reflect.MakeSlice(f.Type(), 1, 1))
+		case reflect.Pointer:
+			f.Set(reflect.New(f.Type().Elem()))
+		}
+	}
+	out := reflect.ValueOf(cloneSettings(in))
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		switch f.Kind() {
+		case reflect.Map, reflect.Slice, reflect.Pointer:
+			if f.UnsafePointer() == out.Field(i).UnsafePointer() {
+				t.Errorf("Settings.%s is shared after cloneSettings", v.Type().Field(i).Name)
+			}
+		}
+	}
+	if (cloneSettings(Settings{}).DockerBookmarkLinks) != nil {
+		t.Errorf("a nil map must stay nil")
+	}
+}
+
+// The cache keeps its own map: a caller writing into what GetSettings gave it
+// must not change what the next caller reads.
+func TestGetSettingsMapIsTheCallersOwn(t *testing.T) {
+	dir := t.TempDir()
+	store := &FileStore{settingsFile: dir + "/settings.json", dataDir: dir, readCache: newStoreReadCache()}
+	store.initializeDefaultFiles()
+	store.readCache.settings = Settings{DockerBookmarkLinks: map[string]string{"a": "1"}}
+	store.readCache.settingsOK = true
+	first := store.GetSettings()
+	first.DockerBookmarkLinks["b"] = "2"
+	if got := store.GetSettings().DockerBookmarkLinks; len(got) != 1 {
+		t.Fatalf("cached map changed by a caller: %v", got)
+	}
+}
+
+// A settings.json that does not decode is not cached: once it is repaired,
+// the next read sees the repair without a restart.
+func TestUndecodableSettingsAreNotCached(t *testing.T) {
+	dir := t.TempDir()
+	store := &FileStore{settingsFile: dir + "/settings.json", dataDir: dir, readCache: newStoreReadCache()}
+	if err := os.WriteFile(store.settingsFile, []byte(`{"theme":"x",`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	store.GetSettings()
+	if err := os.WriteFile(store.settingsFile, []byte(`{"dockerHiddenContainers":["repaired"]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := store.GetSettings().DockerHiddenContainers; len(got) != 1 || got[0] != "repaired" {
+		t.Fatalf("hidden = %v, want [repaired]", got)
 	}
 }
