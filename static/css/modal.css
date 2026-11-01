@@ -1428,7 +1428,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-controls);

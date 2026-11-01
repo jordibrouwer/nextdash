@@ -526,7 +526,7 @@
 .first-start-input {
     min-width: 0;
     padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-3, 0.25rem);
     color: var(--text-primary);

@@ -2085,6 +2085,15 @@ class DashboardInlineEdit {
              * contents of one.
              */
             form.style.background = 'transparent';
+            /*
+             * Nor do the text fields keep the opaque fill applySolidInlineEditSurfaces
+             * gave them: that is for a form lying over the blurred grid, and an inline
+             * background outranks the sheet's own field fill. Selects keep theirs,
+             * because a native list needs a background to be drawn on.
+             */
+            form.querySelectorAll('.bookmark-inline-input, .bookmark-inline-textarea').forEach((node) => {
+                node.style.removeProperty('background');
+            });
         }
         d._inlineEditContext = {
             bookmarkRef,
