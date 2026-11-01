@@ -4073,7 +4073,16 @@
     "widgetFeedNewsOpenPaper": "Ouvrir le journal",
     "widgetFeedNewsReadAll": "Tout lire",
     "widgetFeedNewsOpenSite": "Lire les actualités de ce site",
-    "widgetFeedNewsOpenArticle": "Ouvrir l’article"
+    "widgetFeedNewsOpenArticle": "Ouvrir l’article",
+    "feedWatchRow": "Suivi",
+    "feedWatchRowMany": "{count} flux suivis",
+    "feedWatchRowMuted": "Suivi, en sourdine",
+    "feedWatchRowMutedMany": "{count} flux suivis, en sourdine",
+    "feedWatchRowEvery": "{interval}",
+    "feedWatchRowChecked": "vérifié {ago}",
+    "feedWatchRowPaused": "En pause",
+    "feedWatchRowFailing": "Ne répond pas",
+    "feedWatchPopoverOpenSite": "Ouvrir {name}"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -10268,7 +10277,10 @@
     "widgetFeedNewsLayout": "Disposition",
     "widgetFeedNewsLayoutList": "Sites, une ligne chacun",
     "widgetFeedNewsLayoutHeadlines": "Titres avec images",
-    "widgetFeedNewsLayoutChips": "Puces compactes"
+    "widgetFeedNewsLayoutChips": "Puces compactes",
+    "showFeedWatchIconLabel": "Afficher une icône de flux sur les favoris suivis",
+    "showFeedWatchIconInfoTitle": "Icône de flux sur les favoris suivis",
+    "showFeedWatchIconInfoMessage": "Une petite icône de flux après le nom indique quels favoris vous suivez, même sans nouveauté. Activé par défaut."
   },
   "colors": {
     "title": "personnalisation du thème",

@@ -4073,7 +4073,16 @@
     "widgetFeedNewsOpenPaper": "Zeitung öffnen",
     "widgetFeedNewsReadAll": "Alle lesen",
     "widgetFeedNewsOpenSite": "Nachrichten dieser Website lesen",
-    "widgetFeedNewsOpenArticle": "Artikel öffnen"
+    "widgetFeedNewsOpenArticle": "Artikel öffnen",
+    "feedWatchRow": "Beobachtet",
+    "feedWatchRowMany": "{count} Feeds beobachtet",
+    "feedWatchRowMuted": "Beobachtet, stumm",
+    "feedWatchRowMutedMany": "{count} Feeds beobachtet, stumm",
+    "feedWatchRowEvery": "{interval}",
+    "feedWatchRowChecked": "geprüft {ago}",
+    "feedWatchRowPaused": "Pausiert",
+    "feedWatchRowFailing": "Antwortet nicht",
+    "feedWatchPopoverOpenSite": "{name} öffnen"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -10268,7 +10277,10 @@
     "widgetFeedNewsLayout": "Layout",
     "widgetFeedNewsLayoutList": "Websites, eine Zeile pro Website",
     "widgetFeedNewsLayoutHeadlines": "Schlagzeilen mit Bildern",
-    "widgetFeedNewsLayoutChips": "Kompakte Chips"
+    "widgetFeedNewsLayoutChips": "Kompakte Chips",
+    "showFeedWatchIconLabel": "Feed-Symbol bei beobachteten Lesezeichen anzeigen",
+    "showFeedWatchIconInfoTitle": "Feed-Symbol bei beobachteten Lesezeichen",
+    "showFeedWatchIconInfoMessage": "Ein kleines Feed-Symbol hinter dem Namen zeigt, welche Lesezeichen Sie beobachten, auch wenn es nichts Neues gibt. Standardmäßig aktiviert."
   },
   "colors": {
     "title": "themenanpassung",

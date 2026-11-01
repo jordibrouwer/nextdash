@@ -4073,7 +4073,16 @@
     "widgetFeedNewsOpenPaper": "打开报纸",
     "widgetFeedNewsReadAll": "全部阅读",
     "widgetFeedNewsOpenSite": "阅读此网站的新闻",
-    "widgetFeedNewsOpenArticle": "打开文章"
+    "widgetFeedNewsOpenArticle": "打开文章",
+    "feedWatchRow": "已关注",
+    "feedWatchRowMany": "已关注 {count} 个订阅源",
+    "feedWatchRowMuted": "已关注，已静音",
+    "feedWatchRowMutedMany": "已关注 {count} 个订阅源，已静音",
+    "feedWatchRowEvery": "每{interval}",
+    "feedWatchRowChecked": "{ago}检查",
+    "feedWatchRowPaused": "已暂停",
+    "feedWatchRowFailing": "无响应",
+    "feedWatchPopoverOpenSite": "打开 {name}"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -10268,7 +10277,10 @@
     "widgetFeedNewsLayout": "布局",
     "widgetFeedNewsLayoutList": "网站，每个一行",
     "widgetFeedNewsLayoutHeadlines": "带图片的标题",
-    "widgetFeedNewsLayoutChips": "紧凑标签"
+    "widgetFeedNewsLayoutChips": "紧凑标签",
+    "showFeedWatchIconLabel": "在已关注的书签上显示订阅源图标",
+    "showFeedWatchIconInfoTitle": "已关注书签上的订阅源图标",
+    "showFeedWatchIconInfoMessage": "名称后的小订阅源图标会显示您关注了哪些书签，即使没有新内容。默认开启。"
   },
   "colors": {
     "title": "主题自定义",

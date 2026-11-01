@@ -4073,7 +4073,16 @@
     "widgetFeedNewsOpenPaper": "Open de krant",
     "widgetFeedNewsReadAll": "Alles lezen",
     "widgetFeedNewsOpenSite": "Lees het nieuws van deze site",
-    "widgetFeedNewsOpenArticle": "Open het artikel"
+    "widgetFeedNewsOpenArticle": "Open het artikel",
+    "feedWatchRow": "Gevolgd",
+    "feedWatchRowMany": "{count} feeds gevolgd",
+    "feedWatchRowMuted": "Gevolgd, gedempt",
+    "feedWatchRowMutedMany": "{count} feeds gevolgd, gedempt",
+    "feedWatchRowEvery": "{interval}",
+    "feedWatchRowChecked": "gecontroleerd {ago}",
+    "feedWatchRowPaused": "Gepauzeerd",
+    "feedWatchRowFailing": "Reageert niet",
+    "feedWatchPopoverOpenSite": "{name} openen"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -10268,7 +10277,10 @@
     "widgetFeedNewsLayout": "Indeling",
     "widgetFeedNewsLayoutList": "Sites, één rij per site",
     "widgetFeedNewsLayoutHeadlines": "Koppen met afbeeldingen",
-    "widgetFeedNewsLayoutChips": "Compacte chips"
+    "widgetFeedNewsLayoutChips": "Compacte chips",
+    "showFeedWatchIconLabel": "Toon een feed-icoon bij gevolgde bookmarks",
+    "showFeedWatchIconInfoTitle": "Feed-icoon bij gevolgde bookmarks",
+    "showFeedWatchIconInfoMessage": "Een klein feed-icoon achter de naam laat zien welke bookmarks je volgt, ook als er niets nieuws is. Staat standaard aan."
   },
   "colors": {
     "title": "thema-aanpassing",

@@ -4073,7 +4073,16 @@
     "widgetFeedNewsOpenPaper": "Open the paper",
     "widgetFeedNewsReadAll": "Read all",
     "widgetFeedNewsOpenSite": "Read this site’s news",
-    "widgetFeedNewsOpenArticle": "Open the article"
+    "widgetFeedNewsOpenArticle": "Open the article",
+    "feedWatchRow": "Watching",
+    "feedWatchRowMany": "Watching {count} feeds",
+    "feedWatchRowMuted": "Watching, muted",
+    "feedWatchRowMutedMany": "Watching {count} feeds, muted",
+    "feedWatchRowEvery": "every {interval}",
+    "feedWatchRowChecked": "checked {ago}",
+    "feedWatchRowPaused": "Paused",
+    "feedWatchRowFailing": "Not responding",
+    "feedWatchPopoverOpenSite": "Open {name}"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -10268,7 +10277,10 @@
     "widgetFeedNewsLayout": "Layout",
     "widgetFeedNewsLayoutList": "Sites, one row each",
     "widgetFeedNewsLayoutHeadlines": "Headlines with pictures",
-    "widgetFeedNewsLayoutChips": "Compact chips"
+    "widgetFeedNewsLayoutChips": "Compact chips",
+    "showFeedWatchIconLabel": "Show a feed icon on watched bookmarks",
+    "showFeedWatchIconInfoTitle": "Feed icon on watched bookmarks",
+    "showFeedWatchIconInfoMessage": "A small feed icon after the name shows which bookmarks you watch, even when there is nothing new. On by default."
   },
   "colors": {
     "title": "theme customization",

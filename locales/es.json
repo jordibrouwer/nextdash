@@ -4073,7 +4073,16 @@
     "widgetFeedNewsOpenPaper": "Abrir el periódico",
     "widgetFeedNewsReadAll": "Leer todo",
     "widgetFeedNewsOpenSite": "Leer las noticias de este sitio",
-    "widgetFeedNewsOpenArticle": "Abrir el artículo"
+    "widgetFeedNewsOpenArticle": "Abrir el artículo",
+    "feedWatchRow": "Seguido",
+    "feedWatchRowMany": "{count} feeds seguidos",
+    "feedWatchRowMuted": "Seguido, silenciado",
+    "feedWatchRowMutedMany": "{count} feeds seguidos, silenciados",
+    "feedWatchRowEvery": "cada {interval}",
+    "feedWatchRowChecked": "comprobado {ago}",
+    "feedWatchRowPaused": "En pausa",
+    "feedWatchRowFailing": "No responde",
+    "feedWatchPopoverOpenSite": "Abrir {name}"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -10268,7 +10277,10 @@
     "widgetFeedNewsLayout": "Diseño",
     "widgetFeedNewsLayoutList": "Sitios, una fila cada uno",
     "widgetFeedNewsLayoutHeadlines": "Titulares con imágenes",
-    "widgetFeedNewsLayoutChips": "Chips compactos"
+    "widgetFeedNewsLayoutChips": "Chips compactos",
+    "showFeedWatchIconLabel": "Mostrar un icono de feed en los marcadores seguidos",
+    "showFeedWatchIconInfoTitle": "Icono de feed en los marcadores seguidos",
+    "showFeedWatchIconInfoMessage": "Un pequeño icono de feed tras el nombre muestra qué marcadores sigues, incluso cuando no hay nada nuevo. Activado por defecto."
   },
   "colors": {
     "title": "personalización del tema",
