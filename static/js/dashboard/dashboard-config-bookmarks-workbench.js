@@ -1595,7 +1595,20 @@
         if (focused) panel.querySelector(`[data-bm-bulk-field="${focused}"]`)?.focus();
     },
 
+    // One run at a time: a double click, or Enter twice in the tags field,
+    // started a second run on rows the first was still writing -- a move
+    // sent twice, an error toast and two undo toasts.
     async applyWorkbenchBulk() {
+        if (this._bmBulkBusy) return;
+        this._bmBulkBusy = true;
+        try {
+            await this._applyWorkbenchBulk();
+        } finally {
+            this._bmBulkBusy = false;
+        }
+    },
+
+    async _applyWorkbenchBulk() {
         const keys = [...this.bmSelected];
         const picked = this.bookmarksFromKeys(keys);
         const draft = { ...this.bulkDraft() };

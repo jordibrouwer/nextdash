@@ -600,7 +600,8 @@ class SearchCommandsComponent {
             anchor.download = filename;
             document.body.appendChild(anchor);
             anchor.click();
-            window.URL.revokeObjectURL(url);
+            // Later, not at once: Safari starts the download after click().
+            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
             document.body.removeChild(anchor);
             try {
                 localStorage.setItem('nextdash-last-backup', now.toISOString());

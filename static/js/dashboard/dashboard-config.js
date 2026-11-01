@@ -7170,7 +7170,9 @@ class DashboardConfig {
             a.download = filename;
             document.body.appendChild(a);
             a.click();
-            window.URL.revokeObjectURL(href);
+            // Later, not at once: Safari starts the download after click()
+            // returns, and a URL revoked by then saved an empty file.
+            setTimeout(() => window.URL.revokeObjectURL(href), 10000);
             a.remove();
             return true;
         } catch {
@@ -7223,7 +7225,8 @@ class DashboardConfig {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Later, not at once: see downloadViaBlob.
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
 
     /*
@@ -15813,7 +15816,20 @@ class DashboardConfig {
      * answer -- and got undefined from every save, so a duplicate never went
      * past the page list: no categories, no bookmarks, no word.
      */
-    async savePages(edited = []) {
+    /**
+     * One save of the page list at a time, as saveCategories does: each one
+     * re-reads and then posts the whole list, and quick up/down presses ran
+     * those chains side by side, so an older order could land last.
+     */
+    savePages(edited = []) {
+        const run = (this._pagesSaveChain || Promise.resolve())
+            .catch(() => {})
+            .then(() => this.savePagesNow(edited));
+        this._pagesSaveChain = run;
+        return run;
+    }
+
+    async savePagesNow(edited = []) {
         // The whole list goes to the server, and the server takes every entry
         // in it as the truth: a name changed on another device was put back
         // by the next reorder here. Re-read first; only the pages this save
@@ -16465,9 +16481,17 @@ class DashboardConfig {
             this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
             list.map((c) => c.name)
         );
-        list.splice(Number(index) + 1, 0, { ...source, id, name });
+        const copy = { ...source, id, name };
+        list.splice(Number(index) + 1, 0, copy);
         this.repaintPtBody();
-        if (!await this.saveCategories(pageId)) return;
+        if (!await this.saveCategories(pageId)) {
+            // Not kept on screen after the save said no: it looked created,
+            // and the next save of the page would have written it after all.
+            const at = (this._categories || []).indexOf(copy);
+            if (at >= 0) this._categories.splice(at, 1);
+            this.repaintPtBody();
+            return;
+        }
         this.notify(this.t('config.categoryDuplicatedEmpty',
             'Category duplicated, without its bookmarks — a page holds each link once'), 'success');
         void this.dash.data?.fetchAndStoreDataRevision?.();
@@ -17826,6 +17850,13 @@ class DashboardConfig {
             const chipPage = this.ptChip.categories.page;
             let target = String(chipPage !== 'all' ? chipPage : this.dash.currentPageId);
             if (!visible.includes(target)) target = visible[0];
+            // Every page hidden: there is nowhere for it to go, so say so
+            // rather than ignore the click.
+            if (!target) {
+                this.notify(this.t('config.categoryAddNoVisiblePage',
+                    'Show a page first: a category needs a visible page to live on.'), 'error');
+                return;
+            }
             if (!this.useCategoryPage(target)) {
                 if (this._catFailedPages?.has(target)) {
                     this.notify(this.t('config.categoriesLoadFailed',

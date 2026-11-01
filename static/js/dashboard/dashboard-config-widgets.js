@@ -670,13 +670,21 @@
             this._widgetBlocks = (this._widgetBlocks || [])
                 .filter((block) => !(block.isWidget && picked.has(block.id)));
 
+            // A failed save has said so already; the list is then reloaded,
+            // so rows that are still on the server do not look deleted.
+            let saved = true;
             if (this.isAllPagesView()) {
-                for (const [pageId, removed] of byPage) {
+                outer: for (const [pageId, removed] of byPage) {
                     for (const id of removed) {
-                        if (!await this.savePageWidgetsAfterRemoval(pageId, id)) return;
+                        if (!await this.savePageWidgetsAfterRemoval(pageId, id)) { saved = false; break outer; }
                     }
                 }
-            } else if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) {
+            } else {
+                saved = await this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
+            }
+            if (!saved) {
+                this._widgetLoadedFor = null;
+                await this.loadWidgetsEditor();
                 return;
             }
             for (const block of removedBlocks) await this.forgetWidgetCredential(block);
@@ -758,8 +766,8 @@
         }).then((res) => res.ok).catch(() => false);
 
         if (!wrote) {
-            this.notify(this.t('config.widgetsMoveFailed',
-                'Could not read the other page — nothing was moved.'), 'error');
+            // The page was read; it was the write that was refused.
+            this.notify(this.t('config.widgetsSaveError', 'Could not save the widgets.'), 'error');
             return;
         }
 
@@ -773,13 +781,22 @@
         this._widgetBlocks = (this._widgetBlocks || [])
             .filter((block) => !(block.isWidget && picked.has(block.id)));
 
+        // The copies are on the destination; a failed removal here has said
+        // so, and the list is reloaded to show the widgets where they are.
+        let removedFromSource = true;
         if (this.isAllPagesView()) {
-            for (const [pageId, removed] of sources) {
+            outer: for (const [pageId, removed] of sources) {
                 for (const id of removed) {
-                    if (!await this.savePageWidgetsAfterRemoval(pageId, id)) return;
+                    if (!await this.savePageWidgetsAfterRemoval(pageId, id)) { removedFromSource = false; break outer; }
                 }
             }
-        } else if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) {
+        } else {
+            removedFromSource = await this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
+        }
+        if (!removedFromSource) {
+            this._widgetLoadedFor = null;
+            await this.loadWidgetsEditor();
+            await this.refreshDashboardBlocks();
             return;
         }
 
@@ -4851,11 +4868,19 @@
         // The page is read off the block before it goes: saveWidgetRow would
         // look at whatever row slid into this index.
         const fromPage = this.isAllPagesView() ? Number(block.pageId) : null;
-        this._widgetBlocks = (this._widgetBlocks || []).filter((_, i) => i !== index);
+        // By id, not by the index from before the confirm: a reload while the
+        // dialog was open shifted the list, and another widget went.
+        this._widgetBlocks = (this._widgetBlocks || []).filter((b) =>
+            !(b.isWidget && b.id === block.id && (fromPage == null || Number(b.pageId) === fromPage)));
         const wrote = fromPage
             ? await this.savePageWidgetsAfterRemoval(fromPage, block.id)
             : await this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
-        if (!wrote) return;
+        if (!wrote) {
+            // Shown as the server has it: the row is still there.
+            this._widgetLoadedFor = null;
+            await this.loadWidgetsEditor();
+            return;
+        }
         window.nextdashTrack?.('widget:remove', { type: block.widget?.type || block.type || 'unknown' });
         // After the page save, from the block held above: forgotten first, a
         // failed save left the widget pointing at a key that was gone.

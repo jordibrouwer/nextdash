@@ -1953,9 +1953,9 @@
 
         if (settings.themeSurfacePrefs) {
             delete settings.themeSurfacePrefs[this.currentThemeId()];
-            if (!Object.keys(settings.themeSurfacePrefs).length) {
-                delete settings.themeSurfacePrefs;
-            }
+            // An empty map, not a missing key: the server keeps the stored
+            // value of any key a save leaves out, so deleting it brought the
+            // reset prefs back on the next load.
         }
         // A forced value outlives the per-theme entry, so it has to go too --
         // otherwise the button would appear to do nothing.
