@@ -352,6 +352,11 @@ func summarizeDomains(stored map[string]HostDomain, enabled bool) DomainSummary 
 		switch entry.State {
 		case domainStateOK:
 			summary.Watched++
+		case domainStateError:
+			// A lookup that failed keeps the date it had; with one, it is still watched.
+			if entry.ExpiresAt > 0 {
+				summary.Watched++
+			}
 		case domainStateHidden, domainStateUnsupported:
 			summary.Watched++
 			summary.NoDate = append(summary.NoDate, DomainNoDate{Domain: name, State: entry.State})
@@ -556,10 +561,14 @@ func (h *Handlers) StartDomainExpiryScheduler(stop <-chan struct{}) {
 // certificates the report carries all of them, not only the ones near a
 // threshold: the widget's window is its own setting and can reach past the
 // warning ladder, and a collection has tens of domains, not thousands.
+//
+// A domain whose last lookup failed keeps the date it already had
+// (recordDomainResult), and is shown with it: one bad answer from a registry is
+// no reason for a known deadline to drop out of the report.
 func datedDomains(stored map[string]HostDomain) map[string]HostDomain {
 	out := map[string]HostDomain{}
 	for name, entry := range stored {
-		if entry.State == domainStateOK && entry.ExpiresAt > 0 {
+		if entry.ExpiresAt > 0 && (entry.State == domainStateOK || entry.State == domainStateError) {
 			out[name] = entry
 		}
 	}
