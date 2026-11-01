@@ -855,3 +855,35 @@ func TestGlancesIncidentCapKeepsTheOpenOne(t *testing.T) {
 		t.Fatal("the disk incident was never closed")
 	}
 }
+
+// An opening muted by the cooldown sent no alert, so losing its reading has no
+// alert to replace and sends nothing either; an announced one still does.
+func TestGlancesLostNoticeFollowsTheMute(t *testing.T) {
+	h := quietHandlers(t, "")
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	cfg := normalizeGlancesConfig(GlancesConfig{Enabled: true, Server: "http://nas.lan:61208"})
+	cfg.Notify = []string{"cpu"}
+	hs := glancesHostByID("lostmute")
+	start := time.Now().UnixMilli()
+	cpu := GlancesIncident{Kind: "cpu", Start: start}
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Opened: true, Incident: cpu}})
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Incident: cpu}})
+	// Open again within the cooldown: muted.
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Opened: true, Incident: cpu}})
+	if got := len(readHeldFile().Held); got != 2 {
+		t.Fatalf("%d notices held before the loss, want the first open and close", got)
+	}
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Lost: true, Incident: cpu}})
+	if got := len(readHeldFile().Held); got != 2 {
+		t.Fatalf("a muted incident's loss sent a notice: %d held", got)
+	}
+	// Past the cooldown an opening is announced, and its loss is sent.
+	hs.notices.Lock()
+	hs.notices.lastOpen["cpu\x00"] = time.Now().Add(-glancesNoticeCooldown - time.Minute)
+	hs.notices.Unlock()
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Opened: true, Incident: cpu}})
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Lost: true, Incident: cpu}})
+	if got := len(readHeldFile().Held); got != 4 {
+		t.Fatalf("an announced incident's loss: %d held, want 4", got)
+	}
+}

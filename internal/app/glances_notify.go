@@ -156,7 +156,9 @@ func glancesNoticeFor(cfg GlancesConfig, ev GlancesIncidentEvent) monitorNotific
 func (h *Handlers) glancesNotify(ctx context.Context, cfg GlancesConfig, hs *glancesHost, events []GlancesIncidentEvent) {
 	var notices []monitorNotification
 	for _, ev := range events {
-		if cfg.notifies(ev.Incident.Kind) && (ev.Lost || hs.notices.allow(ev, time.Now())) {
+		// A lost reading goes through allow like a close: it replaces an alert,
+		// and one that was muted had no alert to replace.
+		if cfg.notifies(ev.Incident.Kind) && hs.notices.allow(ev, time.Now()) {
 			notices = append(notices, glancesNoticeFor(cfg, ev))
 		}
 	}
