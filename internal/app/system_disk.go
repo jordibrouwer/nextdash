@@ -99,7 +99,11 @@ func readDisks(paths []string, labels map[string]string) DiskMetrics {
 		// Bavail, not Bfree: the difference is reserved for root and is not
 		// free to whoever is filling this disk up.
 		mount.FreeBytes = block * st.Bavail
-		mount.UsedBytes = block * (st.Blocks - st.Bfree)
+		// Some FUSE and union filesystems report more free blocks than
+		// blocks; unguarded, the subtraction wrapped to about 1.8e19.
+		if st.Blocks >= st.Bfree {
+			mount.UsedBytes = block * (st.Blocks - st.Bfree)
+		}
 		if st.Bfree >= st.Bavail {
 			mount.ReservedBytes = block * (st.Bfree - st.Bavail)
 		}

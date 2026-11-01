@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -70,11 +71,17 @@ func mediaImageOnce(key string, fetch func() ([]byte, error)) ([]byte, error) {
 	mediaImageFlights.at[key] = flight
 	mediaImageFlights.Unlock()
 
+	// Deferred, so a panic in fetch still releases the waiters: left open,
+	// every later request for this picture blocked on done for good.
+	defer func() {
+		close(flight.done)
+		mediaImageFlights.Lock()
+		delete(mediaImageFlights.at, key)
+		mediaImageFlights.Unlock()
+	}()
+	// What the waiters get if fetch panics instead of returning.
+	flight.err = errors.New("the picture could not be fetched")
 	flight.data, flight.err = fetch()
-	close(flight.done)
-	mediaImageFlights.Lock()
-	delete(mediaImageFlights.at, key)
-	mediaImageFlights.Unlock()
 	return flight.data, flight.err
 }
 
