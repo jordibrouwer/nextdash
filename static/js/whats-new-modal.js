@@ -344,11 +344,21 @@
                 </h4>
                 ${html}
             </section>`;
+        // Fixes are the least asked-for part of a release: the block opens on
+        // request, its count on the summary saying what is inside.
+        const foldedBlock = (kind, label, count, html) => `
+            <details class="wn-block wn-block--${kind} wn-block--folded" data-wn-block>
+                <summary class="wn-group-title">
+                    <span>${label}</span>
+                    <span class="wn-group-count" aria-hidden="true" data-wn-block-count>${count}</span>
+                </summary>
+                ${html}
+            </details>`;
         const parts = [];
         if (spots.length) {
             parts.push(`
             <section class="wn-block wn-block--spot" data-wn-block>
-                <ul class="wn-entries wn-spots">${spots.map(renderSpotlight).join('')}</ul>
+                <ul class="wn-entries wn-spots${spots.length > 1 ? ' wn-spots--multi' : ''}">${spots.map(renderSpotlight).join('')}</ul>
             </section>`);
         }
         if (rest.length) {
@@ -360,7 +370,7 @@
         }
         keyGroups.forEach(({ section, index }) => parts.push(renderKeyGroup(section, index)));
         if (fixed.length) {
-            parts.push(block('fix', wnTranslate('dashboard.whatsNewBlockFixed', 'fixed'), fixed.length,
+            parts.push(foldedBlock('fix', wnTranslate('dashboard.whatsNewBlockFixed', 'fixed'), fixed.length,
                 `<ul class="wn-entries wn-fix-list">${fixed.map(renderFixRow).join('')}</ul>`));
         }
         return parts.join('');
@@ -380,27 +390,6 @@
     }
 
     /*
-     * The headline release's version, date and lead, with the support card
-     * beside them. The card used to close the notes, below the fold; next to
-     * the lead it is read with the first thing the reader reads.
-     */
-    function buildTopHtml(data) {
-        const { tag, date } = data || {};
-        const lead = String(data?.modalLead || '').trim();
-        return `
-            <div class="wn-top" data-wn-top>
-                <header class="wn-hero" data-wn-hero>
-                    <div class="wn-hero-line">
-                        <h3 class="wn-hero-version">${tag}</h3>
-                        ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
-                    </div>
-                    ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
-                </header>
-                ${buildSupportHtml()}
-            </div>`;
-    }
-
-    /*
      * A release opened in full: the newest one with the big version as its
      * headline, and every release the reader has not seen yet under it with a
      * smaller header and an "unread" mark.
@@ -411,8 +400,21 @@
     function renderReleaseArticle(data, { headline = false, unread = false } = {}) {
         const { tag, date, sections } = data || {};
         const lead = String(data?.modalLead || '').trim();
+        const { added, fixed } = countKinds(sections);
+        const chips = `<div class="wn-hero-stats">
+                        <span class="wn-stat wn-stat--new">${wnTranslate('dashboard.whatsNewStatNew', '{n} new', { n: added })}</span>
+                        <span class="wn-stat">${wnTranslate('dashboard.whatsNewStatFixed', '{n} fixed', { n: fixed })}</span>
+                    </div>`;
         const head = headline
-            ? ''
+            ? `<header class="wn-hero">
+                    <div class="wn-hero-line">
+                        <h3 class="wn-hero-version">${tag}</h3>
+                        ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
+                        ${chips}
+                    </div>
+                    ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
+                </header>
+                ${buildDeveloperHtml()}`
             : `<header class="wn-rel-head">
                     <h3 class="wn-rel-version">${tag}</h3>
                     ${date ? `<span class="wn-rel-date">${date}</span>` : ''}
@@ -475,28 +477,25 @@
     }
 
     /*
-     * The ask.
+     * Who makes this, under the headline of the newest release.
      *
-     * The footer's small link was the only mention and nobody saw it. It sits
-     * beside the headline release's lead now, where the eye lands first, and
-     * is said once, plainly, in Ko-fi's own colour so it is recognised for
-     * what it is.
+     * The ask used to close the notes, as a card of its own: read after the
+     * changes it was asking about, and missed by everyone who stopped at the
+     * first screen. It is now two things. This card says who built what is
+     * listed below it, with the Ko-fi button beside it; the footer keeps a
+     * one-line version in view while the notes scroll.
      */
-    function buildSupportHtml() {
+    function buildDeveloperHtml() {
         return `
-            <section class="wn-support" aria-label="${wnTranslate('dashboard.whatsNewSupportLabel', 'Support nextDash')}">
-                <div class="wn-support-top">
-                    <span class="wn-support-cup" aria-hidden="true">☕</span>
-                    <h4 class="wn-support-title">${wnTranslate('dashboard.whatsNewSupportTitle', 'nextDash has a team of one.')}</h4>
+            <section class="wn-dev" aria-label="${escapeAttr(wnTranslate('dashboard.whatsNewSupportLabel', 'Support nextDash'))}">
+                <span class="wn-dev-avatar" aria-hidden="true">JB</span>
+                <div class="wn-dev-text">
+                    <h4 class="wn-dev-title">${wnTranslate('dashboard.whatsNewDevTitle', 'Made by Jordi, one person.')}</h4>
+                    <p class="wn-dev-note">${wnTranslate('dashboard.whatsNewDevText',
+                        'Every change here was built, tested and written up in evenings and weekends.')}</p>
                 </div>
-                <p class="wn-support-text">${wnTranslate('dashboard.whatsNewSupportText',
-                    'No investors, no sprint planning, no office plants. Just one person, a lot of evenings and weekends, and a questionable amount of caffeine. If nextDash earns a place on your screen, a coffee keeps the next release coming.')}</p>
-                <div class="wn-support-cta">
-                    <a class="wn-support-btn" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">☕ ${wnTranslate('dashboard.whatsNewSupportButton', 'Buy me a coffee on Ko-fi')}</a>
-                    <span class="wn-support-note">${wnTranslate('dashboard.whatsNewSupportNote', 'One-off. No account, no guilt.')}</span>
-                </div>
-            </section>
-        `;
+                <a class="wn-support-btn" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">\u2615 ${wnTranslate('dashboard.whatsNewDevButton', 'Support on Ko-fi')}</a>
+            </section>`;
     }
 
     /*
@@ -508,7 +507,6 @@
         return `
             ${buildSinceHtml(releases, unreadCount)}
             ${buildFilterHtml(releases)}
-            ${buildTopHtml(first)}
             ${renderReleaseArticle(first, { headline: true })}
             ${unread.map((data) => renderReleaseArticle(data, { unread: true })).join('')}
         `;
@@ -545,9 +543,6 @@
                 });
                 rel.hidden = !rel.querySelector('li[data-wn-kind]:not([hidden]), .wn-group--keys:not([hidden])');
             });
-            const headline = root.querySelector(':scope > .wn-rel--headline');
-            const hero = root.querySelector('[data-wn-hero]');
-            if (headline && hero) hero.hidden = headline.hidden;
             root.closest('.modal-body')?.scrollTo({ top: 0 });
         });
     }
@@ -588,38 +583,18 @@
     }
 
     /*
-     * The support line, at the end rather than the beginning.
-     *
-     * It used to be the third bordered panel above the first release: someone
-     * who opened this to find out what changed read a request for money before
-     * reading a single change. Asking after the reading is done costs the ask
-     * nothing and costs the reader nothing either.
-     *
-     * Sticky to the bottom of the scroll area so it is present without being
-     * first, which is also where the update status now lives.
+     * The ask, kept in view: one line above the footer, so it is there while
+     * the notes scroll and never above them. The developer card under the
+     * headline says who it is for.
      */
-    /*
-     * The Ko-fi button in the header, filled in Ko-fi's colour. The end of the
-     * notes has the support card; the footer no longer repeats the button.
-     */
-    function buildKofiButtonHtml(extraClass = '') {
-        return `
-                <a class="wn-kofi-btn wn-kofi-btn--animated wn-kofi-btn--solid${extraClass ? ` ${extraClass}` : ''}" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">
-                <span class="wn-kofi-stars" aria-hidden="true">
-                    <span class="wn-kofi-star"></span>
-                    <span class="wn-kofi-star"></span>
-                    <span class="wn-kofi-star"></span>
-                    <span class="wn-kofi-star"></span>
-                </span>
-                <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
-                <span class="wn-kofi-label">${wnTranslate('dashboard.whatsNewSupportShort', 'Support')}</span>
-                </a>
-        `;
-    }
-
     function buildFooterHtml() {
         return `
             <div class="wn-foot" data-wn-foot>
+                <div class="wn-foot-support">
+                    <span class="wn-foot-support-text">${wnTranslate('dashboard.whatsNewFootSupport',
+                        'Enjoying nextDash? A coffee keeps the releases coming.')}</span>
+                    <a class="wn-support-btn wn-support-btn--small" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">\u2615 ${wnTranslate('dashboard.whatsNewSupportCoffee', 'Buy me a coffee')}</a>
+                </div>
                 <div class="wn-foot-update" data-wn-foot-update></div>
                 <span class="wn-foot-esc"><span class="wn-foot-key">Esc</span> ${
                     wnTranslate('dashboard.whatsNewFootClose', 'to close')}</span>
@@ -1199,7 +1174,6 @@
             const tools = document.createElement('div');
             tools.className = 'wn-head-tools';
             tools.dataset.modalHeaderExtra = 'true';
-            tools.innerHTML = buildKofiButtonHtml('wn-kofi-btn--head').trim();
             tools.appendChild(close);
             wnHeader.appendChild(tools);
             }
