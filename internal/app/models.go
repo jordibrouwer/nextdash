@@ -1699,6 +1699,12 @@ type FileStore struct {
 	// through. Read under the same lock the caches are.
 	dataGeneration               uint64
 	prefetchDefaultBookmarkIcons bool
+	// lastGoodSettings is the last settings.json that was read and decoded.
+	// A read that fails for another reason than a missing file answers with
+	// it: defaults in its place were saved back over the real file by the
+	// next settings write.
+	lastGoodSettings   Settings
+	lastGoodSettingsOK bool
 }
 
 func NewStore() Store {
@@ -4427,6 +4433,10 @@ func (fs *FileStore) GetSettings() Settings {
 	fs.ensureDataDir()
 
 	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil && !os.IsNotExist(err) && fs.lastGoodSettingsOK {
+		// Not cached: the next read tries the file again.
+		return fs.lastGoodSettings
+	}
 	if err != nil {
 		// Return default settings if file doesn't exist
 		settings := Settings{
@@ -4654,13 +4664,19 @@ func (fs *FileStore) GetSettings() Settings {
 		clampBookmarkViewSettings(&settings)
 		clampInboxViewSettings(&settings)
 		clampNotesProcessing(&settings)
-		fs.readCache.settings = settings
-		fs.readCache.settingsOK = true
+		// Only a missing file is a fresh install. Defaults for an unreadable
+		// one are an answer for now, not one to keep.
+		if os.IsNotExist(err) {
+			fs.readCache.settings = settings
+			fs.readCache.settingsOK = true
+		}
 		return settings
 	}
 
 	var settings Settings
-	json.Unmarshal(data, &settings)
+	if err := json.Unmarshal(data, &settings); err != nil && fs.lastGoodSettingsOK {
+		return fs.lastGoodSettings
+	}
 	// An install from before the setting, or one holding a style since
 	// dropped, has no animation -- except one that had v1.18.3's on/off
 	// switch on, which keeps the swell that switch played.
@@ -5637,6 +5653,7 @@ func (fs *FileStore) GetSettings() Settings {
 
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true
+	fs.lastGoodSettings, fs.lastGoodSettingsOK = settings, true
 	return settings
 }
 
