@@ -83,12 +83,16 @@ class DashboardPreview {
         if (!this.cardsEnabled()) {
             openLink.title = d.buildBookmarkTooltip(bookmark, initialTitle, initialDescription);
             if (openLink.dataset.previewLoaded === 'true') return;
-            openLink.addEventListener('mouseenter', async () => {
+            // Not { once: true }: a hover during a network blip used up the
+            // only attempt, and the row kept its bare tooltip until a render.
+            const onEnter = async () => {
                 if (openLink.dataset.previewLoaded === 'true') return;
                 const preview = await this.fetchBookmarkPreviewData(openLink, bookmark);
                 if (!preview) return;
+                openLink.removeEventListener('mouseenter', onEnter);
                 openLink.title = d.buildBookmarkTooltip(bookmark, preview.title || bookmark.name || '', preview.description || '');
-            }, { once: true });
+            };
+            openLink.addEventListener('mouseenter', onEnter);
             return;
         }
 
@@ -289,7 +293,7 @@ class DashboardPreview {
             openLink._previewDataAt = Date.now();
             return preview;
         } catch (_error) {
-            openLink.dataset.previewLoaded = 'true';
+            // Not marked loaded: the next hover asks again.
             return null;
         }
     }

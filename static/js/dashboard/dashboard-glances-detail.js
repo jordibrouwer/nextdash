@@ -191,7 +191,11 @@
             // The history tab, when that is the one on show, and a refresh while the panel stays open.
             if (L.activeTab(GROUP, tabs) === 'history') void this._loadHistory();
             clearInterval(this._timer);
+            // The panel is this open()'s; a beat after the drawer moved to
+            // another item reads nothing from it.
+            const openedFor = this.item;
             this._timer = setInterval(() => {
+                if (this.item !== openedFor) return;
                 if (document.visibilityState !== 'hidden' && this.isOpen()
                     && panel?.querySelector('[data-slp-pane="history"]:not([hidden])')) void this._loadHistory();
             }, Math.max(5000, view.refreshMs()));
