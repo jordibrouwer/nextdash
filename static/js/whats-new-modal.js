@@ -400,17 +400,11 @@
     function renderReleaseArticle(data, { headline = false, unread = false } = {}) {
         const { tag, date, sections } = data || {};
         const lead = String(data?.modalLead || '').trim();
-        const { added, fixed } = countKinds(sections);
-        const chips = `<div class="wn-hero-stats">
-                        <span class="wn-stat wn-stat--new">${wnTranslate('dashboard.whatsNewStatNew', '{n} new', { n: added })}</span>
-                        <span class="wn-stat">${wnTranslate('dashboard.whatsNewStatFixed', '{n} fixed', { n: fixed })}</span>
-                    </div>`;
         const head = headline
             ? `<header class="wn-hero">
                     <div class="wn-hero-line">
                         <h3 class="wn-hero-version">${tag}</h3>
                         ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
-                        ${chips}
                     </div>
                     ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
                 </header>
@@ -457,24 +451,35 @@
      */
     function buildFilterHtml(releases) {
         const names = [];
+        const perSection = new Map();
         let total = 0;
+        let added = 0;
+        let fixed = 0;
         releases.forEach((data) => {
+            const kinds = countKinds(data.sections);
+            added += kinds.added;
+            fixed += kinds.fixed;
             (data.sections || []).forEach((section) => {
-                total += (section.items || []).length;
-                if (section.title && !names.includes(section.title)) names.push(section.title);
+                const n = (section.items || []).length;
+                total += n;
+                if (!section.title) return;
+                if (!names.includes(section.title)) names.push(section.title);
+                perSection.set(section.title, (perSection.get(section.title) || 0) + n);
             });
         });
         if (names.length < 2 && total < 4) return '';
-        const chip = (value, label, pressed = false) =>
-            `<button type="button" class="wn-chip" data-wn-filter-value="${escapeAttr(value)}" aria-pressed="${pressed}">${label}</button>`;
+        const chip = (value, label, count, pressed = false) =>
+            `<button type="button" class="wn-chip" data-wn-filter-value="${escapeAttr(value)}" aria-pressed="${pressed}">${label}<span class="wn-chip-count">${count}</span></button>`;
         return `
             <div class="wn-filter" role="group" data-wn-filter
                 aria-label="${escapeAttr(wnTranslate('dashboard.whatsNewSections', 'Sections'))}">
-                ${chip('', wnTranslate('dashboard.whatsNewFilterAll', 'All'), true)}
-                ${chip('kind:new', wnTranslate('dashboard.whatsNewFilterNew', 'New only'))}
-                ${names.length > 1 ? names.map((name) => chip(`sec:${name}`, name)).join('') : ''}
+                ${chip('', wnTranslate('dashboard.whatsNewFilterAll', 'All'), total, true)}
+                ${chip('kind:new', wnTranslate('dashboard.whatsNewFilterNew', 'New only'), added)}
+                ${fixed ? chip('kind:fix', wnTranslate('dashboard.whatsNewFilterFixed', 'Fixed only'), fixed) : ''}
+                ${names.length > 1 ? names.map((name) => chip(`sec:${name}`, name, perSection.get(name))).join('') : ''}
             </div>`;
     }
+
 
     /*
      * Who makes this, under the headline of the newest release.
@@ -528,7 +533,7 @@
             const value = chip.getAttribute('data-wn-filter-value') || '';
             const keep = (el) => {
                 if (!value) return true;
-                if (value === 'kind:new') return el.getAttribute('data-wn-kind') === 'new';
+                if (value.startsWith('kind:')) return el.getAttribute('data-wn-kind') === value.slice(5);
                 return `sec:${el.getAttribute('data-wn-section-name')}` === value;
             };
             root.querySelectorAll(':scope > .wn-rel').forEach((rel) => {
@@ -590,12 +595,8 @@
     function buildFooterHtml() {
         return `
             <div class="wn-foot" data-wn-foot>
-                <div class="wn-foot-support">
-                    <span class="wn-foot-support-text">${wnTranslate('dashboard.whatsNewFootSupport',
-                        'Enjoying nextDash? A coffee keeps the releases coming.')}</span>
-                    <a class="wn-support-btn wn-support-btn--small" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">\u2615 ${wnTranslate('dashboard.whatsNewSupportCoffee', 'Buy me a coffee')}</a>
-                </div>
                 <div class="wn-foot-update" data-wn-foot-update></div>
+                <a class="wn-support-btn wn-support-btn--small" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">\u2615 ${wnTranslate('dashboard.whatsNewSupportCoffee', 'Buy me a coffee')}</a>
                 <span class="wn-foot-esc"><span class="wn-foot-key">Esc</span> ${
                     wnTranslate('dashboard.whatsNewFootClose', 'to close')}</span>
             </div>
@@ -704,6 +705,7 @@
         const status = window.dashboardInstance?.updateStatus || null;
         const desc = describeModalUpdateStatus(status, checking);
         statusEl.textContent = desc.message || '';
+        statusEl.title = desc.message || '';
         statusEl.className = `wn-update-check-status wn-update-check-status--${desc.tone || 'neutral'}`;
         statusEl.hidden = !desc.message;
         root.classList.toggle('wn-update-check-header--warn', desc.tone === 'warn');

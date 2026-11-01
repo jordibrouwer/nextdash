@@ -2917,20 +2917,6 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-spots {
    highlights two across, the other new changes as rows, fixes folded away, and
    the ask kept in view in the footer.
    ────────────────────────────────────────────────────────────────────────── */
-.wn-hero-stats { display: flex; gap: var(--space-1-5, 0.4rem); margin-left: auto; align-self: center; }
-.wn-stat {
-    padding: 0.1rem 0.6rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 999px;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    white-space: nowrap;
-}
-.wn-stat--new {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
-    color: var(--accent-primary);
-}
 
 .wn-dev {
     display: flex;
@@ -2992,28 +2978,29 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-spots {
 .wn-block--folded[open] > summary.wn-group-title::before { content: '\25BE'; }
 .wn-block--folded > summary:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 
-/* The ask, in the footer, above the update line and Esc. */
-.wn-foot-support {
-    flex: 1 0 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-}
-.wn-foot-support-text { font-size: var(--font-size-controls); color: var(--text-secondary); }
 .wn-support-btn--small { padding: 0.3rem 0.75rem; font-size: var(--font-size-controls); }
 .wn-support-btn--small::after { display: none; }
-/* On a phone the line would cost the notes a third of the screen: the button
-   stays, the sentence goes. */
+/* The footer is one line: update status, the ask, Esc. The status gives way
+   first, cut with an ellipsis (its full text is the tooltip). */
+.wn-foot { flex-wrap: nowrap; }
+.wn-foot-update { flex: 1 1 0; min-width: 0; }
+.wn-foot .wn-update-check-status {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.wn-foot .wn-update-check-status::before { display: inline-block; margin-right: var(--space-1-5, 0.4rem); vertical-align: middle; }
 @media (max-width: 42rem) {
-    .wn-foot-support { flex: 0 0 auto; align-self: stretch; flex-wrap: nowrap; justify-content: flex-end; }
-    .wn-foot-support-text { display: none; }
+    .wn-foot { flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .wn-foot-update { flex-basis: 100%; order: 3; }
 }
 
+.wn-chip-count { margin-left: 0.4rem; opacity: 0.6; font-variant-numeric: tabular-nums; }
+
 /* ── Readability pass ────────────────────────────────────────────────────────
-   The summary runs over two columns where there is room, the headline and its
-   counts sit on one line, the developer card drops its glow, and a highlight's
+   The summary runs over two columns where there is room, the developer card
+   drops its glow, and a highlight's
    picture is cropped to a fixed height rather than deciding how far down the
    next change starts.
    ────────────────────────────────────────────────────────────────────────── */
@@ -3049,7 +3036,3 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-spots {
 
 .modal.whats-new-modal .wn-entry.wn-entry--line { grid-template-columns: 6.5rem minmax(0, 1fr) auto; }
 .modal.whats-new-modal .wn-entry--line .wn-entry-body { font-size: var(--font-size-controls); }
-
-/* One footer line for the ask; the update status below it stays small. */
-.wn-foot { gap: var(--space-1-5, 0.4rem) var(--space-4, 1rem); margin-top: var(--space-2, 0.5rem); }
-.wn-foot .wn-update-check-status { padding: 0.1rem 0.6rem; font-size: calc(var(--font-size-controls) * 0.85); line-height: 1.35; }
