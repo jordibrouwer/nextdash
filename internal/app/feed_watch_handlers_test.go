@@ -510,3 +510,31 @@ func TestWatchItemsAllKeys(t *testing.T) {
 		}
 	}
 }
+
+// The newest item across a bookmark's feeds, by publish time (found time when
+// a feed gives none), from stored items and the recent list alike.
+func TestWatchListCarriesLatest(t *testing.T) {
+	bms := []Bookmark{{Name: "Blog", URL: "https://blog.example/news"}, {Name: "Quiet", URL: "https://quiet.example/"}}
+	key := canonicalBookmarkURLKey(bms[0].URL)
+	file := FeedWatchFile{Watches: []FeedWatch{
+		{BookmarkKey: key, FeedURL: "https://blog.example/a.xml",
+			Items:  []FeedItem{{ID: "1", Title: "Old stored", PublishedAt: 1000, FoundAt: 5000}},
+			Recent: []FeedItem{{ID: "2", Title: "Newest recent", PublishedAt: 3000, FoundAt: 100}}},
+		{BookmarkKey: key, FeedURL: "https://blog.example/b.xml",
+			Items: []FeedItem{{ID: "3", Title: "Undated", FoundAt: 2000}}},
+		{BookmarkKey: canonicalBookmarkURLKey(bms[1].URL), FeedURL: "https://quiet.example/f.xml"},
+	}}
+	got := watchListFor(file, bms)
+	if e := got[key]; e.LatestAt != 3000 || e.LatestTitle != "Newest recent" {
+		t.Fatalf("latest = %d %q, want 3000 \"Newest recent\"", e.LatestAt, e.LatestTitle)
+	}
+	if e := got[canonicalBookmarkURLKey(bms[1].URL)]; e.LatestAt != 0 || e.LatestTitle != "" {
+		t.Fatalf("a feed with no items has no latest, got %d %q", e.LatestAt, e.LatestTitle)
+	}
+	// An undated item counts at the time it was found.
+	file.Watches[0].Recent = nil
+	file.Watches[0].Items = nil
+	if e := watchListFor(file, bms)[key]; e.LatestAt != 2000 || e.LatestTitle != "Undated" {
+		t.Fatalf("fallback to FoundAt: %d %q", e.LatestAt, e.LatestTitle)
+	}
+}

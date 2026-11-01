@@ -44,6 +44,18 @@ type watchEntry struct {
 	Muted  bool             `json:"muted,omitempty"`
 	Newest *FeedItem        `json:"newest"`
 	Feeds  []watchFeedEntry `json:"feeds"`
+	// LatestAt and LatestTitle are the newest item of any feed of the
+	// bookmark, read or not, by publish time (found time without one).
+	LatestAt    int64  `json:"latestAt,omitempty"`
+	LatestTitle string `json:"latestTitle,omitempty"`
+}
+
+// itemStamp is when an item counts as new for ordering: published, else found.
+func itemStamp(it FeedItem) int64 {
+	if it.PublishedAt > 0 {
+		return it.PublishedAt
+	}
+	return it.FoundAt
 }
 
 // watchItemUnread is the one rule for what is unread. readAt is the newest
@@ -125,6 +137,13 @@ func watchListFor(file FeedWatchFile, bookmarks []Bookmark) map[string]watchEntr
 				first := fresh[0]
 				first.ImageSource = ""
 				entry.Newest = &first
+			}
+		}
+		for _, list := range [][]FeedItem{w.Items, w.Recent} {
+			for _, it := range list {
+				if at := itemStamp(it); at > entry.LatestAt {
+					entry.LatestAt, entry.LatestTitle = at, it.Title
+				}
 			}
 		}
 		out[w.BookmarkKey] = entry
