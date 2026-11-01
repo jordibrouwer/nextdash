@@ -2199,7 +2199,7 @@
             { key: 'mcpContainersRead', label: 'Containers: read', labelKey: 'mcpGroupContainersRead',
                 note: 'See the containers and their state. Their logs need the write token when one is set.', noteKey: 'mcpGroupContainersReadNote' },
             { key: 'mcpSettingsOverview', label: 'Settings overview: read', labelKey: 'mcpGroupSettingsOverview',
-                note: 'See how nextDash is configured (a safe subset, never keys or addresses).', noteKey: 'mcpGroupSettingsOverviewNote' },
+                note: 'See how nextDash is configured and how it is doing (a safe subset, never keys or addresses).', noteKey: 'mcpGroupSettingsOverviewNote' },
         ];
         const control = {
             key: 'mcpContainersControl', label: 'Containers: control', labelKey: 'mcpGroupContainersControl',

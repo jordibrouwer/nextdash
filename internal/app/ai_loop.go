@@ -73,7 +73,8 @@ const aiSystemFixedLine = "You can look things up with the tools. You cannot cha
 // aiSystemFunnelLines name the tools that count, so a model does not count a
 // cut-off list, and say where a missing tool is switched on.
 const aiSystemFunnelLines = "For counts, rankings, health and usage statistics, container links and the configuration, use query_bookmarks, query_containers, get_stats and get_settings_overview: " +
-	"for counts use the `total`/`groups` fields, never count the returned list.\n" +
+	"for counts use the `total`/`groups` fields, never count the returned list. " +
+	"get_stats also has `inbox` and `trash` blocks; get_app_status gives the version, update, data size, status page, feeds and uptime; get_bookmark_history gives one bookmark's checks per day.\n" +
 	"If a needed tool is not offered, say which switch under Config → AI Assistant → What it can see enables it (Health and Inbox: read, Containers: read or Settings overview: read)."
 
 // aiSystemPrompt carries the date, the page names and the fixed line, and
@@ -354,7 +355,7 @@ the answer counts with. A row list loses its tail (it is already sorted the
 way it was asked for) and returned follows it; the trend is oldest first, so
 it keeps its newest days. Any other shape gives up and is cut as text.
 */
-var aiFitRowLists = []string{"bookmarks", "containers", "issues", "items"}
+var aiFitRowLists = []string{"bookmarks", "containers", "issues", "items", "days"}
 
 func aiFitPayload(payload map[string]any, max int) (string, bool) {
 	work := make(map[string]any, len(payload)+1)

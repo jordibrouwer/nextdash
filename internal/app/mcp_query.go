@@ -99,6 +99,8 @@ func mcpQueryDefinitions() []map[string]any {
 				"monitoring (monitored, up, down as the header counts it, pooled uptime); usage (total opens, opened in the last 30 days, never opened, which leaves out bookmarks told to ignore \"unused\", as the weekly digest does); " +
 				"the daily health trend (broken_links and monitors_down as recorded each day; content failures are not recorded there); " +
 				"and containers (total, running, not_running, by_state, with updates, linked to a bookmark) when Containers: read is on. " +
+				"With Health and Inbox: read on it also has inbox (lifetime added, promoted, deleted and kept since a date, average retention, by source, open items now, and the last trend_days days of daily throughput) " +
+				"and trash (items, per kind, oldest and newest deletion time; never what was deleted). " +
 				"Use it for \"how healthy is my collection\", \"how many bookmarks do I have per page\" or \"is my health getting better\". Does not run a check.",
 			"inputSchema": map[string]any{
 				"type": "object",
@@ -939,6 +941,14 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 			"with_updates":       updates,
 			"linked_to_bookmark": len(c.byContainer),
 		}
+	}
+	if settings.MCPHealthInbox {
+		out["inbox"] = h.mcpInboxStatsBlock(r, days, now)
+		out["trash"] = h.mcpTrashBlock()
+	}
+	if settings.MCPHealthInbox {
+		out["inbox"] = h.mcpInboxStatsBlock(r, days, now)
+		out["trash"] = h.mcpTrashBlock()
 	}
 	out["notes"] = notes
 	return out
