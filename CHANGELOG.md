@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.24.0 — 2 November 2026](#v1240--2-november-2026)
 - [v1.23.0 — 30 October 2026](#v1230--30-october-2026)
 - [v1.22.5 — 29 October 2026](#v1225--29-october-2026)
 - [v1.22.4 — 29 October 2026](#v1224--29-october-2026)
@@ -126,6 +127,66 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.24.0 — 2 November 2026
+
+Watch feeds replace Fresh: follow the feed of any bookmark, get a stripe, a badge and a headline on the row, and read the news in a paper of its own; a safety pass over every file nextDash writes, so an unreadable file is never overwritten with defaults; the MCP endpoint answers counts and queries; a redesigned What's new modal and an assistant tour.
+
+### Watch feeds
+
+- **new — Follow a feed.** Watch the feed of a bookmark and nextDash keeps its news. The old **Fresh** feature is gone, with its texts and its walkthrough; see Fresh below.
+- **new — Rows show the news.** A stripe, a bold name, the newest headline, a badge with a halo and a dot on the page tab for new items; a feed icon on watched bookmarks, muted and unhealthy states included (`Settings → Show a feed icon on watched bookmarks`, on).
+- **new — A paper for all the news.** One news modal for everything you watch, with read and unread per item, three layouts, one article per screen in one column, `j`/`k` through the news, and a masthead that stays at the top. `Esc` closes at once; the **Index** button goes back to the front page.
+- **new — The news popover.** Click a row with news for six headlines, a **Reader** button and an open-site button; it grows out of the row, `+n more` expands in place up to 10, and the layout fits the screen. On a phone a tap shows the headlines first and the bar on top goes to the site (five headlines).
+- **new — Manage in one place.** **Config → Watch feeds** (marked *new* in the rail) lists every watched feed with its newest item; follow several sites at once, and **mute**, **pause** or set a **word filter** per feed. **Watch more** puts sites with a feed first.
+- **new — Add one from the bookmark form.** A **Watch feeds** row saves with the bookmark, in place of the offer chip; adding a watch switches the availability check on, and one that is on stays.
+- **new — Dashboard.** A widget with the sites that have new items, in three layouts, and a *Watch feeds news* widget on a fresh install (added once to existing installs). The Bookmarks view has a column with the latest news.
+- **new — JSON Feed, digest and webhooks.** JSON Feed is read next to RSS and Atom; a digest line and the news go to webhooks and the notify target.
+- **new — Statistics.** **Stats → Watch feeds** shows the numbers with a period switch and the settings; the statistics have a reset route and travel in the backup.
+- **new — Keys.** `Shift+N` opens the news; `#` watches the feed of the bookmark in hand. Adding a category by key is gone. Coming back to the tab opens the news only on a computer and only when switched on (off); muted feeds never bring the paper back on their own.
+- **new — Phones.** The news button is desktop only (a phone opens the paper from the toast); the news stripe stands before the favicon.
+- **fix — Feeds.** An aborted poll is not a failure; feeds of deleted bookmarks are dropped; an entry dated in the future no longer stays new after an open; pictures come back after a restore. Each feed keeps ten full items, fifty light copies and 75 seen ids.
+
+### Phones
+
+- **new — Notifications and links.** Two settings: *Hide notifications and corner cards on phones* (on) and *Open links in a new tab on phones* (off).
+- **fix — News and picker windows** have no empty band under the content; the popover keeps under its badge when the page moves and the row's preview card stays away.
+
+### Assistant
+
+- **new — AI Assistant tour.** A guided tour of the panel and its settings.
+- **fix — Conversations are safe.** A conversation file that failed to read is never saved over; a panic during Apply leaves the proposal *failed*, not *applying*; a proposal no longer counts as a lookup.
+
+### MCP
+
+- **new — Queries and counts.** `query_bookmarks`, `query_containers` and `get_stats`, with counts that survive a limit; `get_stats`, `get_app_status` and `get_bookmark_history` report inbox and trash.
+- **new — Settings overview.** A read-only, allowlisted look at the configuration, behind its own switch.
+- **fix — Safe check errors,** Health view counters and container links that match the view.
+
+### What's new
+
+- **new — A new overview.** Two-column summary, developer card, support bar and counts on the filter chips; the support card also sits beside the release intro.
+
+### Themes
+
+- **new — Neutral (dark)** is the default theme on new installs.
+- **fix — Text fields share one fill** in the signature themes, and more fields take it (`config-input` has a style); the news popover follows the material of the theme; in Ink the folio stays put when you hover the header.
+
+### Reliability
+
+- **fix — An unreadable file is never overwritten.** Settings, Secrets, Push (keys and devices), Trash and page order, Glances hosts, the status page token and the status page: when a file cannot be read, nextDash keeps it and does not write defaults over it. Settings are handed out as a copy; a restore holds the settings lock; push keys and chats stay out of the wrong backup; overlapping deletes of one page leave one trash entry.
+- **fix — Glances.** A dip under the line no longer lowers an open incident's peak, the incident cap never drops an open incident, and a muted alert gives no lost-reading notice.
+- **fix — Widgets and API.** The last good answer is kept, Docker logs stream from the end, disk and stats are guarded; long API runs answer past 60 s; strings are cut on rune boundaries and NaN sample rates are rejected.
+- **fix — Config, dashboard, search.** A theme reset sticks, a widget deletes by id, one bulk apply and page save run at a time; preview retries; IME keys, accent-blind picks and finder case in the search; a sturdier modal focus trap and notice queue.
+- **fix — Health and domains.** Reminders stop after a silent recovery; day summaries are tidier; a known expiry date stays in the report after a failed lookup.
+- **fix — Extension.** The typed form survives tab changes and stale favicon answers are ignored.
+- **fix — Bookmarks and Discovery.** A page move that also changes the URL keeps its shortcut; no empty category for an app that cannot be placed.
+
+### Docs
+
+- **docs — `MANUAL.md`** gets Watch feeds, the funnel tools and the settings overview.
 
 ---
 
