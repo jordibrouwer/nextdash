@@ -106,3 +106,59 @@ func (h *Handlers) pushAutoBackupResult(ctx context.Context, err error) {
 
 	h.sendWebPushNotification(ctx, msg)
 }
+
+// newsPushMessage turns one round's news into a single notification: the item
+// when one site has news, a count and two names when several do. It is false
+// when there is nothing to say.
+func newsPushMessage(news []watchNews, names map[string]string) (webPushMessage, bool) {
+	if len(news) == 0 {
+		return webPushMessage{}, false
+	}
+	name := func(key string) string {
+		if n := strings.TrimSpace(names[key]); n != "" {
+			return n
+		}
+		if host := hostOf(key); host != "" {
+			return host
+		}
+		return key
+	}
+	msg := webPushMessage{Kind: "news", Tag: "nextdash-news", URL: "/?news=1"}
+	if len(news) == 1 {
+		msg.Title = name(news[0].BookmarkKey) + " has news"
+		if len(news[0].Items) > 0 {
+			msg.Body = news[0].Items[0].Title
+		}
+		return msg, true
+	}
+	msg.Title = fmt.Sprintf("%d sites have news", len(news))
+	shown := []string{name(news[0].BookmarkKey), name(news[1].BookmarkKey)}
+	msg.Body = strings.Join(shown, ", ")
+	if rest := len(news) - 2; rest > 0 {
+		msg.Body += fmt.Sprintf(" and %d more", rest)
+	}
+	return msg, true
+}
+
+// pushWatchNews announces a round's news to the browser, behind the master
+// switch and the news category.
+func (h *Handlers) pushWatchNews(ctx context.Context, news []watchNews) {
+	settings := h.store.GetSettings()
+	if !settings.PushNotifyEnabled || !settings.PushNotifyNews {
+		return
+	}
+	// News is not worth waking anyone for: during the quiet hours it is
+	// dropped (the dashboard still shows it) unless the reader allowed "news".
+	if quietNow(settings, quietClock()) && !quietAllowSet(settings)[quietKindNews] {
+		return
+	}
+	names := map[string]string{}
+	for _, b := range h.store.GetAllBookmarks() {
+		if key := canonicalBookmarkURLKey(b.URL); key != "" && names[key] == "" {
+			names[key] = b.Name
+		}
+	}
+	if msg, ok := newsPushMessage(news, names); ok {
+		h.sendWebPushNotification(ctx, msg)
+	}
+}

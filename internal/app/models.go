@@ -788,7 +788,6 @@ type Settings struct {
 	SmartRecentPageIds          []int                      `json:"smartRecentPageIds"`                // Page IDs where smart recent is enabled (empty = all)
 	SmartStalePageIds           []int                      `json:"smartStalePageIds"`                 // Page IDs where smart stale is enabled (empty = all)
 	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`              // Page IDs where smart most used is enabled (empty = all)
-	SmartFreshPageIds           []int                      `json:"smartFreshPageIds"`                 // Page IDs where Fresh is shown (empty = all)
 	Collections                 []Collection               `json:"collections,omitempty"`             // User-defined dynamic collections
 	CollectionColumns           map[string]int             `json:"collectionColumns,omitempty"`       // Collections drawn across two columns, by collection id; one column is the absence of an entry
 	TagRules                    []TagRule                  `json:"tagRules,omitempty"`                // Patterns you wrote that propose a tag
@@ -979,19 +978,15 @@ type Settings struct {
 	WebSearchEngine string `json:"webSearchEngine"`
 	// WebSearchSearxngURL is the base address of the reader's own SearXNG.
 	WebSearchSearxngURL string `json:"webSearchSearxngUrl,omitempty"`
-	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
-	// feed can then say when it has published something since you last opened
-	// it. Off by default because it is the only thing here that reaches out to
-	// the internet on a schedule without a bookmark having asked for it —
-	// discovery happens regardless, so switching this on needs no re-fetch.
-	FeedsEnabled bool `json:"feedsEnabled"`
-	// FeedsMarkQuiet puts a mark on a row whose page publishes but has nothing
-	// new. Off by default and deliberately so: most of those rows are silent
-	// most of the time, and a mark on twenty of them is the noise Fresh exists
-	// to avoid. It is here for the reader who wants to see which bookmarks are
-	// taking part at a glance rather than one at a time in the editor.
-	FeedsMarkQuiet          bool `json:"feedsMarkQuiet"`
-	ServerLogRetentionHours int  `json:"serverLogRetentionHours"` // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
+	// FeedWatchWindowMinutes is how long watched news stays open for the reader
+	// after it arrives and they are back: 15, 30, 60 or 120. Anything else
+	// reads as 30.
+	FeedWatchWindowMinutes int `json:"feedWatchWindowMinutes"`
+	// FeedWatchNewsView is how the news modal shows an article: "paper" (a
+	// newspaper front page, the default), "wide" (two columns in the app's own
+	// style) or "single" (one column). Anything else reads as "paper".
+	FeedWatchNewsView       string `json:"feedWatchNewsView"`
+	ServerLogRetentionHours int    `json:"serverLogRetentionHours"` // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
 	// Which cap applies: "time" uses ServerLogRetentionHours and ignores the
 	// entry count, "count" uses ServerLogMaxEntries and ignores the age. The
 	// two are deliberately exclusive — a log capped both ways silently drops
@@ -1095,6 +1090,7 @@ type Settings struct {
 	PushNotifyBackup     bool                  `json:"pushNotifyBackup"`               // Push when an automatic backup succeeds or fails
 	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyGlances    bool                  `json:"pushNotifyGlances"`              // Push when a Glances host has an incident of a kind switched on in Config -> Glances
+	PushNotifyNews       bool                  `json:"pushNotifyNews"`                 // Push when a watched feed has news; on unless turned off
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	InstallPingEnabled   bool                  `json:"installPingEnabled"`             // Daily anonymous install count: random id + version (on by default, separate from analyticsOptIn)
@@ -1813,6 +1809,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowSearchFlowBanner:            true,
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
+			PushNotifyNews:                  true,
+			FeedWatchWindowMinutes:          30,
+			FeedWatchNewsView:               "paper",
 			ShowThemeStudioButton:           true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
@@ -1930,7 +1929,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartStalePageIds:               []int{},
 			SmartMostUsedPageIds:            []int{},
 			SmartAddedPageIds:               []int{},
-			SmartFreshPageIds:               []int{},
 			SmartAddedLimit:                 20,
 			RowTagsMax:                      2,
 			FaviconRefreshPolicy:            "on-save",
@@ -4473,6 +4471,9 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowSearchFlowBanner:            true,
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
+			PushNotifyNews:                  true,
+			FeedWatchWindowMinutes:          30,
+			FeedWatchNewsView:               "paper",
 			ShowThemeStudioButton:           true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
@@ -4548,7 +4549,6 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartRecentPageIds:              []int{},
 			SmartStalePageIds:               []int{},
 			SmartAddedPageIds:               []int{},
-			SmartFreshPageIds:               []int{},
 			SmartAddedLimit:                 20,
 			RowTagsMax:                      2,
 			FaviconRefreshPolicy:            "on-save",
@@ -4687,6 +4687,20 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showThemeStudioButton"]; !ok {
 			settings.ShowThemeStudioButton = true
+		}
+		// On unless turned off: it only fires when push is on and a feed is watched.
+		if _, ok := rawSettings["pushNotifyNews"]; !ok {
+			settings.PushNotifyNews = true
+		}
+		switch settings.FeedWatchWindowMinutes {
+		case 15, 30, 60, 120:
+		default:
+			settings.FeedWatchWindowMinutes = 30
+		}
+		switch settings.FeedWatchNewsView {
+		case "single", "wide", "paper":
+		default:
+			settings.FeedWatchNewsView = "paper"
 		}
 		// The Bookmarks view's switches that are on unless turned off: a file
 		// written before they existed never answered.
@@ -5003,9 +5017,6 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["smartAddedPageIds"]; !ok || settings.SmartAddedPageIds == nil {
 			settings.SmartAddedPageIds = []int{}
-		}
-		if _, ok := rawSettings["smartFreshPageIds"]; !ok || settings.SmartFreshPageIds == nil {
-			settings.SmartFreshPageIds = []int{}
 		}
 		if _, ok := rawSettings["faviconRefreshPolicy"]; !ok || (settings.FaviconRefreshPolicy != "manual" && settings.FaviconRefreshPolicy != "on-save") {
 			settings.FaviconRefreshPolicy = "on-save"

@@ -47,21 +47,6 @@ var demoMonitors = []demoMonitor{
 	{url: "https://www.torproject.org/", page: 3, pingLow: 210, spread: 120, outages: []demoOutage{{daysAgo: 3.3, minutes: 240, code: 0}}},
 }
 
-// demoFeeds are the bookmarks whose pages advertise a feed, with how many
-// entries are new since the bookmark was last opened.
-var demoFeeds = []struct {
-	url, feed string
-	fresh     int
-}{
-	{"https://news.ycombinator.com/", "https://news.ycombinator.com/rss", 9},
-	{"https://lobste.rs/", "https://lobste.rs/rss", 4},
-	{"https://dev.to/", "https://dev.to/feed", 6},
-	{"https://changelog.com/", "https://changelog.com/feed", 1},
-	{"https://selfh.st/", "https://selfh.st/rss/", 2},
-	{"https://www.home-assistant.io/", "https://www.home-assistant.io/atom.xml", 1},
-	{"https://nextdash.cc/", "https://nextdash.cc/feed.xml", 0},
-}
-
 // demoNoise is a small deterministic jitter, so the charts are not rulers and
 // every reset draws the same picture.
 func demoNoise(i, seed int) int {
@@ -224,42 +209,5 @@ func (h *Handlers) seedDemoHealth(now time.Time) error {
 		return err
 	}
 
-	// Feeds, as the last poll twenty minutes ago left them: the newest entries
-	// after the bookmark's last open, so the rows have a count.
-	opened := map[string]int64{}
-	for pageID := 1; pageID <= len(demoPages()); pageID++ {
-		for _, b := range h.store.GetBookmarksByPage(pageID) {
-			opened[canonicalBookmarkURLKey(b.URL)] = b.LastOpened
-		}
-	}
-	state := FeedStateFile{Feeds: map[string]FeedState{}, LastPoll: now.Add(-20 * time.Minute).UnixMilli(), LastDiscovery: now.Add(-26 * time.Hour).UnixMilli()}
-	for i, f := range demoFeeds {
-		key := canonicalBookmarkURLKey(f.url)
-		// A bookmark never opened counts everything its feed has, so it gets
-		// only the new entries; an opened one also gets a few it has seen.
-		since := opened[key]
-		seen := 6
-		if since == 0 {
-			seen = 0
-		}
-		if since == 0 {
-			since = now.Add(-3 * time.Hour).UnixMilli()
-		}
-		items := []int64{}
-		for n := 0; n < f.fresh; n++ { // after the last open, newest first
-			gap := (now.UnixMilli() - since) / int64(f.fresh+1)
-			items = append(items, now.UnixMilli()-int64(n+1)*gap+int64(demoNoise(n, i))%max(gap/2, 1))
-		}
-		for n := 0; n < seen; n++ { // before it, already seen
-			items = append(items, since-int64(n+1)*int64(5*time.Hour/time.Millisecond))
-		}
-		state.Feeds[key] = FeedState{FeedURL: f.feed, CheckedAt: state.LastPoll, TriedAt: state.LastPoll,
-			RecentItems: items, DiscoveredAt: state.LastDiscovery}
-		if len(items) > 0 {
-			entry := state.Feeds[key]
-			entry.LastItemAt = items[0]
-			state.Feeds[key] = entry
-		}
-	}
-	return writeFeedStateFile(state)
+	return nil
 }

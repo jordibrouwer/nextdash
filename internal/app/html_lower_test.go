@@ -24,8 +24,8 @@ func TestHTMLExtractorsSurviveLengthChangingBytes(t *testing.T) {
 			t.Errorf("extractIconFromHTML(%q) = %q", prefix, got)
 		}
 		feed := prefix + `<link rel="alternate" type="application/rss+xml" href="/feed.xml">`
-		if got := extractFeedFromHTML(feed); got != "/feed.xml" {
-			t.Errorf("extractFeedFromHTML(%q) = %q", prefix, got)
+		if got := extractFeedsFromHTML(feed); len(got) != 1 || got[0].URL != "/feed.xml" {
+			t.Errorf("extractFeedsFromHTML(%q) = %+v", prefix, got)
 		}
 	}
 }

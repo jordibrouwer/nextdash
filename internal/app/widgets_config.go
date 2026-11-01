@@ -204,11 +204,6 @@ var widgetFields = map[WidgetType][]widgetField{
 		// editor's shape; the widget reads the first entry.
 		{Key: "tag", Kind: "list"},
 	},
-	WidgetTypeFeeds: {
-		{Key: "freshOnly", Kind: "bool"},
-		{Key: "showRetired", Kind: "bool"},
-		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
-	},
 	WidgetTypeSources: {
 		{Key: "errorsOnly", Kind: "bool"},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
@@ -691,7 +686,7 @@ func widgetValueAllowed(value string, allowed []string) bool {
 func widgetTypeNames() []string {
 	ordered := []WidgetType{
 		WidgetTypeHealth, WidgetTypeUptime, WidgetTypeCerts, WidgetTypeDomains, WidgetTypeTrend,
-		WidgetTypeInbox, WidgetTypeUnsorted, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
+		WidgetTypeInbox, WidgetTypeUnsorted, WidgetTypeSources, WidgetTypeNeglected,
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,

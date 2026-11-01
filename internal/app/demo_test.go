@@ -159,17 +159,6 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 	if points := readHealthTrendFile().Points; len(points) != 90 {
 		t.Errorf("%d trend points, want 90", len(points))
 	}
-	fresh := freshnessForBookmarks(readFeedStateFile(), h.store.GetBookmarksByPage(1))
-	all := []Bookmark{}
-	for pageID := 1; pageID <= len(demoPages()); pageID++ {
-		all = append(all, h.store.GetBookmarksByPage(pageID)...)
-	}
-	fresh = freshnessForBookmarks(readFeedStateFile(), all)
-	for _, f := range demoFeeds {
-		if got := fresh[canonicalBookmarkURLKey(f.url)].NewCount; got != f.fresh {
-			t.Errorf("%s: %d new, want %d", f.url, got, f.fresh)
-		}
-	}
 	if len(h.store.GetFinders()) < 4 {
 		t.Errorf("%d finders", len(h.store.GetFinders()))
 	}
@@ -309,15 +298,8 @@ func TestDemoPollsNoSite(t *testing.T) {
 	if broken != "404 Not Found" {
 		t.Errorf("a re-check wrote over the seeded result: %q", broken)
 	}
-	if n := h.pollFeeds(context.Background(), nil); n != 0 {
-		t.Errorf("polled %d feeds", n)
-	}
-	// Not even in the start-up window, when the favicons are fetched.
-	demoOutboundOpen.Store(true)
-	checked, _ := h.DiscoverFeeds(context.Background())
-	demoOutboundOpen.Store(false)
-	if checked != 0 {
-		t.Errorf("looked for feeds on %d pages", checked)
+	if n, _ := h.pollWatches(context.Background(), true); n != 0 {
+		t.Errorf("polled %d watched feeds", n)
 	}
 	if hits != 0 {
 		t.Errorf("the site was asked %d times", hits)

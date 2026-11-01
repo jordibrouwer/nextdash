@@ -171,6 +171,7 @@ var dataFiles = map[string]dataFilePolicy{
 	// before its chart appears at all.
 	"health-trend.json":       dataKeep,
 	"feeds.json":              dataKeep,
+	"feed-watches.json":       dataKeep,
 	"inbox-stats.json":        dataKeep,
 	"site-news.json":          dataKeep,
 	"push-subscriptions.json": dataKeep,

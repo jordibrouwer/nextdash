@@ -239,12 +239,17 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/bookmark-health", handlers.GetBookmarkHealth).Methods("GET")
 	// The daily points alone, without building a report for them.
 	r.HandleFunc("/api/health/trend", handlers.GetHealthTrend).Methods("GET")
-	r.HandleFunc("/api/feeds", handlers.GetFeeds).Methods("GET")
 	// The five most recent posts from nextdash.cc, fetched by the server so the
 	// page never talks to another host and one fetch serves every reader.
 	r.HandleFunc("/api/site-news", handlers.GetSiteNews).Methods("GET")
-	r.HandleFunc("/api/feeds/poll", handlers.PollFeedsNow).Methods("POST")
-	r.HandleFunc("/api/feeds/retry", handlers.RetryFeed).Methods("POST")
+	r.HandleFunc("/api/feeds/watch", handlers.GetFeedWatches).Methods("GET")
+	r.HandleFunc("/api/feeds/watch/items", handlers.GetFeedWatchItems).Methods("GET")
+	r.HandleFunc("/api/feeds/watch/candidates", handlers.GetFeedWatchCandidates).Methods("GET")
+	r.HandleFunc("/api/feeds/watch", handlers.WatchFeeds).Methods("POST")
+	r.HandleFunc("/api/feeds/unwatch", handlers.UnwatchFeeds).Methods("POST")
+	r.HandleFunc("/api/feeds/watch/seen", handlers.MarkFeedWatchSeen).Methods("POST")
+	r.HandleFunc("/api/feeds/watch/poll", handlers.PollFeedWatchesNow).Methods("POST")
+	r.HandleFunc("/api/feeds/watch/retry", handlers.RetryFeedWatch).Methods("POST")
 	r.HandleFunc("/api/health/cache-scan", handlers.CacheScanResult).Methods("POST")
 	r.HandleFunc("/api/health/update-status", handlers.UpdateBookmarkHealthStatus).Methods("POST")
 	r.HandleFunc("/api/health/statuses", handlers.UpdateBookmarkHealthStatuses).Methods("POST")

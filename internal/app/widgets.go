@@ -54,9 +54,6 @@ const (
 	// dashboard category -- the same list the full Unsorted view shows,
 	// chronological, most recent first.
 	WidgetTypeUnsorted WidgetType = "unsorted"
-	// WidgetTypeFeeds reports feeds with fresh items, and -- the part nobody
-	// sees today -- the feeds that retired themselves after repeated failures.
-	WidgetTypeFeeds WidgetType = "feeds"
 	// WidgetTypeSources reports what each import source last did. An import that
 	// failed is visible only in config today, so it is found by wondering why
 	// nothing new arrived.
@@ -196,7 +193,6 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeTrend:           {},
 	WidgetTypeInbox:           {},
 	WidgetTypeUnsorted:        {},
-	WidgetTypeFeeds:           {},
 	WidgetTypeSources:         {},
 	WidgetTypeNeglected:       {},
 	WidgetTypeArchive:         {},

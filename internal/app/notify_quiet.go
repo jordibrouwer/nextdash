@@ -66,10 +66,12 @@ const (
 	quietKindMassOutage     = "mass-outage"
 	quietKindBackupFailed   = "backup-failed"
 	quietKindContainerCrash = "container-crash"
+	// quietKindNews lets a watched feed's news push through the quiet hours.
+	quietKindNews = "news"
 )
 
 // quietKinds is every kind the config may list, in the order it shows them.
-var quietKinds = []string{quietKindCertExpired, quietKindMassOutage, quietKindBackupFailed, quietKindContainerCrash}
+var quietKinds = []string{quietKindCertExpired, quietKindMassOutage, quietKindBackupFailed, quietKindContainerCrash, quietKindNews}
 
 // quietAllowDefault is what passes when the reader has not chosen. A container
 // crash is not in it: most of them are a restart someone can read in the
