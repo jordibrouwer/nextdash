@@ -3156,7 +3156,14 @@ class DashboardInlineEdit {
                 // allowDuplicate: a move is an add followed by a delete, so
                 // between the two the URL is on both pages by design. Without
                 // this the cross-page duplicate check would refuse every move.
-                body: JSON.stringify({ page: targetPageId, bookmark: { ...bookmarkState, category }, allowDuplicate: true }),
+                // movedFrom: the source row's address, so its shortcut does not
+                // count against itself when the same edit changed the URL.
+                body: JSON.stringify({
+                    page: targetPageId,
+                    bookmark: { ...bookmarkState, category },
+                    allowDuplicate: true,
+                    movedFrom: bookmarkRef.original?.url ?? bookmarkRef.bookmark?.url ?? '',
+                }),
             });
             if (!addRes.ok) {
                 let message = 'Failed to save target page bookmarks.';

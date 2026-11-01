@@ -1626,6 +1626,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		// showed where the URL already lives and the user said save it anyway.
 		// Never honoured within a single page — see the check below.
 		AllowDuplicate bool `json:"allowDuplicate"`
+		// MovedFrom is the address the row had before an edit that also moves
+		// it to another page. That row is still on its source page until the
+		// delete that follows, holding its shortcut under the old address.
+		MovedFrom string `json:"movedFrom"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1701,10 +1705,13 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		if request.AllowDuplicate && newKey != "" {
 			// A move from the dashboard is this add followed by a delete of the
 			// source row, which still holds the shortcut: it is not a conflict
-			// with itself.
+			// with itself. Under its old address too, when the same edit
+			// changed the URL.
+			movedKey := canonicalBookmarkURLKey(request.MovedFrom)
 			kept := others[:0:0]
 			for _, bm := range others {
-				if canonicalBookmarkURLKey(bm.URL) != newKey {
+				key := canonicalBookmarkURLKey(bm.URL)
+				if key != newKey && (movedKey == "" || key != movedKey) {
 					kept = append(kept, bm)
 				}
 			}
