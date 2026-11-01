@@ -76,7 +76,7 @@
         { line: 4, keys: 'Shift+T', legendKey: 'dashboardKeyTag', cheatKey: 'dvTag', fallback: 'tag' },
         { line: 4, keys: 'Shift+P', legendKey: 'dashboardKeyPin', cheatKey: 'dvPin', fallback: 'pin' },
         { line: 4, keys: '\u2318/Ctrl+Enter', legendKey: 'dashboardKeyNewTab', cheatKey: 'dvNewTab', fallback: 'new tab' },
-        { line: 4, more: true, keys: 'Shift+Alt+W', legendKey: 'dashboardKeyWatchFeed', cheatKey: 'dvWatchFeed', fallback: 'watch feed' },
+        { line: 4, more: true, keys: '#', legendKey: 'dashboardKeyWatchFeed', cheatKey: 'dvWatchFeed', fallback: 'watch feed' },
         { line: 4, keys: 'Shift+D', legendKey: 'dashboardKeyDelete', cheatKey: 'dvDelete', fallback: 'delete' },
     ];
 

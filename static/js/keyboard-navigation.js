@@ -366,10 +366,12 @@ class KeyboardNavigation {
                 }
             }
 
-            // Shift+Alt+W — watch the feed of the bookmark in hand. Every plain
-            // Shift+letter is taken, and Shift+Alt was only ever used with arrows.
-            // Matched on e.code: Option changes what e.key types on macOS.
-            if (e.shiftKey && e.altKey && !e.ctrlKey && !e.metaKey && !e.repeat && e.code === 'KeyW') {
+            // # (Shift+3 on most keyboards) — watch the feed of the bookmark in hand.
+            // Every plain Shift+letter is taken, and a Shift+Alt chord got in the way
+            // of Safari's own shortcuts. Matched on the character typed, so it is the
+            // same key on any layout; AltGr, which types # on some of them, is allowed.
+            if (e.key === '#' && !e.metaKey && !e.repeat
+                && ((!e.ctrlKey && !e.altKey) || e.getModifierState?.('AltGraph'))) {
                 if (this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
                     e.preventDefault();
                     e.stopImmediatePropagation();

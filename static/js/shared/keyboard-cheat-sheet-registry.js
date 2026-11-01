@@ -169,7 +169,7 @@
                 { keys: 'Shift + L', cheatKey: 'bmShare', fallback: 'Share the focused bookmark, or copy its name and URL where no share sheet exists', print: true, printFallback: 'Share the focused bookmark — copies name + URL where there is no share sheet' },
                 { keys: 'Shift + J', cheatKey: 'bmQrCode', fallback: 'Show the focused bookmark as a QR code, to open it on a phone', print: true, printFallback: 'QR code of the focused bookmark' },
                 { keys: '↓ · arrows · Alt + ← / →', cheatKey: 'bmIconPicker', fallback: 'In the app icon picker: from the search into the grid, move over the icons, then the variant of the one you are on; Enter chooses', printFallback: 'Icon picker: grid, icons, variant' },
-                { keys: 'Shift + Alt + W', cheatKey: 'bmWatchFeed', fallback: 'Watch the focused bookmark’s feed, or change or stop watching it', print: true, printFallback: 'Watch the bookmark’s feed' },
+                { keys: '#', cheatKey: 'bmWatchFeed', fallback: 'Watch the focused bookmark’s feed, or change or stop watching it', print: true, printFallback: 'Watch the bookmark’s feed' },
                 { keys: 'Shift + R', cheatKey: 'bmRevealHealth', fallback: 'Open the focused bookmark in the Bookmarks view, on its Health tab', print: true, printFallback: 'Show in the Bookmarks view' },
                 { keys: 't', cheatKey: 'bmFilterTag', fallback: 'Filter the grid to the focused bookmark\u2019s tag; several tags open the picker', print: true },
                 { keys: 'Ctrl + C', cheatKey: 'bmCopyUrl', fallback: 'Copy URL of focused bookmark (row flashes green)' },
