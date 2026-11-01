@@ -40,7 +40,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/enhanced-features.css":                              "2b423504534b",
 	"css/favicon-prefetch.css":                               "32ea7f0ffa14",
 	"css/feed-row.css":                                       "a7983318aad6",
-	"css/feed-watch.css":                                     "2db4462b5435",
+	"css/feed-watch.css":                                     "2d87af59e277",
 	"css/font-size.css":                                      "669a02d3c9e6",
 	"css/fonts.css":                                          "2e97be10ab4c",
 	"css/glances-tutorial.css":                               "0433c682d3ff",

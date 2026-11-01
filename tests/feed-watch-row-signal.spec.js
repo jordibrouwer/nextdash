@@ -181,3 +181,24 @@ test('a muted feed on another page puts no dot on its tab', async ({ page, reque
     await page.waitForTimeout(800);
     await expect(page.locator('.page-tab-news-dot')).toHaveCount(0);
 });
+
+test.describe('on a phone', () => {
+    test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+
+    test('the stripe stands before the icon, not over it', async ({ page }) => {
+        await withNews(page, [newsItem(1)]);
+        await openDashboard(page);
+        const geometry = await page.evaluate(() => {
+            const el = document.querySelector('.bookmark-link.has-feed-news');
+            const box = el.getBoundingClientRect();
+            const slot = el.querySelector('.bookmark-icon-slot, .bookmark-icon').getBoundingClientRect();
+            const style = getComputedStyle(el, '::before');
+            const left = box.left + parseFloat(style.insetInlineStart);
+            const list = el.closest('.bookmarks-list').getBoundingClientRect();
+            return { right: left + parseFloat(style.width), left, slotLeft: slot.left, listLeft: list.left };
+        });
+        // Ends before the icon starts, and is not cut off by the list it sits in.
+        expect(geometry.right).toBeLessThanOrEqual(geometry.slotLeft);
+        expect(geometry.left).toBeGreaterThanOrEqual(geometry.listLeft);
+    });
+});

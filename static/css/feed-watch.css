@@ -888,3 +888,12 @@ body[data-density-mode="dense"] .bookmark-news-line,
 }
 
 .bookmark-text:has(+ .bookmark-feed-icon) { flex: 0 1 auto; }
+
+/* On a phone the row has no padding before the icon, so a stripe at the row's
+   edge ran over the favicon. It stands in the gap before the row instead. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+    .bookmark-link.has-feed-news::before,
+    .dashboard-grid.layout-terminal .bookmark-link.has-feed-news::before { inset-inline-start: -9px; }
+}
+body[data-mobile-layout="true"] .bookmark-link.has-feed-news::before,
+body[data-mobile-layout="true"] .dashboard-grid.layout-terminal .bookmark-link.has-feed-news::before { inset-inline-start: -9px; }
