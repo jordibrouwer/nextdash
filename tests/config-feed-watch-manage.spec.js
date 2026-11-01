@@ -235,6 +235,14 @@ test.describe('two watched feeds', () => {
         await expect.poll(async () => (await stored(request)).total).toBe(0);
     });
 
+    test('the select-all box sits over the row boxes', async ({ page }) => {
+        await openSection(page);
+        const centre = async (locator) => { const b = await locator.boundingBox(); return b.x + b.width / 2; };
+        const all = await centre(list(page).locator('[data-fwm-tick-all]'));
+        const first = await centre(rows(page).first().locator('[data-fwm-tick]'));
+        expect(Math.abs(all - first)).toBeLessThan(1);
+    });
+
     test('Watch more… lists the bookmarks without a watch and opens the picker', async ({ page, request }) => {
         expect((await request.post('/api/feeds/unwatch', { headers, data: { bookmarkUrl: b.url } })).ok()).toBe(true);
         await openSection(page);

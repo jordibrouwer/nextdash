@@ -647,3 +647,7 @@ body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn[data-unread="0"] { 
 }
 .feed-watch-x:hover, .feed-watch-x:focus-visible { background: color-mix(in srgb, var(--text-primary) 10%, transparent); color: var(--text-primary); }
 @media (hover: none), (pointer: coarse) { .feed-watch-x { width: 44px; height: 44px; } }
+
+/* The select-all box sits over the row boxes: the rows are inset by their
+   padding and border, so the toolbar's box takes the same inset. */
+.fwm-toolbar > .fwm-tick-all { margin-left: calc(0.6rem + 1px); }
