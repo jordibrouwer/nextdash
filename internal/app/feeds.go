@@ -422,9 +422,16 @@ func feedEntryTimestamps(body []byte) []int64 {
 	}
 	entries := append(append(append([]feedEntry{}, doc.Items...), doc.Entries...), doc.RDFItems...)
 	times := make([]int64, 0, len(entries))
+	// No entry is newer than the read that found it. A date in the future -- a
+	// local time without a zone read as UTC, a scheduled post -- stayed newer
+	// than the bookmark's last open and kept it "new" after it was opened.
+	now := time.Now().UnixMilli()
 	for _, entry := range entries {
 		for _, raw := range []string{entry.PubDate, entry.Published, entry.Updated, entry.Date} {
 			if ts := parseFeedTime(raw); ts > 0 {
+				if ts > now {
+					ts = now
+				}
 				times = append(times, ts)
 				break
 			}

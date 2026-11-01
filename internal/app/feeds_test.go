@@ -268,3 +268,24 @@ func TestFreshnessTakesTheNewestOpenOfEveryCopy(t *testing.T) {
 		t.Fatalf("newCount = %d, want 0 after opening one copy", got)
 	}
 }
+
+// An entry dated in the future counts as published when it was read, so
+// opening the bookmark after that read clears it.
+func TestFeedEntryInTheFutureIsClearedByAnOpen(t *testing.T) {
+	future := time.Now().Add(2 * time.Hour).UTC().Format(time.RFC1123Z)
+	rss := []byte(`<rss><channel><item><pubDate>` + future + `</pubDate></item></channel></rss>`)
+	times := feedEntryTimestamps(rss)
+	if len(times) != 1 {
+		t.Fatalf("times = %v", times)
+	}
+	if times[0] > time.Now().UnixMilli() {
+		t.Fatalf("an entry is dated after the read that found it: %d", times[0])
+	}
+	state := FeedStateFile{Feeds: map[string]FeedState{
+		canonicalBookmarkURLKey("https://blog.example/"): {FeedURL: "https://blog.example/feed", RecentItems: times, LastItemAt: times[0]},
+	}}
+	opened := []Bookmark{{URL: "https://blog.example/", LastOpened: time.Now().Add(time.Minute).UnixMilli()}}
+	if got := freshnessForBookmarks(state, opened)[canonicalBookmarkURLKey("https://blog.example/")].NewCount; got != 0 {
+		t.Fatalf("still %d new after the bookmark was opened", got)
+	}
+}
