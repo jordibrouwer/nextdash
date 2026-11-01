@@ -1002,3 +1002,36 @@ body[data-mobile-layout="true"] .dashboard-grid.layout-terminal .bookmark-link.h
 .modal.feed-news-modal.is-paper .feed-news-top { background: #f4efe4; background-image: none; }
 .feed-news-top .feed-news-head { margin-bottom: 0; }
 .feed-news-top + .feed-news-body, .feed-news-top ~ .feed-news-body { margin-top: 0.6rem; }
+
+/* In a signature material the popover's contents wear the material too: its rules
+   between rows, the colour of the row in hand, its item and control radii, and the
+   "+n more" bar on the popover's own surface instead of a solid strip. The frame
+   itself comes from .move-popover. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop {
+    --feed-pop-item-r: var(--ov-r-item, 8px);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop :is(.feed-news-pop-item, .feed-news-pop-more) {
+    border-top-color: var(--ov-rule-soft, var(--border-secondary));
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop.is-two-cols .feed-news-pop-list > li > .feed-news-pop-item {
+    border-bottom-color: var(--ov-rule-soft, var(--border-secondary));
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop :is(.feed-news-pop-item, .feed-news-pop-close):is(:hover, :active, :focus-visible) {
+    background: var(--ov-hot);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop .feed-news-pop-more:is(:hover, :active, :focus-visible) {
+    background: var(--ov-hot);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop .feed-news-pop-more {
+    background: var(--ov-fill-small, var(--background-secondary));
+    border-top: 1px solid var(--ov-rule);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop .feed-news-pop-close {
+    border-radius: var(--ov-r-control, 8px);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop .feed-news-pop-thumb {
+    border-radius: var(--feed-pop-item-r);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop :is(.feed-news-pop-item, .feed-news-pop-more):focus-visible {
+    border-radius: var(--feed-pop-item-r);
+}
