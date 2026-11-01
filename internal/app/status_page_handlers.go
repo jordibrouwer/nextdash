@@ -54,12 +54,14 @@ func (h *Handlers) SaveStatusPage(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	var in StatusPageConfig
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+	// A pointer, so a body of `null` is refused: decoded into a value it was
+	// an empty page that replaced the stored one without a word.
+	var in *StatusPageConfig
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in == nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-	cfg := normalizeStatusPage(in)
+	cfg := normalizeStatusPage(*in)
 
 	// A service named after its URL is the normalise fallback; use the
 	// bookmark's own name instead.

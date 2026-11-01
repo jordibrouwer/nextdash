@@ -129,3 +129,20 @@ func TestStatusPageAfterRestoreGetsANewLink(t *testing.T) {
 		t.Fatalf("an enabled page without a link must get one when Config opens, got %q", out.Path)
 	}
 }
+
+// A body of null is refused, not decoded into an empty page that replaced
+// the stored groups, title and switch.
+func TestStatusPageSaveRefusesNull(t *testing.T) {
+	h := newTestHandlers(t)
+	fakeStatusContainers(t, nil, nil)
+	if rec := statusOwner(t, h, "PUT", "/api/status-page", `{"enabled":true,"title":"Home"}`, ""); rec.Code != 200 {
+		t.Fatalf("seed PUT = %d", rec.Code)
+	}
+	if rec := statusOwner(t, h, "PUT", "/api/status-page", `null`, ""); rec.Code != http.StatusBadRequest {
+		t.Fatalf("null PUT = %d, want 400", rec.Code)
+	}
+	rec := statusOwner(t, h, "GET", "/api/status-page", "", "")
+	if !strings.Contains(rec.Body.String(), `"title":"Home"`) {
+		t.Fatalf("stored page lost: %s", rec.Body.String())
+	}
+}
