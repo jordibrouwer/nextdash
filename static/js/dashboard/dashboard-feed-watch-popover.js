@@ -19,7 +19,9 @@
     const MARGIN = 12;
     const GAP = 8;
 
-    let popover = null;   // { el, badge, key }
+    let popover = null;   // { el, badge, key, bookmark }
+    let watcher = null;   // MutationObserver on the page, while a popover is open
+    let resizer = null;   // ResizeObserver on the page, while a popover is open
 
     function isTouch() {
         return Boolean(global.matchMedia && global.matchMedia(QUERY).matches);
@@ -57,6 +59,11 @@
         const { badge } = popover;
         badge?.setAttribute('aria-expanded', 'false');
         popover.el.remove();
+        watcher?.disconnect();
+        resizer?.disconnect();
+        watcher = null;
+        resizer = null;
+        document.removeEventListener('feedwatch:changed', onRendered);
         document.removeEventListener('pointerdown', onOutside, true);
         document.removeEventListener('keydown', onKey, true);
         global.removeEventListener('resize', onResize);
@@ -80,6 +87,35 @@
     // a reason to place the popover again, not to take it away.
     function onResize() {
         if (popover) place(popover.el, popover.badge);
+    }
+
+    /**
+     * The page under the popover moves: a picture loads, the news count changes
+     * and the rows are drawn again. The popover is fixed to the screen, so it
+     * finds its badge again (the old one may be gone) and sits under it, or goes
+     * when the badge has.
+     */
+    function follow() {
+        if (!popover) return;
+        let { badge } = popover;
+        if (!badge?.isConnected) {
+            // The same bookmark can be on the page twice (in a recent list and in
+            // its category): the popover goes back to the copy it was opened on.
+            let target = '';
+            try { target = new URL(popover.bookmark?.url, global.location.href).href; } catch { /* no address */ }
+            const copies = [...document.querySelectorAll('.bookmark-news-badge.is-tappable')]
+                .filter((b) => b.closest('a')?.href === target);
+            badge = copies[Math.min(popover.copy || 0, copies.length - 1)] || null;
+            if (!badge) { close(); return; }
+            badge.setAttribute('aria-expanded', 'true');
+            popover.badge = badge;
+        }
+        place(popover.el, badge);
+    }
+
+    function onRendered() {
+        // The rows are drawn on the next frame after the event.
+        global.requestAnimationFrame(() => global.requestAnimationFrame(follow));
     }
 
     function onScroll(event) {
@@ -172,8 +208,25 @@
         const el = build(bookmark, shown, Math.max(0, waiting - shown.length));
         document.body.appendChild(el);
         badge.setAttribute('aria-expanded', 'true');
-        popover = { el, badge, key };
+        const same = [...document.querySelectorAll('.bookmark-news-badge.is-tappable')]
+            .filter((b) => b.closest('a')?.href === badge.closest('a')?.href);
+        popover = { el, badge, key, bookmark, copy: Math.max(0, same.indexOf(badge)) };
         place(el, badge);
+        // A page that is still settling (pictures, a repaint) moves the row after
+        // the first placement.
+        let queued = false;
+        const settle = () => {
+            if (queued) return;
+            queued = true;
+            global.requestAnimationFrame(() => { queued = false; follow(); });
+        };
+        watcher = new global.MutationObserver(settle);
+        watcher.observe(document.body, { childList: true, subtree: true });
+        if (global.ResizeObserver) {
+            resizer = new global.ResizeObserver(settle);
+            resizer.observe(document.body);
+        }
+        document.addEventListener('feedwatch:changed', onRendered);
         el.querySelector('.feed-news-pop-item')?.focus({ preventScroll: true });
         document.addEventListener('pointerdown', onOutside, true);
         document.addEventListener('keydown', onKey, true);
@@ -196,6 +249,15 @@
         badge.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
+            // A touch sends a hover before the click, and the row's own preview
+            // card would open under the headlines a moment later.
+            const link = badge.closest('a');
+            if (link) {
+                link._previewHoverActive = false;
+                clearTimeout(link._previewHoverTimer);
+                link._previewHoverTimer = null;
+            }
+            try { dash()?.dismissBookmarkPreviewInteractions?.(); } catch { /* no card */ }
             void toggle(bookmark, badge);
         });
     }

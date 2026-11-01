@@ -186,6 +186,30 @@ test.describe('on a touch screen', () => {
         await expect(list.getByRole('listitem').first().getByRole('button')).toContainText('Headline 1');
     });
 
+    test('the popover keeps under its badge when the page shifts or the rows are drawn again', async ({ page }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await badge(page).first().tap();
+        await expect(pop(page)).toBeVisible();
+        // How far the popover is from its badge, under it or above it.
+        const gap = async () => page.evaluate(() => {
+            const b = document.querySelector('.bookmark-news-badge[aria-expanded="true"]').getBoundingClientRect();
+            const p = document.querySelector('.feed-news-pop').getBoundingClientRect();
+            return Math.round(Math.min(Math.abs(p.top - b.bottom), Math.abs(b.top - p.bottom)));
+        });
+        expect(await gap()).toBeLessThan(20);
+        // A picture loads above the row, then the rows are drawn again.
+        await page.evaluate(() => {
+            const spacer = document.createElement('div');
+            spacer.style.height = '90px';
+            document.body.firstElementChild.before(spacer);
+        });
+        await page.evaluate(() => document.dispatchEvent(new CustomEvent('feedwatch:changed')));
+        await expect.poll(gap).toBeLessThan(20);
+        await expect(pop(page)).toHaveCount(1);
+        await expect(badge(page)).toHaveAttribute('aria-expanded', 'true');
+    });
+
     test('tapping the row itself still opens the bookmark', async ({ page, context }) => {
         await stubNews(page);
         await openDashboard(page);
@@ -225,6 +249,15 @@ test.describe('on a touch screen, against the real server', () => {
         await expect(badge(page)).toHaveText('3');
         await badge(page).tap();
         await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(3);
+        // The row's own preview card must not open under the headlines.
+        await page.waitForTimeout(1500);
+        expect(await page.evaluate(() => {
+            const el = document.getElementById('bookmark-preview-card');
+            if (!el) return false;
+            const r = el.getBoundingClientRect();
+            const style = getComputedStyle(el);
+            return style.visibility !== 'hidden' && style.display !== 'none' && Number(style.opacity) > 0.05 && r.width > 0;
+        })).toBe(false);
         await pop(page).locator('.feed-news-pop-item').nth(1).tap();
         await expect.poll(async () => (await (await request.get('/api/feeds/watch')).json()).watches
             && Object.values((await (await request.get('/api/feeds/watch')).json()).watches)[0].newCount).toBe(2);
