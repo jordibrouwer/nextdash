@@ -276,16 +276,20 @@ func (h *Handlers) aiRunTurn(ctx context.Context, r *http.Request, p aiProvider,
 
 		req.Messages = append(req.Messages, aiWireMessage{Role: "assistant", Text: reply.Text, ToolCalls: reply.ToolCalls})
 		for _, call := range reply.ToolCalls {
-			calls++
+			// A proposal is not a lookup: it never counts towards the limit,
+			// so one made after the last lookup is still kept.
+			if call.Name != aiProposeChangesTool {
+				calls++
+			}
 			var out string
 			switch {
-			case calls > aiMaxCalls:
-				res.Limit = "calls"
-				out = aiJSONText(map[string]any{"error": "Too many lookups for one question."})
 			case call.Name == aiProposeChangesTool:
 				accepted, told := h.aiCheckProposals(h.store.GetSettings(), call.Arguments)
 				res.Proposals = append(res.Proposals, accepted...)
 				out = aiJSONText(told)
+			case calls > aiMaxCalls:
+				res.Limit = "calls"
+				out = aiJSONText(map[string]any{"error": "Too many lookups for one question."})
 			case aiIsDocsTool(call.Name) && offeredSet[call.Name]:
 				emit(aiTurnEvent{Type: "tool", Group: aiDocsGroup})
 				out = aiCutText(aiRunDocsTool(call), aiToolResultMax)

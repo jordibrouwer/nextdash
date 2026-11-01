@@ -217,6 +217,27 @@ func TestLoopStopsAfterTwentyCalls(t *testing.T) {
 	}
 }
 
+// A proposal is not a lookup: one made right after the twentieth lookup is
+// still stored, and the turn does not end on the call limit.
+func TestAProposalDoesNotCountAsALookup(t *testing.T) {
+	h := newMCPHandlers(t)
+	turnOnEveryMCPGroup(t, h)
+	var calls []aiToolCall
+	for i := 0; i < aiMaxCalls; i++ {
+		calls = append(calls, aiCall(fmt.Sprintf("c%d", i), "list_tags", `{}`))
+	}
+	calls = append(calls, aiCall("p", aiProposeChangesTool,
+		`{"changes":[{"tool":"create_category","arguments":{"page":1,"name":"Media"},"reason":"Group them."}]}`))
+	fake := &fakeAIProvider{replies: []aiChatReply{{ToolCalls: calls}, {Text: "Done."}}}
+	res, _, err := runAITurn(t, h, fake, "Tidy up")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Limit != "" || len(res.Proposals) != 1 {
+		t.Fatalf("limit %q, %d proposals", res.Limit, len(res.Proposals))
+	}
+}
+
 func TestLoopHitsTheDeadline(t *testing.T) {
 	old := aiTurnDeadline
 	aiTurnDeadline = 200 * time.Millisecond
