@@ -76,7 +76,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/theme-depth.css":                                    "1a0f6e45598a",
 	"css/theme-ink.css":                                      "510f764a1cbb",
 	"css/theme-overlays.css":                                 "9c623ccfe941",
-	"css/theme-signature.css":                                "98386d48ee1e",
+	"css/theme-signature.css":                                "bd3292936e3e",
 	"css/theme.css":                                          "c1804c90fc61",
 	"css/typography-tokens.css":                              "0dca3c33d441",
 	"css/unraid-tutorial.css":                                "cfaef90bb204",
