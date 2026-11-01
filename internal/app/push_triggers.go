@@ -143,6 +143,16 @@ func newsPushMessage(news []watchNews, names map[string]string) (webPushMessage,
 // pushWatchNews announces a round's news to the browser, behind the master
 // switch and the news category.
 func (h *Handlers) pushWatchNews(ctx context.Context, news []watchNews) {
+	// A muted feed counts on the dashboard but never calls.
+	loud := make([]watchNews, 0, len(news))
+	for _, n := range news {
+		if !n.Muted {
+			loud = append(loud, n)
+		}
+	}
+	if news = loud; len(news) == 0 {
+		return
+	}
 	settings := h.store.GetSettings()
 	if !settings.PushNotifyEnabled || !settings.PushNotifyNews {
 		return

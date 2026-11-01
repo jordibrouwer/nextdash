@@ -4,7 +4,11 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
+	"unicode/utf8"
+
+	xhtml "golang.org/x/net/html"
 )
 
 /*
@@ -40,6 +44,15 @@ type FeedWatch struct {
 	FeedURL         string `json:"feedUrl"`
 	Title           string `json:"title,omitempty"`
 	IntervalMinutes int    `json:"intervalMinutes"`
+
+	// Muted feeds still count as news but never call: no push, no toast.
+	// Paused feeds are not polled. Include and Exclude are words matched
+	// against an entry's title and text: with Include, an entry needs one of
+	// them; an Exclude word drops it.
+	Muted   bool     `json:"muted,omitempty"`
+	Paused  bool     `json:"paused,omitempty"`
+	Include []string `json:"include,omitempty"`
+	Exclude []string `json:"exclude,omitempty"`
 
 	ETag         string `json:"etag,omitempty"`
 	LastModified string `json:"lastModified,omitempty"`
@@ -125,4 +138,84 @@ func validFeedWatchInterval(minutes int) bool {
 		}
 	}
 	return false
+}
+
+const (
+	feedWatchFilterWords     = 10
+	feedWatchFilterWordRunes = 40
+)
+
+// cleanFilterWords trims the words and drops empty ones. It is false when
+// there are too many or one is too long.
+func cleanFilterWords(in []string) ([]string, bool) {
+	out := make([]string, 0, len(in))
+	for _, word := range in {
+		word = strings.TrimSpace(word)
+		if word == "" {
+			continue
+		}
+		if utf8.RuneCountInString(word) > feedWatchFilterWordRunes {
+			return nil, false
+		}
+		out = append(out, word)
+	}
+	if len(out) > feedWatchFilterWords {
+		return nil, false
+	}
+	return out, true
+}
+
+// feedItemPlainText is an entry's title and text without markup.
+func feedItemPlainText(it FeedItem) string {
+	var b strings.Builder
+	b.WriteString(it.Title)
+	b.WriteByte(' ')
+	z := xhtml.NewTokenizer(strings.NewReader(it.Summary))
+	for {
+		tt := z.Next()
+		if tt == xhtml.ErrorToken {
+			break
+		}
+		if tt == xhtml.TextToken {
+			b.Write(z.Text())
+			b.WriteByte(' ')
+		}
+	}
+	return strings.ToLower(b.String())
+}
+
+// watchKeeps applies a watch's word filter to one entry.
+func watchKeeps(w FeedWatch, it FeedItem) bool {
+	if len(w.Include) == 0 && len(w.Exclude) == 0 {
+		return true
+	}
+	text := feedItemPlainText(it)
+	for _, word := range w.Exclude {
+		if strings.Contains(text, strings.ToLower(word)) {
+			return false
+		}
+	}
+	if len(w.Include) == 0 {
+		return true
+	}
+	for _, word := range w.Include {
+		if strings.Contains(text, strings.ToLower(word)) {
+			return true
+		}
+	}
+	return false
+}
+
+// filterWatchItems keeps the entries a watch's word filter lets through.
+func filterWatchItems(w FeedWatch, items []FeedItem) []FeedItem {
+	if len(w.Include) == 0 && len(w.Exclude) == 0 {
+		return items
+	}
+	out := make([]FeedItem, 0, len(items))
+	for _, it := range items {
+		if watchKeeps(w, it) {
+			out = append(out, it)
+		}
+	}
+	return out
 }

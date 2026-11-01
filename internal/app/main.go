@@ -246,6 +246,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/feeds/watch/items", handlers.GetFeedWatchItems).Methods("GET")
 	r.HandleFunc("/api/feeds/watch/candidates", handlers.GetFeedWatchCandidates).Methods("GET")
 	r.HandleFunc("/api/feeds/watch", handlers.WatchFeeds).Methods("POST")
+	r.HandleFunc("/api/feeds/watch/feed", handlers.UpdateFeedWatch).Methods("POST")
+	r.HandleFunc("/api/feeds/watch/interval", handlers.SetFeedWatchInterval).Methods("POST")
 	r.HandleFunc("/api/feeds/unwatch", handlers.UnwatchFeeds).Methods("POST")
 	r.HandleFunc("/api/feeds/watch/seen", handlers.MarkFeedWatchSeen).Methods("POST")
 	r.HandleFunc("/api/feeds/watch/read", handlers.MarkFeedWatchRead).Methods("POST")

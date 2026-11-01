@@ -70,6 +70,8 @@ type watchNews struct {
 	BookmarkKey string
 	FeedURL     string
 	Items       []FeedItem
+	// Muted news counts on the dashboard but is left out of push.
+	Muted bool
 }
 
 // baselineWatch reads the feed once and records what is already there as seen,
@@ -163,6 +165,9 @@ func (h *Handlers) pollWatch(ctx context.Context, w FeedWatch, now time.Time) (F
 		if it.PublishedAt > 0 && it.PublishedAt < w.NewestAt {
 			continue
 		}
+		if !watchKeeps(w, it) {
+			continue // seen below, so it is never news later
+		}
 		it.Summary = sanitizeFeedHTML(it.Summary, feedWatchSummaryRunes)
 		it.FoundAt = ms
 		found = append(found, it)
@@ -185,7 +190,7 @@ func (h *Handlers) pollWatch(ctx context.Context, w FeedWatch, now time.Time) (F
 
 	w.Failures = 0
 	w.LastError, w.LastStatus = "", 0
-	w.Recent = recentFromItems(items)
+	w.Recent = recentFromItems(filterWatchItems(w, items))
 	w.ETag, w.LastModified = res.ETag, res.LastModified
 	if len(found) > 0 {
 		w.Items = append(append([]FeedItem{}, found...), w.Items...)
@@ -257,6 +262,9 @@ func dedupeStrings(in []string, max int) []string {
 // watchDue reports whether a watch should be asked now. A watch that failed
 // feedMaxFailures times in a row is retried once a day, like a Fresh feed.
 func watchDue(w FeedWatch, now time.Time) bool {
+	if w.Paused {
+		return false
+	}
 	if w.Failures >= feedMaxFailures && now.Sub(time.UnixMilli(w.TriedAt)) < feedRetiredRetry {
 		return false
 	}
@@ -296,6 +304,9 @@ func (h *Handlers) pollWatches(ctx context.Context, force bool) (int, []watchNew
 		if !live[w.BookmarkKey] {
 			continue
 		}
+		if w.Paused {
+			continue
+		}
 		if force {
 			if w.Failures >= feedMaxFailures && now.Sub(time.UnixMilli(w.TriedAt)) < feedRetiredRetry {
 				continue
@@ -331,7 +342,7 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 		}
 		polled = append(polled, polledWatch{from: w.FeedURL, w: next})
 		if len(found) > 0 {
-			news = append(news, watchNews{BookmarkKey: w.BookmarkKey, FeedURL: next.FeedURL, Items: found})
+			news = append(news, watchNews{BookmarkKey: w.BookmarkKey, FeedURL: next.FeedURL, Items: found, Muted: w.Muted})
 		}
 	}
 
@@ -356,6 +367,8 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 					continue
 				}
 				p.w.IntervalMinutes = file.Watches[i].IntervalMinutes
+				p.w.Muted, p.w.Paused = file.Watches[i].Muted, file.Watches[i].Paused
+				p.w.Include, p.w.Exclude = file.Watches[i].Include, file.Watches[i].Exclude
 				if p.w.FeedURL != p.from {
 					// It moved. When the same bookmark already watches the new
 					// address, that watch stays and takes over what this one had seen.

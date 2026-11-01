@@ -29,13 +29,21 @@ type watchFeedEntry struct {
 	LastStatus      int    `json:"lastStatus,omitempty"`
 	MovedFrom       string `json:"movedFrom,omitempty"`
 	MovedAt         int64  `json:"movedAt,omitempty"`
+	// Muted and Paused are the reader's own switches; Include and Exclude the
+	// word filter. All four are always present.
+	Muted   bool     `json:"muted"`
+	Paused  bool     `json:"paused"`
+	Include []string `json:"include"`
+	Exclude []string `json:"exclude"`
 }
 
 type watchEntry struct {
-	NewCount int              `json:"newCount"`
-	NewAt    int64            `json:"newAt,omitempty"`
-	Newest   *FeedItem        `json:"newest"`
-	Feeds    []watchFeedEntry `json:"feeds"`
+	NewCount int   `json:"newCount"`
+	NewAt    int64 `json:"newAt,omitempty"`
+	// Muted is true when every feed of the bookmark is muted.
+	Muted  bool             `json:"muted,omitempty"`
+	Newest *FeedItem        `json:"newest"`
+	Feeds  []watchFeedEntry `json:"feeds"`
 }
 
 // watchItemUnread is the one rule for what is unread. readAt is the newest
@@ -102,7 +110,9 @@ func watchListFor(file FeedWatchFile, bookmarks []Bookmark) map[string]watchEntr
 			FeedURL: w.FeedURL, Title: w.Title, IntervalMinutes: w.IntervalMinutes,
 			CheckedAt: w.CheckedAt, Failures: w.Failures, Retired: w.Failures >= feedMaxFailures,
 			LastError: w.LastError, LastStatus: w.LastStatus, MovedFrom: w.MovedFrom, MovedAt: w.MovedAt,
+			Muted: w.Muted, Paused: w.Paused, Include: nonNilWords(w.Include), Exclude: nonNilWords(w.Exclude),
 		})
+		entry.Muted = w.Muted && (len(entry.Feeds) == 1 || entry.Muted)
 		fresh := watchNewItems(w, read[w.BookmarkKey])
 		entry.NewCount += len(fresh)
 		if len(fresh) > 0 {
@@ -120,6 +130,13 @@ func watchListFor(file FeedWatchFile, bookmarks []Bookmark) map[string]watchEntr
 		out[w.BookmarkKey] = entry
 	}
 	return out
+}
+
+func nonNilWords(in []string) []string {
+	if in == nil {
+		return []string{}
+	}
+	return in
 }
 
 func writeWatchJSON(w http.ResponseWriter, status int, v any) {
@@ -230,7 +247,7 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 		if !ok || (want != "" && wt.BookmarkKey != want) {
 			continue
 		}
-		for _, it := range wt.Recent {
+		for _, it := range filterWatchItems(wt, wt.Recent) {
 			if isNew[wt.BookmarkKey+"|"+it.ID] {
 				continue
 			}
@@ -294,8 +311,16 @@ type watchRequest struct {
 	// FeedURL names one feed, for the routes that act on a single watch.
 	FeedURL string `json:"feedUrl"`
 	// All, on the seen route, marks every watched bookmark's news read.
-	All   bool `json:"all"`
-	Feeds []struct {
+	All bool `json:"all"`
+	// The per-feed settings; a pointer that is absent leaves the setting alone.
+	IntervalMinutes *int      `json:"intervalMinutes"`
+	Muted           *bool     `json:"muted"`
+	Paused          *bool     `json:"paused"`
+	Include         *[]string `json:"include"`
+	Exclude         *[]string `json:"exclude"`
+	// BookmarkURLs names several bookmarks, for the interval route.
+	BookmarkURLs []string `json:"bookmarkUrls"`
+	Feeds        []struct {
 		FeedURL         string `json:"feedUrl"`
 		IntervalMinutes int    `json:"intervalMinutes"`
 	} `json:"feeds"`
@@ -596,4 +621,111 @@ func (h *Handlers) RetryFeedWatch(w http.ResponseWriter, r *http.Request) {
 	file := readFeedWatchFile()
 	feedWatchMu.Unlock()
 	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks())[key]})
+}
+
+// UpdateFeedWatch changes the settings of one watched feed; what the body
+// leaves out stays as it was.
+func (h *Handlers) UpdateFeedWatch(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	body, ok := decodeWatchRequest(w, r)
+	if !ok {
+		return
+	}
+	if body.IntervalMinutes != nil && !validFeedWatchInterval(*body.IntervalMinutes) {
+		writeWatchError(w, http.StatusBadRequest, "bad-interval", nil)
+		return
+	}
+	var include, exclude []string
+	if body.Include != nil {
+		if include, ok = cleanFilterWords(*body.Include); !ok {
+			writeWatchError(w, http.StatusBadRequest, "bad-filter", nil)
+			return
+		}
+	}
+	if body.Exclude != nil {
+		if exclude, ok = cleanFilterWords(*body.Exclude); !ok {
+			writeWatchError(w, http.StatusBadRequest, "bad-filter", nil)
+			return
+		}
+	}
+	key := canonicalBookmarkURLKey(body.BookmarkURL)
+	feedURL := strings.TrimSpace(body.FeedURL)
+
+	feedWatchMu.Lock()
+	file := readFeedWatchFile()
+	i := watchIndex(file.Watches, key, feedURL)
+	if key == "" || i < 0 {
+		feedWatchMu.Unlock()
+		writeWatchError(w, http.StatusNotFound, "not-watched", nil)
+		return
+	}
+	wt := &file.Watches[i]
+	if body.IntervalMinutes != nil {
+		wt.IntervalMinutes = *body.IntervalMinutes
+	}
+	if body.Muted != nil {
+		wt.Muted = *body.Muted
+	}
+	if body.Paused != nil {
+		if wt.Paused && !*body.Paused {
+			// Resumed: forget the failures and ask again soon.
+			wt.Failures, wt.TriedAt, wt.CheckedAt = 0, 0, 0
+		}
+		wt.Paused = *body.Paused
+	}
+	if body.Include != nil {
+		wt.Include = include
+	}
+	if body.Exclude != nil {
+		wt.Exclude = exclude
+	}
+	err := writeFeedWatchFile(file)
+	feedWatchMu.Unlock()
+	if err != nil {
+		http.Error(w, "could not save", http.StatusInternalServerError)
+		return
+	}
+	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks())[key]})
+}
+
+// SetFeedWatchInterval gives every watch of the named bookmarks one interval.
+func (h *Handlers) SetFeedWatchInterval(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	body, ok := decodeWatchRequest(w, r)
+	if !ok {
+		return
+	}
+	if body.IntervalMinutes == nil || !validFeedWatchInterval(*body.IntervalMinutes) {
+		writeWatchError(w, http.StatusBadRequest, "bad-interval", nil)
+		return
+	}
+	keys := map[string]bool{}
+	for _, raw := range body.BookmarkURLs {
+		if key := canonicalBookmarkURLKey(raw); key != "" {
+			keys[key] = true
+		}
+	}
+	changed := 0
+	feedWatchMu.Lock()
+	file := readFeedWatchFile()
+	for i := range file.Watches {
+		if keys[file.Watches[i].BookmarkKey] {
+			file.Watches[i].IntervalMinutes = *body.IntervalMinutes
+			changed++
+		}
+	}
+	var err error
+	if changed > 0 {
+		err = writeFeedWatchFile(file)
+	}
+	feedWatchMu.Unlock()
+	if err != nil {
+		http.Error(w, "could not save", http.StatusInternalServerError)
+		return
+	}
+	writeWatchJSON(w, http.StatusOK, map[string]any{"changed": changed})
 }
