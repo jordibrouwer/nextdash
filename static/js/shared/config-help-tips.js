@@ -151,6 +151,16 @@
             ],
         },
         {
+            titleKey: 'tipsGroupAssistant',
+            titleFallback: 'The assistant',
+            tips: [
+                'tipAssistantAsk',
+                'tipAssistantApply',
+                'tipAssistantOwn',
+                'tipAssistantMcp',
+            ],
+        },
+        {
             titleKey: 'tipsGroupTuning',
             titleFallback: 'Making it yours',
             tips: [

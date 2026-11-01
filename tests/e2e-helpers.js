@@ -555,11 +555,14 @@ async function dismissOnboardingIfPresent(page) {
         await checklist.waitFor({ state: 'hidden', timeout: 5000 });
     }
 
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
         const d = window.dashboardInstance;
         if (!d) return;
         if (d.settings?.onboardingCompleted !== true) {
             d.settings.onboardingCompleted = true;
+            // Background saves send only their own keys now, so this one has to be
+            // sent: a reload in the test would otherwise start the onboarding again.
+            await d.saveSettings?.({ keys: ['onboardingCompleted'] });
         }
         d.onboardingStartedInSession = false;
         // The start guide hides itself once onboarding is complete; take it down

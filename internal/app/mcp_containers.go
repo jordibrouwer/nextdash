@@ -41,8 +41,9 @@ func mcpContainersReadDefinitions() []map[string]any {
 		{
 			"name":        "list_containers",
 			"annotations": mcpAnnotations(true, false),
-			"description": "The Docker containers nextDash can see, with state (running, exited, ...), image, whether an image update is available, and the last CPU and memory reading when one is known. " +
-				"Use get_container for one container's detail.",
+			"description": "The Docker containers nextDash can see, with state (running, exited, ...), image, whether an image update is available, the last CPU and memory reading when one is known, " +
+				"and the bookmark each is linked to (bookmark and via: manual, port, subdomain or title). summary counts every container, linked and unlinked. " +
+				"Use get_container for one container's detail, and query_containers to filter, sort or count.",
 			"inputSchema": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -53,7 +54,7 @@ func mcpContainersReadDefinitions() []map[string]any {
 		{
 			"name":        "get_container",
 			"annotations": mcpAnnotations(true, false),
-			"description": "One container's detail as the Containers view shows it: state, image and version, ports, mounts, networks, restart policy and update history. " +
+			"description": "One container's detail as the Containers view shows it: state, image and version, ports, mounts, networks, restart policy, update history and the bookmark it is linked to. " +
 				"Environment variables are never included.",
 			"inputSchema": map[string]any{
 				"type":       "object",
@@ -155,12 +156,16 @@ func (h *Handlers) mcpListContainers(r *http.Request, args json.RawMessage) map[
 	if !list.Available {
 		return map[string]any{"error": mcpDockerReasonText(list.Reason, list.Message)}
 	}
+	idx := h.mcpLinkContainers(list.Items, h.store.GetAllBookmarks())
 	out := []map[string]any{}
 	for _, c := range list.Items {
 		if len(out) >= limit {
 			break
 		}
+		link, linked := idx.byContainer[c.Name]
 		row := map[string]any{
+			"bookmark":         h.mcpBookmarkRef(link, linked),
+			"via":              nil,
 			"id":               c.ShortID,
 			"name":             c.Name,
 			"image":            c.Image,
@@ -173,9 +178,12 @@ func (h *Handlers) mcpListContainers(r *http.Request, args json.RawMessage) map[
 			row["cpu"] = fmt.Sprintf("%.1f%%", c.Usage.CPU)
 			row["memory"] = mcpBytes(c.Usage.Mem)
 		}
+		if linked {
+			row["via"] = link.via
+		}
 		out = append(out, row)
 	}
-	return map[string]any{"containers": out, "truncated": len(list.Items) > len(out)}
+	return map[string]any{"containers": out, "truncated": len(list.Items) > len(out), "summary": mcpContainerSummary(idx)}
 }
 
 func mcpBytes(n uint64) string {
@@ -233,6 +241,20 @@ func (h *Handlers) mcpGetContainer(r *http.Request, args json.RawMessage) map[st
 		return map[string]any{"error": "Could not read the container."}
 	}
 	mcpStripEnv(detail)
+	// The bookmark this container is linked to, as the list would say it.
+	detail["bookmark"], detail["via"] = nil, nil
+	if rows, why := h.mcpContainerRows(r); why == "" {
+		idx := h.mcpLinkContainers(rows, h.store.GetAllBookmarks())
+		for _, c := range rows {
+			if c.ID == id || c.ShortID == id || strings.HasPrefix(c.ID, id) {
+				if link, ok := idx.byContainer[c.Name]; ok {
+					detail["bookmark"] = h.mcpBookmarkRef(link, true)
+					detail["via"] = link.via
+				}
+				break
+			}
+		}
+	}
 	return detail
 }
 

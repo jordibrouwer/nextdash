@@ -2454,6 +2454,10 @@ class DashboardConfig {
         const unraidTour = this.section === 'unraid'
             ? `<button type="button" class="lvs-action" data-unraid-tour title="${this.dash.escapeHtml(this.t('config.unraidTourHint', 'A tour of Unraid'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // The assistant too, on the same band.
+        const assistantTour = this.section === 'assistant'
+            ? `<button type="button" class="lvs-action" data-assistant-tour title="${this.dash.escapeHtml(this.t('config.assistantTourHint', 'A tour of the AI Assistant'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         // Glances the same: its tour, a click away from the settings that feed it.
         const glancesTour = this.section === 'glances'
             ? `<button type="button" class="lvs-action" data-glances-config-tour title="${this.dash.escapeHtml(this.t('config.glancesTourHint', 'A tour of the Glances page'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
@@ -2470,7 +2474,7 @@ class DashboardConfig {
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + viewLink + widgetsTour + monitoringTour + unraidTour + containersTour + glancesTour;
+                : '')) + viewLink + widgetsTour + monitoringTour + unraidTour + assistantTour + containersTour + glancesTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2497,6 +2501,7 @@ class DashboardConfig {
                 } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
                 else if (e.target.closest('[data-monitoring-tour]')) void this.openMonitoringTour();
                 else if (e.target.closest('[data-unraid-tour]')) void this.openUnraidTour();
+                else if (e.target.closest('[data-assistant-tour]')) void this.openAssistantTour();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-glances-config-tour]')) void this.playViewTour('glancesTutorialV1');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
@@ -2734,6 +2739,7 @@ class DashboardConfig {
             void this.bindStatusPageSection?.(container);
         } else if (this.section === 'assistant') {
             this.bindAssistantSection?.(container);
+            void this.maybeShowAssistantTutorial();
         } else if (this.section === 'inbox') {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
@@ -3818,6 +3824,11 @@ class DashboardConfig {
         { tab: 'glances', titleKey: 'config.helpGlancesContainersTitle', fallback: 'Glances and the Containers view' },
         { tab: 'glances', titleKey: 'config.helpGlancesNoticesTitle', fallback: 'Notices and commands' },
         { tab: 'glances', titleKey: 'config.helpGlancesMoreTitle', fallback: 'Compare, forecast and the widget' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantTitle', fallback: 'Asking the assistant' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantSetupTitle', fallback: 'Setting it up' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantChangesTitle', fallback: 'What it can read and change' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantDataTitle', fallback: 'What leaves and what is kept' },
+        { tab: 'assistant', titleKey: 'config.helpAssistantMcpTitle', fallback: 'MCP: other tools' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
         { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
@@ -7214,7 +7225,9 @@ class DashboardConfig {
             a.download = filename;
             document.body.appendChild(a);
             a.click();
-            window.URL.revokeObjectURL(href);
+            // Later, not at once: Safari starts the download after click()
+            // returns, and a URL revoked by then saved an empty file.
+            setTimeout(() => window.URL.revokeObjectURL(href), 10000);
             a.remove();
             return true;
         } catch {
@@ -7267,7 +7280,8 @@ class DashboardConfig {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Later, not at once: see downloadViaBlob.
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
 
     /*
@@ -9202,7 +9216,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'look-ocean-dark' },
+        theme: { def: 'neutral-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -9367,7 +9381,7 @@ class DashboardConfig {
         aiDeleteAll: { info: ['assistantInfoDeleteAllTitle', 'assistantInfoDeleteAllMessage', 'Delete all conversations',
             'Removes every stored conversation from this server, together with the proposals inside them and what became of each one. A proposal you have not applied yet is gone too. It cannot be undone.\nChanges you already applied to your bookmarks or containers stay as they are. With the write token set, deleting needs it.'] },
         aiAccess: { info: ['assistantInfoAccessTitle', 'assistantInfoAccessMessage', 'What it can see and do',
-            'The assistant reads through the same switches as the MCP endpoint, under Data & backups → Webhooks → MCP access. Looking up bookmarks, tags and pages is always on. Health and Inbox: read and Containers: read add those lookups when they are on. It does not need the MCP address itself to be switched on.\nIt never changes anything by itself: it proposes changes, shown under its answer, and nothing happens until you press Apply. Adding a bookmark is always possible; editing, moving and deleting bookmarks and categories need Bookmarks: edit and delete, and container actions need Containers: control. The switch is checked again when you press Apply.\nWith the write token set, asking, Test connection and Apply need it. One question stops after 8 rounds of lookups, 20 lookups or two minutes.'] },
+            'The assistant reads through the same switches as the MCP endpoint, under Data & backups → Webhooks → MCP access. Looking up bookmarks, tags and pages is always on. Health and Inbox: read, Containers: read and Settings overview: read add those lookups when they are on. It does not need the MCP address itself to be switched on.\nIt never changes anything by itself: it proposes changes, shown under its answer, and nothing happens until you press Apply. Adding a bookmark is always possible; editing, moving and deleting bookmarks and categories need Bookmarks: edit and delete, and container actions need Containers: control. The switch is checked again when you press Apply.\nWith the write token set, asking, Test connection and Apply need it. One question stops after 8 rounds of lookups, 20 lookups or two minutes.'] },
     };
 
     fieldMeta(field) {
@@ -13151,7 +13165,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV2', 'monitoringTutorialV1', 'unraidTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV2', 'monitoringTutorialV1', 'unraidTutorialV1', 'assistantTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -13291,6 +13305,40 @@ class DashboardConfig {
     async openUnraidTour() {
         if (!(await this.loadUnraidTour())) return false;
         return window.UnraidTutorial?.open?.() === true;
+    }
+
+    /**
+     * The one-time AI Assistant tour, the first time this section is opened --
+     * the same guards and the same order as the Unraid tour's.
+     */
+    async maybeShowAssistantTutorial() {
+        // Once: binding runs again on every repaint of the section, and a
+        // second call would replace the tour on screen.
+        if (this._assistantTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.ASSISTANT_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._assistantTutorialAsked = true;
+        if (!(await this.loadAssistantTour())) return;
+        window.AssistantTutorial?.maybeShow?.();
+    }
+
+    /** Fetch the tour script once. False when it cannot be had. */
+    async loadAssistantTour() {
+        if (typeof window.AssistantTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/assistant-tutorial.js', 'assistantTutorialModule',
+                () => typeof window.AssistantTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    }
+
+    /** The AI Assistant tour, from the Tour button on the band or Config's replay: seen or not. */
+    async openAssistantTour() {
+        if (!(await this.loadAssistantTour())) return false;
+        return window.AssistantTutorial?.open?.() === true;
     }
 
     bindMonitoringControls(container) {
@@ -13449,6 +13497,10 @@ class DashboardConfig {
             case 'unraidTutorialV1':
                 await this.openConfigView('unraid');
                 await this.openUnraidTour();
+                return true;
+            case 'assistantTutorialV1':
+                await this.openConfigView('assistant');
+                await this.openAssistantTour();
                 return true;
             default:
                 return false;
@@ -13811,6 +13863,7 @@ class DashboardConfig {
             'stats': ['config.helpNoteStats', 'What the figures in Statistics count, and what they do not.'],
             'data': ['config.helpNoteData', 'Backups, imports, and running nextDash on your own machine.'],
             'logs': ['config.helpNoteLogs', 'The server log and the activity trail: what is recorded, and for how long.'],
+            'assistant': ['config.helpNoteAssistant', 'Questions in plain words, the changes that wait for your click, and the address other tools can use.'],
         },
     };
 
@@ -15890,7 +15943,20 @@ class DashboardConfig {
      * answer -- and got undefined from every save, so a duplicate never went
      * past the page list: no categories, no bookmarks, no word.
      */
-    async savePages(edited = []) {
+    /**
+     * One save of the page list at a time, as saveCategories does: each one
+     * re-reads and then posts the whole list, and quick up/down presses ran
+     * those chains side by side, so an older order could land last.
+     */
+    savePages(edited = []) {
+        const run = (this._pagesSaveChain || Promise.resolve())
+            .catch(() => {})
+            .then(() => this.savePagesNow(edited));
+        this._pagesSaveChain = run;
+        return run;
+    }
+
+    async savePagesNow(edited = []) {
         // The whole list goes to the server, and the server takes every entry
         // in it as the truth: a name changed on another device was put back
         // by the next reorder here. Re-read first; only the pages this save
@@ -16542,9 +16608,17 @@ class DashboardConfig {
             this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
             list.map((c) => c.name)
         );
-        list.splice(Number(index) + 1, 0, { ...source, id, name });
+        const copy = { ...source, id, name };
+        list.splice(Number(index) + 1, 0, copy);
         this.repaintPtBody();
-        if (!await this.saveCategories(pageId)) return;
+        if (!await this.saveCategories(pageId)) {
+            // Not kept on screen after the save said no: it looked created,
+            // and the next save of the page would have written it after all.
+            const at = (this._categories || []).indexOf(copy);
+            if (at >= 0) this._categories.splice(at, 1);
+            this.repaintPtBody();
+            return;
+        }
         this.notify(this.t('config.categoryDuplicatedEmpty',
             'Category duplicated, without its bookmarks — a page holds each link once'), 'success');
         void this.dash.data?.fetchAndStoreDataRevision?.();
@@ -16653,6 +16727,9 @@ class DashboardConfig {
     // Repeated from unraid-tutorial.js, for the same reason.
     static UNRAID_TUTORIAL_TIP_ID = 'unraidTutorialV1';
 
+    // Repeated from assistant-tutorial.js, for the same reason.
+    static ASSISTANT_TUTORIAL_TIP_ID = 'assistantTutorialV1';
+
     /*
      * The six guided tours, in one list.
      *
@@ -16690,6 +16767,8 @@ class DashboardConfig {
           whereKey: 'config.tourWhereMonitoring', where: 'the next time you open Config → Monitoring' },
         { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid',
           whereKey: 'config.tourWhereUnraid', where: 'the next time you open Config → Unraid' },
+        { id: 'assistantTutorialV1', labelKey: 'config.tourAssistant', label: 'AI Assistant',
+          whereKey: 'config.tourWhereAssistant', where: 'the next time you open Config → Assistant' },
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
@@ -17906,6 +17985,13 @@ class DashboardConfig {
             const chipPage = this.ptChip.categories.page;
             let target = String(chipPage !== 'all' ? chipPage : this.dash.currentPageId);
             if (!visible.includes(target)) target = visible[0];
+            // Every page hidden: there is nowhere for it to go, so say so
+            // rather than ignore the click.
+            if (!target) {
+                this.notify(this.t('config.categoryAddNoVisiblePage',
+                    'Show a page first: a category needs a visible page to live on.'), 'error');
+                return;
+            }
             if (!this.useCategoryPage(target)) {
                 if (this._catFailedPages?.has(target)) {
                     this.notify(this.t('config.categoriesLoadFailed',
@@ -24440,7 +24526,7 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'glances', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'glances', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs', 'assistant'];
 
     /*
      * Fifteen tabs on one scrolling line hid most of them past the edge, and
@@ -24451,7 +24537,7 @@ class DashboardConfig {
         { key: 'basics', label: ['config.helpGroupBasics', 'Basics'], tabs: ['start', 'tips', 'config', 'search'] },
         { key: 'dashboard', label: ['config.helpGroupDashboard', 'Dashboard'], tabs: ['appearance', 'organizing', 'bookmarks', 'widgets'] },
         { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'glances', 'health', 'monitoring'] },
-        { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs'] },
+        { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs', 'assistant'] },
     ];
 
     /** Sections whose strip is drawn in labelled groups. */
@@ -24480,6 +24566,7 @@ class DashboardConfig {
             stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
             logs: ['config.helpTabLogs', 'Logs'],
+            assistant: ['config.helpTabAssistant', 'Assistant'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -24669,6 +24756,7 @@ class DashboardConfig {
             case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
             case 'logs': return this.renderHelpLogs();
+            case 'assistant': return this.renderHelpAssistant();
             default: return this.renderHelpStart();
         }
     }
@@ -25751,6 +25839,18 @@ class DashboardConfig {
             + this.helpPanel('config.helpGlancesContainersTitle', 'Glances and the Containers view', 'config.helpGlancesContainersBody', '')
             + this.helpPanel('config.helpGlancesNoticesTitle', 'Notices and commands', 'config.helpGlancesNoticesBody', '')
             + this.helpPanel('config.helpGlancesMoreTitle', 'Compare, forecast and the widget', 'config.helpGlancesMoreBody', '');
+    }
+
+    renderHelpAssistant() {
+        const open = `<div class="config-actions">
+            <button type="button" class="config-btn" data-overview-go='{"section":"assistant"}'>${
+    this.dash.escapeHtml(this.t('config.helpAssistantOpen', 'Open Config → AI Assistant'))}</button>
+        </div>`;
+        return this.helpPanel('config.helpAssistantTitle', 'Asking the assistant', 'config.helpAssistantBody', '', open)
+            + this.helpPanel('config.helpAssistantSetupTitle', 'Setting it up', 'config.helpAssistantSetupBody', '')
+            + this.helpPanel('config.helpAssistantChangesTitle', 'What it can read and change', 'config.helpAssistantChangesBody', '')
+            + this.helpPanel('config.helpAssistantDataTitle', 'What leaves and what is kept', 'config.helpAssistantDataBody', '')
+            + this.helpPanel('config.helpAssistantMcpTitle', 'MCP: other tools', 'config.helpAssistantMcpBody', '');
     }
 
     renderHelpSearch() {

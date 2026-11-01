@@ -196,3 +196,24 @@ func TestSummarizeDomains(t *testing.T) {
 		t.Errorf("off should be empty, got %+v", off)
 	}
 }
+
+// A failed lookup keeps the known date, and the report and the summary keep
+// showing it rather than dropping the domain until the next success.
+func TestAFailedLookupKeepsTheDomainInTheReport(t *testing.T) {
+	now := time.Date(2026, 10, 17, 12, 0, 0, 0, time.UTC)
+	stored := map[string]HostDomain{}
+	expires := now.Add(20 * 24 * time.Hour).UnixMilli()
+	recordDomainResult(stored, "example.com", rdapResult{State: domainStateOK, ExpiresAt: expires}, nil, now, []int{60, 7, 3})
+	recordDomainResult(stored, "example.com", rdapResult{}, errTestLookup, now.Add(24*time.Hour), []int{60, 7, 3})
+	if got := datedDomains(stored); got["example.com"].ExpiresAt != expires {
+		t.Errorf("the report lost the date after a failed lookup: %+v", got)
+	}
+	if got := summarizeDomains(stored, true); got.Watched != 1 {
+		t.Errorf("the summary stopped watching it: %+v", got)
+	}
+	// An error with no date ever learned has nothing to show.
+	stored["never.org"] = HostDomain{Domain: "never.org", State: domainStateError}
+	if _, ok := datedDomains(stored)["never.org"]; ok {
+		t.Error("an error without a date is not dated")
+	}
+}

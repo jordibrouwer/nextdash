@@ -154,6 +154,32 @@ func (fs *FileStore) readTrashDataLocked() TrashData {
 	return trash
 }
 
+// readTrashDataForWriteLocked is the read every mutator that keeps items uses.
+// A missing file is an empty trash; any other read or decode error is
+// returned, because the mutator would otherwise save that empty state over
+// trash.json and lose every deleted page and bookmark in it.
+func (fs *FileStore) readTrashDataForWriteLocked() (TrashData, error) {
+	empty := TrashData{Version: trashDataVersion, Items: []TrashedBookmark{}}
+	data, err := os.ReadFile(fs.trashFile())
+	if err != nil {
+		if os.IsNotExist(err) {
+			return empty, nil
+		}
+		return empty, fmt.Errorf("read trash: %w", err)
+	}
+	var trash TrashData
+	if err := json.Unmarshal(data, &trash); err != nil {
+		return empty, fmt.Errorf("decode trash: %w", err)
+	}
+	if trash.Items == nil {
+		trash.Items = []TrashedBookmark{}
+	}
+	if trash.Version == 0 {
+		trash.Version = trashDataVersion
+	}
+	return trash, nil
+}
+
 func (fs *FileStore) saveTrashDataLocked(trash TrashData) error {
 	if trash.Version == 0 {
 		trash.Version = trashDataVersion
@@ -212,7 +238,10 @@ func (fs *FileStore) AddTrashedBookmarks(entries []TrashedBookmark) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
-	trash := fs.readTrashDataLocked()
+	trash, err := fs.readTrashDataForWriteLocked()
+	if err != nil {
+		return err
+	}
 	now := time.Now()
 	for _, entry := range entries {
 		// The empty-bookmark guard only applies to bookmark entries. A page or
@@ -248,7 +277,10 @@ func (fs *FileStore) TakeTrashItem(id string) (TrashedBookmark, error) {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
-	trash := fs.readTrashDataLocked()
+	trash, err := fs.readTrashDataForWriteLocked()
+	if err != nil {
+		return TrashedBookmark{}, err
+	}
 	for i, item := range trash.Items {
 		if item.ID != id {
 			continue
@@ -293,7 +325,10 @@ func (fs *FileStore) PruneTrash() (int, error) {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
-	trash := fs.readTrashDataLocked()
+	trash, err := fs.readTrashDataForWriteLocked()
+	if err != nil {
+		return 0, err
+	}
 	before := len(trash.Items)
 	trash.Items = pruneTrashItems(trash.Items, time.Now())
 	removed := before - len(trash.Items)

@@ -873,6 +873,9 @@ type Settings struct {
 	MCPHealthInbox       bool `json:"mcpHealthInbox"`
 	MCPContainersRead    bool `json:"mcpContainersRead"`
 	MCPContainersControl bool `json:"mcpContainersControl"`
+	// MCPSettingsOverview lets get_settings_overview describe this install's
+	// configuration: an allowlisted subset, never keys or addresses.
+	MCPSettingsOverview bool `json:"mcpSettingsOverview"`
 	// The in-app assistant. The key lives in ai-secrets.json, never here.
 	AIEnabled         bool   `json:"aiEnabled"`
 	AIProvider        string `json:"aiProvider"`
@@ -1232,10 +1235,10 @@ const defaultFeedNewsWidgetID = "w_000000000004"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "look-ocean-dark"
+const defaultThemeID = "neutral-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "look-ocean-light"
+const defaultThemeLightID = "neutral-light"
 
 // auroraGlassThemeID and auroraGlassThemeLightID are where the one-time move of
 // v1.22.0 puts an install (migrateToAuroraGlass). They were the defaults then;
@@ -1622,6 +1625,7 @@ type Store interface {
 	DeletePage(pageID int) error
 	GetPageOrder() []int
 	SavePageOrder(order []int) error
+	RemoveFromPageOrder(pageID int) error
 	// Settings
 	GetSettings() Settings
 	SaveSettings(settings Settings) error
@@ -1710,6 +1714,12 @@ type FileStore struct {
 	// through. Read under the same lock the caches are.
 	dataGeneration               uint64
 	prefetchDefaultBookmarkIcons bool
+	// lastGoodSettings is the last settings.json that was read and decoded.
+	// A read that fails for another reason than a missing file answers with
+	// it: defaults in its place were saved back over the real file by the
+	// next settings write.
+	lastGoodSettings   Settings
+	lastGoodSettingsOK bool
 }
 
 func NewStore() Store {
@@ -4141,11 +4151,6 @@ func (fs *FileStore) GetPageOrder() []int {
 	return clonePageOrder(order)
 }
 
-func (fs *FileStore) getPageOrder() []int {
-	order, _ := fs.readPageOrder()
-	return order
-}
-
 // readPageOrder reads pages.json. The error is non-nil only when the file
 // exists but could not be read or parsed: a missing file is a normal empty
 // order, while a failed read must not be answered by writing a default order
@@ -4167,6 +4172,29 @@ func (fs *FileStore) readPageOrder() ([]int, error) {
 	}
 
 	return pageOrder.Order, nil
+}
+
+// RemoveFromPageOrder drops one page from the order in a single locked read
+// and write. A pages.json that cannot be read is returned as an error rather
+// than answered with an empty order written over the real one.
+func (fs *FileStore) RemoveFromPageOrder(pageID int) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	order, err := fs.readPageOrder()
+	if err != nil {
+		return err
+	}
+	next := make([]int, 0, len(order))
+	for _, id := range order {
+		if id != pageID {
+			next = append(next, id)
+		}
+	}
+	if len(next) == len(order) {
+		return nil
+	}
+	return fs.savePageOrder(next)
 }
 
 func (fs *FileStore) SavePageOrder(order []int) error {
@@ -4441,8 +4469,15 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 		return err
 	}
 
-	// Put the tab back where it was rather than at the end.
-	order := fs.getPageOrder()
+	// Put the tab back where it was rather than at the end. An unreadable
+	// pages.json is left alone: writing [id] over it would lose every other
+	// tab's place, and a page missing from the order is listed at the end.
+	order, orderErr := fs.readPageOrder()
+	if orderErr != nil {
+		logWarn("trash", "RestorePage: page %d is back but pages.json could not be read, so its place was not saved: %v", snapshot.Page.ID, orderErr)
+		fs.noteDataMutation(0)
+		return nil
+	}
 	for _, id := range order {
 		if id == snapshot.Page.ID {
 			fs.noteDataMutation(0)
@@ -4467,7 +4502,12 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	return nil
 }
 
+// GetSettings returns a copy the caller may change freely; see cloneSettings.
 func (fs *FileStore) GetSettings() Settings {
+	return cloneSettings(fs.getSettingsShared())
+}
+
+func (fs *FileStore) getSettingsShared() Settings {
 	fs.mutex.RLock()
 	if fs.readCache.settingsOK {
 		settings := fs.readCache.settings
@@ -4485,6 +4525,10 @@ func (fs *FileStore) GetSettings() Settings {
 	fs.ensureDataDir()
 
 	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil && !os.IsNotExist(err) && fs.lastGoodSettingsOK {
+		// Not cached: the next read tries the file again.
+		return fs.lastGoodSettings
+	}
 	if err != nil {
 		// Return default settings if file doesn't exist
 		settings := Settings{
@@ -4720,13 +4764,20 @@ func (fs *FileStore) GetSettings() Settings {
 		clampBookmarkViewSettings(&settings)
 		clampInboxViewSettings(&settings)
 		clampNotesProcessing(&settings)
-		fs.readCache.settings = settings
-		fs.readCache.settingsOK = true
+		// Only a missing file is a fresh install. Defaults for an unreadable
+		// one are an answer for now, not one to keep.
+		if os.IsNotExist(err) {
+			fs.readCache.settings = settings
+			fs.readCache.settingsOK = true
+		}
 		return settings
 	}
 
 	var settings Settings
-	json.Unmarshal(data, &settings)
+	decodeErr := json.Unmarshal(data, &settings)
+	if decodeErr != nil && fs.lastGoodSettingsOK {
+		return fs.lastGoodSettings
+	}
 	// An install from before the setting, or one holding a style since
 	// dropped, has no animation -- except one that had v1.18.3's on/off
 	// switch on, which keeps the swell that switch played.
@@ -5731,8 +5782,15 @@ func (fs *FileStore) GetSettings() Settings {
 	clampInboxViewSettings(&settings)
 	clampNotesProcessing(&settings)
 
+	// A file that does not decode, with nothing good read before it, still
+	// answers with what it could give -- but is not kept, so the next read
+	// tries the file again instead of serving the half-read one until restart.
+	if decodeErr != nil {
+		return settings
+	}
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true
+	fs.lastGoodSettings, fs.lastGoodSettingsOK = settings, true
 	return settings
 }
 
@@ -7175,6 +7233,9 @@ type HealthDay struct {
 	N int   `json:"n"`           // Checks counted (maintenance samples excluded, as in uptimeRatio)
 	U int   `json:"u"`           // How many of them succeeded
 	P int   `json:"p,omitempty"` // Mean response time in ms across the successful checks
+	// PN is how many checks P averages: the successful ones that had a ping.
+	// Absent in summaries written before it; those fall back to U.
+	PN int `json:"pn,omitempty"`
 }
 
 // HealthTrendPoint is one day's summary of the whole collection.

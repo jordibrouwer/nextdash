@@ -45,6 +45,9 @@ type Handlers struct {
 	healthHistoryMu   sync.Mutex
 	healthTrendMu     sync.Mutex
 	healthReportMu    sync.RWMutex
+	// pageDeleteMu makes a page delete's check, trash snapshot and removal one
+	// step: two deletes of one page at once each wrote a trash entry.
+	pageDeleteMu sync.Mutex
 	// One Docker action per container at a time, keyed by container id.
 	dockerBusy sync.Map
 	// App discovery (discovery.go): its state is loaded from data/discovery.json
@@ -93,6 +96,17 @@ const previewCacheTTLMs = int64(7 * 24 * 60 * 60 * 1000) // 7 days in ms
 func normalizeShortcut(shortcut string) string {
 	return strings.ToUpper(strings.TrimSpace(shortcut))
 }
+
+// extendWriteDeadline lets a handler that runs longer than the server's 60s
+// WriteTimeout still answer: past it the work finished but the response write
+// failed, and the reader saw a network error instead of the counts.
+func extendWriteDeadline(w http.ResponseWriter, d time.Duration) {
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(d))
+}
+
+// longImportDeadline bounds an import or a refresh of every preview, whose
+// length depends on the collection rather than on a timeout of its own.
+const longImportDeadline = 30 * time.Minute
 
 func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	if err == nil {
@@ -1623,6 +1637,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		// showed where the URL already lives and the user said save it anyway.
 		// Never honoured within a single page — see the check below.
 		AllowDuplicate bool `json:"allowDuplicate"`
+		// MovedFrom is the address the row had before an edit that also moves
+		// it to another page. That row is still on its source page until the
+		// delete that follows, holding its shortcut under the old address.
+		MovedFrom string `json:"movedFrom"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1698,10 +1716,13 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		if request.AllowDuplicate && newKey != "" {
 			// A move from the dashboard is this add followed by a delete of the
 			// source row, which still holds the shortcut: it is not a conflict
-			// with itself.
+			// with itself. Under its old address too, when the same edit
+			// changed the URL.
+			movedKey := canonicalBookmarkURLKey(request.MovedFrom)
 			kept := others[:0:0]
 			for _, bm := range others {
-				if canonicalBookmarkURLKey(bm.URL) != newKey {
+				key := canonicalBookmarkURLKey(bm.URL)
+				if key != newKey && (movedKey == "" || key != movedKey) {
 					kept = append(kept, bm)
 				}
 			}
@@ -2072,6 +2093,7 @@ type ImportedRow struct {
 
 // importRows writes a batch onto a page and answers with the tally.
 func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int, rows []ImportedRow) {
+	extendWriteDeadline(w, longImportDeadline)
 	request := struct {
 		PageID    int
 		Bookmarks []ImportedRow
@@ -2446,6 +2468,8 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Cannot delete the unsorted page", http.StatusBadRequest)
 		return
 	}
+	h.pageDeleteMu.Lock()
+	defer h.pageDeleteMu.Unlock()
 	// A page already gone (deleted in another tab) left an empty page entry in
 	// the trash, which then blocked restoring the real one.
 	if !h.pageExists(pageID) {
@@ -2510,15 +2534,9 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the page order - remove the deleted page ID
-	order := h.store.GetPageOrder()
-	newOrder := make([]int, 0, len(order))
-	for _, id := range order {
-		if id != pageID {
-			newOrder = append(newOrder, id)
-		}
-	}
-	if !respondStorePersistError(w, h.store.SavePageOrder(newOrder)) {
+	// One locked read and write: an unreadable pages.json is an error here,
+	// not an empty order saved over every other tab's place.
+	if !respondStorePersistError(w, h.store.RemoveFromPageOrder(pageID)) {
 		return
 	}
 
@@ -4610,6 +4628,7 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	if !h.requireSSRFAPIRateLimit(w, r) {
 		return
 	}
+	extendWriteDeadline(w, longImportDeadline)
 	w.Header().Set("Content-Type", "application/json")
 
 	/*
@@ -4658,9 +4677,11 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	if offset > total {
 		offset = total
 	}
-	end := offset + limit
-	if end > total {
-		end = total
+	// Compared before adding: a huge limit wrapped offset+limit negative,
+	// past the end check, and the slice below panicked.
+	end := total
+	if limit < total-offset {
+		end = offset + limit
 	}
 	slice := targets[offset:end]
 

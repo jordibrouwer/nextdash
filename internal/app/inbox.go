@@ -262,6 +262,18 @@ func truncateRunes(value string, n int) string {
 	return string(runes[:n])
 }
 
+// truncateBytes cuts to at most n bytes, backing up to a character boundary,
+// for limits measured in bytes where a plain s[:n] could split a rune.
+func truncateBytes(value string, n int) string {
+	if len(value) <= n {
+		return value
+	}
+	for n > 0 && !utf8.RuneStart(value[n]) {
+		n--
+	}
+	return value[:n]
+}
+
 // evictedInboxItems lists the items present in `before` but gone from `after` —
 // what a capacity trim dropped.
 //

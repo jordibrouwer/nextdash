@@ -796,3 +796,94 @@ func TestGlancesForecastIsNotClearAtAFullDisk(t *testing.T) {
 		t.Errorf("a disk at 100%% said it was no longer filling up: %+v", got)
 	}
 }
+
+// One reading back under the line keeps an incident open; the bad reading
+// after it must not lower the peak the incident already reached.
+func TestGlancesIncidentPeakSurvivesADip(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	glancesWipe()
+	setGlancesBeat(5 * time.Second)
+	t0 := time.Now().UnixMilli()
+	cpu := func(i int64, v float64, bad bool) {
+		glancesObserve(t0+i*5000, []glancesObservation{{Kind: "cpu", Value: v, Bad: bad}})
+	}
+	cpu(0, 95, true)
+	cpu(1, 99, true)
+	cpu(2, 80, false)
+	cpu(3, 92, true)
+	ongoing, _ := glancesIncidentList()
+	if len(ongoing) != 1 || ongoing[0].Peak != 99 {
+		t.Fatalf("ongoing after a dip: %+v", ongoing)
+	}
+}
+
+// The cap on the log drops closed incidents, never one that is still going on.
+func TestGlancesIncidentCapKeepsTheOpenOne(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	glancesWipe()
+	setGlancesBeat(5 * time.Second)
+	t0 := time.Now().UnixMilli()
+	disk := func(i int64, bad bool) []glancesObservation {
+		return []glancesObservation{{Kind: "disk", Subject: "/mnt/x", Value: 95, Bad: bad}}
+	}
+	glancesObserve(t0, disk(0, true))
+	glancesObserve(t0+5000, disk(1, true))
+	// A busy log after it: more closed incidents than the cap holds.
+	glancesIncidents.Lock()
+	for i := 0; i < glancesIncidentKeep; i++ {
+		glancesIncidents.log = append(glancesIncidents.log, GlancesIncident{Kind: "cpu", Start: t0 + int64(i), End: t0 + int64(i) + 1})
+	}
+	glancesIncidents.Unlock()
+	// A change trims the log.
+	glancesObserve(t0+10000, append(disk(2, true), glancesObservation{Kind: "mem", Value: 99, Bad: true}))
+	glancesObserve(t0+15000, append(disk(3, true), glancesObservation{Kind: "mem", Value: 99, Bad: true}))
+	ongoing, _ := glancesIncidentList()
+	found := false
+	for _, in := range ongoing {
+		found = found || in.Kind == "disk"
+	}
+	if !found {
+		t.Fatalf("the open disk incident was trimmed: ongoing=%+v", ongoing)
+	}
+	var closed bool
+	for i := int64(4); i < 7; i++ {
+		for _, ev := range glancesObserve(t0+i*5000, disk(i, false)) {
+			closed = closed || (ev.Incident.Kind == "disk" && !ev.Opened && !ev.Lost)
+		}
+	}
+	if !closed {
+		t.Fatal("the disk incident was never closed")
+	}
+}
+
+// An opening muted by the cooldown sent no alert, so losing its reading has no
+// alert to replace and sends nothing either; an announced one still does.
+func TestGlancesLostNoticeFollowsTheMute(t *testing.T) {
+	h := quietHandlers(t, "")
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	cfg := normalizeGlancesConfig(GlancesConfig{Enabled: true, Server: "http://nas.lan:61208"})
+	cfg.Notify = []string{"cpu"}
+	hs := glancesHostByID("lostmute")
+	start := time.Now().UnixMilli()
+	cpu := GlancesIncident{Kind: "cpu", Start: start}
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Opened: true, Incident: cpu}})
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Incident: cpu}})
+	// Open again within the cooldown: muted.
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Opened: true, Incident: cpu}})
+	if got := len(readHeldFile().Held); got != 2 {
+		t.Fatalf("%d notices held before the loss, want the first open and close", got)
+	}
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Lost: true, Incident: cpu}})
+	if got := len(readHeldFile().Held); got != 2 {
+		t.Fatalf("a muted incident's loss sent a notice: %d held", got)
+	}
+	// Past the cooldown an opening is announced, and its loss is sent.
+	hs.notices.Lock()
+	hs.notices.lastOpen["cpu\x00"] = time.Now().Add(-glancesNoticeCooldown - time.Minute)
+	hs.notices.Unlock()
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Opened: true, Incident: cpu}})
+	h.glancesNotify(context.Background(), cfg, hs, []GlancesIncidentEvent{{Lost: true, Incident: cpu}})
+	if got := len(readHeldFile().Held); got != 4 {
+		t.Fatalf("an announced incident's loss: %d held, want 4", got)
+	}
+}

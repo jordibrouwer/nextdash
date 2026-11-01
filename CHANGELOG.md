@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.23.0 — 30 October 2026](#v1230--30-october-2026)
 - [v1.22.5 — 29 October 2026](#v1225--29-october-2026)
 - [v1.22.4 — 29 October 2026](#v1224--29-october-2026)
 - [v1.22.3 — 27 October 2026](#v1223--27-october-2026)
@@ -125,6 +126,57 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.23.0 — 30 October 2026
+
+An assistant that answers questions about your bookmarks, Health and containers on a model you choose, and proposes changes that wait for your click; the MCP endpoint grows from four tools to seventeen, in four groups you switch on one by one; the theme studio takes the material of the views; the Quick start fits shorter windows; a background save no longer puts back settings changed in another tab.
+
+### Assistant
+
+- **new — Ask in plain words.** `:ask` in the command palette, or `=` in the search bar, opens the panel; with a question after it, it starts a new conversation and asks it straight away. A lone `=` lists the latest conversations (`Enter` opens one) and what follows `:ask` or `=` never reaches the search history or the recents (`SearchComponent.ASSISTANT_MODE_QUERY`, `assistant-panel.js`). The panel is laid out like the command palette: the question line on top, conversations on the left, the open one on the right, answers in a small markdown subset (paragraphs, lists, code, links that open a Config page without leaving the dashboard).
+- **new — Claude, OpenAI or a server of your own.** `ai_provider.go` with an Anthropic and an OpenAI chat adapter; *OpenAI-compatible* takes a server address and a model, the key is optional and addresses on your own network are allowed. Answers stream; a stream that ends early or sends garbage is an error, not a short answer. Off until **Turn the assistant on** is ticked, and off in the demo.
+- **new — A key that stays on the server.** `ai-secrets.json` in the data folder, one key per provider, mode 0600, never sent back: the page only learns whether a key is saved (`GET/PUT/DELETE /api/ai/key`). It travels in a backup only with *Tokens and passwords*.
+- **new — It looks things up, and changes nothing by itself.** The tool loop (`ai_loop.go`) reads through the same tools and group switches as the MCP endpoint and stops after 8 rounds, 20 lookups or two minutes; the partial answer says where it stopped. What it wants to change comes back as proposals under its answer, one row each, with **Apply**, **Skip** and **Apply all**; Apply all skips deletions and container actions. The group is checked again at Apply, with `NEXTDASH_WRITE_TOKEN` set Apply needs the token, and applied changes carry the source `assistant` in the activity log. A refused Apply shows the server's message and stays applicable.
+- **new — It knows the manual.** `ai_docs.go` searches the `MANUAL.md` and `README.md` that ship with the install, inside nextDash, so *where do I set up the status page?* is answered from the manual and sends nothing to the web; `main.go` embeds both files and `.dockerignore` lets them through.
+- **new — Conversations kept on the server.** `ai-conversations.json`: texts, tool names with their sizes, proposals and what became of them, token counts; never the answers of the lookups. The newest 50 for 90 days by default (`Conversations to keep`, `Days to keep them`); a file that cannot be read is set aside as `.broken`, an *applying* proposal left by a crash becomes *failed*. Delete one with ×, or all with *Delete all* (it asks once more; hidden while the list is filtered). They travel in every backup.
+- **new — Config → AI Assistant.** A page of its own in the Services group, with one tab, **Settings**: *Turn it on*, *Provider*, *Conversations* and *What it can see and do*, each with an ℹ, a line under **Test connection** that says what is still missing, and the four MCP switches read-only with an *Open MCP access* button. The settings are found by Find settings.
+- **new — It looks like the rest.** The panel and the page take the overlay material of the theme and the look (glass blurs, classic does not) through the shared overlay layers, and the answers have their own typography.
+- **fix — Background saves send only their own keys.** See Settings below.
+- **docs — Help and tips.** A **Assistant** tab in Config → Help (five panels) and a tips group of four.
+
+### MCP
+
+- **new — Tool groups.** The endpoint answered four tools; it now has 17 in five tiers: always on (`search_bookmarks`, `get_bookmark`, `list_tags`, `list_pages`, `add_bookmark`), and four switches under **Data & backups → Webhooks → MCP access**, all off: *Bookmarks: edit and delete*, *Health and Inbox: read*, *Containers: read*, *Containers: control*. The switches can be ticked when either the endpoint or the assistant is on, and `tools/list` shows only what is switched on.
+- **new — Edit and delete bookmarks.** `update_bookmark` (name, note, tags), `move_bookmark` (refused when the target page already holds the URL), `delete_bookmark` (goes to the Trash through the same path as the UI), `create_category` and `rename_category`. They need the write token when one is set.
+- **new — Health and Inbox.** `get_health_summary`, `list_health_issues` (down, or a certificate due to expire) and `list_inbox`, read from the cache; no check is run.
+- **new — Containers.** `list_containers`, `get_container`, `get_container_logs` (needs the write token when one is set; environment variables are never returned) and `container_action` (start, stop, restart, pause, unpause, remove, update, rollback) behind *Containers: control*, which also needs `NEXTDASH_DOCKER_CONTROL` and keeps its long write deadline.
+- **new — Writes through MCP are marked.** The activity log says when a bookmark edit came through MCP.
+- **docs — Manual §23.6** lists the tools by group; **§23.11** is the assistant.
+
+### Theme studio
+
+- **new — The material of the views.** The studio draws with the same overlay material as the views (`theme-overlays.css`): glass on a glass theme, solid on classic, with the same border and shadow.
+
+### Quick start
+
+- **fix — It fits shorter windows.** Head and foot stay put and only the middle scrolls (`.sg-mid`); the answer about the example links comes first, then weather, bookmarks and the rest to look at as three small cards, with less air on a short window (`start-guide.css`, `start-guide.js`).
+
+### Bookmarks
+
+- **fix — The preview card stays off the hovered row.** Beside the row it covered what the pointer was on; it goes below it (above near the bottom edge) and stays on screen. Its size is read without the open animation's scale, which made it look narrower than it ends up and the flip miscount (`dashboard-preview.js`).
+
+### Settings
+
+- **fix — A background save sends only its own keys.** A tip seen, a migration or a search pick posted this tab's whole copy of the settings, so a tab loaded earlier put back whatever had changed since in another tab, through the API or the MCP switches. `saveSettings({ keys })` sends only those keys and the server keeps the rest (`mergeSettingsFromBody`); Config's own save still sends every field. `tests/settings-background-saves.spec.js` fails without it.
+
+### Docs
+
+- **docs — `MANUAL.md` §23.6 and §23.11**, new pictures (`23-assistant-panel`, `23-assistant-conversations`, `23-assistant-settings`, `23-mcp-access`) and retaken ones for the Quick start, the command palette, the theme studio and the Config rail; the intro of README and MANUAL says nextDash is more than bookmarks, and README lists the assistant and the 17 MCP tools.
+- **docs — Config → Help → Assistant, tips, Overview and News & features** (two entries, the assistant and the MCP groups), the cheat sheet row for `=` and its PDF.
+- **docs — Translations.** The assistant's screens, the MCP groups, the cheat sheet row and seventeen older strings (the weekly digest, the tag view's Score, Glances 5) had no locale keys and read in English everywhere; they are in all six languages.
+- **docs — `static/data/whats-new/v1.23.0.json` and its index entry**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v359` and `DASHBOARD_RELEASE` to `2026.10-dashboard-release-v1.23.0`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

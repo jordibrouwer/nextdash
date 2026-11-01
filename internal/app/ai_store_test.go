@@ -287,3 +287,37 @@ func TestMultibyteTruncationIsUTF8Safe(t *testing.T) {
 		t.Fatalf("title %q", got.Title)
 	}
 }
+
+// A file that is there but cannot be read must never be overwritten with an
+// empty list: that would delete every conversation.
+func TestAnUnreadableFileIsNotOverwritten(t *testing.T) {
+	aiTestStoreDir(t)
+	now := time.Now()
+	first, err := aiAppendTurn("", "keep me", aiMessage{Role: "assistant", Text: "x"}, Settings{}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := aiConversationsFilePath()
+	if err := os.Chmod(path, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(path, 0600) })
+	if _, err := os.ReadFile(path); err == nil {
+		t.Skip("the file is still readable (running as root?)")
+	}
+	if _, err := aiAppendTurn("", "new", aiMessage{Role: "assistant", Text: "y"}, Settings{}, now); err == nil {
+		t.Fatal("a turn was saved over a file that could not be read")
+	}
+	if _, _, err := aiUpdateProposal("p1", []string{"pending"}, aiProposal{}); err == nil {
+		t.Fatal("a proposal update went ahead over a file that could not be read")
+	}
+	if _, err := aiDeleteConversation(first.ID); err == nil {
+		t.Fatal("a delete went ahead over a file that could not be read")
+	}
+	if err := os.Chmod(path, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := aiGetConversation(first.ID); !ok {
+		t.Fatal("the existing conversation was lost")
+	}
+}

@@ -742,13 +742,15 @@ class DashboardRenderCore {
     async tickWidget(widget) {
         if (document.visibilityState !== 'visible') return;
         // A slow service must not stack beats, or an old answer lands after a new one.
-        this._widgetTicking = this._widgetTicking || new Set();
+        // A Map of the running beat, so a manual refresh can wait for it.
+        this._widgetTicking = this._widgetTicking || new Map();
         if (this._widgetTicking.has(widget.id)) return;
-        this._widgetTicking.add(widget.id);
+        const run = this.runWidgetTick(widget);
+        this._widgetTicking.set(widget.id, run);
         try {
-            await this.runWidgetTick(widget);
+            await run;
         } finally {
-            this._widgetTicking.delete(widget.id);
+            if (this._widgetTicking.get(widget.id) === run) this._widgetTicking.delete(widget.id);
         }
     }
 
@@ -828,6 +830,27 @@ class DashboardRenderCore {
         const body = block?.querySelector('.dashboard-widget-body');
         if (!body) return;
 
+        // A beat already under way finishes first, and none starts while this
+        // runs: otherwise the beat's older answer could be drawn last, over
+        // the one the reader just asked for.
+        this._widgetTicking = this._widgetTicking || new Map();
+        const pending = this._widgetTicking.get(widget.id);
+        if (pending) await pending.catch(() => {});
+        let release;
+        const mine = new Promise((resolve) => { release = resolve; });
+        this._widgetTicking.set(widget.id, mine);
+        try {
+            await this._refreshCustomWidgetBody(widget, d, pageId, body);
+        } finally {
+            if (this._widgetTicking.get(widget.id) === mine) this._widgetTicking.delete(widget.id);
+            release();
+        }
+        // The clock restarts from now, so pressing this does not leave a beat
+        // arriving a second later.
+        this.startCustomWidgetTimer(widget);
+    }
+
+    async _refreshCustomWidgetBody(widget, d, pageId, body) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
             const url = `/api/widgets/custom?pageId=${encodeURIComponent(pageId)}`
@@ -850,9 +873,6 @@ class DashboardRenderCore {
         const cursor = d.keyboardNavigation?.captureWidgetCursor?.() || null;
         await window.DashboardWidgets?.custom?.(body, widget, d);
         if (cursor) d.keyboardNavigation?.restoreWidgetCursor?.(cursor);
-        // The clock restarts from now, so pressing this does not leave a beat
-        // arriving a second later.
-        this.startCustomWidgetTimer(widget);
     }
 
     /* How many are running -- for the test that one tile keeps one clock. */

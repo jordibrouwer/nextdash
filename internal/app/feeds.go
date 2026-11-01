@@ -312,6 +312,14 @@ func (h *Handlers) fetchFeed(ctx context.Context, feedURL, etag, lastModified st
 		req.Header.Set("If-Modified-Since", lastModified)
 	}
 	resp, err := client.Do(req)
+	// A round cut short -- Poll now abandoned, the tab closed -- says nothing
+	// about the feed. Counted, five of them retired a working feed for a day.
+	if ctx.Err() != nil {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		return feedFetch{Err: ctx.Err()}
+	}
 	if err != nil || resp == nil {
 		if err == nil {
 			err = errors.New("no response")

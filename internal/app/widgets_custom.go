@@ -181,6 +181,14 @@ func customWidgetCached(id string, now time.Time) (CustomWidgetResult, bool) {
 	return entry.result, true
 }
 
+// customWidgetLast is whatever a widget last answered with, expired or not.
+func customWidgetLast(id string) (CustomWidgetResult, bool) {
+	customWidgetCache.Lock()
+	defer customWidgetCache.Unlock()
+	entry, ok := customWidgetCache.at[id]
+	return entry.result, ok
+}
+
 func customWidgetStore(id string, result CustomWidgetResult, ttl time.Duration, now time.Time) {
 	customWidgetCache.Lock()
 	defer customWidgetCache.Unlock()
@@ -1506,6 +1514,13 @@ func (h *Handlers) CustomWidgetHandler(w http.ResponseWriter, r *http.Request) {
 	ttl := time.Duration(spec.TTL) * time.Second
 	if result.Error != "" {
 		ttl = time.Duration(customWidgetMinTTL) * time.Second
+		// The tile keeps its last good figures, as the log line promises;
+		// their FetchedAt says how old they are. A forced refresh is the
+		// reader asking what the service says now, so it sees the error.
+		if previous, ok := customWidgetLast(cacheKey); ok && !forced &&
+			previous.Error == "" && (len(previous.Values) > 0 || len(previous.Items) > 0) {
+			result = previous
+		}
 	}
 	customWidgetStore(cacheKey, result, ttl, now)
 	_ = json.NewEncoder(w).Encode(result)

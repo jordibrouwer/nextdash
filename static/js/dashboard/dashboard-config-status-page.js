@@ -185,6 +185,11 @@
         const q = (sel) => root.querySelector(sel);
         const t = (key, fallback) => this.t(`config.${key}`, fallback);
         this.statusPage = { config: null, path: '', sources: { monitors: [] }, loadError: '' };
+        // The state this bind owns. A save still waiting when the section is
+        // bound again sends this one's config, not the new bind's: that one
+        // starts at null, and "null" decoded server-side to an empty page
+        // that replaced the stored groups, title and switch.
+        const own = this.statusPage;
         let timer = 0;
         let saving = Promise.resolve();
         let qrFor = '';
@@ -228,10 +233,11 @@
         };
 
         const send = async () => {
+            if (!own.config) return;
             const res = await global.nextDashFetch('/api/status-page', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.statusPage.config),
+                body: JSON.stringify(own.config),
             });
             if (!res.ok) throw new Error(String(res.status));
             const body = await res.json();

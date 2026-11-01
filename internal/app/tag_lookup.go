@@ -114,6 +114,18 @@ func (c *tagLookupCache) store(found map[string]tagLookupEntry) {
 	for host, entry := range found {
 		c.entries[host] = entry
 	}
+	// Expired answers are dropped on the way out: fresh() already ignores
+	// them, and kept they made the file and every rewrite of it grow forever.
+	now := time.Now()
+	for host, entry := range c.entries {
+		ttl := tagLookupMissTTL
+		if len(entry.Tags) > 0 {
+			ttl = tagLookupHitTTL
+		}
+		if now.Sub(time.Unix(entry.At, 0)) >= ttl {
+			delete(c.entries, host)
+		}
+	}
 	_ = writeIndentJSONFile(tagLookupCacheFilePath(), c.entries)
 }
 

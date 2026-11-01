@@ -2,6 +2,39 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureAssistantTitle",
+      "titleFallback": "An assistant for your bookmarks",
+      "whatKey": "config.overviewNewFeatureAssistantWhat",
+      "whatFallback": "Finding the dead links, or tagging a whole subject, meant clicking through lists yourself.",
+      "howKey": "config.overviewNewFeatureAssistantHow",
+      "howFallback": "Ask in plain words, with Claude, OpenAI or a server of your own such as Ollama. It looks things up and answers. A change it suggests waits under its answer with Apply and Skip, and nothing happens until you press Apply.",
+      "enableKey": "config.overviewNewFeatureAssistantEnable",
+      "enableFallback": "Open Config → AI Assistant, turn it on, pick a provider and save its key. Then type = in the search bar, or :ask in the command palette.",
+      "ctaKey": "config.overviewNewFeatureAssistantCta",
+      "ctaFallback": "Open AI Assistant →",
+      "go": {
+        "section": "assistant"
+      },
+      "since": "v1.23.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMcpGroupsTitle",
+      "titleFallback": "MCP tools for your bookmarks, Health and containers",
+      "whatKey": "config.overviewNewFeatureMcpGroupsWhat",
+      "whatFallback": "The MCP endpoint could only search and add bookmarks.",
+      "howKey": "config.overviewNewFeatureMcpGroupsHow",
+      "howFallback": "Four switches add more: edit and delete bookmarks, read Health and the Inbox, read the containers, and control them. Editing and controlling need the write token, and a deleted bookmark goes to the Trash.",
+      "enableKey": "config.overviewNewFeatureMcpGroupsEnable",
+      "enableFallback": "Open Config → Data & backups → Webhooks → MCP access, tick the endpoint, then tick the groups you want.",
+      "ctaKey": "config.overviewNewFeatureMcpGroupsCta",
+      "ctaFallback": "Open MCP access →",
+      "go": {
+        "section": "data-backups",
+        "tab": "webhooks"
+      },
+      "since": "v1.23.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureTagViewAnyAllTitle",
       "titleFallback": "Any tag or every tag, and a tag for a selection",
       "whatKey": "config.overviewNewFeatureTagViewAnyAllWhat",

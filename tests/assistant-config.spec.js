@@ -43,6 +43,7 @@ test.describe('Assistant settings', () => {
                 aiEnabled: s.aiEnabled, aiProvider: s.aiProvider, aiBaseURL: s.aiBaseURL, aiModel: s.aiModel,
                 mcpBookmarksWrite: s.mcpBookmarksWrite, mcpHealthInbox: s.mcpHealthInbox,
                 mcpContainersRead: s.mcpContainersRead, mcpContainersControl: s.mcpContainersControl,
+                mcpSettingsOverview: s.mcpSettingsOverview,
             };
         }
         keysBefore = (await (await page.request.get('/api/ai/key')).json()).keySet || {};
@@ -243,18 +244,21 @@ test.describe('Assistant settings', () => {
     test('the group chips show the current MCP switches', async ({ page }) => {
         const res = await page.request.get('/api/settings');
         await page.request.post('/api/settings', {
-            data: { ...(await res.json()), mcpBookmarksWrite: true, mcpHealthInbox: false, mcpContainersRead: true, mcpContainersControl: false },
+            data: { ...(await res.json()), mcpBookmarksWrite: true, mcpHealthInbox: false, mcpContainersRead: true, mcpContainersControl: false, mcpSettingsOverview: true },
             headers: AUTH,
         });
         const fold = await openFold(page);
         const state = (key) => fold.locator(`[data-ai-group="${key}"]`);
-        await expect(fold.locator('[data-ai-group]')).toHaveCount(4);
+        await expect(fold.locator('[data-ai-group]')).toHaveCount(5);
         await expect(state('mcpBookmarksWrite')).toHaveAttribute('data-ai-group-on', 'true');
         await expect(state('mcpBookmarksWrite')).toContainText('On');
         await expect(state('mcpHealthInbox')).toHaveAttribute('data-ai-group-on', 'false');
         await expect(state('mcpHealthInbox')).toContainText('Off');
         await expect(state('mcpContainersRead')).toHaveAttribute('data-ai-group-on', 'true');
         await expect(state('mcpContainersControl')).toHaveAttribute('data-ai-group-on', 'false');
+        await expect(state('mcpSettingsOverview')).toHaveAttribute('data-ai-group-on', 'true');
+        await expect(state('mcpSettingsOverview')).toContainText('Settings overview: read');
+        await expect(state('mcpSettingsOverview')).toContainText('On');
     });
 
     test('the readiness line says what is missing and follows the switch', async ({ page }) => {

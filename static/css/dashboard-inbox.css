@@ -361,7 +361,7 @@ body.no-animations .inbox-item-thumb--loading {
     padding: var(--space-2, 0.5rem) var(--space-2, 0.6rem);
     border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-primary);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--text-sm, 0.85rem);

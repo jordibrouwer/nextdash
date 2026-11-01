@@ -69,8 +69,9 @@ test.describe('ready-made pages', () => {
     test('they wait for the choice about the example links, and the choice says where they go', async ({ page, request }) => {
         await setup(page, request);
         const cards = modal(page).locator('[data-sg-starter]');
-        await expect(cards.first()).toBeDisabled();
-        await expect(modal(page).locator('[data-sg-starter-sub]')).toContainText('First decide about the example links');
+        // The choice has the top of the guide; the ready-made pages come after it.
+        await expect(modal(page).locator('[data-sg-keep]')).toBeVisible();
+        await expect(cards).toHaveCount(0);
         // Keep: the page goes beside the examples.
         await modal(page).locator('[data-sg-keep]').click();
         await expect(modal(page)).toBeVisible();
@@ -241,7 +242,7 @@ test.describe('importing from the guide', () => {
         });
         await setup(page, request);
         await expect(modal(page).getByRole('button', { name: 'Import a CSV file' })).toBeVisible();
-        await expect(modal(page).getByRole('button', { name: /More ways to import: Config/ })).toBeVisible();
+        await expect(modal(page).getByRole('button', { name: /More ways to import/ })).toBeVisible();
 
         await modal(page).locator('[data-sg-csv-input]').setInputFiles({
             name: 'bookmarks.csv', mimeType: 'text/csv',
@@ -285,7 +286,7 @@ test.describe('importing from the guide', () => {
 
     test('"More ways to import" opens Config → Data & backups', async ({ page, request }) => {
         await setup(page, request);
-        await modal(page).getByRole('button', { name: /More ways to import: Config/ }).click();
+        await modal(page).getByRole('button', { name: /More ways to import/ }).click();
         await expect(page).toHaveURL(/#config\/data-backups/);
     });
 });

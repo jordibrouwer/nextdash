@@ -414,8 +414,15 @@ func (h *Handlers) trackOpenAlerts(source string, notices []monitorNotification)
 		}
 		switch n.Event {
 		case "down":
+			fresh := openAlert{Key: key, Source: source, Name: n.Name, URL: n.URL, Since: n.At, LastAt: n.At}
 			if at < 0 {
-				file.Open = append(file.Open, openAlert{Key: key, Source: source, Name: n.Name, URL: n.URL, Since: n.At, LastAt: n.At})
+				file.Open = append(file.Open, fresh)
+				changed = true
+			} else if file.Open[at].Since != n.At {
+				// A down alert fires once per outage, so a second one is a new
+				// outage whose "up" for the last one never came: it starts its
+				// own count and duration instead of inheriting a spent one.
+				file.Open[at] = fresh
 				changed = true
 			}
 		case "up":
@@ -641,21 +648,42 @@ func (h *Handlers) pushNoticeDirect(ctx context.Context, source string, n monito
 }
 
 // openAlertWanted answers, per open alert, whether it may still be reminded
-// about: a monitor that is still a monitored, unmuted bookmark somewhere, a
-// container whose notices are on and not muted.
+// about: a monitor that is still a monitored bookmark with no muted copy and
+// whose newest check is not up, a container whose notices are on and not muted.
+//
+// The newest check matters because an alert only closes on an "up" notice,
+// and some recoveries send none: one inside a maintenance window, or with the
+// sinks switched off. Without it the reminder said "still down" about a
+// service that had been back for hours.
 func (h *Handlers) openAlertWanted() func(openAlert) bool {
 	monitored := map[string]bool{}
+	muted := map[string]bool{}
 	for _, bm := range h.store.GetAllBookmarks() {
-		if bm.Monitor && !bm.NotifyMuted {
-			if key := canonicalBookmarkURLKey(bm.URL); key != "" {
-				monitored[noticeSourceMonitor+":"+key] = true
-			}
+		if !bm.Monitor {
+			continue
+		}
+		key := canonicalBookmarkURLKey(bm.URL)
+		if key == "" {
+			continue
+		}
+		monitored[noticeSourceMonitor+":"+key] = true
+		// Muting any copy mutes the URL, as it does for the monitor's alerts.
+		if bm.NotifyMuted {
+			muted[noticeSourceMonitor+":"+key] = true
 		}
 	}
+	var history map[string][]HealthSample
 	return func(alert openAlert) bool {
 		switch alert.Source {
 		case noticeSourceMonitor:
-			return monitored[alert.Key]
+			if !monitored[alert.Key] || muted[alert.Key] {
+				return false
+			}
+			if history == nil {
+				history = h.readAllHealthHistory()
+			}
+			samples := history[strings.TrimPrefix(alert.Key, noticeSourceMonitor+":")]
+			return len(samples) == 0 || !samples[len(samples)-1].Up
 		case noticeSourceContainer:
 			return h.dockerNotifyAllowed(alert.Name, "")
 		}

@@ -133,9 +133,22 @@ func (h *Handlers) rssFeed(ctx context.Context, url string, forceRefresh bool) (
 		// A feed that is down is not a reason to ask it again on every
 		// repaint, but it should recover sooner than a working one expires.
 		entry.expires = now.Add(2 * time.Minute)
+		// One failed refresh keeps the last good list, as the log line
+		// promises, instead of blanking the tile to an error.
+		if previous := rssFeedLastItems(url); len(previous) > 0 {
+			entry.items, entry.err = previous, ""
+			items, errText = previous, ""
+		}
 	}
 	rssFeedStore(url, entry, now)
 	return items, errText
+}
+
+// rssFeedLastItems is whatever a feed last answered with, expired or not.
+func rssFeedLastItems(url string) []RSSItem {
+	rssFeedCache.Lock()
+	defer rssFeedCache.Unlock()
+	return rssFeedCache.at[url].items
 }
 
 func (h *Handlers) fetchRSSFeed(ctx context.Context, url string) ([]RSSItem, string) {

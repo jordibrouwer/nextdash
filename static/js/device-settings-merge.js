@@ -40,6 +40,7 @@
         'mcpHealthInbox',
         'mcpContainersRead',
         'mcpContainersControl',
+        'mcpSettingsOverview',
         'aiEnabled',
         'aiProvider',
         'aiBaseURL',

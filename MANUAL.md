@@ -649,13 +649,18 @@ The full list is in [§14.4](#144-keys) and on `!`.
 
 ## 1. ✨ What is nextDash?
 
-nextDash is a **self-hosted bookmark dashboard** you open in your browser.
+nextDash is a **self-hosted dashboard** you open in your browser. It keeps your links, shows how your services and machines are doing, and puts both on one screen.
 
 - **No accounts.** One installation, one set of data on disk.
-- **No cloud.** Your bookmarks live as plain JSON files in a directory you control.
+- **No cloud.** Your data lives as plain JSON files in a directory you control.
 - **Keyboard first.** Search, switch pages, add, edit and run commands without the mouse.
 
-Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Around that sit search, a command palette, a Bookmarks view with link health checks and uptime monitoring, an inbox for links you have not filed yet, a Containers view for the machine's own Docker containers, and widgets that show something other than links.
+It began as a place for bookmarks, and bookmarks are still the core: grouped by **page** (Work, Home) and **category** (Dev, News), with search, a command palette, an inbox for links you have not filed yet and a Bookmarks view. Around them sit more tools:
+
+- **Monitoring.** Link health checks, uptime, certificate and domain expiry, page drift, a status page and alerts.
+- **Containers.** A Containers view for the machine's own Docker containers, linked to the bookmarks of their web UIs.
+- **Widgets.** Weather, calendar, feeds, your machine, media and home services, and any service that answers with JSON.
+- **A look of your own.** Themes, backdrops and a theme studio.
 
 <a id="what-you-can-do"></a>
 
@@ -2341,6 +2346,9 @@ The status page is one page behind a secret link, for your household and friends
 **What a visitor never sees.** Error details, container images, bookmark ids, internal addresses (unless **Link** is on for that service), or anything else of your dashboard. The page loads none of the dashboard's files.
 
 **Setting it up.**
+
+<p align="center"><img src="screenshots/manual.md/23-assistant-settings.jpg" alt="Config, AI Assistant: the panels Turn it on, Provider with Claude and a saved key, Conversations and What it can see and do" width="560"></p>
+<p align="center"><sub>Config → AI Assistant.</sub></p>
 
 1. Under **Link and access**, tick **Turn the status page on**. The link appears with **Copy**, **Open** and a QR code to scan with a phone.
 2. Under **Top of the page**, give it a **Title** and, if you like, a **Notice** shown under it.
@@ -4319,7 +4327,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **What's new.** After an upgrade the release notes open once. After that, the **★** button, `:whatsnew`, or *See what's new* under Help open them. Every release newer than the last one you saw opens in full, up to six: the newest with its version as the headline, the others under it marked *unread*, and a line that counts them — *Since your last visit: 3 releases, 9 new and 4 fixed.* Every older release is a row under **Earlier**, opened with a click. A small release can count towards the version number without appearing in this window; the [changelog](CHANGELOG.md) always has everything. With **Check GitHub for new releases** on (Behavior → Privacy & sync), a newer release adds a dot to ★ and a toast.
 
-A release opens with a one-line summary, then its **highlight** in a spotlight: a picture or a short silent recording (a still when motion is turned down), a short title, the explanation and a button to where the change lives. When the release the window opens on marks no highlight, its first new change stands in. The other new changes follow, one row each with their section in front and the detail folded; shortcuts have a block of their own, each key on its own cap; fixes come last, one line each, with the explanation a click away. A row of chips — **All**, **New only** and one per section — narrows what is open. After the last change, a card says nextDash is made by one person and links to Ko-fi (a one-off gift, no account).
+A release opens with a one-line summary, then its **highlight** in a spotlight: a picture or a short silent recording (a still when motion is turned down), a short title, the explanation and a button to where the change lives. When the release the window opens on marks no highlight, its first new change stands in. The other new changes follow, one row each with their section in front and the detail folded; shortcuts have a block of their own, each key on its own cap; fixes come last, one line each, with the explanation a click away. A row of chips — **All**, **New only** and one per section — narrows what is open. Beside the opening summary, a card says nextDash is made by one person and links to Ko-fi (a one-off gift, no account).
 
 <a id="179-config-keys"></a>
 
@@ -4885,12 +4893,15 @@ HTML pages send a strict Content-Security-Policy. `NEXTDASH_CSP=off` switches it
 
 ### 23.6 The MCP endpoint
 
-nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks → MCP access**, which then shows the address. Under it are four group switches, all off until you tick them:
+nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks → MCP access**, which then shows the address. Under it are five group switches, all off until you tick them:
+
+<p align="center"><img src="screenshots/manual.md/23-mcp-access.jpg" alt="The MCP access panel under Data & backups, Webhooks: the switch Answer MCP clients at this address ticked with its address, and four group switches: Bookmarks edit and delete and Containers control off, Health and Inbox read and Containers read on" width="640"></p>
+<p align="center"><sub>MCP access: the endpoint switch, its address and the four tool groups.</sub></p>
 
 | Tool | What it does | Group |
 |---|---|---|
 | `search_bookmarks` | Search by name, URL, tag or note; each result names its page and category; 20 by default, at most 100, with `truncated` when more match | Always on |
-| `get_bookmark` | Everything stored about one bookmark | Always on |
+| `get_bookmark` | Everything stored about one bookmark, with its usage (opens, last opened, added); with *Health and Inbox: read* on also its health (status, score, reasons, flags, last check) and monitoring (interval, uptime, response time), and with *Containers: read* on the container linked to it | Always on |
 | `list_tags` | Every tag with its count | Always on |
 | `list_pages` | The pages with their categories and ids | Always on |
 | `add_bookmark` | Add a bookmark, with the usual duplicate check | Always on |
@@ -4898,17 +4909,25 @@ nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for exam
 | `move_bookmark` | Move to another page or category; refused when the target page already holds the URL | *Bookmarks: edit and delete* |
 | `delete_bookmark` | Delete a bookmark; it goes to the Trash, where you can restore it | *Bookmarks: edit and delete* |
 | `create_category`, `rename_category` | Add a category to a page, or rename one | *Bookmarks: edit and delete* |
-| `get_health_summary` | Counts from the last link checks; it does not run a check | *Health and Inbox: read* |
-| `list_health_issues` | Bookmarks that are down or whose certificate is due to expire; 25 by default, at most 100, with `truncated` when more exist | *Health and Inbox: read* |
+| `get_health_summary` | Counts from the last link checks, the average health score and how many bookmarks fall in each score range; it does not run a check | *Health and Inbox: read* |
+| `list_health_issues` | Bookmarks that are down or whose certificate is due to expire, each with its score, reasons and flags; filter by `status`, `max_score` or `flag` (the last two look at every bookmark) and sort by score, how long it has failed or name; 25 by default, at most 100, with `total` and `truncated` | *Health and Inbox: read* |
+| `query_bookmarks` | Filter, sort, count and group bookmarks: by words, page, category, tag, status (ok, broken, unknown), score, health flag, monitoring, how long since opened, how often opened, when added, a note, and whether a container is linked; sort by score, name, opens, last opened, added or uptime; `group_by` page, category, tag, status, flag or container link. `total` and the groups count every match, not only the listed ones; 25 by default, at most 100, and with `group_by` `limit` 0 returns only the groups | *Health and Inbox: read* |
+| `get_stats` | Statistics over the whole collection: bookmarks per page, per category and the 20 commonest tags; health (the Health view's broken links, monitors down and content failures, and their sum; the average score and score ranges over every bookmark in the report, checked or not; a count per flag, certificates due, duplicates, unused); monitoring (monitors down as the header counts them) and pooled uptime; opens, and bookmarks never opened (leaving out those told to ignore *unused*, as the weekly digest does); the daily health trend (30 days by default, `trend_days` up to 365, about 90 are kept); and container totals (running, `not_running`, a count per state, with updates, linked) when *Containers: read* is on; the `inbox` block (added, promoted, deleted and kept since a date, the average time to triage, the count per source, the items waiting now and the last `trend_days` days of daily activity) and the `trash` block (items, a count per kind, the oldest and newest deletion time, never what was deleted) | *Health and Inbox: read* |
+| `get_bookmark_history` | One bookmark's checks per day, found by its URL: checks, how many answered, the uptime ratio and the mean response time, for 30 days by default and at most 90, plus its current score and flags and its open count and last opened (opens are only counted in total, there is no per-day history). A bookmark without recorded checks gets an empty list and a note; a failure is named by its kind | *Health and Inbox: read* |
 | `list_inbox` | Unread links in the Inbox, newest first; 25 by default, at most 100, with `truncated` when more exist | *Health and Inbox: read* |
-| `list_containers` | The containers with state, image, update availability and the last CPU and memory reading; 50 by default, at most 200, with `truncated` when more exist | *Containers: read* |
-| `get_container` | One container's detail, as the Containers view shows it | *Containers: read* |
+| `list_containers` | The containers with state, image, update availability, the last CPU and memory reading and the bookmark each is linked to (and how: manual, port, subdomain or title), plus a `summary` of linked and unlinked; 50 by default, at most 200, with `truncated` when more exist | *Containers: read* |
+| `get_container` | One container's detail, as the Containers view shows it, with the bookmark it is linked to | *Containers: read* |
+| `query_containers` | Filter, sort, count and group containers: by state, image, update, whether a bookmark is linked, CPU and memory; sort by name, CPU, memory, uptime or restarts; `group_by` state, image, host (a macvlan or ipvlan container's own LAN address, else the Docker host) or link. Uptime is given as text such as *3d 4h* and in seconds. `total` and `summary` count every container; 50 by default, at most 200 | *Containers: read* |
 | `get_container_logs` | The last lines of a log; 100 by default, at most 200 | *Containers: read* |
 | `container_action` | Start, stop, restart, pause, unpause, remove, update or rollback one container | *Containers: control* |
+| `get_settings_overview` | How this install is configured, as a safe read-only subset (see below) | *Settings overview: read* |
+| `get_app_status` | The install itself: version and whether the last update check found a newer one (no check is made for the question), the size of the data folder, how many pages, categories and bookmarks, whether the status page is on and how many monitors it shows, how many bookmark feeds are followed, failing or given up on, and how long the server has been running. Counts, yes/no and versions only | *Settings overview: read* |
 
-Searching, looking up, listing tags and pages, and adding bookmarks are always on while the endpoint is. *Bookmarks: edit and delete* and *Containers: control* are marked **needs write token** in Config.
+Searching, looking up, listing tags and pages, and adding bookmarks are always on while the endpoint is. The container link is the one the Containers view shows: the same steps in the same order, with a link set by hand first, and a bookmark filed on two pages linked on both. For the address your browser has open, which the view also counts as this server, nextDash uses the address the dashboard was last opened on. Without Docker, or with the Containers view off, the tools say so in `notes` instead of failing, and a count they cannot know is marked as unknown rather than given as zero. A failed check is reported only as its kind (*Unreachable*, *Timed out*, an HTTP status or a failed content check), never with its error text, which can repeat the address or quote the expectation; expectations and credentials are never included. Bookmarks in Unsorted are not part of the health report, so they have no health status or score. *Bookmarks: edit and delete* and *Containers: control* are marked **needs write token** in Config.
 
 **Write token.** With `NEXTDASH_WRITE_TOKEN` set, adding, editing, moving and deleting bookmarks and categories, and every container action, need it. Container logs need it too, because logs can contain secrets. Container environment variables are never returned. Without a token, the switches are the only gate.
+
+**Settings overview: read** is off by default. With it on, `get_settings_overview` describes your configuration from a fixed list: the health checking and monitoring settings (automatic recheck and its interval, timeouts and retries, monitor emphasis, uptime badges, how many bookmarks ignore which condition, and only *whether* down alerts are configured), the Containers settings (the view, refresh, hidden containers, alerts and their thresholds, automatic updates and their window, resource history, which container is linked to which bookmark by the bookmark's name and page, whether a container has a custom web UI address and its host, and the host address as a host), your pages and their categories with bookmark counts, which features are on (Containers view, Inbox, status page, uptime badges, automatic recheck, analytics), language and theme, and the MCP and assistant switches with the provider, the model, the conversation limits and the server address as a host. It never contains keys, tokens, passwords, webhook or notify addresses, chat ids or user keys, anything from the secrets files, push subscriptions or the write token. The same switch adds `get_app_status`, which holds no addresses or paths either.
 
 The container read tools need the Containers view switched on; **Containers: control** also needs Docker control switched on for the server (`NEXTDASH_DOCKER_CONTROL`); the switch stays greyed out until it is. It acts exactly like the Containers view: nextDash cannot stop, restart, pause, remove or update itself, only a stopped container can be removed, and only one action runs on a container at a time.
 
@@ -5037,7 +5056,13 @@ location /               { return 404; }
 
 The assistant answers questions about your bookmarks in plain words, for example *which of my Docker bookmarks are down?* or *tag everything about Proxmox*. It runs on a model you choose: Claude, OpenAI, or a server of your own such as Ollama. It is **off** until you turn it on, and it is off in the demo. Open it with `:ask` in the command palette, with or without a question after it: with one, it starts a new conversation and asks it straight away. `=` in the search bar does the same: `=` on its own lists your latest conversations (`Enter` opens one), and `=` followed by a question asks it as a new conversation. Like `:ask`, what follows the `=` is never stored in the search history or the recents.
 
+<p align="center"><img src="screenshots/manual.md/23-assistant-conversations.jpg" alt="The search bar after typing a single equals sign: the latest three conversations listed, newest first" width="560"></p>
+<p align="center"><sub>`=` on its own lists your latest conversations.</sub></p>
+
 The panel is laid out like the command palette: you type your question in the line at the top (`Enter` sends, `Shift+Enter` starts a new line), your conversations are listed on the left and the open one is shown on the right. With the question line empty, `↑` and `↓` walk the list and `Enter` opens the conversation you are on; `Esc` closes the panel.
+
+<p align="center"><img src="screenshots/manual.md/23-assistant-panel.jpg" alt="The assistant panel: a question about links that are down, the answer as a short list of three bookmarks, and two proposals underneath, a tag change and a deletion marked Destructive, each with Apply and Skip, with the conversations on the left" width="620"></p>
+<p align="center"><sub>An answer with its proposals: nothing changes until you press Apply.</sub></p>
 
 **Setting it up.** Under **Config → AI Assistant** (a page of its own in the Services group, with one tab, **Settings**) four panels follow each other: **Turn it on**, **Provider**, **Conversations** and **What it can see and do**. Each opens with a line saying what it is for, and the controls that need more than a label have an **ℹ** button beside them that explains them: the switch, the provider, the key, the server address, the model, **Test connection**, the two limits, **Delete all conversations** and the last panel. Under **Test connection** a line says what is still missing (the assistant is off, no key is saved, no address or no model). The fields stay open while the assistant is off, so you can fill them in first. To set it up, tick **Turn the assistant on** and pick a **Provider**:
 
@@ -5055,9 +5080,9 @@ The panel is laid out like the command palette: you type your question in the li
 - today's date and the names of your pages;
 - the answers of the lookups the assistant makes while it works on that question, for example the bookmarks a search found.
 
-Nothing else is sent: not your whole collection, not your settings, and not your key to anyone but the provider.
+Nothing else is sent: not your whole collection, not your settings (unless *Settings overview: read* is on and it looks them up, and then only the safe subset in [§23.6](#236-the-mcp-endpoint)), and not your key to anyone but the provider.
 
-**What it can read.** The same read tools as the MCP endpoint ([§23.6](#236-the-mcp-endpoint)), following the same group switches under **Data & backups → Webhooks → MCP access**. Searching and looking up bookmarks, tags and pages are always available; *Health and Inbox: read* and *Containers: read* add those lookups when ticked. The group checkboxes can be ticked when either the MCP endpoint or the assistant is on, and the assistant does not need the `/mcp` address to be switched on. Container logs still need the write token when one is set, and environment variables are never returned. The assistant does not run container actions itself, whatever *Containers: control* says. The last panel of the settings page shows the four switches as On or Off, read-only, with an **Open MCP access** button that takes you to them.
+**What it can read.** The same read tools as the MCP endpoint ([§23.6](#236-the-mcp-endpoint)), following the same group switches under **Data & backups → Webhooks → MCP access**. Searching and looking up bookmarks, tags and pages are always available; *Health and Inbox: read*, *Containers: read* and *Settings overview: read* add those lookups when ticked. With them on it can answer counts and rankings (*how many bookmarks are linked to a container*, *which bookmarks have the lowest health score*), health and usage statistics for one bookmark or the whole collection, which container belongs to which bookmark, check how one bookmark has fared day by day, read the Inbox and Trash figures, say which version is running and whether the status page is on, and describe how nextDash is configured; when a switch it needs is off, it says which one. The group checkboxes can be ticked when either the MCP endpoint or the assistant is on, and the assistant does not need the `/mcp` address to be switched on. Container logs still need the write token when one is set, and environment variables are never returned. The assistant does not run container actions itself, whatever *Containers: control* says. The last panel of the settings page shows the five switches as On or Off, read-only, with an **Open MCP access** button that takes you to them.
 
 **What it knows about nextDash.** Ask it how something works, what nextDash can do or where a setting lives and it looks the answer up in the manual and the README that ship with your install; the lookup happens inside nextDash and sends nothing to the web, and the passages it finds travel with the question like the other lookups above. Its answers can contain links that open a page, such as *Config → Containers*, and they open without leaving the dashboard. Where the manual does not say, it tells you so rather than guessing.
 

@@ -38,13 +38,20 @@
             return false;
         }
         const focusable = getFocusableElements(root);
+        // Nothing to move to is still a trap: Tab stays on the dialog
+        // instead of walking out into the page behind it.
         if (focusable.length === 0) {
-            return false;
+            event.preventDefault();
+            if (typeof root.focus === 'function') root.focus({ preventScroll: true });
+            return true;
         }
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         const active = document.activeElement;
-        if (!root.contains(active)) {
+        // The dialog itself holding focus (a click on empty space in a
+        // tabindex=-1 panel) is outside the first/last walk: Shift+Tab from it
+        // left the dialog.
+        if (!root.contains(active) || active === root) {
             event.preventDefault();
             (event.shiftKey ? last : first).focus({ preventScroll: true });
             return true;

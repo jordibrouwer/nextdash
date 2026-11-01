@@ -164,9 +164,7 @@ func (h *Handlers) IconSetsMatchHandler(w http.ResponseWriter, r *http.Request) 
 
 func (h *Handlers) IconSetsSearchHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
-	if len(q) > iconSetsQueryMaxBytes {
-		q = q[:iconSetsQueryMaxBytes]
-	}
+	q = truncateBytes(q, iconSetsQueryMaxBytes)
 	x := currentIconSets()
 	results := []*iconSetRef{}
 	for _, e := range x.search(q, iconSetsSearchLimit) {

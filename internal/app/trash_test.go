@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -270,5 +271,22 @@ func TestTrashCapsAtMaxItems(t *testing.T) {
 	// The cap must drop the oldest, not the newest.
 	if items[0].DeletedAt != now+int64(trashMaxItems+49) {
 		t.Fatalf("newest item was dropped: first deletedAt = %d", items[0].DeletedAt)
+	}
+}
+
+// An unreadable trash.json is an error for a write, not an empty trash saved
+// over every deleted page and bookmark in it.
+func TestTrashWriteRefusesAnUnreadableFile(t *testing.T) {
+	store := newTrashTestStore(t)
+	broken := []byte(`{"version":1,"items":[{"id":"keep"`)
+	if err := os.WriteFile(store.trashFile(), broken, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := store.AddTrashedBookmarks([]TrashedBookmark{{PageID: 1, Bookmark: Bookmark{Name: "x", URL: "https://x.example"}}})
+	if err == nil {
+		t.Fatal("AddTrashedBookmarks wrote over an unreadable trash")
+	}
+	if got, _ := os.ReadFile(store.trashFile()); string(got) != string(broken) {
+		t.Fatalf("trash.json changed: %s", got)
 	}
 }

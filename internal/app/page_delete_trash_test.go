@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -564,6 +565,38 @@ func TestSavePagesRefusesAnIDBelowOne(t *testing.T) {
 		}
 		if _, err := os.Stat(filepath.Join(dir, "bookmarks-"+id+".json")); !os.IsNotExist(err) {
 			t.Errorf("id %s: bookmarks-%s.json was written (err %v)", id, id, err)
+		}
+	}
+}
+
+// Deletes of one page that overlap (two tabs, Config and the structure modal)
+// leave one trash entry: a second one is a copy of a page that is gone, and
+// restoring it answers 409 for good.
+func TestConcurrentDeletesOfOnePageLeaveOneTrashEntry(t *testing.T) {
+	for round := 0; round < 20; round++ {
+		h, _ := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"bookmarks":[{"name":"A","url":"https://a.example"}]}`)
+		const n = 8
+		codes := make([]int, n)
+		var wg sync.WaitGroup
+		start := make(chan struct{})
+		for i := 0; i < n; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				<-start
+				codes[i] = deletePageViaRouter(t, h, "2").Code
+			}(i)
+		}
+		close(start)
+		wg.Wait()
+		ok := 0
+		for _, c := range codes {
+			if c == http.StatusOK {
+				ok++
+			}
+		}
+		if items := h.store.GetTrashItems(); len(items) != 1 || ok != 1 {
+			t.Fatalf("round %d: %d trash entries and %d deletes answered 200 (codes %v), want 1 and 1", round, len(items), ok, codes)
 		}
 	}
 }

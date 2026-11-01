@@ -70,6 +70,13 @@ type aiTurnResult struct {
 
 const aiSystemFixedLine = "You can look things up with the tools. You cannot change anything yourself: to suggest a change, call propose_changes, and the person applies it with a click."
 
+// aiSystemFunnelLines name the tools that count, so a model does not count a
+// cut-off list, and say where a missing tool is switched on.
+const aiSystemFunnelLines = "For counts, rankings, health and usage statistics, container links and the configuration, use query_bookmarks, query_containers, get_stats and get_settings_overview: " +
+	"for counts use the `total`/`groups` fields, never count the returned list. " +
+	"get_stats also has `inbox` and `trash` blocks; get_app_status gives the version, update, data size, status page, feeds and uptime; get_bookmark_history gives one bookmark's checks per day.\n" +
+	"If a needed tool is not offered, say which switch under Config → AI Assistant → What it can see enables it (Health and Inbox: read, Containers: read or Settings overview: read)."
+
 // aiSystemPrompt carries the date, the page names and the fixed line, and
 // nothing else from the data: everything else the model has to look up.
 func aiSystemPrompt(now time.Time, pages []Page) string {
@@ -89,6 +96,7 @@ func aiSystemPrompt(now time.Time, pages []Page) string {
 		b.WriteString("The pages are: " + strings.Join(names, ", ") + ".\n")
 	}
 	b.WriteString(aiSystemFixedLine + "\n")
+	b.WriteString(aiSystemFunnelLines + "\n")
 	b.WriteString(aiSystemDocsBlock())
 	return b.String()
 }
@@ -268,16 +276,20 @@ func (h *Handlers) aiRunTurn(ctx context.Context, r *http.Request, p aiProvider,
 
 		req.Messages = append(req.Messages, aiWireMessage{Role: "assistant", Text: reply.Text, ToolCalls: reply.ToolCalls})
 		for _, call := range reply.ToolCalls {
-			calls++
+			// A proposal is not a lookup: it never counts towards the limit,
+			// so one made after the last lookup is still kept.
+			if call.Name != aiProposeChangesTool {
+				calls++
+			}
 			var out string
 			switch {
-			case calls > aiMaxCalls:
-				res.Limit = "calls"
-				out = aiJSONText(map[string]any{"error": "Too many lookups for one question."})
 			case call.Name == aiProposeChangesTool:
 				accepted, told := h.aiCheckProposals(h.store.GetSettings(), call.Arguments)
 				res.Proposals = append(res.Proposals, accepted...)
 				out = aiJSONText(told)
+			case calls > aiMaxCalls:
+				res.Limit = "calls"
+				out = aiJSONText(map[string]any{"error": "Too many lookups for one question."})
 			case aiIsDocsTool(call.Name) && offeredSet[call.Name]:
 				emit(aiTurnEvent{Type: "tool", Group: aiDocsGroup})
 				out = aiCutText(aiRunDocsTool(call), aiToolResultMax)
@@ -324,8 +336,89 @@ func (h *Handlers) aiRunTool(r *http.Request, call aiToolCall) string {
 		out = aiJSONText(map[string]any{"error": rpcErr.Message})
 	} else if content, ok := result["content"].([]map[string]any); ok && len(content) > 0 {
 		out, _ = content[0]["text"].(string)
+		if len(out) > aiToolResultMax {
+			if payload, ok := result["structuredContent"].(map[string]any); ok {
+				if fitted, ok := aiFitPayload(payload, aiToolResultMax); ok {
+					return fitted
+				}
+			}
+		}
 	}
 	return aiCutText(out, aiToolResultMax)
+}
+
+/*
+aiFitPayload shortens the lists in an answer that is too long, rather than
+cutting its text: JSON keys are written in alphabetical order, so a plain cut
+of {"bookmarks":[...],"total":300} loses the total, which is the one figure a
+count is read from.
+
+Only the row lists are shortened, in a fixed order, and the trend after them;
+groups, summary, totals and notes are never touched, because they are what
+the answer counts with. A row list loses its tail (it is already sorted the
+way it was asked for) and returned follows it; the trend is oldest first, so
+it keeps its newest days. Any other shape gives up and is cut as text.
+*/
+var aiFitRowLists = []string{"bookmarks", "containers", "issues", "items", "days"}
+
+func aiFitPayload(payload map[string]any, max int) (string, bool) {
+	work := make(map[string]any, len(payload)+1)
+	for k, v := range payload {
+		work[k] = v
+	}
+	work["shortened"] = "Some lists were shortened to fit; total, groups and summary still count everything."
+	length := func(v any) int {
+		switch list := v.(type) {
+		case []map[string]any:
+			return len(list)
+		case []any:
+			return len(list)
+		}
+		return 0
+	}
+	keep := func(v any, n int, tail bool) any {
+		switch list := v.(type) {
+		case []map[string]any:
+			if tail {
+				return list[len(list)-n:]
+			}
+			return list[:n]
+		case []any:
+			if tail {
+				return list[len(list)-n:]
+			}
+			return list[:n]
+		}
+		return v
+	}
+	order := append(append([]string{}, aiFitRowLists...), "trend")
+	for i := 0; i < 64; i++ {
+		text := aiJSONText(work)
+		if len(text) <= max {
+			return text, true
+		}
+		key := ""
+		for _, k := range order {
+			if length(work[k]) > 0 {
+				key = k
+				break
+			}
+		}
+		if key == "" {
+			return "", false
+		}
+		n := length(work[key]) / 2
+		work[key] = keep(work[key], n, key == "trend")
+		if key != "trend" {
+			if _, ok := work["returned"]; ok {
+				work["returned"] = n
+			}
+			if _, ok := work["truncated"]; ok {
+				work["truncated"] = true
+			}
+		}
+	}
+	return "", false
 }
 
 // aiCutText keeps at most max bytes, on a character boundary, and says so.

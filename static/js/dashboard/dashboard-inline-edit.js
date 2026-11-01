@@ -2143,6 +2143,15 @@ class DashboardInlineEdit {
              * contents of one.
              */
             form.style.background = 'transparent';
+            /*
+             * Nor do the text fields keep the opaque fill applySolidInlineEditSurfaces
+             * gave them: that is for a form lying over the blurred grid, and an inline
+             * background outranks the sheet's own field fill. Selects keep theirs,
+             * because a native list needs a background to be drawn on.
+             */
+            form.querySelectorAll('.bookmark-inline-input, .bookmark-inline-textarea').forEach((node) => {
+                node.style.removeProperty('background');
+            });
         }
         d._inlineEditContext = {
             bookmarkRef,
@@ -3219,7 +3228,14 @@ class DashboardInlineEdit {
                 // allowDuplicate: a move is an add followed by a delete, so
                 // between the two the URL is on both pages by design. Without
                 // this the cross-page duplicate check would refuse every move.
-                body: JSON.stringify({ page: targetPageId, bookmark: { ...bookmarkState, category }, allowDuplicate: true }),
+                // movedFrom: the source row's address, so its shortcut does not
+                // count against itself when the same edit changed the URL.
+                body: JSON.stringify({
+                    page: targetPageId,
+                    bookmark: { ...bookmarkState, category },
+                    allowDuplicate: true,
+                    movedFrom: bookmarkRef.original?.url ?? bookmarkRef.bookmark?.url ?? '',
+                }),
             });
             if (!addRes.ok) {
                 let message = 'Failed to save target page bookmarks.';

@@ -163,9 +163,15 @@ class SearchCommandRemove {
 
             this.confirmationBookmark = null;
 
+            // The delete has happened: a reload that fails must not also
+            // skip the trash entry and the undo toast below.
             if (dash) {
-                await dash.loadAllBookmarks();
-                await dash.loadPageBookmarks(dash.currentPageId);
+                try {
+                    await dash.loadAllBookmarks();
+                    await dash.loadPageBookmarks(dash.currentPageId);
+                } catch (reloadError) {
+                    console.error('Reload after delete failed:', reloadError);
+                }
             }
 
             // Into the trash like every other delete: without it the bookmark

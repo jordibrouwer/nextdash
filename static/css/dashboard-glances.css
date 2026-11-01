@@ -150,7 +150,7 @@
     padding: 0 var(--space-2, 0.6rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 6px);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-tertiary, var(--text-secondary));
 }
 

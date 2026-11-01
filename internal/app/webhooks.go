@@ -165,6 +165,19 @@ func readWebhookFile() WebhookFile {
 	return file
 }
 
+// readWebhookFileForWrite is the read before a save: an unreadable file is an
+// error, so a save does not drop every other endpoint and its signing key.
+func readWebhookFileForWrite() (WebhookFile, error) {
+	file := WebhookFile{}
+	if err := readJSONForWrite(webhookFilePath(), &file); err != nil {
+		return WebhookFile{}, err
+	}
+	if file.Endpoints == nil {
+		file.Endpoints = map[string]WebhookEndpoint{}
+	}
+	return file, nil
+}
+
 // writeWebhookFile persists the set with 0600: on a shared host, 0644 means
 // every account can read the signing keys and forge a delivery.
 func writeWebhookFile(file WebhookFile) error {
@@ -334,9 +347,9 @@ func saveWebhookEndpoint(id string, endpoint WebhookEndpoint) (WebhookEndpoint, 
 
 	webhookMu.Lock()
 	defer webhookMu.Unlock()
-	file := readWebhookFile()
-	if file.Endpoints == nil {
-		file.Endpoints = map[string]WebhookEndpoint{}
+	file, err := readWebhookFileForWrite()
+	if err != nil {
+		return WebhookEndpoint{}, err
 	}
 	existing, exists := file.Endpoints[id]
 	if !exists && len(file.Endpoints) >= webhookMaxEndpoints {
@@ -367,7 +380,10 @@ func deleteWebhookEndpoint(id string) error {
 	}
 	webhookMu.Lock()
 	defer webhookMu.Unlock()
-	file := readWebhookFile()
+	file, err := readWebhookFileForWrite()
+	if err != nil {
+		return err
+	}
 	if _, ok := file.Endpoints[id]; !ok {
 		return nil
 	}

@@ -153,7 +153,16 @@ canShow every time.
             // cornerIsFree anyway — stopping here says that on purpose rather
             // than by accident.
             for (const entry of [...queue]) {
-                if (await entry.tryShow()) {
+                // One card whose gate throws is skipped, not the end of the
+                // pass: thrown through, it also skipped the retry below and
+                // every card queued behind it waited for the next load.
+                let shown = false;
+                try {
+                    shown = await entry.tryShow();
+                } catch (err) {
+                    console.warn('notice card', entry.id, 'could not be shown', err);
+                }
+                if (shown) {
                     dequeue(entry.id);
                     break;
                 }

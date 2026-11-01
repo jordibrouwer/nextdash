@@ -46,6 +46,17 @@ var serverOwnedBookmarkFields = map[string]bool{
 	"driftFingerprint": true, "driftNoticed": true, "driftSince": true, "driftReason": true,
 }
 
+// serverOwnedBookmarkFieldsFolded is the same set lowercased. json.Unmarshal
+// matches keys without regard to case, so "OpenCount" set openCount when the
+// check compared exact spellings.
+var serverOwnedBookmarkFieldsFolded = func() map[string]bool {
+	out := make(map[string]bool, len(serverOwnedBookmarkFields))
+	for key := range serverOwnedBookmarkFields {
+		out[strings.ToLower(key)] = true
+	}
+	return out
+}()
+
 // bookmarkConflict is a patch the page cannot take: a URL already on it, or a
 // shortcut another bookmark holds. Returned from inside the store mutation so
 // nothing is written, and answered as a 409 naming what it collided with.
@@ -85,7 +96,7 @@ func mergeBookmarkFields(bookmark Bookmark, fields map[string]json.RawMessage) (
 		return bookmark, err
 	}
 	for key, value := range fields {
-		if serverOwnedBookmarkFields[key] {
+		if serverOwnedBookmarkFieldsFolded[strings.ToLower(key)] {
 			continue
 		}
 		merged[key] = value

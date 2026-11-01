@@ -166,6 +166,13 @@ func (h *dockerStatsHistory) keepOnly(ids map[string]bool) {
 			delete(h.series, id)
 		}
 	}
+	// A series filed from Glances has no running totals in prev, so the loop
+	// above never reached it and a removed container's graph lived on.
+	for id := range h.series {
+		if !ids[id] {
+			delete(h.series, id)
+		}
+	}
 }
 
 func (h *dockerStatsHistory) reset() {

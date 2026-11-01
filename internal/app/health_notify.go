@@ -287,19 +287,27 @@ func (h *Handlers) announceRecoveries(updates map[string][]HealthSample) {
 		return
 	}
 	var transitions []monitorTransition
-	seen := map[string]bool{}
+	seen := map[string]int{}
 	for _, page := range h.store.GetPages() {
 		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
 			key := canonicalBookmarkURLKey(bm.URL)
 			samples := updates[key]
-			if !bm.Monitor || len(samples) == 0 || seen[key] {
+			if !bm.Monitor || len(samples) == 0 {
 				continue
 			}
-			seen[key] = true
+			if at, ok := seen[key]; ok {
+				// Muting any copy mutes the URL, as it does in the monitor round.
+				if at >= 0 && bm.NotifyMuted {
+					transitions[at].muted = true
+				}
+				continue
+			}
+			seen[key] = -1
 			last := samples[len(samples)-1]
 			if !last.Up || last.Maint {
 				continue
 			}
+			seen[key] = len(transitions)
 			transitions = append(transitions, monitorTransition{key: key, name: bm.Name, url: bm.URL,
 				up: true, at: last.T, muted: bm.NotifyMuted})
 		}

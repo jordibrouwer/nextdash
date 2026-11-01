@@ -411,8 +411,10 @@ func applyDriftResult(bm *Bookmark, result PingResult, at int64) {
 	// Baseline. evaluateDrift only fills these fields on its no-baseline branch
 	// — it never recomputes them once bm.DriftURL is set — so this is always the
 	// first check after WatchDrift went on, never a drifted page adopting its
-	// new self as normal.
-	if outcome.Fingerprint != "" {
+	// new self as normal. Gated on the URL, which that branch always fills: a
+	// page with too little text for a fingerprint still needs a baseline, or
+	// its redirects were never judged at all.
+	if outcome.URL != "" {
 		bm.DriftURL = outcome.URL
 		bm.DriftTitle = outcome.Title
 		bm.DriftFingerprint = outcome.Fingerprint

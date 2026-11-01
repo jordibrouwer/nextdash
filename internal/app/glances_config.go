@@ -406,6 +406,16 @@ func readGlancesFileLocked() glancesFile {
 	return f
 }
 
+// readGlancesFileForWriteLocked is readGlancesFileLocked before a save: a file
+// that is there but cannot be read is an error. Read as defaults, a save kept
+// only the default first host and the one it changed.
+func readGlancesFileForWriteLocked() (glancesFile, error) {
+	if _, err := os.ReadFile(glancesConfigPath()); err != nil && !os.IsNotExist(err) {
+		return glancesFile{}, err
+	}
+	return readGlancesFileLocked(), nil
+}
+
 // loadGlancesConfig is the first host's settings, with the shared ones.
 func loadGlancesConfig() GlancesConfig {
 	cfg, _ := loadGlancesConfigFor("")
@@ -510,13 +520,19 @@ func glancesCredential(cfg GlancesConfig) HealthCredential {
 func saveGlancesConfig(cfg GlancesConfig, password *string) (GlancesConfig, error) {
 	glancesStore.Lock()
 	defer glancesStore.Unlock()
-	f := readGlancesFileLocked()
+	f, err := readGlancesFileForWriteLocked()
+	if err != nil {
+		return cfg, err
+	}
 	if cfg.ID == "" {
 		cfg.ID = f.Hosts[0].ID
 	}
 	cfg = normalizeGlancesConfig(cfg)
 
-	secrets := readGlancesSecretsLocked()
+	var secrets glancesSecrets
+	if err := readJSONForWrite(glancesSecretsPath(), &secrets); err != nil {
+		return cfg, err
+	}
 	if password != nil {
 		secrets.set(cfg.ID, *password)
 	}
@@ -566,7 +582,10 @@ func writeGlancesFileLocked(f glancesFile, saved GlancesConfig) error {
 func glancesAddHost(name string) (GlancesConfig, error) {
 	glancesStore.Lock()
 	defer glancesStore.Unlock()
-	f := readGlancesFileLocked()
+	f, err := readGlancesFileForWriteLocked()
+	if err != nil {
+		return GlancesConfig{}, err
+	}
 	if len(f.Hosts) >= glancesMaxHosts {
 		return GlancesConfig{}, errGlancesTooManyHosts
 	}
@@ -603,7 +622,11 @@ func glancesAddHost(name string) (GlancesConfig, error) {
 // The last host cannot go: removing it is a reset.
 func glancesRemoveHost(id string) error {
 	glancesStore.Lock()
-	f := readGlancesFileLocked()
+	f, readErr := readGlancesFileForWriteLocked()
+	if readErr != nil {
+		glancesStore.Unlock()
+		return readErr
+	}
 	var kept []glancesHostRecord
 	for _, r := range f.Hosts {
 		if r.ID != id {
@@ -615,9 +638,11 @@ func glancesRemoveHost(id string) error {
 		return errGlancesNoSuchHost
 	}
 	f.Hosts = kept
-	secrets := readGlancesSecretsLocked()
-	secrets.set(id, "")
-	_ = writeGlancesSecretsLocked(secrets)
+	var secrets glancesSecrets
+	if err := readJSONForWrite(glancesSecretsPath(), &secrets); err == nil {
+		secrets.set(id, "")
+		_ = writeGlancesSecretsLocked(secrets)
+	}
 	err := writeGlancesFileLocked(f, f.config(kept[0]))
 	glancesStore.Unlock()
 	if err != nil {

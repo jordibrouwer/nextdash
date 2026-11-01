@@ -2970,7 +2970,7 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     padding: 1px 9px;
     border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
     border-radius: 999px;
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-small, 0.68rem);

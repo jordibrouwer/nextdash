@@ -17,12 +17,13 @@
     /** Models the server falls back to; the field's placeholder, never sent. */
     const AI_DEFAULT_MODELS = { anthropic: 'claude-sonnet-5-5', openai: 'gpt-5.6-terra', compatible: '' };
 
-    /** The four MCP switches the assistant follows: [setting, label key, English]. */
+    /** The MCP switches the assistant follows: [setting, label key, English]. */
     const AI_GROUPS = [
         ['mcpBookmarksWrite', 'mcpGroupBookmarksWrite', 'Bookmarks: edit and delete'],
         ['mcpHealthInbox', 'mcpGroupHealthInbox', 'Health and Inbox: read'],
         ['mcpContainersRead', 'mcpGroupContainersRead', 'Containers: read'],
         ['mcpContainersControl', 'mcpGroupContainersControl', 'Containers: control'],
+        ['mcpSettingsOverview', 'mcpGroupSettingsOverview', 'Settings overview: read'],
     ];
 
     Object.assign(global.DashboardConfig.prototype, {

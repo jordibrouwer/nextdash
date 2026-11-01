@@ -30,7 +30,7 @@
     padding: var(--space-2, 0.45rem) var(--space-2, 0.6rem);
     border-radius: var(--layout-radius-sm, 8px);
     border: 1px solid var(--hairline-strong, var(--border-primary));
-    background: var(--surface-1, var(--background-secondary));
+    background: var(--field-fill, var(--surface-1, var(--background-secondary)));
     color: var(--text-primary);
     font: inherit;
 }
