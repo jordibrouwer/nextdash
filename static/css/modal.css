@@ -3010,3 +3010,46 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-spots {
     .wn-foot-support { flex: 0 0 auto; align-self: stretch; flex-wrap: nowrap; justify-content: flex-end; }
     .wn-foot-support-text { display: none; }
 }
+
+/* ── Readability pass ────────────────────────────────────────────────────────
+   The summary runs over two columns where there is room, the headline and its
+   counts sit on one line, the developer card drops its glow, and a highlight's
+   picture is cropped to a fixed height rather than deciding how far down the
+   next change starts.
+   ────────────────────────────────────────────────────────────────────────── */
+@media (min-width: 720px) {
+    .wn-hero-lead {
+        max-width: none;
+        columns: 2;
+        column-gap: var(--space-6, 2rem);
+        column-rule: 1px solid var(--border-primary);
+    }
+}
+.wn-hero-lead { font-size: calc(var(--font-size-text) * 0.95); }
+.modal.whats-new-modal .wn-hero-version { font-size: calc(var(--font-size-text) * 2.1); }
+.modal.whats-new-modal .wn-hero { padding-bottom: var(--space-3, 0.75rem); }
+
+.wn-dev {
+    margin-bottom: var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    box-shadow: inset 3px 0 0 var(--wn-kofi), inset 0 0 0 1px var(--border-primary);
+}
+.wn-dev-avatar { width: 2rem; height: 2rem; }
+.wn-dev-note { font-size: var(--font-size-controls); }
+
+.modal.whats-new-modal .wn-spots--multi .wn-media { aspect-ratio: 16 / 9; }
+.modal.whats-new-modal .wn-spots--multi .wn-media-img,
+.modal.whats-new-modal .wn-spots--multi .wn-media-video {
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+}
+.modal.whats-new-modal .wn-spots--multi .wn-spot-title { font-size: calc(var(--font-size-text) * 1.05); }
+
+.modal.whats-new-modal .wn-entry.wn-entry--line { grid-template-columns: 6.5rem minmax(0, 1fr) auto; }
+.modal.whats-new-modal .wn-entry--line .wn-entry-body { font-size: var(--font-size-controls); }
+
+/* One footer line for the ask; the update status below it stays small. */
+.wn-foot { gap: var(--space-1-5, 0.4rem) var(--space-4, 1rem); margin-top: var(--space-2, 0.5rem); }
+.wn-foot .wn-update-check-status { padding: 0.1rem 0.6rem; font-size: calc(var(--font-size-controls) * 0.85); line-height: 1.35; }

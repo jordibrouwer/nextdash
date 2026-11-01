@@ -50,7 +50,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/layer-tokens.css":                                   "0bd62e88dc5b",
 	"css/list-view-shell.css":                                "f787fe839d19",
 	"css/mobile-experience.css":                              "182af980a30f",
-	"css/modal.css":                                          "e8498670ca31",
+	"css/modal.css":                                          "42ba12c83cea",
 	"css/monitoring-tutorial.css":                            "958a73ec6be7",
 	"css/nd-chart.css":                                       "3d0d43e2b920",
 	"css/radius-tokens.css":                                  "1cd00b5d64e2",
