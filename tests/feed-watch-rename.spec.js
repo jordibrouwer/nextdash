@@ -12,20 +12,17 @@ async function openFeedsTab(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => {
-        const c = window.dashboardInstance.config;
-        c.bmTab = 'fresh';
-        c.openConfigView('bookmarks');
-    });
-    await page.waitForSelector('[data-config-action="checkWatched"]', { timeout: 15_000 });
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+    await page.locator('[data-config-section="feed-watch"]').click();
+    await page.waitForSelector('[data-behavior-field="feedWatchWindowMinutes"]', { timeout: 15_000 });
 }
 
-test('the Bookmarks tab and its group are called Watch feeds', async ({ page }) => {
+test('the Config section and its group are called Watch feeds', async ({ page }) => {
     await openFeedsTab(page);
-    await expect(page.locator('[data-bm-tab="fresh"]')).toHaveText('Watch feeds');
+    await expect(page.locator('[data-config-section="feed-watch"]')).toHaveText('Watch feeds');
     // The breadcrumb and the window title say it too.
-    await expect.poll(() => page.title()).toMatch(/bookmarks › watch feeds/i);
-    const group = page.locator('[data-config-action="checkWatched"]').locator('xpath=ancestor::*[contains(@class,"config-panel")][1]');
+    await expect.poll(() => page.title()).toMatch(/config › watch feeds/i);
+    const group = page.locator('[data-behavior-field="feedWatchWindowMinutes"]').locator('xpath=ancestor::*[contains(@class,"config-panel")][1]');
     await expect(group.locator('.config-panel-title').first()).toHaveText('Watch feeds');
     // No visible label in the group still says Fresh.
     expect(await group.innerText()).not.toMatch(/\bFresh\b/);

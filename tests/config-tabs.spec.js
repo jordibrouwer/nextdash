@@ -69,14 +69,15 @@ test('Monitoring has Checks, Notifications and Schedules, each with its settings
 
 test('an old tab link opens the tab that holds its settings now', async ({ page }) => {
     // Inbox & Fresh was the tab's name while it held the inbox's settings too;
-    // Fresh itself left Behavior for Bookmarks, between View and Tags.
-    for (const old of ['inbox', 'fresh']) {
-        await open(page, `#config/behavior/${old}`);
-        await expect(page.locator('[data-bm-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
+    // Fresh left Behavior for a tab on Bookmarks, then for Config → Watch feeds.
+    for (const old of ['#config/behavior/inbox', '#config/behavior/fresh', '#config/bookmarks/fresh']) {
+        await open(page, old);
+        await expect(page.locator('[data-config-section="feed-watch"]')).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator('[data-behavior-field="feedWatchWindowMinutes"]')).toBeVisible();
-        await expect.poll(() => hash(page)).toBe('#config/bookmarks/fresh');
+        await expect.poll(() => hash(page)).toBe('#config/feed-watch');
     }
-    await expect(page.locator('[data-bm-tab]')).toHaveText(['View', 'Watch feeds', 'Tags', 'Tag suggestions', 'Your rules', 'Settings', 'Local copies']);
+    await page.locator('[data-config-section="bookmarks"]').click();
+    await expect(page.locator('[data-bm-tab]')).toHaveText(['View', 'Tags', 'Tag suggestions', 'Your rules', 'Settings', 'Local copies']);
 
     // Status & alerts was split in Behavior, then left for Monitoring: all
     // three of its old addresses land there, and the bar says where.

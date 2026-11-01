@@ -119,3 +119,39 @@ test('opening the news again while it is open (?news=1, then the toast) leaves a
     expect(await page.evaluate(() => window.FeedWatchNews.isOpen())).toBe(false);
     expect(errors).toEqual([]);
 });
+
+test.describe('a muted feed', () => {
+    async function stubMuted(page, { a, b }) {
+        await page.goto('/');
+        const keyA = await keyOf(page, site.url);
+        const keyB = await keyOf(page, `${site.base}/b`);
+        const entry = (n, muted) => ({
+            newCount: n, newAt: Date.now(), newest: newsItem(n), muted,
+            feeds: [{ feedUrl: 'http://127.0.0.1:1/f', title: 'T', intervalMinutes: 60, muted }],
+        });
+        const watches = {};
+        if (a !== null) watches[keyA] = entry(a.n, a.muted);
+        if (b !== null) watches[keyB] = entry(b.n, b.muted);
+        const list = { limit: 100, total: Object.keys(watches).length, watches };
+        await page.route('**/api/feeds/watch', (route) => (route.request().method() !== 'GET'
+            ? route.continue()
+            : route.fulfill({ contentType: 'application/json', body: JSON.stringify(list) })));
+    }
+
+    test('only the loud site is announced; the muted one still counts in the tab title', async ({ page }) => {
+        await stubMuted(page, { a: { n: 2, muted: true }, b: { n: 1, muted: false } });
+        await openDashboard(page);
+        await expect(toast(page)).toContainText('Site B has news');
+        await expect(page).toHaveTitle(/^\(3\) /);
+    });
+
+    test('muted news alone makes no toast, and its badge does not pulse', async ({ page }) => {
+        await stubMuted(page, { a: { n: 2, muted: true }, b: null });
+        await openDashboard(page);
+        const badge = page.locator('.bookmark-news-badge').first();
+        await expect(badge).toHaveText('2');
+        await expect(badge).toHaveClass(/is-muted/);
+        expect(await badge.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+        await expect(toast(page)).toHaveCount(0);
+    });
+});

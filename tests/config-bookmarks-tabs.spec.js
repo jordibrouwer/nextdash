@@ -90,18 +90,16 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
         await page.locator('[data-bm-tab="settings"]').focus();
         await page.keyboard.press('ArrowLeft');
 
-        // View · Fresh · Tags · Tag suggestions · Your rules · Settings · Local copies.
+        // View · Tags · Tag suggestions · Your rules · Settings · Local copies.
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-rules');
         await page.keyboard.press('ArrowLeft');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-suggestions');
         await page.keyboard.press('ArrowLeft');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tags');
         await page.keyboard.press('ArrowLeft');
-        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('fresh');
-        await page.keyboard.press('ArrowLeft');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('view');
         await page.keyboard.press('ArrowRight');
-        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('fresh');
+        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tags');
     });
 
     test('a reload on a sub-tab does not filter the list to a page named after it', async ({ page }) => {

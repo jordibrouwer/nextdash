@@ -45,14 +45,19 @@ test.describe('checkboxes use one row shape', () => {
         for (const [section, tabs, attr] of [
             ['appearance', ['general', 'layout', 'display', 'header', 'buttonbar', 'datetime'], 'data-appearance-tab'],
             ['behavior', ['general', 'search', 'privacy'], 'data-behavior-tab'],
-            ['bookmarks', ['fresh'], 'data-bm-tab'],
+            // Watch feeds is a section without a tab strip: one pass, no click.
+            ['feed-watch', [''], ''],
             ['monitoring', ['checks', 'notifications', 'schedules'], 'data-monitoring-tab'],
             ['inbox', ['collecting', 'list', 'panel', 'icon'], 'data-inbox-tab'],
         ]) {
             await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
             for (const tab of tabs) {
-                await page.locator(`[${attr}="${tab}"]`).click();
-                await expect(page.locator(`[${attr}="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
+                if (attr) {
+                    await page.locator(`[${attr}="${tab}"]`).click();
+                    await expect(page.locator(`[${attr}="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
+                } else {
+                    await expect(page.locator(`[data-config-section="${section}"]`)).toHaveAttribute('aria-selected', 'true');
+                }
                 const found = await page.evaluate(({ s, t }) => {
                     const out = [];
                     document.querySelectorAll('#config-section-panel .config-field').forEach((row) => {

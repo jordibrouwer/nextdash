@@ -132,6 +132,37 @@ async function stubWatch(page, state) {
     }));
 }
 
+/** A site with a page and no feed at all, for the bookmark that has nothing to follow. */
+async function startFeedlessSite() {
+    const server = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end('<!doctype html><title>Plain</title><p>No feed here</p>');
+    });
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(undefined)));
+    const address = server.address();
+    const base = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}`;
+    return { url: `${base}/`, base, close: () => new Promise((resolve) => server.close(() => resolve(undefined))) };
+}
+
+/** An install whose first page holds one bookmark per site, all in one category. */
+async function installWithBookmarks(request, sites) {
+    expect((await request.post('/api/reset', { data: { confirm: true }, headers })).ok()).toBe(true);
+    expect((await request.post('/api/settings', {
+        data: { allowLocalBookmarks: true, onboardingCompleted: true, enableHealthReviewNotice: false },
+        headers,
+    })).ok()).toBe(true);
+    const pages = await (await request.get('/api/pages')).json();
+    const pid = pages[0].id;
+    const cats = await (await request.get(`/api/categories?page=${pid}`)).json();
+    const category = cats[0]?.id || 'cat';
+    expect((await request.post(`/api/bookmarks?page=${pid}`, {
+        data: sites.map((s) => ({ name: s.name, url: s.site.url, category })), headers,
+    })).ok()).toBe(true);
+    return { pid, category };
+}
+
+module.exports.startFeedlessSite = startFeedlessSite;
+module.exports.installWithBookmarks = installWithBookmarks;
 module.exports.keyOf = keyOf;
 module.exports.watchPayload = watchPayload;
 module.exports.newsItem = newsItem;
