@@ -758,6 +758,8 @@ class DashboardBookmarkRows {
             row.classList.add('has-feed-news');
             const newsBadge = document.createElement('span');
             newsBadge.className = 'bookmark-news-badge bookmark-superscript-badge';
+            // A muted feed still counts, but does not pulse.
+            if (news.muted) newsBadge.classList.add('is-muted');
             newsBadge.textContent = news.newCount > 99 ? '99+' : String(news.newCount);
             const newsLabel = d.formatDashboardLabel('feedWatchBadge', { count: news.newCount },
                 `${news.newCount} new from a watched feed`);

@@ -194,5 +194,5 @@
         });
     }
 
-    global.FeedWatchPicker = { open, intervalWords };
+    global.FeedWatchPicker = { open, intervalWords, intervals: INTERVALS };
 })(window);

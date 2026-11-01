@@ -56,6 +56,9 @@ class DashboardConfig {
         'overview',
         'appearance',
         'bookmarks',
+        // Beside Bookmarks: a watch hangs off a bookmark, and this is every one
+        // of them in one list with the settings for their news.
+        'feed-watch',
         'structure',
         'behavior',
         'finders',
@@ -508,9 +511,11 @@ class DashboardConfig {
         // Status & alerts left Behavior for a section of its own.
         if (DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
             && raw.startsWith('config/behavior/')) return 'monitoring';
-        // Fresh left Behavior for Bookmarks.
-        if (DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
-            && raw.startsWith('config/behavior/')) return 'bookmarks';
+        // Fresh left Behavior for Bookmarks, then Bookmarks for a section of
+        // its own; links from both stops still arrive.
+        if (raw.startsWith('config/behavior/')
+            && DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(raw.slice('config/behavior/'.length))) return 'feed-watch';
+        if (raw === 'config/bookmarks/fresh') return 'feed-watch';
         if (raw === 'config') return 'overview';
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
@@ -547,8 +552,7 @@ class DashboardConfig {
         if (raw === 'config/behavior/datetime') return 'datetime';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw.startsWith('config/behavior/')) {
-            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
-                || DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
+            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
             if (moved) return moved;
         }
         // Branding lived on Display, then moved to Header with the browser tab.
@@ -1018,8 +1022,9 @@ class DashboardConfig {
             if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
                 return { section: 'appearance', subTab };
             }
-            if (section === 'behavior' && DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[subTab]) {
-                return { section: 'bookmarks', subTab: DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[subTab] };
+            if ((section === 'behavior' && DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(subTab))
+                || (section === 'bookmarks' && subTab === 'fresh')) {
+                return { section: 'feed-watch', subTab: null };
             }
             if (section === 'behavior' && DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab]) {
                 return { section: 'monitoring', subTab: DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab] };
@@ -1247,10 +1252,16 @@ class DashboardConfig {
      * open of Behavior opens Behavior.
      */
     followMovedBehaviorTab(section) {
+        // Bookmarks → Watch feeds was a tab before it was a section: a caller
+        // that still sets the tab and opens Bookmarks lands on the section.
+        if (section === 'bookmarks' && this.bmTab === 'fresh') {
+            this.bmTab = 'view';
+            return 'feed-watch';
+        }
         if (section !== 'behavior') return section;
-        if (this._behaviorTabToBookmarks) {
-            this._behaviorTabToBookmarks = false;
-            return 'bookmarks';
+        if (this._behaviorTabToFeedWatch) {
+            this._behaviorTabToFeedWatch = false;
+            return 'feed-watch';
         }
         if (!this._behaviorTabMoved) return section;
         this._behaviorTabMoved = false;
@@ -1969,6 +1980,11 @@ class DashboardConfig {
             return true;
         }
 
+        // Watch feeds: j/k, Enter, m, p and Delete on the list's rows.
+        if (this.section === 'feed-watch' && window.ConfigFeedWatch?.handleKey(this, e)) {
+            return true;
+        }
+
         if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey
             && !this.shouldUseListKeyboardNav(target)
             && !this.shouldUseBookmarkKeyboardNav(target)
@@ -2291,6 +2307,7 @@ class DashboardConfig {
             overview: ['config.sectionOverview', 'Overview'],
             'structure': ['config.sectionStructure', 'Structure'],
             bookmarks: ['config.sectionBookmarks', 'Bookmarks'],
+            'feed-watch': ['config.sectionFeedWatch', 'Watch feeds'],
             inbox: ['config.sectionInbox', 'Inbox'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
@@ -2751,6 +2768,10 @@ class DashboardConfig {
             this.bindPtToolbar(container);
             this.bindListKeyboard(container);
             void this.loadFinders();
+        } else if (this.section === 'feed-watch') {
+            // The settings group binds like any schema panel; the list in it
+            // is bound by bindFeedWatchList from there.
+            this.bindControlPanels(container, 'behavior');
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
             // The section carries schema panels of its own now, which bind the
@@ -3934,6 +3955,11 @@ class DashboardConfig {
      * install, where the label is translated but the concept people search for
      * often is not.
      */
+    /** The same, for a section in the rail: the words people type for it. */
+    static SECTION_KEYWORDS = {
+        'feed-watch': ['rss', 'atom', 'feed', 'feeds', 'news', 'watch', 'watched', 'subscribe', 'follow', 'mute', 'filter', 'interval'],
+    };
+
     static FIELD_KEYWORDS = {
         monitorNotifyUrl: ['webhook', 'alert', 'notify', 'notification', 'discord', 'slack'],
         monitorNotifyDashboardUrl: ['ntfy', 'button', 'notification', 'address', 'alert'],
@@ -4094,7 +4120,8 @@ class DashboardConfig {
                 }
                 if (!c.field || c.type === 'note' || c.type === 'pushDevice'
                     || c.type === 'maintenanceWindows' || c.type === 'feedWatchList') return;
-                push(c.field, c.label, section, panel.tab || 'general');
+                // A section without a tab strip has no tab to name in the trail.
+                push(c.field, c.label, section, DashboardConfig.SUB_TABS[section] ? (panel.tab || 'general') : null);
             });
         });
 
@@ -4113,6 +4140,7 @@ class DashboardConfig {
                 kind: 'section',
                 title: this.sectionLabel(section),
                 subtitle: this.sectionLabel(section),
+                keywords: (DashboardConfig.SECTION_KEYWORDS[section] || []).join(' '),
                 section,
                 subTab: null,
                 focusSelector: `[data-config-section="${section}"]`,
@@ -4792,6 +4820,9 @@ class DashboardConfig {
         }
         if (this.section === 'bookmarks') {
             return this.renderBookmarksSection();
+        }
+        if (this.section === 'feed-watch') {
+            return this.renderFeedWatchSection();
         }
         if (this.section === 'containers') {
             return this.renderContainersSection();
@@ -6512,7 +6543,6 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             view: ['config.bmTabView', 'View'],
-            fresh: ['config.behaviorTabFresh', 'Watch feeds'],
             tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             'tag-rules': ['config.bmTabTagRules', 'Your rules'],
@@ -10698,15 +10728,15 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'bookmarks',
-                tab: 'fresh',
+                section: 'feed-watch',
+                tab: 'list',
                 title: t('config.feedWatchListTitle', 'Watched feeds'),
                 demoLocked: true,
                 controls: [{ type: 'feedWatchList' }],
             },
             {
-                section: 'bookmarks',
-                tab: 'fresh',
+                section: 'feed-watch',
+                tab: 'general',
                 title: t('config.feedsTitle', 'Watch feeds'),
                 demoLocked: true,
                 note: t('config.feedsNote', 'Feeds you follow from a bookmark (Watch this feed…) are asked on their own interval. When something new appears, the bookmark gets a purple count, a toast and the news window. Both settings below are per install; the window says how long the news stays in view once you are back.'),
@@ -10727,8 +10757,13 @@ class DashboardConfig {
                         opt('wide', t('config.feedWatchNewsViewWide', 'Two columns')),
                         opt('single', t('config.feedWatchNewsViewSingle', 'One column')),
                     ] },
-                    { type: 'action', label: t('config.feedWatchedLabel', 'Watched feeds'),
-                      button: t('config.feedWatchCheckNow', 'Check watched feeds now'), action: 'checkWatched' },
+                    // Moved here from Monitoring's push panel with the rest of
+                    // the news settings; the switch for push itself stays there.
+                    bool('pushNotifyNews', 'config.pushNotifyNewsLabel', 'Notify when a watched feed has news'),
+                    {
+                        type: 'note',
+                        text: t('config.feedWatchPushNote', 'Sent to the browsers where notifications are on (Config → Monitoring → Notifications). Muted feeds never notify.'),
+                    },
                 ],
             },
             {
@@ -10887,7 +10922,6 @@ class DashboardConfig {
                     bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
                     bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
                     bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
-                    bool('pushNotifyNews', 'config.pushNotifyNewsLabel', 'Notify when a watched feed has news'),
                     bool('pushNotifyGlances', 'config.pushNotifyGlancesLabel', 'Notify when a Glances host has an incident (kinds are chosen in Config → Glances)'),
                     { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
                     { type: 'pushDevice' },
@@ -12301,41 +12335,6 @@ class DashboardConfig {
      * a number is easier to read where the button that produced it is.
      */
     bindPanelActions(container) {
-        // Watched feeds: how many, and check them now.
-        const checkWatched = container.querySelector('[data-config-action="checkWatched"]');
-        if (checkWatched) {
-            // Looked up each time: a round repaints the dashboard, and the
-            // panel with it, so a node held from before is no longer on screen.
-            const statusEl = () => document.querySelector('[data-config-action-status="checkWatched"]');
-            // What the last round said, kept so a late answer to the first load
-            // cannot paint over it.
-            // Kept on the config object: the panel is built again whenever the
-            // dashboard repaints, and the new one must still show the result.
-            let roundText = this._feedWatchRoundText || '';
-            const paintCount = (suffix = roundText) => {
-                roundText = suffix;
-                this._feedWatchRoundText = suffix;
-                const watch = this.dash.feedWatch;
-                const status = statusEl();
-                if (!status || !watch) return;
-                status.textContent = this.t('config.feedWatchedCount', '{n} of {limit} watched')
-                    .replace('{n}', String(watch.total)).replace('{limit}', String(watch.limit)) + roundText;
-            };
-            void this.dash.feedWatch?.load().then(() => paintCount());
-            checkWatched.addEventListener('click', async () => {
-                checkWatched.disabled = true;
-                const status = statusEl();
-                if (status) status.textContent = this.t('config.feedsFindingNow', 'Looking…');
-                try {
-                    const round = await this.dash.feedWatch?.pollNow();
-                    paintCount(round ? ` · ${this.t('config.feedWatchedRound', '{fresh} with news').replace('{fresh}', String(round.fresh))}` : '');
-                } finally {
-                    document.querySelector('[data-config-action="checkWatched"]')?.removeAttribute('disabled');
-                    checkWatched.disabled = false;
-                }
-            });
-        }
-
         // The weekly digest as the dashboard shows it, without waiting for the card.
         const showDigest = container.querySelector('[data-config-action="showDigest"]');
         if (showDigest) {
@@ -12451,114 +12450,9 @@ class DashboardConfig {
         });
     }
 
-    /**
-     * The "Watched feeds" panel: what is followed, how often, when it was last
-     * asked and how it is doing, with a way to change or stop each one.
-     */
+    /** Config → Watch feeds: the list lives in dashboard-config-feed-watch.js. */
     bindFeedWatchList(container) {
-        const host = container.querySelector('[data-feed-watch-overview]');
-        const watch = this.dash.feedWatch;
-        if (!host || !watch) return;
-        const esc = (v) => this.dash.escapeHtml(String(v ?? ''));
-        const picker = window.FeedWatchPicker;
-        const ago = (ms) => {
-            const m = Math.max(0, Math.round((Date.now() - Number(ms)) / 60000));
-            if (!ms) return this.t('config.feedWatchNeverChecked', 'not checked yet');
-            if (m < 1) return this.t('dashboard.previewAgoNow', 'just now');
-            if (m < 60) return this.t('dashboard.previewAgoMinutes', '{count} min ago').replace('{count}', String(m));
-            const h = Math.round(m / 60);
-            if (h < 24) return this.t('dashboard.previewAgoHours', '{count} h ago').replace('{count}', String(h));
-            return this.t('dashboard.previewAgoDays', '{count} d ago').replace('{count}', String(Math.round(h / 24)));
-        };
-        const hostOf = (url) => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return String(url || ''); } };
-        const reasonOf = (feed) => {
-            const code = String(feed.lastError || '');
-            if (!code) return '';
-            const status = Number(feed.lastStatus) || 0;
-            if (code === 'http-404') return this.t('config.feedWatchErr404', 'Not found (404)');
-            if (code === 'http-410') return this.t('config.feedWatchErr410', 'Gone (410)');
-            if (code === 'timeout') return this.t('config.feedWatchErrTimeout', 'Timed out');
-            if (code === 'unreachable') return this.t('config.feedWatchErrUnreachable', 'Could not connect');
-            if (code === 'not-a-feed') return this.t('config.feedWatchErrNotFeed', 'No longer a feed');
-            if (code === 'refused') return this.t('config.feedWatchErrRefused', 'Address not allowed');
-            if (code.startsWith('http-')) return this.t('config.feedWatchErrHttp', 'Server error ({status})').replace('{status}', String(status || code.slice(5)));
-            return '';
-        };
-        const movedNote = (feed) => {
-            const at = Number(feed.movedAt) || 0;
-            if (!feed.movedFrom || !at || Date.now() - at > 7 * 24 * 3600 * 1000) return '';
-            return this.t('config.feedWatchMoved', 'Moved from {host}').replace('{host}', hostOf(feed.movedFrom));
-        };
-
-        const paint = () => {
-            const live = document.querySelector('[data-feed-watch-overview]');
-            if (!live) return;
-            const rows = [];
-            let news = 0;
-            let newest = 0;
-            watch.byKey.forEach((entry, key) => {
-                const bookmark = (this.dash.allBookmarks || []).find((b) => watch.key(b.url) === key);
-                if (!bookmark) return;
-                const count = Number(entry.newCount) || 0;
-                if (count > 0) news += 1;
-                (entry.feeds || []).forEach((feed) => {
-                    newest = Math.max(newest, Number(feed.checkedAt) || 0);
-                    const paused = feed.retired === true;
-                    const failing = !paused && Number(feed.failures) > 0;
-                    const reason = reasonOf(feed);
-                    const withReason = (text) => (reason ? `${text} · ${reason}` : text);
-                    const state = paused ? ['is-bad', withReason(this.t('config.feedWatchPaused', 'Paused after repeated failures'))]
-                        : failing ? ['is-warn', withReason(this.t('config.feedWatchFailing', 'Last check failed'))]
-                            : count > 0 ? ['is-news', this.t('config.feedWatchNewState', '{n} new').replace('{n}', String(count))]
-                                : ['is-ok', this.t('config.feedWatchQuiet', 'Nothing new')];
-                    rows.push(`<div class="feed-watch-list-row" data-key="${esc(key)}">`
-                        + `<div class="feed-watch-list-main"><strong>${esc(bookmark.name || bookmark.url)}</strong>`
-                        + `<span class="feed-watch-list-feed" title="${esc(feed.feedUrl)}">${esc(feed.title || hostOf(feed.feedUrl))} · ${esc(hostOf(feed.feedUrl))}${movedNote(feed) ? ` · ${esc(movedNote(feed))}` : ''}</span></div>`
-                        + `<span class="feed-watch-list-meta">${esc(window.FeedWatchPicker?.intervalWords ? this.t('config.feedWatchEvery', 'every {interval}').replace('{interval}', window.FeedWatchPicker.intervalWords(feed.intervalMinutes)) : '')}<br>${esc(ago(feed.checkedAt))}</span>`
-                        + `<span class="feed-watch-list-state ${state[0]}">${esc(state[1])}</span>`
-                        + `<span class="feed-watch-list-actions">`
-                        + (paused ? `<button type="button" class="config-btn config-btn--small" data-fwl-retry="${esc(bookmark.url)}" data-fwl-feed="${esc(feed.feedUrl)}">${esc(this.t('config.feedWatchRetry', 'Retry'))}</button>` : '')
-                        + `<button type="button" class="config-btn config-btn--small" data-fwl-edit="${esc(bookmark.url)}">${esc(this.t('config.feedWatchChange', 'Change…'))}</button>`
-                        + `<button type="button" class="config-btn config-btn--small" data-fwl-stop="${esc(bookmark.url)}">${esc(this.t('config.feedWatchStop', 'Stop'))}</button>`
-                        + `</span></div>`);
-                });
-            });
-            const summary = `<p class="feed-watch-list-summary">${esc(this.t('config.feedWatchSummary', '{n} of {limit} watched · {news} with news · last check {ago}')
-                .replace('{n}', String(watch.total)).replace('{limit}', String(watch.limit)).replace('{news}', String(news))
-                .replace('{ago}', newest ? ago(newest) : this.t('config.feedWatchNever', 'never')))}</p>`;
-            live.innerHTML = rows.length
-                ? summary + rows.join('')
-                : `<p class="feed-watch-note">${esc(this.t('config.feedWatchEmpty', 'You are not watching any feed yet. Right-click a bookmark and choose Watch this feed…'))}</p>`;
-        };
-
-        host.addEventListener('click', async (event) => {
-            const edit = event.target.closest('[data-fwl-edit]');
-            const stop = event.target.closest('[data-fwl-stop]');
-            const retry = event.target.closest('[data-fwl-retry]');
-            if (retry) {
-                retry.disabled = true;
-                await watch.retry(retry.dataset.fwlRetry, retry.dataset.fwlFeed);
-                paint();
-                return;
-            }
-            const url = (edit || stop)?.dataset.fwlEdit || (edit || stop)?.dataset.fwlStop;
-            if (!url) return;
-            const bookmark = (this.dash.allBookmarks || []).find((b) => b.url === url);
-            if (!bookmark) return;
-            if (edit) {
-                await picker?.open({ bookmark });
-            } else if (await watch.unwatch(url)) {
-                this.dash.showNotification?.(this.t('dashboard.feedWatchStopped', 'Stopped watching {name}').replace('{name}', bookmark.name || url), 'success', { duration: 3000 });
-            }
-            paint();
-        });
-        if (!this._feedWatchListBound) {
-            this._feedWatchListBound = true;
-            document.addEventListener('feedwatch:changed', () => this.paintFeedWatchList?.());
-        }
-        this.paintFeedWatchList = paint;
-        paint();
-        void watch.load({ force: true }).then(paint);
+        window.ConfigFeedWatch?.bindList(this, container);
     }
 
     bindPushDeviceControls(container) {
@@ -12756,11 +12650,11 @@ class DashboardConfig {
     static BEHAVIOR_TAB_ALIASES = {};
 
     /**
-     * Behavior tabs that left for Bookmarks: Fresh sits between View and Tags
-     * there. 'inbox' was folded into Fresh before that, so it lands there too.
+     * Behavior tabs that became Config → Watch feeds: Fresh, by way of a tab
+     * on Bookmarks, and 'inbox', which was folded into Fresh before that.
      * Mirrored in dashboard-config-loader.js.
      */
-    static BOOKMARKS_FROM_BEHAVIOR = { fresh: 'fresh', inbox: 'fresh' };
+    static FEED_WATCH_FROM_BEHAVIOR = ['fresh', 'inbox'];
 
     /*
      * Monitoring: what is checked, how you hear of it, and when to keep
@@ -13735,17 +13629,15 @@ class DashboardConfig {
             else this._behaviorTabMoved = true;
             return;
         }
-        // Fresh now sits on Bookmarks: the tab is set there, and the section
-        // follows it the way Monitoring's does.
-        const toBookmarks = DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[tab];
-        if (toBookmarks) {
-            this.bmTab = toBookmarks;
-            if (this.section === 'behavior') this.section = 'bookmarks';
-            else this._behaviorTabToBookmarks = true;
+        // Fresh is Config → Watch feeds now: the section follows the tab the
+        // way Monitoring's does.
+        if (DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(tab)) {
+            if (this.section === 'behavior') this.section = 'feed-watch';
+            else this._behaviorTabToFeedWatch = true;
             return;
         }
         this._behaviorTabMoved = false;
-        this._behaviorTabToBookmarks = false;
+        this._behaviorTabToFeedWatch = false;
         // An old id opens the tab that holds those settings now.
         tab = DashboardConfig.BEHAVIOR_TAB_ALIASES[tab] || tab;
         this._behaviorTab = tab;
@@ -14274,12 +14166,23 @@ class DashboardConfig {
         }
         // Bookmarks → View and Settings: the panels redrawn, so ↺, the count
         // and "Only changed" follow the change just made.
-        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings' || this.bmTab === 'fresh')) {
+        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings')) {
             const body = document.getElementById('config-bm-body');
             if (body) {
                 body.innerHTML = this.renderBmTab();
                 this.bindControlPanels(body, 'behavior');
                 this._fillShellHeadFromSection(container);
+                this.labelSettingsControls();
+                restoreFocus();
+            }
+            return;
+        }
+        // Config → Watch feeds: only the settings; the list paints itself.
+        if (this.section === 'feed-watch') {
+            const body = document.getElementById('config-fw-settings');
+            if (body) {
+                body.innerHTML = this.renderControlPanels(this.panelsFor('feed-watch', 'general'), 'behavior');
+                this.bindControlPanels(body, 'behavior');
                 this.labelSettingsControls();
                 restoreFocus();
             }
@@ -14356,7 +14259,7 @@ class DashboardConfig {
      */
     static LIBRARY_TOUR_TIP_ID = 'bookmarksTutorialV1';
 
-    static BM_TABS = ['view', 'fresh', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
+    static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -18449,6 +18352,20 @@ class DashboardConfig {
             </section>`;
     }
 
+    /**
+     * Config → Watch feeds: the list of every watched feed, then the settings
+     * for their news. Two bodies, so a setting redrawn on change leaves the
+     * list (and whatever is open in it) alone.
+     */
+    renderFeedWatchSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.feedWatchIntro', 'Every feed you follow from a bookmark, and how their news reaches you.'))}</p>
+            <div id="config-fw-list">${this.renderControlPanels(this.panelsFor('feed-watch', 'list'), 'behavior')}</div>
+            <div id="config-fw-settings">${this.renderControlPanels(this.panelsFor('feed-watch', 'general'), 'behavior')}</div>
+        `;
+    }
+
     /** Which sub-tab of Bookmarks is showing. */
     renderBmTab() {
         if (this.bmTab === 'tags') {
@@ -18462,9 +18379,6 @@ class DashboardConfig {
         }
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
-        }
-        if (this.bmTab === 'fresh') {
-            return this.renderControlPanels(this.panelsFor('bookmarks', 'fresh'), 'behavior');
         }
         if (this.bmTab === 'view') {
             return this.renderBookmarksViewTab();
@@ -21061,7 +20975,7 @@ class DashboardConfig {
             this.bindTagRulesTab(container);
             return;
         }
-        if (this.bmTab === 'settings' || this.bmTab === 'fresh') {
+        if (this.bmTab === 'settings') {
             return;
         }
         if (this.bmTab === 'view') {
@@ -25484,7 +25398,7 @@ class DashboardConfig {
         },
         'config.helpFreshTitle': {
             isOn: () => true,
-            go: { section: 'bookmarks', bmTab: 'fresh' },
+            go: { section: 'feed-watch' },
         },
         'config.helpContainersTitle': {
             isOn: (s) => s.dockerViewEnabled !== false,

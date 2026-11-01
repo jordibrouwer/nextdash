@@ -43,6 +43,9 @@
     animation: feed-news-pulse 2.2s ease-in-out infinite;
 }
 
+/* A muted feed still counts, but does not call attention to itself. */
+.bookmark-news-badge.is-muted { animation: none; }
+
 @keyframes feed-news-pulse {
     0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--feed-news-color, #8b5cf6) 55%, transparent); }
     50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--feed-news-color, #8b5cf6) 0%, transparent); }
@@ -267,28 +270,103 @@ body.no-animations .feed-news-bar > i { transition: none; }
     .bookmark-preview-card-news-image { display: none; }
 }
 
-/* Config → Bookmarks → Watch feeds: the list of what is followed. */
-.feed-watch-overview { display: grid; gap: 0.5rem; }
-.feed-watch-list-summary { margin: 0 0 0.3rem; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
-.feed-watch-list-row {
-    display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 1fr) auto; gap: 0.75rem; align-items: center;
-    padding: 0.55rem 0.7rem; border: 1px solid var(--border-secondary); border-radius: var(--radius-4, 8px); background: var(--background-secondary);
+/* Config → Watch feeds: every watched feed, one row each, with a detail that
+   opens under its row. Theme tokens only; the chips reuse the state colours. */
+.feed-watch-overview { display: grid; gap: 0.5rem; min-width: 0; }
+.feed-watch-list-summary { margin: 0; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
+.fwm-toolbar, .fwm-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; min-width: 0; }
+.fwm-bulk {
+    padding: 0.45rem 0.6rem; border-radius: var(--radius-4, 8px);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-secondary));
 }
-.feed-watch-list-main { display: grid; min-width: 0; }
+.fwm-bulk-count { font-weight: var(--font-weight-semibold, 600); color: var(--text-primary); font-size: var(--text-sm, 0.85rem); }
+.fwm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; min-width: 0; }
+.feed-watch-list-row {
+    display: grid; grid-template-columns: auto minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 0.6fr) auto; gap: 0.6rem; align-items: center;
+    padding: 0.45rem 0.6rem; border: 1px solid var(--border-secondary); border-radius: var(--radius-4, 8px); background: var(--background-secondary);
+    min-width: 0;
+}
+.feed-watch-list-row.is-open { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.feed-watch-list-row.keyboard-selected { border-color: var(--accent-primary); box-shadow: 0 0 0 1px var(--accent-primary); }
+.feed-watch-list-row:focus { outline: none; }
+.feed-watch-list-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.feed-watch-list-main {
+    display: grid; min-width: 0; text-align: start; padding: 0.15rem 0; margin: 0;
+    background: none; border: 0; color: inherit; font: inherit; cursor: pointer; border-radius: var(--radius-3, 4px);
+}
+.feed-watch-list-main:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .feed-watch-list-main strong { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.feed-watch-list-feed, .feed-watch-list-meta { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.feed-watch-list-state { font-size: var(--text-sm, 0.85rem); }
+.feed-watch-list-feed, .feed-watch-list-meta, .feed-watch-list-filter { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-watch-list-filter { color: var(--text-tertiary); }
+.feed-watch-list-state { font-size: var(--text-sm, 0.85rem); min-width: 0; }
 .feed-watch-list-state.is-news { color: var(--accent-primary); font-weight: var(--font-weight-semibold, 600); }
 .feed-watch-list-state.is-warn { color: var(--status-warning, var(--text-primary)); }
 .feed-watch-list-state.is-bad { color: var(--status-error, var(--text-primary)); }
 .feed-watch-list-state.is-ok { color: var(--text-secondary); }
-.feed-watch-list-actions { display: inline-flex; gap: 0.4rem; }
+.feed-watch-list-state.is-off { color: var(--text-tertiary); }
+.feed-watch-list-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; justify-content: flex-end; }
+.fwm-tick { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; min-height: 1.75rem; cursor: pointer; }
+.fwm-tick input { margin: 0; cursor: pointer; }
+.fwm-select {
+    min-width: 0; max-width: 100%; padding: 0.3rem 0.45rem; border-radius: var(--radius-4, 8px); font: inherit; font-size: var(--text-sm, 0.85rem);
+    color: var(--text-primary); background: var(--background-primary); border: 1px solid var(--border-secondary);
+}
+.fwm-mute[aria-pressed="true"] { color: var(--text-tertiary); border-style: dashed; }
+.fwm-detail {
+    margin-top: -0.4rem; padding: 0.75rem; display: grid; gap: 0.75rem; min-width: 0;
+    border: 1px solid var(--border-secondary); border-top: 0; border-radius: 0 0 var(--radius-4, 8px) var(--radius-4, 8px);
+    background: var(--background-primary);
+}
+.fwm-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.75rem 1rem; min-width: 0; }
+.fwm-field, .fwm-words { display: grid; gap: 0.3rem; align-content: start; min-width: 0; }
+.fwm-label { font-size: var(--text-sm, 0.85rem); color: var(--text-secondary); }
+.fwm-hint { font-size: var(--text-2xs, 0.75rem); color: var(--text-tertiary); }
+.fwm-reason { color: var(--status-error, var(--text-secondary)); }
+.fwm-url { color: var(--accent-primary); font-size: var(--text-sm, 0.85rem); overflow-wrap: anywhere; }
+.fwm-field .fwm-mute { justify-self: start; }
+.fwm-chips {
+    display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; min-width: 0;
+    padding: 0.3rem; border-radius: var(--radius-4, 8px); background: var(--background-secondary); border: 1px solid var(--border-secondary);
+}
+.fwm-chip {
+    display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.1rem 0.15rem 0.1rem 0.5rem; border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent); color: var(--text-primary); font-size: var(--text-sm, 0.85rem); max-width: 100%;
+    overflow-wrap: anywhere;
+}
+.fwm-chip-x { border: 0; background: none; color: var(--text-secondary); cursor: pointer; font: inherit; line-height: 1; padding: 0.15rem 0.35rem; border-radius: var(--radius-pill, 999px); }
+.fwm-chip-x:hover { color: var(--text-primary); background: var(--hover-bg, transparent); }
+.fwm-word-input { flex: 1 1 8rem; min-width: 6rem; border: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: var(--text-sm, 0.85rem); padding: 0.2rem 0.3rem; }
+.fwm-word-input:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; border-radius: var(--radius-3, 4px); }
+.fwm-detail-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.fwm-detail-actions .config-btn--danger { margin-left: auto; }
+.fwm-chooser { display: grid; gap: 0.6rem; min-width: 0; }
+.fwm-chooser-search {
+    width: 100%; box-sizing: border-box; padding: 0.45rem 0.6rem; border-radius: 8px; font: inherit;
+    color: var(--text-primary); background: var(--background-secondary); border: 1px solid var(--border-secondary);
+}
+.fwm-chooser-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; max-height: min(22rem, 55vh); overflow: auto; }
+.fwm-choice {
+    display: grid; width: 100%; text-align: start; gap: 0.1rem; padding: 0.45rem 0.6rem; border-radius: 8px; cursor: pointer;
+    background: none; border: 1px solid transparent; color: var(--text-primary); font: inherit; min-height: 44px; box-sizing: border-box;
+}
+.fwm-choice span { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); }
+.fwm-choice:hover, .fwm-choice:focus-visible { background: color-mix(in srgb, var(--accent-primary) 8%, transparent); border-color: var(--border-secondary); outline: none; }
 @media (max-width: 720px) {
-    /* One column: the name may wrap, and the two buttons go under the facts. */
-    .feed-watch-list-row { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }
-    .feed-watch-list-main strong, .feed-watch-list-feed { white-space: normal; }
-    .feed-watch-list-meta { white-space: normal; }
-    .feed-watch-list-actions { justify-self: start; margin-top: 0.2rem; }
+    /* Two columns: the tick, then the facts stacked with the controls under them. */
+    .feed-watch-list-row { grid-template-columns: auto minmax(0, 1fr); gap: 0.35rem 0.5rem; align-items: start; }
+    .feed-watch-list-row > :not(.fwm-tick) { grid-column: 2; }
+    .feed-watch-list-main strong, .feed-watch-list-feed, .feed-watch-list-filter, .feed-watch-list-meta { white-space: normal; overflow-wrap: anywhere; }
+    .feed-watch-list-actions { justify-content: flex-start; }
+    .fwm-detail-actions .config-btn--danger { margin-left: 0; }
+}
+@media (pointer: coarse), (max-width: 720px) {
+    /* Fingers: every control in the view is at least 44 px tall. */
+    .fwm-toolbar .config-btn, .fwm-bulk .config-btn, .fwm-select, .fwm-tick,
+    .feed-watch-list-actions .config-btn, .fwm-detail .config-btn, .feed-watch-list-main, .fwm-word-input, .fwm-chip-x {
+        min-height: 44px;
+    }
+    .fwm-tick, .fwm-chip-x { min-width: 44px; }
 }
 
 /* On a phone the app makes every modal button full width; these are small
@@ -437,3 +515,22 @@ body.no-animations .feed-news-bar > i { transition: none; }
 }
 body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn { right: var(--corner-fab-edge); min-height: 44px; min-width: 44px; }
 body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn[data-unread="0"] { display: none; }
+
+/* Watch feeds… in the selection bar: a small popover on the app's menu surface
+   (.move-popover) with the interval, the two actions and a report per bookmark. */
+.move-popover.feed-watch-bulk { min-width: 17rem; max-width: min(21rem, calc(100vw - 1rem)); padding-bottom: var(--space-2, 0.5rem); }
+.feed-watch-bulk-field { display: flex; align-items: center; gap: var(--space-2, 0.5rem); padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem); font-size: calc(var(--font-size-controls) * 0.92); }
+.feed-watch-bulk-field select { flex: 1; min-width: 0; min-height: 32px; background: var(--background-primary); color: var(--text-primary); border: 1px solid var(--border-primary); border-radius: var(--radius-4, 0.4rem); padding: 0 var(--space-2, 0.5rem); font: inherit; }
+.feed-watch-bulk-actions { display: flex; flex-direction: column; gap: var(--space-1, 0.3rem); padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem); }
+.feed-watch-bulk-actions button { min-height: 32px; border-radius: var(--radius-4, 0.4rem); border: 1px solid var(--border-primary); background: var(--background-primary); color: var(--text-primary); font: inherit; font-size: calc(var(--font-size-controls) * 0.92); cursor: pointer; }
+.feed-watch-bulk-actions .feed-watch-bulk-primary { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--text-on-accent, var(--background-primary)); font-weight: var(--font-weight-semibold); }
+.feed-watch-bulk-actions button:disabled { opacity: 0.5; cursor: default; }
+.feed-watch-bulk-actions button:focus-visible, .feed-watch-bulk-field select:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.feed-watch-bulk-progress { padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem) 0; font-size: calc(var(--font-size-controls) * 0.85); font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.feed-watch-bulk-progress:empty { display: none; }
+.feed-watch-bulk-report { list-style: none; margin: 0; padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem) 0; max-height: 9rem; overflow-y: auto; font-size: calc(var(--font-size-controls) * 0.82); color: var(--text-secondary); }
+.feed-watch-bulk-report:empty { display: none; }
+.feed-watch-bulk-report li { padding: 0.1rem 0; overflow-wrap: anywhere; }
+@media (pointer: coarse), (max-width: 767px) {
+    .feed-watch-bulk-actions button, .feed-watch-bulk-field select { min-height: 44px; }
+}

@@ -74,7 +74,7 @@ class DashboardFeedWatch {
     newsFor(bookmark) {
         const entry = this.watchFor(bookmark);
         if (!entry || !(Number(entry.newCount) > 0)) return null;
-        return { newCount: Number(entry.newCount), newest: entry.newest || null, newAt: Number(entry.newAt) || 0 };
+        return { newCount: Number(entry.newCount), newest: entry.newest || null, newAt: Number(entry.newAt) || 0, muted: entry.muted === true };
     }
 
     totalNew() {
@@ -83,17 +83,22 @@ class DashboardFeedWatch {
         return sum;
     }
 
-    /** How many bookmarks have news. */
-    sitesWithNews() {
+    /**
+     * How many bookmarks have news. A muted feed counts in the badges and the
+     * paper but never calls out, so `loud` leaves it out for the toast.
+     */
+    sitesWithNews({ loud = false } = {}) {
         let n = 0;
-        this.byKey.forEach((entry) => { if (Number(entry.newCount) > 0) n += 1; });
+        this.byKey.forEach((entry) => {
+            if (Number(entry.newCount) > 0 && !(loud && entry.muted === true)) n += 1;
+        });
         return n;
     }
 
-    newestNewAt() {
+    newestNewAt({ loud = false } = {}) {
         let at = 0;
         this.byKey.forEach((entry) => {
-            if (Number(entry.newCount) > 0) at = Math.max(at, Number(entry.newAt) || 0);
+            if (Number(entry.newCount) > 0 && !(loud && entry.muted === true)) at = Math.max(at, Number(entry.newAt) || 0);
         });
         return at;
     }
@@ -133,6 +138,45 @@ class DashboardFeedWatch {
         });
         if (res.ok) await this.load({ force: true });
         return res.ok;
+    }
+
+    /**
+     * Change one watched feed: interval, mute, pause or word filters. Only the
+     * fields given change; the answer replaces the local copy.
+     * @returns {Promise<{ok: boolean, error?: string}>}
+     */
+    async updateFeed(bookmarkUrl, feedUrl, fields) {
+        let res;
+        try {
+            res = await this._fetch()('/api/feeds/watch/feed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookmarkUrl, feedUrl, ...fields }),
+            });
+        } catch {
+            return { ok: false, error: 'network' };
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { ok: false, error: data?.error || String(res.status) };
+        await this.load({ force: true });
+        return { ok: true };
+    }
+
+    /** Every feed watched for these bookmarks gets one interval. */
+    async setIntervalFor(bookmarkUrls, intervalMinutes) {
+        let res;
+        try {
+            res = await this._fetch()('/api/feeds/watch/interval', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookmarkUrls, intervalMinutes }),
+            });
+        } catch {
+            return { ok: false, changed: 0 };
+        }
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) await this.load({ force: true });
+        return { ok: res.ok, changed: Number(data?.changed) || 0 };
     }
 
     /** Ask a paused feed again right now. */
@@ -221,7 +265,7 @@ class DashboardFeedWatch {
     announce() {
         if (document.visibilityState === 'hidden') return;
         if (this._evaluateWindow() === 'closed' || this._evaluateWindow() === 'none') return;
-        const newest = this.newestNewAt();
+        const newest = this.newestNewAt({ loud: true });
         let announced = 0;
         try { announced = Number(localStorage.getItem('nextdash.feedWatchToasted')) || 0; } catch { /* no storage */ }
         if (!(newest > announced)) return;
@@ -234,10 +278,10 @@ class DashboardFeedWatch {
             Object.keys(vars || {}).forEach((name) => { text = text.replace(`{${name}}`, () => String(vars[name])); });
             return text;
         };
-        const sites = this.sitesWithNews();
+        const sites = this.sitesWithNews({ loud: true });
         let message;
         if (sites === 1) {
-            const entry = [...this.byKey.entries()].find(([, e]) => Number(e.newCount) > 0);
+            const entry = [...this.byKey.entries()].find(([, e]) => Number(e.newCount) > 0 && e.muted !== true);
             const name = (d?.allBookmarks || []).find((b) => this.key(b.url) === entry?.[0])?.name || entry?.[0] || '';
             message = t('dashboard.feedWatchToastOne', '{site} has news', { site: name });
         } else {
