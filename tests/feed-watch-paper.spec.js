@@ -188,6 +188,21 @@ test('returning to the tab opens the paper once, but not after it was opened by 
     await expect(modal(page)).toBeHidden();
 });
 
+test('returning to the tab leaves the paper closed when only muted feeds have news', async ({ page, request }) => {
+    for (const site of [siteA, siteB]) {
+        expect((await request.post('/api/feeds/watch/feed', {
+            headers, data: { bookmarkUrl: site.url, feedUrl: `${site.base}/feed/`, muted: true },
+        })).ok()).toBe(true);
+    }
+    await openDashboard(page);
+    // Muted feeds still count in the tab title, but nothing opens by itself.
+    await expect.poll(() => page.title()).toMatch(/^\(5\) /);
+    await fakeVisibility(page);
+    await page.evaluate(() => window.__leaveAndReturn());
+    await page.waitForTimeout(500);
+    await expect(modal(page)).toHaveCount(0);
+});
+
 test('returning to the tab does not cover another window', async ({ page }) => {
     await openDashboard(page);
     await expect.poll(() => page.title()).toMatch(/^\(5\) /);

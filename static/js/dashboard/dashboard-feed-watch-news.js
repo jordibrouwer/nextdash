@@ -611,6 +611,8 @@
         if (document.visibilityState !== 'visible' || state) return;
         const watch = dash()?.feedWatch;
         if (!watch || !(unreadTotal(watch) > 0)) return;
+        // A muted feed counts but never calls: only news from a loud feed brings the paper back.
+        if (!((watch.sitesWithNews?.({ loud: true }) ?? 1) > 0)) return;
         const phase = watch.windowPhase();
         if (phase !== 'open' && phase !== 'pending') return;
         if (somethingElseOpen()) return;
