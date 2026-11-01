@@ -784,7 +784,27 @@ class DashboardInlineEdit {
         urlInput.className = 'bookmark-inline-input';
         urlInput.dataset.field = 'url';
         urlInput.value = bookmark.url || '';
-        colWhat.appendChild(mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError));
+        const urlField = mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError);
+        colWhat.appendChild(urlField);
+        // The feed this page advertises, offered under the address.
+        const originalUrl = String(bookmark.url || '').trim();
+        const feedOfferHost = document.createElement('div');
+        feedOfferHost.className = 'tag-suggest-chips bookmark-form-feed-offer';
+        feedOfferHost.hidden = true;
+        urlField.appendChild(feedOfferHost);
+        const feedOffer = d.feedWatch && window.BookmarkFeedOffer
+            ? window.BookmarkFeedOffer.mount(feedOfferHost, {
+                dash: d,
+                getUrl: () => urlInput.value,
+                getName: () => nameInput.value.trim() || bookmark.name || '',
+                // A saved bookmark whose address is unchanged can be watched now.
+                canWatchNow: () => !isCreate && d.feedWatch.key(urlInput.value) === d.feedWatch.key(originalUrl),
+            })
+            : null;
+        if (feedOffer) {
+            urlInput.addEventListener('input', () => feedOffer.reset());
+            if (!isCreate) feedOffer.refresh();
+        }
         colWhat.appendChild(nameField);
         const nameNote = document.createElement('p');
         nameNote.className = 'bookmark-form-name-note';
@@ -1072,6 +1092,7 @@ class DashboardInlineEdit {
             void refreshIconSuggestions();
             title.offer(preview?.title, urlInput.value.trim());
             void refreshSuggestions(Array.isArray(preview?.keywords) ? preview.keywords : []);
+            feedOffer?.refresh();
         };
         /*
          * One read per address, and only the latest one counts.
@@ -2616,6 +2637,8 @@ class DashboardInlineEdit {
                 withTags: Array.isArray(bookmark.tags) && bookmark.tags.length > 0,
                 withShortcut: Boolean(bookmark.shortcut),
             });
+            // The bookmark has a row now, so a feed ticked while adding it can be watched.
+            await window.BookmarkFeedOffer?.flush(d, bookmark);
             if (typeof onSaved === 'function') {
                 await onSaved();
             }

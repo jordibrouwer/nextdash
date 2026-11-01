@@ -403,3 +403,18 @@
     font-family: var(--font-mono, ui-monospace, monospace);
     font-size: var(--text-xs, 0.75rem);
 }
+
+/* The feed a page advertises, offered under the address while a bookmark is
+   added or edited. The chips are the tag suggestions' own (.tag-suggest-chip);
+   this only places the row, quietly, under the field. */
+.bookmark-form-feed-offer {
+    margin-top: var(--space-1-5, 0.35rem);
+}
+
+.bookmark-form-feed-offer[hidden] {
+    display: none;
+}
+
+.bookmark-form-feed-offer-chip[data-feed-offer="pending"] .tag-suggest-chip-add {
+    color: var(--accent-primary);
+}

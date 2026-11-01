@@ -374,6 +374,173 @@
         }
     }
 
+    /*
+     * Offering the feed a page advertises, while a bookmark is added or edited.
+     *
+     * Shown as a chip under the address, drawn like the tag suggestions: one
+     * to take ("Feed found: Posts · Watch?"), one to turn down ("Not now").
+     * Only the first advertised feed is offered -- the rest are in the picker.
+     * A saved bookmark is watched at once; one still being created has no row
+     * for the server to hang a watch on, so the intent is kept in the
+     * dashboard (`setPending`) and saved by `flush` right after the bookmark
+     * exists. A refusal is remembered per site on this device.
+     */
+    const OFFER_DEFAULT_MINUTES = 60;
+    const OFFER_REFUSED_KEY = 'nextdash.feedOfferRefused';
+
+    function offerRefusals() {
+        try {
+            const list = JSON.parse(global.localStorage.getItem(OFFER_REFUSED_KEY) || '[]');
+            return Array.isArray(list) ? list : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function offerRefuse(key) {
+        try {
+            const list = offerRefusals();
+            if (!list.includes(key)) list.push(key);
+            global.localStorage.setItem(OFFER_REFUSED_KEY, JSON.stringify(list.slice(-500)));
+        } catch { /* no storage: the offer comes back next time */ }
+    }
+
+    function offerText(dash, key, fallback, vars) {
+        let text = dash?.language?.t?.(key);
+        if (!text || text === key) text = fallback;
+        Object.keys(vars || {}).forEach((name) => { text = text.replace(`{${name}}`, () => String(vars[name])); });
+        return text;
+    }
+
+    function offerToast(dash, name, minutes) {
+        dash?.showNotification?.(offerText(dash, 'dashboard.feedWatchStarted', 'Watching {name} · checked every {interval}', {
+            name,
+            interval: global.FeedWatchPicker?.intervalWords?.(minutes) || '',
+        }), 'success', { duration: 4000, replace: true });
+    }
+
+    /**
+     * @param {HTMLElement} host where the chip goes
+     * @param {{dash: object, getUrl: () => string, getName: () => string, canWatchNow: () => boolean}} options
+     *   `canWatchNow`: the address is a saved bookmark's own (an edit that has not changed it).
+     */
+    function mountFeedOffer(host, options) {
+        const dash = options.dash;
+        const watch = dash?.feedWatch;
+        let seq = 0;
+        let timer = null;
+        // address key -> the first feed the page advertises (or null), asked once
+        const found = new Map();
+        let busy = false;
+
+        const hide = () => { host.replaceChildren(); host.hidden = true; };
+        const t = (key, fallback, vars) => offerText(dash, key, fallback, vars);
+
+        const chip = (text, className, onClick, title) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = className;
+            button.textContent = text;
+            if (title) { button.title = title; button.setAttribute('aria-label', title); }
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onClick();
+            });
+            return button;
+        };
+
+        const draw = (url, feed) => {
+            const key = watch.key(url);
+            const pending = watch.hasPending(url);
+            host.replaceChildren();
+            host.hidden = false;
+            const accept = document.createElement('span');
+            accept.className = 'tag-suggest-chip bookmark-form-feed-offer-chip';
+            accept.dataset.feedOffer = pending ? 'pending' : 'offer';
+            const label = pending
+                ? t('dashboard.feedOfferPending', 'Will watch after saving')
+                : t('dashboard.feedOfferFound', 'Feed found: {title} · Watch?', { title: feed.title || feed.url });
+            accept.appendChild(chip(label, 'tag-suggest-chip-add', async () => {
+                if (busy) return;
+                if (pending) {
+                    watch.setPending(url, null);
+                    draw(url, feed);
+                } else if (options.canWatchNow()) {
+                    busy = true;
+                    const result = await watch.save(url, [{ feedUrl: feed.url, intervalMinutes: OFFER_DEFAULT_MINUTES }]);
+                    busy = false;
+                    if (!result.ok) return;
+                    offerToast(dash, options.getName() || url, OFFER_DEFAULT_MINUTES);
+                    hide();
+                } else {
+                    watch.setPending(url, { feedUrl: feed.url, intervalMinutes: OFFER_DEFAULT_MINUTES });
+                    draw(url, feed);
+                }
+            }, pending ? t('dashboard.feedOfferUndo', 'Do not watch this feed') : ''));
+            const notNow = document.createElement('span');
+            notNow.className = 'tag-suggest-chip bookmark-form-feed-offer-chip';
+            notNow.dataset.feedOffer = 'refuse';
+            notNow.appendChild(chip(`${t('dashboard.feedOfferNotNow', 'Not now')} ✕`, 'tag-suggest-chip-dismiss', () => {
+                watch.setPending(url, null);
+                offerRefuse(key);
+                hide();
+            }, t('dashboard.feedOfferRefuse', 'Do not offer a feed for this site again')));
+            host.append(accept, notNow);
+        };
+
+        const evaluate = async () => {
+            const url = String(options.getUrl() || '').trim();
+            const mine = ++seq;
+            if (!watch || !/^https?:\/\//i.test(url)) { hide(); return; }
+            const key = watch.key(url);
+            // An edit that changed the address has no saved row to hang a watch on.
+            if (!key || watch.isWatched({ url }) || offerRefusals().includes(key)) { hide(); return; }
+            if (!found.has(key)) {
+                let first = null;
+                try {
+                    const data = await watch.candidates(url);
+                    first = (data?.feeds || []).find((feed) => feed?.url && feed.watched !== true) || null;
+                } catch { first = null; }
+                found.set(key, first);
+            }
+            if (mine !== seq || !host.isConnected) return;
+            const feed = found.get(key);
+            if (feed) draw(url, feed); else hide();
+        };
+
+        hide();
+        return {
+            /** The page has settled: look for a feed, once per address. */
+            refresh({ delay = 300 } = {}) {
+                clearTimeout(timer);
+                timer = setTimeout(() => { void evaluate(); }, delay);
+            },
+            /** The address is being typed over: drop the chip and the unsaved intent. */
+            reset() {
+                clearTimeout(timer);
+                seq += 1;
+                const url = String(options.getUrl() || '').trim();
+                if (watch && url) watch.setPending(url, null);
+                hide();
+            },
+            /** The form closed without saving: the intent goes with it. */
+            discard(url) { if (watch && url) watch.setPending(url, null); },
+        };
+    }
+
+    /** Save what was ticked on a bookmark that has just been created. */
+    async function flushFeedOffer(dash, bookmark) {
+        const watch = dash?.feedWatch;
+        const url = String(bookmark?.url || '').trim();
+        if (!watch || !url || !watch.hasPending(url)) return false;
+        const result = await watch.flushPending(url);
+        if (result?.ok) offerToast(dash, bookmark.name || url, OFFER_DEFAULT_MINUTES);
+        return Boolean(result?.ok);
+    }
+
+    global.BookmarkFeedOffer = { mount: mountFeedOffer, flush: flushFeedOffer };
+
     global.BookmarkFormPreview = BookmarkFormPreview;
     global.BookmarkFormPreviewHtml = { buildPreviewSectionHtml, buildCompactPreviewStripHtml, escHtml };
 })(typeof window !== 'undefined' ? window : globalThis);
