@@ -17,7 +17,7 @@ async function stubLongNews(page, count = 14) {
     await page.goto('/');
     const key = await keyOf(page, site.url);
     const items = Array.from({ length: count }, (_, i) => ({
-        ...newsItem(i + 1, { summary: `<p>${'Long lead text. '.repeat(40)}</p>` }),
+        ...newsItem(i + 1, { summary: `<p>${'Long lead text. '.repeat(40)}</p>`, image: '/data/preview-images/pi-test.png' }),
         bookmarkKey: key, bookmarkName: 'Stub Blog', bookmarkUrl: site.url, feedTitle: 'Stub Posts', feedUrl: 'http://127.0.0.1:1/feed/', unread: true,
     }));
     await stubWatch(page, { list: watchPayload(key, items), items });
@@ -50,3 +50,19 @@ for (const [label, size] of [['phone', { width: 375, height: 600 }], ['desktop',
         await expect(modal.locator('.feed-news-top .feed-news-close')).toBeInViewport();
     });
 }
+
+test('the newspaper shows the pictures of the items, like the other layouts', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await stubLongNews(page);
+    await openDashboard(page);
+    await page.evaluate(() => window.FeedWatchNews.open({ source: 'button' }));
+    const modal = page.locator('#app-modal .modal.feed-news-modal');
+    await expect(modal).toHaveClass(/is-paper/);
+    const pictures = modal.locator('.feed-news-entry-image');
+    await expect(pictures.first()).toBeVisible();
+    const box = await pictures.first().boundingBox();
+    expect(box.width).toBeGreaterThan(50);
+    // The same items in the themed layout have them too.
+    await modal.locator('[data-feed-news-view="wide"]').click();
+    await expect(modal).not.toHaveClass(/is-paper/);
+});
