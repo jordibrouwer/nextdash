@@ -158,7 +158,11 @@ func (hs *glancesHost) observe(now int64, observations []glancesObservation) []G
 			w.ok = 0
 			if w.bad == 0 {
 				w.firstBad = now
-				w.peak = o.Value
+				// One reading back under the line does not close an open
+				// incident, and the next bad one must not lower its peak.
+				if !w.open {
+					w.peak = o.Value
+				}
 			}
 			w.bad++
 			w.lastBad = now

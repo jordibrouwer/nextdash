@@ -796,3 +796,24 @@ func TestGlancesForecastIsNotClearAtAFullDisk(t *testing.T) {
 		t.Errorf("a disk at 100%% said it was no longer filling up: %+v", got)
 	}
 }
+
+// One reading back under the line keeps an incident open; the bad reading
+// after it must not lower the peak the incident already reached.
+func TestGlancesIncidentPeakSurvivesADip(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	glancesWipe()
+	setGlancesBeat(5 * time.Second)
+	t0 := time.Now().UnixMilli()
+	cpu := func(i int64, v float64, bad bool) {
+		glancesObserve(t0+i*5000, []glancesObservation{{Kind: "cpu", Value: v, Bad: bad}})
+	}
+	cpu(0, 95, true)
+	cpu(1, 99, true)
+	cpu(2, 80, false)
+	cpu(3, 92, true)
+	ongoing, _ := glancesIncidentList()
+	if len(ongoing) != 1 || ongoing[0].Peak != 99 {
+		t.Fatalf("ongoing after a dip: %+v", ongoing)
+	}
+}
+
