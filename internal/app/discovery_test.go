@@ -607,3 +607,27 @@ func TestDiscoveryDuplicateAddressIsNotRetried(t *testing.T) {
 		t.Fatalf("duplicate address withheld from Known: %+v", st.Known)
 	}
 }
+
+// An app that cannot be placed (refused as a local address here) gets no
+// category: one made for it stayed on the page with nothing in it.
+func TestDiscoveryAddMakesNoCategoryForAnAppItCannotPlace(t *testing.T) {
+	r := newDiscoveryRig(t)
+	r.setSettings(func(s *Settings) { s.AllowLocalBookmarks = false })
+	before := len(r.h.store.GetCategoriesByPage(1))
+	var outcome map[string]bool
+	r.h.discoveryMu.Lock()
+	st := r.h.discoveryLocked()
+	added, outcome, err := r.h.addDiscoveredBookmarks(context.Background(), st, 1, []discoveryAddItem{{
+		App: discoveredApp{Name: "jellyfin", URL: "http://192.168.1.10:8096", Kind: "Streaming tiles"},
+	}}, true, false)
+	r.h.discoveryMu.Unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(added) != 0 || !outcome["jellyfin"] {
+		t.Fatalf("added %v, outcome %v", added, outcome)
+	}
+	if after := len(r.h.store.GetCategoriesByPage(1)); after != before {
+		t.Fatalf("categories %d -> %d: one was made for an app that was never placed", before, after)
+	}
+}

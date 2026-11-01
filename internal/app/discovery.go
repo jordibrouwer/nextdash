@@ -797,6 +797,26 @@ func findCategoryByName(cats []Category, name string) *Category {
 // page. A name missing from outcome failed and may be tried again.
 func (h *Handlers) addDiscoveredBookmarks(ctx context.Context, st *discoveryState, pageID int, items []discoveryAddItem, direct, cardDone bool) (added []discoveryRecentAdd, outcome map[string]bool, err error) {
 	outcome = map[string]bool{}
+	links := map[string]string{}
+	// What cannot be placed is settled before any category is made: an app
+	// refused as a local address, or already a bookmark, left the category
+	// made for it empty on the page.
+	placeable := items[:0:0]
+	for _, it := range items {
+		u := strings.TrimSpace(it.App.URL)
+		if h.validateBookmarkURL(u) != nil {
+			outcome[it.App.Name] = true // never placeable; not tried again
+			continue
+		}
+		if existing := findBookmarkByURLKey(h.store, canonicalBookmarkURLKey(u)); existing != nil {
+			// Already on a page: the container is tied to that bookmark.
+			links[it.App.Name] = matchBookmarkKey(*existing)
+			outcome[it.App.Name] = true
+			continue
+		}
+		placeable = append(placeable, it)
+	}
+	items = placeable
 	// Read and saved under one store lock: a category renamed in Config in
 	// between was otherwise written back under its old name.
 	var cats []Category
@@ -861,7 +881,6 @@ func (h *Handlers) addDiscoveredBookmarks(ctx context.Context, st *discoveryStat
 		return ""
 	}
 
-	links := map[string]string{}
 	for i, it := range items {
 		u := strings.TrimSpace(it.App.URL)
 		if h.validateBookmarkURL(u) != nil {
