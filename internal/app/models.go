@@ -421,6 +421,7 @@ type Settings struct {
 	OpenLinksNewTabMobile           bool   `json:"openLinksNewTabMobile"`
 	HideToastsMobile                bool   `json:"hideToastsMobile"`
 	HideCornerCardsMobile           bool   `json:"hideCornerCardsMobile"`
+	ShowFeedWatchIcon               bool   `json:"showFeedWatchIcon"` // A feed icon on bookmarks whose feed is watched
 	ColumnsPerRow                   int    `json:"columnsPerRow"`
 	FontSize                        string `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
 	ShowTitle                       bool   `json:"showTitle"`
@@ -1817,6 +1818,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			PushNotifyNews:                  true,
 			HideToastsMobile:                true,
 			HideCornerCardsMobile:           true,
+			ShowFeedWatchIcon:               true,
 			FeedWatchWindowMinutes:          30,
 			FeedWatchNewsView:               "paper",
 			ShowThemeStudioButton:           true,
@@ -4482,6 +4484,7 @@ func (fs *FileStore) GetSettings() Settings {
 			PushNotifyNews:                  true,
 			HideToastsMobile:                true,
 			HideCornerCardsMobile:           true,
+			ShowFeedWatchIcon:               true,
 			FeedWatchWindowMinutes:          30,
 			FeedWatchNewsView:               "paper",
 			ShowThemeStudioButton:           true,
@@ -4709,6 +4712,10 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["hideCornerCardsMobile"]; !ok {
 			settings.HideCornerCardsMobile = true
+		}
+		// On unless turned off: a watched bookmark is recognisable without news.
+		if _, ok := rawSettings["showFeedWatchIcon"]; !ok {
+			settings.ShowFeedWatchIcon = true
 		}
 		switch settings.FeedWatchWindowMinutes {
 		case 15, 30, 60, 120:

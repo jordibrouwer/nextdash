@@ -23,3 +23,14 @@ func TestHideCornerCardsMobileDefaultsOn(t *testing.T) {
 		t.Fatal("an explicit false must stay off")
 	}
 }
+
+func TestShowFeedWatchIconDefaultsOn(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+	if !h.store.GetSettings().ShowFeedWatchIcon {
+		t.Fatal("a settings file without the key must read as on")
+	}
+	h, _ = healthRecheckTestHandlers(t, `{"showFeedWatchIcon":false}`)
+	if h.store.GetSettings().ShowFeedWatchIcon {
+		t.Fatal("an explicit false must stay off")
+	}
+}
