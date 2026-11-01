@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -745,16 +746,31 @@ func (s *serverLogSink) seedFromDisk() {
 	capacity := s.capacityLocked()
 	s.mu.Unlock()
 	tail := make([]string, 0, capacity)
-	scanner := bufio.NewScanner(f)
-	scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
-	for scanner.Scan() {
-		tail = append(tail, scanner.Text())
+	// One line over the cap is cut, not fatal: a Scanner stops at the first
+	// such line, and one huge panic dump in the file then seeded nothing on
+	// every restart after it.
+	const maxLine = 1 << 20
+	reader := bufio.NewReaderSize(f, 64<<10)
+	var line []byte
+	for {
+		chunk, isPrefix, err := reader.ReadLine()
+		if len(line) < maxLine {
+			line = append(line, chunk[:min(len(chunk), maxLine-len(line))]...)
+		}
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			break
+		}
+		if isPrefix {
+			continue
+		}
+		tail = append(tail, string(line))
+		line = line[:0]
 		if len(tail) > capacity {
 			tail = tail[1:]
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		return
 	}
 
 	s.mu.Lock()

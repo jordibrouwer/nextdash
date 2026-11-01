@@ -287,7 +287,9 @@ func parseActivitySampleRates(raw string) (map[string]float64, string) {
 		}
 		channel := strings.ToLower(strings.TrimSpace(kv[0]))
 		rate, err := strconv.ParseFloat(strings.TrimSpace(kv[1]), 64)
-		if channel == "" || err != nil || rate < 0 || rate > 1 {
+		// Written so NaN fails it: ParseFloat accepts "NaN", and every
+		// comparison with it is false.
+		if channel == "" || err != nil || !(rate >= 0 && rate <= 1) {
 			return nil, part
 		}
 		rates[channel] = rate

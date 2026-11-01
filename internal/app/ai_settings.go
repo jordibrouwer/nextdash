@@ -36,9 +36,7 @@ func normalizeAISettings(s *Settings) {
 	}
 	s.AIBaseURL = strings.TrimRight(normalizeSearxngURL(s.AIBaseURL), "/")
 	m := strings.TrimSpace(s.AIModel)
-	if len(m) > 200 {
-		m = m[:200]
-	}
+	m = truncateBytes(m, 200)
 	s.AIModel = m
 	if s.AIHistoryMax != 0 {
 		s.AIHistoryMax = min(max(s.AIHistoryMax, 1), 500)

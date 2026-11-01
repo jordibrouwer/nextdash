@@ -189,9 +189,7 @@ func activityScriptPath(raw string) string {
 		return ""
 	}
 	path := u.Path
-	if len(path) > activityMaxScriptPathLen {
-		path = path[:activityMaxScriptPathLen]
-	}
+	path = truncateBytes(path, activityMaxScriptPathLen)
 	return path
 }
 
