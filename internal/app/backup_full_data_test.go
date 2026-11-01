@@ -30,6 +30,7 @@ func TestBackupCarriesTheRestOfTheDataDirectory(t *testing.T) {
 	written := map[string]string{
 		"health-trend.json":       `{"points":[{"t":1,"n":40}]}`,
 		"feeds.json":              `{"feeds":{}}`,
+		"feed-watches.json":       `{"watches":[{"bookmarkKey":"a.example","feedUrl":"https://a.example/feed","intervalMinutes":60}]}`,
 		"inbox-stats.json":        `{"version":1,"totalAdded":7}`,
 		"site-news.json":          `{"posts":[]}`,
 		"push-subscriptions.json": `[]`,

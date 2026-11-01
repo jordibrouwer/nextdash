@@ -113,3 +113,25 @@ func TestPruneKeepsWatchImages(t *testing.T) {
 		t.Fatal("an unreferenced picture should be pruned")
 	}
 }
+
+// A restored backup carries the watches but not the cached pictures; the next
+// round fetches the missing ones again from the address each item remembers.
+func TestWatchImagesComeBackAfterARestore(t *testing.T) {
+	png, _ := base64.StdEncoding.DecodeString(tinyPNG)
+	srv := imageFeedServer(t, "/hero.png", "image/png", png)
+	h, _ := watchWithOldBaseline(t, srv)
+	if n, _ := h.pollWatches(context.Background(), true); n != 1 {
+		t.Fatalf("first round polled %d", n)
+	}
+	item := readFeedWatchFile().Watches[0].Items[0]
+	file := filepath.Join(previewImageDir(), strings.TrimPrefix(item.Image, "/data/preview-images/"))
+	if err := os.Remove(file); err != nil {
+		t.Fatal(err)
+	}
+	if n, _ := h.pollWatches(context.Background(), true); n != 1 {
+		t.Fatalf("second round polled %d", n)
+	}
+	if _, err := os.Stat(file); err != nil {
+		t.Fatalf("the picture did not come back: %v", err)
+	}
+}

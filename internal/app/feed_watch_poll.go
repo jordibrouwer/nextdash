@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 	"sort"
 	"sync"
 	"time"
@@ -335,6 +338,9 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 			break
 		}
 		next, found := h.pollWatch(ctx, w, time.Now())
+		if h.healWatchImages(next.Items) {
+			imagesStored = true
+		}
 		if len(found) > 0 {
 			found = h.storeWatchImages(found)
 			applyWatchImages(next.Items, found)
@@ -449,6 +455,27 @@ func (h *Handlers) storeWatchImages(items []FeedItem) []FeedItem {
 		}
 	}
 	return out
+}
+
+// healWatchImages fetches a stored item's picture again when its cached file is
+// gone: a restored backup has the watches but never the picture cache. It
+// reports whether it stored one, so the cache can be trimmed afterwards.
+func (h *Handlers) healWatchImages(items []FeedItem) bool {
+	healed := false
+	for i := range items {
+		it := &items[i]
+		if it.Image == "" || it.ImageSource == "" {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(previewImageDir(), path.Base(it.Image))); err == nil {
+			continue
+		}
+		if name, err := downloadPreviewImage(it.ImageSource, h.allowLocalBookmarks()); err == nil && name != "" {
+			it.Image = "/data/" + previewImageDirName + "/" + name
+			healed = true
+		}
+	}
+	return healed
 }
 
 // applyWatchImages copies the stored pictures onto the persisted items.
