@@ -52,7 +52,7 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
     const modal = page.locator('#app-modal .modal.feed-news-modal');
     // The two new posts, and the feed's older one under "Earlier".
     await expect(modal.locator('.feed-news-entry')).toHaveCount(3);
-    await expect(modal.locator('.feed-news-chip')).toHaveText('2 new');
+    await expect(modal.locator('.feed-news-chip')).toHaveText('2 unread');
     await expect(modal.locator('.feed-news-index-head')).toHaveText('Earlier from the feeds');
     await modal.locator('.feed-news-entry').first().click();
     await expect(modal.locator('.feed-news-title')).toHaveText('Third post');

@@ -207,3 +207,27 @@ test.describe('on a desktop', () => {
         await expect(pop(page)).toHaveCount(0);
     });
 });
+
+test.describe('on a touch screen, against the real server', () => {
+    test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+
+    test('a headline tap reads only that item; the others stay new', async ({ page, request, context }) => {
+        const { headers } = require('./helpers/feed-watch');
+        expect((await request.post('/api/feeds/watch', {
+            headers, data: { bookmarkUrl: site.url, feeds: [{ feedUrl: `${site.base}/feed/`, intervalMinutes: 1440 }] },
+        })).ok()).toBe(true);
+        site.add('Second post');
+        site.add('Third post');
+        site.add('Fourth post');
+        await request.post('/api/feeds/watch/poll', { headers, data: {} });
+        await openDashboard(page);
+        context.on('page', () => {});
+        await expect(badge(page)).toHaveText('3');
+        await badge(page).tap();
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(3);
+        await pop(page).locator('.feed-news-pop-item').nth(1).tap();
+        await expect.poll(async () => (await (await request.get('/api/feeds/watch')).json()).watches
+            && Object.values((await (await request.get('/api/feeds/watch')).json()).watches)[0].newCount).toBe(2);
+        await expect(badge(page)).toHaveText('2');
+    });
+});

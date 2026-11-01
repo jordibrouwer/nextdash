@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { startStubSite, installWithBookmark, openDashboard, row, keyOf, watchPayload, newsItem, stubWatch } = require('./helpers/feed-watch');
+const { startStubSite, installWithBookmark, openDashboard, row, keyOf, watchPayload, newsItem, stubWatch, headers } = require('./helpers/feed-watch');
 
 /**
  * The news window: one article at a time, widened on request, closing itself.
@@ -48,7 +48,7 @@ test('the news opens on an index, an article opens from it, Esc goes back and th
     // The index: every item, no article yet, and the count of what is new.
     await expect(modal(page).locator('.feed-news-entry')).toHaveCount(3);
     await expect(modal(page).locator('.feed-news-site')).toHaveText('News');
-    await expect(modal(page).locator('.feed-news-chip')).toHaveText('3 new');
+    await expect(modal(page).locator('.feed-news-chip')).toHaveText('3 unread');
     await expect(modal(page).locator('.feed-news-title')).toHaveCount(0);
     expect(await page.evaluate(() => window.ScrollLock.isLocked())).toBe(true);
 
@@ -112,7 +112,7 @@ test('the newspaper lists more than what was found: the feed\'s earlier entries 
 
     // The index holds all of them, the new ones first and the earlier ones under a heading.
     await expect(modal(page).locator('.feed-news-entry')).toHaveCount(14);
-    await expect(modal(page).locator('.feed-news-chip')).toHaveText('2 new');
+    await expect(modal(page).locator('.feed-news-chip')).toHaveText('2 unread');
     await expect(modal(page).locator('.feed-news-index-head')).toHaveText('Earlier from the feeds');
 
     // Into the first article: the newspaper's right-hand list carries the rest.
@@ -126,11 +126,14 @@ test('the newspaper lists more than what was found: the feed\'s earlier entries 
     await expect(modal(page).locator('.feed-news-title')).toHaveText('Earlier entry 3');
     await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('5 of 14');
 
-    // One column keeps to the new articles: no earlier entries, no index.
+    // One column is the article alone, with no list beside it; the paper's
+    // front page is still one Esc away.
     await modal(page).locator('[data-feed-news-view="single"]').click();
     await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
-    await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 1');
-    await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 2');
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('Earlier entry 3');
+    await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('5 of 14');
+    await page.keyboard.press('Escape');
+    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(14);
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();
 });
@@ -164,17 +167,19 @@ test('the header switches between newspaper, two columns and one column, and the
     await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
     await expect.poll(async () => (await (await request.get('/api/settings')).json()).feedWatchNewsView).toBe('single');
 
-    // One column stays with the article: no index, Esc closes at once.
+    // Esc steps back to the front page in one column too, then closes.
+    await page.keyboard.press('Escape');
+    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(3);
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();
 
-    // The choice is the setting, so it comes back the next time: straight on the article.
+    // The choice is the setting, so it comes back the next time.
     await openFromCard(page);
     await expect(modal(page).locator('[data-feed-news-view="single"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(modal(page).locator('.feed-news-index.is-wide')).toHaveCount(0);
+    await modal(page).locator('.feed-news-entry').first().click();
     await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 1');
-    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(0);
-    // No index in one column, so no button to go there either.
-    await expect(modal(page).locator('[data-feed-news-index]')).toHaveCount(0);
+    await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
 
     // A narrow viewport has only the one column, whatever was chosen.
     await modal(page).locator('[data-feed-news-view="paper"]').click();
@@ -182,6 +187,7 @@ test('the header switches between newspaper, two columns and one column, and the
     await page.setViewportSize({ width: 600, height: 900 });
     await openFromCard(page);
     await expect(modal(page).locator('[data-feed-news-view]')).toBeHidden();
+    await modal(page).locator('.feed-news-entry').first().click();
     await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 1');
     await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
 });
@@ -235,4 +241,38 @@ test('feed HTML is shown as text styling, never as script', async ({ page }) => 
     await openFromCard(page);
     await expect(modal(page).locator('.feed-news-summary b')).toHaveText('bold');
     expect(await modal(page).locator('script, iframe, img[onerror]').count()).toBe(0);
+});
+
+test('read state per item: an article read, marked unread again, then the site read', async ({ page, request }) => {
+    // The real server this time: the bookmark watches the stub site's posts.
+    expect((await request.post('/api/feeds/watch', {
+        headers, data: { bookmarkUrl: site.url, feeds: [{ feedUrl: `${site.base}/feed/`, intervalMinutes: 1440 }] },
+    })).ok()).toBe(true);
+    site.add('Post one');
+    site.add('Post two');
+    site.add('Post three');
+    expect((await request.post('/api/feeds/watch/poll', { headers })).ok()).toBe(true);
+    const newCount = async () => Object.values((await (await request.get('/api/feeds/watch')).json()).watches)[0].newCount;
+    await openDashboard(page);
+    const badge = link(page).locator('.bookmark-news-badge');
+    await expect(badge).toHaveText('3');
+
+    // The second item's article: that one is read, the others are not.
+    await openFromCard(page);
+    await modal(page).locator('.feed-news-entry', { hasText: 'Post two' }).click();
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('Post two');
+    await expect(badge).toHaveText('2');
+    await expect.poll(() => page.title()).toMatch(/^\(2\) /);
+    await expect.poll(newCount).toBe(2);
+
+    // Marked unread again from the article's foot.
+    await modal(page).getByRole('button', { name: 'Mark unread' }).click();
+    await expect(badge).toHaveText('3');
+    await expect.poll(newCount).toBe(3);
+
+    // The whole site read from its section.
+    await page.keyboard.press('Escape');
+    await modal(page).getByRole('button', { name: 'Mark site read' }).click();
+    await expect(badge).toHaveCount(0);
+    await expect.poll(newCount).toBe(0);
 });
