@@ -81,6 +81,8 @@ async function chooseLayout(page, layout) {
 
 test('added from the catalogue, it lists a row per site, newest news first, the muted one dimmed', async ({ page, request }) => {
     await publishThree(request);
+    // A fresh install already ships this widget; clear it so the catalogue adds the first.
+    expect((await request.put(`/api/pages/${pid}/blocks`, { headers, data: { widgets: [] } })).ok()).toBe(true);
     await openDashboard(page);
     await openWidgetsConfig(page);
     await page.locator('[data-widget-catalogue]').first().click();

@@ -421,7 +421,7 @@ type Settings struct {
 	OpenLinksNewTabMobile           bool   `json:"openLinksNewTabMobile"`
 	HideToastsMobile                bool   `json:"hideToastsMobile"`
 	HideCornerCardsMobile           bool   `json:"hideCornerCardsMobile"`
-	ShowFeedWatchIcon               bool   `json:"showFeedWatchIcon"` // A feed icon on bookmarks whose feed is watched
+	ShowFeedWatchIcon               bool   `json:"showFeedWatchIcon"`     // A feed icon on bookmarks whose feed is watched
 	FeedWatchOpenOnReturn           bool   `json:"feedWatchOpenOnReturn"` // Coming back to the tab opens the news, on a computer
 	ColumnsPerRow                   int    `json:"columnsPerRow"`
 	FontSize                        string `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
@@ -455,6 +455,7 @@ type Settings struct {
 	// every page file to strip images again.
 	PreviewImagesStrippedMigrated   bool           `json:"previewImagesStrippedMigrated,omitempty"`
 	CustomPercentGuessMigrated      bool           `json:"customPercentGuessMigrated,omitempty"`
+	FeedNewsWidgetSeeded            bool           `json:"feedNewsWidgetSeeded,omitempty"`            // one-time: Watch feeds news widget on the first page; a field, so a settings save does not drop it and bring a removed widget back
 	NotesWidgetSeeded               bool           `json:"notesWidgetSeeded,omitempty"`               // one-time: notes widget on the first page; a field, or a settings save dropped it and a removed widget came back
 	ConfigButtonDefaultOnMigrated   bool           `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
 	SurfaceDefaultsMigrated         bool           `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
@@ -1224,6 +1225,10 @@ const defaultHealthWidgetID = "w_000000000001"
 // one existing installs get once (migrateNotesWidgetOnFirstPage). Fixed for the
 // same reason as the health widget's.
 const defaultNotesWidgetID = "w_000000000002"
+
+// defaultFeedNewsWidgetID is the Watch feeds news widget a fresh install ships
+// with, and the one existing installs get once (migrateFeedNewsWidgetOnFirstPage).
+const defaultFeedNewsWidgetID = "w_000000000004"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
@@ -2051,6 +2056,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateStripBookmarkPreviewImages()
 	fs.migrateCustomPercentToGuess()
 	fs.migrateNotesWidgetOnFirstPage()
+	fs.migrateFeedNewsWidgetOnFirstPage()
 	fs.migrateCategoryIconsIntoNames()
 
 }
@@ -2093,6 +2099,44 @@ func (fs *FileStore) migrateNotesWidgetOnFirstPage() {
 		break
 	}
 	fs.setMigrationMarker("notesWidgetSeeded")
+}
+
+/*
+ * One-time migration: a Watch feeds news widget on the first page of an
+ * existing install, as the notes widget got one. It goes last in the page's
+ * order so nothing already arranged moves, and it is skipped when any page has
+ * one or the page is full. The marker is set in every one of those cases and
+ * after the write: a reader who deletes the widget does not get it back.
+ */
+func (fs *FileStore) migrateFeedNewsWidgetOnFirstPage() {
+	if fs.migrationMarkerSet("feedNewsWidgetSeeded") {
+		return
+	}
+	pages := fs.GetPages()
+	for _, page := range pages {
+		widgets, _ := fs.GetPageBlocks(page.ID)
+		for _, widget := range widgets {
+			if widget.Type == WidgetTypeFeedNews {
+				fs.setMigrationMarker("feedNewsWidgetSeeded")
+				return
+			}
+		}
+	}
+	for _, page := range pages {
+		if page.Hidden {
+			continue
+		}
+		widgets, order := fs.GetPageBlocks(page.ID)
+		if len(widgets) < widgetMaxPerPage {
+			widgets = append(widgets, Widget{ID: defaultFeedNewsWidgetID, Type: WidgetTypeFeedNews, Config: map[string]any{}})
+			order = append(order, defaultFeedNewsWidgetID)
+			if err := fs.SavePageBlocks(page.ID, widgets, order); err != nil {
+				return // unmarked: the next start tries again
+			}
+		}
+		break
+	}
+	fs.setMigrationMarker("feedNewsWidgetSeeded")
 }
 
 /*
@@ -5720,6 +5764,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.PreviewImagesStrippedMigrated = settings.PreviewImagesStrippedMigrated || stored.PreviewImagesStrippedMigrated
 			settings.CustomPercentGuessMigrated = settings.CustomPercentGuessMigrated || stored.CustomPercentGuessMigrated
 			settings.NotesWidgetSeeded = settings.NotesWidgetSeeded || stored.NotesWidgetSeeded
+			settings.FeedNewsWidgetSeeded = settings.FeedNewsWidgetSeeded || stored.FeedNewsWidgetSeeded
 			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
 			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated

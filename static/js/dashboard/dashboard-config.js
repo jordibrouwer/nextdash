@@ -7690,7 +7690,7 @@ class DashboardConfig {
         const clean = {};
         for (const [key, value] of Object.entries(parsed)) {
             if (/Migrated$/.test(key) || key === 'showTipsOffMigrated'
-                || key === 'notesWidgetSeeded' || key === 'firstRunInstall' || key === 'firstRunAt') continue;
+                || key === 'notesWidgetSeeded' || key === 'feedNewsWidgetSeeded' || key === 'firstRunInstall' || key === 'firstRunAt') continue;
             clean[key] = value;
         }
         try {

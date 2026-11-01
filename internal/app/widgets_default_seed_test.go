@@ -21,8 +21,11 @@ func TestFreshInstallSeedsAHealthWidget(t *testing.T) {
 
 	widgets, order := store.GetPageBlocks(1)
 
-	if len(widgets) != 3 {
-		t.Fatalf("seeded widgets = %d, want 3 (health, trend and notes)", len(widgets))
+	if len(widgets) != 4 {
+		t.Fatalf("seeded widgets = %d, want 4 (health, trend, notes and the feed news)", len(widgets))
+	}
+	if widgets[3].Type != WidgetTypeFeedNews || widgets[3].ID != defaultFeedNewsWidgetID {
+		t.Errorf("fourth seeded widget = %+v, want the Watch feeds news widget", widgets[3])
 	}
 	if widgets[1].Type != WidgetTypeTrend || widgets[1].ID != defaultTrendWidgetID {
 		t.Errorf("second seeded widget = %+v, want the trend widget", widgets[1])
@@ -45,10 +48,11 @@ func TestFreshInstallSeedsAHealthWidget(t *testing.T) {
 
 	categories := store.GetCategoriesByPage(1)
 
-	// Health and trend close the page, after the links and the notes: the
-	// links are what a dashboard is opened for.
-	if len(order) < 2 || order[len(order)-2] != defaultHealthWidgetID || order[len(order)-1] != defaultTrendWidgetID {
-		t.Fatalf("block order = %v, want health and trend last", order)
+	// Health, trend and the feed news close the page, after the links and the
+	// notes: the links are what a dashboard is opened for.
+	if len(order) < 3 || order[len(order)-3] != defaultHealthWidgetID || order[len(order)-2] != defaultTrendWidgetID ||
+		order[len(order)-1] != defaultFeedNewsWidgetID {
+		t.Fatalf("block order = %v, want health, trend and the feed news last", order)
 	}
 	// And every category is still placed, or the ones left out would not draw.
 	for _, c := range categories {
@@ -64,7 +68,7 @@ func TestFreshInstallSeedsAHealthWidget(t *testing.T) {
 		}
 	}
 	if len(order) != len(categories)+len(widgets) {
-		t.Errorf("block order has %d entries, want %d categories plus the three widgets",
+		t.Errorf("block order has %d entries, want %d categories plus the four widgets",
 			len(order), len(categories))
 	}
 }
@@ -129,4 +133,67 @@ func clearMigrationMarker(t *testing.T, fs *FileStore, key string) {
 	delete(m, key)
 	out, _ := json.Marshal(m)
 	_ = os.WriteFile(fs.settingsFile, out, 0o644)
+}
+
+// An install that predates the Watch feeds news widget gets one, once, last on
+// its first page; deleting it afterwards is final.
+func TestExistingInstallGetsAFeedNewsWidgetOnce(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	fs := NewStore().(*FileStore)
+	if err := fs.SavePageBlocks(1, []Widget{{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}}},
+		[]string{defaultHealthWidgetID}); err != nil {
+		t.Fatal(err)
+	}
+	clearMigrationMarker(t, fs, "feedNewsWidgetSeeded")
+
+	fs.migrateFeedNewsWidgetOnFirstPage()
+	widgets, order := fs.GetPageBlocks(1)
+	if len(widgets) != 2 || widgets[1].Type != WidgetTypeFeedNews {
+		t.Fatalf("widgets after the migration = %+v, want health then the feed news", widgets)
+	}
+	if order[len(order)-1] != defaultFeedNewsWidgetID {
+		t.Errorf("block order = %v, want the feed news widget last", order)
+	}
+
+	if err := fs.SavePageBlocks(1, widgets[:1], order[:len(order)-1]); err != nil {
+		t.Fatal(err)
+	}
+	fs.migrateFeedNewsWidgetOnFirstPage()
+	if after, _ := fs.GetPageBlocks(1); len(after) != 1 {
+		t.Errorf("the migration ran twice: %d widgets", len(after))
+	}
+}
+
+func TestFeedNewsMigrationSkipsAnInstallThatAlreadyHasOne(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	fs := NewStore().(*FileStore)
+	mine := Widget{ID: "w_mine00000002", Type: WidgetTypeFeedNews, Config: map[string]any{"layout": "chips"}}
+	if err := fs.SavePageBlocks(1, []Widget{mine}, []string{mine.ID}); err != nil {
+		t.Fatal(err)
+	}
+	clearMigrationMarker(t, fs, "feedNewsWidgetSeeded")
+
+	fs.migrateFeedNewsWidgetOnFirstPage()
+	widgets, _ := fs.GetPageBlocks(1)
+	if len(widgets) != 1 || widgets[0].ID != mine.ID {
+		t.Fatalf("widgets = %+v, want only the one the reader made", widgets)
+	}
+}
+
+// A settings save must not drop the marker: a widget the reader deleted would
+// come back on the next start.
+func TestFeedNewsMarkerSurvivesASettingsSave(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	fs := NewStore().(*FileStore)
+	fs.migrateFeedNewsWidgetOnFirstPage()
+	settings := fs.GetSettings()
+	if err := fs.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	if !fs.migrationMarkerSet("feedNewsWidgetSeeded") {
+		t.Fatal("the marker was dropped by a settings save")
+	}
 }
