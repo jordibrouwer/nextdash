@@ -748,14 +748,16 @@ class DashboardBookmarkRows {
             row.appendChild(openCountBadge);
         }
 
-        // News from a feed the reader chose to watch: a purple, pulsing count while
-        // the news window is open. Once it has closed the row is plain again; the
+        // News from a feed the reader chose to watch: a count in the theme's
+        // accent, a stripe, a bold name and the newest headline while the news
+        // window is open. Once it has closed the row is plain again; the
         // news itself stays until the bookmark is opened.
         const news = d.feedWatch?.newsFor?.(bookmark) || null;
         const newsPhase = news ? d.feedWatch.windowPhase() : 'none';
         const showNews = Boolean(news) && (newsPhase === 'open' || newsPhase === 'pending');
         if (showNews) {
             row.classList.add('has-feed-news');
+            if (news.muted) row.classList.add('is-feed-muted');
             const newsBadge = document.createElement('span');
             newsBadge.className = 'bookmark-news-badge bookmark-superscript-badge';
             // A muted feed still counts, but does not pulse.
@@ -769,6 +771,17 @@ class DashboardBookmarkRows {
             // On a touch screen the badge opens the headlines instead of the site.
             window.FeedWatchPopover?.attach(newsBadge, bookmark, openLink);
             openLink.appendChild(newsBadge);
+            // The newest headline under the name; the badge already says how many,
+            // so a screen reader skips it. CSS drops it where there is no room.
+            const headline = String(news.newest?.title || '').trim();
+            if (headline) {
+                const newsLine = document.createElement('span');
+                newsLine.className = 'bookmark-news-line';
+                newsLine.setAttribute('aria-hidden', 'true');
+                newsLine.textContent = headline;
+                openLink.classList.add('has-news-line');
+                openLink.appendChild(newsLine);
+            }
         }
         /*
          * A row that plays something says so.
