@@ -16,6 +16,12 @@ let site;
 test.beforeEach(async ({ request }) => {
     site = await startStubSite();
     await installWithBookmark(request, site);
+    // A phone opens links in the same tab and hides toasts unless told
+    // otherwise; these tests are about the new tab and the toast's Read button.
+    expect((await request.post('/api/settings', {
+        data: { openLinksNewTabMobile: true, hideToastsMobile: false },
+        headers,
+    })).ok()).toBe(true);
 });
 test.afterEach(async () => { await site.close(); });
 
