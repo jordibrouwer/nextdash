@@ -97,6 +97,17 @@ func normalizeShortcut(shortcut string) string {
 	return strings.ToUpper(strings.TrimSpace(shortcut))
 }
 
+// extendWriteDeadline lets a handler that runs longer than the server's 60s
+// WriteTimeout still answer: past it the work finished but the response write
+// failed, and the reader saw a network error instead of the counts.
+func extendWriteDeadline(w http.ResponseWriter, d time.Duration) {
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(d))
+}
+
+// longImportDeadline bounds an import or a refresh of every preview, whose
+// length depends on the collection rather than on a timeout of its own.
+const longImportDeadline = 30 * time.Minute
+
 func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	if err == nil {
 		return true
@@ -2082,6 +2093,7 @@ type ImportedRow struct {
 
 // importRows writes a batch onto a page and answers with the tally.
 func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int, rows []ImportedRow) {
+	extendWriteDeadline(w, longImportDeadline)
 	request := struct {
 		PageID    int
 		Bookmarks []ImportedRow
@@ -4624,6 +4636,7 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	if !h.requireSSRFAPIRateLimit(w, r) {
 		return
 	}
+	extendWriteDeadline(w, longImportDeadline)
 	w.Header().Set("Content-Type", "application/json")
 
 	/*
@@ -4672,9 +4685,11 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	if offset > total {
 		offset = total
 	}
-	end := offset + limit
-	if end > total {
-		end = total
+	// Compared before adding: a huge limit wrapped offset+limit negative,
+	// past the end check, and the slice below panicked.
+	end := total
+	if limit < total-offset {
+		end = offset + limit
 	}
 	slice := targets[offset:end]
 

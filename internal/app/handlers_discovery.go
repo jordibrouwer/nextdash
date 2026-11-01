@@ -121,6 +121,7 @@ func (h *Handlers) DiscoveryRunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
 	defer cancel()
+	extendWriteDeadline(w, 2*time.Minute)
 	res, err := h.runDiscovery(ctx, time.Now())
 	if err != nil {
 		http.Error(w, "Failed to save data", http.StatusInternalServerError)

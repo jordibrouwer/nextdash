@@ -927,6 +927,7 @@ func (h *Handlers) PollFeedsNow(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
 	defer cancel()
+	extendWriteDeadline(w, 5*time.Minute+30*time.Second)
 	// Ask before counting: on the install that reported Fresh as broken, every
 	// bookmark was unknown, so polling alone had nothing to poll.
 	discovered, found := h.DiscoverFeeds(ctx)
