@@ -3737,7 +3737,7 @@ var bmViewChoices = map[string][]string{
 	"keyLegend":   {"below", "above", "off"},
 }
 
-var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "score"}
+var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "news", "score"}
 var bmViewRailBlocks = []string{"views", "health", "pages", "tags"}
 
 // bmViewChoice keeps a value the view knows, or its default.
