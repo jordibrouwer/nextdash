@@ -1,14 +1,21 @@
 /**
- * The news window: what watched feeds published, one article at a time.
+ * The news window: what watched feeds published, as one paper.
  *
- * A panel in the app's own modal, not a page of its own. One article is read at
- * a time with arrows beneath it. Buttons in the header switch to two columns (the
- * article large, the others beside it) or to a newspaper front page; the choice
- * is the feedWatchNewsView setting, which Config offers too. A thin bar under the
- * header runs down with the
- * time the news stays open; when it runs out the panel closes itself. That is
- * only so for news the window opened. Opened by hand (a push, a bookmark's card)
- * after the window ran out, the panel stays until it is closed and has no bar.
+ * A panel in the app's own modal, not a page of its own. It opens on a front
+ * page with a section per site, the site with the newest unread item first;
+ * opened for one bookmark (the hover card) it is the same paper with only that
+ * site's section. Each item carries a dot while it is unread and a toggle to
+ * mark it read or unread; a site and the whole paper can be marked read at once.
+ * An article opens from the front page with arrows beneath it, and opening one
+ * marks that item read, nothing else.
+ *
+ * Buttons in the header switch how an article is laid out: one column, two
+ * columns (the article large, the others beside it) or a newspaper; the choice
+ * is the feedWatchNewsView setting, which Config offers too. A thin bar under
+ * the header runs down with the time the news stays open; when it runs out the
+ * panel closes itself. That is only so for news the window opened. Opened by
+ * hand (the News button, or a push after the window ran out) the panel stays
+ * until it is closed and has no bar.
  *
  * The summary arrives as HTML the server has already reduced to a handful of
  * tags, which is the only reason it is inserted as markup. Titles and names
@@ -19,8 +26,11 @@
 
     const VIEWS = ['single', 'wide', 'paper'];
     const WIDE_QUERY = '(min-width: 721px)';
+    // When the paper was last opened by hand, so coming back to the tab does
+    // not open it again for news already read in this window.
+    const BY_HAND_KEY = 'nextdash.feedWatchPaperByHand';
 
-    let state = null;   // { items, index, wide, timer, timed }
+    let state = null;   // { fresh, earlier, order, focusKey, index, mode, timer, timed }
 
     function dash() { return global.dashboardInstance; }
 
@@ -99,6 +109,81 @@
         return Math.max(1, Math.ceil((watch?.windowRemainingMs?.() || 0) / 60000));
     }
 
+    /** Earlier entries have no read state; a stored item is unread unless the server says otherwise. */
+    const isUnread = (item) => !item.earlier && item.unread !== false;
+
+    function siteKeyOf(item) {
+        return item.bookmarkKey || item.key || dash()?.feedWatch?.key(item.bookmarkUrl) || '';
+    }
+
+    function bookmarkOf(item) {
+        const d = dash();
+        const key = siteKeyOf(item);
+        return (d?.allBookmarks || []).find((b) => d.feedWatch.key(b.url) === key) || null;
+    }
+
+    function siteNameOf(item) {
+        if (item.bookmarkName) return item.bookmarkName;
+        const bookmark = bookmarkOf(item);
+        if (bookmark?.name) return bookmark.name;
+        try { return new URL(item.bookmarkUrl).hostname; } catch { return item.feedTitle || ''; }
+    }
+
+    /** Newer first: when it was found, then when it was published, as the server sorts. */
+    function newerFirst(a, b) {
+        return ((Number(b.foundAt) || 0) - (Number(a.foundAt) || 0))
+            || ((Number(b.publishedAt) || 0) - (Number(a.publishedAt) || 0));
+    }
+
+    /**
+     * The order of the sections, fixed when the paper opens: sites with unread
+     * news first, by their newest unread item, then the rest by their newest
+     * item. Fixed so marking things read does not move a section from under the
+     * pointer.
+     */
+    function sectionOrder(fresh) {
+        const newest = new Map();
+        fresh.slice().sort(newerFirst).forEach((item) => {
+            const key = siteKeyOf(item);
+            const seen = newest.get(key);
+            if (!seen) newest.set(key, { unread: isUnread(item) ? item : null, any: item });
+            else if (!seen.unread && isUnread(item)) seen.unread = item;
+        });
+        return [...newest.entries()]
+            .sort(([, a], [, b]) => {
+                if (!!a.unread !== !!b.unread) return a.unread ? -1 : 1;
+                return newerFirst(a.unread || a.any, b.unread || b.any);
+            })
+            .map(([key]) => key);
+    }
+
+    function sections() {
+        if (!state) return [];
+        const byKey = new Map(state.order.map((key) => [key, []]));
+        state.fresh.forEach((item) => {
+            const key = siteKeyOf(item);
+            if (!byKey.has(key)) byKey.set(key, []);
+            byKey.get(key).push(item);
+        });
+        return [...byKey.entries()].filter(([, items]) => items.length).map(([key, items]) => {
+            const sorted = items.slice().sort(newerFirst);
+            return { key, name: siteNameOf(sorted[0]), url: sorted[0].bookmarkUrl, items: sorted, unread: sorted.filter(isUnread).length };
+        });
+    }
+
+    /**
+     * What is listed, in the order of the paper: each site's items, then the
+     * feeds' earlier entries. The arrows walk this list.
+     */
+    function listed() {
+        if (!state) return [];
+        return [...sections().flatMap((section) => section.items), ...state.earlier];
+    }
+
+    function unreadCount() {
+        return state ? state.fresh.filter(isUnread).length : 0;
+    }
+
     function articleHtml(item, { large }) {
         const image = item.image
             ? `<img class="feed-news-image" src="${esc(item.image)}" alt="" decoding="async">`
@@ -113,13 +198,40 @@
             + `</article>`;
     }
 
-    /**
-     * What is listed. One column stays with the new articles; the newspaper and
-     * two-column views add the feeds' earlier entries after them.
-     */
-    function listed() {
-        if (!state) return [];
-        return currentView() === 'single' ? state.fresh : [...state.fresh, ...state.earlier];
+    // A tick marks an item read; a dot makes it unread again.
+    const TOGGLE_ICONS = {
+        read: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        unread: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="3.5" fill="currentColor"/></svg>',
+    };
+
+    function toggleLabel(item) {
+        return isUnread(item) ? t('dashboard.feedWatchMarkRead', 'Mark read') : t('dashboard.feedWatchMarkUnread', 'Mark unread');
+    }
+
+    /** One headline on the front page; `i` is its place in listed(). */
+    function entryHtml(entry, i) {
+        const readable = !entry.earlier;
+        const unread = isUnread(entry);
+        const button = `<button type="button" class="feed-news-entry" data-feed-news-pick="${i}">`
+            + (entry.image ? `<img class="feed-news-entry-image" src="${esc(entry.image)}" alt="" decoding="async">` : '')
+            + `<span class="feed-news-entry-text"><span class="feed-news-entry-title">${esc(entry.title)}</span>`
+            + `<span class="feed-news-entry-meta">${esc([entry.earlier ? siteNameOf(entry) : entry.feedTitle, ago(entry.publishedAt || entry.foundAt)].filter(Boolean).join(' · '))}</span>`
+            + (entry.summary ? `<span class="feed-news-entry-lead">${esc(plainLead(entry.summary))}</span>` : '')
+            + `</span></button>`;
+        if (!readable) return `<div class="feed-news-item is-earlier">${button}</div>`;
+        const label = toggleLabel(entry);
+        return `<div class="feed-news-item ${unread ? 'is-unread' : 'is-read'}">`
+            + `<span class="feed-news-dot" role="img" aria-label="${esc(unread ? t('dashboard.feedWatchUnread', 'Unread') : t('dashboard.feedWatchRead', 'Read'))}"></span>`
+            + button
+            + `<button type="button" class="feed-news-toggle" data-feed-news-toggle="${i}" aria-label="${esc(label)}" title="${esc(label)}">${TOGGLE_ICONS[unread ? 'read' : 'unread']}<span class="feed-news-toggle-label">${esc(label)}</span></button>`
+            + `</div>`;
+    }
+
+    function headHtml({ title, chip, chipAttr = '', extra = '', switcher, closeButton }) {
+        return `<div class="feed-news-head">`
+            + `<span class="feed-news-site">${esc(title)}</span>`
+            + `<span class="feed-news-chip"${chipAttr}>${esc(chip)}</span>`
+            + extra + switcher + closeButton + `</div>`;
     }
 
     function render() {
@@ -138,13 +250,7 @@
         }
         const items = listed();
         if (state.index >= items.length) state.index = 0;
-        // One column has no index: it is the article, as it was.
-        if (!wide) state.mode = 'article';
-        if (!items.length) {
-            root.innerHTML = `<p class="feed-news-empty">${esc(t('dashboard.feedWatchNothing', 'Nothing new from the feeds you watch'))}</p>`;
-            return;
-        }
-        const item = items[state.index];
+        if (!items.length) state.mode = 'index';
         const total = items.length;
         const timed = Boolean(state.timed);
         const windowMs = watch?.windowMs() || 1;
@@ -166,49 +272,72 @@
         const bar = !timed ? '' : `<div class="feed-news-bar" role="progressbar" aria-label="${esc(left)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><i style="width:${pct}%"></i></div>`;
         const closeButton = `<button type="button" class="feed-news-close" data-feed-news-close aria-label="${esc(t('dashboard.close', 'Close'))}">×</button>`;
 
-        // The index: every item of the feeds you watch, headline by headline.
-        if (state.mode === 'index' && total > 1) {
-            let indexEarlierShown = false;
-            const entries = items.map((entry, i) => (entry.earlier && !indexEarlierShown ? (indexEarlierShown = true, `<div class="feed-news-index-head">${esc(t('dashboard.feedWatchEarlier', 'Earlier from the feeds'))}</div>`) : '') + `<button type="button" class="feed-news-entry" data-feed-news-pick="${i}">`
-                + (entry.image ? `<img class="feed-news-entry-image" src="${esc(entry.image)}" alt="" decoding="async">` : '')
-                + `<span class="feed-news-entry-text"><span class="feed-news-entry-title">${esc(entry.title)}</span>`
-                + `<span class="feed-news-entry-meta">${esc([entry.bookmarkName || entry.feedTitle, ago(entry.publishedAt || entry.foundAt)].filter(Boolean).join(' · '))}</span>`
-                + (entry.summary ? `<span class="feed-news-entry-lead">${esc(plainLead(entry.summary))}</span>` : '')
-                + `</span></button>`).join('');
-            root.innerHTML = mast + `<div class="feed-news-head">`
-                + `<span class="feed-news-site">${esc(t('dashboard.feedWatchNews', 'News'))}</span>`
-                + `<span class="feed-news-chip">${esc(t('dashboard.feedWatchNewCount', '{n} new', { n: state.newCount ?? total }))}</span>`
-                + switcher + closeButton + `</div>` + bar
-                + `<div class="feed-news-body"><div class="feed-news-index${wide ? ' is-wide' : ''}">${entries}</div></div>`
+        // The front page: a section per site, then the feeds' earlier entries.
+        if (state.mode === 'index') {
+            const unread = unreadCount();
+            // Mark all read belongs to the paper of every site; one site's
+            // paper has its own button in the section.
+            const markAll = !state.focusKey && unread > 0
+                ? `<button type="button" class="modal-button feed-news-mark" data-feed-news-mark-all><span class="modal-button-name">${esc(t('dashboard.feedWatchMarkAllRead', 'Mark all read'))}</span></button>`
+                : '';
+            let i = 0;
+            const blocks = sections().map((section) => {
+                const rows = section.items.map((item) => entryHtml(item, i++)).join('');
+                const count = section.unread > 0
+                    ? `<span class="feed-news-section-count">${esc(t('dashboard.feedWatchUnreadCount', '{n} unread', { n: section.unread }))}</span>`
+                    + `<button type="button" class="modal-button feed-news-mark" data-feed-news-mark-site="${esc(section.key)}"><span class="modal-button-name">${esc(t('dashboard.feedWatchMarkSiteRead', 'Mark site read'))}</span></button>`
+                    : '';
+                return `<section class="feed-news-section" data-feed-news-section="${esc(section.key)}">`
+                    + `<div class="feed-news-section-head"><h3 class="feed-news-section-name">${esc(section.name)}</h3>${count}</div>`
+                    + `<div class="feed-news-index${wide ? ' is-wide' : ''}">${rows}</div></section>`;
+            }).join('');
+            const earlier = state.earlier.length
+                ? `<section class="feed-news-section is-earlier"><div class="feed-news-index-head">${esc(t('dashboard.feedWatchEarlier', 'Earlier from the feeds'))}</div>`
+                    + `<div class="feed-news-index${wide ? ' is-wide' : ''}">${state.earlier.map((entry) => entryHtml(entry, i++)).join('')}</div></section>`
+                : '';
+            const empty = unread === 0
+                ? `<p class="feed-news-empty">${esc(t('dashboard.feedWatchNothing', 'Nothing new from the feeds you watch'))}</p>`
+                : '';
+            root.innerHTML = mast
+                + headHtml({ title: t('dashboard.feedWatchNews', 'News'), chip: t('dashboard.feedWatchUnreadCount', '{n} unread', { n: unread }), extra: markAll, switcher, closeButton })
+                + bar
+                + `<div class="feed-news-body"><div class="feed-news-paper">${empty}${blocks}${earlier}</div></div>`
                 + (timed ? `<div class="feed-news-foot">${caption}</div>` : '');
             return;
         }
 
+        const item = items[state.index];
         const earlierHead = `<div class="feed-news-side-head">${esc(t('dashboard.feedWatchEarlier', 'Earlier from the feeds'))}</div>`;
         let earlierShown = false;
         const side = wide
             ? `<div class="feed-news-side" role="list">${items.map((other, i) => (i === state.index ? '' :
-                (other.earlier && !earlierShown ? (earlierShown = true, earlierHead) : '') + `<button type="button" class="feed-news-card" role="listitem" data-feed-news-pick="${i}">`
+                (other.earlier && !earlierShown ? (earlierShown = true, earlierHead) : '') + `<button type="button" class="feed-news-card${isUnread(other) ? ' is-unread' : ''}" role="listitem" data-feed-news-pick="${i}">`
                 + (other.image ? `<img class="feed-news-card-image" src="${esc(other.image)}" alt="">` : '')
                 + `<span class="feed-news-card-text"><span class="feed-news-card-title">${esc(other.title)}</span>`
-                + `<span class="feed-news-card-time">${esc([other.bookmarkName, ago(other.publishedAt || other.foundAt)].filter(Boolean).join(' · '))}</span></span>`
+                + `<span class="feed-news-card-time">${esc([siteNameOf(other), ago(other.publishedAt || other.foundAt)].filter(Boolean).join(' · '))}</span></span>`
                 + `</button>`)).join('')}</div>`
             : '';
+        const toggle = item.earlier
+            ? ''
+            : `<button type="button" class="modal-button feed-news-mark" data-feed-news-toggle="${state.index}"><span class="modal-button-name">${esc(toggleLabel(item))}</span></button>`;
 
-        root.innerHTML = mast + `<div class="feed-news-head">`
-            + `<span class="feed-news-site">${esc(item.bookmarkName || item.feedTitle || '')}</span>`
-            + `<span class="feed-news-chip" data-feed-news-chip>${esc(t('dashboard.feedWatchCounter', '{n} of {total}', { n: state.index + 1, total }))}</span>`
-            + switcher
-            + closeButton
-            + `</div>`
+        root.innerHTML = mast
+            + headHtml({
+                title: siteNameOf(item),
+                chip: t('dashboard.feedWatchCounter', '{n} of {total}', { n: state.index + 1, total }),
+                chipAttr: ' data-feed-news-chip',
+                switcher,
+                closeButton,
+            })
             + bar
             + `<div class="feed-news-body${wide ? ' is-wide' : ''}">`
             + `<div class="feed-news-main">${articleHtml(item, { large: wide })}</div>${side}</div>`
             + `<div class="feed-news-foot">`
-            + (total > 1 && wide ? `<button type="button" class="modal-button" data-feed-news-index><span class="modal-button-name">${esc(t('dashboard.feedWatchIndex', 'Index'))}</span></button>` : '')
+            + (total > 1 ? `<button type="button" class="modal-button" data-feed-news-index><span class="modal-button-name">${esc(t('dashboard.feedWatchIndex', 'Index'))}</span></button>` : '')
             + `<button type="button" class="modal-button" data-feed-news-step="-1" aria-label="${esc(t('dashboard.feedWatchPrev', 'Previous'))}"><span class="modal-button-name">‹</span></button>`
             + `<button type="button" class="modal-button" data-feed-news-step="1" aria-label="${esc(t('dashboard.feedWatchNext', 'Next'))}"><span class="modal-button-name">›</span></button>`
             + caption
+            + toggle
             + `<button type="button" class="modal-button feed-news-open" data-feed-news-open><span class="modal-button-name">${esc(t('dashboard.feedWatchOpenPage', 'Open page'))}</span></button>`
             + `</div>`;
     }
@@ -220,7 +349,10 @@
         if (!root || !state || !watch) return;
         // Only news the window opened is on its clock.
         if (!state.timed) return;
-        if (watch.windowPhase() === 'closed') { close(); return; }
+        const phase = watch.windowPhase();
+        if (phase === 'closed') { close(); return; }
+        // Everything was marked read: there is no window left to count down.
+        if (phase === 'none') { state.timed = false; render(); return; }
         const windowMs = watch.windowMs();
         const pct = Math.max(0, Math.min(100, (watch.windowRemainingMs() / windowMs) * 100));
         const bar = root.querySelector('.feed-news-bar');
@@ -233,26 +365,52 @@
         if (caption) caption.textContent = left;
     }
 
+    /**
+     * Mark one item read or unread: the dot follows at once, the store and the
+     * server after it.
+     */
+    function markItem(item, read) {
+        if (!item || item.earlier || isUnread(item) === !read) return;
+        item.unread = !read;
+        void dash()?.feedWatch?.markItems?.(item.bookmarkUrl, item.feedUrl, [item.id], read);
+    }
+
+    /** Reading an article is what makes it read. */
+    function showArticle(index) {
+        state.index = index;
+        state.mode = 'article';
+        markItem(listed()[index], true);
+        render();
+    }
+
     function step(delta) {
         const items = listed();
         if (!items.length) return;
-        state.index = (state.index + delta + items.length) % items.length;
-        render();
+        showArticle((state.index + delta + items.length) % items.length);
     }
 
     function openBookmarkOf(item) {
         const d = dash();
-        const bookmark = (d?.allBookmarks || []).find((b) => d.feedWatch.key(b.url) === item.bookmarkKey);
+        const bookmark = bookmarkOf(item);
         const url = item.bookmarkUrl || bookmark?.url;
         if (!url) return;
         if (bookmark) d.recordBookmarkOpened?.(bookmark, undefined, 'feed-news');
         window.open(url, '_blank', 'noopener,noreferrer');
     }
 
+    /** Rebuilding the panel loses focus; put it back on the same control. */
+    function renderKeepingFocus(attribute, value) {
+        render();
+        if (!attribute) return;
+        const again = document.querySelector(`[data-feed-news] [${attribute}="${CSS.escape(String(value))}"]`)
+            || document.querySelector('[data-feed-news] [data-feed-news-close]');
+        again?.focus({ preventScroll: true });
+    }
+
     function onKey(event) {
         if (!state || !document.querySelector('[data-feed-news]')) return;
-        if (event.key === 'Escape' && state.mode === 'article' && currentView() !== 'single' && listed().length > 1) {
-            // From an article, Esc goes back to the index; from the index it closes.
+        if (event.key === 'Escape' && state.mode === 'article' && listed().length > 1) {
+            // From an article, Esc goes back to the front page; from there it closes.
             event.preventDefault();
             event.stopImmediatePropagation();
             state.mode = 'index';
@@ -270,10 +428,33 @@
         const root = event.target.closest('[data-feed-news]');
         if (!root || !state) return;
         const target = event.target;
+        const watch = dash()?.feedWatch;
         const stepButton = target.closest('[data-feed-news-step]');
         if (stepButton) { step(Number(stepButton.dataset.feedNewsStep)); return; }
+        const toggle = target.closest('[data-feed-news-toggle]');
+        if (toggle) {
+            const item = listed()[Number(toggle.dataset.feedNewsToggle)];
+            if (item) markItem(item, isUnread(item));
+            renderKeepingFocus('data-feed-news-toggle', toggle.dataset.feedNewsToggle);
+            return;
+        }
+        const site = target.closest('[data-feed-news-mark-site]');
+        if (site) {
+            const key = site.dataset.feedNewsMarkSite;
+            const section = sections().find((s) => s.key === key);
+            section?.items.forEach((item) => { item.unread = false; });
+            if (section?.url) watch?.markSiteRead?.(section.url);
+            renderKeepingFocus('data-feed-news-close', '');
+            return;
+        }
+        if (target.closest('[data-feed-news-mark-all]')) {
+            state.fresh.forEach((item) => { item.unread = false; });
+            void watch?.markAllRead?.();
+            renderKeepingFocus('data-feed-news-close', '');
+            return;
+        }
         const pick = target.closest('[data-feed-news-pick]');
-        if (pick) { state.index = Number(pick.dataset.feedNewsPick) || 0; state.mode = 'article'; render(); return; }
+        if (pick) { showArticle(Number(pick.dataset.feedNewsPick) || 0); return; }
         if (target.closest('[data-feed-news-index]')) { state.mode = 'index'; render(); return; }
         const viewButton = target.closest('[data-feed-news-view]');
         if (viewButton) { chooseView(viewButton.dataset.feedNewsView); return; }
@@ -284,47 +465,53 @@
             return;
         }
         if (target.closest('[data-feed-news-article]')) {
-            // The link opens itself in a new tab; the bookmark is marked read.
-            const item = listed()[state.index];
-            const bookmark = (dash()?.allBookmarks || []).find((b) => dash().feedWatch.key(b.url) === item?.bookmarkKey);
-            if (bookmark) dash().feedWatch.markSeen(bookmark);
+            // The link opens itself in a new tab; only this item is read.
+            markItem(listed()[state.index], true);
         }
     }
 
     /**
-     * @param {{focusKey?: string, focusItemId?: string}} [options]
+     * @param {{focusKey?: string, focusItemId?: string, source?: string}} [options]
+     *   focusKey: one site's paper. source: 'button' (the News button: no clock)
+     *   or 'return' (coming back to the tab); anything else is the window's news.
      */
-    async function open({ focusKey = '', focusItemId = '' } = {}) {
+    async function open({ focusKey = '', focusItemId = '', source = '' } = {}) {
         const watch = dash()?.feedWatch;
         if (!watch) return;
+        if (source !== 'return') {
+            try { localStorage.setItem(BY_HAND_KEY, String(Date.now())); } catch { /* no storage */ }
+        }
         const { items: fresh, earlier } = await watch.news(focusKey);
-        const newCount = fresh.length;
-        const everything = currentView() === 'single' ? fresh : [...fresh, ...earlier];
-        const start = focusItemId ? Math.max(0, everything.findIndex((i) => i.id === focusItemId)) : 0;
-        const startMode = currentView() !== 'single' && everything.length > 1 && !focusItemId ? 'index' : 'article';
+        const order = sectionOrder(fresh);
+        const fill = (target) => {
+            target.fresh = fresh;
+            target.earlier = earlier;
+            target.order = order;
+            target.focusKey = focusKey;
+            const everything = listed();
+            target.index = focusItemId ? Math.max(0, everything.findIndex((i) => i.id === focusItemId)) : 0;
+            // Several items open on the front page; one asked for by item, or a
+            // single one, opens on the article.
+            target.mode = everything.length > 1 && !focusItemId ? 'index' : 'article';
+        };
         // Already showing (a push landed on ?news=1 and the toast was clicked
         // too): refill it in place. Showing the panel again would replace the
         // one on screen and run its close handler on the new state.
         if (state && document.querySelector('[data-feed-news]')) {
-            state.fresh = fresh;
-            state.earlier = earlier;
-            state.newCount = newCount;
-            state.index = start;
-            state.mode = startMode;
+            fill(state);
             render();
             return;
         }
-        // A feed with several items opens on its index; one asked for by item, or a
-        // single one, opens on the article.
         const phase = watch.windowPhase();
-        state = { fresh, earlier, newCount, index: start, mode: startMode, timed: phase === 'open' || phase === 'pending' };
+        state = { timed: source !== 'button' && (phase === 'open' || phase === 'pending') };
+        fill(state);
 
         global.AppModal.show({
             title: t('dashboard.feedWatchNews', 'News'),
             htmlMessage: '<div class="feed-news" data-feed-news></div>',
             showCancel: false,
             modalClass: 'feed-news-modal',
-            initialFocusSelector: '[data-feed-news-open]',
+            initialFocusSelector: '[data-feed-news-open], [data-feed-news-close]',
             onHide: () => {
                 clearInterval(state?.timer);
                 document.removeEventListener('click', onClick, true);
@@ -341,6 +528,56 @@
     function close() {
         if (state) global.AppModal.hide();
     }
+
+    /* The News button beside What's new: shown once a feed is watched, with
+       the number of unread items. */
+    function unreadTotal(watch) {
+        return Number(watch?.unreadTotal?.() ?? watch?.totalNew?.()) || 0;
+    }
+
+    function syncButton() {
+        const button = document.getElementById('feed-news-btn');
+        const watch = dash()?.feedWatch;
+        if (!button || !watch) return;
+        const watched = (watch.byKey?.size || 0) > 0;
+        const unread = unreadTotal(watch);
+        button.hidden = !watched;
+        button.dataset.unread = String(unread);
+        const count = button.querySelector('[data-feed-news-btn-count]');
+        if (count) count.textContent = unread > 0 ? String(unread) : '';
+        const label = unread > 0
+            ? t('dashboard.feedWatchNewsUnread', 'News, {n} unread', { n: unread })
+            : t('dashboard.feedWatchNews', 'News');
+        button.setAttribute('aria-label', label);
+        button.dataset.tooltip = label.toLowerCase();
+    }
+
+    /** Another window is up (a modal, search, the cheat sheet): never cover it. */
+    function somethingElseOpen() {
+        return Boolean(global.ScrollLock?.isLocked?.() || document.querySelector('.modal-overlay.show'));
+    }
+
+    /**
+     * Coming back to a tab whose title shows a count opens the paper, once per
+     * return: not over another window, and not when the paper was opened by
+     * hand within the last window.
+     */
+    function onReturn() {
+        if (document.visibilityState !== 'visible' || state) return;
+        const watch = dash()?.feedWatch;
+        if (!watch || !(unreadTotal(watch) > 0)) return;
+        const phase = watch.windowPhase();
+        if (phase !== 'open' && phase !== 'pending') return;
+        if (somethingElseOpen()) return;
+        let byHand = 0;
+        try { byHand = Number(localStorage.getItem(BY_HAND_KEY)) || 0; } catch { /* no storage */ }
+        if (Date.now() - byHand < watch.windowMs()) return;
+        void open({ source: 'return' });
+    }
+
+    document.getElementById('feed-news-btn')?.addEventListener('click', () => { void open({ source: 'button' }); });
+    document.addEventListener('feedwatch:changed', syncButton);
+    document.addEventListener('visibilitychange', onReturn);
 
     global.FeedWatchNews = { open, close, isOpen: () => state !== null };
 })(window);

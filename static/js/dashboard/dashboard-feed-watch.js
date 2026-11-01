@@ -314,6 +314,60 @@ class DashboardFeedWatch {
         }).catch(() => {});
     }
 
+    /** Every unread item across the watched feeds. */
+    unreadTotal() { return this.totalNew(); }
+
+    /**
+     * Mark single items read or unread. The count moves at once; the answer
+     * from the server (which knows the rule) replaces it.
+     */
+    async markItems(bookmarkUrl, feedUrl, ids, read) {
+        const key = this.key(bookmarkUrl);
+        const entry = this.byKey.get(key);
+        if (!entry || !Array.isArray(ids) || !ids.length) return false;
+        const step = read ? -ids.length : ids.length;
+        const guess = Math.max(0, (Number(entry.newCount) || 0) + step);
+        this.byKey.set(key, { ...entry, newCount: guess, newest: guess > 0 ? entry.newest : null });
+        document.dispatchEvent(new CustomEvent('feedwatch:changed'));
+        let res;
+        try {
+            res = await this._fetch()('/api/feeds/watch/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookmarkUrl, feedUrl, ids, read: read === true }),
+            });
+        } catch {
+            res = null;
+        }
+        await this.load({ force: true });
+        return !!res?.ok;
+    }
+
+    /** One site's news is read; the same as opening its bookmark. */
+    markSiteRead(bookmarkUrl) {
+        this.markSeen({ url: bookmarkUrl });
+    }
+
+    /** Everything is read, on every watched site. */
+    async markAllRead() {
+        this.byKey.forEach((entry, key) => {
+            if (Number(entry.newCount) > 0) this.byKey.set(key, { ...entry, newCount: 0, newest: null });
+        });
+        document.dispatchEvent(new CustomEvent('feedwatch:changed'));
+        let res;
+        try {
+            res = await this._fetch()('/api/feeds/watch/seen', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ all: true }),
+            });
+        } catch {
+            res = null;
+        }
+        await this.load({ force: true });
+        return !!res?.ok;
+    }
+
     /** The unread items, newest first; one bookmark's when `key` is given. */
     async items(key = '') {
         try {

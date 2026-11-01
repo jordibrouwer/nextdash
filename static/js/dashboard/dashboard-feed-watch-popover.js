@@ -145,7 +145,9 @@
             if (itemButton) {
                 const item = items[Number(itemButton.dataset.popItem)];
                 if (item?.link) global.open(item.link, '_blank', 'noopener,noreferrer');
-                d.feedWatch.markSeen(bookmark);
+                // Only the headline that was opened is read; the others stay new.
+                if (item?.id && item.feedUrl) void d.feedWatch.markItems(bookmark.url, item.feedUrl, [item.id], true);
+                else d.feedWatch.markSeen(bookmark);
             } else {
                 openBookmark(bookmark);
             }
@@ -161,7 +163,8 @@
         const watch = dash()?.feedWatch;
         if (!watch) return;
         const key = watch.key(bookmark.url);
-        const { items } = await watch.news(key);
+        const news = await watch.news(key);
+        const items = news.items.filter((item) => item.unread !== false);
         if (!items.length) return;
         const shown = items.slice(0, MAX_ITEMS);
         // What the entry counts, not what was loaded: more may be waiting.
