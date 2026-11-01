@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -274,30 +275,78 @@ func TestQueryBookmarksMonitoringAndUsage(t *testing.T) {
 	}
 }
 
+// seedFailureExtras adds the two failures the main fixture lacks: a monitor
+// that is down, with an error that repeats its address and a key, and a
+// monitor whose content check failed, quoting its expectation.
+func seedFailureExtras(t *testing.T, h *Handlers, page int) {
+	t.Helper()
+	list := h.store.GetBookmarksByPage(page)
+	now := time.Now()
+	list = append(list,
+		Bookmark{Name: "Status", URL: "https://status.example/", Category: "tools", Monitor: true, MonitorIntervalMinutes: 5,
+			LastChecked: now.Add(-time.Minute).UnixMilli(), PreviewTitle: "Status", OpenCount: 1, LastOpened: now.UnixMilli(),
+			LastError: "Get \"https://status.example/login?key=" + funnelErrSentinel + "\": dial tcp: connection refused"},
+		Bookmark{Name: "Wiki", URL: "https://wiki.example/", Category: "tools", Monitor: true, MonitorIntervalMinutes: 5,
+			LastChecked: now.Add(-time.Minute).UnixMilli(), PreviewTitle: "Wiki", OpenCount: 1, LastOpened: now.UnixMilli(),
+			ExpectText: funnelExpectSentinel, LastError: fmt.Sprintf("Page is missing %q", funnelExpectSentinel)},
+	)
+	if err := h.store.SaveBookmarksByPage(page, list); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestFunnelAnswersCarryNoCheckSecrets(t *testing.T) {
 	h := newMCPHandlers(t)
 	turnOnGroups(t, h, true, false)
-	seedFunnelInstall(t, h)
+	page := seedFunnelInstall(t, h)
+	seedFailureExtras(t, h, page)
+	banned := []string{funnelErrSentinel, "connection refused", "status.example/login", funnelExpectSentinel, "Page is missing", "cred-7731"}
 	for _, call := range [][2]string{
 		{"query_bookmarks", `{"limit":100}`},
 		{"query_bookmarks", `{"status":"broken"}`},
 		{"list_health_issues", `{"max_score":100,"limit":100}`},
+		{"list_health_issues", `{}`},
 		{"get_stats", `{}`},
 		{"get_health_summary", `{}`},
 	} {
 		raw := rawToolText(t, h, call[0], call[1])
-		for _, banned := range []string{funnelErrSentinel, "connection refused", funnelExpectSentinel, "cred-7731", "credentialId", "lastError", "expectText"} {
-			if strings.Contains(raw, banned) {
-				t.Errorf("%s %s carries %q", call[0], call[1], banned)
+		for _, b := range append(banned, "credentialId", "lastError", "expectText") {
+			if strings.Contains(raw, b) {
+				t.Errorf("%s %s carries %q", call[0], call[1], b)
 			}
 		}
 	}
-	// get_bookmark's new blocks add none of it either (its own lastError
-	// field predates them and is left as it was).
-	got := toolCall(t, h, "get_bookmark", `{"url":"https://radarr.home.lan/"}`)
-	blocks, _ := json.Marshal(map[string]any{"health": got["health"], "monitoring": got["monitoring"], "usage": got["usage"]})
-	if strings.Contains(string(blocks), funnelErrSentinel) || strings.Contains(string(blocks), "connection refused") {
-		t.Errorf("get_bookmark blocks carry the error: %s", blocks)
+	// get_bookmark is always on and keeps its lastError key, now only the
+	// kind of failure; the sentinels sit on these very bookmarks.
+	want := map[string]string{
+		"https://radarr.home.lan/": "Unreachable",
+		"https://status.example/":  "Unreachable",
+		"https://wiki.example/":    "The page did not pass its content check",
+	}
+	for _, health := range []bool{false, true} {
+		turnOnGroups(t, h, health, false)
+		for url, label := range want {
+			raw := rawToolText(t, h, "get_bookmark", `{"url":"`+url+`"}`)
+			for _, b := range banned {
+				if strings.Contains(raw, b) {
+					t.Errorf("get_bookmark %s (health %v) carries %q", url, health, b)
+				}
+			}
+			got := toolCall(t, h, "get_bookmark", `{"url":"`+url+`"}`)
+			if got["lastError"] != label || got["reachable"] != false {
+				t.Errorf("get_bookmark %s: lastError %v, reachable %v", url, got["lastError"], got["reachable"])
+			}
+		}
+	}
+	for detail, label := range map[string]string{
+		"HTTP 503 Service Unavailable":                              "HTTP 503",
+		"Get \"https://x.example/?t=1\": context deadline exceeded": "Timed out",
+		"Page contains \"secret\"":                                  "The page did not pass its content check",
+		"dial tcp: lookup x.example: no such host":                  "Unreachable",
+	} {
+		if got := mcpSafeErrorLabel("", detail); got != label {
+			t.Errorf("mcpSafeErrorLabel(%q) = %q, want %q", detail, got, label)
+		}
 	}
 }
 
@@ -332,17 +381,23 @@ func TestListHealthIssuesFiltersAndSorts(t *testing.T) {
 func TestGetStatsMatchesTheReport(t *testing.T) {
 	h := newMCPHandlers(t)
 	turnOnGroups(t, h, true, false)
-	seedFunnelInstall(t, h)
+	page := seedFunnelInstall(t, h)
+	seedFailureExtras(t, h, page)
 	stats := toolCall(t, h, "get_stats", `{}`)
+	// The figures the Health view, the header and the widget read, from the
+	// report's own summary.
 	report := h.loadBookmarkHealthReport(false)
 	s := report.Summary
+	if s.BrokenCount != 1 || s.MonitorDownCount != 1 || s.ContentCount != 1 || s.TotalBookmarks != 8 {
+		t.Fatalf("the fixture is not what this test needs: %+v", s)
+	}
 
 	bookmarks, _ := stats["bookmarks"].(map[string]any)
-	if numberAt(t, bookmarks, "total") != s.TotalBookmarks || s.TotalBookmarks != 6 {
+	if numberAt(t, bookmarks, "total") != s.TotalBookmarks {
 		t.Errorf("total = %v, report %d", bookmarks["total"], s.TotalBookmarks)
 	}
 	perPage := asList(bookmarks["per_page"])
-	if len(perPage) == 0 || perPage[0]["count"] != float64(6) {
+	if len(perPage) == 0 || perPage[0]["count"] != float64(8) {
 		t.Errorf("per page = %v", perPage)
 	}
 	tags := asList(bookmarks["per_tag_top"])
@@ -351,54 +406,64 @@ func TestGetStatsMatchesTheReport(t *testing.T) {
 	}
 
 	health, _ := stats["health"].(map[string]any)
-	summary := toolCall(t, h, "get_health_summary", `{}`)
 	checks := map[string]int{
 		"healthy": s.HealthyCount, "duplicates": s.DuplicateCount, "unused": s.UnusedCount,
+		"broken_links": s.BrokenCount, "monitors_down": s.MonitorDownCount, "content_failures": s.ContentCount,
+		"broken":    s.BrokenCount + s.MonitorDownCount + s.ContentCount,
 		"avg_score": averageHealthScore(report.Issues), "certificates_due": len(report.Certificates),
-		"broken": numberAt(t, summary, "down"), "checked": numberAt(t, summary, "checked"),
-		"ok": 2, "unknown": 3,
 	}
 	for key, want := range checks {
 		if numberAt(t, health, key) != want {
-			t.Errorf("health.%s = %v, want %d", key, health[key], want)
+			t.Errorf("health.%s = %v, the report says %d", key, health[key], want)
 		}
 	}
-	if summary["avg_score"] != health["avg_score"] || mustJSON(t, summary["score_buckets"]) != mustJSON(t, health["score_buckets"]) {
-		t.Errorf("summary %v and stats %v disagree on the score", summary, health)
+	if health["broken"] != float64(3) || health["ok"] != float64(2) || health["unknown"] != float64(3) {
+		t.Errorf("statuses = broken %v, ok %v, unknown %v", health["broken"], health["ok"], health["unknown"])
+	}
+	if !strings.Contains(fmt.Sprint(health["note"]), "broken_links + monitors_down + content_failures") {
+		t.Errorf("note = %v", health["note"])
 	}
 	buckets := 0
 	for _, b := range asList(health["score_buckets"]) {
 		buckets += int(b["count"].(float64))
 	}
-	if buckets != 6 {
-		t.Errorf("buckets add to %d", buckets)
+	if buckets != s.TotalBookmarks {
+		t.Errorf("buckets add to %d, total %d", buckets, s.TotalBookmarks)
 	}
 	flags, _ := health["flags"].(map[string]any)
-	if flags["duplicate"] != float64(s.DuplicateCount) || flags["missing-preview"] != float64(s.MissingPreviewCount) {
+	if flags["duplicate"] != float64(s.DuplicateCount) || flags["missing-preview"] != float64(s.MissingPreviewCount) || flags["content"] != float64(s.ContentCount) {
 		t.Errorf("flags = %v", flags)
 	}
-	// The same figure query_bookmarks would give for the same question.
+	summary := toolCall(t, h, "get_health_summary", `{}`)
+	if summary["avg_score"] != health["avg_score"] || mustJSON(t, summary["score_buckets"]) != mustJSON(t, health["score_buckets"]) || summary["down"] != health["broken"] {
+		t.Errorf("summary %v and stats disagree", summary)
+	}
 	if q := toolCall(t, h, "query_bookmarks", `{"status":"broken","limit":0}`); q["total"] != health["broken"] {
 		t.Errorf("query %v, stats %v", q["total"], health["broken"])
 	}
 
 	mon, _ := stats["monitoring"].(map[string]any)
-	if numberAt(t, mon, "monitored") != s.MonitoredCount || mon["up"] != float64(1) || mon["down"] != float64(0) || mon["avg_uptime_percent"] != float64(90) {
+	if numberAt(t, mon, "monitored") != s.MonitoredCount || numberAt(t, mon, "down") != s.MonitorDownCount || mon["up"] != float64(1) {
 		t.Errorf("monitoring = %v", mon)
 	}
 	usage, _ := stats["usage"].(map[string]any)
-	if usage["total_opens"] != float64(16) || usage["opened_last_30_days"] != float64(4) || usage["never_opened"] != float64(s.UnusedCount) {
+	if usage["total_opens"] != float64(18) || usage["opened_last_30_days"] != float64(6) || usage["never_opened"] != float64(s.UnusedCount) {
 		t.Errorf("usage = %v", usage)
 	}
 
+	// Today's point is recorded from the same summary, and reads the same.
 	trend := asList(stats["trend"])
-	dates := map[string]bool{}
+	today := time.Now().UTC().Format("2006-01-02")
+	dates := map[string]map[string]any{}
 	for _, p := range trend {
-		dates[p["date"].(string)] = true
+		dates[p["date"].(string)] = p
+	}
+	if p := dates[today]; p == nil || p["broken_links"] != float64(s.BrokenCount) || p["monitors_down"] != float64(s.MonitorDownCount) {
+		t.Errorf("today's point = %v", dates[today])
 	}
 	yesterday := time.Now().Add(-24 * time.Hour).UTC().Format("2006-01-02")
 	old := time.Now().Add(-40 * 24 * time.Hour).UTC().Format("2006-01-02")
-	if !dates[yesterday] || dates[old] {
+	if dates[yesterday] == nil || dates[old] != nil {
 		t.Errorf("30-day trend = %v", dates)
 	}
 	long := asList(toolCall(t, h, "get_stats", `{"trend_days":60}`)["trend"])
@@ -485,7 +550,7 @@ func TestContainerLinksThroughEachStep(t *testing.T) {
 
 	stats := toolCall(t, h, "get_stats", `{}`)
 	containers, _ := stats["containers"].(map[string]any)
-	if mustJSON(t, containers) != `{"linked_to_bookmark":4,"running":3,"stopped":2,"total":5,"with_updates":0}` {
+	if mustJSON(t, containers) != `{"by_state":{"exited":2,"running":3},"linked_to_bookmark":4,"not_running":2,"running":3,"total":5,"with_updates":0}` {
 		t.Errorf("stats containers = %v", containers)
 	}
 	got := toolCall(t, h, "get_bookmark", `{"url":"http://localhost:8989/"}`)
@@ -661,5 +726,164 @@ func TestTheAssistantKeepsTheTotalOfALongAnswer(t *testing.T) {
 	rows := asList(got["bookmarks"])
 	if got["total"] != float64(130) || got["truncated"] != true || got["returned"] != float64(len(rows)) || len(rows) == 0 || len(rows) >= 100 || got["shortened"] == nil {
 		t.Errorf("total %v, returned %v, rows %d, shortened %v", got["total"], got["returned"], len(rows), got["shortened"])
+	}
+}
+
+/*
+The same links the Containers view draws, for one fixture with every step,
+the never-link mark, a tie and one address filed on two pages. The view's
+bookmarkFor is given hostAddress() and location.hostname; the server stands
+in the host the dashboard was last opened on for the second.
+*/
+func TestContainerLinksMatchTheView(t *testing.T) {
+	h := newMCPHandlers(t)
+	if got := mcpViewHosts(Settings{DockerHostSeen: "nas.lan"}); strings.Join(got, ",") != "nas.lan" {
+		t.Errorf("hosts with only the seen host = %v", got)
+	}
+	if got := mcpViewHosts(Settings{DockerHostAddress: "10.0.0.2", DockerHostSeen: "nas.lan"}); strings.Join(got, ",") != "10.0.0.2,nas.lan" {
+		t.Errorf("hosts with both = %v", got)
+	}
+	if got := mcpViewHosts(Settings{}); len(got) != 0 {
+		t.Errorf("no host set gives %v; the view never uses the gateway", got)
+	}
+	s := h.store.GetSettings()
+	s.DockerHostSeen = "nas.lan"
+	s.DockerBookmarkLinks = map[string]string{"app": "1::https://app.example/x", "photos": "-"}
+	if err := h.store.SaveSettings(s); err != nil {
+		t.Fatal(err)
+	}
+	bookmarks := []Bookmark{
+		{PageID: 1, Name: "Sonarr", URL: "http://nas.lan:8989/"},
+		{PageID: 1, Name: "Plex", URL: "http://192.168.1.50:32400/web"},
+		{PageID: 1, Name: "Radarr", URL: "https://radarr.example.org/"},
+		{PageID: 1, Name: "Jellyfin", URL: "https://media.example/"},
+		{PageID: 1, Name: "App", URL: "https://app.example/x"},
+		{PageID: 1, Name: "Photos", URL: "https://pics.example/"},
+		{PageID: 1, Name: "Wiki", URL: "https://wiki-one.example/"},
+		{PageID: 1, Name: "Wiki", URL: "https://wiki-two.example/"},
+		{PageID: 1, Name: "Grafana", URL: "https://grafana.lan/"},
+		{PageID: 2, Name: "Grafana again", URL: "https://grafana.lan/"},
+	}
+	list := []dockerViewContainer{
+		{Name: "sonarr", State: "running", Ports: []dockerViewPort{{Private: 8989, Public: 8989, Type: "tcp"}}},
+		{Name: "plex", State: "running", WebUI: "http://[IP]:32400/web", LanIP: "192.168.1.50"},
+		{Name: "radarr", State: "running"},
+		{Name: "jellyfin", State: "running"},
+		{Name: "app", State: "running"},
+		{Name: "photos", State: "running"},
+		{Name: "wiki", State: "running"},
+		{Name: "grafana", State: "running"},
+	}
+	idx := h.mcpLinkContainers(list, bookmarks)
+	want := map[string]string{
+		"sonarr": "1::http://nas.lan:8989/ port", "plex": "1::http://192.168.1.50:32400/web port",
+		"radarr": "1::https://radarr.example.org/ subdomain", "jellyfin": "1::https://media.example/ title",
+		"app": "1::https://app.example/x manual", "grafana": "1::https://grafana.lan/ subdomain",
+	}
+	for _, c := range list {
+		link, ok := idx.byContainer[c.Name]
+		got := ""
+		if ok {
+			got = matchBookmarkKey(link.bookmark) + " " + link.via
+		}
+		if got != want[c.Name] {
+			t.Errorf("%s: %q, want %q", c.Name, got, want[c.Name])
+		}
+	}
+	// The view looks a bookmark's containers up by address, so the copy on
+	// page 2 shows grafana too.
+	if _, ok := idx.byBookmark["https://grafana.lan/"]; !ok {
+		t.Error("the address filed on two pages is not linked")
+	}
+	if len(idx.byContainer) != 6 {
+		t.Errorf("%d linked, want 6 (photos is never-link, wiki is a tie)", len(idx.byContainer))
+	}
+}
+
+func TestFitPayloadKeepsGroupsAndCountsRows(t *testing.T) {
+	h := newMCPHandlers(t)
+	turnOnGroups(t, h, true, false)
+	page := h.store.GetPages()[0].ID
+	var list []Bookmark
+	for i := 0; i < 200; i++ {
+		list = append(list, Bookmark{Name: "Bookmark with a fairly long name number " + strconv.Itoa(i),
+			URL: "https://b" + strconv.Itoa(i) + ".example/a/long/path/so/that/rows/weigh/something", Tags: []string{"tag-" + strconv.Itoa(i)}})
+	}
+	if err := h.store.SaveBookmarksByPage(page, list); err != nil {
+		t.Fatal(err)
+	}
+	r := aiAssistantRequest(httptest.NewRequest(http.MethodPost, "/api/ai/chat", nil))
+	text := h.aiRunTool(r, aiToolCall{Name: "query_bookmarks", Arguments: json.RawMessage(`{"group_by":"tag","limit":25}`)})
+	var got map[string]any
+	if err := json.Unmarshal([]byte(text), &got); err != nil {
+		t.Fatalf("not JSON (%d bytes): %v", len(text), err)
+	}
+	rows := asList(got["bookmarks"])
+	if got["shortened"] == nil || len(asList(got["groups"])) != 200 || got["total"] != float64(200) ||
+		got["returned"] != float64(len(rows)) || len(rows) >= 25 || got["truncated"] != true {
+		t.Errorf("groups %d, rows %d, returned %v, total %v, shortened %v", len(asList(got["groups"])), len(rows), got["returned"], got["total"], got["shortened"])
+	}
+}
+
+func TestFitPayloadKeepsTheNewestTrendAndChoosesInAFixedOrder(t *testing.T) {
+	var trend []any
+	for i := 0; i < 400; i++ {
+		trend = append(trend, map[string]any{"date": fmt.Sprintf("day-%03d", i), "pad": strings.Repeat("x", 60)})
+	}
+	text, ok := aiFitPayload(map[string]any{"trend": trend, "health": map[string]any{"avg_score": 80}}, 8<<10)
+	if !ok {
+		t.Fatal("did not fit")
+	}
+	var got map[string]any
+	_ = json.Unmarshal([]byte(text), &got)
+	kept := asList(got["trend"])
+	if len(kept) == 0 || kept[len(kept)-1]["date"] != "day-399" || got["health"] == nil {
+		t.Fatalf("kept %d, last %v", len(kept), kept[len(kept)-1]["date"])
+	}
+
+	rows := func() []map[string]any {
+		var out []map[string]any
+		for i := 0; i < 100; i++ {
+			out = append(out, map[string]any{"name": strings.Repeat("y", 80)})
+		}
+		return out
+	}
+	payload := map[string]any{"containers": rows(), "items": rows(), "returned": 100, "total": 100}
+	first := ""
+	for i := 0; i < 5; i++ {
+		text, ok := aiFitPayload(payload, 12<<10)
+		if !ok {
+			t.Fatal("did not fit")
+		}
+		if first == "" {
+			first = text
+		} else if text != first {
+			t.Fatal("the same answer was shortened two ways")
+		}
+	}
+	var out map[string]any
+	_ = json.Unmarshal([]byte(first), &out)
+	if len(asList(out["containers"])) >= 100 || out["returned"] != float64(len(asList(out["containers"]))) || out["total"] != float64(100) {
+		t.Errorf("containers %d, items %d, returned %v", len(asList(out["containers"])), len(asList(out["items"])), out["returned"])
+	}
+	if _, ok := aiFitPayload(map[string]any{"blob": strings.Repeat("z", 20000)}, 1000); ok {
+		t.Error("a shape with no list claimed to fit")
+	}
+}
+
+func TestQueryArgumentsAreChecked(t *testing.T) {
+	h := newMCPHandlers(t)
+	turnOnGroups(t, h, true, false)
+	if msg, _ := toolCall(t, h, "query_bookmarks", `{"unused_days":-3}`)["error"].(string); !strings.Contains(msg, "unused_days") {
+		t.Errorf("negative unused_days: %q", msg)
+	}
+	at, ok := mcpParseSince("2026-01-31", time.Now())
+	if !ok || at != time.Date(2026, 1, 31, 0, 0, 0, 0, time.Local).UnixMilli() {
+		t.Errorf("a date is not the start of that local day: %v", at)
+	}
+	for secs, want := range map[int64]string{59: "0m", 7 * 60: "7m", 5*3600 + 12*60: "5h 12m", 3*86400 + 4*3600 + 59: "3d 4h"} {
+		if got := mcpHumanDuration(secs); got != want {
+			t.Errorf("mcpHumanDuration(%d) = %q, want %q", secs, got, want)
+		}
 	}
 }

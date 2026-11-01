@@ -346,47 +346,71 @@ func (h *Handlers) aiRunTool(r *http.Request, call aiToolCall) string {
 aiFitPayload shortens the lists in an answer that is too long, rather than
 cutting its text: JSON keys are written in alphabetical order, so a plain cut
 of {"bookmarks":[...],"total":300} loses the total, which is the one figure a
-count is read from. The longest list is halved until the answer fits, and the
-answer says it was shortened.
+count is read from.
+
+Only the row lists are shortened, in a fixed order, and the trend after them;
+groups, summary, totals and notes are never touched, because they are what
+the answer counts with. A row list loses its tail (it is already sorted the
+way it was asked for) and returned follows it; the trend is oldest first, so
+it keeps its newest days. Any other shape gives up and is cut as text.
 */
+var aiFitRowLists = []string{"bookmarks", "containers", "issues", "items"}
+
 func aiFitPayload(payload map[string]any, max int) (string, bool) {
 	work := make(map[string]any, len(payload)+1)
 	for k, v := range payload {
 		work[k] = v
 	}
 	work["shortened"] = "Some lists were shortened to fit; total, groups and summary still count everything."
-	for i := 0; i < 32; i++ {
+	length := func(v any) int {
+		switch list := v.(type) {
+		case []map[string]any:
+			return len(list)
+		case []any:
+			return len(list)
+		}
+		return 0
+	}
+	keep := func(v any, n int, tail bool) any {
+		switch list := v.(type) {
+		case []map[string]any:
+			if tail {
+				return list[len(list)-n:]
+			}
+			return list[:n]
+		case []any:
+			if tail {
+				return list[len(list)-n:]
+			}
+			return list[:n]
+		}
+		return v
+	}
+	order := append(append([]string{}, aiFitRowLists...), "trend")
+	for i := 0; i < 64; i++ {
 		text := aiJSONText(work)
 		if len(text) <= max {
 			return text, true
 		}
-		longest, size := "", 0
-		for k, v := range work {
-			n := 0
-			switch list := v.(type) {
-			case []map[string]any:
-				n = len(list)
-			case []any:
-				n = len(list)
-			}
-			if n > size {
-				longest, size = k, n
+		key := ""
+		for _, k := range order {
+			if length(work[k]) > 0 {
+				key = k
+				break
 			}
 		}
-		if size == 0 {
+		if key == "" {
 			return "", false
 		}
-		switch list := work[longest].(type) {
-		case []map[string]any:
-			work[longest] = list[:size/2]
-		case []any:
-			work[longest] = list[:size/2]
-		}
-		if _, ok := work["returned"]; ok {
-			work["returned"] = size / 2
-		}
-		if _, ok := work["truncated"]; ok {
-			work["truncated"] = true
+		n := length(work[key]) / 2
+		work[key] = keep(work[key], n, key == "trend")
+		if key != "trend" {
+			if _, ok := work["returned"]; ok {
+				work["returned"] = n
+			}
+			if _, ok := work["truncated"]; ok {
+				work["truncated"] = true
+			}
 		}
 	}
 	return "", false

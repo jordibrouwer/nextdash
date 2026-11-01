@@ -296,11 +296,21 @@ func TestLargeToolResultsAreCut(t *testing.T) {
 		t.Fatalf("tool messages %+v", tools)
 	}
 	text := tools[0].Text
-	if len(text) > aiToolResultMax+len("…(cut)") || !strings.HasSuffix(text, "…(cut)") {
+	// A list answer is shortened, not cut: it stays JSON and keeps its total.
+	var payload map[string]any
+	if len(text) > aiToolResultMax || json.Unmarshal([]byte(text), &payload) != nil {
 		t.Fatalf("tool message of %d bytes, ends %q", len(text), text[max(0, len(text)-20):])
 	}
+	if payload["total"] != float64(300) || payload["truncated"] != true || payload["shortened"] == nil {
+		t.Fatalf("total %v, truncated %v, shortened %v", payload["total"], payload["truncated"], payload["shortened"])
+	}
 	if strings.ToValidUTF8(text, "?") != text {
-		t.Fatal("the cut split a character")
+		t.Fatal("the answer split a character")
+	}
+	// Any other shape is still cut as text, on a character boundary.
+	cut := aiCutText(strings.Repeat("ü", aiToolResultMax), aiToolResultMax)
+	if len(cut) > aiToolResultMax+len("…(cut)") || !strings.HasSuffix(cut, "…(cut)") || strings.ToValidUTF8(cut, "?") != cut {
+		t.Fatalf("plain cut of %d bytes", len(cut))
 	}
 	if res.Tools[0].Bytes != len(text) {
 		t.Fatalf("summary says %d bytes, sent %d", res.Tools[0].Bytes, len(text))

@@ -62,7 +62,9 @@ func mcpQueryDefinitions() []map[string]any {
 				"total is the exact number of matches before limit; groups count the whole filtered set. For counts read total or groups, never count the returned list. " +
 				"Each bookmark has health {status ok|broken|unknown, condition, score 0-100, reasons, flags, last_checked}, " +
 				"monitoring {monitored, interval_minutes, uptime_percent (30 days), avg_response_ms (24 hours)}, usage {opens, last_opened, added} " +
-				"and container {name, state, via} or null. Does not run a check.",
+				"and container {name, state, via} or null. " +
+				"Bookmarks in Unsorted are not in the health report: they have health null, so the status, score and flag filters leave them out and status counts can add up to less than total. " +
+				"The score covers every bookmark in the report, checked or not. Does not run a check.",
 			"inputSchema": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -75,10 +77,10 @@ func mcpQueryDefinitions() []map[string]any {
 					"max_score":        map[string]any{"type": "integer", "description": "Health score at most this (0-100)."},
 					"flag":             map[string]any{"type": "string", "enum": flags, "description": "Only bookmarks the health report flags with this condition."},
 					"monitored":        map[string]any{"type": "boolean", "description": "Only monitored (true) or unmonitored (false) bookmarks."},
-					"unused_days":      map[string]any{"type": "integer", "description": "Not opened for at least this many days (never opened counts when added before then)."},
+					"unused_days":      map[string]any{"type": "integer", "description": "Not opened for at least this many days, 0 or more (never opened counts when added before then)."},
 					"opened_min":       map[string]any{"type": "integer", "description": "Opened at least this many times."},
 					"opened_max":       map[string]any{"type": "integer", "description": "Opened at most this many times."},
-					"added_since":      map[string]any{"type": "string", "description": "Added on or after this date (2026-01-31) or within this period (30d, 8w)."},
+					"added_since":      map[string]any{"type": "string", "description": "Added on or after this date (2026-01-31, from the start of that day in the server's time zone) or within this period (30d, 8w)."},
 					"linked_container": map[string]any{"type": "boolean", "description": "Only bookmarks a Docker container is linked to (true) or not (false). Needs Containers: read."},
 					"has_note":         map[string]any{"type": "boolean", "description": "Only bookmarks with (true) or without (false) a note."},
 					"sort":             map[string]any{"type": "string", "enum": []string{"score", "name", "opens", "last_opened", "added", "uptime"}, "description": "Order of the list. Defaults to page order."},
@@ -92,9 +94,11 @@ func mcpQueryDefinitions() []map[string]any {
 			"name":        "get_stats",
 			"annotations": mcpAnnotations(true, false),
 			"description": "Collection-wide statistics in one call: bookmarks per page, per category and the 20 commonest tags; " +
-				"health (checked, healthy, broken, unknown, average score, score buckets, a count per flag, certificates due, duplicates, unused); " +
-				"monitoring (monitored, up, down, pooled uptime); usage (total opens, opened in the last 30 days, never opened); " +
-				"the daily health trend; and containers (total, running, stopped, with updates, linked to a bookmark) when Containers: read is on. " +
+				"health (checked, healthy, ok, broken = broken_links + monitors_down + content_failures as the Health view counts them, unknown, average score, score buckets, a count per flag, certificates due, duplicates, unused); " +
+				"the average score and the score buckets cover every bookmark in the report, checked or not, so the buckets add up to the bookmark total, not to checked; " +
+				"monitoring (monitored, up, down as the header counts it, pooled uptime); usage (total opens, opened in the last 30 days, never opened, which leaves out bookmarks told to ignore \"unused\", as the weekly digest does); " +
+				"the daily health trend (broken_links and monitors_down as recorded each day; content failures are not recorded there); " +
+				"and containers (total, running, not_running, by_state, with updates, linked to a bookmark) when Containers: read is on. " +
 				"Use it for \"how healthy is my collection\", \"how many bookmarks do I have per page\" or \"is my health getting better\". Does not run a check.",
 			"inputSchema": map[string]any{
 				"type": "object",
@@ -117,6 +121,27 @@ func mcpIssueStatus(issue HealthIssue) string {
 	return "unknown"
 }
 
+/*
+mcpSafeErrorLabel names a failed check without quoting it. The raw text is
+not safe to hand on: a content failure quotes the expectation ("Page is missing
+%q"), and a network error repeats the address it failed on and every redirect,
+query string and all. What is kept is the kind of failure, and an HTTP status
+code, which says nothing about the address.
+*/
+func mcpSafeErrorLabel(code, detail string) string {
+	detail = strings.TrimSpace(detail)
+	lower := strings.ToLower(detail)
+	switch {
+	case code == "content_mismatch" || isContentFailure(detail):
+		return "The page did not pass its content check"
+	case strings.Contains(lower, "timeout") || strings.Contains(lower, "timed out") || strings.Contains(lower, "deadline exceeded"):
+		return "Timed out"
+	case httpStatusFromDetail(lower) > 0:
+		return "HTTP " + strconv.Itoa(httpStatusFromDetail(lower))
+	}
+	return "Unreachable"
+}
+
 // mcpSafeReasons are the report's reasons without the last error text: the two
 // codes that carry it are named, never quoted, because an error can repeat the
 // address it failed on, query string and all.
@@ -124,10 +149,8 @@ func mcpSafeReasons(issue HealthIssue) []string {
 	out := make([]string, 0, len(issue.ReasonDetails))
 	for _, r := range issue.ReasonDetails {
 		switch r.Code {
-		case "last_error", "unreachable":
-			out = append(out, "Unreachable")
-		case "content_mismatch":
-			out = append(out, "The page did not pass its content check")
+		case "last_error", "unreachable", "content_mismatch":
+			out = append(out, mcpSafeErrorLabel(r.Code, r.Detail))
 		case "duplicate_url", "shortcut_conflict", "orphaned_category", "status_never_run", "status_stale",
 			"not_opened_30_days", "never_opened", "no_preview":
 			out = append(out, healthReasonLegacyLabel(HealthReason{Code: r.Code, Params: r.Params}))
@@ -294,7 +317,7 @@ func (d *mcpBookmarkData) containerBlock(bm Bookmark) any {
 	if d.containers == nil {
 		return nil
 	}
-	link, ok := d.containers.byBookmark[matchBookmarkKey(bm)]
+	link, ok := d.containers.byBookmark[strings.TrimSpace(bm.URL)]
 	if !ok {
 		return nil
 	}
@@ -329,7 +352,7 @@ func mcpParseSince(raw string, now time.Time) (int64, bool) {
 	if raw == "" {
 		return 0, false
 	}
-	if t, err := time.Parse("2006-01-02", raw); err == nil {
+	if t, err := time.ParseInLocation("2006-01-02", raw, time.Local); err == nil {
 		return t.UnixMilli(), true
 	}
 	if t, err := time.Parse(time.RFC3339, strings.ToUpper(raw)); err == nil {
@@ -409,6 +432,9 @@ func (h *Handlers) mcpQueryBookmarks(r *http.Request, args json.RawMessage) map[
 	groups := []string{"page", "category", "tag", "status", "flag", "linked_container"}
 	if a.GroupBy != "" && !mcpOneOf(a.GroupBy, groups...) {
 		return mcpRefuseValue("group_by", a.GroupBy, groups)
+	}
+	if a.UnusedDays != nil && *a.UnusedDays < 0 {
+		return map[string]any{"error": "unused_days must be 0 or more."}
 	}
 	now := time.Now()
 	var addedSince int64
@@ -503,7 +529,7 @@ func (h *Handlers) mcpQueryBookmarks(r *http.Request, args json.RawMessage) map[
 			continue
 		}
 		if a.LinkedContainer != nil {
-			_, linked := d.containers.byBookmark[matchBookmarkKey(bm)]
+			_, linked := d.containers.byBookmark[strings.TrimSpace(bm.URL)]
 			if linked != *a.LinkedContainer {
 				continue
 			}
@@ -531,6 +557,15 @@ func (h *Handlers) mcpQueryBookmarks(r *http.Request, args json.RawMessage) map[
 	out["truncated"] = len(matched) > len(rows)
 	if len(matched) > len(rows) && limit > 0 {
 		notes = append(notes, fmt.Sprintf("Showing %d of %d; total is the full count.", len(rows), len(matched)))
+	}
+	noReport := 0
+	for _, i := range matched {
+		if d.issues[i] == nil {
+			noReport++
+		}
+	}
+	if noReport > 0 {
+		notes = append(notes, fmt.Sprintf("%d of these are in Unsorted, which the health report leaves out: they have no health, so status counts add up to %d, not %d.", noReport, len(matched)-noReport, len(matched)))
 	}
 	out["notes"] = notes
 	return out
@@ -667,7 +702,7 @@ func mcpBookmarkGroups(d *mcpBookmarkData, idx []int, by string) []map[string]an
 			case d.containers == nil:
 				add("unknown", issue)
 			default:
-				_, linked := d.containers.byBookmark[matchBookmarkKey(bm)]
+				_, linked := d.containers.byBookmark[strings.TrimSpace(bm.URL)]
 				add(strconv.FormatBool(linked), issue)
 			}
 		}
@@ -776,7 +811,7 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 	checked := 0
 	statusCount := map[string]int{"ok": 0, "broken": 0, "unknown": 0}
 	flagCount := map[string]int{}
-	monitoredUp, monitoredDown := 0, 0
+	monitoredUp := 0
 	for _, issue := range report.Issues {
 		if issue.LastChecked > 0 {
 			checked++
@@ -786,21 +821,23 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 		for _, f := range issue.Flags {
 			flagCount[f]++
 		}
-		if issue.Monitor {
-			switch status {
-			case "ok":
-				monitoredUp++
-			case "broken":
-				monitoredDown++
-			}
+		if issue.Monitor && status == "ok" {
+			monitoredUp++
 		}
 	}
 	s := report.Summary
 	health := map[string]any{
-		"checked":          checked,
-		"healthy":          s.HealthyCount,
-		"ok":               statusCount["ok"],
-		"broken":           statusCount["broken"],
+		"checked": checked,
+		"healthy": s.HealthyCount,
+		"ok":      statusCount["ok"],
+		// The Health view's own three counters. A failing bookmark is in
+		// exactly one: content when the host answered but an expectation
+		// failed, else monitors_down when it is monitored, else broken_links
+		// (buildBookmarkHealthReport), so their sum never counts one twice.
+		"broken_links":     s.BrokenCount,
+		"monitors_down":    s.MonitorDownCount,
+		"content_failures": s.ContentCount,
+		"broken":           s.BrokenCount + s.MonitorDownCount + s.ContentCount,
 		"unknown":          statusCount["unknown"],
 		"avg_score":        averageHealthScore(report.Issues),
 		"score_buckets":    mcpScoreBuckets(report.Issues),
@@ -808,13 +845,16 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 		"certificates_due": len(report.Certificates),
 		"duplicates":       s.DuplicateCount,
 		"unused":           s.UnusedCount,
-		"note":             "healthy: nothing known to be wrong with the link (checked or not); ok/broken/unknown: the status query_bookmarks filters on, and they add up to the total.",
+		"note": "broken is broken_links + monitors_down + content_failures, the Health view's three counters; a bookmark is in only one of them. " +
+			"healthy: nothing known to be wrong with the link (checked or not). ok/broken/unknown are the statuses query_bookmarks filters on and add up to the report total. " +
+			"avg_score and score_buckets cover every bookmark in the report, checked or not.",
 	}
 	monitoring := map[string]any{
 		"monitored":          s.MonitoredCount,
 		"up":                 monitoredUp,
-		"down":               monitoredDown,
+		"down":               s.MonitorDownCount,
 		"avg_uptime_percent": nil,
+		"note":               "down: monitored bookmarks that are unreachable, as the header counts them; a monitored bookmark failing its content check is in health.content_failures instead. up: monitored, checked and nothing failing.",
 	}
 	if report.Fleet != nil && report.Fleet.Uptime30d.Samples > 0 {
 		monitoring["avg_uptime_percent"] = mcpPercent(report.Fleet.Uptime30d.Ratio)
@@ -837,6 +877,7 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 		"total_opens":         point.Opens,
 		"opened_last_30_days": opened30,
 		"never_opened":        s.UnusedCount,
+		"note":                "never_opened leaves out bookmarks told to ignore \"unused\", as the weekly digest does.",
 	}
 
 	// Trend: the recorded daily points, the last `days` of them.
@@ -850,7 +891,7 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 			"date":          time.UnixMilli(p.T).UTC().Format("2006-01-02"),
 			"avg_score":     p.Score,
 			"healthy":       p.Healthy,
-			"broken":        p.Broken,
+			"broken_links":  p.Broken,
 			"monitors_down": p.MonDown,
 			"total":         p.Total,
 		})
@@ -880,7 +921,9 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 	default:
 		c := d.containers
 		running, updates := 0, 0
+		byState := map[string]int{}
 		for _, item := range c.list {
+			byState[item.State]++
 			if item.State == "running" {
 				running++
 			}
@@ -891,7 +934,8 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 		out["containers"] = map[string]any{
 			"total":              len(c.list),
 			"running":            running,
-			"stopped":            len(c.list) - running,
+			"not_running":        len(c.list) - running,
+			"by_state":           byState,
 			"with_updates":       updates,
 			"linked_to_bookmark": len(c.byContainer),
 		}

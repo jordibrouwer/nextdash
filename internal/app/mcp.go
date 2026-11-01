@@ -727,7 +727,9 @@ func (h *Handlers) mcpGetBookmark(r *http.Request, args json.RawMessage) map[str
 		out["lastChecked"] = found.LastChecked
 		out["reachable"] = found.LastError == ""
 		if found.LastError != "" {
-			out["lastError"] = found.LastError
+			// The kind of failure only: the raw text can quote an expectation
+			// or repeat the failing address with its query string.
+			out["lastError"] = mcpSafeErrorLabel("", found.LastError)
 		}
 	}
 	h.mcpAddBookmarkBlocks(r, *found, out)

@@ -18,8 +18,15 @@ The link is matchContainerBookmark's, fed the container exactly as the
 Containers view sees it: the list handler's rows (hidden containers already
 left out), the web UI address the view opens (custom over default), the
 container's own LAN address and its published ports, and the names this
-server goes by, the way discovery derives them. So "linked" here is the link
-icon in the view, not a second opinion.
+server goes by as the view derives them (mcpViewHosts). A bookmark counts as
+linked when any container's match has its address, which is how the view's
+containersFor looks it up: by URL, so the same link on two pages is linked on
+both. So "linked" here is the link icon in the view, not a second opinion.
+
+The one thing the server cannot know is the address a browser has open: the
+view adds window.location.hostname, and the server has only the host the
+dashboard was last opened on (DockerHostSeen). They are the same for whoever
+opened it last.
 */
 
 type mcpContainerLink struct {
@@ -30,7 +37,7 @@ type mcpContainerLink struct {
 
 type mcpContainerIndex struct {
 	list        []dockerViewContainer
-	byBookmark  map[string]mcpContainerLink // bookmark key (pageId::url) -> the first container, by name
+	byBookmark  map[string]mcpContainerLink // trimmed bookmark URL -> the first container, by name
 	byContainer map[string]mcpContainerLink // container name -> its bookmark
 }
 
@@ -59,10 +66,33 @@ func (h *Handlers) mcpContainerRows(r *http.Request) ([]dockerViewContainer, str
 	return list.Items, ""
 }
 
+/*
+mcpViewHosts are the names the Containers view hands bookmarkFor: its
+hostAddress() (the configured host address, else the host the page is open on)
+and the page's own hostname. The server's stand-in for the page's hostname is
+DockerHostSeen. Not discoveryHosts: that also falls back to the container's
+gateway, which the view never uses, and would link containers the view does
+not.
+*/
+func mcpViewHosts(s Settings) []string {
+	primary := strings.TrimSpace(s.DockerHostAddress)
+	seen := strings.TrimSpace(s.DockerHostSeen)
+	if primary == "" {
+		primary = seen
+	}
+	var out []string
+	for _, h := range []string{primary, seen} {
+		if h != "" && !containsString(out, h) {
+			out = append(out, h)
+		}
+	}
+	return out
+}
+
 // mcpLinkContainers matches every container to a bookmark.
 func (h *Handlers) mcpLinkContainers(list []dockerViewContainer, bookmarks []Bookmark) *mcpContainerIndex {
 	settings := h.store.GetSettings()
-	hosts := discoveryHosts(settings, h.discoveryHost(settings))
+	hosts := mcpViewHosts(settings)
 	byKey := make(map[string]Bookmark, len(bookmarks))
 	for _, b := range bookmarks {
 		if k := matchBookmarkKey(b); byKey[k].URL == "" {
@@ -86,8 +116,9 @@ func (h *Handlers) mcpLinkContainers(list []dockerViewContainer, bookmarks []Boo
 		}
 		link := mcpContainerLink{container: c, bookmark: byKey[key], via: via}
 		idx.byContainer[c.Name] = link
-		if _, taken := idx.byBookmark[key]; !taken {
-			idx.byBookmark[key] = link
+		address := strings.TrimSpace(link.bookmark.URL)
+		if _, taken := idx.byBookmark[address]; !taken {
+			idx.byBookmark[address] = link
 		}
 	}
 	return idx
@@ -135,7 +166,8 @@ func mcpQueryContainersDefinitions() []map[string]any {
 			"Answers \"how many containers have no bookmark\" (linked false, read total), \"which containers use the most memory\" (sort memory), " +
 			"\"which have an update\" (update_available true) or \"how many are running\" (group_by state, limit 0). " +
 			"total is the exact count of matches before limit and summary counts every container, linked or not; for counts read those, never count the returned list. " +
-			"A bookmark link says via which step it was found: manual (set in the Containers view), port, subdomain or title. Environment variables are never included.",
+			"A bookmark link says via which step it was found: manual (set in the Containers view), port, subdomain or title, the same steps and order the Containers view uses; " +
+			"for the address the browser has open the server uses the host the dashboard was last opened on. uptime is like \"3d 4h\", with uptime_seconds. Environment variables are never included.",
 		"inputSchema": map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -147,7 +179,7 @@ func mcpQueryContainersDefinitions() []map[string]any {
 				"min_mem_percent":  map[string]any{"type": "number", "description": "Memory at least this percent of its limit (last reading)."},
 				"sort":             map[string]any{"type": "string", "enum": []string{"name", "cpu", "memory", "uptime", "restarts"}, "description": "name ascending, the others highest first."},
 				"order":            map[string]any{"type": "string", "enum": []string{"asc", "desc"}},
-				"group_by":         map[string]any{"type": "string", "enum": []string{"state", "image", "host", "linked"}},
+				"group_by":         map[string]any{"type": "string", "enum": []string{"state", "image", "host", "linked"}, "description": "image groups by repository without the tag; host is the container's own LAN IP when it sits on a macvlan or ipvlan network, else the Docker host."},
 				"limit":            map[string]any{"type": "integer", "description": fmt.Sprintf("How many to list, at most %d. Defaults to %d. With group_by, 0 lists none.", mcpContainerListMax, mcpContainerListDefault)},
 			},
 		},
@@ -178,6 +210,21 @@ func mcpContainerUsage(c dockerViewContainer) (cpu, memPct float64, ok bool) {
 		memPct = p.memShare
 	}
 	return cpu, memPct, true
+}
+
+// mcpHumanDuration is "3d 4h", "5h 12m" or "7m": the two largest units.
+func mcpHumanDuration(secs int64) string {
+	if secs < 0 {
+		secs = 0
+	}
+	d, hr, m := secs/86400, secs%86400/3600, secs%3600/60
+	switch {
+	case d > 0:
+		return fmt.Sprintf("%dd %dh", d, hr)
+	case hr > 0:
+		return fmt.Sprintf("%dh %dm", hr, m)
+	}
+	return fmt.Sprintf("%dm", m)
 }
 
 func mcpRound1(v float64) float64 { return math.Round(v*10) / 10 }
@@ -217,8 +264,11 @@ func (h *Handlers) mcpContainerRow(c dockerViewContainer, idx *mcpContainerIndex
 		row["mem_percent"] = mcpRound1(mem)
 		row["memory"] = mcpBytes(c.Usage.Mem)
 	}
+	row["uptime_seconds"] = nil
 	if c.StartedAt > 0 {
-		row["uptime"] = (time.Duration(now.Unix()-c.StartedAt) * time.Second).String()
+		secs := now.Unix() - c.StartedAt
+		row["uptime"] = mcpHumanDuration(secs)
+		row["uptime_seconds"] = secs
 	}
 	link, ok := idx.byContainer[c.Name]
 	row["bookmark"] = h.mcpBookmarkRef(link, ok)
