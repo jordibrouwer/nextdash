@@ -32,6 +32,7 @@ func TestBackupCarriesTheRestOfTheDataDirectory(t *testing.T) {
 		"feeds.json":              `{"feeds":{}}`,
 		"feed-watches.json":       `{"watches":[{"bookmarkKey":"a.example","feedUrl":"https://a.example/feed","intervalMinutes":60}]}`,
 		"inbox-stats.json":        `{"version":1,"totalAdded":7}`,
+		"feed-stats.json":         `{"since":1,"feeds":{}}`,
 		"site-news.json":          `{"posts":[]}`,
 		"push-subscriptions.json": `[]`,
 		"sources.json":            `{"sources":{"github:stars":{"kind":"github-stars","token":"tok"}}}`,

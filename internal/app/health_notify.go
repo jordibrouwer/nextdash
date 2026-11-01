@@ -430,11 +430,11 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 // postMonitorTarget sends notifications to the configured alert webhook, if
 // there is one. Shared by monitors and containers, so both honour the same
 // preset, the same address rules and the same timeout.
-func (h *Handlers) postMonitorTarget(ctx context.Context, notifications []monitorNotification) {
+func (h *Handlers) postMonitorTarget(ctx context.Context, notifications []monitorNotification) int {
 	settings := h.store.GetSettings()
 	target, configured := monitorNotifyTarget(settings)
 	if !configured {
-		return
+		return 0
 	}
 	// The target is user input for every preset but Pushover (a fixed,
 	// nextDash-chosen endpoint, not something the operator typed in), so it
@@ -444,14 +444,18 @@ func (h *Handlers) postMonitorTarget(ctx context.Context, notifications []monito
 		allowLocal := h.allowLocalBookmarks()
 		if err := validateHTTPURL(target, allowLocal); err != nil {
 			logWarn(logComponentNotify, "the webhook address was refused (%v); no alert was sent", err)
-			return
+			return 0
 		}
 	}
 
 	client := h.outboundHTTPClient(monitorNotifyTimeout, 3)
+	sent := 0
 	for _, n := range notifications {
-		h.postMonitorNotification(ctx, client, target, settings, n)
+		if h.postMonitorNotification(ctx, client, target, settings, n) {
+			sent++
+		}
 	}
+	return sent
 }
 
 // buildMonitorNotificationRequest formats n for settings' preset and builds
@@ -509,11 +513,11 @@ func buildMonitorNotificationRequest(ctx context.Context, target string, setting
 	return req, nil
 }
 
-func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Client, target string, settings Settings, n monitorNotification) {
+func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Client, target string, settings Settings, n monitorNotification) bool {
 	req, err := buildMonitorNotificationRequest(ctx, target, settings, n)
 	if err != nil {
 		logError(logComponentNotify, "the alert could not be prepared and was not sent: %v", err)
-		return
+		return false
 	}
 	// A container notice has a name and no URL.
 	about := n.URL
@@ -530,12 +534,14 @@ func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Cli
 			err = ue.Err
 		}
 		logWarn(logComponentNotify, "%s could not be reached at %s, so the alert did not arrive: %v", about, req.URL.Host, err)
-		return
+		return false
 	}
 	defer drainAndCloseResponse(resp)
 	if resp.StatusCode >= 400 {
 		logWarn(logComponentNotify, "%s answered %d; the alert was not accepted", about, resp.StatusCode)
+		return false
 	}
+	return true
 }
 
 // monitorDigestThreshold is how many notifications one round may carry before

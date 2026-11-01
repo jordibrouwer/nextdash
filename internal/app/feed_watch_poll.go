@@ -333,11 +333,21 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 	polled := make([]polledWatch, 0, len(targets))
 	imagesStored := false
 	var news []watchNews
+	start := time.Now()
+	statsSince, statsOn := h.feedStatsSince()
+	var statPolls []feedPollResult
 	for _, w := range targets {
 		if ctx.Err() != nil {
 			break
 		}
-		next, found := h.pollWatch(ctx, w, time.Now())
+		asked := time.Now()
+		next, found := h.pollWatch(ctx, w, asked)
+		if statsOn {
+			statPolls = append(statPolls, feedPollResult{
+				id: feedStatsID(next.BookmarkKey, next.FeedURL), ok: next.LastError == "", code: next.LastError,
+				ms: time.Since(asked).Milliseconds(), found: found,
+			})
+		}
 		if h.healWatchImages(next.Items) {
 			imagesStored = true
 		}
@@ -356,6 +366,10 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 		_, _ = evictPreviewImages(h.previewImageCapBytes())
 	}
 
+	var bookmarks []Bookmark
+	if statsOn {
+		bookmarks = h.store.GetAllBookmarks()
+	}
 	feedWatchMu.Lock()
 	file := readFeedWatchFile()
 	dropped := map[int]bool{}
@@ -385,6 +399,7 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 						continue
 					}
 				}
+				carryReadCounted(&p.w, file.Watches[i])
 				file.Watches[i] = p.w
 			}
 		}
@@ -398,10 +413,24 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 		}
 		file.Watches = kept
 	}
-	if len(polled) > 0 {
+	// The statistics: reads that happened by any path since the last look,
+	// and what is left unread per feed.
+	var reads, unread map[string]int
+	if statsOn {
+		readAt := watchReadAt(file, bookmarks)
+		reads = flagWatchReads(&file, readAt, statsSince)
+		unread = map[string]int{}
+		for _, wt := range file.Watches {
+			unread[feedStatsID(wt.BookmarkKey, wt.FeedURL)] = len(watchNewItems(wt, readAt[wt.BookmarkKey]))
+		}
+	}
+	if len(polled) > 0 || len(reads) > 0 {
 		_ = writeFeedWatchFile(file)
 	}
 	feedWatchMu.Unlock()
+	if statsOn {
+		h.recordFeedPolls(start, statPolls, reads, unread)
+	}
 
 	sort.SliceStable(news, func(i, j int) bool { return news[i].Items[0].PublishedAt > news[j].Items[0].PublishedAt })
 	if len(news) > 0 {

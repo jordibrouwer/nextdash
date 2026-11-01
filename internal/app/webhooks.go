@@ -614,17 +614,20 @@ receiver that takes ten seconds to answer must not be able to hold up the
 request that triggered it -- or, worse, to make saving a bookmark fail because
 something unrelated is down.
 */
-func emitWebhookEvent(event string, data map[string]any) {
+func emitWebhookEvent(event string, data map[string]any) int {
 	webhookMu.Lock()
 	file := readWebhookFile()
 	webhookMu.Unlock()
 
+	sent := 0
 	for _, endpoint := range file.Endpoints {
 		if !endpoint.wants(event) {
 			continue
 		}
 		go deliverWebhook(endpoint, event, data)
+		sent++
 	}
+	return sent
 }
 
 // webhooksConfigured reports whether anything is listening. Used to skip work

@@ -172,6 +172,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"health-trend.json":       dataKeep,
 	"feeds.json":              dataKeep,
 	"feed-watches.json":       dataKeep,
+	"feed-stats.json":         dataKeep,
 	"inbox-stats.json":        dataKeep,
 	"site-news.json":          dataKeep,
 	"push-subscriptions.json": dataKeep,

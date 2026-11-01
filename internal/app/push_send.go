@@ -71,16 +71,16 @@ type webPushMessage struct {
 // Best-effort by design, exactly like the existing webhook dispatch: a broken
 // push service must never fail a monitor run, so every error is logged and the
 // remaining devices are still tried.
-func (h *Handlers) sendWebPushNotification(ctx context.Context, msg webPushMessage) {
+func (h *Handlers) sendWebPushNotification(ctx context.Context, msg webPushMessage) int {
 	subs := listPushSubscriptions()
 	if len(subs) == 0 {
-		return
+		return 0
 	}
 
 	keys, err := ensureVAPIDKeys()
 	if err != nil {
 		logPushError("no VAPID keys available: %v", err)
-		return
+		return 0
 	}
 
 	if msg.At == 0 {
@@ -89,7 +89,7 @@ func (h *Handlers) sendWebPushNotification(ctx context.Context, msg webPushMessa
 	payload, err := fitPushPayload(msg)
 	if err != nil {
 		logPushError("failed to encode message: %v", err)
-		return
+		return 0
 	}
 
 	subject := h.vapidSubject()
@@ -99,7 +99,7 @@ func (h *Handlers) sendWebPushNotification(ctx context.Context, msg webPushMessa
 	client := &http.Client{Timeout: pushSendTimeout}
 	// The demo sends nothing to other hosts (demo_guard.go).
 	if demoOutboundRefused() {
-		return
+		return 0
 	}
 
 	results := make(map[string]pushDeliveryOutcome, len(subs))
@@ -123,6 +123,13 @@ func (h *Handlers) sendWebPushNotification(ctx context.Context, msg webPushMessa
 	wg.Wait()
 
 	recordPushDeliveryResults(results)
+	sent := 0
+	for _, outcome := range results {
+		if outcome == pushDeliveryOK {
+			sent++
+		}
+	}
+	return sent
 }
 
 /*

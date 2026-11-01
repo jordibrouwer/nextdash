@@ -536,6 +536,7 @@ func (h *Handlers) MarkFeedWatchSeen(w http.ResponseWriter, r *http.Request) {
 	} else {
 		file.SeenAt[key] = now
 	}
+	h.sweepWatchReads(&file, bookmarks)
 	_ = writeFeedWatchFile(file)
 	writeWatchJSON(w, http.StatusOK, map[string]any{})
 }
@@ -583,10 +584,14 @@ func (h *Handlers) MarkFeedWatchRead(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	bookmarks := h.store.GetAllBookmarks()
+	if changed && body.Read {
+		h.sweepWatchReads(&file, bookmarks)
+	}
 	if changed {
 		_ = writeFeedWatchFile(file)
 	}
-	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks())[key]})
+	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, bookmarks)[key]})
 }
 
 // PollFeedWatchesNow checks every watch regardless of its interval.

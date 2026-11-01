@@ -4907,6 +4907,9 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 		if !respondBookmarkMutationError(w, err) {
 			return
 		}
+	} else if opened := firstNonEmpty(strings.TrimSpace(openedURL), bookmark.URL); opened != "" {
+		// Opening a watched bookmark reads its news.
+		h.recordBookmarkOpenReads(opened)
 	}
 
 	// Cached JS in an open tab, or the browser extension, may still be

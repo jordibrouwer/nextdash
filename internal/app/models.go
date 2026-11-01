@@ -990,8 +990,14 @@ type Settings struct {
 	// FeedWatchNewsView is how the news modal shows an article: "paper" (a
 	// newspaper front page, the default), "wide" (two columns in the app's own
 	// style) or "single" (one column). Anything else reads as "paper".
-	FeedWatchNewsView       string `json:"feedWatchNewsView"`
-	ServerLogRetentionHours int    `json:"serverLogRetentionHours"` // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
+	FeedWatchNewsView string `json:"feedWatchNewsView"`
+	// FeedStatsEnabled keeps counting watched feeds into feed-stats.json
+	// (feed_stats.go); on unless turned off. FeedStatsKeepDays is how many days
+	// of daily rows are kept before they are rolled into weeks: 30, 90 or 365.
+	// Anything else reads as 90.
+	FeedStatsEnabled        bool `json:"feedStatsEnabled"`
+	FeedStatsKeepDays       int  `json:"feedStatsKeepDays"`
+	ServerLogRetentionHours int  `json:"serverLogRetentionHours"` // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
 	// Which cap applies: "time" uses ServerLogRetentionHours and ignores the
 	// entry count, "count" uses ServerLogMaxEntries and ignores the age. The
 	// two are deliberately exclusive — a log capped both ways silently drops
@@ -1822,6 +1828,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowFeedWatchIcon:               true,
 			FeedWatchWindowMinutes:          30,
 			FeedWatchNewsView:               "paper",
+			FeedStatsEnabled:                true,
+			FeedStatsKeepDays:               90,
 			ShowThemeStudioButton:           true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
@@ -4488,6 +4496,8 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowFeedWatchIcon:               true,
 			FeedWatchWindowMinutes:          30,
 			FeedWatchNewsView:               "paper",
+			FeedStatsEnabled:                true,
+			FeedStatsKeepDays:               90,
 			ShowThemeStudioButton:           true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
@@ -4727,6 +4737,13 @@ func (fs *FileStore) GetSettings() Settings {
 		case "single", "wide", "paper":
 		default:
 			settings.FeedWatchNewsView = "paper"
+		}
+		// On unless turned off: counting what watched feeds do costs a small file.
+		if _, ok := rawSettings["feedStatsEnabled"]; !ok {
+			settings.FeedStatsEnabled = true
+		}
+		if !validFeedStatsKeepDays(settings.FeedStatsKeepDays) {
+			settings.FeedStatsKeepDays = 90
 		}
 		// The Bookmarks view's switches that are on unless turned off: a file
 		// written before they existed never answered.

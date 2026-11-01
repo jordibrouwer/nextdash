@@ -163,13 +163,15 @@ func newsNotifyNotice(news []watchNews, names map[string]string, now time.Time) 
 	}, true
 }
 
-// emitFeedNewsWebhooks sends one feed.news event per feed with news. Webhooks
+// emitFeedNewsWebhooks sends one feed.news event per feed with news and says
+// how many deliveries it started. Webhooks
 // are machine integrations and stay outside the quiet hours (notify_quiet.go);
 // the endpoint's own event list is the only gate. No summaries leave the app.
-func emitFeedNewsWebhooks(news []watchNews, names, urls map[string]string) {
+func emitFeedNewsWebhooks(news []watchNews, names, urls map[string]string) int {
 	if !webhooksConfigured() {
-		return
+		return 0
 	}
+	sent := 0
 	for _, n := range news {
 		items := make([]map[string]any, 0, len(n.Items))
 		for _, it := range n.Items {
@@ -179,10 +181,11 @@ func emitFeedNewsWebhooks(news []watchNews, names, urls map[string]string) {
 		if site == "" {
 			site = hostOf(n.BookmarkKey)
 		}
-		emitWebhookEvent(webhookEventFeedNews, map[string]any{
+		sent += emitWebhookEvent(webhookEventFeedNews, map[string]any{
 			"site": site, "bookmarkUrl": urls[n.BookmarkKey], "feedUrl": n.FeedURL, "items": items,
 		})
 	}
+	return sent
 }
 
 // pushWatchNews announces a round's news: to subscribed webhooks, to the
@@ -207,7 +210,10 @@ func (h *Handlers) pushWatchNews(ctx context.Context, news []watchNews) {
 			urls[key] = b.URL
 		}
 	}
-	emitFeedNewsWebhooks(news, names, urls)
+	// What went out is counted for the statistics, whatever the gates below.
+	var pushed, targeted int
+	hooked := emitFeedNewsWebhooks(news, names, urls)
+	defer func() { h.recordFeedNotify(pushed, hooked, targeted) }()
 
 	settings := h.store.GetSettings()
 	// News is not worth waking anyone for: during the quiet hours it is
@@ -217,12 +223,12 @@ func (h *Handlers) pushWatchNews(ctx context.Context, news []watchNews) {
 	}
 	if settings.PushNotifyEnabled && settings.PushNotifyNews {
 		if msg, ok := newsPushMessage(news, names); ok {
-			h.sendWebPushNotification(ctx, msg)
+			pushed = h.sendWebPushNotification(ctx, msg)
 		}
 	}
 	if settings.NotifyNewsTarget {
 		if n, ok := newsNotifyNotice(news, names, time.Now()); ok {
-			h.postMonitorTarget(ctx, []monitorNotification{n})
+			targeted = h.postMonitorTarget(ctx, []monitorNotification{n})
 		}
 	}
 }
