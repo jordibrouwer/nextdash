@@ -3,9 +3,10 @@ const { test, expect } = require('./fixtures');
 const { headers, startStubSite, installWithBookmark, openDashboard, row, keyOf, watchPayload, newsItem, stubWatch } = require('./helpers/feed-watch');
 
 /**
- * Watched news on a phone: the row keeps its purple badge, a tap on it opens a
- * popover with up to four headlines and "+n more", a tap on a headline opens
- * that article. The watch routes are stubbed; every interaction is a real tap.
+ * Watched news under the row, on a phone and on a desktop: the row keeps its
+ * purple badge, a tap or a click on it opens a popover with up to six headlines
+ * and "+n more", a tap on a headline opens that article. The watch routes are
+ * stubbed; every interaction is a real tap, click or key.
  */
 let site;
 test.beforeEach(async ({ request }) => {
@@ -34,6 +35,8 @@ async function stubNews(page, count = 6) {
 const link = (page) => row(page, 'Stub Blog');
 const badge = (page) => link(page).locator('.bookmark-news-badge');
 const pop = (page) => page.locator('.feed-news-pop');
+// It grows in; measure it once it has.
+const settled = (page) => pop(page).evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
 
 test.describe('on a touch screen', () => {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
@@ -53,21 +56,24 @@ test.describe('on a touch screen', () => {
         expect(hit.content).not.toBe('none');
     });
 
-    test('tapping the badge opens at most five headlines and "+1 more", and does not open the bookmark', async ({ page, context }) => {
-        await stubNews(page, 6);
+    test('tapping the badge opens at most six headlines and "+1 more", and does not open the bookmark', async ({ page, context }) => {
+        await stubNews(page, 7);
         await openDashboard(page);
         let opened = 0;
         context.on('page', () => { opened += 1; });
         await badge(page).tap();
         await expect(pop(page)).toBeVisible();
-        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(5);
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(6);
         await expect(pop(page).locator('.feed-news-pop-title').first()).toHaveText('Headline 1');
         await expect(pop(page).locator('.feed-news-pop-thumb')).toHaveCount(1);
         await expect(pop(page).locator('.feed-news-pop-more')).toHaveText('+1 more');
         await expect(badge(page)).toHaveAttribute('aria-expanded', 'true');
         // The app's own menu surface (so the theme styles it), with a close button.
         await expect(pop(page)).toHaveClass(/move-popover/);
-        await expect(pop(page).locator('.feed-news-pop-head')).toContainText('6 new');
+        await settled(page);
+        await expect(pop(page).locator('.feed-news-pop-head')).toContainText('7 new');
+        // The Reader button is a desktop's; a phone reaches the paper from the toast.
+        await expect(pop(page).locator('[data-pop-reader]')).toHaveCount(0);
         const close = await pop(page).locator('[data-pop-close]').boundingBox();
         expect(close.width).toBeGreaterThanOrEqual(44);
         expect(close.height).toBeGreaterThanOrEqual(44);
@@ -82,7 +88,7 @@ test.describe('on a touch screen', () => {
         expect(opened).toBe(0);
     });
 
-    test('with four or fewer there is no "+n more"', async ({ page }) => {
+    test('with six or fewer there is no "+n more"', async ({ page }) => {
         await stubNews(page, 3);
         await openDashboard(page);
         await badge(page).tap();
@@ -104,7 +110,7 @@ test.describe('on a touch screen', () => {
     });
 
     test('tapping "+1 more" opens the bookmark', async ({ page, context }) => {
-        await stubNews(page, 6);
+        await stubNews(page, 7);
         await openDashboard(page);
         await badge(page).tap();
         const opened = context.waitForEvent('page');
@@ -188,7 +194,7 @@ test.describe('on a touch screen', () => {
         await expect(dialog).toBeVisible();
         await expect(dialog).toHaveAttribute('aria-modal', 'false');
         const list = dialog.getByRole('list');
-        await expect(list.getByRole('listitem')).toHaveCount(5);
+        await expect(list.getByRole('listitem')).toHaveCount(6);
         await expect(list.getByRole('listitem').first().getByRole('button')).toContainText('Headline 1');
     });
 
@@ -258,15 +264,166 @@ test.describe('on a touch screen', () => {
     });
 });
 
+/** Is the hover card on screen? */
+const cardShown = (page) => page.evaluate(() => {
+    const el = document.getElementById('bookmark-preview-card');
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return style.visibility !== 'hidden' && style.display !== 'none' && Number(style.opacity) > 0.05 && r.width > 0;
+});
+const name = (page) => link(page).locator('a.bookmark-open');
+
 test.describe('on a desktop', () => {
     test.use({ viewport: { width: 1500, height: 950 } });
 
-    test('the badge is plain and no popover opens', async ({ page }) => {
-        await stubNews(page);
+    test('a click on the name opens six headlines and "+3 more", not the site; a second click closes them', async ({ page, context }) => {
+        await stubNews(page, 9);
         await openDashboard(page);
-        await expect(badge(page)).toBeVisible();
-        await expect(badge(page)).not.toHaveAttribute('aria-haspopup', 'dialog');
+        let opened = 0;
+        context.on('page', () => { opened += 1; });
+        await expect(badge(page)).toHaveAttribute('aria-haspopup', 'dialog');
+        await name(page).click({ position: { x: 20, y: 10 } });
+        await expect(pop(page)).toBeVisible();
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(6);
+        await expect(pop(page).locator('.feed-news-pop-title').first()).toHaveText('Headline 1');
+        await expect(pop(page).locator('.feed-news-pop-meta').first()).toContainText('Stub Posts · ');
+        await expect(pop(page).locator('.feed-news-pop-more')).toHaveText('+3 more');
+        await expect(pop(page).locator('.feed-news-pop-head')).toContainText('9 new');
+        await expect(badge(page)).toHaveAttribute('aria-expanded', 'true');
+        await page.waitForTimeout(400);
+        expect(opened).toBe(0);
+        await name(page).click({ position: { x: 20, y: 10 } });
         await expect(pop(page)).toHaveCount(0);
+        await expect(badge(page)).toHaveText('9');
+        expect(opened).toBe(0);
+    });
+
+    for (const [label, how] of [
+        ['Ctrl/Cmd-click', { modifiers: ['ControlOrMeta'] }],
+        ['a middle click', { button: 'middle' }],
+    ]) {
+        test(`${label} still opens the site, and no popover`, async ({ page, context }) => {
+            await stubNews(page, 3);
+            await openDashboard(page);
+            const opened = context.waitForEvent('page');
+            await name(page).click({ position: { x: 20, y: 10 }, ...how });
+            const tab = await opened;
+            await expect.poll(() => tab.url()).toContain(new URL(site.url).host);
+            await page.waitForTimeout(300);
+            await expect(pop(page)).toHaveCount(0);
+        });
+    }
+
+    test('a right click is the menu, not the popover', async ({ page }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await name(page).click({ button: 'right', position: { x: 20, y: 10 } });
+        await expect(page.getByRole('menuitem').first()).toBeVisible();
+        await expect(pop(page)).toHaveCount(0);
+    });
+
+    test('the first click closes the hover card, and no card opens while the headlines are open', async ({ page }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await name(page).hover({ position: { x: 20, y: 10 } });
+        await expect(page.locator('#bookmark-preview-card .bookmark-preview-card-news')).toBeVisible();
+        await name(page).click({ position: { x: 20, y: 10 } });
+        await expect(pop(page)).toBeVisible();
+        await expect.poll(() => cardShown(page)).toBe(false);
+        // Away and back onto the row: the card stays shut while the popover is open.
+        await page.mouse.move(5, 940);
+        await name(page).hover({ position: { x: 20, y: 10 } });
+        await page.waitForTimeout(1500);
+        expect(await cardShown(page)).toBe(false);
+        await expect(pop(page)).toBeVisible();
+        // Closed, the card comes back on the next hover.
+        await page.keyboard.press('Escape');
+        await expect(pop(page)).toHaveCount(0);
+        await page.mouse.move(5, 940);
+        await name(page).hover({ position: { x: 20, y: 10 } });
+        await expect.poll(() => cardShown(page), { timeout: 5000 }).toBe(true);
+    });
+
+    test('Reader opens the paper on that site alone and closes the popover', async ({ page }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await name(page).click({ position: { x: 20, y: 10 } });
+        const reader = pop(page).locator('[data-pop-reader]');
+        await expect(reader).toHaveText('Reader');
+        await expect(reader).toHaveAttribute('aria-label', 'Open the reader for Stub Blog');
+        // Between the bar to the site and the ×.
+        const order = await pop(page).locator('.feed-news-pop-head > *').evaluateAll((els) => els.map((el) => el.className));
+        expect(order).toEqual(['feed-news-pop-site', 'feed-news-pop-reader', 'feed-news-pop-close']);
+        await reader.click();
+        const modal = page.locator('#app-modal .modal.feed-news-modal');
+        await expect(modal).toBeVisible();
+        await expect(pop(page)).toHaveCount(0);
+        await expect(modal.locator('.feed-news-section')).toHaveCount(1);
+        // One site's paper: Mark all read belongs to the paper of every site.
+        await expect(modal.locator('[data-feed-news-mark-all]')).toHaveCount(0);
+    });
+
+    test('the bar on top opens the site, a headline its article', async ({ page, context }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await name(page).click({ position: { x: 20, y: 10 } });
+        const opened = context.waitForEvent('page');
+        await pop(page).locator('[data-pop-site]').click();
+        const tab = await opened;
+        await expect.poll(() => tab.url()).toContain(new URL(site.url).host);
+        await expect(pop(page)).toHaveCount(0);
+    });
+
+    test('a headline opens its article', async ({ page }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await page.evaluate(() => { window.__opened = []; window.open = (url) => { window.__opened.push(String(url)); return null; }; });
+        await name(page).click({ position: { x: 20, y: 10 } });
+        await pop(page).locator('.feed-news-pop-item').nth(1).click();
+        await expect.poll(() => page.evaluate(() => window.__opened)).toEqual(['http://127.0.0.1:1/n2']);
+        await expect(pop(page)).toHaveCount(0);
+    });
+
+    test('it grows down out of the row', async ({ page }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await name(page).click({ position: { x: 20, y: 10 } });
+        const style = await pop(page).evaluate((el) => {
+            const cs = getComputedStyle(el);
+            return { name: cs.animationName, origin: el.style.transformOrigin };
+        });
+        expect(style.name).toBe('feed-news-pop-grow');
+        expect(style.origin).toMatch(/px (top|bottom)$/);
+    });
+
+    test('Enter on the selected row opens the headlines, not the site', async ({ page, context }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        let opened = 0;
+        context.on('page', () => { opened += 1; });
+        const selected = () => page.evaluate(() => window.dashboardInstance.keyboardNavigation.getSelectedBookmark()?.name || '');
+        for (let i = 0; i < 20 && (await selected()) !== 'Stub Blog'; i += 1) await page.keyboard.press('ArrowDown');
+        expect(await selected()).toBe('Stub Blog');
+        await page.keyboard.press('Enter');
+        await expect(pop(page)).toBeVisible();
+        await page.waitForTimeout(400);
+        expect(opened).toBe(0);
+    });
+});
+
+test.describe('on a desktop, with reduced motion', () => {
+    test.use({ viewport: { width: 1500, height: 950 } });
+
+    test('it appears and goes without an animation', async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await name(page).click({ position: { x: 20, y: 10 } });
+        await expect(pop(page)).toBeVisible();
+        expect(await pop(page).evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+        await page.keyboard.press('Escape');
+        expect(await page.locator('.feed-news-pop, .feed-news-pop-closing').count()).toBe(0);
     });
 });
 

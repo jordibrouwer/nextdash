@@ -74,10 +74,12 @@ test('opening a bookmark takes its news off the tab title at once', async ({ pag
     await stubTwoSites(page);
     await openDashboard(page);
     await expect.poll(() => page.title()).toMatch(/^\(3\) /);
-    // The real open path: click the row. No clock jump; the title follows directly.
+    // The real open path: click the row, then the bar on top of its headlines.
+    // No clock jump; the title follows directly.
     const opened = context.waitForEvent('page');
     await page.locator('#dashboard-layout .bookmark-link:not([data-category-id^="__smart"])', { hasText: 'Site A' }).first()
         .locator('a.bookmark-open').click({ position: { x: 20, y: 10 } });
+    await page.locator('.feed-news-pop [data-pop-site]').click();
     await opened;
     await expect.poll(() => page.title(), { timeout: 2000 }).toMatch(/^\(1\) /);
 });

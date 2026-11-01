@@ -62,7 +62,10 @@ class DashboardPreview {
      * setting allows them, without a redraw.
      */
     suppressed() {
-        return document.body?.getAttribute('data-edit-mode') === 'on';
+        // The headlines under a row are what the reader clicked for; a card
+        // from the next row the pointer crosses would cover them.
+        return document.body?.getAttribute('data-edit-mode') === 'on'
+            || Boolean(window.FeedWatchPopover?.isOpen?.());
     }
 
     /** Which rows this reader asked for; everything, unless they said otherwise. */
@@ -435,7 +438,11 @@ class DashboardPreview {
                 const key = el.dataset.key;
                 this.hideBookmarkPreviewCard();
                 if (action === 'read') void window.FeedWatchNews?.open({ focusKey: key });
-                else ctx?.openLink?.click();
+                else if (ctx?.openLink) {
+                    // Past the headlines popover: this button is the way to the site.
+                    ctx.openLink._feedPopoverBypass = true;
+                    try { ctx.openLink.click(); } finally { ctx.openLink._feedPopoverBypass = false; }
+                }
             });
         }
         const item = news.newest;

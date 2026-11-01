@@ -64,10 +64,13 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
     await page.keyboard.press('Escape'); // closes
     await expect(modal).toBeHidden();
 
-    // 7 · Opening the bookmark clears the count everywhere.
+    // 7 · Opening the bookmark clears the count everywhere. Both posts were read
+    // in the paper, so the row has no headlines left to show and goes straight
+    // to the site.
     const opened = context.waitForEvent('page');
     await row(page, 'Stub News').locator('a.bookmark-open').click();
     await opened;
+    await expect(page.locator('.feed-news-pop')).toHaveCount(0);
     await expect(badge).toHaveCount(0);
     await expect.poll(() => page.title()).not.toMatch(/^\(\d+\) /);
     await expect.poll(async () => {

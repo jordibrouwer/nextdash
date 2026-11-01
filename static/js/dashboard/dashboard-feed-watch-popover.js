@@ -1,11 +1,13 @@
 /**
- * Watched news on a touch screen: tap the badge, read the headlines.
+ * Watched news under the row: click the bookmark, read the headlines.
  *
- * A phone has no hover, so the card that shows the newest item on a desktop has
- * nothing to open it. The row keeps the same purple badge instead, and tapping
- * the badge opens a small popover under it with up to four headlines, newest
- * first. A tap on a headline opens that article and clears the badge; "+n more"
- * says how many did not fit and opens the bookmark. A tap anywhere else closes it.
+ * A row with news does not open its site straight away, on a phone or a
+ * desktop: the first click opens a small popover under it with up to six
+ * headlines, newest first. A click on a headline opens that article and reads
+ * only that one; "+n more" says how many did not fit and opens the bookmark,
+ * and so does the bar on top. A click anywhere else closes it. On a desktop the
+ * head has a Reader button for the paper on that site, and the new-tab gestures
+ * (a modifier or the middle button) still open the site itself.
  *
  * Touch is the media query and nothing else. dash.isCoarsePointer() also matches
  * a narrow desktop window, and the user agent is a guess; "no hover, coarse
@@ -15,11 +17,12 @@
     'use strict';
 
     const QUERY = '(hover: none) and (pointer: coarse)';
-    const MAX_ITEMS = 5;
+    const MAX_ITEMS = 6;
     const MARGIN = 12;
     const GAP = 8;
 
     let popover = null;   // { el, badge, key, bookmark }
+    let opening = false;  // between the click and the news arriving
     let watcher = null;   // MutationObserver on the page, while a popover is open
     let resizer = null;   // ResizeObserver on the page, while a popover is open
 
@@ -28,6 +31,18 @@
     }
 
     function dash() { return global.dashboardInstance; }
+
+    // The reader's own wish, and the app's switch for its animations.
+    function still() {
+        return Boolean(global.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+            || Boolean(document.body?.classList.contains('no-animations'));
+    }
+
+    // A modifier or another button is a new tab, a new window or the menu: the
+    // browser's own, and the site's.
+    function plainClick(event) {
+        return (event.button || 0) === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey;
+    }
 
     function t(key, fallback, vars) {
         let text = fallback;
@@ -56,9 +71,9 @@
     // Whichever way it closes, the reader lands where they were: on the badge.
     function close() {
         if (!popover) return;
-        const { badge } = popover;
+        const { el, badge } = popover;
         badge?.setAttribute('aria-expanded', 'false');
-        popover.el.remove();
+        fadeOut(el);
         watcher?.disconnect();
         resizer?.disconnect();
         watcher = null;
@@ -70,6 +85,24 @@
         global.removeEventListener('scroll', onScroll, true);
         popover = null;
         global.FocusTrapUtils?.focusIfConnected?.(badge);
+    }
+
+    /**
+     * Out of the way at once, gone a moment later. The element stops being the
+     * popover straight away (its class, role and ids go), so a quick reopen
+     * finds one popover and not two; the inline animation beats the theme's.
+     */
+    function fadeOut(el) {
+        el.classList.replace('feed-news-pop', 'feed-news-pop-closing');
+        el.removeAttribute('role');
+        el.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+        el.style.pointerEvents = 'none';
+        if (still()) { el.remove(); return; }
+        let gone = false;
+        const finish = () => { if (!gone) { gone = true; el.remove(); } };
+        el.addEventListener('animationend', finish, { once: true });
+        global.setTimeout(finish, 150);
+        el.style.animation = 'feed-news-pop-shrink 90ms ease-in forwards';
     }
 
     function onOutside(event) {
@@ -134,7 +167,8 @@
         el.style.width = `${width}px`;
         const left = Math.min(Math.max(MARGIN, rect.right - width), vw - width - MARGIN);
         el.style.left = `${left}px`;
-        const height = el.getBoundingClientRect().height;
+        // The layout height: while it grows, the drawn box is still small.
+        const height = el.offsetHeight;
         const below = vh - rect.bottom - GAP - MARGIN;
         const above = rect.top - GAP - MARGIN;
         const showBelow = below >= Math.min(height, 240) || below >= above;
@@ -146,6 +180,8 @@
         const arrow = Math.min(Math.max(16, rect.left + rect.width / 2 - left - 6), width - 28);
         el.style.setProperty('--feed-pop-arrow', `${arrow}px`);
         el.classList.toggle('is-above', !showBelow);
+        // It grows out of the row: from the edge next to it, at the arrow.
+        el.style.transformOrigin = `${arrow + 5}px ${showBelow ? 'top' : 'bottom'}`;
     }
 
     function openBookmark(bookmark) {
@@ -168,6 +204,8 @@
             + `<button type="button" class="feed-news-pop-site" data-pop-site aria-label="${esc(t('dashboard.feedWatchPopoverOpenSite', 'Open {name}', { name: bookmark.name || bookmark.url }))}">`
             + `<span class="feed-news-pop-name" id="feed-news-pop-name">${esc(bookmark.name || bookmark.url)}</span>`
             + `<span class="feed-news-pop-count">${esc(t('dashboard.feedWatchNewCount', '{n} new', { n: count }))}</span></button>`
+            // The paper on this site alone; a phone reaches it from the toast.
+            + (isTouch() ? '' : `<button type="button" class="feed-news-pop-reader" data-pop-reader aria-label="${esc(t('dashboard.feedWatchPopoverReaderLabel', 'Open the reader for {name}', { name: bookmark.name || bookmark.url }))}">${esc(t('dashboard.feedWatchPopoverReader', 'Reader'))}</button>`)
             + `<button type="button" class="feed-news-pop-close" data-pop-close aria-label="${esc(t('dashboard.close', 'Close'))}">×</button></div>`
             + `<ul class="feed-news-pop-list">` + items.map((item, i) => `<li><button type="button" class="feed-news-pop-item" data-pop-item="${i}">`
             + (item.image ? `<img class="feed-news-pop-thumb" src="${esc(item.image)}" alt="" decoding="async">` : '')
@@ -178,6 +216,12 @@
         el.addEventListener('click', (event) => {
             event.stopPropagation();
             if (event.target.closest('[data-pop-close]')) { close(); return; }
+            if (event.target.closest('[data-pop-reader]')) {
+                const focusKey = dash()?.feedWatch?.key(bookmark.url);
+                close();
+                void global.FeedWatchNews?.open({ focusKey, source: 'button' });
+                return;
+            }
             // The bar on top is the way on to the site itself.
             if (event.target.closest('[data-pop-site]')) { openBookmark(bookmark); close(); return; }
             const itemButton = event.target.closest('[data-pop-item]');
@@ -205,9 +249,13 @@
         const watch = dash()?.feedWatch;
         if (!watch) return;
         const key = watch.key(bookmark.url);
-        const news = await watch.news(key);
+        opening = true;
+        let news;
+        try { news = await watch.news(key); } finally { opening = false; }
         const items = news.items.filter((item) => item.unread !== false);
-        if (!items.length) return;
+        // Counted but nothing left to show (read in the paper meanwhile): the
+        // click was for the site, so it goes there rather than nowhere.
+        if (!items.length) { openBookmark(bookmark); return; }
         const shown = items.slice(0, MAX_ITEMS);
         // What the entry counts, not what was loaded: more may be waiting.
         const waiting = Number(watch.watchFor(bookmark)?.newCount) || items.length;
@@ -218,6 +266,7 @@
             .filter((b) => b.closest('a')?.href === badge.closest('a')?.href);
         popover = { el, badge, key, bookmark, copy: Math.max(0, same.indexOf(badge)) };
         place(el, badge);
+        el.style.animation = still() ? 'none' : 'feed-news-pop-grow 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both';
         // A page that is still settling (pictures, a repaint) moves the row after
         // the first placement.
         let queued = false;
@@ -241,11 +290,10 @@
     }
 
     /**
-     * Make a row's news badge a button on a touch screen. Called by the row
-     * painter for every badge it draws.
+     * Make a row's news badge a button, and the row a way to the headlines.
+     * Called by the row painter for every badge it draws.
      */
     function attach(badge, bookmark, openLink) {
-        if (!isTouch()) return;
         badge.classList.add('is-tappable');
         badge.setAttribute('role', 'button');
         badge.setAttribute('tabindex', '0');
@@ -253,6 +301,7 @@
         badge.setAttribute('aria-expanded', 'false');
         // Inside the row's link: without this the tap would open the bookmark.
         badge.addEventListener('click', (event) => {
+            if (!plainClick(event)) return;
             event.preventDefault();
             event.stopPropagation();
             // A touch sends a hover before the click, and the row's own preview
@@ -266,12 +315,22 @@
             try { dash()?.dismissBookmarkPreviewInteractions?.(); } catch { /* no card */ }
             void toggle(bookmark, badge);
         });
-        // A bookmark with news never opens its site straight from the row on a
-        // touch screen: whatever part of the row is tapped, the headlines come
-        // first, and the site is one tap further, from the bar on top.
+        // A button answers Enter and Space as well, and keeps them from the row.
+        badge.addEventListener('keydown', (event) => {
+            if ((event.key !== 'Enter' && event.key !== ' ') || event.ctrlKey || event.metaKey || event.altKey) return;
+            event.preventDefault();
+            event.stopPropagation();
+            void toggle(bookmark, badge);
+        });
+        // A bookmark with news never opens its site straight from the row:
+        // whatever part of the row is clicked or tapped, and Enter on it too,
+        // the headlines come first, and the site is one click further, from the
+        // bar on top. A new-tab gesture still goes straight to the site.
         if (openLink) {
             openLink.addEventListener('click', (event) => {
-                if (!badge.isConnected || event.defaultPrevented) return;
+                if (!badge.isConnected || event.defaultPrevented || !plainClick(event)) return;
+                // Open page on the hover card means the site itself.
+                if (openLink._feedPopoverBypass) return;
                 event.preventDefault();
                 event.stopImmediatePropagation();
                 openLink._previewHoverActive = false;
@@ -298,5 +357,5 @@
         }
     });
 
-    global.FeedWatchPopover = { isTouch, attach, close, isOpen: () => popover !== null };
+    global.FeedWatchPopover = { isTouch, attach, close, isOpen: () => popover !== null || opening };
 })(window);

@@ -232,7 +232,12 @@ body.no-animations .feed-news-bar > i { transition: none; }
 .is-paper .feed-news-item:first-child, .is-paper .is-wide > .feed-news-item:nth-child(2) { border-top: 0; }
 .is-paper .feed-news-entry:hover, .is-paper .feed-news-entry:focus-visible { background: transparent; }
 .is-paper .feed-news-entry:hover .feed-news-entry-title { text-decoration: underline; }
-.is-paper .feed-news-entry-image { display: none; }
+/* The newspaper shows the pictures too: small, square, a little muted like a
+   printed photograph, on the side of the headline. */
+.is-paper .feed-news-entry-image {
+    width: 4.2rem; height: 4.2rem; border-radius: 2px; filter: grayscale(0.2) contrast(1.02);
+    border: 1px solid #cdc3a8;
+}
 .is-paper .feed-news-entry-title, .is-paper .feed-news-entry-lead, .is-paper .feed-news-entry-meta { font-family: Georgia, 'Times New Roman', serif; }
 .is-paper .feed-news-entry-title { font-size: 1.15rem; line-height: 1.2; }
 .is-paper .feed-news-entry-lead { color: #2b271d; }
@@ -395,19 +400,33 @@ body.no-animations .feed-news-bar > i { transition: none; }
     .feed-news-open { margin-left: auto; }
 }
 
-/* Touch: the news badge is a button, and opens a popover with the headlines. The
+/* The news badge is a button, and the row opens a popover with the headlines. The
    popover is a .move-popover, the surface every menu in the app wears, so the
-   theme's edges, depth and drop come from there; only its layout is set here. */
+   theme's edges, depth and drop come from there; only its layout is set here.
+   .feed-news-pop-closing is the same popover on its way out. */
 .bookmark-news-badge.is-tappable { position: relative; cursor: pointer; pointer-events: auto; } /* row badges are inert by default */
-.bookmark-news-badge.is-tappable::after { content: ''; position: absolute; inset: -12px -10px; } /* a 44 px target around a small badge */
-.move-popover.feed-news-pop {
+@media (hover: none), (pointer: coarse) {
+    .bookmark-news-badge.is-tappable::after { content: ''; position: absolute; inset: -12px -10px; } /* a 44 px target around a small badge */
+}
+.move-popover:is(.feed-news-pop, .feed-news-pop-closing) {
     max-width: none; min-width: 0; max-height: none; padding: 0; overflow-y: auto; overscroll-behavior: contain;
 }
-.feed-news-pop::before {
+/* It grows down out of the row (up, when it sits above it); the script sets the
+   animation inline, after the theme's own, and leaves it off for reduced motion. */
+.feed-news-pop.is-above { --feed-pop-rise: 6px; }
+@keyframes feed-news-pop-grow {
+    from { transform: translateY(var(--feed-pop-rise, -6px)) scaleY(0.2); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+@keyframes feed-news-pop-shrink { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+    .move-popover:is(.feed-news-pop, .feed-news-pop-closing) { animation: none !important; }
+}
+:is(.feed-news-pop, .feed-news-pop-closing)::before {
     content: ''; position: absolute; top: -6px; left: var(--feed-pop-arrow, 24px); width: 10px; height: 10px; rotate: 45deg;
     background: var(--background-secondary); border-left: 1px solid var(--border-primary); border-top: 1px solid var(--border-primary);
 }
-.feed-news-pop.is-above::before { top: auto; bottom: -6px; rotate: 225deg; }
+:is(.feed-news-pop, .feed-news-pop-closing).is-above::before { top: auto; bottom: -6px; rotate: 225deg; }
 .feed-news-pop-head {
     display: flex; align-items: center; gap: 0.5rem; padding: 0.15rem 0.2rem 0.15rem 0.8rem; min-height: 44px;
     position: sticky; top: 0; background: var(--background-secondary); border-bottom: 1px solid var(--border-secondary); z-index: 1;
@@ -438,6 +457,32 @@ body.no-animations .feed-news-bar > i { transition: none; }
 }
 .feed-news-pop-meta { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed-news-pop-more { justify-content: center; color: var(--accent-primary); font-weight: var(--font-weight-semibold, 600); }
+
+/* Reader: the paper on this site, a small accent button between the bar and the ×.
+   Desktop only (the script leaves it out on a phone). */
+.feed-news-pop-reader {
+    flex: none; padding: 0.3rem var(--space-3, 0.75rem); border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    border-radius: var(--radius-4, 8px); background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary); font: inherit; font-size: var(--text-sm, 0.85rem); font-weight: var(--font-weight-semibold, 600);
+    line-height: 1.2; white-space: nowrap; cursor: pointer;
+}
+.feed-news-pop-reader:hover, .feed-news-pop-reader:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 24%, transparent); outline: none;
+}
+
+/* A mouse: the 44 px targets are for fingers, and a row lights up under it. */
+@media (hover: hover) and (pointer: fine) {
+    .feed-news-pop-head { min-height: 40px; }
+    .feed-news-pop-site { min-height: 36px; }
+    .feed-news-pop-close { width: 32px; height: 32px; font-size: 1.2rem; }
+    .feed-news-pop-item, .feed-news-pop-more { min-height: 0; padding: 0.5rem 0.8rem; }
+    .feed-news-pop-item:hover, .feed-news-pop-more:hover, .feed-news-pop-site:hover {
+        background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    }
+}
+@media (hover: none), (pointer: coarse) {
+    .feed-news-pop-reader { min-height: 44px; }
+}
 
 /* The front page of the paper: a section per site, the one with the newest
    unread item first. An unread item has a dot; a read one a hollow ring and

@@ -155,7 +155,9 @@ test('another page\'s tab gets a dot while it holds unread news, and loses it on
     await tabs.nth(1).click();
     await expect(row(page, 'Other Blog').locator('.bookmark-news-badge')).toBeVisible();
     await expect(page.locator('.page-tab-news-dot')).toHaveCount(0);
+    // The row shows the headlines first; the bar on top opens the site.
     await row(page, 'Other Blog').locator('a.bookmark-open').click();
+    await page.locator('.feed-news-pop [data-pop-site]').click();
     await expect(row(page, 'Other Blog').locator('.bookmark-news-badge')).toHaveCount(0);
     await tabs.nth(0).click();
     await expect(page.locator('.page-tab-news-dot')).toHaveCount(0);
