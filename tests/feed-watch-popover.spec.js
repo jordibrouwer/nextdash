@@ -21,11 +21,13 @@ test.beforeEach(async ({ request }) => {
 });
 test.afterEach(async () => { await site.close(); });
 
-async function stubNews(page, count = 6) {
+// With `long`, the fifth headline is one unbroken word far wider than the popover.
+async function stubNews(page, count = 6, { long = false } = {}) {
     await page.goto('/');
     const key = await keyOf(page, site.url);
     const items = Array.from({ length: count }, (_, i) => ({
         ...newsItem(i + 1, i === 0 ? { image: '/data/preview-images/pi-test.png' } : {}),
+        ...(long && i === 4 ? { title: `Headline5-${'x'.repeat(120)}` } : {}),
         bookmarkKey: key, bookmarkName: 'Stub Blog', bookmarkUrl: site.url, feedTitle: 'Stub Posts',
     }));
     await stubWatch(page, { list: watchPayload(key, items), items });
@@ -109,16 +111,19 @@ test.describe('on a touch screen', () => {
         await expect(badge(page)).toHaveCount(0);
     });
 
-    test('tapping "+1 more" opens the bookmark', async ({ page, context }) => {
+    test('tapping "+1 more" shows the seventh in the same popover, and opens nothing', async ({ page, context }) => {
         await stubNews(page, 7);
         await openDashboard(page);
+        let opened = 0;
+        context.on('page', () => { opened += 1; });
         await badge(page).tap();
-        const opened = context.waitForEvent('page');
         await pop(page).locator('.feed-news-pop-more').tap();
-        const tab = await opened;
-        expect(tab.url()).toContain(new URL(site.url).host);
-        await expect(pop(page)).toHaveCount(0);
-        await expect(badge(page)).toHaveCount(0);
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(7);
+        // All of them are here now: the bar on top is the way to the site.
+        await expect(pop(page).locator('.feed-news-pop-more')).toHaveCount(0);
+        await page.waitForTimeout(300);
+        expect(opened).toBe(0);
+        await expect(badge(page)).toHaveText('7');
     });
 
     test('the close button closes it and leaves the badge and the bookmark alone', async ({ page, context }) => {
@@ -263,6 +268,67 @@ test.describe('on a touch screen', () => {
         await opened;
     });
 });
+
+/**
+ * Where the popover is and what it holds, measured once it has grown in. The
+ * test's real claim is in every one of these: nothing sideways to scroll, and
+ * the whole box on the screen.
+ */
+async function shape(page) {
+    await settled(page);
+    return pop(page).evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const link = document.querySelector('.bookmark-news-badge[aria-expanded="true"]').closest('a').getBoundingClientRect();
+        const items = [...el.querySelectorAll('.feed-news-pop-item')].map((b) => b.getBoundingClientRect().toJSON());
+        const cs = getComputedStyle(el);
+        return {
+            compact: el.classList.contains('is-compact'), two: el.classList.contains('is-two-cols'),
+            side: el.classList.contains('is-side'), above: el.classList.contains('is-above'),
+            thumbs: [...el.querySelectorAll('.feed-news-pop-thumb')].filter((img) => img.getBoundingClientRect().width > 0).length,
+            rect: r.toJSON(), row: link.toJSON(), items, vw: innerWidth, vh: innerHeight,
+            scrollWidth: el.scrollWidth, clientWidth: el.clientWidth, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,
+            overflowX: cs.overflowX, listOverflowX: getComputedStyle(el.querySelector('.feed-news-pop-list')).overflowX,
+        };
+    });
+}
+
+function expectOnScreen(s) {
+    expect(s.scrollWidth).toBeLessThanOrEqual(s.clientWidth);
+    expect(s.overflowX).toBe('hidden');
+    expect(s.rect.top).toBeGreaterThanOrEqual(0);
+    expect(s.rect.left).toBeGreaterThanOrEqual(0);
+    expect(s.rect.bottom).toBeLessThanOrEqual(s.vh + 0.5);
+    expect(s.rect.right).toBeLessThanOrEqual(s.vw + 0.5);
+}
+
+/**
+ * Put the row at the bottom of the screen, or in its middle, by scrolling the
+ * page; the spacers give a short dashboard room to scroll.
+ */
+async function rowAt(page, where) {
+    await link(page).evaluate((row, at) => {
+        for (const end of ['before', 'after']) {
+            const spacer = document.createElement('div');
+            spacer.style.height = `${innerHeight * 2}px`;
+            if (end === 'before') document.body.firstElementChild.before(spacer); else document.body.append(spacer);
+        }
+        const r = row.getBoundingClientRect();
+        const target = at === 'bottom' ? innerHeight - 4 - r.height : (innerHeight - r.height) / 2;
+        window.scrollBy(0, r.top - target);
+    }, where);
+    // WebKit hands the scroll event over late; it must not land on the popover.
+    await page.waitForTimeout(300);
+}
+
+/**
+ * A real click on the row where it is. A locator click may scroll the page first
+ * (WebKit does, for a row at the very bottom), and a page that scrolls closes the
+ * popover it just opened.
+ */
+async function clickInPlace(page) {
+    const box = await name(page).boundingBox();
+    await page.mouse.click(box.x + 20, box.y + 10);
+}
 
 /** Is the hover card on screen? */
 const cardShown = (page) => page.evaluate(() => {
@@ -412,6 +478,163 @@ test.describe('on a desktop', () => {
     });
 });
 
+test.describe('on a desktop, "+n more" and the shape', () => {
+    test.use({ viewport: { width: 1500, height: 950 } });
+
+    test('"+6 more" shows four more in place; "+2 more · Open site" is the way to the rest', async ({ page, context }) => {
+        await stubNews(page, 12, { long: true });
+        await openDashboard(page);
+        let opened = 0;
+        const counter = () => { opened += 1; };
+        context.on('page', counter);
+        await name(page).click({ position: { x: 20, y: 10 } });
+        const more = pop(page).locator('.feed-news-pop-more');
+        await expect(more).toHaveText('+6 more');
+        await expect(more).toHaveAttribute('aria-expanded', 'false');
+        await more.click();
+        await expect(pop(page)).toBeVisible();
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(10);
+        await expect(pop(page).locator('.feed-news-pop-title').nth(9)).toHaveText('Headline 10');
+        // The cursor lands on the first of the newcomers.
+        expect(await page.evaluate(() => document.activeElement?.dataset.popItem)).toBe('6');
+        await expect(more).toHaveText('+2 more · Open site');
+        await page.waitForTimeout(300);
+        expect(opened).toBe(0);
+        expectOnScreen(await shape(page));
+        context.off('page', counter);
+        const tab = context.waitForEvent('page');
+        await more.click();
+        await expect.poll(async () => (await tab).url()).toContain(new URL(site.url).host);
+        await expect(pop(page)).toHaveCount(0);
+    });
+
+    test('with ten or fewer, the expanded popover has no line under the headlines', async ({ page }) => {
+        await stubNews(page, 9);
+        await openDashboard(page);
+        await name(page).click({ position: { x: 20, y: 10 } });
+        await pop(page).locator('.feed-news-pop-more').click();
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(9);
+        await expect(pop(page).locator('.feed-news-pop-more')).toHaveCount(0);
+        // Esc still closes it, back on the badge.
+        await page.keyboard.press('Escape');
+        await expect(pop(page)).toHaveCount(0);
+        expect(await page.evaluate(() => document.activeElement?.classList.contains('bookmark-news-badge'))).toBe(true);
+    });
+
+    test('a tall screen: one column with pictures, under the row, growing from the top', async ({ page }) => {
+        await stubNews(page, 12, { long: true });
+        await openDashboard(page);
+        await name(page).click({ position: { x: 20, y: 10 } });
+        const origin = await pop(page).evaluate((el) => getComputedStyle(el).transformOrigin.split(' ').map(parseFloat));
+        expect(origin[1]).toBe(0);
+        const s = await shape(page);
+        expect([s.compact, s.two, s.side, s.above]).toEqual([false, false, false, false]);
+        expect(s.thumbs).toBe(1);
+        expect(s.rect.top).toBeGreaterThanOrEqual(s.row.top);
+        expect(s.scrollHeight).toBeLessThanOrEqual(s.clientHeight);
+        expectOnScreen(s);
+        await page.screenshot({ path: '/tmp/fw31-layout-1.png' });
+    });
+
+    test('a short screen with the row at the bottom: compact, over the row, growing from the bottom', async ({ page }) => {
+        await page.setViewportSize({ width: 1500, height: 420 });
+        await stubNews(page, 12, { long: true });
+        await openDashboard(page);
+        await rowAt(page, 'bottom');
+        await clickInPlace(page);
+        const origin = await pop(page).evaluate((el) => [getComputedStyle(el).transformOrigin.split(' ').map(parseFloat)[1], el.offsetHeight]);
+        expect(Math.abs(origin[0] - origin[1])).toBeLessThan(1);
+        const s = await shape(page);
+        expect([s.compact, s.two, s.side, s.above]).toEqual([true, false, false, true]);
+        expect(s.thumbs).toBe(0);
+        expect(s.scrollHeight).toBeLessThanOrEqual(s.clientHeight);
+        expectOnScreen(s);
+        await page.screenshot({ path: '/tmp/fw31-layout-2.png' });
+    });
+
+    test('shorter still and wide: two columns, top to bottom, all on the screen', async ({ page }) => {
+        await page.setViewportSize({ width: 1500, height: 300 });
+        await stubNews(page, 12, { long: true });
+        await openDashboard(page);
+        await rowAt(page, 'bottom');
+        await clickInPlace(page);
+        const s = await shape(page);
+        expect([s.compact, s.two, s.side]).toEqual([true, true, false]);
+        expect(s.scrollHeight).toBeLessThanOrEqual(s.clientHeight);
+        // 1, 2, 3 down the first column, 4, 5, 6 down the second.
+        expect(s.items[0].left).toBeLessThan(s.items[3].left);
+        expect(s.items[1].left).toBe(s.items[0].left);
+        expect(s.items[1].top).toBeGreaterThan(s.items[0].top);
+        expect(s.items[3].top).toBe(s.items[0].top);
+        for (const item of s.items) {
+            expect(item.top).toBeGreaterThanOrEqual(0);
+            expect(item.bottom).toBeLessThanOrEqual(s.vh);
+            expect(item.right).toBeLessThanOrEqual(s.vw);
+        }
+        expectOnScreen(s);
+        await page.screenshot({ path: '/tmp/fw31-layout-3.png' });
+    });
+
+    test('very short and wide, the row in the middle: beside the row, clear of it', async ({ page }) => {
+        await page.setViewportSize({ width: 1500, height: 300 });
+        await stubNews(page, 12, { long: true });
+        await openDashboard(page);
+        await rowAt(page, 'middle');
+        await clickInPlace(page);
+        const origin = await pop(page).evaluate((el) => [getComputedStyle(el).transformOrigin.split(' ').map(parseFloat)[0], el.offsetWidth, el.classList.contains('is-left')]);
+        // Beside the row on its left: it grows out of its right edge.
+        expect(origin[2]).toBe(true);
+        expect(Math.abs(origin[0] - origin[1])).toBeLessThan(1);
+        const s = await shape(page);
+        expect([s.compact, s.two, s.side]).toEqual([true, false, true]);
+        expect(s.scrollHeight).toBeLessThanOrEqual(s.clientHeight);
+        const overlaps = s.rect.left < s.row.right && s.rect.right > s.row.left && s.rect.top < s.row.bottom && s.rect.bottom > s.row.top;
+        expect(overlaps).toBe(false);
+        expectOnScreen(s);
+        await page.screenshot({ path: '/tmp/fw31-layout-4.png' });
+    });
+
+    test('narrow and very short: compact, and it scrolls up and down only', async ({ page }) => {
+        await page.setViewportSize({ width: 520, height: 300 });
+        await stubNews(page, 12, { long: true });
+        await openDashboard(page);
+        await rowAt(page, 'bottom');
+        await clickInPlace(page);
+        const s = await shape(page);
+        expect([s.compact, s.two, s.side]).toEqual([true, false, false]);
+        expect(s.scrollHeight).toBeGreaterThan(s.clientHeight);
+        expect(s.listOverflowX).toBe('hidden');
+        expectOnScreen(s);
+        await page.screenshot({ path: '/tmp/fw31-layout-5.png' });
+        // Scrolling the popover itself keeps it open.
+        await pop(page).hover();
+        await page.mouse.wheel(0, 80);
+        await page.waitForTimeout(200);
+        await expect(pop(page)).toBeVisible();
+    });
+
+    test('expanding at the bottom of the screen takes the shape ten headlines need', async ({ page }) => {
+        await page.setViewportSize({ width: 1500, height: 500 });
+        await stubNews(page, 12, { long: true });
+        await openDashboard(page);
+        await rowAt(page, 'bottom');
+        await clickInPlace(page);
+        let s = await shape(page);
+        expect([s.compact, s.two, s.side]).toEqual([false, false, false]);
+        expectOnScreen(s);
+        // The new shape is there as the click ends, before the next paint: the
+        // longer list never shows in the old one.
+        await pop(page).evaluate((el) => el.addEventListener('click', () => { window.__shapeOnClick = el.className; }, { once: true }));
+        await pop(page).locator('.feed-news-pop-more').click();
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(10);
+        expect(await page.evaluate(() => window.__shapeOnClick)).toContain('is-compact');
+        s = await shape(page);
+        expect(s.compact).toBe(true);
+        expect(s.scrollHeight).toBeLessThanOrEqual(s.clientHeight);
+        expectOnScreen(s);
+    });
+});
+
 test.describe('on a desktop, with reduced motion', () => {
     test.use({ viewport: { width: 1500, height: 950 } });
 
@@ -426,6 +649,27 @@ test.describe('on a desktop, with reduced motion', () => {
         expect(await page.locator('.feed-news-pop, .feed-news-pop-closing').count()).toBe(0);
     });
 });
+
+for (const height of [812, 400]) {
+    test.describe(`on a phone, ${height} px tall`, () => {
+        test.use({ viewport: { width: 375, height }, hasTouch: true, isMobile: true });
+
+        test('one column, never two or beside the row, and "+6 more" shows ten in place', async ({ page }) => {
+            await stubNews(page, 12, { long: true });
+            await openDashboard(page);
+            await badge(page).tap();
+            let s = await shape(page);
+            expect([s.two, s.side]).toEqual([false, false]);
+            expectOnScreen(s);
+            await pop(page).locator('.feed-news-pop-more').tap();
+            await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(10);
+            await expect(pop(page).locator('.feed-news-pop-more')).toHaveText('+2 more · Open site');
+            s = await shape(page);
+            expect([s.two, s.side]).toEqual([false, false]);
+            expectOnScreen(s);
+        });
+    });
+}
 
 test.describe('on a touch screen, against the real server', () => {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });

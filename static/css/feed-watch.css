@@ -408,14 +408,30 @@ body.no-animations .feed-news-bar > i { transition: none; }
 @media (hover: none), (pointer: coarse) {
     .bookmark-news-badge.is-tappable::after { content: ''; position: absolute; inset: -12px -10px; } /* a 44 px target around a small badge */
 }
+/* Never sideways: what is too wide wraps or ends in an ellipsis. Up and down it
+   scrolls only when no layout fits (the script decides), on a thin bar in the
+   theme's colours that takes no gutter of its own. */
 .move-popover:is(.feed-news-pop, .feed-news-pop-closing) {
-    max-width: none; min-width: 0; max-height: none; padding: 0; overflow-y: auto; overscroll-behavior: contain;
+    max-width: none; min-width: 0; max-height: none; padding: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text-primary) 28%, transparent) transparent;
 }
-/* It grows down out of the row (up, when it sits above it); the script sets the
-   animation inline, after the theme's own, and leaves it off for reduced motion. */
+:is(.feed-news-pop, .feed-news-pop-closing)::-webkit-scrollbar { width: 8px; height: 0; background: transparent; }
+:is(.feed-news-pop, .feed-news-pop-closing)::-webkit-scrollbar-track { background: transparent; }
+:is(.feed-news-pop, .feed-news-pop-closing)::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-primary) 28%, transparent);
+    border: 2px solid transparent; background-clip: padding-box; border-radius: 999px;
+}
+/* It grows out of the row: down under it, up over it, sideways beside it. The
+   script sets the animation inline, after the theme's own, and leaves it off
+   for reduced motion; a change of layout later is never animated. */
 .feed-news-pop.is-above { --feed-pop-rise: 6px; }
+.feed-news-pop.is-side { --feed-pop-rise: 0px; --feed-pop-rise-x: -6px; --feed-pop-scale-x: 0.2; --feed-pop-scale-y: 1; }
+.feed-news-pop.is-side.is-left { --feed-pop-rise-x: 6px; }
 @keyframes feed-news-pop-grow {
-    from { transform: translateY(var(--feed-pop-rise, -6px)) scaleY(0.2); opacity: 0; }
+    from {
+        transform: translate(var(--feed-pop-rise-x, 0px), var(--feed-pop-rise, -6px)) scale(var(--feed-pop-scale-x, 1), var(--feed-pop-scale-y, 0.2));
+        opacity: 0;
+    }
     to { transform: scale(1); opacity: 1; }
 }
 @keyframes feed-news-pop-shrink { to { opacity: 0; } }
@@ -426,7 +442,12 @@ body.no-animations .feed-news-bar > i { transition: none; }
     content: ''; position: absolute; top: -6px; left: var(--feed-pop-arrow, 24px); width: 10px; height: 10px; rotate: 45deg;
     background: var(--background-secondary); border-left: 1px solid var(--border-primary); border-top: 1px solid var(--border-primary);
 }
-:is(.feed-news-pop, .feed-news-pop-closing).is-above::before { top: auto; bottom: -6px; rotate: 225deg; }
+/* Beside the row the pointer turns to it; with the badge past the edge (two wide
+   columns) there is nothing under it to point at. Past the bottom or the right
+   edge of a box that scrolls, the pointer would be scrolling room of its own:
+   a scrollbar for nothing, both ways. Over the row and left of it, it stays out. */
+:is(.feed-news-pop, .feed-news-pop-closing).is-side::before { top: var(--feed-pop-arrow-y, 16px); left: -6px; rotate: -45deg; }
+:is(.feed-news-pop, .feed-news-pop-closing):is(.is-above, .is-side.is-left, .is-arrowless)::before { display: none; }
 .feed-news-pop-head {
     display: flex; align-items: center; gap: 0.5rem; padding: 0.15rem 0.2rem 0.15rem 0.8rem; min-height: 44px;
     position: sticky; top: 0; background: var(--background-secondary); border-bottom: 1px solid var(--border-secondary); z-index: 1;
@@ -444,10 +465,16 @@ body.no-animations .feed-news-bar > i { transition: none; }
     display: flex; align-items: center; gap: 0.7rem; width: 100%; min-height: 44px; padding: 0.6rem 0.8rem;
     text-align: left; background: transparent; border: 0; border-top: 1px solid var(--border-secondary); color: var(--text-primary); font: inherit; cursor: pointer;
 }
-.feed-news-pop-list { margin: 0; padding: 0; list-style: none; }
+.feed-news-pop-list { margin: 0; padding: 0; list-style: none; overflow-x: hidden; }
+.feed-news-pop-list > li { min-width: 0; }
 .feed-news-pop-list li:first-child > .feed-news-pop-item { border-top: 0; }
-.feed-news-pop-item:active, .feed-news-pop-more:active, .feed-news-pop-item:focus-visible, .feed-news-pop-more:focus-visible {
+/* The line under the headlines stays in sight while they scroll. */
+.feed-news-pop-more { position: sticky; bottom: 0; z-index: 1; background: var(--background-secondary); }
+.feed-news-pop-item:active, .feed-news-pop-item:focus-visible {
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent); outline: none;
+}
+.feed-news-pop-more:active, .feed-news-pop-more:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)); outline: none;
 }
 .feed-news-pop-thumb { width: 40px; height: 40px; border-radius: var(--radius-4, 8px); object-fit: cover; flex: none; }
 .feed-news-pop-text { display: grid; gap: 0.1rem; min-width: 0; }
@@ -457,6 +484,23 @@ body.no-animations .feed-news-bar > i { transition: none; }
 }
 .feed-news-pop-meta { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed-news-pop-more { justify-content: center; color: var(--accent-primary); font-weight: var(--font-weight-semibold, 600); }
+.feed-news-pop-ago { white-space: nowrap; }
+
+/* Compact: no pictures, a line per headline with its age after it, small. */
+.feed-news-pop.is-compact .feed-news-pop-thumb,
+.feed-news-pop.is-compact .feed-news-pop-feed { display: none; }
+.feed-news-pop.is-compact .feed-news-pop-text { display: flex; align-items: baseline; gap: 0.5rem; flex: 1 1 auto; }
+.feed-news-pop.is-compact .feed-news-pop-title { display: block; -webkit-line-clamp: none; flex: 1 1 auto; min-width: 0; white-space: nowrap; text-overflow: ellipsis; }
+.feed-news-pop.is-compact .feed-news-pop-meta { flex: none; overflow: visible; }
+
+/* Two columns: the headlines run down the first, then the second. The script
+   sets how many rows half of them take. */
+.feed-news-pop.is-two-cols .feed-news-pop-list {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: column;
+    grid-template-rows: repeat(var(--feed-pop-rows, 3), auto);
+}
+.feed-news-pop.is-two-cols .feed-news-pop-list > li > .feed-news-pop-item { height: 100%; border-top: 0; border-bottom: 1px solid var(--border-secondary); }
+.feed-news-pop.is-two-cols .feed-news-pop-more { border-top: 0; }
 
 /* Reader: the paper on this site, a small accent button between the bar and the ×.
    Desktop only (the script leaves it out on a phone). */
@@ -476,9 +520,11 @@ body.no-animations .feed-news-bar > i { transition: none; }
     .feed-news-pop-site { min-height: 36px; }
     .feed-news-pop-close { width: 32px; height: 32px; font-size: 1.2rem; }
     .feed-news-pop-item, .feed-news-pop-more { min-height: 0; padding: 0.5rem 0.8rem; }
-    .feed-news-pop-item:hover, .feed-news-pop-more:hover, .feed-news-pop-site:hover {
+    .feed-news-pop.is-compact :is(.feed-news-pop-item, .feed-news-pop-more) { padding-block: 0.4rem; }
+    .feed-news-pop-item:hover, .feed-news-pop-site:hover {
         background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     }
+    .feed-news-pop-more:hover { background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)); }
 }
 @media (hover: none), (pointer: coarse) {
     .feed-news-pop-reader { min-height: 44px; }

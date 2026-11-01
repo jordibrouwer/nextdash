@@ -4088,7 +4088,8 @@
     "feedWatchRowFoundMany": "{n} feeds gevonden",
     "feedWatchRetryNow": "Nu opnieuw proberen",
     "feedWatchPopoverReader": "Lezer",
-    "feedWatchPopoverReaderLabel": "Open de lezer voor {name}"
+    "feedWatchPopoverReaderLabel": "Open de lezer voor {name}",
+    "feedWatchPopoverMoreOpenSite": "+{n} meer · Open site"
   },
   "health": {
     "reloadPage": "Pagina herladen",

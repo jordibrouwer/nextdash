@@ -4088,7 +4088,8 @@
     "feedWatchRowFoundMany": "发现 {n} 个订阅源",
     "feedWatchRetryNow": "立即重试",
     "feedWatchPopoverReader": "阅读器",
-    "feedWatchPopoverReaderLabel": "打开 {name} 的阅读器"
+    "feedWatchPopoverReaderLabel": "打开 {name} 的阅读器",
+    "feedWatchPopoverMoreOpenSite": "另有 {n} 条 · 打开网站"
   },
   "health": {
     "reloadPage": "重新加载页面",

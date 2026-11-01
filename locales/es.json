@@ -4088,7 +4088,8 @@
     "feedWatchRowFoundMany": "{n} feeds encontrados",
     "feedWatchRetryNow": "Reintentar ahora",
     "feedWatchPopoverReader": "Lector",
-    "feedWatchPopoverReaderLabel": "Abrir el lector de {name}"
+    "feedWatchPopoverReaderLabel": "Abrir el lector de {name}",
+    "feedWatchPopoverMoreOpenSite": "+{n} más · Abrir sitio"
   },
   "health": {
     "reloadPage": "Recargar la página",

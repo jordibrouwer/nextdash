@@ -4088,7 +4088,8 @@
     "feedWatchRowFoundMany": "{n} flux trouvés",
     "feedWatchRetryNow": "Réessayer maintenant",
     "feedWatchPopoverReader": "Lecteur",
-    "feedWatchPopoverReaderLabel": "Ouvrir le lecteur pour {name}"
+    "feedWatchPopoverReaderLabel": "Ouvrir le lecteur pour {name}",
+    "feedWatchPopoverMoreOpenSite": "+{n} de plus · Ouvrir le site"
   },
   "health": {
     "reloadPage": "Recharger la page",
