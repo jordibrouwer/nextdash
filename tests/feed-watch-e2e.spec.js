@@ -59,7 +59,7 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
     await expect(modal.locator('[data-feed-news-chip]')).toHaveText('1 of 3');
     await modal.getByRole('button', { name: 'Next' }).click();
     await expect(modal.locator('.feed-news-title')).toHaveText('Second post');
-    await page.keyboard.press('Escape'); // back to the index
+    await modal.locator('[data-feed-news-index]').click(); // back to the index
     await expect(modal.locator('.feed-news-entry')).toHaveCount(3);
     await page.keyboard.press('Escape'); // closes
     await expect(modal).toBeHidden();

@@ -439,7 +439,7 @@
     function legendHtml() {
         return `<p class="feed-news-keys" aria-hidden="true">`
             + `<span><kbd>j / k</kbd> ${esc(t('dashboard.feedWatchKeyMove', 'next / previous'))}</span>`
-            + `<span><kbd>Esc</kbd> ${esc(t('dashboard.feedWatchKeyEsc', 'back / close'))}</span></p>`;
+            + `<span><kbd>Esc</kbd> ${esc(t('dashboard.feedWatchKeyEsc', 'close'))}</span></p>`;
     }
 
     function onKey(event) {
@@ -451,13 +451,9 @@
             else moveRow(delta);
             return;
         }
-        if (event.key === 'Escape' && state.mode === 'article' && listed().length > 1 && currentView() !== 'single') {
-            // From an article, Esc goes back to the front page; from there it closes.
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            state.mode = 'index';
-            render();
-        } else if (event.key === 'ArrowRight' && state.mode === 'article') {
+        // Esc is the window's own: it closes at once, from the front page and from
+        // an article alike. The Index button is the way back to the front page.
+        if (event.key === 'ArrowRight' && state.mode === 'article') {
             event.preventDefault();
             step(1);
         } else if (event.key === 'ArrowLeft' && state.mode === 'article') {

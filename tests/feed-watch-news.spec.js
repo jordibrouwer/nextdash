@@ -47,7 +47,7 @@ async function openArticle(page, n = 0) {
     await expect(modal(page).locator('[data-feed-news-chip]')).toBeVisible();
 }
 
-test('the news opens on an index, an article opens from it, Esc goes back and then closes', async ({ page }) => {
+test('the news opens on an index, an article opens from it, the Index button goes back, Esc closes at once', async ({ page }) => {
     await setup(page);
     await openFromCard(page);
     // The index: every item, no article yet, and the count of what is new.
@@ -65,13 +65,15 @@ test('the news opens on an index, an article opens from it, Esc goes back and th
     await page.keyboard.press('ArrowRight');
     await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 3');
 
-    // Esc from the article: back to the index, the modal stays.
-    await page.keyboard.press('Escape');
+    // The Index button goes back to the index, the modal stays.
+    await modal(page).locator('[data-feed-news-index]').click();
     await expect(modal(page)).toBeVisible();
     await expect(modal(page).locator('.feed-news-entry')).toHaveCount(3);
     await expect(modal(page).locator('.feed-news-title')).toHaveCount(0);
 
-    // Esc from the index: closes, and releases the scroll lock.
+    // Esc closes at once, from an article too, and releases the scroll lock.
+    await modal(page).locator('.feed-news-entry').first().click();
+    await expect(modal(page).locator('.feed-news-title')).toHaveCount(1);
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();
     await expect.poll(() => page.evaluate(() => window.ScrollLock.isLocked())).toBe(false);
@@ -285,7 +287,7 @@ test('read state per item: an article read, marked unread again, then the site r
     await expect.poll(newCount).toBe(3);
 
     // The whole site read from its section.
-    await page.keyboard.press('Escape');
+    await modal(page).locator('[data-feed-news-index]').click();
     await modal(page).getByRole('button', { name: 'Mark site read' }).click();
     await expect(badge).toHaveCount(0);
     await expect.poll(newCount).toBe(0);

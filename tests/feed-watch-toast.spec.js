@@ -112,7 +112,7 @@ test('opening the news again while it is open (?news=1, then the toast) leaves a
     await modal(page).locator('.feed-news-entry').first().click();
     await page.keyboard.press('ArrowRight');
     await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('2 of 3');
-    await page.keyboard.press('Escape'); // back to the index
+    await modal(page).locator('[data-feed-news-index]').click(); // back to the index
     await expect(modal(page)).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();

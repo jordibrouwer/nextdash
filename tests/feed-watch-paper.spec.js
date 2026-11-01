@@ -87,11 +87,12 @@ test('the News button opens one paper with a section per site, newest site first
     await expect(modal(page).locator('.feed-news-bar')).toHaveCount(0);
     expect(await page.evaluate(() => window.ScrollLock.isLocked())).toBe(true);
 
-    // An article, then Esc back to the paper, then Esc closes.
+    // An article, the Index button back to the paper, then Esc closes at once, from an article too.
     await item(page, 'A two').locator('.feed-news-entry').click();
     await expect(modal(page).locator('.feed-news-title')).toHaveText('A two');
-    await page.keyboard.press('Escape');
+    await modal(page).locator('[data-feed-news-index]').click();
     await expect(modal(page).locator('.feed-news-section-name')).toHaveCount(2);
+    await item(page, 'A two').locator('.feed-news-entry').click();
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();
     await expect.poll(() => page.evaluate(() => window.ScrollLock.isLocked())).toBe(false);
@@ -127,7 +128,7 @@ test('opening an article marks only that item read', async ({ page, request }) =
     await expect(row(page, 'Site A').locator('.bookmark-news-badge')).toHaveText('2');
     await expect.poll(() => page.title()).toMatch(/^\(4\) /);
 
-    await page.keyboard.press('Escape');
+    await modal(page).locator('[data-feed-news-index]').click();
     await expect(item(page, 'A two')).toHaveClass(/is-read/);
     await expect(item(page, 'A three')).toHaveClass(/is-unread/);
     await expect(item(page, 'A one')).toHaveClass(/is-unread/);
