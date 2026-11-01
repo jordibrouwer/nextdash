@@ -1,7 +1,7 @@
 /**
  * The window that chooses which feeds of a bookmark to watch.
  *
- * Reached from the bookmark's right-click menu and from the editor's feed line,
+ * Reached from the bookmark's right-click menu and the Watched feeds list,
  * so the choice looks the same wherever it is made. The server lists the feeds
  * the page advertises plus the ones already watched; one or several can be
  * ticked, or an address pasted.

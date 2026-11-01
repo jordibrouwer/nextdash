@@ -68,22 +68,19 @@ test('the menu entry says Watching feed… once watched, and Stop watching remov
     expect(headers).toBeTruthy();
 });
 
-test('the editor line opens the same picker, and shows the watch once saved', async ({ page, request }) => {
+test('a watch saved in the picker shows in the editor\'s Watch feeds row', async ({ page, request }) => {
     await page.setViewportSize({ width: 1500, height: 950 });
     await openDashboard(page);
-    await row(page, 'Stub Blog').click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Edit' }).click();
-    const open = page.locator('[data-feed-watch-open]');
-    await expect(open).toBeVisible();
-    await expect(open).toHaveText('Watch this feed…');
-    await open.click();
+    await openPicker(page, 'Stub Blog');
     await picker(page).getByLabel(/Posts/).check();
     await picker(page).locator('[data-feed-watch-interval]').selectOption('1440');
     await picker(page).locator('[data-feed-watch-save]').click();
     await expect(picker(page)).toBeHidden();
-    await expect(page.locator('[data-feed-watch-open]')).toHaveText('Watching · every day');
     const list = await (await request.get('/api/feeds/watch')).json();
     expect(list.total).toBe(1);
+    await row(page, 'Stub Blog').click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await expect(page.locator('#bookmark-form-modal [data-feed-watch-summary]')).toContainText('Watching · every day');
 });
 
 test('the picker offers seven intervals and 30 minutes saves', async ({ page, request }) => {

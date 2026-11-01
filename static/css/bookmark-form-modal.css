@@ -1217,6 +1217,16 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     #bookmark-form-modal .bookmark-form-col .bookmark-form-flags-row > .bookmark-inline-checkmode { grid-area: 5 / 2; }
     #bookmark-form-modal .bookmark-form-col .bookmark-form-flags-row > .bookmark-inline-toggles { grid-area: 6 / 2; margin: 0; }
 
+    /* Watch feeds, when the page has a feed: under Name, and everything below it one row down. */
+    #bookmark-form-modal .bookmark-form-col > .bookmark-form-watch { grid-area: 3 / 1; }
+    #bookmark-form-modal .bookmark-form-col:has(> .bookmark-form-watch:not([hidden])) > .bookmark-inline-field:has([data-field="tags"]) { grid-area: 4 / 1; }
+    #bookmark-form-modal .bookmark-form-col:has(> .bookmark-form-watch:not([hidden])) .bookmark-form-place > .bookmark-inline-field:has(> .bookmark-form-place-field) { grid-area: 5 / 1; }
+    #bookmark-form-modal .bookmark-form-col:has(> .bookmark-form-watch:not([hidden])) > .bookmark-inline-field[data-field-block="note"] { grid-area: 6 / 1 / span 2; }
+    #bookmark-form-modal .bookmark-form-col:has(> .bookmark-form-watch:not([hidden])) > .bookmark-form-card { grid-area: 1 / 2 / span 4; }
+    #bookmark-form-modal .bookmark-form-col:has(> .bookmark-form-watch:not([hidden])) .bookmark-form-place > .bookmark-inline-field:has([data-field="shortcut"]) { grid-area: 5 / 2; }
+    #bookmark-form-modal .bookmark-form-col:has(> .bookmark-form-watch:not([hidden])) .bookmark-form-flags-row > .bookmark-inline-checkmode { grid-area: 6 / 2; }
+    #bookmark-form-modal .bookmark-form-col:has(> .bookmark-form-watch:not([hidden])) .bookmark-form-flags-row > .bookmark-inline-toggles { grid-area: 7 / 2; }
+
     /* The options: rows with a hairline between them. */
     #bookmark-form-modal .bookmark-form-col .bookmark-form-place > .bookmark-inline-field:has([data-field="shortcut"]),
     #bookmark-form-modal .bookmark-form-col .bookmark-form-flags-row > .bookmark-inline-checkmode,

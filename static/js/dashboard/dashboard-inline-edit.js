@@ -786,26 +786,24 @@ class DashboardInlineEdit {
         urlInput.value = bookmark.url || '';
         const urlField = mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError);
         colWhat.appendChild(urlField);
-        // The feed this page advertises, offered under the address.
-        const originalUrl = String(bookmark.url || '').trim();
-        const feedOfferHost = document.createElement('div');
-        feedOfferHost.className = 'tag-suggest-chips bookmark-form-feed-offer';
-        feedOfferHost.hidden = true;
-        urlField.appendChild(feedOfferHost);
-        const feedOffer = d.feedWatch && window.BookmarkFeedOffer
-            ? window.BookmarkFeedOffer.mount(feedOfferHost, {
+        colWhat.appendChild(nameField);
+        // Watch feeds: shown when the page has a feed or the bookmark is
+        // watched, and written only by Save.
+        const feedRowHost = document.createElement('div');
+        colWhat.appendChild(feedRowHost);
+        const feedRow = d.feedWatch && window.BookmarkFeedWatchRow
+            ? window.BookmarkFeedWatchRow.mount(feedRowHost, {
                 dash: d,
                 getUrl: () => urlInput.value,
-                getName: () => nameInput.value.trim() || bookmark.name || '',
-                // A saved bookmark whose address is unchanged can be watched now.
-                canWatchNow: () => !isCreate && d.feedWatch.key(urlInput.value) === d.feedWatch.key(originalUrl),
+                originalUrl: isCreate ? '' : String(bookmark.url || '').trim(),
             })
             : null;
-        if (feedOffer) {
-            urlInput.addEventListener('input', () => feedOffer.reset());
-            if (!isCreate) feedOffer.refresh();
+        if (feedRow) {
+            urlInput.addEventListener('input', () => feedRow.reset());
+            if (!isCreate) feedRow.refresh({ delay: 0 });
+        } else {
+            feedRowHost.hidden = true;
         }
-        colWhat.appendChild(nameField);
         const nameNote = document.createElement('p');
         nameNote.className = 'bookmark-form-name-note';
         nameNote.hidden = true;
@@ -832,38 +830,6 @@ class DashboardInlineEdit {
         const cardHost = document.createElement('div');
         cardHost.className = 'bookmark-form-card';
         colWhat.appendChild(cardHost);
-
-        /*
-         * Watching a feed starts here as well as in the right-click menu. Only
-         * for a bookmark that exists: the server keeps a watch against the
-         * bookmark it was started from, and one being created has no row yet.
-         */
-        if (!isCreate && d.feedWatch && String(bookmark.url || '').trim()) {
-            const watchLine = document.createElement('p');
-            watchLine.className = 'bookmark-form-feed-line';
-            colWhat.appendChild(watchLine);
-            const renderWatchLine = () => {
-                const watched = d.feedWatch.watchFor(bookmark)?.feeds || [];
-                const label = watched.length
-                    ? cfg('feedWatchWatching', 'Watching · every {interval}')
-                        .replace('{interval}', () => window.FeedWatchPicker?.intervalWords?.(watched[0].intervalMinutes) || '')
-                    : cfg('feedWatchStart', 'Watch this feed…');
-                watchLine.replaceChildren();
-                const caption = document.createElement('span');
-                caption.className = 'bookmark-form-feed-label';
-                caption.textContent = cfg('feedWatchLabel', 'Watch feeds');
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'bookmark-form-feed-watch';
-                button.dataset.feedWatchOpen = '';
-                button.textContent = label;
-                button.addEventListener('click', () => {
-                    void window.FeedWatchPicker?.open({ bookmark }).then(renderWatchLine);
-                });
-                watchLine.append(caption, button);
-            };
-            renderWatchLine();
-        }
 
         let pendingIcon = String(bookmark.icon || '').trim();
         // A favicon found for the address, not stored yet: its addresses, best
@@ -1092,7 +1058,7 @@ class DashboardInlineEdit {
             void refreshIconSuggestions();
             title.offer(preview?.title, urlInput.value.trim());
             void refreshSuggestions(Array.isArray(preview?.keywords) ? preview.keywords : []);
-            feedOffer?.refresh();
+            feedRow?.refresh();
         };
         /*
          * One read per address, and only the latest one counts.
@@ -1963,6 +1929,9 @@ class DashboardInlineEdit {
                 return;
             }
             saveBtn.dataset.saving = '1';
+            // Taken now: Create + New clears the form before the watch is written.
+            const feedIntent = feedRow?.intent() || null;
+            const commitFeedWatch = (saved) => window.BookmarkFeedWatchRow?.commit(d, feedIntent, saved);
             try {
                 // The favicon found for this address is stored now that the
                 // bookmark is; one the server cannot fetch leaves no icon.
@@ -1986,6 +1955,7 @@ class DashboardInlineEdit {
                         monitorIntervalInput,
                         noteInput,
                         tagsInput,
+                        commitFeedWatch,
                         getPendingIcon: () => pendingIcon,
                         resetPendingIcon: () => { pendingIcon = ''; pendingIconSources = []; syncIconState(); },
                         // Create + New: the next bookmark starts from nothing,
@@ -1996,6 +1966,7 @@ class DashboardInlineEdit {
                             iconIsFetched = false;
                             draftKeywords = [];
                             title.reset();
+                            feedRow?.clear();
                             card.setIdle();
                             card.setIcon('');
                             window.TagSuggestChips?.render(tagsSuggest, []);
@@ -2015,6 +1986,7 @@ class DashboardInlineEdit {
                         monitorIntervalInput,
                         noteInput,
                         tagsInput,
+                        commitFeedWatch,
                         getPendingIcon: () => pendingIcon,
                     }, row);
                 }
@@ -2448,6 +2420,7 @@ class DashboardInlineEdit {
             const full = { ...(bookmarkRef.original || {}), ...bookmark, ...nextBookmarkState };
             delete full.pageId;
             await this._moveBookmarkToPage(bookmarkRef, full, targetPageId, row);
+            await fields.commitFeedWatch?.({ name, url });
             return;
         }
 
@@ -2464,6 +2437,7 @@ class DashboardInlineEdit {
                 this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
                 await d.saveBookmarkOrder();
                 await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
+                await fields.commitFeedWatch?.({ name, url });
                 return;
             }
         }
@@ -2475,6 +2449,7 @@ class DashboardInlineEdit {
 
         this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
         await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
+        await fields.commitFeedWatch?.({ name, url });
     }
 
 
@@ -2637,8 +2612,8 @@ class DashboardInlineEdit {
                 withTags: Array.isArray(bookmark.tags) && bookmark.tags.length > 0,
                 withShortcut: Boolean(bookmark.shortcut),
             });
-            // The bookmark has a row now, so a feed ticked while adding it can be watched.
-            await window.BookmarkFeedOffer?.flush(d, bookmark);
+            // The bookmark has a row now, so the feeds ticked while adding it can be watched.
+            await fields.commitFeedWatch?.(bookmark);
             if (typeof onSaved === 'function') {
                 await onSaved();
             }

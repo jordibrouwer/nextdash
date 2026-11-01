@@ -375,35 +375,22 @@
     }
 
     /*
-     * Offering the feed a page advertises, while a bookmark is added or edited.
+     * The Watch feeds row of the add/edit form.
      *
-     * Shown as a chip under the address, drawn like the tag suggestions: one
-     * to take ("Feed found: Posts · Watch?"), one to turn down ("Not now").
-     * Only the first advertised feed is offered -- the rest are in the picker.
-     * A saved bookmark is watched at once; one still being created has no row
-     * for the server to hang a watch on, so the intent is kept in the
-     * dashboard (`setPending`) and saved by `flush` right after the bookmark
-     * exists. A refusal is remembered per site on this device.
+     * One line between Name and the rest, shown only when there is something to
+     * say: the page advertises a feed, or the bookmark is watched already. Shut,
+     * it says what it knows ("2 feeds found", "Watching · every hour · …") and
+     * carries the switch; open, it lists the feeds to tick, an address to paste,
+     * the interval and Mute. Nothing is written while the form is open -- the
+     * row only collects what was chosen, and `commit` writes it once the
+     * bookmark is saved. Closing the form without saving throws it away. Retry
+     * is the one exception: it asks the feed again at once, and says so.
      */
-    const OFFER_DEFAULT_MINUTES = 60;
-    const OFFER_REFUSED_KEY = 'nextdash.feedOfferRefused';
-
-    function offerRefusals() {
-        try {
-            const list = JSON.parse(global.localStorage.getItem(OFFER_REFUSED_KEY) || '[]');
-            return Array.isArray(list) ? list : [];
-        } catch {
-            return [];
-        }
-    }
-
-    function offerRefuse(key) {
-        try {
-            const list = offerRefusals();
-            if (!list.includes(key)) list.push(key);
-            global.localStorage.setItem(OFFER_REFUSED_KEY, JSON.stringify(list.slice(-500)));
-        } catch { /* no storage: the offer comes back next time */ }
-    }
+    const ROW_DEFAULT_MINUTES = 60;
+    // The glyph a watched bookmark carries on the dashboard (feedWatchIcon).
+    const FEED_GLYPH = '<svg class="bookmark-form-watch-glyph" viewBox="0 0 12 12" width="13" height="13" aria-hidden="true" focusable="false">'
+        + '<circle cx="2.4" cy="9.6" r="1.2" fill="currentColor" stroke="none"/>'
+        + '<path d="M1.2 5.2a5.6 5.6 0 0 1 5.6 5.6"/><path d="M1.2 1.4a9.4 9.4 0 0 1 9.4 9.4"/></svg>';
 
     function offerText(dash, key, fallback, vars) {
         let text = dash?.language?.t?.(key);
@@ -412,134 +399,463 @@
         return text;
     }
 
-    function offerToast(dash, name, minutes) {
-        dash?.showNotification?.(offerText(dash, 'dashboard.feedWatchStarted', 'Watching {name} · checked every {interval}', {
-            name,
-            interval: global.FeedWatchPicker?.intervalWords?.(minutes) || '',
-        }), 'success', { duration: 4000, replace: true });
-    }
+    const isWebUrl = (url) => {
+        if (!/^https?:\/\/\S+$/i.test(url)) return false;
+        try { return Boolean(new URL(url).hostname); } catch { return false; }
+    };
+
+    const feedPath = (url) => {
+        try { const u = new URL(url); return `${u.pathname}${u.search}`; } catch { return url; }
+    };
 
     /**
-     * @param {HTMLElement} host where the chip goes
-     * @param {{dash: object, getUrl: () => string, getName: () => string, canWatchNow: () => boolean}} options
-     *   `canWatchNow`: the address is a saved bookmark's own (an edit that has not changed it).
+     * @param {HTMLElement} host the row
+     * @param {{dash: object, getUrl: () => string, originalUrl?: string}} options
+     *   `originalUrl`: the address a saved bookmark had when the form opened.
      */
-    function mountFeedOffer(host, options) {
+    function mountFeedWatchRow(host, options) {
         const dash = options.dash;
         const watch = dash?.feedWatch;
+        const t = (key, fallback, vars) => offerText(dash, key, fallback, vars);
+        const originalUrl = String(options.originalUrl || '').trim();
+        const originalWatched = Boolean(watch && originalUrl && watch.isWatched({ url: originalUrl }));
+        // address key -> the feeds the page advertises, asked once
+        const found = new Map();
         let seq = 0;
         let timer = null;
-        // address key -> the first feed the page advertises (or null), asked once
-        const found = new Map();
-        let busy = false;
+        let state = null;
+        let open = false;
+        const uid = `fw-row-${Math.random().toString(36).slice(2, 8)}`;
 
-        const hide = () => { host.replaceChildren(); host.hidden = true; };
-        const t = (key, fallback, vars) => offerText(dash, key, fallback, vars);
+        host.classList.add('bookmark-form-watch');
+        host.dataset.feedWatchRow = '';
+        host.hidden = true;
+        host.innerHTML = `
+            <div class="bookmark-form-watch-head">
+                <button type="button" class="bookmark-form-watch-toggle" data-feed-watch-toggle aria-expanded="false" aria-controls="${uid}-body">
+                    ${FEED_GLYPH}
+                    <span class="bookmark-form-watch-text">
+                        <span class="bookmark-form-watch-title">${escHtml(t('dashboard.feedWatchTitle', 'Watch feeds'))}</span>
+                        <span class="bookmark-form-watch-summary" data-feed-watch-summary></span>
+                    </span>
+                    <span class="bookmark-form-watch-chevron" aria-hidden="true"></span>
+                </button>
+                <label class="bookmark-form-watch-switch">
+                    <input type="checkbox" role="switch" data-feed-watch-switch aria-label="${escHtml(t('dashboard.feedWatchTitle', 'Watch feeds'))}">
+                    <span class="bookmark-form-watch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+            <div class="bookmark-form-watch-body" id="${uid}-body" hidden>
+                <ul class="bookmark-form-watch-feeds" data-feed-watch-feeds aria-label="${escHtml(t('dashboard.feedWatchRowFeeds', 'Feeds to watch'))}"></ul>
+                <div class="bookmark-form-watch-paste">
+                    <input type="text" inputmode="url" spellcheck="false" class="bookmark-inline-input" data-feed-watch-paste autocomplete="off"
+                           placeholder="${escHtml(t('dashboard.feedWatchRowPaste', 'Paste a feed address'))}"
+                           aria-label="${escHtml(t('dashboard.feedWatchRowPaste', 'Paste a feed address'))}">
+                    <button type="button" class="bookmark-inline-action-btn" data-feed-watch-add>${escHtml(t('dashboard.feedWatchRowAdd', 'Add'))}</button>
+                    <span class="bookmark-form-watch-error" data-feed-watch-paste-error role="status" hidden>${escHtml(t('dashboard.feedWatchRowBadAddress', 'Enter an address that starts with http:// or https://'))}</span>
+                </div>
+                <div class="bookmark-form-watch-options">
+                    <label class="bookmark-form-watch-interval">
+                        <span>${escHtml(t('dashboard.feedWatchRowEveryLabel', 'Check every'))}</span>
+                        <select class="bookmark-inline-select" data-feed-watch-interval>
+                            ${(global.FeedWatchPicker?.intervals || []).map((i) => `<option value="${i.minutes}">${escHtml(t(i.label[0], i.label[1]))}</option>`).join('')}
+                        </select>
+                    </label>
+                    <label class="bookmark-form-watch-switch bookmark-form-watch-mute">
+                        <input type="checkbox" role="switch" data-feed-watch-mute>
+                        <span class="bookmark-form-watch-track" aria-hidden="true"></span>
+                        <span>${escHtml(t('config.feedWatchMute', 'Mute'))}</span>
+                    </label>
+                </div>
+                <div class="bookmark-form-watch-stop" data-feed-watch-stop-area></div>
+            </div>`;
 
-        const chip = (text, className, onClick, title) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = className;
-            button.textContent = text;
-            if (title) { button.title = title; button.setAttribute('aria-label', title); }
-            button.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onClick();
+        const $ = (sel) => host.querySelector(sel);
+        const toggle = $('[data-feed-watch-toggle]');
+        const summary = $('[data-feed-watch-summary]');
+        const onSwitch = $('[data-feed-watch-switch]');
+        const body = $('.bookmark-form-watch-body');
+        const list = $('[data-feed-watch-feeds]');
+        const paste = $('[data-feed-watch-paste]');
+        const pasteError = $('[data-feed-watch-paste-error]');
+        const intervalSelect = $('[data-feed-watch-interval]');
+        const muteSwitch = $('[data-feed-watch-mute]');
+        const stopArea = $('[data-feed-watch-stop-area]');
+
+        const sameSet = (a, b) => a.size === b.size && [...a].every((v) => b.has(v));
+
+        /** The watch as it is stored, or null. */
+        const entryOf = (url) => {
+            const entry = watch.watchFor({ url });
+            return entry?.feeds?.length ? entry : null;
+        };
+
+        const fresh = (url, key, entry) => {
+            const checked = new Set((entry?.feeds || []).map((f) => f.feedUrl));
+            const intervalMinutes = Number(entry?.feeds?.[0]?.intervalMinutes) || ROW_DEFAULT_MINUTES;
+            const muted = entry?.muted === true;
+            return {
+                url, key, entry,
+                feeds: (entry?.feeds || []).map((f) => ({ url: f.feedUrl, title: f.title || '' })),
+                checked, on: Boolean(entry), stop: false, intervalMinutes, muted,
+                initial: { checked: new Set(checked), intervalMinutes, muted },
+            };
+        };
+
+        /** The feeds the page advertises join the list, unticked. */
+        const mergeFound = (feeds) => {
+            (feeds || []).forEach((feed) => {
+                if (feed?.url && !state.feeds.some((f) => f.url === feed.url)) state.feeds.push({ url: feed.url, title: feed.title || '' });
             });
-            return button;
         };
 
-        const draw = (url, feed) => {
-            const key = watch.key(url);
-            const pending = watch.hasPending(url);
-            host.replaceChildren();
-            host.hidden = false;
-            const accept = document.createElement('span');
-            accept.className = 'tag-suggest-chip bookmark-form-feed-offer-chip';
-            accept.dataset.feedOffer = pending ? 'pending' : 'offer';
-            const label = pending
-                ? t('dashboard.feedOfferPending', 'Will watch after saving')
-                : t('dashboard.feedOfferFound', 'Feed found: {title} · Watch?', { title: feed.title || feed.url });
-            accept.appendChild(chip(label, 'tag-suggest-chip-add', async () => {
-                if (busy) return;
-                if (pending) {
-                    watch.setPending(url, null);
-                    draw(url, feed);
-                } else if (options.canWatchNow()) {
-                    busy = true;
-                    const result = await watch.save(url, [{ feedUrl: feed.url, intervalMinutes: OFFER_DEFAULT_MINUTES }]);
-                    busy = false;
-                    if (!result.ok) return;
-                    offerToast(dash, options.getName() || url, OFFER_DEFAULT_MINUTES);
-                    hide();
-                } else {
-                    watch.setPending(url, { feedUrl: feed.url, intervalMinutes: OFFER_DEFAULT_MINUTES });
-                    draw(url, feed);
-                }
-            }, pending ? t('dashboard.feedOfferUndo', 'Do not watch this feed') : ''));
-            const notNow = document.createElement('span');
-            notNow.className = 'tag-suggest-chip bookmark-form-feed-offer-chip';
-            notNow.dataset.feedOffer = 'refuse';
-            notNow.appendChild(chip(`${t('dashboard.feedOfferNotNow', 'Not now')} ✕`, 'tag-suggest-chip-dismiss', () => {
-                watch.setPending(url, null);
-                offerRefuse(key);
-                hide();
-            }, t('dashboard.feedOfferRefuse', 'Do not offer a feed for this site again')));
-            host.append(accept, notNow);
+        const changed = () => {
+            if (!state?.entry) return false;
+            return state.stop || !sameSet(state.checked, state.initial.checked)
+                || state.intervalMinutes !== state.initial.intervalMinutes || state.muted !== state.initial.muted;
         };
+
+        const statusOf = (feed) => {
+            const reason = watch.errorReason(feed);
+            const withReason = (text) => (reason ? `${text} · ${reason}` : text);
+            if (feed.retired === true) return ['bad', withReason(t('config.feedWatchPaused', 'Paused after repeated failures'))];
+            if (feed.paused === true) return ['off', t('config.feedWatchPausedByYou', 'Paused')];
+            if (Number(feed.failures) > 0) return ['bad', withReason(t('config.feedWatchFailing', 'Last check failed'))];
+            const entry = state.entry;
+            const count = entry?.feeds?.length === 1 ? Number(entry.newCount) || 0 : 0;
+            const head = count > 0 ? t('config.feedWatchNewState', '{n} new', { n: count }) : t('config.feedWatchQuiet', 'Nothing new');
+            return ['ok', `${head} · ${t('dashboard.feedWatchRowChecked', 'checked {ago}', { ago: watch.agoText(feed.checkedAt) })}`];
+        };
+
+        const drawSummary = () => {
+            let text;
+            let tone = '';
+            if (state.entry) {
+                if (state.stop) text = t('dashboard.feedWatchRowWillStop', 'Will stop watching after saving');
+                else if (changed()) text = t('dashboard.feedWatchRowWillUpdate', 'Will update after saving');
+                else {
+                    const info = watch.rowIconFor({ url: state.url });
+                    text = info?.label || '';
+                    tone = info?.state || '';
+                }
+            } else if (state.on && state.checked.size) {
+                text = t('dashboard.feedOfferPending', 'Will watch after saving');
+            } else if (state.feeds.length === 1) {
+                text = t('dashboard.feedWatchRowFoundOne', '1 feed found · {title}', { title: state.feeds[0].title || feedPath(state.feeds[0].url) });
+            } else {
+                text = t('dashboard.feedWatchRowFoundMany', '{n} feeds found', { n: state.feeds.length });
+            }
+            summary.textContent = text;
+            summary.dataset.tone = tone;
+            onSwitch.checked = state.on && !state.stop;
+            host.classList.toggle('is-on', onSwitch.checked);
+        };
+
+        const drawStop = () => {
+            stopArea.replaceChildren();
+            if (!state.entry) return;
+            if (state.stop) {
+                const note = document.createElement('span');
+                note.className = 'bookmark-form-watch-note';
+                note.textContent = t('dashboard.feedWatchRowWillStop', 'Will stop watching after saving');
+                const undo = document.createElement('button');
+                undo.type = 'button';
+                undo.className = 'bookmark-inline-action-btn';
+                undo.dataset.feedWatchUndo = '';
+                undo.textContent = t('dashboard.undo', 'Undo');
+                stopArea.append(note, undo);
+            } else {
+                const stop = document.createElement('button');
+                stop.type = 'button';
+                stop.className = 'bookmark-inline-action-btn bookmark-inline-delete bookmark-form-watch-stop-btn';
+                stop.dataset.feedWatchStop = '';
+                stop.textContent = t('dashboard.feedWatchStop', 'Stop watching');
+                stopArea.append(stop);
+            }
+        };
+
+        const drawList = () => {
+            const stored = new Map((state.entry?.feeds || []).map((f) => [f.feedUrl, f]));
+            list.innerHTML = state.feeds.map((feed) => {
+                const kept = stored.get(feed.url);
+                const [tone, text] = kept ? statusOf(kept) : ['', ''];
+                const canRetry = kept && (kept.retired === true || Number(kept.failures) > 0);
+                return `<li class="bookmark-form-watch-item">`
+                    + `<label class="bookmark-form-watch-feed" title="${escHtml(feed.url)}">`
+                    + `<input type="checkbox" data-feed-watch-feed value="${escHtml(feed.url)}"${state.checked.has(feed.url) ? ' checked' : ''}>`
+                    + `<span class="bookmark-form-watch-feed-text">`
+                    + `<span class="bookmark-form-watch-feed-name">${escHtml(feed.title || feedPath(feed.url))}</span>`
+                    + `<span class="bookmark-form-watch-feed-path">${escHtml(feedPath(feed.url))}</span>`
+                    + `</span></label>`
+                    + (kept ? `<div class="bookmark-form-watch-status" data-feed-watch-status data-tone="${tone}">`
+                        + `<span>${escHtml(text)}</span>`
+                        + (canRetry ? `<button type="button" class="bookmark-inline-action-btn" data-feed-watch-retry="${escHtml(feed.url)}">${escHtml(t('dashboard.feedWatchRetryNow', 'Retry now'))}</button>` : '')
+                        + `</div>` : '')
+                    + `</li>`;
+            }).join('');
+        };
+
+        const draw = () => {
+            const show = Boolean(state && (state.entry || state.feeds.length));
+            host.hidden = !show;
+            if (!show) return;
+            intervalSelect.value = String(state.intervalMinutes);
+            muteSwitch.checked = state.muted;
+            drawList();
+            drawStop();
+            drawSummary();
+            setOpen(open);
+        };
+
+        function setOpen(value) {
+            open = Boolean(value);
+            body.hidden = !open;
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            host.classList.toggle('is-open', open);
+        }
+
+        const hide = () => { state = null; host.hidden = true; setOpen(false); };
 
         const evaluate = async () => {
-            const url = String(options.getUrl() || '').trim();
             const mine = ++seq;
-            if (!watch || !/^https?:\/\//i.test(url)) { hide(); return; }
+            const url = String(options.getUrl() || '').trim();
+            if (!watch || !isWebUrl(url)) { hide(); return; }
             const key = watch.key(url);
-            // An edit that changed the address has no saved row to hang a watch on.
-            if (!key || watch.isWatched({ url }) || offerRefusals().includes(key)) { hide(); return; }
-            if (!found.has(key)) {
-                let first = null;
-                try {
-                    const data = await watch.candidates(url);
-                    first = (data?.feeds || []).find((feed) => feed?.url && feed.watched !== true) || null;
-                } catch { first = null; }
-                found.set(key, first);
+            if (!key) { hide(); return; }
+            if (state?.key !== key) {
+                state = fresh(url, key, entryOf(url));
+                setOpen(false);
+                if (!found.has(key)) host.hidden = !state.entry;
+                if (state.entry) draw();
             }
-            if (mine !== seq || !host.isConnected) return;
-            const feed = found.get(key);
-            if (feed) draw(url, feed); else hide();
+            if (!found.has(key)) {
+                let feeds = [];
+                try {
+                    feeds = ((await watch.candidates(url))?.feeds || []).filter((f) => f?.url);
+                } catch { feeds = []; }
+                found.set(key, feeds);
+            }
+            if (mine !== seq || !host.isConnected || state?.key !== key) return;
+            mergeFound(found.get(key));
+            draw();
         };
 
-        hide();
+        const addPasted = () => {
+            const value = String(paste.value || '').trim();
+            if (!isWebUrl(value)) {
+                pasteError.hidden = false;
+                paste.focus();
+                return;
+            }
+            pasteError.hidden = true;
+            if (!state.feeds.some((f) => f.url === value)) state.feeds.push({ url: value, title: '' });
+            state.checked.add(value);
+            state.on = true;
+            state.stop = false;
+            paste.value = '';
+            drawList();
+            drawStop();
+            drawSummary();
+            paste.focus();
+        };
+
+        toggle.addEventListener('click', () => setOpen(!open));
+        onSwitch.addEventListener('change', () => {
+            if (!state) return;
+            if (onSwitch.checked) {
+                state.on = true;
+                state.stop = false;
+                if (!state.checked.size) {
+                    const first = state.initial.checked.size ? [...state.initial.checked] : [state.feeds[0]?.url].filter(Boolean);
+                    first.forEach((u) => state.checked.add(u));
+                }
+                drawList();
+                setOpen(true);
+            } else {
+                state.on = false;
+                if (state.entry) state.stop = true;
+            }
+            drawStop();
+            drawSummary();
+        });
+        list.addEventListener('change', (event) => {
+            const box = event.target.closest?.('[data-feed-watch-feed]');
+            if (!box || !state) return;
+            if (box.checked) state.checked.add(box.value); else state.checked.delete(box.value);
+            // Ticking a feed means watching it; untick the last and nothing is.
+            state.on = state.checked.size > 0;
+            state.stop = Boolean(state.entry) && !state.on;
+            drawStop();
+            drawSummary();
+        });
+        list.addEventListener('click', async (event) => {
+            const retry = event.target.closest?.('[data-feed-watch-retry]');
+            if (!retry || !state) return;
+            event.preventDefault();
+            retry.disabled = true;
+            const key = state.key;
+            await watch.retry(state.url, retry.dataset.feedWatchRetry);
+            if (state?.key !== key) return;
+            state.entry = entryOf(state.url) || state.entry;
+            drawList();
+            drawSummary();
+            list.querySelector('[data-feed-watch-feed]')?.focus();
+        });
+        paste.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            event.stopPropagation();
+            addPasted();
+        });
+        paste.addEventListener('input', () => { pasteError.hidden = true; });
+        $('[data-feed-watch-add]').addEventListener('click', addPasted);
+        intervalSelect.addEventListener('change', () => {
+            if (!state) return;
+            state.intervalMinutes = Number(intervalSelect.value) || ROW_DEFAULT_MINUTES;
+            drawSummary();
+        });
+        muteSwitch.addEventListener('change', () => {
+            if (!state) return;
+            state.muted = muteSwitch.checked;
+            drawSummary();
+        });
+        stopArea.addEventListener('click', (event) => {
+            if (!state) return;
+            if (event.target.closest('[data-feed-watch-stop]')) {
+                state.stop = true;
+                state.on = false;
+                drawStop();
+                drawSummary();
+                stopArea.querySelector('[data-feed-watch-undo]')?.focus();
+            } else if (event.target.closest('[data-feed-watch-undo]')) {
+                state.stop = false;
+                state.on = true;
+                if (!state.checked.size) state.initial.checked.forEach((u) => state.checked.add(u));
+                drawList();
+                drawStop();
+                drawSummary();
+                stopArea.querySelector('[data-feed-watch-stop]')?.focus();
+            }
+        });
+
         return {
-            /** The page has settled: look for a feed, once per address. */
+            /** The page has settled: look for feeds, once per address. */
             refresh({ delay = 300 } = {}) {
                 clearTimeout(timer);
                 timer = setTimeout(() => { void evaluate(); }, delay);
             },
-            /** The address is being typed over: drop the chip and the unsaved intent. */
+            /** The address is being typed over: a different one starts over. */
             reset() {
                 clearTimeout(timer);
-                seq += 1;
                 const url = String(options.getUrl() || '').trim();
-                if (watch && url) watch.setPending(url, null);
-                hide();
+                if (!state || !watch || watch.key(url) !== state.key) {
+                    seq += 1;
+                    hide();
+                }
             },
-            /** The form closed without saving: the intent goes with it. */
-            discard(url) { if (watch && url) watch.setPending(url, null); },
+            /**
+             * What Save should write, taken before the form is cleared: the
+             * feeds and their interval, Mute, a stop -- and the old address, when
+             * an edit moved a watched bookmark to a new one.
+             */
+            intent() {
+                const url = String(options.getUrl() || '').trim();
+                const moved = originalWatched && watch.key(url) !== watch.key(originalUrl);
+                const out = { oldUrl: moved ? originalUrl : '', action: null };
+                if (!state || !watch || watch.key(url) !== state.key) return out;
+                const wanted = state.on && !state.stop ? [...state.checked] : [];
+                if (state.entry) {
+                    if (!wanted.length) return { ...out, action: 'stop' };
+                    if (!changed()) return out;
+                    const own = new Map(state.entry.feeds.map((f) => [f.feedUrl, Number(f.intervalMinutes) || ROW_DEFAULT_MINUTES]));
+                    const intervalTouched = state.intervalMinutes !== state.initial.intervalMinutes;
+                    return {
+                        ...out,
+                        action: 'watch',
+                        saveSet: intervalTouched || !sameSet(state.checked, state.initial.checked),
+                        // An untouched interval leaves each kept feed its own.
+                        feeds: wanted.map((feedUrl) => ({
+                            feedUrl,
+                            intervalMinutes: !intervalTouched && own.has(feedUrl) ? own.get(feedUrl) : state.intervalMinutes,
+                        })),
+                        intervalMinutes: state.intervalMinutes,
+                        muted: state.muted,
+                        muteChanged: state.muted !== state.initial.muted,
+                    };
+                }
+                if (!wanted.length) return out;
+                return {
+                    ...out,
+                    action: 'watch',
+                    saveSet: true,
+                    feeds: wanted.map((feedUrl) => ({ feedUrl, intervalMinutes: state.intervalMinutes })),
+                    intervalMinutes: state.intervalMinutes,
+                    muted: state.muted,
+                    muteChanged: state.muted,
+                };
+            },
+            /** Create + New: the next bookmark starts without a row. */
+            clear() { clearTimeout(timer); seq += 1; hide(); },
         };
     }
 
-    /** Save what was ticked on a bookmark that has just been created. */
-    async function flushFeedOffer(dash, bookmark) {
+    /**
+     * Write what the row collected, now that the bookmark is saved.
+     * @param {object} dash
+     * @param {ReturnType<ReturnType<typeof mountFeedWatchRow>['intent']>} intent
+     * @param {{name?: string, url: string}} saved
+     */
+    async function commitFeedWatchRow(dash, intent, saved) {
         const watch = dash?.feedWatch;
-        const url = String(bookmark?.url || '').trim();
-        if (!watch || !url || !watch.hasPending(url)) return false;
-        const result = await watch.flushPending(url);
-        if (result?.ok) offerToast(dash, bookmark.name || url, OFFER_DEFAULT_MINUTES);
-        return Boolean(result?.ok);
+        const url = String(saved?.url || '').trim();
+        if (!watch || !intent || !url) return false;
+        const t = (key, fallback, vars) => offerText(dash, key, fallback, vars);
+        const name = String(saved?.name || '').trim() || url;
+        const toast = (message, type = 'success') => dash?.showNotification?.(message, type, { duration: 4000, replace: true });
+
+        /*
+         * The server keeps a watch under the address it was started from and
+         * does not follow an edit. The old one is dropped -- unless another
+         * bookmark still has that address, which the list then still shows.
+         */
+        if (intent.oldUrl && watch.key(intent.oldUrl) !== watch.key(url)) {
+            await watch.load({ force: true });
+            if (!watch.byKey.has(watch.key(intent.oldUrl))) await watch.unwatch(intent.oldUrl);
+        }
+
+        if (intent.action === 'stop') {
+            if (!(await watch.unwatch(url))) {
+                toast(t('dashboard.feedWatchFailed', 'Could not save the watch'), 'error');
+                return false;
+            }
+            toast(t('dashboard.feedWatchStopped', 'Stopped watching {name}', { name }));
+            return true;
+        }
+        if (intent.action !== 'watch') return false;
+
+        if (intent.saveSet) {
+            const result = await watch.save(url, intent.feeds);
+            if (!result.ok) {
+                if (result.error === 'not-a-feed') toast(t('dashboard.feedWatchNotAFeed', 'That address is not a feed nextDash can read'), 'error');
+                else if (result.error === 'limit') toast(t('dashboard.feedWatchLimit', 'You are watching {limit} feeds, the most nextDash follows', { limit: watch.limit }), 'error');
+                else toast(t('dashboard.feedWatchFailed', 'Could not save the watch'), 'error');
+                return false;
+            }
+        }
+        if (intent.muteChanged || (intent.saveSet && intent.muted)) {
+            const feeds = watch.watchFor({ url })?.feeds || [];
+            for (const feed of feeds) {
+                if ((feed.muted === true) !== intent.muted) await watch.updateFeed(url, feed.feedUrl, { muted: intent.muted });
+            }
+        }
+        toast(t('dashboard.feedWatchStarted', 'Watching {name} · checked every {interval}', {
+            name,
+            interval: global.FeedWatchPicker?.intervalWords?.(intent.intervalMinutes) || '',
+        }));
+        return true;
     }
 
-    global.BookmarkFeedOffer = { mount: mountFeedOffer, flush: flushFeedOffer };
+    global.BookmarkFeedWatchRow = { mount: mountFeedWatchRow, commit: commitFeedWatchRow };
 
     global.BookmarkFormPreview = BookmarkFormPreview;
     global.BookmarkFormPreviewHtml = { buildPreviewSectionHtml, buildCompactPreviewStripHtml, escHtml };

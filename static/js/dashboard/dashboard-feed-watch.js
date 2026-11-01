@@ -258,31 +258,6 @@ class DashboardFeedWatch {
         };
     }
 
-    /**
-     * A feed the reader ticked while adding a bookmark that has no row yet.
-     * It is saved once the bookmark exists (`flushPending`).
-     */
-    setPending(url, feed) {
-        const key = this.key(url);
-        if (!key) return;
-        this._pending = this._pending || new Map();
-        if (feed) this._pending.set(key, feed);
-        else this._pending.delete(key);
-    }
-
-    hasPending(url) {
-        return Boolean(this._pending?.has(this.key(url)));
-    }
-
-    /** Save the intent for a bookmark that has just been created. */
-    async flushPending(url) {
-        const key = this.key(url);
-        const feed = this._pending?.get(key);
-        if (!feed) return { ok: false };
-        this._pending.delete(key);
-        return this.save(url, [feed]);
-    }
-
     /** Ask a paused feed again right now. */
     async retry(url, feedUrl) {
         let res;
