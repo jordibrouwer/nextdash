@@ -130,3 +130,31 @@ func TestStatusLinkIsNotReplacedOverAnUnreadableFile(t *testing.T) {
 		t.Fatal("the status link was replaced")
 	}
 }
+
+// A Glances save over a config file that cannot be read is refused: read as
+// defaults, it kept only the default first host and the one it changed.
+func TestGlancesSaveDoesNotDropHostsOverAnUnreadableFile(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	main := loadGlancesConfig()
+	main.Server = "http://tower.lan:61208"
+	if _, err := saveGlancesConfig(main, nil); err != nil {
+		t.Fatal(err)
+	}
+	nas, err := glancesAddHost("NAS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	unreadable(t, glancesConfigPath())
+	nas.Server = "http://nas.lan:61208"
+	if _, err := saveGlancesConfig(nas, nil); err == nil {
+		t.Error("a host was saved over a config file that could not be read")
+	}
+	if _, err := glancesAddHost("Pi"); err == nil {
+		t.Error("a host was added over a config file that could not be read")
+	}
+	readable(t, glancesConfigPath())
+	configs := glancesHostConfigs()
+	if len(configs) != 2 || configs[0].Server != "http://tower.lan:61208" {
+		t.Fatalf("hosts after the refused saves: %+v", configs)
+	}
+}
