@@ -45,6 +45,9 @@ type Handlers struct {
 	healthHistoryMu   sync.Mutex
 	healthTrendMu     sync.Mutex
 	healthReportMu    sync.RWMutex
+	// pageDeleteMu makes a page delete's check, trash snapshot and removal one
+	// step: two deletes of one page at once each wrote a trash entry.
+	pageDeleteMu sync.Mutex
 	// One Docker action per container at a time, keyed by container id.
 	dockerBusy sync.Map
 	// App discovery (discovery.go): its state is loaded from data/discovery.json
@@ -2446,6 +2449,8 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Cannot delete the unsorted page", http.StatusBadRequest)
 		return
 	}
+	h.pageDeleteMu.Lock()
+	defer h.pageDeleteMu.Unlock()
 	// A page already gone (deleted in another tab) left an empty page entry in
 	// the trash, which then blocked restoring the real one.
 	if !h.pageExists(pageID) {
