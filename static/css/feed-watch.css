@@ -492,6 +492,7 @@ body.no-animations .feed-news-bar > i { transition: none; }
     .feed-news-toggle { min-width: 44px; min-height: 44px; opacity: 1; }
     .modal-overlay.show .modal .feed-news .feed-news-mark { min-height: 44px; }
     .feed-news-close { width: 44px; height: 44px; }
+    .feed-news-view { min-width: 44px; min-height: 44px; }
 }
 @media (max-width: 720px) {
     /* The close button stays on the first line; Mark all read goes under it. */
