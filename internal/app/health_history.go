@@ -90,9 +90,8 @@ func trimSamples(samples []HealthSample, cutoff int64) []HealthSample {
 // longer monitored. Passing a nil known map skips the orphan sweep, which is what
 // callers that only want the age/size limits applied should do.
 func pruneHealthHistory(history HealthHistoryFile, known map[string]bool, now time.Time) HealthHistoryFile {
-	if len(history.Samples) == 0 {
+	if history.Samples == nil {
 		history.Samples = map[string][]HealthSample{}
-		return history
 	}
 	cutoff := now.Add(-healthHistoryRetention).UnixMilli()
 	pruned := make(map[string][]HealthSample, len(history.Samples))
@@ -123,12 +122,21 @@ func pruneHealthHistory(history HealthHistoryFile, known map[string]bool, now ti
 		}
 	}
 	// A URL can have summaries left after its last raw sample aged out; that is
-	// the point of keeping them. Only an unknown URL loses them, above.
-	if known != nil {
-		for url := range days {
-			if !known[url] {
-				delete(days, url)
-			}
+	// the point of keeping them. Only an unknown URL loses them, and the
+	// summaries age out on their own clock -- the loop above only reaches URLs
+	// that still have raw samples.
+	for url := range days {
+		if known != nil && !known[url] {
+			delete(days, url)
+			continue
+		}
+		if _, raw := history.Samples[url]; raw {
+			continue
+		}
+		if kept := trimDays(days[url], now); len(kept) > 0 {
+			days[url] = kept
+		} else {
+			delete(days, url)
 		}
 	}
 	history.Samples = pruned

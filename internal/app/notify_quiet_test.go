@@ -350,3 +350,38 @@ func TestAUsageUpDoesNotCloseAnUnhealthyAlert(t *testing.T) {
 		t.Errorf("a health up left the alert open: %+v", o)
 	}
 }
+
+// A recovery that sent no "up" -- inside a maintenance window, sinks off --
+// still ends the reminders: the newest check is what says it is down.
+func TestNoReminderOnceTheNewestCheckIsUp(t *testing.T) {
+	h := quietHandlers(t, `,"remindersEnabled":true,"remindAfterMinutes":5`)
+	day := quietNight.Add(10 * time.Hour)
+	quietClock = func() time.Time { return day }
+	h.trackOpenAlerts(noticeSourceMonitor, []monitorNotification{{Event: "down", Name: "wiki", URL: "https://wiki.example/", At: day.UnixMilli()}})
+	key := canonicalBookmarkURLKey("https://wiki.example/")
+	history := emptyHealthHistory()
+	history.Samples[key] = []HealthSample{{T: day.UnixMilli(), Up: false}, {T: day.Add(time.Minute).UnixMilli(), Up: true, Maint: true}}
+	if err := writeHealthHistoryFile(history); err != nil {
+		t.Fatal(err)
+	}
+	h.sendReminders(context.Background(), day.Add(10*time.Minute))
+	if o := readOpenFile().Open; len(o) != 0 {
+		t.Errorf("reminded about a monitor whose newest check is up: %+v", o)
+	}
+}
+
+// A second down for the same URL is a new outage: it starts its own count
+// and duration instead of inheriting the spent one.
+func TestASecondDownStartsTheAlertAgain(t *testing.T) {
+	h := quietHandlers(t, `,"remindersEnabled":true,"remindAfterMinutes":5,"remindMax":1`)
+	day := quietNight.Add(10 * time.Hour)
+	quietClock = func() time.Time { return day }
+	h.trackOpenAlerts(noticeSourceMonitor, []monitorNotification{{Event: "down", Name: "wiki", URL: "https://wiki.example/", At: day.UnixMilli()}})
+	h.sendReminders(context.Background(), day.Add(10*time.Minute))
+	later := day.Add(3 * time.Hour)
+	h.trackOpenAlerts(noticeSourceMonitor, []monitorNotification{{Event: "down", Name: "wiki", URL: "https://wiki.example/", At: later.UnixMilli()}})
+	o := readOpenFile().Open
+	if len(o) != 1 || o[0].Count != 0 || o[0].Since != later.UnixMilli() {
+		t.Errorf("second outage kept the first one's state: %+v", o)
+	}
+}

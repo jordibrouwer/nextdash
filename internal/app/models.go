@@ -7133,6 +7133,9 @@ type HealthDay struct {
 	N int   `json:"n"`           // Checks counted (maintenance samples excluded, as in uptimeRatio)
 	U int   `json:"u"`           // How many of them succeeded
 	P int   `json:"p,omitempty"` // Mean response time in ms across the successful checks
+	// PN is how many checks P averages: the successful ones that had a ping.
+	// Absent in summaries written before it; those fall back to U.
+	PN int `json:"pn,omitempty"`
 }
 
 // HealthTrendPoint is one day's summary of the whole collection.

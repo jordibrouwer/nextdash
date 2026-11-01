@@ -191,7 +191,10 @@ func recordHostCertificatesWith(stored map[string]HostCertificate, seen []PingRe
 		// Everything looser is marked seen at the same time, so a certificate
 		// that skips straight past several thresholds does not alert again on
 		// each of them as it keeps expiring.
-		if reached != 0 && !containsInt(entry.NotifiedDays, reached) {
+		// Already told counts any threshold at or below this one: a changed
+		// CertWarnDays ladder otherwise has numbers the stored ones do not
+		// match, and every certificate alerted once more after each change.
+		if reached != 0 && !notifiedAtOrBelow(entry.NotifiedDays, reached) {
 			for _, threshold := range thresholds {
 				if threshold >= reached && !containsInt(entry.NotifiedDays, threshold) {
 					entry.NotifiedDays = append(entry.NotifiedDays, threshold)
@@ -204,6 +207,15 @@ func recordHostCertificatesWith(stored map[string]HostCertificate, seen []PingRe
 
 	sort.Slice(crossed, func(i, j int) bool { return crossed[i].ExpiresAt < crossed[j].ExpiresAt })
 	return crossed
+}
+
+func notifiedAtOrBelow(notified []int, threshold int) bool {
+	for _, v := range notified {
+		if v <= threshold {
+			return true
+		}
+	}
+	return false
 }
 
 func containsInt(values []int, want int) bool {

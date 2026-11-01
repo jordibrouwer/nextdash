@@ -38,9 +38,16 @@ func foldSamplesIntoDays(days []HealthDay, dropped []HealthSample) []HealthDay {
 	pingTotal := make(map[int64]int, len(byDay))
 	pingCount := make(map[int64]int, len(byDay))
 	for key, d := range byDay {
-		if d.P > 0 && d.U > 0 {
-			pingTotal[key] = d.P * d.U
-			pingCount[key] = d.U
+		// Weighted by the checks the mean was taken over, not every success:
+		// a day with up checks that had no ping otherwise counted its old
+		// mean too heavily each time more of that day was folded in.
+		weight := d.PN
+		if weight == 0 {
+			weight = d.U
+		}
+		if d.P > 0 && weight > 0 {
+			pingTotal[key] = d.P * weight
+			pingCount[key] = weight
 		}
 	}
 
@@ -68,6 +75,7 @@ func foldSamplesIntoDays(days []HealthDay, dropped []HealthSample) []HealthDay {
 	for key, day := range byDay {
 		if count := pingCount[key]; count > 0 {
 			day.P = pingTotal[key] / count
+			day.PN = count
 		}
 		out = append(out, *day)
 	}
