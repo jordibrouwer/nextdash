@@ -668,3 +668,16 @@ body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn { display: none !im
    border. */
 .modal.feed-news-modal .modal-body,
 .modal.feed-watch-modal .modal-body { margin-block: 0.35rem; }
+
+/* A phone gives every modal a full-height sheet and reserves room in its body
+   for a header and a button row. The news and picker windows have neither
+   (their header and buttons are inside the content), so the sheet fits its
+   content and the body takes whatever room the window has: no empty band
+   under a long article, no empty sheet under a short one. */
+.modal-overlay.show .modal.feed-news-modal,
+.modal-overlay.show .modal.feed-watch-modal {
+    min-height: 0;
+    max-height: calc(100vh - 1rem); max-height: calc(100dvh - 1rem);
+}
+.modal-overlay.show .modal.feed-news-modal .modal-body,
+.modal-overlay.show .modal.feed-watch-modal .modal-body { max-height: none; }

@@ -143,6 +143,23 @@ test.describe('on a touch screen, against the real server', () => {
 test.describe('the paper on a touch screen', () => {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
+    test('no empty band under the article in any of the three layouts', async ({ page }) => {
+        await stubLongNews(page);
+        await openDashboard(page);
+        await openPaper(page);
+        await expect(modal(page)).toBeVisible();
+        for (const view of ['paper', 'wide', 'single']) {
+            await modal(page).locator(`[data-feed-news-view="${view}"]`).tap();
+            await expect(modal(page).locator(`[data-feed-news-view="${view}"]`)).toHaveAttribute('aria-pressed', 'true');
+            // The body reaches the bottom of the sheet: only its own padding is left under it.
+            const gap = await modal(page).evaluate((el) => {
+                const body = el.querySelector('.modal-body');
+                return el.getBoundingClientRect().bottom - body.getBoundingClientRect().bottom;
+            });
+            expect(gap, view).toBeLessThan(30);
+        }
+    });
+
     test('one column, 44 px controls, three layouts, and the body scrolls under a finger', async ({ page }) => {
         await stubLongNews(page);
         await openDashboard(page);
