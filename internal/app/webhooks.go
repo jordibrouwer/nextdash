@@ -96,6 +96,8 @@ const (
 	webhookEventHealthCertExpiring = "health.cert-expiring"
 	// The registration behind the host, on the same ladder as the certificate.
 	webhookEventHealthDomainExpiring = "health.domain-expiring"
+	// A watched feed has news: one event per feed per poll round, without summaries.
+	webhookEventFeedNews = "feed.news"
 )
 
 // webhookEventNames is every event that can be subscribed to, in the order the
@@ -108,6 +110,7 @@ var webhookEventNames = []string{
 	webhookEventHealthUp,
 	webhookEventHealthCertExpiring,
 	webhookEventHealthDomainExpiring,
+	webhookEventFeedNews,
 }
 
 /*

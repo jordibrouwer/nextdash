@@ -95,7 +95,7 @@ test.describe('config info + reset affordances', () => {
         const allowed = new Set([
             'showSmartTodayCollection', 'showSmartRecentCollection', 'showSmartStaleCollection',
             'showSmartMostUsedCollection', 'showSmartAddedCollection', 'pushNotifyMonitor', 'pushNotifyBackup', 'pushNotifyContainers', 'pushNotifyGlances',
-            'pushNotifyRelease', 'pushNotifySubject', 'pushNotifyNews',
+            'pushNotifyRelease', 'pushNotifySubject', 'pushNotifyNews', 'notifyNewsTarget',
             // The two news-window settings: the group's note says what they do and
             // the options name themselves (15 minutes, Newspaper), so no ℹ.
             'feedWatchWindowMinutes', 'feedWatchNewsView',
@@ -162,7 +162,7 @@ test.describe('config info + reset affordances', () => {
             // Monitoring → Notifications → Weekly digest. The switch carries the
             // ℹ; the day, the hour and the three parts under it read as part of
             // it, under a panel note that says what the digest holds.
-            'digestWeekday', 'digestTime', 'digestHealth', 'digestUpdates', 'digestUsage', 'digestNews',
+            'digestWeekday', 'digestTime', 'digestHealth', 'digestUpdates', 'digestUsage', 'digestNews', 'digestFeeds',
             // Behavior → General → Notes widget. One select under a group note
             // that says where a note is worked out, and what each choice costs.
             'notesProcessing',

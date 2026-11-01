@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // The three event sources that raise a browser notification. Each one is a thin
@@ -140,8 +141,53 @@ func newsPushMessage(news []watchNews, names map[string]string) (webPushMessage,
 	return msg, true
 }
 
-// pushWatchNews announces a round's news to the browser, behind the master
-// switch and the news category.
+// newsNotifyNotice is the one-message-per-round sentence for the alert target:
+// "Site: title" for one site, "N sites have news: A, B" for several.
+func newsNotifyNotice(news []watchNews, names map[string]string, now time.Time) (monitorNotification, bool) {
+	msg, ok := newsPushMessage(news, names)
+	if !ok {
+		return monitorNotification{}, false
+	}
+	title := msg.Title
+	if len(news) == 1 {
+		title = strings.TrimSuffix(msg.Title, " has news")
+		if msg.Body != "" {
+			title += ": " + msg.Body
+		}
+	} else {
+		title += ": " + msg.Body
+	}
+	return monitorNotification{
+		Event: "news", Name: "Watched feeds", Status: "online",
+		Title: title, At: now.UnixMilli(), Source: "news",
+	}, true
+}
+
+// emitFeedNewsWebhooks sends one feed.news event per feed with news. Webhooks
+// are machine integrations and stay outside the quiet hours (notify_quiet.go);
+// the endpoint's own event list is the only gate. No summaries leave the app.
+func emitFeedNewsWebhooks(news []watchNews, names, urls map[string]string) {
+	if !webhooksConfigured() {
+		return
+	}
+	for _, n := range news {
+		items := make([]map[string]any, 0, len(n.Items))
+		for _, it := range n.Items {
+			items = append(items, map[string]any{"title": it.Title, "link": it.Link, "publishedAt": it.PublishedAt})
+		}
+		site := strings.TrimSpace(names[n.BookmarkKey])
+		if site == "" {
+			site = hostOf(n.BookmarkKey)
+		}
+		emitWebhookEvent(webhookEventFeedNews, map[string]any{
+			"site": site, "bookmarkUrl": urls[n.BookmarkKey], "feedUrl": n.FeedURL, "items": items,
+		})
+	}
+}
+
+// pushWatchNews announces a round's news: to subscribed webhooks, to the
+// browser behind the master switch and the news category, and to the alert
+// target when that is switched on.
 func (h *Handlers) pushWatchNews(ctx context.Context, news []watchNews) {
 	// A muted feed counts on the dashboard but never calls.
 	loud := make([]watchNews, 0, len(news))
@@ -153,22 +199,30 @@ func (h *Handlers) pushWatchNews(ctx context.Context, news []watchNews) {
 	if news = loud; len(news) == 0 {
 		return
 	}
-	settings := h.store.GetSettings()
-	if !settings.PushNotifyEnabled || !settings.PushNotifyNews {
-		return
+	names := map[string]string{}
+	urls := map[string]string{}
+	for _, b := range h.store.GetAllBookmarks() {
+		if key := canonicalBookmarkURLKey(b.URL); key != "" && names[key] == "" {
+			names[key] = b.Name
+			urls[key] = b.URL
+		}
 	}
+	emitFeedNewsWebhooks(news, names, urls)
+
+	settings := h.store.GetSettings()
 	// News is not worth waking anyone for: during the quiet hours it is
 	// dropped (the dashboard still shows it) unless the reader allowed "news".
 	if quietNow(settings, quietClock()) && !quietAllowSet(settings)[quietKindNews] {
 		return
 	}
-	names := map[string]string{}
-	for _, b := range h.store.GetAllBookmarks() {
-		if key := canonicalBookmarkURLKey(b.URL); key != "" && names[key] == "" {
-			names[key] = b.Name
+	if settings.PushNotifyEnabled && settings.PushNotifyNews {
+		if msg, ok := newsPushMessage(news, names); ok {
+			h.sendWebPushNotification(ctx, msg)
 		}
 	}
-	if msg, ok := newsPushMessage(news, names); ok {
-		h.sendWebPushNotification(ctx, msg)
+	if settings.NotifyNewsTarget {
+		if n, ok := newsNotifyNotice(news, names, time.Now()); ok {
+			h.postMonitorTarget(ctx, []monitorNotification{n})
+		}
 	}
 }

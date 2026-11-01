@@ -99,6 +99,7 @@
         'pushNotifyContainers',
         'pushNotifyGlances',
         'pushNotifyNews',
+        'notifyNewsTarget',
         'feedWatchWindowMinutes',
         'feedWatchNewsView',
         'pushNotifyRelease',

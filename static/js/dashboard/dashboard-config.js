@@ -3969,6 +3969,7 @@ class DashboardConfig {
         pushNotifyBackup: ['push', 'notification', 'backup'],
         pushNotifyGlances: ['push', 'notification', 'glances', 'host', 'incident'],
         pushNotifyNews: ['push', 'notification', 'news', 'feed', 'watch'],
+        notifyNewsTarget: ['notification', 'news', 'feed', 'watch', 'ntfy', 'gotify', 'discord', 'alert'],
         pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
@@ -6008,7 +6009,12 @@ class DashboardConfig {
         if (!this.isActiveView() || !this.inSection('overview')) return;
         const body = document.getElementById('config-view-body');
         if (!body) return;
+        // A late repaint (the catalogue, the digest, the update check) must not
+        // take the keyboard with it: note which control had focus and give it back.
+        const active = body.contains(document.activeElement) ? document.activeElement : null;
+        const heldAction = active?.getAttribute?.('data-overview-action') || '';
         body.innerHTML = this.renderOverview();
+        if (heldAction) body.querySelector(`[data-overview-action="${heldAction}"]`)?.focus({ preventScroll: true });
         const container = document.getElementById('dashboard-layout');
         if (container) {
             // The intro belongs in the band; a repaint that re-renders the
@@ -9112,6 +9118,7 @@ class DashboardConfig {
         digestUpdates: { def: true },
         digestUsage: { def: true },
         digestNews: { def: true },
+        digestFeeds: { def: true },
         // Containers
         dockerViewEnabled: { def: true },
         dockerRefreshSeconds: { def: 5 },
@@ -9253,6 +9260,7 @@ class DashboardConfig {
         pushNotifyContainers: { def: false },
         pushNotifyGlances: { def: false },
         pushNotifyNews: { def: true },
+        notifyNewsTarget: { def: false },
         pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
@@ -10761,6 +10769,7 @@ class DashboardConfig {
                     // Moved here from Monitoring's push panel with the rest of
                     // the news settings; the switch for push itself stays there.
                     bool('pushNotifyNews', 'config.pushNotifyNewsLabel', 'Notify when a watched feed has news'),
+                    bool('notifyNewsTarget', 'config.notifyNewsTargetLabel', 'Also send news to the alert channel (ntfy, Gotify, Discord…)'),
                     {
                         type: 'note',
                         text: t('config.feedWatchPushNote', 'Sent to the browsers where notifications are on (Config → Monitoring → Notifications). Muted feeds never notify.'),
@@ -10988,6 +10997,7 @@ class DashboardConfig {
                     bool('digestUpdates', 'config.digestUpdatesLabel', 'Include container updates'),
                     bool('digestUsage', 'config.digestUsageLabel', 'Include most opened, unused and Inbox'),
                     bool('digestNews', 'config.digestNewsLabel', 'Include what is new in nextDash this week'),
+                    bool('digestFeeds', 'config.digestFeedsLabel', 'Include what the watched feeds published'),
                     { type: 'action', action: 'showDigest',
                       label: t('config.digestShowLabel', 'The latest digest'),
                       button: t('config.digestShowButton', 'Show') },

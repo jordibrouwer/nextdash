@@ -2409,6 +2409,7 @@
                 'A TLS certificate is about to expire'),
             'health.domain-expiring': this.t('config.webhookEventHealthDomainExpiring',
                 'A domain registration is about to expire'),
+            'feed.news': this.t('config.webhookEventFeedNews', 'A watched feed has news'),
         };
         const boxes = (this._webhookEvents || Object.keys(labels)).map((name) => `
             <label class="config-check">

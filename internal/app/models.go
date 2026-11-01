@@ -1075,7 +1075,8 @@ type Settings struct {
 	DigestHealth  bool   `json:"digestHealth"`
 	DigestUpdates bool   `json:"digestUpdates"`
 	DigestUsage   bool   `json:"digestUsage"`
-	DigestNews    bool   `json:"digestNews"` // the week's nextDash releases (digest_news.go)
+	DigestNews    bool   `json:"digestNews"`  // the week's nextDash releases (digest_news.go)
+	DigestFeeds   bool   `json:"digestFeeds"` // what the watched feeds published (digest_feeds.go)
 	// RemindersEnabled repeats an outage that is still going: after
 	// RemindAfterMinutes, up to RemindMax times. Monitors and containers only.
 	RemindersEnabled   bool `json:"remindersEnabled"`
@@ -1091,6 +1092,7 @@ type Settings struct {
 	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyGlances    bool                  `json:"pushNotifyGlances"`              // Push when a Glances host has an incident of a kind switched on in Config -> Glances
 	PushNotifyNews       bool                  `json:"pushNotifyNews"`                 // Push when a watched feed has news; on unless turned off
+	NotifyNewsTarget     bool                  `json:"notifyNewsTarget"`               // Also send a round's news to the alert target (ntfy, Gotify, Discord...); off unless turned on
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	InstallPingEnabled   bool                  `json:"installPingEnabled"`             // Daily anonymous install count: random id + version (on by default, separate from analyticsOptIn)
@@ -1976,6 +1978,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DigestUpdates:                  true,
 			DigestUsage:                    true,
 			DigestNews:                     true,
+			DigestFeeds:                    true,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
@@ -4632,6 +4635,7 @@ func (fs *FileStore) GetSettings() Settings {
 			DigestUpdates:                   true,
 			DigestUsage:                     true,
 			DigestNews:                      true,
+			DigestFeeds:                     true,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
@@ -4727,6 +4731,7 @@ func (fs *FileStore) GetSettings() Settings {
 			"digestUpdates": &settings.DigestUpdates,
 			"digestUsage":   &settings.DigestUsage,
 			"digestNews":    &settings.DigestNews,
+			"digestFeeds":   &settings.DigestFeeds,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true
