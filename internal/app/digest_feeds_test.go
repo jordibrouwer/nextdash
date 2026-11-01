@@ -65,7 +65,7 @@ func TestDigestFeedsAtLeastWhenAFeedIsFull(t *testing.T) {
 	if d.Feeds == nil || !d.Feeds.AtLeast {
 		t.Fatalf("feeds %+v", d.Feeds)
 	}
-	if got := digestFeedsLine(d.Feeds); got != "Watched feeds published at least 32 items on 2 sites this week: A (30) and B (2)." {
+	if got := digestFeedsLine(d.Feeds); got != fmt.Sprintf("Watched feeds published at least %d items on 2 sites this week: A (%d) and B (2).", feedWatchRecent+2, feedWatchRecent) {
 		t.Fatalf("line %q", got)
 	}
 }

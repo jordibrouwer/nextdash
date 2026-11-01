@@ -107,19 +107,21 @@ func TestWatchPollFindsNewEntries(t *testing.T) {
 	}
 }
 
-func TestWatchKeepsFiveItems(t *testing.T) {
+func TestWatchKeepsTheNewestItems(t *testing.T) {
 	srv := newWatchFeedServer(t)
 	srv.set(rssEntry("a", "A", 1))
 	h := newDiscoveryHandlers(t, nil)
 	w := baselined(t, h, srv.URL)
 	var all []string
 	all = append(all, rssEntry("a", "A", 1))
-	for d := 2; d <= 9; d++ {
+	// More new entries than a watch keeps in full: the newest stay.
+	last := feedWatchMaxItems + 3
+	for d := 2; d <= last; d++ {
 		all = append(all, rssEntry(fmt.Sprintf("n%d", d), fmt.Sprintf("N%d", d), d))
 	}
 	srv.set(all...)
 	w, _ = h.pollWatch(context.Background(), w, watchNow)
-	if len(w.Items) != feedWatchMaxItems || w.Items[0].Title != "N9" {
+	if len(w.Items) != feedWatchMaxItems || w.Items[0].Title != fmt.Sprintf("N%d", last) {
 		t.Fatalf("items=%d first=%q", len(w.Items), w.Items[0].Title)
 	}
 }
@@ -284,7 +286,7 @@ func manyEntries(n int) []string {
 
 func TestWatchKeepsRecentEntriesOfTheFeed(t *testing.T) {
 	srv := newWatchFeedServer(t)
-	srv.set(manyEntries(40)...)
+	srv.set(manyEntries(feedWatchRecent + 10)...)
 	h := newDiscoveryHandlers(t, nil)
 	w := baselined(t, h, srv.URL)
 	if len(w.Recent) != feedWatchRecent {

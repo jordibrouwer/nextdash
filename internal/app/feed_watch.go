@@ -22,14 +22,14 @@ validators and items, while Fresh holds one feed per bookmark and only
 timestamps. Stopping a watch is then a plain delete.
 */
 const (
-	feedWatchMaxItems     = 5
+	feedWatchMaxItems     = 10
 	feedWatchSummaryRunes = 600
 	feedWatchLimit        = 100
-	feedWatchSeenIDs      = 50
+	feedWatchSeenIDs      = 75
 	// feedWatchRecent is how many of a feed's current entries are kept for the
 	// news modal's lists, beyond the new ones; feedWatchRecentSummaryRunes cuts
 	// their text so a hundred watches stay a small file.
-	feedWatchRecent             = 30
+	feedWatchRecent             = 50
 	feedWatchRecentSummaryRunes = 300
 )
 
