@@ -95,7 +95,10 @@ test.describe('config info + reset affordances', () => {
         const allowed = new Set([
             'showSmartTodayCollection', 'showSmartRecentCollection', 'showSmartStaleCollection',
             'showSmartMostUsedCollection', 'showSmartAddedCollection', 'pushNotifyMonitor', 'pushNotifyBackup', 'pushNotifyContainers', 'pushNotifyGlances',
-            'pushNotifyRelease', 'pushNotifySubject',
+            'pushNotifyRelease', 'pushNotifySubject', 'pushNotifyNews',
+            // The two news-window settings: the group's note says what they do and
+            // the options name themselves (15 minutes, Newspaper), so no ℹ.
+            'feedWatchWindowMinutes', 'feedWatchNewsView',
             // Listed in FIELD_META for the ↺ button and the changed-settings
             // count, with a comment saying they carry no ℹ of their own: a
             // field with no `def` reports itself unchanged whatever it holds.

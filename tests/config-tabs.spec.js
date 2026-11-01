@@ -73,10 +73,10 @@ test('an old tab link opens the tab that holds its settings now', async ({ page 
     for (const old of ['inbox', 'fresh']) {
         await open(page, `#config/behavior/${old}`);
         await expect(page.locator('[data-bm-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('[data-behavior-field="feedsEnabled"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="feedWatchWindowMinutes"]')).toBeVisible();
         await expect.poll(() => hash(page)).toBe('#config/bookmarks/fresh');
     }
-    await expect(page.locator('[data-bm-tab]')).toHaveText(['View', 'Fresh', 'Tags', 'Tag suggestions', 'Your rules', 'Settings', 'Local copies']);
+    await expect(page.locator('[data-bm-tab]')).toHaveText(['View', 'Watch feeds', 'Tags', 'Tag suggestions', 'Your rules', 'Settings', 'Local copies']);
 
     // Status & alerts was split in Behavior, then left for Monitoring: all
     // three of its old addresses land there, and the bar says where.

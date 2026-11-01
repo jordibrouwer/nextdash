@@ -39,12 +39,11 @@ const fingerprint = (page) => page.evaluate(() => {
             url: row.getAttribute('data-bookmark-url'),
             pin: read('.bookmark-pin-badge'),
             note: read('.bookmark-note-badge'),
-            fresh: read('.bookmark-fresh-badge'),
         };
     });
 });
 
-test('the pin, note and fresh marks are what they were', async ({ page }) => {
+test('the pin and note marks are what they were', async ({ page }) => {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
@@ -90,7 +89,7 @@ test('the pin, note and fresh marks are what they were', async ({ page }) => {
     // No row builds a span it has nothing to draw in. An `is-empty` anywhere
     // means the old always-build path is back.
     for (const row of marks) {
-        for (const kind of ['pin', 'note', 'fresh']) {
+        for (const kind of ['pin', 'note']) {
             expect(row[kind], `${kind} span on ${row.url} is built but empty`)
                 .not.toContain('is-empty');
         }
@@ -102,7 +101,7 @@ test('the pin, note and fresh marks are what they were', async ({ page }) => {
     // how many rows wear each — that is what the flag could have altered.
     const tally = {};
     for (const row of marks) {
-        for (const kind of ['pin', 'note', 'fresh']) {
+        for (const kind of ['pin', 'note']) {
             const key = `${kind} ${row[kind]}`;
             tally[key] = (tally[key] || 0) + 1;
         }

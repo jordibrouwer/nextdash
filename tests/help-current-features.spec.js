@@ -37,7 +37,7 @@ async function openHelp(page, tab) {
 
 const CASES = [
     { tab: 'search', needles: [/typing a bookmark shortcut/i, /short pause/i] },
-    { tab: 'organizing', needles: [/already saved this on/i, /come back where you were/i, /Fresh/] },
+    { tab: 'organizing', needles: [/already saved this on/i, /come back where you were/i, /Watch feeds/] },
     // "Working through the list" — and the Ten links / Rot report cards it
     // covers — moved to the Bookmarks view tab with the standalone health view.
     { tab: 'bookmarks', needles: [/ten links, two minutes/i, /rot report/i] },
@@ -65,7 +65,7 @@ test('the Tips tab carries the new tips, in their groups', async ({ page }) => {
     const text = await body.innerText();
     // One per group that gained a tip, so a tip added to the locales but never
     // registered in ConfigHelpTips fails here rather than passing unseen.
-    for (const needle of [/Shift\+F/, /share sheet/i, /Shift\+Alt/, /raccourci|shortcut/i, /two-minute session/i, /Fresh/, /Ctrl\+Shift\+K/]) {
+    for (const needle of [/Shift\+F/, /share sheet/i, /Shift\+Alt/, /raccourci|shortcut/i, /two-minute session/i, /Ctrl\+Shift\+K/]) {
         expect(text, `tips are missing ${needle}`).toMatch(needle);
     }
     // Every registered tip resolves to prose, rather than showing its own key.

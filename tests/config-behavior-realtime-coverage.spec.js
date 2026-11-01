@@ -178,8 +178,6 @@ test('every special in the schema is one setBehavior actually handles', async ({
     });
     // `visual` runs applyVisualSettings, for fields written onto <body> that
     // neither the render nor the chrome pass touches — launcherIconSize.
-    // `feeds` polls once when Fresh is switched on, so the dashboard is not
-    // blank until the scheduler's next wake.
     // `previewCard` is handled before the switch rather than inside it: it
     // repaints the sample card beside the checklist, which every one of the
     // three preview fields has to do.
@@ -189,7 +187,7 @@ test('every special in the schema is one setBehavior actually handles', async ({
     // pool takes effect on the next reload and looks like it did nothing.
     // `healthBadge` redraws the Bookmarks icon's count (Config → Bookmarks → View).
     const handled = ['language', 'datetime', 'chrome', 'chromeRender', 'render', 'shortcutTooltips',
-        'visual', 'feeds', 'previewCard', 'siteNews', 'search', 'healthBadge', 'inboxBadge'];
+        'visual', 'previewCard', 'siteNews', 'search', 'healthBadge', 'inboxBadge'];
     expect(used.length).toBeGreaterThan(3);
     expect(used.filter((s) => !handled.includes(s))).toEqual([]);
 });

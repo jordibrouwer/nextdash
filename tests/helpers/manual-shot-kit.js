@@ -310,8 +310,7 @@ function tidyDemoData(dir, patch) {
     // One shot only: two pages of tiles -- the machine's three in one row on
     // the first, the weather and a feed on the second.
     if (patches.includes('widgets')) {
-        // Today stays on the other pages and Fresh is off, so the tiles lead
-        // these. (The server keeps no page list for Fresh.)
+        // Today stays on the other pages, so the tiles lead these.
         const s = readJSON(settingsFile);
         writeJSON(settingsFile, { ...s, smartTodayPageIds: [1, 2, 3], feedsEnabled: false });
         const pages = readJSON(path.join(dir, 'pages.json'));
@@ -423,7 +422,7 @@ function tidyDemoData(dir, patch) {
         ];
         // No smart collections: they would fill the page with links.
         const settingsFile = path.join(dir, 'settings.json');
-        writeJSON(settingsFile, { ...readJSON(settingsFile), smartTodayPageIds: [1], smartFreshPageIds: [1] });
+        writeJSON(settingsFile, { ...readJSON(settingsFile), smartTodayPageIds: [1] });
         writeJSON(path.join(dir, 'bookmarks-4.json'), {
             page: { id: 4, name: 'Servers' },
             categories: [],
@@ -441,7 +440,7 @@ function tidyDemoData(dir, patch) {
         writeJSON(path.join(dir, 'pages.json'), pages);
         const widgets = [{ id: 'w_d00000000001', type: 'domains', config: {} }];
         const settingsFile = path.join(dir, 'settings.json');
-        writeJSON(settingsFile, { ...readJSON(settingsFile), smartTodayPageIds: [1], smartFreshPageIds: [1] });
+        writeJSON(settingsFile, { ...readJSON(settingsFile), smartTodayPageIds: [1] });
         writeJSON(path.join(dir, 'bookmarks-4.json'), {
             page: { id: 4, name: 'Domains' },
             categories: [],

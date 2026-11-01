@@ -41,7 +41,7 @@ test.describe('uptime, trend, inbox and neglected', () => {
          * every offered type can be drawn and can be configured, which is a
          * property of the lists agreeing rather than of their length.
          */
-        const ringZero = ['certs', 'feeds', 'health', 'inbox', 'neglected', 'sources', 'trend', 'uptime'];
+        const ringZero = ['certs', 'health', 'inbox', 'neglected', 'sources', 'trend', 'uptime'];
         for (const type of ringZero) {
             expect(state.renderers, `${type} has a renderer`).toContain(type);
             expect(state.offered, `${type} is offered`).toContain(type);
@@ -419,27 +419,6 @@ test.describe('what does not fit is stated', () => {
         expect(rendered.more).toContain('6');
     });
 
-    // A retired feed pushed off the tile is exactly the one worth knowing about.
-    test('the feeds tile counts both halves toward what did not fit', async ({ page }) => {
-        await markWhatsNewSeen(page);
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-
-        const more = await page.evaluate(async () => {
-            const d = window.dashboardInstance;
-            const feeds = {};
-            for (let i = 0; i < 4; i++) feeds[`r${i}`] = { feedUrl: `https://r${i}.example/rss`, retired: true };
-            for (let i = 0; i < 5; i++) feeds[`f${i}`] = { feedUrl: `https://f${i}.example/rss`, newCount: i + 1 };
-            d.feedFreshness = feeds;
-            const body = document.createElement('div');
-            await window.DashboardWidgets.feeds(body, { type: 'feeds', config: { rows: 3 } }, d);
-            return body.querySelector('.dashboard-widget-row--more .dashboard-widget-row-name')?.textContent || '';
-        });
-        // Three rows shown, all retired; one retired plus five fresh left over.
-        expect(more).toContain('6');
-    });
 });
 
 /*

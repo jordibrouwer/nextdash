@@ -101,8 +101,8 @@ test.describe('Config → Inbox', () => {
         await page.goto('/#config/behavior/inbox');
         await page.waitForSelector('[data-bm-tab="fresh"]', { timeout: 15_000 });
         await expect(page.locator('[data-bm-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('[data-bm-tab="fresh"]')).toContainText('Fresh');
-        await expect(page.locator('[data-behavior-field="feedsEnabled"]')).toHaveCount(1);
+        await expect(page.locator('[data-bm-tab="fresh"]')).toContainText('Watch feeds');
+        await expect(page.locator('[data-behavior-field="feedWatchWindowMinutes"]')).toHaveCount(1);
         await expect(page.locator('[data-behavior-field="inboxEnabled"]')).toHaveCount(0);
     });
 

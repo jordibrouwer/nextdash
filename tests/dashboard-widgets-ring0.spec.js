@@ -37,7 +37,7 @@ test.describe('ring 0 widgets', () => {
         });
 
         // The three built in this phase, beside the one that already existed.
-        for (const type of ['health', 'sources', 'feeds', 'certs']) {
+        for (const type of ['health', 'sources', 'certs']) {
             expect(state.offered, `${type} offered`).toContain(type);
             expect(state.renderers, `${type} has a renderer`).toContain(type);
         }
@@ -85,32 +85,6 @@ test.describe('ring 0 widgets', () => {
             return [...body.querySelectorAll('.dashboard-widget-row-name')].map((n) => n.textContent);
         });
         expect(rows).toEqual(['Broken']);
-    });
-
-    /*
-     * A retired feed is the half nobody can see anywhere else: it is skipped on
-     * every poll, so it produces no items and no error.
-     */
-    test('the feeds tile shows the feeds that stopped, first', async ({ page }) => {
-        await open(page);
-        const rendered = await page.evaluate(async () => {
-            const d = window.dashboardInstance;
-            d.feedFreshness = {
-                a: { feedUrl: 'https://busy.example/rss', newCount: 7 },
-                b: { feedUrl: 'https://dead.example/rss', newCount: 0, retired: true, failures: 5 },
-            };
-            const body = document.createElement('div');
-            await window.DashboardWidgets.feeds(body, { type: 'feeds', config: {} }, d);
-            const rows = [...body.querySelectorAll('.dashboard-widget-row')];
-            return {
-                names: rows.map((r) => r.querySelector('.dashboard-widget-row-name')?.textContent),
-                first: rows[0]?.classList.contains('dashboard-widget-row--bad'),
-            };
-        });
-        // "This stopped working" outranks "this has seven new items".
-        expect(rendered.names[0]).toBe('dead.example');
-        expect(rendered.first).toBe(true);
-        expect(rendered.names).toContain('busy.example');
     });
 
     test('the certificates tile groups by host and honours its window', async ({ page }) => {

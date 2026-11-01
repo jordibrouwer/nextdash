@@ -247,15 +247,6 @@ window.HealthFacts = { certificates: {
     'two.example': { host: 'two.example', expiresAt: Date.now() + 20 * 86400000 },
 } };`;
 
-const FEEDS = `const real = window.fetch;
-d._widgetFeeds = null;
-window.fetch = async (url, ...rest) => (String(url).includes('/api/feeds')
-    ? new Response(JSON.stringify({ feeds: {
-        a: { feedUrl: 'https://a.example/feed', newCount: 3 },
-        b: { feedUrl: 'https://b.example/feed', newCount: 0, retired: true },
-    } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
-    : real(url, ...rest));`;
-
 const NEGLECTED = `const day = 24 * 60 * 60 * 1000;
 d.allBookmarks = [
     { name: 'Dropped', url: 'https://a.example/', pageId: 1, lastOpened: Date.now() - 400 * day, createdAt: Date.now() - 500 * day },
@@ -275,17 +266,6 @@ test.describe('the list tiles drawn wide', () => {
         const wide = await drawAt(page, 'certs', 700, CERTS);
         expect(wide.stats).toBe(3);
         expect(wide.runTimes).toBe(2);
-        expect(wide.rowColumns).toBe(2);
-    });
-
-    /* The rows say which feeds have something new; the summary says how many
-       are followed at all and how many have quietly stopped. */
-    test('feeds add how many are followed and how many stopped', async ({ page }) => {
-        await openDashboard(page);
-        expect((await drawAt(page, 'feeds', 300, FEEDS)).stats).toBe(0);
-
-        const wide = await drawAt(page, 'feeds', 700, FEEDS);
-        expect(wide.stats).toBe(3);
         expect(wide.rowColumns).toBe(2);
     });
 
