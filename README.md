@@ -465,7 +465,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - A **checkup** walks you through what is worth tidying up — dead links, duplicates, bookmarks nobody opens, empty categories and pages, widgets that show an error — one step at a time, with nothing removed before you have seen it. Type `:checkup`. *[Manual §12](MANUAL.md#the-checkup)*
 - **A status page** for the people who use your services: a read-only page behind a secret link with your groups of services, whether each one works, since when one is down, planned maintenance and 30 days of history. It shows no error details or internal addresses, refreshes itself every minute and follows the visitor’s language and light or dark. *[Manual §12.8](MANUAL.md#128-the-status-page)*
 - Alerts, set under **Config → Monitoring** (tabs Checks, Notifications and Schedules), to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows, quiet hours with one summary at the end, reminders for an outage that goes on, per-bookmark muting, and a weekly digest of what broke, what can be updated and what nobody opens. *[Manual §12.4](MANUAL.md#124-alerts)*
-- **Fresh** shows which bookmarked sites published something new. *[Manual §12.6](MANUAL.md#126-fresh)*
+- **Watch feeds** follows the feeds of sites you choose and shows what they publish, as a count, a toast and a news window. *[Manual §12.6](MANUAL.md#126-watch-feeds)*
 - Keep a copy of a page on your own disk or in the Web Archive. *[Manual §12.7](MANUAL.md#127-keeping-a-copy-of-a-page)*
 
 **Widgets**

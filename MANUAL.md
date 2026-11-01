@@ -194,7 +194,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Drift](#123-drift)
 - [Alerts](#124-alerts)
 - [Maintenance windows](#125-maintenance-windows)
-- [Fresh](#126-fresh)
+- [Watch feeds](#126-watch-feeds)
 - [Keeping a copy of a page](#127-keeping-a-copy-of-a-page)
 - [The status page](#128-the-status-page)
 
@@ -676,7 +676,7 @@ Bookmarks are grouped by **page** (Work, Home) and **category** (Dev, News). Aro
 ### 🚫 What nextDash is not
 
 - Not a multi-user service. Anyone who can reach the address can read and change the data — see [Security and self-hosting](#23-security-and-self-hosting).
-- Not a feed reader. Fresh and the RSS widget tell you what is new; they do not store articles.
+- Not a feed reader. Watch feeds and the RSS widget tell you what is new; they keep only the newest entries of the feeds you follow.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -1040,7 +1040,7 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 
 1. **What the page is** — icon, title, one address and a status pill.
 2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. A bookmark that is a video — YouTube, Vimeo, Dailymotion, or a file that ends in `.mp4` — carries a small **▶** on the corner of its icon (beside the name when icons are off), and the card opens on the thumbnail with a play button over it.
-3. **What you know about it** — last check and ping, uptime, certificate expiry, the Fresh count, opens and last opened, shortcut and location.
+3. **What you know about it** — last check and ping, uptime, certificate expiry, opens and last opened, shortcut and location.
 
 The page's picture stands on the left of the card, beside the text.
 
@@ -1695,7 +1695,6 @@ The column count of the grid is the ceiling. Spreading needs a limit on items pe
 | **Recently added** | What you saved last (off by default) |
 | **Most used** | Ranked by opens; appears once you have opened bookmarks from the dashboard |
 | **Stale** | Not opened within the stale threshold |
-| **Fresh** | Bookmarks whose site published since you last opened them ([§12.6](#126-fresh)) |
 
 Editing or deleting a bookmark inside a collection changes the real bookmark.
 
@@ -2307,17 +2306,17 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 **Uptime badges.** **Serve uptime badges** (off by default) lets `/badge/uptime.svg?url=<address>&days=7` (or `30`) return a small SVG for a README or a forum post: the uptime percentage, green from 99.9 %, amber from 99 %, red below. It answers for monitored addresses only; any other address reads *no data*, so the badge never tells whether an address is known. Anyone who knows a monitored address can read its badge, which is why it is off until you switch it on. A monitored bookmark's **Health** tab in the Bookmarks view has an **Uptime badge** section with a preview, a choice of 7 or 30 days and two buttons, **Copy Markdown** and **Copy HTML**, that put the snippet for your server on the clipboard. While badges are off the section says so and has a button to the switch.
 
-<a id="126-fresh"></a>
+<a id="126-watch-feeds"></a>
 
-### 12.6 Fresh
+### 12.6 Watch feeds
 
-**Fresh** shows whether a bookmarked site has published something since you last opened it.
+**Watch feeds** follows the RSS or Atom feeds of sites you choose and tells you when they publish something. Nothing is followed until you ask.
 
-- Switch it on under **Bookmarks → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
-- A bookmark with news carries a count on its row, and the **Fresh** collection lists them, newest first. Opening the bookmark clears the count.
-- Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**, and **Retry all** when more than one has stopped.
-- The bookmark editor shows a **Feed** line when there is one. `status:feed` / `-status:feed` search for them. **Mark rows that publish** (off by default) puts a quiet dot on those rows.
-- Fresh stores no articles, only counts. It is off by default because it contacts other servers on a schedule. The guide is under Config → Help → Monitoring.
+- **Start.** Right-click a bookmark → **Watch this feed…**, or use the same button in the bookmark editor. nextDash lists the feeds the page advertises (and tries the usual addresses when the page says nothing, as it does behind a cookie wall); tick one or more, or paste an address. Choose how often to check: 30 minutes, 1, 2, 4, 6, 12 or 24 hours. **Also check that this page is reachable (Periodic)** is ticked by default while the bookmark's checking is off. Up to 100 feeds can be watched.
+- **News.** A bookmark with news gets a purple, pulsing count. One toast covers all sites, the browser tab shows a count and a dot on the icon, and **Push notifications → Notify when a watched feed has news** (on by default) sends a notification. Hovering shows the newest item, with **Read in full** and **Open page**. On a phone there is no hover: tap the badge and a popover opens under it with up to four headlines and "+n more"; a tap on a headline opens that article and clears the badge, and "+n more" opens the bookmark.
+- **The news window** opens on an index of every new item, followed by the feeds' earlier entries. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the three buttons in its header: a newspaper front page (the default), two columns, or one column. **Esc** steps back from an article to the index and closes the window from there. One column has no index.
+- **When it goes away.** Opening the bookmark (or an article's headline) clears its count. The purple mark and the window close by themselves after 15, 30 (default), 60 or 120 minutes, counted from when the tab is in view; the news itself stays until you open the bookmark. `status:watched` and `status:unwatched` search for followed bookmarks.
+- **What it keeps.** The five newest new items of each feed, with their text and picture, and 30 recent entries as short copies without pictures. A feed that fails five times in a row is paused and tried again once a day. **Check watched feeds now** polls them all at once.
 
 <a id="127-keeping-a-copy-of-a-page"></a>
 
@@ -3924,7 +3923,7 @@ Small drawings beside the shape settings show what a value looks like.
 | **Show tags on bookmark rows** | And **Tags shown before "+N"** |
 | **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small (default), Medium or Large; an install that was still on Medium moves to Small once. **Shown in the header** — chips for the category icon (chosen per category, from its menu), the count of bookmarks on the right, and the underline |
 
-**Previews** tab — one panel, **Link preview cards**: Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**, as chips: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)).
+**Previews** tab — one panel, **Link preview cards**: Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**, as chips: image, site, author & date, video player, description, your note, tags, status & uptime, opens, shortcut & location ([§4](#4-the-dashboard)).
 
 <p align="center"><img src="screenshots/manual.md/16-appearance-rows.jpg" alt="Config, Appearance on its Rows tab: the open Favicons panel, the open Category header panel with its Style and Size choices and the Icon, Count and Underline chips, and the folded Bookmark display panel with a line of its values" width="860"></p>
 <p align="center"><sub>The Rows tab: two panels open, the third folded to its values; the header extras are chips.</sub></p>
@@ -4105,7 +4104,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Appearance** | Look: Theme · Background · Surfaces — Bookmarks: Layout · Rows · Previews — Header & bars: Header · Action bar · Date & weather ([§16](#16-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§17.4](#174-config-bookmarks)) |
 | **Structure** | Categories · Pages · Finders · Collections ([§9](#9-pages-categories-and-collections)) |
-| **Behavior** | General · Keyboard & search · Fresh · Privacy & sync ([§17.5](#175-behavior)) |
+| **Behavior** | General · Keyboard & search · Privacy & sync ([§17.5](#175-behavior)) |
 | **Monitoring** | Checks · Notifications · Schedules ([§17.5](#monitoring)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§17.6](#176-config-inbox)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
@@ -4122,7 +4121,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 
 In the rail the Containers row opens a group labelled **Services** (Containers, Unraid, Glances, Monitoring, Status page, Assistant) and Statistics one labelled **Info** (Statistics, Help, Logs, About); the labels are headings for the eye, not tabs.
 
-Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Bookmarks → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
+Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Bookmarks → Watch feeds, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
 <details>
 <summary>📷 Screenshot — Config → Appearance, full page</summary>
@@ -4206,7 +4205,7 @@ The other tabs:
 |---|---|
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§15](#15-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
-| **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now ([§12.6](#126-fresh)) |
+| **Watch feeds** | How long the news window stays open, how it looks, check watched feeds now ([§12.6](#126-watch-feeds)) |
 | **Privacy & sync** | **Count this install** (on by default, [§23.8](#238-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips and how often they come, whether a section offers its tour on a first visit, the review and offer cards, every tour (replay it with its button), *Show quick start again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
 
 Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config → Inbox** ([§17.6](#176-config-inbox)).
@@ -4300,7 +4299,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 <p align="center"><img src="screenshots/manual.md/17-monitoring-tour.jpg" alt="The Monitoring tour on its first step, Watching your services, not only your links: a drawing of the three tabs Checks, Notifications and Schedules, and the Next and Skip buttons" width="520"></p>
 
-**About** has three tabs. **Project** says what nextDash is and why it exists, links to the docs, the issues, the changelog, the manual and the maker's site, has a Ko-fi card for those who want to chip in, and ends in a collapsed **Credits and licences** block. **Install** shows the release you run and whether a newer one is out, tiles for pages, categories, bookmarks, widgets, tags, data size, uptime and platform, and **Copy diagnostics**, which puts the facts a bug report asks for on the clipboard. **News & features** lists every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts.
+**About** has three tabs. **Project** says what nextDash is and why it exists, links to the docs, the issues, the changelog, the manual and the maker's site, has a Ko-fi card for those who want to chip in, and ends in a collapsed **Credits and licences** block. **Install** shows the release you run and whether a newer one is out, tiles for pages, categories, bookmarks, widgets, tags, data size, uptime and platform, and **Copy diagnostics**, which puts the facts a bug report asks for on the clipboard. **News & features** lists every post from nextdash.cc, every release and every setting worth switching on, with source filters.
 
 <details>
 <summary>📷 Screenshot — Config → About, Project tab</summary>
@@ -4927,7 +4926,7 @@ The in-app assistant ([§23.11](#2311-the-assistant)) reads through the same gro
 
 | What | When | Switch |
 |---|---|---|
-| Your bookmarks' sites | Checks, previews, icons, Fresh, archives | Per feature |
+| Your bookmarks' sites | Checks, previews, icons, watched feeds, archives | Per feature |
 | GitHub Releases API | Once a day, to see whether a newer release exists; with the Containers GitHub token when you set one; a failure is explained in [§24](#the-update-check-fails) | Behavior → Privacy & sync → *Check GitHub for new releases*; `DISABLE_UPDATE_CHECK=true` for the whole server |
 | nextdash.cc feed | Every 90 minutes, by the server, for News & features | Behavior → Privacy & sync → *Show posts from nextdash.cc*; `DISABLE_NEWS_FEED=true` |
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
@@ -5390,7 +5389,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 |---|---|---|
 | Filter | A way to narrow what is shown: `tag:`, `category:`, `status:` and more in search, and the rail's groups in the Bookmarks view. | [§8.2](#82-filters) |
 | Finder (`?`) | A shortcut that sends a query to another site, as in `?g nextdash`. | [§8.6](#86-finders) |
-| Fresh | Shows whether a bookmarked site has published something since you last opened it, through its RSS or Atom feed. | [§12.6](#126-fresh) |
+| Watch feeds | Follows the RSS or Atom feed of a site you choose and tells you when it publishes something. | [§12.6](#126-watch-feeds) |
 | Glances | A server that reports one machine's processor, memory, disks, processes and containers. nextDash reads a Glances 4 host for its Glances page and widget. | [§15A](#15a-glances) |
 | Glances page | The view for one Glances host, opened with `Shift + G` or `:glances`, with Overview, Processes, Containers, Disks, Network, Insights, History, Alerts and Hosts sections. | [§15A.1](#15a1-opening-it) |
 
