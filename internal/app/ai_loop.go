@@ -70,6 +70,12 @@ type aiTurnResult struct {
 
 const aiSystemFixedLine = "You can look things up with the tools. You cannot change anything yourself: to suggest a change, call propose_changes, and the person applies it with a click."
 
+// aiSystemFunnelLines name the tools that count, so a model does not count a
+// cut-off list, and say where a missing tool is switched on.
+const aiSystemFunnelLines = "For counts, rankings, health and usage statistics, container links and the configuration, use query_bookmarks, query_containers, get_stats and get_settings_overview: " +
+	"for counts use the `total`/`groups` fields, never count the returned list.\n" +
+	"If a needed tool is not offered, say which switch under Config → AI Assistant → What it can see enables it (Health and Inbox: read, Containers: read or Settings overview: read)."
+
 // aiSystemPrompt carries the date, the page names and the fixed line, and
 // nothing else from the data: everything else the model has to look up.
 func aiSystemPrompt(now time.Time, pages []Page) string {
@@ -89,6 +95,7 @@ func aiSystemPrompt(now time.Time, pages []Page) string {
 		b.WriteString("The pages are: " + strings.Join(names, ", ") + ".\n")
 	}
 	b.WriteString(aiSystemFixedLine + "\n")
+	b.WriteString(aiSystemFunnelLines + "\n")
 	b.WriteString(aiSystemDocsBlock())
 	return b.String()
 }
@@ -324,8 +331,65 @@ func (h *Handlers) aiRunTool(r *http.Request, call aiToolCall) string {
 		out = aiJSONText(map[string]any{"error": rpcErr.Message})
 	} else if content, ok := result["content"].([]map[string]any); ok && len(content) > 0 {
 		out, _ = content[0]["text"].(string)
+		if len(out) > aiToolResultMax {
+			if payload, ok := result["structuredContent"].(map[string]any); ok {
+				if fitted, ok := aiFitPayload(payload, aiToolResultMax); ok {
+					return fitted
+				}
+			}
+		}
 	}
 	return aiCutText(out, aiToolResultMax)
+}
+
+/*
+aiFitPayload shortens the lists in an answer that is too long, rather than
+cutting its text: JSON keys are written in alphabetical order, so a plain cut
+of {"bookmarks":[...],"total":300} loses the total, which is the one figure a
+count is read from. The longest list is halved until the answer fits, and the
+answer says it was shortened.
+*/
+func aiFitPayload(payload map[string]any, max int) (string, bool) {
+	work := make(map[string]any, len(payload)+1)
+	for k, v := range payload {
+		work[k] = v
+	}
+	work["shortened"] = "Some lists were shortened to fit; total, groups and summary still count everything."
+	for i := 0; i < 32; i++ {
+		text := aiJSONText(work)
+		if len(text) <= max {
+			return text, true
+		}
+		longest, size := "", 0
+		for k, v := range work {
+			n := 0
+			switch list := v.(type) {
+			case []map[string]any:
+				n = len(list)
+			case []any:
+				n = len(list)
+			}
+			if n > size {
+				longest, size = k, n
+			}
+		}
+		if size == 0 {
+			return "", false
+		}
+		switch list := work[longest].(type) {
+		case []map[string]any:
+			work[longest] = list[:size/2]
+		case []any:
+			work[longest] = list[:size/2]
+		}
+		if _, ok := work["returned"]; ok {
+			work["returned"] = size / 2
+		}
+		if _, ok := work["truncated"]; ok {
+			work["truncated"] = true
+		}
+	}
+	return "", false
 }
 
 // aiCutText keeps at most max bytes, on a character boundary, and says so.
