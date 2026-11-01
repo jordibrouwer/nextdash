@@ -946,10 +946,6 @@ func (h *Handlers) mcpGetStats(r *http.Request, args json.RawMessage) map[string
 		out["inbox"] = h.mcpInboxStatsBlock(r, days, now)
 		out["trash"] = h.mcpTrashBlock()
 	}
-	if settings.MCPHealthInbox {
-		out["inbox"] = h.mcpInboxStatsBlock(r, days, now)
-		out["trash"] = h.mcpTrashBlock()
-	}
 	out["notes"] = notes
 	return out
 }
