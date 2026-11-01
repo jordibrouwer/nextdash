@@ -817,3 +817,41 @@ func TestGlancesIncidentPeakSurvivesADip(t *testing.T) {
 	}
 }
 
+// The cap on the log drops closed incidents, never one that is still going on.
+func TestGlancesIncidentCapKeepsTheOpenOne(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	glancesWipe()
+	setGlancesBeat(5 * time.Second)
+	t0 := time.Now().UnixMilli()
+	disk := func(i int64, bad bool) []glancesObservation {
+		return []glancesObservation{{Kind: "disk", Subject: "/mnt/x", Value: 95, Bad: bad}}
+	}
+	glancesObserve(t0, disk(0, true))
+	glancesObserve(t0+5000, disk(1, true))
+	// A busy log after it: more closed incidents than the cap holds.
+	glancesIncidents.Lock()
+	for i := 0; i < glancesIncidentKeep; i++ {
+		glancesIncidents.log = append(glancesIncidents.log, GlancesIncident{Kind: "cpu", Start: t0 + int64(i), End: t0 + int64(i) + 1})
+	}
+	glancesIncidents.Unlock()
+	// A change trims the log.
+	glancesObserve(t0+10000, append(disk(2, true), glancesObservation{Kind: "mem", Value: 99, Bad: true}))
+	glancesObserve(t0+15000, append(disk(3, true), glancesObservation{Kind: "mem", Value: 99, Bad: true}))
+	ongoing, _ := glancesIncidentList()
+	found := false
+	for _, in := range ongoing {
+		found = found || in.Kind == "disk"
+	}
+	if !found {
+		t.Fatalf("the open disk incident was trimmed: ongoing=%+v", ongoing)
+	}
+	var closed bool
+	for i := int64(4); i < 7; i++ {
+		for _, ev := range glancesObserve(t0+i*5000, disk(i, false)) {
+			closed = closed || (ev.Incident.Kind == "disk" && !ev.Opened && !ev.Lost)
+		}
+	}
+	if !closed {
+		t.Fatal("the disk incident was never closed")
+	}
+}

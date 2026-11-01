@@ -227,12 +227,27 @@ func (hs *glancesHost) observe(now int64, observations []glancesObservation) []G
 			remap[i] = len(kept)
 			kept = append(kept, in)
 		}
-		if len(kept) > glancesIncidentKeep {
-			drop := len(kept) - glancesIncidentKeep
-			for i := range remap {
-				remap[i] = max(-1, remap[i]-drop)
+		// Past the cap the oldest closed incidents go; one still open stays,
+		// or it would vanish while going on and never be closed.
+		if over := len(kept) - glancesIncidentKeep; over > 0 {
+			trimmed := make([]GlancesIncident, 0, glancesIncidentKeep)
+			pos := map[int]int{}
+			for j, in := range kept {
+				if over > 0 && in.End != 0 {
+					over--
+					continue
+				}
+				pos[j] = len(trimmed)
+				trimmed = append(trimmed, in)
 			}
-			kept = kept[drop:]
+			for i, n := range remap {
+				if p, ok := pos[n]; ok {
+					remap[i] = p
+				} else {
+					remap[i] = -1
+				}
+			}
+			kept = trimmed
 		}
 		for key, i := range hs.incidents.index {
 			if n, ok := remap[i]; ok && n >= 0 {
