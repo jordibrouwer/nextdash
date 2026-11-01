@@ -861,6 +861,9 @@ class SearchCommandNew {
         okBtn?.addEventListener('click', () => this.confirmInlineCreate(kind));
         cancelBtn?.addEventListener('click', () => this.cancelInlineCreate(kind));
         input?.addEventListener('keydown', (e) => {
+            // Enter and Escape mid-composition belong to the IME: they commit
+            // or cancel the candidate, not the new category or page.
+            if (e.isComposing || e.keyCode === 229) return;
             if (e.key === 'Enter') { e.preventDefault(); this.confirmInlineCreate(kind); }
             else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.cancelInlineCreate(kind); }
         });
@@ -1302,6 +1305,7 @@ class SearchCommandNew {
     }
 
     handleKeyDown(e) {
+        if (e.isComposing || e.keyCode === 229) return;
         if (e.key === 'Escape' && this.modal?.classList.contains('show')) {
             this.closeModal();
         }

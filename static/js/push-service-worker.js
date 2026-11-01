@@ -23,7 +23,10 @@ self.addEventListener('push', (event) => {
     let data = {};
     if (event.data) {
         try {
-            data = event.data.json();
+            // `null` and other non-objects are valid JSON too; read as one,
+            // data.title threw and no notification was shown at all.
+            const parsed = event.data.json();
+            data = parsed && typeof parsed === 'object' ? parsed : { title: DEFAULT_TITLE, body: String(parsed ?? '') };
         } catch (err) {
             // A payload that is not JSON still deserves to reach the user, so fall
             // back to showing it as plain text rather than dropping the event.
@@ -57,7 +60,12 @@ self.addEventListener('notificationclick', (event) => {
         for (const client of clientList) {
             const sameOrigin = new URL(client.url).origin === self.location.origin;
             if (sameOrigin && 'focus' in client) {
-                if ('navigate' in client && new URL(client.url).pathname !== target) {
+                // Compared as whole paths with query and hash: target can carry
+                // either, and a pathname alone never matched it, so the tab was
+                // reloaded on every click.
+                const here = new URL(client.url);
+                const there = new URL(target, self.location.origin);
+                if ('navigate' in client && here.pathname + here.search + here.hash !== there.pathname + there.search + there.hash) {
                     try {
                         await client.navigate(target);
                     } catch (err) {

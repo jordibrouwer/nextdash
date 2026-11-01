@@ -112,12 +112,16 @@ class SearchCommandNote {
             onConfirm: async () => {
                 const textarea = document.getElementById('note-cmd-textarea');
                 const newNote = textarea ? textarea.value : '';
+                const previousNote = bookmark.note;
                 bookmark.note = newNote;
                 const saved = await this._persistBookmark(bookmark);
                 const dash = window.dashboardInstance;
                 // Said only when the note was written: the toast came from a
                 // separate save of the page in view, and showed either way.
                 if (!saved) {
+                    // Put back, or a later unrelated page save wrote the note
+                    // that this one reported as not saved.
+                    bookmark.note = previousNote;
                     dash?.showErrorNotification?.(this._t('commands.bookmarkUpdateFailed', 'Could not save the change'));
                     return;
                 }

@@ -18,7 +18,9 @@ class FuzzySearchComponent {
         this.picks = new Map();
         (Array.isArray(picks) ? picks : []).forEach((entry) => {
             if (!entry || !entry.q || !entry.url) return;
-            this.picks.set(`${String(entry.q).toLowerCase()}\n${entry.url}`, entry);
+            // Folded and trimmed as the lookup is, so "météo" learned is
+            // found when "meteo " is typed.
+            this.picks.set(`${this.pickKey(entry.q)}\n${entry.url}`, entry);
         });
     }
 
@@ -156,6 +158,7 @@ class FuzzySearchComponent {
         if (!query.trim()) return [];
 
         const q = this.fold(query);
+        const pickQ = this.pickKey(query);
 
         const scored = [];
         for (const bookmark of (bookmarks || this.bookmarks)) {
@@ -238,7 +241,7 @@ class FuzzySearchComponent {
             // would render below the group it had just beaten, which is the
             // one place it must never be.
             const remembered = this.pickScore(
-                this.picks?.get(`${q}\n${bookmark.url}`));
+                this.picks?.get(`${pickQ}\n${bookmark.url}`));
             if (remembered > score) {
                 score = remembered;
                 group = 'strong';
@@ -277,6 +280,10 @@ class FuzzySearchComponent {
      * "meteo". Precomposed letters keep their length, which the highlight
      * relies on.
      */
+    pickKey(value) {
+        return this.fold(String(value || '').trim().replace(/\s+/g, ' '));
+    }
+
     fold(value) {
         return String(value || '').normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC').toLowerCase();
     }

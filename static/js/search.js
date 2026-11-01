@@ -212,6 +212,10 @@ class SearchComponent {
         const mobileInput = document.getElementById('search-input-mobile');
         if (mobileInput) {
             mobileInput.addEventListener('input', (e) => {
+                // Mid-composition the field holds an IME candidate. Rewriting
+                // the value under it reset or doubled what was being typed on
+                // a CJK or predictive keyboard; compositionend syncs instead.
+                if (e.isComposing) return;
                 const raw = e.target.value;
                 const inCommandMode = this.currentQuery.startsWith(':');
                 const inFinderMode = this.currentQuery.startsWith('?');
@@ -250,11 +254,17 @@ class SearchComponent {
                 e.target.value = this.currentQuery;
             });
 
+            mobileInput.addEventListener('compositionend', () => {
+                mobileInput.dispatchEvent(new Event('input'));
+            });
+
             mobileInput.addEventListener('keydown', (e) => {
                 // Handled here, so it does not reach the document handler as
                 // well: one Enter ran the match twice -- a completion filled
                 // in and then ran, a toggle flipped and flipped back.
-                if (e.isComposing) return;
+                // keyCode 229 too: Safari sends the Enter that ends a
+                // composition with isComposing already false.
+                if (e.isComposing || e.keyCode === 229) return;
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     e.stopPropagation();
