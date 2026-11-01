@@ -313,6 +313,7 @@
                 + bar
                 + `<div class="feed-news-body"><div class="feed-news-paper">${empty}${blocks}${earlier}</div></div>`
                 + `<div class="feed-news-foot">${caption}${legendHtml()}</div>`;
+            stickTop(root);
             return;
         }
 
@@ -351,6 +352,22 @@
             + `<button type="button" class="modal-button feed-news-open" data-feed-news-open><span class="modal-button-name">${esc(t('dashboard.feedWatchOpenPage', 'Open page'))}</span></button>`
             + legendHtml()
             + `</div>`;
+        stickTop(root);
+    }
+
+    /**
+     * The masthead, the title row with its controls and the time bar stay where
+     * they are while the news scrolls under them: one block, stuck to the top of
+     * the window's scroller.
+     */
+    function stickTop(root) {
+        const parts = ['.feed-news-mast', '.feed-news-head', '.feed-news-bar']
+            .map((selector) => root.querySelector(`:scope > ${selector}`)).filter(Boolean);
+        if (!parts.length) return;
+        const top = document.createElement('div');
+        top.className = 'feed-news-top';
+        parts[0].before(top);
+        parts.forEach((part) => top.appendChild(part));
     }
 
     /** Update only the bar and its caption, so the 1-second tick never rebuilds the article. */

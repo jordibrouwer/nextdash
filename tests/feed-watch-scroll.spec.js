@@ -39,5 +39,14 @@ for (const [label, size] of [['phone', { width: 375, height: 600 }], ['desktop',
         await body.hover();
         await page.mouse.wheel(0, 400);
         await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
+        // The masthead and the title row with its controls stay at the top while the news scrolls.
+        const stuck = await modal.evaluate((el) => {
+            const scroller = el.querySelector('.modal-body').getBoundingClientRect();
+            const top = el.querySelector('.feed-news-top').getBoundingClientRect();
+            return { gap: Math.round(top.top - scroller.top), height: Math.round(top.height) };
+        });
+        expect(stuck.gap).toBeLessThanOrEqual(2);
+        expect(stuck.height).toBeGreaterThan(30);
+        await expect(modal.locator('.feed-news-top .feed-news-close')).toBeInViewport();
     });
 }

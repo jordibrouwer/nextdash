@@ -897,3 +897,17 @@ body[data-density-mode="dense"] .bookmark-news-line,
 }
 body[data-mobile-layout="true"] .bookmark-link.has-feed-news::before,
 body[data-mobile-layout="true"] .dashboard-grid.layout-terminal .bookmark-link.has-feed-news::before { inset-inline-start: -9px; }
+
+/* The top of the news window stays put while the news scrolls under it. The
+   window's own panel is glass; the stuck block gets enough of the panel's
+   colour that the lines passing under it do not show through. The newspaper
+   keeps its paper. */
+.feed-news-top {
+    position: sticky; top: 0; z-index: 4;
+    background: var(--background-modal, var(--background-primary));
+    background-image: linear-gradient(color-mix(in srgb, var(--background-primary) 55%, transparent), color-mix(in srgb, var(--background-primary) 55%, transparent));
+    margin: 0 -0.25rem; padding: 0 0.25rem;
+}
+.modal.feed-news-modal.is-paper .feed-news-top { background: #f4efe4; background-image: none; }
+.feed-news-top .feed-news-head { margin-bottom: 0; }
+.feed-news-top + .feed-news-body, .feed-news-top ~ .feed-news-body { margin-top: 0.6rem; }
