@@ -535,7 +535,9 @@
             target.index = focusItemId ? Math.max(0, everything.findIndex((i) => i.id === focusItemId)) : 0;
             // Several items open on the front page; one asked for by item, or a
             // single one, opens on the article.
-            target.mode = everything.length > 1 && !focusItemId && currentView() !== 'single' ? 'index' : 'article';
+            // The newspaper opens on its front page; the two-column and one-column
+            // layouts open on an article, the others beside it or one at a time.
+            target.mode = everything.length > 1 && !focusItemId && currentView() === 'paper' ? 'index' : 'article';
         };
         // Already showing (a push landed on ?news=1 and the toast was clicked
         // too): refill it in place. Showing the panel again would replace the

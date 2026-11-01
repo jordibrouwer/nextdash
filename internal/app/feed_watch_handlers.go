@@ -294,10 +294,17 @@ func (h *Handlers) GetFeedWatchCandidates(w http.ResponseWriter, r *http.Request
 	}
 	var out []candidate
 	index := map[string]int{}
-	ctx, cancel := context.WithTimeout(r.Context(), 40*time.Second)
+	// light=1 is the quick look the bookmark chooser takes at many sites: the
+	// page head only, one request, no guessing at the usual addresses.
+	light := r.URL.Query().Get("light") == "1"
+	timeout := 40 * time.Second
+	if light {
+		timeout = 10 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 	found := h.discoverFeedsForURL(ctx, raw)
-	if len(found) == 0 {
+	if len(found) == 0 && !light {
 		// Nothing in the page head: a consent wall, or a site that never
 		// advertised its feed. Try the usual addresses.
 		found = h.probeCommonFeeds(ctx, raw)

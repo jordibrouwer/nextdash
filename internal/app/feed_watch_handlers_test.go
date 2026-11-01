@@ -538,3 +538,34 @@ func TestWatchListCarriesLatest(t *testing.T) {
 		t.Fatalf("fallback to FoundAt: %d %q", e.LatestAt, e.LatestTitle)
 	}
 }
+
+func TestWatchCandidatesLightSkipsTheUsualAddresses(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `<html><head><title>Please accept</title></head><body>consent</body></html>`)
+	})
+	mux.HandleFunc("/rss", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/rss+xml")
+		fmt.Fprint(w, rssItemsFixture)
+	})
+	page := httptest.NewServer(mux)
+	defer page.Close()
+	e := newWatchEnv(t, Bookmark{Name: "P", URL: page.URL + "/"})
+	count := func(query string) int {
+		rec := httptest.NewRecorder()
+		e.h.GetFeedWatchCandidates(rec, httptest.NewRequest(http.MethodGet, "/api/feeds/watch/candidates?url="+page.URL+"/"+query, nil))
+		var out struct {
+			Feeds []struct{ URL string } `json:"feeds"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		return len(out.Feeds)
+	}
+	if n := count(""); n != 1 {
+		t.Fatalf("the full lookup should find the open feed, got %d", n)
+	}
+	if n := count("&light=1"); n != 0 {
+		t.Fatalf("the light lookup reads the page only, got %d", n)
+	}
+}

@@ -376,35 +376,76 @@
             await update(r, { [kind]: [...list, word] });
         };
 
+        /**
+         * What a quick look at each site found, kept on this device for a week:
+         * how many feeds the page advertises. The chooser fills it in as it goes.
+         */
+        const SCAN_KEY = 'nextdash.feedScan';
+        const SCAN_TTL = 7 * 24 * 3600 * 1000;
+        const readScan = () => {
+            try {
+                const raw = JSON.parse(localStorage.getItem(SCAN_KEY) || '{}');
+                const fresh = {};
+                Object.keys(raw || {}).forEach((k) => { if (Date.now() - Number(raw[k]?.at) < SCAN_TTL) fresh[k] = raw[k]; });
+                return fresh;
+            } catch { return {}; }
+        };
+        const writeScan = (scan) => { try { localStorage.setItem(SCAN_KEY, JSON.stringify(scan)); } catch { /* no storage */ } };
+
         /** A bookmark without a watch, chosen by name, then the usual picker. */
         const watchMore = () => {
             const bookmarks = (this.dash.allBookmarks || []).filter((b) => /^https?:/i.test(String(b.url || '')) && !watch.isWatched(b));
             const seen = new Set();
             const choices = bookmarks.filter((b) => { const k = watch.key(b.url); if (seen.has(k)) return false; seen.add(k); return true; })
                 .sort((a, b) => String(a.name || a.url).localeCompare(String(b.name || b.url)));
-            const list = (query) => {
+            const scan = readScan();
+            let onlyFeeds = false;
+            let query = '';
+            // Sites known to have a feed first, then the ones not looked at yet, then the ones without.
+            const rank = (b) => { const r = scan[watch.key(b.url)]; return !r ? 1 : (r.n > 0 ? 0 : 2); };
+            const list = () => {
                 const q = String(query || '').trim().toLowerCase();
-                const hits = choices.filter((b) => !q || `${b.name || ''} ${b.url}`.toLowerCase().includes(q)).slice(0, 50);
+                const hits = choices.filter((b) => (!q || `${b.name || ''} ${b.url}`.toLowerCase().includes(q))
+                    && (!onlyFeeds || rank(b) === 0))
+                    .map((b, i) => ({ b, i }))
+                    .sort((x, y) => (rank(x.b) - rank(y.b)) || (x.i - y.i))
+                    .map((x) => x.b)
+                    .slice(0, 60);
                 return hits.length
-                    ? hits.map((b) => `<li><button type="button" class="fwm-choice" data-fwm-choose="${esc(b.url)}"><strong>${esc(b.name || b.url)}</strong><span>${esc(hostOf(b.url))}</span></button></li>`).join('')
-                    : `<li class="feed-watch-note">${esc(t('config.feedWatchMoreNone', 'No bookmark without a watch matches.'))}</li>`;
+                    ? hits.map((b) => {
+                        const r = scan[watch.key(b.url)];
+                        const tag = !r ? '' : (r.n > 0
+                            ? `<em class="fwm-tag is-feed">${esc(t('config.feedWatchMoreHasFeed', 'feed found'))}</em>`
+                            : `<em class="fwm-tag">${esc(t('config.feedWatchMoreNoFeed', 'no feed advertised'))}</em>`);
+                        return `<li><button type="button" class="fwm-choice${r && r.n === 0 ? ' is-none' : ''}" data-fwm-choose="${esc(b.url)}"><strong>${esc(b.name || b.url)}</strong><span>${esc(hostOf(b.url))}</span>${tag}</button></li>`;
+                    }).join('')
+                    : `<li class="feed-watch-note">${esc(onlyFeeds && !q
+                        ? t('config.feedWatchMoreNoneYet', 'No site with a feed found yet. The sites are still being looked at.')
+                        : t('config.feedWatchMoreNone', 'No bookmark without a watch matches.'))}</li>`;
             };
             global.AppModal.show({
                 title: t('config.feedWatchMoreTitle', 'Watch more feeds'),
                 htmlMessage: `<div class="fwm-chooser" data-fwm-chooser>
                         <input type="search" class="fwm-chooser-search" data-fwm-chooser-search autocomplete="off"
                                aria-label="${esc(t('config.feedWatchMoreSearch', 'Find a bookmark'))}" placeholder="${esc(t('config.feedWatchMoreSearch', 'Find a bookmark'))}">
-                        <ul class="fwm-chooser-list" data-fwm-chooser-list>${list('')}</ul>
+                        <label class="fwm-chooser-only"><input type="checkbox" data-fwm-only> ${esc(t('config.feedWatchMoreOnly', 'Only sites with a feed'))}</label>
+                        <p class="feed-watch-note" data-fwm-scan aria-live="polite"></p>
+                        <ul class="fwm-chooser-list" data-fwm-chooser-list>${list()}</ul>
                     </div>`,
                 showCancel: false,
                 modalClass: 'feed-watch-modal',
                 initialFocusSelector: '[data-fwm-chooser-search]',
             });
+            picker()?.addCloseButton?.();
             const root = document.querySelector('[data-fwm-chooser]');
             if (!root) return;
             const listEl = root.querySelector('[data-fwm-chooser-list]');
-            root.querySelector('[data-fwm-chooser-search]')?.addEventListener('input', (e) => { listEl.innerHTML = list(e.target.value); });
-            root.querySelector('[data-fwm-chooser-search]')?.addEventListener('keydown', (e) => {
+            const statusEl = root.querySelector('[data-fwm-scan]');
+            const render = () => { listEl.innerHTML = list(); };
+            const search = root.querySelector('[data-fwm-chooser-search]');
+            search?.addEventListener('input', (e) => { query = e.target.value; render(); });
+            root.querySelector('[data-fwm-only]')?.addEventListener('change', (e) => { onlyFeeds = e.target.checked; render(); });
+            search?.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') { e.preventDefault(); listEl.querySelector('[data-fwm-choose]')?.click(); }
             });
             listEl.addEventListener('click', (e) => {
@@ -414,6 +455,42 @@
                 // The picker takes over the same modal.
                 if (bookmark) void picker()?.open({ bookmark }).then(paint);
             });
+
+            // A quick look at each site the list has not seen yet: the page head
+            // only, one request apiece, one every half second so the outbound
+            // limit is never in the way. It stops when the window closes.
+            const todo = choices.filter((b) => !scan[watch.key(b.url)]);
+            const total = choices.length;
+            const found = () => choices.filter((b) => scan[watch.key(b.url)]?.n > 0).length;
+            const say = () => {
+                if (!statusEl.isConnected) return;
+                const looked = total - todo.length;
+                statusEl.textContent = todo.length
+                    ? t('config.feedWatchMoreProgress', 'Looked at {done} of {total} sites · {found} have a feed')
+                        .replace('{done}', String(looked)).replace('{total}', String(total)).replace('{found}', String(found()))
+                    : t('config.feedWatchMoreDone', '{found} of {total} sites have a feed')
+                        .replace('{found}', String(found())).replace('{total}', String(total));
+            };
+            say();
+            void (async () => {
+                let sinceRender = 0;
+                while (todo.length && root.isConnected) {
+                    const b = todo.shift();
+                    let n = 0;
+                    try {
+                        const res = await fetch(`/api/feeds/watch/candidates?light=1&url=${encodeURIComponent(b.url)}`);
+                        if (res.ok) n = ((await res.json()).feeds || []).length;
+                        else if (res.status === 429) { todo.unshift(b); await new Promise((r) => setTimeout(r, 4000)); continue; }
+                    } catch { /* offline or blocked: counts as nothing found */ }
+                    scan[watch.key(b.url)] = { at: Date.now(), n };
+                    sinceRender += 1;
+                    if (sinceRender >= 4 || !todo.length) { sinceRender = 0; writeScan(scan); if (root.isConnected) render(); }
+                    say();
+                    await new Promise((r) => setTimeout(r, 500));
+                }
+                writeScan(scan);
+                say();
+            })();
         };
 
         const checkAll = async () => {

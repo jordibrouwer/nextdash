@@ -132,6 +132,7 @@
                 initialFocusSelector: '[data-feed-watch-save]',
                 onHide: () => resolve(outcome),
             });
+            addCloseButton();
 
             const root = document.querySelector('[data-feed-watch-picker]');
             if (!root) { resolve('cancelled'); return; }
@@ -194,5 +195,22 @@
         });
     }
 
-    global.FeedWatchPicker = { open, intervalWords, intervals: INTERVALS };
+    /**
+     * A close button in the header of a Watch feeds window, for the mouse; the
+     * shell's "ESC to close" line under the window is the keyboard's half.
+     */
+    function addCloseButton() {
+        const header = document.querySelector('#app-modal .modal-header');
+        if (!header || header.querySelector('[data-feed-watch-x]')) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'feed-watch-x';
+        button.setAttribute('data-feed-watch-x', '');
+        button.setAttribute('aria-label', t('dashboard.close', 'Close'));
+        button.textContent = '\u00d7';
+        button.addEventListener('click', () => global.AppModal.hide());
+        header.appendChild(button);
+    }
+
+    global.FeedWatchPicker = { open, intervalWords, intervals: INTERVALS, addCloseButton };
 })(window);
