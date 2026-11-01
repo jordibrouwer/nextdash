@@ -105,7 +105,12 @@ func aiKeyFor(provider string) string {
 func saveAIKey(provider, key string) error {
 	aiSecretsMu.Lock()
 	defer aiSecretsMu.Unlock()
-	secrets := readAISecrets()
+	// Not readAISecrets: read as empty, clearing one provider's key removed
+	// the file and with it every other provider's.
+	var secrets aiSecrets
+	if err := readJSONForWrite(aiSecretsFilePath(), &secrets); err != nil {
+		return err
+	}
 	if secrets.Keys == nil {
 		secrets.Keys = map[string]string{}
 	}

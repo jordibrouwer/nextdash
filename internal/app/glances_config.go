@@ -516,7 +516,10 @@ func saveGlancesConfig(cfg GlancesConfig, password *string) (GlancesConfig, erro
 	}
 	cfg = normalizeGlancesConfig(cfg)
 
-	secrets := readGlancesSecretsLocked()
+	var secrets glancesSecrets
+	if err := readJSONForWrite(glancesSecretsPath(), &secrets); err != nil {
+		return cfg, err
+	}
 	if password != nil {
 		secrets.set(cfg.ID, *password)
 	}
@@ -615,9 +618,11 @@ func glancesRemoveHost(id string) error {
 		return errGlancesNoSuchHost
 	}
 	f.Hosts = kept
-	secrets := readGlancesSecretsLocked()
-	secrets.set(id, "")
-	_ = writeGlancesSecretsLocked(secrets)
+	var secrets glancesSecrets
+	if err := readJSONForWrite(glancesSecretsPath(), &secrets); err == nil {
+		secrets.set(id, "")
+		_ = writeGlancesSecretsLocked(secrets)
+	}
 	err := writeGlancesFileLocked(f, f.config(kept[0]))
 	glancesStore.Unlock()
 	if err != nil {

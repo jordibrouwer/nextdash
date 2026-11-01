@@ -150,6 +150,19 @@ func readHealthCredentialFile() HealthCredentialFile {
 	return file
 }
 
+// readHealthCredentialFileForWrite is the read before a save: an unreadable
+// file is an error, so the save does not keep only the entry it changed.
+func readHealthCredentialFileForWrite() (HealthCredentialFile, error) {
+	file := HealthCredentialFile{}
+	if err := readJSONForWrite(healthCredentialFilePath(), &file); err != nil {
+		return HealthCredentialFile{}, err
+	}
+	if file.Credentials == nil {
+		file.Credentials = map[string]HealthCredential{}
+	}
+	return file, nil
+}
+
 // writeHealthCredentialFile persists the set with 0600, for the same reason
 // sources.json does: on a multi-user host 0644 means every account can read it.
 func writeHealthCredentialFile(file HealthCredentialFile) error {
@@ -395,7 +408,10 @@ func saveHealthCredential(id string, credential HealthCredential) error {
 	}
 	healthCredentialMu.Lock()
 	defer healthCredentialMu.Unlock()
-	file := readHealthCredentialFile()
+	file, err := readHealthCredentialFileForWrite()
+	if err != nil {
+		return err
+	}
 	file.Credentials[id] = sanitizeHealthCredential(credential)
 	return writeHealthCredentialFile(file)
 }
@@ -408,7 +424,10 @@ func deleteHealthCredential(id string) error {
 	}
 	healthCredentialMu.Lock()
 	defer healthCredentialMu.Unlock()
-	file := readHealthCredentialFile()
+	file, err := readHealthCredentialFileForWrite()
+	if err != nil {
+		return err
+	}
 	delete(file.Credentials, id)
 	return writeHealthCredentialFile(file)
 }

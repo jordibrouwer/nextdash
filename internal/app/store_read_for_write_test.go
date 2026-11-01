@@ -55,3 +55,60 @@ func TestPushKeysAreNotRemadeOverAnUnreadableStore(t *testing.T) {
 		t.Fatalf("%d subscriptions, want the one saved before", n)
 	}
 }
+
+// The secret stores refuse a save over a file they could not read, instead of
+// keeping only the entry being saved.
+func TestSecretStoresDoNotSaveOverAnUnreadableFile(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	if err := saveHealthCredential("a", HealthCredential{Label: "A", Headers: map[string]string{"X-Key": "1"}}); err != nil {
+		t.Fatal(err)
+	}
+	unreadable(t, healthCredentialFilePath())
+	if err := saveHealthCredential("b", HealthCredential{Label: "B", Headers: map[string]string{"X-Key": "2"}}); err == nil {
+		t.Error("credential saved over an unreadable file")
+	}
+	readable(t, healthCredentialFilePath())
+	if _, ok := lookupHealthCredential("a"); !ok {
+		t.Error("credential a was lost")
+	}
+
+	if _, err := saveWebhookEndpoint("one", WebhookEndpoint{URL: "https://hooks.example/1", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	unreadable(t, webhookFilePath())
+	if _, err := saveWebhookEndpoint("two", WebhookEndpoint{URL: "https://hooks.example/2", Enabled: true}); err == nil {
+		t.Error("webhook saved over an unreadable file")
+	}
+	readable(t, webhookFilePath())
+	if _, ok := lookupWebhookEndpoint("one"); !ok {
+		t.Error("webhook one was lost")
+	}
+
+	if err := saveAIKey(aiProviderAnthropic, "sk-a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveAIKey(aiProviderOpenAI, "sk-o"); err != nil {
+		t.Fatal(err)
+	}
+	unreadable(t, aiSecretsFilePath())
+	if err := saveAIKey(aiProviderOpenAI, ""); err == nil {
+		t.Error("an AI key was cleared from an unreadable file")
+	}
+	readable(t, aiSecretsFilePath())
+	if aiKeyFor(aiProviderAnthropic) != "sk-a" {
+		t.Error("the other provider's key was lost")
+	}
+
+	if err := saveUnraidAPIKey("tower", "k1"); err != nil {
+		t.Fatal(err)
+	}
+	unreadable(t, unraidSecretsFilePath())
+	if err := saveUnraidAPIKey("backup", "k2"); err == nil {
+		t.Error("Unraid key saved over an unreadable file")
+	}
+	readable(t, unraidSecretsFilePath())
+	if unraidAPIKey("tower") != "k1" {
+		t.Error("the Unraid key for tower was lost")
+	}
+}
