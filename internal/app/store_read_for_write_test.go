@@ -112,3 +112,21 @@ func TestSecretStoresDoNotSaveOverAnUnreadableFile(t *testing.T) {
 		t.Error("the Unraid key for tower was lost")
 	}
 }
+
+// A status token file that cannot be read makes no new link: the new token
+// stopped every copy of the old link while nothing said why.
+func TestStatusLinkIsNotReplacedOverAnUnreadableFile(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	before, err := ensureStatusToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	unreadable(t, statusSecretsFilePath())
+	if _, err := ensureStatusToken(); err == nil {
+		t.Fatal("a link was handed out from a token file that could not be read")
+	}
+	readable(t, statusSecretsFilePath())
+	if after := readStatusToken(); after != before {
+		t.Fatal("the status link was replaced")
+	}
+}
