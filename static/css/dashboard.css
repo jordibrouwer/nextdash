@@ -1204,7 +1204,7 @@ body[data-show-theme-studio-button="false"] .header-shortcuts #theme-studio-butt
     width: 2.6rem;
     text-align: center;
     font-size: 1.1em;
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 0.4rem);
     color: var(--text-primary);
@@ -1215,7 +1215,7 @@ body[data-show-theme-studio-button="false"] .header-shortcuts #theme-studio-butt
 
 .page-tab-popover-name {
     flex: 1;
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 0.4rem);
     color: var(--text-primary);
@@ -6549,7 +6549,7 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
     padding: var(--space-2, 0.55rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 7px);
-    background: var(--background-secondary);
+    background: var(--field-fill, var(--background-secondary));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-small);

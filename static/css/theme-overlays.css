@@ -835,7 +835,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-text, .config-choices) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-text, .config-input, .config-choices) {
     border-color: transparent;
     border-radius: var(--ov-r-control);
     background-color: var(--ov-field-fill);
@@ -1637,7 +1637,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-text, .config-choices) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-text, .config-input, .config-choices) {
     border-color: transparent;
     border-radius: var(--ov-r-control);
     background-color: var(--ov-field-fill);
@@ -1668,4 +1668,12 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 /* The fields outside the config and library views (modals, finders, notes) read this name, and take it only where the material is signature. */
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] {
     --field-fill: var(--ov-field-fill);
+}
+
+/* A .config-text outside the config view (a confirm dialog, the inbox drawer) takes the same field as the ones inside it. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-text, .config-input) {
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    background-color: var(--ov-field-fill);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
