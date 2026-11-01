@@ -180,6 +180,16 @@ test.describe('one watched feed', () => {
     });
 });
 
+test('Watch feeds carries a "new" in the Config rail', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+    await expect(page.locator('[data-config-section="feed-watch"]')).toHaveAttribute('data-config-new', 'new');
+});
+
 test('a paused feed is not asked when the feeds are polled', async ({ page, request }) => {
     const site = await startCountingSite();
     try {

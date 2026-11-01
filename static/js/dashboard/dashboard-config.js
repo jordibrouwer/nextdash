@@ -238,7 +238,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['status-page', 'glances', 'assistant'];
+    static NEW_SECTIONS = ['status-page', 'glances', 'assistant', 'feed-watch'];
 
     /** The sections that open a named group in the rail. */
     static NAV_GROUP_LABELS = {
