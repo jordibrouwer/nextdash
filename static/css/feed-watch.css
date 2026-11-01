@@ -516,14 +516,12 @@ body.no-animations .feed-news-bar > i { transition: none; }
 .whats-new-btn.feed-news-btn[hidden] { display: none; }
 .feed-news-btn-count { font-weight: var(--font-weight-semibold, 600); font-variant-numeric: tabular-nums; line-height: 1; }
 .feed-news-btn-count:empty { display: none; }
-/* What's new is not shown on a phone; News takes its corner there, and only
-   while something is unread. */
+/* The News button is a desktop control. A phone has the badges on the rows,
+   the toast, the push and the paper that opens when you come back. */
 @media (max-width: 767px) {
-    .whats-new-btn.feed-news-btn { right: var(--corner-fab-edge); min-height: 44px; min-width: 44px; }
-    .whats-new-btn.feed-news-btn[data-unread="0"] { display: none; }
+    .whats-new-btn.feed-news-btn { display: none !important; }
 }
-body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn { right: var(--corner-fab-edge); min-height: 44px; min-width: 44px; }
-body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn[data-unread="0"] { display: none; }
+body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn { display: none !important; }
 
 /* Watch feeds… in the selection bar: a small popover on the app's menu surface
    (.move-popover) with the interval, the two actions and a report per bookmark. */

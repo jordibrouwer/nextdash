@@ -24,6 +24,8 @@ const badge = (page) => link(page).locator('.bookmark-news-badge');
 const pop = (page) => page.locator('.feed-news-pop');
 const modal = (page) => page.locator('#app-modal .modal.feed-news-modal');
 const newsButton = (page) => page.locator('#feed-news-btn');
+// On a phone there is no News button: the toast's Read is the way in.
+const openPaper = async (page) => { await page.locator('#app-notification.show').getByRole('button', { name: 'Read' }).tap(); };
 
 /** Watch the stub feed, publish `count` posts and let the server poll once. */
 async function publish(request, count) {
@@ -119,14 +121,12 @@ test.describe('on a touch screen, against the real server', () => {
         expect(await storedCount(request)).toBe(3);
     });
 
-    test('the News button opens the paper in one column, and Mark all read clears the badge and the button', async ({ page, request }) => {
+    test('the toast opens the paper in one column, and Mark all read clears the badge', async ({ page, request }) => {
         await publish(request, 3);
         await openDashboard(page);
-        await expect(newsButton(page)).toBeVisible();
-        await expect(newsButton(page)).toHaveText('3');
-        // On a phone it takes the place of What's new.
-        await expect(page.locator('#whats-new-btn')).toBeHidden();
-        await newsButton(page).tap();
+        // The News button is a desktop control; a phone opens the paper from the toast.
+        await expect(newsButton(page)).toBeHidden();
+        await openPaper(page);
         await expect(modal(page)).toBeVisible();
         await expect(modal(page).locator('.feed-news-section:not(.is-earlier)')).toHaveCount(1);
         expect(await page.evaluate(() => document.scrollingElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -137,7 +137,6 @@ test.describe('on a touch screen, against the real server', () => {
         await expect(badge(page)).toHaveCount(0);
         await modal(page).locator('[data-feed-news-close]').tap();
         await expect(modal(page)).toBeHidden();
-        await expect(newsButton(page)).toBeHidden();
     });
 });
 
@@ -147,8 +146,7 @@ test.describe('the paper on a touch screen', () => {
     test('one column, 44 px controls, three layouts, and the body scrolls under a finger', async ({ page }) => {
         await stubLongNews(page);
         await openDashboard(page);
-        await expect(newsButton(page)).toBeVisible();
-        await newsButton(page).tap();
+        await openPaper(page);
         await expect(modal(page)).toBeVisible();
         await expect(modal(page)).toHaveClass(/is-paper/);
         expect(await page.evaluate(() => document.scrollingElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -178,7 +176,7 @@ test.describe('the paper on a touch screen', () => {
     test('the layout switcher buttons are 44 px targets', async ({ page }) => {
         await stubLongNews(page);
         await openDashboard(page);
-        await newsButton(page).tap();
+        await openPaper(page);
         await expect(modal(page)).toBeVisible();
         for (const el of await modal(page).locator('.feed-news-view').all()) {
             const box = /** @type {{width:number,height:number}} */ (await el.boundingBox());
@@ -218,9 +216,7 @@ test.describe('hit testing and scroll lock', () => {
     test('nothing covers the news controls, the modal scrolls, and closing releases the lock', async ({ page }) => {
         await stubLongNews(page);
         await openDashboard(page);
-        await expect(newsButton(page)).toBeVisible();
-        expect(await hitsControl(newsButton(page))).toBe(true);
-        await newsButton(page).tap();
+        await openPaper(page);
         await expect(modal(page)).toBeVisible();
         expect((await lockOf(page)).locked).toBe(true);
         for (const sel of ['[data-feed-news-close]', '[data-feed-news-mark-all]', '[data-feed-news-view="single"]', '[data-feed-news-view="wide"]', '[data-feed-news-view="paper"]']) {

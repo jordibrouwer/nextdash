@@ -218,8 +218,9 @@ test('returning to the tab does not cover another window', async ({ page }) => {
 test('on a phone the sections stack, the controls are 44 px and nothing runs off the side', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await openDashboard(page);
-    await expect(newsButton(page)).toBeVisible();
-    await newsButton(page).click();
+    // No News button on a phone: the toast's Read opens the paper.
+    await expect(newsButton(page)).toBeHidden();
+    await page.locator('#app-notification.show').getByRole('button', { name: 'Read' }).click();
     await expectTwoSections(page);
     const box = async (locator) => /** @type {{x:number,y:number,width:number,height:number}} */ (await locator.boundingBox());
     const toggle = await box(item(page, 'B one').locator('.feed-news-toggle'));
