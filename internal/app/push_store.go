@@ -89,6 +89,20 @@ func readPushSubscriptionsFile() PushSubscriptionsFile {
 	return file
 }
 
+// readPushSubscriptionsFileForWrite is readPushSubscriptionsFile before a
+// write: a file that is there but cannot be read is an error, not an empty
+// store. Read as empty, the next write made new keys and dropped every device.
+func readPushSubscriptionsFileForWrite() (PushSubscriptionsFile, error) {
+	file := emptyPushSubscriptions()
+	if err := readJSONForWrite(pushSubscriptionsFilePath(), &file); err != nil {
+		return PushSubscriptionsFile{}, err
+	}
+	if file.Subscriptions == nil {
+		file.Subscriptions = []PushSubscription{}
+	}
+	return file, nil
+}
+
 func writePushSubscriptionsFile(file PushSubscriptionsFile) error {
 	file.GeneratedAt = time.Now().UnixMilli()
 	if file.Subscriptions == nil {
@@ -104,7 +118,10 @@ func writePushSubscriptionsFile(file PushSubscriptionsFile) error {
 // two are inseparable: rotating the key invalidates every subscription stored
 // beside it, and keeping them together makes that impossible to get wrong.
 func ensureVAPIDKeysLocked() (vapidKeys, error) {
-	file := readPushSubscriptionsFile()
+	file, err := readPushSubscriptionsFileForWrite()
+	if err != nil {
+		return vapidKeys{}, err
+	}
 	if file.Keys != nil && strings.TrimSpace(file.Keys.PublicKey) != "" && strings.TrimSpace(file.Keys.PrivateKey) != "" {
 		return *file.Keys, nil
 	}
@@ -146,7 +163,10 @@ func savePushSubscription(sub PushSubscription) error {
 	pushMu.Lock()
 	defer pushMu.Unlock()
 
-	file := readPushSubscriptionsFile()
+	file, err := readPushSubscriptionsFileForWrite()
+	if err != nil {
+		return err
+	}
 	now := time.Now().UnixMilli()
 	sub.ID = pushSubscriptionID(sub.Endpoint)
 	sub.LastSeen = now
@@ -210,7 +230,10 @@ func deletePushSubscriptionByID(id string) (bool, error) {
 	pushMu.Lock()
 	defer pushMu.Unlock()
 
-	file := readPushSubscriptionsFile()
+	file, err := readPushSubscriptionsFileForWrite()
+	if err != nil {
+		return false, err
+	}
 	for i, s := range file.Subscriptions {
 		if s.ID == id {
 			file.Subscriptions = append(file.Subscriptions[:i], file.Subscriptions[i+1:]...)
@@ -231,7 +254,11 @@ func recordPushDeliveryResults(results map[string]pushDeliveryOutcome) {
 	pushMu.Lock()
 	defer pushMu.Unlock()
 
-	file := readPushSubscriptionsFile()
+	file, err := readPushSubscriptionsFileForWrite()
+	if err != nil {
+		logPushError("delivery results not recorded, the store could not be read: %v", err)
+		return
+	}
 	kept := make([]PushSubscription, 0, len(file.Subscriptions))
 	changed := false
 
