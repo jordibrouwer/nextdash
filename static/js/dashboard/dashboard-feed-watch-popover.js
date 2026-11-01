@@ -15,7 +15,7 @@
     'use strict';
 
     const QUERY = '(hover: none) and (pointer: coarse)';
-    const MAX_ITEMS = 4;
+    const MAX_ITEMS = 5;
     const MARGIN = 12;
     const GAP = 8;
 
@@ -74,7 +74,9 @@
 
     function onOutside(event) {
         if (!popover) return;
-        if (popover.el.contains(event.target) || popover.badge?.contains(event.target)) return;
+        // A tap on the row the popover belongs to is the row's own: it closes the
+        // popover itself, and must not do it twice.
+        if (popover.el.contains(event.target) || popover.badge?.closest('a')?.contains(event.target)) return;
         close();
     }
 
@@ -162,8 +164,10 @@
         el.setAttribute('aria-modal', 'false');
         el.setAttribute('aria-labelledby', 'feed-news-pop-name');
         const count = Number(dash()?.feedWatch?.watchFor(bookmark)?.newCount) || items.length;
-        el.innerHTML = `<div class="feed-news-pop-head"><span class="feed-news-pop-name" id="feed-news-pop-name">${esc(bookmark.name || bookmark.url)}</span>`
-            + `<span class="feed-news-pop-count">${esc(t('dashboard.feedWatchNewCount', '{n} new', { n: count }))}</span>`
+        el.innerHTML = `<div class="feed-news-pop-head">`
+            + `<button type="button" class="feed-news-pop-site" data-pop-site aria-label="${esc(t('dashboard.feedWatchPopoverOpenSite', 'Open {name}', { name: bookmark.name || bookmark.url }))}">`
+            + `<span class="feed-news-pop-name" id="feed-news-pop-name">${esc(bookmark.name || bookmark.url)}</span>`
+            + `<span class="feed-news-pop-count">${esc(t('dashboard.feedWatchNewCount', '{n} new', { n: count }))}</span></button>`
             + `<button type="button" class="feed-news-pop-close" data-pop-close aria-label="${esc(t('dashboard.close', 'Close'))}">×</button></div>`
             + `<ul class="feed-news-pop-list">` + items.map((item, i) => `<li><button type="button" class="feed-news-pop-item" data-pop-item="${i}">`
             + (item.image ? `<img class="feed-news-pop-thumb" src="${esc(item.image)}" alt="" decoding="async">` : '')
@@ -174,6 +178,8 @@
         el.addEventListener('click', (event) => {
             event.stopPropagation();
             if (event.target.closest('[data-pop-close]')) { close(); return; }
+            // The bar on top is the way on to the site itself.
+            if (event.target.closest('[data-pop-site]')) { openBookmark(bookmark); close(); return; }
             const itemButton = event.target.closest('[data-pop-item]');
             const moreButton = event.target.closest('[data-pop-more]');
             if (!itemButton && !moreButton) return;
@@ -238,7 +244,7 @@
      * Make a row's news badge a button on a touch screen. Called by the row
      * painter for every badge it draws.
      */
-    function attach(badge, bookmark) {
+    function attach(badge, bookmark, openLink) {
         if (!isTouch()) return;
         badge.classList.add('is-tappable');
         badge.setAttribute('role', 'button');
@@ -260,6 +266,21 @@
             try { dash()?.dismissBookmarkPreviewInteractions?.(); } catch { /* no card */ }
             void toggle(bookmark, badge);
         });
+        // A bookmark with news never opens its site straight from the row on a
+        // touch screen: whatever part of the row is tapped, the headlines come
+        // first, and the site is one tap further, from the bar on top.
+        if (openLink) {
+            openLink.addEventListener('click', (event) => {
+                if (!badge.isConnected || event.defaultPrevented) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                openLink._previewHoverActive = false;
+                clearTimeout(openLink._previewHoverTimer);
+                openLink._previewHoverTimer = null;
+                try { dash()?.dismissBookmarkPreviewInteractions?.(); } catch { /* no card */ }
+                void toggle(bookmark, badge);
+            }, true);
+        }
     }
 
     // A phone turned sideways, or a keyboard attached, can change the answer.

@@ -767,7 +767,7 @@ class DashboardBookmarkRows {
             newsBadge.setAttribute('aria-label', newsLabel);
             newsBadge.setAttribute('role', 'img');
             // On a touch screen the badge opens the headlines instead of the site.
-            window.FeedWatchPopover?.attach(newsBadge, bookmark);
+            window.FeedWatchPopover?.attach(newsBadge, bookmark, openLink);
             openLink.appendChild(newsBadge);
         }
         /*

@@ -47,17 +47,17 @@ test.describe('on a touch screen', () => {
         expect(hit.content).not.toBe('none');
     });
 
-    test('tapping the badge opens at most four headlines and "+2 more", and does not open the bookmark', async ({ page, context }) => {
+    test('tapping the badge opens at most five headlines and "+1 more", and does not open the bookmark', async ({ page, context }) => {
         await stubNews(page, 6);
         await openDashboard(page);
         let opened = 0;
         context.on('page', () => { opened += 1; });
         await badge(page).tap();
         await expect(pop(page)).toBeVisible();
-        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(4);
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(5);
         await expect(pop(page).locator('.feed-news-pop-title').first()).toHaveText('Headline 1');
         await expect(pop(page).locator('.feed-news-pop-thumb')).toHaveCount(1);
-        await expect(pop(page).locator('.feed-news-pop-more')).toHaveText('+2 more');
+        await expect(pop(page).locator('.feed-news-pop-more')).toHaveText('+1 more');
         await expect(badge(page)).toHaveAttribute('aria-expanded', 'true');
         // The app's own menu surface (so the theme styles it), with a close button.
         await expect(pop(page)).toHaveClass(/move-popover/);
@@ -97,7 +97,7 @@ test.describe('on a touch screen', () => {
         await expect(badge(page)).toHaveCount(0);
     });
 
-    test('tapping "+2 more" opens the bookmark', async ({ page, context }) => {
+    test('tapping "+1 more" opens the bookmark', async ({ page, context }) => {
         await stubNews(page, 6);
         await openDashboard(page);
         await badge(page).tap();
@@ -151,10 +151,10 @@ test.describe('on a touch screen', () => {
         // Opening puts the cursor on the first headline.
         expect(await activeIs('.feed-news-pop-item')).toBe(true);
         expect(await page.evaluate(() => document.activeElement?.closest('.feed-news-pop-list li:first-child') !== null)).toBe(true);
-        // Tab from the last headline wraps to the close button, and Shift+Tab goes back.
+        // Tab from the last headline wraps to the bar on top, and Shift+Tab goes back.
         await pop(page).locator('.feed-news-pop-item').last().focus();
         await page.keyboard.press('Tab');
-        expect(await activeIs('[data-pop-close]')).toBe(true);
+        expect(await activeIs('[data-pop-site]')).toBe(true);
         await page.keyboard.press('Shift+Tab');
         expect(await activeIs('li:last-child > .feed-news-pop-item')).toBe(true);
         // Esc, the close button and a second tap all hand focus back.
@@ -182,7 +182,7 @@ test.describe('on a touch screen', () => {
         await expect(dialog).toBeVisible();
         await expect(dialog).toHaveAttribute('aria-modal', 'false');
         const list = dialog.getByRole('list');
-        await expect(list.getByRole('listitem')).toHaveCount(4);
+        await expect(list.getByRole('listitem')).toHaveCount(5);
         await expect(list.getByRole('listitem').first().getByRole('button')).toContainText('Headline 1');
     });
 
@@ -210,13 +210,45 @@ test.describe('on a touch screen', () => {
         await expect(badge(page)).toHaveAttribute('aria-expanded', 'true');
     });
 
-    test('tapping the row itself still opens the bookmark', async ({ page, context }) => {
-        await stubNews(page);
+    test('a tap anywhere on a row with news shows the headlines first, not the site', async ({ page, context }) => {
+        await stubNews(page, 3);
         await openDashboard(page);
+        let opened = 0;
+        context.on('page', () => { opened += 1; });
+        // On the name, away from the badge.
+        await link(page).locator('a.bookmark-open').tap({ position: { x: 20, y: 10 } });
+        await expect(pop(page)).toBeVisible();
+        await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(3);
+        await page.waitForTimeout(400);
+        expect(opened).toBe(0);
+        // The second tap on the row closes it again; the site still did not open.
+        await link(page).locator('a.bookmark-open').tap({ position: { x: 20, y: 10 } });
+        await expect(pop(page)).toHaveCount(0);
+        expect(opened).toBe(0);
+    });
+
+    test('the bar on top of the headlines goes on to the site', async ({ page, context }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await link(page).locator('a.bookmark-open').tap({ position: { x: 20, y: 10 } });
+        await expect(pop(page)).toBeVisible();
+        const opened = context.waitForEvent('page');
+        await pop(page).locator('[data-pop-site]').tap();
+        const tab = await opened;
+        expect(tab.url()).toContain(new URL(site.url).host);
+        await expect(pop(page)).toHaveCount(0);
+    });
+
+    test('a row without news still opens its site directly', async ({ page, context }) => {
+        await stubNews(page, 3);
+        await page.route('**/api/feeds/watch', (route) => (route.request().method() !== 'GET'
+            ? route.continue()
+            : route.fulfill({ contentType: 'application/json', body: JSON.stringify({ limit: 100, total: 0, watches: {} }) })));
+        await openDashboard(page);
+        await expect(badge(page)).toHaveCount(0);
         const opened = context.waitForEvent('page');
         await link(page).locator('a.bookmark-open').tap({ position: { x: 20, y: 10 } });
         await opened;
-        await expect(badge(page)).toHaveCount(0);
     });
 });
 

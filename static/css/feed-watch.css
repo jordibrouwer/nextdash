@@ -681,3 +681,10 @@ body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn { display: none !im
 }
 .modal-overlay.show .modal.feed-news-modal .modal-body,
 .modal-overlay.show .modal.feed-watch-modal .modal-body { max-height: none; }
+
+/* The bar on top of the headlines: it is the way on to the site. */
+.feed-news-pop-site {
+    flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 0.6rem; min-height: 44px;
+    padding: 0 0.25rem; margin: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer;
+}
+.feed-news-pop-site:active, .feed-news-pop-site:focus-visible { background: color-mix(in srgb, var(--text-primary) 8%, transparent); outline: none; }
