@@ -169,11 +169,13 @@ var dataFiles = map[string]dataFilePolicy{
 	// re-records daily, a feed re-polls -- and together a restored install
 	// that had to earn back weeks of history. health-trend needs three days
 	// before its chart appears at all.
-	"health-trend.json":       dataKeep,
-	"feeds.json":              dataKeep,
-	"inbox-stats.json":        dataKeep,
-	"site-news.json":          dataKeep,
-	"push-subscriptions.json": dataKeep,
+	"health-trend.json": dataKeep,
+	"feeds.json":        dataKeep,
+	"inbox-stats.json":  dataKeep,
+	"site-news.json":    dataKeep,
+	// Holds the VAPID private key next to every device's keys: together they
+	// send pushes to those devices, so it travels and is restored as a secret.
+	"push-subscriptions.json": dataSecret,
 	// Notices held for the quiet hours, and the outages still being reminded
 	// about: both are of this moment, and a restore must not bring back a night
 	// that is already over.
@@ -514,6 +516,11 @@ where they are preserved.
 */
 func importFileMode(relPath string) os.FileMode {
 	if policy, _ := dataFilePolicyOf(relPath); policy == dataSecret {
+		return 0600
+	}
+	// Not a secret, so it is in every backup, but private: ai_store writes it
+	// 0600 and a restore must not leave it readable until the next chat.
+	if relPath == "ai-conversations.json" {
 		return 0600
 	}
 	return 0644
@@ -859,13 +866,16 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		applyRuntimeSettings(h.store.GetSettings())
 		h.forgetUnraidAfterRestore(before, preparedHasRelPath(prepared, "unraid-secrets.json"))
 	}()
-	// Under the store lock, so no bookmark write lands between the files.
+	// Under the store lock, so no bookmark write lands between the files, and
+	// under settingsMu, so a settings save that read the old file before the
+	// commit cannot write it back over the restored one after it.
+	h.settingsMu.Lock()
 	if err := h.store.ReplaceDataFiles(func() error { return commitPreparedImport(dataDir, prepared) }); err != nil {
+		h.settingsMu.Unlock()
 		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
 	}
 	// A backup made without its secrets has them empty; restoring it keeps the
 	// ones in use, as it keeps the secret files it does not carry.
-	h.settingsMu.Lock()
 	if after := h.store.GetSettings(); keepSettingsSecrets(&after, before) {
 		if err := h.store.SaveSettings(after); err != nil {
 			logWarn(logComponentImport, "the alert and archive secrets could not be kept (%v); set them again in Config", err)

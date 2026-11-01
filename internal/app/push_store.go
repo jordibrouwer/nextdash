@@ -108,7 +108,12 @@ func writePushSubscriptionsFile(file PushSubscriptionsFile) error {
 	if file.Subscriptions == nil {
 		file.Subscriptions = []PushSubscription{}
 	}
-	return writeIndentJSONFile(pushSubscriptionsFilePath(), file)
+	data, err := json.MarshalIndent(file, "", "  ")
+	if err != nil {
+		return err
+	}
+	// 0600: the VAPID private key is in here.
+	return writeFileAtomic(pushSubscriptionsFilePath(), data, 0600)
 }
 
 // ensureVAPIDKeys returns the server's key pair, generating and persisting one on
