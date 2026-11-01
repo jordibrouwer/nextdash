@@ -19,6 +19,7 @@ class SearchCommandsComponent {
         { id: 'widgetsTutorialV2', labelKey: 'config.tourWidgets', label: 'Widgets' },
         { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring' },
         { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid' },
+        { id: 'assistantTutorialV1', labelKey: 'config.tourAssistant', label: 'AI Assistant' },
     ];
 
     constructor(language = null, currentBookmarks = [], allBookmarks = [], updateQueryCallback = null) {
