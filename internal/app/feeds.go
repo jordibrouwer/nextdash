@@ -527,6 +527,14 @@ func (h *Handlers) pollFeed(ctx context.Context, state FeedState) FeedState {
 	}
 
 	resp, err := client.Do(req)
+	// A round cut short -- Poll now abandoned, the tab closed -- says nothing
+	// about the feed. Counted, five of them retired a working feed for a day.
+	if ctx.Err() != nil {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		return state
+	}
 	if err != nil || resp == nil {
 		state.Failures++
 		logFeedFailure(feedURL, state.Failures, "it could not be reached")
@@ -548,7 +556,9 @@ func (h *Handlers) pollFeed(ctx context.Context, state FeedState) FeedState {
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, feedMaxBytes))
 	if err != nil {
-		state.Failures++
+		if ctx.Err() == nil {
+			state.Failures++
+		}
 		return state
 	}
 	times := feedEntryTimestamps(body)
@@ -683,6 +693,20 @@ persist:
 	}
 	if only == nil {
 		current.LastPoll = time.Now().UnixMilli()
+		// Feeds of bookmarks that are gone are dropped here, against the
+		// bookmarks as they are now: nothing else removes them, and the file
+		// grew with every bookmark ever deleted.
+		liveNow := map[string]bool{}
+		for _, bookmark := range h.store.GetAllBookmarks() {
+			if key := canonicalBookmarkURLKey(bookmark.URL); key != "" {
+				liveNow[key] = true
+			}
+		}
+		for key := range current.Feeds {
+			if !liveNow[key] {
+				delete(current.Feeds, key)
+			}
+		}
 	}
 	_ = writeFeedStateFile(current)
 

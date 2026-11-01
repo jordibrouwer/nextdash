@@ -327,7 +327,9 @@ func (h *Handlers) TagScan(w http.ResponseWriter, r *http.Request) {
 				// round from offering it again on the next pass.
 				ok: preview.Title != "" || len(preview.Keywords) > 0,
 			}
-			if !results[i].ok && globalOutboundLimiter.saturated("global") {
+			// A scan stopped mid-slice cancels every fetch still going: those
+			// pages were not really asked, so they are not stamped either.
+			if !results[i].ok && (globalOutboundLimiter.saturated("global") || r.Context().Err() != nil) {
 				results[i].limited = true
 			}
 		}(i, target)

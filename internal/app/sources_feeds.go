@@ -208,7 +208,13 @@ func (h *Handlers) fetchFeedSource(ctx context.Context, feedURL, since, category
 			continue
 		}
 
+		// A date in the future is a mis-set clock or zone, not news from
+		// tomorrow. Taken as is, it moved the cursor past now and every real
+		// new entry was "older than the last round" until time caught up.
 		at := entry.publishedAt()
+		if nowMs := time.Now().UnixMilli(); at > nowMs {
+			at = nowMs
+		}
 		if at > out.parsedNewest() {
 			out.NewestAt = time.UnixMilli(at).UTC().Format(time.RFC3339)
 		}
