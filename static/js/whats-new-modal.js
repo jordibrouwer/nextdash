@@ -380,6 +380,27 @@
     }
 
     /*
+     * The headline release's version, date and lead, with the support card
+     * beside them. The card used to close the notes, below the fold; next to
+     * the lead it is read with the first thing the reader reads.
+     */
+    function buildTopHtml(data) {
+        const { tag, date } = data || {};
+        const lead = String(data?.modalLead || '').trim();
+        return `
+            <div class="wn-top" data-wn-top>
+                <header class="wn-hero" data-wn-hero>
+                    <div class="wn-hero-line">
+                        <h3 class="wn-hero-version">${tag}</h3>
+                        ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
+                    </div>
+                    ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
+                </header>
+                ${buildSupportHtml()}
+            </div>`;
+    }
+
+    /*
      * A release opened in full: the newest one with the big version as its
      * headline, and every release the reader has not seen yet under it with a
      * smaller header and an "unread" mark.
@@ -391,13 +412,7 @@
         const { tag, date, sections } = data || {};
         const lead = String(data?.modalLead || '').trim();
         const head = headline
-            ? `<header class="wn-hero">
-                    <div class="wn-hero-line">
-                        <h3 class="wn-hero-version">${tag}</h3>
-                        ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
-                    </div>
-                    ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
-                </header>`
+            ? ''
             : `<header class="wn-rel-head">
                     <h3 class="wn-rel-version">${tag}</h3>
                     ${date ? `<span class="wn-rel-date">${date}</span>` : ''}
@@ -460,28 +475,25 @@
     }
 
     /*
-     * The ask, after the reading.
+     * The ask.
      *
-     * The footer's small link was the only mention and nobody saw it. This
-     * sits after the release's last change and before the older releases:
-     * the reader has just seen what went into it, which is the moment the
-     * question makes sense. Said once, plainly, in Ko-fi's own colour so it
-     * is recognised for what it is -- and never above the notes.
+     * The footer's small link was the only mention and nobody saw it. It sits
+     * beside the headline release's lead now, where the eye lands first, and
+     * is said once, plainly, in Ko-fi's own colour so it is recognised for
+     * what it is.
      */
     function buildSupportHtml() {
         return `
             <section class="wn-support" aria-label="${wnTranslate('dashboard.whatsNewSupportLabel', 'Support nextDash')}">
                 <div class="wn-support-top">
                     <span class="wn-support-cup" aria-hidden="true">☕</span>
-                    <div>
-                        <h4 class="wn-support-title">${wnTranslate('dashboard.whatsNewSupportTitle', 'nextDash is made by one person.')}</h4>
-                        <p class="wn-support-text">${wnTranslate('dashboard.whatsNewSupportText',
-                            'Every change above was built, tested and written up in evenings and weekends. If nextDash earns a place on your screen, a coffee keeps the next release coming.')}</p>
-                    </div>
+                    <h4 class="wn-support-title">${wnTranslate('dashboard.whatsNewSupportTitle', 'nextDash has a team of one.')}</h4>
                 </div>
+                <p class="wn-support-text">${wnTranslate('dashboard.whatsNewSupportText',
+                    'No investors, no sprint planning, no office plants. Just one person, a lot of evenings and weekends, and a questionable amount of caffeine. If nextDash earns a place on your screen, a coffee keeps the next release coming.')}</p>
                 <div class="wn-support-cta">
                     <a class="wn-support-btn" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">☕ ${wnTranslate('dashboard.whatsNewSupportButton', 'Buy me a coffee on Ko-fi')}</a>
-                    <span class="wn-support-note">${wnTranslate('dashboard.whatsNewSupportNote', 'One-off, no account needed.')}</span>
+                    <span class="wn-support-note">${wnTranslate('dashboard.whatsNewSupportNote', 'One-off. No account, no guilt.')}</span>
                 </div>
             </section>
         `;
@@ -496,9 +508,9 @@
         return `
             ${buildSinceHtml(releases, unreadCount)}
             ${buildFilterHtml(releases)}
+            ${buildTopHtml(first)}
             ${renderReleaseArticle(first, { headline: true })}
             ${unread.map((data) => renderReleaseArticle(data, { unread: true })).join('')}
-            ${buildSupportHtml()}
         `;
     }
 
@@ -533,6 +545,9 @@
                 });
                 rel.hidden = !rel.querySelector('li[data-wn-kind]:not([hidden]), .wn-group--keys:not([hidden])');
             });
+            const headline = root.querySelector(':scope > .wn-rel--headline');
+            const hero = root.querySelector('[data-wn-hero]');
+            if (headline && hero) hero.hidden = headline.hidden;
             root.closest('.modal-body')?.scrollTo({ top: 0 });
         });
     }
