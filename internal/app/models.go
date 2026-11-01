@@ -868,6 +868,9 @@ type Settings struct {
 	MCPHealthInbox       bool `json:"mcpHealthInbox"`
 	MCPContainersRead    bool `json:"mcpContainersRead"`
 	MCPContainersControl bool `json:"mcpContainersControl"`
+	// MCPSettingsOverview lets get_settings_overview describe this install's
+	// configuration: an allowlisted subset, never keys or addresses.
+	MCPSettingsOverview bool `json:"mcpSettingsOverview"`
 	// The in-app assistant. The key lives in ai-secrets.json, never here.
 	AIEnabled         bool   `json:"aiEnabled"`
 	AIProvider        string `json:"aiProvider"`

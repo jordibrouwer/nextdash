@@ -24,7 +24,7 @@ async function openMcpPanel(page) {
     await expect(panel).toHaveAttribute('open', '');
 }
 
-const GROUPS = ['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpContainersControl'];
+const GROUPS = ['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpSettingsOverview', 'mcpContainersControl'];
 
 async function toolNames(page) {
     const res = await page.request.post('/mcp', { data: { jsonrpc: '2.0', id: 1, method: 'tools/list' } });
@@ -61,6 +61,28 @@ test.describe('MCP access tool groups', () => {
         await expect.poll(async () => (await page.request.post('/mcp', {
             data: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
         })).status()).toBe(404);
+    });
+
+    test('Settings overview is off by default, adds its tool and survives a reload', async ({ page }) => {
+        await openMcpPanel(page);
+        const overview = page.locator('[data-backup-toggle="mcpSettingsOverview"]');
+        await expect(overview).not.toBeChecked();
+        await expect(page.locator('[data-fold="mcp"]')).toContainText('never keys or addresses');
+        await page.locator('[data-backup-toggle="mcpEnabled"]').check();
+        await expect(overview).toBeEnabled();
+        expect(await toolNames(page)).not.toContain('get_settings_overview');
+
+        await overview.check();
+        await expect.poll(() => toolNames(page)).toContain('get_settings_overview');
+        await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).mcpSettingsOverview).toBe(true);
+
+        await openMcpPanel(page);
+        await expect(page.locator('[data-backup-toggle="mcpSettingsOverview"]')).toBeChecked();
+
+        // Leave nothing open for the next test.
+        await page.locator('[data-backup-toggle="mcpSettingsOverview"]').uncheck();
+        await expect.poll(() => toolNames(page)).not.toContain('get_settings_overview');
+        await page.locator('[data-backup-toggle="mcpEnabled"]').uncheck();
     });
 
     test('control is disabled, with its reason, while Docker control is off', async ({ page }) => {

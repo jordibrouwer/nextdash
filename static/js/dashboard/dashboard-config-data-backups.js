@@ -2198,6 +2198,8 @@
                 note: 'See which links are broken and what is waiting in the Inbox.', noteKey: 'mcpGroupHealthInboxNote' },
             { key: 'mcpContainersRead', label: 'Containers: read', labelKey: 'mcpGroupContainersRead',
                 note: 'See the containers and their state. Their logs need the write token when one is set.', noteKey: 'mcpGroupContainersReadNote' },
+            { key: 'mcpSettingsOverview', label: 'Settings overview: read', labelKey: 'mcpGroupSettingsOverview',
+                note: 'See how nextDash is configured (a safe subset, never keys or addresses).', noteKey: 'mcpGroupSettingsOverviewNote' },
         ];
         const control = {
             key: 'mcpContainersControl', label: 'Containers: control', labelKey: 'mcpGroupContainersControl',
@@ -2872,7 +2874,7 @@
             return;
         }
         // The MCP tool groups: plain booleans, saved as they are ticked.
-        if (['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpContainersControl'].includes(name)) {
+        if (['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpSettingsOverview', 'mcpContainersControl'].includes(name)) {
             d.settings[name] = value;
             void this.saveSettingsWithFeedback();
             return;

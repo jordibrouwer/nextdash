@@ -194,6 +194,7 @@
         '': ['statusBookmarks', 'Looking at your bookmarks…'],
         healthInbox: ['statusHealth', 'Looking at Health and the Inbox…'],
         containersRead: ['statusContainers', 'Looking at your containers…'],
+        settingsOverview: ['statusSettings', 'Looking at your settings…'],
         docs: ['statusDocs', 'Looking in the manual…'],
     };
 

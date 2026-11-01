@@ -114,6 +114,7 @@ const (
 	mcpGroupHealthInbox       = "healthInbox"
 	mcpGroupContainersRead    = "containersRead"
 	mcpGroupContainersControl = "containersControl"
+	mcpGroupSettingsOverview  = "settingsOverview"
 )
 
 // mcpToolGroup says which switch a tool belongs to; "" means always on.
@@ -125,6 +126,8 @@ func mcpToolGroup(name string) string {
 		return mcpGroupHealthInbox
 	case "list_containers", "get_container", "get_container_logs", "query_containers":
 		return mcpGroupContainersRead
+	case "get_settings_overview":
+		return mcpGroupSettingsOverview
 	case "container_action":
 		return mcpGroupContainersControl
 	}
@@ -143,6 +146,8 @@ func mcpGroupEnabled(s Settings, group string) bool {
 		return s.MCPContainersRead
 	case mcpGroupContainersControl:
 		return s.MCPContainersControl
+	case mcpGroupSettingsOverview:
+		return s.MCPSettingsOverview
 	}
 	return false
 }
@@ -308,6 +313,7 @@ func mcpAllToolDefinitions() []map[string]any {
 	all = append(all, mcpQueryDefinitions()...)
 	all = append(all, mcpContainersReadDefinitions()...)
 	all = append(all, mcpQueryContainersDefinitions()...)
+	all = append(all, mcpSettingsOverviewDefinitions()...)
 	return append(all, mcpContainersControlDefinitions()...)
 }
 
@@ -560,6 +566,8 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return mcpToolResult(h.mcpGetStats(r, body.Arguments)), nil
 	case "query_containers":
 		return mcpToolResult(h.mcpQueryContainers(r, body.Arguments)), nil
+	case "get_settings_overview":
+		return mcpToolResult(h.mcpSettingsOverview()), nil
 	case "list_containers":
 		return mcpToolResult(h.mcpListContainers(r, body.Arguments)), nil
 	case "get_container":
