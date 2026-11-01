@@ -495,7 +495,7 @@
             <section class="wn-dev" aria-label="${escapeAttr(wnTranslate('dashboard.whatsNewSupportLabel', 'Support nextDash'))}">
                 <span class="wn-dev-avatar" aria-hidden="true">JB</span>
                 <div class="wn-dev-text">
-                    <h4 class="wn-dev-title">${wnTranslate('dashboard.whatsNewDevTitle', 'Made by Jordi, one person.')}</h4>
+                    <h4 class="wn-dev-title">${wnTranslate('dashboard.whatsNewSupportTitle', 'nextDash has a team of one.')}</h4>
                     <p class="wn-dev-note">${wnTranslate('dashboard.whatsNewDevText',
                         'Every change here was built, tested and written up in evenings and weekends.')}</p>
                 </div>
