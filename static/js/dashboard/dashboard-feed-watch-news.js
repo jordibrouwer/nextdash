@@ -62,8 +62,9 @@
      */
     function currentView() {
         const chosen = dash()?.settings?.feedWatchNewsView;
-        const view = VIEWS.includes(chosen) ? chosen : 'paper';
-        return canBeWide() ? view : 'single';
+        // The paper is the default and stays so on a narrow screen too: its
+        // columns fold into one, the look does not change.
+        return VIEWS.includes(chosen) ? chosen : 'paper';
     }
 
     const VIEW_ICONS = {
@@ -263,11 +264,11 @@
             ? `<div class="feed-news-mast"><span>${esc(t('dashboard.feedWatchNews', 'News'))}</span>`
                 + `<span>${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}</span></div>`
             : '';
-        const switcher = canBeWide()
-            ? `<span class="feed-news-views" role="group" aria-label="${esc(t('dashboard.feedWatchView', 'View'))}">`
-                + VIEWS.map((v) => `<button type="button" class="feed-news-view" data-feed-news-view="${v}" aria-pressed="${v === view}" aria-label="${esc(viewLabel(v))}" title="${esc(viewLabel(v))}">${VIEW_ICONS[v]}</button>`).join('')
-                + `</span>`
-            : '';
+        // All three layouts stay on offer on a narrow screen: two columns fold
+        // into one there, the look of the layout stays.
+        const switcher = `<span class="feed-news-views" role="group" aria-label="${esc(t('dashboard.feedWatchView', 'View'))}">`
+            + VIEWS.map((v) => `<button type="button" class="feed-news-view" data-feed-news-view="${v}" aria-pressed="${v === view}" aria-label="${esc(viewLabel(v))}" title="${esc(viewLabel(v))}">${VIEW_ICONS[v]}</button>`).join('')
+            + `</span>`;
 
         const bar = !timed ? '' : `<div class="feed-news-bar" role="progressbar" aria-label="${esc(left)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><i style="width:${pct}%"></i></div>`;
         const closeButton = `<button type="button" class="feed-news-close" data-feed-news-close aria-label="${esc(t('dashboard.close', 'Close'))}">×</button>`;

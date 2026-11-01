@@ -14,6 +14,16 @@
 #app-modal:has(.feed-news-modal) .modal-esc-hint { display: none; }
 .modal.feed-watch-modal .modal-body,
 .modal.feed-news-modal .modal-body { margin-bottom: 0; }
+/* The shell clips its panel, so a tall list has to scroll inside the panel:
+   the header stays, the body takes the rest of the screen and scrolls. */
+.modal.feed-watch-modal,
+.modal.feed-news-modal {
+    display: flex; flex-direction: column; max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem);
+}
+.modal.feed-watch-modal .modal-body,
+.modal.feed-news-modal .modal-body {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+}
 .feed-watch-picker-name { font-weight: 600; color: var(--text-primary); }
 .feed-watch-list { display: grid; gap: 0.35rem; max-height: 14rem; overflow: auto; }
 .feed-watch-note { margin: 0; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
@@ -147,7 +157,6 @@ body.no-animations .feed-news-bar > i { transition: none; }
 }
 .feed-news-view:hover { color: var(--text-primary); }
 .feed-news-view[aria-pressed="true"] { background: color-mix(in srgb, var(--feed-news-color, #8b5cf6) 18%, transparent); color: var(--feed-news-color, #8b5cf6); }
-@media (max-width: 720px) { .feed-news-views { display: none; } }
 
 /* The newspaper: a fixed paper look whatever the theme, on purpose. */
 .feed-news-mast { display: none; }

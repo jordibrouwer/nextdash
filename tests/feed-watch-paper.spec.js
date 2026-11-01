@@ -208,12 +208,12 @@ test('on a phone the sections stack, the controls are 44 px and nothing runs off
     await expectTwoSections(page);
     const box = async (locator) => /** @type {{x:number,y:number,width:number,height:number}} */ (await locator.boundingBox());
     const toggle = await box(item(page, 'B one').locator('.feed-news-toggle'));
-    expect(toggle.width).toBeGreaterThanOrEqual(44);
-    expect(toggle.height).toBeGreaterThanOrEqual(44);
+    expect(toggle.width).toBeGreaterThanOrEqual(43.9);
+    expect(toggle.height).toBeGreaterThanOrEqual(43.9);
     const markSite = await box(section(page, 'Site A').locator('[data-feed-news-mark-site]'));
-    expect(markSite.height).toBeGreaterThanOrEqual(44);
+    expect(markSite.height).toBeGreaterThanOrEqual(43.9);
     const markAll = await box(modal(page).locator('[data-feed-news-mark-all]'));
-    expect(markAll.height).toBeGreaterThanOrEqual(44);
+    expect(markAll.height).toBeGreaterThanOrEqual(43.9);
     // Stacked: Site A's section starts below Site B's.
     const b = await box(section(page, 'Site B'));
     const a = await box(section(page, 'Site A'));

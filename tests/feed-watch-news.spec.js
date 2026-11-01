@@ -181,15 +181,23 @@ test('the header switches between newspaper, two columns and one column, and the
     await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 1');
     await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
 
-    // A narrow viewport has only the one column, whatever was chosen.
+    // A narrow viewport keeps the chosen layout (the newspaper by default) and
+    // all three layouts stay on offer.
     await modal(page).locator('[data-feed-news-view="paper"]').click();
     await modal(page).locator('[data-feed-news-close]').click();
     await page.setViewportSize({ width: 600, height: 900 });
     await openFromCard(page);
-    await expect(modal(page).locator('[data-feed-news-view]')).toBeHidden();
+    await expect(modal(page).locator('[data-feed-news-view]')).toHaveCount(3);
+    await expect(modal(page)).toHaveClass(/is-paper/);
+    await modal(page).locator('[data-feed-news-view="wide"]').click();
+    await expect(modal(page)).toHaveClass(/is-wide/);
+    await expect(modal(page)).not.toHaveClass(/is-paper/);
+    await modal(page).locator('[data-feed-news-view="single"]').click();
+    await expect(modal(page).locator('[data-feed-news-view="single"]')).toHaveAttribute('aria-pressed', 'true');
+    await modal(page).locator('[data-feed-news-view="paper"]').click();
+    await expect(modal(page)).toHaveClass(/is-paper/);
     await modal(page).locator('.feed-news-entry').first().click();
     await expect(modal(page).locator('.feed-news-title')).toHaveText('Headline 1');
-    await expect(modal(page).locator('.feed-news-card')).toHaveCount(0);
 });
 
 test('the bar runs down and the modal closes itself after 30 minutes', async ({ page }) => {
