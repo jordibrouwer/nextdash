@@ -84,6 +84,7 @@ class Dashboard {
             openLinksNewTabMobile: false,
             hideToastsMobile: true,
             hideCornerCardsMobile: true,
+            showFeedWatchIcon: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
             fontSize: 'm',

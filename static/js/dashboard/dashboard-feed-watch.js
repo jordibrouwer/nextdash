@@ -70,6 +70,70 @@ class DashboardFeedWatch {
         return (this.watchFor(bookmark)?.feeds?.length || 0) > 0;
     }
 
+    _t(key, fallback) {
+        const translated = this.dash?.language?.t?.(key);
+        return translated && translated !== key ? translated : fallback;
+    }
+
+    /** "5 min ago", "2 h ago": the same wording the Watched feeds list uses. */
+    agoText(ms) {
+        const m = Math.max(0, Math.round((Date.now() - Number(ms)) / 60000));
+        if (!ms) return this._t('config.feedWatchNeverChecked', 'not checked yet');
+        if (m < 1) return this._t('dashboard.previewAgoNow', 'just now');
+        if (m < 60) return this._t('dashboard.previewAgoMinutes', '{count} min ago').replace('{count}', String(m));
+        const h = Math.round(m / 60);
+        if (h < 24) return this._t('dashboard.previewAgoHours', '{count} h ago').replace('{count}', String(h));
+        return this._t('dashboard.previewAgoDays', '{count} d ago').replace('{count}', String(Math.round(h / 24)));
+    }
+
+    /** Why a feed failed, in words; '' when the server left no code. */
+    errorReason(feed) {
+        const code = String(feed?.lastError || '');
+        if (!code) return '';
+        const status = Number(feed.lastStatus) || 0;
+        if (code === 'http-404') return this._t('config.feedWatchErr404', 'Not found (404)');
+        if (code === 'http-410') return this._t('config.feedWatchErr410', 'Gone (410)');
+        if (code === 'timeout') return this._t('config.feedWatchErrTimeout', 'Timed out');
+        if (code === 'unreachable') return this._t('config.feedWatchErrUnreachable', 'Could not connect');
+        if (code === 'not-a-feed') return this._t('config.feedWatchErrNotFeed', 'No longer a feed');
+        if (code === 'refused') return this._t('config.feedWatchErrRefused', 'Address not allowed');
+        if (code.startsWith('http-')) return this._t('config.feedWatchErrHttp', 'Server error ({status})').replace('{status}', String(status || code.slice(5)));
+        return '';
+    }
+
+    /**
+     * What the small feed icon on a watched row says: its state (ok, muted or
+     * unhealthy) and the sentence for it. Null for a bookmark nobody watches.
+     */
+    rowIconFor(bookmark) {
+        const entry = this.watchFor(bookmark);
+        const feeds = entry?.feeds || [];
+        if (!feeds.length) return null;
+        const sick = feeds.find((f) => f.retired === true || f.paused === true || Number(f.failures) > 0 || f.lastError);
+        const parts = [];
+        let state = 'ok';
+        if (sick) {
+            state = 'unhealthy';
+            const stopped = sick.retired === true || sick.paused === true;
+            parts.push(stopped ? this._t('dashboard.feedWatchRowPaused', 'Paused') : this._t('dashboard.feedWatchRowFailing', 'Not responding'));
+            const reason = this.errorReason(sick);
+            if (reason) parts.push(reason);
+        } else {
+            if (entry.muted === true) state = 'muted';
+            const minutes = Math.min(...feeds.map((f) => Number(f.intervalMinutes) || 60));
+            const checked = Math.min(...feeds.map((f) => Number(f.checkedAt) || 0));
+            const every = this._t('dashboard.feedWatchRowEvery', 'every {interval}')
+                .replace('{interval}', window.FeedWatchPicker?.intervalWords?.(minutes) || '');
+            const head = feeds.length > 1
+                ? this._t(state === 'muted' ? 'dashboard.feedWatchRowMutedMany' : 'dashboard.feedWatchRowMany',
+                    state === 'muted' ? 'Watching {count} feeds, muted' : 'Watching {count} feeds').replace('{count}', String(feeds.length))
+                : this._t(state === 'muted' ? 'dashboard.feedWatchRowMuted' : 'dashboard.feedWatchRow',
+                    state === 'muted' ? 'Watching, muted' : 'Watching');
+            parts.push(head, every, this._t('dashboard.feedWatchRowChecked', 'checked {ago}').replace('{ago}', this.agoText(checked)));
+        }
+        return { state, label: parts.join(' · ') };
+    }
+
     /** What is new for this bookmark, or null when nothing is. */
     newsFor(bookmark) {
         const entry = this.watchFor(bookmark);
@@ -367,14 +431,18 @@ class DashboardFeedWatch {
                 void this.load({ force: true });
             }
         });
-        document.addEventListener('feedwatch:changed', () => {
+        const queueRender = () => {
             if (this._renderQueued) return;
             this._renderQueued = true;
             requestAnimationFrame(() => {
                 this._renderQueued = false;
                 this.dash?.renderDashboard?.();
             });
-        });
+        };
+        document.addEventListener('feedwatch:changed', queueRender);
+        // The first load answered before this listened: the rows drawn so far
+        // do not know which bookmarks are watched.
+        if (this.byKey.size) queueRender();
         const tick = () => {
             this._evaluateWindow();
             const fast = window.FeedWatchNews?.isOpen?.();

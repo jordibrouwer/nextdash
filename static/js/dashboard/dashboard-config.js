@@ -3975,6 +3975,7 @@ class DashboardConfig {
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedWatchWindowMinutes: ['feed', 'watch', 'news', 'modal', 'minutes', 'window'],
         feedWatchNewsView: ['feed', 'watch', 'news', 'newspaper', 'columns', 'layout', 'modal'],
+        showFeedWatchIcon: ['feed', 'watch', 'icon', 'rss', 'bookmark', 'row', 'mark'],
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
         remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
@@ -9116,6 +9117,7 @@ class DashboardConfig {
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: true },
         feedWatchWindowMinutes: { def: 30 },
         feedWatchNewsView: { def: 'paper' },
+        showFeedWatchIcon: { info: ['showFeedWatchIconInfoTitle', 'showFeedWatchIconInfoMessage'], def: true },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         // Weekly digest (digest.go)
         digestWeekday: { def: 1 },
@@ -10785,6 +10787,7 @@ class DashboardConfig {
                     ] },
                     // Moved here from Monitoring's push panel with the rest of
                     // the news settings; the switch for push itself stays there.
+                    bool('showFeedWatchIcon', 'config.showFeedWatchIconLabel', 'Show a feed icon on watched bookmarks'),
                     bool('pushNotifyNews', 'config.pushNotifyNewsLabel', 'Notify when a watched feed has news'),
                     bool('notifyNewsTarget', 'config.notifyNewsTargetLabel', 'Also send news to the alert channel (ntfy, Gotify, Discord…)'),
                     {

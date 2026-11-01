@@ -783,6 +783,12 @@ class DashboardBookmarkRows {
                 openLink.appendChild(newsLine);
             }
         }
+        // A watched bookmark without news says so with a small feed glyph after
+        // its name; with news the badge takes that place.
+        if (!showNews && d.settings.showFeedWatchIcon !== false) {
+            const icon = this.feedWatchIcon(bookmark);
+            if (icon) textSpan.after(icon);
+        }
         /*
          * A row that plays something says so.
          *
@@ -861,6 +867,44 @@ class DashboardBookmarkRows {
 
 
     /**
+     * The feed glyph for a watched row, or null: a dot and two arcs in the
+     * secondary text colour. Muted gets a strike, a feed that stopped or fails
+     * gets a warning dot. It only informs, so the row's own taps stay as they are.
+     */
+    feedWatchIcon(bookmark) {
+        const info = this.dash.feedWatch?.rowIconFor?.(bookmark);
+        if (!info) return null;
+        const NS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 12 12');
+        svg.setAttribute('width', '12');
+        svg.setAttribute('height', '12');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        const add = (tag, attrs) => {
+            const el = document.createElementNS(NS, tag);
+            Object.keys(attrs).forEach((k) => el.setAttribute(k, attrs[k]));
+            svg.appendChild(el);
+        };
+        add('circle', { cx: '2.4', cy: '9.6', r: '1.2', fill: 'currentColor', stroke: 'none' });
+        add('path', { d: 'M1.2 5.2a5.6 5.6 0 0 1 5.6 5.6' });
+        add('path', { d: 'M1.2 1.4a9.4 9.4 0 0 1 9.4 9.4' });
+        if (info.state === 'muted') add('path', { d: 'M1 11L11 1', class: 'bookmark-feed-icon-strike' });
+        const wrap = document.createElement('span');
+        wrap.className = `bookmark-feed-icon is-${info.state}`;
+        wrap.setAttribute('role', 'img');
+        wrap.setAttribute('aria-label', info.label);
+        wrap.title = info.label;
+        wrap.appendChild(svg);
+        if (info.state === 'unhealthy') {
+            const dot = document.createElement('span');
+            dot.className = 'bookmark-feed-icon-dot';
+            wrap.appendChild(dot);
+        }
+        return wrap;
+    }
+
+    /**
      * What the watched-news marks on a row depend on: the count, the newest
      * item (a sixth arrival keeps the count at five), the window and whether
      * this is a touch screen. Only rows with news pay for the window lookup.
@@ -868,7 +912,11 @@ class DashboardBookmarkRows {
     feedWatchFingerprint(bookmark) {
         const watch = this.dash.feedWatch;
         const news = watch?.newsFor?.(bookmark);
-        if (!news) return '0';
+        if (!news) {
+            // The feed glyph shows what the row knows about the watch.
+            const icon = this.dash.settings?.showFeedWatchIcon !== false ? watch?.rowIconFor?.(bookmark) : null;
+            return icon ? `i:${icon.label}` : '0';
+        }
         const touch = window.FeedWatchPopover?.isTouch?.() ? 't' : 'd';
         return `${news.newCount}:${news.newest?.id || ''}:${watch.windowPhase()}:${touch}`;
     }
