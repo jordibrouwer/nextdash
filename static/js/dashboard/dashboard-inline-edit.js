@@ -1829,6 +1829,39 @@ class DashboardInlineEdit {
         });
         checkModeRow.appendChild(checkModeInfo);
 
+        // Watching a feed also needs the page to be reachable, so adding a watch
+        // switches the availability check to Periodic when it is off. An
+        // availability check that is already on (Periodic or Monitor) is left as
+        // it is, and taking the watch away again puts back only what it changed.
+        {
+            let setByWatch = false;
+            const bookmarkWasWatched = !isCreate && Boolean(d.feedWatch?.isWatched?.(bookmark));
+            const chooseMode = (value) => {
+                modeInputs[value].checked = true;
+                modeInputs[value].dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            Object.values(modeInputs).forEach((input) => {
+                input.addEventListener('change', () => {
+                    if (!input._byWatch) setByWatch = false;
+                });
+            });
+            feedRowHost.addEventListener('change', () => {
+                if (!feedRow || bookmarkWasWatched) return;
+                const adding = feedRow.intent()?.action === 'watch';
+                if (adding && readCheckMode() === 'off') {
+                    modeInputs.periodic._byWatch = true;
+                    chooseMode('periodic');
+                    modeInputs.periodic._byWatch = false;
+                    setByWatch = true;
+                } else if (!adding && setByWatch && readCheckMode() === 'periodic') {
+                    modeInputs.off._byWatch = true;
+                    chooseMode('off');
+                    modeInputs.off._byWatch = false;
+                    setByWatch = false;
+                }
+            });
+        }
+
         Object.values(modeInputs).forEach((input) => {
             input.addEventListener('change', () => {
                 monitorIntervalInput.hidden = !monitorInput.checked;

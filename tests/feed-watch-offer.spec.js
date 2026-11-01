@@ -323,3 +323,60 @@ test('phone: the open row fits 375 px and its controls are 44 px tall', async ({
     for (const height of sizes.controls) expect(height).toBeGreaterThanOrEqual(44);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
+
+const checkMode = (page) => modal(page).locator('.bookmark-inline-checkmode-input:checked');
+
+test('adding a watch switches the availability check on, and leaves one that is on alone', async ({ page, request }) => {
+    site = await startStubSite();
+    await installWithBookmarks(request, []);
+    await openDashboard(page);
+    await openAdd(page);
+    await typeUrl(page, site.url);
+    await expect(watchRow(page)).toBeVisible();
+
+    // Off becomes Periodic, and goes back to Off when the watch is taken away again.
+    await modal(page).locator('.bookmark-inline-checkmode-option', { hasText: 'Off' }).click();
+    await expect(checkMode(page)).toHaveValue('off');
+    await onSwitch(page).check();
+    await expect(checkMode(page)).toHaveValue('periodic');
+    await onSwitch(page).uncheck();
+    await expect(checkMode(page)).toHaveValue('off');
+
+    // A choice made by hand after the watch stays, whatever the switch does next.
+    await onSwitch(page).check();
+    await expect(checkMode(page)).toHaveValue('periodic');
+    await modal(page).locator('.bookmark-inline-checkmode-option', { hasText: 'Monitor' }).click();
+    await onSwitch(page).uncheck();
+    await expect(checkMode(page)).toHaveValue('monitor');
+
+    // Monitor (or Periodic) already on: nothing changes when a watch is added.
+    await onSwitch(page).check();
+    await expect(checkMode(page)).toHaveValue('monitor');
+});
+
+test('a new bookmark saved with a watch is checked periodically', async ({ page, request }) => {
+    site = await startStubSite();
+    await installWithBookmarks(request, []);
+    await openDashboard(page);
+    await openAdd(page);
+    await typeUrl(page, site.url);
+    await modal(page).locator('.bookmark-inline-checkmode-option', { hasText: 'Off' }).click();
+    await onSwitch(page).check();
+    await saveNew(page, 'Stub Blog');
+    const pages = await (await request.get('/api/pages')).json();
+    const list = await (await request.get(`/api/bookmarks?page=${pages[0].id}`)).json();
+    const saved = list.find((b) => b.name === 'Stub Blog');
+    expect(saved.checkStatus).toBe(true);
+});
+
+test('a bookmark that was watched already keeps its availability check when the watch is edited', async ({ page, request }) => {
+    site = await startStubSite();
+    await installWithBookmark(request, site);
+    await watchStub(request);
+    await openDashboard(page);
+    await openEdit(page, 'Stub Blog');
+    await modal(page).locator('.bookmark-inline-checkmode-option', { hasText: 'Off' }).click();
+    await onSwitch(page).uncheck();
+    await onSwitch(page).check();
+    await expect(checkMode(page)).toHaveValue('off');
+});
