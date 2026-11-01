@@ -649,3 +649,22 @@ body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn { display: none !im
 /* The select-all box sits over the row boxes: the rows are inset by their
    padding and border, so the toolbar's box takes the same inset. */
 .fwm-toolbar > .fwm-tick-all { margin-left: calc(0.6rem + 1px); }
+
+/* The header controls of the news window: one clean focus ring inside the
+   button's own edge. The app's glow ring spilled over the header line and the
+   window's border at the top right corner. */
+.feed-news-head .feed-news-close:focus-visible,
+.feed-news-head .feed-news-view:focus-visible,
+.feed-news-head .feed-news-mark:focus-visible {
+    outline: 2px solid var(--accent-primary); outline-offset: -2px; box-shadow: none !important; border-radius: 8px;
+}
+.feed-news-head .feed-news-close { border: 0; }
+.is-paper .feed-news-head .feed-news-close:focus-visible,
+.is-paper .feed-news-head .feed-news-view:focus-visible,
+.is-paper .feed-news-head .feed-news-mark:focus-visible { outline-color: #1d1a14; }
+
+/* The scroller starts a little below the window's top edge and stops above its
+   bottom edge, so the scrollbar never runs into the rounded corners and the
+   border. */
+.modal.feed-news-modal .modal-body,
+.modal.feed-watch-modal .modal-body { margin-block: 0.35rem; }
