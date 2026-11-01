@@ -391,6 +391,34 @@ func TestAFailedApplyCanBeRetriedOrSkipped(t *testing.T) {
 	}
 }
 
+// panickingStore panics when the tool reads the bookmarks.
+type panickingStore struct{ Store }
+
+func (panickingStore) GetAllBookmarks() []Bookmark { panic("boom") }
+
+// A panic in the tool must not leave the proposal at applying, where Apply and
+// Skip would both refuse it until a restart.
+func TestAPanicDuringApplyLeavesItFailed(t *testing.T) {
+	h, _ := applyInstall(t)
+	storeProposals(t, h, aiProposal{ID: "p1", Tool: "update_bookmark", Arguments: json.RawMessage(`{"url":"https://radarr.example/","note":"films"}`)})
+	h.store = panickingStore{h.store}
+	func() {
+		defer func() {
+			if recover() == nil {
+				t.Fatal("the tool did not panic")
+			}
+		}()
+		h.aiApplyProposal(httptest.NewRequest("POST", "/api/ai/proposals/p1/apply", nil), "p1")
+	}()
+	p, _ := aiFindProposal("p1")
+	if p.Status != "failed" || p.Error != aiStoppedText {
+		t.Fatalf("status %q, error %q", p.Status, p.Error)
+	}
+	if rec := askDo(h, "POST", "/api/ai/proposals/p1/skip", "", ""); rec.Code != 200 {
+		t.Fatalf("skip after the panic: %d %s", rec.Code, rec.Body)
+	}
+}
+
 func TestAskOutlivesTheServerWriteTimeout(t *testing.T) {
 	h, f := newAskInstall(t)
 	f.delay = 1500 * time.Millisecond
