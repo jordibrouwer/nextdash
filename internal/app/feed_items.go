@@ -25,6 +25,10 @@ type FeedItem struct {
 	ImageSource string `json:"imageSource,omitempty"`
 	PublishedAt int64  `json:"publishedAt,omitempty"`
 	FoundAt     int64  `json:"foundAt,omitempty"`
+	// MarkedRead and MarkedAt are the reader's own mark on this item; it wins
+	// over the bookmark's read time only when it is the more recent of the two.
+	MarkedRead bool  `json:"markedRead,omitempty"`
+	MarkedAt   int64 `json:"markedAt,omitempty"`
 }
 
 var errFeedNoEntries = errors.New("that address did not answer with a feed")

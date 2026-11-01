@@ -38,12 +38,21 @@ type watchEntry struct {
 	Feeds    []watchFeedEntry `json:"feeds"`
 }
 
-// watchNewItems are the items of one watch not yet read: found after the
-// newest open of any bookmark copy and after the last "seen".
+// watchItemUnread is the one rule for what is unread. readAt is the newest
+// open of any bookmark copy or "seen"; an item marked after that keeps its
+// mark, otherwise it is unread when it was found after readAt.
+func watchItemUnread(it FeedItem, readAt int64) bool {
+	if it.MarkedAt > readAt {
+		return !it.MarkedRead
+	}
+	return it.FoundAt > readAt
+}
+
+// watchNewItems are the items of one watch not yet read, by watchItemUnread.
 func watchNewItems(w FeedWatch, readAt int64) []FeedItem {
 	var out []FeedItem
 	for _, it := range w.Items {
-		if it.FoundAt > readAt {
+		if watchItemUnread(it, readAt) {
 			out = append(out, it)
 		}
 	}
@@ -161,7 +170,9 @@ func (h *Handlers) GetFeedWatches(w http.ResponseWriter, r *http.Request) {
 	writeWatchJSON(w, http.StatusOK, h.watchListResponse(file))
 }
 
-// GetFeedWatchItems lists the unread items, newest first, with where they came from.
+// GetFeedWatchItems lists every stored item, read ones too, newest first, each
+// flagged unread or not and with where it came from. Without a key it spans
+// every watched bookmark. The earlier entries (recent) carry no read state.
 func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 	want := canonicalBookmarkURLKey(r.URL.Query().Get("key"))
 	if raw := r.URL.Query().Get("key"); raw != "" && want == "" {
@@ -184,6 +195,8 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 		BookmarkName string `json:"bookmarkName"`
 		BookmarkURL  string `json:"bookmarkUrl"`
 		FeedTitle    string `json:"feedTitle,omitempty"`
+		FeedURL      string `json:"feedUrl"`
+		Unread       bool   `json:"unread"`
 		FeedItem
 	}
 	items := []outItem{}
@@ -192,9 +205,10 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 		if !ok || (want != "" && wt.BookmarkKey != want) {
 			continue
 		}
-		for _, it := range watchNewItems(wt, read[wt.BookmarkKey]) {
+		for _, it := range wt.Items {
+			unread := watchItemUnread(it, read[wt.BookmarkKey])
 			it.ImageSource = "" // the client gets our copy, never the remote address
-			items = append(items, outItem{wt.BookmarkKey, b.Name, b.URL, wt.Title, it})
+			items = append(items, outItem{wt.BookmarkKey, b.Name, b.URL, wt.Title, wt.FeedURL, unread, it})
 		}
 	}
 	sort.SliceStable(items, func(i, j int) bool {
@@ -220,7 +234,7 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 			if isNew[wt.BookmarkKey+"|"+it.ID] {
 				continue
 			}
-			recent = append(recent, outItem{wt.BookmarkKey, b.Name, b.URL, wt.Title, it})
+			recent = append(recent, outItem{wt.BookmarkKey, b.Name, b.URL, wt.Title, wt.FeedURL, false, it})
 		}
 	}
 	sort.SliceStable(recent, func(i, j int) bool { return recent[i].PublishedAt > recent[j].PublishedAt })
@@ -279,7 +293,9 @@ type watchRequest struct {
 	BookmarkURL string `json:"bookmarkUrl"`
 	// FeedURL names one feed, for the routes that act on a single watch.
 	FeedURL string `json:"feedUrl"`
-	Feeds   []struct {
+	// All, on the seen route, marks every watched bookmark's news read.
+	All   bool `json:"all"`
+	Feeds []struct {
 		FeedURL         string `json:"feedUrl"`
 		IntervalMinutes int    `json:"intervalMinutes"`
 	} `json:"feeds"`
@@ -450,19 +466,76 @@ func (h *Handlers) MarkFeedWatchSeen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := canonicalBookmarkURLKey(body.BookmarkURL)
-	if key == "" {
+	if key == "" && !body.All {
 		writeWatchError(w, http.StatusBadRequest, "no-bookmark", nil)
 		return
 	}
+	bookmarks := h.store.GetAllBookmarks()
 	feedWatchMu.Lock()
 	defer feedWatchMu.Unlock()
 	file := readFeedWatchFile()
 	if file.SeenAt == nil {
 		file.SeenAt = map[string]int64{}
 	}
-	file.SeenAt[key] = time.Now().UnixMilli()
+	now := time.Now().UnixMilli()
+	if body.All {
+		for _, b := range bookmarks {
+			file.SeenAt[canonicalBookmarkURLKey(b.URL)] = now
+		}
+	} else {
+		file.SeenAt[key] = now
+	}
 	_ = writeFeedWatchFile(file)
 	writeWatchJSON(w, http.StatusOK, map[string]any{})
+}
+
+// MarkFeedWatchRead marks single items of one feed read or unread.
+func (h *Handlers) MarkFeedWatchRead(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	var body struct {
+		BookmarkURL string   `json:"bookmarkUrl"`
+		FeedURL     string   `json:"feedUrl"`
+		IDs         []string `json:"ids"`
+		Read        bool     `json:"read"`
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil && err != io.EOF {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+	key := canonicalBookmarkURLKey(body.BookmarkURL)
+	if key == "" {
+		writeWatchError(w, http.StatusBadRequest, "no-bookmark", nil)
+		return
+	}
+	ids := make(map[string]bool, len(body.IDs))
+	for _, id := range body.IDs {
+		ids[id] = true
+	}
+	feedWatchMu.Lock()
+	defer feedWatchMu.Unlock()
+	file := readFeedWatchFile()
+	now := time.Now().UnixMilli()
+	changed := false
+	for i := range file.Watches {
+		wt := &file.Watches[i]
+		if wt.BookmarkKey != key || wt.FeedURL != body.FeedURL {
+			continue
+		}
+		for j := range wt.Items {
+			if ids[wt.Items[j].ID] {
+				wt.Items[j].MarkedRead = body.Read
+				wt.Items[j].MarkedAt = now
+				changed = true
+			}
+		}
+	}
+	if changed {
+		_ = writeFeedWatchFile(file)
+	}
+	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks())[key]})
 }
 
 // PollFeedWatchesNow checks every watch regardless of its interval.

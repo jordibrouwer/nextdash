@@ -177,6 +177,7 @@ func TestWatchWritesNeedToken(t *testing.T) {
 		"/api/feeds/watch":       e.h.WatchFeeds,
 		"/api/feeds/unwatch":     e.h.UnwatchFeeds,
 		"/api/feeds/watch/seen":  e.h.MarkFeedWatchSeen,
+		"/api/feeds/watch/read":  e.h.MarkFeedWatchRead,
 		"/api/feeds/watch/poll":  e.h.PollFeedWatchesNow,
 		"/api/feeds/watch/retry": e.h.RetryFeedWatch,
 	}
@@ -329,7 +330,7 @@ func TestDemoDeniesWatchWrites(t *testing.T) {
 	for _, route := range demoDeniedWrites {
 		denied[route] = true
 	}
-	for _, route := range []string{"/api/feeds/watch", "/api/feeds/unwatch", "/api/feeds/watch/seen", "/api/feeds/watch/poll", "/api/feeds/watch/retry"} {
+	for _, route := range []string{"/api/feeds/watch", "/api/feeds/unwatch", "/api/feeds/watch/seen", "/api/feeds/watch/read", "/api/feeds/watch/poll", "/api/feeds/watch/retry"} {
 		if !denied[route] {
 			t.Errorf("%s is not refused in the demo", route)
 		}
@@ -391,5 +392,121 @@ func TestWatchRetryRevivesRetired(t *testing.T) {
 	missing := fmt.Sprintf(`{"bookmarkUrl":%q,"feedUrl":"https://nowhere.example/f"}`, e.url)
 	if rec := e.post(e.h.RetryFeedWatch, "/api/feeds/watch/retry", missing); rec.Code != 404 {
 		t.Fatalf("unknown feed: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// newReadEnv watches a feed whose baseline is "a", then finds "b" and "c".
+func newReadEnv(t *testing.T) *watchEnv {
+	t.Helper()
+	globalOutboundLimiter.reset()
+	e := newWatchEnv(t)
+	if rec := e.watch(t, 360); rec.Code != 200 {
+		t.Fatalf("watch: %d %s", rec.Code, rec.Body.String())
+	}
+	e.srv.set(rssEntry("a", "A", 1), rssEntry("b", "B", 2), rssEntry("c", "C", 3))
+	e.post(e.h.PollFeedWatchesNow, "/api/feeds/watch/poll", "")
+	if n := e.list(t)[e.key].NewCount; n != 2 {
+		t.Fatalf("setup newCount = %d, want 2", n)
+	}
+	time.Sleep(5 * time.Millisecond)
+	return e
+}
+
+func (e *watchEnv) markItem(t *testing.T, id string, read bool) {
+	t.Helper()
+	body := fmt.Sprintf(`{"bookmarkUrl":%q,"feedUrl":%q,"ids":[%q],"read":%t}`, e.url, e.srv.URL, id, read)
+	if rec := e.post(e.h.MarkFeedWatchRead, "/api/feeds/watch/read", body); rec.Code != 200 {
+		t.Fatalf("read: %d %s", rec.Code, rec.Body.String())
+	}
+	time.Sleep(5 * time.Millisecond)
+}
+
+func (e *watchEnv) newCountOpenedAt(openedAt int64) int {
+	bms := e.h.store.GetAllBookmarks()
+	bms[0].LastOpened = openedAt
+	return watchListFor(readFeedWatchFile(), bms)[e.key].NewCount
+}
+
+func TestWatchItemReadWins(t *testing.T) {
+	e := newReadEnv(t)
+	e.markItem(t, "b", true)
+	got := e.list(t)[e.key]
+	if got.NewCount != 1 || got.Newest == nil || got.Newest.ID != "c" {
+		t.Fatalf("after marking b read: count %d newest %+v", got.NewCount, got.Newest)
+	}
+}
+
+func TestWatchItemUnreadAfterOpenWins(t *testing.T) {
+	e := newReadEnv(t)
+	opened := time.Now().UnixMilli()
+	time.Sleep(5 * time.Millisecond)
+	if n := e.newCountOpenedAt(opened); n != 0 {
+		t.Fatalf("after open: %d", n)
+	}
+	e.markItem(t, "b", false)
+	if n := e.newCountOpenedAt(opened); n != 1 {
+		t.Fatalf("marked unread after open: %d, want 1", n)
+	}
+}
+
+func TestWatchOpenAfterItemMarkWins(t *testing.T) {
+	e := newReadEnv(t)
+	e.markItem(t, "b", false)
+	if n := e.newCountOpenedAt(time.Now().Add(time.Hour).UnixMilli()); n != 0 {
+		t.Fatalf("open after the mark: %d, want 0", n)
+	}
+}
+
+func TestWatchSeenAll(t *testing.T) {
+	e := newReadEnv(t)
+	if rec := e.post(e.h.MarkFeedWatchSeen, "/api/feeds/watch/seen", `{"all":true}`); rec.Code != 200 {
+		t.Fatalf("seen all: %d %s", rec.Code, rec.Body.String())
+	}
+	if n := e.list(t)[e.key].NewCount; n != 0 {
+		t.Fatalf("newCount = %d, want 0", n)
+	}
+	if rec := e.post(e.h.MarkFeedWatchSeen, "/api/feeds/watch/seen", `{}`); rec.Code != 400 {
+		t.Fatalf("empty seen = %d, want 400", rec.Code)
+	}
+}
+
+func TestWatchReadNeedsToken(t *testing.T) {
+	e := newReadEnv(t)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "secret")
+	if rec := e.post(e.h.MarkFeedWatchRead, "/api/feeds/watch/read", `{}`); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("read without token = %d", rec.Code)
+	}
+}
+
+func TestWatchItemsAllKeys(t *testing.T) {
+	e := newReadEnv(t)
+	e.markItem(t, "b", true)
+	for _, url := range []string{"/api/feeds/watch/items", "/api/feeds/watch/items?key=" + e.key} {
+		rec := httptest.NewRecorder()
+		e.h.GetFeedWatchItems(rec, httptest.NewRequest(http.MethodGet, url, nil))
+		var out struct {
+			Items []struct {
+				ID          string `json:"id"`
+				Unread      bool   `json:"unread"`
+				FeedURL     string `json:"feedUrl"`
+				BookmarkKey string `json:"bookmarkKey"`
+				BookmarkURL string `json:"bookmarkUrl"`
+				MarkedRead  bool   `json:"markedRead"`
+			} `json:"items"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		if len(out.Items) != 2 {
+			t.Fatalf("%s: items = %d, want both stored items: %s", url, len(out.Items), rec.Body.String())
+		}
+		for _, it := range out.Items {
+			if it.FeedURL != e.srv.URL || it.BookmarkKey != e.key || it.BookmarkURL != e.url {
+				t.Fatalf("%s: item origin: %+v", url, it)
+			}
+			if it.Unread != (it.ID == "c") || it.MarkedRead != (it.ID == "b") {
+				t.Fatalf("%s: item state: %+v", url, it)
+			}
+		}
 	}
 }
