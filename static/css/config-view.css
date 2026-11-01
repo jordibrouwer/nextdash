@@ -1438,6 +1438,100 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     outline-offset: -1px;
 }
 
+/* Stats → Watch feeds: a dot per feed, its health line and its list row. */
+.config-stats-feed-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--accent-success, #2fa968);
+}
+.config-stats-feed-dot--warn { background: var(--accent-warning, #cf9014); }
+.config-stats-feed-dot--bad { background: var(--accent-error, #d1493f); }
+.config-stats-feed-dot--paused,
+.config-stats-feed-dot--muted { background: color-mix(in srgb, var(--text-muted, #888) 60%, transparent); }
+
+.config-stats-feed-health,
+.config-stats-feed-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.config-stats-feed-health-row {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr) minmax(0, 1.4fr) auto;
+    gap: 8px;
+    align-items: center;
+    font-size: calc(var(--font-size-text) * 0.9);
+}
+
+.config-stats-feed-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.config-stats-feed-codes,
+.config-stats-feed-ms,
+.config-stats-feed-ago,
+.config-stats-feed-num {
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+}
+
+.config-stats-feed-codes { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.config-stats-feed-ms,
+.config-stats-feed-num { text-align: right; }
+
+.config-stats-feed-head,
+.config-stats-feed-row {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1.2fr) minmax(40px, 1fr) 3.2rem 3.2rem 5.2rem;
+    gap: 8px;
+    align-items: center;
+}
+
+.config-stats-feed-head {
+    font-size: calc(var(--font-size-text) * 0.78);
+    color: var(--text-muted, #888);
+    padding: 0 6px 4px;
+}
+.config-stats-feed-head span:nth-child(n + 4) { text-align: right; }
+
+.config-stats-feed-row {
+    width: 100%;
+    padding: 5px 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.9);
+    text-align: left;
+    cursor: pointer;
+}
+.config-stats-feed-row:hover,
+.config-stats-feed-row:focus-visible { background: color-mix(in srgb, var(--accent-primary, #4a90d9) 10%, transparent); }
+.config-stats-feed-row .config-stats-feed-ago { text-align: right; white-space: nowrap; }
+.config-stats-feed-row .config-bar { margin: 0; }
+.config-stats-feed-pick { max-width: min(14rem, 100%); }
+
+@media (max-width: 600px) {
+    .config-stats-feed-head,
+    .config-stats-feed-row { grid-template-columns: 8px minmax(0, 1fr) 2.6rem 2.8rem 4.4rem; }
+    .config-stats-feed-head span:nth-child(3),
+    .config-stats-feed-row .config-bar { display: none; }
+    .config-stats-feed-health-row { grid-template-columns: 8px minmax(0, 1fr) auto; }
+    .config-stats-feed-health-row .config-stats-feed-codes { grid-column: 2 / -1; grid-row: 2; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
     .config-stats-stack-seg { transition: flex-grow 0.2s ease; }
 }

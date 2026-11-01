@@ -86,6 +86,8 @@ class Dashboard {
             hideCornerCardsMobile: true,
             showFeedWatchIcon: true,
             feedWatchOpenOnReturn: false,
+            feedStatsEnabled: true,
+            feedStatsKeepDays: 90,
             showGridKeyLegend: true,
             columnsPerRow: 3,
             fontSize: 'm',

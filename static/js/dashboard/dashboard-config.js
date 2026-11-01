@@ -278,6 +278,7 @@ class DashboardConfig {
     static STATS_RANGE_KEY = 'nextdash:config-stats-range-v1';
     // Which of the two usage charts the reader picked, when they picked one.
     static STATS_OPENS_MODE_KEY = 'nextdash:config-stats-opens-mode-v1';
+    static STATS_FEEDS_RANGE_KEY = 'nextdash:config-stats-feeds-range-v1';
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -1134,6 +1135,7 @@ class DashboardConfig {
             // Overview reads it for the server lines in its attention list.
             server: all || tab === 'server' || tab === 'overview',
             notify: all || tab === 'health',
+            feeds: all || tab === 'feeds',
         };
         if (wants.inbox && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
         if (wants.finders && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
@@ -1141,6 +1143,7 @@ class DashboardConfig {
         if (wants.library && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
         if (wants.server && this._statsServer === undefined) once('server', () => this.loadStatsServer());
         if (wants.notify && this._statsNotify === undefined) once('notify', () => this.loadStatsNotify());
+        if (wants.feeds && this._statsFeeds === undefined) once('feeds', () => this.loadStatsFeeds());
     }
 
     /**
@@ -3977,6 +3980,8 @@ class DashboardConfig {
         feedWatchNewsView: ['feed', 'watch', 'news', 'newspaper', 'columns', 'layout', 'modal'],
         showFeedWatchIcon: ['feed', 'watch', 'icon', 'rss', 'bookmark', 'row', 'mark'],
         feedWatchOpenOnReturn: ['feed', 'watch', 'news', 'open', 'return', 'tab', 'automatic', 'newspaper'],
+        feedStatsEnabled: ['feed', 'watch', 'statistics', 'stats', 'numbers', 'count', 'record', 'rss'],
+        feedStatsKeepDays: ['feed', 'watch', 'statistics', 'stats', 'days', 'keep', 'history', 'retention'],
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
         remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
@@ -9120,6 +9125,10 @@ class DashboardConfig {
         feedWatchNewsView: { def: 'paper' },
         showFeedWatchIcon: { info: ['showFeedWatchIconInfoTitle', 'showFeedWatchIconInfoMessage'], def: true },
         feedWatchOpenOnReturn: { info: ['feedWatchOpenOnReturnInfoTitle', 'feedWatchOpenOnReturnInfoMessage'], def: false },
+        feedStatsEnabled: { info: ['feedStatsEnabledInfoTitle', 'feedStatsEnabledInfoMessage',
+            'Statistics about watched feeds', 'Counts what your watched feeds publish, what you read, and how their checks go, day by day, for Stats → Watch feeds. Only numbers are kept, never titles or text. On by default.'], def: true },
+        feedStatsKeepDays: { info: ['feedStatsKeepDaysInfoTitle', 'feedStatsKeepDaysInfoMessage',
+            'Keep daily numbers for', 'How long the day-by-day numbers are kept. Older days are added up per week and kept for two years. A stopped feed is forgotten 90 days after you stop watching it.'], def: 90 },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         // Weekly digest (digest.go)
         digestWeekday: { def: 1 },
@@ -10791,6 +10800,15 @@ class DashboardConfig {
                     // the news settings; the switch for push itself stays there.
                     bool('feedWatchOpenOnReturn', 'config.feedWatchOpenOnReturnLabel', 'Open the news when I come back to the tab'),
                     bool('showFeedWatchIcon', 'config.showFeedWatchIconLabel', 'Show a feed icon on watched bookmarks'),
+                    // Counters for Config → Stats → Watch feeds (feed_stats.go).
+                    bool('feedStatsEnabled', 'config.feedStatsEnabledLabel', 'Keep statistics about watched feeds'),
+                    { field: 'feedStatsKeepDays', type: 'select', label: t('config.feedStatsKeepDaysLabel', 'Keep daily numbers for'), options: [
+                        opt(30, t('config.feedStatsKeep30', '30 days')), opt(90, t('config.feedStatsKeep90', '90 days')),
+                        opt(365, t('config.feedStatsKeep365', '1 year')),
+                    ] },
+                    { type: 'action', action: 'resetFeedStats',
+                        label: t('config.feedStatsResetLabel', 'Reset feed statistics'),
+                        button: t('config.feedStatsResetButton', 'Reset') },
                     bool('pushNotifyNews', 'config.pushNotifyNewsLabel', 'Notify when a watched feed has news'),
                     bool('notifyNewsTarget', 'config.notifyNewsTargetLabel', 'Also send news to the alert channel (ntfy, Gotify, Discord…)'),
                     {
@@ -12400,6 +12418,38 @@ class DashboardConfig {
             });
         }
 
+        // Every counted number about watched feeds goes; counting starts again.
+        const resetFeedStats = container.querySelector('[data-config-action="resetFeedStats"]');
+        if (resetFeedStats) {
+            resetFeedStats.addEventListener('click', async () => {
+                const status = container.querySelector('[data-config-action-status="resetFeedStats"]');
+                const ok = await this.confirmAction(
+                    this.t('config.feedStatsResetConfirm', 'Forget every number counted about your watched feeds? Counting starts again from now.'),
+                    {
+                        title: this.t('config.feedStatsResetLabel', 'Reset feed statistics'),
+                        confirmLabel: this.t('config.feedStatsResetButton', 'Reset'),
+                        danger: true,
+                    }
+                );
+                if (!ok) return;
+                resetFeedStats.disabled = true;
+                try {
+                    const api = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+                    const res = await api('/api/feeds/stats/reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                    if (status) {
+                        status.textContent = res.ok
+                            ? this.t('config.feedStatsResetDone', 'Statistics cleared.')
+                            : this.t('config.feedStatsResetFailed', 'Could not reset the statistics.');
+                    }
+                    if (res.ok) this._statsFeeds = undefined;
+                } catch (_) {
+                    if (status) status.textContent = this.t('config.feedStatsResetFailed', 'Could not reset the statistics.');
+                } finally {
+                    resetFeedStats.disabled = false;
+                }
+            });
+        }
+
         container.querySelectorAll('[data-config-action]').forEach((btn) => {
             const action = btn.getAttribute('data-config-action');
             if (action !== 'resetCategorySpreads') {
@@ -13728,6 +13778,7 @@ class DashboardConfig {
             'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
             'health': ['config.statsNoteHealth', 'Whether everything still answers, how reliably, and what is wearing out.'],
             'server': ['config.statsNoteServer', 'The machine behind the dashboard: containers, Unraid and backups.'],
+            'feeds': ['config.statsNoteFeeds', 'What your watched feeds publish, what you read of it, and how their checks go.'],
         },
         containers: {
             'connection': ['config.containersNoteConnection', 'How nextDash reaches Docker, and whether that connection works right now.'],
@@ -14354,7 +14405,7 @@ class DashboardConfig {
         'bookmarks-layout': 'layout',
     };
 
-    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health', 'server'];
+    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health', 'server', 'feeds'];
 
     // The tabs' names until September 2026, kept so an old link still lands.
     static STATS_TAB_ALIASES = { activity: 'usage', content: 'collection' };
@@ -22885,6 +22936,7 @@ class DashboardConfig {
             inbox: ['config.statsTabInbox', 'Inbox'],
             health: ['config.statsTabHealth', 'Health'],
             server: ['config.statsTabServer', 'Server'],
+            feeds: ['config.statsTabFeeds', 'Watch feeds'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -23235,6 +23287,30 @@ class DashboardConfig {
         ]);
         this._statsNotify = { quiet, push, webhooks, digest };
         if (this.isActiveView() && this.inSection('stats') && this.statsTab === 'health') {
+            this.repaintStatsBody();
+        }
+    }
+
+    /**
+     * Stats → Watch feeds, worked out on the server (feed_stats.go) for the
+     * period on screen and the feed whose hours are shown. The period is kept
+     * per device, like the other choices on this page.
+     */
+    async loadStatsFeeds() {
+        if (!this.statsFeedsRange) {
+            let stored = 0;
+            try { stored = Number(localStorage.getItem(DashboardConfig.STATS_FEEDS_RANGE_KEY)); } catch { /* per session then */ }
+            this.statsFeedsRange = [7, 14, 30, 90].includes(stored) ? stored : 30;
+        }
+        const q = new URLSearchParams({ days: String(this.statsFeedsRange) });
+        if (this.statsFeedsHour) q.set('feed', this.statsFeedsHour);
+        try {
+            const res = await fetch(`/api/feeds/stats?${q}`, { cache: 'no-store' });
+            this._statsFeeds = res.ok ? await res.json() : null;
+        } catch {
+            this._statsFeeds = null;
+        }
+        if (this.isActiveView() && this.inSection('stats') && this.statsTab === 'feeds') {
             this.repaintStatsBody();
         }
     }
@@ -24087,6 +24163,7 @@ class DashboardConfig {
                     this._statsLibrary = undefined;
                     this._statsServer = undefined;
                     this._statsNotify = undefined;
+                    this._statsFeeds = undefined;
                     // Refresh means "work them out again", so the memo goes too
                     // — otherwise the button would only re-fetch the two
                     // server-side tabs and hand back the same cached arithmetic
@@ -24215,6 +24292,7 @@ class DashboardConfig {
                 this.repaintStatsBody();
             });
         });
+        this.bindStatsFeeds?.(container);
         container.querySelectorAll('[data-stats-inbox-range]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const next = Number(btn.getAttribute('data-stats-inbox-range'));

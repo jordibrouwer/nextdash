@@ -526,7 +526,7 @@
             const s = this.computeStats();
             // Inbox and Server are server-side and still meaningful on an
             // empty dashboard.
-            if (!s.total && this.statsTab !== 'inbox' && this.statsTab !== 'server') {
+            if (!s.total && this.statsTab !== 'inbox' && this.statsTab !== 'server' && this.statsTab !== 'feeds') {
                 return this.renderStatsEmpty();
             }
             switch (this.statsTab) {
@@ -535,6 +535,7 @@
                 case 'inbox': return this.renderStatsInbox();
                 case 'health': return this.renderStatsHealthTab(s);
                 case 'server': return this.renderStatsServer();
+                case 'feeds': return this.renderStatsFeeds();
                 default: return this.renderStatsOverview(s);
             }
         },
@@ -2707,6 +2708,349 @@
                 title: this.t('config.statsWidgetPagesTitle', 'Widgets per page'),
                 body: this.statsBars([...pages].sort((a, b) => b[1] - a[1]),
                     { axis: [this.t('config.statsAxisPage', 'Page'), this.t('config.statsAxisWidgets', 'Widgets')] }),
+            });
+        },
+
+        /* ------------------------------------------------------------------
+         * Watch feeds
+         *
+         * Counted on the server (feed_stats.go) and aggregated there; this only
+         * draws it. Every number covers every watched feed: there is no page
+         * filter for a feed, so the scope line says so.
+         * ------------------------------------------------------------------ */
+
+        renderStatsFeeds() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const d = this._statsFeeds;
+            if (d === undefined) {
+                return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+            }
+            if (!d) {
+                return `<p class="config-panel-empty">${esc(this.t('config.statsFeedsFailed', 'The statistics could not be loaded.'))}</p>`;
+            }
+            if (d.enabled === false) {
+                return `
+                    <div class="config-panel config-panel--empty-state" data-stats-feeds-state="off">
+                        <h3 class="config-panel-title">${esc(this.t('config.statsFeedsOffTitle', 'Statistics about watched feeds are off.'))}</h3>
+                        <p class="config-panel-note">${esc(this.t('config.statsFeedsOffBody', 'Nothing is counted until you switch them on in Config → Watch feeds.'))}</p>
+                        <div class="config-actions">
+                            <button type="button" class="config-btn config-btn--primary" data-stats-section-goto="feed-watch">${esc(this.t('config.statsFeedsOffButton', 'Open the setting'))}</button>
+                        </div>
+                    </div>`;
+            }
+            const feeds = Array.isArray(d.feeds) ? d.feeds : [];
+            const anyCount = (d.daily || []).some((r) => r.published || r.read) || feeds.some((f) => f.published || f.hourTotal);
+            if (!feeds.length && !anyCount) {
+                return `
+                    <div class="config-panel config-panel--empty-state" data-stats-feeds-state="empty">
+                        <h3 class="config-panel-title">${esc(this.t('config.statsFeedsEmptyTitle', 'No watched feeds yet'))}</h3>
+                        <p class="config-panel-note">${esc(this.t('config.statsFeedsEmpty', 'Nothing recorded yet. Watch a feed and the numbers fill in.'))}</p>
+                    </div>`;
+            }
+            return `
+                ${this.statsFeedsScopeNote()}
+                <div id="config-stats-feeds">
+                    ${this.statsFeedsKpis(d)}
+                    ${this.statsGrid([
+                        this.renderStatsFeedsDaily(d),
+                        this.renderStatsFeedsHealth(d),
+                        this.renderStatsFeedsList(d),
+                        this.renderStatsFeedsHours(d),
+                    ])}
+                </div>`;
+        },
+
+        /** These panels ignore the page filter: a feed belongs to no page. */
+        statsFeedsScopeNote() {
+            if (!this.statsScopePage() || (this.dash.pages || []).length < 2) return '';
+            return `<p class="config-panel-note config-stats-scope-note">${this.dash.escapeHtml(
+                this.t('config.statsFeedsScope', 'These figures cover every watched feed, whatever the page filter says.'))}</p>`;
+        },
+
+        /** "3 h ago" from a time in ms, or a dash. */
+        statsFeedsAgo(ms) {
+            const at = Number(ms) || 0;
+            if (!at) return '—';
+            const m = Math.max(0, Math.round((Date.now() - at) / 60000));
+            if (m < 1) return this.t('dashboard.previewAgoNow', 'just now');
+            if (m < 60) return this.t('dashboard.previewAgoMinutes', '{count} min ago').replace('{count}', String(m));
+            const h = Math.round(m / 60);
+            if (h < 24) return this.t('dashboard.previewAgoHours', '{count} h ago').replace('{count}', String(h));
+            return this.t('dashboard.previewAgoDays', '{count} d ago').replace('{count}', String(Math.round(h / 24)));
+        },
+
+        statsFeedsKpis(d) {
+            const tot = d.totals || {};
+            const busiest = tot.busiest || {};
+            return this.statsKpis([
+                { label: this.t('config.statsFeedsWatched', 'Feeds watched'), value: this.statsNumber(tot.feeds || 0) },
+                { label: this.t('config.statsFeedsItemsWeek', 'Items this week'), value: this.statsNumber(tot.published || 0) },
+                {
+                    label: this.t('config.statsFeedsReadPct', 'Read'),
+                    value: tot.published ? `${Number(tot.readPct) || 0}%` : '—',
+                    detail: this.t('config.statsFeedsReadOf', '{read} of {n} this week')
+                        .replace('{read}', this.statsNumber(tot.read || 0)).replace('{n}', this.statsNumber(tot.published || 0)),
+                },
+                { label: this.t('config.statsFeedsUnreadNow', 'Unread now'), value: this.statsNumber(tot.unreadNow || 0) },
+                {
+                    label: this.t('config.statsFeedsErrorsWeek', 'Errors this week'),
+                    value: this.statsNumber(tot.failed || 0),
+                    tone: tot.failed ? 'warn' : undefined,
+                },
+                {
+                    label: this.t('config.statsFeedsBusiest', 'Busiest feed'),
+                    value: busiest.name || '—',
+                    detail: busiest.name
+                        ? this.t('config.statsFeedsBusiestItems', '{n} items this week').replace('{n}', this.statsNumber(busiest.published || 0))
+                        : '',
+                },
+            ], 'config-stats-feeds-kpis');
+        },
+
+        renderStatsFeedsDaily(d) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const range = this.statsFeedsRange || 30;
+            const series = this.statsFeedsSeries === 'read' ? 'read' : 'published';
+            const daily = Array.isArray(d.daily) ? d.daily : [];
+            const fmt = new Intl.DateTimeFormat(this.dash.settings?.language || undefined, { day: 'numeric', month: 'short' });
+            const dates = daily.map((r) => fmt.format(new Date(`${r.date}T12:00:00`)));
+            const values = daily.map((r) => Number(r[series]) || 0);
+            const label = series === 'read'
+                ? this.t('config.statsFeedsSeriesRead', 'Read')
+                : this.t('config.statsFeedsSeriesPublished', 'Published');
+            const total = values.reduce((a, b) => a + b, 0);
+            const aria = this.t('config.statsFeedsDailyAria', '{series} per day, {range}: {n} in all.')
+                .replace('{series}', label).replace('{range}', this.statsRangeLabel(range)).replace('{n}', this.statsNumber(total));
+            const seriesChips = [
+                ['published', this.t('config.statsFeedsSeriesPublished', 'Published')],
+                ['read', this.t('config.statsFeedsSeriesRead', 'Read')],
+            ].map(([key, text]) => `<button type="button" class="config-choice${series === key ? ' is-active' : ''}" data-stats-feeds-series="${key}" aria-pressed="${series === key}">${esc(text)}</button>`).join('');
+            const right = `<div class="config-choices config-choices--compact" role="group" aria-label="${esc(this.t('config.statsModeGroup', 'Measure'))}">${seriesChips}</div>${this.statsRangeChips('data-stats-feeds-range', range, [7, 14, 30, 90])}`;
+            const keep = Number(d.keepDays) || 90;
+            const note = range > keep
+                ? this.t('config.statsFeedsKeepNote', 'Daily numbers are kept for {n} days; older days are added up per week.')
+                    .replace('{n}', String(keep))
+                : '';
+            return this.statsPanel({
+                title: this.t('config.statsFeedsDailyTitle', 'Items per day'),
+                info: this.t('config.statsFeedsDailyInfo', 'Published counts the new items a check found, on the day they were published. Read counts items that turned read that day, however you read them.'),
+                right,
+                note,
+                span: 12,
+                id: 'config-stats-feeds-daily',
+                cls: 'config-stats-feeds-daily',
+                body: `<div data-stats-feeds-bars="${values.length}" data-stats-feeds-series-shown="${series}" data-stats-feeds-total="${total}">${this.statsColumns({
+                    series: [{ label, values }],
+                    dates,
+                    axisY: this.t('config.statsFeedsAxisItems', 'Items'),
+                    axisX: this.t('config.statsAxisPerDay', 'Day (oldest → newest)'),
+                    aria,
+                })}</div>`,
+            });
+        },
+
+        /** A coloured dot for a feed's state, with the state in words. */
+        statsFeedsDot(state) {
+            const words = {
+                ok: this.t('config.statsFeedsStateOk', 'Working'),
+                warn: this.t('config.statsFeedsStateWarn', 'Had errors'),
+                bad: this.t('config.statsFeedsStateBad', 'Not working'),
+                paused: this.t('config.statsFeedsStatePaused', 'Paused'),
+                muted: this.t('config.statsFeedsStateMuted', 'Muted'),
+            };
+            const key = words[state] ? state : 'ok';
+            return `<span class="config-stats-feed-dot config-stats-feed-dot--${key}" role="img" aria-label="${this.dash.escapeHtml(words[key])}" title="${this.dash.escapeHtml(words[key])}"></span>`;
+        },
+
+        renderStatsFeedsHealth(d) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const h = d.health || {};
+            const rows = Array.isArray(h.byFeed) ? h.byFeed : [];
+            const list = rows.map((r) => {
+                const codes = Object.entries(r.codes || {}).sort((a, b) => b[1] - a[1])
+                    .map(([code, n]) => `<span class="config-stats-feed-code">${esc(code)} ×${esc(this.statsNumber(n))}</span>`).join(' ');
+                const avg = Number(r.avgMs) > 0
+                    ? this.t('config.statsFeedsAvgMs', '{n} ms').replace('{n}', this.statsNumber(Math.round(r.avgMs)))
+                    : '—';
+                return `<li class="config-stats-feed-health-row" data-stats-feed-health="${esc(r.bookmarkKey)}|${esc(r.feedUrl)}">
+                    ${this.statsFeedsDot(r.state)}
+                    <span class="config-stats-feed-name" title="${esc(r.title || r.feedUrl)}">${esc(r.name)}</span>
+                    <span class="config-stats-feed-codes">${codes || esc(this.t('config.statsFeedsNoErrors', 'No errors'))}</span>
+                    <span class="config-stats-feed-ms" title="${esc(this.t('config.statsFeedsAvgMsTitle', 'Average answer time'))}">${esc(avg)}</span>
+                </li>`;
+            }).join('');
+            const sent = this.t('config.statsFeedsSent', '{push} push messages, {hooks} to webhooks and {targets} to the alert channel.')
+                .replace('{push}', this.statsNumber(h.push || 0))
+                .replace('{hooks}', this.statsNumber(h.webhooks || 0))
+                .replace('{targets}', this.statsNumber(h.targets || 0));
+            return this.statsPanel({
+                title: this.t('config.statsFeedsHealthTitle', 'Health this week'),
+                info: this.t('config.statsFeedsHealthInfo', 'Why checks failed over the last 7 days, and how long a feed took to answer on average.'),
+                id: 'config-stats-feeds-health',
+                body: `${rows.length ? `<ul class="config-stats-feed-health">${list}</ul>` : `<p class="config-panel-empty">${esc(this.t('config.statsFeedsNone', 'No feeds are watched right now.'))}</p>`}
+                    <p class="config-panel-note" data-stats-feeds-sent>${esc(sent)}</p>`,
+            });
+        },
+
+        renderStatsFeedsList(d) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const sort = ['items', 'read', 'last'].includes(this.statsFeedsSort) ? this.statsFeedsSort : 'items';
+            const feeds = [...(d.feeds || [])];
+            const by = {
+                items: (a, b) => b.published - a.published || String(a.name).localeCompare(String(b.name)),
+                read: (a, b) => b.readPct - a.readPct || b.published - a.published,
+                last: (a, b) => (Number(b.lastItemAt) || 0) - (Number(a.lastItemAt) || 0),
+            };
+            feeds.sort(by[sort]);
+            const top = Math.max(1, ...feeds.map((f) => Number(f.published) || 0));
+            const chips = [
+                ['items', this.t('config.statsFeedsSortItems', 'Items')],
+                ['read', this.t('config.statsFeedsSortRead', 'Read %')],
+                ['last', this.t('config.statsFeedsSortLast', 'Last item')],
+            ].map(([key, text]) => `<button type="button" class="config-choice${sort === key ? ' is-active' : ''}" data-stats-feeds-sort="${key}" aria-pressed="${sort === key}">${esc(text)}</button>`).join('');
+            const right = `<div class="config-choices config-choices--compact" role="group" aria-label="${esc(this.t('config.statsFeedsSortGroup', 'Sort by'))}">${chips}</div>`;
+            const rows = feeds.map((f) => {
+                const pct = Math.round(((Number(f.published) || 0) / top) * 100);
+                const spoken = this.t('config.statsFeedsRowAria', '{name}: {n} items, {pct}% read, last item {ago}')
+                    .replace('{name}', f.name).replace('{n}', this.statsNumber(f.published || 0))
+                    .replace('{pct}', String(f.readPct || 0)).replace('{ago}', this.statsFeedsAgo(f.lastItemAt));
+                return `<li>
+                    <button type="button" class="config-stats-feed-row" data-stats-feed-open="${esc(f.bookmarkKey)}" data-stats-feed-url="${esc(f.feedUrl)}" aria-label="${esc(spoken)}">
+                        ${this.statsFeedsDot(f.state)}
+                        <span class="config-stats-feed-name" title="${esc(f.title || f.feedUrl)}">${esc(f.name)}</span>
+                        <span class="config-bar config-bar--slim${f.published ? '' : ' config-bar--empty'}" aria-hidden="true"><span class="config-bar-fill" style="width:${pct}%"></span></span>
+                        <span class="config-stats-feed-num">${esc(this.statsNumber(f.published || 0))}</span>
+                        <span class="config-stats-feed-num">${f.published ? `${esc(String(f.readPct || 0))}%` : '—'}</span>
+                        <span class="config-stats-feed-ago">${esc(this.statsFeedsAgo(f.lastItemAt))}</span>
+                    </button>
+                </li>`;
+            }).join('');
+            return this.statsPanel({
+                title: this.t('config.statsFeedsListTitle', 'Per feed'),
+                info: this.t('config.statsFeedsListInfo', 'Items and read share over the period chosen above. A row opens that feed in Config → Watch feeds.'),
+                right,
+                id: 'config-stats-feeds-list',
+                body: feeds.length
+                    ? `<div class="config-stats-feed-head" aria-hidden="true"><span></span><span>${esc(this.t('config.statsFeedsColFeed', 'Feed'))}</span><span></span><span>${esc(this.t('config.statsFeedsSortItems', 'Items'))}</span><span>${esc(this.t('config.statsFeedsSortRead', 'Read %'))}</span><span>${esc(this.t('config.statsFeedsSortLast', 'Last item'))}</span></div>
+                        <ul class="config-stats-feed-list">${rows}</ul>`
+                    : `<p class="config-panel-empty">${esc(this.t('config.statsFeedsNone', 'No feeds are watched right now.'))}</p>`,
+            });
+        },
+
+        /**
+         * "Most items between 08:00 and 11:00, mostly on weekdays": the
+         * three-hour window that holds the most, and whether weekdays or the
+         * weekend carry more than their share.
+         */
+        statsFeedsHourSummary(matrix) {
+            const byHour = Array.from({ length: 24 }, (_, hr) => matrix.reduce((sum, row) => sum + (Number(row[hr]) || 0), 0));
+            let best = 0;
+            let bestSum = -1;
+            for (let hr = 0; hr < 24; hr += 1) {
+                const sum = byHour[hr] + byHour[(hr + 1) % 24] + byHour[(hr + 2) % 24];
+                if (sum > bestSum) { bestSum = sum; best = hr; }
+            }
+            const pad = (n) => `${String(n % 24).padStart(2, '0')}:00`;
+            const total = byHour.reduce((a, b) => a + b, 0);
+            const weekday = matrix.slice(0, 5).flat().reduce((a, b) => a + (Number(b) || 0), 0);
+            // Five of seven days are weekdays: well over that share is "mostly".
+            let text = this.t('config.statsFeedsHoursMost', 'Most items between {from} and {to}.');
+            if (total && weekday / total > 0.85) {
+                text = this.t('config.statsFeedsHoursMostWeekdays', 'Most items between {from} and {to}, mostly on weekdays.');
+            } else if (total && weekday / total < 0.5) {
+                text = this.t('config.statsFeedsHoursMostWeekend', 'Most items between {from} and {to}, mostly at the weekend.');
+            }
+            return text.replace('{from}', pad(best)).replace('{to}', pad(best + 3));
+        },
+
+        renderStatsFeedsHours(d) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const hours = d.hours || {};
+            const feeds = d.feeds || [];
+            const chosen = hours.feed || '';
+            const name = hours.feedLabel || '';
+            const options = feeds.map((f) => {
+                const id = `${f.bookmarkKey}|${f.feedUrl}`;
+                return `<option value="${esc(id)}"${id === chosen ? ' selected' : ''}>${esc(f.name)}${f.title && f.title !== f.name ? ` · ${esc(f.title)}` : ''}</option>`;
+            }).join('');
+            const right = feeds.length > 1
+                ? `<select class="config-select config-stats-feed-pick" data-stats-feeds-hour aria-label="${esc(this.t('config.statsFeedsHoursPick', 'Feed'))}">${options}</select>`
+                : '';
+            const title = this.t('config.statsFeedsHoursTitle', 'When {feed} publishes').replace('{feed}', name || this.t('config.statsFeedsHoursAFeed', 'a feed'));
+            const matrix = Array.isArray(hours.matrix) && hours.matrix.length === 7 ? hours.matrix : Array.from({ length: 7 }, () => Array(24).fill(0));
+            const total = Number(hours.total) || 0;
+            const MIN = 20;
+            const weekday = new Intl.DateTimeFormat(this.dash.settings?.language || undefined, { weekday: 'short' });
+            // 28 September 2026 is a Monday; the grid is Monday first, as the server counts.
+            const days = [0, 1, 2, 3, 4, 5, 6].map((i) => weekday.format(new Date(2026, 8, 28 + i)));
+            const max = Math.max(1, ...matrix.flat().map(Number));
+            const head = `<span></span>${Array.from({ length: 24 }, (_, hr) => `<span class="config-stats-heat-hour">${hr % 6 === 0 ? hr : ''}</span>`).join('')}`;
+            const rows = matrix.map((row, i) => `<span class="config-stats-heat-day">${esc(days[i])}</span>${row.map((v, hr) =>
+                `<span class="config-stats-heat-cell${v ? '' : ' is-empty'}" style="--heat:${(Number(v) / max).toFixed(2)}" title="${esc(days[i])} ${hr}:00 · ${Number(v) || 0}"></span>`).join('')}`).join('');
+            const summary = total >= MIN ? this.statsFeedsHourSummary(matrix) : '';
+            const spoken = summary || this.t('config.statsFeedsHoursCount', '{n} items by weekday and hour.').replace('{n}', this.statsNumber(total));
+            const srList = matrix.map((row, i) => `<li>${esc(days[i])}: ${row.map((v, hr) => (Number(v) ? `${hr}:00 ${Number(v)}` : '')).filter(Boolean).join(', ') || '0'}</li>`).join('');
+            return this.statsPanel({
+                title,
+                info: this.t('config.statsFeedsHoursInfo', 'Items by the weekday and hour they were published, in your own time zone, since counting began.'),
+                right,
+                id: 'config-stats-feeds-hours',
+                cls: 'config-stats-heat-panel',
+                body: total
+                    ? `<div class="config-stats-heat" role="img" aria-label="${esc(spoken)}" data-stats-feeds-heat="${esc(chosen)}">${head}${rows}</div>
+                        <ul class="config-sr-only">${srList}</ul>
+                        ${summary ? `<p class="config-panel-note" data-stats-feeds-hours-summary>${esc(summary)}</p>` : ''}`
+                    : `<p class="config-panel-empty" data-stats-feeds-heat="${esc(chosen)}">${esc(this.t('config.statsFeedsHoursEmpty', 'No dated items counted for this feed yet.'))}</p>`,
+            });
+        },
+
+        /** The switches of the Watch feeds tab; bound from bindStats. */
+        bindStatsFeeds(container) {
+            // The figures on screen stay until the new ones arrive.
+            const reload = () => { void this.loadStatsFeeds(); };
+            container.querySelectorAll('[data-stats-feeds-range]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const next = Number(btn.getAttribute('data-stats-feeds-range'));
+                    if (![7, 14, 30, 90].includes(next) || next === this.statsFeedsRange) return;
+                    this.statsFeedsRange = next;
+                    try { localStorage.setItem(DashboardConfig.STATS_FEEDS_RANGE_KEY, String(next)); } catch { /* per session then */ }
+                    reload();
+                });
+            });
+            container.querySelectorAll('[data-stats-feeds-series]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const next = btn.getAttribute('data-stats-feeds-series') === 'read' ? 'read' : 'published';
+                    if (next === (this.statsFeedsSeries || 'published')) return;
+                    this.statsFeedsSeries = next;
+                    this.repaintStatsBody();
+                });
+            });
+            container.querySelectorAll('[data-stats-feeds-sort]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    this.statsFeedsSort = btn.getAttribute('data-stats-feeds-sort');
+                    this.repaintStatsBody();
+                });
+            });
+            container.querySelector('[data-stats-feeds-hour]')?.addEventListener('change', (e) => {
+                this.statsFeedsHour = e.target.value || '';
+                reload();
+            });
+            // A row opens that feed in Config → Watch feeds, its detail unfolded.
+            container.querySelectorAll('[data-stats-feed-open]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const key = btn.getAttribute('data-stats-feed-open') || '';
+                    const url = btn.getAttribute('data-stats-feed-url') || '';
+                    const id = `${encodeURIComponent(key)}|${encodeURIComponent(url)}`;
+                    this._fw = this._fw || { open: '', cursor: '', ticked: new Set() };
+                    this._fw.open = id;
+                    this._fw.cursor = id;
+                    this.selectSection('feed-watch');
+                    setTimeout(() => {
+                        const row = document.querySelector(`[data-fw-row="${CSS.escape(id)}"]`);
+                        row?.scrollIntoView({ block: 'center' });
+                        row?.focus?.({ preventScroll: true });
+                    }, 120);
+                });
             });
         },
     });

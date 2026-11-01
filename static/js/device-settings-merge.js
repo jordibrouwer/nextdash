@@ -103,6 +103,8 @@
         'feedWatchWindowMinutes',
         'feedWatchNewsView',
         'feedWatchOpenOnReturn',
+        'feedStatsEnabled',
+        'feedStatsKeepDays',
         'pushNotifyRelease',
         'dockerHiddenContainers',
         'dockerWebUIs',
