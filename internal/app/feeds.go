@@ -64,7 +64,7 @@ func (h *Handlers) discoverFeedsForURL(ctx context.Context, rawURL string) []fee
 		return nil
 	}
 	req.Header.Set("User-Agent", "nextDash FeedFinder/1.0")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/rss+xml,application/atom+xml;q=0.9")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/rss+xml,application/atom+xml;q=0.9,application/feed+json;q=0.9")
 
 	resp, err := h.outboundHTTPClient(feedDiscoverTimeout, 5).Do(req)
 	if err != nil || resp == nil {
@@ -95,6 +95,7 @@ func (h *Handlers) discoverFeedsForURL(ctx context.Context, rawURL string) []fee
 // requests each would be eight extra requests to every site.
 var commonFeedPaths = []string{
 	"/feed", "/feed/", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml", "/feeds/mixed.xml",
+	"/feed.json", "/feed/json",
 }
 
 // probeCommonFeeds looks for a feed at the usual addresses of a site's origin.
@@ -160,6 +161,10 @@ func extractFeedsFromHTML(htmlBody string) []feedLink {
 			mediaType = "application/rss+xml"
 		case strings.Contains(lowerTag, "application/atom+xml"):
 			mediaType = "application/atom+xml"
+		case strings.Contains(lowerTag, "application/feed+json"):
+			mediaType = "application/feed+json"
+		case strings.Contains(lowerTag, "application/json") && jsonFeedLooksLikeAFeed(tag):
+			mediaType = "application/json"
 		default:
 			continue
 		}
@@ -174,6 +179,14 @@ func extractFeedsFromHTML(htmlBody string) []feedLink {
 			Type:  mediaType,
 		})
 	}
+}
+
+// jsonFeedLooksLikeAFeed tells a plain application/json alternate that is a
+// feed from the oEmbed and API links sites advertise the same way: its title or
+// address says feed.
+func jsonFeedLooksLikeAFeed(tag string) bool {
+	hay := asciiLower(htmlpkg.UnescapeString(extractAttributeValue(tag, "title") + " " + extractAttributeValue(tag, "href")))
+	return strings.Contains(hay, "feed")
 }
 
 // extractAttributeValue reads one attribute out of a tag, quoted either way.
@@ -291,7 +304,7 @@ func (h *Handlers) fetchFeed(ctx context.Context, feedURL, etag, lastModified st
 		return feedFetch{Err: err}
 	}
 	req.Header.Set("User-Agent", "nextDash FeedBot/1.0")
-	req.Header.Set("Accept", "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.5")
+	req.Header.Set("Accept", "application/rss+xml, application/atom+xml, application/feed+json, application/xml;q=0.9, */*;q=0.5")
 	if etag != "" {
 		req.Header.Set("If-None-Match", etag)
 	}
