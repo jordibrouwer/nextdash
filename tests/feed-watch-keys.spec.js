@@ -4,7 +4,7 @@ const { startStubSite, installWithBookmark, openDashboard, row, keyOf, watchPayl
 
 /**
  * Keys for watched feeds: Shift+Alt+W watches the focused bookmark's feed,
- * Shift+Alt+N opens the paper, j / k read inside it. Real key presses; the
+ * Shift+N opens the paper, j / k read inside it. Real key presses; the
  * watch routes are stubbed with one watched bookmark and three unread items.
  */
 test.describe.configure({ mode: 'serial' });
@@ -53,15 +53,17 @@ test('the context menu shows the key beside Watch this feed', async ({ page }) =
     await expect(page.getByRole('menuitem', { name: /Watch this feed/ })).toContainText('Shift+Alt+W');
 });
 
-test('Shift+Alt+N opens the paper when a feed is watched, and not otherwise', async ({ page }) => {
+test('Shift+N opens the paper when a feed is watched, and not otherwise', async ({ page }) => {
     await setup(page, { watched: false });
-    await page.keyboard.press('Shift+Alt+KeyN');
+    await page.keyboard.press('Shift+KeyN');
     await expect(modal(page)).toHaveCount(0);
+    // It is not "add a category" any more either.
+    await expect(page.locator('.bookmark-inline-create.category-add-create')).toHaveCount(0);
 });
 
-test('Shift+Alt+N opens the paper; j / k move through it; Enter opens; the legend shows the chips', async ({ page }) => {
+test('Shift+N opens the paper; j / k move through it; Enter opens; the legend shows the chips', async ({ page }) => {
     await setup(page);
-    await page.keyboard.press('Shift+Alt+KeyN');
+    await page.keyboard.press('Shift+KeyN');
     await expect(modal(page)).toBeVisible();
     await expect(modal(page).locator('.feed-news-entry')).toHaveCount(3);
 
@@ -94,7 +96,7 @@ test('Shift+Alt+N opens the paper; j / k move through it; Enter opens; the legen
 
 test('j and k do nothing while typing in a field or with a modifier held', async ({ page }) => {
     await setup(page);
-    await page.keyboard.press('Shift+Alt+KeyN');
+    await page.keyboard.press('Shift+KeyN');
     await expect(modal(page)).toBeVisible();
     await modal(page).locator('[data-feed-news-pick]').first().click();
     await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 3');

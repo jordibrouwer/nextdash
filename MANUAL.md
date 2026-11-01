@@ -1289,7 +1289,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `,` | Pages panel (`n` there makes a new page) |
 | `!` or `F1` | Cheat sheet |
 | `.` | Fold or unfold every category and widget |
-| `Shift + N` | Add a category to this page |
+| `Shift + N` | Open the news of the feeds you watch (when at least one feed is watched) |
 | `'` or `Shift + O` | Slide a docked action bar away or back |
 | `Shift + F` | Filter this page in place |
 | `Shift + Z` | Key legend under the grid off or on |
@@ -1625,7 +1625,7 @@ Page names are unique. Each row in Structure → Pages shows how many bookmarks 
 
 <img src="screenshots/manual.md/09-category-menu.jpg" alt="The right-click menu on a category header: Add new bookmark, Rename, Show as tiles, Spread across columns, Insert icon, Move to page, Add category and Delete, with their keys" width="281" align="right">
 
-- **Create** — the **+** in a category header or **`Shift + N`** (on the page you are on), `:category new`, **New category…** in the bookmark form, or **Structure → Categories**.
+- **Create** — the **+** in a category header or the button under the last category (on the page you are on), `:category new`, **New category…** in the bookmark form, or **Structure → Categories**.
 - **Rename** — `F2`, a long press or double-click on the header, the right-click menu, or Structure → Categories.
 - **Icon** — an icon is part of the title. Type an emoji in the name, or right-click the header → **Insert icon…** to put an app icon in it (written `:file.svg:` in the name). Widgets are titled the same way.
 - **Tiles** — right-click the header → **Show as tiles** draws the category's bookmarks as a grid: a large icon, the name under it, the status as a dot on the corner. **Show as rows** goes back. The choice belongs to that category; Terminal and Launcher keep their own designs.

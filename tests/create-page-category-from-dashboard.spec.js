@@ -57,15 +57,12 @@ const overlayRow = (page) => page.locator('#app-modal .page-overview-modal-actio
 const gridRow = (page) => page.locator('.bookmark-inline-create.category-add-create');
 
 /**
- * Shift+N adds a category on the first press.
- *
- * It was a bare c, which swallowed the letter before the shortcut search saw
- * it — so no bookmark whose shortcut starts with c could be reached by typing
- * it. Adding is a few presses a day; typing a shortcut is the whole point of
- * the grid.
+ * The way into "name your category" from the grid: the add button under the
+ * last category. (A bare c and then Shift+N used to open it; neither does now,
+ * so that no key swallows a letter a bookmark shortcut could start with.)
  */
 async function pressAddCategory(page) {
-    await page.keyboard.press('Shift+N');
+    await page.locator('.category-add-inline-btn').first().click();
 }
 
 test.describe('pages overlay — creating a page', () => {
@@ -286,15 +283,6 @@ test.describe('dashboard grid — adding a category', () => {
         await expect(gridRow(page).locator('.bookmark-inline-create-input')).toBeFocused();
     });
 
-    test('Shift+N adds a category rather than reaching the shortcut search', async ({ page }) => {
-        await loadDashboard(page);
-        // A tap is the shortcut, and the search box must not open behind it.
-        await page.keyboard.press('Shift+N');
-
-        await expect(gridRow(page)).toBeVisible();
-        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
-    });
-
     test('a bare c belongs to the shortcut search again', async ({ page }) => {
         await loadDashboard(page);
         // This is what the move bought: c starts a search, so a bookmark whose
@@ -305,7 +293,7 @@ test.describe('dashboard grid — adding a category', () => {
         await expect(gridRow(page)).toHaveCount(0);
     });
 
-    test('Shift+N still works a second time', async ({ page }) => {
+    test('the add button works a second time', async ({ page }) => {
         await loadDashboard(page);
         await pressAddCategory(page);
         await expect(gridRow(page)).toBeVisible();

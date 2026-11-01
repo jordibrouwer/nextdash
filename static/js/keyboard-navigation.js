@@ -40,9 +40,8 @@
 // The letters these keys take are still reachable in search: open it first
 // (>, @ or /) and type.
 //
-// c is no longer one of them: adding a category moved to Shift+N, because a
-// bare letter that swallows the key is a letter no bookmark shortcut can start
-// with.
+// c is no longer one of them: it once added a category, and a bare letter that
+// swallows the key is a letter no bookmark shortcut can start with.
 const G_CHORD_MS = 3000;
 
 class KeyboardNavigation {
@@ -367,25 +366,15 @@ class KeyboardNavigation {
                 }
             }
 
-            // Shift+Alt+W — watch the feed of the bookmark in hand; Shift+Alt+N —
-            // open the paper of every watched feed. Every plain Shift+letter is
-            // taken, and Shift+Alt was only ever used with arrows. Matched on
-            // e.code: Option changes what e.key types on macOS.
-            if (e.shiftKey && e.altKey && !e.ctrlKey && !e.metaKey && !e.repeat
-                && (e.code === 'KeyW' || e.code === 'KeyN')) {
-                if (e.code === 'KeyW') {
-                    if (this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        e.stopPropagation();
-                        void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() });
-                        return;
-                    }
-                } else if (window.FeedWatchNews && this._anyFeedWatched()) {
+            // Shift+Alt+W — watch the feed of the bookmark in hand. Every plain
+            // Shift+letter is taken, and Shift+Alt was only ever used with arrows.
+            // Matched on e.code: Option changes what e.key types on macOS.
+            if (e.shiftKey && e.altKey && !e.ctrlKey && !e.metaKey && !e.repeat && e.code === 'KeyW') {
+                if (this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
-                    void window.FeedWatchNews.open({ source: 'button' });
+                    void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() });
                     return;
                 }
             }
@@ -481,26 +470,17 @@ class KeyboardNavigation {
                 }
             }
 
-            // Shift+N — add a category.
-            //
-            // It was a bare c, which cost more than it looked: the branch stops
-            // the event dead, so the shortcut search never saw the letter and no
-            // bookmark whose shortcut starts with c could be reached by typing
-            // it. A shortcut for adding something is pressed a few times a day;
-            // typing a shortcut is the thing this dashboard is for.
-            //
-            // Shift+N rather than another bare letter, because every bare letter
-            // is a letter somebody's shortcut starts with. It sits with the
-            // other Shift actions — Shift+B adds a bookmark, Shift+W sets a
-            // width — and N is for new, which is what it does.
-            if (e.code === 'KeyN' && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            // Shift+N — the news of the feeds you watch. Nothing watched leaves the
+            // key alone. It was "add a category" once; that is still in the
+            // category menu, the edit panel and the button under the last category.
+            if (e.code === 'KeyN' && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
+                && window.FeedWatchNews && this._anyFeedWatched()) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 e.stopPropagation();
-                if (e.repeat) {
-                    return;
+                if (!e.repeat) {
+                    void window.FeedWatchNews.open({ source: 'button' });
                 }
-                this._openCategoryAdd();
                 return;
             }
 
@@ -1823,18 +1803,6 @@ class KeyboardNavigation {
         }, 0);
     }
 
-
-    /** Open the "name your category" row, if the dashboard can take it now. */
-    _openCategoryAdd() {
-        const dash = this.dashboard;
-        if (!dash || dash.isBookmarksView?.() === false || dash.isInlineEditActive?.()) {
-            return;
-        }
-        if (dash.searchComponent?.isActive?.() || dash.isModalOpen?.()) {
-            return;
-        }
-        dash.categoryAdd?.open();
-    }
 
     _armGChordTimeout(ms) {
         if (this._gTimeout) {
