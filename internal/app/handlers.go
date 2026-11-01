@@ -2522,15 +2522,9 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the page order - remove the deleted page ID
-	order := h.store.GetPageOrder()
-	newOrder := make([]int, 0, len(order))
-	for _, id := range order {
-		if id != pageID {
-			newOrder = append(newOrder, id)
-		}
-	}
-	if !respondStorePersistError(w, h.store.SavePageOrder(newOrder)) {
+	// One locked read and write: an unreadable pages.json is an error here,
+	// not an empty order saved over every other tab's place.
+	if !respondStorePersistError(w, h.store.RemoveFromPageOrder(pageID)) {
 		return
 	}
 

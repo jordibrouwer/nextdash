@@ -1611,6 +1611,7 @@ type Store interface {
 	DeletePage(pageID int) error
 	GetPageOrder() []int
 	SavePageOrder(order []int) error
+	RemoveFromPageOrder(pageID int) error
 	// Settings
 	GetSettings() Settings
 	SaveSettings(settings Settings) error
@@ -4089,11 +4090,6 @@ func (fs *FileStore) GetPageOrder() []int {
 	return clonePageOrder(order)
 }
 
-func (fs *FileStore) getPageOrder() []int {
-	order, _ := fs.readPageOrder()
-	return order
-}
-
 // readPageOrder reads pages.json. The error is non-nil only when the file
 // exists but could not be read or parsed: a missing file is a normal empty
 // order, while a failed read must not be answered by writing a default order
@@ -4115,6 +4111,29 @@ func (fs *FileStore) readPageOrder() ([]int, error) {
 	}
 
 	return pageOrder.Order, nil
+}
+
+// RemoveFromPageOrder drops one page from the order in a single locked read
+// and write. A pages.json that cannot be read is returned as an error rather
+// than answered with an empty order written over the real one.
+func (fs *FileStore) RemoveFromPageOrder(pageID int) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	order, err := fs.readPageOrder()
+	if err != nil {
+		return err
+	}
+	next := make([]int, 0, len(order))
+	for _, id := range order {
+		if id != pageID {
+			next = append(next, id)
+		}
+	}
+	if len(next) == len(order) {
+		return nil
+	}
+	return fs.savePageOrder(next)
 }
 
 func (fs *FileStore) SavePageOrder(order []int) error {
@@ -4389,8 +4408,15 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 		return err
 	}
 
-	// Put the tab back where it was rather than at the end.
-	order := fs.getPageOrder()
+	// Put the tab back where it was rather than at the end. An unreadable
+	// pages.json is left alone: writing [id] over it would lose every other
+	// tab's place, and a page missing from the order is listed at the end.
+	order, orderErr := fs.readPageOrder()
+	if orderErr != nil {
+		logWarn("trash", "RestorePage: page %d is back but pages.json could not be read, so its place was not saved: %v", snapshot.Page.ID, orderErr)
+		fs.noteDataMutation(0)
+		return nil
+	}
 	for _, id := range order {
 		if id == snapshot.Page.ID {
 			fs.noteDataMutation(0)
