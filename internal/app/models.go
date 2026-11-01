@@ -418,6 +418,9 @@ type Settings struct {
 	CurrentPage                     int    `json:"currentPage"` // Numeric ID of the current page
 	Theme                           string `json:"theme"`       // "light" or "dark"
 	OpenInNewTab                    bool   `json:"openInNewTab"`
+	OpenLinksNewTabMobile           bool   `json:"openLinksNewTabMobile"`
+	HideToastsMobile                bool   `json:"hideToastsMobile"`
+	HideCornerCardsMobile           bool   `json:"hideCornerCardsMobile"`
 	ColumnsPerRow                   int    `json:"columnsPerRow"`
 	FontSize                        string `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
 	ShowTitle                       bool   `json:"showTitle"`
@@ -1812,6 +1815,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
 			PushNotifyNews:                  true,
+			HideToastsMobile:                true,
+			HideCornerCardsMobile:           true,
 			FeedWatchWindowMinutes:          30,
 			FeedWatchNewsView:               "paper",
 			ShowThemeStudioButton:           true,
@@ -4475,6 +4480,8 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
 			PushNotifyNews:                  true,
+			HideToastsMobile:                true,
+			HideCornerCardsMobile:           true,
 			FeedWatchWindowMinutes:          30,
 			FeedWatchNewsView:               "paper",
 			ShowThemeStudioButton:           true,
@@ -4695,6 +4702,13 @@ func (fs *FileStore) GetSettings() Settings {
 		// On unless turned off: it only fires when push is on and a feed is watched.
 		if _, ok := rawSettings["pushNotifyNews"]; !ok {
 			settings.PushNotifyNews = true
+		}
+		// On unless turned off: a phone is quiet by default, errors still show.
+		if _, ok := rawSettings["hideToastsMobile"]; !ok {
+			settings.HideToastsMobile = true
+		}
+		if _, ok := rawSettings["hideCornerCardsMobile"]; !ok {
+			settings.HideCornerCardsMobile = true
 		}
 		switch settings.FeedWatchWindowMinutes {
 		case 15, 30, 60, 120:
