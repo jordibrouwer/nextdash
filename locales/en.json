@@ -10280,7 +10280,10 @@
     "widgetFeedNewsLayoutChips": "Compact chips",
     "showFeedWatchIconLabel": "Show a feed icon on watched bookmarks",
     "showFeedWatchIconInfoTitle": "Feed icon on watched bookmarks",
-    "showFeedWatchIconInfoMessage": "A small feed icon after the name shows which bookmarks you watch, even when there is nothing new. On by default."
+    "showFeedWatchIconInfoMessage": "A small feed icon after the name shows which bookmarks you watch, even when there is nothing new. On by default.",
+    "feedWatchOpenOnReturnLabel": "Open the news when I come back to the tab",
+    "feedWatchOpenOnReturnInfoTitle": "Open the news on return",
+    "feedWatchOpenOnReturnInfoMessage": "When you come back to this tab and there is unread news from a feed that is not muted, the news opens by itself, once per return. Off by default, and never on a phone or tablet."
   },
   "colors": {
     "title": "theme customization",

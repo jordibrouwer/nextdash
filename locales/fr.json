@@ -10280,7 +10280,10 @@
     "widgetFeedNewsLayoutChips": "Puces compactes",
     "showFeedWatchIconLabel": "Afficher une icône de flux sur les favoris suivis",
     "showFeedWatchIconInfoTitle": "Icône de flux sur les favoris suivis",
-    "showFeedWatchIconInfoMessage": "Une petite icône de flux après le nom indique quels favoris vous suivez, même sans nouveauté. Activé par défaut."
+    "showFeedWatchIconInfoMessage": "Une petite icône de flux après le nom indique quels favoris vous suivez, même sans nouveauté. Activé par défaut.",
+    "feedWatchOpenOnReturnLabel": "Ouvrir les actualités quand je reviens sur l’onglet",
+    "feedWatchOpenOnReturnInfoTitle": "Ouvrir les actualités au retour",
+    "feedWatchOpenOnReturnInfoMessage": "Quand vous revenez sur cet onglet et qu’un flux non mis en sourdine a des actualités non lues, elles s’ouvrent d’elles-mêmes, une fois par retour. Désactivé par défaut, et jamais sur un téléphone ou une tablette."
   },
   "colors": {
     "title": "personnalisation du thème",

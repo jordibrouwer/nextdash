@@ -605,6 +605,9 @@
      */
     function onReturn() {
         if (document.visibilityState !== 'visible' || state) return;
+        // Only on a computer, and only when the reader switched it on: a phone or
+        // tablet never opens the news by itself, and nor does anything else by default.
+        if (global.isPhoneDevice?.() || dash()?.settings?.feedWatchOpenOnReturn !== true) return;
         const watch = dash()?.feedWatch;
         if (!watch || !(unreadTotal(watch) > 0)) return;
         // A muted feed counts but never calls: only news from a loud feed brings the paper back.

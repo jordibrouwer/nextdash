@@ -102,6 +102,7 @@
         'notifyNewsTarget',
         'feedWatchWindowMinutes',
         'feedWatchNewsView',
+        'feedWatchOpenOnReturn',
         'pushNotifyRelease',
         'dockerHiddenContainers',
         'dockerWebUIs',

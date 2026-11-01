@@ -168,7 +168,19 @@ test('an item toggles read and unread, Mark site read and Mark all read clear th
     await expect.poll(() => page.title()).not.toMatch(/^\(\d+\) /);
 });
 
-test('returning to the tab opens the paper once, but not after it was opened by hand', async ({ page }) => {
+const allowOpenOnReturn = (request, on = true) => request.post('/api/settings', { headers, data: { feedWatchOpenOnReturn: on } });
+
+test('returning to the tab opens nothing by itself unless the setting is on', async ({ page }) => {
+    await openDashboard(page);
+    await expect.poll(() => page.title()).toMatch(/^\(5\) /);
+    await fakeVisibility(page);
+    await page.evaluate(() => window.__leaveAndReturn());
+    await page.waitForTimeout(600);
+    await expect(modal(page)).toHaveCount(0);
+});
+
+test('returning to the tab opens the paper once, but not after it was opened by hand', async ({ page, request }) => {
+    await allowOpenOnReturn(request);
     await openDashboard(page);
     await expect.poll(() => page.title()).toMatch(/^\(5\) /);
     await fakeVisibility(page);
@@ -190,6 +202,7 @@ test('returning to the tab opens the paper once, but not after it was opened by 
 });
 
 test('returning to the tab leaves the paper closed when only muted feeds have news', async ({ page, request }) => {
+    await allowOpenOnReturn(request);
     for (const site of [siteA, siteB]) {
         expect((await request.post('/api/feeds/watch/feed', {
             headers, data: { bookmarkUrl: site.url, feedUrl: `${site.base}/feed/`, muted: true },
@@ -204,7 +217,8 @@ test('returning to the tab leaves the paper closed when only muted feeds have ne
     await expect(modal(page)).toHaveCount(0);
 });
 
-test('returning to the tab does not cover another window', async ({ page }) => {
+test('returning to the tab does not cover another window', async ({ page, request }) => {
+    await allowOpenOnReturn(request);
     await openDashboard(page);
     await expect.poll(() => page.title()).toMatch(/^\(5\) /);
     await fakeVisibility(page);
@@ -240,4 +254,17 @@ test('on a phone the sections stack, the controls are 44 px and nothing runs off
     expect(panel.x + panel.width).toBeLessThanOrEqual(375);
     expect(await modal(page).evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});
+
+test.describe('on a phone', () => {
+    test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+
+    test('returning to the tab never opens the paper, even with the setting on', async ({ page, request }) => {
+        await allowOpenOnReturn(request);
+        await openDashboard(page);
+        await fakeVisibility(page);
+        await page.evaluate(() => window.__leaveAndReturn());
+        await page.waitForTimeout(600);
+        await expect(modal(page)).toHaveCount(0);
+    });
 });

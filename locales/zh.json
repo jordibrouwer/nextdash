@@ -10280,7 +10280,10 @@
     "widgetFeedNewsLayoutChips": "紧凑标签",
     "showFeedWatchIconLabel": "在已关注的书签上显示订阅源图标",
     "showFeedWatchIconInfoTitle": "已关注书签上的订阅源图标",
-    "showFeedWatchIconInfoMessage": "名称后的小订阅源图标会显示您关注了哪些书签，即使没有新内容。默认开启。"
+    "showFeedWatchIconInfoMessage": "名称后的小订阅源图标会显示您关注了哪些书签，即使没有新内容。默认开启。",
+    "feedWatchOpenOnReturnLabel": "返回标签页时打开新闻",
+    "feedWatchOpenOnReturnInfoTitle": "返回时打开新闻",
+    "feedWatchOpenOnReturnInfoMessage": "当你回到此标签页，且有未静音订阅源的未读新闻时，新闻会自动打开，每次返回一次。默认关闭，且在手机或平板上从不自动打开。"
   },
   "colors": {
     "title": "主题自定义",

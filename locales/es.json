@@ -10280,7 +10280,10 @@
     "widgetFeedNewsLayoutChips": "Chips compactos",
     "showFeedWatchIconLabel": "Mostrar un icono de feed en los marcadores seguidos",
     "showFeedWatchIconInfoTitle": "Icono de feed en los marcadores seguidos",
-    "showFeedWatchIconInfoMessage": "Un pequeño icono de feed tras el nombre muestra qué marcadores sigues, incluso cuando no hay nada nuevo. Activado por defecto."
+    "showFeedWatchIconInfoMessage": "Un pequeño icono de feed tras el nombre muestra qué marcadores sigues, incluso cuando no hay nada nuevo. Activado por defecto.",
+    "feedWatchOpenOnReturnLabel": "Abrir las noticias cuando vuelvo a la pestaña",
+    "feedWatchOpenOnReturnInfoTitle": "Abrir las noticias al volver",
+    "feedWatchOpenOnReturnInfoMessage": "Cuando vuelves a esta pestaña y hay noticias sin leer de un feed que no está silenciado, las noticias se abren solas, una vez por regreso. Desactivado por defecto, y nunca en un teléfono o una tableta."
   },
   "colors": {
     "title": "personalización del tema",

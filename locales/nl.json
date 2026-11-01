@@ -10280,7 +10280,10 @@
     "widgetFeedNewsLayoutChips": "Compacte chips",
     "showFeedWatchIconLabel": "Toon een feed-icoon bij gevolgde bookmarks",
     "showFeedWatchIconInfoTitle": "Feed-icoon bij gevolgde bookmarks",
-    "showFeedWatchIconInfoMessage": "Een klein feed-icoon achter de naam laat zien welke bookmarks je volgt, ook als er niets nieuws is. Staat standaard aan."
+    "showFeedWatchIconInfoMessage": "Een klein feed-icoon achter de naam laat zien welke bookmarks je volgt, ook als er niets nieuws is. Staat standaard aan.",
+    "feedWatchOpenOnReturnLabel": "Het nieuws openen als ik terugkom in de tab",
+    "feedWatchOpenOnReturnInfoTitle": "Nieuws openen bij terugkeer",
+    "feedWatchOpenOnReturnInfoMessage": "Als je terugkomt in deze tab en er is ongelezen nieuws van een feed die niet gedempt is, opent het nieuws vanzelf, één keer per terugkeer. Standaard uit, en nooit op een telefoon of tablet."
   },
   "colors": {
     "title": "thema-aanpassing",

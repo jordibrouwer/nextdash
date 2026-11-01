@@ -85,6 +85,7 @@ class Dashboard {
             hideToastsMobile: true,
             hideCornerCardsMobile: true,
             showFeedWatchIcon: true,
+            feedWatchOpenOnReturn: false,
             showGridKeyLegend: true,
             columnsPerRow: 3,
             fontSize: 'm',

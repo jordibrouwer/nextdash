@@ -10280,7 +10280,10 @@
     "widgetFeedNewsLayoutChips": "Kompakte Chips",
     "showFeedWatchIconLabel": "Feed-Symbol bei beobachteten Lesezeichen anzeigen",
     "showFeedWatchIconInfoTitle": "Feed-Symbol bei beobachteten Lesezeichen",
-    "showFeedWatchIconInfoMessage": "Ein kleines Feed-Symbol hinter dem Namen zeigt, welche Lesezeichen Sie beobachten, auch wenn es nichts Neues gibt. Standardmäßig aktiviert."
+    "showFeedWatchIconInfoMessage": "Ein kleines Feed-Symbol hinter dem Namen zeigt, welche Lesezeichen Sie beobachten, auch wenn es nichts Neues gibt. Standardmäßig aktiviert.",
+    "feedWatchOpenOnReturnLabel": "Die News öffnen, wenn ich zum Tab zurückkehre",
+    "feedWatchOpenOnReturnInfoTitle": "News bei Rückkehr öffnen",
+    "feedWatchOpenOnReturnInfoMessage": "Wenn Sie zu diesem Tab zurückkehren und es ungelesene News aus einem nicht stummgeschalteten Feed gibt, öffnen sich die News von selbst, einmal pro Rückkehr. Standardmäßig aus und nie auf einem Smartphone oder Tablet."
   },
   "colors": {
     "title": "themenanpassung",

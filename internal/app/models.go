@@ -422,6 +422,7 @@ type Settings struct {
 	HideToastsMobile                bool   `json:"hideToastsMobile"`
 	HideCornerCardsMobile           bool   `json:"hideCornerCardsMobile"`
 	ShowFeedWatchIcon               bool   `json:"showFeedWatchIcon"` // A feed icon on bookmarks whose feed is watched
+	FeedWatchOpenOnReturn           bool   `json:"feedWatchOpenOnReturn"` // Coming back to the tab opens the news, on a computer
 	ColumnsPerRow                   int    `json:"columnsPerRow"`
 	FontSize                        string `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
 	ShowTitle                       bool   `json:"showTitle"`
