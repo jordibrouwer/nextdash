@@ -367,6 +367,29 @@ class KeyboardNavigation {
                 }
             }
 
+            // Shift+Alt+W — watch the feed of the bookmark in hand; Shift+Alt+N —
+            // open the paper of every watched feed. Every plain Shift+letter is
+            // taken, and Shift+Alt was only ever used with arrows. Matched on
+            // e.code: Option changes what e.key types on macOS.
+            if (e.shiftKey && e.altKey && !e.ctrlKey && !e.metaKey && !e.repeat
+                && (e.code === 'KeyW' || e.code === 'KeyN')) {
+                if (e.code === 'KeyW') {
+                    if (this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        e.stopPropagation();
+                        void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() });
+                        return;
+                    }
+                } else if (window.FeedWatchNews && this._anyFeedWatched()) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    void window.FeedWatchNews.open({ source: 'button' });
+                    return;
+                }
+            }
+
             // Alt+←/→ on a category header — reorder the category itself.
             //
             // Shift+Home already steps from a row up to its header, where F2,
@@ -2589,6 +2612,12 @@ class KeyboardNavigation {
             keyboardNav: false,
         });
         return true;
+    }
+
+    /** True once at least one bookmark has a feed watched. */
+    _anyFeedWatched() {
+        const byKey = this.dashboard?.feedWatch?.byKey;
+        return Boolean(byKey) && [...byKey.values()].some((entry) => (entry?.feeds?.length || 0) > 0);
     }
 
     // Public methods
