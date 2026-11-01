@@ -237,6 +237,7 @@ test.describe('two watched feeds', () => {
 
     test('the select-all box sits over the row boxes', async ({ page }) => {
         await openSection(page);
+        await expect(rows(page).first()).toBeVisible();
         const centre = async (locator) => { const b = await locator.boundingBox(); return b.x + b.width / 2; };
         const all = await centre(list(page).locator('[data-fwm-tick-all]'));
         const first = await centre(rows(page).first().locator('[data-fwm-tick]'));
