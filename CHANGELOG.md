@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.24.1 — 2 November 2026](#v1241--2-november-2026)
 - [v1.24.0 — 2 November 2026](#v1240--2-november-2026)
 - [v1.23.0 — 30 October 2026](#v1230--30-october-2026)
 - [v1.22.5 — 29 October 2026](#v1225--29-october-2026)
@@ -127,6 +128,22 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.24.1 — 2 November 2026
+
+A small follow-up to Watch feeds: the One column news window no longer opens on a long list when nothing is new, and adding a feed says what to expect.
+
+### Watch feeds
+
+- **fix — One column is one article at a time, also when nothing is new.** With *Show news as → One column* the window walked only the new items. When none were new (everything read, or the window opened by hand with nothing waiting) it fell back to the front page and listed every earlier entry, 68 of them in one reader's case. It now walks the feeds' earlier entries one by one, with the counter and the arrows, and no Index button; with news waiting nothing changes. `tests/feed-watch-news.spec.js` opens it with twelve earlier entries and nothing new, and fails without the change.
+- **new — Adding a feed says what to expect.** When you save, nextDash reads the feed once and counts what is already there as seen, so a bookmark shows no news (and a click still opens the site) until the site publishes something new. The toast after saving now says so: *Watching {name} · checked every {interval}. You'll see news when it publishes something new.* It shows after the right-click menu and after the bookmark form, in six languages.
+
+### Docs
+
+- **docs — Watch feeds is its own chapter in the manual.** It was §12.6 under Checks & health; it is now **§14**, after Inbox, with four sections (14.1 Following a site, 14.2 What you see, 14.3 The news window, 14.4 Managing it). Containers is §15, Widgets §16, Glances §16A and the chapters after it each move up by one, to Glossary at §27; the contents, the §-references, the anchors and the README's links follow, and Keeping a copy of a page and The status page become §12.6 and §12.7.
+- **docs — The manual says what a new feed does.** The *Start* paragraph now explains that a feed's existing entries count as seen and when news shows; the news window paragraph describes One column with nothing new.
 
 ---
 
