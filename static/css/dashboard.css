@@ -2924,6 +2924,15 @@ body.is-moving-block-by-pointer { cursor: grabbing; }
     background: var(--action-btn-bg-hover);
 }
 
+/* The open menu hangs below its header, over the category under it. A category
+   with a surface (glass, ink) is a stacking context of its own, so the next one
+   in the column painted over the menu and took its clicks: lift the category
+   whose menu is open above its neighbours. */
+.category:has(.category-sort-menu) {
+    position: relative;
+    z-index: 20;
+}
+
 .category-sort-menu {
     position: absolute;
     top: calc(100% + 0.25em);
