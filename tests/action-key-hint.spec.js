@@ -52,7 +52,9 @@ test('chips off: resting on a button shows its key after a moment', async ({ pag
     await expect(hint(page)).toHaveCount(0);
 
     await expect(hint(page)).toBeVisible();
-    await expect(hint(page)).toHaveText('>');
+    // The name of the function, then its key: a bare ">" explains nothing.
+    await expect(hint(page).locator('.action-key-hint-name')).toHaveText('search');
+    await expect(hint(page).locator('kbd')).toHaveText('>');
 
     // Docked at the bottom, so it stands above the button.
     const box = await hint(page).boundingBox();
@@ -66,7 +68,8 @@ test('chips off: resting on a button shows its key after a moment', async ({ pag
 test('the key follows the button', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'left', showActionKeys: false });
     const button = await hover(page, '#help-button');
-    await expect(hint(page)).toHaveText('!');
+    await expect(hint(page).locator('.action-key-hint-name')).toHaveText('cheat');
+    await expect(hint(page).locator('kbd')).toHaveText('!');
     // Docked on the left, so it stands to the right.
     const box = await hint(page).boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(button.x + button.width);

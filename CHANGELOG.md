@@ -174,6 +174,10 @@ Watch feeds replace Fresh: follow the feed of any bookmark, get a stripe, a badg
 - **new — Tidal Slate (dark)** is the default theme on new installs, with Tidal Slate (light) as its light half for auto dark mode. Installs that already chose a theme keep it.
 - **fix — Text fields share one fill** in the signature themes, and more fields take it (`config-input` has a style); the news popover follows the material of the theme; in Ink the folio stays put when you hover the header.
 
+### Action bar
+
+- **new — The hover popover names the button.** With the key chips off, resting on an action button showed only its key (`>`). It now shows the name first, in your language, then the key: *search* `>`, *cheat* `!`.
+
 ### Reliability
 
 - **fix — An unreadable file is never overwritten.** Settings, Secrets, Push (keys and devices), Trash and page order, Glances hosts, the status page token and the status page: when a file cannot be read, nextDash keeps it and does not write defaults over it. Settings are handed out as a copy; a restore holds the settings lock; push keys and chats stay out of the wrong backup; overlapping deletes of one page leave one trash entry.

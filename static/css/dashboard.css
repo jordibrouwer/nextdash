@@ -9662,6 +9662,22 @@ body[data-action-keys="off"] .header-action-item-key {
     background: var(--background-secondary);
     box-shadow: 0 4px 14px color-mix(in srgb, black 22%, transparent);
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.32rem);
+    white-space: nowrap;
+}
+
+.action-key-hint-name {
+    padding: 0 var(--space-1, 0.25rem);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    line-height: 1.3;
+}
+
+.action-key-hint-name:empty {
+    display: none;
 }
 
 .action-key-hint kbd {
