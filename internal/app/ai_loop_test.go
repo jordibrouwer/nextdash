@@ -532,7 +532,7 @@ func TestAScriptedTurnSearchesReadsAndAnswers(t *testing.T) {
 	h := newMCPHandlers(t)
 	fake := &fakeAIProvider{replies: []aiChatReply{
 		{ToolCalls: []aiToolCall{aiCall("c1", "search_docs", `{"query":"what is the write token"}`)}},
-		{ToolCalls: []aiToolCall{aiCall("c2", "read_doc", `{"id":"manual:232-the-write-token"}`)}},
+		{ToolCalls: []aiToolCall{aiCall("c2", "read_doc", `{"id":"manual:242-the-write-token"}`)}},
 		{Text: "It is a secret that guards changes. See [Config → Containers](#config/containers)."},
 	}}
 	res, events, err := runAITurn(t, h, fake, "What is the write token?")
@@ -543,11 +543,11 @@ func TestAScriptedTurnSearchesReadsAndAnswers(t *testing.T) {
 		t.Fatalf("the fake saw %d requests", len(fake.seen))
 	}
 	first := toolMessages(fake.seen[1])
-	if len(first) != 1 || !strings.Contains(first[0].Text, "manual:232-the-write-token") {
+	if len(first) != 1 || !strings.Contains(first[0].Text, "manual:242-the-write-token") {
 		t.Fatalf("search result sent on: %+v", first)
 	}
 	second := toolMessages(fake.seen[2])
-	if len(second) != 2 || !strings.Contains(second[1].Text, "X-NextDash-Token") || !strings.Contains(second[1].Text, "23.2 The write token") {
+	if len(second) != 2 || !strings.Contains(second[1].Text, "X-NextDash-Token") || !strings.Contains(second[1].Text, "24.2 The write token") {
 		t.Fatalf("read result sent on: %+v", second)
 	}
 	if len(res.Tools) != 2 || res.Tools[0].Name != "search_docs" || res.Tools[1].Name != "read_doc" || res.Tools[1].Bytes != len(second[1].Text) {
