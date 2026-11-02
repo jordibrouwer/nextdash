@@ -48,12 +48,32 @@ Links:
 • Also available on GHCR: ghcr.io/jordibrouwer/nextdash:latest
 • User manual: https://github.com/jordibrouwer/nextdash/blob/main/MANUAL.md
 
-The host widgets (Processor, Memory, Disks, Containers) are off until you fill in the optional paths and variables below — they are hidden under Show more settings. Section 15.4 of the manual explains what each one reads.
+The host widgets (Processor, Memory, Disks, Containers) are off until you fill in the optional paths and variables below — they are hidden under Show more settings. Section 16.4 of the manual explains what each one reads.
 
 Support: open an issue on GitHub via the Support link above. Bug reports and feature requests are welcome.
   </Overview>
 
   <Changes>
+### v1.24.1 (2026-11-02)
+- Watch feeds: the One column news window shows one article at a time, also when nothing is new
+- Watch feeds: the toast after adding a feed says news shows when the site publishes something new
+- Manual: Watch feeds has a chapter of its own
+
+### v1.24.0 (2026-11-02)
+- Watch feeds: follow the RSS, Atom or JSON Feed of any site, with a stripe, a badge and the newest headline on the bookmark, a preview card that leads with the news, and a news window on Shift+N in three layouts
+- Appearance: Tidal Slate (dark) is the theme a new install starts on
+- Bookmarks view: Ctrl/Cmd+A and a button select every bookmark shown
+- Health: a server with no connection holds its failures back, and the first 15 minutes after a start hold a bookmark's first failed check
+- Action bar: resting on a button shows its name first, then its key
+- Notices: four hints are toasts now
+- Fixes: an unreadable file is never overwritten
+
+### v1.23.0 (2026-10-30)
+- Assistant: ask in plain words with :ask or =, through Claude, OpenAI or a server of your own; it looks things up and changes nothing by itself
+- MCP: 17 tools in five groups, with edit and delete for bookmarks, health, inbox and containers
+- Theme studio: it draws with the material of the views
+- Fixes: a background save sends only its own keys, the Quick start fits shorter windows, and the preview card stays off the hovered row
+
 ### v1.22.5 (2026-10-29)
 - Recent bookmarks: * shows tiles with the day you opened them, from every page, ten at a time
 - Tag view: show bookmarks with any tag or with every tag, put a tag on ticked rows with Add tag, and sort by score
@@ -72,33 +92,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Widgets: adding one is a guided step that tests the address or key first
 - Config: Finders is a section of its own
 - Fixes: the demo server starts faster, icons the outbound limit refused are fetched again, and a page of uncategorised bookmarks no longer counts as empty
-
-### v1.22.3 (2026-10-28)
-- First start: the Quick start asks whether to keep the example links, offers ready-made pages (Homelab, Media server, Developer) and a CSV import, and lists ten steps
-- Tours and tips: a keyboard tour, tours for Config Monitoring and Unraid, tips that can come weekly, and a settings search that remembers what you opened
-- Offers: check images for updates, re-check old links, the browser extension and what changed after an update, each with its own switch
-- Appearance: the docked action bar and the command palette take more of your theme, and Config's title stays clear of its buttons
-- Privacy: the analytics send an install code and a hostname replaced by one word, and send less often
-- Security: golang.org/x/net v0.62.0
-
-### v1.22.2 (2026-10-26)
-- Appearance: the action bar, the Bookmarks, Inbox, Containers, Glances, Tags and Config views are drawn like a category in every material, and the blocks in Config lie on their pane as a tint
-
-### v1.22.1 (2026-10-26)
-- Dashboard: a click on a bookmark icon opens the bookmark
-- Weekly digest: a clearer window and :digest, plus an overview panel
-- Health: an Uptime badge section with Copy Markdown and Copy HTML
-- Widgets: Retry all on the Feeds widget
-- Fixes: a Glances 5 server is no longer called version 3, and the key legend sits inside its panel
-
-### v1.22.0 (2026-10-25)
-- Appearance: every theme is redrawn with a surface of its own for each material, Aurora Glass is the default and every install moved onto it once, with a way back
-- Backdrops: 75 of them, a pool for each material, and a Quiet centre slider that fades the backdrop behind your bookmarks
-- Appearance: Material style (Signature or Classic), the neutral themes share one accent, and ThinkDashboard Classic is back
-- Keyboard: a cheat sheet you can search, and Shift+G opens Glances from every view
-- Bookmarks: the add and edit form has two columns with a live preview of the card
-- Config: Overview lists the new features since v1.20.3, and its manual link goes to nextdash.cc/docs
-- Fixes: Export CSV and the imports work before Data &amp; backups is opened, Home and End work on tabs and charts, and a focused block title shows its focus
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -106,7 +99,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-29</Date>
+  <Date>2026-11-02</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
