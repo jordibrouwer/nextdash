@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Ocean**; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16A The new look](#16a-the-new-look), [§16 Appearance](#16-appearance) and [the theme studio](#the-theme-studio) |
+| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Tidal Slate**; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16A The new look](#16a-the-new-look), [§16 Appearance](#16-appearance) and [the theme studio](#the-theme-studio) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 | 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
@@ -1020,7 +1020,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 
 <a id="corner-cards"></a>
 
-**Corner cards** offer things once, one card at a time, in the bottom-left corner. Each can be dismissed with the **×**.
+**Corner cards** offer things once, one card at a time, in the bottom-left corner. Each can be dismissed with the **×**. Four hints are not corner cards any more: the theme studio hint, *Updated from … to …*, the Inbox extension invitation and the image-update invitation appear as a one-line toast with no buttons, and the line says where to go. Showing one counts as answered, or snoozed for the two invitations; the switches in Config still turn them off.
 
 - **Link review** — *10 links to review* once five or more bookmarks need a decision. **Start** runs a session over the worst ten ([§11.7](#117-work-through-and-the-header-band)); **Not today** brings it back tomorrow; **Remind me in 30 days** puts it away for a month.
 - **Kept links** — ten or more links you kept have waited over a month in **Unsorted**. **Open Unsorted** shows them; the card never files or deletes anything.
@@ -1028,11 +1028,11 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Clock and weather** — asks for a town, a clock and a unit when no location is set.
 - **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)). It waits two days after the analytics question, so the two privacy cards never arrive in one visit.
 - **Moving blocks** — once, a see-through copy of the first category glides to its next place to show that blocks can be moved, and a card under its `//` offers **Try it**. The first time you pick a block up, a card beside the landing box lists the keys until **Got it**.
-- **Theme studio** — *Not happy with how it looks?* names `Shift + A` and the *Surface* and *Layout* tabs, and **Open the studio** opens it. Asked once; a new install is asked after its first day.
-- **Image updates** — in the Containers view, from the third visit: *Check images for updates?* offers the daily check, which sends requests to the image registries. **Turn on (daily)** switches it on; **Not now** and the **×** ask again in 30 days and **Never** stops asking. Nothing updates by itself ([§14.5](#145-actions-and-updates)).
+- **Theme studio** — a toast, *Not happy with how it looks? Press Shift+A to open the theme studio.* Shown once; a new install is shown it after its first day.
+- **Image updates** — a toast in the Containers view, from the third visit: *Check images for updates?* names where to switch on the daily check (Config → Containers → Updates), which sends requests to the image registries. It comes back in 30 days until you do. Nothing updates by itself ([§14.5](#145-actions-and-updates)).
 - **Re-check links** — *Last link check was 9 days ago* when the newest check is a week old or more and re-checking in the background is off. **Re-check now** runs the checks, **Every day** switches the background re-check on at 24 hours, and **Not now** brings it back tomorrow and **Remind me in 30 days** puts it away.
-- **Browser extension** — in the Inbox, after a few visits and while nothing has ever arrived from the extension: **Get the extension** points to the docs, **Not now** asks again in two weeks, **Don't show again** stops it ([§21](#21-browser-extension-and-capture)).
-- **Updated** — after an upgrade, once the release notes are closed: *Updated from v1.21.0 to v1.22.0*, with **What's new** to open them again. It reports what happened and never asks anything; it comes once per version and not on a new install.
+- **Browser extension** — a toast in the Inbox, after a few visits and while nothing has ever arrived from the extension, saying the extension saves the page you are on straight to the Inbox. It comes back in two weeks ([§21](#21-browser-extension-and-capture)).
+- **Updated** — a toast after an upgrade, once the release notes are closed: *Updated from v1.21.0 to v1.22.0. The notes are under the ★ button.* It reports what happened and never asks anything; it comes once per version and not on a new install.
 - **Others** — browser notifications, the theme studio and the tour of what moved.
 
 Each review card has a switch under Behavior → Privacy & sync → Onboarding, the four above included (*Offer image update checks*, *Offer to re-check links*, *Offer the browser extension*, *Show what changed after an update*). The same place lists the cards — kept links, the theme studio, tag suggestions, health review, the install count, the weekly digest and analytics — each with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
@@ -1048,6 +1048,8 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 3. **What you know about it** — last check and ping, uptime, certificate expiry, opens and last opened, shortcut and location.
 
 The page's picture stands on the left of the card, beside the text.
+
+**A bookmark with news** ([§12.6](#126-watch-feeds)) gets a different card: it leads with the newest item — its photo, its headline and a short lead — with two equal buttons, **Open reader** and **Open page** (the item's own page). When the site has more than one new item, a pager (`‹ 1 / 3 ›`) pages through up to three. The site's own picture and description do not sit beside it, and the card is about 420 px high instead of 770.
 
 <img src="screenshots/manual.md/04-preview-card.jpg" alt="The link preview card of a bookmark: picture, description, a tag, when it was last opened, its shortcut and where it lives" width="408" align="left">
 
@@ -2318,8 +2320,10 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 **Watch feeds** follows the RSS or Atom feeds of sites you choose and tells you when they publish something. Nothing is followed until you ask.
 
 - **Start.** Right-click a bookmark → **Watch this feed…**, or use the same button in the bookmark editor. nextDash lists the feeds the page advertises (and tries the usual addresses when the page says nothing, as it does behind a cookie wall); tick one or more, or paste an address. Choose how often to check: 30 minutes, 1, 2, 4, 6, 12 or 24 hours. **Also check that this page is reachable (Periodic)** is ticked by default while the bookmark's checking is off. Up to 100 feeds can be watched.
-- **News.** A bookmark with news gets a purple, pulsing count. One toast covers all sites, the browser tab shows a count and a dot on the icon, and **Push notifications → Notify when a watched feed has news** (on by default) sends a notification. Hovering shows the newest item, with **Open reader** and **Open page**. On a phone there is no hover: tap the badge and a popover opens under it with up to four headlines and "+n more"; a tap on a headline opens that article and clears the badge, and "+n more" opens the bookmark.
-- **The news window** opens on an index of every new item, followed by the feeds' earlier entries. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the three buttons in its header: a newspaper front page (the default), two columns, or one column. **Esc** steps back from an article to the index and closes the window from there. One column has no index.
+- **News.** A bookmark with news gets a stripe, a bold name, the newest headline, a badge with a halo and a dot on the page tab; a feed icon marks watched bookmarks (**Settings → Show a feed icon on watched bookmarks**, on). One toast covers all sites, the browser tab shows a count, and **Push notifications → Notify when a watched feed has news** (on by default) sends a notification. Hovering shows the preview card that leads with the news (**Open reader**, **Open page** and a pager for up to three items, [§4](#the-link-preview-card)). Clicking a row with news opens a popover with six headlines, a **Reader** button and an open-site button; "+n more" expands it in place up to 10. On a phone there is no hover: a tap shows the headlines first (five), and the bar on top goes to the site.
+- **The news window** (`Shift + N`, or the news button on a computer) is one paper for everything you watch, with read and unread per item. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the buttons in its header: single (one article per screen), two columns or a newspaper front page. `j` and `k` move through the news, **Index** goes back to the front page and `Esc` closes the window at once. It follows the theme and its material; only the Newspaper view keeps its own paper look.
+- **Keys.** `Shift + N` opens the news; `#` watches the feed of the bookmark in hand (or changes or stops it).
+- **Manage in one place.** **Config → Watch feeds** lists every watched feed with its newest item; per feed you can **mute** it, **pause** it or set a **word filter**. **Stats → Watch feeds** shows the numbers, with a period switch. Nothing is sent to anyone: nextDash only reads the feeds.
 - **When it goes away.** Opening the bookmark (or an article's headline) clears its count. The purple mark and the window close by themselves after 15, 30 (default), 60 or 120 minutes, counted from when the tab is in view; the news itself stays until you open the bookmark. `status:watched` and `status:unwatched` search for followed bookmarks.
 - **What it keeps.** The ten newest new items of each feed, with their text and picture, and 50 recent entries as short copies without pictures; the ids of the last 75 entries are remembered so nothing counts as new twice. A feed that fails five times in a row is paused and tried again once a day. **Check watched feeds now** polls them all at once.
 
@@ -2652,7 +2656,7 @@ Updating by hand still works on a skipped or held image.
 
 **Update automatically** — a switch in the same part, or the selection bar for several — lets nextDash update the container on its own, in the nightly window set in **Config → Containers → Updates** (03:00 to 05:00 until you change it; a window past midnight, 22 to 4, works too). Inside it, every five minutes, a container with this switch on and an update waiting — as the last check found it; not skipped, not held, never nextDash's own — is updated as the Update button would, one at a time, and tried once per night for a given image. It is then watched for five minutes: if it stops, starts again on its own or turns unhealthy, it is rolled back to the image it had, started again, and that version is skipped. A stop or restart you make yourself during those five minutes is left alone. A container that was not running is updated and left stopped, without the watch. Each update, rollback or failure sends a notice ([§14.9](#149-notices)). It needs `NEXTDASH_DOCKER_CONTROL=1`, and the update check switched on — that is what finds a newer image.
 
-**Offered, not assumed.** The check for new images is off until you switch it on, because it asks the registries. After your third visit to the Containers view a corner card offers it once ([§4](#corner-cards)); **Config → Containers → Updates** has the same switch and the interval.
+**Offered, not assumed.** The check for new images is off until you switch it on, because it asks the registries. After your third visit to the Containers view a toast points to it ([§4](#corner-cards)); **Config → Containers → Updates** has the same switch and the interval.
 
 <details>
 <summary>📷 Screenshot — the Containers view filtered on Updates, full page</summary>
@@ -3691,7 +3695,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 ### 16.1 Themes
 
-nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Ocean** — deep water lit from far above, behind a pane you can see through — dark, with Ocean light for auto dark mode. It is drawn in the **Signature** material style ([§16A](#16a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§16A.3](#16a3-everyone-gets-aurora-glass-and-the-way-back)).
+nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Tidal Slate** — dark, with Tidal Slate (light) for auto dark mode. An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§16A](#16a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§16A.3](#16a3-everyone-gets-aurora-glass-and-the-way-back)).
 
 **Theme** on the Theme tab lists every theme by name. Beside it:
 
@@ -4038,7 +4042,7 @@ The new look is drawn per material, and the themes were redrawn with it. Keeping
 
 **Aurora Glass** — northern light behind a pane you can see through — was the default theme of version 1.22.0, and that release moved every existing install onto it.
 
-- **A fresh install** started on Aurora Glass and saw nothing of what follows. A fresh install now starts on **Ocean** instead, and still sees no dialog.
+- **A fresh install** started on Aurora Glass and saw nothing of what follows. A fresh install now starts on **Tidal Slate** instead, and still sees no dialog.
 - **An existing install** moved onto it **once**, when it first ran this release. It stays on the half it was on: a dark theme became Aurora Glass dark, a light one Aurora Glass light. An install that was already on Aurora Glass moved nowhere and sees no dialog.
 - **What stays.** Your bookmarks, categories, pages, settings and your own themes are exactly as you left them. Only the theme changed, and the theme you had is remembered.
 - **A dialog says so, once.** It names the theme you had and the theme you have now, tells you what changed, and ends with *This message appears once.* It comes before any corner card. The corner cards that invited you to a theme browser, to the clock and weather and to Berry are gone; Berry is no longer the default, so there is nobody to invite.
