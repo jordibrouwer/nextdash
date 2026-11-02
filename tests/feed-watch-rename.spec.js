@@ -14,6 +14,8 @@ async function openFeedsTab(page) {
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
     await page.locator('[data-config-section="feed-watch"]').click();
+    // The news settings sit on the Settings tab.
+    await page.locator('[data-fw-tab="settings"]').click();
     await page.waitForSelector('[data-behavior-field="feedWatchWindowMinutes"]', { timeout: 15_000 });
 }
 
