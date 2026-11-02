@@ -4072,7 +4072,7 @@
     "feedWatchPickOne": "Feed ankreuzen oder Adresse einfügen",
     "feedWatchNotAFeed": "Diese Adresse ist kein Feed, den nextDash lesen kann",
     "feedWatchLimit": "Sie beobachten {limit} Feeds, so viele wie nextDash maximal verfolgt",
-    "feedWatchStarted": "{name} wird beobachtet · Prüfung {interval}",
+    "feedWatchStarted": "{name} wird beobachtet · Prüfung {interval}. Du siehst Neues, sobald etwas Neues erscheint.",
     "feedWatchNewCount": "{n} neu",
     "feedWatchPopoverMore": "+{n} weitere",
     "feedWatchToastOne": "{site} hat Neuigkeiten",

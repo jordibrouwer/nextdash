@@ -848,7 +848,7 @@
                 if ((feed.muted === true) !== intent.muted) await watch.updateFeed(url, feed.feedUrl, { muted: intent.muted });
             }
         }
-        toast(t('dashboard.feedWatchStarted', 'Watching {name} · checked every {interval}', {
+        toast(t('dashboard.feedWatchStarted', 'Watching {name} · checked every {interval}. You\'ll see news when it publishes something new.', {
             name,
             interval: global.FeedWatchPicker?.intervalWords?.(intent.intervalMinutes) || '',
         }));

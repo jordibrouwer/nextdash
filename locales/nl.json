@@ -4072,7 +4072,7 @@
     "feedWatchPickOne": "Vink een feed aan of plak een adres",
     "feedWatchNotAFeed": "Dit adres is geen feed die nextDash kan lezen",
     "feedWatchLimit": "Je volgt {limit} feeds, het maximum dat nextDash volgt",
-    "feedWatchStarted": "{name} wordt gevolgd · gecontroleerd {interval}",
+    "feedWatchStarted": "{name} wordt gevolgd · gecontroleerd {interval}. Je ziet nieuws zodra er iets nieuws verschijnt.",
     "feedWatchNewCount": "{n} nieuw",
     "feedWatchPopoverMore": "+{n} meer",
     "feedWatchToastOne": "{site} heeft nieuws",

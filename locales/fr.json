@@ -4072,7 +4072,7 @@
     "feedWatchPickOne": "Cochez un flux ou collez une adresse",
     "feedWatchNotAFeed": "Cette adresse n'est pas un flux que nextDash peut lire",
     "feedWatchLimit": "Vous suivez {limit} flux, le maximum que nextDash suit",
-    "feedWatchStarted": "{name} est suivi · vérifié {interval}",
+    "feedWatchStarted": "{name} est suivi · vérifié {interval}. Vous verrez les nouveautés dès que quelque chose de nouveau est publié.",
     "feedWatchNewCount": "{n} nouveaux",
     "feedWatchPopoverMore": "+{n} de plus",
     "feedWatchToastOne": "{site} a des nouveautés",

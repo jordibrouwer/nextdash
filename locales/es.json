@@ -4072,7 +4072,7 @@
     "feedWatchPickOne": "Marca un feed o pega una dirección",
     "feedWatchNotAFeed": "Esa dirección no es un feed que nextDash pueda leer",
     "feedWatchLimit": "Vigilas {limit} feeds, el máximo que sigue nextDash",
-    "feedWatchStarted": "Vigilando {name} · se comprueba cada {interval}",
+    "feedWatchStarted": "Vigilando {name} · se comprueba cada {interval}. Verás las novedades cuando publique algo nuevo.",
     "feedWatchNewCount": "{n} nuevos",
     "feedWatchPopoverMore": "+{n} más",
     "feedWatchToastOne": "{site} tiene noticias",
