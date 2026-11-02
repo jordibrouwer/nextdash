@@ -10474,6 +10474,8 @@
     "feedWatchNewsViewSingle": "One column",
     "feedWatchPushNote": "Sent to the browsers where notifications are on (Config → Monitoring → Notifications). Muted feeds never notify.",
     "feedWatchIntro": "Every feed you follow from a bookmark, and how their news reaches you.",
+    "feedWatchTabFeeds": "Feeds",
+    "feedWatchTabSettings": "Settings",
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Notify when a watched feed has news",
     "notifyNewsTargetLabel": "Also send news to the alert channel (ntfy, Gotify, Discord…)",

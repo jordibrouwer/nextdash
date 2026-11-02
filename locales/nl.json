@@ -10474,6 +10474,8 @@
     "feedWatchNewsViewSingle": "Eén kolom",
     "feedWatchPushNote": "Verstuurd naar de browsers waar meldingen aanstaan (Config → Monitoring → Meldingen). Gedempte feeds sturen nooit een melding.",
     "feedWatchIntro": "Elke feed die je vanaf een bookmark volgt, en hoe het nieuws bij je komt.",
+    "feedWatchTabFeeds": "Feeds",
+    "feedWatchTabSettings": "Instellingen",
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Melden als een gevolgde feed nieuws heeft",
     "notifyNewsTargetLabel": "Nieuws ook naar het meldingskanaal sturen (ntfy, Gotify, Discord…)",

@@ -10474,6 +10474,8 @@
     "feedWatchNewsViewSingle": "单栏",
     "feedWatchPushNote": "发送到已开启通知的浏览器（配置 → 监控 → 通知）。静音的订阅源不会通知。",
     "feedWatchIntro": "你从书签关注的所有订阅源，以及新消息如何送达你。",
+    "feedWatchTabFeeds": "订阅源",
+    "feedWatchTabSettings": "设置",
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "关注的订阅源有新消息时通知我",
     "notifyNewsTargetLabel": "同时把新消息发送到告警渠道（ntfy、Gotify、Discord…）",

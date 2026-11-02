@@ -10474,6 +10474,8 @@
     "feedWatchNewsViewSingle": "Une colonne",
     "feedWatchPushNote": "Envoyé aux navigateurs où les notifications sont activées (Config → Monitoring → Notifications). Les flux en sourdine n'envoient jamais de notification.",
     "feedWatchIntro": "Tous les flux que vous suivez depuis un favori, et comment leurs nouveautés vous parviennent.",
+    "feedWatchTabFeeds": "Flux",
+    "feedWatchTabSettings": "Réglages",
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Notifier quand un flux suivi a des nouveautés",
     "notifyNewsTargetLabel": "Envoyer aussi les nouveautés au canal d'alerte (ntfy, Gotify, Discord…)",

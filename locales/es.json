@@ -10474,6 +10474,8 @@
     "feedWatchNewsViewSingle": "Una columna",
     "feedWatchPushNote": "Se envía a los navegadores con las notificaciones activadas (Config → Monitorización → Notificaciones). Los feeds silenciados nunca notifican.",
     "feedWatchIntro": "Todos los feeds que sigues desde un marcador y cómo te llegan sus noticias.",
+    "feedWatchTabFeeds": "Feeds",
+    "feedWatchTabSettings": "Ajustes",
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Avisar cuando un feed vigilado tenga noticias",
     "notifyNewsTargetLabel": "Enviar también las noticias al canal de alertas (ntfy, Gotify, Discord…)",

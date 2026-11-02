@@ -324,6 +324,8 @@ class DashboardConfig {
         this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'connection';
         // Glances sub-tab, remembered the same way.
         this._glancesTab = DashboardConfig.readRememberedTab('glances') || 'connection';
+        // Watch feeds sub-tab, remembered the same way.
+        this._feedWatchTab = DashboardConfig.readRememberedTab('feed-watch') || 'feeds';
         // Assistant has one tab; remembered the same way for consistency.
         this._assistantTab = DashboardConfig.readRememberedTab('assistant') || 'settings';
         /**
@@ -555,7 +557,10 @@ class DashboardConfig {
         if (raw.startsWith('config/behavior/')) {
             const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
             if (moved) return moved;
+            // Fresh's tab held the news settings; they are Watch feeds' Settings tab now.
+            if (DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(raw.slice('config/behavior/'.length))) return 'settings';
         }
+        if (raw === 'config/bookmarks/fresh') return 'settings';
         // Branding lived on Display, then moved to Header with the browser tab.
         if (raw === 'config/appearance/branding') return 'header';
         // Same move as sectionFromHash above: the tab it lands on now.
@@ -656,6 +661,7 @@ class DashboardConfig {
             unraid: DashboardConfig.UNRAID_TABS,
             glances: DashboardConfig.GLANCES_TABS,
             assistant: DashboardConfig.ASSISTANT_TABS,
+            'feed-watch': DashboardConfig.FEED_WATCH_TABS,
         };
     }
 
@@ -691,7 +697,7 @@ class DashboardConfig {
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
 
-    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances', 'assistant'];
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances', 'assistant', 'feed-watch'];
 
     static readRememberedTab(section) {
         try {
@@ -765,6 +771,7 @@ class DashboardConfig {
         unraid: 'unraidTab',
         glances: 'glancesTab',
         assistant: 'assistantTab',
+        'feed-watch': 'feedWatchTab',
     };
 
     /**
@@ -790,6 +797,7 @@ class DashboardConfig {
         'data-unraid-tab': 'unraid',
         'data-glances-tab': 'glances',
         'data-assistant-tab': 'assistant',
+        'data-fw-tab': 'feed-watch',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -809,6 +817,7 @@ class DashboardConfig {
         'status-page': 'data-sp-tab',
         unraid: 'data-unraid-tab',
         assistant: 'data-assistant-tab',
+        'feed-watch': 'data-fw-tab',
     };
 
     /**
@@ -1025,7 +1034,7 @@ class DashboardConfig {
             }
             if ((section === 'behavior' && DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(subTab))
                 || (section === 'bookmarks' && subTab === 'fresh')) {
-                return { section: 'feed-watch', subTab: null };
+                return { section: 'feed-watch', subTab: 'settings' };
             }
             if (section === 'behavior' && DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab]) {
                 return { section: 'monitoring', subTab: DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab] };
@@ -1259,6 +1268,7 @@ class DashboardConfig {
         // that still sets the tab and opens Bookmarks lands on the section.
         if (section === 'bookmarks' && this.bmTab === 'fresh') {
             this.bmTab = 'view';
+            this.feedWatchTab = 'settings';
             return 'feed-watch';
         }
         if (section !== 'behavior') return section;
@@ -2185,6 +2195,10 @@ class DashboardConfig {
             case 'widgets':
                 this.repaintWidgetsBody();
                 break;
+            case 'feed-watch':
+                // Both bodies are drawn; a tab shows one (the strip's click does the same).
+                this.showFeedWatchTab(container || document);
+                break;
             case 'stats':
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
@@ -2391,6 +2405,7 @@ class DashboardConfig {
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             case 'glances': return this.glancesTabLabel?.(tab) || tab;
             case 'assistant': return this.assistantTabLabel?.(tab) || tab;
+            case 'feed-watch': return this.feedWatchTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2796,8 +2811,18 @@ class DashboardConfig {
             void this.loadFinders();
         } else if (this.section === 'feed-watch') {
             // The settings group binds like any schema panel; the list in it
-            // is bound by bindFeedWatchList from there.
+            // is bound by bindFeedWatchList from there. The tabs show and hide
+            // the two bodies, so the list is bound once.
             this.bindControlPanels(container, 'behavior');
+            if (container.querySelector('[data-fw-tab]')) {
+                this.bindSubTabStrip(container, 'data-fw-tab', (tab) => {
+                    if (tab === this.feedWatchTab) return;
+                    this.feedWatchTab = tab;
+                    this.restoreConfigHash();
+                    this.showFeedWatchTab(container);
+                    this.syncSubTabStrip('data-fw-tab', this.feedWatchTab);
+                });
+            }
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
             // The section carries schema panels of its own now, which bind the
@@ -3903,6 +3928,7 @@ class DashboardConfig {
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             case 'glances': return this.glancesTabLabel?.(tab) || tab;
             case 'assistant': return this.assistantTabLabel?.(tab) || tab;
+            case 'feed-watch': return this.feedWatchTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -10799,14 +10825,14 @@ class DashboardConfig {
             },
             {
                 section: 'feed-watch',
-                tab: 'list',
+                tab: 'feeds',
                 title: t('config.feedWatchListTitle', 'Watched feeds'),
                 demoLocked: true,
                 controls: [{ type: 'feedWatchList' }],
             },
             {
                 section: 'feed-watch',
-                tab: 'general',
+                tab: 'settings',
                 title: t('config.feedsTitle', 'Watch feeds'),
                 demoLocked: true,
                 note: t('config.feedsNote', 'Feeds you follow from a bookmark (Watch this feed…) are asked on their own interval. When something new appears, the bookmark gets a purple count, a toast and the news window. Both settings below are per install; the window says how long the news stays in view once you are back.'),
@@ -13762,6 +13788,13 @@ class DashboardConfig {
         DashboardConfig.rememberTab('glances', tab);
     }
 
+    get feedWatchTab() { return this._feedWatchTab; }
+
+    set feedWatchTab(tab) {
+        this._feedWatchTab = tab;
+        DashboardConfig.rememberTab('feed-watch', tab);
+    }
+
     get unraidTab() { return this._unraidTab; }
 
     set unraidTab(tab) {
@@ -13785,6 +13818,7 @@ class DashboardConfig {
         // Fresh is Config → Watch feeds now: the section follows the tab the
         // way Monitoring's does.
         if (DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(tab)) {
+            this.feedWatchTab = 'settings';
             if (this.section === 'behavior') this.section = 'feed-watch';
             else this._behaviorTabToFeedWatch = true;
             return;
@@ -14336,7 +14370,7 @@ class DashboardConfig {
         if (this.section === 'feed-watch') {
             const body = document.getElementById('config-fw-settings');
             if (body) {
-                body.innerHTML = this.renderControlPanels(this.panelsFor('feed-watch', 'general'), 'behavior');
+                body.innerHTML = this.renderControlPanels(this.panelsFor('feed-watch', 'settings'), 'behavior');
                 this.bindControlPanels(body, 'behavior');
                 this.labelSettingsControls();
                 restoreFocus();
@@ -16731,6 +16765,9 @@ class DashboardConfig {
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
     static UNRAID_TABS = ['connection', 'how'];
 
+    /** Config → Watch feeds: the feeds you follow, and the settings for their news. */
+    static FEED_WATCH_TABS = ['feeds', 'settings'];
+
     /** Config → Glances: where it is, how the page looks, what is recorded, the notices, the rest. */
     static GLANCES_TABS = ['connection', 'page', 'recording', 'notices', 'advanced'];
 
@@ -18555,11 +18592,39 @@ class DashboardConfig {
      */
     renderFeedWatchSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const active = this.feedWatchTab || 'feeds';
+        const tabs = DashboardConfig.FEED_WATCH_TABS.map((tab) => {
+            const on = tab === active;
+            return `<button type="button" class="config-subtab${on ? ' is-active' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="config-fw-body" data-fw-tab="${esc(tab)}">${esc(this.feedWatchTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.feedWatchIntro', 'Every feed you follow from a bookmark, and how their news reaches you.'))}</p>
-            <div id="config-fw-list">${this.renderControlPanels(this.panelsFor('feed-watch', 'list'), 'behavior')}</div>
-            <div id="config-fw-settings">${this.renderControlPanels(this.panelsFor('feed-watch', 'general'), 'behavior')}</div>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div class="config-tabpage">
+                <div class="config-tabpage-main" id="config-fw-body" role="tabpanel" tabindex="0">
+                    <div id="config-fw-list"${active === 'feeds' ? '' : ' hidden'}>${this.renderControlPanels(this.panelsFor('feed-watch', 'feeds'), 'behavior')}</div>
+                    <div id="config-fw-settings"${active === 'settings' ? '' : ' hidden'}>${this.renderControlPanels(this.panelsFor('feed-watch', 'settings'), 'behavior')}</div>
+                </div>
+            </div>
         `;
+    }
+
+    feedWatchTabLabel(tab) {
+        const map = {
+            feeds: ['config.feedWatchTabFeeds', 'Feeds'],
+            settings: ['config.feedWatchTabSettings', 'Settings'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    /** Show the body of the chosen tab without redrawing either: the list keeps what is open in it. */
+    showFeedWatchTab(container) {
+        const tab = this.feedWatchTab || 'feeds';
+        const list = container.querySelector('#config-fw-list');
+        const settings = container.querySelector('#config-fw-settings');
+        if (list) list.hidden = tab !== 'feeds';
+        if (settings) settings.hidden = tab !== 'settings';
     }
 
     /** Which sub-tab of Bookmarks is showing. */

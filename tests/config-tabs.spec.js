@@ -74,7 +74,7 @@ test('an old tab link opens the tab that holds its settings now', async ({ page 
         await open(page, old);
         await expect(page.locator('[data-config-section="feed-watch"]')).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator('[data-behavior-field="feedWatchWindowMinutes"]')).toBeVisible();
-        await expect.poll(() => hash(page)).toBe('#config/feed-watch');
+        await expect.poll(() => hash(page)).toBe('#config/feed-watch/settings');
     }
     await page.locator('[data-config-section="bookmarks"]').click();
     await expect(page.locator('[data-bm-tab]')).toHaveText(['View', 'Tags', 'Tag suggestions', 'Your rules', 'Settings', 'Local copies']);

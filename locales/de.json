@@ -10474,6 +10474,8 @@
     "feedWatchNewsViewSingle": "Eine Spalte",
     "feedWatchPushNote": "Wird an die Browser gesendet, in denen Benachrichtigungen aktiviert sind (Config → Monitoring → Benachrichtigungen). Stummgeschaltete Feeds benachrichtigen nie.",
     "feedWatchIntro": "Jeder Feed, dem Sie über ein Lesezeichen folgen, und wie seine Neuigkeiten zu Ihnen kommen.",
+    "feedWatchTabFeeds": "Feeds",
+    "feedWatchTabSettings": "Einstellungen",
     "sectionFeedWatch": "Watch feeds",
     "pushNotifyNewsLabel": "Benachrichtigen, wenn ein beobachteter Feed Neuigkeiten hat",
     "notifyNewsTargetLabel": "Neuigkeiten auch an den Alarmkanal senden (ntfy, Gotify, Discord…)",
