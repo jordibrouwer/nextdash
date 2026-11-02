@@ -4072,7 +4072,7 @@
     "feedWatchPickOne": "Tick a feed or paste an address",
     "feedWatchNotAFeed": "That address is not a feed nextDash can read",
     "feedWatchLimit": "You are watching {limit} feeds, the most nextDash follows",
-    "feedWatchStarted": "Watching {name} · checked every {interval}",
+    "feedWatchStarted": "Watching {name} · checked every {interval}. You'll see news when it publishes something new.",
     "feedWatchNewCount": "{n} new",
     "feedWatchPopoverMore": "+{n} more",
     "feedWatchToastOne": "{site} has news",

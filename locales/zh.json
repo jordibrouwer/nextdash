@@ -4072,7 +4072,7 @@
     "feedWatchPickOne": "请勾选一个订阅源或粘贴地址",
     "feedWatchNotAFeed": "该地址不是 nextDash 能读取的订阅源",
     "feedWatchLimit": "你已关注 {limit} 个订阅源，这是 nextDash 能关注的上限",
-    "feedWatchStarted": "正在关注 {name} · 每{interval}检查一次",
+    "feedWatchStarted": "正在关注 {name} · 每{interval}检查一次。发布新内容后你就会看到。",
     "feedWatchNewCount": "{n} 条新",
     "feedWatchPopoverMore": "另有 {n} 条",
     "feedWatchToastOne": "{site} 有新消息",

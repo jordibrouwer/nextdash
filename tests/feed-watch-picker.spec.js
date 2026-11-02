@@ -29,7 +29,7 @@ test('right-click → Watch this feed lists both feeds and saves the ticked one'
     await picker(page).locator('[data-feed-watch-interval]').selectOption('360');
     await picker(page).locator('[data-feed-watch-save]').click();
 
-    await expect(toast(page)).toContainText(/Watching Stub Blog · checked every 6 hours/);
+    await expect(toast(page)).toContainText(/Watching Stub Blog · checked every 6 hours\. You'll see news when it publishes something new\./);
     const list = await (await request.get('/api/feeds/watch')).json();
     const entries = Object.values(list.watches);
     expect(entries).toHaveLength(1);
