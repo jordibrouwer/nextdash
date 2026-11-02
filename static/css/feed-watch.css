@@ -585,8 +585,7 @@ body.no-animations .feed-news-bar > i { transition: none; }
 .feed-news-pop.is-two-cols .feed-news-pop-list > li > .feed-news-pop-item { height: 100%; border-top: 0; border-bottom: 1px solid var(--border-secondary); }
 .feed-news-pop.is-two-cols .feed-news-pop-more { border-top: 0; }
 
-/* Reader: the paper on this site, a small accent button between the bar and the ×.
-   Desktop only (the script leaves it out on a phone). */
+/* Reader: the paper on this site, a small accent button between the bar and the ×. */
 .feed-news-pop-reader {
     flex: none; padding: 0.3rem var(--space-3, 0.75rem); border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
     border-radius: var(--radius-4, 8px); background: color-mix(in srgb, var(--accent-primary) 14%, transparent);

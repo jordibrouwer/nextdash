@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.24.2 — 2 November 2026](#v1242--2-november-2026)
 - [v1.24.1 — 2 November 2026](#v1241--2-november-2026)
 - [v1.24.0 — 2 November 2026](#v1240--2-november-2026)
 - [v1.23.0 — 30 October 2026](#v1230--30-october-2026)
@@ -128,6 +129,27 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.24.2 — 2 November 2026
+
+Config → Watch feeds gets tabs like the other sections, the news popover has its Reader button on a phone too, and a new install starts without row status. Held back from the What's new window (`hideFromModal`), so v1.24.0 keeps leading it.
+
+### Watch feeds
+
+- **new — Config → Watch feeds has two tabs.** *Feeds* lists the watched feeds; *Settings* holds how their news reaches you (the check window, the news view, push). The tab you left on is remembered, the address follows it (`#config/feed-watch/settings`), and the settings search sends a news setting to the Settings tab. Older links to the settings on the Bookmarks tab open it there too.
+- **new — The Reader button in the news popover is on a phone too.** Tap a row with news and the head of the popover shows **Reader** between the bar to the site and the cross, as on a computer. It opens the news window on that site alone.
+
+### Rows
+
+- **new — A new install starts without row status.** *Config → Appearance → Rows → Row status*: **Online/offline** and **Ping times** are off by default now (**Loading state** already was), so a fresh dashboard shows rows as just their names. An install that already has these settings keeps them as they are; they are one click away for anyone who wants them.
+
+### Docs
+
+- **docs — The Help text of Watch feeds is current.** It names the two tabs and the popover with its Reader button (on a computer and a phone), and gives the news view setting as *Config → Watch feeds → Settings*; all six languages.
+- **docs — The manual says so too.** §14.4 describes the two tabs and §14.2 the Reader button on a phone, with retaken pictures. *The new look* is §17A, so Glances keeps §16A.
+- **docs — `static/data/whats-new/v1.24.2.json` and its index entry**, flagged `hideFromModal`; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v362` and `DASHBOARD_RELEASE` stays on v1.24.0. `tests/whats-new-hidden-release.spec.js` follows. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
