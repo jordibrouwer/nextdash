@@ -352,8 +352,16 @@
                 );
                 if (match >= 0) idx = match;
             }
+            // By tag, not by element: the cloud may have been drawn again in
+            // these two frames, and a chip of the old drawing takes no focus.
+            const tag = chips[idx]?.dataset.tag;
             requestAnimationFrame(() => {
-                requestAnimationFrame(() => this.focusChipAtIndex(idx, chips));
+                requestAnimationFrame(() => {
+                    if (!this.modalOpen) return;
+                    const now = this.getTagChips();
+                    const at = now.findIndex((chip) => chip.dataset.tag === tag);
+                    this.focusChipAtIndex(at >= 0 ? at : 0, now);
+                });
             });
         },
 
@@ -670,9 +678,24 @@
             const dash = window.dashboardInstance;
             if (!dash || dash._unsortedLoaded || !dash.data?.deferredLoadAllBookmarks) return;
             void dash.data.deferredLoadAllBookmarks().then(() => {
-                if (this.modalOpen) this.renderWordCloud();
+                if (this.modalOpen) this.redrawKeepingPlace();
                 if (dash.hasActiveTagFilters?.()) dash.renderDashboard?.({ animate: false });
             }).catch(() => {});
+        },
+
+        /**
+         * Drawn again with the other pages' tags while open: the chips are new,
+         * so the letters typed and the tag under the cursor are put back on them.
+         */
+        redrawKeepingPlace() {
+            const active = document.activeElement;
+            const tag = this.body?.contains(active) ? active.dataset.tag : null;
+            const query = this._query;
+            this.renderWordCloud();
+            if (query) this.setQuery(query);
+            const chips = this.getNavigableChips();
+            const at = tag ? chips.findIndex((chip) => chip.dataset.tag === tag) : -1;
+            if (at >= 0) this.focusChipAtIndex(at, chips);
         },
 
         restoreBookmarkFocus() {
