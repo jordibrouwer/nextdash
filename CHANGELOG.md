@@ -171,7 +171,7 @@ Watch feeds replace Fresh: follow the feed of any bookmark, get a stripe, a badg
 
 ### Themes
 
-- **new — Neutral (dark)** is the default theme on new installs.
+- **new — Tidal Slate (dark)** is the default theme on new installs, with Tidal Slate (light) as its light half for auto dark mode. Installs that already chose a theme keep it.
 - **fix — Text fields share one fill** in the signature themes, and more fields take it (`config-input` has a style); the news popover follows the material of the theme; in Ink the folio stays put when you hover the header.
 
 ### Reliability
