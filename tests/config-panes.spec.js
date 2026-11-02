@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, useGlassLook } = require('./e2e-helpers');
 
 /**
  * Config is one pane, like the views beside it.
@@ -14,6 +14,9 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * page still shows where a block starts and ends.
  */
 async function open(page, hash) {
+    // Written against a glass look: Neutral, the fresh install's, is ink, an
+    // open plate with a small corner and no blur.
+    await useGlassLook(page);
     await markWhatsNewSeen(page);
     await page.setViewportSize({ width: 1500, height: 1000 });
     await page.goto(`/${hash}`);

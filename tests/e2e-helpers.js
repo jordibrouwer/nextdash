@@ -131,6 +131,23 @@ async function useClassicType(page, extra = {}) {
     if (!response.ok()) throw new Error(`useClassicType failed: HTTP ${response.status()}`);
 }
 
+/**
+ * Put the store on Ocean (dark), the glass look a fresh install opened on until
+ * v1.24.0. Since then a fresh install starts on Neutral (dark), an ink look with
+ * an open surface and no depth, so specs that measure glass panes, depth or a
+ * material's tinted rows name the look they were written against. Saved on the
+ * server like any setting; the fixture's reset puts the next spec file back.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} [theme]
+ */
+async function useGlassLook(page, theme = 'look-ocean-dark') {
+    const response = await page.request.post('/api/settings', {
+        data: { theme },
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
+    if (!response.ok()) throw new Error(`useGlassLook failed: HTTP ${response.status()}`);
+}
+
 /** @param {import('@playwright/test').Page} page */
 async function dismissWhatsNewIfPresent(page) {
     // Mark the running release as seen first. Closing the modal does not record
@@ -729,6 +746,7 @@ module.exports = {
     resetDashboardData,
     WRITE_TOKEN,
     useClassicType,
+    useGlassLook,
     DASHBOARD_WHATS_NEW_RELEASE,
     DEFAULT_DISCOVERABILITY_KEYS,
     E2E_WEB_SERVER_ENV,

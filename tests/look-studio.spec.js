@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, useGlassLook } = require('./e2e-helpers');
 
 /**
  * The theme browser as a look studio: a panel docked beside the dashboard
@@ -354,6 +354,8 @@ test.describe('the look studio', () => {
     });
 
     test('card glass says why nothing changes, and gives a layout without cards its panes', async ({ page }) => {
+        // A glass look: ink, Neutral's, tints an open category of its own.
+        await useGlassLook(page);
         await openDashboard(page);
         const before = await stored(page);
         // A layout that draws no card round a category, on a theme not at

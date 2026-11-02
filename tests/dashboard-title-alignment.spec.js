@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, useGlassLook } = require('./e2e-helpers');
 
 /**
  * A page of categories and widgets keeps its titles in step.
@@ -148,6 +148,9 @@ test.describe('titles of categories and widgets', () => {
     });
 
     test('pointing at a title tints the whole header and does not move its text', async ({ page }) => {
+        // A glass look: under ink, Neutral's, the folio stays put when you point
+        // at a header and the tint is not drawn to the edges.
+        await useGlassLook(page);
         await openDashboard(page);
         for (const style of ['signature', 'classic']) {
             if (style === 'classic') await drawClassic(page);

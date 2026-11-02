@@ -1,4 +1,5 @@
 const { test, expect } = require('./fixtures');
+const { useGlassLook } = require('./e2e-helpers');
 const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
@@ -42,6 +43,8 @@ test.describe('bookmarks view: the band\'s actions', () => {
   });
 
   test('under glass depth the card is glass, like every other modal', async ({ page }) => {
+    // A glass look: Neutral, the fresh install's, is ink.
+    await useGlassLook(page);
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await page.evaluate(() => { document.body.dataset.depth = 'glass'; });
     await band(page).locator('[data-bm-work-through]').click();

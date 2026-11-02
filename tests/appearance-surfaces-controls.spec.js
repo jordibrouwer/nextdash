@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, openConfigPanel } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, openConfigPanel, useGlassLook } = require('./e2e-helpers');
 
 /**
  * Appearance → Theme, drawn as one kind of control.
@@ -179,6 +179,9 @@ test('the reset puts the value back and repaints the page', async ({ page }) => 
 });
 
 test('the category surface is a dropdown on Surface and draws at once', async ({ page }) => {
+    // A glass look, so Follow has a pane to go back to: Neutral, the fresh
+    // install's, is ink and follows to open.
+    await useGlassLook(page);
     await openAppearance(page);
     await openTab(page, 'surface');
 

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, useGlassLook } = require('./e2e-helpers');
 
 /**
  * What a category sits on: glass, card or open.
@@ -45,7 +45,13 @@ async function setSurface(page, word) {
 }
 
 test.describe('category surface', () => {
-    test('a fresh page is drawn on glass', async ({ page }) => {
+    test('a fresh page follows its look: open on Neutral, glass on a glass look', async ({ page }) => {
+        // Since v1.24.0 a fresh install starts on Neutral (dark), an ink look:
+        // its categories are text on the page, with no pane round them.
+        await openDashboard(page);
+        await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'open');
+        // Ocean, the fresh install's look before it, is drawn on glass.
+        await useGlassLook(page);
         await openDashboard(page);
         await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'glass');
     });
