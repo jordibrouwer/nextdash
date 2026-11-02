@@ -143,6 +143,33 @@ test('the newspaper lists more than what was found: the feed\'s earlier entries 
     await expect(modal(page)).toBeHidden();
 });
 
+test('one column with nothing new still shows one article at a time, from the earlier entries', async ({ page, request }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await page.goto('/');
+    const key = await keyOf(page, site.url);
+    const recent = Array.from({ length: 12 }, (_, i) => ({
+        id: `old${i}`, title: `Earlier entry ${i + 1}`, link: `http://127.0.0.1:1/old${i}`, summary: `<p>Older text ${i + 1}</p>`,
+        publishedAt: Date.now() - (i + 5) * 86_400_000, bookmarkKey: key, bookmarkName: 'Stub Blog', bookmarkUrl: site.url, feedTitle: 'Stub Posts',
+    }));
+    await page.route('**/api/feeds/watch', (route) => (route.request().method() !== 'GET' ? route.continue() : route.fulfill({
+        contentType: 'application/json', body: JSON.stringify(watchPayload(key, [])),
+    })));
+    await page.route('**/api/feeds/watch/items**', (route) => route.fulfill({
+        contentType: 'application/json', body: JSON.stringify({ items: [], recent }),
+    }));
+    expect((await request.post('/api/settings', { data: { feedWatchNewsView: 'single' }, headers })).ok()).toBe(true);
+    await openDashboard(page);
+    await page.keyboard.press('Shift+N');
+    await expect(modal(page)).toBeVisible();
+
+    // An article, not the front page with all twelve listed.
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('Earlier entry 1');
+    await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 12');
+    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(0);
+    await modal(page).locator('[data-feed-news-step="1"]').click();
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('Earlier entry 2');
+});
+
 test('the header switches between newspaper, two columns and one column, and the choice is kept', async ({ page, request }) => {
     await page.setViewportSize({ width: 1400, height: 900 });
     await setup(page);

@@ -2578,7 +2578,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.3 The news window
 
-- **The news window** (`Shift + N`, or the news button on a computer) is one paper for everything you watch, with read and unread per item. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the buttons in its header: single (one article per screen), two columns or a newspaper front page. `j` and `k` move through the news, **Index** goes back to the front page and `Esc` closes the window at once. It follows the theme and its material; only the Newspaper view keeps its own paper look.
+- **The news window** (`Shift + N`, or the news button on a computer) is one paper for everything you watch, with read and unread per item. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the buttons in its header: one column (one article per screen, the new ones first, and the feeds' earlier entries one by one when nothing is new), two columns or a newspaper front page. `j` and `k` move through the news, **Index** goes back to the front page and `Esc` closes the window at once. It follows the theme and its material; only the Newspaper view keeps its own paper look.
 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-news.jpg" alt="The news window in its one-article view: the site name and 1 of 10 in the header with the three layout buttons, a picture, the headline and its lead, and the buttons previous, next, Mark read and Open page with the keys j, k and Esc" width="440"></p>
 <p align="center"><sub>The news window, one article per screen.</sub></p>

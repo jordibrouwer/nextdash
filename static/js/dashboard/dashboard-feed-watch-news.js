@@ -181,12 +181,16 @@
         if (!state) return [];
         const fresh = sections().flatMap((section) => section.items);
         // One column is one article at a time: the new ones, no front page and
-        // no earlier entries.
+        // no earlier entries (those only when nothing is new, below).
         if (currentView() !== 'single') return [...fresh, ...state.earlier];
         // Walking one by one, the unread come first and every site is mixed in
         // by time, so no single site fills the first screens.
         // The order is fixed when the news opens: reading an item must not move it.
-        return fresh.slice().sort((a, b) => (Number(b.openUnread) - Number(a.openUnread)) || newerFirst(a, b));
+        const ordered = fresh.slice().sort((a, b) => (Number(b.openUnread) - Number(a.openUnread)) || newerFirst(a, b));
+        // Nothing new: one column still shows one article at a time, walking the
+        // feeds' earlier entries, rather than falling back to a front page that
+        // lists them all.
+        return ordered.length ? ordered : state.earlier.slice();
     }
 
     function unreadCount() {
