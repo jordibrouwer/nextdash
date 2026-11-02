@@ -119,5 +119,15 @@
     global.addEventListener('scroll', hide, { passive: true, capture: true });
     global.addEventListener('blur', hide);
 
+    // The bar slides away on its own (auto-hide) while the pointer may still be
+    // over a button: the button leaves from under the pointer without a
+    // pointerout, so the popover would stay behind on its own. The bar's hidden
+    // state is an attribute on <body>; when it goes on, so does the popover.
+    if (typeof MutationObserver === 'function' && document.body) {
+        new MutationObserver(() => {
+            if (document.body.hasAttribute('data-action-bar-hidden')) hide();
+        }).observe(document.body, { attributes: true, attributeFilter: ['data-action-bar-hidden'] });
+    }
+
     global.ActionKeyHint = { hide };
 })(window);

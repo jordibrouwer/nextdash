@@ -84,6 +84,17 @@ test('a click takes it away', async ({ page }) => {
     await page.mouse.up();
 });
 
+test('the bar sliding away takes the popover with it', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'bottom', showActionKeys: false });
+    await hover(page, '#search-button');
+    await expect(hint(page)).toBeVisible();
+    // The pointer stays where it is: the bar leaves from under it, so no pointerout
+    // ever tells the popover. The bar's own toggle is the way it goes in this test.
+    await page.evaluate(() => window.ActionBarAutoHide.toggle());
+    await expect.poll(() => page.evaluate(() => document.body.hasAttribute('data-action-bar-hidden'))).toBe(true);
+    await expect(hint(page)).toHaveCount(0);
+});
+
 test('chips on: no popover, the chip already says it', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'bottom', showActionKeys: true });
     await hover(page, '#search-button');
