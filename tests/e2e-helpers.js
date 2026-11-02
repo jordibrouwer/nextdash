@@ -42,6 +42,10 @@ const RAINDROP_STUB_PORT = 18076;
 const E2E_WEB_SERVER_ENV = {
     NEXTDASH_WRITE_TOKEN: WRITE_TOKEN,
     NEXTDASH_DISABLE_PREFETCH: '1',
+    // No startup grace for bookmark health: a first failed check is recorded at
+    // once, so specs that check a failing address do not depend on the age of
+    // the server.
+    NEXTDASH_HEALTH_STARTUP_GRACE: '0',
     // Every start of a server on an empty data folder is a new install to the
     // daily install count, so test runs and CI shards were most of its
     // "installs". Only the ping: DISABLE_TELEMETRY would take the analytics

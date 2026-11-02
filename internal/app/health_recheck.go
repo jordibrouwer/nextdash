@@ -125,11 +125,17 @@ func (h *Handlers) maybeRunHealthAutoRecheck() {
 	// than at the next 15-minute tick.
 	if result.NetworkDown {
 		logInfo(logComponentHealth, "the scheduled re-check held back %s: this server looks offline", plural(result.HeldOffline, "failed check", "failed checks"))
-		if h.recheckRetryPending.CompareAndSwap(false, true) {
-			time.AfterFunc(networkGuardRetryAfter, func() {
-				h.recheckRetryPending.Store(false)
-				h.maybeRunHealthAutoRecheck()
-			})
+		h.scheduleRecheckRetry()
+		return
+	}
+	// Failures held for the startup grace: one quick retry per process, which
+	// confirms them (it comes after the 45-second gap). Past that, a new first
+	// failure is left to the monitor ticks and the next scheduled run; the run
+	// is not stamped, so it stays due.
+	if result.HeldGrace > 0 {
+		logInfo(logComponentHealth, "the scheduled re-check held back %s: this server has only just started", plural(result.HeldGrace, "first failure", "first failures"))
+		if h.graceRetryUsed.CompareAndSwap(false, true) {
+			h.scheduleRecheckRetry()
 		}
 		return
 	}
@@ -139,4 +145,19 @@ func (h *Handlers) maybeRunHealthAutoRecheck() {
 		logWarn(logComponentHealth, "the re-check ran but its run time could not be recorded (%v); the next one may come early", err)
 	}
 	logInfo(logComponentHealth, "the scheduled re-check covered %s", plural(result.Tested, "bookmark", "bookmarks"))
+}
+
+// scheduleRecheckRetry runs the re-check again shortly; never two waiting.
+func (h *Handlers) scheduleRecheckRetry() {
+	if !h.recheckRetryPending.CompareAndSwap(false, true) {
+		return
+	}
+	after := h.recheckAfter
+	if after == nil {
+		after = func(d time.Duration, f func()) { time.AfterFunc(d, f) }
+	}
+	after(networkGuardRetryAfter, func() {
+		h.recheckRetryPending.Store(false)
+		h.maybeRunHealthAutoRecheck()
+	})
 }

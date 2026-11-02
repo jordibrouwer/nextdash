@@ -64,6 +64,18 @@ type Handlers struct {
 	// for its retry (health_recheck.go), so retries never stack.
 	recheckRetryPending atomic.Bool
 	recheckRunning      atomic.Bool
+	// startedAt is when this process built its handlers; the startup grace for
+	// bookmark health counts from it (health_startup_grace.go). Zero means no
+	// grace. clock replaces time.Now for that rule in tests.
+	startedAt   time.Time
+	graceWindow time.Duration
+	// graceRetryUsed: the scheduled re-check retries once for the grace
+	// (health_recheck.go). recheckAfter replaces time.AfterFunc in tests.
+	graceRetryUsed atomic.Bool
+	recheckAfter   func(d time.Duration, f func())
+	clock          func() time.Time
+	graceMu        sync.Mutex
+	gracePending   map[string]graceEntry
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
@@ -381,6 +393,11 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		files:             files,
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
+	}
+	// The startup grace for bookmark health; "0" in the environment turns it off.
+	if window := graceWindowFromEnv(os.Getenv("NEXTDASH_HEALTH_STARTUP_GRACE")); window > 0 {
+		h.startedAt = time.Now()
+		h.graceWindow = window
 	}
 	h.wireDockerSettings()
 	h.ensureHealthReportCond()
@@ -5258,6 +5275,8 @@ type healthRetestResult struct {
 	// have no connection; NetworkDown says the run looked that way.
 	HeldOffline int
 	NetworkDown bool
+	// HeldGrace counts first failures held back by the startup grace.
+	HeldGrace int
 }
 
 // runHealthRetest pings the eligible bookmarks once and persists their status,
@@ -5324,6 +5343,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	 * real and are recorded.
 	 */
 	sweepStart := time.Now()
+	graceStart := h.graceNow()
 	pinged := make(map[retestRef]PingResult)
 	var sweep []sweepHostResult
 	for _, page := range pages {
@@ -5347,6 +5367,26 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 		}
 	}
 	holdFailures := len(pinged) > 0 && h.networkGuard(sweep, sweepStart, time.Now(), true)
+	// The startup grace is for unattended runs only: Retest all is the user's
+	// own click and records at once. Decided once per URL (copies of a URL share
+	// the answer): held when any copy failed and the rule says so.
+	graceHeld := map[string]bool{}
+	if activitySource == healthAutoRecheckSource {
+		failedByKey := map[string]bool{}
+		for ref, result := range pinged {
+			key := canonicalBookmarkURLKey(pageBookmarks[ref.page][ref.index].URL)
+			if key == "" {
+				continue
+			}
+			if holdFailures && holdableFailure(pageBookmarks[ref.page][ref.index].URL, result.Status) {
+				continue // the guard has it
+			}
+			failedByKey[key] = failedByKey[key] || result.Status != "online"
+		}
+		for key, failed := range failedByKey {
+			graceHeld[key] = h.graceHold(key, failed, graceStart)
+		}
+	}
 	res.NetworkDown = holdFailures
 
 	for _, page := range pages {
@@ -5374,6 +5414,10 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 			}
 			if holdFailures && holdableFailure(bm.URL, result.Status) {
 				res.HeldOffline++
+				continue
+			}
+			if result.Status != "online" && graceHeld[canonicalBookmarkURLKey(bm.URL)] {
+				res.HeldGrace++
 				continue
 			}
 			res.Tested++

@@ -112,6 +112,17 @@ func (h *Handlers) UpdateBookmarkHealthStatuses(w http.ResponseWriter, r *http.R
 		}
 	}
 
+	// The startup grace: a first failure of a bookmark on this page is held.
+	graceStart := h.graceNow()
+	for key, res := range wanted {
+		if !onPage[key] {
+			continue
+		}
+		if h.graceHold(key, strings.TrimSpace(res.Status) != "online", graceStart) {
+			delete(wanted, key)
+		}
+	}
+
 	checkedAt := time.Now().UnixMilli()
 	updated := 0
 	// Per URL, not per row: a URL on two rows of the page counted twice and
