@@ -199,7 +199,9 @@ Watch feeds replace Fresh: follow the feed of any bookmark, get a stripe, a badg
 
 ### Docs
 
-- **docs — `MANUAL.md`** gets Watch feeds, the funnel tools and the settings overview.
+- **docs — `MANUAL.md` and `README.md`.** Watch feeds, the funnel tools and the settings overview are in the manual; the default theme (Tidal Slate), the four toasts and the news-first preview card are corrected in both. The manual has six new pictures (`04-preview-card-news`, `12-watch-feeds-news`, `-news-columns`, `-paper`, `-config`, `-stats`), the README says 23 MCP tools, and four README dashboard pictures that still showed the removed *Fresh* block are retaken.
+- **docs — Config → Help, tips, Overview and News & features.** The Watch feeds panel is rewritten (the news window, the preview card and its pager, `Shift + N`, `#`, Config and Stats); four panels name Tidal Slate and the toasts; a *Watching feeds* tip group has three tips; Overview has two new entries; the cheat sheet has a *The news* section and its PDF is regenerated.
+- **docs — Translations.** All of the above, the AI Assistant tour and a few older strings (76 keys per language) are in Dutch, German, French, Spanish and Chinese; the Help panel for Watch feeds still carried its old name in all five and is renamed.
 
 ---
 
