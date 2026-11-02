@@ -1929,6 +1929,23 @@ class DashboardConfig {
             return true;
         }
 
+        // Ctrl/Cmd+A in the Bookmarks view ticks every bookmark the filter and
+        // the list search show, as it does in the Inbox. A text field keeps the
+        // browser's own select-all (the list search included); a row's tick box
+        // is an input too, but not a place to type, so it does not count.
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
+            && (e.key === 'a' || e.key === 'A') && this.section === 'bookmarks') {
+            const t = e.target;
+            const typing = t?.tagName === 'TEXTAREA' || t?.tagName === 'SELECT' || t?.isContentEditable
+                || (t?.tagName === 'INPUT' && t.type !== 'checkbox' && t.type !== 'radio' && t.type !== 'button');
+            if (!typing) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.toggleSelectAllBookmarks();
+                return true;
+            }
+        }
+
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
@@ -20509,6 +20526,48 @@ class DashboardConfig {
         this.afterSelectionChange();
     }
 
+    /** True when every bookmark the filter and search show is ticked. */
+    allShownBookmarksSelected() {
+        const shown = this.visibleBookmarks();
+        return shown.length > 0 && shown.every((b) => this.bmSelected.has(this.bookmarkKey(b)));
+    }
+
+    /**
+     * Ctrl/Cmd+A and the toolbar button: tick every bookmark shown, drawn or
+     * not, or clear them again when they are all ticked already. Ticked rows
+     * the filter hides stay as they are when ticking, and go when clearing only
+     * if they are among the shown, so the "hidden by the filter" count holds.
+     */
+    toggleSelectAllBookmarks() {
+        const shown = this.visibleBookmarks();
+        if (!shown.length) return;
+        const keys = shown.map((b) => this.bookmarkKey(b));
+        if (keys.every((k) => this.bmSelected.has(k))) keys.forEach((k) => this.bmSelected.delete(k));
+        else keys.forEach((k) => this.bmSelected.add(k));
+        this.afterSelectionChange();
+    }
+
+    /** The toolbar's Select all / Deselect all, built for the list as shown. */
+    renderBookmarkSelectAllButton() {
+        const count = this.visibleBookmarks().length;
+        if (!count) return '';
+        const all = this.allShownBookmarksSelected();
+        const label = all
+            ? this.t('config.bmDeselectAll', 'Deselect all')
+            : this.t('config.bmSelectAll', 'Select all ({count})').replace('{count}', String(count));
+        const hint = all
+            ? this.t('config.bmDeselectAllHint', 'Untick every bookmark the current filter shows')
+            : this.t('config.bmSelectAllHint', 'Tick every bookmark the current filter shows');
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<button type="button" class="config-btn config-btn--small" data-bm-select-all
+            title="${esc(hint)}">${esc(label)}</button>`;
+    }
+
+    syncBookmarkSelectAllButton() {
+        const host = document.getElementById('config-bm-select-all');
+        if (host) host.innerHTML = this.renderBookmarkSelectAllButton();
+    }
+
     /** Every row of a page › category group, drawn or not. */
     selectBookmarkGroup(groupKey) {
         this.visibleBookmarks()
@@ -20527,6 +20586,7 @@ class DashboardConfig {
         });
         // A selection of fewer than two has no shared form to show.
         if (this.bmSelected.size < 2) this._bmBulkPanelWanted = false;
+        this.syncBookmarkSelectAllButton();
         this.repaintWorkbenchPanel?.();
     }
 
@@ -21076,6 +21136,7 @@ class DashboardConfig {
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
             ['x', this.t('config.bmKeySelect', 'select')],
             ['Shift X', this.t('config.bmKeyRange', 'range')],
+            ['Ctrl/Cmd A', this.t('config.bmKeySelectAll', 'select all')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
             ['Shift E', this.t('config.bmKeyEditDialog', 'edit in dialog')],
             ['i', this.t('config.bmKeyPanel', 'panel')],
@@ -21254,6 +21315,9 @@ class DashboardConfig {
         });
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
+        container.querySelector('#config-bm-select-all')?.addEventListener('click', (e) => {
+            if (e.target.closest('[data-bm-select-all]')) this.toggleSelectAllBookmarks();
+        });
         container.querySelector('#config-bm-list')?.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-empty-add]')) {
                 this.openAddBookmarkModal();

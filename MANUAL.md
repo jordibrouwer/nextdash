@@ -1936,7 +1936,7 @@ On a narrow window the rail becomes a drawer and the side panel a sheet. What yo
 
 ### 11.4 Selecting several
 
-Tick rows (`x` / `X` for the whole page shown, or **Select all** in the ⋯ menu) and the selection bar appears above the list — ticking does not open the side panel, as in Inbox and Containers. The bar counts what is ticked and offers **Edit…**, **Re-check**, **Mute alerts**, **Export CSV**, **Delete** and **Clear selection**. **Edit…** opens the form for the selection in the side panel (one ticked row opens its own panel): page, category, tags (add, replace, remove), pin all / unpin all, checking and interval, **Mute alerts** / **Unmute**, **Re-check**, **Follow redirects**, **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk**, **Export CSV**, and **Delete**. Fields that differ read *mixed*. The slow ones run one page at a time behind a progress bar, wait out a rate limit, and can be stopped. A selection survives a filter change; bulk changes and moves can be undone from the toast.
+Tick rows (`x` ticks the row under the cursor, `Shift + X` a range from the last one you ticked; `Ctrl/Cmd + A` or the **Select all** button in the toolbar ticks every bookmark the filter and search show, drawn or not, and a second press clears them again) and the selection bar appears above the list — ticking does not open the side panel, as in Inbox and Containers. The bar counts what is ticked and offers **Edit…**, **Re-check**, **Mute alerts**, **Export CSV**, **Delete** and **Clear selection**. **Edit…** opens the form for the selection in the side panel (one ticked row opens its own panel): page, category, tags (add, replace, remove), pin all / unpin all, checking and interval, **Mute alerts** / **Unmute**, **Re-check**, **Follow redirects**, **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk**, **Export CSV**, and **Delete**. Fields that differ read *mixed*. The slow ones run one page at a time behind a progress bar, wait out a rate limit, and can be stopped. A selection survives a filter change; bulk changes and moves can be undone from the toast.
 
 <a id="115-the-row-menu"></a>
 
@@ -1960,6 +1960,7 @@ The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, 
 | `1` / `2` / `3`, `[` / `]` | Details, Health or Usage in the side panel |
 | `e` / `Shift + E` | Edit in the side panel / in the full dialog |
 | `x` / `Shift + X` | Select a row / a range |
+| `Ctrl/Cmd + A` | Select every bookmark shown (again to clear) |
 | `d` | Delete (undo is offered) |
 | `/` | Search the list |
 | `f` | Work through the list |

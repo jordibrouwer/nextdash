@@ -245,6 +245,7 @@
                 { keys: '1 / 2 / 3  ·  [ / ]', cheatKey: 'lvPanelTabs', fallback: 'Details, Health or Usage in the side panel' },
                 { keys: 'e / Shift + E', cheatKey: 'lvEdit', fallback: 'Edit in the side panel / in the full dialog', print: true },
                 { keys: 'x / Shift + X', cheatKey: 'lvSelect', fallback: 'Select a row / a range of rows' },
+                { keys: 'Ctrl/Cmd + A', cheatKey: 'lvSelectAll', fallback: 'Select every bookmark shown' },
                 { keys: 'd', cheatKey: 'lvDelete', fallback: 'Delete the bookmark (undo is offered)' },
                 { keys: 'g / End', cheatKey: 'lvFirstLast', fallback: 'First / last row' },
                 { keys: '/', cheatKey: 'lvSearch', fallback: 'Search the list', print: true },
