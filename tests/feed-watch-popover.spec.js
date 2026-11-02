@@ -74,8 +74,10 @@ test.describe('on a touch screen', () => {
         await expect(pop(page)).toHaveClass(/move-popover/);
         await settled(page);
         await expect(pop(page).locator('.feed-news-pop-head')).toContainText('7 new');
-        // The Reader button is a desktop's; a phone reaches the paper from the toast.
-        await expect(pop(page).locator('[data-pop-reader]')).toHaveCount(0);
+        // The Reader button is on a phone too, a finger-sized target that opens the paper.
+        const reader = pop(page).locator('[data-pop-reader]');
+        await expect(reader).toBeVisible();
+        expect((await reader.boundingBox()).height).toBeGreaterThanOrEqual(44);
         const close = await pop(page).locator('[data-pop-close]').boundingBox();
         expect(close.width).toBeGreaterThanOrEqual(44);
         expect(close.height).toBeGreaterThanOrEqual(44);
@@ -88,6 +90,17 @@ test.describe('on a touch screen', () => {
         expect(box.x + box.width).toBeLessThanOrEqual(375);
         expect(box.y + box.height).toBeLessThanOrEqual(812);
         expect(opened).toBe(0);
+    });
+
+    test('tapping Reader opens the paper on that site alone', async ({ page }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await badge(page).tap();
+        await pop(page).locator('[data-pop-reader]').tap();
+        const modal = page.locator('#app-modal .modal.feed-news-modal');
+        await expect(modal).toBeVisible();
+        await expect(pop(page)).toHaveCount(0);
+        await expect(modal.locator('.feed-news-section')).toHaveCount(1);
     });
 
     test('with six or fewer there is no "+n more"', async ({ page }) => {
