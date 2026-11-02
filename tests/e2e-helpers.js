@@ -133,8 +133,8 @@ async function useClassicType(page, extra = {}) {
 
 /**
  * Put the store on Ocean (dark), the glass look a fresh install opened on until
- * v1.24.0. Since then a fresh install starts on Neutral (dark), an ink look with
- * an open surface and no depth, so specs that measure glass panes, depth or a
+ * v1.24.0. Since then a fresh install starts on Tidal Slate (dark), a frost look,
+ * so specs that measure glass panes, depth or a
  * material's tinted rows name the look they were written against. Saved on the
  * server like any setting; the fixture's reset puts the next spec file back.
  * @param {import('@playwright/test').Page} page

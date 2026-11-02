@@ -45,15 +45,16 @@ async function setSurface(page, word) {
 }
 
 test.describe('category surface', () => {
-    test('a fresh page follows its look: open on Neutral, glass on a glass look', async ({ page }) => {
-        // Since v1.24.0 a fresh install starts on Neutral (dark), an ink look:
-        // its categories are text on the page, with no pane round them.
-        await openDashboard(page);
-        await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'open');
-        // Ocean, the fresh install's look before it, is drawn on glass.
-        await useGlassLook(page);
+    test('a fresh page follows its look: glass on Tidal Slate, open on an ink look', async ({ page }) => {
+        // Since v1.24.0 a fresh install starts on Tidal Slate (dark), a frost
+        // look: its categories are drawn on glass.
         await openDashboard(page);
         await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'glass');
+        // Neutral (dark) is an ink look: its categories are text on the page,
+        // with no pane round them.
+        await useGlassLook(page, 'neutral-dark');
+        await openDashboard(page);
+        await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'open');
     });
 
     test('glass is see-through and blurred, card is solid, open has no pane', async ({ page }) => {
