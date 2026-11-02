@@ -183,6 +183,8 @@ test.describe('with two watched feeds', () => {
         expect((await stats(request, '?days=7')).totals.published).toBe(4);
         await openStatsFeeds(page);
         await page.evaluate(() => window.dashboardInstance.config.selectSection('feed-watch'));
+        // Reset sits with the news settings, on the Settings tab.
+        await page.locator('[data-fw-tab="settings"]').click();
         await page.locator('[data-config-action="resetFeedStats"]').click();
         await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
         await expect(page.locator('[data-config-action-status="resetFeedStats"]')).toHaveText('Statistics cleared.');
@@ -205,7 +207,7 @@ test('switched off, the tab says so and links to the setting', async ({ page, re
     await openStatsFeeds(page);
     const off = page.locator('[data-stats-feeds-state="off"]');
     await expect(off).toContainText('Statistics about watched feeds are off.');
-    await off.locator('[data-stats-section-goto="feed-watch"]').click();
+    await off.locator('[data-stats-section-goto="feed-watch:settings"]').click();
     await expect(page.locator('[data-behavior-field="feedStatsEnabled"]')).toBeVisible();
     await request.post('/api/settings', { data: { feedStatsEnabled: true }, headers });
     expect((await stats(request, '?days=7')).totals.published).toBe(0);
@@ -219,6 +221,7 @@ test('the switch and the keep-days select in Config → Watch feeds save', async
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
     await page.locator('[data-config-section="feed-watch"]').click();
+    await page.locator('[data-fw-tab="settings"]').click();
     const keep = page.locator('[data-behavior-field="feedStatsKeepDays"]');
     await expect(keep).toHaveValue('90');
     await keep.selectOption('365');
