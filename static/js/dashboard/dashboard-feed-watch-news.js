@@ -368,6 +368,18 @@
         top.className = 'feed-news-top';
         parts[0].before(top);
         parts.forEach((part) => top.appendChild(part));
+        syncStuck();
+    }
+
+    /**
+     * The stuck top is see-through at rest, so it is the panel itself in every
+     * theme; once the news scrolls under it, it takes the panel's colour.
+     */
+    function syncStuck() {
+        const root = document.querySelector('[data-feed-news]');
+        const top = root?.querySelector(':scope > .feed-news-top');
+        const scroller = root?.closest('.modal-body');
+        if (top && scroller) top.classList.toggle('is-stuck', scroller.scrollTop > 0);
     }
 
     /** Update only the bar and its caption, so the 1-second tick never rebuilds the article. */
@@ -574,13 +586,20 @@
                 clearInterval(state?.timer);
                 document.removeEventListener('click', onClick, true);
                 global.removeEventListener('keydown', onKey, true);
+                document.removeEventListener('scroll', onScroll, true);
                 state = null;
             },
         });
         render();
+        document.addEventListener('scroll', onScroll, { capture: true, passive: true });
         document.addEventListener('click', onClick, true);
         global.addEventListener('keydown', onKey, true);
         state.timer = setInterval(tick, 1000);
+    }
+
+    /** The news window's scroller moved: the stuck top follows. Scroll does not bubble, so this listens in capture. */
+    function onScroll(event) {
+        if (event.target?.classList?.contains('modal-body') && event.target.querySelector('[data-feed-news]')) syncStuck();
     }
 
     function close() {
