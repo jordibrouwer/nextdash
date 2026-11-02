@@ -12,8 +12,7 @@ const modal = (page) => page.locator('#app-modal.show [data-bm-health-large]');
 const card = (page, name) => modal(page).locator(`[data-bm-large-card="${name}"]`);
 const tab = (page, name) => modal(page).locator(`[data-bm-large-tab="${name}"]`);
 
-async function stubHistory(page, { samples = null, days = null } = {}) {
-  const now = Date.now();
+async function stubHistory(page, { samples = null, days = null, now = Date.now() } = {}) {
   const s = samples ?? [
     { t: now - 3 * HOUR, u: true, p: 120, c: 200 },
     { t: now - 2 * HOUR, u: true, p: 180, c: 200 },
@@ -39,6 +38,19 @@ async function stubHistory(page, { samples = null, days = null } = {}) {
       body: JSON.stringify({ url: 'x', samples: s, days: d, sampleDays: 30, dayDays: 90 }) });
   });
   return asked;
+}
+
+/**
+ * Pin the page's clock to a recent hour at least four hours into both the
+ * local and the UTC day, and return it. The seeded checks are one to three
+ * hours old: just after midnight they fall in yesterday, so "today" (local
+ * hours) or the last bar of the days chart (UTC days) would be empty.
+ */
+async function pinClockPastMidnight(page) {
+  const at = new Date(); at.setMinutes(0, 0, 0);
+  while (at.getHours() < 4 || at.getUTCHours() < 4) at.setTime(at.getTime() - HOUR);
+  await page.clock.setFixedTime(at);
+  return at.getTime();
 }
 
 async function open(page) {
@@ -122,7 +134,7 @@ test.describe('bookmark health, in large', () => {
   });
 
   test('the period is chosen from a list, and every chart follows it', async ({ page }) => {
-    await stubHistory(page);
+    await stubHistory(page, { now: await pinClockPastMidnight(page) });
     const { bookmarks } = await open(page);
     await row(page, bookmarks[0].name).click({ button: 'right' });
     await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
@@ -219,7 +231,7 @@ test.describe('bookmark health, in large', () => {
   });
 
   test('uptime bars with uPlot: a bar says its share and its checks', async ({ page }) => {
-    await stubHistory(page);
+    await stubHistory(page, { now: await pinClockPastMidnight(page) });
     const { bookmarks } = await open(page);
     await row(page, bookmarks[0].name).click({ button: 'right' });
     await page.locator('#config-bm-context-menu [data-action="health-large"]').click();
