@@ -147,6 +147,8 @@ Watch feeds replace Fresh: follow the feed of any bookmark, get a stripe, a badg
 - **new — Statistics.** **Stats → Watch feeds** shows the numbers with a period switch and the settings; the statistics have a reset route and travel in the backup.
 - **new — Keys.** `Shift+N` opens the news; `#` watches the feed of the bookmark in hand. Adding a category by key is gone. Coming back to the tab opens the news only on a computer and only when switched on (off); muted feeds never bring the paper back on their own.
 - **new — Phones.** The news button is desktop only (a phone opens the paper from the toast); the news stripe stands before the favicon.
+- **new — A preview card that leads with the news.** Hovering a bookmark with news now shows the photo, the headline and a short lead first, two equal buttons (**Open reader** and **Open page**), and a pager (`‹ 1 / 3 ›`) when the site has more than one new item; the site's own picture and description no longer sit beside it. Open page now opens that item's own page. The card is about 420 px high instead of 770.
+- **fix — The news modal follows the theme.** The header, buttons, links, list cards and accent come from the active theme and its material, not from a fixed black and purple. Only the **Newspaper** view keeps its own paper look. The horizontal scrollbar under the footer is gone, and the footer buttons share one height, border and hover.
 - **fix — Feeds.** An aborted poll is not a failure; feeds of deleted bookmarks are dropped; an entry dated in the future no longer stays new after an open; pictures come back after a restore. Each feed keeps ten full items, fifty light copies and 75 seen ids.
 
 ### Phones
@@ -177,6 +179,10 @@ Watch feeds replace Fresh: follow the feed of any bookmark, get a stripe, a badg
 ### Action bar
 
 - **new — The hover popover names the button.** With the key chips off, resting on an action button showed only its key (`>`). It now shows the name first, in your language, then the key: *search* `>`, *cheat* `!`.
+
+### Notices
+
+- **new — Four hints are toasts now.** The theme studio hint, the *Updated from … to …* notice, the Inbox extension invitation and the image-update invitation appear as one line in a toast, with no buttons, and say where to go (`Shift+A`, the ★ button, Config → Containers → Updates). Showing one counts as answered, or snoozed for the two invitations; the switches in Config still turn them off. Corner cards that ask a question stay corner cards.
 
 ### Reliability
 
