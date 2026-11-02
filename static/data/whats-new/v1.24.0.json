@@ -103,7 +103,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>No more fake rot after a start without internet.</strong> When nextDash starts before the machine is online, it no longer marks every bookmark broken. It holds those results back, says so in the Bookmarks view, and checks again a minute later."
+          "text": "<strong>No more fake rot after a start.</strong> When nextDash starts before the machine is online, it no longer marks every bookmark broken: those results are held back, the Bookmarks view says so, and checks run again a minute later. For the first 15 minutes after a start, one failed check of a bookmark (also of your own services that are still starting) does not count until it fails again."
         }
       ]
     },
