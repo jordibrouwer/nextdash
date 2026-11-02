@@ -26,12 +26,12 @@
         },
         {
           "badge": "new",
-          "text": "<strong>A news window of your own.</strong> Press <code>Shift + N</code> to read everything you follow in one paper, with read and unread per article. Show it as one article at a time, in two columns grouped by site, or as a newspaper front page; <code>j</code> and <code>k</code> move through it and <strong>Index</strong> goes back to the front page. It follows your theme, except the newspaper, which keeps its paper look.",
+          "text": "<strong>A news window of your own.</strong> Press <code>Shift + N</code> to read everything you follow in one paper, with pictures and read and unread per article. Show it as a newspaper front page with a lead story, as one article at a time, or in two columns grouped by site; <code>j</code> and <code>k</code> move through it and <strong>Index</strong> goes back to the front page. It follows your theme, except the newspaper, which keeps its paper look.",
           "highlight": true,
           "title": "A news window of your own",
           "media": {
             "image": "media/v1.24.0-news-window.jpg",
-            "alt": "The news window in two columns: the news grouped by site with a dot on unread articles"
+            "alt": "The news window as a newspaper: a lead article with its picture and a list of the other articles beside it"
           }
         },
         {

@@ -89,7 +89,7 @@ module.exports = {
         {
             slug: 'news-window',
             kind: 'image',
-            alt: 'The news window in two columns: the news grouped by site with a dot on unread articles',
+            alt: 'The news window as a newspaper: a lead article with its picture and a list of the other articles with their pictures beside it',
             viewport: { width: 1280, height: 800 },
             dataTweak: { run: newsData },
             target: (page) => page.locator('#app-modal.show .modal').first(),
@@ -99,9 +99,12 @@ module.exports = {
                 await settle(page);
                 await page.keyboard.press('Shift+N');
                 await page.locator('[data-feed-news]').waitFor({ state: 'visible' });
-                const view = page.locator('.feed-news-view[data-feed-news-view="wide"]').first();
+                // The Newspaper layout, opened on its first article: the lead picture and the paper's list of the rest.
+                const view = page.locator('.feed-news-view[data-feed-news-view="paper"]').first();
                 await view.click();
                 await page.locator('.feed-news-view[aria-pressed="true"]').waitFor();
+                await page.locator('.feed-news-entry').first().click();
+                await page.locator('.feed-news-card').first().waitFor({ state: 'visible' });
                 // Pacing for the capture, not a condition: the window finishes drawing its pictures.
                 await page.waitForTimeout(1_500);
             },
