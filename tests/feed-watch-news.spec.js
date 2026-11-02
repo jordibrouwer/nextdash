@@ -259,6 +259,20 @@ test('feed HTML is shown as text styling, never as script', async ({ page }) => 
     expect(await modal(page).locator('script, iframe, img[onerror]').count()).toBe(0);
 });
 
+test('the index lead keeps a space between two paragraphs', async ({ page }) => {
+    await page.goto('/');
+    const key = await keyOf(page, site.url);
+    const items = [1, 2].map((n) => ({
+        ...newsItem(n), bookmarkKey: key, bookmarkName: 'Stub Blog', bookmarkUrl: site.url,
+        summary: n === 1 ? '<p>First paragraph.</p><p>Second paragraph.</p><ul><li>One</li><li>Two</li></ul>' : '<p>Plain.</p>',
+    }));
+    await stubWatch(page, { list: watchPayload(key, items), items });
+    await openDashboard(page);
+    await openFromCard(page);
+    // textContent alone would read "First paragraph.Second paragraph.OneTwo".
+    await expect(modal(page).locator('.feed-news-entry-lead').filter({ hasText: 'First paragraph' })).toHaveText('First paragraph. Second paragraph. One Two');
+});
+
 test('read state per item: an article read, marked unread again, then the site read', async ({ page, request }) => {
     // The real server this time: the bookmark watches the stub site's posts.
     expect((await request.post('/api/feeds/watch', {

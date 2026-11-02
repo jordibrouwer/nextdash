@@ -245,6 +245,24 @@ test.describe('two watched feeds', () => {
         await expect.poll(async () => (await stored(request)).total).toBe(0);
     });
 
+    test('a muted row keeps its columns where the others have them', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await openSection(page);
+        await expect(rows(page)).toHaveCount(2);
+        const xs = async () => rows(page).evaluateAll((els) => els.map((el) => [
+            el.querySelector('.feed-watch-list-state').getBoundingClientRect().left,
+            el.querySelector('.feed-watch-list-meta').getBoundingClientRect().left,
+            el.querySelector('.feed-watch-list-actions').getBoundingClientRect().left,
+        ].map((n) => Math.round(n))));
+        // The button reads Mute on one row and Muted on the other: its width differs, the columns must not.
+        const before = await xs();
+        expect(before[0]).toEqual(before[1]);
+        await rows(page).nth(0).locator('[data-fwm-mute]').click();
+        await expect(rows(page).nth(0).locator('[data-fwm-mute]')).toHaveText('Muted');
+        const after = await xs();
+        expect(after[0]).toEqual(after[1]);
+    });
+
     test('the select-all box sits over the row boxes', async ({ page }) => {
         await openSection(page);
         await expect(rows(page).first()).toBeVisible();

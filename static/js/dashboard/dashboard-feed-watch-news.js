@@ -100,7 +100,8 @@
 
     function plainLead(html, max = 150) {
         const probe = document.createElement('div');
-        probe.innerHTML = String(html || '');
+        // textContent glues neighbouring blocks ("…read.The list…"): a space goes in at every block end and break first.
+        probe.innerHTML = String(html || '').replace(/<\/(?:p|div|li|h[1-6]|blockquote|pre|tr)>|<br\s*\/?>/gi, ' $&');
         const text = (probe.textContent || '').replace(/\s+/g, ' ').trim();
         return text.length > max ? `${text.slice(0, max - 1)}…` : text;
     }
