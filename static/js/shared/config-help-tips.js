@@ -32,6 +32,9 @@
                 'tipEverydayGridFilter',
                 'tipEverydayScrollBack',
                 'tipEverydayCheatsheet',
+                'tipWatchNews',
+                'tipWatchFeedKey',
+                'tipWatchPreviewPager',
             ],
         },
         {
@@ -89,15 +92,6 @@
                 'tipFindRecent',
                 'tipFindAddressBar',
                 'tipFindWeb',
-            ],
-        },
-        {
-            titleKey: 'tipsGroupWatch',
-            titleFallback: 'Watching feeds',
-            tips: [
-                'tipWatchNews',
-                'tipWatchFeedKey',
-                'tipWatchPreviewPager',
             ],
         },
         {
