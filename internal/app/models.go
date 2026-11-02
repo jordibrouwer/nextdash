@@ -1235,10 +1235,10 @@ const defaultFeedNewsWidgetID = "w_000000000004"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "neutral-dark"
+const defaultThemeID = "tidal-slate-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "neutral-light"
+const defaultThemeLightID = "tidal-slate-light"
 
 // auroraGlassThemeID and auroraGlassThemeLightID are where the one-time move of
 // v1.22.0 puts an install (migrateToAuroraGlass). They were the defaults then;

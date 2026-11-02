@@ -294,8 +294,8 @@ func TestTheFourCharacterThemesShip(t *testing.T) {
 	if crt := themes["retro-crt-mk2-dark"]; crt.RadiusScale > 0.2 || crt.LabelTransform != "uppercase" {
 		t.Errorf("Retro CRT Mk II lost its shape: radius %v, transform %q", crt.RadiusScale, crt.LabelTransform)
 	}
-	// The default theme is Neutral; a new theme does not change it by accident.
-	if defaultThemeID != "neutral-dark" {
+	// The default theme is Tidal Slate; a new theme does not change it by accident.
+	if defaultThemeID != "tidal-slate-dark" {
 		t.Errorf("a new theme changed what a fresh install starts on: %q", defaultThemeID)
 	}
 }
