@@ -2593,7 +2593,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.4 Managing it
 
-- **Manage in one place.** **Config → Watch feeds** lists every watched feed with its newest item; per feed you can **mute** it, **pause** it or set a **word filter**. **Stats → Watch feeds** shows the numbers, with a period switch. Nothing is sent to anyone: nextDash only reads the feeds.
+- **Manage in one place.** **Config → Watch feeds** has two tabs, like the other sections. **Feeds** lists every watched feed with its newest item; per feed you can **mute** it, **pause** it or set a **word filter**. **Settings** holds how long the news stays open, how it is shown, the feed icon, the statistics and the notifications. **Stats → Watch feeds** shows the numbers, with a period switch. Nothing is sent to anyone: nextDash only reads the feeds.
 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-config.jpg" alt="Config, Watch feeds: six watched feeds with their newest count, when they were checked, the interval and a Mute button; one feed shows Paused, one Muted and one a word filter, and above the list Open the paper, Check all now and Watch more" width="720"></p>
 <p align="center"><sub>Config → Watch feeds: every feed with its news, interval, mute, pause and word filter.</sub></p>
