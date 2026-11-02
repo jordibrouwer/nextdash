@@ -45,7 +45,7 @@ test.skip(!TAG, 'What\'s new media are taken on purpose only (WHATS_NEW_MEDIA=<t
 test.describe.configure({ mode: 'parallel' });
 test.setTimeout(120_000);
 
-/** @type {{ slug: string, kind: string, alt?: string, viewport?: any, dataPatch?: string, setup?: Function, act?: Function, target?: Function }[]} */
+/** @type {{ slug: string, kind: string, alt?: string, viewport?: any, dataPatch?: string, dataTweak?: any, keepPointer?: boolean, setup?: Function, act?: Function, target?: Function }[]} */
 const shots = TAG && fs.existsSync(PLAN) ? require(PLAN).shots || [] : [];
 
 if (TAG && !shots.length) {
@@ -75,9 +75,10 @@ async function clipFor(page, shot, viewport) {
     };
 }
 
-async function still(page, file, clip) {
+async function still(page, file, clip, keepPointer = false) {
     const view = page.viewportSize() || VIEWPORT;
-    await page.mouse.move(5, view.height - 5);
+    // keepPointer: the frame is of something that shows while the pointer is on it (a hover card).
+    if (!keepPointer) await page.mouse.move(5, view.height - 5);
     await page.evaluate(() => /** @type {HTMLElement|null} */ (document.activeElement)?.blur?.());
     // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(300);
@@ -88,6 +89,8 @@ for (const shot of shots) {
     if (!/^[a-z0-9-]+$/.test(shot.slug || '')) throw new Error(`bad slug: ${shot.slug}`);
     test.describe(shot.slug, () => {
         if (shot.dataPatch) test.use({ dataPatch: shot.dataPatch });
+        // Optional: { run(dir) } that changes this shot's copy of the data (see the kit).
+        if (shot.dataTweak) test.use({ dataTweak: shot.dataTweak });
 
         test(`${shot.kind} ${shot.slug}`, async ({ browser, server }) => {
             const viewport = shot.viewport || VIEWPORT;
@@ -103,18 +106,21 @@ for (const shot of shots) {
                 reducedMotion: video ? 'no-preference' : 'reduce',
                 ...(video ? { recordVideo: { dir: raw, size: viewport } } : {}),
             });
+            const cleanups = [];
+            // The shot's own server, and a way to leave something to close when it is done.
+            const tools = { ...kit, server, onDone: (fn) => cleanups.push(fn) };
             const started = Date.now();
             try {
                 const page = await context.newPage();
                 await prepare(page);
-                if (shot.setup) await shot.setup(page, kit);
+                if (shot.setup) await shot.setup(page, tools);
                 else await openDashboard(page);
                 if (!video) {
                     await still(page, path.join(OUT, `${base}.jpg`), await clipFor(page, shot, viewport));
                     return;
                 }
                 const from = (Date.now() - started) / 1000;
-                if (shot.act) await shot.act(page, kit);
+                if (shot.act) await shot.act(page, tools);
                 // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
                 await page.waitForTimeout(800);
                 const to = (Date.now() - started) / 1000;
@@ -122,7 +128,7 @@ for (const shot of shots) {
                 // is on screen; the whole recording is cut to that frame.
                 const clip = await clipFor(page, shot, viewport);
                 // The last frame is the poster.
-                await still(page, path.join(OUT, `${base}.jpg`), clip);
+                await still(page, path.join(OUT, `${base}.jpg`), clip, shot.keepPointer === true);
                 const recording = page.video();
                 await context.close();
                 const source = await recording?.path();
@@ -137,6 +143,7 @@ for (const shot of shots) {
                     path.join(OUT, `${base}.webm`),
                 ]);
             } finally {
+                for (const fn of cleanups) await Promise.resolve(fn()).catch(() => {});
                 await context.close().catch(() => {});
                 fs.rmSync(raw, { recursive: true, force: true });
             }

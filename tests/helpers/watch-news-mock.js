@@ -160,15 +160,17 @@ function newsData(dir) {
 }
 
 /** The feed server: GET /<site>/feed.xml, GET /img/<name>.jpg, GET /__arm (adds the newer stories). */
-async function startNewsStub() {
+async function startNewsStub({ hold = [] } = {}) {
     const port = stubPort();
     const base = `http://127.0.0.1:${port}`;
-    let armed = false;
+    // `hold`: sites whose newer stories wait for their own arm(id).
+    const armed = new Set();
+    const isArmed = (id) => armed.has(id);
     const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
     const feed = (id) => {
         const f = FEEDS[id];
         const now = Date.now();
-        const entries = (armed ? f.fresh.map(([t, img, ago, p1, p2]) => ({ t, img, ago, p1, p2 })) : [])
+        const entries = (isArmed(id) ? f.fresh.map(([t, img, ago, p1, p2]) => ({ t, img, ago, p1, p2 })) : [])
             .concat(f.old.map(([t, img, ago]) => ({ t, img, ago, p1: 'Earlier story.', p2: '' })));
         return '<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel>'
             + `<title>${esc(f.title)}</title><link>${siteUrl(id)}</link><description>${esc(f.title)}</description>`
@@ -183,7 +185,12 @@ async function startNewsStub() {
     };
     const server = http.createServer((req, res) => {
         const u = (req.url || '').split('?')[0];
-        if (u === '/__arm') { armed = true; res.end('armed'); return; }
+        if (u === '/__arm') {
+            const only = new URL(req.url || '', base).searchParams.get('site');
+            for (const [id] of SITES) if (only ? id === only : !hold.includes(id)) armed.add(id);
+            res.end('armed');
+            return;
+        }
         let m = u.match(/^\/([a-z]+)\/feed\.xml$/);
         if (m && FEEDS[m[1]]) { res.writeHead(200, { 'Content-Type': 'application/rss+xml' }); res.end(feed(m[1])); return; }
         m = u.match(/^\/img\/([a-z-]+)\.jpg$/);
@@ -195,7 +202,7 @@ async function startNewsStub() {
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => resolve(undefined)); });
     return {
         base,
-        arm: () => fetch(`${base}/__arm`),
+        arm: (site) => fetch(`${base}/__arm${site ? `?site=${site}` : ''}`),
         close: () => new Promise((resolve) => server.close(() => resolve(undefined))),
     };
 }
@@ -205,14 +212,15 @@ async function startNewsStub() {
  * stories and poll once, the way a day on a real install would go.
  * Then one feed is muted, one paused and one given a word filter.
  */
-async function watchSites(server, stub) {
+async function watchSites(server, stub, { skip = [] } = {}) {
     const headers = { 'Content-Type': 'application/json', 'X-NextDash-Token': WRITE_TOKEN };
     const post = async (url, body) => {
         const res = await fetch(`${server.baseURL}${url}`, { method: 'POST', headers, body: JSON.stringify(body) });
         if (!res.ok) throw new Error(`${url} answered ${res.status}: ${await res.text()}`);
         return res;
     };
-    for (const [id] of SITES) {
+    const sites = SITES.filter(([id]) => !skip.includes(id));
+    for (const [id] of sites) {
         await post('/api/feeds/watch', { bookmarkUrl: siteUrl(id), feeds: [{ feedUrl: feedUrl(id), intervalMinutes: 60 }] });
     }
     await stub.arm();
@@ -221,7 +229,7 @@ async function watchSites(server, stub) {
     for (;;) {
         const state = await (await fetch(`${server.baseURL}/api/feeds/watch`)).json();
         const counts = Object.values(state.watches || {}).map((w) => /** @type {any} */ (w).newCount || 0);
-        if (counts.length >= SITES.length && counts.every((n) => n > 0)) break;
+        if (counts.length >= sites.length && counts.every((n) => n > 0)) break;
         if (Date.now() > deadline) throw new Error('the stub news did not arrive');
         await new Promise((resolve) => setTimeout(resolve, 300));
     }
@@ -261,4 +269,4 @@ async function shiftFeedTimes(page) {
     }));
 }
 
-module.exports = { SITES, newsData, startNewsStub, watchSites, shiftFeedTimes };
+module.exports = { feedUrl, siteUrl, SITES, newsData, startNewsStub, watchSites, shiftFeedTimes };
