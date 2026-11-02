@@ -4023,7 +4023,7 @@ Small drawings beside the shape settings show what a value looks like.
 | **Change bookmark color when offline** | A broken row takes the status colour |
 | **Shortcut letters on rows** | **Always** (default; a column down the right of each category) · **Only on the row you are on** · **Never** — the shortcuts keep working in every mode |
 | **How a row lights up** | **Subtle** (default) or **Strong** — how far the accent carries across the row you are on |
-| **Row status** | Chips for the online/offline status colours, **a loading state while checking** and **ping times** |
+| **Row status** | Chips for the online/offline status colours, **a loading state while checking** and **ping times**. A new install starts with all three off, so a row is just its name; an install that already shows them keeps them |
 | **Show tags on bookmark rows** | And **Tags shown before "+N"** |
 | **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small (default), Medium or Large; an install that was still on Medium moves to Small once. **Shown in the header** — chips for the category icon (chosen per category, from its menu), the count of bookmarks on the right, and the underline |
 

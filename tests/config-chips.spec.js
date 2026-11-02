@@ -81,22 +81,22 @@ test.describe('chip groups', () => {
     test('one reset for the group puts back only the chips that differ', async ({ page }) => {
         await openTab(page, 'display');
         await openConfigPanel(page, chip(page, 'showStatus'));
-        // Row status: online/offline and ping times ship on.
+        // Row status: online/offline and ping times ship off on a new install.
         const status = chip(page, 'showStatus');
         const ping = chip(page, 'showPing');
-        await expect(status).toHaveAttribute('aria-pressed', 'true');
-        await expect(ping).toHaveAttribute('aria-pressed', 'true');
+        await expect(status).toHaveAttribute('aria-pressed', 'false');
+        await expect(ping).toHaveAttribute('aria-pressed', 'false');
         await expect(page.locator('[data-reset-group]')).toHaveCount(0);
 
         await ping.click();
-        await expect(ping).toHaveAttribute('aria-pressed', 'false');
+        await expect(ping).toHaveAttribute('aria-pressed', 'true');
         const reset = page.locator('[data-reset-group]');
         await expect(reset).toHaveCount(1);
         await expect(reset).toHaveAttribute('data-reset-group', 'showPing');
 
         await reset.click();
-        await expect(chip(page, 'showPing')).toHaveAttribute('aria-pressed', 'true');
-        await expect(chip(page, 'showStatus')).toHaveAttribute('aria-pressed', 'true');
+        await expect(chip(page, 'showPing')).toHaveAttribute('aria-pressed', 'false');
+        await expect(chip(page, 'showStatus')).toHaveAttribute('aria-pressed', 'false');
         await expect(page.locator('[data-reset-group]')).toHaveCount(0);
         await settingsSaved(page);
     });

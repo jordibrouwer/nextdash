@@ -134,12 +134,16 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.24.2 — 2 November 2026
 
-Config → Watch feeds gets tabs like the other sections, and the news popover has its Reader button on a phone too. Held back from the What's new window (`hideFromModal`), so v1.24.0 keeps leading it.
+Config → Watch feeds gets tabs like the other sections, the news popover has its Reader button on a phone too, and a new install starts without row status. Held back from the What's new window (`hideFromModal`), so v1.24.0 keeps leading it.
 
 ### Watch feeds
 
 - **new — Config → Watch feeds has two tabs.** *Feeds* lists the watched feeds; *Settings* holds how their news reaches you (the check window, the news view, push). The tab you left on is remembered, the address follows it (`#config/feed-watch/settings`), and the settings search sends a news setting to the Settings tab. Older links to the settings on the Bookmarks tab open it there too.
 - **new — The Reader button in the news popover is on a phone too.** Tap a row with news and the head of the popover shows **Reader** between the bar to the site and the cross, as on a computer. It opens the news window on that site alone.
+
+### Rows
+
+- **new — A new install starts without row status.** *Config → Appearance → Rows → Row status*: **Online/offline** and **Ping times** are off by default now (**Loading state** already was), so a fresh dashboard shows rows as just their names. An install that already has these settings keeps them as they are; they are one click away for anyone who wants them.
 
 ### Docs
 
