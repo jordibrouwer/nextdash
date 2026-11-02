@@ -108,7 +108,7 @@ test.describe('a widget tile in the reader\'s language', () => {
             return {
                 uptimeNone: t('dashboard.widgetUptimeNone'),
                 uptimeNoSamples: t('dashboard.widgetUptimeNoSamples'),
-                feedsWaiting: t('dashboard.widgetFeedsWaiting'),
+                feedNewsWaiting: t('dashboard.widgetFeedNewsWaiting'),
                 more: t('dashboard.widgetMore'),
             };
         });

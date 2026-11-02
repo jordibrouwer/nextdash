@@ -128,7 +128,9 @@ test.describe('keywords widen what a search matches', () => {
 
     test('keywords are matched but never displayed', async ({ page }) => {
         await openConfig(page, 'overview');
-        const hit = (await search(page, 'discord'))[0];
+        // The alert channel is found by keyword; other rows (Watch feeds'
+        // "send news to the alert channel") carry the word in their label.
+        const hit = (await search(page, 'discord')).find((h) => h.field === 'monitorNotifyUrl');
         expect(hit).toBeTruthy();
         // The row shows the label and its location, not the words behind it.
         expect(hit.title.toLowerCase()).not.toContain('discord');
