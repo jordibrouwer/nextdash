@@ -41,13 +41,13 @@ type watchEntry struct {
 	NewCount int   `json:"newCount"`
 	NewAt    int64 `json:"newAt,omitempty"`
 	// Muted is true when every feed of the bookmark is muted.
-	Muted  bool             `json:"muted,omitempty"`
-	Newest *FeedItem        `json:"newest"`
+	Muted  bool      `json:"muted,omitempty"`
+	Newest *FeedItem `json:"newest"`
 	// NewItems are the newest unread items across the bookmark's feeds, newest
 	// first and at most watchNewItemsMax, so the hover card can page through
 	// them without a request. NewItems[0] is Newest.
-	NewItems []FeedItem `json:"newItems,omitempty"`
-	Feeds  []watchFeedEntry `json:"feeds"`
+	NewItems []FeedItem       `json:"newItems,omitempty"`
+	Feeds    []watchFeedEntry `json:"feeds"`
 	// LatestAt and LatestTitle are the newest item of any feed of the
 	// bookmark, read or not, by publish time (found time without one).
 	LatestAt    int64  `json:"latestAt,omitempty"`
