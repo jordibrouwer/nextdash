@@ -8241,6 +8241,7 @@
     "bmHealthScoreBreakdown": "Desglose de la puntuación",
     "bmHealthSettings": "Ajustes de salud",
     "bmHealthStateBroken": "Roto",
+    "bmNetworkDown": "Sin conexión desde este servidor desde las {time}. Las comprobaciones están en pausa y no se marcó nada como roto.",
     "bmHealthStateDown": "Vigilancia caída",
     "bmHealthStateHealthy": "Sano",
     "bmHealthStateLook": "Conviene revisar",

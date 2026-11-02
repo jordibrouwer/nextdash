@@ -5827,6 +5827,7 @@
     "bmDetailsDelete": "Delete bookmark",
     "bmDetailsDeleteHint": "It goes to the trash; undo is offered right after.",
     "bmHealthStateBroken": "Broken",
+    "bmNetworkDown": "No connection from this server since {time}. Checks are paused and nothing was marked broken.",
     "bmHealthStateDown": "Monitor down",
     "bmHealthStateLook": "Needs a look",
     "bmHealthStateHealthy": "Healthy",

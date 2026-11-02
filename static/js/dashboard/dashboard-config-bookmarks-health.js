@@ -141,13 +141,23 @@
                     <span class="config-bm-health-summary-value">${esc(row.value ?? '')}</span>
                     ${row.extraNode?.outerHTML || ''}
                 </div>`).join('');
+            // While the server has no connection its failed checks are held back
+            // (health_network_guard.go): one calm line, in the tile's own rows,
+            // that goes with the next normal report.
+            const down = health.report.networkDown;
+            const downLine = down && Number(down.since) > 0
+                ? `<div class="config-bm-health-summary-row config-bm-health-netdown" data-tone="muted" role="status">
+                    <span class="config-bm-health-summary-label">${esc(this.t('config.bmNetworkDown', 'No connection from this server since {time}. Checks are paused and nothing was marked broken.')
+                        .replace('{time}', new Date(Number(down.since)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))}</span>
+                </div>`
+                : '';
             // No aria-label: the rows already read as text (score, trend,
             // updated), which says more than a fixed label would, and
             // role="button" is enough to announce that Enter/Space act on it.
             // .lvs-summary: Health's own tile, so a theme's edges, glow and
             // (under glass) blur reach this one the same way.
-            return body ? `<div class="config-bm-health-summary lvs-summary" data-bm-health-summary
-                role="button" tabindex="0">${body}</div>` : '';
+            return body || downLine ? `<div class="config-bm-health-summary lvs-summary" data-bm-health-summary
+                role="button" tabindex="0">${downLine}${body}</div>` : '';
         },
 
         /* ── The panel's Health, Monitor and Actions parts ──────────────── */

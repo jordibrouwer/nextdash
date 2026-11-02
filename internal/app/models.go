@@ -7075,6 +7075,9 @@ type BookmarkHealthReport struct {
 	// domain expiry is switched off.
 	Domains       map[string]HostDomain `json:"domains,omitempty"`
 	DomainSummary DomainSummary         `json:"domainSummary"`
+	// NetworkDown is set while this server looks offline and its failed checks
+	// are being held back instead of recorded.
+	NetworkDown *NetworkDownInfo `json:"networkDown,omitempty"`
 }
 
 // DomainSummary is the part of the domain picture that is not an expiry:
@@ -7145,8 +7148,13 @@ type HealthScanCacheFile struct {
 	// LastAutoRecheck is when the background recheck scheduler last completed a run
 	// (Unix ms). Persisted so "is a recheck due?" survives restarts, mirroring how
 	// auto-backup compares the newest backup's age rather than an in-process timer.
-	LastAutoRecheck int64                      `json:"lastAutoRecheck,omitempty"`
-	Cache           map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
+	LastAutoRecheck int64 `json:"lastAutoRecheck,omitempty"`
+	// NetworkDownSince / LastOfflineSweepAt (Unix ms) are set while sweeps look
+	// like this server has no connection (health_network_guard.go): their
+	// failures are held back rather than written onto bookmarks and history.
+	NetworkDownSince   int64                      `json:"networkDownSince,omitempty"`
+	LastOfflineSweepAt int64                      `json:"lastOfflineSweepAt,omitempty"`
+	Cache              map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
 	// Certificates seen while checking, keyed by host. Lives here rather than in
 	// its own file because it is written by the same pass that writes the cache
 	// and is worthless without it.

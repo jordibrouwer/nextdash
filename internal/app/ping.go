@@ -55,6 +55,9 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 	if demoMode() {
 		return PingResult{Status: "offline", ErrorDetail: demoNotAvailable}
 	}
+	if h.pingHook != nil {
+		return h.pingHook(ctx, urlStr, expect)
+	}
 	if ctx == nil {
 		ctx = context.Background()
 	}

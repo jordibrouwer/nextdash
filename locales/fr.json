@@ -8241,6 +8241,7 @@
     "bmHealthScoreBreakdown": "Détail du score",
     "bmHealthSettings": "Réglages Health",
     "bmHealthStateBroken": "Cassé",
+    "bmNetworkDown": "Aucune connexion depuis ce serveur depuis {time}. Les vérifications sont en pause et rien n'a été marqué comme cassé.",
     "bmHealthStateDown": "Surveillance en panne",
     "bmHealthStateHealthy": "Sain",
     "bmHealthStateLook": "À examiner",

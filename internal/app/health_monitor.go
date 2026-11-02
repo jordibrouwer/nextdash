@@ -48,9 +48,11 @@ const (
 	// — a dropped packet, a container still coming up, a DNS blip — without
 	// hiding a service that is genuinely down, which fails the retry too and is
 	// recorded as it always was, five seconds later.
-	monitorConfirmDelay   = 5 * time.Second
 	monitorConfirmRetries = 1
 )
+
+// monitorConfirmDelay is a variable only so tests need not wait it out.
+var monitorConfirmDelay = 5 * time.Second
 
 // clampMonitorIntervalMinutes normalizes a stored/incoming per-bookmark cadence,
 // mirroring clampHealthAutoRecheckIntervalHours: zero means "use the default",
@@ -360,6 +362,29 @@ func (h *Handlers) runDueMonitors() {
 		}(target)
 	}
 	wg.Wait()
+
+	// A round in which nearly every host failed to resolve or answer says more
+	// about this server's connection than about the hosts. Its failures are
+	// not recorded -- no status, no failing sample, no alert, no incident --
+	// and the targets, having no new sample, are due again on the next tick.
+	// Answers in the same round are real and are kept.
+	if len(outcomes) > 0 {
+		sweep := make([]sweepHostResult, 0, len(outcomes))
+		for _, out := range outcomes {
+			if r, ok := sweepHostResultFor(out.target.url, out.result); ok {
+				sweep = append(sweep, r)
+			}
+		}
+		if h.networkGuard(sweep, now, time.Now(), true) {
+			kept := outcomes[:0]
+			for _, out := range outcomes {
+				if !holdableFailure(out.target.url, out.result.Status) {
+					kept = append(kept, out)
+				}
+			}
+			outcomes = kept
+		}
+	}
 
 	// One decision for the whole round: a window that opens mid-sweep should not
 	// split it into alerting and non-alerting halves.

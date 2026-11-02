@@ -97,6 +97,12 @@ func (h *Handlers) StartHealthRecheckScheduler(stop <-chan struct{}) {
 // and one is due. The scope mirrors the health page's "Retest all" (includeFlagged)
 // so background runs can clear a broken row the same way a manual run does.
 func (h *Handlers) maybeRunHealthAutoRecheck() {
+	// One at a time: the 60-second retry of a held run can land on the
+	// 15-minute tick's run.
+	if !h.recheckRunning.CompareAndSwap(false, true) {
+		return
+	}
+	defer h.recheckRunning.Store(false)
 	if !h.store.GetSettings().HealthAutoRecheckEnabled {
 		return
 	}
@@ -112,6 +118,19 @@ func (h *Handlers) maybeRunHealthAutoRecheck() {
 	result, err := h.runHealthRetest(ctx, true, healthAutoRecheckSource)
 	if err != nil {
 		logError(logComponentHealth, "the scheduled re-check did not run: %v", err)
+		return
+	}
+	// A run that looked offline held its failures back; it did not complete
+	// its job. Not stamped, so it is still due, and tried again shortly rather
+	// than at the next 15-minute tick.
+	if result.NetworkDown {
+		logInfo(logComponentHealth, "the scheduled re-check held back %s: this server looks offline", plural(result.HeldOffline, "failed check", "failed checks"))
+		if h.recheckRetryPending.CompareAndSwap(false, true) {
+			time.AfterFunc(networkGuardRetryAfter, func() {
+				h.recheckRetryPending.Store(false)
+				h.maybeRunHealthAutoRecheck()
+			})
+		}
 		return
 	}
 	// Stamp completion even when nothing was eligible, so an empty dashboard does not

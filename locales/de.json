@@ -8241,6 +8241,7 @@
     "bmHealthScoreBreakdown": "Aufschlüsselung der Punktzahl",
     "bmHealthSettings": "Health-Einstellungen",
     "bmHealthStateBroken": "Defekt",
+    "bmNetworkDown": "Keine Verbindung von diesem Server seit {time}. Prüfungen sind pausiert und nichts wurde als defekt markiert.",
     "bmHealthStateDown": "Monitor ausgefallen",
     "bmHealthStateHealthy": "Gesund",
     "bmHealthStateLook": "Sollte man ansehen",

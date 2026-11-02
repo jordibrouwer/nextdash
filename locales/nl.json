@@ -8241,6 +8241,7 @@
     "bmHealthScoreBreakdown": "Opbouw van de score",
     "bmHealthSettings": "Health-instellingen",
     "bmHealthStateBroken": "Kapot",
+    "bmNetworkDown": "Geen verbinding vanaf deze server sinds {time}. Controles staan stil en er is geen bookmark als kapot gemarkeerd.",
     "bmHealthStateDown": "Monitor offline",
     "bmHealthStateHealthy": "Gezond",
     "bmHealthStateLook": "Even naar kijken",

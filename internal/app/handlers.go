@@ -42,9 +42,11 @@ type Handlers struct {
 	previewLoaded     bool
 	previewCacheDirty bool
 	healthCacheMu     sync.RWMutex
-	healthHistoryMu   sync.Mutex
-	healthTrendMu     sync.Mutex
-	healthReportMu    sync.RWMutex
+	// pingHook replaces the real check; tests only.
+	pingHook        func(ctx context.Context, urlStr string, expect expectation) PingResult
+	healthHistoryMu sync.Mutex
+	healthTrendMu   sync.Mutex
+	healthReportMu  sync.RWMutex
 	// pageDeleteMu makes a page delete's check, trash snapshot and removal one
 	// step: two deletes of one page at once each wrote a trash entry.
 	pageDeleteMu sync.Mutex
@@ -58,6 +60,10 @@ type Handlers struct {
 	discovery        *discoveryState
 	discoveryRunning atomic.Bool
 	discoveryDocker  atomic.Bool
+	// recheckRetryPending is set while a held-back background re-check waits
+	// for its retry (health_recheck.go), so retries never stack.
+	recheckRetryPending atomic.Bool
+	recheckRunning      atomic.Bool
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
@@ -1230,6 +1236,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	} else {
 		report.DomainSummary = summarizeDomains(nil, false)
 	}
+	report.NetworkDown = networkDownFor(readHealthCacheFile())
 
 	return report
 }
@@ -5228,6 +5235,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		"results":          result.Results,
 		"skipped":          result.Skipped,
 		"skippedOverLimit": result.SkippedOverLimit,
+		"heldOffline":      result.HeldOffline,
+		"networkDown":      result.NetworkDown,
 		"tested":           result.Tested,
 		"scope":            map[bool]string{true: "all", false: "checked"}[includeFlagged],
 	})
@@ -5245,6 +5254,10 @@ type healthRetestResult struct {
 	OfflineCount     int
 	Skipped          int
 	SkippedOverLimit int
+	// HeldOffline counts failures not recorded because this server looked to
+	// have no connection; NetworkDown says the run looked that way.
+	HeldOffline int
+	NetworkDown bool
 }
 
 // runHealthRetest pings the eligible bookmarks once and persists their status,
@@ -5301,6 +5314,41 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 		}
 	}
 
+	/*
+	 * Every check first, then what to record.
+	 *
+	 * A run in which nearly every host failed to resolve or answer says more
+	 * about this server's connection than about the bookmarks (health_network_
+	 * guard.go). Its failures are held back whole: no status, no sample, no
+	 * recovery message, the previous state kept. Answers in the same run are
+	 * real and are recorded.
+	 */
+	sweepStart := time.Now()
+	pinged := make(map[retestRef]PingResult)
+	var sweep []sweepHostResult
+	for _, page := range pages {
+		for bmIndex, bm := range pageBookmarks[page.ID] {
+			eligible := bm.CheckStatus || bm.Monitor || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
+			ref := retestRef{page.ID, bmIndex}
+			if !eligible || (withinCap != nil && !withinCap[ref]) || len(pinged) >= retestAllMaxBookmarks || ctx.Err() != nil {
+				continue
+			}
+			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
+			// Cancelled -- the page was left, or the scheduler's deadline hit --
+			// makes every check fail at once as "Unreachable". That says nothing
+			// about the bookmark and must not be saved as if it did.
+			if ctx.Err() != nil {
+				continue
+			}
+			pinged[ref] = result
+			if r, ok := sweepHostResultFor(bm.URL, result); ok {
+				sweep = append(sweep, r)
+			}
+		}
+	}
+	holdFailures := len(pinged) > 0 && h.networkGuard(sweep, sweepStart, time.Now(), true)
+	res.NetworkDown = holdFailures
+
 	for _, page := range pages {
 		bookmarks := pageBookmarks[page.ID]
 		type retestUpdate struct {
@@ -5319,17 +5367,13 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				res.Skipped++
 				continue
 			}
-			if (withinCap != nil && !withinCap[retestRef{page.ID, bmIndex}]) || res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
+			result, wasPinged := pinged[retestRef{page.ID, bmIndex}]
+			if !wasPinged {
 				res.SkippedOverLimit++
 				continue
 			}
-
-			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
-			// Cancelled -- the page was left, or the scheduler's deadline hit --
-			// makes every check fail at once as "Unreachable". That says nothing
-			// about the bookmark and must not be saved as if it did.
-			if ctx.Err() != nil {
-				res.SkippedOverLimit++
+			if holdFailures && holdableFailure(bm.URL, result.Status) {
+				res.HeldOffline++
 				continue
 			}
 			res.Tested++

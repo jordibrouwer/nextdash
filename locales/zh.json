@@ -8241,6 +8241,7 @@
     "bmHealthScoreBreakdown": "评分构成",
     "bmHealthSettings": "健康设置",
     "bmHealthStateBroken": "失效",
+    "bmNetworkDown": "此服务器自 {time} 起无法联网。检查已暂停，没有任何书签被标记为失效。",
     "bmHealthStateDown": "监控离线",
     "bmHealthStateHealthy": "正常",
     "bmHealthStateLook": "需要查看",
