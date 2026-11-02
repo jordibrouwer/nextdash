@@ -92,6 +92,15 @@
             ],
         },
         {
+            titleKey: 'tipsGroupWatch',
+            titleFallback: 'Watching feeds',
+            tips: [
+                'tipWatchNews',
+                'tipWatchFeedKey',
+                'tipWatchPreviewPager',
+            ],
+        },
+        {
             titleKey: 'tipsGroupMaintenance',
             titleFallback: 'Keeping it healthy',
             tips: [

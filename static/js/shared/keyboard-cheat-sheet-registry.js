@@ -528,6 +528,16 @@
             ],
         },
         {
+            id: 'sectionFeedNews',
+            titleKey: 'sectionFeedNews',
+            titleFallback: 'The news (watched feeds)',
+            rows: [
+                { keys: 'j / k', cheatKey: 'fnMove', fallback: 'In the news: the next or previous item (on the front page, the next or previous row)', print: true, printFallback: 'In the news: next / previous item' },
+                { keys: '← / →', cheatKey: 'fnStep', fallback: 'In an article: the previous or next item' },
+                { keys: 'Esc', cheatKey: 'fnClose', fallback: 'Close the news at once; the Index button goes back to the front page' },
+            ],
+        },
+        {
             id: 'sectionOther',
             titleKey: 'sectionOther',
             titleFallback: 'Other',
