@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Tidal Slate**; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#16a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
+| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Tidal Slate**; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 | 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
@@ -31,7 +31,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 | 🆕 just installed nextDash | [2 · First launch](#first-launch) → [3 · Core concepts](#3-core-concepts) | [5 · Adding bookmarks](#5-adding-bookmarks) |
 | ⌨️ want to stop using the mouse | [7 · Keyboard](#7-keyboard) | [8 · Search, commands and finders](#8-search-commands-and-finders) |
 | 🏠 run it next to your own services | [Self-hosted guide](#self-hosted-guide) | [15 · Containers](#15-containers), [12 · Checks & health](#12-checks-health) |
-| 🎨 want it to look like yours | [17 · Appearance](#17-appearance), [16A · The new look](#16a-the-new-look) | [16 · Widgets](#16-widgets) |
+| 🎨 want it to look like yours | [17 · Appearance](#17-appearance), [17A · The new look](#17a-the-new-look) | [16 · Widgets](#16-widgets) |
 | 🔤 met a word you don't know | [Glossary](#glossary) | |
 
 **All chapters**
@@ -290,13 +290,13 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 </details>
 
 <details>
-<summary><b>16A.</b> <a href="#16a-the-new-look">The new look</a></summary>
+<summary><b>17A.</b> <a href="#17a-the-new-look">The new look</a></summary>
 
-- [What changed](#16a1-what-changed)
-- [Why](#16a2-why)
-- [Everyone gets Aurora Glass, and the way back](#16a3-everyone-gets-aurora-glass-and-the-way-back)
-- [New and changed backdrops](#16a4-backdrops)
-- [The neutral themes](#16a5-neutrals)
+- [What changed](#17a1-what-changed)
+- [Why](#17a2-why)
+- [Everyone gets Aurora Glass, and the way back](#17a3-everyone-gets-aurora-glass-and-the-way-back)
+- [New and changed backdrops](#17a4-backdrops)
+- [The neutral themes](#17a5-neutrals)
 
 </details>
 
@@ -976,7 +976,7 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 
 <img src="screenshots/manual.md/04-action-buttons.jpg" alt="The action buttons in a column along the right edge, each with its key on a small chip" width="74" align="right">
 
-**How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§17A](#16a-the-new-look)). A docked bar stands apart from the cards it slides over: a layer of the surface colour goes over the material's paint, with an edge that leans to the accent. A button that is on is filled with the accent, as the lit view in the header is.
+**How it is drawn.** In the new look the bar is a handle on the screen edge, drawn in the surface of the theme's material, with the mark of its head and a hairline between its groups ([§17A](#17a-the-new-look)). A docked bar stands apart from the cards it slides over: a layer of the surface colour goes over the material's paint, with an edge that leans to the accent. A button that is on is filled with the accent, as the lit view in the header is.
 
 **A bar that slides away.** **Slide a docked bar away after loading** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The delay counts after a load and after you used the keyboard. The bar comes back when the pointer rests for a moment anywhere along that edge (or on its handle), or when focus moves into it; a quick pass on the way to the Dock or the scrollbar leaves it away. Called back with the mouse, it slides away shortly after the pointer leaves it, whatever the delay is. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
 
@@ -3760,7 +3760,7 @@ The ones that change something need the write token.
 > **In short:** Appearance changes how the dashboard looks: themes, background, surfaces, type, layout, rows, link previews, header and action bar. Pick, preview and apply, or build a theme of your own.
 
 > [!TIP]
-> The look changed in version 1.22: every material has a surface of its own, and every install that ran an earlier release moved onto Aurora Glass once. What changed, why, and how to get your old look back is in [§17A The new look](#16a-the-new-look).
+> The look changed in version 1.22: every material has a surface of its own, and every install that ran an earlier release moved onto Aurora Glass once. What changed, why, and how to get your old look back is in [§17A The new look](#17a-the-new-look).
 
 **Config → Appearance** opens straight on its settings, on the tab you had open if that was in the last five minutes, and on **Theme** otherwise. Nine tabs in three labelled groups:
 
@@ -3784,7 +3784,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 ### 17.1 Themes
 
-nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Tidal Slate** — dark, with Tidal Slate (light) for auto dark mode. An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§17A](#16a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§17A.3](#16a3-everyone-gets-aurora-glass-and-the-way-back)).
+nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Tidal Slate** — dark, with Tidal Slate (light) for auto dark mode. An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§17A](#17a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§17A.3](#17a3-everyone-gets-aurora-glass-and-the-way-back)).
 
 **Theme** on the Theme tab lists every theme by name. Beside it:
 
@@ -3905,7 +3905,7 @@ it was drawn for, and picking a theme brings its answer with it.
 
 | Setting | Choices |
 |---|---|
-| **Material style** | **Follow the theme** (default) · Signature · Classic — Signature draws each material with a surface of its own, so glass, frost and aurora stop looking like one pane in three colours; Classic is the flat surface as it was before the new look ([§17A](#16a-the-new-look)). *Follow the theme* takes the install-wide answer, which is Signature unless you changed it; Signature and Classic set the theme you are on. With **Use these for every theme** on, the choice holds for the whole install and *Follow the theme* is not offered. |
+| **Material style** | **Follow the theme** (default) · Signature · Classic — Signature draws each material with a surface of its own, so glass, frost and aurora stop looking like one pane in three colours; Classic is the flat surface as it was before the new look ([§17A](#17a-the-new-look)). *Follow the theme* takes the install-wide answer, which is Signature unless you changed it; Signature and Classic set the theme you are on. With **Use these for every theme** on, the choice holds for the whole install and *Follow the theme* is not offered. |
 | **Accent of the neutrals** | **The theme's own** (default) · Blue · Teal · Green · Amber · Rose · Violet — one colour for the eight neutral themes (Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete, Black); every colour reads on every base, light and dark. Other themes keep their own accent. |
 | **Depth** | **Follow the theme** (default) · Flat · Soft · Rich · Vivid · Glass — the steps add a tint in the greys, raised surfaces and a faint wash of light behind the page; Glass blurs what is behind a surface and sits beside the ladder rather than on it. Menus are never blurred. |
 | **Glow** | **Follow the theme** (default) · Off · Soft · Full — how far the theme's colour carries around a surface. Flat has no glow. |
@@ -4072,18 +4072,18 @@ Each tab has a filter beside **Only changed**. When the filter — or **Only cha
 
 ---
 
-<a id="16a-the-new-look"></a>
+<a id="17a-the-new-look"></a>
 
-## 16A. 🪞 The new look
+## 17A. 🪞 The new look
 
 > [!NOTE]
 > **In short:** every material now has a surface of its own, and cards, headers, menus, dialogs and the side panel are drawn as one design. Every install that ran an earlier release moved onto **Aurora Glass** once; a fresh install now starts on Ocean. Your bookmarks, settings and own themes stayed exactly as they were, and the old look is one choice away.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
-<a id="16a1-what-changed"></a>
+<a id="17a1-what-changed"></a>
 
-### 16A.1 What changed
+### 17A.1 What changed
 
 Before, a theme was mostly a palette on one surface. Its *character* (glass, frost, aurora, lacquer and so on) scaled a few numbers, which is why glass, frost and aurora read as the same pane in three colours. Menus, dialogs and the views each took the look from a different place.
 
@@ -4122,15 +4122,15 @@ A few things came with it:
 - **Bookmark rows** take one inset from one variable, so icons line up with and without a ping.
 - **The keys** — `Shift + G` opens Glances from every view, so the last row of a list is `End` and no longer `G` ([§7](#7-keyboard)).
 
-<a id="16a2-why"></a>
+<a id="17a2-why"></a>
 
-### 16A.2 Why
+### 17A.2 Why
 
 The new look is drawn per material, and the themes were redrawn with it. Keeping the old drawing next to the new one would have meant two of everything: two sets of surfaces, two sets of headers, two sets of menus. One design that every part shares feels like a whole instead of loose parts, and it lets a paper theme look like paper and a terminal theme like a terminal, instead of three colours of the same pane.
 
-<a id="16a3-everyone-gets-aurora-glass-and-the-way-back"></a>
+<a id="17a3-everyone-gets-aurora-glass-and-the-way-back"></a>
 
-### 16A.3 Everyone gets Aurora Glass, and the way back
+### 17A.3 Everyone gets Aurora Glass, and the way back
 
 **Aurora Glass** — northern light behind a pane you can see through — was the default theme of version 1.22.0, and that release moved every existing install onto it.
 
@@ -4153,9 +4153,9 @@ The new look is drawn per material, and the themes were redrawn with it. Keeping
 
 The themes of version 1.0.0 are there too: **ThinkDashboard Classic** brings back the colours and the grid of dots of that release, and the current one is now **ThinkDashboard Modern**.
 
-<a id="16a4-backdrops"></a>
+<a id="17a4-backdrops"></a>
 
-### 16A.4 New and changed backdrops
+### 17A.4 New and changed backdrops
 
 A theme's backdrop is the picture behind your bookmarks. There are now **75** (there were 29), and a theme no longer takes one at random: **every material has a pool of its own**, from seven to seventeen recipes, and a theme's choice comes from the pool of its material. Two paper themes can have different backdrops, and both are paper backdrops. A terminal theme gets scanlines or a drafting grid, not a soft curtain.
 
@@ -4170,9 +4170,9 @@ A theme's backdrop is the picture behind your bookmarks. There are now **75** (t
 
 Choosing one yourself works as before ([§17.4](#174-type-and-background)): **Theme backdrop → Choose one**, or **Follow the theme** to let the theme pick from its pool.
 
-<a id="16a5-neutrals"></a>
+<a id="17a5-neutrals"></a>
 
-### 16A.5 The neutral themes
+### 17A.5 The neutral themes
 
 The eight neutral themes — Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete and Black — now sit on one lightness ladder, each with a material and a backdrop of its own. **Accent of the neutrals** (Appearance → Surfaces) gives all eight one colour: blue, teal, green, amber, rose or violet. Every colour reads on every base, light and dark. Other themes keep their own accent.
 
