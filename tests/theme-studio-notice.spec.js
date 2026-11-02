@@ -25,28 +25,26 @@ async function load(page, settings = {}) {
 }
 
 const card = (page) => page.locator('.theme-studio-notice-card');
+const toast = (page) => page.locator('#app-notification.show');
 
 test.describe('the theme studio hint', () => {
-    test('it names the key, and Open the studio opens the studio and is not asked again', async ({ page }) => {
+    test('it names the key, has no button and no corner card', async ({ page }) => {
         await load(page);
-        await page.evaluate(() => {
-            window.__studioOpened = 0;
-            window.dashboardInstance.config.openThemeBrowser = async () => { window.__studioOpened += 1; };
-        });
         expect(await page.evaluate(() => window.DashboardThemeStudioNotice.render())).toBe(true);
-        await expect(card(page)).toBeVisible();
-        await expect(card(page)).toContainText('Shift+A');
-        await card(page).locator('[data-ts-action="open"]').click();
+        await expect(toast(page)).toBeVisible();
+        await expect(toast(page)).toContainText('Shift+A');
+        await expect(page.locator('#app-notification')).not.toHaveClass(/has-action/);
+        await expect(page.locator('#app-notification .app-notification-action')).toBeHidden();
         await expect(card(page)).toHaveCount(0);
-        expect(await page.evaluate(() => window.__studioOpened)).toBe(1);
-        expect(await page.evaluate(() => window.DashboardThemeStudioNotice.shouldShow())).toBe(false);
     });
 
-    test('No thanks closes it for good', async ({ page }) => {
+    test('showing the toast counts as answered, so it is not asked again', async ({ page }) => {
         await load(page);
+        expect(await page.evaluate(() => window.DashboardThemeStudioNotice.shouldShow())).toBe(true);
         await page.evaluate(() => window.DashboardThemeStudioNotice.render());
-        await card(page).locator('[data-ts-action="dismiss"]').first().click();
+        await expect(toast(page)).toBeVisible();
         await expect(card(page)).toHaveCount(0);
+        expect(await page.evaluate((id) => window.DiscoverabilityState.hasSeenSettingPromo(id), PROMO_ID)).toBe(true);
         expect(await page.evaluate(() => window.DashboardThemeStudioNotice.shouldShow())).toBe(false);
     });
 

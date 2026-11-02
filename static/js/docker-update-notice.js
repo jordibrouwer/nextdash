@@ -108,6 +108,14 @@
         dismissLabel: () => t('dashboard.dockerUpdateNoticeDismiss', 'Dismiss'),
         dismissName: 'dismiss',
         canShow: eligible,
+        // One line that says where to turn it on. It counts as "not now": it
+        // comes back after the snooze, and the switch in Config turns it off
+        // for good.
+        toast: {
+            message: () => t('dashboard.dockerUpdateNoticeToast', 'Check images for updates? Turn it on under Config → Containers → Updates. nextDash then asks the image registries once a day; nothing updates by itself.'),
+            duration: 20000,
+            onShown: () => snooze(),
+        },
         onShown: () => track('shown'),
         onDismiss: () => { snooze(); track('dismiss'); },
         actionAttr: 'data-du-action',
