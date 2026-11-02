@@ -318,6 +318,7 @@ class DashboardPreview {
         return {
             url,
             title: this.decodeEntities(preview?.title || bookmark?.name || '').trim(),
+            name: String(bookmark?.name || '').trim(),
             domain: String(preview?.domain || this.extractDomainFromUrl(url) || '').trim(),
             image: preview?.image || '',
             // Carried so the card can tell "no picture" from "picture not here
@@ -399,9 +400,9 @@ class DashboardPreview {
     }
 
     /**
-     * The newest item of a feed the reader watches, while its window is open.
-     * Desktop only: a touch screen has no hover, and gets the strip under the
-     * row instead.
+     * The newest items of a feed the reader watches (up to three, newest
+     * first), while its window is open. Desktop only: a touch screen has no
+     * hover, and gets the strip under the row instead.
      */
     bookmarkNewsState(bookmark) {
         const watch = this.dash.feedWatch;
@@ -411,19 +412,28 @@ class DashboardPreview {
         if (!news?.newest) return null;
         const phase = watch.windowPhase();
         if (phase !== 'open' && phase !== 'pending') return null;
-        return { newCount: news.newCount, newest: news.newest, key: watch.key(bookmark?.url) };
+        const items = (Array.isArray(news.newItems) && news.newItems.length ? news.newItems : [news.newest])
+            .filter((item) => item && item.title).slice(0, 3);
+        if (!items.length) return null;
+        return { newCount: news.newCount, newest: items[0], items, key: watch.key(bookmark?.url) };
     }
 
     /**
-     * The newest item at the top of the card: picture, headline, lead, and the
-     * two ways on. Built once and refilled, like the rest of the card.
+     * A card with news is about the news: the item first (picture, headline,
+     * lead, the two ways on, and a pager when the site has more than one), and
+     * the site underneath as one compact line. The site's own description,
+     * picture and fact rows step aside (CSS, on `has-feed-news`).
      */
     paintPreviewNews(card, preview) {
         let el = card.querySelector('.bookmark-preview-card-news');
         const news = preview?.news;
-        card.classList.toggle('has-feed-news', Boolean(news?.newest));
-        if (!news?.newest) {
-            if (el) el.hidden = true;
+        const items = news?.items?.length ? news.items : (news?.newest ? [news.newest] : []);
+        card.classList.toggle('has-feed-news', items.length > 0);
+        if (!items.length) {
+            if (el) {
+                el.hidden = true;
+                el._news = null;
+            }
             return;
         }
         const d = this.dash;
@@ -433,41 +443,191 @@ class DashboardPreview {
             el.className = 'bookmark-preview-card-news';
             card.prepend(el);
             el.addEventListener('click', (event) => {
+                const pageButton = event.target.closest('[data-feed-news-page]');
+                if (pageButton) {
+                    // Paging keeps the card: no hide, no bubbling to the row.
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.stepPreviewNews(el, Number(pageButton.dataset.feedNewsPage) || 0);
+                    return;
+                }
                 const button = event.target.closest('[data-feed-news-action]');
                 if (!button) return;
                 event.preventDefault();
                 event.stopPropagation();
-                const ctx = card._previewContext;
-                const action = button.dataset.feedNewsAction;
-                const key = el.dataset.key;
-                this.hideBookmarkPreviewCard();
-                if (action === 'read') void window.FeedWatchNews?.open({ focusKey: key });
-                else if (ctx?.openLink) {
-                    // Past the headlines popover: this button is the way to the site.
-                    ctx.openLink._feedPopoverBypass = true;
-                    try { ctx.openLink.click(); } finally { ctx.openLink._feedPopoverBypass = false; }
-                }
+                this.runPreviewNewsAction(card, el, button.dataset.feedNewsAction);
+            });
+            // ← and → page through the items while the focus is inside the card
+            // (a pinned card, or a button on it). On the row they stay the
+            // grid's own keys: the card never sees those.
+            card.addEventListener('keydown', (event) => {
+                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                if (!card.classList.contains('has-feed-news') || el.hidden) return;
+                if ((el._news?.items?.length || 0) < 2) return;
+                if (event.target?.closest?.('input, textarea, select, [contenteditable="true"], iframe')) return;
+                event.preventDefault();
+                event.stopPropagation();
+                this.stepPreviewNews(el, event.key === 'ArrowRight' ? 1 : -1);
             });
         }
-        const item = news.newest;
-        el.dataset.key = news.key;
-        const image = item.image ? `<img class="bookmark-preview-card-news-image" src="${esc(item.image)}" alt="" decoding="async">` : '';
-        const when = item.publishedAt ? ` · ${esc(this.formatPreviewAgo(item.publishedAt))}` : '';
-        el.innerHTML = image
-            + `<div class="bookmark-preview-card-news-meta">${esc(d.formatDashboardLabel('feedWatchNewCount', { count: news.newCount }, `${news.newCount} new`))}${when}</div>`
-            + `<div class="bookmark-preview-card-news-title">${esc(item.title)}</div>`
-            + (item.summary ? `<div class="bookmark-preview-card-news-lead">${item.summary}</div>` : '')
+        if (el.dataset.key !== String(news.key || '')) el._page = 0;
+        el.dataset.key = String(news.key || '');
+        el._news = { ...news, items };
+        el._page = Math.min(Math.max(0, el._page || 0), items.length - 1);
+
+        const pager = items.length > 1
+            ? `<div class="bookmark-preview-card-news-pager">`
+                + `<button type="button" class="bookmark-preview-card-news-page" data-feed-news-page="-1" aria-label="${esc(d.formatDashboardLabel('feedWatchPrev', {}, 'Previous'))}">‹</button>`
+                + `<span class="bookmark-preview-card-news-count" aria-live="polite"></span>`
+                + `<button type="button" class="bookmark-preview-card-news-page" data-feed-news-page="1" aria-label="${esc(d.formatDashboardLabel('feedWatchNext', {}, 'Next'))}">›</button>`
+                + `</div>`
+            : '';
+        el.innerHTML = `<div class="bookmark-preview-card-news-media"></div>`
+            + `<div class="bookmark-preview-card-news-body">`
+            + `<div class="bookmark-preview-card-news-top"><div class="bookmark-preview-card-news-meta"></div>${pager}</div>`
+            + `<div class="bookmark-preview-card-news-title"></div>`
+            + `<div class="bookmark-preview-card-news-lead"></div>`
             + `<div class="bookmark-preview-card-news-actions">`
-            + `<button type="button" class="bookmark-preview-card-action" data-feed-news-action="read">${esc(d.formatDashboardLabel('feedWatchReadFull', {}, 'Read in full'))}</button>`
+            + `<button type="button" class="bookmark-preview-card-action" data-feed-news-action="read">${esc(d.formatDashboardLabel('feedWatchReadFull', {}, 'Open reader'))}</button>`
             + `<button type="button" class="bookmark-preview-card-action" data-feed-news-action="open">${esc(d.formatDashboardLabel('feedWatchOpenPage', {}, 'Open page'))}</button>`
-            + `</div>`;
+            + `</div></div>`
+            + this.previewNewsSiteMarkup(preview);
         el.hidden = false;
-        // The picture changes the card's height when it arrives; place the card
-        // again then, so it never ends below the screen.
-        el.querySelector('img')?.addEventListener('load', () => {
-            const ctx = card._previewContext;
-            if (ctx && card.classList.contains('is-visible')) this.positionBookmarkPreviewCard(ctx.openLink);
-        }, { once: true });
+        this.paintPreviewNewsItem(el);
+    }
+
+    /** The site, compact: favicon, name and status on one line, the rest muted under it. */
+    previewNewsSiteMarkup(preview) {
+        const d = this.dash;
+        const esc = (v) => window.NextDashHtml.escapeHtml(String(v ?? ''));
+        const iconSrc = this.resolvePreviewIconSrc(preview?.icon);
+        const name = String(preview?.name || '').trim() || String(preview?.title || '').trim() || String(preview?.domain || '').trim();
+        let status = '';
+        const checked = preview?.checked;
+        if (checked?.state === 'online') {
+            const slow = checked.ping >= 1500;
+            const label = slow
+                ? d.formatDashboardLabel('previewStatusSlow', {}, 'Slow')
+                : d.formatDashboardLabel('previewStatusOnline', {}, 'Online');
+            status = `<span class="bookmark-preview-card-news-status is-${slow ? 'warn' : 'ok'}">${esc(label)}${checked.ping > 0 ? ` · ${esc(checked.ping)} ms` : ''}</span>`;
+        } else if (checked?.state === 'offline') {
+            status = `<span class="bookmark-preview-card-news-status is-bad">${esc(d.formatDashboardLabel('previewStatusOffline', {}, 'Offline'))}</span>`;
+        }
+        const facts = [];
+        const openCount = Number(preview?.openCount || 0);
+        facts.push(openCount > 0
+            ? `${esc(d.formatDashboardLabel('previewFactOpens', {}, 'Opens'))} ${esc(openCount)}`
+            : esc(d.formatDashboardLabel('previewNeverOpened', {}, 'Never opened')));
+        const shortcut = String(preview?.shortcut || '').trim();
+        if (shortcut) facts.push(`${esc(d.formatDashboardLabel('previewFactKey', {}, 'Key'))} <kbd>${esc(shortcut)}</kbd>`);
+        const tags = (Array.isArray(preview?.tags) ? preview.tags.filter(Boolean) : []).slice(0, 3);
+        const chips = tags.map((tag) => `<span class="bookmark-preview-card-news-tag">${esc(tag)}</span>`).join('');
+        return `<div class="bookmark-preview-card-news-site">`
+            + (iconSrc ? `<span class="bookmark-preview-card-news-site-fav"><img src="${esc(iconSrc)}" alt="" decoding="async"></span>` : '')
+            + `<span class="bookmark-preview-card-news-site-name">${esc(name)}</span>${status}</div>`
+            + `<div class="bookmark-preview-card-news-facts"><span>${facts.join(' · ')}</span>${chips}</div>`;
+    }
+
+    /** Fill the item part of the news block with the item on the current page. */
+    paintPreviewNewsItem(el) {
+        const d = this.dash;
+        const news = el._news;
+        const items = news?.items || [];
+        const item = items[el._page || 0];
+        if (!item) return;
+        const card = el.closest('.bookmark-preview-card');
+        const media = el.querySelector('.bookmark-preview-card-news-media');
+        // No icon either: the site's first letter, in a quiet ring.
+        const letter = () => {
+            const name = card?.querySelector('.bookmark-preview-card-news-site-name')?.textContent || '';
+            const first = Array.from(name.trim())[0] || '';
+            if (!first) return;
+            const span = document.createElement('span');
+            span.className = 'bookmark-preview-card-news-fallback-letter';
+            span.setAttribute('aria-hidden', 'true');
+            span.textContent = first.toUpperCase();
+            media.appendChild(span);
+        };
+        const fallback = () => {
+            media.innerHTML = '';
+            media.classList.add('is-fallback');
+            const icon = card?.querySelector('.bookmark-preview-card-news-site-fav img')?.getAttribute('src') || '';
+            if (icon) {
+                const img = document.createElement('img');
+                img.className = 'bookmark-preview-card-news-fallback-icon';
+                img.alt = '';
+                img.src = icon;
+                img.addEventListener('error', () => { img.remove(); letter(); }, { once: true });
+                media.appendChild(img);
+            } else {
+                letter();
+            }
+        };
+        if (item.image) {
+            media.classList.remove('is-fallback');
+            media.innerHTML = '';
+            const img = document.createElement('img');
+            img.className = 'bookmark-preview-card-news-image';
+            img.alt = '';
+            img.decoding = 'async';
+            img.addEventListener('error', fallback, { once: true });
+            img.src = String(item.image);
+            media.appendChild(img);
+        } else {
+            fallback();
+        }
+        const when = item.publishedAt ? ` · ${this.formatPreviewAgo(item.publishedAt)}` : '';
+        el.querySelector('.bookmark-preview-card-news-meta').textContent =
+            d.formatDashboardLabel('feedWatchNewCount', { n: news.newCount, count: news.newCount }, `${news.newCount} new`) + when;
+        el.querySelector('.bookmark-preview-card-news-title').textContent = String(item.title || '');
+        const lead = el.querySelector('.bookmark-preview-card-news-lead');
+        // The summary is sanitised by the server when it is stored.
+        lead.innerHTML = item.summary ? String(item.summary) : '';
+        lead.hidden = !item.summary;
+        const count = el.querySelector('.bookmark-preview-card-news-count');
+        if (count) count.textContent = `${(el._page || 0) + 1} / ${items.length}`;
+        el.dataset.itemId = String(item.id || '');
+        const openButton = el.querySelector('[data-feed-news-action="open"]');
+        if (openButton) {
+            if (item.link) openButton.dataset.href = String(item.link);
+            else delete openButton.dataset.href;
+        }
+    }
+
+    /** One step through the items, wrapping at either end. */
+    stepPreviewNews(el, step) {
+        const total = el._news?.items?.length || 0;
+        if (total < 2 || !step) return;
+        el._page = ((el._page || 0) + step + total) % total;
+        this.paintPreviewNewsItem(el);
+    }
+
+    /**
+     * Open reader goes to the site's paper (the paged item's own article when
+     * the reader paged on); Open page goes to the item's page, which reads the
+     * site's news the way opening the bookmark does. An item without a link
+     * falls back to the bookmark itself.
+     */
+    runPreviewNewsAction(card, el, action) {
+        const ctx = card._previewContext;
+        const key = el.dataset.key;
+        const page = el._page || 0;
+        const item = el._news?.items?.[page] || null;
+        this.hideBookmarkPreviewCard();
+        if (action === 'read') {
+            void window.FeedWatchNews?.open(page > 0 && item?.id ? { focusKey: key, focusItemId: item.id } : { focusKey: key });
+            return;
+        }
+        if (item?.link && typeof window.openUrl === 'function') {
+            window.openUrl(String(item.link), this.dash.settings);
+            if (ctx?.bookmark) this.dash.feedWatch?.markSeen?.(ctx.bookmark);
+            return;
+        }
+        if (ctx?.openLink) {
+            // Past the headlines popover: this button is the way to the site.
+            ctx.openLink._feedPopoverBypass = true;
+            try { ctx.openLink.click(); } finally { ctx.openLink._feedPopoverBypass = false; }
+        }
     }
 
     /**
@@ -1414,7 +1574,10 @@ class DashboardPreview {
 
         const imageWrap = card.querySelector('.bookmark-preview-card-image-wrap');
         const imageEl = card.querySelector('.bookmark-preview-card-image');
-        const image = want.has('image') ? this.resolvePreviewImageSrc(preview?.image) : '';
+        // A card with news leads with the news picture; the page's own picture
+        // stays off it (it was the cropped logo in a side column).
+        const hasNews = Boolean(preview?.news?.newest);
+        const image = want.has('image') && !hasNews ? this.resolvePreviewImageSrc(preview?.image) : '';
         if (image) {
             imageEl.alt = title;
             imageEl.src = image;

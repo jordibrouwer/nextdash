@@ -106,10 +106,10 @@ test('the toast Read opens the same paper', async ({ page }) => {
     await expectTwoSections(page);
 });
 
-test('Read in full on the hover card shows only that site', async ({ page }) => {
+test('Open reader on the hover card shows only that site', async ({ page }) => {
     await openDashboard(page);
     await row(page, 'Site A').hover();
-    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Read in full' }).click();
+    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Open reader' }).click();
     await expect(modal(page)).toBeVisible();
     await expect(modal(page).locator('.feed-news-section-name')).toHaveText(['Site A']);
     await expect(modal(page).locator('.feed-news-section:not(.is-earlier) .feed-news-entry-title')).toHaveText(['A three', 'A two', 'A one']);

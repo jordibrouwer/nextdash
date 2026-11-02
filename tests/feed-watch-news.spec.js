@@ -36,7 +36,7 @@ async function setup(page, { clock = false } = {}) {
 
 async function openFromCard(page) {
     await link(page).hover();
-    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Read in full' }).click();
+    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Open reader' }).click();
     await expect(modal(page)).toBeVisible();
 }
 
@@ -213,7 +213,7 @@ test('the bar runs down and the modal closes itself after 30 minutes', async ({ 
     await expect(link(page).locator('.bookmark-news-badge')).toBeVisible();
     await link(page).hover();
     await page.clock.runFor(400);
-    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Read in full' }).click();
+    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Open reader' }).click();
     await expect(modal(page)).toBeVisible();
     const bar = modal(page).locator('.feed-news-bar');
     await expect(bar).toHaveAttribute('aria-label', /Closes in 30 min/);

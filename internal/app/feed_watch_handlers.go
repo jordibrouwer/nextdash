@@ -43,6 +43,10 @@ type watchEntry struct {
 	// Muted is true when every feed of the bookmark is muted.
 	Muted  bool             `json:"muted,omitempty"`
 	Newest *FeedItem        `json:"newest"`
+	// NewItems are the newest unread items across the bookmark's feeds, newest
+	// first and at most watchNewItemsMax, so the hover card can page through
+	// them without a request. NewItems[0] is Newest.
+	NewItems []FeedItem `json:"newItems,omitempty"`
 	Feeds  []watchFeedEntry `json:"feeds"`
 	// LatestAt and LatestTitle are the newest item of any feed of the
 	// bookmark, read or not, by publish time (found time without one).
@@ -78,6 +82,9 @@ func watchNewItems(w FeedWatch, readAt int64) []FeedItem {
 	}
 	return out
 }
+
+// watchNewItemsMax is how many unread items the list carries per bookmark.
+const watchNewItemsMax = 3
 
 func newestItemFirst(items []FeedItem) {
 	sort.SliceStable(items, func(i, j int) bool {
@@ -137,6 +144,15 @@ func watchListFor(file FeedWatchFile, bookmarks []Bookmark) map[string]watchEntr
 				first := fresh[0]
 				first.ImageSource = ""
 				entry.Newest = &first
+			}
+			for i := 0; i < len(fresh) && i < watchNewItemsMax; i++ {
+				it := fresh[i]
+				it.ImageSource = ""
+				entry.NewItems = append(entry.NewItems, it)
+			}
+			newestItemFirst(entry.NewItems)
+			if len(entry.NewItems) > watchNewItemsMax {
+				entry.NewItems = entry.NewItems[:watchNewItemsMax]
 			}
 		}
 		for _, list := range [][]FeedItem{w.Items, w.Recent} {
