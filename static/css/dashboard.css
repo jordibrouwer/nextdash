@@ -9668,6 +9668,11 @@ body[data-action-keys="off"] .header-action-item-key {
     white-space: nowrap;
 }
 
+/* display:flex above would otherwise win over the hidden attribute and leave the popover on screen. */
+.action-key-hint[hidden] {
+    display: none;
+}
+
 .action-key-hint-name {
     padding: 0 var(--space-1, 0.25rem);
     color: var(--text-primary);

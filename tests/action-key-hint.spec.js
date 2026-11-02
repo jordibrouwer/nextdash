@@ -9,7 +9,8 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * short rest on the button brings it up; passing over the bar does not.
  */
 
-const hint = (page) => page.locator('.action-key-hint:not([hidden])');
+// :visible, not :not([hidden]): the attribute alone says nothing once a rule gives the popover its own display.
+const hint = (page) => page.locator('.action-key-hint:visible');
 
 async function openDashboard(page, settings) {
     await page.setViewportSize({ width: 1500, height: 900 });
