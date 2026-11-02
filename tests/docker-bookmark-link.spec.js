@@ -136,8 +136,9 @@ test('a bookmark far down the list still gets its row, in view and in focus', as
     await open(page, '#docker', [...filler, { name: 'Zz Sonarr', url: 'http://localhost:8989/', pageId: 1, category: 'c1', checkStatus: true }]);
     await page.locator('[data-docker-row="sonarr"] [data-docker-bm-dot]').click();
     const row = page.locator('#config-bm-list .config-bm-row[data-bm-key="1::http://localhost:8989/"]');
-    await expect(row).toBeFocused();
-    await expect(row).toBeFocused();
+    // Eighty-one rows are drawn before the one asked for gets its focus: on a
+    // loaded runner that takes longer than the default five seconds.
+    await expect(row).toBeFocused({ timeout: 20_000 });
     await expect(row).toBeInViewport();
     await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-key', '1::http://localhost:8989/');
 });

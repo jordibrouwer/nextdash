@@ -190,7 +190,7 @@ test.describe('on a touch screen', () => {
         // Back inside the popover, off the bar. Which headline takes the focus is
         // not asserted: on the CI runner it was not the last one, on three other
         // machines it was, and what this checks is that the trap holds.
-        expect(await page.evaluate(() => {
+        await expect.poll(() => page.evaluate(() => {
             const p = document.querySelector('.feed-news-pop');
             const a = document.activeElement;
             return Boolean(p && a && p.contains(a) && !a.matches('[data-pop-site]'));
@@ -198,7 +198,7 @@ test.describe('on a touch screen', () => {
         // Esc, the close button and a second tap all hand focus back.
         await page.keyboard.press('Escape');
         await expect(pop(page)).toHaveCount(0);
-        expect(await page.evaluate(() => document.activeElement?.classList.contains('bookmark-news-badge'))).toBe(true);
+        await expect.poll(() => page.evaluate(() => document.activeElement?.classList.contains('bookmark-news-badge'))).toBe(true);
 
         await badge(page).tap();
         await pop(page).locator('[data-pop-close]').tap();

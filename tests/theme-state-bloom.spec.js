@@ -92,10 +92,16 @@ test.describe('the state bloom', () => {
             // .bookmark-link transitions box-shadow over 0.16s, so reading it
             // in the same tick returns the starting frame -- a transparent
             // zero-size shadow that looks exactly like "no bloom".
+            // A timer is not the transition's clock: on a loaded runner the
+            // frames come late and 300ms can end mid-transition (alpha 0.30
+            // of 0.36). The animation says when it has finished.
+            const settled = () => Promise.all(row.getAnimations().map((a) => a.finished.catch(() => {})));
             await new Promise((resolve) => setTimeout(resolve, 300));
+            await settled();
             const shadow = window.getComputedStyle(row).boxShadow;
             row.classList.remove('keyboard-selected');
             await new Promise((resolve) => setTimeout(resolve, 300));
+            await settled();
 
             return { bloom, shadow, restingShadow: window.getComputedStyle(row).boxShadow };
         });

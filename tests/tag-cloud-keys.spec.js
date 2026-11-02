@@ -152,7 +152,8 @@ test('arrows walk the cloud in reading order, like a dashboard list', async ({ p
     const order = await page.evaluate(() =>
         [...document.querySelectorAll('#tag-cloud-modal .tag-cloud-word')].map((el) => el.dataset.tag));
     expect(order.length).toBeGreaterThan(3);
-    expect(await focusedTag(page)).toBe(order[0]);
+    // The cloud takes focus a moment after it opens; a loaded runner is slower.
+    await expect.poll(() => focusedTag(page)).toBe(order[0]);
 
     // Down and Right both take the next tag, even where it starts a new row.
     await page.keyboard.press('ArrowDown');
