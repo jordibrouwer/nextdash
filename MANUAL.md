@@ -1049,6 +1049,8 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 
 The page's picture stands on the left of the card, beside the text.
 
+<img src="screenshots/manual.md/04-preview-card-news.jpg" alt="The preview card of a bookmark with news: a photo, the meta line 3 new, 22 min ago with a pager 1 / 3, the headline, a short lead, two equal buttons Open reader and Open page, and the site and its tag on one line" width="360" align="right">
+
 **A bookmark with news** ([§12.6](#126-watch-feeds)) gets a different card: it leads with the newest item — its photo, its headline and a short lead — with two equal buttons, **Open reader** and **Open page** (the item's own page). When the site has more than one new item, a pager (`‹ 1 / 3 ›`) pages through up to three. The site's own picture and description do not sit beside it, and the card is about 420 px high instead of 770.
 
 <img src="screenshots/manual.md/04-preview-card.jpg" alt="The link preview card of a bookmark: picture, description, a tag, when it was last opened, its shortcut and where it lives" width="408" align="left">
@@ -2326,6 +2328,21 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 - **Manage in one place.** **Config → Watch feeds** lists every watched feed with its newest item; per feed you can **mute** it, **pause** it or set a **word filter**. **Stats → Watch feeds** shows the numbers, with a period switch. Nothing is sent to anyone: nextDash only reads the feeds.
 - **When it goes away.** Opening the bookmark (or an article's headline) clears its count. The purple mark and the window close by themselves after 15, 30 (default), 60 or 120 minutes, counted from when the tab is in view; the news itself stays until you open the bookmark. `status:watched` and `status:unwatched` search for followed bookmarks.
 - **What it keeps.** The ten newest new items of each feed, with their text and picture, and 50 recent entries as short copies without pictures; the ids of the last 75 entries are remembered so nothing counts as new twice. A feed that fails five times in a row is paused and tried again once a day. **Check watched feeds now** polls them all at once.
+
+<p align="center"><img src="screenshots/manual.md/12-watch-feeds-news.jpg" alt="The news window in its one-article view: the site name and 1 of 10 in the header with the three layout buttons, a picture, the headline and its lead, and the buttons previous, next, Mark read and Open page with the keys j, k and Esc" width="440"></p>
+<p align="center"><sub>The news window, one article per screen.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/12-watch-feeds-news-columns.jpg" alt="The news window in two columns: the news grouped by site, each item a card with a small picture, its headline, the site and age and a short lead, with a dot on the unread ones, and Mark site read and Mark all read buttons" width="620"></p>
+<p align="center"><sub>Two columns: the news per site, with a dot on what is unread.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/12-watch-feeds-paper.jpg" alt="The Newspaper view of the news window on a cream page with a dateline: a serif headline per item with a small picture and a lead, grouped by site with unread counts" width="620"></p>
+<p align="center"><sub>The Newspaper view keeps its own paper look whatever the theme.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/12-watch-feeds-config.jpg" alt="Config, Watch feeds: six watched feeds with their newest count, when they were checked, the interval and a Mute button; one feed shows Paused, one Muted and one a word filter, and above the list Open the paper, Check all now and Watch more" width="720"></p>
+<p align="center"><sub>Config → Watch feeds: every feed with its news, interval, mute, pause and word filter.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/12-watch-feeds-stats.jpg" alt="Stats, Watch feeds tab: tiles for feeds watched, items this week, read share, unread now, errors and busiest feed, a bar chart of items per day with a period switch, health this week, a table per feed and a heat map of when a site publishes" width="640"></p>
+<p align="center"><sub>Stats → Watch feeds: what the feeds publish, what you read and how their checks go.</sub></p>
 
 <a id="127-keeping-a-copy-of-a-page"></a>
 
