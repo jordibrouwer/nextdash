@@ -133,7 +133,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.24.1 — 2 November 2026
 
-A small follow-up to Watch feeds: the One column news window no longer opens on a long list when nothing is new, and adding a feed says what to expect.
+A small follow-up to Watch feeds: the One column news window no longer opens on a long list when nothing is new, and adding a feed says what to expect. Held back from the What's new window (`hideFromModal`), so v1.24.0 keeps leading it.
 
 ### Watch feeds
 
@@ -144,6 +144,7 @@ A small follow-up to Watch feeds: the One column news window no longer opens on 
 
 - **docs — Watch feeds is its own chapter in the manual.** It was §12.6 under Checks & health; it is now **§14**, after Inbox, with four sections (14.1 Following a site, 14.2 What you see, 14.3 The news window, 14.4 Managing it). Containers is §15, Widgets §16, Glances §16A and the chapters after it each move up by one, to Glossary at §27; the contents, the §-references, the anchors and the README's links follow, and Keeping a copy of a page and The status page become §12.6 and §12.7.
 - **docs — The manual says what a new feed does.** The *Start* paragraph now explains that a feed's existing entries count as seen and when news shows; the news window paragraph describes One column with nothing new.
+- **docs — `static/data/whats-new/v1.24.1.json` and its index entry**, flagged `hideFromModal`; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v361` and `DASHBOARD_RELEASE` stays on v1.24.0. `tests/whats-new-hidden-release.spec.js` follows. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
