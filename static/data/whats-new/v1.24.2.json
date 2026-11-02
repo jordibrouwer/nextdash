@@ -1,0 +1,21 @@
+{
+  "tag": "v1.24.2",
+  "date": "2 November 2026",
+  "releasedAt": "2026-11-02",
+  "modalLead": "Watch feeds: Config has a Feeds and a Settings tab, and the news popover has its Reader button on a phone.",
+  "sections": [
+    {
+      "title": "Watch feeds",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Config → Watch feeds has two tabs.</strong> <em>Feeds</em> lists what you follow; <em>Settings</em> holds how the news reaches you."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Reader in the news popover, on a phone too.</strong> Tap a row with news and open the news window for that site from the popover."
+        }
+      ]
+    }
+  ]
+}
