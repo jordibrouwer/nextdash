@@ -93,6 +93,21 @@
       ]
     },
     {
+      "title": "Bookmarks and Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Select every bookmark.</strong> Press <kbd>Ctrl</kbd> + <kbd>A</kbd> (or <kbd>Cmd</kbd> + <kbd>A</kbd>) in the Bookmarks view to tick everything the filter and search show, or use the new <strong>Select all</strong> button in the toolbar. Press it again to clear.",
+          "link": "#bookmarks",
+          "linkLabel": "Open Bookmarks"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No more fake rot after a start without internet.</strong> When nextDash starts before the machine is online, it no longer marks every bookmark broken. It holds those results back, says so in the Bookmarks view, and checks again a minute later."
+        }
+      ]
+    },
+    {
       "title": "MCP and assistant",
       "items": [
         {

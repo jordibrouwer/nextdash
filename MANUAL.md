@@ -2187,6 +2187,8 @@ Set the mode in the bookmark form, the Bookmarks view's side panel, the right-cl
 - **Sign in with** — a stored sign-in. Sign-ins are created in a Custom widget's settings and kept in their own file, outside backups unless you include stored tokens. A sign-in is never sent when a check is redirected to another host.
 - **Accept a certificate this machine does not trust.**
 
+**When this server has no connection.** If a round of checks reaches at least ten different sites and nearly all of them fail with a lookup, timeout or refused-connection error at once, the problem is the server's own connection, not ten dead sites: it happens when nextDash starts before the machine is online. nextDash then holds those failures back: nothing is marked broken, no sample is added, no alert or incident is opened, every bookmark keeps its earlier status, and the Bookmarks view says *No connection from this server since …*. The round is tried again a minute later. Addresses on your own network (IP addresses, `.lan`, `.local`, single-label names) are never held back, and anything that answers is recorded as usual. If the outage lasts more than half an hour, failures are recorded normally.
+
 <a id="122-expected-response"></a>
 
 ### 12.2 Expected response
