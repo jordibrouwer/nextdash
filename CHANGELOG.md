@@ -149,6 +149,7 @@ Watch feeds replace Fresh: follow the feed of any bookmark, get a stripe, a badg
 - **new — Phones.** The news button is desktop only (a phone opens the paper from the toast); the news stripe stands before the favicon.
 - **new — A preview card that leads with the news.** Hovering a bookmark with news now shows the photo, the headline and a short lead first, two equal buttons (**Open reader** and **Open page**), and a pager (`‹ 1 / 3 ›`) when the site has more than one new item; the site's own picture and description no longer sit beside it. Open page now opens that item's own page. The card is about 420 px high instead of 770.
 - **fix — The news modal follows the theme.** The header, buttons, links, list cards and accent come from the active theme and its material, not from a fixed black and purple. Only the **Newspaper** view keeps its own paper look. The horizontal scrollbar under the footer is gone, and the footer buttons share one height, border and hover.
+- **fix — `:config` offers Watch feeds.** The command palette listed every Config section except this one.
 - **fix — Feeds.** An aborted poll is not a failure; feeds of deleted bookmarks are dropped; an entry dated in the future no longer stays new after an open; pictures come back after a restore. Each feed keeps ten full items, fifty light copies and 75 seen ids.
 
 ### Phones
@@ -175,6 +176,7 @@ Watch feeds replace Fresh: follow the feed of any bookmark, get a stripe, a badg
 
 - **new — Tidal Slate (dark)** is the default theme on new installs, with Tidal Slate (light) as its light half for auto dark mode. Installs that already chose a theme keep it.
 - **fix — Text fields share one fill** in the signature themes, and more fields take it (`config-input` has a style); the news popover follows the material of the theme; in Ink the folio stays put when you hover the header.
+- **fix — An open category sort menu stays above the next category.** In the Ink and frost looks every category is its own layer, so the category below drew over the menu and took its clicks.
 
 ### Action bar
 
