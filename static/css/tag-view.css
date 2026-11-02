@@ -5,6 +5,7 @@
 
 .tag-view .tag-view-title-wrap {
     display: inline-flex;
+    max-width: 100%;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
@@ -12,6 +13,10 @@
 
 .tag-view .tag-view-title {
     color: var(--accent-primary);
+    /* A long tag has no space to break at: it breaks anywhere rather than
+       push the header wider than a phone. */
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .tag-view .tag-view-pill {
@@ -608,6 +613,7 @@
 .tag-view .lvs-header-text {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 /* ── Selection ────────────────────────────────────────────────────────── */
