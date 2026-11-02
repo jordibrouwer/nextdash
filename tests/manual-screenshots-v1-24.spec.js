@@ -20,6 +20,7 @@ const {
     snap,
     openDashboard,
     DESKTOP,
+    PHONE,
 } = require('./helpers/manual-shot-kit');
 const { newsData, startNewsStub, watchSites, shiftFeedTimes } = require('./helpers/watch-news-mock');
 
@@ -65,6 +66,34 @@ test('04 preview card with news', async ({ page, server }) => {
     // Pacing for the capture, not a condition: the headline's picture finishes loading.
     await page.waitForTimeout(1_500);
     await crop(page, card, '04-preview-card-news.jpg');
+});
+
+test('12 click popover on a row with news', async ({ page, server }) => {
+    await withNews(page, server);
+    await openDashboard(page);
+    // A click on the row opens the headlines; the preview card steps aside.
+    const link = row(page, 'Northside Gazette');
+    await link.click({ modifiers: [] });
+    const pop = page.locator('.feed-news-pop');
+    await pop.waitFor({ state: 'visible' });
+    // Pacing for the capture, not a condition: the popover grows in and its picture loads.
+    await page.waitForTimeout(1_200);
+    await crop(page, [link, pop], '12-watch-feeds-popover.jpg', 20);
+});
+
+test.describe('on a phone', () => {
+    test.use({ viewport: PHONE, isMobile: true, hasTouch: true });
+    test('12 tap popover on a row with news', async ({ page, server }) => {
+        await withNews(page, server);
+        await openDashboard(page);
+        const link = row(page, 'Northside Gazette');
+        await link.tap();
+        const pop = page.locator('.feed-news-pop');
+        await pop.waitFor({ state: 'visible' });
+        // Pacing for the capture, not a condition: the popover grows in.
+        await page.waitForTimeout(1_200);
+        await crop(page, [link, pop], '12-watch-feeds-popover-phone.jpg', 16);
+    });
 });
 
 test('12 news window, one article', async ({ page, server }) => {
