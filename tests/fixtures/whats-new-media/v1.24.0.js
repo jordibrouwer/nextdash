@@ -59,12 +59,15 @@ module.exports = {
             async act(page, { server }) {
                 const link = row(page, 'Northside Gazette');
                 await link.click({ button: 'right' });
+                // Pacing for the capture, not a condition: the context menu is on screen long enough to be read.
                 await page.waitForTimeout(700);
                 await page.getByText('Watch this feed…').first().click();
                 const tick = page.locator('[data-feed-watch-tick]').first();
                 await tick.waitFor();
+                // Pacing for the capture, not a condition: the viewer sees the dialog before the tick is set.
                 await page.waitForTimeout(600);
                 await tick.check();
+                // Pacing for the capture, not a condition: the ticked state stays on screen before Save.
                 await page.waitForTimeout(700);
                 await page.locator('[data-feed-watch-save]').click();
                 await page.locator('.feed-watch-modal').waitFor({ state: 'hidden' });
@@ -80,9 +83,11 @@ module.exports = {
                 await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
                 await page.locator('.bookmark-link', { hasText: 'Harbour footbridge' }).first().waitFor({ timeout: 20_000 });
                 await page.evaluate((y) => window.scrollTo(0, y), page.__scrollY);
+                // Pacing for the capture, not a condition: the redrawn row rests before the pointer moves onto it.
                 await page.waitForTimeout(1_000);
                 await link.hover();
                 await page.locator('.bookmark-preview-card-news-page').first().waitFor({ state: 'visible' });
+                // Pacing for the capture, not a condition: the hover card stays on screen at the end of the recording.
                 await page.waitForTimeout(1_800);
             },
         },

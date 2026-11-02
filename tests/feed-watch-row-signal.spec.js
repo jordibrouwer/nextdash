@@ -180,6 +180,7 @@ test('a muted feed on another page puts no dot on its tab', async ({ page, reque
     await stubWatch(page, { list, items: [newsItem(1)] });
     await openDashboard(page);
     await expect(page.locator('#page-navigation .page-nav-btn[role="tab"]')).toHaveCount(2);
+    // No dot should appear: a fixed wait, so a late render would show up before the zero count is read.
     await page.waitForTimeout(800);
     await expect(page.locator('.page-tab-news-dot')).toHaveCount(0);
 });

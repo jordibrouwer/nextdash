@@ -57,6 +57,7 @@ test('the toast is not repeated for news already announced', async ({ page }) =>
     await expect(toast(page)).toContainText('2 sites have news');
     await page.reload();
     await openDashboard(page);
+    // No toast should appear: a fixed wait, so a late one would show up before the zero count is read.
     await page.waitForTimeout(1500);
     await expect(page.locator('#app-notification.show', { hasText: 'sites have news' })).toHaveCount(0);
 });

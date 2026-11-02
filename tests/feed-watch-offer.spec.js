@@ -73,6 +73,7 @@ test('the row appears for a page with feeds, and not for one without or a non-we
 
         // A page with no feed: the row goes, the form is as short as before.
         await typeUrl(page, plain.url);
+        // No feed on this page: the lookup runs, and the row must stay away. A fixed wait, because "hidden" is also true before the lookup answers.
         await page.waitForTimeout(1200);
         await expect(watchRow(page)).toBeHidden();
 
@@ -80,6 +81,7 @@ test('the row appears for a page with feeds, and not for one without or a non-we
         let asked = 0;
         page.on('request', (req) => { if (req.url().includes('/api/feeds/watch/candidates')) asked += 1; });
         await typeUrl(page, 'ftp://127.0.0.1/files');
+        // Nothing should be asked for a non-web address: a fixed wait, so a late request would still count in `asked`.
         await page.waitForTimeout(1200);
         await expect(watchRow(page)).toBeHidden();
         expect(asked).toBe(0);
@@ -134,6 +136,7 @@ test('adding then closing the form stores nothing', async ({ page, request }) =>
     const discard = page.locator('#app-modal.show #modal-actions .modal-button.danger');
     await discard.waitFor({ state: 'visible', timeout: 3000 }).then(() => discard.click(), () => {});
     await expect(modal(page)).not.toHaveClass(/show/);
+    // Nothing should be stored: a fixed wait, so a late watch request would show up before the count is read.
     await page.waitForTimeout(500);
     expect((await watches(request)).total).toBe(0);
 });
@@ -213,6 +216,7 @@ test('editing: Stop watching takes effect on Save, Undo keeps the watch', async 
     await expect(summary(page)).toContainText('Watching · every hour');
     await save(page);
     await expect(modal(page)).not.toHaveClass(/show/);
+    // Nothing should change on the server: a fixed wait, so a late write would show up before the count is read.
     await page.waitForTimeout(500);
     expect((await watches(request)).total).toBe(1);
 
@@ -241,6 +245,7 @@ test('editing with nothing changed in the row sends no watch request', async ({ 
     await modal(page).locator('[data-field="name"]').fill('Stub Blog 2');
     await save(page);
     await expect(modal(page)).not.toHaveClass(/show/);
+    // Nothing should be sent: a fixed wait, so a late watch request would land in `writes` before it is checked.
     await page.waitForTimeout(800);
     expect(writes).toEqual([]);
     expect((await watches(request)).total).toBe(1);

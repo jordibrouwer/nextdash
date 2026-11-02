@@ -31,6 +31,7 @@ test.describe('on a phone', () => {
         // On by default: no toast, but an error still shows.
         await openDashboard(page);
         await notify(page, 'Saved it', 'success');
+        // The toast must stay hidden: a fixed wait, so a late `show` class would be there before the single read.
         await page.waitForTimeout(600);
         // Read once: a retrying not-assertion would wait the toast out.
         expect(await toast(page).getAttribute('class')).not.toContain('show');

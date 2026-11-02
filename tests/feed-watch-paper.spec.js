@@ -175,6 +175,7 @@ test('returning to the tab opens nothing by itself unless the setting is on', as
     await expect.poll(() => page.title()).toMatch(/^\(5\) /);
     await fakeVisibility(page);
     await page.evaluate(() => window.__leaveAndReturn());
+    // Nothing should open: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(600);
     await expect(modal(page)).toHaveCount(0);
 });
@@ -197,6 +198,7 @@ test('returning to the tab opens the paper once, but not after it was opened by 
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();
     await page.evaluate(() => window.__leaveAndReturn());
+    // Nothing should open: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(500);
     await expect(modal(page)).toBeHidden();
 });
@@ -213,6 +215,7 @@ test('returning to the tab leaves the paper closed when only muted feeds have ne
     await expect.poll(() => page.title()).toMatch(/^\(5\) /);
     await fakeVisibility(page);
     await page.evaluate(() => window.__leaveAndReturn());
+    // Nothing should open: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(500);
     await expect(modal(page)).toHaveCount(0);
 });
@@ -226,6 +229,7 @@ test('returning to the tab does not cover another window', async ({ page, reques
     await page.locator('#help-button').click();
     await expect(page.locator('#app-modal.show .modal')).toBeVisible();
     await page.evaluate(() => window.__leaveAndReturn());
+    // Nothing should open over the other window: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(500);
     await expect(modal(page)).toHaveCount(0);
 });
@@ -264,6 +268,7 @@ test.describe('on a phone', () => {
         await openDashboard(page);
         await fakeVisibility(page);
         await page.evaluate(() => window.__leaveAndReturn());
+        // Nothing should open: a fixed wait, so a late open would show up before the check.
         await page.waitForTimeout(600);
         await expect(modal(page)).toHaveCount(0);
     });
