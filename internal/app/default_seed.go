@@ -95,6 +95,8 @@ func defaultMainPage() PageWithBookmarks {
 			{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
 			{ID: defaultTrendWidgetID, Type: WidgetTypeTrend, Config: map[string]any{}},
 			{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
+			// Empty until a feed is watched, and says how to start then.
+			{ID: defaultFeedNewsWidgetID, Type: WidgetTypeFeedNews, Config: map[string]any{}},
 		},
 		BlockOrder: []string{
 			"development",
@@ -102,6 +104,7 @@ func defaultMainPage() PageWithBookmarks {
 			"docker", "unraid", "selfhosted", "tools", "daily",
 			defaultHealthWidgetID,
 			defaultTrendWidgetID,
+			defaultFeedNewsWidgetID,
 		},
 		Bookmarks: []Bookmark{
 			// The project itself, twice: the site is where a new install
@@ -280,6 +283,7 @@ func minimalMainPage() PageWithBookmarks {
 			// Notes after the links it sits beside, with the example note:
 			// it shows what the widget does and is one Edit away from yours.
 			{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
+			{ID: defaultFeedNewsWidgetID, Type: WidgetTypeFeedNews, Config: map[string]any{}},
 		},
 		// The widget leads, then the categories in the order above. Without
 		// an explicit order the widget would fall wherever resolveBlockOrder
@@ -288,6 +292,7 @@ func minimalMainPage() PageWithBookmarks {
 			defaultHealthWidgetID,
 			"development", "media", "social", "search", "utilities",
 			defaultNotesWidgetID,
+			defaultFeedNewsWidgetID,
 		},
 		Bookmarks: []Bookmark{
 			// The project's own site, in the seed rather than only behind the

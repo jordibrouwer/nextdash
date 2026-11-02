@@ -76,6 +76,12 @@
         dismissName: 'dismiss',
         canShow: () => !hasAnswered() && oldEnough(),
         onDismiss: markAnswered,
+        // A hint, not a question: one line, and the studio a click away.
+        toast: {
+            message: () => t('dashboard.themeStudioNoticeToast', 'Not happy with how it looks? Press Shift+A to open the theme studio.'),
+            duration: 14000,
+            onShown: markAnswered,
+        },
         actionAttr: 'data-ts-action',
         actions: [
             {

@@ -205,8 +205,6 @@ func (h *Handlers) seedDemo(now time.Time) error {
 	settings.ActionBarAutoHideSeconds = 0
 	// New bookmarks start unchecked: the demo checks no site.
 	settings.NewBookmarkCheckMode = "off"
-	// Fresh shows the seeded feeds; the demo does not poll them.
-	settings.FeedsEnabled = true
 	return h.store.SaveSettings(settings)
 }
 

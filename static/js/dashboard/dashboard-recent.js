@@ -253,7 +253,7 @@ class DashboardRecent {
         const pool = this.recentPool();
         const allRecent = this.getRecentBookmarks(pool, 0);
         const { page, pages, size, shown: recentBookmarks } = this.recentPageOf(allRecent);
-        const openInNewTab = d.settings.openInNewTab;
+        const openInNewTab = window.opensInNewTab(d.settings);
         const noRecentText = d.language.t('dashboard.noRecentBookmarks') || 'No recent bookmarks yet.';
         // The open buttons act on the page on screen; "the last N" is always the newest.
         const shownWithUrls = recentBookmarks.filter((bookmark) => bookmark && String(bookmark.url || '').trim());
@@ -619,7 +619,7 @@ class DashboardRecent {
         // Opening is what clears a fresh count, on the server and here: the
         // server recomputes it against lastOpened, and this keeps the row you
         // just read from still claiming three new until a reload.
-        d.feeds?.markOpened(bookmark);
+        d.feedWatch?.markOpened(bookmark);
         d.syncBookmarkMetadataAcrossViews(bookmark, pageId);
         d.refreshSmartCollectionsAfterOpen(bookmark.url);
 

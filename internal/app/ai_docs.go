@@ -39,7 +39,7 @@ const (
 // list as DashboardConfig.SECTIONS in static/js/dashboard/dashboard-config.js;
 // a test fails when the two drift.
 var aiConfigSections = []string{
-	"overview", "appearance", "bookmarks", "structure", "behavior", "finders",
+	"overview", "appearance", "bookmarks", "feed-watch", "structure", "behavior", "finders",
 	"inbox", "data-backups", "widgets", "containers", "unraid", "glances",
 	"monitoring", "status-page", "assistant", "stats", "help", "logs", "about",
 }

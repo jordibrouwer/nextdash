@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" width="720" height="320" role="img" aria-labelledby="t d"><title id="t">Pages, categories, bookmarks, the inbox and the views</title><desc id="d">A page holds categories and each category holds bookmarks. The inbox is a separate list of links not yet filed; triage files a link on a page and Keep sends it to Unsorted in the Bookmarks view. Below, six views (dashboard grid, Bookmarks view, inbox, Containers, Glances, config) share one browser tab, and the dashboard grid and the Bookmarks view show the same bookmarks two ways.</desc><style>text{font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:#1f2a25}
+.m{fill:#5b6561}.b{font-weight:600}.mono{white-space:pre;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}.c{text-anchor:middle}
+.a{fill:#2f7d55}.big{font-size:20px;font-weight:700}
+.box{fill:#8a9490;fill-opacity:.1;stroke:#8a9490;stroke-width:1.5}
+.ln{fill:none;stroke:#8a9490;stroke-width:1.5}
+.ac{fill:none;stroke:#2f7d55;stroke-width:2}
+.af{fill:#2f7d55;fill-opacity:.18;stroke:#2f7d55;stroke-width:1.5}
+.dot{fill:#2f7d55}.mk{fill:#8a9490}.gd{fill:#8a9490;fill-opacity:.55}
+.bad{fill:#b4493f}.badl{stroke:#b4493f}
+.nb{fill:#2f7d55}.nt{fill:#fff;font-weight:700;font-size:12px;text-anchor:middle}
+@media (prefers-color-scheme:dark){text{fill:#e6ebe8}.m{fill:#a9b3af}.a{fill:#72ca9d}.ac{stroke:#72ca9d}.af{fill:#72ca9d;stroke:#72ca9d}.dot{fill:#72ca9d}.bad{fill:#e8847a}.badl{stroke:#e8847a}.nb{fill:#72ca9d}.nt{fill:#12201a}}</style><defs><marker id="h" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L8 4L0 8z" class="mk"/></marker></defs><rect x="10" y="10" width="415" height="200" rx="10" class="box"/>
+<text x="24" y="32" class="b">Page</text><text x="62" y="32" class="m">Work, Home, a project</text>
+<rect x="24" y="44" width="187" height="152" rx="8" class="ln"/>
+<text x="36" y="66" class="mono b">// Dev</text><circle cx="38" cy="90" r="5" class="gd"/><text x="52" y="94" >GitHub</text><circle cx="38" cy="116" r="5" class="gd"/><text x="52" y="120" >MDN Web Docs</text><circle cx="38" cy="142" r="5" class="gd"/><text x="52" y="146" >Hacker News</text><text x="36" y="184" class="m">category + bookmarks</text>
+<rect x="224" y="44" width="187" height="152" rx="8" class="ln"/>
+<text x="236" y="66" class="mono b">// Tools</text><circle cx="238" cy="90" r="5" class="gd"/><text x="252" y="94" >regex101</text><circle cx="238" cy="116" r="5" class="gd"/><text x="252" y="120" >Excalidraw</text><circle cx="238" cy="142" r="5" class="gd"/><text x="252" y="146" >JWT debugger</text>
+<rect x="470" y="10" width="240" height="200" rx="10" class="box" stroke-dasharray="6 4"/>
+<text x="484" y="32" class="b">Inbox</text><text x="484" y="50" class="m">a list of its own, not a page</text>
+<circle cx="486" cy="78" r="5" class="gd"/><text x="500" y="82" >link to read later</text><circle cx="486" cy="104" r="5" class="gd"/><text x="500" y="108" >link to read later</text><circle cx="486" cy="130" r="5" class="gd"/><text x="500" y="134" >link to read later</text>
+<text x="484" y="170" class="a b">Triage: file it on a page</text><text x="484" y="190" class="m">Keep: Bookmarks, Unsorted</text>
+<path d="M466 100H432" class="ln" marker-end="url(#h)"/>
+<text x="10" y="242" class="b">Views</text><text x="56" y="242" class="m">all in one browser tab, switching never reloads</text>
+<rect x="12" y="256" width="106" height="32" rx="16" class="af"/><text x="65" y="276" class="c">Dashboard grid</text><rect x="130" y="256" width="106" height="32" rx="16" class="af"/><text x="183" y="276" class="c">Bookmarks</text><rect x="248" y="256" width="106" height="32" rx="16" class="ln"/><text x="301" y="276" class="c">Inbox</text><rect x="366" y="256" width="106" height="32" rx="16" class="ln"/><text x="419" y="276" class="c">Containers</text><rect x="484" y="256" width="106" height="32" rx="16" class="ln"/><text x="537" y="276" class="c">Glances</text><rect x="602" y="256" width="106" height="32" rx="16" class="ln"/><text x="655" y="276" class="c">config</text>
+<text x="10" y="310" class="m">The dashboard grid and the Bookmarks view show the same bookmarks, two ways.</text></svg>

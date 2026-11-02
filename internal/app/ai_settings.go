@@ -36,9 +36,7 @@ func normalizeAISettings(s *Settings) {
 	}
 	s.AIBaseURL = strings.TrimRight(normalizeSearxngURL(s.AIBaseURL), "/")
 	m := strings.TrimSpace(s.AIModel)
-	if len(m) > 200 {
-		m = m[:200]
-	}
+	m = truncateBytes(m, 200)
 	s.AIModel = m
 	if s.AIHistoryMax != 0 {
 		s.AIHistoryMax = min(max(s.AIHistoryMax, 1), 500)
@@ -105,7 +103,12 @@ func aiKeyFor(provider string) string {
 func saveAIKey(provider, key string) error {
 	aiSecretsMu.Lock()
 	defer aiSecretsMu.Unlock()
-	secrets := readAISecrets()
+	// Not readAISecrets: read as empty, clearing one provider's key removed
+	// the file and with it every other provider's.
+	var secrets aiSecrets
+	if err := readJSONForWrite(aiSecretsFilePath(), &secrets); err != nil {
+		return err
+	}
 	if secrets.Keys == nil {
 		secrets.Keys = map[string]string{}
 	}

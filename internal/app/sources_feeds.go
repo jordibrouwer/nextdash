@@ -79,9 +79,22 @@ type feedSourceEntry struct {
 	 * catches it -- so this holds the text and the attributes together and the
 	 * reader below picks whichever is filled.
 	 */
-	Links       []feedSourceLink `xml:"link"`
-	GUID        string           `xml:"guid"`
-	Description string           `xml:"description"`
+	Links []feedSourceLink `xml:"link"`
+	GUID  string           `xml:"guid"`
+	// ID is an Atom entry's <id>.
+	ID string `xml:"id"`
+	/*
+	 * The media fields come before Content on purpose. encoding/xml hands an
+	 * element to the first field whose name matches, and an un-namespaced
+	 * `xml:"content"` matches media:content too, so declared after it these
+	 * would never be filled.
+	 */
+	Enclosures   []feedEnclosure `xml:"enclosure"`
+	MediaContent []feedMedia     `xml:"http://search.yahoo.com/mrss/ content"`
+	MediaThumbs  []feedMedia     `xml:"http://search.yahoo.com/mrss/ thumbnail"`
+	MediaGroups  []feedMediaGrp  `xml:"http://search.yahoo.com/mrss/ group"`
+	Encoded      string          `xml:"http://purl.org/rss/1.0/modules/content/ encoded"`
+	Description  string          `xml:"description"`
 	// Atom's text: never read, so every Atom entry had no preview.
 	Summary   string `xml:"summary"`
 	Content   string `xml:"content"`
@@ -97,6 +110,25 @@ type feedSourceLink struct {
 	Text string `xml:",chardata"`
 	Href string `xml:"href,attr"`
 	Rel  string `xml:"rel,attr"`
+	Type string `xml:"type,attr"`
+}
+
+// feedEnclosure is an RSS <enclosure>; only images are of interest here.
+type feedEnclosure struct {
+	URL  string `xml:"url,attr"`
+	Type string `xml:"type,attr"`
+}
+
+// feedMedia is a media:content or media:thumbnail.
+type feedMedia struct {
+	URL    string `xml:"url,attr"`
+	Type   string `xml:"type,attr"`
+	Medium string `xml:"medium,attr"`
+}
+
+// feedMediaGrp is a media:group, which wraps media:content.
+type feedMediaGrp struct {
+	Content []feedMedia `xml:"http://search.yahoo.com/mrss/ content"`
 }
 
 // url returns the entry's address from whichever shape carried it.
@@ -208,7 +240,13 @@ func (h *Handlers) fetchFeedSource(ctx context.Context, feedURL, since, category
 			continue
 		}
 
+		// A date in the future is a mis-set clock or zone, not news from
+		// tomorrow. Taken as is, it moved the cursor past now and every real
+		// new entry was "older than the last round" until time caught up.
 		at := entry.publishedAt()
+		if nowMs := time.Now().UnixMilli(); at > nowMs {
+			at = nowMs
+		}
 		if at > out.parsedNewest() {
 			out.NewestAt = time.UnixMilli(at).UTC().Format(time.RFC3339)
 		}

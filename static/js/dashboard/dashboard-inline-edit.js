@@ -784,8 +784,26 @@ class DashboardInlineEdit {
         urlInput.className = 'bookmark-inline-input';
         urlInput.dataset.field = 'url';
         urlInput.value = bookmark.url || '';
-        colWhat.appendChild(mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError));
+        const urlField = mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError);
+        colWhat.appendChild(urlField);
         colWhat.appendChild(nameField);
+        // Watch feeds: shown when the page has a feed or the bookmark is
+        // watched, and written only by Save.
+        const feedRowHost = document.createElement('div');
+        colWhat.appendChild(feedRowHost);
+        const feedRow = d.feedWatch && window.BookmarkFeedWatchRow
+            ? window.BookmarkFeedWatchRow.mount(feedRowHost, {
+                dash: d,
+                getUrl: () => urlInput.value,
+                originalUrl: isCreate ? '' : String(bookmark.url || '').trim(),
+            })
+            : null;
+        if (feedRow) {
+            urlInput.addEventListener('input', () => feedRow.reset());
+            if (!isCreate) feedRow.refresh({ delay: 0 });
+        } else {
+            feedRowHost.hidden = true;
+        }
         const nameNote = document.createElement('p');
         nameNote.className = 'bookmark-form-name-note';
         nameNote.hidden = true;
@@ -1040,6 +1058,7 @@ class DashboardInlineEdit {
             void refreshIconSuggestions();
             title.offer(preview?.title, urlInput.value.trim());
             void refreshSuggestions(Array.isArray(preview?.keywords) ? preview.keywords : []);
+            feedRow?.refresh();
         };
         /*
          * One read per address, and only the latest one counts.
@@ -1810,6 +1829,39 @@ class DashboardInlineEdit {
         });
         checkModeRow.appendChild(checkModeInfo);
 
+        // Watching a feed also needs the page to be reachable, so adding a watch
+        // switches the availability check to Periodic when it is off. An
+        // availability check that is already on (Periodic or Monitor) is left as
+        // it is, and taking the watch away again puts back only what it changed.
+        {
+            let setByWatch = false;
+            const bookmarkWasWatched = !isCreate && Boolean(d.feedWatch?.isWatched?.(bookmark));
+            const chooseMode = (value) => {
+                modeInputs[value].checked = true;
+                modeInputs[value].dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            Object.values(modeInputs).forEach((input) => {
+                input.addEventListener('change', () => {
+                    if (!input._byWatch) setByWatch = false;
+                });
+            });
+            feedRowHost.addEventListener('change', () => {
+                if (!feedRow || bookmarkWasWatched) return;
+                const adding = feedRow.intent()?.action === 'watch';
+                if (adding && readCheckMode() === 'off') {
+                    modeInputs.periodic._byWatch = true;
+                    chooseMode('periodic');
+                    modeInputs.periodic._byWatch = false;
+                    setByWatch = true;
+                } else if (!adding && setByWatch && readCheckMode() === 'periodic') {
+                    modeInputs.off._byWatch = true;
+                    chooseMode('off');
+                    modeInputs.off._byWatch = false;
+                    setByWatch = false;
+                }
+            });
+        }
+
         Object.values(modeInputs).forEach((input) => {
             input.addEventListener('change', () => {
                 monitorIntervalInput.hidden = !monitorInput.checked;
@@ -1910,6 +1962,9 @@ class DashboardInlineEdit {
                 return;
             }
             saveBtn.dataset.saving = '1';
+            // Taken now: Create + New clears the form before the watch is written.
+            const feedIntent = feedRow?.intent() || null;
+            const commitFeedWatch = (saved) => window.BookmarkFeedWatchRow?.commit(d, feedIntent, saved);
             try {
                 // The favicon found for this address is stored now that the
                 // bookmark is; one the server cannot fetch leaves no icon.
@@ -1933,6 +1988,7 @@ class DashboardInlineEdit {
                         monitorIntervalInput,
                         noteInput,
                         tagsInput,
+                        commitFeedWatch,
                         getPendingIcon: () => pendingIcon,
                         resetPendingIcon: () => { pendingIcon = ''; pendingIconSources = []; syncIconState(); },
                         // Create + New: the next bookmark starts from nothing,
@@ -1943,6 +1999,7 @@ class DashboardInlineEdit {
                             iconIsFetched = false;
                             draftKeywords = [];
                             title.reset();
+                            feedRow?.clear();
                             card.setIdle();
                             card.setIcon('');
                             window.TagSuggestChips?.render(tagsSuggest, []);
@@ -1962,6 +2019,7 @@ class DashboardInlineEdit {
                         monitorIntervalInput,
                         noteInput,
                         tagsInput,
+                        commitFeedWatch,
                         getPendingIcon: () => pendingIcon,
                     }, row);
                 }
@@ -2085,6 +2143,15 @@ class DashboardInlineEdit {
              * contents of one.
              */
             form.style.background = 'transparent';
+            /*
+             * Nor do the text fields keep the opaque fill applySolidInlineEditSurfaces
+             * gave them: that is for a form lying over the blurred grid, and an inline
+             * background outranks the sheet's own field fill. Selects keep theirs,
+             * because a native list needs a background to be drawn on.
+             */
+            form.querySelectorAll('.bookmark-inline-input, .bookmark-inline-textarea').forEach((node) => {
+                node.style.removeProperty('background');
+            });
         }
         d._inlineEditContext = {
             bookmarkRef,
@@ -2395,6 +2462,7 @@ class DashboardInlineEdit {
             const full = { ...(bookmarkRef.original || {}), ...bookmark, ...nextBookmarkState };
             delete full.pageId;
             await this._moveBookmarkToPage(bookmarkRef, full, targetPageId, row);
+            await fields.commitFeedWatch?.({ name, url });
             return;
         }
 
@@ -2411,6 +2479,7 @@ class DashboardInlineEdit {
                 this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
                 await d.saveBookmarkOrder();
                 await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
+                await fields.commitFeedWatch?.({ name, url });
                 return;
             }
         }
@@ -2422,6 +2491,7 @@ class DashboardInlineEdit {
 
         this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
         await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
+        await fields.commitFeedWatch?.({ name, url });
     }
 
 
@@ -2584,6 +2654,8 @@ class DashboardInlineEdit {
                 withTags: Array.isArray(bookmark.tags) && bookmark.tags.length > 0,
                 withShortcut: Boolean(bookmark.shortcut),
             });
+            // The bookmark has a row now, so the feeds ticked while adding it can be watched.
+            await fields.commitFeedWatch?.(bookmark);
             if (typeof onSaved === 'function') {
                 await onSaved();
             }
@@ -3156,7 +3228,14 @@ class DashboardInlineEdit {
                 // allowDuplicate: a move is an add followed by a delete, so
                 // between the two the URL is on both pages by design. Without
                 // this the cross-page duplicate check would refuse every move.
-                body: JSON.stringify({ page: targetPageId, bookmark: { ...bookmarkState, category }, allowDuplicate: true }),
+                // movedFrom: the source row's address, so its shortcut does not
+                // count against itself when the same edit changed the URL.
+                body: JSON.stringify({
+                    page: targetPageId,
+                    bookmark: { ...bookmarkState, category },
+                    allowDuplicate: true,
+                    movedFrom: bookmarkRef.original?.url ?? bookmarkRef.bookmark?.url ?? '',
+                }),
             });
             if (!addRes.ok) {
                 let message = 'Failed to save target page bookmarks.';

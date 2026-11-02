@@ -114,6 +114,7 @@ const (
 	mcpGroupHealthInbox       = "healthInbox"
 	mcpGroupContainersRead    = "containersRead"
 	mcpGroupContainersControl = "containersControl"
+	mcpGroupSettingsOverview  = "settingsOverview"
 )
 
 // mcpToolGroup says which switch a tool belongs to; "" means always on.
@@ -121,10 +122,12 @@ func mcpToolGroup(name string) string {
 	switch name {
 	case "update_bookmark", "move_bookmark", "delete_bookmark", "create_category", "rename_category":
 		return mcpGroupBookmarksWrite
-	case "get_health_summary", "list_health_issues", "list_inbox":
+	case "get_health_summary", "list_health_issues", "list_inbox", "query_bookmarks", "get_stats", "get_bookmark_history":
 		return mcpGroupHealthInbox
-	case "list_containers", "get_container", "get_container_logs":
+	case "list_containers", "get_container", "get_container_logs", "query_containers":
 		return mcpGroupContainersRead
+	case "get_settings_overview", "get_app_status":
+		return mcpGroupSettingsOverview
 	case "container_action":
 		return mcpGroupContainersControl
 	}
@@ -143,6 +146,8 @@ func mcpGroupEnabled(s Settings, group string) bool {
 		return s.MCPContainersRead
 	case mcpGroupContainersControl:
 		return s.MCPContainersControl
+	case mcpGroupSettingsOverview:
+		return s.MCPSettingsOverview
 	}
 	return false
 }
@@ -305,7 +310,12 @@ func mcpToolDefinitions(s Settings) []map[string]any {
 func mcpAllToolDefinitions() []map[string]any {
 	all := append(mcpCoreToolDefinitions(), mcpBookmarksWriteDefinitions()...)
 	all = append(all, mcpHealthInboxDefinitions()...)
+	all = append(all, mcpQueryDefinitions()...)
+	all = append(all, mcpHistoryDefinitions()...)
 	all = append(all, mcpContainersReadDefinitions()...)
+	all = append(all, mcpQueryContainersDefinitions()...)
+	all = append(all, mcpSettingsOverviewDefinitions()...)
+	all = append(all, mcpAppStatusDefinitions()...)
 	return append(all, mcpContainersControlDefinitions()...)
 }
 
@@ -339,7 +349,9 @@ func mcpCoreToolDefinitions() []map[string]any {
 			"name":        "get_bookmark",
 			"annotations": mcpAnnotations(true, false),
 			"description": "Look up one bookmark by its exact URL, with everything stored about it: " +
-				"note, tags, when it was added, when it was last opened, and whether its last check succeeded.",
+				"note, tags, when it was added, when it was last opened, and whether its last check succeeded. " +
+				"Also usage {opens, last_opened, added}; with Health and Inbox: read on, health {status, score, reasons, flags, last_checked} and monitoring {monitored, interval_minutes, uptime_percent, avg_response_ms}; " +
+				"with Containers: read on, the container linked to it {name, state, via} or null.",
 			"inputSchema": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -529,7 +541,7 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 	case "search_bookmarks":
 		return mcpToolResult(h.mcpSearchBookmarks(body.Arguments)), nil
 	case "get_bookmark":
-		return mcpToolResult(h.mcpGetBookmark(body.Arguments)), nil
+		return mcpToolResult(h.mcpGetBookmark(r, body.Arguments)), nil
 	case "list_tags":
 		return mcpToolResult(h.mcpListTags()), nil
 	case "add_bookmark":
@@ -550,6 +562,18 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return mcpToolResult(h.mcpHealthIssues(r, body.Arguments)), nil
 	case "list_inbox":
 		return mcpToolResult(h.mcpListInbox(r, body.Arguments)), nil
+	case "query_bookmarks":
+		return mcpToolResult(h.mcpQueryBookmarks(r, body.Arguments)), nil
+	case "get_stats":
+		return mcpToolResult(h.mcpGetStats(r, body.Arguments)), nil
+	case "get_bookmark_history":
+		return mcpToolResult(h.mcpBookmarkHistory(r, body.Arguments)), nil
+	case "query_containers":
+		return mcpToolResult(h.mcpQueryContainers(r, body.Arguments)), nil
+	case "get_app_status":
+		return mcpToolResult(h.mcpAppStatus()), nil
+	case "get_settings_overview":
+		return mcpToolResult(h.mcpSettingsOverview()), nil
 	case "list_containers":
 		return mcpToolResult(h.mcpListContainers(r, body.Arguments)), nil
 	case "get_container":
@@ -677,7 +701,7 @@ func (h *Handlers) mcpBookmarkSummary(bm Bookmark) map[string]any {
 	return out
 }
 
-func (h *Handlers) mcpGetBookmark(args json.RawMessage) map[string]any {
+func (h *Handlers) mcpGetBookmark(r *http.Request, args json.RawMessage) map[string]any {
 	var body struct {
 		URL string `json:"url"`
 	}
@@ -709,10 +733,45 @@ func (h *Handlers) mcpGetBookmark(args json.RawMessage) map[string]any {
 		out["lastChecked"] = found.LastChecked
 		out["reachable"] = found.LastError == ""
 		if found.LastError != "" {
-			out["lastError"] = found.LastError
+			// The kind of failure only: the raw text can quote an expectation
+			// or repeat the failing address with its query string.
+			out["lastError"] = mcpSafeErrorLabel("", found.LastError)
 		}
 	}
+	h.mcpAddBookmarkBlocks(r, *found, out)
 	return out
+}
+
+// mcpAddBookmarkBlocks adds the blocks query_bookmarks lists, each only while
+// its group is on: the tool is always offered, so the switch is kept here.
+func (h *Handlers) mcpAddBookmarkBlocks(r *http.Request, bm Bookmark, out map[string]any) {
+	settings := h.store.GetSettings()
+	d, failure := h.mcpLoadBookmarkData(r, settings.MCPHealthInbox, settings.MCPContainersRead)
+	if failure != nil {
+		out["usage"] = mcpUsageBlock(bm)
+		return
+	}
+	at := -1
+	for i, b := range d.bookmarks {
+		if b.PageID == bm.PageID && b.URL == bm.URL {
+			at = i
+			break
+		}
+	}
+	out["usage"] = mcpUsageBlock(bm)
+	if at < 0 {
+		return
+	}
+	if settings.MCPHealthInbox {
+		out["health"] = mcpHealthBlock(d.issues[at])
+		out["monitoring"] = h.mcpMonitoringBlock(d, bm, d.issues[at])
+	}
+	if settings.MCPContainersRead {
+		out["container"] = d.containerBlock(bm)
+		if len(d.notes) > 0 {
+			out["notes"] = d.notes
+		}
+	}
 }
 
 func (h *Handlers) mcpListPages() map[string]any {

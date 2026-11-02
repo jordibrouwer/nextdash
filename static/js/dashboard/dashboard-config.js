@@ -56,6 +56,9 @@ class DashboardConfig {
         'overview',
         'appearance',
         'bookmarks',
+        // Beside Bookmarks: a watch hangs off a bookmark, and this is every one
+        // of them in one list with the settings for their news.
+        'feed-watch',
         'structure',
         'behavior',
         'finders',
@@ -235,7 +238,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['status-page', 'glances', 'assistant'];
+    static NEW_SECTIONS = ['status-page', 'glances', 'assistant', 'feed-watch'];
 
     /** The sections that open a named group in the rail. */
     static NAV_GROUP_LABELS = {
@@ -275,6 +278,7 @@ class DashboardConfig {
     static STATS_RANGE_KEY = 'nextdash:config-stats-range-v1';
     // Which of the two usage charts the reader picked, when they picked one.
     static STATS_OPENS_MODE_KEY = 'nextdash:config-stats-opens-mode-v1';
+    static STATS_FEEDS_RANGE_KEY = 'nextdash:config-stats-feeds-range-v1';
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -508,9 +512,11 @@ class DashboardConfig {
         // Status & alerts left Behavior for a section of its own.
         if (DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
             && raw.startsWith('config/behavior/')) return 'monitoring';
-        // Fresh left Behavior for Bookmarks.
-        if (DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
-            && raw.startsWith('config/behavior/')) return 'bookmarks';
+        // Fresh left Behavior for Bookmarks, then Bookmarks for a section of
+        // its own; links from both stops still arrive.
+        if (raw.startsWith('config/behavior/')
+            && DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(raw.slice('config/behavior/'.length))) return 'feed-watch';
+        if (raw === 'config/bookmarks/fresh') return 'feed-watch';
         if (raw === 'config') return 'overview';
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
@@ -547,8 +553,7 @@ class DashboardConfig {
         if (raw === 'config/behavior/datetime') return 'datetime';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw.startsWith('config/behavior/')) {
-            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
-                || DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
+            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
             if (moved) return moved;
         }
         // Branding lived on Display, then moved to Header with the browser tab.
@@ -1018,8 +1023,9 @@ class DashboardConfig {
             if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
                 return { section: 'appearance', subTab };
             }
-            if (section === 'behavior' && DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[subTab]) {
-                return { section: 'bookmarks', subTab: DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[subTab] };
+            if ((section === 'behavior' && DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(subTab))
+                || (section === 'bookmarks' && subTab === 'fresh')) {
+                return { section: 'feed-watch', subTab: null };
             }
             if (section === 'behavior' && DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab]) {
                 return { section: 'monitoring', subTab: DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab] };
@@ -1129,6 +1135,7 @@ class DashboardConfig {
             // Overview reads it for the server lines in its attention list.
             server: all || tab === 'server' || tab === 'overview',
             notify: all || tab === 'health',
+            feeds: all || tab === 'feeds',
         };
         if (wants.inbox && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
         if (wants.finders && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
@@ -1136,6 +1143,7 @@ class DashboardConfig {
         if (wants.library && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
         if (wants.server && this._statsServer === undefined) once('server', () => this.loadStatsServer());
         if (wants.notify && this._statsNotify === undefined) once('notify', () => this.loadStatsNotify());
+        if (wants.feeds && this._statsFeeds === undefined) once('feeds', () => this.loadStatsFeeds());
     }
 
     /**
@@ -1247,10 +1255,16 @@ class DashboardConfig {
      * open of Behavior opens Behavior.
      */
     followMovedBehaviorTab(section) {
+        // Bookmarks → Watch feeds was a tab before it was a section: a caller
+        // that still sets the tab and opens Bookmarks lands on the section.
+        if (section === 'bookmarks' && this.bmTab === 'fresh') {
+            this.bmTab = 'view';
+            return 'feed-watch';
+        }
         if (section !== 'behavior') return section;
-        if (this._behaviorTabToBookmarks) {
-            this._behaviorTabToBookmarks = false;
-            return 'bookmarks';
+        if (this._behaviorTabToFeedWatch) {
+            this._behaviorTabToFeedWatch = false;
+            return 'feed-watch';
         }
         if (!this._behaviorTabMoved) return section;
         this._behaviorTabMoved = false;
@@ -1915,6 +1929,23 @@ class DashboardConfig {
             return true;
         }
 
+        // Ctrl/Cmd+A in the Bookmarks view ticks every bookmark the filter and
+        // the list search show, as it does in the Inbox. A text field keeps the
+        // browser's own select-all (the list search included); a row's tick box
+        // is an input too, but not a place to type, so it does not count.
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
+            && (e.key === 'a' || e.key === 'A') && this.section === 'bookmarks') {
+            const t = e.target;
+            const typing = t?.tagName === 'TEXTAREA' || t?.tagName === 'SELECT' || t?.isContentEditable
+                || (t?.tagName === 'INPUT' && t.type !== 'checkbox' && t.type !== 'radio' && t.type !== 'button');
+            if (!typing) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.toggleSelectAllBookmarks();
+                return true;
+            }
+        }
+
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
@@ -1966,6 +1997,11 @@ class DashboardConfig {
         }
 
         if (this.shouldUseBookmarkKeyboardNav(target) && this.handleBookmarkKeyboardNavigation(e)) {
+            return true;
+        }
+
+        // Watch feeds: j/k, Enter, m, p and Delete on the list's rows.
+        if (this.section === 'feed-watch' && window.ConfigFeedWatch?.handleKey(this, e)) {
             return true;
         }
 
@@ -2291,6 +2327,7 @@ class DashboardConfig {
             overview: ['config.sectionOverview', 'Overview'],
             'structure': ['config.sectionStructure', 'Structure'],
             bookmarks: ['config.sectionBookmarks', 'Bookmarks'],
+            'feed-watch': ['config.sectionFeedWatch', 'Watch feeds'],
             inbox: ['config.sectionInbox', 'Inbox'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
@@ -2340,6 +2377,7 @@ class DashboardConfig {
 
     subTabHeaderLabel(section, tab) {
         switch (section) {
+            case 'bookmarks': return this.bmTabLabel?.(tab) || tab;
             case 'behavior': return this.behaviorTabLabel?.(tab) || tab;
             case 'monitoring': return this.monitoringTabLabel?.(tab) || tab;
             case 'structure': return this.ptTabLabel?.(tab) || tab;
@@ -2433,6 +2471,10 @@ class DashboardConfig {
         const unraidTour = this.section === 'unraid'
             ? `<button type="button" class="lvs-action" data-unraid-tour title="${this.dash.escapeHtml(this.t('config.unraidTourHint', 'A tour of Unraid'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // The assistant too, on the same band.
+        const assistantTour = this.section === 'assistant'
+            ? `<button type="button" class="lvs-action" data-assistant-tour title="${this.dash.escapeHtml(this.t('config.assistantTourHint', 'A tour of the AI Assistant'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         // Glances the same: its tour, a click away from the settings that feed it.
         const glancesTour = this.section === 'glances'
             ? `<button type="button" class="lvs-action" data-glances-config-tour title="${this.dash.escapeHtml(this.t('config.glancesTourHint', 'A tour of the Glances page'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
@@ -2449,7 +2491,7 @@ class DashboardConfig {
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + viewLink + widgetsTour + monitoringTour + unraidTour + containersTour + glancesTour;
+                : '')) + viewLink + widgetsTour + monitoringTour + unraidTour + assistantTour + containersTour + glancesTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2476,6 +2518,7 @@ class DashboardConfig {
                 } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
                 else if (e.target.closest('[data-monitoring-tour]')) void this.openMonitoringTour();
                 else if (e.target.closest('[data-unraid-tour]')) void this.openUnraidTour();
+                else if (e.target.closest('[data-assistant-tour]')) void this.openAssistantTour();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-glances-config-tour]')) void this.playViewTour('glancesTutorialV1');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
@@ -2713,6 +2756,7 @@ class DashboardConfig {
             void this.bindStatusPageSection?.(container);
         } else if (this.section === 'assistant') {
             this.bindAssistantSection?.(container);
+            void this.maybeShowAssistantTutorial();
         } else if (this.section === 'inbox') {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
@@ -2750,6 +2794,10 @@ class DashboardConfig {
             this.bindPtToolbar(container);
             this.bindListKeyboard(container);
             void this.loadFinders();
+        } else if (this.section === 'feed-watch') {
+            // The settings group binds like any schema panel; the list in it
+            // is bound by bindFeedWatchList from there.
+            this.bindControlPanels(container, 'behavior');
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
             // The section carries schema panels of its own now, which bind the
@@ -3388,7 +3436,7 @@ class DashboardConfig {
         // Honour the openInNewTab preference, which the dashboard grid already
         // respects: opening from Config used to force a new tab whatever it
         // said, so the setting only half applied. "Open in new tab" says so.
-        if (!newTab && this.dash?.settings?.openInNewTab === false) {
+        if (!newTab && !window.opensInNewTab(this.dash?.settings, true)) {
             window.location.href = href;
             return;
         }
@@ -3938,6 +3986,11 @@ class DashboardConfig {
      * install, where the label is translated but the concept people search for
      * often is not.
      */
+    /** The same, for a section in the rail: the words people type for it. */
+    static SECTION_KEYWORDS = {
+        'feed-watch': ['rss', 'atom', 'feed', 'feeds', 'news', 'watch', 'watched', 'subscribe', 'follow', 'mute', 'filter', 'interval'],
+    };
+
     static FIELD_KEYWORDS = {
         monitorNotifyUrl: ['webhook', 'alert', 'notify', 'notification', 'discord', 'slack'],
         monitorNotifyDashboardUrl: ['ntfy', 'button', 'notification', 'address', 'alert'],
@@ -3946,10 +3999,17 @@ class DashboardConfig {
         pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
         pushNotifyBackup: ['push', 'notification', 'backup'],
         pushNotifyGlances: ['push', 'notification', 'glances', 'host', 'incident'],
+        pushNotifyNews: ['push', 'notification', 'news', 'feed', 'watch'],
+        notifyNewsTarget: ['notification', 'news', 'feed', 'watch', 'ntfy', 'gotify', 'discord', 'alert'],
         pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
-        feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
+        feedWatchWindowMinutes: ['feed', 'watch', 'news', 'modal', 'minutes', 'window'],
+        feedWatchNewsView: ['feed', 'watch', 'news', 'newspaper', 'columns', 'layout', 'modal'],
+        showFeedWatchIcon: ['feed', 'watch', 'icon', 'rss', 'bookmark', 'row', 'mark'],
+        feedWatchOpenOnReturn: ['feed', 'watch', 'news', 'open', 'return', 'tab', 'automatic', 'newspaper'],
+        feedStatsEnabled: ['feed', 'watch', 'statistics', 'stats', 'numbers', 'count', 'record', 'rss'],
+        feedStatsKeepDays: ['feed', 'watch', 'statistics', 'stats', 'days', 'keep', 'history', 'retention'],
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
         remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
@@ -4046,6 +4106,9 @@ class DashboardConfig {
         calendarUrl: ['calendar', 'ical', 'ics', 'agenda'],
         calendarIcsUrl: ['calendar', 'ical', 'ics', 'agenda', 'feed', 'widget'],
         openInNewTab: ['tab', 'window', 'target'],
+        openLinksNewTabMobile: ['tab', 'window', 'target', 'phone', 'mobile', 'touch'],
+        hideToastsMobile: ['toast', 'notification', 'phone', 'mobile', 'touch', 'hide', 'quiet'],
+        hideCornerCardsMobile: ['card', 'corner', 'notice', 'phone', 'mobile', 'touch', 'hide', 'quiet'],
         globalShortcuts: ['keyboard', 'shortcut', 'hotkey'],
         enableFuzzySuggestions: ['fuzzy', 'search', 'suggestion'],
         shortcutOpenMode: ['shortcut', 'enter', 'open', 'typing', 'instant'],
@@ -4095,8 +4158,9 @@ class DashboardConfig {
                     return;
                 }
                 if (!c.field || c.type === 'note' || c.type === 'pushDevice'
-                    || c.type === 'maintenanceWindows') return;
-                push(c.field, c.label, section, panel.tab || 'general');
+                    || c.type === 'maintenanceWindows' || c.type === 'feedWatchList') return;
+                // A section without a tab strip has no tab to name in the trail.
+                push(c.field, c.label, section, DashboardConfig.SUB_TABS[section] ? (panel.tab || 'general') : null);
             });
         });
 
@@ -4115,6 +4179,7 @@ class DashboardConfig {
                 kind: 'section',
                 title: this.sectionLabel(section),
                 subtitle: this.sectionLabel(section),
+                keywords: (DashboardConfig.SECTION_KEYWORDS[section] || []).join(' '),
                 section,
                 subTab: null,
                 focusSelector: `[data-config-section="${section}"]`,
@@ -4794,6 +4859,9 @@ class DashboardConfig {
         }
         if (this.section === 'bookmarks') {
             return this.renderBookmarksSection();
+        }
+        if (this.section === 'feed-watch') {
+            return this.renderFeedWatchSection();
         }
         if (this.section === 'containers') {
             return this.renderContainersSection();
@@ -5979,7 +6047,12 @@ class DashboardConfig {
         if (!this.isActiveView() || !this.inSection('overview')) return;
         const body = document.getElementById('config-view-body');
         if (!body) return;
+        // A late repaint (the catalogue, the digest, the update check) must not
+        // take the keyboard with it: note which control had focus and give it back.
+        const active = body.contains(document.activeElement) ? document.activeElement : null;
+        const heldAction = active?.getAttribute?.('data-overview-action') || '';
         body.innerHTML = this.renderOverview();
+        if (heldAction) body.querySelector(`[data-overview-action="${heldAction}"]`)?.focus({ preventScroll: true });
         const container = document.getElementById('dashboard-layout');
         if (container) {
             // The intro belongs in the band; a repaint that re-renders the
@@ -6514,7 +6587,6 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             view: ['config.bmTabView', 'View'],
-            fresh: ['config.behaviorTabFresh', 'Fresh'],
             tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             'tag-rules': ['config.bmTabTagRules', 'Your rules'],
@@ -7170,7 +7242,9 @@ class DashboardConfig {
             a.download = filename;
             document.body.appendChild(a);
             a.click();
-            window.URL.revokeObjectURL(href);
+            // Later, not at once: Safari starts the download after click()
+            // returns, and a URL revoked by then saved an empty file.
+            setTimeout(() => window.URL.revokeObjectURL(href), 10000);
             a.remove();
             return true;
         } catch {
@@ -7223,7 +7297,8 @@ class DashboardConfig {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Later, not at once: see downloadViaBlob.
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
 
     /*
@@ -7646,7 +7721,7 @@ class DashboardConfig {
         const clean = {};
         for (const [key, value] of Object.entries(parsed)) {
             if (/Migrated$/.test(key) || key === 'showTipsOffMigrated'
-                || key === 'notesWidgetSeeded' || key === 'firstRunInstall' || key === 'firstRunAt') continue;
+                || key === 'notesWidgetSeeded' || key === 'feedNewsWidgetSeeded' || key === 'firstRunInstall' || key === 'firstRunAt') continue;
             clean[key] = value;
         }
         try {
@@ -8968,6 +9043,9 @@ class DashboardConfig {
         // General
         language: { info: ['languageInfoTitle', 'languageInfoMessage'], def: 'en' },
         openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'], def: true },
+        openLinksNewTabMobile: { info: ['openLinksNewTabMobileInfoTitle', 'openLinksNewTabMobileInfoMessage'], def: false },
+        hideToastsMobile: { info: ['hideToastsMobileInfoTitle', 'hideToastsMobileInfoMessage'], def: true },
+        hideCornerCardsMobile: { info: ['hideCornerCardsMobileInfoTitle', 'hideCornerCardsMobileInfoMessage'], def: true },
         globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'], def: true },
         showShortcutTooltips: { info: ['shortcutTooltipsInfoTitle', 'shortcutTooltipsInfoMessage'], def: false },
         showGridKeyLegend: { info: ['showGridKeyLegendInfoTitle', 'showGridKeyLegendInfoMessage'], hint: 'gridKeyLegendHint', def: true },
@@ -9074,8 +9152,14 @@ class DashboardConfig {
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: true },
-        feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
-        feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
+        feedWatchWindowMinutes: { def: 30 },
+        feedWatchNewsView: { def: 'paper' },
+        showFeedWatchIcon: { info: ['showFeedWatchIconInfoTitle', 'showFeedWatchIconInfoMessage'], def: true },
+        feedWatchOpenOnReturn: { info: ['feedWatchOpenOnReturnInfoTitle', 'feedWatchOpenOnReturnInfoMessage'], def: false },
+        feedStatsEnabled: { info: ['feedStatsEnabledInfoTitle', 'feedStatsEnabledInfoMessage',
+            'Statistics about watched feeds', 'Counts what your watched feeds publish, what you read, and how their checks go, day by day, for Stats → Watch feeds. Only numbers are kept, never titles or text. On by default.'], def: true },
+        feedStatsKeepDays: { info: ['feedStatsKeepDaysInfoTitle', 'feedStatsKeepDaysInfoMessage',
+            'Keep daily numbers for', 'How long the day-by-day numbers are kept. Older days are added up per week and kept for two years. A stopped feed is forgotten 90 days after you stop watching it.'], def: 90 },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         // Weekly digest (digest.go)
         digestWeekday: { def: 1 },
@@ -9084,6 +9168,7 @@ class DashboardConfig {
         digestUpdates: { def: true },
         digestUsage: { def: true },
         digestNews: { def: true },
+        digestFeeds: { def: true },
         // Containers
         dockerViewEnabled: { def: true },
         dockerRefreshSeconds: { def: 5 },
@@ -9148,7 +9233,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'look-ocean-dark' },
+        theme: { def: 'tidal-slate-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -9224,6 +9309,8 @@ class DashboardConfig {
         pushNotifyBackup: { hint: 'pushNotifyBackupHint', def: false },
         pushNotifyContainers: { def: false },
         pushNotifyGlances: { def: false },
+        pushNotifyNews: { def: true },
+        notifyNewsTarget: { def: false },
         pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
@@ -9311,7 +9398,7 @@ class DashboardConfig {
         aiDeleteAll: { info: ['assistantInfoDeleteAllTitle', 'assistantInfoDeleteAllMessage', 'Delete all conversations',
             'Removes every stored conversation from this server, together with the proposals inside them and what became of each one. A proposal you have not applied yet is gone too. It cannot be undone.\nChanges you already applied to your bookmarks or containers stay as they are. With the write token set, deleting needs it.'] },
         aiAccess: { info: ['assistantInfoAccessTitle', 'assistantInfoAccessMessage', 'What it can see and do',
-            'The assistant reads through the same switches as the MCP endpoint, under Data & backups → Webhooks → MCP access. Looking up bookmarks, tags and pages is always on. Health and Inbox: read and Containers: read add those lookups when they are on. It does not need the MCP address itself to be switched on.\nIt never changes anything by itself: it proposes changes, shown under its answer, and nothing happens until you press Apply. Adding a bookmark is always possible; editing, moving and deleting bookmarks and categories need Bookmarks: edit and delete, and container actions need Containers: control. The switch is checked again when you press Apply.\nWith the write token set, asking, Test connection and Apply need it. One question stops after 8 rounds of lookups, 20 lookups or two minutes.'] },
+            'The assistant reads through the same switches as the MCP endpoint, under Data & backups → Webhooks → MCP access. Looking up bookmarks, tags and pages is always on. Health and Inbox: read, Containers: read and Settings overview: read add those lookups when they are on. It does not need the MCP address itself to be switched on.\nIt never changes anything by itself: it proposes changes, shown under its answer, and nothing happens until you press Apply. Adding a bookmark is always possible; editing, moving and deleting bookmarks and categories need Bookmarks: edit and delete, and container actions need Containers: control. The switch is checked again when you press Apply.\nWith the write token set, asking, Test connection and Apply need it. One question stops after 8 rounds of lookups, 20 lookups or two minutes.'] },
     };
 
     fieldMeta(field) {
@@ -9479,7 +9566,7 @@ class DashboardConfig {
         if (!c) return [];
         if (c.type === 'chips') return (c.items || []).map((i) => i.field);
         if (!c.field || c.type === 'note' || c.type === 'pushDevice'
-            || c.type === 'maintenanceWindows') return [];
+            || c.type === 'maintenanceWindows' || c.type === 'feedWatchList') return [];
         return [c.field];
     }
 
@@ -9832,6 +9919,7 @@ class DashboardConfig {
                         opt('last', t('config.bmViewColLast', 'Last opened')),
                         opt('added', t('config.bmViewColAdded', 'Added')),
                         opt('usage', t('config.bmViewColUsage', 'Usage')),
+                        opt('news', t('config.bmViewColNews', 'Latest news')),
                         opt('score', t('config.bmViewColScore', 'Score')),
                     ] },
                     { field: 'bmViewUsageDays', type: 'select', label: t('config.bmViewUsageDaysLabel', 'Usage covers'), options: [
@@ -9999,6 +10087,17 @@ class DashboardConfig {
                 controls: [
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupPhones', 'On phones and tablets'),
+                note: t('config.generalGroupPhonesNote', 'Only for a touch screen. On a computer these change nothing.'),
+                controls: [
+                    bool('openLinksNewTabMobile', 'config.openLinksNewTabMobile', 'Open links in a new tab on phones'),
+                    bool('hideToastsMobile', 'config.hideToastsMobile', 'Hide notifications on phones (errors stay)'),
+                    bool('hideCornerCardsMobile', 'config.hideCornerCardsMobile', 'Hide corner cards on phones'),
                 ],
             },
             {
@@ -10373,7 +10472,6 @@ class DashboardConfig {
                             { value: 'tags', label: t('config.linkPreviewPartTags', 'Tags') },
                             { value: 'status', label: t('config.linkPreviewPartStatus', 'Status & uptime') },
                             { value: 'opens', label: t('config.linkPreviewPartOpens', 'Opens & last opened') },
-                            { value: 'fresh', label: t('config.linkPreviewPartFresh', 'Fresh count') },
                             { value: 'location', label: t('config.linkPreviewPartLocation', 'Shortcut & location') },
                         ] },
                     { type: 'previewSample' },
@@ -10700,24 +10798,54 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'bookmarks',
-                tab: 'fresh',
-                title: t('config.feedsTitle', 'Fresh'),
+                section: 'feed-watch',
+                tab: 'list',
+                title: t('config.feedWatchListTitle', 'Watched feeds'),
                 demoLocked: true,
-                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
+                controls: [{ type: 'feedWatchList' }],
+            },
+            {
+                section: 'feed-watch',
+                tab: 'general',
+                title: t('config.feedsTitle', 'Watch feeds'),
+                demoLocked: true,
+                note: t('config.feedsNote', 'Feeds you follow from a bookmark (Watch this feed…) are asked on their own interval. When something new appears, the bookmark gets a purple count, a toast and the news window. Both settings below are per install; the window says how long the news stays in view once you are back.'),
                 controls: [
-                    { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
-                    // Off by default on purpose: most rows with a feed are
-                    // silent most of the time, and a mark on twenty of them is
-                    // the noise Fresh exists to avoid. For the reader who would
-                    // rather see who is taking part than ask one row at a time.
-                    { ...bool('feedsMarkQuiet', 'config.feedsMarkQuietLabel', 'Mark rows that publish, even when nothing is new'), special: 'render' },
-                    // Most bookmarks have no feed, so an empty Fresh is the
-                    // normal state and looks exactly like a broken feature.
-                    // This line is the difference: it says how many pages have
-                    // been asked and how many of them publish anything at all.
-                    { type: 'action', label: t('config.feedsCoverageLabel', 'Feeds found'),
-                      button: t('config.feedsFindNow', 'Find feeds now'), action: 'findFeeds' },
+                    // Feeds you chose to follow, from Watch this feed… on a
+                    // bookmark: their news gets a toast, a purple mark and the
+                    // news modal, for as long as this window.
+                    { field: 'feedWatchWindowMinutes', type: 'select', label: t('config.feedWatchWindowLabel', 'Keep the news modal open for'), options: [
+                        opt(15, t('config.feedWatchWindow15', '15 minutes')), opt(30, t('config.feedWatchWindow30', '30 minutes')),
+                        opt(60, t('config.feedWatchWindow60', '1 hour')), opt(120, t('config.feedWatchWindow120', '2 hours')),
+                    ] },
+                    {
+                        type: 'note',
+                        text: t('config.feedWatchWindowNote', 'After news arrives, the news modal and the purple mark stay for this long once you are back in nextDash.'),
+                    },
+                    { field: 'feedWatchNewsView', type: 'select', label: t('config.feedWatchNewsViewLabel', 'Show news as'), options: [
+                        opt('paper', t('config.feedWatchNewsViewPaper', 'Newspaper')),
+                        opt('wide', t('config.feedWatchNewsViewWide', 'Two columns')),
+                        opt('single', t('config.feedWatchNewsViewSingle', 'One column')),
+                    ] },
+                    // Moved here from Monitoring's push panel with the rest of
+                    // the news settings; the switch for push itself stays there.
+                    bool('feedWatchOpenOnReturn', 'config.feedWatchOpenOnReturnLabel', 'Open the news when I come back to the tab'),
+                    bool('showFeedWatchIcon', 'config.showFeedWatchIconLabel', 'Show a feed icon on watched bookmarks'),
+                    // Counters for Config → Stats → Watch feeds (feed_stats.go).
+                    bool('feedStatsEnabled', 'config.feedStatsEnabledLabel', 'Keep statistics about watched feeds'),
+                    { field: 'feedStatsKeepDays', type: 'select', label: t('config.feedStatsKeepDaysLabel', 'Keep daily numbers for'), options: [
+                        opt(30, t('config.feedStatsKeep30', '30 days')), opt(90, t('config.feedStatsKeep90', '90 days')),
+                        opt(365, t('config.feedStatsKeep365', '1 year')),
+                    ] },
+                    { type: 'action', action: 'resetFeedStats',
+                        label: t('config.feedStatsResetLabel', 'Reset feed statistics'),
+                        button: t('config.feedStatsResetButton', 'Reset') },
+                    bool('pushNotifyNews', 'config.pushNotifyNewsLabel', 'Notify when a watched feed has news'),
+                    bool('notifyNewsTarget', 'config.notifyNewsTargetLabel', 'Also send news to the alert channel (ntfy, Gotify, Discord…)'),
+                    {
+                        type: 'note',
+                        text: t('config.feedWatchPushNote', 'Sent to the browsers where notifications are on (Config → Monitoring → Notifications). Muted feeds never notify.'),
+                    },
                 ],
             },
             {
@@ -10941,6 +11069,7 @@ class DashboardConfig {
                     bool('digestUpdates', 'config.digestUpdatesLabel', 'Include container updates'),
                     bool('digestUsage', 'config.digestUsageLabel', 'Include most opened, unused and Inbox'),
                     bool('digestNews', 'config.digestNewsLabel', 'Include what is new in nextDash this week'),
+                    bool('digestFeeds', 'config.digestFeedsLabel', 'Include what the watched feeds published'),
                     { type: 'action', action: 'showDigest',
                       label: t('config.digestShowLabel', 'The latest digest'),
                       button: t('config.digestShowButton', 'Show') },
@@ -11206,6 +11335,12 @@ class DashboardConfig {
                         <button type="button" class="config-btn" data-push-test hidden>${esc(this.t('config.pushNotifyTestButton', 'Send test notification'))}</button>
                         <button type="button" class="config-btn" data-push-reask hidden>${esc(this.t('config.pushNotifyAskAgain', 'Show the invitation again'))}</button>
                     </div>`;
+            }
+            // The feeds being followed, one row each, filled in once the watch list
+            // has loaded (bindFeedWatchList).
+            if (c.type === 'feedWatchList') {
+                return '<div class="feed-watch-overview" data-feed-watch-overview><p class="feed-watch-note">'
+                    + esc(this.t('dashboard.feedWatchLoading', 'Looking for feeds…')) + '</p></div>';
             }
             if (c.type === 'maintenanceWindows') {
                 return this.renderMaintenanceWindows(c.windowsField || 'maintenanceWindows', c.emptyText || '');
@@ -11637,6 +11772,7 @@ class DashboardConfig {
         this.bindPanelResetActions(container);
         this.bindGroupResetActions(container);
         this.bindPushDeviceControls(container);
+        this.bindFeedWatchList(container);
         this.bindMaintenanceWindows(container);
         this.bindMonitorNotifyTest(container);
         this.bindPanelActions(container);
@@ -12282,24 +12418,6 @@ class DashboardConfig {
      * a number is easier to read where the button that produced it is.
      */
     bindPanelActions(container) {
-        // Fresh: look for feeds now, and say what the round found.
-        const findFeeds = container.querySelector('[data-config-action="findFeeds"]');
-        if (findFeeds) {
-            this.paintFeedCoverage();
-            findFeeds.addEventListener('click', async () => {
-                findFeeds.disabled = true;
-                const status = container.querySelector('[data-config-action-status="findFeeds"]');
-                if (status) status.textContent = this.t('config.feedsFindingNow', 'Looking…');
-                try {
-                    const round = await this.dash.feeds?.pollNow();
-                    this.paintFeedCoverage(round);
-                    this.dash.renderDashboard?.({ animate: false });
-                } finally {
-                    findFeeds.disabled = false;
-                }
-            });
-        }
-
         // The weekly digest as the dashboard shows it, without waiting for the card.
         const showDigest = container.querySelector('[data-config-action="showDigest"]');
         if (showDigest) {
@@ -12327,6 +12445,38 @@ class DashboardConfig {
                     if (status) status.textContent = this.t('config.digestTestFailed', 'Could not send the digest');
                 } finally {
                     sendDigest.disabled = false;
+                }
+            });
+        }
+
+        // Every counted number about watched feeds goes; counting starts again.
+        const resetFeedStats = container.querySelector('[data-config-action="resetFeedStats"]');
+        if (resetFeedStats) {
+            resetFeedStats.addEventListener('click', async () => {
+                const status = container.querySelector('[data-config-action-status="resetFeedStats"]');
+                const ok = await this.confirmAction(
+                    this.t('config.feedStatsResetConfirm', 'Forget every number counted about your watched feeds? Counting starts again from now.'),
+                    {
+                        title: this.t('config.feedStatsResetLabel', 'Reset feed statistics'),
+                        confirmLabel: this.t('config.feedStatsResetButton', 'Reset'),
+                        danger: true,
+                    }
+                );
+                if (!ok) return;
+                resetFeedStats.disabled = true;
+                try {
+                    const api = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+                    const res = await api('/api/feeds/stats/reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                    if (status) {
+                        status.textContent = res.ok
+                            ? this.t('config.feedStatsResetDone', 'Statistics cleared.')
+                            : this.t('config.feedStatsResetFailed', 'Could not reset the statistics.');
+                    }
+                    if (res.ok) this._statsFeeds = undefined;
+                } catch (_) {
+                    if (status) status.textContent = this.t('config.feedStatsResetFailed', 'Could not reset the statistics.');
+                } finally {
+                    resetFeedStats.disabled = false;
                 }
             });
         }
@@ -12371,41 +12521,6 @@ class DashboardConfig {
         });
     }
 
-    /**
-     * What the last look for feeds found, beside the button that repeats it.
-     *
-     * Fresh spent a release looking broken on installs where it was working
-     * perfectly: most pages carry no feed, so the honest result is an empty
-     * dashboard, and an empty dashboard is indistinguishable from a feature
-     * that does nothing. Three numbers fix that — how many bookmarks there are,
-     * how many have been asked, and how many publish anything at all.
-     */
-    paintFeedCoverage(round = null) {
-        const status = document.querySelector('[data-config-action-status="findFeeds"]');
-        if (!status) return;
-        const feeds = this.dash?.feeds;
-        if (!feeds) return;
-        if (feeds.enabled !== true) {
-            status.textContent = this.t('config.feedsCoverageOff', 'Switched off — nothing is being asked.');
-            return;
-        }
-        const coverage = round || feeds.coverage || {};
-        const bookmarks = Number(coverage.bookmarks) || 0;
-        const checked = Number(coverage.checked) || 0;
-        const withFeed = Number(coverage.withFeed) || 0;
-        const text = this.t('config.feedsCoverageCount', '{checked} of {bookmarks} bookmarks asked · {withFeed} publish a feed')
-            .replace('{checked}', String(checked))
-            .replace('{bookmarks}', String(bookmarks))
-            .replace('{withFeed}', String(withFeed));
-        // The "and none of them publishes anything" case is the one worth a
-        // sentence rather than a number: it is the answer to "why is my
-        // dashboard not changing", and it is not a fault.
-        const none = checked > 0 && withFeed === 0
-            ? ` ${this.t('config.feedsCoverageNone', 'None of them publishes a feed, so there is nothing for Fresh to count.')}`
-            : '';
-        status.textContent = text + none;
-    }
-
     bindMonitorNotifyTest(container) {
         const btn = container.querySelector('[data-monitor-notify-test]');
         if (!btn) return;
@@ -12448,6 +12563,11 @@ class DashboardConfig {
                 btn.disabled = false;
             }
         });
+    }
+
+    /** Config → Watch feeds: the list lives in dashboard-config-feed-watch.js. */
+    bindFeedWatchList(container) {
+        window.ConfigFeedWatch?.bindList(this, container);
     }
 
     bindPushDeviceControls(container) {
@@ -12645,11 +12765,11 @@ class DashboardConfig {
     static BEHAVIOR_TAB_ALIASES = {};
 
     /**
-     * Behavior tabs that left for Bookmarks: Fresh sits between View and Tags
-     * there. 'inbox' was folded into Fresh before that, so it lands there too.
+     * Behavior tabs that became Config → Watch feeds: Fresh, by way of a tab
+     * on Bookmarks, and 'inbox', which was folded into Fresh before that.
      * Mirrored in dashboard-config-loader.js.
      */
-    static BOOKMARKS_FROM_BEHAVIOR = { fresh: 'fresh', inbox: 'fresh' };
+    static FEED_WATCH_FROM_BEHAVIOR = ['fresh', 'inbox'];
 
     /*
      * Monitoring: what is checked, how you hear of it, and when to keep
@@ -13062,7 +13182,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV2', 'monitoringTutorialV1', 'unraidTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV2', 'monitoringTutorialV1', 'unraidTutorialV1', 'assistantTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -13202,6 +13322,40 @@ class DashboardConfig {
     async openUnraidTour() {
         if (!(await this.loadUnraidTour())) return false;
         return window.UnraidTutorial?.open?.() === true;
+    }
+
+    /**
+     * The one-time AI Assistant tour, the first time this section is opened --
+     * the same guards and the same order as the Unraid tour's.
+     */
+    async maybeShowAssistantTutorial() {
+        // Once: binding runs again on every repaint of the section, and a
+        // second call would replace the tour on screen.
+        if (this._assistantTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.ASSISTANT_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._assistantTutorialAsked = true;
+        if (!(await this.loadAssistantTour())) return;
+        window.AssistantTutorial?.maybeShow?.();
+    }
+
+    /** Fetch the tour script once. False when it cannot be had. */
+    async loadAssistantTour() {
+        if (typeof window.AssistantTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/assistant-tutorial.js', 'assistantTutorialModule',
+                () => typeof window.AssistantTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    }
+
+    /** The AI Assistant tour, from the Tour button on the band or Config's replay: seen or not. */
+    async openAssistantTour() {
+        if (!(await this.loadAssistantTour())) return false;
+        return window.AssistantTutorial?.open?.() === true;
     }
 
     bindMonitoringControls(container) {
@@ -13360,6 +13514,10 @@ class DashboardConfig {
             case 'unraidTutorialV1':
                 await this.openConfigView('unraid');
                 await this.openUnraidTour();
+                return true;
+            case 'assistantTutorialV1':
+                await this.openConfigView('assistant');
+                await this.openAssistantTour();
                 return true;
             default:
                 return false;
@@ -13521,26 +13679,6 @@ class DashboardConfig {
                 this._newsStream = undefined;
                 void this.loadNewsStream({ force: true }).then(() => this.repaintOverview());
                 break;
-            case 'feeds':
-                // Switching this on looks for feeds and polls once now, rather
-                // than leaving the dashboard blank until the scheduler's next
-                // wake — turning a feature on and seeing nothing happen reads
-                // as broken. Off just drops what is painted.
-                if (value) {
-                    // The same line "Find feeds now" writes while it looks, so
-                    // switching on does not sit silent for the length of a round.
-                    const feedStatus = document.querySelector('[data-config-action-status="findFeeds"]');
-                    if (feedStatus) feedStatus.textContent = this.t('config.feedsFindingNow', 'Looking…');
-                    void d.feeds?.pollNow().then((round) => {
-                        this.paintFeedCoverage(round);
-                        d.renderDashboard?.({ animate: false });
-                    });
-                } else if (d.feeds) {
-                    d.feeds.enabled = false;
-                    d.feeds.byKey = new Map();
-                    d.renderDashboard?.({ animate: false });
-                }
-                break;
             case 'search':
                 // The search component holds its own copy of the pool, built
                 // when the data loads -- a setting that decides what goes into
@@ -13644,17 +13782,15 @@ class DashboardConfig {
             else this._behaviorTabMoved = true;
             return;
         }
-        // Fresh now sits on Bookmarks: the tab is set there, and the section
-        // follows it the way Monitoring's does.
-        const toBookmarks = DashboardConfig.BOOKMARKS_FROM_BEHAVIOR[tab];
-        if (toBookmarks) {
-            this.bmTab = toBookmarks;
-            if (this.section === 'behavior') this.section = 'bookmarks';
-            else this._behaviorTabToBookmarks = true;
+        // Fresh is Config → Watch feeds now: the section follows the tab the
+        // way Monitoring's does.
+        if (DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(tab)) {
+            if (this.section === 'behavior') this.section = 'feed-watch';
+            else this._behaviorTabToFeedWatch = true;
             return;
         }
         this._behaviorTabMoved = false;
-        this._behaviorTabToBookmarks = false;
+        this._behaviorTabToFeedWatch = false;
         // An old id opens the tab that holds those settings now.
         tab = DashboardConfig.BEHAVIOR_TAB_ALIASES[tab] || tab;
         this._behaviorTab = tab;
@@ -13711,6 +13847,7 @@ class DashboardConfig {
             'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
             'health': ['config.statsNoteHealth', 'Whether everything still answers, how reliably, and what is wearing out.'],
             'server': ['config.statsNoteServer', 'The machine behind the dashboard: containers, Unraid and backups.'],
+            'feeds': ['config.statsNoteFeeds', 'What your watched feeds publish, what you read of it, and how their checks go.'],
         },
         containers: {
             'connection': ['config.containersNoteConnection', 'How nextDash reaches Docker, and whether that connection works right now.'],
@@ -14184,12 +14321,23 @@ class DashboardConfig {
         }
         // Bookmarks → View and Settings: the panels redrawn, so ↺, the count
         // and "Only changed" follow the change just made.
-        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings' || this.bmTab === 'fresh')) {
+        if (this.section === 'bookmarks' && !this.standalone && (this.bmTab === 'view' || this.bmTab === 'settings')) {
             const body = document.getElementById('config-bm-body');
             if (body) {
                 body.innerHTML = this.renderBmTab();
                 this.bindControlPanels(body, 'behavior');
                 this._fillShellHeadFromSection(container);
+                this.labelSettingsControls();
+                restoreFocus();
+            }
+            return;
+        }
+        // Config → Watch feeds: only the settings; the list paints itself.
+        if (this.section === 'feed-watch') {
+            const body = document.getElementById('config-fw-settings');
+            if (body) {
+                body.innerHTML = this.renderControlPanels(this.panelsFor('feed-watch', 'general'), 'behavior');
+                this.bindControlPanels(body, 'behavior');
                 this.labelSettingsControls();
                 restoreFocus();
             }
@@ -14266,7 +14414,7 @@ class DashboardConfig {
      */
     static LIBRARY_TOUR_TIP_ID = 'bookmarksTutorialV1';
 
-    static BM_TABS = ['view', 'fresh', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
+    static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -14327,7 +14475,7 @@ class DashboardConfig {
         'bookmarks-layout': 'layout',
     };
 
-    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health', 'server'];
+    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health', 'server', 'feeds'];
 
     // The tabs' names until September 2026, kept so an old link still lands.
     static STATS_TAB_ALIASES = { activity: 'usage', content: 'collection' };
@@ -14358,11 +14506,11 @@ class DashboardConfig {
      */
     static WIDGET_TYPE_GROUPS = [
         ['links', ['health', 'uptime', 'certs', 'domains', 'trend']],
-        ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
+        ['incoming', ['inbox', 'unsorted', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
-        ['ambient', ['weather', 'calendar', 'rss', 'notes']],
+        ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
@@ -15483,7 +15631,6 @@ class DashboardConfig {
         ['smartAddedPageIds', 'config.smartAddedScope', '“Recently added” pages'],
         ['smartStalePageIds', 'config.smartStaleScope', '“Stale” pages'],
         ['smartMostUsedPageIds', 'config.smartMostUsedScope', '“Most used” pages'],
-        ['smartFreshPageIds', 'config.smartFreshScope', '“Fresh” pages'],
     ];
 
     renderCollectionScopes() {
@@ -15813,7 +15960,20 @@ class DashboardConfig {
      * answer -- and got undefined from every save, so a duplicate never went
      * past the page list: no categories, no bookmarks, no word.
      */
-    async savePages(edited = []) {
+    /**
+     * One save of the page list at a time, as saveCategories does: each one
+     * re-reads and then posts the whole list, and quick up/down presses ran
+     * those chains side by side, so an older order could land last.
+     */
+    savePages(edited = []) {
+        const run = (this._pagesSaveChain || Promise.resolve())
+            .catch(() => {})
+            .then(() => this.savePagesNow(edited));
+        this._pagesSaveChain = run;
+        return run;
+    }
+
+    async savePagesNow(edited = []) {
         // The whole list goes to the server, and the server takes every entry
         // in it as the truth: a name changed on another device was put back
         // by the next reorder here. Re-read first; only the pages this save
@@ -16465,9 +16625,17 @@ class DashboardConfig {
             this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
             list.map((c) => c.name)
         );
-        list.splice(Number(index) + 1, 0, { ...source, id, name });
+        const copy = { ...source, id, name };
+        list.splice(Number(index) + 1, 0, copy);
         this.repaintPtBody();
-        if (!await this.saveCategories(pageId)) return;
+        if (!await this.saveCategories(pageId)) {
+            // Not kept on screen after the save said no: it looked created,
+            // and the next save of the page would have written it after all.
+            const at = (this._categories || []).indexOf(copy);
+            if (at >= 0) this._categories.splice(at, 1);
+            this.repaintPtBody();
+            return;
+        }
         this.notify(this.t('config.categoryDuplicatedEmpty',
             'Category duplicated, without its bookmarks — a page holds each link once'), 'success');
         void this.dash.data?.fetchAndStoreDataRevision?.();
@@ -16576,6 +16744,9 @@ class DashboardConfig {
     // Repeated from unraid-tutorial.js, for the same reason.
     static UNRAID_TUTORIAL_TIP_ID = 'unraidTutorialV1';
 
+    // Repeated from assistant-tutorial.js, for the same reason.
+    static ASSISTANT_TUTORIAL_TIP_ID = 'assistantTutorialV1';
+
     /*
      * The six guided tours, in one list.
      *
@@ -16613,12 +16784,14 @@ class DashboardConfig {
           whereKey: 'config.tourWhereMonitoring', where: 'the next time you open Config → Monitoring' },
         { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid',
           whereKey: 'config.tourWhereUnraid', where: 'the next time you open Config → Unraid' },
+        { id: 'assistantTutorialV1', labelKey: 'config.tourAssistant', label: 'AI Assistant',
+          whereKey: 'config.tourWhereAssistant', where: 'the next time you open Config → Assistant' },
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -16955,11 +17128,6 @@ class DashboardConfig {
                      'With Order on By tag: one tag shows only that tag, none groups every tag under its own heading.'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
-        feeds: [
-            { key: 'freshOnly', kind: 'bool', label: ['config.widgetFreshOnly', 'Only feeds with fresh items'] },
-            { key: 'showRetired', kind: 'bool', defaultOn: true, label: ['config.widgetShowRetired', 'Show feeds that stopped after repeated failures'] },
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
-        ],
         sources: [
             { key: 'errorsOnly', kind: 'bool', label: ['config.widgetErrorsOnly', 'Only sources that failed'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
@@ -17018,6 +17186,14 @@ class DashboardConfig {
               label: ['config.widgetRows', 'Rows to show'],
               hint: ['config.widgetRssRowsHint',
                      'What is past this count folds into a “more” row that opens in place.'] },
+        ],
+        'feed-news': [
+            { key: 'layout', kind: 'choice', label: ['config.widgetFeedNewsLayout', 'Layout'],
+              options: [
+                  ['list', ['config.widgetFeedNewsLayoutList', 'Sites, one row each']],
+                  ['headlines', ['config.widgetFeedNewsLayoutHeadlines', 'Headlines with pictures']],
+                  ['chips', ['config.widgetFeedNewsLayoutChips', 'Compact chips']],
+              ] },
         ],
         jellyfin: [
             { key: 'layout', kind: 'choice', label: ['config.widgetJellyfinLayout', 'Layout'],
@@ -17826,6 +18002,13 @@ class DashboardConfig {
             const chipPage = this.ptChip.categories.page;
             let target = String(chipPage !== 'all' ? chipPage : this.dash.currentPageId);
             if (!visible.includes(target)) target = visible[0];
+            // Every page hidden: there is nowhere for it to go, so say so
+            // rather than ignore the click.
+            if (!target) {
+                this.notify(this.t('config.categoryAddNoVisiblePage',
+                    'Show a page first: a category needs a visible page to live on.'), 'error');
+                return;
+            }
             if (!this.useCategoryPage(target)) {
                 if (this._catFailedPages?.has(target)) {
                     this.notify(this.t('config.categoriesLoadFailed',
@@ -18365,6 +18548,20 @@ class DashboardConfig {
             </section>`;
     }
 
+    /**
+     * Config → Watch feeds: the list of every watched feed, then the settings
+     * for their news. Two bodies, so a setting redrawn on change leaves the
+     * list (and whatever is open in it) alone.
+     */
+    renderFeedWatchSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.feedWatchIntro', 'Every feed you follow from a bookmark, and how their news reaches you.'))}</p>
+            <div id="config-fw-list">${this.renderControlPanels(this.panelsFor('feed-watch', 'list'), 'behavior')}</div>
+            <div id="config-fw-settings">${this.renderControlPanels(this.panelsFor('feed-watch', 'general'), 'behavior')}</div>
+        `;
+    }
+
     /** Which sub-tab of Bookmarks is showing. */
     renderBmTab() {
         if (this.bmTab === 'tags') {
@@ -18378,9 +18575,6 @@ class DashboardConfig {
         }
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
-        }
-        if (this.bmTab === 'fresh') {
-            return this.renderControlPanels(this.panelsFor('bookmarks', 'fresh'), 'behavior');
         }
         if (this.bmTab === 'view') {
             return this.renderBookmarksViewTab();
@@ -19430,6 +19624,7 @@ class DashboardConfig {
             ['tags', this.t('config.bmViewColTags', 'Tags')],
             ['shortcut', this.t('config.bmViewColShortcut', 'Shortcut')],
             ['usage', this.t('config.bmViewColUsage', 'Usage')],
+            ['news', this.t('config.bmViewColNews', 'Latest news')],
             ['score', this.t('config.sortByScore', 'Health score')],
         ];
         return options.map(([v, label]) =>
@@ -19787,7 +19982,7 @@ class DashboardConfig {
 
     /** Every sort the list knows: the toolbar's and the headings'. */
     static BM_SORTS = ['page', 'name', 'url', 'category', 'recent', 'lastOpened', 'opens', 'pinned',
-        'tags', 'shortcut', 'usage', 'score'];
+        'tags', 'shortcut', 'usage', 'news', 'score'];
 
     /** '' groups nothing; every other value names a workbenchGroupKey shape. */
     static BM_GROUPS = ['', 'page', 'category', 'site', 'status', 'tag'];
@@ -20206,6 +20401,13 @@ class DashboardConfig {
             },
             // The busiest of the sparkline's window first.
             usage: (a, b) => usageSum(b) - usageSum(a),
+            // Newest publish first; bookmarks without a watched feed last.
+            news: (a, b) => {
+                const la = this.dash.feedWatch?.latestFor?.(a)?.at || 0;
+                const lb = this.dash.feedWatch?.latestFor?.(b)?.at || 0;
+                if (!la || !lb) return (la ? 0 : 1) - (lb ? 0 : 1);
+                return lb - la;
+            },
             // Worst first. Rows without an issue score as healthy.
             score: (a, b) => Number(this.bmHealthIssue?.(a)?.score ?? 100) - Number(this.bmHealthIssue?.(b)?.score ?? 100),
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;
@@ -20324,6 +20526,48 @@ class DashboardConfig {
         this.afterSelectionChange();
     }
 
+    /** True when every bookmark the filter and search show is ticked. */
+    allShownBookmarksSelected() {
+        const shown = this.visibleBookmarks();
+        return shown.length > 0 && shown.every((b) => this.bmSelected.has(this.bookmarkKey(b)));
+    }
+
+    /**
+     * Ctrl/Cmd+A and the toolbar button: tick every bookmark shown, drawn or
+     * not, or clear them again when they are all ticked already. Ticked rows
+     * the filter hides stay as they are when ticking, and go when clearing only
+     * if they are among the shown, so the "hidden by the filter" count holds.
+     */
+    toggleSelectAllBookmarks() {
+        const shown = this.visibleBookmarks();
+        if (!shown.length) return;
+        const keys = shown.map((b) => this.bookmarkKey(b));
+        if (keys.every((k) => this.bmSelected.has(k))) keys.forEach((k) => this.bmSelected.delete(k));
+        else keys.forEach((k) => this.bmSelected.add(k));
+        this.afterSelectionChange();
+    }
+
+    /** The toolbar's Select all / Deselect all, built for the list as shown. */
+    renderBookmarkSelectAllButton() {
+        const count = this.visibleBookmarks().length;
+        if (!count) return '';
+        const all = this.allShownBookmarksSelected();
+        const label = all
+            ? this.t('config.bmDeselectAll', 'Deselect all')
+            : this.t('config.bmSelectAll', 'Select all ({count})').replace('{count}', String(count));
+        const hint = all
+            ? this.t('config.bmDeselectAllHint', 'Untick every bookmark the current filter shows')
+            : this.t('config.bmSelectAllHint', 'Tick every bookmark the current filter shows');
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<button type="button" class="config-btn config-btn--small" data-bm-select-all
+            title="${esc(hint)}">${esc(label)}</button>`;
+    }
+
+    syncBookmarkSelectAllButton() {
+        const host = document.getElementById('config-bm-select-all');
+        if (host) host.innerHTML = this.renderBookmarkSelectAllButton();
+    }
+
     /** Every row of a page › category group, drawn or not. */
     selectBookmarkGroup(groupKey) {
         this.visibleBookmarks()
@@ -20342,6 +20586,7 @@ class DashboardConfig {
         });
         // A selection of fewer than two has no shared form to show.
         if (this.bmSelected.size < 2) this._bmBulkPanelWanted = false;
+        this.syncBookmarkSelectAllButton();
         this.repaintWorkbenchPanel?.();
     }
 
@@ -20891,6 +21136,7 @@ class DashboardConfig {
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
             ['x', this.t('config.bmKeySelect', 'select')],
             ['Shift X', this.t('config.bmKeyRange', 'range')],
+            ['Ctrl/Cmd A', this.t('config.bmKeySelectAll', 'select all')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
             ['Shift E', this.t('config.bmKeyEditDialog', 'edit in dialog')],
             ['i', this.t('config.bmKeyPanel', 'panel')],
@@ -20977,7 +21223,7 @@ class DashboardConfig {
             this.bindTagRulesTab(container);
             return;
         }
-        if (this.bmTab === 'settings' || this.bmTab === 'fresh') {
+        if (this.bmTab === 'settings') {
             return;
         }
         if (this.bmTab === 'view') {
@@ -21069,6 +21315,9 @@ class DashboardConfig {
         });
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
+        container.querySelector('#config-bm-select-all')?.addEventListener('click', (e) => {
+            if (e.target.closest('[data-bm-select-all]')) this.toggleSelectAllBookmarks();
+        });
         container.querySelector('#config-bm-list')?.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-empty-add]')) {
                 this.openAddBookmarkModal();
@@ -22837,6 +23086,7 @@ class DashboardConfig {
             inbox: ['config.statsTabInbox', 'Inbox'],
             health: ['config.statsTabHealth', 'Health'],
             server: ['config.statsTabServer', 'Server'],
+            feeds: ['config.statsTabFeeds', 'Watch feeds'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -23091,7 +23341,7 @@ class DashboardConfig {
         };
         const pages = this.dash.pages || [];
         const [feeds, sources, trash, backups, ...blocks] = await Promise.all([
-            get('/api/feeds'),
+            get('/api/feeds/watch'),
             get('/api/sources'),
             get('/api/trash'),
             get('/api/auto-backups'),
@@ -23114,13 +23364,11 @@ class DashboardConfig {
             });
         }
 
-        const feedMap = feeds?.feeds && typeof feeds.feeds === 'object' ? feeds.feeds : null;
         this._statsLibrary = {
             widgets: widgetCount,
             widgetTypes: [...widgetTypes.entries()].sort((a, b) => b[1] - a[1]),
             widgetPages,
-            feedsEnabled: feeds ? feeds.enabled === true : null,
-            feeds: feedMap ? Object.keys(feedMap).length : null,
+            feeds: feeds && Number.isFinite(Number(feeds.total)) ? Number(feeds.total) : null,
             sources: Array.isArray(sources) ? sources.length : null,
             trash: trash && Number.isFinite(Number(trash.count)) ? Number(trash.count) : null,
             backups: Array.isArray(backups?.backups) ? backups.backups.length : null,
@@ -23189,6 +23437,30 @@ class DashboardConfig {
         ]);
         this._statsNotify = { quiet, push, webhooks, digest };
         if (this.isActiveView() && this.inSection('stats') && this.statsTab === 'health') {
+            this.repaintStatsBody();
+        }
+    }
+
+    /**
+     * Stats → Watch feeds, worked out on the server (feed_stats.go) for the
+     * period on screen and the feed whose hours are shown. The period is kept
+     * per device, like the other choices on this page.
+     */
+    async loadStatsFeeds() {
+        if (!this.statsFeedsRange) {
+            let stored = 0;
+            try { stored = Number(localStorage.getItem(DashboardConfig.STATS_FEEDS_RANGE_KEY)); } catch { /* per session then */ }
+            this.statsFeedsRange = [7, 14, 30, 90].includes(stored) ? stored : 30;
+        }
+        const q = new URLSearchParams({ days: String(this.statsFeedsRange) });
+        if (this.statsFeedsHour) q.set('feed', this.statsFeedsHour);
+        try {
+            const res = await fetch(`/api/feeds/stats?${q}`, { cache: 'no-store' });
+            this._statsFeeds = res.ok ? await res.json() : null;
+        } catch {
+            this._statsFeeds = null;
+        }
+        if (this.isActiveView() && this.inSection('stats') && this.statsTab === 'feeds') {
             this.repaintStatsBody();
         }
     }
@@ -24041,6 +24313,7 @@ class DashboardConfig {
                     this._statsLibrary = undefined;
                     this._statsServer = undefined;
                     this._statsNotify = undefined;
+                    this._statsFeeds = undefined;
                     // Refresh means "work them out again", so the memo goes too
                     // — otherwise the button would only re-fetch the two
                     // server-side tabs and hand back the same cached arithmetic
@@ -24169,6 +24442,7 @@ class DashboardConfig {
                 this.repaintStatsBody();
             });
         });
+        this.bindStatsFeeds?.(container);
         container.querySelectorAll('[data-stats-inbox-range]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const next = Number(btn.getAttribute('data-stats-inbox-range'));
@@ -24767,7 +25041,7 @@ class DashboardConfig {
                     { k: 'config.helpArtLifeCapture', d: 'Capture' },
                     { k: 'config.helpArtLifeCheck', d: 'Check' },
                     { k: 'config.helpArtLifeTidy', d: 'Tidy' },
-                    { k: 'config.feedsTitle', d: 'Fresh' },
+                    { k: 'config.feedsTitle', d: 'Watch feeds' },
                 ],
                 captionKey: 'config.helpArtLifeOfLink', caption: 'The life of a link',
             },
@@ -25183,15 +25457,6 @@ class DashboardConfig {
                 kind: 'bookmarkRow', value: ['icon', 'key'],
                 captionKey: 'config.helpArtFreshRow', caption: 'A count on the row',
             },
-            {
-                kind: 'flow',
-                value: [
-                    { k: 'config.helpArtFreshPreview', d: 'Link preview' },
-                    { k: 'config.helpArtFreshFeed', d: 'Feed address' },
-                    '304',
-                ],
-                captionKey: 'config.helpArtFreshCost', caption: 'Found once, then asked cheaply',
-            },
         ],
         'config.helpHealthMaintenanceTitle': [
             {
@@ -25412,8 +25677,8 @@ class DashboardConfig {
             go: { section: 'logs', logsTab: 'server' },
         },
         'config.helpFreshTitle': {
-            isOn: (s) => s.feedsEnabled === true,
-            go: { section: 'bookmarks', bmTab: 'fresh' },
+            isOn: () => true,
+            go: { section: 'feed-watch' },
         },
         'config.helpContainersTitle': {
             isOn: (s) => s.dockerViewEnabled !== false,
@@ -25712,7 +25977,7 @@ class DashboardConfig {
             // Fresh sat in a paragraph of the Behavior article, which is where
             // its switch is rather than where its subject is: it is a thing the
             // dashboard does with a bookmark, like everything else on this tab.
-            + this.helpPanel('config.helpFreshTitle', 'Fresh',
+            + this.helpPanel('config.helpFreshTitle', 'Watch feeds',
                 'config.helpFreshBody', '')
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
@@ -25963,51 +26228,9 @@ class DashboardConfig {
                 void this.copyDiagnostics();
                 return;
             }
-            if (e.target.closest('[data-about-action="track-fresh"]')) {
-                void this.trackSiteInFresh();
-                return;
-            }
             const go = e.target.closest('[data-overview-go]');
             if (go) this.handleOverviewGo(go);
         });
-    }
-
-    /**
-     * Save nextdash.cc as a bookmark, so Fresh can count its posts.
-     *
-     * Added through the same endpoint the add-bookmark form uses, on the page
-     * you are looking at, and it says where it went — a button that silently
-     * writes a bookmark somewhere is worse than one that does nothing.
-     */
-    async trackSiteInFresh() {
-        const d = this.dash;
-        const pageId = Number(d.currentPageId) || 1;
-        try {
-            const res = await this.writeFetch('/api/bookmarks/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    page: pageId,
-                    bookmark: {
-                        name: 'nextDash',
-                        url: 'https://nextdash.cc/',
-                        category: '',
-                        tags: [],
-                        note: '',
-                        icon: '',
-                        shortcut: '',
-                        createdAt: Date.now(),
-                    },
-                }),
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [pageId] });
-            this.notify(this.t('config.aboutTrackAdded',
-                'nextdash.cc is on your dashboard. Turn Fresh on under Behavior → Inbox & Fresh to see what it publishes.'), 'success');
-            this.render();
-        } catch (_error) {
-            this.notify(this.t('config.aboutTrackFailed', 'Could not add the bookmark.'), 'error');
-        }
     }
 
     aboutTabLabel(tab) {
@@ -26344,30 +26567,6 @@ class DashboardConfig {
                     at: 0,
                 })).join('')}</ul>
             </div>` : ''}
-            ${this.renderTrackInFresh()}
-            </div>`;
-    }
-
-    /**
-     * Follow the project's own feed with the product's own feature.
-     *
-     * Fresh polls the pages you have saved and counts what they published
-     * since you last looked. Pointing it at nextdash.cc is both the shortest
-     * way to keep up and the clearest demonstration of what Fresh is for.
-     */
-    renderTrackInFresh() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const already = (this.dash.allBookmarks || [])
-            .some((b) => String(b?.url || '').includes('nextdash.cc'));
-        return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.aboutTrackTitle', 'Follow it from your own dashboard'))}</h3>
-                <p class="config-panel-note">${esc(already
-                    ? this.t('config.aboutTrackDone', 'nextdash.cc is already one of your bookmarks — Fresh will count new posts on it like any other page.')
-                    : this.t('config.aboutTrackNote', 'Save nextdash.cc as a bookmark and Fresh counts what it publishes, the same way it does for every other page you keep.'))}</p>
-                ${already ? '' : `<div class="config-actions">
-                    <button type="button" class="config-btn config-btn--small" data-about-action="track-fresh">${esc(this.t('config.aboutTrackCta', 'Add nextdash.cc to my bookmarks'))}</button>
-                </div>`}
             </div>`;
     }
 

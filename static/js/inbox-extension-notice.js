@@ -105,6 +105,13 @@
             'The browser extension saves the page you are on straight to your Inbox, so you can sort it later.'),
         dismissLabel: () => t('dashboard.inboxExtensionNoticeLater', 'Not now'),
         canShow: shouldShow,
+        // One line, no button. It counts as "not now": the offer comes back
+        // after the snooze, and the switch in Config turns it off for good.
+        toast: {
+            message: () => t('dashboard.inboxExtensionNoticeToast', 'Fill your Inbox from the browser: the extension saves the page you are on straight to it.'),
+            duration: 15000,
+            onShown: () => snooze(),
+        },
         onShown: () => track('shown'),
         onDismiss: () => { snooze(); track('dismiss'); },
         actions: [

@@ -67,7 +67,7 @@
         { line: 2, keys: ':', legendKey: 'dashboardKeyCommands', cheatKey: 'dvCommands', fallback: 'commands' },
         { line: 3, keys: '1\u20139', legendKey: 'dashboardKeyPage', cheatKey: 'dvPage', fallback: 'page' },
         { line: 3, keys: '+', legendKey: 'dashboardKeyAddBookmark', cheatKey: 'dvAddBookmark', fallback: 'add bookmark' },
-        { line: 3, keys: 'Shift+N', legendKey: 'dashboardKeyAddCategory', cheatKey: 'dvAddCategory', fallback: 'add category' },
+        { line: 3, keys: 'Shift+N', legendKey: 'dashboardKeyNews', cheatKey: 'dvNews', fallback: 'news' },
         { line: 3, more: true, keys: 'Shift+\u2190/\u2192', legendKey: 'dashboardKeyPrevNextPage', cheatKey: 'dvPrevNextPage', fallback: 'prev / next page' },
         { line: 3, more: true, keys: 'Shift+F', legendKey: 'dashboardKeyFilter', cheatKey: 'dvFilter', fallback: 'filter' },
         { line: 3, more: true, keys: '.', legendKey: 'dashboardKeyFoldAll', cheatKey: 'dvFoldAll', fallback: 'fold all' },
@@ -76,6 +76,7 @@
         { line: 4, keys: 'Shift+T', legendKey: 'dashboardKeyTag', cheatKey: 'dvTag', fallback: 'tag' },
         { line: 4, keys: 'Shift+P', legendKey: 'dashboardKeyPin', cheatKey: 'dvPin', fallback: 'pin' },
         { line: 4, keys: '\u2318/Ctrl+Enter', legendKey: 'dashboardKeyNewTab', cheatKey: 'dvNewTab', fallback: 'new tab' },
+        { line: 4, more: true, keys: '#', legendKey: 'dashboardKeyWatchFeed', cheatKey: 'dvWatchFeed', fallback: 'watch feed' },
         { line: 4, keys: 'Shift+D', legendKey: 'dashboardKeyDelete', cheatKey: 'dvDelete', fallback: 'delete' },
     ];
 

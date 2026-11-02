@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.24.0 — 2 November 2026](#v1240--2-november-2026)
 - [v1.23.0 — 30 October 2026](#v1230--30-october-2026)
 - [v1.22.5 — 29 October 2026](#v1225--29-october-2026)
 - [v1.22.4 — 29 October 2026](#v1224--29-october-2026)
@@ -126,6 +127,95 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.24.0 — 2 November 2026
+
+Watch feeds replace Fresh: follow the RSS (or Atom, or JSON Feed) feed of any site you have a bookmark for, get a stripe, a badge and a headline on the row, a preview card that leads with the news, and a news window of your own that reads like a paper; a safety pass over every file nextDash writes, so an unreadable file is never overwritten with defaults; the MCP endpoint answers counts and queries; a redesigned What's new modal and an assistant tour.
+
+### Bookmarks view
+
+- **new — Select every bookmark.** `Ctrl/Cmd + A` ticks every bookmark the filter and the list search show, rows not yet drawn included, and pressing it again clears them; a **Select all (N)** / **Deselect all** button in the toolbar does the same. In the search field `Ctrl/Cmd + A` still selects the text. The manual claimed `x` / `Shift + X` and a *Select all* in the ⋯ menu did this; they never did, and §11.4 and §11.6 now say what each key does. Reported as [issue #20](https://github.com/jordibrouwer/nextdash/issues/20); `tests/bookmarks-view-select-all.spec.js` covers it with more bookmarks than one drawn chunk.
+
+### Health
+
+- **fix — A server with no connection no longer marks everything broken.** When nextDash started before the machine was online, the first round of checks recorded *DNS lookup failed* for every bookmark and filled the Bookmarks view and *Work through* with fake rot, which a restart did not clear. A round that reaches at least ten different sites and fails for at least 80% of them with a lookup, timeout, refused or unreachable error is now treated as the server's own outage: its failures are held back (no broken status, no sample, no alert, no incident), every bookmark keeps its earlier status, the Bookmarks view shows *No connection from this server since …*, and the round is tried again a minute later. Addresses on your own network are never held back; after thirty minutes failures are recorded normally. It covers the monitors, *Retest all*, the scheduled recheck and the checks the browser asks for; *Retest all* says why it held back. Nothing is sent to any third party. Reported as [issue #20](https://github.com/jordibrouwer/nextdash/issues/20); if the first round after a start still marks your bookmarks broken, please say so on the issue, with the *last error* a bookmark shows. Go tests cover the rule around the 80% line, the real Linux and Docker error strings, long sweeps, overlapping rechecks and the thirty-minute limit.
+
+- **fix — The first 15 minutes after a start are forgiving.** After nextDash starts, a bookmark's first failed check (any address, including your own services on the LAN and containers that are still starting) is not recorded: no broken status, sample, alert or incident, and the earlier status stays. The same bookmark failing again at least 45 seconds later is recorded, and an answer clears the first failure. Only unattended checks wait (the monitors, the scheduled recheck and the checks the browser asks for); *Retest all* records at once; copies of one address with their own rules share one decision, and the scheduled recheck retries once, not for the whole window. A service that is really dead is recorded a minute or two later than before, in that window only. `NEXTDASH_HEALTH_STARTUP_GRACE` sets the window (a duration such as `5m`; `0` switches it off) and the end-to-end tests set it to 0; Docker, Glances and Unraid are not affected.
+
+### Watch feeds
+
+- **new — Follow the RSS feed of any site.** Right-click a bookmark → **Watch this feed…**, use the **Watch feeds** row of the bookmark form, or press `#` on the bookmark in hand. nextDash lists the RSS or Atom feeds the page advertises (and tries the usual addresses when the page says nothing, as it does behind a cookie wall), you tick one or more or paste an address, and you choose how often to check: 30 minutes, 1, 2, 4, 6, 12 or 24 hours. Up to 100 feeds can be watched. Nothing is followed until you ask, and nextDash only *reads* feeds: nothing is sent to anyone. The old **Fresh** feature is gone, with its texts and its walkthrough.
+- **new — What is read.** RSS and Atom, and JSON Feed too. Each item keeps its title, link, lead (reduced to a few safe tags, never scripts) and its picture; feeds that use another character set are converted. A feed that fails five times in a row is paused and tried again once a day, an aborted poll does not count as a failure, and a feed can be moved to its new address when the site moves it.
+- **new — What it keeps.** The ten newest new items of each feed with their text and picture, fifty recent entries as short copies without pictures, and the ids of the last 75 entries so nothing counts as new twice. Opening the bookmark (or an article's headline) clears its count; the purple mark and the news window close by themselves after 15, 30 (default), 60 or 120 minutes, counted from when the tab is in view. **Check watched feeds now** polls them all at once, and `status:watched` and `status:unwatched` search for followed bookmarks.
+- **new — Rows show the news.** A stripe, a bold name, the newest headline, a badge with a halo and a dot on the page tab for new items; a feed icon on watched bookmarks, muted and unhealthy states included (`Settings → Show a feed icon on watched bookmarks`, on).
+- **new — A paper for all the news.** One news modal for everything you watch, with read and unread per item, three layouts, one article per screen in one column, `j`/`k` through the news, and a masthead that stays at the top. `Esc` closes at once; the **Index** button goes back to the front page.
+- **new — The news popover.** Click a row with news for six headlines, a **Reader** button and an open-site button; it grows out of the row, `+n more` expands in place up to 10, and the layout fits the screen. On a phone a tap shows the headlines first and the bar on top goes to the site (five headlines).
+- **new — Manage in one place.** **Config → Watch feeds** (marked *new* in the rail) lists every watched feed with its newest item; follow several sites at once, and **mute**, **pause** or set a **word filter** per feed. **Watch more** puts sites with a feed first.
+- **new — Add one from the bookmark form.** A **Watch feeds** row saves with the bookmark, in place of the offer chip; adding a watch switches the availability check on, and one that is on stays.
+- **new — Dashboard.** A widget with the sites that have new items, in three layouts, and a *Watch feeds news* widget on a fresh install (added once to existing installs). The Bookmarks view has a column with the latest news.
+- **new — JSON Feed, digest and webhooks.** JSON Feed is read next to RSS and Atom; a digest line and the news go to webhooks and the notify target.
+- **new — Statistics.** **Stats → Watch feeds** shows the numbers with a period switch and the settings; the statistics have a reset route and travel in the backup.
+- **new — Keys.** `Shift+N` opens the news; `#` watches the feed of the bookmark in hand. Adding a category by key is gone. Coming back to the tab opens the news only on a computer and only when switched on (off); muted feeds never bring the paper back on their own.
+- **new — Phones.** The news button is desktop only (a phone opens the paper from the toast); the news stripe stands before the favicon.
+- **new — A preview card that leads with the news.** Hovering a bookmark with news now shows the photo, the headline and a short lead first, two equal buttons (**Open reader** and **Open page**), and a pager (`‹ 1 / 3 ›`) when the site has more than one new item; the site's own picture and description no longer sit beside it. Open page now opens that item's own page. The card is about 420 px high instead of 770.
+- **fix — The news modal follows the theme.** The header, buttons, links, list cards and accent come from the active theme and its material, not from a fixed black and purple. Only the **Newspaper** view keeps its own paper look. The horizontal scrollbar under the footer is gone, and the footer buttons share one height, border and hover.
+- **fix — The news list reads right.** A feed item with several paragraphs or list items showed them run together in the list ("…read.The list…"); they now keep their spaces. In Config → Watch feeds a muted row no longer pushes its columns a few pixels out of line.
+- **fix — `:config` offers Watch feeds.** The command palette listed every Config section except this one.
+- **fix — Feeds.** An aborted poll is not a failure; feeds of deleted bookmarks are dropped; an entry dated in the future no longer stays new after an open; pictures come back after a restore. Each feed keeps ten full items, fifty light copies and 75 seen ids.
+
+### Phones
+
+- **new — Notifications and links.** Two settings: *Hide notifications and corner cards on phones* (on) and *Open links in a new tab on phones* (off).
+- **fix — News and picker windows** have no empty band under the content; the popover keeps under its badge when the page moves and the row's preview card stays away.
+
+### Assistant
+
+- **new — AI Assistant tour.** A guided tour of the panel and its settings.
+- **fix — Conversations are safe.** A conversation file that failed to read is never saved over; a panic during Apply leaves the proposal *failed*, not *applying*; a proposal no longer counts as a lookup.
+
+### MCP
+
+- **new — Queries and counts.** `query_bookmarks`, `query_containers` and `get_stats`, with counts that survive a limit; `get_stats`, `get_app_status` and `get_bookmark_history` report inbox and trash.
+- **new — Settings overview.** A read-only, allowlisted look at the configuration, behind its own switch.
+- **fix — Safe check errors,** Health view counters and container links that match the view.
+
+### What's new
+
+- **new — A new overview.** Two-column summary, developer card, support bar and counts on the filter chips; the support card also sits beside the release intro.
+
+### Themes
+
+- **new — Tidal Slate (dark)** is the default theme on new installs, with Tidal Slate (light) as its light half for auto dark mode. Installs that already chose a theme keep it.
+- **fix — Text fields share one fill** in the signature themes, and more fields take it (`config-input` has a style); the news popover follows the material of the theme; in Ink the folio stays put when you hover the header.
+- **fix — An open category sort menu stays above the next category.** In the Ink and frost looks every category is its own layer, so the category below drew over the menu and took its clicks.
+
+### Action bar
+
+- **new — The hover popover names the button.** With the key chips off, resting on an action button showed only its key (`>`). It now shows the name first, in your language, then the key: *search* `>`, *cheat* `!`.
+
+### Notices
+
+- **new — Four hints are toasts now.** The theme studio hint, the *Updated from … to …* notice, the Inbox extension invitation and the image-update invitation appear as one line in a toast, with no buttons, and say where to go (`Shift+A`, the ★ button, Config → Containers → Updates). Showing one counts as answered, or snoozed for the two invitations; the switches in Config still turn them off. Corner cards that ask a question stay corner cards.
+
+### Reliability
+
+- **fix — An unreadable file is never overwritten.** Settings, Secrets, Push (keys and devices), Trash and page order, Glances hosts, the status page token and the status page: when a file cannot be read, nextDash keeps it and does not write defaults over it. Settings are handed out as a copy; a restore holds the settings lock; push keys and chats stay out of the wrong backup; overlapping deletes of one page leave one trash entry.
+- **fix — Glances.** A dip under the line no longer lowers an open incident's peak, the incident cap never drops an open incident, and a muted alert gives no lost-reading notice.
+- **fix — Widgets and API.** The last good answer is kept, Docker logs stream from the end, disk and stats are guarded; long API runs answer past 60 s; strings are cut on rune boundaries and NaN sample rates are rejected.
+- **fix — Config, dashboard, search.** A theme reset sticks, a widget deletes by id, one bulk apply and page save run at a time; preview retries; IME keys, accent-blind picks and finder case in the search; a sturdier modal focus trap and notice queue.
+- **fix — Health and domains.** Reminders stop after a silent recovery; day summaries are tidier; a known expiry date stays in the report after a failed lookup.
+- **fix — Extension.** The typed form survives tab changes and stale favicon answers are ignored.
+- **fix — Bookmarks and Discovery.** A page move that also changes the URL keeps its shortcut; no empty category for an app that cannot be placed.
+
+### Docs
+
+- **docs — `MANUAL.md` and `README.md`.** Watch feeds, the funnel tools and the settings overview are in the manual; the default theme (Tidal Slate), the four toasts and the news-first preview card are corrected in both. The manual has six new pictures (`04-preview-card-news`, `12-watch-feeds-news`, `-news-columns`, `-paper`, `-config`, `-stats`), the README says 23 MCP tools, and four README dashboard pictures that still showed the removed *Fresh* block are retaken.
+- **docs — Sixteen diagrams in the manual.** Hand-drawn SVGs, eleven of them animated, sit beside the text they explain: the install routes (§2), pages, categories and the inbox (§3), the dashboard laid out and numbered (§4), the ways a bookmark comes in (§5), how a check reaches its verdict and the offline guard with the start-up grace (§12), Watch feeds from feed to row, card and window (§12.6), the inbox (§13), how a container finds its bookmark (§14), a custom widget's path to a tile (§15), the layers of a look (§16), the data folder (§19), the extension's capture route (§21), what the write token gates and what nextDash contacts (§23), and a *broken but the site works* tree (§24). Each follows the light or dark scheme and holds still with reduced motion; they live in `screenshots/manual.md/` beside the pictures.
+- **docs — Config → Help, tips, Overview and News & features.** The Watch feeds panel is rewritten (the news window, the preview card and its pager, `Shift + N`, `#`, Config and Stats); four panels name Tidal Slate and the toasts; a *Watching feeds* tip group has three tips; Overview has two new entries; the cheat sheet has a *The news* section and its PDF is regenerated.
+- **docs — `static/data/whats-new/v1.24.0.json` and its index entry**, with two highlights (*Follow the RSS feed of any site*, with a recording, and *A news window of your own*, with a picture; `tests/fixtures/whats-new-media/v1.24.0.js` and the media spec take them); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v360` and `DASHBOARD_RELEASE` to `2026.11-dashboard-release-v1.24.0`, so the window opens once for everyone. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — Translations.** All of the above, the AI Assistant tour and a few older strings (76 keys per language) are in Dutch, German, French, Spanish and Chinese; the Help panel for Watch feeds still carried its old name in all five and is renamed.
 
 ---
 

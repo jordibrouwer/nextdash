@@ -183,8 +183,18 @@ func writeStatusToken(token string) error {
 func ensureStatusToken() (string, error) {
 	statusPageMu.Lock()
 	defer statusPageMu.Unlock()
-	if tok := readStatusToken(); len(tok) >= statusTokenMinLen {
-		return tok, nil
+	// A new token is a new link, and every copy of the old one stops working.
+	// So only a missing, damaged or too-short token is replaced; a file that
+	// could not be read is an error, not a page without a link.
+	data, err := os.ReadFile(statusSecretsFilePath())
+	if err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+	var s statusSecrets
+	if err == nil && json.Unmarshal(data, &s) == nil {
+		if tok := strings.TrimSpace(s.Token); len(tok) >= statusTokenMinLen {
+			return tok, nil
+		}
 	}
 	tok, err := newStatusToken()
 	if err != nil {

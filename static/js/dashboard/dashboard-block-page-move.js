@@ -24,7 +24,6 @@
         __smart_added__: 'smartAddedPageIds',
         __smart_stale__: 'smartStalePageIds',
         __smart_most_used__: 'smartMostUsedPageIds',
-        __smart_fresh__: 'smartFreshPageIds',
     };
 
     function api() {

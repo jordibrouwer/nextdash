@@ -1,0 +1,124 @@
+{
+  "tag": "v1.24.0",
+  "date": "2 November 2026",
+  "releasedAt": "2026-11-02",
+  "modalLead": "nextDash can now follow the RSS feeds of the sites you save: right-click a bookmark, choose Watch this feed, and new articles show on its row, in a preview card and in a news window of their own. New installs start on Tidal Slate, and every file nextDash writes is now protected from being overwritten when it cannot be read.",
+  "sections": [
+    {
+      "title": "Watch feeds",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Follow the RSS feed of any site.</strong> Right-click a bookmark and choose <strong>Watch this feed…</strong>, or press <code>#</code> on it. nextDash lists the RSS or Atom feeds the page offers (and tries the usual addresses when the page says nothing), you tick the ones you want and choose how often to check, from every 30 minutes to once a day. Nothing is followed until you ask, and nextDash only reads feeds: nothing is sent to anyone.",
+          "highlight": true,
+          "title": "Follow the RSS feed of any site",
+          "link": "#config/feed-watch",
+          "linkLabel": "Open Watch feeds",
+          "media": {
+            "image": "media/v1.24.0-follow-feeds.jpg",
+            "video": "media/v1.24.0-follow-feeds.webm",
+            "alt": "Right-click a bookmark, choose Watch this feed, tick the feed, and its row shows the newest headline and a count while the preview card shows the article"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>New articles show on the row.</strong> A bookmark with news gets a stripe, a bold name, its newest headline and a count badge, a watched bookmark carries a small feed icon, and the page tab shows a dot. One toast covers all the sites at once, and push notifications can tell you too."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A news window of your own.</strong> Press <code>Shift + N</code> to read everything you follow in one paper, with pictures and read and unread per article. Show it as a newspaper front page with a lead story, as one article at a time, or in two columns grouped by site; <code>j</code> and <code>k</code> move through it and <strong>Index</strong> goes back to the front page. It follows your theme, except the newspaper, which keeps its paper look.",
+          "highlight": true,
+          "title": "A news window of your own",
+          "media": {
+            "image": "media/v1.24.0-news-window.jpg",
+            "alt": "The news window as a newspaper: a lead article with its picture and a list of the other articles beside it"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A preview card that leads with the news.</strong> Hover a bookmark with news for the article's picture, headline and a short lead, with <strong>Open reader</strong> and <strong>Open page</strong>. When the site has more than one new article, a pager steps through up to three."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Mute, pause or filter a feed.</strong> Config → Watch feeds lists every feed with its newest article: mute one so it counts but never calls out, pause it, or give it a word filter. <strong>Watch more</strong> lists your sites that offer a feed, and Stats → Watch feeds shows what each feed publishes and how much of it you read.",
+          "link": "#config/feed-watch",
+          "linkLabel": "Manage feeds"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Also on the dashboard and in the digest.</strong> A widget shows the sites with new articles in three layouts, the Bookmarks view has a column with the latest news, and the weekly digest and your webhooks carry the news. JSON Feed is read as well as RSS and Atom."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The news reads right.</strong> Articles with several paragraphs or list items no longer run together in the list, a feed that stops answering is paused instead of failing over and over, and the pictures come back after a restore."
+        }
+      ]
+    },
+    {
+      "title": "Look and feel",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Tidal Slate is the default theme</strong> on new installs, with Tidal Slate (light) as its light half. An install that already chose a theme keeps it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Four hints are toasts now.</strong> The theme studio hint, the notice that nextDash was updated, the Inbox extension invitation and the image-update invitation appear as one line instead of a card in the corner, and say where to go."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The action bar names its buttons.</strong> With the key chips off, resting on a button now shows what it does next to its key, such as <em>search</em> and <code>&gt;</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A new What's new window.</strong> A two-column summary with counts on its filter chips and a support button for the one person who builds nextDash."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An open category sort menu stays on top.</strong> The category below it no longer draws over the menu and takes its clicks."
+        }
+      ]
+    },
+    {
+      "title": "Safer files",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>An unreadable file is never overwritten.</strong> If settings, secrets, push keys, the trash, page order, Glances hosts or the status page cannot be read, nextDash keeps the file as it is instead of writing defaults over it. A restore no longer races a settings save, and push keys and chats stay out of the wrong backup."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Fewer stale readings.</strong> Widgets keep their last good answer, Docker logs stream from the end, long API runs answer past a minute, and a Glances incident keeps its peak and is never dropped while it is still open."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks and Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Select every bookmark.</strong> Press <kbd>Ctrl</kbd> + <kbd>A</kbd> (or <kbd>Cmd</kbd> + <kbd>A</kbd>) in the Bookmarks view to tick everything the filter and search show, or use the new <strong>Select all</strong> button in the toolbar. Press it again to clear.",
+          "link": "#bookmarks",
+          "linkLabel": "Open Bookmarks"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No more fake rot after a start.</strong> When nextDash starts before the machine is online, it no longer marks every bookmark broken: those results are held back, the Bookmarks view says so, and checks run again a minute later. For the first 15 minutes after a start, one failed check of a bookmark (also of your own services that are still starting) does not count until it fails again."
+        }
+      ]
+    },
+    {
+      "title": "MCP and assistant",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>MCP answers questions with counts.</strong> New tools query bookmarks and containers and report statistics, with counts that survive a limit, and a read-only look at your settings sits behind its own switch."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A tour of the assistant</strong> walks through the panel, its settings and what it can and cannot do."
+        }
+      ]
+    }
+  ]
+}

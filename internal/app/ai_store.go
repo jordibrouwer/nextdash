@@ -94,9 +94,21 @@ func aiResetRecoveryForTest() {
 
 // aiLoadConversations has side effects (it may rename a bad file aside and
 // recover interrupted proposals), so aiStoreMu MUST be held by the caller.
-// Tests may call it unlocked.
+// Tests may call it unlocked. A file that is there but cannot be read reads as
+// empty here; a caller that writes uses aiLoadConversationsChecked instead.
 func aiLoadConversations() []aiConversation {
-	convs := aiReadConversations()
+	convs, _ := aiLoadConversationsChecked()
+	return convs
+}
+
+// aiLoadConversationsChecked is aiLoadConversations for a caller that writes
+// the list back: a read error comes back as an error, because saving an empty
+// list over a file that only failed to read would delete every conversation.
+func aiLoadConversationsChecked() ([]aiConversation, error) {
+	convs, err := aiReadConversations()
+	if err != nil {
+		return []aiConversation{}, err
+	}
 	if !aiRecoveryDone {
 		aiRecoveryDone = true
 		changed := false
@@ -118,32 +130,37 @@ func aiLoadConversations() []aiConversation {
 			}
 		}
 	}
-	return convs
+	return convs, nil
 }
 
-func aiReadConversations() []aiConversation {
+// aiReadConversations answers an empty list for a missing file and for one it
+// set aside, and an error only for a file that is there but could not be read.
+func aiReadConversations() ([]aiConversation, error) {
 	path := aiConversationsFilePath()
 	fi, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return []aiConversation{}, nil
+	}
 	if err != nil {
-		return []aiConversation{}
+		return nil, err
 	}
 	if fi.Size() > aiConversationsMaxBytes {
 		aiSetAside(path, "is too large")
-		return []aiConversation{}
+		return []aiConversation{}, nil
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return []aiConversation{}
+		return nil, err
 	}
 	var convs []aiConversation
 	if err := json.Unmarshal(data, &convs); err != nil {
 		aiSetAside(path, "is not valid JSON")
-		return []aiConversation{}
+		return []aiConversation{}, nil
 	}
 	if convs == nil {
 		convs = []aiConversation{}
 	}
-	return convs
+	return convs, nil
 }
 
 func aiSaveConversations(convs []aiConversation, s Settings, now time.Time) error {
@@ -212,7 +229,10 @@ func aiPrepMessage(m aiMessage, now time.Time) aiMessage {
 func aiAppendTurn(convID string, question string, answer aiMessage, s Settings, now time.Time) (aiConversation, error) {
 	aiStoreMu.Lock()
 	defer aiStoreMu.Unlock()
-	convs := aiLoadConversations()
+	convs, err := aiLoadConversationsChecked()
+	if err != nil {
+		return aiConversation{}, err
+	}
 	idx := -1
 	if convID != "" {
 		for i := range convs {
@@ -283,7 +303,10 @@ func aiGetConversation(id string) (aiConversation, bool) {
 func aiDeleteConversation(id string) (bool, error) {
 	aiStoreMu.Lock()
 	defer aiStoreMu.Unlock()
-	convs := aiLoadConversations()
+	convs, err := aiLoadConversationsChecked()
+	if err != nil {
+		return false, err
+	}
 	for i := range convs {
 		if convs[i].ID == id {
 			convs = append(convs[:i], convs[i+1:]...)
@@ -322,7 +345,10 @@ func aiDeleteAllConversations() error {
 func aiUpdateProposal(id string, from []string, to aiProposal) (aiProposal, bool, error) {
 	aiStoreMu.Lock()
 	defer aiStoreMu.Unlock()
-	convs := aiLoadConversations()
+	convs, err := aiLoadConversationsChecked()
+	if err != nil {
+		return aiProposal{}, false, err
+	}
 	for ci := range convs {
 		for mi := range convs[ci].Messages {
 			props := convs[ci].Messages[mi].Proposals

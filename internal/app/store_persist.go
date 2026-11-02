@@ -113,6 +113,26 @@ func syncDir(dir string) {
 	_ = handle.Close()
 }
 
+/*
+readJSONForWrite reads path into v for a read-modify-write. A missing file
+leaves v as it was; any other read or decode failure is returned, so the caller
+does not save over a file it could not read.
+
+The readers beside each store answer an empty value for every failure, which is
+right for a read and wrong before a write: one failed read, and the save that
+followed kept only the entry it changed.
+*/
+func readJSONForWrite(path string, v any) error {
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, v)
+}
+
 func writeIndentJSONFile(path string, v any) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {

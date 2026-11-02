@@ -32,6 +32,9 @@
                 'tipEverydayGridFilter',
                 'tipEverydayScrollBack',
                 'tipEverydayCheatsheet',
+                'tipWatchNews',
+                'tipWatchFeedKey',
+                'tipWatchPreviewPager',
             ],
         },
         {
@@ -180,7 +183,6 @@
                 'tipTunePreview',
                 'tipTuneVideoCard',
                 'tipTuneSmartCollections',
-                'tipTuneFresh',
                 'tipTuneReviewOffers',
                 'tipTuneWidgets',
                 'tipTuneWidgetFold',

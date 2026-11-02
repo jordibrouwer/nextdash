@@ -133,7 +133,7 @@
     width: 100%;
     padding: var(--space-1-5, 0.38rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-primary);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     font-family: inherit;
     font-size: var(--font-size-text);

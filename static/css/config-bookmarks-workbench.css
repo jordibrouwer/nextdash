@@ -3656,3 +3656,47 @@ html body .config-bm-more-menu .config-btn {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
 }
+
+/* Latest news: when the newest item came out and its headline; the accent
+   while news is unread. Shown with the other wide columns. */
+.config-bm-news {
+    display: none;
+}
+
+@media (min-width: 1100px) {
+    .config-bm-workbench.is-library .config-bm-news {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2, 0.5rem);
+        min-width: 0;
+        font-size: var(--font-size-small);
+        color: var(--text-secondary);
+    }
+
+    .config-bm-workbench.is-library .config-bm-news-when {
+        flex: none;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .config-bm-workbench.is-library .config-bm-news-title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 0;
+        border: 0;
+        background: none;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .config-bm-workbench.is-library .config-bm-news-title:hover {
+        text-decoration: underline;
+    }
+
+    .config-bm-workbench.is-library .config-bm-news.is-unread {
+        color: var(--accent-primary);
+    }
+}

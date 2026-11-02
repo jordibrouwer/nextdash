@@ -54,9 +54,6 @@ const (
 	// dashboard category -- the same list the full Unsorted view shows,
 	// chronological, most recent first.
 	WidgetTypeUnsorted WidgetType = "unsorted"
-	// WidgetTypeFeeds reports feeds with fresh items, and -- the part nobody
-	// sees today -- the feeds that retired themselves after repeated failures.
-	WidgetTypeFeeds WidgetType = "feeds"
 	// WidgetTypeSources reports what each import source last did. An import that
 	// failed is visible only in config today, so it is found by wondering why
 	// nothing new arrived.
@@ -128,6 +125,9 @@ const (
 	 * because Fresh is a checker and not a reader. This is the reader.
 	 */
 	WidgetTypeRSS WidgetType = "rss"
+	// WidgetTypeFeedNews lists the sites whose watched feeds have unread
+	// items. It fetches nothing: it reads the watch list the dashboard holds.
+	WidgetTypeFeedNews WidgetType = "feed-news"
 
 	/*
 	 * WidgetTypeJellyfin shows what was added to a Jellyfin server lately,
@@ -196,7 +196,6 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeTrend:           {},
 	WidgetTypeInbox:           {},
 	WidgetTypeUnsorted:        {},
-	WidgetTypeFeeds:           {},
 	WidgetTypeSources:         {},
 	WidgetTypeNeglected:       {},
 	WidgetTypeArchive:         {},
@@ -212,6 +211,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeWeather:         {},
 	WidgetTypeCalendar:        {},
 	WidgetTypeRSS:             {},
+	WidgetTypeFeedNews:        {},
 	WidgetTypeCustom:          {},
 	WidgetTypeNotes:           {},
 	WidgetTypeJellyfin:        {},

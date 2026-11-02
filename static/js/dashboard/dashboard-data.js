@@ -248,9 +248,6 @@ class DashboardData {
             if (!Array.isArray(d.settings.smartMostUsedPageIds)) {
                 d.settings.smartMostUsedPageIds = [];
             }
-            if (!Array.isArray(d.settings.smartFreshPageIds)) {
-                d.settings.smartFreshPageIds = [];
-            }
             // Left out of the response when no collection is wide (omitempty).
             if (!d.settings.collectionColumns || typeof d.settings.collectionColumns !== 'object') {
                 d.settings.collectionColumns = {};

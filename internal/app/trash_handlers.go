@@ -327,40 +327,38 @@ func (h *Handlers) restoreTrashedCategory(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	existing := h.store.GetCategoriesByPage(item.PageID)
-	for _, category := range existing {
-		if category.ID == snapshot.Category.ID {
-			// Already back — most likely the 8s undo won the race. Consuming the
-			// entry is correct: the category is present, which is what was asked.
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]any{
-				"status":   "success",
-				"kind":     TrashKindCategory,
-				"pageId":   item.PageID,
-				"category": snapshot.Category,
-			})
-			return
+	// One locked read and write, so a rename or a discovered category that
+	// lands meanwhile is kept instead of overwritten by an older list.
+	alreadyBack := false
+	err := h.store.MutateCategoriesByPage(item.PageID, func(existing []Category) ([]Category, bool) {
+		for _, category := range existing {
+			if category.ID == snapshot.Category.ID {
+				// Already back -- most likely the 8s undo won the race. Consuming
+				// the entry is correct: the category is present, which is what
+				// was asked.
+				alreadyBack = true
+				return existing, false
+			}
 		}
-	}
-
-	at := snapshot.Index
-	if at < 0 || at > len(existing) {
-		at = len(existing)
-	}
-	restored := make([]Category, 0, len(existing)+1)
-	restored = append(restored, existing[:at]...)
-	restored = append(restored, snapshot.Category)
-	restored = append(restored, existing[at:]...)
-
-	if err := h.store.SaveCategoriesByPage(item.PageID, restored); err != nil {
+		at := snapshot.Index
+		if at < 0 || at > len(existing) {
+			at = len(existing)
+		}
+		restored := make([]Category, 0, len(existing)+1)
+		restored = append(restored, existing[:at]...)
+		restored = append(restored, snapshot.Category)
+		restored = append(restored, existing[at:]...)
+		return restored, true
+	})
+	if err != nil {
 		_ = h.store.AddTrashedBookmarks([]TrashedBookmark{item})
-		if !respondStorePersistError(w, err) {
-			return
-		}
+		respondStorePersistError(w, err)
 		return
 	}
 
-	logCategoryRestore(item, r)
+	if !alreadyBack {
+		logCategoryRestore(item, r)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"status":   "success",

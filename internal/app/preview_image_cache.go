@@ -241,6 +241,15 @@ func (h *Handlers) pruneOrphanPreviewImages() int {
 	for _, item := range h.store.GetInboxItems() {
 		claim(item.PreviewImage)
 	}
+	// So do the stored items of watched feeds.
+	feedWatchMu.Lock()
+	watches := readFeedWatchFile().Watches
+	feedWatchMu.Unlock()
+	for _, w := range watches {
+		for _, it := range w.Items {
+			claim(it.Image)
+		}
+	}
 
 	entries, err := os.ReadDir(previewImageDir())
 	if err != nil {

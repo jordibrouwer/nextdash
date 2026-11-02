@@ -401,6 +401,251 @@ class DashboardMultiSelect {
             btn.dataset.bulkAction = action.id;
             if (popoverId) afterOpen = popup(btn, popoverId);
         });
+
+        // Following feeds is not a BulkActions entry: it needs the watch module
+        // and a bookmark with a web address, so the button is only drawn when
+        // both are there.
+        if (this.watchableRefs().length && this.dash.feedWatch && window.FeedWatchPicker?.intervals) {
+            const watchBtn = addButton(t('dashboard.feedWatchBulkButton', 'Watch feeds…'), '', (b) => {
+                this.openFeedWatchPopover(b);
+                after();
+            });
+            watchBtn.dataset.multiAction = 'watch-feeds';
+            const after = popup(watchBtn, 'multi-select-feed-watch-popover');
+        }
+    }
+
+    /** The selected bookmarks that have a web address a feed could be found on. */
+    watchableRefs(refs = this.resolveRefs()) {
+        return refs.filter((ref) => /^https?:\/\//i.test(String(ref.bookmark?.url || '').trim()));
+    }
+
+    /**
+     * Follow the selection's feeds from one small popover: pick how often, then
+     * Watch feeds (sequential, one bookmark at a time, since finding a feed is a
+     * request to that site) or Set all (only the interval of the bookmarks that
+     * are already watched). Only the first feed a page advertises is followed;
+     * more of them go through the bookmark's own picker.
+     */
+    openFeedWatchPopover(anchorEl) {
+        const d = this.dash;
+        const watch = d.feedWatch;
+        const refs = this.watchableRefs();
+        const intervals = window.FeedWatchPicker?.intervals || [];
+        if (!refs.length || !anchorEl || !watch || !intervals.length) return;
+        d._closeActionPopovers?.();
+
+        const pop = document.createElement('div');
+        pop.id = 'multi-select-feed-watch-popover';
+        pop.className = 'move-popover feed-watch-bulk';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', this.t('dashboard.feedWatchBulkLabel', 'Watch feeds'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = this.t('dashboard.feedWatchBulkHeader', 'Watch feeds for {count} bookmark(s)')
+            .replace('{count}', String(refs.length));
+        pop.appendChild(header);
+
+        const field = document.createElement('div');
+        field.className = 'feed-watch-bulk-field';
+        const label = document.createElement('label');
+        label.htmlFor = 'feed-watch-bulk-interval';
+        label.textContent = this.t('dashboard.feedWatchCheck', 'Check');
+        const select = document.createElement('select');
+        select.id = 'feed-watch-bulk-interval';
+        select.setAttribute('data-feed-watch-bulk-interval', '');
+        intervals.forEach((i) => {
+            const option = document.createElement('option');
+            option.value = String(i.minutes);
+            option.textContent = this.t(i.label[0], i.label[1]);
+            option.selected = i.minutes === 60;
+            select.appendChild(option);
+        });
+        field.append(label, select);
+        pop.appendChild(field);
+
+        const alreadyWatched = refs.filter((ref) => watch.isWatched(ref.bookmark));
+        const actions = document.createElement('div');
+        actions.className = 'feed-watch-bulk-actions';
+        const watchBtn = document.createElement('button');
+        watchBtn.type = 'button';
+        watchBtn.className = 'feed-watch-bulk-primary';
+        watchBtn.setAttribute('data-feed-watch-bulk-run', '');
+        watchBtn.textContent = this.t('dashboard.feedWatchBulkRun', 'Watch feeds');
+        const setBtn = document.createElement('button');
+        setBtn.type = 'button';
+        setBtn.className = 'feed-watch-bulk-secondary';
+        setBtn.setAttribute('data-feed-watch-bulk-set', '');
+        setBtn.disabled = !alreadyWatched.length;
+        const paintSet = () => {
+            const chosen = select.options[select.selectedIndex]?.textContent || '';
+            setBtn.textContent = this.t('dashboard.feedWatchBulkSetAll', 'Set all to {interval}').replace('{interval}', chosen);
+            setBtn.title = alreadyWatched.length
+                ? this.t('dashboard.feedWatchBulkSetHint', 'Changes {count} bookmark(s) that are already watched')
+                    .replace('{count}', String(alreadyWatched.length))
+                : this.t('dashboard.feedWatchBulkSetNone', 'None of the selected bookmarks is watched yet');
+        };
+        select.addEventListener('change', paintSet);
+        paintSet();
+        actions.append(watchBtn, setBtn);
+        pop.appendChild(actions);
+
+        const progress = document.createElement('div');
+        progress.className = 'feed-watch-bulk-progress';
+        progress.setAttribute('data-feed-watch-bulk-progress', '');
+        progress.setAttribute('role', 'status');
+        progress.setAttribute('aria-live', 'polite');
+        pop.appendChild(progress);
+        const report = document.createElement('ul');
+        report.className = 'feed-watch-bulk-report';
+        report.setAttribute('data-feed-watch-bulk-report', '');
+        pop.appendChild(report);
+
+        let unbindOutside = null;
+        let running = false;
+        const close = () => {
+            pop.remove();
+            unbindOutside?.();
+            unbindOutside = null;
+            document.removeEventListener('keydown', onKey, true);
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                close();
+                anchorEl.focus?.({ preventScroll: true });
+            }
+        };
+
+        const run = async (mode) => {
+            if (running) return;
+            running = true;
+            watchBtn.disabled = true;
+            setBtn.disabled = true;
+            select.disabled = true;
+            report.replaceChildren();
+            try {
+                await this.watchSelected(refs, Number(select.value) || 60, {
+                    onlyWatched: mode === 'set',
+                    onProgress: (line) => { progress.textContent = line; },
+                    onItem: (ref, text) => {
+                        const li = document.createElement('li');
+                        li.textContent = `${ref.bookmark.name || ref.bookmark.url} · ${text}`;
+                        report.appendChild(li);
+                    },
+                });
+            } finally {
+                running = false;
+                watchBtn.disabled = false;
+                select.disabled = false;
+                setBtn.disabled = !refs.some((ref) => watch.isWatched(ref.bookmark));
+            }
+        };
+        watchBtn.addEventListener('click', () => { void run('watch'); });
+        setBtn.addEventListener('click', () => { void run('set'); });
+
+        document.body.appendChild(pop);
+        document.addEventListener('keydown', onKey, true);
+        unbindOutside = d.bookmarkRows?._bindActionPopoverOutsideClose?.(pop, close, { anchorEl });
+        const rect = anchorEl.getBoundingClientRect();
+        pop.style.position = 'fixed';
+        pop.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - pop.offsetWidth - 8))}px`;
+        pop.style.top = `${Math.max(8, rect.top - pop.offsetHeight - 8)}px`;
+        select.focus({ preventScroll: true });
+    }
+
+    /**
+     * Watch the first advertised feed of each bookmark at one interval, or with
+     * `onlyWatched` just change the interval of those already watched. Already
+     * watched bookmarks only ever get the interval; a bookmark with no feed is
+     * counted, not failed; the 100-feed limit ends the run.
+     */
+    async watchSelected(refs, minutes, { onlyWatched = false, onProgress, onItem } = {}) {
+        const watch = this.dash.feedWatch;
+        if (!watch) return;
+        const t = (key, fallback, vars) => this.t(key, fallback)
+            .replace(/\{(\w+)\}/g, (m, k) => (vars && k in vars ? String(vars[k]) : m));
+        const total = refs.length;
+        let done = 0;
+        let noFeed = 0;
+        let failed = 0;
+        let started = 0;
+        let changed = 0;
+        const paint = () => {
+            const parts = [t('dashboard.feedWatchBulkProgress', '{done} of {total}', { done, total })];
+            if (noFeed) parts.push(t('dashboard.feedWatchBulkNoFeed', '{count} had no feed', { count: noFeed }));
+            if (failed) parts.push(t('dashboard.feedWatchBulkFailed', '{count} failed', { count: failed }));
+            onProgress?.(parts.join(' · '));
+        };
+        const word = (i) => this.t(i.label[0], i.label[1]);
+        const interval = (window.FeedWatchPicker?.intervals || []).find((i) => i.minutes === minutes);
+        const everyText = interval ? word(interval) : `${minutes} min`;
+
+        // Bookmarks that are already watched only get the new interval, in one call.
+        const watched = refs.filter((ref) => watch.isWatched(ref.bookmark));
+        if (watched.length) {
+            const result = await watch.setIntervalFor(watched.map((ref) => ref.bookmark.url), minutes);
+            watched.forEach((ref) => {
+                done += 1;
+                if (result.ok) changed += 1; else failed += 1;
+                onItem?.(ref, result.ok ? t('dashboard.feedWatchBulkChanged', 'now {interval}', { interval: everyText.toLowerCase() })
+                    : t('dashboard.feedWatchBulkItemFailed', 'could not be saved'));
+            });
+            paint();
+        }
+
+        let hardFailures = 0;
+        let limited = false;
+        if (!onlyWatched) {
+            const rest = refs.filter((ref) => !watch.isWatched(ref.bookmark));
+            for (let i = 0; i < rest.length; i += 1) {
+                const ref = rest[i];
+                if (limited || hardFailures >= 2) {
+                    onItem?.(ref, t('dashboard.feedWatchBulkSkipped', 'not tried'));
+                    continue;
+                }
+                const found = await watch.candidates(ref.bookmark.url).catch(() => ({ feeds: [] }));
+                const first = (found?.feeds || [])[0];
+                if (!first?.url) {
+                    done += 1;
+                    noFeed += 1;
+                    onItem?.(ref, t('dashboard.feedWatchBulkItemNoFeed', 'no feed found'));
+                    paint();
+                    continue;
+                }
+                const result = await watch.save(ref.bookmark.url, [{ feedUrl: first.url, intervalMinutes: minutes }]);
+                done += 1;
+                if (result.ok) {
+                    started += 1;
+                    hardFailures = 0;
+                    onItem?.(ref, t('dashboard.feedWatchBulkItemWatching', 'watching {feed}', { feed: first.title || first.url }));
+                } else if (result.error === 'limit') {
+                    limited = true;
+                    failed += 1;
+                    onItem?.(ref, t('dashboard.feedWatchLimit', 'You are watching {limit} feeds, the most nextDash follows', { limit: watch.limit }));
+                } else if (result.error === 'not-a-feed') {
+                    noFeed += 1;
+                    onItem?.(ref, t('dashboard.feedWatchBulkItemNoFeed', 'no feed found'));
+                } else {
+                    failed += 1;
+                    hardFailures += 1;
+                    onItem?.(ref, t('dashboard.feedWatchBulkItemFailed', 'could not be saved'));
+                }
+                paint();
+            }
+        }
+        paint();
+        const summary = [];
+        if (started) summary.push(t('dashboard.feedWatchBulkStarted', 'Watching {count} bookmark(s) · checked every {interval}', { count: started, interval: window.FeedWatchPicker?.intervalWords?.(minutes) || everyText }));
+        if (changed) summary.push(t('dashboard.feedWatchBulkChangedCount', 'Interval changed on {count} bookmark(s)', { count: changed }));
+        if (limited) summary.push(t('dashboard.feedWatchLimit', 'You are watching {limit} feeds, the most nextDash follows', { limit: watch.limit }));
+        this.dash.showNotification?.(
+            summary.join(' · ') || (failed ? t('dashboard.feedWatchFailed', 'Could not save the watch') : t('dashboard.feedWatchBulkNothing', 'No feeds found')),
+            (failed || limited) && !started && !changed ? 'error' : 'success',
+            { duration: 4000 }
+        );
     }
 
     /**

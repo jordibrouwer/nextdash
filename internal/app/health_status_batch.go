@@ -78,6 +78,51 @@ func (h *Handlers) UpdateBookmarkHealthStatuses(w http.ResponseWriter, r *http.R
 		wanted[key] = res
 	}
 
+	// The browser pinged these through the server. A page in which nearly every
+	// host failed to resolve is this server being offline, not a page of rot:
+	// the failures are left unrecorded and the rows keep what they had
+	// (health_network_guard.go). The answers are still written.
+	onPage := map[string]bool{}
+	for _, bm := range h.store.GetBookmarksByPage(req.PageID) {
+		if key := canonicalBookmarkURLKey(bm.URL); key != "" {
+			onPage[key] = true
+		}
+	}
+	sweep := make([]sweepHostResult, 0, len(wanted))
+	for key, res := range wanted {
+		if !onPage[key] {
+			continue
+		}
+		result := PingResult{Status: "offline", ErrorDetail: strings.TrimSpace(res.Error)}
+		if strings.TrimSpace(res.Status) == "online" {
+			result = PingResult{Status: "online"}
+		}
+		if r, ok := sweepHostResultFor(res.URL, result); ok {
+			sweep = append(sweep, r)
+		}
+	}
+	// A batch only holds while the server-side sweeps say an episode is on; it
+	// never starts or refreshes one, so rows posted by a client cannot pause
+	// the checks.
+	if now := time.Now(); h.networkGuard(sweep, now, now, false) {
+		for key, res := range wanted {
+			if holdableFailure(res.URL, strings.TrimSpace(res.Status)) {
+				delete(wanted, key)
+			}
+		}
+	}
+
+	// The startup grace: a first failure of a bookmark on this page is held.
+	graceStart := h.graceNow()
+	for key, res := range wanted {
+		if !onPage[key] {
+			continue
+		}
+		if h.graceHold(key, strings.TrimSpace(res.Status) != "online", graceStart) {
+			delete(wanted, key)
+		}
+	}
+
 	checkedAt := time.Now().UnixMilli()
 	updated := 0
 	// Per URL, not per row: a URL on two rows of the page counted twice and

@@ -848,6 +848,12 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"] .das
     pointer-events: none;
 }
 
+/* The hover tint pulls the title out to the block's edges and gives the space back as padding,
+   so the folio, pinned to the title's right edge, rode that edge outward and jumped. Keep it put. */
+html[data-theme] body[data-material-style="signature"][data-material="ink"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category:not(.dashboard-widget) .category-title:hover::after {
+    right: var(--category-inline-pad, 0.5rem);
+}
+
 /* Terminal: een scherm. Elke kolom een zacht vlak, ook bij een theme dat op open staat, met
    scanlijnen, een gloed in de accentkleur aan de binnenkant, een $ voor de naam en een
    cursor erachter. Alles achtergrondlagen en pseudo-elementen: geen extra element. */

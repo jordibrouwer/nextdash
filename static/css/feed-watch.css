@@ -1,0 +1,1238 @@
+/* Watch feeds: the picker window. The row signal, hover card, news modal and
+   strip follow in their own sections below. */
+.feed-watch-picker { display: grid; gap: 0.9rem; min-width: 0; width: 100%; box-sizing: border-box; }
+
+/* Both panels are the app's own modal with their own buttons, so the shell's
+   Confirm row and Esc hint are not wanted, and the width is ours to set. */
+.modal.feed-watch-modal,
+.modal.feed-news-modal { box-sizing: border-box; }
+.modal.feed-watch-modal { width: min(32rem, calc(100vw - 2rem)); max-width: min(32rem, calc(100vw - 2rem)); }
+.modal.feed-news-modal { width: min(520px, calc(100vw - 2rem)); max-width: min(520px, calc(100vw - 2rem)); }
+.modal.feed-watch-modal .modal-actions,
+.modal.feed-news-modal .modal-actions,
+#app-modal:has(.feed-news-modal) .modal-esc-hint { display: none; }
+.modal.feed-watch-modal .modal-body,
+.modal.feed-news-modal .modal-body { margin-bottom: 0; }
+/* The shell clips its panel, so a tall list has to scroll inside the panel:
+   the header stays, the body takes the rest of the screen and scrolls. */
+.modal.feed-watch-modal,
+.modal.feed-news-modal {
+    display: flex; flex-direction: column; max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem);
+}
+.modal.feed-watch-modal .modal-body,
+.modal.feed-news-modal .modal-body {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+}
+/* The news only ever scrolls down, never sideways. */
+.modal.feed-news-modal .modal-body { overflow-x: hidden; }
+/* Everything that marks the news (the chip, the dots, the bar, the pressed view)
+   is the theme's accent; the newspaper sets its own ink further down. */
+.modal.feed-news-modal { --feed-news-color: var(--accent-primary, #8b5cf6); }
+.feed-watch-picker-name { font-weight: 600; color: var(--text-primary); }
+.feed-watch-list { display: grid; gap: 0.35rem; max-height: 14rem; overflow: auto; }
+.feed-watch-note { margin: 0; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
+.feed-watch-candidate { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.35rem 0.5rem; border-radius: 8px; cursor: pointer; }
+.feed-watch-candidate:hover { background: color-mix(in srgb, var(--accent-primary) 8%, transparent); }
+.feed-watch-candidate-text { display: grid; min-width: 0; }
+.feed-watch-candidate-name { color: var(--text-primary); }
+.feed-watch-candidate-url { color: var(--text-secondary); font-size: var(--text-2xs, 0.72rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-watch-paste, .feed-watch-interval { display: grid; gap: 0.3rem; }
+.feed-watch-paste label, .feed-watch-interval label { font-size: var(--text-sm, 0.85rem); color: var(--text-secondary); }
+.feed-watch-paste input, .feed-watch-interval select {
+    width: 100%; box-sizing: border-box; min-width: 0;
+    padding: 0.45rem 0.6rem; border-radius: 8px; color: var(--text-primary);
+    background: var(--background-secondary); border: 1px solid var(--border-secondary);
+}
+.feed-watch-foot { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.feed-watch-foot .modal-button { flex: 0 1 auto; width: auto; }
+.feed-watch-stop { margin-left: auto; }
+
+/* The signal on a row: the theme's own accent, so it reads in every theme.
+   A count in the accent colour with a ring in the page colour (it stays apart
+   from a row of the same hue), a stripe at the row's edge, a bold name and the
+   newest headline under it -- see the "row signal" block at the end. The pulse
+   plays three times when the row appears, then it rests. */
+.bookmark-news-badge {
+    margin-left: 0.3em;
+    color: var(--on-accent, var(--text-on-accent, var(--background-primary)));
+    background: var(--accent-primary, var(--feed-news-color, #8b5cf6));
+    border-color: transparent;
+    box-shadow: 0 0 0 2px var(--background-primary);
+    animation: feed-news-pulse 2.2s ease-in-out 3;
+}
+
+/* A muted feed still counts, but does not call attention to itself. */
+.bookmark-news-badge.is-muted { animation: none; }
+
+@keyframes feed-news-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--background-primary), 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--feed-news-color, #8b5cf6)) 55%, transparent); }
+    50% { box-shadow: 0 0 0 2px var(--background-primary), 0 0 0 7px color-mix(in srgb, var(--accent-primary, var(--feed-news-color, #8b5cf6)) 0%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-news-badge { animation: none; }
+}
+
+body[data-animations="off"] .bookmark-news-badge,
+body.no-animations .bookmark-news-badge { animation: none; }
+
+/* The hover card with news: the item first (a picture of fixed height, the
+   meta line with its pager, headline, lead, two equal buttons), then the site as
+   one compact line. Everything else the card would show about the site steps
+   aside; the pinned card's footer stays. One background for the whole card:
+   the news part has none of its own. Theme tokens only. */
+.bookmark-preview-card.has-feed-news { width: min(380px, calc(100vw - 24px)); pointer-events: auto; }
+.bookmark-preview-card.has-feed-news > :not(.bookmark-preview-card-news):not(.bookmark-preview-card-foot) { display: none !important; }
+.bookmark-preview-card-news { display: block; min-width: 0; }
+.bookmark-preview-card-news[hidden] { display: none; }
+
+.bookmark-preview-card-news-media {
+    height: 132px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    background: var(--background-primary);
+    border-bottom: 1px solid var(--border-secondary);
+}
+.bookmark-preview-card-news-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* No picture, or one that failed: a calm panel with the site's icon, never a
+   stretched logo. */
+.bookmark-preview-card-news-media.is-fallback {
+    height: 88px;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+.bookmark-preview-card-news-fallback-icon { width: 32px; height: 32px; object-fit: contain; opacity: 0.85; border-radius: var(--radius-3, 4px); }
+.bookmark-preview-card-news-fallback-letter {
+    width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-pill, 999px); border: 1px solid var(--border-secondary);
+    color: var(--text-secondary); font-weight: var(--font-weight-semibold, 600); font-size: 1.1rem;
+}
+
+.bookmark-preview-card-news-body { display: grid; gap: 0.4rem; padding: 0.7rem 0.8rem 0.75rem; min-width: 0; }
+.bookmark-preview-card-news-top { display: flex; align-items: center; gap: 0.5rem; min-height: 24px; min-width: 0; }
+.bookmark-preview-card-news-meta {
+    flex: 1 1 auto; min-width: 0;
+    font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bookmark-preview-card-news-pager { flex: none; display: inline-flex; align-items: center; gap: 0.15rem; }
+.bookmark-preview-card-news-count {
+    min-width: 2.6em; text-align: center;
+    font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary); font-variant-numeric: tabular-nums;
+}
+.bookmark-preview-card-news-page {
+    width: 26px; height: 24px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border-secondary); border-radius: var(--radius-4, 6px);
+    background: none; color: var(--text-primary); font-size: 1rem; line-height: 1; cursor: pointer;
+}
+.bookmark-preview-card-news-page:hover { border-color: var(--text-secondary); }
+.bookmark-preview-card-news-page:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+.bookmark-preview-card-news-title {
+    font-weight: var(--font-weight-semibold, 600); color: var(--text-primary); line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
+}
+.bookmark-preview-card-news-lead {
+    color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
+}
+.bookmark-preview-card-news-lead p { margin: 0 0 0.3rem; }
+.bookmark-preview-card-news-lead img { display: none; }
+
+/* The site, in one line under a thin rule, and its facts muted under that. */
+.bookmark-preview-card-news-site {
+    display: flex; align-items: center; gap: 0.45rem; min-width: 0;
+    padding: 0.55rem 0.8rem 0.15rem;
+    border-top: 1px solid var(--ov-rule-soft, var(--border-secondary));
+    font-size: var(--text-sm, 0.85rem);
+}
+.bookmark-preview-card-news-site-fav { flex: none; width: 16px; height: 16px; border-radius: var(--radius-3, 4px); overflow: hidden; }
+.bookmark-preview-card-news-site-fav img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.bookmark-preview-card-news-site-name {
+    flex: 1 1 auto; min-width: 0; font-weight: var(--font-weight-semibold, 600); color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bookmark-preview-card-news-status { flex: none; font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary); white-space: nowrap; }
+.bookmark-preview-card-news-status::before {
+    content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%;
+    background: currentColor; vertical-align: 1px;
+}
+.bookmark-preview-card-news-status.is-ok { color: var(--accent-success, #10B981); }
+.bookmark-preview-card-news-status.is-warn { color: var(--accent-warning, #F59E0B); }
+.bookmark-preview-card-news-status.is-bad { color: var(--accent-error, #EF4444); }
+.bookmark-preview-card-news-facts {
+    display: flex; flex-wrap: nowrap; align-items: center; gap: 0.4rem; min-width: 0; overflow: hidden;
+    padding: 0.1rem 0.8rem 0.65rem;
+    font-size: var(--text-2xs, 0.72rem); color: var(--text-tertiary, var(--text-secondary));
+}
+.bookmark-preview-card-news-site:has(.bookmark-preview-card-news-site-fav) + .bookmark-preview-card-news-facts { padding-left: calc(0.8rem + 16px + 0.45rem); }
+.bookmark-preview-card-news-tag:last-child { flex: 0 1 auto; min-width: 0; }
+.bookmark-preview-card-news-facts kbd {
+    font-family: var(--font-family-mono, monospace); font-size: 0.95em;
+    padding: 0 0.3em; border: 1px solid var(--border-secondary); border-radius: var(--radius-3, 4px); color: var(--text-secondary);
+}
+.bookmark-preview-card-news-facts > span:first-child { flex: none; white-space: nowrap; }
+.bookmark-preview-card-news-tag {
+    flex: none;
+    padding: 0 0.4rem; border-radius: var(--radius-pill, 999px);
+    border: 1px solid var(--border-secondary); color: var(--text-secondary);
+    max-width: 8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* The news window: one article in the app's own panel, widened on request. */
+.feed-news {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
+    width: 100%; min-width: 0; box-sizing: border-box; overflow-wrap: anywhere;
+}
+.feed-news > * { min-width: 0; }
+.feed-news-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.25rem 0.25rem 0.6rem; }
+.feed-news-site { flex: 1 1 auto; font-weight: 600; color: var(--text-primary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-news-chip { flex: none; }
+.feed-news-chip {
+    font-size: var(--text-2xs, 0.72rem); padding: 0.1rem 0.5rem; border-radius: 999px;
+    color: var(--feed-news-color, #8b5cf6);
+    background: color-mix(in srgb, var(--feed-news-color, #8b5cf6) 14%, transparent);
+}
+.feed-news-close {
+    flex: none; width: 2rem; height: 2rem; border-radius: 8px; border: 0; cursor: pointer;
+    background: transparent; color: var(--text-secondary); font-size: 1.1rem; line-height: 1;
+}
+.feed-news-close:hover { background: color-mix(in srgb, var(--accent-primary) 10%, transparent); color: var(--text-primary); }
+.feed-news-bar { height: 3px; background: var(--border-secondary); border-radius: 2px; overflow: hidden; }
+.feed-news-bar > i { display: block; height: 100%; background: var(--feed-news-color, #8b5cf6); transition: width 1s linear; }
+body.no-animations .feed-news-bar > i { transition: none; }
+.feed-news-body { padding: 0.9rem 0.25rem; min-width: 0; }
+.feed-news-main { min-width: 0; }
+.feed-news-body.is-wide { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 1.25rem; }
+.feed-news-image { width: 100%; max-height: 11rem; object-fit: cover; border-radius: 10px; margin-bottom: 0.7rem; }
+.is-large .feed-news-image { max-height: 16rem; }
+.feed-news-time { font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary); margin-bottom: 0.25rem; }
+.feed-news-title { margin: 0 0 0.5rem; font-size: 1.2rem; line-height: 1.25; color: var(--text-primary); }
+.is-large .feed-news-title { font-size: 1.5rem; }
+.feed-news-link { color: inherit; text-decoration: none; }
+.feed-news-link:hover { text-decoration: underline; }
+.feed-news-summary { color: var(--text-secondary); line-height: 1.55; }
+.feed-news-summary p { margin: 0 0 0.6rem; }
+.feed-news-side { display: grid; gap: 0.5rem; align-content: start; }
+.feed-news-card {
+    display: flex; gap: 0.6rem; align-items: center; text-align: left; padding: 0.5rem; border-radius: 10px; cursor: pointer;
+    background: var(--background-secondary); border: 1px solid var(--border-secondary); color: inherit; font: inherit;
+}
+.feed-news-card:hover { border-color: color-mix(in srgb, var(--feed-news-color, #8b5cf6) 50%, var(--border-secondary)); }
+.feed-news-card-image { width: 3.2rem; height: 3.2rem; object-fit: cover; border-radius: 8px; flex: none; }
+.feed-news-card-text { display: grid; gap: 0.15rem; min-width: 0; }
+.feed-news-card-title { color: var(--text-primary); font-weight: 600; font-size: var(--text-sm, 0.85rem); }
+.feed-news-card-time { color: var(--text-secondary); font-size: var(--text-2xs, 0.72rem); }
+.feed-news-foot { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.25rem 0; border-top: 1px solid var(--border-secondary); min-width: 0; }
+.feed-news-foot .modal-button { flex: 0 0 auto; width: auto; min-width: 2.5rem; }
+.feed-news-left { min-width: 0; }
+.feed-news-left { margin-left: 0.5rem; color: var(--text-secondary); font-size: var(--text-2xs, 0.72rem); }
+.feed-news-open { margin-left: auto; }
+.feed-news-empty { margin: 1rem 0; color: var(--text-secondary); }
+@media (max-width: 720px) {
+    .feed-news-expand { display: none; }
+    .feed-news-body.is-wide { display: block; }
+}
+
+/* The view switcher: one column, two columns, newspaper. */
+.feed-news-views { display: inline-flex; flex: none; gap: 2px; padding: 2px; border-radius: 8px; border: 1px solid var(--border-secondary); }
+.feed-news-view {
+    display: grid; place-items: center; width: 1.7rem; height: 1.5rem; border: 0; border-radius: 6px; cursor: pointer;
+    background: transparent; color: var(--text-secondary);
+}
+.feed-news-view:hover { color: var(--text-primary); }
+.feed-news-view[aria-pressed="true"] { background: color-mix(in srgb, var(--feed-news-color, #8b5cf6) 18%, transparent); color: var(--feed-news-color, #8b5cf6); }
+
+/* The newspaper: a fixed paper look whatever the theme, on purpose. */
+.feed-news-mast { display: none; }
+#app-modal .modal.feed-news-modal.is-paper {
+    --text-primary: #1d1a14;
+    --text-secondary: #55503f;
+    --border-secondary: #cdc3a8;
+    --background-secondary: #ebe4d2;
+    --feed-news-color: #8a2d1d;
+    /* The shell paints its own glass; the paper replaces all of it. */
+    background: #f4efe4 !important;
+    background-image: none !important;
+    color: #1d1a14;
+    border-color: #cdc3a8 !important;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+#app-modal .modal.feed-news-modal.is-paper::before,
+#app-modal .modal.feed-news-modal.is-paper::after { display: none !important; }
+/* The masthead is the title. */
+.modal.feed-news-modal.is-paper .modal-header { display: none; }
+.is-paper .feed-news-mast {
+    display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 0.4rem; margin-bottom: 0.5rem;
+    font: 700 0.7rem Georgia, 'Times New Roman', serif; letter-spacing: 0.22em; text-transform: uppercase; color: #1d1a14;
+    border-bottom: 3px double #1d1a14;
+}
+.is-paper .feed-news-site, .is-paper .feed-news-chip, .is-paper .feed-news-time, .is-paper .feed-news-left { font-family: Georgia, 'Times New Roman', serif; }
+.is-paper .feed-news-title, .is-paper .feed-news-summary, .is-paper .feed-news-card-title, .is-paper .feed-news-card-time {
+    font-family: Georgia, 'Times New Roman', serif;
+}
+.is-paper .feed-news-title { font-size: 1.9rem; line-height: 1.12; letter-spacing: -0.01em; }
+.is-paper .feed-news-summary { font-size: 1rem; line-height: 1.6; color: #2b271d; }
+.is-paper .feed-news-image { border-radius: 2px; filter: grayscale(0.15) contrast(1.02); }
+.is-paper .feed-news-body.is-wide { gap: 1.5rem; }
+.is-paper .feed-news-side { border-left: 1px solid #cdc3a8; padding-left: 1.1rem; gap: 0; }
+.is-paper .feed-news-card {
+    display: block; padding: 0.6rem 0; border: 0; border-top: 1px solid #cdc3a8; border-radius: 0; background: transparent;
+}
+.is-paper .feed-news-card:first-child { border-top: 0; padding-top: 0; }
+.is-paper .feed-news-card:hover { background: transparent; }
+.is-paper .feed-news-card:hover .feed-news-card-title { text-decoration: underline; }
+.is-paper .feed-news-card-image { display: none; }
+.is-paper .feed-news-card-title { font-size: 1rem; line-height: 1.25; }
+.is-paper .feed-news-foot { border-top-color: #1d1a14; }
+.is-paper .feed-news-bar { background: #cdc3a8; }
+.is-paper .feed-news-foot .modal-button { background: #e4dcc6; border-color: #b9ad8c; color: #1d1a14; }
+.is-paper .feed-news-view[aria-pressed="true"] { background: #1d1a14; color: #f4efe4; }
+@media (max-width: 720px) { .feed-news-mast { display: none !important; } }
+
+/* The index: every item, headline by headline. */
+.feed-news-index { display: grid; gap: 0.15rem; }
+.feed-news-index.is-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.25rem; }
+.feed-news-entry {
+    display: flex; gap: 0.7rem; align-items: flex-start; width: 100%; min-width: 0; text-align: left; cursor: pointer;
+    padding: 0.6rem 0.5rem; border: 0; border-radius: 10px; background: transparent; color: inherit; font: inherit;
+}
+.feed-news-entry:hover, .feed-news-entry:focus-visible { background: color-mix(in srgb, var(--feed-news-color, #8b5cf6) 10%, transparent); }
+.feed-news-entry-image { width: 3.6rem; height: 3.6rem; object-fit: cover; border-radius: 8px; flex: none; }
+.feed-news-entry-text { display: grid; gap: 0.15rem; min-width: 0; }
+.feed-news-entry-title { font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+.feed-news-entry-meta { font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary); }
+.feed-news-entry-lead {
+    font-size: var(--text-sm, 0.85rem); color: var(--text-secondary); line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.is-paper .feed-news-index { gap: 0; }
+.is-paper .feed-news-entry { border-radius: 0; padding: 0.7rem 0.1rem; }
+.is-paper .feed-news-item { border-top: 1px solid #cdc3a8; }
+.is-paper .feed-news-item:first-child, .is-paper .is-wide > .feed-news-item:nth-child(2) { border-top: 0; }
+.is-paper .feed-news-entry:hover, .is-paper .feed-news-entry:focus-visible { background: transparent; }
+.is-paper .feed-news-entry:hover .feed-news-entry-title { text-decoration: underline; }
+/* The newspaper shows the pictures too: small, square, a little muted like a
+   printed photograph, on the side of the headline. */
+.is-paper .feed-news-entry-image {
+    width: 4.2rem; height: 4.2rem; border-radius: 2px; filter: grayscale(0.2) contrast(1.02);
+    border: 1px solid #cdc3a8;
+}
+.is-paper .feed-news-entry-title, .is-paper .feed-news-entry-lead, .is-paper .feed-news-entry-meta { font-family: Georgia, 'Times New Roman', serif; }
+.is-paper .feed-news-entry-title { font-size: 1.15rem; line-height: 1.2; }
+.is-paper .feed-news-entry-lead { color: #2b271d; }
+
+/* More than what was found: the feeds' other entries, as a list beside the article. */
+.feed-news-side { max-height: 30rem; overflow: auto; padding-right: 0.25rem; }
+.feed-news-side-head, .feed-news-index-head {
+    font-size: var(--text-2xs, 0.72rem); text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-secondary);
+    padding: 0.7rem 0 0.3rem;
+}
+.feed-news-index-head { grid-column: 1 / -1; }
+.is-paper .feed-news-side-head, .is-paper .feed-news-index-head {
+    font-family: Georgia, 'Times New Roman', serif; font-weight: 700; color: #1d1a14; border-top: 3px double #1d1a14; margin-top: 0.7rem;
+}
+
+.feed-news-side { scrollbar-width: thin; }
+.is-paper .feed-news-side { scrollbar-color: #b9ad8c transparent; }
+
+/* The two buttons of the hover card's news block: equal halves of one row,
+   both real bordered buttons; Open reader takes the accent. */
+.bookmark-preview-card-news-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2, 0.5rem); margin-top: var(--space-1, 0.3rem); }
+.bookmark-preview-card-news-actions .bookmark-preview-card-action {
+    min-height: 32px; min-width: 0;
+    padding: var(--space-1, 0.3rem) var(--space-3, 0.75rem);
+    font-size: var(--font-size-controls);
+    color: var(--text-primary);
+    border: 1px solid var(--border-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bookmark-preview-card-news-actions [data-feed-news-action="read"] {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    font-weight: var(--font-weight-semibold, 600);
+}
+.bookmark-preview-card-news-actions .bookmark-preview-card-action:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+
+/* The card always fits the screen. Normally it needs no scrolling (about 440px
+   at most); on a short window the picture shrinks, then goes, and what is still
+   too tall scrolls inside the card, which takes the pointer. */
+.bookmark-preview-card { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); }
+.bookmark-preview-card.has-feed-news { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+@media (max-height: 700px) {
+    .bookmark-preview-card-news-media { height: 96px; }
+    .bookmark-preview-card-news-media.is-fallback { height: 64px; }
+    .bookmark-preview-card-news-lead { -webkit-line-clamp: 2; }
+}
+@media (max-height: 520px) {
+    .bookmark-preview-card-news-media { display: none; }
+}
+
+/* Config → Watch feeds: every watched feed, one row each, with a detail that
+   opens under its row. Theme tokens only; the chips reuse the state colours. */
+.feed-watch-overview { display: grid; gap: 0.5rem; min-width: 0; }
+.feed-watch-list-summary { margin: 0; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
+.fwm-toolbar, .fwm-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; min-width: 0; }
+.fwm-bulk {
+    padding: 0.45rem 0.6rem; border-radius: var(--radius-4, 8px);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-secondary));
+}
+.fwm-bulk-count { font-weight: var(--font-weight-semibold, 600); color: var(--text-primary); font-size: var(--text-sm, 0.85rem); }
+.fwm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; min-width: 0; }
+.feed-watch-list-row {
+    display: grid; grid-template-columns: auto minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 0.6fr) 13.5rem; gap: 0.6rem; align-items: center;
+    padding: 0.45rem 0.6rem; border: 1px solid var(--border-secondary); border-radius: var(--radius-4, 8px); background: var(--background-secondary);
+    min-width: 0;
+}
+.feed-watch-list-row.is-open { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.feed-watch-list-row.keyboard-selected { border-color: var(--accent-primary); box-shadow: 0 0 0 1px var(--accent-primary); }
+.feed-watch-list-row:focus { outline: none; }
+.feed-watch-list-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.feed-watch-list-main {
+    display: grid; min-width: 0; text-align: start; padding: 0.15rem 0; margin: 0;
+    background: none; border: 0; color: inherit; font: inherit; cursor: pointer; border-radius: var(--radius-3, 4px);
+}
+.feed-watch-list-main:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.feed-watch-list-main strong { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-watch-list-feed, .feed-watch-list-meta, .feed-watch-list-filter { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-watch-list-filter { color: var(--text-tertiary); }
+.feed-watch-list-state { font-size: var(--text-sm, 0.85rem); min-width: 0; }
+.feed-watch-list-state.is-news { color: var(--accent-primary); font-weight: var(--font-weight-semibold, 600); }
+.feed-watch-list-state.is-warn { color: var(--status-warning, var(--text-primary)); }
+.feed-watch-list-state.is-bad { color: var(--status-error, var(--text-primary)); }
+.feed-watch-list-state.is-ok { color: var(--text-secondary); }
+.feed-watch-list-state.is-off { color: var(--text-tertiary); }
+.feed-watch-list-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; justify-content: flex-end; }
+.fwm-tick { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; min-height: 1.75rem; cursor: pointer; }
+.fwm-tick input { margin: 0; cursor: pointer; }
+.fwm-select {
+    min-width: 0; max-width: 100%; padding: 0.3rem 0.45rem; border-radius: var(--radius-4, 8px); font: inherit; font-size: var(--text-sm, 0.85rem);
+    color: var(--text-primary); background: var(--background-primary); border: 1px solid var(--border-secondary);
+}
+.fwm-mute[aria-pressed="true"] { color: var(--text-tertiary); border-style: dashed; }
+.fwm-detail {
+    margin-top: -0.4rem; padding: 0.75rem; display: grid; gap: 0.75rem; min-width: 0;
+    border: 1px solid var(--border-secondary); border-top: 0; border-radius: 0 0 var(--radius-4, 8px) var(--radius-4, 8px);
+    background: var(--background-primary);
+}
+.fwm-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.75rem 1rem; min-width: 0; }
+.fwm-field, .fwm-words { display: grid; gap: 0.3rem; align-content: start; min-width: 0; }
+.fwm-label { font-size: var(--text-sm, 0.85rem); color: var(--text-secondary); }
+.fwm-hint { font-size: var(--text-2xs, 0.75rem); color: var(--text-tertiary); }
+.fwm-reason { color: var(--status-error, var(--text-secondary)); }
+.fwm-url { color: var(--accent-primary); font-size: var(--text-sm, 0.85rem); overflow-wrap: anywhere; }
+.fwm-field .fwm-mute { justify-self: start; }
+.fwm-chips {
+    display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; min-width: 0;
+    padding: 0.3rem; border-radius: var(--radius-4, 8px); background: var(--background-secondary); border: 1px solid var(--border-secondary);
+}
+.fwm-chip {
+    display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.1rem 0.15rem 0.1rem 0.5rem; border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent); color: var(--text-primary); font-size: var(--text-sm, 0.85rem); max-width: 100%;
+    overflow-wrap: anywhere;
+}
+.fwm-chip-x { border: 0; background: none; color: var(--text-secondary); cursor: pointer; font: inherit; line-height: 1; padding: 0.15rem 0.35rem; border-radius: var(--radius-pill, 999px); }
+.fwm-chip-x:hover { color: var(--text-primary); background: var(--hover-bg, transparent); }
+.fwm-word-input { flex: 1 1 8rem; min-width: 6rem; border: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: var(--text-sm, 0.85rem); padding: 0.2rem 0.3rem; }
+.fwm-word-input:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; border-radius: var(--radius-3, 4px); }
+.fwm-detail-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.fwm-detail-actions .config-btn--danger { margin-left: auto; }
+.fwm-chooser { display: grid; gap: 0.6rem; min-width: 0; }
+.fwm-chooser-search {
+    width: 100%; box-sizing: border-box; padding: 0.45rem 0.6rem; border-radius: 8px; font: inherit;
+    color: var(--text-primary); background: var(--background-secondary); border: 1px solid var(--border-secondary);
+}
+.fwm-chooser-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; max-height: min(22rem, 55vh); overflow: auto; }
+.fwm-choice {
+    display: grid; width: 100%; text-align: start; gap: 0.1rem; padding: 0.45rem 0.6rem; border-radius: 8px; cursor: pointer;
+    background: none; border: 1px solid transparent; color: var(--text-primary); font: inherit; min-height: 44px; box-sizing: border-box;
+}
+.fwm-choice span { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); }
+.fwm-choice:hover, .fwm-choice:focus-visible { background: color-mix(in srgb, var(--accent-primary) 8%, transparent); border-color: var(--border-secondary); outline: none; }
+@media (max-width: 720px) {
+    /* Two columns: the tick, then the facts stacked with the controls under them. */
+    .feed-watch-list-row { grid-template-columns: auto minmax(0, 1fr); gap: 0.35rem 0.5rem; align-items: start; }
+    .feed-watch-list-row > :not(.fwm-tick) { grid-column: 2; }
+    .feed-watch-list-main strong, .feed-watch-list-feed, .feed-watch-list-filter, .feed-watch-list-meta { white-space: normal; overflow-wrap: anywhere; }
+    .feed-watch-list-actions { justify-content: flex-start; }
+    .fwm-detail-actions .config-btn--danger { margin-left: 0; }
+}
+@media (pointer: coarse), (max-width: 720px) {
+    /* Fingers: every control in the view is at least 44 px tall. */
+    .fwm-toolbar .config-btn, .fwm-bulk .config-btn, .fwm-select, .fwm-tick,
+    .feed-watch-list-actions .config-btn, .fwm-detail .config-btn, .feed-watch-list-main, .fwm-word-input, .fwm-chip-x {
+        min-height: 44px;
+    }
+    .fwm-tick, .fwm-chip-x { min-width: 44px; }
+}
+
+/* On a phone the app makes every modal button full width; these are small
+   controls in a row (arrows, Index, Open page), so they keep their own size
+   and the foot wraps instead of running off the panel. */
+.modal-overlay.show .modal .feed-news-foot .modal-button,
+.modal-overlay.show .modal .feed-watch-foot .modal-button {
+    width: auto; flex: 0 0 auto; min-width: 2.75rem; padding-inline: var(--space-3, 0.75rem);
+}
+.feed-news-foot { flex-wrap: wrap; row-gap: 0.5rem; }
+.feed-news-left { flex: 1 1 auto; white-space: nowrap; }
+@media (max-width: 720px) {
+    .feed-news-left { order: 5; flex: 1 0 100%; margin-left: 0; text-align: center; }
+    .feed-news-open { margin-left: auto; }
+}
+
+/* The news badge is a button, and the row opens a popover with the headlines. The
+   popover is a .move-popover, the surface every menu in the app wears, so the
+   theme's edges, depth and drop come from there; only its layout is set here.
+   .feed-news-pop-closing is the same popover on its way out. */
+.bookmark-news-badge.is-tappable { position: relative; cursor: pointer; pointer-events: auto; } /* row badges are inert by default */
+@media (hover: none), (pointer: coarse) {
+    .bookmark-news-badge.is-tappable::after { content: ''; position: absolute; inset: -12px -10px; } /* a 44 px target around a small badge */
+}
+/* Never sideways: what is too wide wraps or ends in an ellipsis. Up and down it
+   scrolls only when no layout fits (the script decides), on a thin bar in the
+   theme's colours that takes no gutter of its own. */
+.move-popover:is(.feed-news-pop, .feed-news-pop-closing) {
+    max-width: none; min-width: 0; max-height: none; padding: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text-primary) 28%, transparent) transparent;
+}
+:is(.feed-news-pop, .feed-news-pop-closing)::-webkit-scrollbar { width: 8px; height: 0; background: transparent; }
+:is(.feed-news-pop, .feed-news-pop-closing)::-webkit-scrollbar-track { background: transparent; }
+:is(.feed-news-pop, .feed-news-pop-closing)::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-primary) 28%, transparent);
+    border: 2px solid transparent; background-clip: padding-box; border-radius: 999px;
+}
+/* It grows out of the row: down under it, up over it, sideways beside it. The
+   script sets the animation inline, after the theme's own, and leaves it off
+   for reduced motion; a change of layout later is never animated. */
+.feed-news-pop.is-above { --feed-pop-rise: 6px; }
+.feed-news-pop.is-side { --feed-pop-rise: 0px; --feed-pop-rise-x: -6px; --feed-pop-scale-x: 0.2; --feed-pop-scale-y: 1; }
+.feed-news-pop.is-side.is-left { --feed-pop-rise-x: 6px; }
+@keyframes feed-news-pop-grow {
+    from {
+        transform: translate(var(--feed-pop-rise-x, 0px), var(--feed-pop-rise, -6px)) scale(var(--feed-pop-scale-x, 1), var(--feed-pop-scale-y, 0.2));
+        opacity: 0;
+    }
+    to { transform: scale(1); opacity: 1; }
+}
+@keyframes feed-news-pop-shrink { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+    .move-popover:is(.feed-news-pop, .feed-news-pop-closing) { animation: none !important; }
+}
+:is(.feed-news-pop, .feed-news-pop-closing)::before {
+    content: ''; position: absolute; top: -6px; left: var(--feed-pop-arrow, 24px); width: 10px; height: 10px; rotate: 45deg;
+    background: var(--background-secondary); border-left: 1px solid var(--border-primary); border-top: 1px solid var(--border-primary);
+}
+/* Beside the row the pointer turns to it; with the badge past the edge (two wide
+   columns) there is nothing under it to point at. Past the bottom or the right
+   edge of a box that scrolls, the pointer would be scrolling room of its own:
+   a scrollbar for nothing, both ways. Over the row and left of it, it stays out. */
+:is(.feed-news-pop, .feed-news-pop-closing).is-side::before { top: var(--feed-pop-arrow-y, 16px); left: -6px; rotate: -45deg; }
+:is(.feed-news-pop, .feed-news-pop-closing):is(.is-above, .is-side.is-left, .is-arrowless)::before { display: none; }
+.feed-news-pop-head {
+    display: flex; align-items: center; gap: 0.5rem; padding: 0.15rem 0.2rem 0.15rem 0.8rem; min-height: 44px;
+    position: sticky; top: 0; background: var(--background-secondary); border-bottom: 1px solid var(--border-secondary); z-index: 1;
+}
+.feed-news-pop-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
+.feed-news-pop-count { flex: none; color: var(--accent-primary); font-size: var(--text-sm, 0.85rem); font-weight: var(--font-weight-semibold, 600); }
+.feed-news-pop-close {
+    flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: var(--radius-4, 8px);
+    background: transparent; color: var(--text-secondary); font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+.feed-news-pop-close:hover, .feed-news-pop-close:focus-visible, .feed-news-pop-close:active {
+    color: var(--text-primary); background: color-mix(in srgb, var(--accent-primary) 12%, transparent); outline: none;
+}
+.feed-news-pop-item, .feed-news-pop-more {
+    display: flex; align-items: center; gap: 0.7rem; width: 100%; min-height: 44px; padding: 0.6rem 0.8rem;
+    text-align: left; background: transparent; border: 0; border-top: 1px solid var(--border-secondary); color: var(--text-primary); font: inherit; cursor: pointer;
+}
+.feed-news-pop-list { margin: 0; padding: 0; list-style: none; overflow-x: hidden; }
+.feed-news-pop-list > li { min-width: 0; }
+.feed-news-pop-list li:first-child > .feed-news-pop-item { border-top: 0; }
+/* The line under the headlines stays in sight while they scroll. */
+.feed-news-pop-more { position: sticky; bottom: 0; z-index: 1; background: var(--background-secondary); }
+.feed-news-pop-item:active, .feed-news-pop-item:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent); outline: none;
+}
+.feed-news-pop-more:active, .feed-news-pop-more:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)); outline: none;
+}
+.feed-news-pop-thumb { width: 40px; height: 40px; border-radius: var(--radius-4, 8px); object-fit: cover; flex: none; }
+.feed-news-pop-text { display: grid; gap: 0.1rem; min-width: 0; }
+.feed-news-pop-title {
+    font-weight: var(--font-weight-semibold, 600); line-height: 1.25; white-space: normal;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
+}
+.feed-news-pop-meta { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.feed-news-pop-more { justify-content: center; color: var(--accent-primary); font-weight: var(--font-weight-semibold, 600); }
+.feed-news-pop-ago { white-space: nowrap; }
+
+/* Compact: no pictures, a line per headline with its age after it, small. */
+.feed-news-pop.is-compact .feed-news-pop-thumb,
+.feed-news-pop.is-compact .feed-news-pop-feed { display: none; }
+.feed-news-pop.is-compact .feed-news-pop-text { display: flex; align-items: baseline; gap: 0.5rem; flex: 1 1 auto; }
+.feed-news-pop.is-compact .feed-news-pop-title { display: block; -webkit-line-clamp: none; flex: 1 1 auto; min-width: 0; white-space: nowrap; text-overflow: ellipsis; }
+.feed-news-pop.is-compact .feed-news-pop-meta { flex: none; overflow: visible; }
+
+/* Two columns: the headlines run down the first, then the second. The script
+   sets how many rows half of them take. */
+.feed-news-pop.is-two-cols .feed-news-pop-list {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: column;
+    grid-template-rows: repeat(var(--feed-pop-rows, 3), auto);
+}
+.feed-news-pop.is-two-cols .feed-news-pop-list > li > .feed-news-pop-item { height: 100%; border-top: 0; border-bottom: 1px solid var(--border-secondary); }
+.feed-news-pop.is-two-cols .feed-news-pop-more { border-top: 0; }
+
+/* Reader: the paper on this site, a small accent button between the bar and the ×.
+   Desktop only (the script leaves it out on a phone). */
+.feed-news-pop-reader {
+    flex: none; padding: 0.3rem var(--space-3, 0.75rem); border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    border-radius: var(--radius-4, 8px); background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary); font: inherit; font-size: var(--text-sm, 0.85rem); font-weight: var(--font-weight-semibold, 600);
+    line-height: 1.2; white-space: nowrap; cursor: pointer;
+}
+.feed-news-pop-reader:hover, .feed-news-pop-reader:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 24%, transparent); outline: none;
+}
+
+/* A mouse: the 44 px targets are for fingers, and a row lights up under it. */
+@media (hover: hover) and (pointer: fine) {
+    .feed-news-pop-head { min-height: 40px; }
+    .feed-news-pop-site { min-height: 36px; }
+    .feed-news-pop-close { width: 32px; height: 32px; font-size: 1.2rem; }
+    .feed-news-pop-item, .feed-news-pop-more { min-height: 0; padding: 0.5rem 0.8rem; }
+    .feed-news-pop.is-compact :is(.feed-news-pop-item, .feed-news-pop-more) { padding-block: 0.4rem; }
+    .feed-news-pop-item:hover, .feed-news-pop-site:hover {
+        background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    }
+    .feed-news-pop-more:hover { background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)); }
+}
+@media (hover: none), (pointer: coarse) {
+    .feed-news-pop-reader { min-height: 44px; }
+}
+
+/* The front page of the paper: a section per site, the one with the newest
+   unread item first. An unread item has a dot; a read one a hollow ring and
+   dimmed text. The toggle beside an item shows on hover with a mouse and
+   always on touch. */
+.feed-news-paper { display: grid; gap: 1.1rem; min-width: 0; }
+.feed-news-paper > .feed-news-empty { margin: 0.25rem 0 0; }
+.feed-news-section { display: grid; gap: 0.2rem; min-width: 0; }
+.feed-news-section-head {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem 0.6rem; min-width: 0;
+    padding-bottom: 0.35rem; border-bottom: 1px solid var(--border-secondary);
+}
+.feed-news-section-name {
+    flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--font-size-text, 1rem); font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-primary); overflow-wrap: anywhere;
+}
+.feed-news-section-count { flex: none; font-size: var(--text-2xs, 0.72rem); color: var(--feed-news-color, #8b5cf6); }
+.feed-news-section.is-earlier { gap: 0; }
+.feed-news-item { display: flex; align-items: flex-start; gap: 0.2rem; min-width: 0; }
+.feed-news-item > .feed-news-entry { flex: 1 1 auto; }
+.feed-news-dot {
+    flex: none; box-sizing: border-box; width: 0.55rem; height: 0.55rem; margin: 1.1rem 0 0 0.1rem; border-radius: 50%;
+    background: var(--feed-news-color, #8b5cf6); border: 1.5px solid var(--feed-news-color, #8b5cf6);
+}
+.feed-news-item.is-read .feed-news-dot { background: transparent; border-color: var(--text-secondary); }
+.feed-news-item.is-read > .feed-news-entry { opacity: 0.6; }
+.feed-news-item.is-read .feed-news-entry-title { font-weight: var(--font-weight-normal, 400); }
+.feed-news-toggle {
+    flex: none; align-self: center; display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+    min-height: 2rem; padding: 0 0.55rem; border: 1px solid var(--border-secondary); border-radius: var(--radius-4, 8px);
+    background: transparent; color: var(--text-secondary); font: inherit; font-size: var(--text-2xs, 0.72rem); white-space: nowrap; cursor: pointer;
+}
+.feed-news-toggle:hover, .feed-news-toggle:focus-visible { color: var(--text-primary); border-color: var(--feed-news-color, #8b5cf6); }
+@media (hover: hover) and (pointer: fine) {
+    .feed-news-toggle { opacity: 0; transition: opacity 0.15s ease; }
+    .feed-news-item:hover .feed-news-toggle, .feed-news-toggle:focus-visible { opacity: 1; }
+}
+.feed-news-card.is-unread .feed-news-card-title::before {
+    content: ''; display: inline-block; width: 0.45rem; height: 0.45rem; margin-right: 0.4rem; border-radius: 50%;
+    vertical-align: 0.1em; background: var(--feed-news-color, #8b5cf6);
+}
+
+/* Mark all read, Mark site read and the article's toggle: modal buttons, but
+   small ones in a row, not the phone's full-width buttons. */
+.feed-news-head { flex-wrap: wrap; row-gap: 0.4rem; }
+.modal-overlay.show .modal .feed-news .feed-news-mark {
+    width: auto; flex: 0 0 auto; min-width: 0; padding: 0.3rem var(--space-3, 0.75rem);
+}
+.feed-news-mark .modal-button-name { font-size: var(--text-sm, 0.85rem); white-space: nowrap; }
+.feed-news-head .feed-news-mark { margin-left: auto; }
+.feed-news-head .feed-news-mark + .feed-news-views, .feed-news-head .feed-news-mark + .feed-news-close { margin-left: 0; }
+
+/* Touch and narrow screens: every control is a 44 px target, and the toggle is
+   always there. */
+@media (hover: none), (pointer: coarse), (max-width: 720px) {
+    .feed-news-toggle { min-width: 44px; min-height: 44px; opacity: 1; }
+    .modal-overlay.show .modal .feed-news .feed-news-mark { min-height: 44px; }
+    .feed-news-close { width: 44px; height: 44px; }
+    .feed-news-view { min-width: 44px; min-height: 44px; }
+}
+@media (max-width: 720px) {
+    /* The close button stays on the first line; Mark all read goes under it. */
+    .feed-news-head .feed-news-mark { order: 5; margin-left: 0; }
+    .feed-news-toggle-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .feed-news-toggle { position: relative; padding: 0; }
+}
+
+/* The paper's own ink for the same parts. */
+.is-paper .feed-news-section-head { border-bottom: 2px solid #1d1a14; }
+.is-paper .feed-news-section-name { font-family: Georgia, 'Times New Roman', serif; font-size: 1.05rem; letter-spacing: 0.02em; }
+.is-paper .feed-news-section-count, .is-paper .feed-news-toggle { font-family: Georgia, 'Times New Roman', serif; }
+.is-paper .feed-news-mark, .is-paper .feed-news-foot .feed-news-mark { background: #e4dcc6; border-color: #b9ad8c; color: #1d1a14; }
+
+/* The News button beside What's new: the same corner button, one place to its
+   left, with the unread count after the icon. */
+.whats-new-btn.feed-news-btn {
+    right: calc(var(--corner-fab-edge) + 18px + 2 * var(--space-3, 0.72rem) + var(--corner-fab-gap));
+    gap: 0.35rem;
+}
+.whats-new-btn.feed-news-btn[hidden] { display: none; }
+.feed-news-btn-count { font-weight: var(--font-weight-semibold, 600); font-variant-numeric: tabular-nums; line-height: 1; }
+.feed-news-btn-count:empty { display: none; }
+/* The News button is a desktop control. A phone has the badges on the rows,
+   the toast, the push and the paper that opens when you come back. */
+@media (max-width: 767px) {
+    .whats-new-btn.feed-news-btn { display: none !important; }
+}
+body[data-mobile-layout="true"] .whats-new-btn.feed-news-btn { display: none !important; }
+
+/* Watch feeds… in the selection bar: a small popover on the app's menu surface
+   (.move-popover) with the interval, the two actions and a report per bookmark. */
+.move-popover.feed-watch-bulk { min-width: 17rem; max-width: min(21rem, calc(100vw - 1rem)); padding-bottom: var(--space-2, 0.5rem); }
+.feed-watch-bulk-field { display: flex; align-items: center; gap: var(--space-2, 0.5rem); padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem); font-size: calc(var(--font-size-controls) * 0.92); }
+.feed-watch-bulk-field select { flex: 1; min-width: 0; min-height: 32px; background: var(--background-primary); color: var(--text-primary); border: 1px solid var(--border-primary); border-radius: var(--radius-4, 0.4rem); padding: 0 var(--space-2, 0.5rem); font: inherit; }
+.feed-watch-bulk-actions { display: flex; flex-direction: column; gap: var(--space-1, 0.3rem); padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem); }
+.feed-watch-bulk-actions button { min-height: 32px; border-radius: var(--radius-4, 0.4rem); border: 1px solid var(--border-primary); background: var(--background-primary); color: var(--text-primary); font: inherit; font-size: calc(var(--font-size-controls) * 0.92); cursor: pointer; }
+.feed-watch-bulk-actions .feed-watch-bulk-primary { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--text-on-accent, var(--background-primary)); font-weight: var(--font-weight-semibold); }
+.feed-watch-bulk-actions button:disabled { opacity: 0.5; cursor: default; }
+.feed-watch-bulk-actions button:focus-visible, .feed-watch-bulk-field select:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.feed-watch-bulk-progress { padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem) 0; font-size: calc(var(--font-size-controls) * 0.85); font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.feed-watch-bulk-progress:empty { display: none; }
+.feed-watch-bulk-report { list-style: none; margin: 0; padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem) 0; max-height: 9rem; overflow-y: auto; font-size: calc(var(--font-size-controls) * 0.82); color: var(--text-secondary); }
+.feed-watch-bulk-report:empty { display: none; }
+.feed-watch-bulk-report li { padding: 0.1rem 0; overflow-wrap: anywhere; }
+@media (pointer: coarse), (max-width: 767px) {
+    .feed-watch-bulk-actions button, .feed-watch-bulk-field select { min-height: 44px; }
+}
+
+/* Keyboard legend in the news foot: the config legends' chip row. */
+.feed-news-keys { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 0 0 0 auto; font-size: var(--text-xs, 0.75rem); color: var(--text-tertiary); }
+.feed-news-keys kbd {
+    font-size: var(--text-xs, 0.7rem); padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border-radius: var(--radius-3, 0.25rem); border: 1px solid var(--border-secondary);
+    background: var(--background-secondary); color: var(--text-secondary);
+}
+.is-paper .feed-news-keys, .is-paper .feed-news-keys kbd { color: #1d1a14; }
+.is-paper .feed-news-keys kbd { background: #e4dcc6; border-color: #b9ad8c; }
+.is-paper .feed-news-entry:focus-visible .feed-news-entry-title { text-decoration: underline; }
+@media (pointer: coarse), (max-width: 767px) { .feed-news-keys { display: none; } }
+
+/* The news header: the title on the left, every control together at the top
+   right. A narrow screen wraps the controls under each other, still on the
+   right, instead of dropping them below the title. */
+.modal.feed-news-modal .modal-header { display: none; }
+.feed-news-head {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 0.75rem; row-gap: 0;
+    padding: 0.1rem 0.25rem 0.7rem; border-bottom: 1px solid var(--border-secondary); margin-bottom: 0.6rem;
+}
+.feed-news-head .feed-news-site { align-self: center; font-size: var(--text-lg, 1.05rem); }
+.feed-news-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 0.4rem; min-width: 0; max-width: 100%; }
+.feed-news-head .feed-news-mark,
+.feed-news-head .feed-news-mark + .feed-news-views,
+.feed-news-head .feed-news-mark + .feed-news-close { margin-left: 0; order: 0; }
+.is-paper .feed-news-head { border-bottom: 0; padding-bottom: 0.2rem; margin-bottom: 0; }
+
+/* Two columns: each item is a card of its own, so the list reads as items and
+   the section name says whose they are. */
+.feed-news:not(.is-paper-skin) .feed-news-section-head { padding: 0.35rem 0.1rem 0.4rem; border-bottom: 1px solid var(--border-secondary); }
+.modal.feed-news-modal.is-wide:not(.is-paper) .feed-news-entry {
+    border: 1px solid var(--border-secondary); border-radius: 10px; padding: 0.65rem 0.75rem;
+    background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+.modal.feed-news-modal.is-wide:not(.is-paper) .feed-news-index { gap: 0.6rem; }
+.modal.feed-news-modal.is-wide:not(.is-paper) .feed-news-section { gap: 0.5rem; margin-top: 0.6rem; }
+.modal.feed-news-modal:not(.is-paper) .feed-news-section-name { font-size: var(--text-md, 1rem); }
+
+/* Scrollbars inside the news and picker windows. The page's own scrollbar
+   colours inherit into every scroller and paint a dark track (the page
+   background) over the modal; here the track is clear and the thumb is a
+   hairline of the surroundings, so the bar reads as part of the panel. */
+.modal.feed-news-modal .modal-body,
+.modal.feed-watch-modal .modal-body,
+.feed-news-side,
+.feed-watch-list,
+.fwm-chooser-list {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-primary) 28%, transparent) transparent;
+    scrollbar-gutter: stable;
+}
+.modal.feed-news-modal.is-paper .modal-body,
+.is-paper .feed-news-side {
+    scrollbar-color: #b9ad8c transparent;
+}
+.modal.feed-news-modal .modal-body::-webkit-scrollbar,
+.modal.feed-watch-modal .modal-body::-webkit-scrollbar,
+.feed-news-side::-webkit-scrollbar,
+.feed-watch-list::-webkit-scrollbar,
+.fwm-chooser-list::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+.modal.feed-news-modal .modal-body::-webkit-scrollbar-track,
+.modal.feed-watch-modal .modal-body::-webkit-scrollbar-track,
+.feed-news-side::-webkit-scrollbar-track,
+.feed-watch-list::-webkit-scrollbar-track,
+.fwm-chooser-list::-webkit-scrollbar-track { background: transparent; }
+.modal.feed-news-modal .modal-body::-webkit-scrollbar-thumb,
+.modal.feed-watch-modal .modal-body::-webkit-scrollbar-thumb,
+.feed-news-side::-webkit-scrollbar-thumb,
+.feed-watch-list::-webkit-scrollbar-thumb,
+.fwm-chooser-list::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-primary) 28%, transparent);
+    border: 3px solid transparent; background-clip: padding-box; border-radius: 999px;
+}
+.modal.feed-news-modal.is-paper .modal-body::-webkit-scrollbar-thumb,
+.is-paper .feed-news-side::-webkit-scrollbar-thumb { background: #b9ad8c; background-clip: padding-box; }
+
+/* The read toggle sits on the card, not beside it, so the cards keep their width
+   and nothing jumps when the pointer arrives. The text label is for screen
+   readers (the icon carries it for the eye) outside the newspaper. */
+.modal.feed-news-modal:not(.is-paper) .feed-news-item { position: relative; }
+.modal.feed-news-modal:not(.is-paper) .feed-news-item > .feed-news-toggle {
+    position: absolute; top: 0.35rem; right: 0.35rem; min-width: 0; padding: 0.25rem; z-index: 1;
+}
+.modal.feed-news-modal:not(.is-paper) .feed-news-item > .feed-news-toggle .feed-news-toggle-label {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.modal.feed-news-modal:not(.is-paper) .feed-news-item > .feed-news-entry { padding-right: 2.2rem; }
+
+/* The chooser: what the quick look found beside each site. */
+.fwm-chooser-only { display: flex; gap: 0.4rem; align-items: center; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
+.fwm-choice { position: relative; }
+.fwm-choice.is-none { opacity: 0.6; }
+.fwm-tag { font-style: normal; font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary); margin-top: 0.1rem; }
+.fwm-tag.is-feed { color: var(--feed-news-color, var(--accent-primary)); }
+
+/* A close button for the picker and the chooser: the news window has its own. */
+.modal.feed-watch-modal .modal-header { display: flex; align-items: center; }
+.feed-watch-x {
+    margin-left: auto; flex: none; width: 2rem; height: 2rem; border-radius: 8px; border: 0; cursor: pointer;
+    background: transparent; color: var(--text-secondary); font-size: 1.3rem; line-height: 1;
+}
+.feed-watch-x:hover, .feed-watch-x:focus-visible { background: color-mix(in srgb, var(--text-primary) 10%, transparent); color: var(--text-primary); }
+@media (hover: none), (pointer: coarse) { .feed-watch-x { width: 44px; height: 44px; } }
+
+/* The select-all box sits over the row boxes: the rows are inset by their
+   padding and border, so the toolbar's box takes the same inset. */
+.fwm-toolbar > .fwm-tick-all { margin-left: calc(0.6rem + 1px); }
+
+/* The header controls of the news window: one clean focus ring inside the
+   button's own edge. The app's glow ring spilled over the header line and the
+   window's border at the top right corner. */
+.feed-news-head .feed-news-close:focus-visible,
+.feed-news-head .feed-news-view:focus-visible,
+.feed-news-head .feed-news-mark:focus-visible {
+    outline: 2px solid var(--accent-primary); outline-offset: -2px; box-shadow: none !important; border-radius: 8px;
+}
+.feed-news-head .feed-news-close { border: 0; }
+.is-paper .feed-news-head .feed-news-close:focus-visible,
+.is-paper .feed-news-head .feed-news-view:focus-visible,
+.is-paper .feed-news-head .feed-news-mark:focus-visible { outline-color: #1d1a14; }
+
+/* The scroller starts a little below the window's top edge and stops above its
+   bottom edge, so the scrollbar never runs into the rounded corners and the
+   border. */
+.modal.feed-news-modal .modal-body,
+.modal.feed-watch-modal .modal-body { margin-block: 0.35rem; }
+
+/* A phone gives every modal a full-height sheet and reserves room in its body
+   for a header and a button row. The news and picker windows have neither
+   (their header and buttons are inside the content), so the sheet fits its
+   content and the body takes whatever room the window has: no empty band
+   under a long article, no empty sheet under a short one. */
+.modal-overlay.show .modal.feed-news-modal,
+.modal-overlay.show .modal.feed-watch-modal {
+    min-height: 0;
+    max-height: calc(100vh - 1rem); max-height: calc(100dvh - 1rem);
+}
+.modal-overlay.show .modal.feed-news-modal .modal-body,
+.modal-overlay.show .modal.feed-watch-modal .modal-body { max-height: none; }
+
+/* The bar on top of the headlines: it is the way on to the site. */
+.feed-news-pop-site {
+    flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 0.6rem; min-height: 44px;
+    padding: 0 0.25rem; margin: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer;
+}
+.feed-news-pop-site:active, .feed-news-pop-site:focus-visible { background: color-mix(in srgb, var(--text-primary) 8%, transparent); outline: none; }
+
+/* The Watch feeds news widget (dashboard-widget-feed-news.js): a row per site,
+   the newest headlines with pictures, or a chip per site. Theme tokens only; it
+   inherits the rows' hover and focus from .dashboard-widget-row. */
+.feed-news-widget { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.feed-news-widget-head {
+    display: flex; align-items: center; gap: 0.5rem; min-width: 0;
+    padding-bottom: 3px; border-bottom: 1px solid var(--dashboard-widget-rule);
+}
+.feed-news-widget-title { font-weight: 600; color: var(--text-primary); }
+.feed-news-widget-total { flex: 1 1 auto; min-width: 0; color: var(--text-tertiary); font-size: var(--font-size-small); }
+.feed-news-widget-action {
+    flex: none; padding: 0.15rem 0.4rem; border: 0; border-radius: var(--layout-radius-sm, 5px);
+    background: none; color: var(--accent-primary); font: inherit; font-size: var(--font-size-small); cursor: pointer;
+}
+.feed-news-widget-action:hover,
+.feed-news-widget-action:focus-visible { background: color-mix(in srgb, var(--accent-primary) 12%, transparent); }
+.feed-news-widget-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+.feed-news-widget-empty .feed-news-widget-action { padding-inline: 0; }
+
+.feed-news-widget-rows { min-width: 0; }
+.feed-news-widget-row,
+.feed-news-widget-item { align-items: center; min-width: 0; }
+.feed-news-widget-row.is-muted { opacity: 0.6; }
+.feed-news-widget-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.feed-news-widget-name,
+.feed-news-widget-headline,
+.feed-news-widget-meta { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.feed-news-widget-name { color: var(--text-primary); }
+.feed-news-widget-headline,
+.feed-news-widget-meta { color: var(--text-tertiary); font-size: var(--font-size-small); }
+
+.feed-news-widget-icon {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 4px; overflow: hidden;
+}
+.feed-news-widget-icon > img { width: 100%; height: 100%; object-fit: contain; }
+.feed-news-widget-letter {
+    width: 100%; height: 100%; display: inline-flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent); color: var(--text-secondary);
+    font-size: 0.7rem; font-weight: 600;
+}
+.feed-news-widget-picture { width: 34px; height: 34px; border-radius: 6px; }
+.feed-news-widget-picture > img { object-fit: cover; }
+
+/* The unread count: the accent, pulsing until the site is muted. */
+.feed-news-widget-pill {
+    flex: none; min-width: 1.4em; padding: 0 0.4em; border-radius: 999px; text-align: center;
+    background: var(--accent-primary); color: var(--on-accent, var(--background-primary));
+    font-size: var(--font-size-small); font-variant-numeric: tabular-nums; line-height: 1.5;
+    animation: feed-news-widget-pulse 2.2s ease-in-out infinite;
+}
+.feed-news-widget-pill.is-muted { animation: none; }
+@keyframes feed-news-widget-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 55%, transparent); }
+    50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .feed-news-widget-pill { animation: none; } }
+body[data-animations="off"] .feed-news-widget-pill,
+body.no-animations .feed-news-widget-pill { animation: none; }
+
+.feed-news-widget-item-title {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+    overflow: hidden; overflow-wrap: anywhere; color: var(--text-primary);
+}
+
+.feed-news-widget-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; min-width: 0; }
+.feed-news-widget-chip {
+    display: inline-flex; align-items: center; gap: 0.35rem; max-width: 100%; min-width: 0;
+    padding: 0.15rem 0.55rem; border: 1px solid var(--dashboard-widget-rule); border-radius: 999px;
+    background: transparent; color: var(--text-primary); font: inherit; font-size: var(--font-size-small); cursor: pointer;
+}
+.feed-news-widget-chip.is-muted { opacity: 0.6; }
+.feed-news-widget-chip:hover,
+.feed-news-widget-chip:focus-visible { background: rgba(127, 127, 127, 0.09); }
+.feed-news-widget-chip-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.feed-news-widget-chip-count { flex: none; color: var(--accent-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+.feed-news-widget-latest { display: flex; flex-direction: column; margin: 0; min-width: 0; }
+.feed-news-widget-latest-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-secondary); }
+
+/* Touch: every way in is a 44 px target. */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    .feed-news-widget-row,
+    .feed-news-widget-item,
+    .feed-news-widget-chip,
+    .feed-news-widget-action { min-height: 44px; }
+}
+
+/* Row signal: signs that do not hang on one colour. A stripe at the row's
+   start edge, a bold name, and the newest headline on a second line. The
+   stripe is a pseudo-element, so nothing shifts; it follows the writing
+   direction. A muted feed gets a faint hairline instead of the accent. */
+.bookmark-link.has-feed-news::before {
+    content: '';
+    position: absolute;
+    inset-block: 3px;
+    inset-inline-start: 0;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent-primary, var(--feed-news-color, #8b5cf6));
+    pointer-events: none;
+}
+.dashboard-grid.layout-terminal .bookmark-link.has-feed-news::before {
+    content: '';
+    opacity: 1;
+    inset-block: 3px;
+    inset-inline-start: 0;
+    left: auto;
+    top: auto;
+    margin: 0;
+    transform: none;
+}
+.bookmark-link.has-feed-news.is-feed-muted::before {
+    width: 1px;
+    background: color-mix(in srgb, var(--text-secondary) 45%, transparent);
+}
+.bookmark-link.has-feed-news .bookmark-text { font-weight: var(--font-weight-semibold, 600); }
+
+/* The headline sits under the name, inside the link so that hovering it is
+   hovering the row. The link wraps; the headline takes a whole line of its
+   own and goes last, whatever badges come after it. */
+a.bookmark-open.has-news-line { flex-wrap: wrap; row-gap: 1px; }
+.bookmark-open > .bookmark-news-line {
+    order: 99;
+    flex: 0 0 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-normal, 400);
+    line-height: 1.3;
+    color: var(--text-secondary);
+}
+body[data-density-mode="compact"] .bookmark-news-line,
+body[data-density-mode="dense"] .bookmark-news-line,
+.category[data-view="tiles"] .bookmark-news-line,
+.layout-launcher .bookmark-news-line { display: none; }
+@media (max-width: 600px) {
+    .bookmark-news-line { display: none; }
+}
+
+/* A page tab with news on another page: a small accent dot after the label. */
+.page-tab-news-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-inline-start: 0.35em;
+    border-radius: 50%;
+    vertical-align: middle;
+    flex-shrink: 0;
+    background: var(--accent-primary, var(--feed-news-color, #8b5cf6));
+    box-shadow: 0 0 0 2px var(--background-primary);
+}
+
+/* The feed glyph after the name of a watched bookmark that shows no news badge.
+   Secondary text colour, drawn with currentColor; it only informs, so it takes
+   no clicks and adds nothing to the row's height. */
+.bookmark-feed-icon {
+    position: relative;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    width: 12px;
+    height: 12px;
+    margin: -3px auto -3px 0.35em; /* the free width stays after the glyph, so later marks keep their place */
+    color: var(--text-secondary);
+    opacity: 0.6;
+    pointer-events: none;
+    user-select: none;
+}
+.bookmark-feed-icon svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+}
+.bookmark-feed-icon.is-muted { opacity: 0.45; }
+.bookmark-feed-icon.is-muted .bookmark-feed-icon-strike { stroke-width: 1.4; }
+.bookmark-feed-icon.is-unhealthy { opacity: 1; }
+.bookmark-feed-icon-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-warning, currentColor);
+    box-shadow: 0 0 0 1.5px var(--background-primary);
+}
+
+.bookmark-text:has(+ .bookmark-feed-icon) { flex: 0 1 auto; }
+
+/* On a phone the row has no padding before the icon, so a stripe at the row's
+   edge ran over the favicon. It stands in the gap before the row instead. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+    .bookmark-link.has-feed-news::before,
+    .dashboard-grid.layout-terminal .bookmark-link.has-feed-news::before { inset-inline-start: -9px; }
+}
+body[data-mobile-layout="true"] .bookmark-link.has-feed-news::before,
+body[data-mobile-layout="true"] .dashboard-grid.layout-terminal .bookmark-link.has-feed-news::before { inset-inline-start: -9px; }
+
+/* The top of the news window stays put while the news scrolls under it. At rest
+   it has no colour of its own, so it is the panel itself, whatever the theme or
+   material. Only once the news scrolls under it (.is-stuck, set by the script)
+   does it take the panel's colour, so the lines passing under it do not show
+   through: classic's --background-modal, or a signature material's fill and lift,
+   frosting what is under it when the fill is see-through. No negative side
+   margins: they made the scroller 4px wider than itself, which showed as a
+   horizontal scrollbar under the footer. The newspaper keeps its paper. */
+.feed-news-top { position: sticky; top: 0; z-index: 4; background: transparent; }
+.feed-news-top.is-stuck { background: var(--background-modal, var(--background-primary)); }
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .modal.feed-news-modal:not(.is-paper) .feed-news-top.is-stuck {
+    background-color: var(--ov-fill, var(--background-modal));
+    background-image: linear-gradient(var(--ov-lift-3, transparent), var(--ov-lift-3, transparent));
+    -webkit-backdrop-filter: blur(var(--ov-blur, 0px));
+    backdrop-filter: blur(var(--ov-blur, 0px));
+}
+.modal.feed-news-modal.is-paper .feed-news-top { background: #f4efe4; background-image: none; }
+.feed-news-top .feed-news-head { margin-bottom: 0; }
+.feed-news-top + .feed-news-body, .feed-news-top ~ .feed-news-body { margin-top: 0.6rem; }
+
+/* In a signature material the popover's contents wear the material too: its rules
+   between rows, the colour of the row in hand, its item and control radii, and the
+   "+n more" bar on the popover's own surface instead of a solid strip. The frame
+   itself comes from .move-popover. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop {
+    --feed-pop-item-r: var(--ov-r-item, 8px);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop :is(.feed-news-pop-item, .feed-news-pop-more) {
+    border-top-color: var(--ov-rule-soft, var(--border-secondary));
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop.is-two-cols .feed-news-pop-list > li > .feed-news-pop-item {
+    border-bottom-color: var(--ov-rule-soft, var(--border-secondary));
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop :is(.feed-news-pop-item, .feed-news-pop-close):is(:hover, :active, :focus-visible) {
+    background: var(--ov-hot);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop .feed-news-pop-more:is(:hover, :active, :focus-visible) {
+    background: var(--ov-hot);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop .feed-news-pop-more {
+    background: var(--ov-fill-small, var(--background-secondary));
+    border-top: 1px solid var(--ov-rule);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop .feed-news-pop-close {
+    border-radius: var(--ov-r-control, 8px);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop .feed-news-pop-thumb {
+    border-radius: var(--feed-pop-item-r);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop :is(.feed-news-pop-item, .feed-news-pop-more):focus-visible {
+    border-radius: var(--feed-pop-item-r);
+}
+
+/* The news window wears the theme: the chrome below (cards, links, the footer's
+   buttons and keys, the time bar) is drawn from the theme's tokens and, in a
+   signature material, from the layer tokens (--ov-*) the other modals use, so
+   it follows every theme and material. Only the newspaper (.is-paper) keeps a
+   paper look of its own; its overrides come after each rule. */
+
+/* The list beside the article scrolls down only. */
+.feed-news-side { overflow-x: hidden; overflow-y: auto; }
+
+/* The other items beside the article: a quiet tint of the panel, not a block of
+   the page colour, with the material's rule and item corner. */
+.modal.feed-news-modal:not(.is-paper) .feed-news-card {
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    border-color: var(--ov-rule-soft, var(--border-secondary));
+    border-radius: var(--ov-r-item, 10px);
+}
+.modal.feed-news-modal:not(.is-paper) .feed-news-card:hover,
+.modal.feed-news-modal:not(.is-paper) .feed-news-card:focus-visible {
+    background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 10%, transparent));
+    border-color: color-mix(in srgb, var(--accent-primary) 50%, var(--border-secondary));
+}
+.modal.feed-news-modal:not(.is-paper) .feed-news-card:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+.modal.feed-news-modal:not(.is-paper) .feed-news-card-image,
+.modal.feed-news-modal:not(.is-paper) .feed-news-entry-image,
+.modal.feed-news-modal:not(.is-paper) .feed-news-image { border-radius: var(--ov-r-item, 8px); }
+.modal.feed-news-modal.is-wide:not(.is-paper) .feed-news-entry {
+    border-color: var(--ov-rule-soft, var(--border-secondary)); border-radius: var(--ov-r-item, 10px);
+}
+
+/* Links in a summary: the theme's accent, underlined; the newspaper's ink there. */
+.feed-news-summary a { color: var(--accent-primary); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent-primary) 45%, transparent); text-underline-offset: 2px; }
+.feed-news-summary a:hover { text-decoration-color: currentColor; }
+.feed-news-summary a:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 2px; }
+.feed-news-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 2px; }
+.is-paper .feed-news-summary a { color: #8a2d1d; text-decoration-color: color-mix(in srgb, #8a2d1d 45%, transparent); }
+.is-paper .feed-news-summary a:focus-visible, .is-paper .feed-news-link:focus-visible { outline-color: #1d1a14; }
+
+/* The time bar: a slim line in the accent on a hairline of the panel. */
+.feed-news-bar { height: 2px; border-radius: 999px; background: color-mix(in srgb, var(--text-primary) 12%, transparent); }
+.feed-news-bar > i { border-radius: inherit; background: var(--feed-news-color); }
+.is-paper .feed-news-bar { background: #cdc3a8; }
+
+/* The footer: one set of buttons, all the same height, corner, border and type;
+   Open page is a button like Mark read; the keys are chips in a row. */
+.feed-news-foot { flex-wrap: wrap; row-gap: 0.5rem; column-gap: 0.4rem; }
+.modal-overlay.show .modal .feed-news .feed-news-foot .modal-button,
+.modal-overlay.show .modal .feed-news .feed-news-mark {
+    flex: 0 0 auto; width: auto; min-width: 2.25rem; min-height: 2.25rem; height: auto; margin: 0;
+    padding: 0 var(--space-3, 0.75rem); box-sizing: border-box;
+    border: 1px solid var(--ov-rule, var(--border-primary)); border-radius: var(--ov-r-control, var(--layout-radius-sm, 6px));
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent); color: var(--text-primary);
+    font-family: inherit; line-height: 1; transform: none;
+}
+.modal-overlay.show .modal .feed-news .feed-news-foot .modal-button .modal-button-name,
+.modal-overlay.show .modal .feed-news .feed-news-mark .modal-button-name {
+    font-size: var(--text-sm, 0.85rem); font-weight: var(--font-weight-semibold, 600); white-space: nowrap; line-height: 1;
+}
+.modal-overlay.show .modal .feed-news .feed-news-foot .modal-button:hover,
+.modal-overlay.show .modal .feed-news .feed-news-mark:hover {
+    transform: none; background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 12%, transparent));
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+}
+.modal-overlay.show .modal .feed-news .feed-news-foot .modal-button:focus-visible {
+    outline: 2px solid var(--accent-primary); outline-offset: 1px; box-shadow: none;
+}
+/* Open page goes on to the site: the accent, like the hover card's Open reader. */
+.modal-overlay.show .modal .feed-news .feed-news-foot .feed-news-open {
+    color: var(--accent-primary); border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+/* Two groups: the way through the news on the left (Index, ‹ ›, the time left),
+   what to do with this item on the right (Mark read, Open page, the keys). */
+.modal-overlay.show .modal .feed-news .feed-news-foot > .feed-news-mark,
+.modal-overlay.show .modal .feed-news .feed-news-foot > .feed-news-open { margin-left: auto; }
+.modal-overlay.show .modal .feed-news .feed-news-foot > .feed-news-mark + .feed-news-open { margin-left: 0; }
+.feed-news-foot .feed-news-left { flex: none; margin: 0 0 0 0.35rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.feed-news-keys { align-items: center; gap: 0.35rem 0.9rem; margin: 0 0 0 0.5rem; }
+.feed-news-keys > span { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+.feed-news-keys kbd {
+    font-family: var(--font-family-mono, ui-monospace, monospace); line-height: 1.4;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent); border-color: var(--ov-rule-soft, var(--border-secondary));
+}
+.feed-news-foot > .feed-news-keys:first-child, .feed-news-foot > .feed-news-left + .feed-news-keys { margin-left: auto; }
+/* One column is a narrow window: the keys take a row of their own at the right
+   instead of breaking into the buttons' row. */
+.modal.feed-news-modal:not(.is-wide) .feed-news-foot > .feed-news-keys { flex: 1 0 100%; justify-content: flex-end; margin-left: 0; }
+
+/* The newspaper's own buttons: paper, ink and its serif. */
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-foot .modal-button,
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-mark {
+    background: #e4dcc6; border-color: #b9ad8c; color: #1d1a14; border-radius: 4px; font-family: Georgia, 'Times New Roman', serif;
+}
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-foot .modal-button:hover,
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-mark:hover { background: #d9cfb3; border-color: #8f8466; }
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-foot .feed-news-open { background: #1d1a14; border-color: #1d1a14; color: #f4efe4; }
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-foot .modal-button:focus-visible { outline-color: #1d1a14; }
+.is-paper .feed-news-keys kbd { font-family: Georgia, 'Times New Roman', serif; }
+.is-paper .feed-news-keys { font-family: Georgia, 'Times New Roman', serif; }
+
+/* Touch and narrow screens: 44px targets, all alike. */
+@media (hover: none), (pointer: coarse), (max-width: 720px) {
+    .modal-overlay.show .modal .feed-news .feed-news-foot .modal-button,
+    .modal-overlay.show .modal .feed-news .feed-news-mark { min-height: 44px; min-width: 44px; }
+}
+@media (max-width: 720px) {
+    /* The time left takes the last row of its own, centred, under the buttons. */
+    .feed-news-foot .feed-news-left { order: 5; flex: 1 0 100%; margin: 0; text-align: center; }
+    /* Two columns of headlines fold into one: the look stays, the columns go. */
+    .feed-news-index.is-wide { grid-template-columns: minmax(0, 1fr); }
+    .is-paper .is-wide > .feed-news-item:nth-child(2) { border-top: 1px solid #cdc3a8; }
+}

@@ -2198,6 +2198,8 @@
                 note: 'See which links are broken and what is waiting in the Inbox.', noteKey: 'mcpGroupHealthInboxNote' },
             { key: 'mcpContainersRead', label: 'Containers: read', labelKey: 'mcpGroupContainersRead',
                 note: 'See the containers and their state. Their logs need the write token when one is set.', noteKey: 'mcpGroupContainersReadNote' },
+            { key: 'mcpSettingsOverview', label: 'Settings overview: read', labelKey: 'mcpGroupSettingsOverview',
+                note: 'See how nextDash is configured and how it is doing (a safe subset, never keys or addresses).', noteKey: 'mcpGroupSettingsOverviewNote' },
         ];
         const control = {
             key: 'mcpContainersControl', label: 'Containers: control', labelKey: 'mcpGroupContainersControl',
@@ -2279,7 +2281,7 @@
                     <span>${esc(this.t('config.sourceAsRows', 'Import each item as its own bookmark'))}</span>
                 </label>
                 <p class="config-field-hint">${esc(this.t('config.sourceAsRowsHint',
-                    'Off: one bookmark to the source itself, which Fresh can then count new items on.'))}</p>` : '';
+                    'Off: one bookmark to the source itself, which Watch feeds can then count new items on.'))}</p>` : '';
 
         /*
          * Folded shut, as <details> rather than a panel of our own.
@@ -2409,6 +2411,7 @@
                 'A TLS certificate is about to expire'),
             'health.domain-expiring': this.t('config.webhookEventHealthDomainExpiring',
                 'A domain registration is about to expire'),
+            'feed.news': this.t('config.webhookEventFeedNews', 'A watched feed has news'),
         };
         const boxes = (this._webhookEvents || Object.keys(labels)).map((name) => `
             <label class="config-check">
@@ -2872,7 +2875,7 @@
             return;
         }
         // The MCP tool groups: plain booleans, saved as they are ticked.
-        if (['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpContainersControl'].includes(name)) {
+        if (['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpSettingsOverview', 'mcpContainersControl'].includes(name)) {
             d.settings[name] = value;
             void this.saveSettingsWithFeedback();
             return;

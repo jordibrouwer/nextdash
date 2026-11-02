@@ -19,6 +19,7 @@ class SearchCommandsComponent {
         { id: 'widgetsTutorialV2', labelKey: 'config.tourWidgets', label: 'Widgets' },
         { id: 'monitoringTutorialV1', labelKey: 'config.tourMonitoring', label: 'Monitoring' },
         { id: 'unraidTutorialV1', labelKey: 'config.tourUnraid', label: 'Unraid' },
+        { id: 'assistantTutorialV1', labelKey: 'config.tourAssistant', label: 'AI Assistant' },
     ];
 
     constructor(language = null, currentBookmarks = [], allBookmarks = [], updateQueryCallback = null) {
@@ -77,7 +78,7 @@ class SearchCommandsComponent {
                 id: 'collections',
                 label: 'Smart collections',
                 labelKey: 'commands.groupCollections',
-                commands: ['collections', 'fresh'],
+                commands: ['collections'],
             },
             {
                 id: 'settings-tools',
@@ -133,7 +134,6 @@ class SearchCommandsComponent {
             'collapse': this.handleCollapseCommand.bind(this),
             'empty': this.handleEmptyCategoriesCommand.bind(this),
             'tags': this.handleRowTagsCommand.bind(this),
-            'fresh': this.handleFreshCommand.bind(this),
             'header': this.handleHeaderCommand.bind(this),
             'glow': this.handleGlowCommand.bind(this),
             'buttonstyle': this.handleButtonStyleCommand.bind(this),
@@ -327,6 +327,7 @@ class SearchCommandsComponent {
     _CONFIG_SECTIONS = [
         { id: 'overview', labelKey: 'commands.configOverview', fallback: 'Overview' },
         { id: 'bookmarks', labelKey: 'commands.configBookmarks', fallback: 'Bookmarks' },
+        { id: 'feed-watch', labelKey: 'config.sectionFeedWatch', fallback: 'Watch feeds' },
         { id: 'inbox', labelKey: 'commands.configInbox', fallback: 'Inbox' },
         { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
         { id: 'structure', labelKey: 'commands.configStructure', fallback: 'Structure' },
@@ -600,7 +601,8 @@ class SearchCommandsComponent {
             anchor.download = filename;
             document.body.appendChild(anchor);
             anchor.click();
-            window.URL.revokeObjectURL(url);
+            // Later, not at once: Safari starts the download after click().
+            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
             document.body.removeChild(anchor);
             try {
                 localStorage.setItem('nextdash-last-backup', now.toISOString());
@@ -3353,18 +3355,6 @@ class SearchCommandsComponent {
         }, args);
     }
 
-    handleFreshCommand(args) {
-        const t = (key, fb) => this._t(key, fb);
-        return this._toggleSettingCommand({
-            field: 'feedsEnabled',
-            shortcut: ':FRESH',
-            apply: 'render',
-            onLabel: t('commands.freshOn', 'Count what the pages you saved have published'),
-            offLabel: t('commands.freshOff', 'Stop counting new items'),
-        }, args);
-    }
-
-
     /*
      * The guided tours, replayed from the palette.
      *
@@ -3865,7 +3855,7 @@ class SearchCommandsComponent {
             const isDomain = /^[a-z0-9-]+\.[a-z]{2,}/i.test(rawTarget);
             if (isUrl || isDomain) {
                 const href = isUrl ? rawTarget : `https://${rawTarget}`;
-                const openInNewTab = dashboard.settings?.openInNewTab !== false;
+                const openInNewTab = window.opensInNewTab(dashboard.settings, true);
                 return [{
                     name: `Navigate to ${rawTarget}`,
                     shortcut: ':GOTO',

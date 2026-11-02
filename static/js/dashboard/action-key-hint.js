@@ -1,10 +1,12 @@
 /**
- * The key an action button answers to, shown on hover when the chips are off.
+ * What an action button does and the key it answers to, shown on hover when
+ * the chips are off.
  *
  * "Show the key on each button" hides the chip, not the key: the keys keep
  * working, and a reader who switched the chips off to quiet the bar still has
  * to find out what a button's key is once. Resting on a button for a moment
- * brings up a small popover with that key; leaving, clicking, typing or
+ * brings up a small popover with its name and that key -- "search" and ">", so
+ * a bare symbol is never left to explain itself; leaving, clicking, typing or
  * scrolling takes it away.
  *
  * The delay is what keeps it out of the way. A pointer passing over the bar on
@@ -32,8 +34,10 @@
         hint.className = 'action-key-hint';
         hint.setAttribute('aria-hidden', 'true');
         hint.hidden = true;
+        const name = document.createElement('span');
+        name.className = 'action-key-hint-name';
         const kbd = document.createElement('kbd');
-        hint.appendChild(kbd);
+        hint.append(name, kbd);
         document.body.appendChild(hint);
         return hint;
     }
@@ -80,7 +84,10 @@
         if (!key || !chipsOff() || !button.isConnected) return;
         if (document.body.hasAttribute('data-action-bar-hidden')) return;
         const el = element();
-        el.firstChild.textContent = key;
+        // The name the button already carries, in the reader's language.
+        const name = button.querySelector('.search-button-label')?.textContent?.trim() || button.getAttribute('aria-label') || '';
+        el.querySelector('.action-key-hint-name').textContent = name;
+        el.querySelector('kbd').textContent = key;
         el.hidden = false;
         position(el, button);
     }
@@ -111,6 +118,16 @@
     document.addEventListener('keydown', hide, true);
     global.addEventListener('scroll', hide, { passive: true, capture: true });
     global.addEventListener('blur', hide);
+
+    // The bar slides away on its own (auto-hide) while the pointer may still be
+    // over a button: the button leaves from under the pointer without a
+    // pointerout, so the popover would stay behind on its own. The bar's hidden
+    // state is an attribute on <body>; when it goes on, so does the popover.
+    if (typeof MutationObserver === 'function' && document.body) {
+        new MutationObserver(() => {
+            if (document.body.hasAttribute('data-action-bar-hidden')) hide();
+        }).observe(document.body, { attributes: true, attributeFilter: ['data-action-bar-hidden'] });
+    }
 
     global.ActionKeyHint = { hide };
 })(window);

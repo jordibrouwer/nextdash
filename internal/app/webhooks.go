@@ -96,6 +96,8 @@ const (
 	webhookEventHealthCertExpiring = "health.cert-expiring"
 	// The registration behind the host, on the same ladder as the certificate.
 	webhookEventHealthDomainExpiring = "health.domain-expiring"
+	// A watched feed has news: one event per feed per poll round, without summaries.
+	webhookEventFeedNews = "feed.news"
 )
 
 // webhookEventNames is every event that can be subscribed to, in the order the
@@ -108,6 +110,7 @@ var webhookEventNames = []string{
 	webhookEventHealthUp,
 	webhookEventHealthCertExpiring,
 	webhookEventHealthDomainExpiring,
+	webhookEventFeedNews,
 }
 
 /*
@@ -160,6 +163,19 @@ func readWebhookFile() WebhookFile {
 		return WebhookFile{Endpoints: map[string]WebhookEndpoint{}}
 	}
 	return file
+}
+
+// readWebhookFileForWrite is the read before a save: an unreadable file is an
+// error, so a save does not drop every other endpoint and its signing key.
+func readWebhookFileForWrite() (WebhookFile, error) {
+	file := WebhookFile{}
+	if err := readJSONForWrite(webhookFilePath(), &file); err != nil {
+		return WebhookFile{}, err
+	}
+	if file.Endpoints == nil {
+		file.Endpoints = map[string]WebhookEndpoint{}
+	}
+	return file, nil
 }
 
 // writeWebhookFile persists the set with 0600: on a shared host, 0644 means
@@ -331,9 +347,9 @@ func saveWebhookEndpoint(id string, endpoint WebhookEndpoint) (WebhookEndpoint, 
 
 	webhookMu.Lock()
 	defer webhookMu.Unlock()
-	file := readWebhookFile()
-	if file.Endpoints == nil {
-		file.Endpoints = map[string]WebhookEndpoint{}
+	file, err := readWebhookFileForWrite()
+	if err != nil {
+		return WebhookEndpoint{}, err
 	}
 	existing, exists := file.Endpoints[id]
 	if !exists && len(file.Endpoints) >= webhookMaxEndpoints {
@@ -364,7 +380,10 @@ func deleteWebhookEndpoint(id string) error {
 	}
 	webhookMu.Lock()
 	defer webhookMu.Unlock()
-	file := readWebhookFile()
+	file, err := readWebhookFileForWrite()
+	if err != nil {
+		return err
+	}
 	if _, ok := file.Endpoints[id]; !ok {
 		return nil
 	}
@@ -611,17 +630,20 @@ receiver that takes ten seconds to answer must not be able to hold up the
 request that triggered it -- or, worse, to make saving a bookmark fail because
 something unrelated is down.
 */
-func emitWebhookEvent(event string, data map[string]any) {
+func emitWebhookEvent(event string, data map[string]any) int {
 	webhookMu.Lock()
 	file := readWebhookFile()
 	webhookMu.Unlock()
 
+	sent := 0
 	for _, endpoint := range file.Endpoints {
 		if !endpoint.wants(event) {
 			continue
 		}
 		go deliverWebhook(endpoint, event, data)
+		sent++
 	}
+	return sent
 }
 
 // webhooksConfigured reports whether anything is listening. Used to skip work

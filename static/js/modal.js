@@ -280,7 +280,12 @@ class Modal {
         if (typeof this._onHideCallback === 'function') {
             const replaced = this._onHideCallback;
             this._onHideCallback = null;
-            replaced({ reason: 'replaced' });
+            // A caller's callback that throws must not stop the new modal.
+            try {
+                replaced({ reason: 'replaced' });
+            } catch (error) {
+                console.error('Modal onHide failed', error);
+            }
         }
         this._onHideCallback = typeof onHide === 'function' ? onHide : null;
 
@@ -516,7 +521,13 @@ class Modal {
         if (typeof this._onHideCallback === 'function') {
             const callback = this._onHideCallback;
             this._onHideCallback = null;
-            callback({ reason: 'dismiss' });
+            // Caught, so a throwing callback cannot leave the modal shown,
+            // the page scroll-locked and the background inert.
+            try {
+                callback({ reason: 'dismiss' });
+            } catch (error) {
+                console.error('Modal onHide failed', error);
+            }
         }
 
         // Move focus out of the modal before hiding it. Setting aria-hidden

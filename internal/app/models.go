@@ -418,6 +418,11 @@ type Settings struct {
 	CurrentPage                     int    `json:"currentPage"` // Numeric ID of the current page
 	Theme                           string `json:"theme"`       // "light" or "dark"
 	OpenInNewTab                    bool   `json:"openInNewTab"`
+	OpenLinksNewTabMobile           bool   `json:"openLinksNewTabMobile"`
+	HideToastsMobile                bool   `json:"hideToastsMobile"`
+	HideCornerCardsMobile           bool   `json:"hideCornerCardsMobile"`
+	ShowFeedWatchIcon               bool   `json:"showFeedWatchIcon"`     // A feed icon on bookmarks whose feed is watched
+	FeedWatchOpenOnReturn           bool   `json:"feedWatchOpenOnReturn"` // Coming back to the tab opens the news, on a computer
 	ColumnsPerRow                   int    `json:"columnsPerRow"`
 	FontSize                        string `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
 	ShowTitle                       bool   `json:"showTitle"`
@@ -450,6 +455,7 @@ type Settings struct {
 	// every page file to strip images again.
 	PreviewImagesStrippedMigrated   bool           `json:"previewImagesStrippedMigrated,omitempty"`
 	CustomPercentGuessMigrated      bool           `json:"customPercentGuessMigrated,omitempty"`
+	FeedNewsWidgetSeeded            bool           `json:"feedNewsWidgetSeeded,omitempty"`            // one-time: Watch feeds news widget on the first page; a field, so a settings save does not drop it and bring a removed widget back
 	NotesWidgetSeeded               bool           `json:"notesWidgetSeeded,omitempty"`               // one-time: notes widget on the first page; a field, or a settings save dropped it and a removed widget came back
 	ConfigButtonDefaultOnMigrated   bool           `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
 	SurfaceDefaultsMigrated         bool           `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
@@ -788,7 +794,6 @@ type Settings struct {
 	SmartRecentPageIds          []int                      `json:"smartRecentPageIds"`                // Page IDs where smart recent is enabled (empty = all)
 	SmartStalePageIds           []int                      `json:"smartStalePageIds"`                 // Page IDs where smart stale is enabled (empty = all)
 	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`              // Page IDs where smart most used is enabled (empty = all)
-	SmartFreshPageIds           []int                      `json:"smartFreshPageIds"`                 // Page IDs where Fresh is shown (empty = all)
 	Collections                 []Collection               `json:"collections,omitempty"`             // User-defined dynamic collections
 	CollectionColumns           map[string]int             `json:"collectionColumns,omitempty"`       // Collections drawn across two columns, by collection id; one column is the absence of an entry
 	TagRules                    []TagRule                  `json:"tagRules,omitempty"`                // Patterns you wrote that propose a tag
@@ -868,6 +873,9 @@ type Settings struct {
 	MCPHealthInbox       bool `json:"mcpHealthInbox"`
 	MCPContainersRead    bool `json:"mcpContainersRead"`
 	MCPContainersControl bool `json:"mcpContainersControl"`
+	// MCPSettingsOverview lets get_settings_overview describe this install's
+	// configuration: an allowlisted subset, never keys or addresses.
+	MCPSettingsOverview bool `json:"mcpSettingsOverview"`
 	// The in-app assistant. The key lives in ai-secrets.json, never here.
 	AIEnabled         bool   `json:"aiEnabled"`
 	AIProvider        string `json:"aiProvider"`
@@ -979,18 +987,20 @@ type Settings struct {
 	WebSearchEngine string `json:"webSearchEngine"`
 	// WebSearchSearxngURL is the base address of the reader's own SearXNG.
 	WebSearchSearxngURL string `json:"webSearchSearxngUrl,omitempty"`
-	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
-	// feed can then say when it has published something since you last opened
-	// it. Off by default because it is the only thing here that reaches out to
-	// the internet on a schedule without a bookmark having asked for it —
-	// discovery happens regardless, so switching this on needs no re-fetch.
-	FeedsEnabled bool `json:"feedsEnabled"`
-	// FeedsMarkQuiet puts a mark on a row whose page publishes but has nothing
-	// new. Off by default and deliberately so: most of those rows are silent
-	// most of the time, and a mark on twenty of them is the noise Fresh exists
-	// to avoid. It is here for the reader who wants to see which bookmarks are
-	// taking part at a glance rather than one at a time in the editor.
-	FeedsMarkQuiet          bool `json:"feedsMarkQuiet"`
+	// FeedWatchWindowMinutes is how long watched news stays open for the reader
+	// after it arrives and they are back: 15, 30, 60 or 120. Anything else
+	// reads as 30.
+	FeedWatchWindowMinutes int `json:"feedWatchWindowMinutes"`
+	// FeedWatchNewsView is how the news modal shows an article: "paper" (a
+	// newspaper front page, the default), "wide" (two columns in the app's own
+	// style) or "single" (one column). Anything else reads as "paper".
+	FeedWatchNewsView string `json:"feedWatchNewsView"`
+	// FeedStatsEnabled keeps counting watched feeds into feed-stats.json
+	// (feed_stats.go); on unless turned off. FeedStatsKeepDays is how many days
+	// of daily rows are kept before they are rolled into weeks: 30, 90 or 365.
+	// Anything else reads as 90.
+	FeedStatsEnabled        bool `json:"feedStatsEnabled"`
+	FeedStatsKeepDays       int  `json:"feedStatsKeepDays"`
 	ServerLogRetentionHours int  `json:"serverLogRetentionHours"` // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
 	// Which cap applies: "time" uses ServerLogRetentionHours and ignores the
 	// entry count, "count" uses ServerLogMaxEntries and ignores the age. The
@@ -1080,7 +1090,8 @@ type Settings struct {
 	DigestHealth  bool   `json:"digestHealth"`
 	DigestUpdates bool   `json:"digestUpdates"`
 	DigestUsage   bool   `json:"digestUsage"`
-	DigestNews    bool   `json:"digestNews"` // the week's nextDash releases (digest_news.go)
+	DigestNews    bool   `json:"digestNews"`  // the week's nextDash releases (digest_news.go)
+	DigestFeeds   bool   `json:"digestFeeds"` // what the watched feeds published (digest_feeds.go)
 	// RemindersEnabled repeats an outage that is still going: after
 	// RemindAfterMinutes, up to RemindMax times. Monitors and containers only.
 	RemindersEnabled   bool `json:"remindersEnabled"`
@@ -1095,6 +1106,8 @@ type Settings struct {
 	PushNotifyBackup     bool                  `json:"pushNotifyBackup"`               // Push when an automatic backup succeeds or fails
 	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyGlances    bool                  `json:"pushNotifyGlances"`              // Push when a Glances host has an incident of a kind switched on in Config -> Glances
+	PushNotifyNews       bool                  `json:"pushNotifyNews"`                 // Push when a watched feed has news; on unless turned off
+	NotifyNewsTarget     bool                  `json:"notifyNewsTarget"`               // Also send a round's news to the alert target (ntfy, Gotify, Discord...); off unless turned on
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	InstallPingEnabled   bool                  `json:"installPingEnabled"`             // Daily anonymous install count: random id + version (on by default, separate from analyticsOptIn)
@@ -1216,12 +1229,16 @@ const defaultHealthWidgetID = "w_000000000001"
 // same reason as the health widget's.
 const defaultNotesWidgetID = "w_000000000002"
 
+// defaultFeedNewsWidgetID is the Watch feeds news widget a fresh install ships
+// with, and the one existing installs get once (migrateFeedNewsWidgetOnFirstPage).
+const defaultFeedNewsWidgetID = "w_000000000004"
+
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "look-ocean-dark"
+const defaultThemeID = "tidal-slate-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "look-ocean-light"
+const defaultThemeLightID = "tidal-slate-light"
 
 // auroraGlassThemeID and auroraGlassThemeLightID are where the one-time move of
 // v1.22.0 puts an install (migrateToAuroraGlass). They were the defaults then;
@@ -1608,6 +1625,7 @@ type Store interface {
 	DeletePage(pageID int) error
 	GetPageOrder() []int
 	SavePageOrder(order []int) error
+	RemoveFromPageOrder(pageID int) error
 	// Settings
 	GetSettings() Settings
 	SaveSettings(settings Settings) error
@@ -1696,6 +1714,12 @@ type FileStore struct {
 	// through. Read under the same lock the caches are.
 	dataGeneration               uint64
 	prefetchDefaultBookmarkIcons bool
+	// lastGoodSettings is the last settings.json that was read and decoded.
+	// A read that fails for another reason than a missing file answers with
+	// it: defaults in its place were saved back over the real file by the
+	// next settings write.
+	lastGoodSettings   Settings
+	lastGoodSettingsOK bool
 }
 
 func NewStore() Store {
@@ -1813,6 +1837,14 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowSearchFlowBanner:            true,
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
+			PushNotifyNews:                  true,
+			HideToastsMobile:                true,
+			HideCornerCardsMobile:           true,
+			ShowFeedWatchIcon:               true,
+			FeedWatchWindowMinutes:          30,
+			FeedWatchNewsView:               "paper",
+			FeedStatsEnabled:                true,
+			FeedStatsKeepDays:               90,
 			ShowThemeStudioButton:           true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
@@ -1930,7 +1962,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartStalePageIds:               []int{},
 			SmartMostUsedPageIds:            []int{},
 			SmartAddedPageIds:               []int{},
-			SmartFreshPageIds:               []int{},
 			SmartAddedLimit:                 20,
 			RowTagsMax:                      2,
 			FaviconRefreshPolicy:            "on-save",
@@ -1978,6 +2009,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DigestUpdates:                  true,
 			DigestUsage:                    true,
 			DigestNews:                     true,
+			DigestFeeds:                    true,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
@@ -2034,6 +2066,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateStripBookmarkPreviewImages()
 	fs.migrateCustomPercentToGuess()
 	fs.migrateNotesWidgetOnFirstPage()
+	fs.migrateFeedNewsWidgetOnFirstPage()
 	fs.migrateCategoryIconsIntoNames()
 
 }
@@ -2076,6 +2109,44 @@ func (fs *FileStore) migrateNotesWidgetOnFirstPage() {
 		break
 	}
 	fs.setMigrationMarker("notesWidgetSeeded")
+}
+
+/*
+ * One-time migration: a Watch feeds news widget on the first page of an
+ * existing install, as the notes widget got one. It goes last in the page's
+ * order so nothing already arranged moves, and it is skipped when any page has
+ * one or the page is full. The marker is set in every one of those cases and
+ * after the write: a reader who deletes the widget does not get it back.
+ */
+func (fs *FileStore) migrateFeedNewsWidgetOnFirstPage() {
+	if fs.migrationMarkerSet("feedNewsWidgetSeeded") {
+		return
+	}
+	pages := fs.GetPages()
+	for _, page := range pages {
+		widgets, _ := fs.GetPageBlocks(page.ID)
+		for _, widget := range widgets {
+			if widget.Type == WidgetTypeFeedNews {
+				fs.setMigrationMarker("feedNewsWidgetSeeded")
+				return
+			}
+		}
+	}
+	for _, page := range pages {
+		if page.Hidden {
+			continue
+		}
+		widgets, order := fs.GetPageBlocks(page.ID)
+		if len(widgets) < widgetMaxPerPage {
+			widgets = append(widgets, Widget{ID: defaultFeedNewsWidgetID, Type: WidgetTypeFeedNews, Config: map[string]any{}})
+			order = append(order, defaultFeedNewsWidgetID)
+			if err := fs.SavePageBlocks(page.ID, widgets, order); err != nil {
+				return // unmarked: the next start tries again
+			}
+		}
+		break
+	}
+	fs.setMigrationMarker("feedNewsWidgetSeeded")
 }
 
 /*
@@ -3739,7 +3810,7 @@ var bmViewChoices = map[string][]string{
 	"keyLegend":   {"below", "above", "off"},
 }
 
-var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "score"}
+var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "news", "score"}
 var bmViewRailBlocks = []string{"views", "health", "pages", "tags"}
 
 // bmViewChoice keeps a value the view knows, or its default.
@@ -4080,11 +4151,6 @@ func (fs *FileStore) GetPageOrder() []int {
 	return clonePageOrder(order)
 }
 
-func (fs *FileStore) getPageOrder() []int {
-	order, _ := fs.readPageOrder()
-	return order
-}
-
 // readPageOrder reads pages.json. The error is non-nil only when the file
 // exists but could not be read or parsed: a missing file is a normal empty
 // order, while a failed read must not be answered by writing a default order
@@ -4106,6 +4172,29 @@ func (fs *FileStore) readPageOrder() ([]int, error) {
 	}
 
 	return pageOrder.Order, nil
+}
+
+// RemoveFromPageOrder drops one page from the order in a single locked read
+// and write. A pages.json that cannot be read is returned as an error rather
+// than answered with an empty order written over the real one.
+func (fs *FileStore) RemoveFromPageOrder(pageID int) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	order, err := fs.readPageOrder()
+	if err != nil {
+		return err
+	}
+	next := make([]int, 0, len(order))
+	for _, id := range order {
+		if id != pageID {
+			next = append(next, id)
+		}
+	}
+	if len(next) == len(order) {
+		return nil
+	}
+	return fs.savePageOrder(next)
 }
 
 func (fs *FileStore) SavePageOrder(order []int) error {
@@ -4380,8 +4469,15 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 		return err
 	}
 
-	// Put the tab back where it was rather than at the end.
-	order := fs.getPageOrder()
+	// Put the tab back where it was rather than at the end. An unreadable
+	// pages.json is left alone: writing [id] over it would lose every other
+	// tab's place, and a page missing from the order is listed at the end.
+	order, orderErr := fs.readPageOrder()
+	if orderErr != nil {
+		logWarn("trash", "RestorePage: page %d is back but pages.json could not be read, so its place was not saved: %v", snapshot.Page.ID, orderErr)
+		fs.noteDataMutation(0)
+		return nil
+	}
 	for _, id := range order {
 		if id == snapshot.Page.ID {
 			fs.noteDataMutation(0)
@@ -4406,7 +4502,12 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	return nil
 }
 
+// GetSettings returns a copy the caller may change freely; see cloneSettings.
 func (fs *FileStore) GetSettings() Settings {
+	return cloneSettings(fs.getSettingsShared())
+}
+
+func (fs *FileStore) getSettingsShared() Settings {
 	fs.mutex.RLock()
 	if fs.readCache.settingsOK {
 		settings := fs.readCache.settings
@@ -4424,6 +4525,10 @@ func (fs *FileStore) GetSettings() Settings {
 	fs.ensureDataDir()
 
 	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil && !os.IsNotExist(err) && fs.lastGoodSettingsOK {
+		// Not cached: the next read tries the file again.
+		return fs.lastGoodSettings
+	}
 	if err != nil {
 		// Return default settings if file doesn't exist
 		settings := Settings{
@@ -4473,6 +4578,14 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowSearchFlowBanner:            true,
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
+			PushNotifyNews:                  true,
+			HideToastsMobile:                true,
+			HideCornerCardsMobile:           true,
+			ShowFeedWatchIcon:               true,
+			FeedWatchWindowMinutes:          30,
+			FeedWatchNewsView:               "paper",
+			FeedStatsEnabled:                true,
+			FeedStatsKeepDays:               90,
 			ShowThemeStudioButton:           true,
 			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
@@ -4548,7 +4661,6 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartRecentPageIds:              []int{},
 			SmartStalePageIds:               []int{},
 			SmartAddedPageIds:               []int{},
-			SmartFreshPageIds:               []int{},
 			SmartAddedLimit:                 20,
 			RowTagsMax:                      2,
 			FaviconRefreshPolicy:            "on-save",
@@ -4632,6 +4744,7 @@ func (fs *FileStore) GetSettings() Settings {
 			DigestUpdates:                   true,
 			DigestUsage:                     true,
 			DigestNews:                      true,
+			DigestFeeds:                     true,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
@@ -4651,13 +4764,20 @@ func (fs *FileStore) GetSettings() Settings {
 		clampBookmarkViewSettings(&settings)
 		clampInboxViewSettings(&settings)
 		clampNotesProcessing(&settings)
-		fs.readCache.settings = settings
-		fs.readCache.settingsOK = true
+		// Only a missing file is a fresh install. Defaults for an unreadable
+		// one are an answer for now, not one to keep.
+		if os.IsNotExist(err) {
+			fs.readCache.settings = settings
+			fs.readCache.settingsOK = true
+		}
 		return settings
 	}
 
 	var settings Settings
-	json.Unmarshal(data, &settings)
+	decodeErr := json.Unmarshal(data, &settings)
+	if decodeErr != nil && fs.lastGoodSettingsOK {
+		return fs.lastGoodSettings
+	}
 	// An install from before the setting, or one holding a style since
 	// dropped, has no animation -- except one that had v1.18.3's on/off
 	// switch on, which keeps the swell that switch played.
@@ -4688,6 +4808,38 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["showThemeStudioButton"]; !ok {
 			settings.ShowThemeStudioButton = true
 		}
+		// On unless turned off: it only fires when push is on and a feed is watched.
+		if _, ok := rawSettings["pushNotifyNews"]; !ok {
+			settings.PushNotifyNews = true
+		}
+		// On unless turned off: a phone is quiet by default, errors still show.
+		if _, ok := rawSettings["hideToastsMobile"]; !ok {
+			settings.HideToastsMobile = true
+		}
+		if _, ok := rawSettings["hideCornerCardsMobile"]; !ok {
+			settings.HideCornerCardsMobile = true
+		}
+		// On unless turned off: a watched bookmark is recognisable without news.
+		if _, ok := rawSettings["showFeedWatchIcon"]; !ok {
+			settings.ShowFeedWatchIcon = true
+		}
+		switch settings.FeedWatchWindowMinutes {
+		case 15, 30, 60, 120:
+		default:
+			settings.FeedWatchWindowMinutes = 30
+		}
+		switch settings.FeedWatchNewsView {
+		case "single", "wide", "paper":
+		default:
+			settings.FeedWatchNewsView = "paper"
+		}
+		// On unless turned off: counting what watched feeds do costs a small file.
+		if _, ok := rawSettings["feedStatsEnabled"]; !ok {
+			settings.FeedStatsEnabled = true
+		}
+		if !validFeedStatsKeepDays(settings.FeedStatsKeepDays) {
+			settings.FeedStatsKeepDays = 90
+		}
 		// The Bookmarks view's switches that are on unless turned off: a file
 		// written before they existed never answered.
 		for key, field := range map[string]*bool{
@@ -4713,6 +4865,7 @@ func (fs *FileStore) GetSettings() Settings {
 			"digestUpdates": &settings.DigestUpdates,
 			"digestUsage":   &settings.DigestUsage,
 			"digestNews":    &settings.DigestNews,
+			"digestFeeds":   &settings.DigestFeeds,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true
@@ -5003,9 +5156,6 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["smartAddedPageIds"]; !ok || settings.SmartAddedPageIds == nil {
 			settings.SmartAddedPageIds = []int{}
-		}
-		if _, ok := rawSettings["smartFreshPageIds"]; !ok || settings.SmartFreshPageIds == nil {
-			settings.SmartFreshPageIds = []int{}
 		}
 		if _, ok := rawSettings["faviconRefreshPolicy"]; !ok || (settings.FaviconRefreshPolicy != "manual" && settings.FaviconRefreshPolicy != "on-save") {
 			settings.FaviconRefreshPolicy = "on-save"
@@ -5632,8 +5782,15 @@ func (fs *FileStore) GetSettings() Settings {
 	clampInboxViewSettings(&settings)
 	clampNotesProcessing(&settings)
 
+	// A file that does not decode, with nothing good read before it, still
+	// answers with what it could give -- but is not kept, so the next read
+	// tries the file again instead of serving the half-read one until restart.
+	if decodeErr != nil {
+		return settings
+	}
 	fs.readCache.settings = settings
 	fs.readCache.settingsOK = true
+	fs.lastGoodSettings, fs.lastGoodSettingsOK = settings, true
 	return settings
 }
 
@@ -5665,6 +5822,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.PreviewImagesStrippedMigrated = settings.PreviewImagesStrippedMigrated || stored.PreviewImagesStrippedMigrated
 			settings.CustomPercentGuessMigrated = settings.CustomPercentGuessMigrated || stored.CustomPercentGuessMigrated
 			settings.NotesWidgetSeeded = settings.NotesWidgetSeeded || stored.NotesWidgetSeeded
+			settings.FeedNewsWidgetSeeded = settings.FeedNewsWidgetSeeded || stored.FeedNewsWidgetSeeded
 			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
 			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
@@ -6917,6 +7075,9 @@ type BookmarkHealthReport struct {
 	// domain expiry is switched off.
 	Domains       map[string]HostDomain `json:"domains,omitempty"`
 	DomainSummary DomainSummary         `json:"domainSummary"`
+	// NetworkDown is set while this server looks offline and its failed checks
+	// are being held back instead of recorded.
+	NetworkDown *NetworkDownInfo `json:"networkDown,omitempty"`
 }
 
 // DomainSummary is the part of the domain picture that is not an expiry:
@@ -6987,8 +7148,13 @@ type HealthScanCacheFile struct {
 	// LastAutoRecheck is when the background recheck scheduler last completed a run
 	// (Unix ms). Persisted so "is a recheck due?" survives restarts, mirroring how
 	// auto-backup compares the newest backup's age rather than an in-process timer.
-	LastAutoRecheck int64                      `json:"lastAutoRecheck,omitempty"`
-	Cache           map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
+	LastAutoRecheck int64 `json:"lastAutoRecheck,omitempty"`
+	// NetworkDownSince / LastOfflineSweepAt (Unix ms) are set while sweeps look
+	// like this server has no connection (health_network_guard.go): their
+	// failures are held back rather than written onto bookmarks and history.
+	NetworkDownSince   int64                      `json:"networkDownSince,omitempty"`
+	LastOfflineSweepAt int64                      `json:"lastOfflineSweepAt,omitempty"`
+	Cache              map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
 	// Certificates seen while checking, keyed by host. Lives here rather than in
 	// its own file because it is written by the same pass that writes the cache
 	// and is worthless without it.
@@ -7075,6 +7241,9 @@ type HealthDay struct {
 	N int   `json:"n"`           // Checks counted (maintenance samples excluded, as in uptimeRatio)
 	U int   `json:"u"`           // How many of them succeeded
 	P int   `json:"p,omitempty"` // Mean response time in ms across the successful checks
+	// PN is how many checks P averages: the successful ones that had a ping.
+	// Absent in summaries written before it; those fall back to U.
+	PN int `json:"pn,omitempty"`
 }
 
 // HealthTrendPoint is one day's summary of the whole collection.

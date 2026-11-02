@@ -98,7 +98,13 @@ func unraidAPIKey(serverID string) string {
 func saveUnraidAPIKey(serverID, key string) error {
 	unraidSecretsMu.Lock()
 	defer unraidSecretsMu.Unlock()
-	secrets := readUnraidSecrets()
+	var secrets unraidSecrets
+	if err := readJSONForWrite(unraidSecretsFilePath(), &secrets); err != nil {
+		return err
+	}
+	if secrets.Keys == nil {
+		secrets.Keys = map[string]string{}
+	}
 	key = strings.TrimSpace(key)
 	if key == "" {
 		delete(secrets.Keys, serverID)

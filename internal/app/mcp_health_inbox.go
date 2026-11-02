@@ -3,6 +3,8 @@ package app
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -38,16 +40,26 @@ func mcpHealthInboxDefinitions() []map[string]any {
 			"name":        "get_health_summary",
 			"annotations": mcpAnnotations(true, false),
 			"description": "Counts from the last link checks: how many bookmarks have been checked, how many were up and how many down, " +
-				"how many certificates are close to expiring, and how many inbox links are unread. " +
-				"Does not run a check; it reports what the most recent one found. Use list_health_issues for which ones.",
+				"how many certificates are close to expiring, how many inbox links are unread, the average health score (0-100) and how many bookmarks fall in each score range. " +
+				"Does not run a check; it reports what the most recent one found. Use list_health_issues for which ones, get_stats for the whole picture.",
 			"inputSchema": map[string]any{"type": "object", "properties": map[string]any{}},
 		},
 		{
 			"name":        "list_health_issues",
 			"annotations": mcpAnnotations(true, false),
-			"description": "Bookmarks that are down right now or whose certificate is due to expire, with their page, category and since when they have been failing. " +
-				"Does not run a check. Bookmarks that are merely stale or unused are not listed.",
-			"inputSchema": limitSchema,
+			"description": "Bookmarks that are down right now or whose certificate is due to expire, with their page, category, since when they have been failing, health score, reasons and flags. " +
+				"With flag or max_score set it looks at every bookmark instead, for example flag duplicate, or max_score 50 with sort score for the worst ones. " +
+				"total is the exact count before limit. Does not run a check. For richer filters use query_bookmarks.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"limit":     limitProp,
+					"status":    map[string]any{"type": "string", "enum": []string{"down", "certificate_due"}, "description": "Only the down ones, or only those with a certificate due."},
+					"max_score": map[string]any{"type": "integer", "description": "Only bookmarks scoring at most this (0-100)."},
+					"flag":      map[string]any{"type": "string", "enum": mcpHealthFlagNames(), "description": "Only bookmarks the report flags with this condition."},
+					"sort":      map[string]any{"type": "string", "enum": []string{"score", "since", "name"}, "description": "score: lowest first; since: longest failing first; name: A to Z. Defaults to the report's order."},
+				},
+			},
 		},
 		{
 			"name":        "list_inbox",
@@ -154,32 +166,79 @@ func (h *Handlers) mcpHealthSummary(r *http.Request) map[string]any {
 		"down":             down,
 		"certificates_due": len(report.Certificates),
 		"inbox_unread":     len(unread),
+		"avg_score":        averageHealthScore(report.Issues),
+		"score_buckets":    mcpScoreBuckets(report.Issues),
 	}
 }
 
 func (h *Handlers) mcpHealthIssues(r *http.Request, args json.RawMessage) map[string]any {
 	var body struct {
-		Limit int `json:"limit"`
+		Limit    int    `json:"limit"`
+		Status   string `json:"status"`
+		MaxScore *int   `json:"max_score"`
+		Flag     string `json:"flag"`
+		Sort     string `json:"sort"`
 	}
 	_ = json.Unmarshal(args, &body)
 	limit := clampLimit(body.Limit, mcpListDefaultLimit, mcpListMaxLimit)
+	body.Status = strings.ToLower(strings.TrimSpace(body.Status))
+	body.Flag = strings.ToLower(strings.TrimSpace(body.Flag))
+	body.Sort = strings.ToLower(strings.TrimSpace(body.Sort))
+	if body.Status != "" && !mcpOneOf(body.Status, "down", "certificate_due") {
+		return mcpRefuseValue("status", body.Status, []string{"down", "certificate_due"})
+	}
+	if body.Flag != "" && !mcpOneOf(body.Flag, mcpHealthFlagNames()...) {
+		return mcpRefuseValue("flag", body.Flag, mcpHealthFlagNames())
+	}
+	if body.Sort != "" && !mcpOneOf(body.Sort, "score", "since", "name") {
+		return mcpRefuseValue("sort", body.Sort, []string{"score", "since", "name"})
+	}
 
 	report, failure := h.mcpHealthReport(r)
 	if failure != nil {
 		return failure
 	}
-	issues := []map[string]any{}
-	total := 0
+	// Without flag or max_score the list is what it always was: down, or a
+	// certificate due. Either of those asks about every bookmark instead.
+	everyone := body.Flag != "" || body.MaxScore != nil
+	var picked []HealthIssue
 	for _, issue := range report.Issues {
 		down := mcpIssueDown(issue)
 		certDue := mcpIssueCertDue(report, issue)
-		if !down && !certDue {
+		if !everyone && !down && !certDue {
 			continue
 		}
-		total++
+		if body.Status == "down" && !down || body.Status == "certificate_due" && !certDue {
+			continue
+		}
+		if body.Flag != "" && !mcpHasFlag(issue, body.Flag) {
+			continue
+		}
+		if body.MaxScore != nil && issue.Score > *body.MaxScore {
+			continue
+		}
+		picked = append(picked, issue)
+	}
+	switch body.Sort {
+	case "score":
+		sort.SliceStable(picked, func(i, j int) bool { return picked[i].Score < picked[j].Score })
+	case "name":
+		sort.SliceStable(picked, func(i, j int) bool { return strings.ToLower(picked[i].Name) < strings.ToLower(picked[j].Name) })
+	case "since":
+		sort.SliceStable(picked, func(i, j int) bool {
+			a, b := picked[i].BrokenSince, picked[j].BrokenSince
+			if (a == 0) != (b == 0) {
+				return a != 0
+			}
+			return a < b
+		})
+	}
+	issues := []map[string]any{}
+	for _, issue := range picked {
 		if len(issues) >= limit {
-			continue
+			break
 		}
+		down := mcpIssueDown(issue)
 		status := "up"
 		if down {
 			status = "down"
@@ -188,6 +247,10 @@ func (h *Handlers) mcpHealthIssues(r *http.Request, args json.RawMessage) map[st
 		if issue.Category != "" {
 			category = categoryNameForID(h.store, issue.PageID, issue.Category)
 		}
+		flags := issue.Flags
+		if flags == nil {
+			flags = []string{}
+		}
 		issues = append(issues, map[string]any{
 			"name":            issue.Name,
 			"url":             issue.URL,
@@ -195,10 +258,13 @@ func (h *Handlers) mcpHealthIssues(r *http.Request, args json.RawMessage) map[st
 			"category":        category,
 			"status":          status,
 			"since":           mcpTimestamp(issue.BrokenSince),
-			"certificate_due": certDue,
+			"certificate_due": mcpIssueCertDue(report, issue),
+			"score":           issue.Score,
+			"reasons":         mcpSafeReasons(issue),
+			"flags":           flags,
 		})
 	}
-	return map[string]any{"issues": issues, "truncated": total > len(issues)}
+	return map[string]any{"issues": issues, "total": len(picked), "truncated": len(picked) > len(issues)}
 }
 
 func (h *Handlers) mcpListInbox(r *http.Request, args json.RawMessage) map[string]any {

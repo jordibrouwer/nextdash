@@ -54,6 +54,7 @@
         weather: { big: '14°', rows: [['rain', '30%']] },
         calendar: { rows: [['09:30', 'Stand-up'], ['14:00', 'Dentist']] },
         rss: { rows: [['Release 2.4 is out', ''], ['A note on caching', '']] },
+        'feed-news': { rows: [['Changelog', '3 new', 'good'], ['Release 2.4 is out', '']] },
         notes: { rows: [['☑ renew domain', ''], ['☐ swap disk', '']] },
         jellyfin: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },
         emby: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },

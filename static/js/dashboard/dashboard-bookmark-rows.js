@@ -648,7 +648,7 @@ class DashboardBookmarkRows {
 
         this.ensureBookmarkOpenDelegation();
 
-        if (d.settings.openInNewTab) {
+        if (window.opensInNewTab(d.settings)) {
             openLink.target = '_blank';
             openLink.rel = 'noopener noreferrer';
         }
@@ -748,38 +748,47 @@ class DashboardBookmarkRows {
             row.appendChild(openCountBadge);
         }
 
-        // What the page has published since this row was last opened. Quiet by
-        // design: a count, no colour of its own, and absent entirely when there
-        // is nothing new or when feed polling is off.
-        const fresh = d.feeds?.freshFor(bookmark) || null;
-        // A row whose page publishes but has nothing new, when the reader has
-        // asked to see those: a dot rather than a number, because there is
-        // nothing to count. Off by default — see feedsMarkQuiet.
-        const quiet = !fresh && d.settings?.feedsMarkQuiet === true
-            && d.feeds?.hasFeed?.(bookmark) === true;
-        if (fresh || quiet) {
-            const freshBadge = document.createElement('span');
-            freshBadge.className = 'bookmark-fresh-badge bookmark-superscript-badge';
-            if (fresh) {
-                const count = Number(fresh.newCount) || 0;
-                freshBadge.textContent = count > 99 ? '99+' : String(count);
-                const label = count === 1
-                    ? d.formatDashboardLabel('feedOneNew', {}, '1 new since you last opened this')
-                    : d.formatDashboardLabel('feedManyNew', { count }, `${count} new since you last opened this`);
-                freshBadge.title = label;
-                freshBadge.setAttribute('aria-label', label);
-            } else {
-                freshBadge.classList.add('is-quiet');
-                freshBadge.textContent = '·';
-                const label = d.formatDashboardLabel('feedQuietMark', {},
-                    'Publishes a feed — nothing new since you last opened this');
-                freshBadge.title = label;
-                freshBadge.setAttribute('aria-label', label);
+        // News from a feed the reader chose to watch: a count in the theme's
+        // accent, a stripe, a bold name and the newest headline while the news
+        // window is open. Once it has closed the row is plain again; the
+        // news itself stays until the bookmark is opened.
+        const news = d.feedWatch?.newsFor?.(bookmark) || null;
+        const newsPhase = news ? d.feedWatch.windowPhase() : 'none';
+        const showNews = Boolean(news) && (newsPhase === 'open' || newsPhase === 'pending');
+        if (showNews) {
+            row.classList.add('has-feed-news');
+            if (news.muted) row.classList.add('is-feed-muted');
+            const newsBadge = document.createElement('span');
+            newsBadge.className = 'bookmark-news-badge bookmark-superscript-badge';
+            // A muted feed still counts, but does not pulse.
+            if (news.muted) newsBadge.classList.add('is-muted');
+            newsBadge.textContent = news.newCount > 99 ? '99+' : String(news.newCount);
+            const newsLabel = d.formatDashboardLabel('feedWatchBadge', { count: news.newCount },
+                `${news.newCount} new from a watched feed`);
+            newsBadge.title = newsLabel;
+            newsBadge.setAttribute('aria-label', newsLabel);
+            newsBadge.setAttribute('role', 'img');
+            // On a touch screen the badge opens the headlines instead of the site.
+            window.FeedWatchPopover?.attach(newsBadge, bookmark, openLink);
+            openLink.appendChild(newsBadge);
+            // The newest headline under the name; the badge already says how many,
+            // so a screen reader skips it. CSS drops it where there is no room.
+            const headline = String(news.newest?.title || '').trim();
+            if (headline) {
+                const newsLine = document.createElement('span');
+                newsLine.className = 'bookmark-news-line';
+                newsLine.setAttribute('aria-hidden', 'true');
+                newsLine.textContent = headline;
+                openLink.classList.add('has-news-line');
+                openLink.appendChild(newsLine);
             }
-            freshBadge.setAttribute('role', 'img');
-            openLink.appendChild(freshBadge);
         }
-
+        // A watched bookmark without news says so with a small feed glyph after
+        // its name; with news the badge takes that place.
+        if (!showNews && d.settings.showFeedWatchIcon !== false) {
+            const icon = this.feedWatchIcon(bookmark);
+            if (icon) textSpan.after(icon);
+        }
         /*
          * A row that plays something says so.
          *
@@ -857,6 +866,61 @@ class DashboardBookmarkRows {
     }
 
 
+    /**
+     * The feed glyph for a watched row, or null: a dot and two arcs in the
+     * secondary text colour. Muted gets a strike, a feed that stopped or fails
+     * gets a warning dot. It only informs, so the row's own taps stay as they are.
+     */
+    feedWatchIcon(bookmark) {
+        const info = this.dash.feedWatch?.rowIconFor?.(bookmark);
+        if (!info) return null;
+        const NS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 12 12');
+        svg.setAttribute('width', '12');
+        svg.setAttribute('height', '12');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        const add = (tag, attrs) => {
+            const el = document.createElementNS(NS, tag);
+            Object.keys(attrs).forEach((k) => el.setAttribute(k, attrs[k]));
+            svg.appendChild(el);
+        };
+        add('circle', { cx: '2.4', cy: '9.6', r: '1.2', fill: 'currentColor', stroke: 'none' });
+        add('path', { d: 'M1.2 5.2a5.6 5.6 0 0 1 5.6 5.6' });
+        add('path', { d: 'M1.2 1.4a9.4 9.4 0 0 1 9.4 9.4' });
+        if (info.state === 'muted') add('path', { d: 'M1 11L11 1', class: 'bookmark-feed-icon-strike' });
+        const wrap = document.createElement('span');
+        wrap.className = `bookmark-feed-icon is-${info.state}`;
+        wrap.setAttribute('role', 'img');
+        wrap.setAttribute('aria-label', info.label);
+        wrap.title = info.label;
+        wrap.appendChild(svg);
+        if (info.state === 'unhealthy') {
+            const dot = document.createElement('span');
+            dot.className = 'bookmark-feed-icon-dot';
+            wrap.appendChild(dot);
+        }
+        return wrap;
+    }
+
+    /**
+     * What the watched-news marks on a row depend on: the count, the newest
+     * item (a sixth arrival keeps the count at five), the window and whether
+     * this is a touch screen. Only rows with news pay for the window lookup.
+     */
+    feedWatchFingerprint(bookmark) {
+        const watch = this.dash.feedWatch;
+        const news = watch?.newsFor?.(bookmark);
+        if (!news) {
+            // The feed glyph shows what the row knows about the watch.
+            const icon = this.dash.settings?.showFeedWatchIcon !== false ? watch?.rowIconFor?.(bookmark) : null;
+            return icon ? `i:${icon.label}` : '0';
+        }
+        const touch = window.FeedWatchPopover?.isTouch?.() ? 't' : 'd';
+        return `${news.newCount}:${news.newest?.id || ''}:${watch.windowPhase()}:${touch}`;
+    }
+
     bookmarkRenderFingerprint(bookmark) {
         if (!bookmark) {
             return '';
@@ -884,11 +948,10 @@ class DashboardBookmarkRows {
             String(bookmark.note || '').trim(),
             (bookmark.tags || []).join(','),
             String(bookmark.openCount || 0),
-            // The count on the row is part of what was drawn, so a row whose
-            // feed reported something new — or whose badge was cleared by
-            // opening it — has to be redrawn by the incremental renderer.
-            String(this.dash.feeds?.freshFor(bookmark)?.newCount || 0),
-            this.dash.settings?.feedsMarkQuiet === true && this.dash.feeds?.hasFeed?.(bookmark) ? 'q' : '',
+            // Watched news is drawn on the row, and so is the window it sits in; a
+            // row whose count changed or was cleared by opening it has to be
+            // redrawn by the incremental renderer.
+            this.feedWatchFingerprint(bookmark),
             showIcons,
             iconStylingKey,
         ].join('\u0001');
@@ -1243,7 +1306,7 @@ class DashboardBookmarkRows {
         meta.textContent = bookmark.category || d.configLabel('noCategory', 'No category');
         link.appendChild(meta);
 
-        if (d.settings.openInNewTab) {
+        if (window.opensInNewTab(d.settings)) {
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
         }

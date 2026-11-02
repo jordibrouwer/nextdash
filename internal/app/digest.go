@@ -72,14 +72,19 @@ func (h *Handlers) collectDigestInput(now time.Time) digestInput {
 	for _, link := range inbox {
 		inboxAddedAt = append(inboxAddedAt, link.AddedAt)
 	}
+	bookmarks := h.store.GetAllBookmarks()
+	feedWatchMu.Lock()
+	feeds := readFeedWatchFile().Watches
+	feedWatchMu.Unlock()
 	return digestInput{
+		Feeds:           feeds,
 		Samples:         history.Samples,
 		Days:            history.Days,
 		InboxAddedAt:    inboxAddedAt,
 		Now:             now,
 		Settings:        settings,
 		Issues:          report.Issues,
-		Bookmarks:       h.store.GetAllBookmarks(),
+		Bookmarks:       bookmarks,
 		InboxCount:      len(inbox),
 		Updates:         h.dockerUpdateSnapshot(),
 		CertsExpiring:   digestCertLines(report.Certificates, now),

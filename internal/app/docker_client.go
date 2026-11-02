@@ -466,30 +466,39 @@ func (d *dockerAPI) logsTail(ctx context.Context, id string, tail int) ([]string
 		return nil, err
 	}
 	defer resp.Body.Close()
-	// The daemon sends the tail oldest first. Cut at 2 MiB on the way in, long
-	// lines lost the newest ones -- the reason the tab was opened. Read more,
-	// then keep the last 2 MiB of text.
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 16<<20))
-	if err != nil {
+	// The daemon sends the tail oldest first, so the newest lines are the end
+	// of the stream. Read all of it -- demultiplexed as it arrives, keeping only
+	// the last 2 MiB of text -- rather than cutting the stream at a size: a cut
+	// from the head dropped exactly the lines the tab was opened for.
+	const keep = 2 << 20
+	text := &tailBuffer{max: keep}
+	reader := bufio.NewReader(resp.Body)
+	if head, err := reader.Peek(8); err == nil && head[0] <= 2 && head[1] == 0 && head[2] == 0 && head[3] == 0 {
+		var header [8]byte
+		for {
+			if _, err := io.ReadFull(reader, header[:]); err != nil {
+				if err == io.EOF || err == io.ErrUnexpectedEOF {
+					break
+				}
+				return nil, err
+			}
+			size := int64(binary.BigEndian.Uint32(header[4:8]))
+			if _, err := io.CopyN(text, reader, size); err != nil {
+				if err == io.EOF || err == io.ErrUnexpectedEOF {
+					break
+				}
+				return nil, err
+			}
+		}
+	} else if _, err := io.Copy(text, reader); err != nil {
 		return nil, err
 	}
-	var text bytes.Buffer
-	if len(body) >= 8 && body[0] <= 2 && body[1] == 0 && body[2] == 0 && body[3] == 0 {
-		for len(body) >= 8 {
-			size := int(binary.BigEndian.Uint32(body[4:8]))
-			body = body[8:]
-			if size > len(body) {
-				size = len(body)
-			}
-			text.Write(body[:size])
-			body = body[size:]
-		}
-	} else {
-		text.Write(body)
+	out := text.buf
+	if len(out) > keep {
+		out = out[len(out)-keep:]
+		text.cut = true
 	}
-	out := text.Bytes()
-	if len(out) > 2<<20 {
-		out = out[len(out)-2<<20:]
+	if text.cut {
 		// From the first whole line on.
 		if i := bytes.IndexByte(out, '\n'); i >= 0 {
 			out = out[i+1:]
@@ -500,6 +509,22 @@ func (d *dockerAPI) logsTail(ctx context.Context, id string, tail int) ([]string
 		return []string{}, nil
 	}
 	return lines, nil
+}
+
+// tailBuffer keeps the last max bytes written to it.
+type tailBuffer struct {
+	buf []byte
+	max int
+	cut bool
+}
+
+func (t *tailBuffer) Write(p []byte) (int, error) {
+	t.buf = append(t.buf, p...)
+	if len(t.buf) > 2*t.max {
+		t.buf = append(t.buf[:0:0], t.buf[len(t.buf)-t.max:]...)
+		t.cut = true
+	}
+	return len(p), nil
 }
 
 // splitImageTag separates "repo:tag" without mistaking a registry port for a

@@ -180,8 +180,10 @@ class SearchFindersComponent {
     openFinder(finder, searchText) {
         let url = finder.searchUrl;
         
-        // Convert search text to lowercase before encoding
-        const processedText = searchText.toLowerCase();
+        // Kept as typed, as the preview URL shows it: a YouTube id or a
+        // GitHub path is case-sensitive, and lowercasing it opened the wrong
+        // page. Search engines ignore case anyway.
+        const processedText = searchText;
         
         if (url.includes('%s')) {
             // Replace %s placeholder with encoded search text
@@ -195,7 +197,7 @@ class SearchFindersComponent {
         const link = document.createElement('a');
         link.href = url;
         link.style.display = 'none'; // Hide the link
-        if (this.settings.openInNewTab) {
+        if (window.opensInNewTab(this.settings)) {
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
         } else {

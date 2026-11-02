@@ -110,6 +110,9 @@ async function autoFetchExtensionUrlMeta() {
         // Not stored yet: an icon file uploaded here was left behind by every
         // popup that closed without saving.
         const extras = await fetchBookmarkExtras(extServerUrl, normalized, { uploadIcon: false });
+        // The URL changed while this was asked: a late answer for the old one
+        // would hand its favicon to the new bookmark.
+        if (BookmarkUrlUtils.ensureHttpUrl(urlInput.value) !== normalized) return;
         extDraftState.iconSource = extras.iconSource || '';
         if (extras.previewTitle) extDraftState.previewTitle = extras.previewTitle;
         if (extras.previewDesc) extDraftState.previewDesc = extras.previewDesc;
@@ -381,18 +384,30 @@ async function loadSettings() {
     if (allowCheckbox) allowCheckbox.checked = extAllowDuplicateUrls;
 }
 
+// Whether the form was filled from the active tab. A trip to Settings and back
+// re-ran the fill and replaced a name the reader had typed; now only the
+// first visit fills it, and later ones just reload the pages.
+let saveTabFilled = false;
+
 async function loadSaveTab() {
     try {
         const settings = await chrome.storage.sync.get(['serverUrl']);
         extServerUrl = settings.serverUrl || '';
         if (!extFormPreview) initExtensionPreview();
 
+        if (saveTabFilled) {
+            await loadPages();
+            return;
+        }
+        // No tab can come back (a detached or devtools window): an empty form
+        // still loads the pages instead of throwing before them.
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        document.getElementById('bookmark-name').value = tab.title || '';
-        document.getElementById('bookmark-url').value = tab.url || '';
+        document.getElementById('bookmark-name').value = tab?.title || '';
+        document.getElementById('bookmark-url').value = tab?.url || '';
         extDraftState = { icon: '', iconSource: '', previewTitle: '', previewDesc: '', previewImage: '' };
         extDuplicateAcknowledged = false;
-        updateUrlGuard(tab.url || '');
+        updateUrlGuard(tab?.url || '');
+        saveTabFilled = true;
         await loadPages();
         void autoFetchExtensionUrlMeta();
     } catch (error) {

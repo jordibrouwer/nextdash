@@ -9,7 +9,7 @@ import "strings"
 // missing here is stripped out of the reader's stored list on every save. That
 // is what happened to the byline and the player -- both were added to the card
 // and to the checklist, never here, so nobody could keep them switched on.
-var linkPreviewParts = []string{"image", "byline", "embed", "description", "note", "tags", "status", "opens", "fresh", "location"}
+var linkPreviewParts = []string{"image", "byline", "embed", "description", "note", "tags", "status", "opens", "location"}
 
 // linkPreviewPartsAddedLater is what this list gained after readers had
 // already saved a checklist. A row that did not exist cannot have been

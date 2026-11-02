@@ -216,6 +216,7 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	extendWriteDeadline(w, sourceRunTimeout+30*time.Second)
 	ctx, cancel := context.WithTimeout(r.Context(), sourceRunTimeout)
 	defer cancel()
 

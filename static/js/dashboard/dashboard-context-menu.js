@@ -306,6 +306,14 @@ class DashboardContextMenu {
                 icon: '→',
                 key: 'Shift+M',
             },
+            {
+                id: 'feed-watch',
+                label: d.feedWatch?.isWatched?.(bookmarkRef.bookmark)
+                    ? this.t('dashboard.feedWatchManage', 'Watching feed…')
+                    : this.t('dashboard.feedWatchStart', 'Watch this feed…'),
+                icon: '◎',
+                key: '#',
+            },
             ...(currentMode
                 ? [{
                     id: 'check-mode',
@@ -970,6 +978,9 @@ class DashboardContextMenu {
                 else void inbox.runClaimed(item.id, () => inbox.deleteItemWithUndo(item.id));
                 break;
             }
+            case 'feed-watch':
+                void window.FeedWatchPicker?.open({ bookmark });
+                break;
             case 'edit':
                 d.openBookmarkInlineEditor?.(row, bookmarkRef);
                 break;

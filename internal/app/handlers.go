@@ -42,9 +42,14 @@ type Handlers struct {
 	previewLoaded     bool
 	previewCacheDirty bool
 	healthCacheMu     sync.RWMutex
-	healthHistoryMu   sync.Mutex
-	healthTrendMu     sync.Mutex
-	healthReportMu    sync.RWMutex
+	// pingHook replaces the real check; tests only.
+	pingHook        func(ctx context.Context, urlStr string, expect expectation) PingResult
+	healthHistoryMu sync.Mutex
+	healthTrendMu   sync.Mutex
+	healthReportMu  sync.RWMutex
+	// pageDeleteMu makes a page delete's check, trash snapshot and removal one
+	// step: two deletes of one page at once each wrote a trash entry.
+	pageDeleteMu sync.Mutex
 	// One Docker action per container at a time, keyed by container id.
 	dockerBusy sync.Map
 	// App discovery (discovery.go): its state is loaded from data/discovery.json
@@ -55,6 +60,22 @@ type Handlers struct {
 	discovery        *discoveryState
 	discoveryRunning atomic.Bool
 	discoveryDocker  atomic.Bool
+	// recheckRetryPending is set while a held-back background re-check waits
+	// for its retry (health_recheck.go), so retries never stack.
+	recheckRetryPending atomic.Bool
+	recheckRunning      atomic.Bool
+	// startedAt is when this process built its handlers; the startup grace for
+	// bookmark health counts from it (health_startup_grace.go). Zero means no
+	// grace. clock replaces time.Now for that rule in tests.
+	startedAt   time.Time
+	graceWindow time.Duration
+	// graceRetryUsed: the scheduled re-check retries once for the grace
+	// (health_recheck.go). recheckAfter replaces time.AfterFunc in tests.
+	graceRetryUsed atomic.Bool
+	recheckAfter   func(d time.Duration, f func())
+	clock          func() time.Time
+	graceMu        sync.Mutex
+	gracePending   map[string]graceEntry
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
@@ -93,6 +114,17 @@ const previewCacheTTLMs = int64(7 * 24 * 60 * 60 * 1000) // 7 days in ms
 func normalizeShortcut(shortcut string) string {
 	return strings.ToUpper(strings.TrimSpace(shortcut))
 }
+
+// extendWriteDeadline lets a handler that runs longer than the server's 60s
+// WriteTimeout still answer: past it the work finished but the response write
+// failed, and the reader saw a network error instead of the counts.
+func extendWriteDeadline(w http.ResponseWriter, d time.Duration) {
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(d))
+}
+
+// longImportDeadline bounds an import or a refresh of every preview, whose
+// length depends on the collection rather than on a timeout of its own.
+const longImportDeadline = 30 * time.Minute
 
 func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	if err == nil {
@@ -361,6 +393,11 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		files:             files,
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
+	}
+	// The startup grace for bookmark health; "0" in the environment turns it off.
+	if window := graceWindowFromEnv(os.Getenv("NEXTDASH_HEALTH_STARTUP_GRACE")); window > 0 {
+		h.startedAt = time.Now()
+		h.graceWindow = window
 	}
 	h.wireDockerSettings()
 	h.ensureHealthReportCond()
@@ -1216,6 +1253,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	} else {
 		report.DomainSummary = summarizeDomains(nil, false)
 	}
+	report.NetworkDown = networkDownFor(readHealthCacheFile())
 
 	return report
 }
@@ -1623,6 +1661,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		// showed where the URL already lives and the user said save it anyway.
 		// Never honoured within a single page — see the check below.
 		AllowDuplicate bool `json:"allowDuplicate"`
+		// MovedFrom is the address the row had before an edit that also moves
+		// it to another page. That row is still on its source page until the
+		// delete that follows, holding its shortcut under the old address.
+		MovedFrom string `json:"movedFrom"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1698,10 +1740,13 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		if request.AllowDuplicate && newKey != "" {
 			// A move from the dashboard is this add followed by a delete of the
 			// source row, which still holds the shortcut: it is not a conflict
-			// with itself.
+			// with itself. Under its old address too, when the same edit
+			// changed the URL.
+			movedKey := canonicalBookmarkURLKey(request.MovedFrom)
 			kept := others[:0:0]
 			for _, bm := range others {
-				if canonicalBookmarkURLKey(bm.URL) != newKey {
+				key := canonicalBookmarkURLKey(bm.URL)
+				if key != newKey && (movedKey == "" || key != movedKey) {
 					kept = append(kept, bm)
 				}
 			}
@@ -2072,6 +2117,7 @@ type ImportedRow struct {
 
 // importRows writes a batch onto a page and answers with the tally.
 func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int, rows []ImportedRow) {
+	extendWriteDeadline(w, longImportDeadline)
 	request := struct {
 		PageID    int
 		Bookmarks []ImportedRow
@@ -2446,6 +2492,8 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Cannot delete the unsorted page", http.StatusBadRequest)
 		return
 	}
+	h.pageDeleteMu.Lock()
+	defer h.pageDeleteMu.Unlock()
 	// A page already gone (deleted in another tab) left an empty page entry in
 	// the trash, which then blocked restoring the real one.
 	if !h.pageExists(pageID) {
@@ -2510,15 +2558,9 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the page order - remove the deleted page ID
-	order := h.store.GetPageOrder()
-	newOrder := make([]int, 0, len(order))
-	for _, id := range order {
-		if id != pageID {
-			newOrder = append(newOrder, id)
-		}
-	}
-	if !respondStorePersistError(w, h.store.SavePageOrder(newOrder)) {
+	// One locked read and write: an unreadable pages.json is an error here,
+	// not an empty order saved over every other tab's place.
+	if !respondStorePersistError(w, h.store.RemoveFromPageOrder(pageID)) {
 		return
 	}
 
@@ -4393,14 +4435,6 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 		}
 	}
 
-	// The page's own feed, if it advertises one. Recorded even when feed polling
-	// is switched off: reading it out of a <head> that has already been fetched
-	// costs nothing, and it means turning Fresh on later does not have to
-	// re-fetch every page before it can say anything.
-	if feedURL := extractFeedFromHTML(htmlBody); feedURL != "" {
-		recordDiscoveredFeed(rawURL, h.resolveRelativeURL(preview.URL, feedURL))
-	}
-
 	/*
 	 * What else the page says about itself.
 	 *
@@ -4618,6 +4652,7 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	if !h.requireSSRFAPIRateLimit(w, r) {
 		return
 	}
+	extendWriteDeadline(w, longImportDeadline)
 	w.Header().Set("Content-Type", "application/json")
 
 	/*
@@ -4666,9 +4701,11 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	if offset > total {
 		offset = total
 	}
-	end := offset + limit
-	if end > total {
-		end = total
+	// Compared before adding: a huge limit wrapped offset+limit negative,
+	// past the end check, and the slice below panicked.
+	end := total
+	if limit < total-offset {
+		end = offset + limit
 	}
 	slice := targets[offset:end]
 
@@ -4915,6 +4952,9 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 		if !respondBookmarkMutationError(w, err) {
 			return
 		}
+	} else if opened := firstNonEmpty(strings.TrimSpace(openedURL), bookmark.URL); opened != "" {
+		// Opening a watched bookmark reads its news.
+		h.recordBookmarkOpenReads(opened)
 	}
 
 	// Cached JS in an open tab, or the browser extension, may still be
@@ -5212,6 +5252,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		"results":          result.Results,
 		"skipped":          result.Skipped,
 		"skippedOverLimit": result.SkippedOverLimit,
+		"heldOffline":      result.HeldOffline,
+		"networkDown":      result.NetworkDown,
 		"tested":           result.Tested,
 		"scope":            map[bool]string{true: "all", false: "checked"}[includeFlagged],
 	})
@@ -5229,6 +5271,12 @@ type healthRetestResult struct {
 	OfflineCount     int
 	Skipped          int
 	SkippedOverLimit int
+	// HeldOffline counts failures not recorded because this server looked to
+	// have no connection; NetworkDown says the run looked that way.
+	HeldOffline int
+	NetworkDown bool
+	// HeldGrace counts first failures held back by the startup grace.
+	HeldGrace int
 }
 
 // runHealthRetest pings the eligible bookmarks once and persists their status,
@@ -5285,6 +5333,62 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 		}
 	}
 
+	/*
+	 * Every check first, then what to record.
+	 *
+	 * A run in which nearly every host failed to resolve or answer says more
+	 * about this server's connection than about the bookmarks (health_network_
+	 * guard.go). Its failures are held back whole: no status, no sample, no
+	 * recovery message, the previous state kept. Answers in the same run are
+	 * real and are recorded.
+	 */
+	sweepStart := time.Now()
+	graceStart := h.graceNow()
+	pinged := make(map[retestRef]PingResult)
+	var sweep []sweepHostResult
+	for _, page := range pages {
+		for bmIndex, bm := range pageBookmarks[page.ID] {
+			eligible := bm.CheckStatus || bm.Monitor || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
+			ref := retestRef{page.ID, bmIndex}
+			if !eligible || (withinCap != nil && !withinCap[ref]) || len(pinged) >= retestAllMaxBookmarks || ctx.Err() != nil {
+				continue
+			}
+			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
+			// Cancelled -- the page was left, or the scheduler's deadline hit --
+			// makes every check fail at once as "Unreachable". That says nothing
+			// about the bookmark and must not be saved as if it did.
+			if ctx.Err() != nil {
+				continue
+			}
+			pinged[ref] = result
+			if r, ok := sweepHostResultFor(bm.URL, result); ok {
+				sweep = append(sweep, r)
+			}
+		}
+	}
+	holdFailures := len(pinged) > 0 && h.networkGuard(sweep, sweepStart, time.Now(), true)
+	// The startup grace is for unattended runs only: Retest all is the user's
+	// own click and records at once. Decided once per URL (copies of a URL share
+	// the answer): held when any copy failed and the rule says so.
+	graceHeld := map[string]bool{}
+	if activitySource == healthAutoRecheckSource {
+		failedByKey := map[string]bool{}
+		for ref, result := range pinged {
+			key := canonicalBookmarkURLKey(pageBookmarks[ref.page][ref.index].URL)
+			if key == "" {
+				continue
+			}
+			if holdFailures && holdableFailure(pageBookmarks[ref.page][ref.index].URL, result.Status) {
+				continue // the guard has it
+			}
+			failedByKey[key] = failedByKey[key] || result.Status != "online"
+		}
+		for key, failed := range failedByKey {
+			graceHeld[key] = h.graceHold(key, failed, graceStart)
+		}
+	}
+	res.NetworkDown = holdFailures
+
 	for _, page := range pages {
 		bookmarks := pageBookmarks[page.ID]
 		type retestUpdate struct {
@@ -5303,17 +5407,17 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				res.Skipped++
 				continue
 			}
-			if (withinCap != nil && !withinCap[retestRef{page.ID, bmIndex}]) || res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
+			result, wasPinged := pinged[retestRef{page.ID, bmIndex}]
+			if !wasPinged {
 				res.SkippedOverLimit++
 				continue
 			}
-
-			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
-			// Cancelled -- the page was left, or the scheduler's deadline hit --
-			// makes every check fail at once as "Unreachable". That says nothing
-			// about the bookmark and must not be saved as if it did.
-			if ctx.Err() != nil {
-				res.SkippedOverLimit++
+			if holdFailures && holdableFailure(bm.URL, result.Status) {
+				res.HeldOffline++
+				continue
+			}
+			if result.Status != "online" && graceHeld[canonicalBookmarkURLKey(bm.URL)] {
+				res.HeldGrace++
 				continue
 			}
 			res.Tested++

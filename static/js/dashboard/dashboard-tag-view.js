@@ -422,7 +422,7 @@
             const icon = this.buildRowIcon(b);
             const link = this.el('a', 'tag-view-open');
             link.href = d.safeBookmarkOpenHref?.(b.url) || '#';
-            if (d.settings?.openInNewTab) {
+            if (window.opensInNewTab(d.settings)) {
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
             }
@@ -1174,7 +1174,7 @@
                         const href = d.safeBookmarkOpenHref?.(b.url);
                         if (!href || href === '#') return;
                         // Counted as the row's link counts it: opens, Last opened, Recent.
-                        const newTab = Boolean(d.settings?.openInNewTab);
+                        const newTab = window.opensInNewTab(d.settings);
                         d.recordBookmarkOpened?.(b, undefined, 'tag-view', 'mouse', { newTab });
                         window.open(href, newTab ? '_blank' : '_self', 'noopener');
                     }, true);

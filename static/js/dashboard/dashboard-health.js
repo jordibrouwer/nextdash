@@ -2659,12 +2659,19 @@ class DashboardHealth {
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             const tested = Number(body?.tested) || 0;
+            // Checks held back because this server has no connection are not
+            // "nothing to re-check": say what happened.
+            const held = body?.networkDown || Number(body?.heldOffline) > 0;
+            const downSince = Number(this.report?.networkDown?.since) || Date.now();
             d.showNotification(
-                tested > 0
+                held
+                    ? this.t('config.bmNetworkDown', 'No connection from this server since {time}. Checks are paused and nothing was marked broken.')
+                        .replace('{time}', new Date(downSince).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+                    : tested > 0
                     ? this.t('dashboard.healthRetestDone', 'Re-checked {count} bookmarks', { count: tested })
                     : this.t('dashboard.healthRetestNothing', 'Nothing to re-check'),
-                'success',
-                { duration: 3500 }
+                held ? 'info' : 'success',
+                { duration: held ? 6000 : 3500 }
             );
         } catch {
             d.showNotification(

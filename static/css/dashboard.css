@@ -1204,7 +1204,7 @@ body[data-show-theme-studio-button="false"] .header-shortcuts #theme-studio-butt
     width: 2.6rem;
     text-align: center;
     font-size: 1.1em;
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 0.4rem);
     color: var(--text-primary);
@@ -1215,7 +1215,7 @@ body[data-show-theme-studio-button="false"] .header-shortcuts #theme-studio-butt
 
 .page-tab-popover-name {
     flex: 1;
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 0.4rem);
     color: var(--text-primary);
@@ -2924,6 +2924,15 @@ body.is-moving-block-by-pointer { cursor: grabbing; }
     background: var(--action-btn-bg-hover);
 }
 
+/* The open menu hangs below its header, over the category under it. A category
+   with a surface (glass, ink) is a stacking context of its own, so the next one
+   in the column painted over the menu and took its clicks: lift the category
+   whose menu is open above its neighbours. */
+.category:has(.category-sort-menu) {
+    position: relative;
+    z-index: 20;
+}
+
 .category-sort-menu {
     position: absolute;
     top: calc(100% + 0.25em);
@@ -3480,20 +3489,6 @@ a.bookmark-open:hover {
 }
 
 .bookmark-open-count {
-    display: none;
-}
-
-/* "3 new" — what this page published since the row was last opened. It borrows
-   the superscript badge's shape and adds only a hint of the accent: it is worth
-   noticing on a scan and never worth reading first. */
-.bookmark-fresh-badge {
-    margin-left: 0.3em;
-    color: var(--accent-primary);
-    border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-secondary));
-    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
-}
-
-.bookmark-fresh-badge.is-empty {
     display: none;
 }
 
@@ -5965,7 +5960,7 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
     padding: var(--space-hairline, 0.15rem) var(--space-1-5, 0.35rem);
     border: 1px solid var(--border-secondary);
     border-radius: var(--radius-3, 0.3rem);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     font: inherit;
     text-align: center;
@@ -6176,16 +6171,6 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
 
 .category.grid-filter-open[data-collapsed="true"] .category-body > .bookmarks-list {
     opacity: 1;
-}
-
-/* "Publishes, but nothing new" — the quiet half of Fresh, off unless asked for.
-   A dot rather than a number, and dimmer than a count: it says this row takes
-   part, which is worth a glance and never worth reading. */
-.bookmark-fresh-badge.is-quiet {
-    color: color-mix(in srgb, var(--accent-primary) 55%, var(--text-tertiary));
-    border-color: var(--border-secondary);
-    background: transparent;
-    letter-spacing: 0;
 }
 
 /*
@@ -6501,35 +6486,6 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
     text-wrap: pretty;
 }
 
-/* The Retry on a stopped feed: a quiet text button at the end of its row. */
-.dashboard-widget-feeds-retry {
-    flex-shrink: 0;
-    margin-left: var(--space-2, 0.55rem);
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--text-secondary);
-    font: inherit;
-    font-size: var(--font-size-small);
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.dashboard-widget-feeds-retry:hover,
-.dashboard-widget-feeds-retry:focus-visible {
-    color: var(--text-primary);
-}
-
-.dashboard-widget-feeds-retry-all {
-    display: block;
-    margin: 0 0 var(--space-2, 0.55rem) auto;
-}
-
-.dashboard-widget-feeds-retry[disabled] {
-    opacity: 0.5;
-    cursor: default;
-}
-
 /* The notes widget: text, with tickable lines. */
 .dashboard-widget-note-lines {
     display: block;
@@ -6602,7 +6558,7 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
     padding: var(--space-2, 0.55rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 7px);
-    background: var(--background-secondary);
+    background: var(--field-fill, var(--background-secondary));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-small);
@@ -9706,6 +9662,27 @@ body[data-action-keys="off"] .header-action-item-key {
     background: var(--background-secondary);
     box-shadow: 0 4px 14px color-mix(in srgb, black 22%, transparent);
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.32rem);
+    white-space: nowrap;
+}
+
+/* display:flex above would otherwise win over the hidden attribute and leave the popover on screen. */
+.action-key-hint[hidden] {
+    display: none;
+}
+
+.action-key-hint-name {
+    padding: 0 var(--space-1, 0.25rem);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    line-height: 1.3;
+}
+
+.action-key-hint-name:empty {
+    display: none;
 }
 
 .action-key-hint kbd {

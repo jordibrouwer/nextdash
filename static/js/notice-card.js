@@ -31,6 +31,20 @@
  * a card about containers is for the Containers view, and would otherwise
  * never be shown, since every other view is held clear of interruptions.
  *
+ * A card may be shown as a toast instead of a corner card, with `toast: { ... }`
+ * on its spec: it keeps its gate, its delay and its place in the queue (so it
+ * still waits for a free moment), but it appears as one line of text and no
+ * button at all, so the message has to say where to go. A toast cannot be
+ * answered, so `toast.onShown` records what the corner card's x used to
+ * ("seen", or a snooze); the card's buttons are not offered.
+ *
+ *     toast: {
+ *         message: () => t('...', 'One line, with the key in it'),  // default: title + body
+ *         type: 'info',          // an AppNotification type; default 'info'
+ *         duration: 12000,       // ms; default 12000
+ *         onShown: () => markAnswered(),
+ *     }
+ *
  * The returned handle exposes render/autoStart/close for tests and for a manual
  * re-prompt from config, matching what the hand-written cards exposed.
  */
@@ -69,6 +83,9 @@
         // The public demo shows no corner cards: every visitor is new, and a
         // stack of invitations is not the product.
         if (global.DemoLock?.on) return false;
+        // Hide corner cards on phones. Nothing is marked as answered: the card
+        // is only not shown, so it comes back when the setting is turned off.
+        if (global.isPhoneDevice?.() && d.settings.hideCornerCardsMobile === true) return false;
         // An essential card reports something that already happened and offers
         // its undo; it is not an invitation, so the phone layout and an
         // unfinished onboarding do not hold it back.
@@ -150,7 +167,16 @@ canShow every time.
             // cornerIsFree anyway — stopping here says that on purpose rather
             // than by accident.
             for (const entry of [...queue]) {
-                if (await entry.tryShow()) {
+                // One card whose gate throws is skipped, not the end of the
+                // pass: thrown through, it also skipped the retry below and
+                // every card queued behind it waited for the next load.
+                let shown = false;
+                try {
+                    shown = await entry.tryShow();
+                } catch (err) {
+                    console.warn('notice card', entry.id, 'could not be shown', err);
+                }
+                if (shown) {
                     dequeue(entry.id);
                     break;
                 }
@@ -317,6 +343,11 @@ canShow every time.
         /** Put a failure on the card, where it stays until the user acts on it. */
         function showError(message) {
             const el = cardEl;
+            // A toast has no card to put the failure on: it becomes a toast of its own.
+            if (!el && spec.toast) {
+                dash()?.showNotification?.(message, 'error');
+                return;
+            }
             if (!el) return;
             let box = el.querySelector('.notice-card-error');
             if (!box) {
@@ -350,7 +381,22 @@ canShow every time.
         // that name rather than forcing a rename on every call site.
         const attr = spec.actionAttr || 'data-notice-action';
 
+        /** The card as a toast: one line of text, no button. */
+        function buildToast() {
+            const d = dash();
+            if (!d?.showNotification) return false;
+            const cfg = spec.toast === true ? {} : spec.toast;
+            const message = cfg.message ? text(cfg.message) : `${text(spec.title)} ${text(spec.body)}`.trim();
+            const options = { duration: cfg.duration ?? 12000 };
+            d.showNotification(message, cfg.type || 'info', options);
+            noteCardShown();
+            cfg.onShown?.(handle);
+            spec.onShown?.(handle);
+            return true;
+        }
+
         function build() {
+            if (spec.toast) return buildToast();
             const el = document.createElement('div');
             el.className = `quickstart-card notice-card ${cardClass}`;
             el.setAttribute('role', 'complementary');

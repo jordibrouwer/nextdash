@@ -43,6 +43,7 @@ type digestInput struct {
 	CertsExpiring   []string                      // "host (5 days)" lines, already formatted
 	DomainsExpiring []string                      // "domain (5 days)" lines, already formatted
 	Releases        []whatsNewRelease             // nextDash's own recent releases, newest first
+	Feeds           []FeedWatch                   // the watched feeds, muted ones too
 	// The week in figures. Samples and Days are the check history by URL, the
 	// way health-history.json keeps it; InboxAddedAt is when each waiting link
 	// arrived.
@@ -57,6 +58,7 @@ type digestSnapshot struct {
 	Updates     *digestUpdates `json:"updates,omitempty"`
 	Usage       *digestUsage   `json:"usage,omitempty"`
 	News        *digestNews    `json:"news,omitempty"`
+	Feeds       *digestFeeds   `json:"feeds,omitempty"`
 	Checkup     *digestCheckup `json:"checkup,omitempty"`
 	Week        *digestWeek    `json:"week,omitempty"`
 }
@@ -307,6 +309,10 @@ func buildDigest(in digestInput) digestSnapshot {
 		snap.News = buildDigestNews(in.Releases, in.Now)
 	}
 
+	if in.Settings.DigestFeeds {
+		snap.Feeds = buildDigestFeeds(in)
+	}
+
 	snap.Week = buildDigestWeek(in)
 
 	// One bookmark with several findings is one thing to tidy up.
@@ -400,7 +406,7 @@ func digestPercent(up, total int) float64 {
 }
 
 func (d digestSnapshot) empty() bool {
-	return d.Health == nil && d.Updates == nil && d.Usage == nil && d.News == nil
+	return d.Health == nil && d.Updates == nil && d.Usage == nil && d.News == nil && d.Feeds == nil
 }
 
 // digestSample is the first digestNamesMax names, in order.
@@ -493,6 +499,10 @@ func digestNotice(d digestSnapshot) monitorNotification {
 			line += ": " + joinCapped(n.Highlights, digestListCap)
 		}
 		lines = append(lines, line+".")
+	}
+	if f := d.Feeds; f != nil {
+		first(digestFeedsLead(f))
+		lines = append(lines, digestFeedsLine(f))
 	}
 	if c := d.Checkup; c != nil {
 		lines = append(lines, fmt.Sprintf("%d things worth tidying up. Run :checkup.", c.Items))

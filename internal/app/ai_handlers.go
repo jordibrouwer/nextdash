@@ -33,6 +33,7 @@ const (
 	aiAppliedLine    = "Already applied."
 	aiSkippedLine    = "Skipped."
 	aiNotEnabledLine = "The assistant is switched off."
+	aiStoppedText    = "The change stopped unexpectedly. You can apply it again or skip it."
 )
 
 // aiHeartbeat keeps a quiet stream alive through proxies. A var for tests.
@@ -363,6 +364,16 @@ func (h *Handlers) aiApplyProposal(r *http.Request, id string) (aiProposal, int,
 		}
 		return prev, http.StatusConflict, aiAppliedLine
 	}
+	// A panic in the tool would leave the claim at applying, where Apply and
+	// Skip both refuse it until a restart; settle it as failed instead.
+	settled := false
+	defer func() {
+		if !settled {
+			failed := prop
+			failed.Status, failed.Error, failed.Result = "failed", aiStoppedText, ""
+			_, _, _ = aiUpdateProposal(id, []string{"applying"}, failed)
+		}
+	}()
 
 	args := prop.Arguments
 	if len(args) == 0 {
@@ -393,6 +404,7 @@ func (h *Handlers) aiApplyProposal(r *http.Request, id string) (aiProposal, int,
 			}
 		}
 	}
+	settled = true
 	_, _, err = aiUpdateProposal(id, []string{"applying"}, final)
 	if err != nil {
 		return final, http.StatusInternalServerError, "The change was made, but the proposal could not be saved."

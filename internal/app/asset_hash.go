@@ -254,6 +254,7 @@ var lazyLoadedAssets = []string{
 	"js/widgets-tutorial.js",
 	"js/monitoring-tutorial.js",
 	"js/unraid-tutorial.js",
+	"js/assistant-tutorial.js",
 	"js/dashboard/dashboard-inline-edit.js",
 	"js/dashboard/dashboard-context-menu.js",
 	// Web results in the search panel, fetched on the first web search.

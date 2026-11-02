@@ -23,6 +23,8 @@
 html[data-theme] body {
     /* 1 on a dark page, 0 on a light one: custom themes have no -light id to go by. */
     --ov-k: calc((1 + var(--ink-dir, 1)) / 2);
+    /* What a text field is filled with: a tint cut into the layer, not a layer of its own. One value for every field, so none is darker than its neighbour. */
+    --ov-field-fill: color-mix(in srgb, black calc(16% * var(--ov-k) + 4%), transparent);
     --ov-cast-ink: color-mix(in srgb, black calc(var(--ov-k) * 100%), rgb(50 60 100));
     --ov-e2:
         0 26px 50px -16px color-mix(in srgb, var(--ov-cast-ink) calc(40% + 35% * var(--ov-k)), transparent),
@@ -819,7 +821,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-nav-search {
-    background-color: var(--ov-fill-small);
+    background-color: var(--ov-field-fill);
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
     border-radius: var(--ov-r-control);
 }
@@ -833,10 +835,10 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-text, .config-choices) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-text, .config-input, .config-choices) {
     border-color: transparent;
     border-radius: var(--ov-r-control);
-    background-color: var(--ov-fill-small);
+    background-color: var(--ov-field-fill);
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
@@ -1173,10 +1175,10 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(input[type="search"], input[type="text"], .inbox-search-input, .tag-view-search) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) :is(input[type="search"], input[type="text"], input[type="url"], input[type="number"], input[type="email"], input[type="password"], .inbox-search-input, .tag-view-search) {
     border: 0;
     border-radius: var(--ov-r-control);
-    background-color: color-mix(in srgb, black calc(16% * var(--ov-k) + 4%), transparent);
+    background-color: var(--ov-field-fill);
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
@@ -1635,10 +1637,10 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-text, .config-choices) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(.config-text, .config-input, .config-choices) {
     border-color: transparent;
     border-radius: var(--ov-r-control);
-    background-color: var(--ov-fill-small);
+    background-color: var(--ov-field-fill);
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
@@ -1661,4 +1663,17 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }
+}
+
+/* The fields outside the config and library views (modals, finders, notes) read this name, and take it only where the material is signature. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] {
+    --field-fill: var(--ov-field-fill);
+}
+
+/* A .config-text outside the config view (a confirm dialog, the inbox drawer) takes the same field as the ones inside it. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-text, .config-input) {
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    background-color: var(--ov-field-fill);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }

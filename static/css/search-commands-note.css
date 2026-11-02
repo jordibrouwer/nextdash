@@ -38,7 +38,7 @@
 .note-cmd-textarea {
     width: 100%;
     box-sizing: border-box;
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     border: 1px solid var(--border-primary);
     border-radius: var(--border-radius-sm, 3px);
