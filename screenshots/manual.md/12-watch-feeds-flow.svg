@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 290" width="720" height="290" role="img" aria-labelledby="t d"><title id="t">How a watched feed becomes news</title><desc id="d">A site feed is read by the nextDash server on the interval you chose, from 30 minutes to 24 hours. New items then show in three places: the bookmark row gets a stripe, a bold name and a badge; hovering shows the preview card with Open reader and Open page; and the news window, opened with Shift N, shows everything in one paper as single, two columns or a newspaper front page. Small dots travel from the feed to the server and on to the three places; at rest all three are lit.</desc><style>text{font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:#1f2a25}
+.m{fill:#5b6561}.b{font-weight:600}.mono{white-space:pre;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}.c{text-anchor:middle}
+.a{fill:#2f7d55}.big{font-size:20px;font-weight:700}
+.box{fill:#8a9490;fill-opacity:.1;stroke:#8a9490;stroke-width:1.5}
+.ln{fill:none;stroke:#8a9490;stroke-width:1.5}
+.ac{fill:none;stroke:#2f7d55;stroke-width:2}
+.af{fill:#2f7d55;fill-opacity:.18;stroke:#2f7d55;stroke-width:1.5}
+.dot{fill:#2f7d55}.mk{fill:#8a9490}.gd{fill:#8a9490;fill-opacity:.55}
+.bad{fill:#b4493f}.badl{stroke:#b4493f}
+.nb{fill:#2f7d55}.nt{fill:#fff;font-weight:700;font-size:12px;text-anchor:middle}
+@media (prefers-color-scheme:dark){text{fill:#e6ebe8}.m{fill:#a9b3af}.a{fill:#72ca9d}.ac{stroke:#72ca9d}.af{fill:#72ca9d;stroke:#72ca9d}.dot{fill:#72ca9d}.bad{fill:#e8847a}.badl{stroke:#e8847a}.nb{fill:#72ca9d}.nt{fill:#12201a}}.ob{fill-opacity:.2}@keyframes dd{0%,4%{opacity:0;transform:none}8%{opacity:1}30%{opacity:1;transform:translate(var(--x),var(--y))}34%,100%{opacity:0;transform:translate(var(--x),var(--y))}}
+@keyframes dl{0%,36%{opacity:0;transform:none}40%{opacity:1}60%{opacity:1;transform:translate(var(--x),var(--y))}64%,100%{opacity:0;transform:translate(var(--x),var(--y))}}
+.d1{animation:dd 7s ease-in-out infinite}.d2{animation:dl 7s ease-in-out infinite}
+@keyframes gl{0%,58%{fill-opacity:.05}68%,92%{fill-opacity:.2}100%{fill-opacity:.05}}.ob{animation:gl 7s ease infinite}
+@media (prefers-reduced-motion:reduce){.d1,.d2{animation:none;opacity:0}.ob{animation:none}}</style><defs><marker id="h" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L8 4L0 8z" class="mk"/></marker></defs><rect x="10" y="95" width="150" height="100" rx="10" class="box"/><text x="85" y="122" class="c b">A site's feed</text><text x="85" y="142" class="c m">RSS or Atom</text><path d="M40 160h90M40 176h60" class="ln"/>
+<path d="M162 145H200" class="ln" marker-end="url(#h)"/>
+<rect x="204" y="76" width="170" height="146" rx="10" class="ac"/><text x="289" y="106" class="c b">nextDash server</text><text x="289" y="128" class="c">reads the feed</text><text x="289" y="148" class="c">every 30 min to 24 h</text><text x="289" y="168" class="c m">keeps the newest items</text><text x="289" y="190" class="c m">5 failures: paused,</text><text x="289" y="206" class="c m">retried daily</text>
+<path d="M376 145C410 145 400 55 436 55" class="ln" marker-end="url(#h)"/><path d="M376 145H436" class="ln" marker-end="url(#h)"/><path d="M376 145C410 145 400 235 436 235" class="ln" marker-end="url(#h)"/>
+<rect x="440" y="20" width="270" height="70" rx="10" class="af ob"/><text x="454" y="44" class="b">A row on the dashboard</text>
+<rect x="454" y="56" width="4" height="22" rx="2" class="dot"/><rect x="464" y="58" width="130" height="8" rx="4" class="gd"/><rect x="464" y="70" width="90" height="6" rx="3" class="gd"/><circle cx="620" cy="66" r="9" class="nb"/><text x="620" y="70" class="nt">3</text><text x="636" y="70" class="m">badge</text>
+<rect x="440" y="105" width="270" height="80" rx="10" class="af ob"/><text x="454" y="129" class="b">Preview card, on hover</text><text x="454" y="150" class="m">leads with the news,</text><text x="454" y="168" class="m">Open reader · Open page</text>
+<rect x="440" y="200" width="270" height="80" rx="10" class="af ob"/><text x="454" y="224" class="b">News window, Shift + N</text><text x="454" y="246" class="m">one paper for everything</text>
+<rect x="454" y="254" width="26" height="16" rx="3" class="ln"/><rect x="490" y="254" width="12" height="16" rx="2" class="ln"/><rect x="506" y="254" width="12" height="16" rx="2" class="ln"/><rect x="530" y="254" width="26" height="16" rx="3" class="ln"/><path d="M536 259h14M536 264h14" class="ln"/><text x="568" y="266" class="m">3 layouts</text>
+<text x="10" y="246" class="m">nextDash only reads feeds;</text><text x="10" y="264" class="m">nothing is sent to anyone.</text>
+<circle cx="162" cy="145" r="5" class="dot d1" style="--x:42px;--y:0px"/>
+<circle cx="376" cy="145" r="5" class="dot d2" style="--x:60px;--y:-90px"/><circle cx="376" cy="145" r="5" class="dot d2" style="--x:60px;--y:0px"/><circle cx="376" cy="145" r="5" class="dot d2" style="--x:60px;--y:90px"/></svg>

@@ -763,6 +763,9 @@ go build -o nextDash && ./nextDash
 
 Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it elsewhere.
 
+<p align="center"><img src="screenshots/manual.md/02-install-routes.svg" alt="Three ways to install end at the same place. Docker Compose, the recommended route, pulls the ghcr.io image and mounts the data folder; Unraid, through Community Applications, uses an AppData folder; building from source runs the binary with a data folder beside it. All three keep your bookmarks, inbox, settings, icons and backups in that one data folder. Small dots travel from each route to the folder" width="720"></p>
+<p align="center"><sub>Three routes in, one place for your data.</sub></p>
+
 <a id="which-branch-to-clone"></a>
 
 ### 🌿 Which branch to clone
@@ -865,6 +868,9 @@ The dashboard has up to six views: the **dashboard grid**, the **Bookmarks view*
 
 This manual calls the page of categories and widgets the **dashboard grid**, to keep it apart from the **Bookmarks view** — the library of every bookmark, with its own rail, list and side panel ([§11](#11-the-bookmarks-view)).
 
+<p align="center"><img src="screenshots/manual.md/03-concepts-diagram.svg" alt="A page holds categories and each category holds bookmarks. Beside it, the inbox is a list of its own: triage files a link on a page, and Keep sends it to Bookmarks, Unsorted. Under both, six views (dashboard grid, Bookmarks view, inbox, Containers, Glances and config) share one browser tab, and the dashboard grid and the Bookmarks view show the same bookmarks in two ways" width="720"></p>
+<p align="center"><sub>How the parts fit: pages hold categories, categories hold bookmarks, the inbox waits beside them, and the views are ways to look.</sub></p>
+
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
@@ -892,6 +898,9 @@ This manual calls the page of categories and widgets the **dashboard grid**, to 
   <img src="screenshots/manual.md/04-dashboard.jpg" alt="The dashboard: the header with the clock, weather and page switcher, and categories and widgets in three columns" width="860">
 </p>
 <p align="center"><sub>The dashboard: header with clock, weather and the page switcher, then categories and widgets in columns.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/04-dashboard-anatomy.svg" alt="A schematic of the dashboard with six numbered parts: 1 the header with the clock, date, weather and page name; 2 the page switcher; 3 the destination icons with count badges; 4 categories of bookmark rows; 5 widgets, drawn with a green outline; 6 the action bar, a column of buttons on the right edge" width="720"></p>
+<p align="center"><sub>The parts of the dashboard grid, numbered as in the list under it.</sub></p>
 
 <a id="the-header"></a>
 
@@ -1146,6 +1155,9 @@ With no field active, paste a URL on the dashboard. A dialog offers **Add bookma
 - **Import** — a browser bookmark file, a CSV file, or a source such as GitHub stars ([§19](#19-data-backups-and-import)).
 - **Add bookmark** in the Bookmarks view's toolbar — the same form, on the page the list is filtered to ([§11](#11-the-bookmarks-view)).
 - **`:new`** and **`:add`** in the command palette.
+
+<p align="center"><img src="screenshots/manual.md/05-ways-in.svg" alt="Six ways in on one row: quick add, the full form, pasting a URL, the browser extension, the share sheet and bookmarklet, and an import. Arrows lead from each to the same bookmark, which sits on a page and category or waits in the inbox until it is promoted with the same form. The form reads the page once for icon, name, preview card and suggested tags, a duplicate on the same page is refused and one on another page is asked about, and imports skip duplicates. Small dots travel down the arrows" width="720"></p>
+<p align="center"><sub>Every way in ends in the same bookmark.</sub></p>
 
 <a id="a-link-you-already-have"></a>
 
@@ -2191,6 +2203,9 @@ Set the mode in the bookmark form, the Bookmarks view's side panel, the right-cl
 
 **The first 15 minutes after a start.** When nextDash has just started, your own services may not be up yet. During the first 15 minutes a bookmark's first failed check, whatever the address, is not recorded: it gets no broken status, sample, alert or incident, and keeps its earlier status. If the same bookmark fails again at least 45 seconds later it is recorded; if it answers, nothing was ever marked. Only unattended checks wait (the monitors, the scheduled recheck and the checks the dashboard asks for); **Retest all** records at once. A service that is really dead is recorded a minute or two later than usual, in that window only. `NEXTDASH_HEALTH_STARTUP_GRACE` sets the window (for example `5m`), and `0` switches it off. Docker, Glances and Unraid are not affected.
 
+<p align="center"><img src="screenshots/manual.md/12-offline-guard-timeline.svg" alt="Two timelines. Top, the offline guard: a round of checks that reaches ten or more sites with at least 80 percent failing is held back and tried again a minute later, round after round, and only after 30 minutes are failures recorded. Bottom, the first 15 minutes after a start: a bookmark first failed check is held, and a second failure at least 45 seconds later is recorded, while an answer means nothing was ever marked. A marker walks along each line, then the loop starts again" width="720"></p>
+<p align="center"><sub>Held back, then recorded: the two rules that keep a start-up from filling the list with false breaks.</sub></p>
+
 <a id="122-expected-response"></a>
 
 ### 12.2 Expected response
@@ -2206,6 +2221,9 @@ On a monitored bookmark, **Expected response** opens a panel:
 <p align="center"><sub>Expected response, in the Expectations section of the Health tab.</sub></p>
 
 Failures of these tests go to the **Content** filter, not Broken. Clearing both test fields clears the failure.
+
+<p align="center"><img src="screenshots/manual.md/12-check-verdict.svg" alt="A check runs through three gates. The request: no answer from DNS, a timeout, a refused connection or TLS gives Broken, after a retry five seconds later. The status code must be on your list of healthy codes, by default anything below 500, or it is Broken with an HTTP status. The optional page text, a phrase the page must or must not contain, sends a failure to the Content filter, not Broken. Passing all three is healthy. A robot check or rate limit reads as Unknown. A dot travels along the gates" width="720"></p>
+<p align="center"><sub>How a check reaches its verdict.</sub></p>
 
 **The same address on two pages.** It is checked once per round. A copy with its own expected response, drift setting, check address or credential is checked with those too, and gets its own result; uptime, history and alerts stay one per address, from the first copy.
 
@@ -2334,6 +2352,9 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 - **When it goes away.** Opening the bookmark (or an article's headline) clears its count. The purple mark and the window close by themselves after 15, 30 (default), 60 or 120 minutes, counted from when the tab is in view; the news itself stays until you open the bookmark. `status:watched` and `status:unwatched` search for followed bookmarks.
 - **What it keeps.** The ten newest new items of each feed, with their text and picture, and 50 recent entries as short copies without pictures; the ids of the last 75 entries are remembered so nothing counts as new twice. A feed that fails five times in a row is paused and tried again once a day. **Check watched feeds now** polls them all at once.
 
+<p align="center"><img src="screenshots/manual.md/12-watch-feeds-flow.svg" alt="A site feed is read by the nextDash server on the interval you chose, from 30 minutes to 24 hours. What it finds appears in three places: a row on the dashboard with a stripe, a bold name and a badge; the preview card on hover, with Open reader and Open page; and the news window opened with Shift and N, which comes in three layouts. Small dots travel from the feed to the server and on to the three places, which light up when the news arrives" width="720"></p>
+<p align="center"><sub>From feed to screen: nextDash reads, and the news shows on the row, in the preview card and in the news window.</sub></p>
+
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-news.jpg" alt="The news window in its one-article view: the site name and 1 of 10 in the header with the three layout buttons, a picture, the headline and its lead, and the buttons previous, next, Mark read and Open page with the keys j, k and Esc" width="440"></p>
 <p align="center"><sub>The news window, one article per screen.</sub></p>
 
@@ -2410,6 +2431,9 @@ flowchart LR
     U -->|promote| K
     I -->|delete, undo in the toast| D[Gone from the inbox]
 ```
+
+<p align="center"><img src="screenshots/manual.md/13-inbox-flow.svg" alt="Six ways in on the left, paste, the browser extension, the share sheet or bookmarklet or add address, the API, app discovery and an import into the inbox, all lead to the inbox, which waits with no limit in data/inbox.json. Triage takes one link at a time to one of three exits: Promote with p to a category on a page, Keep with Shift and K to Bookmarks, Unsorted, or Delete with d, with undo in the toast. One link travels in and out" width="720"></p>
+<p align="center"><sub>One link, six ways in, three ways out.</sub></p>
 
 <a id="131-getting-links-in"></a>
 
@@ -2600,6 +2624,9 @@ The web UI link is the address you set in the side panel's **Custom** section, e
 4. a bookmark titled after the container.
 
 The bookmark's own side panel says it back: **Details → Address → Runs in** names the container, a link to its side panel.
+
+<p align="center"><img src="screenshots/manual.md/14-container-match.svg" alt="A container such as sonarr is matched to a bookmark in four steps, tried in order, stopping at the first step that finds exactly one: the bookmark chosen in its side panel, a bookmark on the same port of this server, a bookmark whose subdomain is the container's name, and a bookmark titled after the container. The link shows on the container row as a bookmark mark in green, red or outline, and on the bookmark as a cube in the container's state with Details, Address, Runs in. The steps appear one after the other" width="720"></p>
+<p align="center"><sub>How a container finds its bookmark, and where the link shows.</sub></p>
 
 **Selecting several.** Tick containers with the box in front of the name, `x` or `Space`; `Shift`-click a box, `Shift + X` or `Shift + ↑/↓` ticks a run, and `Ctrl/Cmd + A` ticks everything the filter shows (again to clear). A bar above the list then offers **Start**, **Stop**, **Restart**, **Update**, **Remove**, **Mute notifications** and **Update automatically** ([§14.5](#145-actions-and-updates)) for the lot, one container at a time with a count, and ends with one notice such as *3 restarted, 1 failed*, naming each one that failed and why. **Update** takes only the ticked containers with an update on offer: the question names the ones it leaves out for having none, and with none on offer it says so and does nothing. Skipped and held ones are left out without a word. **Remove** asks once, naming the ones that still run, and stops those first; `⌫` or `Delete` with containers ticked does the same, and so does a right-click on one of the ticked rows, whose menu then offers the bar's actions for all of them. The container nextDash runs in is left out. Without actions switched on ([§14.6](#146-what-it-needs)) the bar offers only muting. **Clear selection** or `Esc` lets go. The header badge counts containers with an update waiting; a skipped or held update does not count.
 
@@ -3207,6 +3234,9 @@ Take this answer, from a made-up service:
 | `jobs[state=failed].name` | `sync` | Without `#`, a filter picks the first entry that matches. |
 | `jobs.sync.state` | `failed` | A name against a list finds the entry that calls itself that (by its `entity_id`, `id`, `name`, `key` or `slug`). |
 | `server.gpu` | *not found* | Not in the answer: the **Found** column says so, and the tile shows a dash, not a zero. |
+
+<p align="center"><img src="screenshots/manual.md/15-custom-widget-flow.svg" alt="The nextDash server asks a service for its JSON answer on a refresh interval, keeping your key on the server. A path picks one value out of the answer: server.cpu reads 0.43, shown as 43 percent, and jobs[state=failed]# counts the failed jobs and gives 2. Those two values become the rows of the tile on the dashboard. The highlights light up one after the other, from the request to the tile" width="720"></p>
+<p align="center"><sub>From request to tile: the server asks, a path picks a value, Show as writes it.</sub></p>
 
 Some services answer with a list at the top, and Home Assistant answers with every sensor in one:
 
@@ -3865,6 +3895,9 @@ While Depth, Glow, Effects and Category surface say *Follow the theme*, changing
 the theme on screen: switch away and back and it is still there, and every
 other theme keeps its own. The backdrop and the card glass work the same way.
 
+<p align="center"><img src="screenshots/manual.md/16-look-layers.svg" alt="A look is five layers from the top down: the theme, the material, the surface, the effects and the backdrop. A note beside them says that material, depth, glow, effects, the category surface and the backdrop start on Follow the theme, that a change belongs to the theme you are on, and that Use these for every theme holds one answer for the whole install. The layers slide in one by one" width="720"></p>
+<p align="center"><sub>The five layers of a look, and who answers for them.</sub></p>
+
 `:depth`, `:surface`, `:effects`, `:widgetbg`, `:widgetopacity`, `:glow`, `:contrast`, `:backdrop`, `:pattern` and `:harmonize` change these from the command palette.
 
 <a id="164-type-and-background"></a>
@@ -4464,6 +4497,9 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 - **Restore → Stored backups** — each with its age, size and contents (*1.7 MB · 412 bookmarks on 5 pages*), and **Download**, **Restore** and **Delete**. **Download all** saves them all.
 - **Restore → From a file** → **Import backup…** — restores a ZIP.
 
+<p align="center"><img src="screenshots/manual.md/19-data-folder.svg" alt="The data folder holds plain files such as bookmarks.json, inbox.json and settings.json. In three groups: what every backup carries, what travels only if you switch on local copies of pages or tokens and passwords, and what is never in a backup, such as cached previews, the health cache and push subscriptions. Below it, deleted items wait 30 days in the trash, and browsers are served only the icons folder" width="720"></p>
+<p align="center"><sub>What is in the data folder, and what a backup does and does not take along.</sub></p>
+
 **Restoring** replaces all current data. First, nextDash checks the archive and writes a backup of the current data, so a restore can be undone. An archive without any bookmark page is refused. So is one over 1 GiB in total, with a file over 64 MB or with more than 50,000 entries (the page captures nextDash writes itself do not count towards the total). The import is atomic. A ZIP without `finders.json` or `health-history.json` leaves your current ones in place. Bookmarks with an invalid address are skipped and counted; the imported `settings.json` decides whether local addresses are allowed.
 
 > In Docker, keep `data/` on a mounted volume, or automatic backups are lost with the container.
@@ -4723,6 +4759,9 @@ The **nextDash Bookmark Saver** in `extension/` saves the current tab to a page 
 
 The extension needs no CORS setting: its origin is always allowed. Errors: **401** wrong or missing write token, **403** origin not allowed, **409** shortcut already used on that page.
 
+<p align="center"><img src="screenshots/manual.md/21-capture-flow.svg" alt="A page in your browser is saved by the extension, which sends it to your nextDash server with the write token, to a page and category as a bookmark or to the inbox. Below, the keys, the icon badges plus, D, question mark and exclamation mark, and the errors 401, 403 and 409. Small dots travel along the arrows" width="720"></p>
+<p align="center"><sub>From a tab to your server.</sub></p>
+
 <a id="212-capture-without-the-extension"></a>
 
 ### 21.2 Capture without the extension
@@ -4861,6 +4900,9 @@ Set `NEXTDASH_WRITE_TOKEN` and every write or destructive API call — saves, im
 
 Read-only routes (bookmarks, settings, the health list, ping) stay open, with two exceptions: without the token, settings come back without the stored keys and tokens (the archive keys, the Pushover token and user key, the alert URL), and the server log needs it. The dashboard reads both with the token. The extension stores the token under **Settings → Write token**. `GET /api/backup` and the automatic-backup routes need the token, because a backup is the whole library.
 
+<p align="center"><img src="screenshots/manual.md/23-write-token.svg" alt="With a write token set, a request that only reads, bookmarks, settings without stored keys, the health list, ping and the icons folder, goes through. A request that writes, imports, deletes, uploads, resets, retests, fetches previews, acts on containers, takes a backup, reads the server log or the stored keys and tokens needs the X-NextDash-Token header. A request without it stops at the gate and one with it passes. The dashboard supplies the token itself, so it is not a login" width="720"></p>
+<p align="center"><sub>What the write token gates.</sub></p>
+
 **The data directory is not served.** Only `data/icons/` and an uploaded favicon or font are published, with a long cache lifetime. Settings, bookmark files, the inbox, the trash and stored backups are reachable only through the API.
 
 `NEXTDASH_CAPTURE_TOKEN` opens only the two capture routes ([§21.2](#212-capture-without-the-extension)).
@@ -4980,6 +5022,9 @@ The in-app assistant ([§23.11](#2311-the-assistant)) reads through the same gro
 | Your assistant provider (Anthropic, OpenAI or your own server) | Only when you ask a question or press Test connection | Config → AI Assistant |
 | Install count | Once a day: a random install id and the version (on Unraid, also the word Unraid) | Behavior → Privacy & sync → *Count this install*; `DISABLE_TELEMETRY=true`; `NEXTDASH_DISABLE_INSTALL_PING=1` for the count alone |
 | Analytics | Only when switched on, with a random install code (**v1.22.3**) | See below |
+
+<p align="center"><img src="screenshots/manual.md/23-what-nextdash-contacts.svg" alt="The nextDash install in the middle with nine lines going out. Solid lines are requests made when you use a feature: your bookmarks sites, your own services, weather and calendar providers, image registries and GitHub. Dashed lines run on a schedule: the GitHub release check, the nextdash.cc news feed and the daily install count. Dotted lines happen only when you ask or turn them on: analytics and your assistant provider" width="720"></p>
+<p align="center"><sub>Everything nextDash contacts, grouped by what makes it call.</sub></p>
 
 <a id="238-analytics"></a>
 
@@ -5184,6 +5229,9 @@ The address is `localhost`, `192.168.x.x` or another private host while **Allow 
 ### A self-hosted service shows as broken
 
 It probably needs a sign-in, or answers 401. On the bookmark's Health tab in the Bookmarks view, choose **Expected response**: add `401` to the healthy status codes, or pick a stored sign-in ([§12.1](#121-availability-modes)).
+
+<p align="center"><img src="screenshots/manual.md/24-broken-but-works.svg" alt="A decision tree. A bookmark shows broken although the site opens for you. Open its Health tab and read the cause. An HTTP 401 or sign-in page: add 401 to the healthy status codes or pick a stored sign-in in Expected response. TLS with a self-signed certificate: tick Accept a certificate this machine does not trust. Content: change the text the page must contain or clear both test fields. No answer from DNS, timeout or refused: switch on Allow localhost and private-network bookmarks for your own network, or raise the check timeout. Right after a start, or with no connection, failures are held back" width="720"></p>
+<p align="center"><sub>When a bookmark shows broken but the site works.</sub></p>
 
 <a id="the-colours-look-wrong-after-the-system-switched-to-dark"></a>
 

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" width="720" height="300" role="img" aria-labelledby="t d"><title id="t">How a Custom widget reads a JSON service</title><desc id="d">The nextDash server asks a service for its JSON answer on a refresh interval, with your key kept on the server. A path picks one value from the answer: server.cpu reads 0.43, shown as 43 percent, and jobs[state=failed]# counts the failed jobs, giving 2. Those two figures become the rows of the tile on the dashboard. A soft highlight moves from the request through the answer to the tile; with reduced motion all of it is shown at rest.</desc><style>text{font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:#1f2a25}
+.m{fill:#5b6561}.b{font-weight:600}.mono{white-space:pre;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}.c{text-anchor:middle}
+.a{fill:#2f7d55}.big{font-size:20px;font-weight:700}
+.box{fill:#8a9490;fill-opacity:.1;stroke:#8a9490;stroke-width:1.5}
+.ln{fill:none;stroke:#8a9490;stroke-width:1.5}
+.ac{fill:none;stroke:#2f7d55;stroke-width:2}
+.af{fill:#2f7d55;fill-opacity:.18;stroke:#2f7d55;stroke-width:1.5}
+.dot{fill:#2f7d55}.mk{fill:#8a9490}.gd{fill:#8a9490;fill-opacity:.55}
+.bad{fill:#b4493f}.badl{stroke:#b4493f}
+.nb{fill:#2f7d55}.nt{fill:#fff;font-weight:700;font-size:12px;text-anchor:middle}
+@media (prefers-color-scheme:dark){text{fill:#e6ebe8}.m{fill:#a9b3af}.a{fill:#72ca9d}.ac{stroke:#72ca9d}.af{fill:#72ca9d;stroke:#72ca9d}.dot{fill:#72ca9d}.bad{fill:#e8847a}.badl{stroke:#e8847a}.nb{fill:#72ca9d}.nt{fill:#12201a}}@keyframes s1{0%,5%{opacity:0}12%,90%{opacity:1}97%,100%{opacity:0}}@keyframes s2{0%,28%{opacity:.2}36%,90%{opacity:1}97%,100%{opacity:.2}}@keyframes s3{0%,52%{opacity:.2}60%,90%{opacity:1}97%,100%{opacity:.2}}
+.q1{animation:s1 7s ease infinite}.q2{animation:s2 7s ease infinite}.q3{animation:s3 7s ease infinite}
+@media (prefers-reduced-motion:reduce){.q1,.q2,.q3{animation:none;opacity:1}}</style><defs><marker id="h" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L8 4L0 8z" class="mk"/></marker></defs><rect x="10" y="60" width="150" height="150" rx="10" class="ac"/><text x="85" y="88" class="c b">nextDash server</text><text x="85" y="114" class="c">asks on your</text><text x="85" y="132" class="c">refresh interval</text><text x="85" y="156" class="c m">30 s to 24 h</text><text x="85" y="184" class="c a">key stays here,</text><text x="85" y="200" class="c a">not in the browser</text>
+<path d="M164 120H196" class="ln" marker-end="url(#h)"/><text x="180" y="108" class="c mono m">GET</text>
+<rect x="200" y="30" width="230" height="200" rx="10" class="box"/><text x="214" y="54" class="b">The service answers</text><text x="214" y="72" class="m">JSON</text>
+<text x="214" y="102" class="mono">{ "server": { "cpu": 0.43 },</text><text x="214" y="124" class="mono">  "jobs": [</text><text x="214" y="146" class="mono">    { "state": "ok" },</text><text x="214" y="168" class="mono">    { "state": "failed" },</text><text x="214" y="190" class="mono">    { "state": "failed" } ] }</text>
+<g class="q2"><rect x="206" y="88" width="218" height="20" rx="4" class="af"/><rect x="206" y="154" width="218" height="42" rx="4" class="af"/></g>
+<g class="q2"><path d="M432 98H474" class="ln" marker-end="url(#h)"/><path d="M432 175H474" class="ln" marker-end="url(#h)"/></g>
+<rect x="480" y="30" width="230" height="200" rx="10" class="ac"/><text x="494" y="54" class="b">The tile on the dashboard</text>
+<g class="q3"><text x="494" y="96" class="b">CPU</text><text x="696" y="96" class="big a" text-anchor="end">43%</text><text x="494" y="116" class="mono m">server.cpu</text><text x="494" y="132" class="m">Show as: percentage (0 to 1)</text>
+<text x="494" y="174" class="b">Failed jobs</text><text x="696" y="174" class="big a" text-anchor="end">2</text><text x="494" y="194" class="mono m">jobs[state=failed]#</text><text x="494" y="210" class="m">Show as: count</text></g>
+<text x="10" y="262" class="m">A path names one value: dots walk into objects, [0] picks a list entry, a # at the end counts.</text>
+<text x="10" y="282" class="m">Press Ask now in the editor to see what each path finds before you save.</text></svg>
