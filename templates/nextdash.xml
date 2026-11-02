@@ -56,6 +56,12 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.24.2 (2026-11-02)
+- Watch feeds: Config has a Feeds tab and a Settings tab, like the other sections
+- Watch feeds: the news popover has its Reader button on a phone too
+- Rows: a new install starts without row status (online/offline and ping times)
+- Tag cloud: it keeps its place when it is drawn again
+
 ### v1.24.1 (2026-11-02)
 - Watch feeds: the One column news window shows one article at a time, also when nothing is new
 - Watch feeds: the toast after adding a feed says news shows when the site publishes something new
@@ -85,15 +91,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Glances: the Hosts table puts hosts in trouble first, sorts, names the fullest disk's mount and draws the processor's last hour
 - Appearance: Ocean is the theme a new install starts on
 - Fixes: a setting changed on another device survives closing the theme studio, and a right-click menu stays open in edit mode
-
-### v1.22.4 (2026-10-29)
-- Edit mode: Shift+M or the pencil in the action bar edits names, icons, widths, views and a widget's settings in a panel beside the page
-- Search: a Usually now group in the empty panel, and the right arrow on a result unfolds open, edit, copy and move
-- Checkup: :checkup walks through dead links, duplicates, bookmarks never opened, empty pages and widgets that show an error
-- Weekly digest: it opens on an Overview with the week in figures, and says since when a link is down and why
-- Widgets: adding one is a guided step that tests the address or key first
-- Config: Finders is a section of its own
-- Fixes: the demo server starts faster, icons the outbound limit refused are fetched again, and a page of uncategorised bookmarks no longer counts as empty
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
