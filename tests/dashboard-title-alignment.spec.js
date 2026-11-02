@@ -97,6 +97,8 @@ test.describe('titles of categories and widgets', () => {
     });
 
     test('on a glass pane the handle stands inside it; a widget\'s stands with a category\'s, or on its strip under Classic', async ({ page }) => {
+        // Written for a Signature glass look; the default since v1.24.0 is another.
+        await useGlassLook(page);
         await openDashboard(page);
         await page.evaluate(() => window.ThemeLoader.applyCatSurface('glass'));
         const category = await measure(page, false);
