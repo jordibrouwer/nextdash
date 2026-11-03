@@ -907,6 +907,7 @@
                 chip.type = 'button';
                 chip.className = `tag-cloud-word is-${classes.get(tag)}`;
                 chip.dataset.tag = tag;
+                window.TagColors?.paint(chip, tag);
                 chip.classList.toggle('is-selected', selected);
                 chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
                 chip.style.setProperty('--tag-index', String(index));

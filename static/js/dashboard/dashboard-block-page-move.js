@@ -149,7 +149,12 @@
                 landedAs: id,
                 async undo() {
                     const there = await readBlocks(to);
-                    const back = (there.widgets || []).find((w) => String(w?.id) === id) || moved;
+                    const found = (there.widgets || []).find((w) => String(w?.id) === id);
+                    // A stack lost its tabs on the other page (they are not
+                    // there); the ones it had when it left go back with it.
+                    const back = found
+                        ? { ...found, config: { ...(found.config || {}), ...(moved.config.members ? { members: moved.config.members } : {}) } }
+                        : moved;
                     const here = await readBlocks(from);
                     const list = (here.widgets || []).filter((w) => String(w?.id) !== id);
                     list.splice(Math.min(at, list.length), 0, back);

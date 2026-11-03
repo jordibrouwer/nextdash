@@ -53,8 +53,8 @@
      * Answers as text: a small, safe subset of Markdown, built from DOM nodes.
      *
      * Paragraphs and line breaks, **bold**, *italic* and _italic_, `code`,
-     * fenced code blocks, - and * bullet lists, 1. numbered lists and # headings
-     * (as bold lines). A link is [label](#hash) and only for the hashes the app
+     * fenced code blocks, - and * bullet lists, 1. numbered lists, # headings
+     * (as bold lines) and | tables |. A link is [label](#hash) and only for the hashes the app
      * itself routes: #config, #config/<section>, #config/<section>/<tab> and a
      * page number. Everything else, links to other addresses and any HTML
      * included, stays on the page as the characters it was sent as. Rendered
@@ -123,6 +123,31 @@
         return out;
     }
 
+    const TABLE_RULE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+
+    /** The cells of a table row; a pipe inside `code` does not split. */
+    function tableCells(line) {
+        const cells = [];
+        let cell = '';
+        let inCode = false;
+        for (const ch of line.trim().replace(/^\|/, '')) {
+            if (ch === '`') inCode = !inCode;
+            if (ch === '|' && !inCode) { cells.push(cell.trim()); cell = ''; continue; }
+            cell += ch;
+        }
+        if (cell.trim()) cells.push(cell.trim());
+        return cells;
+    }
+
+    /** A header row, a rule row and the rows after it, as a table that scrolls sideways when it is wide. */
+    function tableEl(header, rows) {
+        const row = (cells, tag) => el('tr', null, ...header.map((_, n) => el(tag, null, ...inlineNodes(cells[n] || ''))));
+        return el('div', { class: 'assistant-table-wrap' },
+            el('table', { class: 'assistant-table' },
+                el('thead', null, row(header, 'th')),
+                el('tbody', null, ...rows.map((cells) => row(cells, 'td')))));
+    }
+
     /** The text of an answer as a fragment of block elements. */
     function renderMarkdown(text) {
         const frag = document.createDocumentFragment();
@@ -151,6 +176,17 @@
                 continue;
             }
             if (!line.trim()) { endPara(); list = null; continue; }
+            // A table: a row with pipes, then a rule row. Before the rule arrives it is just text.
+            if (line.includes('|') && i + 1 < lines.length && lines[i + 1].includes('-') && TABLE_RULE.test(lines[i + 1])) {
+                endPara();
+                list = null;
+                const header = tableCells(line);
+                const rows = [];
+                for (i += 2; i < lines.length && lines[i].includes('|') && lines[i].trim(); i += 1) rows.push(tableCells(lines[i]));
+                i -= 1;
+                frag.append(tableEl(header, rows));
+                continue;
+            }
             const heading = /^\s{0,3}#{1,6}\s+(\S.*)$/.exec(line);
             if (heading) {
                 endPara();

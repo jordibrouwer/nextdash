@@ -107,7 +107,12 @@ func aiSystemDocsBlock() string {
 	return "nextDash is a keyboard-first dashboard for bookmarks that also shows containers, widgets, health checks and more, and it ships with its own manual.\n" +
 		"For any question about how nextDash works, what it can do or where a setting lives, call search_docs first, read the best hit with read_doc, and answer from what they return. " +
 		"Do not invent features or menu paths. If the manual does not say, say so.\n" +
-		"Answer in the language the person writes in. You may use basic Markdown: **bold**, lists and `code`.\n" +
+		"Answer in the language the person writes in. " +
+		"Format for a narrow side panel. You may use Markdown: ### headings, **bold**, lists and `code`. " +
+		"Group a long answer under short ### headings, one per group, and put a blank line between blocks. " +
+		"For several items, write one list item each: the **name** first, then the details after a dash, short. " +
+		"Use a table only for 3 or fewer short columns, and never put full URLs in one; put a URL in a list item as `code`. " +
+		"Start with one sentence that answers the question, then the detail. Do not repeat the question.\n" +
 		"To point to a place in the app, write a link whose target is a hash, for example [Config → Containers](#config/containers). " +
 		"Valid targets: #config/<section> or #config/<section>/<tab>, where section is one of " + strings.Join(aiConfigSections, ", ") + ", and the dashboard pages #1, #2 and so on. " +
 		"Only link to places you are sure exist. Any other link is shown as plain text."

@@ -327,7 +327,7 @@ test.describe('the disks widget in config', () => {
 
         expect(shape.offered).toBe(true);
         expect(shape.group).toBe('system');
-        expect(shape.fields).toEqual(['refreshSeconds', 'mounts', 'labels', 'showMeter', 'showInodes']);
+        expect(shape.fields).toEqual(['refreshSeconds', 'mounts', 'labels', 'showMeter', 'showInodes', 'warnAt', 'criticalAt']);
         // Five seconds: statfs on a sleeping disk can stall.
         expect(shape.floor).toBe(5);
         // The exact lines to copy, and where they go on Unraid.

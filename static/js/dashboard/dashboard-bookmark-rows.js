@@ -983,6 +983,7 @@ class DashboardBookmarkRows {
             const chip = document.createElement('span');
             chip.className = 'bookmark-tag-chip';
             chip.textContent = tag;
+            window.TagColors?.paint(chip, tag);
             strip.appendChild(chip);
         });
         if (tags.length > max) {

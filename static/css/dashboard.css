@@ -10200,3 +10200,27 @@ body[data-action-bar="bottom"] #dashboard-layout {
     position: absolute;
     inset: -3px;
 }
+
+/* Uptime widget: the response time of the last day, beside a row. */
+.dashboard-widget-latency {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-size: var(--text-2xs, 0.68rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-widget-latency svg {
+    width: 3rem;
+    height: 0.9rem;
+}
+
+.dashboard-widget-latency-line {
+    fill: none;
+    stroke: var(--accent-primary, currentColor);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}

@@ -1814,23 +1814,94 @@
                 <input type="file" id="config-import-input" accept=".zip" hidden>
             </div>
 
+            <h3 class="config-db-group">${esc(this.t('config.dbGroupImport', 'Bring things in'))}</h3>
+            ${this.renderImportSources(esc)}
+
             <h3 class="config-db-group">${esc(this.t('config.dbGroupMove', 'Move'))}</h3>
             <div class="config-panel">
                 ${row(this.t('config.dbMoveBookmarks', 'Bookmarks'), 'bookmarks',
-                    this.t('config.dbMoveBookmarksNote', 'To or from a browser, or a spreadsheet.'),
+                    this.t('config.dbMoveBookmarksNote', 'Take them out as a browser file or a spreadsheet. Bringing them in is above.'),
                     btn('html-export', this.t('config.htmlExportBtn', 'Export bookmarks (HTML)'))
-                    + btn('csv-export', this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))
-                    + btn('csv-import', this.t('config.csvImportBtn', 'Import bookmarks (CSV)'))
-                    + btn('browser-import', this.t('config.browserImportBtn', 'Import browser bookmarks…')))}
+                    + btn('csv-export', this.t('config.csvExportBtn', 'Export bookmarks (CSV)')))}
                 ${row(this.t('config.settingsSection', 'Settings'), 'settings',
                     this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'),
-                    btn('settings-export', this.t('config.settingsExportBtn', 'Export settings (JSON)'))
-                    + btn('settings-import', this.t('config.settingsImportBtn', 'Import settings…')))}
-                <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
+                    btn('settings-export', this.t('config.settingsExportBtn', 'Export settings (JSON)')))}
+                <input type="file" id="config-browser-import-input" accept=".html,.htm,.yaml,.yml" hidden>
                 <input type="file" id="config-csv-import-input" accept=".csv,text/csv" hidden>
                 <input type="file" id="config-settings-import-input" accept=".json" hidden>
             </div>
         `;
+    },
+
+    /**
+     * What can be brought in, as a card per kind of source.
+     *
+     * The importers were a row of buttons named after one or two of the things
+     * they read ("Import browser bookmarks…" also reads Pocket, linkding and
+     * Homepage), so what a file had to be, and what of it came along, was in the
+     * manual and nowhere in front of you. A card says the file type, the
+     * services it covers, and what is carried and what is not; the button on it
+     * is the same one that was there. Every card that reads links asks where
+     * they go before anything is written.
+     */
+    renderImportSources(esc) {
+        const yes = (text) => `<span class="config-import-chip is-yes">${esc(text)}</span>`;
+        const no = (text) => `<span class="config-import-chip is-no">${esc(text)}</span>`;
+        const t = (key, fallback) => this.t(key, fallback);
+        const sources = [
+            {
+                id: 'browser', action: 'browser-import', files: ['.html'],
+                title: t('config.importSrcBrowser', 'A browser'),
+                from: t('config.importSrcBrowserFrom', 'Chrome, Firefox, Safari, Edge, Brave'),
+                gets: [yes(t('config.importGetLinks', 'Links')), yes(t('config.importGetFolders', 'Folders')), yes(t('config.importGetDates', 'Dates'))],
+            },
+            {
+                id: 'services', action: 'browser-import', files: ['.html'],
+                title: t('config.importSrcServices', 'A bookmark service'),
+                from: t('config.importSrcServicesFrom', 'Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden, Karakeep'),
+                gets: [yes(t('config.importGetLinks', 'Links')), yes(t('config.importGetTags', 'Tags')), yes(t('config.importGetNotes', 'Notes'))],
+            },
+            {
+                id: 'dashboards', action: 'browser-import', files: ['.yaml', '.yml'],
+                title: t('config.importSrcDashboards', 'Another dashboard'),
+                from: t('config.importSrcDashboardsFrom', 'Homepage, Dashy, Homer'),
+                gets: [yes(t('config.importGetLinks', 'Links')), yes(t('config.importGetGroups', 'Groups')),
+                    no(t('config.importGetWidgets', 'Widgets')), no(t('config.importGetKeys', 'Keys'))],
+            },
+            {
+                id: 'spreadsheet', action: 'csv-import', files: ['.csv'],
+                title: t('config.importSrcSpreadsheet', 'A spreadsheet'),
+                from: t('config.importSrcSpreadsheetFrom', 'Columns: name, URL, category, tags, notes, shortcut'),
+                gets: [yes(t('config.importGetLinks', 'Links')), yes(t('config.importGetTags', 'Tags')), yes(t('config.importGetNotes', 'Notes')), yes(t('config.importGetShortcuts', 'Shortcuts'))],
+            },
+            {
+                id: 'settings', action: 'settings-import', files: ['.json'],
+                title: t('config.importSrcSettings', 'Settings'),
+                from: t('config.importSrcSettingsFrom', 'Exported from another nextDash'),
+                gets: [yes(t('config.importGetSettings', 'Settings')), no(t('config.importGetBookmarks', 'Bookmarks'))],
+            },
+            {
+                id: 'backup', action: 'import', files: ['.zip'],
+                title: t('config.importSrcBackup', 'A nextDash backup'),
+                from: t('config.importSrcBackupFrom', 'A full backup of everything'),
+                gets: [yes(t('config.importGetEverything', 'Everything')), no(t('config.importGetKeeps', 'Replaces what is here'))],
+            },
+        ];
+        const cards = sources.map((src) => `
+            <div class="config-import-card config-import-card--${esc(src.id)}">
+                <div class="config-import-head">
+                    <b>${esc(src.title)}</b>
+                    <span class="config-import-files">${src.files.map((f) => `<code>${esc(f)}</code>`).join('')}</span>
+                </div>
+                <p class="config-import-from">${esc(src.from)}</p>
+                <div class="config-import-gets">${src.gets.join('')}</div>
+                <button type="button" class="config-btn config-btn--small" data-backup-action="${esc(src.action)}">${esc(t('config.importChoose', 'Choose a file…'))}</button>
+            </div>`).join('');
+        return `
+            <div class="config-panel">
+                <div class="config-import-grid">${cards}</div>
+                <p class="config-import-foot">${esc(t('config.importFoot', 'Links are counted first, then you choose where they go: this page, a new page, or the inbox. Links you already have are skipped.'))}</p>
+            </div>`;
     },
 
     /**

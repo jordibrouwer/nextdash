@@ -25,6 +25,7 @@
         'fontPreset',
         'collections',
         'tagRules',
+        'tagColors',
         'dismissedTagSuggestions',
         'savedSearches',
         'quickStart',

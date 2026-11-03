@@ -175,7 +175,7 @@ test.describe('the memory widget in config', () => {
 
         expect(shape.offered).toBe(true);
         expect(shape.group).toBe('system');
-        expect(shape.fields).toEqual(['refreshSeconds', 'showCache', 'showSwap']);
+        expect(shape.fields).toEqual(['refreshSeconds', 'showCache', 'showSwap', 'warnAt', 'criticalAt']);
         expect(shape.floor).toBe(2);
         expect(shape.about).toBeTruthy();
     });

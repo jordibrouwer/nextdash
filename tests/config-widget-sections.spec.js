@@ -61,7 +61,8 @@ test.describe('widget settings in three sections', () => {
 
     test('RSS keeps its feeds in Connection and its rows in Display', async ({ page }) => {
         const detail = await openWidget(page, rss);
-        expect(await names(detail)).toEqual(['connection', 'display']);
+        // Advanced is there for every widget: when it is shown lives in it.
+        expect(await names(detail)).toEqual(['connection', 'display', 'advanced']);
         await expect(section(detail, 'connection').locator('[data-widget-setting="feedUrls"]')).toHaveCount(1);
         await expect(section(detail, 'display').locator('[data-widget-setting="rows"]')).toHaveCount(1);
         await expect(section(detail, 'display').locator('[data-widget-setting="columns"]')).toHaveCount(1);
@@ -80,10 +81,11 @@ test.describe('widget settings in three sections', () => {
         await expect(section(detail, 'display')).toHaveAttribute('open', '');
     });
 
-    test('Notes shows only Display', async ({ page }) => {
+    test('Notes shows Display, and Advanced for when it is shown', async ({ page }) => {
         const detail = await openWidget(page, { type: 'notes', title: 'Notes', config: {} });
-        await expect(detail.locator('[data-widget-section]')).toHaveCount(1);
-        expect(await names(detail)).toEqual(['display']);
+        await expect(detail.locator('[data-widget-section]')).toHaveCount(2);
+        expect(await names(detail)).toEqual(['display', 'advanced']);
+        await expect(section(detail, 'advanced').locator('[data-widget-setting="showFrom"]')).toHaveCount(1);
     });
 
     test('a repaint keeps an opened section open', async ({ page }) => {

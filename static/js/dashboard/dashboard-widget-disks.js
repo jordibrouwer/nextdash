@@ -28,21 +28,23 @@
         return U().label(dash, key, fallback);
     }
 
-    /** Tone by how little is left, not by size: 90% of a big disk still bites. */
-    function tone(usedPercent) {
-        if (usedPercent >= 95) return 'bad';
-        if (usedPercent >= 85) return 'warn';
-        return 'good';
+    /**
+     * Tone by how little is left, not by size: 90% of a big disk still bites.
+     * Where it turns amber and red is the widget's own setting, 85 and 95 until
+     * it is moved.
+     */
+    function tone(usedPercent, limits) {
+        return U().usageTone(usedPercent, limits || U().usageLimits({}));
     }
 
     /** The four figures the totals break into once there is room for them. */
-    function totalsRow(dash, disks) {
+    function totalsRow(dash, disks, limits) {
         const s = S();
         return [
             {
                 value: s.formatBytes(disks.freeBytes),
                 label: label(dash, 'dashboard.widgetDisksFreeLabel', 'free'),
-                tone: tone(disks.usedPercent),
+                tone: tone(disks.usedPercent, limits),
             },
             {
                 value: s.formatBytes(disks.usedBytes),
@@ -84,6 +86,7 @@
         const showMeter = config.showMeter !== false;
         const showInodes = config.showInodes === true;
         const mounts = disks.mounts || [];
+        const limits = u.usageLimits(config);
 
         // The headline is the whole pool: one figure rather than a sum the
         // reader has to do across rows.
@@ -99,7 +102,7 @@
          * what the headline already implies, so they wait for the width; free
          * and how full sit on the narrow tile too.
          */
-        const totals = u.statGrid(totalsRow(dash, disks));
+        const totals = u.statGrid(totalsRow(dash, disks, limits));
         totals.children[1]?.classList.add('dashboard-widget-wide-only');
         totals.children[2]?.classList.add('dashboard-widget-wide-only');
         panel.appendChild(totals);
@@ -127,10 +130,10 @@
                 return;
             }
 
-            list.appendChild(u.row(name, mountDetail(dash, mount), tone(mount.usedPercent)));
+            list.appendChild(u.row(name, mountDetail(dash, mount), tone(mount.usedPercent, limits)));
 
             if (showMeter && mount.totalBytes > 0) {
-                list.appendChild(u.meter(mount.usedBytes, mount.totalBytes, tone(mount.usedPercent)));
+                list.appendChild(u.meter(mount.usedBytes, mount.totalBytes, tone(mount.usedPercent, limits)));
             }
 
             /*

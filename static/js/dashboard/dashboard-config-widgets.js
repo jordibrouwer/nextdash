@@ -2488,7 +2488,8 @@
 
     renderWidgetSettings(stored, index) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const fields = DashboardConfig.WIDGET_SETTINGS[stored.type] || [];
+        // Its own settings, then the ones every widget has (when it is shown).
+        const fields = [...(DashboardConfig.WIDGET_SETTINGS[stored.type] || []), ...DashboardConfig.WIDGET_SCHEDULE_FIELDS];
         // No early return for a type with no fields of its own: width applies to
         // every widget, so the panel is never empty.
 
@@ -2629,10 +2630,11 @@
             return `
                 <div class="config-widget-field">
                     <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                    <input type="text" id="${id}" class="config-text"
+                    <input type="${field.input === 'time' || field.input === 'date' ? field.input : 'text'}" id="${id}" class="config-text"
                         data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                         data-widget-kind="text" maxlength="${field.maxlength || 200}"
                         value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
+                    ${field.hint ? `<p class="config-widget-field-hint">${esc(this.t(field.hint[0], field.hint[1]))}</p>` : ''}
                 </div>`;
         }
         /*
@@ -2680,21 +2682,61 @@
         // health widget's figures and reads better than every box ticked.
         // A field may name its own starting selection (`defaults`) when
         // "everything" is not what the tile draws until it is told.
-        const chosen = Array.isArray(config[field.key]) ? config[field.key] : (field.defaults || null);
-        const boxes = (field.options || []).map(([value, text]) => `
+        /*
+         * Options that are other widgets of this page (a stack's tabs): read
+         * from the list as it stands, minus this widget and any stack, and
+         * none ticked until the reader picks -- "all of them" is not a
+         * sensible way to fill a tab strip.
+         */
+        const siblings = field.optionsFrom === 'siblings';
+        const options = siblings ? this.widgetSiblingOptions(index) : (field.options || []);
+        const chosen = Array.isArray(config[field.key])
+            ? config[field.key]
+            : (siblings ? [] : (field.defaults || null));
+        if (siblings && !options.length) {
+            return `
+            <div class="config-widget-field">
+                <span class="config-widget-field-label">${label}</span>
+                <p class="config-widget-field-hint">${esc(this.t('config.widgetStackNoMembers',
+                    'Add other widgets to this page first; each becomes a tab here.'))}</p>
+            </div>`;
+        }
+        const boxes = options.map(([value, text]) => `
             <label class="config-toggle config-toggle--inline">
                 <input type="checkbox" data-widget-setting="${esc(field.key)}"
                     data-widget-index="${index}" data-widget-kind="checkset"
                     ${(field.defaults || []).includes(value) ? 'data-widget-default' : ''}
                     value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
-                <span>${esc(this.t(text[0], text[1]))}</span>
+                <span>${esc(typeof text === 'string' ? text : this.t(text[0], text[1]))}</span>
             </label>`).join('');
         return `
             <div class="config-widget-field">
                 <span class="config-widget-field-label">${label}${
                     this.widgetFieldInfoButton(field, index)}</span>
                 <div class="config-widget-checkset">${boxes}</div>
+                ${field.hint && !siblings ? `<p class="config-widget-field-hint">${esc(this.t(field.hint[0], field.hint[1]))}</p>` : ''}
             </div>`;
+    },
+
+    /**
+     * The widgets a stack could hold: the others on its own page, never a
+     * stack, as [id, name] pairs in page order. The name is the title, or the
+     * type's when it has none, with the type after a title so two "Status"
+     * widgets can be told apart.
+     */
+    widgetSiblingOptions(index) {
+        const blocks = this._widgetBlocks || [];
+        const self = blocks[index];
+        if (!self?.isWidget) return [];
+        const core = this.dash.renderCore;
+        return blocks
+            .filter((block) => block.isWidget && block.id !== self.id && block.type !== 'stack'
+                && (self.pageId == null || block.pageId == null || Number(block.pageId) === Number(self.pageId)))
+            .map((block) => {
+                const kind = core?.widgetTypeLabel?.(block.type) || block.type;
+                const title = String(block.title || '').trim();
+                return [block.id, title && title !== kind ? `${title} · ${kind}` : kind];
+            });
     },
 
     /** Which section a setting belongs in: Display unless the table says otherwise. */
@@ -3696,6 +3738,9 @@
         if (this.dash.settings?.enableSessionTips === false) return;
         this._widgetsTutorialAsked = true;
         if (!(await this.loadWidgetsTour())) return;
+        // The script came in while the reader moved on: a tour for a section
+        // that is no longer on screen would open over another one.
+        if (this.section !== 'widgets' || !this.isActiveView()) { this._widgetsTutorialAsked = false; return; }
         window.WidgetsTutorial?.maybeShow?.();
     },
 
@@ -4351,6 +4396,11 @@
             // With a starting selection, "all ticked" is a choice of its own.
             value = starting.length ? (isStart ? undefined : chosen)
                 : (chosen.length === boxes.length ? undefined : chosen);
+            // A stack's tabs: what is ticked, and nothing ticked is no tabs --
+            // all ticked is six tabs, not "the default".
+            if (DashboardConfig.WIDGET_SETTINGS.stack?.some((f) => f.key === key && f.optionsFrom)) {
+                value = chosen.length ? chosen : undefined;
+            }
         }
 
         if (value === undefined) delete draft.config[key];
