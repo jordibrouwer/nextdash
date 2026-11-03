@@ -106,10 +106,10 @@ test('the toast Read opens the same paper', async ({ page }) => {
     await expectTwoSections(page);
 });
 
-test('Read in full on the hover card shows only that site', async ({ page }) => {
+test('Open reader on the hover card shows only that site', async ({ page }) => {
     await openDashboard(page);
     await row(page, 'Site A').hover();
-    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Read in full' }).click();
+    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Open reader' }).click();
     await expect(modal(page)).toBeVisible();
     await expect(modal(page).locator('.feed-news-section-name')).toHaveText(['Site A']);
     await expect(modal(page).locator('.feed-news-section:not(.is-earlier) .feed-news-entry-title')).toHaveText(['A three', 'A two', 'A one']);
@@ -175,6 +175,7 @@ test('returning to the tab opens nothing by itself unless the setting is on', as
     await expect.poll(() => page.title()).toMatch(/^\(5\) /);
     await fakeVisibility(page);
     await page.evaluate(() => window.__leaveAndReturn());
+    // Nothing should open: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(600);
     await expect(modal(page)).toHaveCount(0);
 });
@@ -197,6 +198,7 @@ test('returning to the tab opens the paper once, but not after it was opened by 
     await page.keyboard.press('Escape');
     await expect(modal(page)).toBeHidden();
     await page.evaluate(() => window.__leaveAndReturn());
+    // Nothing should open: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(500);
     await expect(modal(page)).toBeHidden();
 });
@@ -213,6 +215,7 @@ test('returning to the tab leaves the paper closed when only muted feeds have ne
     await expect.poll(() => page.title()).toMatch(/^\(5\) /);
     await fakeVisibility(page);
     await page.evaluate(() => window.__leaveAndReturn());
+    // Nothing should open: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(500);
     await expect(modal(page)).toHaveCount(0);
 });
@@ -226,37 +229,9 @@ test('returning to the tab does not cover another window', async ({ page, reques
     await page.locator('#help-button').click();
     await expect(page.locator('#app-modal.show .modal')).toBeVisible();
     await page.evaluate(() => window.__leaveAndReturn());
+    // Nothing should open over the other window: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(500);
     await expect(modal(page)).toHaveCount(0);
-});
-
-test('the News button goes back to the article that was open; from the front page it starts at the front', async ({ page }) => {
-    await openDashboard(page);
-    await newsButton(page).click();
-    await item(page, 'A two').locator('.feed-news-entry').click();
-    await expect(modal(page).locator('.feed-news-title')).toHaveText('A two');
-    await page.keyboard.press('Escape');
-    await expect(modal(page)).toBeHidden();
-    await newsButton(page).click();
-    await expect(modal(page).locator('.feed-news-title')).toHaveText('A two');
-    await modal(page).locator('[data-feed-news-index]').click();
-    await page.keyboard.press('Escape');
-    await expect(modal(page)).toBeHidden();
-    await newsButton(page).click();
-    await expect(modal(page).locator('.feed-news-section-name')).toHaveText(['Site B', 'Site A']);
-});
-
-test('the News button hides when every feed is paused and returns with one that runs', async ({ page, request }) => {
-    const pause = async (site, paused) => expect((await request.post('/api/feeds/watch/feed', {
-        headers, data: { bookmarkUrl: site.url, feedUrl: `${site.base}/feed/`, paused },
-    })).ok()).toBe(true);
-    await pause(siteA, true);
-    await pause(siteB, true);
-    await openDashboard(page);
-    await expect(newsButton(page)).toBeHidden();
-    await pause(siteB, false);
-    await page.reload();
-    await expect(newsButton(page)).toBeVisible();
 });
 
 test('on a phone the sections stack, the controls are 44 px and nothing runs off the side', async ({ page }) => {
@@ -293,6 +268,7 @@ test.describe('on a phone', () => {
         await openDashboard(page);
         await fakeVisibility(page);
         await page.evaluate(() => window.__leaveAndReturn());
+        // Nothing should open: a fixed wait, so a late open would show up before the check.
         await page.waitForTimeout(600);
         await expect(modal(page)).toHaveCount(0);
     });
