@@ -4430,8 +4430,68 @@ class DashboardConfig {
             action('check-update', 'config.actionCheckUpdate', 'Check for an update', 'upgrade version new release', 'overview'),
             action('backups', 'config.actionBackups', 'Make or restore a backup', 'backup restore export import data zip', 'data-backups'),
             action('import', 'config.actionImport', 'Import bookmarks', 'import browser html csv pocket raindrop', 'data-backups'),
+            action('layout-history', 'config.actionLayoutHistory', 'Restore an earlier layout of this page', 'undo history widgets arrangement rollback back', 'overview'),
             action('changed', 'config.actionChanged', 'Show what I changed from the defaults', 'modified different default customised diff reset', 'overview'),
         ];
+    }
+
+    /**
+     * Earlier arrangements of this page, newest first, each with what restoring
+     * it would change. A restore is a save like any other, so the layout it
+     * replaces is kept too: nothing here is final.
+     */
+    async openLayoutHistory() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pageId = Number(this.dash.currentPageId) || Number(this.dash.pages?.[0]?.id) || 1;
+        let entries = [];
+        try {
+            const res = await this.writeFetch(`/api/pages/${pageId}/layout-history`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            entries = ((await res.json()).entries || []).filter((e) => e.changed);
+        } catch {
+            this.notify(this.t('config.layoutHistoryError', 'Could not read the layout history.'), 'error');
+            return;
+        }
+        const page = (this.dash.pages || []).find((p) => Number(p.id) === pageId)?.name || '';
+        const summary = (e) => {
+            const parts = [];
+            if (e.brings?.length) parts.push(this.t('config.layoutHistoryBrings', 'brings back {names}').replace('{names}', e.brings.join(', ')));
+            if (e.removes?.length) parts.push(this.t('config.layoutHistoryRemoves', 'takes away {names}').replace('{names}', e.removes.join(', ')));
+            if (e.reordered && !parts.length) parts.push(this.t('config.layoutHistoryOrder', 'puts the blocks in another order'));
+            return parts.join(' · ') || this.t('config.layoutHistorySettings', 'changes widget settings');
+        };
+        const body = entries.length
+            ? `<ul class="config-settings-jump-results config-layout-history" role="list">${entries.map((e) => `
+                <li class="config-settings-jump-result" role="listitem">
+                    <span class="config-settings-jump-result-title">${esc(this.formatRelative(e.at))}</span>
+                    <span class="config-settings-jump-result-sub">${esc(summary(e))}</span>
+                    <button type="button" class="config-btn config-btn--small" data-layout-restore="${esc(e.id)}">${esc(this.t('config.layoutHistoryRestore', 'Restore'))}</button>
+                </li>`).join('')}</ul>`
+            : `<p class="config-settings-jump-empty">${esc(this.t('config.layoutHistoryNone', 'No earlier layouts yet. They are kept when widgets are added, moved, closed or changed.'))}</p>`;
+        window.AppModal.show({
+            title: this.t('config.layoutHistoryTitle', 'Earlier layouts of “{page}”').replace('{page}', page),
+            htmlMessage: `<div class="config-layout-history-box"><p class="config-panel-note">${esc(this.t('config.layoutHistoryNote',
+                'The widgets of this page and the order of its blocks, not the links. Restoring keeps the layout it replaces, so you can go back.'))}</p>${body}</div>`,
+            confirmText: this.t('config.close', 'Close'),
+            showCancel: false,
+            modalClass: 'config-settings-jump-modal keyboard-cheat-sheet-modal',
+        });
+        // Inside the message, which is new on every show: AppModal's own panel is shared.
+        document.querySelector('.config-layout-history-box')?.addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-layout-restore]');
+            if (!button) return;
+            button.disabled = true;
+            try {
+                const res = await this.writeFetch(`/api/pages/${pageId}/layout-history/${encodeURIComponent(button.getAttribute('data-layout-restore'))}/restore`, { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                window.AppModal.hide();
+                await this.dash.renderCore?.reloadPageBlocks?.(pageId);
+                this.notify(this.t('config.layoutHistoryRestored', 'Layout restored. It is in the list again if you want the one it replaced.'), 'success');
+            } catch {
+                button.disabled = false;
+                this.notify(this.t('config.layoutHistoryRestoreError', 'Could not restore that layout.'), 'error');
+            }
+        });
     }
 
     /** Runs an action entry. Returns once it has handed over to where it lives. */
@@ -4449,6 +4509,7 @@ class DashboardConfig {
             await this.openThemeBrowser();
             return;
         }
+        if (id === 'layout-history') { await this.openLayoutHistory(); return; }
         if (id === 'changed') { this.openChangedSettings(); return; }
         if (id === 'whats-new') { await this.openWhatsNew(); return; }
         if (id === 'check-update') {

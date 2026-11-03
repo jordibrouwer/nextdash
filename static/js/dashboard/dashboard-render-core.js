@@ -913,6 +913,31 @@ class DashboardRenderCore {
     }
 
     /*
+     * Read this page's blocks again from the server and draw the grid from them.
+     * For a change made on the server's side of things (a restored layout) that
+     * this browser did not make itself. False when the reader has moved to
+     * another page meanwhile or the read failed.
+     */
+    async reloadPageBlocks(pageId = Number(this.dash.currentPageId)) {
+        const d = this.dash;
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetcher(`/api/pages/${pageId}/blocks`);
+            if (!res.ok || !this.onSamePage(pageId)) return false;
+            const blocks = await res.json();
+            d.widgets = blocks.widgets || [];
+            d.blockOrder = blocks.order || [];
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
+            this.forgetWidgetConfigCache?.();
+            this.forgetWidgetCaches?.();
+            d.renderDashboard?.({ animate: false, forceFull: true });
+            return true;
+        } catch (_error) {
+            return false;
+        }
+    }
+
+    /*
      * Which tiles a click can truly bring up to date: the ones whose answer
      * can be older than their clock says. Custom holds a failure for thirty
      * seconds; the media, Beszel and Home Assistant tiles come through the

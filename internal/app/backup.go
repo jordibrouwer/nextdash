@@ -162,6 +162,8 @@ var dataFiles = map[string]dataFilePolicy{
 	// Uptime samples for monitored bookmarks. Unlike the caches these cannot
 	// be recomputed: a 30-day window takes 30 days to earn back.
 	"health-history.json": dataKeep,
+	// Earlier arrangements of each page: they describe the pages a restore replaces.
+	"layout-history.json": dataCache,
 	// Deleted bookmarks still inside their 30 days; dropping them would empty
 	// the one place they still existed.
 	"trash.json": dataKeep,

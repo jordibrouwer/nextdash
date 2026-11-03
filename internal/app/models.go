@@ -1620,6 +1620,10 @@ type Store interface {
 	// because an order is only meaningful beside the things it orders.
 	GetPageBlocks(pageID int) ([]Widget, []string)
 	SavePageBlocks(pageID int, widgets []Widget, order []string) error
+	// LayoutHistory is a page's earlier arrangements, newest first; RestoreLayout
+	// saves one back and always keeps the layout it replaces (see layout_history.go).
+	LayoutHistory(pageID int) []LayoutSnapshot
+	RestoreLayout(pageID int, widgets []Widget, order []string) error
 	SavePage(page Page) error
 	// EnsureUnsortedPage returns the reserved hidden "Unsorted" page, creating it on first use.
 	EnsureUnsortedPage() (Page, error)
@@ -1704,6 +1708,8 @@ type PrefetchIconUpdate struct {
 }
 
 type FileStore struct {
+	// layoutLast is when each page last had a layout snapshot filed (store lock).
+	layoutLast                  map[int]time.Time
 	settingsFile                string
 	colorsFile                  string
 	pageOrderFile               string
@@ -4425,6 +4431,7 @@ func (fs *FileStore) DeletePage(pageID int) error {
 	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
 		return err
 	}
+	fs.forgetLayoutHistory(pageID)
 	// Removing bookmarks-N.json changes what GetPages() reports — see the same
 	// note in saveBookmarksByPageLocked.
 	fs.noteDataMutation(0)

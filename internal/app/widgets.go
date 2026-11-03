@@ -645,6 +645,12 @@ else in the file belongs to somebody else, and a save that carried a stale copy
 of the bookmarks would undo whatever was written between the read and the write.
 */
 func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string) error {
+	return fs.savePageBlocks(pageID, widgets, order, false)
+}
+
+// savePageBlocks is SavePageBlocks, with the choice of whether the layout it
+// replaces is always kept (a restore) or kept once per burst of edits (the rest).
+func (fs *FileStore) savePageBlocks(pageID int, widgets []Widget, order []string, forceHistory bool) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -654,6 +660,8 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 	if err != nil {
 		return err
 	}
+	previousPageWidgets := append([]Widget(nil), page.Widgets...)
+	previousPageOrder := append([]string(nil), page.BlockOrder...)
 
 	// nil keeps what is stored, read under this lock: a drag sends only the
 	// order, and reading the widgets before taking it wrote back a list that
@@ -668,6 +676,9 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 	if order == nil {
 		order = page.BlockOrder
 	}
+	// What the page held before, for the layout history.
+	previousWidgets := normalizeWidgets(previousPageWidgets)
+	previousOrder := resolveBlockOrder(previousPageOrder, page.Categories, previousWidgets)
 	// Resolved rather than stored as given, so a caller cannot write an order
 	// naming blocks that do not exist -- or leave one out and make it vanish.
 	page.BlockOrder = resolveBlockOrder(order, page.Categories, page.Widgets)
@@ -677,6 +688,12 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 		return err
 	}
 	fs.invalidateReadCache()
+	if now := normalizeWidgets(page.Widgets); !sameLayout(previousWidgets, previousOrder, now, page.BlockOrder) {
+		// A widget that disappears always files the layout it was in, burst or
+		// not: removing is the edit most worth being able to take back, and the
+		// state before a burst may be from before the widget was set up.
+		fs.recordLayoutSnapshot(pageID, previousWidgets, previousOrder, forceHistory || widgetDisappeared(previousWidgets, now))
+	}
 	return nil
 }
 
@@ -685,3 +702,17 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 // the timer started, so a beat found it still valid by milliseconds and drew
 // the same figures again: up to twice the TTL between real fetches.
 const widgetBeatSlack = 3 * time.Second
+
+// widgetDisappeared reports whether the earlier list has a widget the later one lacks.
+func widgetDisappeared(before, after []Widget) bool {
+	still := make(map[string]struct{}, len(after))
+	for _, w := range after {
+		still[w.ID] = struct{}{}
+	}
+	for _, w := range before {
+		if _, ok := still[w.ID]; !ok {
+			return true
+		}
+	}
+	return false
+}
