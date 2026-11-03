@@ -4843,7 +4843,7 @@
     "browserImportConfirm": "Import {n} bookmarks onto the current page?",
     "browserImportConfirmDetail": "Import {n} bookmarks onto the current page? {d} are already here and will be skipped.",
     "browserImportError": "Failed to import browser bookmarks.",
-    "browserImportInvalidFile": "Please select a browser bookmark HTML export file.",
+    "browserImportInvalidFile": "Please choose an HTML bookmarks file, or a Homepage, Dashy or Homer configuration (.yaml).",
     "browserImportEmpty": "No valid bookmarks found in the file.",
     "csvExportDescription": "Export all bookmarks to CSV",
     "dbTabSources": "Sources",

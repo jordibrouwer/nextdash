@@ -1,8 +1,11 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -43,10 +46,31 @@ func (h *Handlers) ImportBookmarksHTML(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body := http.MaxBytesReader(w, r.Body, maxImportBytes)
-	parsed, err := ParseNetscapeBookmarks(body)
+	raw, err := io.ReadAll(body)
 	if err != nil {
 		http.Error(w, "Could not read that bookmark file", http.StatusBadRequest)
 		return
+	}
+	// The same door takes another dashboard's configuration: a bookmark file
+	// starts with a tag, those do not. A file that is neither falls through to
+	// the bookmark reader and is refused there, as it always was.
+	var parsed []NetscapeBookmark
+	if looksLikeDashboardConfig(raw) {
+		rows, _, parseErr := ParseDashboardConfig(raw)
+		if errors.Is(parseErr, errDashboardConfigTooBig) {
+			http.Error(w, "That configuration is too large or too deeply nested to read", http.StatusBadRequest)
+			return
+		}
+		if parseErr == nil {
+			parsed = rows
+		}
+	}
+	if parsed == nil {
+		parsed, err = ParseNetscapeBookmarks(bytes.NewReader(raw))
+		if err != nil {
+			http.Error(w, "Could not read that bookmark file", http.StatusBadRequest)
+			return
+		}
 	}
 
 	rows := make([]ImportedRow, 0, len(parsed))
@@ -131,6 +155,7 @@ func (h *Handlers) previewImport(pageID int, rows []ImportedRow) ImportPreview {
 			folders[row.Category] = struct{}{}
 		}
 	}
+	preview.Folders = len(folders)
 	return preview
 }
 

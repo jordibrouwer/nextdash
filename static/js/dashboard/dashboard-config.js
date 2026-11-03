@@ -7697,8 +7697,9 @@ class DashboardConfig {
     }
 
     async importBrowserBookmarks(file) {
-        if (!/\.(html?|htm)$/i.test(file.name)) {
-            this.notify(this.t('config.browserImportInvalidFile', 'Please choose an HTML bookmarks file.'), 'error');
+        // A bookmarks file, or the configuration of Homepage, Dashy or Homer.
+        if (!/\.(html?|htm|ya?ml)$/i.test(file.name)) {
+            this.notify(this.t('config.browserImportInvalidFile', 'Please choose an HTML bookmarks file, or a Homepage, Dashy or Homer configuration (.yaml).'), 'error');
             return;
         }
         const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;

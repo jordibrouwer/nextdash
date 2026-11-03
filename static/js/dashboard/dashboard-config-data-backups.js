@@ -1826,7 +1826,7 @@
                     this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'),
                     btn('settings-export', this.t('config.settingsExportBtn', 'Export settings (JSON)'))
                     + btn('settings-import', this.t('config.settingsImportBtn', 'Import settings…')))}
-                <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
+                <input type="file" id="config-browser-import-input" accept=".html,.htm,.yaml,.yml" hidden>
                 <input type="file" id="config-csv-import-input" accept=".csv,text/csv" hidden>
                 <input type="file" id="config-settings-import-input" accept=".json" hidden>
             </div>
