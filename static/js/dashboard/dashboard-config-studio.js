@@ -440,7 +440,7 @@
             const t = (k, f) => this.t(k, f);
             switch (tab) {
                 case 'backdrop':
-                    return this.renderBackdropPanel() + this.renderBackdropTuningPanel() + this.renderPatternPanel();
+                    return this.renderBackdropTuningPanel() + this.renderBackdropPanel() + this.renderPatternPanel();
                 case 'surface':
                     return this.renderSurfacesPanel() + this.renderCardGlassPanel();
                 case 'heads': {
