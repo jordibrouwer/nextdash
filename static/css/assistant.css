@@ -530,6 +530,50 @@ body:not([data-depth="flat"]) .assistant-side {
     font-size: 0.9em;
 }
 
+/* A table (renderMarkdown): small, ruled by row, scrolls sideways instead of squeezing a column to nothing. */
+.assistant-table-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+    border: 1px solid var(--ai-rule);
+    border-radius: var(--layout-radius-sm, 4px);
+}
+
+.assistant-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.92em;
+    line-height: 1.4;
+}
+
+.assistant-table th,
+.assistant-table td {
+    padding: 0.35em 0.7em;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: normal;
+}
+
+.assistant-table th {
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-semibold, 600);
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.assistant-table tr + tr > * {
+    border-top: 1px solid var(--ai-rule);
+}
+
+/* Cells stay wide enough to read; a long address in a cell breaks instead of stretching the table. */
+.assistant-table td {
+    min-width: 6em;
+}
+
+.assistant-table td code {
+    overflow-wrap: anywhere;
+    word-break: break-all;
+}
+
 /* A link to a place in the app: the accent, underlined, and a ring on focus. */
 .assistant-link {
     color: var(--accent-primary);
