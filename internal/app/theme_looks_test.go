@@ -57,9 +57,13 @@ func TestLooksCollection(t *testing.T) {
 			t.Errorf("%s: %q is not an archetype", family, dark.Character)
 		}
 	}
-	for recipe, want := range map[string]int{"burst": 5, "splash": 4, "oceanblue": 1, "mesh": 4, "aurora": 3, "leak": 4, "prism": 3} {
-		if recipes[recipe] != want {
-			t.Errorf("%d looks on %s, want %d", recipes[recipe], recipe, want)
+	// Each Look has a recipe of its own, outside the shared ones, and no two Looks share one.
+	for recipe, n := range recipes {
+		if n != 1 {
+			t.Errorf("%d looks on %s, want 1", n, recipe)
+		}
+		if themeBackdropRecipeIndex(recipe) < sharedBackdropRecipes() {
+			t.Errorf("%s is a shared recipe, a Look draws its own", recipe)
 		}
 	}
 }

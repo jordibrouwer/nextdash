@@ -46,32 +46,38 @@ func TestBothHalvesOfAPairGetTheSameRecipe(t *testing.T) {
 	}
 }
 
-// Spread: no recipe is a theme's alone and none is the whole library's.
+// sharedBackdropRecipes is how many recipes come before the first one drawn for a single
+// pair ("louche"): the shared ones, held in material pools. Everything after them belongs
+// to one pair, or to a Look or Ocean, and is in no pool.
+func sharedBackdropRecipes() int { return themeBackdropRecipeIndex("louche") }
+
+// Spread: the first 75 recipes are shared and no one of them is the whole library's; every
+// recipe after them is a pair's alone, so a pair is never given one that another has.
 func TestChosenBackdropsAreSpreadAcrossTheRecipes(t *testing.T) {
 	uses := map[string]int{}
 	for _, recipe := range themeBackdropChoice {
 		uses[recipe]++
 	}
+	shared := sharedBackdropRecipes()
+	if shared != 75 {
+		t.Fatalf("%d shared recipes, want 75", shared)
+	}
 	for i, name := range themeBackdropRecipes {
 		n := uses[name]
-		if i >= themeBackdropHashedRecipes {
-			// The colour-burst recipes are chosen by the looks written for them,
-			// not by the older pairs; they only may not be the whole library's.
-			if n > 16 {
-				t.Errorf("%s is used by %d pairs, want at most 16", name, n)
+		if i >= shared {
+			if n > 1 {
+				t.Errorf("%s belongs to one pair and is used by %d", name, n)
 			}
 			continue
 		}
-		// The colour washes the patterns replaced are no longer chosen for a theme; the Looks name
-		// them themselves, and the archetypes bind two.
-		if retiredColourWashes[name] {
-			if n > 10 {
-				t.Errorf("%s is used by %d pairs, want at most 10", name, n)
-			}
-			continue
+		if n > 10 {
+			t.Errorf("%s is used by %d pairs, want at most 10", name, n)
 		}
-		if n < 2 || n > 10 {
-			t.Errorf("%s is used by %d pairs, want 2 to 10", name, n)
+	}
+	// Every pair has a recipe of its own, outside the shared ones.
+	for key, recipe := range themeBackdropChoice {
+		if themeBackdropRecipeIndex(recipe) < shared {
+			t.Errorf("%s is given the shared recipe %q, want one of its own", key, recipe)
 		}
 	}
 }
@@ -128,6 +134,17 @@ func TestAThemeOwnBackdropBeatsTheChoice(t *testing.T) {
 func TestEveryChoiceComesFromThePoolOfItsMaterial(t *testing.T) {
 	themes := getDefaultBuiltInThemes()
 	for key, recipe := range themeBackdropChoice {
+		if themeBackdropRecipeIndex(recipe) >= sharedBackdropRecipes() {
+			// A recipe drawn for one pair is in no pool; it is held to its own theme instead.
+			for _, pool := range themeBackdropPools {
+				for _, name := range pool {
+					if name == recipe {
+						t.Errorf("%s is a recipe of one pair and is also pooled", recipe)
+					}
+				}
+			}
+			continue
+		}
 		for _, id := range []string{key, strings.TrimSuffix(key, "-light") + "-dark"} {
 			material := materialAttr(themes[id])
 			if !themeBackdropInPool(material, recipe) {

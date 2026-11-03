@@ -47,10 +47,10 @@ func TestBackdropPairSharesOneRecipe(t *testing.T) {
 	}
 
 	// Same palette on both sides so only the id can move the recipe -- the
-	// point being proven is the shape, not the colour, which already varied
-	// correctly before this fix.
-	dark.AccentPrimary, dark.AccentError, dark.BackgroundPrimary =
-		light.AccentPrimary, light.AccentError, light.BackgroundPrimary
+	// point being proven is the shape, not the colour. A recipe drawn for one
+	// pair uses all of the theme's colours (an SVG holds them as hex), so the
+	// whole palette is made equal, not three of its colours.
+	dark = light
 
 	lightBackdrop := themeBackdropImage("retro-crt-mk2-light", light)
 	darkBackdrop := themeBackdropImage("retro-crt-mk2-dark", dark)
@@ -103,6 +103,23 @@ func TestBackdropBareLightAndDarkStayDifferent(t *testing.T) {
 	}
 }
 
+// drawsInThemeColours says whether any of the theme's colours is in the image, as a variable or
+// as the hex an SVG data: URI has to carry (percent-encoded, in either case).
+func drawsInThemeColours(image string, tc ThemeColors) bool {
+	for _, v := range []string{"--accent-primary", "--accent-error", "--accent-warning", "--accent-success", "--background-primary"} {
+		if strings.Contains(image, v) {
+			return true
+		}
+	}
+	lower := strings.ToLower(image)
+	for _, hex := range []string{tc.AccentPrimary, tc.AccentError, tc.AccentWarning, tc.AccentSuccess, tc.BackgroundPrimary} {
+		if hex != "" && (strings.Contains(lower, strings.ToLower(hex)) || strings.Contains(lower, "%23"+strings.ToLower(strings.TrimPrefix(hex, "#")))) {
+			return true
+		}
+	}
+	return false
+}
+
 // Every recipe is drawn with all four colours of the theme on a deeper ground, with a quiet centre on top, and
 // no two recipes draw the same thing.
 func TestEveryRecipeIsDrawnInColourOnADeeperGround(t *testing.T) {
@@ -119,10 +136,15 @@ func TestEveryRecipeIsDrawnInColourOnADeeperGround(t *testing.T) {
 		if !strings.Contains(look.Image, "--bd-calm") {
 			t.Errorf("%s: no quiet centre", name)
 		}
-		for _, colour := range []string{"--accent-primary", "--accent-error", "--accent-warning", "--accent-success"} {
-			if !strings.Contains(look.Image, colour) {
-				t.Errorf("%s: does not draw with %s", name, colour)
+		if themeBackdropRecipeIndex(name) < sharedBackdropRecipes() {
+			for _, colour := range []string{"--accent-primary", "--accent-error", "--accent-warning", "--accent-success"} {
+				if !strings.Contains(look.Image, colour) {
+					t.Errorf("%s: does not draw with %s", name, colour)
+				}
 			}
+		} else if !drawsInThemeColours(look.Image, tc) {
+			// A recipe of one pair is drawn in the theme's own colours, as variables or as hex.
+			t.Errorf("%s: draws with none of the theme's colours", name)
 		}
 		if !strings.Contains(look.Image, "#000") {
 			t.Errorf("%s: no deeper ground", name)

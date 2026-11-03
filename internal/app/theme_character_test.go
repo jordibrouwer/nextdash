@@ -294,8 +294,8 @@ func TestTheFourCharacterThemesShip(t *testing.T) {
 	if crt := themes["retro-crt-mk2-dark"]; crt.RadiusScale > 0.2 || crt.LabelTransform != "uppercase" {
 		t.Errorf("Retro CRT Mk II lost its shape: radius %v, transform %q", crt.RadiusScale, crt.LabelTransform)
 	}
-	// The default theme is Tidal Slate; a new theme does not change it by accident.
-	if defaultThemeID != "tidal-slate-dark" {
+	// The default theme is Aurora Glass dark; a new theme does not change it by accident.
+	if defaultThemeID != "aurora-glass-dark" {
 		t.Errorf("a new theme changed what a fresh install starts on: %q", defaultThemeID)
 	}
 }
@@ -717,10 +717,10 @@ func hexHue(t *testing.T, hex string) float64 {
 	return h
 }
 
-// Each Unraid family has its own backdrop, drawn from a terminal and not from the shared pools.
+// Each Unraid family has a recipe of its own, drawn in its colours as a terminal and in no pool.
 var unraidBackdrops = map[string]string{
-	"unraid-black-dark": "digirain", "unraid-black-light": "digirain",
-	"unraid-azure-dark": "cellgrid", "unraid-azure-light": "cellgrid",
-	"unraid-ember-dark": "bootlog", "unraid-ember-light": "bootlog",
-	"unraid-blaze-dark": "crt", "unraid-blaze-light": "crt",
+	"unraid-black-dark": "unraidblack", "unraid-black-light": "unraidblack",
+	"unraid-azure-dark": "unraidazure", "unraid-azure-light": "unraidazure",
+	"unraid-ember-dark": "unraidember", "unraid-ember-light": "unraidember",
+	"unraid-blaze-dark": "unraidblaze", "unraid-blaze-light": "unraidblaze",
 }
