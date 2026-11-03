@@ -8732,7 +8732,7 @@ class DashboardConfig {
                 return `
                 <div class="config-field config-theme-char config-theme-char--tiles" data-theme-char-row="${esc(f.prop)}">
                     <span class="config-field-label">${esc(label)}</span>
-                    <div class="config-theme-backdrops config-backdrop-grid" data-theme-backdrops role="group" aria-label="${esc(label)}"></div>
+                    <div class="config-theme-backdrops config-backdrop-picker" data-theme-backdrops role="group" aria-label="${esc(label)}"></div>
                 </div>`;
             }
             let control;

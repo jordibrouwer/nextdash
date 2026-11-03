@@ -260,7 +260,7 @@
                     ? t('config.backdropScopeStudio', 'This belongs to the theme you are on. “Applies to” below makes it hold for every theme.')
                     : t('config.backdropScopeTheme', 'This belongs to the theme you are on. Tick “Use these for every theme” on the Surface tab to make it hold for all of them.');
             const followNote = own.backdrop
-                ? t('config.backdropFollowNote', 'This theme draws “{recipe}”.').replace('{recipe}', own.backdrop)
+                ? t('config.backdropFollowNote', 'This theme draws “{recipe}”.').replace('{recipe}', (this._backdropData || this._lookStudio?.backdrops)?.labels?.[own.backdrop] || own.backdrop)
                 : '';
             return `
                 <div class="config-panel" data-backdrop-panel>
@@ -273,7 +273,7 @@
                         ${mode === 'follow' && followNote ? `<p class="config-field-hint">${e(followNote)}</p>` : ''}
                         <p class="config-field-hint">${e(scopeNote)}</p>
                     </div>
-                    ${mode === 'pick' ? `<div class="config-backdrop-grid" data-backdrop-grid role="group" aria-label="${e(t('config.backdropGridLabel', 'Backdrops'))}"></div>` : ''}
+                    ${mode === 'pick' ? `<div class="config-backdrop-picker" data-backdrop-grid role="group" aria-label="${e(t('config.backdropGridLabel', 'Backdrops'))}"></div>` : ''}
                     ${this._lookStudio ? '' : this.renderBackdropFine()}
                 </div>`;
         },
@@ -328,27 +328,27 @@
                 </div>`;
         },
 
-        /** Paint the thumbnails of the recipes, in the colours of the theme on screen. */
+        /**
+         * The backdrop picker: short at first (this theme's own backdrop, a few like it, the ones used
+         * last) and the whole library behind a button, with groups and a search. The thumbnails are
+         * drawn in the colours of the theme on screen, and only once they scroll into view: a few
+         * hundred of them at once is more than a slow machine wants.
+         */
         async paintBackdropGrid(container, seed) {
             const grid = container.querySelector('[data-backdrop-grid]');
             if (!grid) return;
-            const query = Number.isInteger(seed) ? `?seed=${seed}` : '';
+            const params = [];
+            if (Number.isInteger(seed)) params.push(`seed=${seed}`);
+            const themeId = this.currentThemeId?.();
+            if (themeId) params.push(`theme=${encodeURIComponent(themeId)}`);
             let data = null;
             try {
-                const res = await fetch(`/api/themes/backdrops${query}`);
+                const res = await fetch(`/api/themes/backdrops${params.length ? `?${params.join('&')}` : ''}`);
                 data = res.ok ? await res.json() : null;
             } catch (_) { /* the grid stays empty, which says so */ }
             if (!data || !grid.isConnected) return;
-            const chosen = this.backdropChoice();
-            const ownRecipe = this.themeOwnSurfaces().backdrop || '';
-            grid.innerHTML = data.recipes.map((name) => {
-                const look = data.looks[name];
-                const isOwn = name === ownRecipe;
-                return `<button type="button" class="config-backdrop-thumb${chosen === name ? ' is-active' : ''}" data-backdrop-recipe="${esc(this, name)}" aria-pressed="${chosen === name}">
-                    <span class="config-backdrop-sw" style="--bd-scale:0.5;--bd-strength:1;background-image:${look.image};background-size:${look.size};background-position:${look.position}"></span>
-                    <span class="config-backdrop-name">${esc(this, name)}${isOwn ? ` <em>${esc(this, this.t('config.backdropThemeMark', 'theme'))}</em>` : ''}</span>
-                </button>`;
-            }).join('');
+            this._backdropData = data;
+            this.renderBackdropPicker(grid, data);
             const restore = this._backdropRestore;
             this._backdropRestore = null;
             if (restore) {
@@ -356,6 +356,106 @@
                 if (pane && restore.top !== null) pane.scrollTop = restore.top;
                 grid.querySelector(`[data-backdrop-recipe="${CSS.escape(restore.recipe)}"]`)?.focus({ preventScroll: true });
             }
+        },
+
+        /** The recipes used last, newest first; kept in this browser only. */
+        recentBackdrops() {
+            try {
+                const list = JSON.parse(localStorage.getItem('nextdash.backdropRecent') || '[]');
+                return Array.isArray(list) ? list.filter((n) => typeof n === 'string') : [];
+            } catch (_) { return []; }
+        },
+
+        rememberBackdrop(name) {
+            if (!name || name === 'off' || name === 'follow' || name === 'on') return;
+            try {
+                const list = [name, ...this.recentBackdrops().filter((n) => n !== name)].slice(0, 8);
+                localStorage.setItem('nextdash.backdropRecent', JSON.stringify(list));
+            } catch (_) { /* the list is a convenience */ }
+        },
+
+        renderBackdropPicker(grid, data, opts = {}) {
+            const t = (k, f) => this.t(k, f);
+            const e = (v) => esc(this, v);
+            const ui = opts.ui || this._backdropUI || (this._backdropUI = { open: false, cat: '', q: '' });
+            const attr = opts.attr || 'data-backdrop-recipe';
+            const again = () => this.renderBackdropPicker(grid, data, opts);
+            const chosen = opts.chosen !== undefined ? opts.chosen : this.backdropChoice();
+            const own = opts.own !== undefined ? opts.own : (this.themeOwnSurfaces().backdrop || '');
+            const label = (name) => data.labels?.[name] || name;
+            const catOf = (name) => data.categories?.[name] || '';
+            const tile = (name, extra = '') => `<button type="button" class="config-backdrop-thumb${extra}${chosen === name ? ' is-active' : ''}" ${attr}="${e(name)}" aria-pressed="${chosen === name}" title="${e(label(name))}">
+                    <span class="config-backdrop-sw" data-backdrop-lazy="${e(name)}"></span>
+                    <span class="config-backdrop-name">${e(label(name))}${name === own && !extra.includes('big') ? ` <em>${e(t('config.backdropThemeMark', 'theme'))}</em>` : ''}</span>
+                </button>`;
+            const group = (title, names, extra = '') => names.length
+                ? `<p class="config-backdrop-label">${e(title)}</p><div class="config-backdrop-row">${names.map((n) => tile(n, extra)).join('')}</div>` : '';
+            // Like the theme's own: the same group, spread over the alphabet so four are four kinds.
+            const ownCat = catOf(own);
+            const same = data.recipes.filter((n) => n !== own && catOf(n) === ownCat).sort((x, y) => label(x).localeCompare(label(y)));
+            const step = Math.max(1, Math.floor(same.length / 4));
+            const related = same.filter((_, i) => i % step === 0).slice(0, 4);
+            const recent = this.recentBackdrops().filter((n) => data.looks[n] && n !== own).slice(0, 4);
+            const order = data.categoryOrder || [];
+            const cats = order.filter((c) => data.recipes.some((n) => catOf(n) === c));
+            const total = data.recipes.length;
+            grid.innerHTML = `
+                ${opts.auto ? `<div class="config-backdrop-row"><button type="button" class="config-backdrop-thumb${chosen === '' ? ' is-active' : ''}" ${attr}="" aria-pressed="${chosen === ''}"><span class="config-backdrop-sw"></span><span class="config-backdrop-name">${e(t('config.themeCharAuto', 'Automatic'))}</span></button></div>` : ''}
+                ${own && data.looks[own] ? group(opts.ownTitle || t('config.backdropOwnTitle', 'This theme'), [own], ' config-backdrop-thumb--big') : ''}
+                ${group(ownCat ? t('config.backdropRelatedTitle', 'Like it') : '', related)}
+                ${group(t('config.backdropRecentTitle', 'Used lately'), recent)}
+                <button type="button" class="config-btn config-btn--field config-backdrop-all-toggle" data-backdrop-all-toggle aria-expanded="${ui.open}">
+                    ${e(ui.open ? t('config.backdropHideAll', 'Hide all backdrops') : t('config.backdropShowAll', 'All backdrops ({n})').replace('{n}', total))}
+                </button>
+                ${ui.open ? `
+                <div class="config-backdrop-chips" role="group" aria-label="${e(t('config.backdropGroups', 'Groups'))}">
+                    ${['', ...cats].map((c) => `<button type="button" class="config-backdrop-chip${ui.cat === c ? ' is-active' : ''}" data-backdrop-cat="${e(c)}" aria-pressed="${ui.cat === c}">${e(c || t('config.backdropAllGroups', 'All'))}</button>`).join('')}
+                </div>
+                <input type="search" class="config-input config-backdrop-search" data-backdrop-search value="${e(ui.q)}" placeholder="${e(t('config.backdropSearch', 'Search backdrops…'))}" aria-label="${e(t('config.backdropSearch', 'Search backdrops…'))}">
+                <div class="config-backdrop-all" data-backdrop-all></div>
+                <p class="config-field-hint" data-backdrop-count></p>` : ''}`;
+            const paintLazy = (root) => {
+                const paint = (el) => {
+                    const look = data.looks[el.getAttribute('data-backdrop-lazy')];
+                    if (!look) return;
+                    el.style.cssText = `--bd-scale:0.5;--bd-strength:1;background-image:${look.image};background-size:${look.size};background-position:${look.position}`;
+                    el.removeAttribute('data-backdrop-lazy');
+                };
+                const lazy = [...root.querySelectorAll('[data-backdrop-lazy]')];
+                if (!('IntersectionObserver' in window)) { lazy.forEach(paint); return; }
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach((en) => { if (en.isIntersecting) { paint(en.target); io.unobserve(en.target); } });
+                }, { rootMargin: '120px' });
+                lazy.forEach((el) => io.observe(el));
+            };
+            const fillAll = () => {
+                const box = grid.querySelector('[data-backdrop-all]');
+                if (!box) return;
+                const q = ui.q.trim().toLowerCase();
+                // A search looks through the whole library; the group only narrows the list while there is none.
+                const names = data.recipes.filter((n) => (q
+                    ? (label(n).toLowerCase().includes(q) || n.includes(q) || catOf(n).toLowerCase().includes(q))
+                    : (!ui.cat || catOf(n) === ui.cat)));
+                box.innerHTML = names.map((n) => tile(n)).join('');
+                const count = grid.querySelector('[data-backdrop-count]');
+                if (count) count.textContent = t('config.backdropCount', '{n} of {total}').replace('{n}', names.length).replace('{total}', total);
+                paintLazy(box);
+            };
+            fillAll();
+            paintLazy(grid);
+            grid.querySelector('[data-backdrop-all-toggle]')?.addEventListener('click', () => {
+                ui.open = !ui.open;
+                again();
+                if (ui.open) grid.querySelector('[data-backdrop-search]')?.focus({ preventScroll: true });
+            });
+            grid.querySelectorAll('[data-backdrop-cat]').forEach((btn) => btn.addEventListener('click', () => {
+                ui.cat = btn.getAttribute('data-backdrop-cat') || '';
+                again();
+            }));
+            grid.querySelector('[data-backdrop-search]')?.addEventListener('input', (ev) => {
+                ui.q = ev.target.value;
+                fillAll();
+            });
         },
 
         /**
@@ -366,19 +466,20 @@
         async paintThemeBackdropTiles(container, theme) {
             const grid = container.querySelector('[data-theme-backdrops]');
             if (!grid) return;
+            const themeId = this._themeSelected || this.currentThemeId?.();
             let data = null;
             try {
-                const res = await fetch('/api/themes/backdrops');
+                const res = await fetch(`/api/themes/backdrops${themeId ? `?theme=${encodeURIComponent(themeId)}` : ''}`);
                 data = res.ok ? await res.json() : null;
             } catch (_) { /* the row stays empty */ }
             if (!data || !grid.isConnected) return;
-            const current = String(theme?.backdrop || '');
-            const tile = (name, label, look) => `<button type="button" class="config-backdrop-thumb${current === name ? ' is-active' : ''}" data-theme-backdrop-tile="${esc(this, name)}" aria-pressed="${current === name}">
-                    <span class="config-backdrop-sw"${look ? ` style="--bd-scale:0.5;--bd-strength:1;background-image:${look.image};background-size:${look.size};background-position:${look.position}"` : ''}></span>
-                    <span class="config-backdrop-name">${esc(this, label)}</span>
-                </button>`;
-            grid.innerHTML = tile('', this.t('config.themeCharAuto', 'Automatic'), null)
-                + data.recipes.map((name) => tile(name, name, data.looks[name])).join('');
+            this._backdropData = data;
+            const ui = this._themeBackdropUI || (this._themeBackdropUI = { open: false, cat: '', q: '' });
+            const chosen = String(theme?.backdrop || '');
+            this.renderBackdropPicker(grid, data, {
+                ui, attr: 'data-theme-backdrop-tile', chosen, own: chosen && data.looks[chosen] ? chosen : '',
+                ownTitle: this.t('config.backdropChosenTitle', 'Chosen'), auto: true,
+            });
         },
 
         /* ------------------------------------------------------------------ */
@@ -701,6 +802,7 @@
                     const btn = event.target.closest('[data-backdrop-recipe]');
                     if (!btn) return;
                     this._lastBackdropPick = btn.getAttribute('data-backdrop-recipe');
+                    this.rememberBackdrop(this._lastBackdropPick);
                     // The tab is painted again and its grid fills in after a fetch: remember where
                     // the reader was, so the chosen thumbnail keeps the focus and the scroll.
                     this._backdropRestore = { recipe: this._lastBackdropPick, top: grid.closest('[data-studio-pane]')?.scrollTop ?? null };

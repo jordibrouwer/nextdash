@@ -10575,3 +10575,76 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
     color: var(--text-muted);
     font-size: calc(var(--font-size-text) * 0.85);
 }
+
+/* The backdrop picker: this theme's own, a few like it, the ones used lately, and the whole library on request. */
+.config-backdrop-label {
+    margin: 12px 0 4px;
+    font-size: 0.78em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+}
+
+.config-backdrop-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 8px;
+}
+
+.config-backdrop-thumb--big {
+    grid-column: 1 / -1;
+}
+
+.config-backdrop-thumb--big .config-backdrop-sw {
+    height: 120px;
+}
+
+.config-backdrop-row:has(.config-backdrop-thumb--big) {
+    grid-template-columns: 1fr;
+}
+
+.config-backdrop-all-toggle {
+    margin-top: 14px;
+    width: 100%;
+}
+
+.config-backdrop-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 8px;
+}
+
+.config-backdrop-chip {
+    padding: 3px 10px;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.82em;
+    cursor: pointer;
+}
+
+.config-backdrop-chip.is-active {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.config-backdrop-search {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.config-backdrop-all {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 8px;
+    max-height: 340px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.config-backdrop-picker {
+    margin-top: 6px;
+}
