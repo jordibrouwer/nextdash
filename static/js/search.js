@@ -2825,6 +2825,21 @@ class SearchComponent {
          */
         this.searchMatches = this._composeScopedSections(this.searchMatches);
 
+        // A sum, a percentage or a unit conversion answers at the top, as the
+        // first row; Enter copies the answer. Only for a plain question: the
+        // command, finder, global and assistant modes (a leading =) keep their own words.
+        const calc = this.currentScope() === 'all' && !String(this.currentQuery || '').startsWith('@')
+            ? window.SearchCalc?.evaluate?.(this.currentQuery) : null;
+        if (calc) {
+            this.searchMatches = [{
+                type: 'finder',
+                shortcut: '=',
+                name: `${calc.expression} = ${calc.result}`,
+                calc: true,
+                action: () => this._copyCalcResult(calc.copy),
+            }, ...this.searchMatches];
+        }
+
         // Always show search interface, even with no matches
         this.showSearch();
         if (this.selectedMatchIndex === -1) {
@@ -4138,6 +4153,29 @@ class SearchComponent {
         this.updateSelectionHighlight();
     }
 
+    /** Puts a calculator answer on the clipboard, with the fallback for a plain-http address. */
+    _copyCalcResult(text) {
+        const done = () => window.dashboardInstance?.showNotification?.(
+            this.dashboardLabel('calcCopied', 'Copied {n}').replace('{n}', text), 'success');
+        const fallback = () => {
+            const box = document.createElement('textarea');
+            box.value = text;
+            box.setAttribute('readonly', '');
+            box.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+            document.body.appendChild(box);
+            box.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (_error) { ok = false; }
+            box.remove();
+            if (ok) done();
+        };
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text).then(done, fallback);
+        } else {
+            fallback();
+        }
+    }
+
     selectCurrentMatch({ newTab = false } = {}) {
         if (this.rowActions) {
             void this.runRowAction();
@@ -4183,8 +4221,11 @@ class SearchComponent {
                 this.selectedMatchIndex = 0; // Auto-select first match after completion
                 this.updateSelectionHighlight(); // Update visual selection
             } else if (selectedMatch.type === 'finder') {
-                window.nextdashRecordKey?.(selectedMatch.shortcut);
-                this.recordSearchHistory(this.currentQuery);
+                // A calculator answer is not a finder: nothing to count as used or to remember.
+                if (!selectedMatch.calc) {
+                    window.nextdashRecordKey?.(selectedMatch.shortcut);
+                    this.recordSearchHistory(this.currentQuery);
+                }
                 selectedMatch.action();
                 this.closeSearch();
             } else if (selectedMatch.type === 'finder-completion') {

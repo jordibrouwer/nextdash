@@ -78,6 +78,7 @@
     "themeStudioAria": "Open the theme studio",
     "tagsLabel": "tags",
     "recentModeEmpty": "Nothing opened yet",
+    "calcCopied": "Copied {n}",
     "searchModeTag": "TAGS",
     "searchModeRecent": "RECENT",
     "headerRecentsLabel": "recents",
