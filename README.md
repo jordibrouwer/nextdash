@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo-ascii-on-black-large.png" alt="nextDash" width="720">
+  <img src="header.svg" alt="nextDash: your links, your services, your homelab. in one place." width="100%">
 </p>
 
 # nextDash
