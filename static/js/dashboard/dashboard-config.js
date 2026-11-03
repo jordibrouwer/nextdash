@@ -5621,6 +5621,22 @@ class DashboardConfig {
     }
 
     /**
+     * The automatic backups' status, for the "last backup failed" chip. Needs
+     * the write token, so a browser without one simply gets no chip. Repaints
+     * once when it lands and the answer differs.
+     */
+    loadOverviewBackups() {
+        const auth = window.DashboardWidgetUtils?.authFetch;
+        if (typeof auth !== 'function') return Promise.resolve(null);
+        return auth('/api/auto-backups').then((res) => (res.ok ? res.json() : null)).then((data) => {
+            const changed = String(data?.lastRunError || '') !== String(this._overviewBackups?.lastRunError || '');
+            this._overviewBackups = data;
+            if (changed && this.isActiveView() && this.section === 'overview') this.repaintOverview();
+            return data;
+        }).catch(() => null);
+    }
+
+    /**
      * The latest weekly digest for the overview's panel. Repaints once when it
      * lands; no digest yet leaves the panel out.
      */
@@ -5679,6 +5695,17 @@ class DashboardConfig {
         const containerUpdates = (this._overviewContainers || [])
             .filter((c) => c.update?.status === 'available').length;
         const say = (key, fallback, n) => this.t(key, fallback).replace('{n}', String(n));
+        // Certificates that run out within two weeks, from the report the
+        // header badge already fetched (expiresAt is in milliseconds).
+        const certs = window.HealthFacts?.certificates || d.healthReport?.certificates || sum.certificates || {};
+        const certCutoff = Date.now() + 14 * 86400000;
+        const certsDue = Object.values(certs)
+            .filter((c) => Number(c?.expiresAt) > 0 && Number(c.expiresAt) <= certCutoff).length;
+        // Tiles on the page in view that could not read what they show. Only
+        // the page that has been drawn knows, so this is a floor, not a count.
+        const widgetsFailing = (window.WidgetState?.snapshot?.() || [])
+            .filter((w) => w.state === 'error').length;
+        const backupFailed = String(this._overviewBackups?.lastRunError || '').trim() !== '' ? 1 : 0;
 
         return [
             {
@@ -5729,6 +5756,27 @@ class DashboardConfig {
                 sentence: say('config.overviewSentenceContainerUpdates', '{n} containers have an update waiting.', containerUpdates),
                 cta: this.t('config.overviewOpenContainers', 'Open containers'),
                 action: { view: 'docker' },
+            },
+            {
+                n: certsDue, tone: 'crit',
+                label: this.t('config.overviewCertsDue', 'Certificates expiring'),
+                sentence: say('config.overviewSentenceCertsDue', '{n} certificates run out within two weeks.', certsDue),
+                cta: this.t('config.overviewFixInHealth', 'Open health'),
+                action: { view: 'health' },
+            },
+            {
+                n: widgetsFailing, tone: 'warn',
+                label: this.t('config.overviewWidgetsFailing', 'Widgets that cannot read'),
+                sentence: say('config.overviewSentenceWidgetsFailing', '{n} widgets on the dashboard could not read what they show.', widgetsFailing),
+                cta: this.t('config.overviewOpenWidgets', 'Open widgets'),
+                action: { section: 'widgets' },
+            },
+            {
+                n: backupFailed, tone: 'crit',
+                label: this.t('config.overviewBackupFailed', 'Last backup failed'),
+                sentence: this.t('config.overviewSentenceBackupFailed', 'The last automatic backup did not finish.'),
+                cta: this.t('config.overviewOpenBackups', 'Open backups'),
+                action: { section: 'data-backups', dbTab: 'backups' },
             },
         ].filter((i) => i.n > 0);
     }
@@ -6052,6 +6100,7 @@ class DashboardConfig {
         // Also not awaited: a slow Docker daemon must not hold the page up.
         // The panel appears when the list lands.
         void this.loadOverviewContainers();
+        void this.loadOverviewBackups();
         void this.loadOverviewDigest();
         if (d.settings?.updateCheckEnabled !== false && !document.querySelector('meta[name="nextdash-update-check-locked"]')) {
             jobs.push(this.loadUpdateStatus());
