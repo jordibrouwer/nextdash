@@ -165,11 +165,13 @@ Widgets get a lot more to do: a Tabs widget, Clock and Countdown, duplicate, set
 - **new — Import a Homepage, Dashy or Homer configuration.**
 - **fix — Config no longer moves while a setting is saved.** The page is held in place in any browser.
 - **fix — Config tours do not open over a section you have left.**
+- **fix — "Nothing changed" says the right thing.** The message of the *What you changed* list and the one on a settings tab shared a text key, so a tab said *Every setting is at its default*. Each has its own now.
 
 ### Themes
 
 - **new — A backdrop recipe for every theme.** Each backdrop pair, each Look and Ocean (its own sonar) has a recipe of its own, drawn in the theme's colours.
 - **new — A better backdrop picker.** A short view, groups, search and thumbnails that load when you scroll to them. The backdrop settings sit with the backdrops in the theme studio.
+- **fix — The backdrop groups are in English.** The groups in the backdrop picker (Patterns, Colour & glow, Fire & light, Nature & water, Sky & space, Materials, Paper & ink, Tech) were Dutch in every language; they are English now and translated in the other five.
 - **new — Aurora Glass is the default theme** on new installs. Installs that already chose a theme keep it.
 - **new — Tag colours.** Give a tag a colour; it shows in the tag cloud, the rows and the preview.
 
@@ -188,6 +190,16 @@ Widgets get a lot more to do: a Tabs widget, Clock and Countdown, duplicate, set
 ### Assistant
 
 - **new — Tables and leaner answers.** The panel renders tables, and the assistant is asked for a shorter answer layout.
+
+### Docs
+
+- **docs — Config → Help and its tips are current.** Help says fifty-one widget kinds and lists the new ones, 266 backdrops with the short picker, the new commands, sums in search, tag colours, importing a Homepage, Dashy or Homer configuration, layout history, *What you changed* and the Overview chips. Nine new tips cover the Tabs widget, set times and days, the widget menu with its limits, tag colours, sums, *What you changed*, layout history, importing another dashboard and the extra commands.
+- **docs — Translations.** The v1.25.0 texts are in Dutch, German, French, Chinese and Spanish: all 202 new interface texts, the Help and the tips, and 47 texts that code asked for but `en.json` did not have (the digest, the backdrop picker, six commands).
+- **docs — MANUAL, README and the pictures.** The manual and README describe every new feature, count 266 backdrops and fifty-one widget kinds, and say a fresh install starts on Aurora Glass. The manual and README pictures were retaken in Aurora Glass.
+- **docs — Config → Overview and About → News & features** list five v1.25.0 features (new backdrops, Tabs/Clock/Countdown, layout history, search sums, what you changed and the import), in six languages.
+- **docs — Cheat sheet.** The cheat sheet and its PDF have a row for the arrow keys, `Home` and `End` in a Tabs widget.
+- **docs — `static/data/whats-new/v1.25.0.json` and its index entry**; the release leads the What's new window with three highlights (Tabs, Clock and Countdown; search sums; a backdrop for every theme). `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v363` and `DASHBOARD_RELEASE` to v1.25.0. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — nextdash.cc.** The feature pages for widgets, search, Config, data, tags and themes show the new features with pictures; the theme gallery is retaken for all 192 families; the figures on the site are 266 backdrops and fifty-one widget kinds. About thirty wrong or stale sentences on the site were corrected (default theme, keys, tab names, chapter numbers, counts).
 
 ## v1.24.2 — 2 November 2026
 

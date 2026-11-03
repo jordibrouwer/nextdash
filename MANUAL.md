@@ -3040,6 +3040,9 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 <p align="center"><img src="screenshots/manual.md/15-weather.jpg" alt="The Weather tile: rain at 16 °C in Leiden and the next five days" width="380"> <img src="screenshots/manual.md/15-rss.jpg" alt="The RSS tile: five headlines, newest first, each with its age" width="380"></p>
 <p align="center"><sub>The Weather and RSS tiles.</sub></p>
 
+<p align="center"><img src="screenshots/manual.md/16-tabs.jpg" alt="A dashboard with a Tabs tile, at a glance, holding three widgets as tabs named Health, Weather and Notes, with the Weather tab open, beside a Clock, a Countdown and two Jellyfin tiles" width="860"></p>
+<p align="center"><sub>A Tabs tile: three widgets of the page in one tile, one tab each.</sub></p>
+
 *What is new to watch?*
 
 | Kind | Shows |
@@ -4167,7 +4170,7 @@ The themes of version 1.0.0 are there too: **ThinkDashboard Classic** brings bac
 
 ### 17A.4 New and changed backdrops
 
-A theme's backdrop is the picture behind your bookmarks. There are now **266** (there were 29). The first 75 are shared: **every material has a pool of its own**, from seven to seventeen recipes, and a theme's choice comes from the pool of its material. The rest are drawn for a single theme pair, a Look or Ocean each, in that theme's colours, and belong to no pool. Two paper themes can have different backdrops, and both are paper backdrops. A terminal theme gets scanlines or a drafting grid, not a soft curtain.
+A theme's backdrop is the picture behind your bookmarks. There are now **266** (there were 29 before the new look and 75 in v1.22). The first 75 are shared: **every material has a pool of its own**, from seven to seventeen recipes, and a theme's choice comes from the pool of its material. The rest are drawn for a single theme pair, a Look or Ocean each, in that theme's colours, and belong to no pool. Two paper themes can have different backdrops, and both are paper backdrops. A terminal theme gets scanlines or a drafting grid, not a soft curtain.
 
 - **New** — haze, veil, spotlight, silk, caustics, dawn, linen, dotgrid, ruled and grain (calm, for reading); flare, spectrum, inkdrop, sunburst, tide, confetti and ember; and a family of patterns: scales, seigaiha, diamonds, bricks, checker, zigzag, isocube, tartan, rays, stitch, moire, deco, terrazzo, bauhaus, circuit, triangles, herring, windows, bubbles, petals and bamboo. Patterns now replace the colour washes that some themes drew before.
 - **For one theme** — Ocean draws its blue sea (`oceanblue`) and Concrete its bricks. The four Unraid themes get a rack and terminal backdrops (`rack`, `crt`, `bootlog`, `digirain`, `cellgrid`), card panels and the colours of a server.
@@ -4217,8 +4220,10 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Overview** | One line of what needs you, then **Your install** — panels for bookmarks, the inbox, containers, health and statistics — beside **From nextDash**: the newest posts, the version you run, the newest features and a tip of the day ([§18.8](#188-overview-help-and-about)). |
 | **Appearance** | Look: Theme · Background · Surfaces — Bookmarks: Layout · Rows · Previews — Header & bars: Header · Action bar · Date & weather ([§17](#17-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§18.4](#184-config-bookmarks)) |
-| **Structure** | Categories · Pages · Finders · Collections ([§9](#9-pages-categories-and-collections)) |
+| **Watch feeds** | Feeds · Settings: every watched feed with its newest item, and how the news is kept and shown ([§14](#14-watch-feeds)) |
+| **Structure** | Categories · Pages · Collections ([§9](#9-pages-categories-and-collections)) |
 | **Behavior** | General · Keyboard & search · Privacy & sync ([§18.5](#185-behavior)) |
+| **Finders** | Your search shortcuts: name, shortcut and URL ([§8.6](#86-finders)) |
 | **Monitoring** | Checks · Notifications · Schedules ([§18.5](#monitoring)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§18.6](#186-config-inbox)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§20](#20-data-backups-and-import)) |
@@ -4294,9 +4299,15 @@ Before you type, the list starts with **Recent**: the last eight settings you op
 
 **What you changed.** **Show what I changed from the defaults** (or **What changed** on the Overview's Settings panel) opens a list titled *What you changed*, with a count. Each row is a setting that differs from the default, with its section and *now … , default …*. Clicking a row goes to the setting. **Copy as text** puts the list on the clipboard, for a bug report or to compare two installs. The list is read-only.
 
+<p align="center"><img src="screenshots/manual.md/18-what-you-changed.jpg" alt="The list titled What you changed, with a count: each row a setting that differs from the default, with its section, now and default values" width="560"></p>
+<p align="center"><sub>The What you changed list.</sub></p>
+
 <a id="layout-history"></a>
 
 **Layout history.** nextDash keeps earlier arrangements of each page: its widgets, their settings and the order of its blocks, not the links. They are kept when widgets are added, moved, closed or changed. **Restore an earlier layout of this page** lists them, newest first, under *Earlier layouts of “…”*, and each line says what restoring it would change (*brings back …*, *takes away …*, *puts the blocks in another order* or *changes widget settings*). **Restore** saves that layout back. The layout it replaces is kept too, so a restore can be undone the same way. The history travels in the backup.
+
+<p align="center"><img src="screenshots/manual.md/18-layout-history.jpg" alt="The Earlier layouts dialog of a page: layouts newest first, each with a line saying what restoring it would change and a Restore button" width="560"></p>
+<p align="center"><sub>Earlier layouts of a page.</sub></p>
 
 **Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections, the action bar position, web search and container icons — carry an **all devices** mark.
 
@@ -4340,8 +4351,9 @@ The other tabs:
 |---|---|
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§16](#16-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
-| **Watch feeds** | How long the news window stays open, how it looks, check watched feeds now ([§14](#14-watch-feeds)) |
 | **Privacy & sync** | **Count this install** (on by default, [§24.8](#248-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips and how often they come, whether a section offers its tour on a first visit, the review and offer cards, every tour (replay it with its button), *Show quick start again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
+
+Watch feeds has its own section (Feeds · Settings, [§14](#14-watch-feeds)), and so has Finders; neither is a Behavior tab.
 
 Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config → Inbox** ([§18.6](#186-config-inbox)).
 
@@ -5654,7 +5666,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 |---|---|---|
 | QR code | A bookmark's address drawn as a code to scan with a phone, from `Shift + J` or the row menu; drawn in the browser, so the address goes nowhere. | [§6](#qr-code) |
 | Quick add (`&`) | Press `&`, type a name, address and optional shortcut on one line, and press Enter. | [§5.1](#51-quick-add) |
-| Quick start | The bar at the bottom of a new install's dashboard, and the guide it opens: what to do with the example links, the language, the weather and nine next steps. | [§2](#first-launch) |
+| Quick start | The bar at the bottom of a new install's dashboard, and the guide it opens: what to do with the example links, the language, the weather and ten next steps. | [§2](#first-launch) |
 | Quiet hours | A window in which alerts are held and then summed up in one message when it ends; the downtime still counts. | [§12.5](#quiet-hours) |
 
 <a id="glossary-r"></a>
