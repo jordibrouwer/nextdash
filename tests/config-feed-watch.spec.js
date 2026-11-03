@@ -47,6 +47,8 @@ test('with nothing watched the section explains itself in three steps and starts
 
 test('the window select saves and the news modal uses it', async ({ page, request }) => {
     await openFresh(page);
+    // The settings are their own tab; the list is the first.
+    await page.locator('[data-fw-tab="settings"]').click();
     const select = page.locator('[data-behavior-field="feedWatchWindowMinutes"]');
     await expect(select).toBeVisible();
     await select.selectOption('60');
@@ -71,6 +73,7 @@ test('Check all now polls and reports how many are watched', async ({ page, requ
 
 test('Show news as saves the layout and the news modal uses it', async ({ page, request }) => {
     await openFresh(page);
+    await page.locator('[data-fw-tab="settings"]').click();
     const select = page.locator('[data-behavior-field="feedWatchNewsView"]');
     await expect(select).toBeVisible();
     await expect(select).toHaveValue('paper');
