@@ -77,6 +77,7 @@ test('whatever moves the page after a change, it goes back where it was', async 
         document.addEventListener('click', () => setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 250), { once: true, capture: true });
     });
     await page.locator('[data-appearance-toggle="animationsEnabled"]').evaluate((el) => el.click());
+    // About time itself: wait out the 250 ms throw above, so the hold has had its chance to put the page back.
     await page.waitForTimeout(900);
     expect(await scrollY(page)).toBe(before);
     // And the reader is in charge again afterwards: the hold lets go.
