@@ -79,7 +79,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'tidal-slate-dark',
+            theme: 'look-berry-dark',
             openInNewTab: true,
             openLinksNewTabMobile: false,
             hideToastsMobile: true,

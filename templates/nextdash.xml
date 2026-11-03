@@ -69,7 +69,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 
 ### v1.24.0 (2026-11-02)
 - Watch feeds: follow the RSS, Atom or JSON Feed of any site, with a stripe, a badge and the newest headline on the bookmark, a preview card that leads with the news, and a news window on Shift+N in three layouts
-- Appearance: Tidal Slate (dark) is the theme a new install starts on
+- Appearance: Berry (dark) is the theme a new install starts on
 - Bookmarks view: Ctrl/Cmd+A and a button select every bookmark shown
 - Health: a server with no connection holds its failures back, and the first 15 minutes after a start hold a bookmark's first failed check
 - Action bar: resting on a button shows its name first, then its key
