@@ -279,6 +279,33 @@ func TestFeedStatsCountsWhatTheNewsSent(t *testing.T) {
 	}
 }
 
+// The count of push messages is what a push service accepted, not what was
+// tried: a browser that answers 201 is one, a subscription that is gone is none.
+func TestFeedStatsCountsPushOnlyWhenTheServiceTookIt(t *testing.T) {
+	service := newFakePushService(t)
+	h, _ := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true,"pushNotifyEnabled":true,"pushNotifyNews":true}`)
+	if err := savePushSubscription(testSubscription(t, service.server.URL+"/push/device-1")); err != nil {
+		t.Fatal(err)
+	}
+	round := []watchNews{watchNewsFor("a.example", "x")}
+
+	h.pushWatchNews(context.Background(), round)
+	if service.count() != 1 {
+		t.Fatalf("the push service got %d deliveries, want 1", service.count())
+	}
+	if g := readFeedStatsFile().Days[statsToday()]; g == nil || g.Push != 1 {
+		t.Fatalf("one accepted delivery, counted: %+v", g)
+	}
+
+	service.mu.Lock()
+	service.status = http.StatusInternalServerError
+	service.mu.Unlock()
+	h.pushWatchNews(context.Background(), round)
+	if g := readFeedStatsFile().Days[statsToday()]; g.Push != 1 {
+		t.Fatalf("a refused delivery must not count: %+v", g)
+	}
+}
+
 func TestFeedStatsPruneRollsDaysIntoWeeksAndForgetsTheGone(t *testing.T) {
 	h, _ := healthRecheckTestHandlers(t, `{"feedStatsKeepDays":30}`)
 	now := time.Date(2026, 6, 15, 12, 0, 0, 0, time.Local)
