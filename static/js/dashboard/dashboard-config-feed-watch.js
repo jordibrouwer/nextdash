@@ -251,6 +251,20 @@
             if (saved.text != null && el.tagName === 'INPUT') el.value = saved.text;
         };
 
+        /* Nothing watched yet: what this is, in three steps, and where to start. */
+        const emptyHtml = () => `<div class="feed-watch-empty">
+                <p class="feed-watch-empty-lead">${esc(t('config.feedWatchEmptyLead', 'You are not watching any feed yet. Watch a site and its new posts show up as a badge on the bookmark and together in News.'))}</p>
+                <ol class="feed-watch-empty-steps">
+                    <li>${esc(t('config.feedWatchEmptyStep1', 'Pick a bookmark of a site that publishes posts: a blog, a news site, release notes.'))}</li>
+                    <li>${esc(t('config.feedWatchEmptyStep2', 'nextDash finds its feed and you choose how often to look.'))}</li>
+                    <li>${esc(t('config.feedWatchEmptyStep3', 'New posts are announced once; read them on the dashboard or in News.'))}</li>
+                </ol>
+                <p class="feed-watch-note">${esc(t('config.feedWatchEmptyHint', 'Good first picks: a blog you read, a project’s releases, a changelog. You can also right-click any bookmark and choose Watch this feed…'))}</p>
+                <div class="feed-watch-empty-actions">
+                    <button type="button" class="config-btn config-btn--primary" data-fwm-more>${esc(t('config.feedWatchEmptyStart', 'Choose a bookmark to watch…'))}</button>
+                </div>
+            </div>`;
+
         const paint = () => {
             const live = document.querySelector('[data-feed-watch-overview]');
             if (!live) return;
@@ -279,7 +293,7 @@
             live.innerHTML = rows.length
                 ? summary + toolbar + (ticked ? bulkHtml(ticked) : '')
                     + `<ul class="fwm-list" role="list">${rows.map(rowHtml).join('')}</ul>` + legendHtml()
-                : summary + toolbar + `<p class="feed-watch-note">${esc(t('config.feedWatchEmpty', 'You are not watching any feed yet. Choose Watch more… to pick a bookmark, or right-click one and choose Watch this feed…'))}</p>`;
+                : emptyHtml();
             restoreFocus(saved);
         };
 

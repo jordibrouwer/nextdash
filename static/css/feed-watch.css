@@ -1041,3 +1041,11 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .feed-news-pop :is(.feed-news-pop-item, .feed-news-pop-more):focus-visible {
     border-radius: var(--feed-pop-item-r);
 }
+
+.feed-watch-empty { display: grid; gap: 0.75rem; max-width: 40rem; padding: 0.25rem 0; }
+.feed-watch-empty-lead { margin: 0; color: var(--text-primary); }
+.feed-watch-empty-steps { margin: 0; padding-left: 1.25rem; display: grid; gap: 0.3rem; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
+.feed-watch-empty-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.feed-watch-check { display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; }
+.feed-watch-check input { flex: 0 0 auto; margin-top: 0.2rem; }
+.feed-watch-check small { display: block; margin-top: 0.15rem; color: var(--text-secondary); font-size: var(--text-xs, 0.78rem); }

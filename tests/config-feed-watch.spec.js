@@ -34,6 +34,17 @@ async function openFresh(page) {
     await page.waitForSelector('[data-feed-watch-overview] [data-fwm-more]', { timeout: 15_000 });
 }
 
+test('with nothing watched the section explains itself in three steps and starts the chooser', async ({ page }) => {
+    await openFresh(page);
+    const empty = page.locator('[data-feed-watch-overview] .feed-watch-empty');
+    await expect(empty).toContainText('You are not watching any feed yet');
+    await expect(empty.locator('.feed-watch-empty-steps li')).toHaveCount(3);
+    // No list controls over an empty list.
+    await expect(page.locator('[data-feed-watch-overview] .fwm-toolbar')).toHaveCount(0);
+    await empty.locator('[data-fwm-more]').click();
+    await expect(page.locator('[data-feed-watch-picker], .modal.feed-watch-modal').first()).toBeVisible();
+});
+
 test('the window select saves and the news modal uses it', async ({ page, request }) => {
     await openFresh(page);
     const select = page.locator('[data-behavior-field="feedWatchWindowMinutes"]');
