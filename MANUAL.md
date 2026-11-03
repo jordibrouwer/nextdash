@@ -4671,6 +4671,7 @@ Webhooks tell another program the moment something happens here. Add a receiver 
 | `health.up` | It comes back |
 | `health.cert-expiring` | A TLS certificate is about to run out ([§12.4](#124-alerts)) |
 | `health.domain-expiring` | A domain registration is about to run out ([§12.4](#124-alerts)) |
+| `feed.news` | A watched feed has news ([§14](#14-watch-feeds)) |
 
 Every delivery is signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme:
 
