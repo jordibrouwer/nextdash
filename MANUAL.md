@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Aurora Glass**; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
+| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Aurora Glass**; 190+ theme families in light and dark, twelve characters, more than 260 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 | 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
@@ -682,7 +682,7 @@ It began as a place for bookmarks, and bookmarks are still the core: grouped by 
 | **Add** | One-line quick add, the full form, paste a URL, browser extension, share sheet, bookmarklet, imports |
 | **Watch** | Broken links, uptime monitoring, certificate expiry, page drift, alerts |
 | **Show** | Widgets for health, inbox, feeds, weather, calendar, your machine, your containers and your own services |
-| **Customise** | 190+ theme families, 75 backdrops, materials and surfaces, layout, header and action buttons, six languages |
+| **Customise** | 190+ theme families, 260+ backdrops, materials and surfaces, layout, header and action buttons, six languages |
 | **Keep** | Automatic backups, a 30-day trash, local copies of pages, HTML and CSV export |
 
 <a id="what-nextdash-is-not"></a>
@@ -1494,6 +1494,8 @@ With the panel empty, the first group is **Usually now**: up to three bookmarks 
 
 **Switch search mode** (Behavior → Keyboard & search, or **`Shift + Q`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way. With letters already typed, **`/`** does the same by hand and switches this one search; the letters stay where they are.
 
+**A sum answers itself.** Type `15% of 240`, `2+2*3` or `5 km in mi` and the answer is the top row of the list, written as *expression = answer*. **`Enter`** copies the answer and says *Copied*. Sums use `+ - * / ^ %` and brackets. A conversion reads *number unit* `in` (or `to`) *unit* and covers length, weight, volume, time, data sizes, speed and temperature. It is worked out in your browser by a small parser of its own; nothing is sent anywhere and nothing is evaluated as code. Only what is plainly a sum is answered: a word or a shortcut never is, and neither is a phrase, range, phone number or date such as `24/7`, `20-30`, `06-12345678` or `03-11-2026`. A `-` or `/` counts as an operator only with a space on both sides. The answer shows in the ordinary search, not after `:`, `?`, `@` or a leading `=`, and the row is not counted in your search history.
+
 **Behavior → Keyboard & search** also holds fuzzy suggestions for near-misses, *include finders in search*, *keep search open when empty* and the search hint. *Search unsorted bookmarks* (on by default) lets search reach links kept on **Bookmarks → Unsorted** ([§11.11](#1111-unsorted-and-promote)); they stay out of every other list.
 
 <a id="82-filters"></a>
@@ -1569,6 +1571,9 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:page <name or n>` · `:page new <name>` | Switch page · create one |
 | `:category <name or n>` · `:category new <name>` | Jump to a category · create one |
 | `:recent` · `:overview` | Recent bookmarks · pages panel |
+| `:news` | The news window of the feeds you watch (`:feeds` does the same). With no feed watched it points to Watch feeds in Config |
+| `:unsorted` | The Bookmarks view on Unsorted, like `Shift + U` |
+| `:cloud` | The tag cloud, the window `/` opens |
 | `:save` · `:saved` · `:history` | Saved searches and search history (saved searches are kept in settings) |
 | `:sort order\|az\|recent` | Sort the focused category |
 | `:stale [days]` · `:duplicates` | Cleanup lists |
@@ -1584,11 +1589,13 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:favicons fetch` · `:favicons on\|off` | Download every icon again · show icons |
 | `:metadata` | Bookmarks without a preview |
 | `:theme <name>` · `:dark` | Theme · flip light and dark |
+| `:studio` | The theme studio, like `Shift + A` (`:themes` does the same) |
 | `:depth` · `:surface` · `:effects` · `:widgetbg` · `:widgetopacity` · `:glow` · `:contrast` · `:backdrop` · `:pattern` · `:harmonize` | Surfaces ([§17](#17-appearance)) |
 | `:layout <preset>` · `:density` · `:columns <1-6>` · `:spacing` · `:columngap` · `:margins` · `:width on\|off\|all` · `:rows` · `:packed` · `:fontsize` | Grid |
 | `:switcher` · `:buttonstyle` · `:maxtabs` · `:maxactions` · `:buttons` · `:header` | Header and action buttons |
 | `:preview` · `:title` · `:opacity` · `:animations` · `:status` · `:shortcuts` · `:lang` | Display toggles |
 | `:locklayout` | Lock or unlock drag and drop |
+| `:legend` · `:hypr` | The key legend under the grid on or off · Hypr mode on or off ([§6](#hypr-mode)) |
 | `:collections` | Smart collections on or off |
 | `:telemetry on\|off` | Analytics (reloads the page) |
 | `:cheat` · `:help` · `:whatsnew` · `:digest` · `:reload` | Cheat sheet · release notes · latest weekly digest · reload |
@@ -1822,6 +1829,8 @@ A file is at most 2 MB.
 ### 10.3 Managing tags
 
 **Config → Bookmarks → Tags** lists every tag with how many bookmarks carry it. Rename or delete a tag everywhere at once; renaming onto an existing tag is refused. Expand a tag to see its bookmarks and remove it from one. `↑`/`↓` move and `/` focuses the filter.
+
+Each tag row has a colour menu: **No colour**, Red, Orange, Yellow, Green, Teal, Blue, Purple or Pink. A coloured tag is tinted in the tag cloud, in the tag chips on bookmark rows and in the preview card. The tint follows the theme, pale on a light one and deep on a dark one. The colour follows the tag when you rename it and goes with it when you delete it.
 
 <a id="104-tag-suggestions"></a>
 
@@ -2306,7 +2315,7 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 - **Where it arrives** — every week as a card in the corner of the dashboard, *Your week in nextDash*, that names the one or two things that matter most; and as a browser notification when those are on, through the service under **Downtime alerts**. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
 - **The card** — **Read the digest** opens the window. **Snooze 1 day** hides the card until tomorrow. **Got it** marks it seen; unless you opened the window, the card returns once the next day and once the day after, and then stays away until the next digest. Progress, snooze and reminders are kept per browser.
-- **Reading it** — along the top is **the week in figures**: bookmarks opened, bookmarks added, uptime with the number of outages, and the links in the Inbox with how many are new, each next to the week before (▲ and ▼, green when it went the better way). A figure with nothing behind it is left out, so a new install shows a short row. The window opens on an **Overview**, one line per part saying where it stands, and lists the parts on the left in three groups: **Needs you** (broken links, certificates, domains, container updates), **Tidy up** (the checkup, never opened, not opened in 30 days) and **Good to know** (the Inbox, most opened, what is new in nextDash), with a sentence on top that names what matters most. The part you pick is shown in full on the right: what it means, the names behind the count with what matters about each — a broken link with its page, since when it is down and what the last check said; the most opened with how often; never opened with their page; not opened lately with how long ago; the Inbox with how long its oldest link has waited — certificates and domains as bars of days left, and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Start the checkup**, **Review**, **Open Inbox**, **Open What's new**. The close button at the top and **Close** at the bottom are always in view; only the middle scrolls. After a part's button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the one after; it closes itself once every part is opened. Its **×** asks first, because the digest may still hold something important: **Keep it** or **Close until Monday**. Clicking the push notification opens the same window.
+- **Reading it** — along the top is **the week in figures**: bookmarks opened, bookmarks added, uptime with the number of outages, and the links in the Inbox with how many are new, each next to the week before (▲ and ▼, green when it went the better way). A figure with nothing behind it is left out, so a new install shows a short row. The Overview carries two charts: **Bookmarks opened per day** as seven bars, and **Uptime per day** as a line. Lines that show a number of days spell them out (*3 days left*, *down for 2 days*). The window opens on an **Overview**, one line per part saying where it stands, and lists the parts on the left in three groups: **Needs you** (broken links, certificates, domains, container updates), **Tidy up** (the checkup, never opened, not opened in 30 days) and **Good to know** (the Inbox, most opened, what is new in nextDash), with a sentence on top that names what matters most. The part you pick is shown in full on the right: what it means, the names behind the count with what matters about each — a broken link with its page, since when it is down and what the last check said; the most opened with how often; never opened with their page; not opened lately with how long ago; the Inbox with how long its oldest link has waited — certificates and domains as bars of days left, and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Start the checkup**, **Review**, **Open Inbox**, **Open What's new**. The close button at the top and **Close** at the bottom are always in view; only the middle scrolls. After a part's button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the one after; it closes itself once every part is opened. Its **×** asks first, because the digest may still hold something important: **Keep it** or **Close until Monday**. Clicking the push notification opens the same window.
 - **Setting it up** — Monitoring → Notifications → **Weekly digest**: **On** (the day), **At** (the hour), and which parts go in — **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**; broken links and certificates always stay. The figures along the top follow the parts: uptime and outages stay with the broken links, while the opens, the added bookmarks and the Inbox go with **Include most opened, unused and Inbox**. **The latest digest → Show** opens the last one again, as does the digest panel in Config → Overview; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
 
 <p align="center"><img src="screenshots/manual.md/12-weekly-digest.jpg" alt="The weekly digest window: the week in figures along the top, the Overview chosen on the left above three groups of parts (Needs you, Tidy up, Good to know), and on the right one line per part saying where it stands" width="860"></p>
@@ -2558,6 +2567,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 ### 14.1 Following a site
 
 - **Start.** Right-click a bookmark → **Watch this feed…**, or use the same button in the bookmark editor. nextDash lists the feeds the page advertises (and tries the usual addresses when the page says nothing, as it does behind a cookie wall); tick one or more, or paste an address. Choose how often to check: 30 minutes, 1, 2, 4, 6, 12 or 24 hours. **Also check that this page is reachable (Periodic)** is ticked by default while the bookmark's checking is off. Up to 100 feeds can be watched. When you save, nextDash reads the feed once and counts what is already there as seen, so a bookmark shows no news until the site publishes something new; until then a click opens the site as usual. A toast says so.
+- **The window's buttons.** **Stop watching** (when the feed is watched) stands on the left; **Save**, in the accent colour, and **Cancel**, in the warning colour, stand together on the right. Saving leaves the dashboard where it was scrolled. The empty Watch feeds section explains how to start.
 - **Keys.** `Shift + N` opens the news; `#` watches the feed of the bookmark in hand (or changes or stops it).
 
 <a id="142-what-you-see"></a>
@@ -2578,7 +2588,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.3 The news window
 
-- **The news window** (`Shift + N`, or the news button on a computer) is one paper for everything you watch, with read and unread per item. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the buttons in its header: one column (one article per screen, the new ones first, and the feeds' earlier entries one by one when nothing is new), two columns or a newspaper front page. `j` and `k` move through the news, **Index** goes back to the front page and `Esc` closes the window at once. It follows the theme and its material; only the Newspaper view keeps its own paper look.
+- **The news window** (`Shift + N`, or the news button on a computer) is one paper for everything you watch, with read and unread per item. The news button shows only while at least one feed is followed, not paused and not given up on. Closing the window on an article and pressing the button again returns to that article, if it is still in the paper; the button starts at the front page otherwise, and so do a push notification and the toast. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the buttons in its header: one column (one article per screen, the new ones first, and the feeds' earlier entries one by one when nothing is new), two columns or a newspaper front page. `j` and `k` move through the news, **Index** goes back to the front page and `Esc` closes the window at once. It follows the theme and its material; only the Newspaper view keeps its own paper look.
 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-news.jpg" alt="The news window in its one-article view: the site name and 1 of 10 in the header with the three layout buttons, a picture, the headline and its lead, and the buttons previous, next, Mark read and Open page with the keys j, k and Esc" width="440"></p>
 <p align="center"><sub>The news window, one article per screen.</sub></p>
@@ -2941,7 +2951,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | Kind | Shows |
 |---|---|
 | **Health** | Broken, down, changed and fine; each figure opens its filter |
-| **Uptime** | Monitored bookmarks, worst first, with a heartbeat |
+| **Uptime** | Monitored bookmarks, worst first, with a heartbeat. **Show the response time of the last day** adds a small line and the latest figure beside each row that is up |
 | **Certificates** | Certificates close to expiry, per host. **Also list domains** adds the domains that run out in the same window |
 | **Domains** | Domain registrations close to expiry, per registered domain, and the domains no registry gives a date for |
 | **Health trend** | How the collection's health has moved, drawn like the summary in Collection health |
@@ -2974,8 +2984,8 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | Kind | Shows |
 |---|---|
 | **Processor** | CPU use and the load average |
-| **Memory** | What is really in use; the file cache counts as free |
-| **Disks** | Used, free and reserved space on the disks you name |
+| **Memory** | What is really in use; the file cache counts as free. **Amber from (% used)** and **Red from (% used)** set where the figure changes colour |
+| **Disks** | Used, free and reserved space on the disks you name. **Amber from (% used)** and **Red from (% used)** set where the figure changes colour |
 | **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates`. The figures you tick can add **updates waiting** (a skipped or held one does not count), **reclaimable** disk space — what the Disk tab last measured, measured again in the background once it is six hours old, a dash before the first — and **incidents** in the last 24 hours (crashes and turns unhealthy, from the timeline). **Name the three busiest by CPU** lists them under the figures. Nothing ticked means every figure. |
 | **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime, CPU or memory — busiest first), what stands on the right of a row (uptime, the image tag, CPU and memory, or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
 
@@ -3023,6 +3033,9 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **Calendar** | What is coming up, from the **Calendar feed URL (.ics)** under Appearance → Date & weather |
 | **RSS** | The newest articles from up to ten feed addresses set on the widget, merged newest first |
 | **Notes** | A text of your own, read as Markdown, with checkboxes you tick on the tile; up to 6,000 characters |
+| **Clock** | The time where you are, and in the other places you add as **Name=Region/City** (for example `Tokyo=Asia/Tokyo`), with *tomorrow* or *yesterday* where the date differs. **Use a 12-hour clock** and **Show today's date** are switches |
+| **Countdown** | The days left to a **Date**, or since it. The widget's title says what it counts to. An optional **Time of day** and **Count in hours and minutes near the end** switch the figure to hours and minutes in the last two days |
+| **Tabs** | Several widgets of the page in one tile, one tab each. **Widgets in the tabs** lists the other widgets of the page; each one you tick becomes a tab, in page order, and leaves the grid while the tabs hold it. Up to six tabs; a widget sits in one Tabs widget at most, and a widget moved to another page leaves the tabs. Its settings stay under Widgets. Only the tab in view is drawn |
 
 <p align="center"><img src="screenshots/manual.md/15-weather.jpg" alt="The Weather tile: rain at 16 °C in Leiden and the next five days" width="380"> <img src="screenshots/manual.md/15-rss.jpg" alt="The RSS tile: five headlines, newest first, each with its age" width="380"></p>
 <p align="center"><sub>The Weather and RSS tiles.</sub></p>
@@ -3076,7 +3089,9 @@ Every widget's settings come in the same three folding sections, in this order, 
 
 - **Connection** — how the widget reaches what it shows: an address, a host, the feed addresses, a key or sign-in, and **Connect** or **Test** where there is one. It opens on a widget that has no saved way in yet — and on a media service whose key is missing or whose server did not answer, with the reason in it — and starts folded on one that has; a media service's title adds how it stands, such as *connected*. Saving or connecting while you work in it leaves it open. For the processor, memory, disks and Docker it holds only the note on what the host needs, and starts folded.
 - **Display** — what you see on the tile: the page, the width, what to show, the order, how many rows, the style and, for Custom, the figures. It is open.
-- **Advanced** — how often it refreshes, how long an answer is kept, and where a click goes. It is folded.
+- **Advanced** — how often it refreshes, how long an answer is kept, where a click goes, and when the widget shows. It is folded.
+
+**When a widget shows.** Every kind has, under Advanced, **Show from (time of day)**, **Show until (time of day)** and **Show on** (Mon to Sun). Outside them the widget is off the dashboard; its settings are kept. Set both times or neither. An end before the start runs past midnight. With no day ticked the widget shows every day, and so it does with all seven ticked.
 
 Open or shut a section yourself, or work in one, and it stays that way while Config is open, even as the panel redraws; close Config and they go back to these starting states. Save and Discard stay below the sections and cover all three.
 
@@ -3090,7 +3105,8 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 
 - A widget's title sits on a lighter strip with a line under it, and its handle is a small panel where a category has `//`; it is dragged the same way. **Widget background** and **Widget opacity** under Appearance → Surfaces set how it looks ([§17.3](#173-surfaces)).
 - Click the title, or `Enter` on the header, to fold a widget. `.` folds everything. The state is kept per page.
-- Right-click the title to rename, change the width, fold, open the settings, **move it to another page** (**Move to page…**, the same move as in Config → Widgets, keeping its sign-in and folded state) or **close** it. Closing hides it and keeps its settings; Config → Widgets switches it back on.
+- Right-click the title to rename, change the width, fold, open the settings, **move it to another page** (**Move to page…**, the same move as in Config → Widgets, keeping its sign-in and folded state), **Duplicate** it or **close** it. **Duplicate** makes a copy right after the widget, with the same settings and sign-in. A widget with a title gets *(copy)* added to it. Closing hides it and keeps its settings; Config → Widgets switches it back on.
+- The menu of the media widgets, Beszel, Home Assistant and Custom has **Refresh now**, which asks the service again instead of waiting for the next refresh.
 - The arrow keys walk through a widget's rows; `Enter` does what a click does. See [§7.4](#74-acting-on-a-category-or-widget).
 - Widgets that read something outside refresh on their own interval, and not at all while the tab is hidden.
 
@@ -3947,21 +3963,15 @@ other theme keeps its own. The backdrop and the card glass work the same way.
 Type is in the **Type** panel on the **Theme** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
 
 - **Source** — **Auto** (follows the theme), **None**, **Gradient** or **Image**. **Opacity** (65–100%) fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
-- **Theme backdrop** — **Follow the theme** (default), **Choose one** or **Off**. Every theme draws a backdrop of its own, in its own colours, chosen from the backdrops that suit its material: a terminal theme gets scanlines or a drafting grid, a paper theme contour lines or linen, Ocean its blue sea, Concrete its bricks. Each light and dark half share one. *Follow the theme* names the one it draws, and *Choose one* opens a grid of all 75, previewed in your theme's colours:
+- **Theme backdrop** — **Follow the theme** (default), **Choose one** or **Off**. Every theme draws a backdrop of its own, in its own colours: each theme pair, each Look and Ocean has a recipe drawn for it, and a terminal theme gets scanlines or a drafting grid, a paper theme contour lines or linen, Concrete its bricks. Each light and dark half share one. *Follow the theme* names the one it draws (*This theme draws …*), and *Choose one* opens the picker:
+  - **A short view first.** The theme's own backdrop (*This theme*), a few of the same group (*Like it*) and the ones you used lately (*Used lately*, kept in this browser only).
+  - **All backdrops (266)** opens the whole library. Chips narrow it by group, a search box looks through names and groups, and a line counts what is shown (*n of 266*). Hide it again with **Hide all backdrops**.
+  - **Thumbnails** are drawn in the colours of your theme, and only when they scroll into view, so a long list stays light on a slow machine.
 
-  | Group | Backdrops |
-  |---|---|
-  | Soft | blooms, glow, sweep, mesh, aurora, bokeh (a small honeycomb), nebula, stars, haze, veil, spotlight, silk, caustics, dawn, flare, spectrum, inkdrop, sunburst, tide, confetti, ember, bubbles, petals, oceanblue |
-  | Landscape | horizon, band, sunset, dunes, mountains, waves, bamboo |
-  | Lines | wireframe, scanlines, crosshatch, topo, perspective, blueprint, pinstripe, linen, dotgrid, ruled, grain |
-  | Terminal and rack | rack, crt, bootlog, digirain, cellgrid |
-  | Patterns | rings, hexagons, halftone, prism, chevron, dots, scales, seigaiha, diamonds, bricks, checker, zigzag, isocube, tartan, rays, stitch, moire, deco, terrazzo, bauhaus, circuit, triangles, dotsoff, herring, windows |
-  | Colour burst | burst, splash, leak |
-
-  The colour-burst three are loud, so each is drawn over a floor of theme tint. **Theme tint** can raise it but never go below it.
+  The colour-burst backdrops are loud, so each is drawn over a floor of theme tint. **Theme tint** can raise it but never go below it.
 
   Like depth and glow, the choice belongs to the theme you are on unless **Use these for every theme** is on ([§17.3](#173-surfaces)). `:backdrop` turns it on or off from the command palette.
-- **Backdrop settings** — **Intensity**, **Scale** and **Variant** (with **🎲** for a new one) change the theme's backdrop; **Blur**, **Brightness**, **Saturation** and **Theme tint** soften it and your own background image alike. **Quiet centre** fades the backdrop toward the page colour behind your bookmarks, so a pattern or a scene stays at the edges of the window and out of the way of the text; at 0 the backdrop is drawn edge to edge, and the value is kept per theme, with the install-wide number as the fallback. Only the backdrop blurs, never the bookmarks. **Back to the defaults** resets all eight.
+- **Backdrop settings** — below the backdrops in the theme studio. **Intensity**, **Scale** and **Variant** (with **🎲** for a new one) change the theme's backdrop; **Blur**, **Brightness**, **Saturation** and **Theme tint** soften it and your own background image alike. **Quiet centre** fades the backdrop toward the page colour behind your bookmarks, so a pattern or a scene stays at the edges of the window and out of the way of the text; at 0 the backdrop is drawn edge to edge, and the value is kept per theme, with the install-wide number as the fallback. Only the backdrop blurs, never the bookmarks. **Back to the defaults** resets all eight.
 - **Pattern over it** — **Follow the theme**, **Dots**, **Grid**, **Lines**, **Hatch** or **None**: a texture drawn over the backdrop. Left to the theme, there is none while a backdrop is shown; with the backdrop off, most themes ask for dots.
 
 <p align="center"><img src="screenshots/manual.md/16-backdrops.jpg" alt="The Backdrop tab of the theme studio: Theme backdrop on Follow the theme, which draws scanlines, and the backdrop settings intensity, scale, variant and blur" width="489"></p>
@@ -4077,7 +4087,7 @@ Each tab has a filter beside **Only changed**. When the filter — or **Only cha
 ## 17A. 🪞 The new look
 
 > [!NOTE]
-> **In short:** every material now has a surface of its own, and cards, headers, menus, dialogs and the side panel are drawn as one design. Every install that ran an earlier release moved onto **Aurora Glass** once; a fresh install now starts on Ocean. Your bookmarks, settings and own themes stayed exactly as they were, and the old look is one choice away.
+> **In short:** every material now has a surface of its own, and cards, headers, menus, dialogs and the side panel are drawn as one design. Every install that ran an earlier release moved onto **Aurora Glass** once; a fresh install now starts on Aurora Glass. Your bookmarks, settings and own themes stayed exactly as they were, and the old look is one choice away.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -4157,7 +4167,7 @@ The themes of version 1.0.0 are there too: **ThinkDashboard Classic** brings bac
 
 ### 17A.4 New and changed backdrops
 
-A theme's backdrop is the picture behind your bookmarks. There are now **75** (there were 29), and a theme no longer takes one at random: **every material has a pool of its own**, from seven to seventeen recipes, and a theme's choice comes from the pool of its material. Two paper themes can have different backdrops, and both are paper backdrops. A terminal theme gets scanlines or a drafting grid, not a soft curtain.
+A theme's backdrop is the picture behind your bookmarks. There are now **266** (there were 29). The first 75 are shared: **every material has a pool of its own**, from seven to seventeen recipes, and a theme's choice comes from the pool of its material. The rest are drawn for a single theme pair, a Look or Ocean each, in that theme's colours, and belong to no pool. Two paper themes can have different backdrops, and both are paper backdrops. A terminal theme gets scanlines or a drafting grid, not a soft curtain.
 
 - **New** — haze, veil, spotlight, silk, caustics, dawn, linen, dotgrid, ruled and grain (calm, for reading); flare, spectrum, inkdrop, sunburst, tide, confetti and ember; and a family of patterns: scales, seigaiha, diamonds, bricks, checker, zigzag, isocube, tartan, rays, stitch, moire, deco, terrazzo, bauhaus, circuit, triangles, herring, windows, bubbles, petals and bamboo. Patterns now replace the colour washes that some themes drew before.
 - **For one theme** — Ocean draws its blue sea (`oceanblue`) and Concrete its bricks. The four Unraid themes get a rack and terminal backdrops (`rack`, `crt`, `bootlog`, `digirain`, `cellgrid`), card panels and the colours of a server.
@@ -4267,6 +4277,27 @@ Before you type, the list starts with **Recent**: the last eight settings you op
 <p align="center"><img src="screenshots/manual.md/17-find-settings.jpg" alt="Find settings with quiet typed: one result, Hold notices during quiet hours, under Monitoring › Schedules, with its value Off" width="840"></p>
 <p align="center"><sub>Find settings shows where a setting lives and what it is set to.</sub></p>
 
+**Actions.** Besides settings, the list holds a few things to do, marked *Action*. Choosing one goes to where it lives and never changes anything by itself:
+
+| Action | Where it goes |
+|---|---|
+| **Add a widget** | Config → Widgets, with the Add widget picker open |
+| **Open the theme studio** | The theme studio |
+| **Show what's new** | The release notes |
+| **Check for an update** | The Overview, running the update check |
+| **Make or restore a backup** | Data & backups → Backups & data |
+| **Import bookmarks** | Data & backups → Backups & data, where the import cards stand |
+| **Restore an earlier layout of this page** | The layout history of the page in view |
+| **Show what I changed from the defaults** | The list of changed settings |
+
+<a id="what-you-changed"></a>
+
+**What you changed.** **Show what I changed from the defaults** (or **What changed** on the Overview's Settings panel) opens a list titled *What you changed*, with a count. Each row is a setting that differs from the default, with its section and *now … , default …*. Clicking a row goes to the setting. **Copy as text** puts the list on the clipboard, for a bug report or to compare two installs. The list is read-only.
+
+<a id="layout-history"></a>
+
+**Layout history.** nextDash keeps earlier arrangements of each page: its widgets, their settings and the order of its blocks, not the links. They are kept when widgets are added, moved, closed or changed. **Restore an earlier layout of this page** lists them, newest first, under *Earlier layouts of “…”*, and each line says what restoring it would change (*brings back …*, *takes away …*, *puts the blocks in another order* or *changes widget settings*). **Restore** saves that layout back. The layout it replaces is kept too, so a restore can be undone the same way. The history travels in the backup.
+
 **Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections, the action bar position, web search and container icons — carry an **all devices** mark.
 
 <a id="184-config-bookmarks"></a>
@@ -4373,9 +4404,9 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 ### 18.8 Overview, Help and About
 
-**Overview** is the page config opens on. A slim banner at the top links to the feature overview on nextdash.cc. At the top, one line says what needs you — broken links, monitors that are down, unread inbox items, duplicates, shortcut conflicts, links never checked, containers with an update — as chips that each go where the problem is fixed; with nothing to do it says so. Below it, two columns:
+**Overview** is the page config opens on. A slim banner at the top links to the feature overview on nextdash.cc. At the top, one line says what needs you — broken links, monitors that are down, unread inbox items, duplicates, shortcut conflicts, links never checked, containers with an update, certificates that run out within two weeks, widgets that could not read what they show (counted on the page in view) and a failed automatic backup — as chips that each go where the problem is fixed; with nothing to do it says so. Below it, two columns:
 
-- **Your install** — a panel per part of the app, each with a way in (**Open →**) and its own warning in the foot. **Bookmarks**: the count, pages, categories, tags, shortcuts, pins and when you last edited one. **Inbox**: unread, the links added per day over two weeks, how many wait and how long the oldest has. **Containers**: running, stopped, unhealthy and updates available, and which ones — shown only when nextDash can see Docker. **Health**: the healthy share as a ring and the four states (healthy, broken, monitor down, wrong content). **Statistics**: opens this week with two weeks of bars, the most-opened link, the busiest page and the **cleanup score** with what lowers it most. The Containers panel is left out while it is switched off.
+- **Your install** — a panel per part of the app, each with a way in (**Open →**) and its own warning in the foot. **Bookmarks**: the count, pages, categories, tags, shortcuts, pins and when you last edited one. **Inbox**: unread, the links added per day over two weeks, how many wait and how long the oldest has. **Containers**: running, stopped, unhealthy and updates available, and which ones — shown only when nextDash can see Docker. **Health**: the healthy share as a ring and the four states (healthy, broken, monitor down, wrong content). **Statistics**: opens this week with two weeks of bars, the most-opened link, the busiest page and the **cleanup score** with what lowers it most. **Settings**: how many settings differ from the defaults, with the sections that hold most of them, and **What changed**, which opens the list ([§18.3](#183-finding-a-setting)); with nothing changed it says *Everything is as it came out of the box.* The Containers panel is left out while it is switched off.
 - **From nextDash** — four panels. **Latest news**: the three newest posts on nextdash.cc (off with **Behavior → Privacy**). **Version**: *You're running v1.x.y of nextDash*, with links to the full changelog and to this manual on GitHub. **New in nextDash**: the three newest features, each a way into what it changed, with **Show what's new**. Last, a **tip of the day** from Help → Tips, with ‹ › to step through the others.
 - **The Version panel** shows up as soon as the update check knows which release you run, also when the posts are switched off. A dot before its title says where you stand: **green** on the newest release, **red** when a newer one is out — a second line then names it, its tag a link to the release on GitHub — and **no dot** when GitHub was not asked or could not be reached. When the check failed, the panel says why ([§25](#the-update-check-fails)). The check is the one under Behavior → Privacy & sync → *Check GitHub for new releases*.
 
@@ -4480,7 +4511,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 - Tiles show the direction since last week. A tag or a table row leads to the bookmarks behind it.
 - **Stale** follows **count as neglected after** under Config → Bookmarks, the same threshold the Bookmarks view uses.
 - Each tab has a 🔗 to copy a link to it.
-- At the top: when the figures were worked out, **Refresh**, and **Export CSV** for every tab. The export fetches the inbox and health figures itself.
+- At the top: when the figures were worked out, **Refresh**, and **Export CSV** for every tab. The export fetches the inbox and health figures itself, and adds the watched feed figures (feeds watched, items, read share, unread now, errors, and per feed and per day) while Watch feeds is on and follows a feed; otherwise it says `feeds_included,0`.
 - A category is counted per page: the same name on two pages is two categories.
 
 <details>
@@ -4543,11 +4574,26 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 
 <a id="import-and-export-bookmarks"></a>
 
-**Move → Bookmarks** (import and export):
+**Bring things in** is the top group of the tab. It shows a card for each kind of file you can import, with the file type, the services it covers, and what comes along (a green chip) and what does not (a grey one). The button on a card, **Choose a file…**, is the same one as in the table below.
+
+| Card | File | Covers | Comes along |
+|---|---|---|---|
+| **A browser** | `.html` | Chrome, Firefox, Safari, Edge, Brave | Links, folders, dates |
+| **A bookmark service** | `.html` | Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden, Karakeep | Links, tags, notes |
+| **Another dashboard** | `.yaml`, `.yml` | Homepage, Dashy, Homer | Links, groups; not widgets, not keys |
+| **A spreadsheet** | `.csv` | Columns: name, URL, category, tags, notes, shortcut | Links, tags, notes, shortcuts |
+| **Settings** | `.json` | Exported from another nextDash | Settings; not bookmarks |
+| **A nextDash backup** | `.zip` | A full backup of everything | Everything; replaces what is here |
+
+Links are counted first, then you choose where they go: this page, a new page, or the inbox. Links you already have are skipped.
+
+**Another dashboard.** Pick the configuration file of a Homepage (`services.yaml` or `bookmarks.yaml`), Dashy (`conf.yml`) or Homer (`config.yml`). nextDash reads each service or link as a bookmark with its name, address and group, and each group becomes a category; a group inside a group becomes a category named after the inner group. Widgets, themes, colour schemes and API keys are not read, so no credential leaves the file. Add widgets afterwards under Config → Widgets. A file that is too large or too deeply nested is refused as a whole.
+
+**Move → Bookmarks** (import and export, below the import cards):
 
 | Button | What it does |
 |---|---|
-| **Import browser bookmarks…** | Reads the HTML file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep. Shows a preview (*12 new, 3 conflicts*), then asks where the bookmarks go: **Onto the dashboard** (on the current page), **On a new page** (a page of its own called *Imported*, or *Imported 2* when that name is taken, so what is on the current page stays as it is) or **Into the inbox first**, to sort them one by one — folders then become tags, and links the dashboard already holds are skipped. Each answer says how many it would add and skip. Folders become categories; tags, notes and dates come along; duplicates are skipped; missing icons are fetched afterwards. |
+| **Import browser bookmarks…** | Reads the HTML file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep — or a Homepage, Dashy or Homer configuration (`.yaml`). Shows a preview (*12 new, 3 conflicts*), then asks where the bookmarks go: **Onto the dashboard** (on the current page), **On a new page** (a page of its own called *Imported*, or *Imported 2* when that name is taken, so what is on the current page stays as it is) or **Into the inbox first**, to sort them one by one — folders then become tags, and links the dashboard already holds are skipped. Each answer says how many it would add and skip. Folders become categories; tags, notes and dates come along; duplicates are skipped; missing icons are fetched afterwards. |
 | **Export bookmarks (HTML)** | The same format, for a browser or another tool |
 | **Export bookmarks (CSV)** | Name, URL, category, page, shortcut, tags and notes, with translated headers |
 | **Import bookmarks (CSV)** | Reads that file back, onto the current page, a new page or into the inbox — the same question as above. The Quick start guide's **Import a CSV file** asks it too. Columns are matched by name; rows without a URL and existing URLs are skipped. |
@@ -4558,6 +4604,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 |---|---|
 | Disaster recovery, moving servers | ZIP backup |
 | Leaving a browser or read-later tool | Import browser bookmarks |
+| Moving from Homepage, Dashy or Homer | Import browser bookmarks, with the configuration file |
 | Moving your collection elsewhere | Export bookmarks (HTML) |
 | Tidying in a spreadsheet | CSV export and import |
 | Links that keep arriving | Sources |
@@ -5173,6 +5220,8 @@ The panel is laid out like the command palette: you type your question in the li
 <p align="center"><img src="screenshots/manual.md/23-assistant-panel.jpg" alt="The assistant panel: a question about links that are down, the answer as a short list of three bookmarks, and two proposals underneath, a tag change and a deletion marked Destructive, each with Apply and Skip, with the conversations on the left" width="620"></p>
 <p align="center"><sub>An answer with its proposals: nothing changes until you press Apply.</sub></p>
 
+**How an answer is drawn.** The panel shows Markdown: headings (as bold lines), lists, numbered lists, `code` and code blocks, links to pages of nextDash and tables. A table that is wider than the panel scrolls sideways. The assistant is asked for a short layout: one sentence that answers, then the detail, a list item per thing, and a table only for three or fewer short columns.
+
 **Setting it up.** Under **Config → AI Assistant** (a page of its own in the Services group, with one tab, **Settings**) four panels follow each other: **Turn it on**, **Provider**, **Conversations** and **What it can see and do**. Each opens with a line saying what it is for, and the controls that need more than a label have an **ℹ** button beside them that explains them: the switch, the provider, the key, the server address, the model, **Test connection**, the two limits, **Delete all conversations** and the last panel. Under **Test connection** a line says what is still missing (the assistant is off, no key is saved, no address or no model). The fields stay open while the assistant is off, so you can fill them in first. To set it up, tick **Turn the assistant on** and pick a **Provider**:
 
 | Provider | What you fill in |
@@ -5468,7 +5517,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 
 | Term | Meaning | Explained in |
 |---|---|---|
-| Backdrop | What is drawn behind the bookmarks; every theme has one of its own, and you can pick any of 29. | [§17.4](#174-type-and-background) |
+| Backdrop | What is drawn behind the bookmarks; every theme has one of its own, and you can pick any of more than 260. | [§17.4](#174-type-and-background) |
 | Backup | A ZIP of the whole data directory, downloaded or stored on the server, by hand or on a schedule. | [§20.1](#201-backups-data) |
 | Bookmark | A saved link with a name, address, page and category, tags, an optional shortcut, a note and a pin. | [§3.3](#33-bookmarks) |
 | Bookmarklet | A button for your browser's bookmarks bar that saves the page you are on to nextDash, from any browser. | [§22.2](#222-capture-without-the-extension) |
@@ -5547,7 +5596,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Image update | A newer tag of a container's image, found by checks on request and on an interval; it can be skipped, held or applied automatically. | [§15.5](#155-actions-and-updates) |
-| Import | Reads a browser's bookmark file, other bookmark tools' exports or a CSV, showing a preview first and skipping duplicates; export goes the other way, as HTML or CSV. | [§20.1](#import-and-export-bookmarks) |
+| Import | Reads a browser's bookmark file, other bookmark tools' exports, a Homepage, Dashy or Homer configuration or a CSV, showing a preview first and skipping duplicates; export goes the other way, as HTML or CSV. | [§20.1](#import-and-export-bookmarks) |
 | Inbox | Where links wait until you decide where they go; a list of its own, not a page. | [§13](#13-inbox) |
 | Installed app | nextDash added to the home screen or installed from the browser, with the custom title and favicon; it also receives shared links. | [§23](#install-as-an-app) |
 
@@ -5557,6 +5606,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Layout history | The earlier arrangements nextDash keeps of a page's widgets and block order, which Find settings can restore. | [§18.3](#layout-history) |
 | Link preview card | The card that opens when you hover a bookmark or press `Shift + V`: what the page is, what it says, your note and tags. | [§4](#the-link-preview-card) |
 | Logs window | A window that follows a container's log as it is written, with search and filter. | [§15.8](#158-the-logs-window) |
 | Look | A ready-made combination of backdrop, surface, headers and type that leaves the theme's colours alone. | [§17.1](#looks) |
@@ -5643,7 +5693,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 
 | Term | Meaning | Explained in |
 |---|---|---|
-| Tag | A free label on a bookmark, stored in lower case. | [§10.1](#101-tags-on-a-bookmark) |
+| Tag | A free label on a bookmark, stored in lower case, with an optional colour. | [§10.1](#101-tags-on-a-bookmark) |
 | Tag cloud and tag view | Every tag from every page in three sizes with counts; pick one to open its tag view — all its bookmarks from every page in a table, with related tags, bulk actions and rename, merge or remove for the tag. Shift to stack, type to find. | [§10.2](#102-filtering-by-tag) |
 | Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
 | Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
