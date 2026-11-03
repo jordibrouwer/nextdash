@@ -1175,6 +1175,8 @@ class DashboardRenderCore {
         containers: 'Container list',
         notes: 'Notes',
         stack: 'Tabs',
+        clock: 'Clock',
+        countdown: 'Countdown',
         'feed-news': 'Watch feeds news',
         jellyfin: 'Jellyfin',
         emby: 'Emby',

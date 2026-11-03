@@ -5,6 +5,7 @@ import (
 	neturl "net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 /*
@@ -136,6 +137,19 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "click", Kind: "string", Allowed: []string{"view", "webui"}},
 		// Rows per column: a tile drawn two wide shows twice as many.
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
+	WidgetTypeClock: {
+		// "Label=Region/City" or just "Region/City"; the browser knows which
+		// zones exist, so an unknown one is shown as such rather than dropped.
+		{Key: "zones", Kind: "list"},
+		{Key: "hour12", Kind: "bool"},
+		{Key: "showDate", Kind: "bool"},
+	},
+	WidgetTypeCountdown: {
+		// A calendar date (YYYY-MM-DD) and, optionally, a time of day (HH:MM).
+		{Key: "date", Kind: "date"},
+		{Key: "time", Kind: "clock"},
+		{Key: "showTime", Kind: "bool"},
 	},
 	WidgetTypeStack: {
 		// Ids of other widgets on the page, in tab order; pruneStackMembers
@@ -555,6 +569,16 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 			if list := homeAssistantEntityList(raw); len(list) > 0 {
 				clean[field.Key] = list
 			}
+		case "date":
+			if text, isString := raw.(string); isString {
+				if parsed, err := time.Parse("2006-01-02", strings.TrimSpace(text)); err == nil {
+					clean[field.Key] = parsed.Format("2006-01-02")
+				}
+			}
+		case "clock":
+			if at := widgetClockTime(raw); at != "" {
+				clean[field.Key] = at
+			}
 		case "urlList":
 			// Its own kind rather than a list of strings: a list entry is
 			// capped at widgetMaxIDLen, which is an identifier's length and
@@ -721,7 +745,7 @@ func widgetTypeNames() []string {
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,
-		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes, WidgetTypeStack,
+		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes, WidgetTypeStack, WidgetTypeClock, WidgetTypeCountdown,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,

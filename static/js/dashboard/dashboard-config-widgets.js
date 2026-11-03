@@ -2630,7 +2630,7 @@
             return `
                 <div class="config-widget-field">
                     <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                    <input type="${field.input === 'time' ? 'time' : 'text'}" id="${id}" class="config-text"
+                    <input type="${field.input === 'time' || field.input === 'date' ? field.input : 'text'}" id="${id}" class="config-text"
                         data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                         data-widget-kind="text" maxlength="${field.maxlength || 200}"
                         value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">

@@ -14824,7 +14824,7 @@ class DashboardConfig {
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
-        ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack']],
+        ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
@@ -17159,7 +17159,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -17412,6 +17412,22 @@ class DashboardConfig {
               hint: ['config.widgetContainersRowsHint', 'Two wide, the tile shows two columns of this many.'] },
             { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+        ],
+        clock: [
+            { key: 'zones', kind: 'tags',
+              label: ['config.widgetClockZones', 'Other places'],
+              hint: ['config.widgetClockZonesHint',
+                     'Comma separated, as Name=Region/City — for example Tokyo=Asia/Tokyo, New York=America/New_York. Your own time is always shown first.'] },
+            { key: 'hour12', kind: 'bool', label: ['config.widgetClockHour12', 'Use a 12-hour clock'] },
+            { key: 'showDate', kind: 'bool', label: ['config.widgetClockShowDate', 'Show today’s date'] },
+        ],
+        countdown: [
+            { key: 'date', kind: 'text', input: 'date', maxlength: 10,
+              label: ['config.widgetCountdownDate', 'Date'],
+              hint: ['config.widgetCountdownDateHint', 'The widget’s title says what it counts to. Past the date it counts the days since.'] },
+            { key: 'time', kind: 'text', input: 'time', maxlength: 5,
+              label: ['config.widgetCountdownTime', 'Time of day (optional)'] },
+            { key: 'showTime', kind: 'bool', label: ['config.widgetCountdownShowTime', 'Count in hours and minutes near the end'] },
         ],
         stack: [
             { key: 'members', kind: 'checkset', optionsFrom: 'siblings',

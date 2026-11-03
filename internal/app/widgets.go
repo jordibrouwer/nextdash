@@ -177,6 +177,11 @@ const (
 	// widgets of the page (their settings, their sign-ins, their place in the
 	// order) and are left out of the grid while a stack holds them.
 	WidgetTypeStack WidgetType = "stack"
+	// WidgetTypeClock shows the time in a few places, WidgetTypeCountdown the
+	// days left to (or since) a date. Both are drawn in the browser from their
+	// config alone: no service is asked and nothing is stored but the settings.
+	WidgetTypeClock     WidgetType = "clock"
+	WidgetTypeCountdown WidgetType = "countdown"
 
 	// The Unraid widgets read the Unraid server set under Config -> Containers
 	// (unraid_settings.go). One connection for all of them: a widget only says
@@ -220,6 +225,8 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeCustom:          {},
 	WidgetTypeNotes:           {},
 	WidgetTypeStack:           {},
+	WidgetTypeClock:           {},
+	WidgetTypeCountdown:       {},
 	WidgetTypeJellyfin:        {},
 	WidgetTypeEmby:            {},
 	WidgetTypeSonarr:          {},
