@@ -2848,6 +2848,7 @@ class DashboardConfig {
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
         this.bindFormKeyboard(container);
         this.bindFormKeyboardLegend(container);
+        this.bindSettingPageHold();
         this.cacheSettingsJumpFields();
         if (this.isActiveView()) {
             this.updateConfigShellHead();
@@ -2878,6 +2879,72 @@ class DashboardConfig {
         return pairs
             .map(([k, label]) => `<span><kbd>${esc(k)}</kbd> ${esc(label)}</span>`)
             .join('');
+    }
+
+    /**
+     * A setting that is changed does not move the page.
+     *
+     * Changing a setting saves it and draws the panel again, a few times over
+     * about a second, and in some browsers (Safari was the one that showed it)
+     * the page ends up somewhere else: further up, with the reader who had
+     * scrolled down left looking at a different part of the settings. Whatever
+     * moves it, the way back is the same: note where the page was when the
+     * control was used and put it back for as long as the change is settling.
+     * The reader taking the page back (wheel, touch, a key, the scrollbar)
+     * ends it at once. One listener for every tab, so a setting added later is
+     * covered without anyone remembering to.
+     */
+    bindSettingPageHold() {
+        if (this._settingPageHoldBound) return;
+        this._settingPageHoldBound = true;
+        const CONTROL = 'input[type="checkbox"], input[type="radio"], input[type="range"], select, '
+            + '.config-choices button, button[data-behavior-type="chip"], .config-toggle';
+        const onUse = (event) => {
+            if (!this.isActiveView()) return;
+            const target = event.target;
+            if (!target?.closest?.('#config-view-body')) return;
+            // Choosing a tab or a section is meant to move the page.
+            if (target.closest('.config-subtab, .config-subtabs, [data-appearance-goto], [data-filter-elsewhere]')) return;
+            if (!target.closest(CONTROL)) return;
+            this.holdPageFor(1500);
+        };
+        document.addEventListener('change', onUse, true);
+        document.addEventListener('click', onUse, true);
+    }
+
+    /**
+     * Put the page back to where it is now whenever something moves it, for
+     * `ms` milliseconds or until the reader scrolls it themselves.
+     */
+    holdPageFor(ms) {
+        this._pageHold?.stop?.();
+        const root = document.documentElement;
+        const y = window.scrollY;
+        const held = root.style.minHeight;
+        // As tall as it is now, so a panel that is empty for a moment cannot
+        // leave the page too short to hold the position.
+        root.style.minHeight = `${root.scrollHeight}px`;
+        const until = performance.now() + ms;
+        const takeBack = ['wheel', 'touchstart', 'keydown'];
+        let frame = 0;
+        let over = false;
+        const stop = () => {
+            if (over) return;
+            over = true;
+            cancelAnimationFrame(frame);
+            root.style.minHeight = held;
+            takeBack.forEach((name) => window.removeEventListener(name, stop, true));
+            if (this._pageHold?.stop === stop) this._pageHold = null;
+        };
+        const keep = () => {
+            if (over) return;
+            if (Math.abs(window.scrollY - y) > 0.5) window.scrollTo({ top: y, behavior: 'instant' });
+            if (performance.now() >= until) { stop(); return; }
+            frame = requestAnimationFrame(keep);
+        };
+        takeBack.forEach((name) => window.addEventListener(name, stop, { capture: true, passive: true }));
+        this._pageHold = { stop };
+        frame = requestAnimationFrame(keep);
     }
 
     /** Footer hint on form-heavy sections (Behavior, Appearance, …). */

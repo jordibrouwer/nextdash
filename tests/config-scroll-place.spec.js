@@ -64,3 +64,22 @@ test('a news setting on Watch feeds → Settings leaves the page where it was', 
     const { before, after } = await changeAtTheBottom(page, '[data-behavior-field="showFeedWatchIcon"]');
     expect(after).toBe(before);
 });
+
+test('whatever moves the page after a change, it goes back where it was', async ({ page }) => {
+    await openConfig(page, '#config/appearance/general');
+    await page.setViewportSize({ width: 1280, height: 520 });
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+    await expect.poll(() => scrollY(page)).toBeGreaterThan(100);
+    const before = await scrollY(page);
+    // Something other than the app's own code throws the page to the top a
+    // moment after the click, the way Safari did: the hold has to undo it.
+    await page.evaluate(() => {
+        document.addEventListener('click', () => setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 250), { once: true, capture: true });
+    });
+    await page.locator('[data-appearance-toggle="animationsEnabled"]').evaluate((el) => el.click());
+    await page.waitForTimeout(900);
+    expect(await scrollY(page)).toBe(before);
+    // And the reader is in charge again afterwards: the hold lets go.
+    await page.mouse.wheel(0, -200);
+    await expect.poll(() => scrollY(page)).toBeLessThan(before);
+});
