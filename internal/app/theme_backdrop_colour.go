@@ -42,6 +42,26 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 		return themeBackdropBamboo(k)
 	case "oceanblue":
 		return themeBackdropOceanBlue(k)
+	case "louche":
+		return themeBackdropLouche(k)
+	case "planking":
+		return themeBackdropPlanking(k)
+	case "orbits":
+		return themeBackdropOrbits(k)
+	case "floes":
+		return themeBackdropFloes(k)
+	case "curtains":
+		return themeBackdropCurtains(k)
+	case "panda":
+		return themeBackdropPanda(k)
+	case "plankton":
+		return themeBackdropPlankton(k)
+	case "compass":
+		return themeBackdropCompass(k)
+	case "craquelure":
+		return themeBackdropCraquelure(k)
+	case "ribbons":
+		return themeBackdropRibbons(k)
 	}
 	if themeBackdropIsPattern(name) {
 		return themeBackdropPattern(name, k)

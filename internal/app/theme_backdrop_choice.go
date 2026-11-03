@@ -22,16 +22,16 @@ holds the map to that, and to there being an entry for every built-in theme and
 none for a theme that is gone.
 */
 var themeBackdropChoice = map[string]string{
-	"absinthe-light":              "crosshatch",  // gegraveerd papier, absintprent
-	"aluminium-deck-light":        "diamonds",    // past bij het thema
-	"andromeda-drift-light":       "nebula",      // sterrenstelsel
-	"arctic-cyan-light":           "stitch",      // patroon in plaats van een kleurvlak
-	"aurora-glass-light":          "aurora",      // naam
-	"bamboo-panda-light":          "bamboo",      // past bij het thema
-	"bio-abyss-light":             "bubbles",     // past bij het thema
-	"blueprint-light":             "blueprint",   // past bij het thema
-	"bone-china-light":            "rings",       // (blijft rings)
-	"borealis-veil-light":         "aurora",      // noorderlicht; aurora past beter dan blooms
+	"absinthe-light":              "louche",      // absint die troebel wordt
+	"aluminium-deck-light":        "planking",    // naden en klinknagels van een dek
+	"andromeda-drift-light":       "orbits",      // banen rond een sterrenstelsel
+	"arctic-cyan-light":           "floes",       // gebroken ijsschotsen
+	"aurora-glass-light":          "curtains",    // gordijnen van noorderlicht
+	"bamboo-panda-light":          "panda",       // pandagezichten
+	"bio-abyss-light":             "plankton",    // lichtgevend plankton
+	"blueprint-light":             "compass",     // passercirkels en hulplijnen
+	"bone-china-light":            "craquelure",  // craquelé van oud glazuur
+	"borealis-veil-light":         "ribbons",     // lint van noorderlicht
 	"candlelit-study-light":       "ruled",       // uit het paper-pakket (was glow)
 	"candy-pop-light":             "dotsoff",     // patroon in plaats van een kleurvlak
 	"cerulean-skylark-light":      "rays",        // patroon in plaats van een kleurvlak
