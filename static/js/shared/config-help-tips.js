@@ -83,12 +83,14 @@
             titleFallback: 'Finding things',
             tips: [
                 'tipFindFilters',
+                'tipFindSums',
                 'tipFindShortcutMode',
                 'tipFindGridShortcut',
                 'tipFindAllPages',
                 'tipFindFinders',
                 'tipFindTagCloud',
                 'tipFindTagView',
+                'tipFindTagColour',
                 'tipFindRecent',
                 'tipFindAddressBar',
                 'tipFindWeb',
@@ -186,25 +188,29 @@
                 'tipTuneReviewOffers',
                 'tipTuneWidgets',
                 'tipTuneWidgetFold',
+                'tipTuneWidgetTabs',
+                'tipTuneWidgetSchedule',
+                'tipTuneWidgetMenu',
                 'tipTuneCustomWidget',
                 'tipTuneAmbientWidgets',
                 'tipTuneHomeAssistant',
                 'tipTuneRssWidget',
                 'tipTuneCommands',
+                'tipTuneCommandsMore',
                 'tipTuneInboxConfig',
             ],
         },
         {
             titleKey: 'tipsGroupConfig',
             titleFallback: 'Config',
-            tips: ['tipConfigKeyboard', 'tipConfigFindValue', 'tipConfigHub', 'tipConfigTours'],
+            tips: ['tipConfigKeyboard', 'tipConfigFindValue', 'tipConfigWhatChanged', 'tipConfigLayoutHistory', 'tipConfigHub', 'tipConfigTours'],
         },
         {
             // Where bookmarks come from, where what happens here goes, and
             // what the server says about it.
             titleKey: 'tipsGroupData',
             titleFallback: 'Data in and out',
-            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs'],
+            tips: ['tipDataSources', 'tipDataPortable', 'tipDataImportDashboard', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs'],
         },
     ];
 
