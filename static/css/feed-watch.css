@@ -51,7 +51,17 @@
 .feed-watch-foot .feed-watch-save {
     background: var(--accent-primary); border-color: var(--accent-primary); color: var(--background-primary);
     font-weight: var(--font-weight-semibold, 600);
+    box-shadow: 0 0 0 1px var(--accent-primary), 0 2px 10px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
+.feed-watch-foot .feed-watch-save:hover { filter: brightness(1.1); }
+/* Cancel in the theme's warning hue: a colour of its own, so the pair reads as two
+   clear choices rather than one button and a label. */
+.feed-watch-foot .feed-watch-cancel {
+    background: color-mix(in srgb, var(--accent-warning) 22%, transparent);
+    border-color: var(--accent-warning); color: var(--accent-warning);
+    font-weight: var(--font-weight-semibold, 600);
+}
+.feed-watch-foot .feed-watch-cancel:hover { background: var(--accent-warning); color: var(--background-primary); }
 
 /* The signal on a row: the theme's own accent, so it reads in every theme.
    A count in the accent colour with a ring in the page colour (it stays apart

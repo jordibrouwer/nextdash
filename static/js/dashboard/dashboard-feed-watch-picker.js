@@ -126,7 +126,7 @@
                         : '')
                     + `<div class="feed-watch-foot-end">`
                     + `<button type="button" class="modal-button feed-watch-save" data-feed-watch-save><span class="modal-button-name">${esc(t('dashboard.feedWatchSave', 'Save'))}</span></button>`
-                    + `<button type="button" class="modal-button" data-feed-watch-cancel><span class="modal-button-name">${esc(t('dashboard.cancel', 'Cancel'))}</span></button>`
+                    + `<button type="button" class="modal-button feed-watch-cancel" data-feed-watch-cancel><span class="modal-button-name">${esc(t('dashboard.cancel', 'Cancel'))}</span></button>`
                     + `</div>`
                     + `</div></div>`,
                 showCancel: false,
