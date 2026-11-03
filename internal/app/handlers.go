@@ -2768,6 +2768,8 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	// would otherwise put the old address back with the next unrelated save.
 	settings.UnraidServers = h.store.GetSettings().UnraidServers
 
+	settings.TagColors = sanitizeTagColors(settings.TagColors)
+
 	// Validate and sanitize collections.
 	//
 	// Anything dropped here is reported back rather than discarded in silence.

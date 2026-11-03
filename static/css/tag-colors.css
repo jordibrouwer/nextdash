@@ -1,0 +1,35 @@
+/*
+ * A tag's colour, from data-tag-color (static/js/shared/tag-colors.js).
+ *
+ * One hue per name, mixed into the surface the chip sits on rather than laid
+ * over it, so the tint follows the theme: pale on a light one, deep on a dark
+ * one, and the text keeps its own contrast against the mix.
+ */
+[data-tag-color="red"]    { --tag-hue: #e5484d; }
+[data-tag-color="orange"] { --tag-hue: #f76b15; }
+[data-tag-color="yellow"] { --tag-hue: #d9a400; }
+[data-tag-color="green"]  { --tag-hue: #30a46c; }
+[data-tag-color="teal"]   { --tag-hue: #12a594; }
+[data-tag-color="blue"]   { --tag-hue: #3e8fe8; }
+[data-tag-color="purple"] { --tag-hue: #8e4ec6; }
+[data-tag-color="pink"]   { --tag-hue: #d6409f; }
+
+.bookmark-tag-chip[data-tag-color],
+.tag-cloud-word[data-tag-color],
+.config-tag-swatch[data-tag-color] {
+    border-color: color-mix(in srgb, var(--tag-hue) 55%, var(--border-primary, transparent));
+    background: color-mix(in srgb, var(--tag-hue) 20%, var(--background-secondary, transparent));
+    color: color-mix(in srgb, var(--tag-hue) 55%, var(--text-primary, currentColor));
+}
+
+/* Terminal and list rows draw tags as bare text: the colour is the text. */
+.dashboard-grid.layout-terminal .bookmark-tag-chip[data-tag-color],
+.dashboard-grid.layout-list .bookmark-tag-chip[data-tag-color] {
+    background: none;
+    border: 0;
+    opacity: 0.95;
+}
+
+.config-tag-swatch {
+    min-width: 6.5rem;
+}

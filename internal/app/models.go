@@ -795,6 +795,7 @@ type Settings struct {
 	SmartStalePageIds           []int                      `json:"smartStalePageIds"`                 // Page IDs where smart stale is enabled (empty = all)
 	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`              // Page IDs where smart most used is enabled (empty = all)
 	Collections                 []Collection               `json:"collections,omitempty"`             // User-defined dynamic collections
+	TagColors                   map[string]string          `json:"tagColors,omitempty"`               // A palette colour per tag (lower-cased), see tag_colors.go
 	CollectionColumns           map[string]int             `json:"collectionColumns,omitempty"`       // Collections drawn across two columns, by collection id; one column is the absence of an entry
 	TagRules                    []TagRule                  `json:"tagRules,omitempty"`                // Patterns you wrote that propose a tag
 	DismissedTagSuggestions     []string                   `json:"dismissedTagSuggestions,omitempty"` // Proposals you turned down, as "pattern|tag"

@@ -15441,8 +15441,9 @@ class DashboardConfig {
                 // Same .is-selected / aria-pressed pair the dashboard's own tag
                 // cloud uses, so the two clouds behave alike.
                 const selected = this._tagQuery === tag;
+                const hue = window.TagColors?.get(tag) || '';
                 return `<button type="button"
-                    class="tag-cloud-word is-${classes.get(tag)}${selected ? ' is-selected' : ''}"
+                    class="tag-cloud-word is-${classes.get(tag)}${selected ? ' is-selected' : ''}"${hue ? ` data-tag-color="${esc(hue)}"` : ''}
                     data-tag-cloud="${esc(tag)}" role="listitem" aria-pressed="${selected ? 'true' : 'false'}"
                     style="--tag-index:${i}"
                     title="${esc(tag)} — ${esc(label)}" aria-label="${esc(tag)}. ${esc(label)}">
@@ -15451,6 +15452,35 @@ class DashboardConfig {
                 </button>`;
             }).join('');
         return `<div class="tag-cloud-wordcloud config-tag-cloud" role="list">${words}</div>`;
+    }
+
+    /** The colour choice for one tag: none, or a name from the palette. */
+    renderTagColorSelect(tag) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = window.TagColors?.get(tag) || '';
+        const names = {
+            red: ['config.tagColorRed', 'Red'], orange: ['config.tagColorOrange', 'Orange'],
+            yellow: ['config.tagColorYellow', 'Yellow'], green: ['config.tagColorGreen', 'Green'],
+            teal: ['config.tagColorTeal', 'Teal'], blue: ['config.tagColorBlue', 'Blue'],
+            purple: ['config.tagColorPurple', 'Purple'], pink: ['config.tagColorPink', 'Pink'],
+        };
+        const options = (window.TagColors?.PALETTE || []).map((name) =>
+            `<option value="${name}"${current === name ? ' selected' : ''}>${esc(this.t(...names[name]))}</option>`).join('');
+        return `<select class="config-select config-tag-swatch"${current ? ` data-tag-color="${esc(current)}"` : ''}
+            data-tag-color-for="${esc(tag)}" aria-label="${esc(this.t('config.tagColorAria', 'Colour for {tag}').replace('{tag}', tag))}">
+            <option value=""${current ? '' : ' selected'}>${esc(this.t('config.tagColorNone', 'No colour'))}</option>${options}</select>`;
+    }
+
+    /** Saves one tag's colour. Empty removes it. Follows a rename through renameTagColor. */
+    async setTagColor(tag, color) {
+        const key = String(tag || '').trim().toLowerCase();
+        if (!key) return;
+        const next = { ...(this.dash.settings.tagColors || {}) };
+        if (color && window.TagColors?.PALETTE.includes(color)) next[key] = color; else delete next[key];
+        // {} rather than a missing key: the server keeps what an omitted key held.
+        this.dash.settings.tagColors = next;
+        await this.saveSettingsWithFeedback();
+        this.dash.renderDashboard?.({ animate: false });
     }
 
     renderTagsManager() {
@@ -15467,6 +15497,7 @@ class DashboardConfig {
             <li class="config-crud-row" data-tag-row="${esc(tag)}">
                 <div class="config-crud-fields">
                     <input type="text" class="config-text" data-tag-rename="${esc(tag)}" value="${esc(tag)}">
+                    ${this.renderTagColorSelect(tag)}
                     ${this.renderStatMeta(count, scales[i], 'config.tagBookmarkCount', '{count} bookmarks')}
                 </div>
                 <div class="config-crud-row-actions">
@@ -15566,6 +15597,13 @@ class DashboardConfig {
                 void this.rewriteTag(from, to);
             });
         });
+        container.querySelectorAll('[data-tag-color-for]').forEach((select) => {
+            select.addEventListener('change', () => {
+                const value = select.value;
+                if (value) select.setAttribute('data-tag-color', value); else select.removeAttribute('data-tag-color');
+                void this.setTagColor(select.getAttribute('data-tag-color-for'), value);
+            });
+        });
         container.querySelectorAll('[data-tag-delete]').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const tag = btn.getAttribute('data-tag-delete');
@@ -15602,6 +15640,19 @@ class DashboardConfig {
     async rewriteTag(from, to) {
         await window.TagRewrite.rewrite(this.dash, from, to, {
             onDone: async () => {
+                // The colour belongs to the tag: it follows a rename (a merge
+                // keeps the colour of the tag it merged into) and goes with a delete.
+                const colors = this.dash.settings.tagColors;
+                const was = String(from || '').trim().toLowerCase();
+                if (colors && Object.prototype.hasOwnProperty.call(colors, was)) {
+                    const moved = { ...colors };
+                    const color = moved[was];
+                    delete moved[was];
+                    const now = String(to || '').trim().toLowerCase();
+                    if (now && !moved[now]) moved[now] = color;
+                    this.dash.settings.tagColors = moved;
+                    await this.saveSettingsWithFeedback();
+                }
                 this._tagList = null;
                 await this.loadTagsManager();
                 await this.refreshBookmarksAfterWrite({ silent: true });
