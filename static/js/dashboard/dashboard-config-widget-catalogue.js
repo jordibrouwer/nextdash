@@ -56,6 +56,7 @@
         rss: { rows: [['Release 2.4 is out', ''], ['A note on caching', '']] },
         'feed-news': { rows: [['Changelog', '3 new', 'good'], ['Release 2.4 is out', '']] },
         notes: { rows: [['☑ renew domain', ''], ['☐ swap disk', '']] },
+        stack: { rows: [['Disks  ·  CPU  ·  Memory', ''], ['one tile, three tabs', '']] },
         jellyfin: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },
         emby: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },
         plex: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },

@@ -363,11 +363,15 @@ class DashboardRenderCore {
          * order does not name should be "it appears", not "it appears last for
          * ever". Anything not in the order keeps the position it is pushed in.
          */
+        const heldInStacks = this.stackMemberIds();
         (d.widgets || []).forEach((widget) => {
             // Switched off: kept in the order and out of the grid, so turning it
             // back on returns it to the place the reader put it rather than to
             // the end.
             if (widget?.config?.enabled === false) return;
+            // In a stack's tabs: drawn there, not here. Still in the order, so
+            // taking it out of the stack puts it back where it stood.
+            if (heldInStacks.has(widget.id)) return;
             columnBlocks.push({
                 widget,
                 category: {
@@ -767,8 +771,7 @@ class DashboardRenderCore {
                 .forEach((key) => delete held[key]);
         });
 
-        const block = document.querySelector(
-            `.dashboard-widget[data-widget-id="${CSS.escape(String(widget.id))}"]`);
+        const block = this.widgetBlockEl(widget.id);
         const body = block?.querySelector('.dashboard-widget-body');
         // Gone from the page: the tile was closed or the reader moved on, and
         // the clock has nothing left to draw into.
@@ -825,8 +828,7 @@ class DashboardRenderCore {
         const d = this.dash;
         const pageId = Number(d?.currentPageId) || Number(d?.pages?.[0]?.id) || 1;
 
-        const block = document.querySelector(
-            `.dashboard-widget[data-widget-id="${CSS.escape(String(widget.id))}"]`);
+        const block = this.widgetBlockEl(widget.id);
         const body = block?.querySelector('.dashboard-widget-body');
         if (!body) return;
 
@@ -1001,7 +1003,7 @@ class DashboardRenderCore {
          * in the tile can.
          */
         const cursor = d.keyboardNavigation?.captureWidgetCursor?.() || null;
-        document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"]`)
+        document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"], .dashboard-widget-member[data-widget-type="${CSS.escape(String(type))}"]`)
             .forEach((block) => {
                 const widget = (d.widgets || []).find((w) => w.id === block.dataset.widgetId);
                 const body = block.querySelector('.dashboard-widget-body');
@@ -1026,6 +1028,31 @@ class DashboardRenderCore {
         return Math.max(1, Math.min(2, Math.trunc(asked), available));
     }
 
+    /**
+     * The ids held in tabs by a stack that is on the page. A stack that is
+     * switched off holds nothing: its widgets are back in the grid, since a
+     * hidden stack would otherwise take its members out of sight with it.
+     */
+    stackMemberIds() {
+        const held = new Set();
+        (this.dash.widgets || []).forEach((widget) => {
+            if (widget?.type !== 'stack' || widget?.config?.enabled === false) return;
+            (Array.isArray(widget.config?.members) ? widget.config.members : [])
+                .forEach((id) => held.add(String(id)));
+        });
+        return held;
+    }
+
+    /**
+     * Where a widget is drawn: its block, or, when a stack holds it, the panel
+     * of the tab it is in. Beats, refreshes and redraws all look it up here.
+     */
+    widgetBlockEl(id) {
+        const key = CSS.escape(String(id));
+        return document.querySelector(
+            `.dashboard-widget[data-widget-id="${key}"], .dashboard-widget-member[data-widget-id="${key}"]`);
+    }
+
     /** A readable name for a type, for a widget with no title of its own. */
     widgetTypeLabel(type) {
         const d = this.dash;
@@ -1040,6 +1067,7 @@ class DashboardRenderCore {
     static WIDGET_TYPE_NAMES = {
         containers: 'Container list',
         notes: 'Notes',
+        stack: 'Tabs',
         'feed-news': 'Watch feeds news',
         jellyfin: 'Jellyfin',
         emby: 'Emby',

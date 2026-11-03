@@ -559,6 +559,10 @@ class KeyboardNavigation {
                 return;
             }
 
+            // A tab of a Tabs widget answers its own arrows, Home and End.
+            if (e.target?.closest?.('[role="tab"].dashboard-stack-tab')
+                && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+
             this.handleKeyPress(e);
         };
         document.addEventListener('keydown', this._keydownHandler, true);

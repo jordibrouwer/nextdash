@@ -172,6 +172,11 @@ const (
 	// WidgetTypeNotes holds a short text of the reader's own, some lines of it
 	// tickable. The text is the widget's config, so it travels with the page.
 	WidgetTypeNotes WidgetType = "notes"
+	// WidgetTypeStack is a frame that holds other widgets of the same page as
+	// tabs, one showing at a time. Its members are ids in config; they stay
+	// widgets of the page (their settings, their sign-ins, their place in the
+	// order) and are left out of the grid while a stack holds them.
+	WidgetTypeStack WidgetType = "stack"
 
 	// The Unraid widgets read the Unraid server set under Config -> Containers
 	// (unraid_settings.go). One connection for all of them: a widget only says
@@ -214,6 +219,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeFeedNews:        {},
 	WidgetTypeCustom:          {},
 	WidgetTypeNotes:           {},
+	WidgetTypeStack:           {},
 	WidgetTypeJellyfin:        {},
 	WidgetTypeEmby:            {},
 	WidgetTypeSonarr:          {},
@@ -459,7 +465,78 @@ func normalizeWidgetsForSave(widgets []Widget) ([]Widget, error) {
 	if len(out) == 0 {
 		return nil, nil
 	}
-	return out, nil
+	return pruneStackMembers(out), nil
+}
+
+// widgetMaxStackMembers is how many tabs one stack holds. Past a handful the tab
+// strip is a menu, and there is a menu for that: the page.
+const widgetMaxStackMembers = 6
+
+/*
+pruneStackMembers makes every stack's members true.
+
+A member is a widget of this same page that is not itself a stack, held by at
+most one stack (the first in page order keeps it), up to widgetMaxStackMembers,
+in the order the stack lists them. Deleting a widget, moving it to another page
+or importing a template can all leave a stack naming something that is not
+there; here is the one place that is put right, on every read and every write,
+so no caller has to remember to.
+*/
+func pruneStackMembers(widgets []Widget) []Widget {
+	hasStack := false
+	for _, widget := range widgets {
+		if widget.Type == WidgetTypeStack {
+			hasStack = true
+			break
+		}
+	}
+	if !hasStack {
+		return widgets
+	}
+	candidates := make(map[string]bool, len(widgets))
+	for _, widget := range widgets {
+		if widget.Type != WidgetTypeStack {
+			candidates[widget.ID] = true
+		}
+	}
+	taken := map[string]bool{}
+	out := make([]Widget, len(widgets))
+	copy(out, widgets)
+	for i, widget := range out {
+		if widget.Type != WidgetTypeStack {
+			continue
+		}
+		var kept []string
+		switch list := widget.Config["members"].(type) {
+		case []string:
+			kept = append(kept, list...)
+		case []any:
+			for _, item := range list {
+				if id, ok := item.(string); ok {
+					kept = append(kept, id)
+				}
+			}
+		}
+		members := make([]string, 0, len(kept))
+		for _, id := range kept {
+			if !candidates[id] || taken[id] || len(members) >= widgetMaxStackMembers {
+				continue
+			}
+			taken[id] = true
+			members = append(members, id)
+		}
+		config := make(map[string]any, len(widget.Config))
+		for key, value := range widget.Config {
+			config[key] = value
+		}
+		if len(members) > 0 {
+			config["members"] = members
+		} else {
+			delete(config, "members")
+		}
+		out[i].Config = config
+	}
+	return out
 }
 
 func normalizeWidgets(widgets []Widget) []Widget {
@@ -485,7 +562,7 @@ func normalizeWidgets(widgets []Widget) []Widget {
 	if len(out) == 0 {
 		return nil
 	}
-	return out
+	return pruneStackMembers(out)
 }
 
 /*
