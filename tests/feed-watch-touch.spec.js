@@ -63,22 +63,40 @@ async function stubLongNews(page, count = 14) {
  * A finger drag up on the element: a real touch scroll in Chromium. Mobile
  * WebKit supports neither CDP nor the wheel, so there the nearest scroller
  * is scrolled by script (the scroll events are the same, the gesture is not).
+ *
+ * Chromium's synthetic gesture is sometimes swallowed on a loaded Linux
+ * runner and nothing scrolls. So the scroller at that point is read before and
+ * after: the gesture is tried up to three times, and when it still did not
+ * move anything the scroll is made by script, as in WebKit. What these specs
+ * check is what the page does on a scroll, which both ways cause.
  */
 async function touchScroll(page, locator, distance = 400, at = null) {
     const box = locator ? /** @type {{x:number,y:number,width:number,height:number}} */ (await locator.boundingBox()) : null;
     const x = at ? at.x : box.x + box.width / 2;
     const y = at ? at.y : box.y + box.height / 2;
+    const position = () => page.evaluate(({ px, py }) => {
+        let el = document.elementFromPoint(px, py);
+        while (el && el.scrollHeight <= el.clientHeight + 1) el = el.parentElement;
+        return el && el !== document.body && el !== document.documentElement ? el.scrollTop : window.scrollY;
+    }, { px: x, py: y });
+    const byScript = () => page.evaluate(({ px, py, dy }) => {
+        let el = document.elementFromPoint(px, py);
+        while (el && el.scrollHeight <= el.clientHeight + 1) el = el.parentElement;
+        (el && el !== document.body && el !== document.documentElement ? el : window).scrollBy(0, dy);
+    }, { px: x, py: y, dy: distance });
     if (page.context().browser()?.browserType().name() === 'chromium') {
-        const cdp = await page.context().newCDPSession(page);
-        await cdp.send('Input.synthesizeScrollGesture', { x, y, yDistance: -distance, gestureSourceType: 'touch', speed: 800 });
-        await cdp.detach();
-    } else {
-        await page.evaluate(({ px, py, dy }) => {
-            let el = document.elementFromPoint(px, py);
-            while (el && el.scrollHeight <= el.clientHeight + 1) el = el.parentElement;
-            (el && el !== document.body && el !== document.documentElement ? el : window).scrollBy(0, dy);
-        }, { px: x, py: y, dy: distance });
+        const before = await position();
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const cdp = await page.context().newCDPSession(page);
+            await cdp.send('Input.synthesizeScrollGesture', { x, y, yDistance: -distance, gestureSourceType: 'touch', speed: 800 });
+            await cdp.detach();
+            try {
+                await expect.poll(position, { timeout: 1_500 }).not.toBe(before);
+                return;
+            } catch { /* swallowed: the gesture is tried again */ }
+        }
     }
+    await byScript();
 }
 
 const lockOf = (page) => page.evaluate(() => ({

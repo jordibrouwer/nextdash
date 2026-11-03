@@ -64,7 +64,15 @@ async function seedFirstRow(page, stats) {
 test.describe('usage in the row tooltip', () => {
     test('the title carries the open count and last opened', async ({ page }) => {
         await loadDashboard(page);
-        const { url, openCount } = await seedFirstRow(page, { openCount: 35, lastOpened: Date.now() - 26 * 60 * 60 * 1000 });
+        // Noon yesterday, not "26 hours ago": the label counts calendar days, so
+        // 26 hours back from one in the morning is two days ago, not yesterday.
+        const noonYesterday = await page.evaluate(() => {
+            const d = new Date();
+            d.setDate(d.getDate() - 1);
+            d.setHours(12, 0, 0, 0);
+            return d.getTime();
+        });
+        const { url, openCount } = await seedFirstRow(page, { openCount: 35, lastOpened: noonYesterday });
         const text = page.locator(`.bookmark-link[data-bookmark-url="${url}"] .bookmark-text`).first();
         const title = await text.getAttribute('title');
         expect(title).toContain(String(openCount));
@@ -133,7 +141,12 @@ test.describe('preview card usage line', () => {
 
     test('renders the count and substitutes every placeholder', async ({ page }) => {
         await loadDashboard(page);
-        const text = await usageTextFor(page, { openCount: 12, lastOpened: Date.now() - 3 * 60 * 60 * 1000 });
+        // Pinned to noon: three hours before a time early in the morning is
+        // yesterday, and the label rightly says so rather than "3h ago".
+        const noon = new Date();
+        noon.setHours(12, 0, 0, 0);
+        await page.clock.setFixedTime(noon);
+        const text = await usageTextFor(page, { openCount: 12, lastOpened: noon.getTime() - 3 * 60 * 60 * 1000 });
         expect(text).toContain('12');
         expect(text).toMatch(/3h ago/);
         expect(text).not.toContain('{');

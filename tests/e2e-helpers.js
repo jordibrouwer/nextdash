@@ -42,6 +42,10 @@ const RAINDROP_STUB_PORT = 18076;
 const E2E_WEB_SERVER_ENV = {
     NEXTDASH_WRITE_TOKEN: WRITE_TOKEN,
     NEXTDASH_DISABLE_PREFETCH: '1',
+    // No startup grace for bookmark health: a first failed check is recorded at
+    // once, so specs that check a failing address do not depend on the age of
+    // the server.
+    NEXTDASH_HEALTH_STARTUP_GRACE: '0',
     // Every start of a server on an empty data folder is a new install to the
     // daily install count, so test runs and CI shards were most of its
     // "installs". Only the ping: DISABLE_TELEMETRY would take the analytics
@@ -129,6 +133,23 @@ async function useClassicType(page, extra = {}) {
         headers: { 'X-NextDash-Token': WRITE_TOKEN },
     });
     if (!response.ok()) throw new Error(`useClassicType failed: HTTP ${response.status()}`);
+}
+
+/**
+ * Put the store on Ocean (dark), the glass look a fresh install opened on until
+ * v1.24.0. Since then a fresh install starts on Tidal Slate (dark), a frost look,
+ * so specs that measure glass panes, depth or a
+ * material's tinted rows name the look they were written against. Saved on the
+ * server like any setting; the fixture's reset puts the next spec file back.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} [theme]
+ */
+async function useGlassLook(page, theme = 'look-ocean-dark') {
+    const response = await page.request.post('/api/settings', {
+        data: { theme },
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
+    if (!response.ok()) throw new Error(`useGlassLook failed: HTTP ${response.status()}`);
 }
 
 /** @param {import('@playwright/test').Page} page */
@@ -729,6 +750,7 @@ module.exports = {
     resetDashboardData,
     WRITE_TOKEN,
     useClassicType,
+    useGlassLook,
     DASHBOARD_WHATS_NEW_RELEASE,
     DEFAULT_DISCOVERABILITY_KEYS,
     E2E_WEB_SERVER_ENV,

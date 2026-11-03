@@ -52,10 +52,14 @@ async function hoverAndRead(page, selector) {
     if (await el.count() === 0) return { skipped: true };
     const box = await el.boundingBox();
     if (!box) return { skipped: true };
-    // Move away first so a re-entry always registers as a fresh hover.
-    await page.mouse.move(5, 5);
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await expect.poll(() => el.evaluate((node) => node.matches(':hover'))).toBe(true);
+    // Move away first so a re-entry always registers as a fresh hover. The
+    // move is repeated until the browser reports the hover: on a loaded runner
+    // the first one can land before the layout has settled under the pointer.
+    await expect.poll(async () => {
+        await page.mouse.move(5, 5);
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        return el.evaluate((node) => node.matches(':hover'));
+    }, { timeout: 10_000 }).toBe(true);
     // A fixed wait: whether the popover opens is the question, and when it
     // should stay shut there is nothing to wait for.
     await page.waitForTimeout(120);

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 358" width="720" height="358" role="img" aria-labelledby="t d"><title id="t">The offline guard and the startup grace</title><desc id="d">Two timelines. Top: a round of checks where at least ten sites are reached and at least 80 percent fail with lookup, timeout or refused errors is held back, with no broken status, sample or alert, and tried again a minute later; after 30 minutes failures are recorded normally. Bottom: in the first 15 minutes after a start a bookmark first failed check is held, and a second failure at least 45 seconds later is recorded, while an answer means nothing was ever marked. A moving marker walks along each timeline; with reduced motion the full story is shown at rest.</desc><style>text{font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:#1f2a25}
+.m{fill:#5b6561}.b{font-weight:600}.mono{white-space:pre;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}.c{text-anchor:middle}
+.a{fill:#2f7d55}.big{font-size:20px;font-weight:700}
+.box{fill:#8a9490;fill-opacity:.1;stroke:#8a9490;stroke-width:1.5}
+.ln{fill:none;stroke:#8a9490;stroke-width:1.5}
+.ac{fill:none;stroke:#2f7d55;stroke-width:2}
+.af{fill:#2f7d55;fill-opacity:.18;stroke:#2f7d55;stroke-width:1.5}
+.dot{fill:#2f7d55}.mk{fill:#8a9490}.gd{fill:#8a9490;fill-opacity:.55}
+.bad{fill:#b4493f}.badl{stroke:#b4493f}
+.nb{fill:#2f7d55}.nt{fill:#fff;font-weight:700;font-size:12px;text-anchor:middle}
+@media (prefers-color-scheme:dark){text{fill:#e6ebe8}.m{fill:#a9b3af}.a{fill:#72ca9d}.ac{stroke:#72ca9d}.af{fill:#72ca9d;stroke:#72ca9d}.dot{fill:#72ca9d}.bad{fill:#e8847a}.badl{stroke:#e8847a}.nb{fill:#72ca9d}.nt{fill:#12201a}}@keyframes k12{0%,12%{opacity:.2}15%,90%{opacity:1}97%,100%{opacity:.2}}.p12{animation:k12 8s ease infinite}@keyframes k22{0%,22%{opacity:.2}25%,90%{opacity:1}97%,100%{opacity:.2}}.p22{animation:k22 8s ease infinite}@keyframes k32{0%,32%{opacity:.2}35%,90%{opacity:1}97%,100%{opacity:.2}}.p32{animation:k32 8s ease infinite}@keyframes k40{0%,40%{opacity:.2}43%,90%{opacity:1}97%,100%{opacity:.2}}.p40{animation:k40 8s ease infinite}@keyframes k45{0%,45%{opacity:.2}48%,90%{opacity:1}97%,100%{opacity:.2}}.p45{animation:k45 8s ease infinite}@keyframes k65{0%,65%{opacity:.2}68%,90%{opacity:1}97%,100%{opacity:.2}}.p65{animation:k65 8s ease infinite}@keyframes k80{0%,80%{opacity:.2}83%,90%{opacity:1}97%,100%{opacity:.2}}.p80{animation:k80 8s ease infinite}
+.cu{stroke:#2f7d55;stroke-width:2;stroke-opacity:.7}
+#c1{animation:c1 8s linear infinite}#c2{animation:c2 8s linear infinite}
+@keyframes c1{0%{transform:translateX(40px)}12%{transform:translateX(70px)}22%{transform:translateX(140px)}32%{transform:translateX(210px)}45%{transform:translateX(330px)}80%{transform:translateX(610px)}92%{transform:translateX(660px)}100%{transform:translateX(660px)}}@keyframes c2{0%{transform:translateX(40px)}12%{transform:translateX(80px)}40%{transform:translateX(230px)}65%{transform:translateX(440px)}92%{transform:translateX(600px)}100%{transform:translateX(600px)}}
+@media (prefers-reduced-motion:reduce){[class^=p]{animation:none!important;opacity:1!important}.cu{display:none}}</style><defs><marker id="h" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L8 4L0 8z" class="mk"/></marker></defs><text x="10" y="22" class="b">No connection: the offline guard</text>
+<text x="10" y="42" class="m">A round reaches 10 or more sites and 80 % or more fail with a lookup, timeout or refused error</text>
+<path d="M30 100H690" class="ln"/>
+<g class="p12"><circle cx="70" cy="100" r="9" class="ln" stroke-dasharray="3 3"/><text x="70" y="128" class="c m">round 1</text></g>
+<g class="p22"><circle cx="140" cy="100" r="9" class="ln" stroke-dasharray="3 3"/><text x="140" y="128" class="c m">+1 min</text></g>
+<g class="p32"><circle cx="210" cy="100" r="9" class="ln" stroke-dasharray="3 3"/><text x="210" y="128" class="c m">+2 min</text></g>
+<g class="p45"><text x="330" y="95" class="c m">· · ·</text><text x="140" y="76" class="c a b">tried again a minute later</text></g>
+<g class="p12"><text x="40" y="158">Held back: no broken status, no sample, no alert, no incident.</text><text x="40" y="178" class="m">Bookmarks keep their earlier status; the Bookmarks view says: No connection from this server since …</text></g>
+<g class="p80"><circle cx="610" cy="100" r="9" class="bad"/><text x="610" y="76" class="c b">after 30 minutes</text><text x="610" y="128" class="c m">recorded as usual</text></g>
+<line id="c1" x1="0" x2="0" y1="84" y2="116" class="cu"/>
+<path d="M10 198H710" class="ln" stroke-opacity=".4"/>
+<text x="10" y="222" class="b">The first 15 minutes after a start</text>
+<text x="10" y="242" class="m">A bookmark's first failed check is held; the next one, at least 45 s later, counts</text>
+<rect x="30" y="256" width="500" height="56" rx="8" class="af"/><text x="40" y="272" class="a b">grace window</text>
+<path d="M30 292H690" class="ln"/><text x="545" y="284" class="m">then normal checks</text>
+<g class="p12"><circle cx="80" cy="292" r="9" class="ln" stroke-dasharray="3 3"/><text x="80" y="330" class="c">1st failure</text><text x="80" y="347" class="c m">held</text></g>
+<g class="p40"><circle cx="260" cy="292" r="9" class="bad"/><text x="260" y="330" class="c">2nd failure</text><text x="260" y="347" class="c m">45 s or more later: recorded</text></g>
+<g class="p65"><circle cx="460" cy="292" r="9" class="dot"/><text x="460" y="330" class="c">it answers</text><text x="460" y="347" class="c m">nothing was ever marked</text><text x="360" y="284" class="c m">or</text></g>
+<text x="710" y="222" class="mono m" text-anchor="end">NEXTDASH_HEALTH_STARTUP_GRACE sets the window, 0 turns it off</text>
+<line id="c2" x1="0" x2="0" y1="260" y2="308" class="cu"/></svg>

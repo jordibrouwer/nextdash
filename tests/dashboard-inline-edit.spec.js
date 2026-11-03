@@ -313,25 +313,41 @@ test.describe('dashboard bookmark form modal', () => {
         )).toBeLessThan(countBefore);
     });
 
-    test('modal form uses opaque field surfaces', async ({ page }) => {
+    test('modal form: text fields take the sheet\'s field fill, the select stays opaque', async ({ page }) => {
+        // The text fields used to carry an opaque inline fill for a form lying
+        // over the blurred grid. In the sheet that fill outranked the sheet's own
+        // field (--bf-field), so a field was darker than its neighbours; the
+        // inline fill is taken off and every text field reads the one value.
+        // A native select still lists its options on its own background.
         await page.keyboard.press(';');
         await expect(page.locator('.bookmark-inline-form')).toBeVisible({ timeout: 3000 });
 
         const surfaces = await page.evaluate(() => {
-            const form = document.querySelector('#bookmark-form-modal .bookmark-inline-form');
-            const input = document.querySelector('#bookmark-form-modal .bookmark-inline-input');
-            const parseAlpha = (color) => {
-                const rgba = color.match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)$/);
-                if (rgba) return Number(rgba[4]);
-                return color.startsWith('rgb(') ? 1 : null;
+            const body = document.querySelector('#bookmark-form-modal .bookmark-form-modal-body');
+            const inputs = [...document.querySelectorAll('#bookmark-form-modal :is(.bookmark-inline-input, .bookmark-inline-textarea)')];
+            const select = document.querySelector('#bookmark-form-modal .bookmark-inline-select');
+            const probe = document.createElement('div');
+            probe.style.backgroundColor = 'var(--bf-field)';
+            body.appendChild(probe);
+            const field = getComputedStyle(probe).backgroundColor;
+            probe.remove();
+            const alphaOf = (color) => {
+                const slash = color.match(/\/\s*([\d.]+)\s*\)/);
+                const comma = color.match(/rgba\(([^)]+)\)/);
+                return slash ? parseFloat(slash[1]) : comma ? parseFloat(comma[1].split(',')[3]) : 1;
             };
-            const formStyle = form ? getComputedStyle(form) : null;
             return {
-                formAlpha: formStyle ? parseAlpha(formStyle.backgroundColor) : null,
-                inputAlpha: input ? parseAlpha(getComputedStyle(input).backgroundColor) : null,
+                count: inputs.length,
+                inline: inputs.map((el) => el.style.background || el.style.backgroundColor).filter(Boolean),
+                fills: [...new Set(inputs.map((el) => getComputedStyle(el).backgroundColor))],
+                field,
+                selectAlpha: select ? alphaOf(getComputedStyle(select).backgroundColor) : null,
             };
         });
 
-        expect(surfaces.inputAlpha).toBe(1);
+        expect(surfaces.count).toBeGreaterThan(1);
+        expect(surfaces.inline, 'a text field kept an inline fill').toEqual([]);
+        expect(surfaces.fills).toEqual([surfaces.field]);
+        expect(surfaces.selectAlpha).toBe(1);
     });
 });

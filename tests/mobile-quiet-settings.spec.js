@@ -31,6 +31,7 @@ test.describe('on a phone', () => {
         // On by default: no toast, but an error still shows.
         await openDashboard(page);
         await notify(page, 'Saved it', 'success');
+        // The toast must stay hidden: a fixed wait, so a late `show` class would be there before the single read.
         await page.waitForTimeout(600);
         // Read once: a retrying not-assertion would wait the toast out.
         expect(await toast(page).getAttribute('class')).not.toContain('show');
@@ -47,22 +48,29 @@ test.describe('on a phone', () => {
 
     test('a corner card is held back, not dismissed, and comes back when the setting is off', async ({ page, request }) => {
         await openDashboard(page);
-        // The "Updated from … to …" card is the one a phone still gets (it
+        // The "Updated from … to …" notice is the one a phone still gets (it
         // reports something that happened); the invitations are held back by
-        // the phone layout already.
+        // the phone layout already. It is a toast now, held back by the same
+        // corner gate (and hideToastsMobile keeps the toast itself unseen here,
+        // so what counts is whether it was shown at all).
+        await page.evaluate(() => { window.__toasts = []; const d = window.dashboardInstance; const o = d.showNotification?.bind(d); d.showNotification = (...a) => { window.__toasts.push(a[0]); return o?.(...a); }; });
         const ask = () => page.evaluate(() => {
             window.__nextdashUpdatedFrom = { from: '1.0.0', to: '9.9.9' };
             return window.DashboardUpdatedNotice.card.render();
         });
         expect(await ask()).toBe(false);
         await expect(page.locator('.updated-notice-card')).toHaveCount(0);
+        expect(await page.evaluate(() => window.__toasts.length)).toBe(0);
         // Not marked as answered.
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('updated-9.9.9'))).toBe(false);
 
         await set(request, { hideCornerCardsMobile: false });
         await openDashboard(page);
+        await page.evaluate(() => { window.__toasts = []; const d = window.dashboardInstance; const o = d.showNotification?.bind(d); d.showNotification = (...a) => { window.__toasts.push(a[0]); return o?.(...a); }; });
         expect(await ask()).toBe(true);
-        await expect(page.locator('.updated-notice-card')).toHaveCount(1);
+        expect(await page.evaluate(() => window.__toasts)).toEqual(['Updated from 1.0.0 to 9.9.9. The notes are under the ★ button.']);
+        await expect(page.locator('.updated-notice-card')).toHaveCount(0);
+        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('updated-9.9.9'))).toBe(true);
     });
 
     test('a bookmark opens in the same tab by default, in a new one when asked', async ({ page, context, request }) => {

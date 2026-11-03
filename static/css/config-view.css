@@ -2412,7 +2412,8 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     opacity: 0.8;
 }
 
-.config-text {
+.config-text,
+.config-input {
     padding: 7px 10px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
     border-radius: var(--radius-5, 8px);
@@ -2423,11 +2424,13 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     min-width: 200px;
 }
 
-.config-text:disabled {
+.config-text:disabled,
+.config-input:disabled {
     opacity: 0.5;
 }
 
-.config-text:focus-visible {
+.config-text:focus-visible,
+.config-input:focus-visible {
     outline: 2px solid var(--accent-color, #4a90d9);
     outline-offset: 1px;
 }

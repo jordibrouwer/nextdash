@@ -1,0 +1,21 @@
+{
+  "tag": "v1.24.1",
+  "date": "2 November 2026",
+  "releasedAt": "2026-11-02",
+  "modalLead": "Watch feeds: the One column news window shows one article at a time even when nothing is new, and adding a feed says what to expect.",
+  "sections": [
+    {
+      "title": "Watch feeds",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>One column is one article at a time, also when nothing is new.</strong> With <em>Show news as → One column</em> the window no longer falls back to a long list of every earlier entry: it walks them one by one."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Adding a feed says what to expect.</strong> A feed's existing entries count as seen, so news shows when the site publishes something new; the toast after saving now says so."
+        }
+      ]
+    }
+  ]
+}

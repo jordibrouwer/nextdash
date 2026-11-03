@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel, useGlassLook } = require('./e2e-helpers');
 
 /**
  * The appearance controls change the page while you are looking at it.
@@ -62,6 +62,9 @@ test.describe('appearance controls apply live', () => {
     });
 
     test('and the surfaces repaint with it', async ({ page }) => {
+        // A look that draws depth: Neutral, the fresh install's, is ink, whose
+        // categories cast no shadow at any depth.
+        await useGlassLook(page);
         await appearanceControls(page);
 
         const shadow = () => page.evaluate(() => {

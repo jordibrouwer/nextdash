@@ -2734,7 +2734,7 @@
                         <h3 class="config-panel-title">${esc(this.t('config.statsFeedsOffTitle', 'Statistics about watched feeds are off.'))}</h3>
                         <p class="config-panel-note">${esc(this.t('config.statsFeedsOffBody', 'Nothing is counted until you switch them on in Config → Watch feeds.'))}</p>
                         <div class="config-actions">
-                            <button type="button" class="config-btn config-btn--primary" data-stats-section-goto="feed-watch">${esc(this.t('config.statsFeedsOffButton', 'Open the setting'))}</button>
+                            <button type="button" class="config-btn config-btn--primary" data-stats-section-goto="feed-watch:settings">${esc(this.t('config.statsFeedsOffButton', 'Open the setting'))}</button>
                         </div>
                     </div>`;
             }
@@ -3044,6 +3044,8 @@
                     this._fw = this._fw || { open: '', cursor: '', ticked: new Set() };
                     this._fw.open = id;
                     this._fw.cursor = id;
+                    // The row is in the list, whichever tab was left open.
+                    this.feedWatchTab = 'feeds';
                     this.selectSection('feed-watch');
                     setTimeout(() => {
                         const row = document.querySelector(`[data-fw-row="${CSS.escape(id)}"]`);

@@ -1204,7 +1204,7 @@ body[data-show-theme-studio-button="false"] .header-shortcuts #theme-studio-butt
     width: 2.6rem;
     text-align: center;
     font-size: 1.1em;
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 0.4rem);
     color: var(--text-primary);
@@ -1215,7 +1215,7 @@ body[data-show-theme-studio-button="false"] .header-shortcuts #theme-studio-butt
 
 .page-tab-popover-name {
     flex: 1;
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 0.4rem);
     color: var(--text-primary);
@@ -2922,6 +2922,15 @@ body.is-moving-block-by-pointer { cursor: grabbing; }
     opacity: 1;
     color: var(--text-primary);
     background: var(--action-btn-bg-hover);
+}
+
+/* The open menu hangs below its header, over the category under it. A category
+   with a surface (glass, ink) is a stacking context of its own, so the next one
+   in the column painted over the menu and took its clicks: lift the category
+   whose menu is open above its neighbours. */
+.category:has(.category-sort-menu) {
+    position: relative;
+    z-index: 20;
 }
 
 .category-sort-menu {
@@ -6549,7 +6558,7 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
     padding: var(--space-2, 0.55rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 7px);
-    background: var(--background-secondary);
+    background: var(--field-fill, var(--background-secondary));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-small);
@@ -9653,6 +9662,27 @@ body[data-action-keys="off"] .header-action-item-key {
     background: var(--background-secondary);
     box-shadow: 0 4px 14px color-mix(in srgb, black 22%, transparent);
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.32rem);
+    white-space: nowrap;
+}
+
+/* display:flex above would otherwise win over the hidden attribute and leave the popover on screen. */
+.action-key-hint[hidden] {
+    display: none;
+}
+
+.action-key-hint-name {
+    padding: 0 var(--space-1, 0.25rem);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    line-height: 1.3;
+}
+
+.action-key-hint-name:empty {
+    display: none;
 }
 
 .action-key-hint kbd {

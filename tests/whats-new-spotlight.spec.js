@@ -98,13 +98,19 @@ test.describe("what's new: spotlight and catch-up", () => {
         // What is open is not listed again under Earlier.
         const earlier = await modal(page).locator('[data-wn-earlier]').evaluateAll((els) => els.map((el) => el.dataset.wnEarlier));
         expect(earlier).toEqual(['v9.0.0', 'v8.0.0']);
-        // The ask comes after everything that is open.
-        const after = await page.evaluate(() => {
-            const rel = [...document.querySelectorAll('.whats-new-modal .wn-rel')].pop();
-            const card = document.querySelector('.whats-new-modal .wn-support');
-            return Boolean(rel && card && (rel.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING));
+        // The ask is made once, under the headline release's title and before
+        // its changes -- not repeated in every release that is open.
+        await expect(modal(page).locator('.wn-dev')).toHaveCount(1);
+        const place = await page.evaluate(() => {
+            const card = document.querySelector('.whats-new-modal .wn-dev');
+            const rel = card?.closest('.wn-rel');
+            const groups = rel?.querySelector(':scope > .wn-groups');
+            return {
+                headline: Boolean(rel?.classList.contains('wn-rel--headline')),
+                beforeChanges: Boolean(groups && (card.compareDocumentPosition(groups) & Node.DOCUMENT_POSITION_FOLLOWING)),
+            };
         });
-        expect(after).toBe(true);
+        expect(place).toEqual({ headline: true, beforeChanges: true });
     });
 
     test('a browser that never saw the window gets only the newest release', async ({ page }) => {

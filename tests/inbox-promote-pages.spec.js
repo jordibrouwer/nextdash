@@ -31,13 +31,15 @@ async function twoPages(page) {
     await dismissBlockingOverlays(page);
 }
 
+// The Watch feeds row's interval select comes first in the form; the page
+// select is the first of the rest.
 const pageOptions = (page) => page.evaluate(() => {
-    const sel = document.querySelector('#bookmark-form-modal .bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select)');
+    const sel = document.querySelector('#bookmark-form-modal .bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select):not([data-feed-watch-interval])');
     return sel ? [...sel.options].map((o) => o.textContent.trim()) : [];
 });
 
 const pinnedPageValue = (page) => page.evaluate(() => {
-    const sel = document.querySelector('#bookmark-form-modal .bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select)');
+    const sel = document.querySelector('#bookmark-form-modal .bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select):not([data-feed-watch-interval])');
     return sel ? Number(sel.value) : NaN;
 });
 

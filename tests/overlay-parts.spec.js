@@ -250,7 +250,7 @@ test.describe('overlay parts', () => {
     });
 
     // ── 3. What's New ─────────────────────────────────────────────────────────────────────────────
-    test('What\'s New lays its entries, earlier releases and support block on the surface', async ({ page, request }) => {
+    test('What\'s New lays its entries, earlier releases and developer card on the surface', async ({ page, request }) => {
         await setTheme(request, THEME_PER_MATERIAL.glass);
         await openDashboard(page);
         await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((c) => c.remove()));
@@ -278,11 +278,12 @@ test.describe('overlay parts', () => {
                 return {
                     entry: read('.wn-entry--new'),
                     earlier: read('.wn-earlier'),
-                    support: read('.wn-support'),
+                    // The ask is the developer card under the headline now.
+                    dev: read('.wn-dev'),
                     chip: read('.wn-chip'),
                 };
             });
-            for (const key of ['entry', 'earlier', 'support']) {
+            for (const key of ['entry', 'earlier', 'dev']) {
                 const part = m[key];
                 expect.soft(part, material + ': .wn-' + key + ' is not on the page').not.toBeNull();
                 if (!part) continue;

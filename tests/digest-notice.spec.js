@@ -204,7 +204,13 @@ test.describe('the digest window', () => {
     }
 
     test('a part opened shrinks it to a bar that leads to the next part', async ({ page, request }) => {
-        await seedTwoParts(request);
+        const snap = await seedTwoParts(request);
+        // Two parts, whatever the shared data holds: a certificate or domain
+        // left by another spec's run, or a release of the week, would add a
+        // third and put it ahead of Never opened.
+        await page.route('**/api/digest/latest', (route) => route.fulfill({
+            json: { ...snap, news: undefined, health: { ...snap.health, newlyBroken: [], stillBroken: 0, certsExpiring: [], domainsExpiring: [] } },
+        }));
         const win = await openFresh(page);
         await choose(win, 'inbox');
         await win.locator('[data-digest-go="inbox"]').click();

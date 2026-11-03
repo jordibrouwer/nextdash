@@ -47,8 +47,10 @@ test.describe('category sort menu', () => {
         await page.locator('.category-sort-menu-item[data-sort-mode="opens"]').first().click();
 
         await expect.poll(async () => (await strip(page)).text, { timeout: 10_000 }).toBe('Top⋯');
-        // Still far below the four-button strip it replaced.
-        expect((await strip(page)).width).toBeLessThan(70);
+        // Still well below the four-button strip it replaced (around 90px).
+        // Ink, the default Neutral themes' material, sets the label a little
+        // wider: 71px where the glass themes drew under 70.
+        expect((await strip(page)).width).toBeLessThan(80);
     });
 
     test('Escape closes the menu and returns focus to its button', async ({ page }) => {

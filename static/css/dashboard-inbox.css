@@ -707,7 +707,7 @@ body.inbox-triage-active {
     padding: var(--space-1, 0.3rem) var(--space-1-5, 0.4rem);
     border-radius: var(--radius-4, 0.35rem);
     border: 1px solid var(--border-primary);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--text-sm, 0.8rem);

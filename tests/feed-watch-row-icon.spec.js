@@ -97,7 +97,7 @@ test('the setting off hides the glyph, and Config switches it without a reload',
     await expect(icon(page)).toHaveCount(1);
     await page.evaluate(() => { window.__noReload = true; });
     const leave = () => page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-    await page.goto('/#config/feed-watch');
+    await page.goto('/#config/feed-watch/settings');
     const box = page.locator('[data-behavior-field="showFeedWatchIcon"]');
     await expect(box).toBeChecked();
     await box.uncheck();
@@ -105,7 +105,7 @@ test('the setting off hides the glyph, and Config switches it without a reload',
     await leave();
     await expect(link(page)).toBeVisible();
     await expect(icon(page)).toHaveCount(0);
-    await page.goto('/#config/feed-watch');
+    await page.goto('/#config/feed-watch/settings');
     await page.locator('[data-behavior-field="showFeedWatchIcon"]').check();
     await leave();
     await expect(icon(page)).toHaveCount(1);

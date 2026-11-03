@@ -6,8 +6,8 @@
  * headlines, newest first. A click on a headline opens that article and reads
  * only that one; "+n more" says how many did not fit and shows them in the same
  * popover, up to ten; what is left after that opens the bookmark, and so does
- * the bar on top. A click anywhere else closes it. On a desktop the
- * head has a Reader button for the paper on that site, and the new-tab gestures
+ * the bar on top. A click anywhere else closes it. The head has a Reader
+ * button for the paper on that site, and the new-tab gestures
  * (a modifier or the middle button) still open the site itself.
  *
  * Touch is the media query and nothing else. dash.isCoarsePointer() also matches
@@ -292,8 +292,8 @@
             + `<button type="button" class="feed-news-pop-site" data-pop-site aria-label="${esc(t('dashboard.feedWatchPopoverOpenSite', 'Open {name}', { name: bookmark.name || bookmark.url }))}">`
             + `<span class="feed-news-pop-name" id="feed-news-pop-name">${esc(bookmark.name || bookmark.url)}</span>`
             + `<span class="feed-news-pop-count">${esc(t('dashboard.feedWatchNewCount', '{n} new', { n: count }))}</span></button>`
-            // The paper on this site alone; a phone reaches it from the toast.
-            + (isTouch() ? '' : `<button type="button" class="feed-news-pop-reader" data-pop-reader aria-label="${esc(t('dashboard.feedWatchPopoverReaderLabel', 'Open the reader for {name}', { name: bookmark.name || bookmark.url }))}">${esc(t('dashboard.feedWatchPopoverReader', 'Reader'))}</button>`)
+            // The paper on this site alone, on a phone too.
+            + `<button type="button" class="feed-news-pop-reader" data-pop-reader aria-label="${esc(t('dashboard.feedWatchPopoverReaderLabel', 'Open the reader for {name}', { name: bookmark.name || bookmark.url }))}">${esc(t('dashboard.feedWatchPopoverReader', 'Reader'))}</button>`
             + `<button type="button" class="feed-news-pop-close" data-pop-close aria-label="${esc(t('dashboard.close', 'Close'))}">×</button></div>`
             + `<ul class="feed-news-pop-list">` + items.slice(0, shown).map(row).join('') + `</ul>`
             + footer(shown);

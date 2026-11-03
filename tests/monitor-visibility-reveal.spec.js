@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, resetDashboardData } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, resetDashboardData, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
  * Monitored bookmarks on the dashboard, and the way back into the Health view.
@@ -53,6 +53,8 @@ test.beforeAll(async ({ browser }) => {
 
 test.describe('monitored bookmarks on the dashboard', () => {
     test('a monitored bookmark gets a status, like a periodic one', async ({ page }) => {
+        // A new install shows no row status; this is about the rows that do.
+        await page.request.post('/api/settings', { data: { showStatus: true }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
         await load(page);
         const url = await setMode(page, 0, 'monitor');
         const row = page.locator(`.bookmark-link[data-bookmark-url="${url}"]`).first();

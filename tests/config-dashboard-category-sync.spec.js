@@ -75,7 +75,7 @@ test.describe('config to dashboard category sync', () => {
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         // Through the page › category field; the hidden select behind it is
         // what the save reads, so that is what is checked afterwards.
-        const categorySelect = form.locator('.bookmark-inline-select:not(.bookmark-inline-toggle-select)').nth(1);
+        const categorySelect = form.locator('.bookmark-inline-select:not(.bookmark-inline-toggle-select):not([data-feed-watch-interval])').nth(1);
         await form.locator('.bookmark-form-place-value').click();
         const option = page.locator('.bookmark-form-place-pop .bookmark-form-place-option').first();
         const targetCategory = await option.getAttribute('data-category-id');

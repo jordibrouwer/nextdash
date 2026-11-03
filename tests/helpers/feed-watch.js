@@ -103,6 +103,8 @@ function watchPayload(key, items, { feedTitle = 'Stub Posts', newAt = Date.now()
                 newCount: items.length,
                 newAt,
                 newest: items[0] || null,
+                // The server sends up to three unread items, newest first.
+                newItems: items.slice(0, 3),
                 feeds: [{ feedUrl: 'http://127.0.0.1:1/feed/', title: feedTitle, intervalMinutes: 60, checkedAt: newAt }],
             },
         },

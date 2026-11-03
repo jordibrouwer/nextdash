@@ -1145,7 +1145,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     padding: 0.45rem 0.6rem;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 6px);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-controls);
@@ -1815,7 +1815,7 @@ body.no-animations .modal-button.danger.selected {
     padding: 0.7rem 1rem;
     border: none;
     border-radius: var(--ov-r-control, var(--layout-radius-sm, 10px));
-    background: rgba(0, 0, 0, 0.12);
+    background: var(--field-fill, rgba(0, 0, 0, 0.12));
     box-shadow: inset 0 0 0 1px var(--ov-rule, var(--border-primary));
     font-size: 1.15rem;
 }

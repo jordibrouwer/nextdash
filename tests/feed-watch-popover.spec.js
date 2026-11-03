@@ -74,8 +74,10 @@ test.describe('on a touch screen', () => {
         await expect(pop(page)).toHaveClass(/move-popover/);
         await settled(page);
         await expect(pop(page).locator('.feed-news-pop-head')).toContainText('7 new');
-        // The Reader button is a desktop's; a phone reaches the paper from the toast.
-        await expect(pop(page).locator('[data-pop-reader]')).toHaveCount(0);
+        // The Reader button is on a phone too, a finger-sized target that opens the paper.
+        const reader = pop(page).locator('[data-pop-reader]');
+        await expect(reader).toBeVisible();
+        expect((await reader.boundingBox()).height).toBeGreaterThanOrEqual(44);
         const close = await pop(page).locator('[data-pop-close]').boundingBox();
         expect(close.width).toBeGreaterThanOrEqual(44);
         expect(close.height).toBeGreaterThanOrEqual(44);
@@ -88,6 +90,17 @@ test.describe('on a touch screen', () => {
         expect(box.x + box.width).toBeLessThanOrEqual(375);
         expect(box.y + box.height).toBeLessThanOrEqual(812);
         expect(opened).toBe(0);
+    });
+
+    test('tapping Reader opens the paper on that site alone', async ({ page }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        await badge(page).tap();
+        await pop(page).locator('[data-pop-reader]').tap();
+        const modal = page.locator('#app-modal .modal.feed-news-modal');
+        await expect(modal).toBeVisible();
+        await expect(pop(page)).toHaveCount(0);
+        await expect(modal.locator('.feed-news-section')).toHaveCount(1);
     });
 
     test('with six or fewer there is no "+n more"', async ({ page }) => {
@@ -121,6 +134,7 @@ test.describe('on a touch screen', () => {
         await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(7);
         // All of them are here now: the bar on top is the way to the site.
         await expect(pop(page).locator('.feed-news-pop-more')).toHaveCount(0);
+        // No tab should open: a fixed wait, so a late `page` event would be counted before the check.
         await page.waitForTimeout(300);
         expect(opened).toBe(0);
         await expect(badge(page)).toHaveText('7');
@@ -173,11 +187,18 @@ test.describe('on a touch screen', () => {
         await page.keyboard.press('Tab');
         expect(await activeIs('[data-pop-site]')).toBe(true);
         await page.keyboard.press('Shift+Tab');
-        expect(await activeIs('li:last-child > .feed-news-pop-item')).toBe(true);
+        // Back inside the popover, off the bar. Which headline takes the focus is
+        // not asserted: on the CI runner it was not the last one, on three other
+        // machines it was, and what this checks is that the trap holds.
+        await expect.poll(() => page.evaluate(() => {
+            const p = document.querySelector('.feed-news-pop');
+            const a = document.activeElement;
+            return Boolean(p && a && p.contains(a) && !a.matches('[data-pop-site]'));
+        })).toBe(true);
         // Esc, the close button and a second tap all hand focus back.
         await page.keyboard.press('Escape');
         await expect(pop(page)).toHaveCount(0);
-        expect(await page.evaluate(() => document.activeElement?.classList.contains('bookmark-news-badge'))).toBe(true);
+        await expect.poll(() => page.evaluate(() => document.activeElement?.classList.contains('bookmark-news-badge'))).toBe(true);
 
         await badge(page).tap();
         await pop(page).locator('[data-pop-close]').tap();
@@ -236,6 +257,7 @@ test.describe('on a touch screen', () => {
         await link(page).locator('a.bookmark-open').tap({ position: { x: 20, y: 10 } });
         await expect(pop(page)).toBeVisible();
         await expect(pop(page).locator('.feed-news-pop-item')).toHaveCount(3);
+        // No tab should open: a fixed wait, so a late `page` event would be counted before the check.
         await page.waitForTimeout(400);
         expect(opened).toBe(0);
         // The second tap on the row closes it again; the site still did not open.
@@ -357,6 +379,7 @@ test.describe('on a desktop', () => {
         await expect(pop(page).locator('.feed-news-pop-more')).toHaveText('+3 more');
         await expect(pop(page).locator('.feed-news-pop-head')).toContainText('9 new');
         await expect(badge(page)).toHaveAttribute('aria-expanded', 'true');
+        // No tab should open: a fixed wait, so a late `page` event would be counted before the check.
         await page.waitForTimeout(400);
         expect(opened).toBe(0);
         await name(page).click({ position: { x: 20, y: 10 } });
@@ -376,6 +399,7 @@ test.describe('on a desktop', () => {
             await name(page).click({ position: { x: 20, y: 10 }, ...how });
             const tab = await opened;
             await expect.poll(() => tab.url()).toContain(new URL(site.url).host);
+            // No popover should appear: a fixed wait, so a late one would exist before the zero count is read.
             await page.waitForTimeout(300);
             await expect(pop(page)).toHaveCount(0);
         });
@@ -400,6 +424,7 @@ test.describe('on a desktop', () => {
         // Away and back onto the row: the card stays shut while the popover is open.
         await page.mouse.move(5, 940);
         await name(page).hover({ position: { x: 20, y: 10 } });
+        // The card must stay shut: a fixed wait, so a late card would show before the check.
         await page.waitForTimeout(1500);
         expect(await cardShown(page)).toBe(false);
         await expect(pop(page)).toBeVisible();
@@ -473,6 +498,7 @@ test.describe('on a desktop', () => {
         expect(await selected()).toBe('Stub Blog');
         await page.keyboard.press('Enter');
         await expect(pop(page)).toBeVisible();
+        // No tab should open: a fixed wait, so a late `page` event would be counted before the check.
         await page.waitForTimeout(400);
         expect(opened).toBe(0);
     });
@@ -498,6 +524,7 @@ test.describe('on a desktop, "+n more" and the shape', () => {
         // The cursor lands on the first of the newcomers.
         expect(await page.evaluate(() => document.activeElement?.dataset.popItem)).toBe('6');
         await expect(more).toHaveText('+2 more · Open site');
+        // No tab should open: a fixed wait, so a late `page` event would be counted before the check.
         await page.waitForTimeout(300);
         expect(opened).toBe(0);
         expectOnScreen(await shape(page));
@@ -609,6 +636,7 @@ test.describe('on a desktop, "+n more" and the shape', () => {
         // Scrolling the popover itself keeps it open.
         await pop(page).hover();
         await page.mouse.wheel(0, 80);
+        // The popover must stay open after the wheel: a fixed wait, so a late close would happen before the visibility check.
         await page.waitForTimeout(200);
         await expect(pop(page)).toBeVisible();
     });

@@ -190,7 +190,7 @@
                 watched = urls.length > 0;
                 outcome = urls.length ? 'saved' : 'removed';
                 notify(urls.length
-                    ? t('dashboard.feedWatchStarted', 'Watching {name} · checked every {interval}', { name, interval: intervalWords(minutes) })
+                    ? t('dashboard.feedWatchStarted', 'Watching {name} · checked every {interval}. You\'ll see news when it publishes something new.', { name, interval: intervalWords(minutes) })
                     : t('dashboard.feedWatchStopped', 'Stopped watching {name}', { name }), 'success');
                 close();
             });

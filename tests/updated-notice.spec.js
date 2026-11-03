@@ -40,6 +40,7 @@ async function visitAfterUpgrade(page, lastSeen = OLD_RELEASE) {
 }
 
 const card = (page) => page.locator('.updated-notice-card');
+const toast = (page) => page.locator('#app-notification.show');
 
 test.describe('the updated notice', () => {
     test('appears after the notes are closed and names both versions', async ({ page }) => {
@@ -50,25 +51,26 @@ test.describe('the updated notice', () => {
         await expect(card(page)).toHaveCount(0);
         const to = await page.evaluate(() => String(window.NEXTDASH_WHATS_NEW_RELEASE).replace(/^.*-v/, 'v'));
         await page.keyboard.press('Escape');
-        await expect(card(page)).toBeVisible({ timeout: 15_000 });
-        await expect(card(page)).toContainText('Updated from v1.3.0 to ' + to);
-        await expect(card(page)).not.toContainText('dashboard.updatedNotice');
-        // Answering it once is final.
-        await card(page).locator('[data-updated-notice-action="dismiss"]').click();
+        await expect(toast(page)).toBeVisible({ timeout: 15_000 });
+        await expect(toast(page)).toContainText('Updated from v1.3.0 to ' + to);
+        await expect(toast(page)).not.toContainText('dashboard.updatedNotice');
+        await expect(toast(page)).toContainText('The notes are under the');
+        await expect(page.locator('#app-notification')).not.toHaveClass(/has-action/);
         await expect(card(page)).toHaveCount(0);
+        // Showing it once is final: it counts as answered.
         expect(await page.evaluate(() => window.DashboardUpdatedNotice.shouldShow())).toBe(false);
     });
 
-    test('"What\'s new" reopens the notes', async ({ page }) => {
+    test('showing it counts as answered: a reload does not show it again', async ({ page }) => {
         await visitAfterUpgrade(page);
-        await expect(page.locator('.whats-new-modal')).toBeVisible({ timeout: 20_000 });
-        // The notes have loaded: on a busy runner Escape could close them while they were still loading.
         await expect(page.locator('.whats-new-modal [data-wn-content]')).toBeVisible({ timeout: 20_000 });
         await page.keyboard.press('Escape');
-        await expect(card(page)).toBeVisible({ timeout: 15_000 });
-        await card(page).locator('[data-updated-notice-action="open"]').click();
-        await expect(page.locator('.whats-new-modal [data-wn-content]')).toBeVisible();
+        await expect(toast(page)).toContainText('Updated from', { timeout: 15_000 });
         await expect(card(page)).toHaveCount(0);
+        expect(await page.evaluate(() => window.DashboardUpdatedNotice.shouldShow())).toBe(false);
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        expect(await page.evaluate(() => window.DashboardUpdatedNotice.shouldShow())).toBe(false);
     });
 
     test('is not shown to a fresh install, the same version or with the setting off', async ({ page }) => {

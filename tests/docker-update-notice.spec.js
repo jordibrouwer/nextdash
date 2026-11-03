@@ -9,6 +9,7 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
  */
 const PROMO_ID = 'docker-update-offer-v1';
 const card = (page) => page.locator('.docker-update-notice-card');
+const toast = (page) => page.locator('#app-notification.show');
 
 async function load(page, { socket = true, opens = 3, settings = {} } = {}) {
   await mockDocker(page, { socket });
@@ -39,8 +40,11 @@ test.describe('the image-update invitation', () => {
   test('it appears in the Containers view on the third visit', async ({ page }) => {
     await load(page, { opens: 3 });
     await openView(page);
-    await expect(card(page)).toBeVisible({ timeout: 15_000 });
-    await expect(card(page)).toContainText('Check images for updates?');
+    await expect(toast(page)).toBeVisible({ timeout: 15_000 });
+    await expect(toast(page)).toContainText('Check images for updates?');
+    await expect(toast(page)).toContainText('Config → Containers → Updates');
+    await expect(page.locator('#app-notification')).not.toHaveClass(/has-action/);
+    await expect(card(page)).toHaveCount(0);
   });
 
   test('not before the third visit', async ({ page }) => {
@@ -69,45 +73,15 @@ test.describe('the image-update invitation', () => {
     await other.close();
   });
 
-  test('Turn on writes 24h, and only then', async ({ page }) => {
-    await load(page);
-    const before = await page.evaluate(() => fetch('/api/settings').then((r) => r.json()));
-    try {
-      await openView(page);
-      await expect(card(page)).toBeVisible({ timeout: 15_000 });
-      const during = await page.evaluate(() => fetch('/api/settings').then((r) => r.json()));
-      expect(during.dockerUpdateInterval).toBe(before.dockerUpdateInterval);
-      await card(page).locator('[data-du-action="enable"]').click();
-      await expect(card(page)).toHaveCount(0);
-      await expect.poll(async () => (await page.evaluate(() => fetch('/api/settings').then((r) => r.json()))).dockerUpdateInterval).toBe('24h');
-      expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('docker-update-offer-v1'))).toBe(true);
-    } finally {
-      await page.evaluate(async () => {
-        const d = window.dashboardInstance;
-        d.settings.dockerUpdateInterval = 'off';
-        await d.saveSettings();
-      });
-    }
-  });
-
-  test('Not now hides it and snoozes it', async ({ page }) => {
+  test('showing the toast snoozes it and changes nothing', async ({ page }) => {
     await load(page);
     await openView(page);
-    await expect(card(page)).toBeVisible({ timeout: 15_000 });
-    await card(page).locator('[data-du-action="later"]').click();
+    await expect(toast(page)).toBeVisible({ timeout: 15_000 });
     await expect(card(page)).toHaveCount(0);
     expect(await page.evaluate(() => Number(localStorage.getItem('nextdashDockerUpdateOfferSnoozeUntil')) > Date.now())).toBe(true);
     expect(await page.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(false);
     expect(await page.evaluate(() => window.dashboardInstance.settings.dockerUpdateInterval)).toBe('off');
-  });
-
-  test('Never keeps it away for good', async ({ page }) => {
-    await load(page);
-    await openView(page);
-    await expect(card(page)).toBeVisible({ timeout: 15_000 });
-    await card(page).locator('[data-du-action="never"]').click();
-    await expect(card(page)).toHaveCount(0);
-    expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('docker-update-offer-v1'))).toBe(true);
-    expect(await page.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(false);
+    // Snoozed, not answered: it comes back after the snooze.
+    expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('docker-update-offer-v1'))).toBe(false);
   });
 });

@@ -138,7 +138,14 @@ class DashboardFeedWatch {
     newsFor(bookmark) {
         const entry = this.watchFor(bookmark);
         if (!entry || !(Number(entry.newCount) > 0)) return null;
-        return { newCount: Number(entry.newCount), newest: entry.newest || null, newAt: Number(entry.newAt) || 0, muted: entry.muted === true };
+        return {
+            newCount: Number(entry.newCount),
+            newest: entry.newest || null,
+            // Up to three unread items, newest first (the hover card pages them).
+            newItems: Array.isArray(entry.newItems) ? entry.newItems : [],
+            newAt: Number(entry.newAt) || 0,
+            muted: entry.muted === true,
+        };
     }
 
     totalNew() {

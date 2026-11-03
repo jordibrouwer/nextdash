@@ -47,6 +47,7 @@ MANUAL_SHOTS=1 NEXTDASH_DATA_DIR="$SEED" SHOTS_OUT="$OUT" PW_WORKERS=8 \
     tests/manual-screenshots-v1-23.spec.js \
     tests/manual-screenshots-v1-23-ai.spec.js \
     tests/manual-screenshots-v1-22-4.spec.js \
+    tests/manual-screenshots-v1-24.spec.js \
     --reporter=line --retries=2 >"$LOG" 2>&1
 status=$?
 grep -E '^\s+[0-9]+ (passed|failed|flaky|skipped)' "$LOG"

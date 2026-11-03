@@ -324,6 +324,8 @@ class DashboardConfig {
         this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'connection';
         // Glances sub-tab, remembered the same way.
         this._glancesTab = DashboardConfig.readRememberedTab('glances') || 'connection';
+        // Watch feeds sub-tab, remembered the same way.
+        this._feedWatchTab = DashboardConfig.readRememberedTab('feed-watch') || 'feeds';
         // Assistant has one tab; remembered the same way for consistency.
         this._assistantTab = DashboardConfig.readRememberedTab('assistant') || 'settings';
         /**
@@ -555,7 +557,10 @@ class DashboardConfig {
         if (raw.startsWith('config/behavior/')) {
             const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
             if (moved) return moved;
+            // Fresh's tab held the news settings; they are Watch feeds' Settings tab now.
+            if (DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(raw.slice('config/behavior/'.length))) return 'settings';
         }
+        if (raw === 'config/bookmarks/fresh') return 'settings';
         // Branding lived on Display, then moved to Header with the browser tab.
         if (raw === 'config/appearance/branding') return 'header';
         // Same move as sectionFromHash above: the tab it lands on now.
@@ -656,6 +661,7 @@ class DashboardConfig {
             unraid: DashboardConfig.UNRAID_TABS,
             glances: DashboardConfig.GLANCES_TABS,
             assistant: DashboardConfig.ASSISTANT_TABS,
+            'feed-watch': DashboardConfig.FEED_WATCH_TABS,
         };
     }
 
@@ -691,7 +697,7 @@ class DashboardConfig {
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
 
-    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances', 'assistant'];
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances', 'assistant', 'feed-watch'];
 
     static readRememberedTab(section) {
         try {
@@ -765,6 +771,7 @@ class DashboardConfig {
         unraid: 'unraidTab',
         glances: 'glancesTab',
         assistant: 'assistantTab',
+        'feed-watch': 'feedWatchTab',
     };
 
     /**
@@ -790,6 +797,7 @@ class DashboardConfig {
         'data-unraid-tab': 'unraid',
         'data-glances-tab': 'glances',
         'data-assistant-tab': 'assistant',
+        'data-fw-tab': 'feed-watch',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -809,6 +817,7 @@ class DashboardConfig {
         'status-page': 'data-sp-tab',
         unraid: 'data-unraid-tab',
         assistant: 'data-assistant-tab',
+        'feed-watch': 'data-fw-tab',
     };
 
     /**
@@ -1025,7 +1034,7 @@ class DashboardConfig {
             }
             if ((section === 'behavior' && DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(subTab))
                 || (section === 'bookmarks' && subTab === 'fresh')) {
-                return { section: 'feed-watch', subTab: null };
+                return { section: 'feed-watch', subTab: 'settings' };
             }
             if (section === 'behavior' && DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab]) {
                 return { section: 'monitoring', subTab: DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab] };
@@ -1259,6 +1268,7 @@ class DashboardConfig {
         // that still sets the tab and opens Bookmarks lands on the section.
         if (section === 'bookmarks' && this.bmTab === 'fresh') {
             this.bmTab = 'view';
+            this.feedWatchTab = 'settings';
             return 'feed-watch';
         }
         if (section !== 'behavior') return section;
@@ -1929,6 +1939,23 @@ class DashboardConfig {
             return true;
         }
 
+        // Ctrl/Cmd+A in the Bookmarks view ticks every bookmark the filter and
+        // the list search show, as it does in the Inbox. A text field keeps the
+        // browser's own select-all (the list search included); a row's tick box
+        // is an input too, but not a place to type, so it does not count.
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
+            && (e.key === 'a' || e.key === 'A') && this.section === 'bookmarks') {
+            const t = e.target;
+            const typing = t?.tagName === 'TEXTAREA' || t?.tagName === 'SELECT' || t?.isContentEditable
+                || (t?.tagName === 'INPUT' && t.type !== 'checkbox' && t.type !== 'radio' && t.type !== 'button');
+            if (!typing) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.toggleSelectAllBookmarks();
+                return true;
+            }
+        }
+
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
@@ -2168,6 +2195,10 @@ class DashboardConfig {
             case 'widgets':
                 this.repaintWidgetsBody();
                 break;
+            case 'feed-watch':
+                // Both bodies are drawn; a tab shows one (the strip's click does the same).
+                this.showFeedWatchTab(container || document);
+                break;
             case 'stats':
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
@@ -2374,6 +2405,7 @@ class DashboardConfig {
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             case 'glances': return this.glancesTabLabel?.(tab) || tab;
             case 'assistant': return this.assistantTabLabel?.(tab) || tab;
+            case 'feed-watch': return this.feedWatchTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2779,8 +2811,18 @@ class DashboardConfig {
             void this.loadFinders();
         } else if (this.section === 'feed-watch') {
             // The settings group binds like any schema panel; the list in it
-            // is bound by bindFeedWatchList from there.
+            // is bound by bindFeedWatchList from there. The tabs show and hide
+            // the two bodies, so the list is bound once.
             this.bindControlPanels(container, 'behavior');
+            if (container.querySelector('[data-fw-tab]')) {
+                this.bindSubTabStrip(container, 'data-fw-tab', (tab) => {
+                    if (tab === this.feedWatchTab) return;
+                    this.feedWatchTab = tab;
+                    this.restoreConfigHash();
+                    this.showFeedWatchTab(container);
+                    this.syncSubTabStrip('data-fw-tab', this.feedWatchTab);
+                });
+            }
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
             // The section carries schema panels of its own now, which bind the
@@ -2806,6 +2848,7 @@ class DashboardConfig {
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
         this.bindFormKeyboard(container);
         this.bindFormKeyboardLegend(container);
+        this.bindSettingPageHold();
         this.cacheSettingsJumpFields();
         if (this.isActiveView()) {
             this.updateConfigShellHead();
@@ -2836,6 +2879,72 @@ class DashboardConfig {
         return pairs
             .map(([k, label]) => `<span><kbd>${esc(k)}</kbd> ${esc(label)}</span>`)
             .join('');
+    }
+
+    /**
+     * A setting that is changed does not move the page.
+     *
+     * Changing a setting saves it and draws the panel again, a few times over
+     * about a second, and in some browsers (Safari was the one that showed it)
+     * the page ends up somewhere else: further up, with the reader who had
+     * scrolled down left looking at a different part of the settings. Whatever
+     * moves it, the way back is the same: note where the page was when the
+     * control was used and put it back for as long as the change is settling.
+     * The reader taking the page back (wheel, touch, a key, the scrollbar)
+     * ends it at once. One listener for every tab, so a setting added later is
+     * covered without anyone remembering to.
+     */
+    bindSettingPageHold() {
+        if (this._settingPageHoldBound) return;
+        this._settingPageHoldBound = true;
+        const CONTROL = 'input[type="checkbox"], input[type="radio"], input[type="range"], select, '
+            + '.config-choices button, button[data-behavior-type="chip"], .config-toggle';
+        const onUse = (event) => {
+            if (!this.isActiveView()) return;
+            const target = event.target;
+            if (!target?.closest?.('#config-view-body')) return;
+            // Choosing a tab or a section is meant to move the page.
+            if (target.closest('.config-subtab, .config-subtabs, [data-appearance-goto], [data-filter-elsewhere]')) return;
+            if (!target.closest(CONTROL)) return;
+            this.holdPageFor(1500);
+        };
+        document.addEventListener('change', onUse, true);
+        document.addEventListener('click', onUse, true);
+    }
+
+    /**
+     * Put the page back to where it is now whenever something moves it, for
+     * `ms` milliseconds or until the reader scrolls it themselves.
+     */
+    holdPageFor(ms) {
+        this._pageHold?.stop?.();
+        const root = document.documentElement;
+        const y = window.scrollY;
+        const held = root.style.minHeight;
+        // As tall as it is now, so a panel that is empty for a moment cannot
+        // leave the page too short to hold the position.
+        root.style.minHeight = `${root.scrollHeight}px`;
+        const until = performance.now() + ms;
+        const takeBack = ['wheel', 'touchstart', 'keydown'];
+        let frame = 0;
+        let over = false;
+        const stop = () => {
+            if (over) return;
+            over = true;
+            cancelAnimationFrame(frame);
+            root.style.minHeight = held;
+            takeBack.forEach((name) => window.removeEventListener(name, stop, true));
+            if (this._pageHold?.stop === stop) this._pageHold = null;
+        };
+        const keep = () => {
+            if (over) return;
+            if (Math.abs(window.scrollY - y) > 0.5) window.scrollTo({ top: y, behavior: 'instant' });
+            if (performance.now() >= until) { stop(); return; }
+            frame = requestAnimationFrame(keep);
+        };
+        takeBack.forEach((name) => window.addEventListener(name, stop, { capture: true, passive: true }));
+        this._pageHold = { stop };
+        frame = requestAnimationFrame(keep);
     }
 
     /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
@@ -3886,6 +3995,7 @@ class DashboardConfig {
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             case 'glances': return this.glancesTabLabel?.(tab) || tab;
             case 'assistant': return this.assistantTabLabel?.(tab) || tab;
+            case 'feed-watch': return this.feedWatchTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -8050,11 +8160,14 @@ class DashboardConfig {
                     return;
                 }
                 const body = document.getElementById('config-view-body');
+                // The body is replaced whole, keyboard legend and all: the legend
+                // is drawn again, or the page came back 63px shorter.
                 if (body) {
                     body.innerHTML = this.renderAppearance();
                     const container = document.getElementById('dashboard-layout');
                     if (container) {
                         this.bindAppearanceControls(container);
+                        this.bindFormKeyboardLegend(container);
                         // The fresh body carries the intro line again; lifted to
                         // the band as repaintBackupSection does, or it showed twice.
                         this._fillShellHeadFromSection(container);
@@ -9073,8 +9186,8 @@ class DashboardConfig {
         rowHighlight: { info: ['rowHighlightInfoTitle', 'rowHighlightInfoMessage',
             'How a row lights up', 'Subtle lets the accent reach a little way in from the left edge of the row you are on. Strong carries it much further across, which is easier to pick out at a glance or from a distance.'],
             hint: 'rowHighlightHint', def: 'subtle' },
-        showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
-        showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
+        showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: false },
+        showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: false },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
         colorizeStatus: { info: ['colorizeStatusInfoTitle', 'colorizeStatusInfoMessage'], def: true },
         showIcons: { info: ['showIconsInfoTitle', 'showIconsInfoMessage'], def: true },
@@ -9216,7 +9329,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'neutral-dark' },
+        theme: { def: 'tidal-slate-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -10782,14 +10895,14 @@ class DashboardConfig {
             },
             {
                 section: 'feed-watch',
-                tab: 'list',
+                tab: 'feeds',
                 title: t('config.feedWatchListTitle', 'Watched feeds'),
                 demoLocked: true,
                 controls: [{ type: 'feedWatchList' }],
             },
             {
                 section: 'feed-watch',
-                tab: 'general',
+                tab: 'settings',
                 title: t('config.feedsTitle', 'Watch feeds'),
                 demoLocked: true,
                 note: t('config.feedsNote', 'Feeds you follow from a bookmark (Watch this feed…) are asked on their own interval. When something new appears, the bookmark gets a purple count, a toast and the news window. Both settings below are per install; the window says how long the news stays in view once you are back.'),
@@ -13745,6 +13858,13 @@ class DashboardConfig {
         DashboardConfig.rememberTab('glances', tab);
     }
 
+    get feedWatchTab() { return this._feedWatchTab; }
+
+    set feedWatchTab(tab) {
+        this._feedWatchTab = tab;
+        DashboardConfig.rememberTab('feed-watch', tab);
+    }
+
     get unraidTab() { return this._unraidTab; }
 
     set unraidTab(tab) {
@@ -13768,6 +13888,7 @@ class DashboardConfig {
         // Fresh is Config → Watch feeds now: the section follows the tab the
         // way Monitoring's does.
         if (DashboardConfig.FEED_WATCH_FROM_BEHAVIOR.includes(tab)) {
+            this.feedWatchTab = 'settings';
             if (this.section === 'behavior') this.section = 'feed-watch';
             else this._behaviorTabToFeedWatch = true;
             return;
@@ -14222,7 +14343,10 @@ class DashboardConfig {
             // would move the reader to a different control.
             const next = document.querySelector(`[${attr}="${CSS.escape(field)}"]`);
             if (!next) return;
-            next.focus?.();
+            // Without preventScroll the browser scrolls the control into view,
+            // which moves a reader who changed a setting somewhere else on the
+            // page: it is only the focus that is being put back.
+            next.focus?.({ preventScroll: true });
             // Text inputs keep the caret too, or typing resumes at the wrong end.
             if (selectionStart != null && next.setSelectionRange) {
                 try { next.setSelectionRange(selectionStart, selectionEnd); } catch { /* not a text input */ }
@@ -14319,7 +14443,7 @@ class DashboardConfig {
         if (this.section === 'feed-watch') {
             const body = document.getElementById('config-fw-settings');
             if (body) {
-                body.innerHTML = this.renderControlPanels(this.panelsFor('feed-watch', 'general'), 'behavior');
+                body.innerHTML = this.renderControlPanels(this.panelsFor('feed-watch', 'settings'), 'behavior');
                 this.bindControlPanels(body, 'behavior');
                 this.labelSettingsControls();
                 restoreFocus();
@@ -16714,6 +16838,9 @@ class DashboardConfig {
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
     static UNRAID_TABS = ['connection', 'how'];
 
+    /** Config → Watch feeds: the feeds you follow, and the settings for their news. */
+    static FEED_WATCH_TABS = ['feeds', 'settings'];
+
     /** Config → Glances: where it is, how the page looks, what is recorded, the notices, the rest. */
     static GLANCES_TABS = ['connection', 'page', 'recording', 'notices', 'advanced'];
 
@@ -18538,11 +18665,39 @@ class DashboardConfig {
      */
     renderFeedWatchSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const active = this.feedWatchTab || 'feeds';
+        const tabs = DashboardConfig.FEED_WATCH_TABS.map((tab) => {
+            const on = tab === active;
+            return `<button type="button" class="config-subtab${on ? ' is-active' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="config-fw-body" data-fw-tab="${esc(tab)}">${esc(this.feedWatchTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.feedWatchIntro', 'Every feed you follow from a bookmark, and how their news reaches you.'))}</p>
-            <div id="config-fw-list">${this.renderControlPanels(this.panelsFor('feed-watch', 'list'), 'behavior')}</div>
-            <div id="config-fw-settings">${this.renderControlPanels(this.panelsFor('feed-watch', 'general'), 'behavior')}</div>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div class="config-tabpage">
+                <div class="config-tabpage-main" id="config-fw-body" role="tabpanel" tabindex="0">
+                    <div id="config-fw-list"${active === 'feeds' ? '' : ' hidden'}>${this.renderControlPanels(this.panelsFor('feed-watch', 'feeds'), 'behavior')}</div>
+                    <div id="config-fw-settings"${active === 'settings' ? '' : ' hidden'}>${this.renderControlPanels(this.panelsFor('feed-watch', 'settings'), 'behavior')}</div>
+                </div>
+            </div>
         `;
+    }
+
+    feedWatchTabLabel(tab) {
+        const map = {
+            feeds: ['config.feedWatchTabFeeds', 'Feeds'],
+            settings: ['config.feedWatchTabSettings', 'Settings'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    /** Show the body of the chosen tab without redrawing either: the list keeps what is open in it. */
+    showFeedWatchTab(container) {
+        const tab = this.feedWatchTab || 'feeds';
+        const list = container.querySelector('#config-fw-list');
+        const settings = container.querySelector('#config-fw-settings');
+        if (list) list.hidden = tab !== 'feeds';
+        if (settings) settings.hidden = tab !== 'settings';
     }
 
     /** Which sub-tab of Bookmarks is showing. */
@@ -20509,6 +20664,48 @@ class DashboardConfig {
         this.afterSelectionChange();
     }
 
+    /** True when every bookmark the filter and search show is ticked. */
+    allShownBookmarksSelected() {
+        const shown = this.visibleBookmarks();
+        return shown.length > 0 && shown.every((b) => this.bmSelected.has(this.bookmarkKey(b)));
+    }
+
+    /**
+     * Ctrl/Cmd+A and the toolbar button: tick every bookmark shown, drawn or
+     * not, or clear them again when they are all ticked already. Ticked rows
+     * the filter hides stay as they are when ticking, and go when clearing only
+     * if they are among the shown, so the "hidden by the filter" count holds.
+     */
+    toggleSelectAllBookmarks() {
+        const shown = this.visibleBookmarks();
+        if (!shown.length) return;
+        const keys = shown.map((b) => this.bookmarkKey(b));
+        if (keys.every((k) => this.bmSelected.has(k))) keys.forEach((k) => this.bmSelected.delete(k));
+        else keys.forEach((k) => this.bmSelected.add(k));
+        this.afterSelectionChange();
+    }
+
+    /** The toolbar's Select all / Deselect all, built for the list as shown. */
+    renderBookmarkSelectAllButton() {
+        const count = this.visibleBookmarks().length;
+        if (!count) return '';
+        const all = this.allShownBookmarksSelected();
+        const label = all
+            ? this.t('config.bmDeselectAll', 'Deselect all')
+            : this.t('config.bmSelectAll', 'Select all ({count})').replace('{count}', String(count));
+        const hint = all
+            ? this.t('config.bmDeselectAllHint', 'Untick every bookmark the current filter shows')
+            : this.t('config.bmSelectAllHint', 'Tick every bookmark the current filter shows');
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<button type="button" class="config-btn config-btn--small" data-bm-select-all
+            title="${esc(hint)}">${esc(label)}</button>`;
+    }
+
+    syncBookmarkSelectAllButton() {
+        const host = document.getElementById('config-bm-select-all');
+        if (host) host.innerHTML = this.renderBookmarkSelectAllButton();
+    }
+
     /** Every row of a page › category group, drawn or not. */
     selectBookmarkGroup(groupKey) {
         this.visibleBookmarks()
@@ -20527,6 +20724,7 @@ class DashboardConfig {
         });
         // A selection of fewer than two has no shared form to show.
         if (this.bmSelected.size < 2) this._bmBulkPanelWanted = false;
+        this.syncBookmarkSelectAllButton();
         this.repaintWorkbenchPanel?.();
     }
 
@@ -21076,6 +21274,7 @@ class DashboardConfig {
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
             ['x', this.t('config.bmKeySelect', 'select')],
             ['Shift X', this.t('config.bmKeyRange', 'range')],
+            ['Ctrl/Cmd A', this.t('config.bmKeySelectAll', 'select all')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
             ['Shift E', this.t('config.bmKeyEditDialog', 'edit in dialog')],
             ['i', this.t('config.bmKeyPanel', 'panel')],
@@ -21254,6 +21453,9 @@ class DashboardConfig {
         });
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
+        container.querySelector('#config-bm-select-all')?.addEventListener('click', (e) => {
+            if (e.target.closest('[data-bm-select-all]')) this.toggleSelectAllBookmarks();
+        });
         container.querySelector('#config-bm-list')?.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-empty-add]')) {
                 this.openAddBookmarkModal();

@@ -35,10 +35,17 @@ function serverDefaults() {
         tags[m[1]] = m[2];
     }
 
+    // Named constants are read from models.go too: the default theme has
+    // changed twice, and a copy of it here went stale each time.
+    const constant = (name) => {
+        const m = go.match(new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`));
+        expect(m, `const ${name} not found in models.go`).toBeTruthy();
+        return m[1];
+    };
     const named = {
-        defaultThemeID: 'look-ocean-dark',
-        defaultThemeDepth: 'glass',
-        defaultGlowStrength: 'soft',
+        defaultThemeID: constant('defaultThemeID'),
+        defaultThemeDepth: constant('defaultThemeDepth'),
+        defaultGlowStrength: constant('defaultGlowStrength'),
         defaultHealthAutoRecheckIntervalHours: 24,
     };
     const out = {};

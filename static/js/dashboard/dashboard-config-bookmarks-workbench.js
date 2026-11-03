@@ -103,6 +103,7 @@
                         </label>
                         <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
                         <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
+                        <span id="config-bm-select-all" class="config-bm-select-all">${this.renderBookmarkSelectAllButton()}</span>
                         <span id="config-bm-narrow-buttons" class="config-bm-narrow-buttons">${this.renderWorkbenchNarrowButtons()}</span>
                         <span class="config-bm-toolbar-spacer"></span>
                         ${this.renderEnableCheckingButton?.() || ''}
@@ -1796,6 +1797,7 @@
     syncWorkbenchToolbar() {
         const host = document.getElementById('config-bm-narrow-buttons');
         if (host) host.innerHTML = this.renderWorkbenchNarrowButtons();
+        this.syncBookmarkSelectAllButton?.();
         // The headings sit outside the list, so a list repaint leaves them;
         // they follow the sort (and the Score heading the Health filter) here.
         const heads = document.querySelector('#config-bm-workbench [data-bm-colhead]');

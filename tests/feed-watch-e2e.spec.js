@@ -43,12 +43,14 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
     await row(page, 'Stub News').hover();
     const news = page.locator('#bookmark-preview-card .bookmark-preview-card-news');
     await expect(news.locator('.bookmark-preview-card-news-title')).toHaveText('Third post');
-    await expect(news.locator('img')).toHaveAttribute('src', /^\/data\/preview-images\/pi-/);
+    await expect(news.locator('.bookmark-preview-card-news-image')).toHaveAttribute('src', /^\/data\/preview-images\/pi-/);
+    // The server sends both new items, so the card pages between them.
+    await expect(news.locator('.bookmark-preview-card-news-count')).toHaveText('1 / 2');
     expect(await news.locator('script').count()).toBe(0);
     expect(await page.evaluate(() => window.__pwned)).toBeUndefined();
 
-    // 6 · Read in full: one article at a time.
-    await news.getByRole('button', { name: 'Read in full' }).click();
+    // 6 · Open reader: one article at a time.
+    await news.getByRole('button', { name: 'Open reader' }).click();
     const modal = page.locator('#app-modal .modal.feed-news-modal');
     // The two new posts, and the feed's older one under "Earlier".
     await expect(modal.locator('.feed-news-entry')).toHaveCount(3);

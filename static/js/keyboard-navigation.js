@@ -187,6 +187,9 @@ class KeyboardNavigation {
                  * itself correctly and then search took the focus anyway.
                  */
                 || document.querySelector('.bookmark-context-menu')
+                // The news popover traps Tab itself; the grid moving its cursor
+                // under it scrolled the page, and a scroll closes the popover.
+                || document.querySelector('.feed-news-pop')
             ) {
                 return;
             }

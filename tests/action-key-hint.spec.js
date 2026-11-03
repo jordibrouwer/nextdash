@@ -9,7 +9,8 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * short rest on the button brings it up; passing over the bar does not.
  */
 
-const hint = (page) => page.locator('.action-key-hint:not([hidden])');
+// :visible, not :not([hidden]): the attribute alone says nothing once a rule gives the popover its own display.
+const hint = (page) => page.locator('.action-key-hint:visible');
 
 async function openDashboard(page, settings) {
     await page.setViewportSize({ width: 1500, height: 900 });
@@ -52,7 +53,9 @@ test('chips off: resting on a button shows its key after a moment', async ({ pag
     await expect(hint(page)).toHaveCount(0);
 
     await expect(hint(page)).toBeVisible();
-    await expect(hint(page)).toHaveText('>');
+    // The name of the function, then its key: a bare ">" explains nothing.
+    await expect(hint(page).locator('.action-key-hint-name')).toHaveText('search');
+    await expect(hint(page).locator('kbd')).toHaveText('>');
 
     // Docked at the bottom, so it stands above the button.
     const box = await hint(page).boundingBox();
@@ -66,7 +69,8 @@ test('chips off: resting on a button shows its key after a moment', async ({ pag
 test('the key follows the button', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'left', showActionKeys: false });
     const button = await hover(page, '#help-button');
-    await expect(hint(page)).toHaveText('!');
+    await expect(hint(page).locator('.action-key-hint-name')).toHaveText('cheat');
+    await expect(hint(page).locator('kbd')).toHaveText('!');
     // Docked on the left, so it stands to the right.
     const box = await hint(page).boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(button.x + button.width);
@@ -79,6 +83,17 @@ test('a click takes it away', async ({ page }) => {
     await page.mouse.down();
     await expect(hint(page)).toHaveCount(0);
     await page.mouse.up();
+});
+
+test('the bar sliding away takes the popover with it', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'bottom', showActionKeys: false });
+    await hover(page, '#search-button');
+    await expect(hint(page)).toBeVisible();
+    // The pointer stays where it is: the bar leaves from under it, so no pointerout
+    // ever tells the popover. The bar's own toggle is the way it goes in this test.
+    await page.evaluate(() => window.ActionBarAutoHide.toggle());
+    await expect.poll(() => page.evaluate(() => document.body.hasAttribute('data-action-bar-hidden'))).toBe(true);
+    await expect(hint(page)).toHaveCount(0);
 });
 
 test('chips on: no popover, the chip already says it', async ({ page }) => {

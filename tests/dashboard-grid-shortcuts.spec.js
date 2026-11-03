@@ -18,7 +18,10 @@ async function selectFirstBookmark(page) {
             return false;
         }
         const style = window.getComputedStyle(row);
-        return style.backgroundImage !== 'none' || style.backgroundColor !== 'rgba(0, 0, 0, 0)';
+        if (style.backgroundImage !== 'none' || style.backgroundColor !== 'rgba(0, 0, 0, 0)') return true;
+        // Ink (the default Neutral themes) draws no fill: the name is underlined.
+        const name = row.querySelector('.bookmark-text');
+        return !!name && window.getComputedStyle(name).textDecorationLine.includes('underline');
     })).toBe(true);
 }
 

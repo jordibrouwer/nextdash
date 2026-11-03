@@ -622,7 +622,7 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
     padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-secondary);
     border-radius: var(--radius-4, 0.4rem);
-    background: var(--background-primary);
+    background: var(--field-fill, var(--background-primary));
     color: var(--text-primary);
     font: inherit;
     font-size: calc(var(--font-size-controls) * 0.88);

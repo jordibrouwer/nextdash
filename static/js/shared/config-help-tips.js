@@ -32,6 +32,9 @@
                 'tipEverydayGridFilter',
                 'tipEverydayScrollBack',
                 'tipEverydayCheatsheet',
+                'tipWatchNews',
+                'tipWatchFeedKey',
+                'tipWatchPreviewPager',
             ],
         },
         {

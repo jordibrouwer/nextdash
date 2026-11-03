@@ -66,6 +66,13 @@
             if (document.querySelector('.whats-new-modal')?.offsetParent) return false;
             return true;
         },
+        // A report of what happened, as a toast that names where the notes are.
+        toast: {
+            message: () => `${fill(t('dashboard.updatedNoticeTitle', 'Updated from {from} to {to}'))}. ${t('dashboard.updatedNoticeToastHint', 'The notes are under the ★ button.')}`,
+            type: 'update',
+            duration: 15000,
+            onShown: markAnswered,
+        },
         onShown: () => global.nextdashTrack?.('updated-notice', { action: 'shown' }),
         onDismiss: () => {
             global.nextdashTrack?.('updated-notice', { action: 'dismiss' });

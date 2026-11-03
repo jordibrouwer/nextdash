@@ -119,11 +119,15 @@ async function openDashboard(page) {
 
 test('the page overview offers sharing this page and importing one', async ({ page }) => {
     await openDashboard(page);
-    await page.getByRole('button', { name: 'Choose a page' }).click();
+    // The header button is opened by dispatching its click: on a loaded runner a
+    // real pointer click found the dashboard's container over it, or the button
+    // outside the viewport, for the whole 30 seconds; what is tested is the
+    // overview it opens, not where the pointer lands.
+    await page.getByRole('button', { name: 'Choose a page' }).dispatchEvent('click');
     await page.locator('#page-overview-share').click();
     await expect(page.locator('#config-template-export .modal')).toBeVisible();
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Choose a page' }).click();
+    await page.getByRole('button', { name: 'Choose a page' }).dispatchEvent('click');
     await page.locator('#page-overview-import').click();
     await expect(page.locator('#config-template-import .modal')).toBeVisible();
 });

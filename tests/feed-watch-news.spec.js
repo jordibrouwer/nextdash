@@ -36,7 +36,7 @@ async function setup(page, { clock = false } = {}) {
 
 async function openFromCard(page) {
     await link(page).hover();
-    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Read in full' }).click();
+    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Open reader' }).click();
     await expect(modal(page)).toBeVisible();
 }
 
@@ -143,6 +143,33 @@ test('the newspaper lists more than what was found: the feed\'s earlier entries 
     await expect(modal(page)).toBeHidden();
 });
 
+test('one column with nothing new still shows one article at a time, from the earlier entries', async ({ page, request }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await page.goto('/');
+    const key = await keyOf(page, site.url);
+    const recent = Array.from({ length: 12 }, (_, i) => ({
+        id: `old${i}`, title: `Earlier entry ${i + 1}`, link: `http://127.0.0.1:1/old${i}`, summary: `<p>Older text ${i + 1}</p>`,
+        publishedAt: Date.now() - (i + 5) * 86_400_000, bookmarkKey: key, bookmarkName: 'Stub Blog', bookmarkUrl: site.url, feedTitle: 'Stub Posts',
+    }));
+    await page.route('**/api/feeds/watch', (route) => (route.request().method() !== 'GET' ? route.continue() : route.fulfill({
+        contentType: 'application/json', body: JSON.stringify(watchPayload(key, [])),
+    })));
+    await page.route('**/api/feeds/watch/items**', (route) => route.fulfill({
+        contentType: 'application/json', body: JSON.stringify({ items: [], recent }),
+    }));
+    expect((await request.post('/api/settings', { data: { feedWatchNewsView: 'single' }, headers })).ok()).toBe(true);
+    await openDashboard(page);
+    await page.keyboard.press('Shift+N');
+    await expect(modal(page)).toBeVisible();
+
+    // An article, not the front page with all twelve listed.
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('Earlier entry 1');
+    await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 12');
+    await expect(modal(page).locator('.feed-news-entry')).toHaveCount(0);
+    await modal(page).locator('[data-feed-news-step="1"]').click();
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('Earlier entry 2');
+});
+
 test('the header switches between newspaper, two columns and one column, and the choice is kept', async ({ page, request }) => {
     await page.setViewportSize({ width: 1400, height: 900 });
     await setup(page);
@@ -213,7 +240,7 @@ test('the bar runs down and the modal closes itself after 30 minutes', async ({ 
     await expect(link(page).locator('.bookmark-news-badge')).toBeVisible();
     await link(page).hover();
     await page.clock.runFor(400);
-    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Read in full' }).click();
+    await page.locator('#bookmark-preview-card').getByRole('button', { name: 'Open reader' }).click();
     await expect(modal(page)).toBeVisible();
     const bar = modal(page).locator('.feed-news-bar');
     await expect(bar).toHaveAttribute('aria-label', /Closes in 30 min/);
@@ -257,6 +284,20 @@ test('feed HTML is shown as text styling, never as script', async ({ page }) => 
     await openFromCard(page);
     await expect(modal(page).locator('.feed-news-summary b')).toHaveText('bold');
     expect(await modal(page).locator('script, iframe, img[onerror]').count()).toBe(0);
+});
+
+test('the index lead keeps a space between two paragraphs', async ({ page }) => {
+    await page.goto('/');
+    const key = await keyOf(page, site.url);
+    const items = [1, 2].map((n) => ({
+        ...newsItem(n), bookmarkKey: key, bookmarkName: 'Stub Blog', bookmarkUrl: site.url,
+        summary: n === 1 ? '<p>First paragraph.</p><p>Second paragraph.</p><ul><li>One</li><li>Two</li></ul>' : '<p>Plain.</p>',
+    }));
+    await stubWatch(page, { list: watchPayload(key, items), items });
+    await openDashboard(page);
+    await openFromCard(page);
+    // textContent alone would read "First paragraph.Second paragraph.OneTwo".
+    await expect(modal(page).locator('.feed-news-entry-lead').filter({ hasText: 'First paragraph' })).toHaveText('First paragraph. Second paragraph. One Two');
 });
 
 test('read state per item: an article read, marked unread again, then the site read', async ({ page, request }) => {

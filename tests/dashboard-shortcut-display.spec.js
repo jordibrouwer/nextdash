@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
  * The shortcut label has three settings, and the middle one is the point.
@@ -186,6 +186,10 @@ test.describe('shortcut label display modes', () => {
         // that end belongs to the milliseconds. Pinning it to the row instead of
         // to the name column put it on top of the number -- and looked right in
         // every list that had times switched off.
+        // A new install ships with row status off, so it is switched on first.
+        await page.request.post('/api/settings', { data: { showStatus: true, showPing: true }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await page.evaluate(() => {
             const d = window.dashboardInstance;
             d.settings.showStatus = true;

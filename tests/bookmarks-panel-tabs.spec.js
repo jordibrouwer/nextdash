@@ -1,5 +1,5 @@
 const { test, expect } = require('./fixtures');
-const { useClassicType } = require('./e2e-helpers');
+const { useClassicType, useGlassLook } = require('./e2e-helpers');
 const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 test.beforeEach(async ({ page }) => {
@@ -304,6 +304,9 @@ test.describe('bookmark panel: scrolling stays in it', () => {
 });
 
 test('the side panel wears the theme like the summary tile: edges, cast and gloss', async ({ page }) => {
+  // A look with a gloss and a rim to wear: Neutral, the fresh install's, is ink,
+  // which draws neither.
+  await useGlassLook(page);
   const { bookmarks } = await open(page);
   await page.evaluate(() => { document.body.dataset.depth = 'rich'; });
   await pick(page, bookmarks[1].name);

@@ -2,11 +2,11 @@ package app
 
 import "testing"
 
-// Ocean is the theme a fresh install starts on, with its light half for auto dark
+// Tidal Slate is the theme a fresh install starts on, with its light half for auto dark
 // mode. An install from before v1.22.0 is still moved onto Aurora Glass once (see
 // aurora_glass_migration_test.go) and keeps whatever it chooses afterwards.
-func TestOceanIsTheDefaultTheme(t *testing.T) {
-	if defaultThemeID != "look-ocean-dark" || defaultThemeLightID != "look-ocean-light" {
+func TestTidalSlateIsTheDefaultTheme(t *testing.T) {
+	if defaultThemeID != "tidal-slate-dark" || defaultThemeLightID != "tidal-slate-light" {
 		t.Fatalf("defaults are %q / %q", defaultThemeID, defaultThemeLightID)
 	}
 	themes := getDefaultBuiltInThemes()

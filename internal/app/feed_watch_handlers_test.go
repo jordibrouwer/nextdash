@@ -511,6 +511,30 @@ func TestWatchItemsAllKeys(t *testing.T) {
 	}
 }
 
+// The list carries up to three unread items per bookmark across its feeds,
+// newest first, the first being Newest; read items stay out.
+func TestWatchListCarriesNewItems(t *testing.T) {
+	bms := []Bookmark{{Name: "Blog", URL: "https://blog.example/news", LastOpened: 1500}}
+	key := canonicalBookmarkURLKey(bms[0].URL)
+	file := FeedWatchFile{Watches: []FeedWatch{
+		{BookmarkKey: key, FeedURL: "https://blog.example/a.xml", Items: []FeedItem{
+			{ID: "old", FoundAt: 1000}, {ID: "a2", FoundAt: 2000}, {ID: "a5", FoundAt: 5000, ImageSource: "x"}}},
+		{BookmarkKey: key, FeedURL: "https://blog.example/b.xml", Items: []FeedItem{
+			{ID: "b3", FoundAt: 3000}, {ID: "b4", FoundAt: 4000}}},
+	}}
+	e := watchListFor(file, bms)[key]
+	var ids []string
+	for _, it := range e.NewItems {
+		ids = append(ids, it.ID)
+		if it.ImageSource != "" {
+			t.Fatalf("imageSource leaked: %+v", it)
+		}
+	}
+	if fmt.Sprint(ids) != "[a5 b4 b3]" || e.NewCount != 4 || e.Newest == nil || e.Newest.ID != "a5" {
+		t.Fatalf("newItems = %v, count %d, newest %+v", ids, e.NewCount, e.Newest)
+	}
+}
+
 // The newest item across a bookmark's feeds, by publish time (found time when
 // a feed gives none), from stored items and the recent list alike.
 func TestWatchListCarriesLatest(t *testing.T) {

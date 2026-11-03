@@ -48,9 +48,11 @@ const (
 	// — a dropped packet, a container still coming up, a DNS blip — without
 	// hiding a service that is genuinely down, which fails the retry too and is
 	// recorded as it always was, five seconds later.
-	monitorConfirmDelay   = 5 * time.Second
 	monitorConfirmRetries = 1
 )
+
+// monitorConfirmDelay is a variable only so tests need not wait it out.
+var monitorConfirmDelay = 5 * time.Second
 
 // clampMonitorIntervalMinutes normalizes a stored/incoming per-bookmark cadence,
 // mirroring clampHealthAutoRecheckIntervalHours: zero means "use the default",
@@ -272,6 +274,7 @@ func lastSampleAt(samples []HealthSample) int64 {
 // something to derive from.
 func (h *Handlers) runDueMonitors() {
 	now := time.Now()
+	graceStart := h.graceNow()
 	targets, known, liveHosts := h.dueMonitorTargets(now)
 
 	// Sweep even when nothing is due, so un-monitoring or deleting a bookmark
@@ -360,6 +363,57 @@ func (h *Handlers) runDueMonitors() {
 		}(target)
 	}
 	wg.Wait()
+
+	// A round in which nearly every host failed to resolve or answer says more
+	// about this server's connection than about the hosts. Its failures are
+	// not recorded -- no status, no failing sample, no alert, no incident --
+	// and the targets, having no new sample, are due again on the next tick.
+	// Answers in the same round are real and are kept.
+	if len(outcomes) > 0 {
+		sweep := make([]sweepHostResult, 0, len(outcomes))
+		for _, out := range outcomes {
+			if r, ok := sweepHostResultFor(out.target.url, out.result); ok {
+				sweep = append(sweep, r)
+			}
+		}
+		if h.networkGuard(sweep, now, time.Now(), true) {
+			kept := outcomes[:0]
+			for _, out := range outcomes {
+				if !holdableFailure(out.target.url, out.result.Status) {
+					kept = append(kept, out)
+				}
+			}
+			outcomes = kept
+		}
+	}
+
+	// The startup grace, for the failures the guard did not hold: a first
+	// failure is held, the target having no new sample is due again next tick.
+	// Decided once per URL, from the round's start, because rule copies of one
+	// URL share a key: a copy that passed must not clear what a copy that
+	// failed has just set.
+	if len(outcomes) > 0 {
+		failedByKey := map[string]bool{}
+		for _, out := range outcomes {
+			failedByKey[out.target.key] = failedByKey[out.target.key] || out.result.Status != "online"
+		}
+		held := make(map[string]bool, len(failedByKey))
+		for key, failed := range failedByKey {
+			held[key] = h.graceHold(key, failed, graceStart)
+		}
+		kept := outcomes[:0]
+		for _, out := range outcomes {
+			// All of a held URL's outcomes go, a passing copy's too: the secondary
+			// copies are only checked when the primary is due, so a recorded
+			// success would push the failing copy's retry out by a whole interval
+			// and let its first failure expire before it is confirmed.
+			if held[out.target.key] {
+				continue
+			}
+			kept = append(kept, out)
+		}
+		outcomes = kept
+	}
 
 	// One decision for the whole round: a window that opens mid-sweep should not
 	// split it into alerting and non-alerting halves.

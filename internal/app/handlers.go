@@ -42,9 +42,11 @@ type Handlers struct {
 	previewLoaded     bool
 	previewCacheDirty bool
 	healthCacheMu     sync.RWMutex
-	healthHistoryMu   sync.Mutex
-	healthTrendMu     sync.Mutex
-	healthReportMu    sync.RWMutex
+	// pingHook replaces the real check; tests only.
+	pingHook        func(ctx context.Context, urlStr string, expect expectation) PingResult
+	healthHistoryMu sync.Mutex
+	healthTrendMu   sync.Mutex
+	healthReportMu  sync.RWMutex
 	// pageDeleteMu makes a page delete's check, trash snapshot and removal one
 	// step: two deletes of one page at once each wrote a trash entry.
 	pageDeleteMu sync.Mutex
@@ -58,6 +60,22 @@ type Handlers struct {
 	discovery        *discoveryState
 	discoveryRunning atomic.Bool
 	discoveryDocker  atomic.Bool
+	// recheckRetryPending is set while a held-back background re-check waits
+	// for its retry (health_recheck.go), so retries never stack.
+	recheckRetryPending atomic.Bool
+	recheckRunning      atomic.Bool
+	// startedAt is when this process built its handlers; the startup grace for
+	// bookmark health counts from it (health_startup_grace.go). Zero means no
+	// grace. clock replaces time.Now for that rule in tests.
+	startedAt   time.Time
+	graceWindow time.Duration
+	// graceRetryUsed: the scheduled re-check retries once for the grace
+	// (health_recheck.go). recheckAfter replaces time.AfterFunc in tests.
+	graceRetryUsed atomic.Bool
+	recheckAfter   func(d time.Duration, f func())
+	clock          func() time.Time
+	graceMu        sync.Mutex
+	gracePending   map[string]graceEntry
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
@@ -375,6 +393,11 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		files:             files,
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
+	}
+	// The startup grace for bookmark health; "0" in the environment turns it off.
+	if window := graceWindowFromEnv(os.Getenv("NEXTDASH_HEALTH_STARTUP_GRACE")); window > 0 {
+		h.startedAt = time.Now()
+		h.graceWindow = window
 	}
 	h.wireDockerSettings()
 	h.ensureHealthReportCond()
@@ -1230,6 +1253,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	} else {
 		report.DomainSummary = summarizeDomains(nil, false)
 	}
+	report.NetworkDown = networkDownFor(readHealthCacheFile())
 
 	return report
 }
@@ -5228,6 +5252,8 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 		"results":          result.Results,
 		"skipped":          result.Skipped,
 		"skippedOverLimit": result.SkippedOverLimit,
+		"heldOffline":      result.HeldOffline,
+		"networkDown":      result.NetworkDown,
 		"tested":           result.Tested,
 		"scope":            map[bool]string{true: "all", false: "checked"}[includeFlagged],
 	})
@@ -5245,6 +5271,12 @@ type healthRetestResult struct {
 	OfflineCount     int
 	Skipped          int
 	SkippedOverLimit int
+	// HeldOffline counts failures not recorded because this server looked to
+	// have no connection; NetworkDown says the run looked that way.
+	HeldOffline int
+	NetworkDown bool
+	// HeldGrace counts first failures held back by the startup grace.
+	HeldGrace int
 }
 
 // runHealthRetest pings the eligible bookmarks once and persists their status,
@@ -5301,6 +5333,62 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 		}
 	}
 
+	/*
+	 * Every check first, then what to record.
+	 *
+	 * A run in which nearly every host failed to resolve or answer says more
+	 * about this server's connection than about the bookmarks (health_network_
+	 * guard.go). Its failures are held back whole: no status, no sample, no
+	 * recovery message, the previous state kept. Answers in the same run are
+	 * real and are recorded.
+	 */
+	sweepStart := time.Now()
+	graceStart := h.graceNow()
+	pinged := make(map[retestRef]PingResult)
+	var sweep []sweepHostResult
+	for _, page := range pages {
+		for bmIndex, bm := range pageBookmarks[page.ID] {
+			eligible := bm.CheckStatus || bm.Monitor || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
+			ref := retestRef{page.ID, bmIndex}
+			if !eligible || (withinCap != nil && !withinCap[ref]) || len(pinged) >= retestAllMaxBookmarks || ctx.Err() != nil {
+				continue
+			}
+			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
+			// Cancelled -- the page was left, or the scheduler's deadline hit --
+			// makes every check fail at once as "Unreachable". That says nothing
+			// about the bookmark and must not be saved as if it did.
+			if ctx.Err() != nil {
+				continue
+			}
+			pinged[ref] = result
+			if r, ok := sweepHostResultFor(bm.URL, result); ok {
+				sweep = append(sweep, r)
+			}
+		}
+	}
+	holdFailures := len(pinged) > 0 && h.networkGuard(sweep, sweepStart, time.Now(), true)
+	// The startup grace is for unattended runs only: Retest all is the user's
+	// own click and records at once. Decided once per URL (copies of a URL share
+	// the answer): held when any copy failed and the rule says so.
+	graceHeld := map[string]bool{}
+	if activitySource == healthAutoRecheckSource {
+		failedByKey := map[string]bool{}
+		for ref, result := range pinged {
+			key := canonicalBookmarkURLKey(pageBookmarks[ref.page][ref.index].URL)
+			if key == "" {
+				continue
+			}
+			if holdFailures && holdableFailure(pageBookmarks[ref.page][ref.index].URL, result.Status) {
+				continue // the guard has it
+			}
+			failedByKey[key] = failedByKey[key] || result.Status != "online"
+		}
+		for key, failed := range failedByKey {
+			graceHeld[key] = h.graceHold(key, failed, graceStart)
+		}
+	}
+	res.NetworkDown = holdFailures
+
 	for _, page := range pages {
 		bookmarks := pageBookmarks[page.ID]
 		type retestUpdate struct {
@@ -5319,17 +5407,17 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				res.Skipped++
 				continue
 			}
-			if (withinCap != nil && !withinCap[retestRef{page.ID, bmIndex}]) || res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
+			result, wasPinged := pinged[retestRef{page.ID, bmIndex}]
+			if !wasPinged {
 				res.SkippedOverLimit++
 				continue
 			}
-
-			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
-			// Cancelled -- the page was left, or the scheduler's deadline hit --
-			// makes every check fail at once as "Unreachable". That says nothing
-			// about the bookmark and must not be saved as if it did.
-			if ctx.Err() != nil {
-				res.SkippedOverLimit++
+			if holdFailures && holdableFailure(bm.URL, result.Status) {
+				res.HeldOffline++
+				continue
+			}
+			if result.Status != "online" && graceHeld[canonicalBookmarkURLKey(bm.URL)] {
+				res.HeldGrace++
 				continue
 			}
 			res.Tested++

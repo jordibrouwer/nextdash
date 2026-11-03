@@ -620,7 +620,8 @@
         if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
         const target = e.target;
         const list = document.querySelector('#config-fw-list');
-        if (!list) return false;
+        // On the Settings tab the list is hidden and takes no keys.
+        if (!list || list.hidden) return false;
         const inList = list.contains(target);
         const loose = !target || target === document.body || target.id === 'config-section-panel';
         if (!inList && !loose) return false;

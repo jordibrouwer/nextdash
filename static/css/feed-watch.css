@@ -23,6 +23,11 @@
 .modal.feed-news-modal .modal-body {
     flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
 }
+/* The news only ever scrolls down, never sideways. */
+.modal.feed-news-modal .modal-body { overflow-x: hidden; }
+/* Everything that marks the news (the chip, the dots, the bar, the pressed view)
+   is the theme's accent; the newspaper sets its own ink further down. */
+.modal.feed-news-modal { --feed-news-color: var(--accent-primary, #8b5cf6); }
 .feed-watch-picker-name { font-weight: 600; color: var(--text-primary); }
 .feed-watch-list { display: grid; gap: 0.35rem; max-height: 14rem; overflow: auto; }
 .feed-watch-note { margin: 0; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
@@ -77,31 +82,107 @@
 body[data-animations="off"] .bookmark-news-badge,
 body.no-animations .bookmark-news-badge { animation: none; }
 
-/* The hover card's news block: the newest item, read before opening anything. */
-.bookmark-preview-card-news {
-    display: grid;
-    gap: 0.4rem;
-    margin: -0.25rem -0.25rem 0.75rem;
-    padding: 0.75rem;
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--feed-news-color, #8b5cf6) 12%, var(--background-secondary));
-    border: 1px solid color-mix(in srgb, var(--feed-news-color, #8b5cf6) 35%, var(--border-secondary));
+/* The hover card with news: the item first (a picture of fixed height, the
+   meta line with its pager, headline, lead, two equal buttons), then the site as
+   one compact line. Everything else the card would show about the site steps
+   aside; the pinned card's footer stays. One background for the whole card:
+   the news part has none of its own. Theme tokens only. */
+.bookmark-preview-card.has-feed-news { width: min(380px, calc(100vw - 24px)); pointer-events: auto; }
+.bookmark-preview-card.has-feed-news > :not(.bookmark-preview-card-news):not(.bookmark-preview-card-foot) { display: none !important; }
+.bookmark-preview-card-news { display: block; min-width: 0; }
+.bookmark-preview-card-news[hidden] { display: none; }
+
+.bookmark-preview-card-news-media {
+    height: 132px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    background: var(--background-primary);
+    border-bottom: 1px solid var(--border-secondary);
+}
+.bookmark-preview-card-news-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* No picture, or one that failed: a calm panel with the site's icon, never a
+   stretched logo. */
+.bookmark-preview-card-news-media.is-fallback {
+    height: 88px;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+.bookmark-preview-card-news-fallback-icon { width: 32px; height: 32px; object-fit: contain; opacity: 0.85; border-radius: var(--radius-3, 4px); }
+.bookmark-preview-card-news-fallback-letter {
+    width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-pill, 999px); border: 1px solid var(--border-secondary);
+    color: var(--text-secondary); font-weight: var(--font-weight-semibold, 600); font-size: 1.1rem;
 }
 
-.bookmark-preview-card-news[hidden] { display: none; }
-.bookmark-preview-card-news-image { width: 100%; max-height: min(9rem, 22vh); object-fit: cover; border-radius: 8px; }
-.bookmark-preview-card-news-meta { font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary); }
-.bookmark-preview-card-news-title { font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+.bookmark-preview-card-news-body { display: grid; gap: 0.4rem; padding: 0.7rem 0.8rem 0.75rem; min-width: 0; }
+.bookmark-preview-card-news-top { display: flex; align-items: center; gap: 0.5rem; min-height: 24px; min-width: 0; }
+.bookmark-preview-card-news-meta {
+    flex: 1 1 auto; min-width: 0;
+    font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bookmark-preview-card-news-pager { flex: none; display: inline-flex; align-items: center; gap: 0.15rem; }
+.bookmark-preview-card-news-count {
+    min-width: 2.6em; text-align: center;
+    font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary); font-variant-numeric: tabular-nums;
+}
+.bookmark-preview-card-news-page {
+    width: 26px; height: 24px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border-secondary); border-radius: var(--radius-4, 6px);
+    background: none; color: var(--text-primary); font-size: 1rem; line-height: 1; cursor: pointer;
+}
+.bookmark-preview-card-news-page:hover { border-color: var(--text-secondary); }
+.bookmark-preview-card-news-page:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+.bookmark-preview-card-news-title {
+    font-weight: var(--font-weight-semibold, 600); color: var(--text-primary); line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
+}
 .bookmark-preview-card-news-lead {
     color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); line-height: 1.45;
-    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
 }
 .bookmark-preview-card-news-lead p { margin: 0 0 0.3rem; }
-.bookmark-preview-card-news-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.bookmark-preview-card-news-lead img { display: none; }
 
-/* A card with news has buttons to reach, so unlike a plain peek it takes the
-   pointer. Entering it cancels the close that leaving the row started. */
-.bookmark-preview-card.has-feed-news { pointer-events: auto; }
+/* The site, in one line under a thin rule, and its facts muted under that. */
+.bookmark-preview-card-news-site {
+    display: flex; align-items: center; gap: 0.45rem; min-width: 0;
+    padding: 0.55rem 0.8rem 0.15rem;
+    border-top: 1px solid var(--ov-rule-soft, var(--border-secondary));
+    font-size: var(--text-sm, 0.85rem);
+}
+.bookmark-preview-card-news-site-fav { flex: none; width: 16px; height: 16px; border-radius: var(--radius-3, 4px); overflow: hidden; }
+.bookmark-preview-card-news-site-fav img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.bookmark-preview-card-news-site-name {
+    flex: 1 1 auto; min-width: 0; font-weight: var(--font-weight-semibold, 600); color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bookmark-preview-card-news-status { flex: none; font-size: var(--text-2xs, 0.72rem); color: var(--text-secondary); white-space: nowrap; }
+.bookmark-preview-card-news-status::before {
+    content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%;
+    background: currentColor; vertical-align: 1px;
+}
+.bookmark-preview-card-news-status.is-ok { color: var(--accent-success, #10B981); }
+.bookmark-preview-card-news-status.is-warn { color: var(--accent-warning, #F59E0B); }
+.bookmark-preview-card-news-status.is-bad { color: var(--accent-error, #EF4444); }
+.bookmark-preview-card-news-facts {
+    display: flex; flex-wrap: nowrap; align-items: center; gap: 0.4rem; min-width: 0; overflow: hidden;
+    padding: 0.1rem 0.8rem 0.65rem;
+    font-size: var(--text-2xs, 0.72rem); color: var(--text-tertiary, var(--text-secondary));
+}
+.bookmark-preview-card-news-site:has(.bookmark-preview-card-news-site-fav) + .bookmark-preview-card-news-facts { padding-left: calc(0.8rem + 16px + 0.45rem); }
+.bookmark-preview-card-news-tag:last-child { flex: 0 1 auto; min-width: 0; }
+.bookmark-preview-card-news-facts kbd {
+    font-family: var(--font-family-mono, monospace); font-size: 0.95em;
+    padding: 0 0.3em; border: 1px solid var(--border-secondary); border-radius: var(--radius-3, 4px); color: var(--text-secondary);
+}
+.bookmark-preview-card-news-facts > span:first-child { flex: none; white-space: nowrap; }
+.bookmark-preview-card-news-tag {
+    flex: none;
+    padding: 0 0.4rem; border-radius: var(--radius-pill, 999px);
+    border: 1px solid var(--border-secondary); color: var(--text-secondary);
+    max-width: 8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* The news window: one article in the app's own panel, widened on request. */
 .feed-news {
@@ -262,35 +343,37 @@ body.no-animations .feed-news-bar > i { transition: none; }
 .feed-news-side { scrollbar-width: thin; }
 .is-paper .feed-news-side { scrollbar-color: #b9ad8c transparent; }
 
-/* The two buttons of the hover card's news block. They are the card's own
-   action buttons (theme tokens only), a little roomier; Read in full takes the
-   accent, Open page stays plain. */
-.bookmark-preview-card-news-actions { display: flex; gap: var(--space-2, 0.5rem); margin-top: var(--space-1, 0.3rem); }
+/* The two buttons of the hover card's news block: equal halves of one row,
+   both real bordered buttons; Open reader takes the accent. */
+.bookmark-preview-card-news-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2, 0.5rem); margin-top: var(--space-1, 0.3rem); }
 .bookmark-preview-card-news-actions .bookmark-preview-card-action {
-    flex: 1 1 0;
-    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    min-height: 32px; min-width: 0;
+    padding: var(--space-1, 0.3rem) var(--space-3, 0.75rem);
     font-size: var(--font-size-controls);
     color: var(--text-primary);
-    border-color: var(--border-secondary);
+    border: 1px solid var(--border-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .bookmark-preview-card-news-actions [data-feed-news-action="read"] {
     color: var(--accent-primary);
     border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
     font-weight: var(--font-weight-semibold, 600);
 }
+.bookmark-preview-card-news-actions .bookmark-preview-card-action:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
 
-/* The card always fits the screen. Its blocks shrink first (the picture is
-   capped by the viewport height, the lead by lines); a card that is still too
-   tall scrolls inside itself, which it can because a card with news takes the
-   pointer. */
+/* The card always fits the screen. Normally it needs no scrolling (about 440px
+   at most); on a short window the picture shrinks, then goes, and what is still
+   too tall scrolls inside the card, which takes the pointer. */
 .bookmark-preview-card { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); }
 .bookmark-preview-card.has-feed-news { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 @media (max-height: 700px) {
-    .bookmark-preview-card-news-image { max-height: 14vh; }
+    .bookmark-preview-card-news-media { height: 96px; }
+    .bookmark-preview-card-news-media.is-fallback { height: 64px; }
     .bookmark-preview-card-news-lead { -webkit-line-clamp: 2; }
 }
 @media (max-height: 520px) {
-    .bookmark-preview-card-news-image { display: none; }
+    .bookmark-preview-card-news-media { display: none; }
 }
 
 /* Config → Watch feeds: every watched feed, one row each, with a detail that
@@ -306,7 +389,7 @@ body.no-animations .feed-news-bar > i { transition: none; }
 .fwm-bulk-count { font-weight: var(--font-weight-semibold, 600); color: var(--text-primary); font-size: var(--text-sm, 0.85rem); }
 .fwm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; min-width: 0; }
 .feed-watch-list-row {
-    display: grid; grid-template-columns: auto minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 0.6fr) auto; gap: 0.6rem; align-items: center;
+    display: grid; grid-template-columns: auto minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 0.6fr) 13.5rem; gap: 0.6rem; align-items: center;
     padding: 0.45rem 0.6rem; border: 1px solid var(--border-secondary); border-radius: var(--radius-4, 8px); background: var(--background-secondary);
     min-width: 0;
 }
@@ -508,8 +591,7 @@ body.no-animations .feed-news-bar > i { transition: none; }
 .feed-news-pop.is-two-cols .feed-news-pop-list > li > .feed-news-pop-item { height: 100%; border-top: 0; border-bottom: 1px solid var(--border-secondary); }
 .feed-news-pop.is-two-cols .feed-news-pop-more { border-top: 0; }
 
-/* Reader: the paper on this site, a small accent button between the bar and the ×.
-   Desktop only (the script leaves it out on a phone). */
+/* Reader: the paper on this site, a small accent button between the bar and the ×. */
 .feed-news-pop-reader {
     flex: none; padding: 0.3rem var(--space-3, 0.75rem); border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
     border-radius: var(--radius-4, 8px); background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
@@ -995,15 +1077,21 @@ body[data-density-mode="dense"] .bookmark-news-line,
 body[data-mobile-layout="true"] .bookmark-link.has-feed-news::before,
 body[data-mobile-layout="true"] .dashboard-grid.layout-terminal .bookmark-link.has-feed-news::before { inset-inline-start: -9px; }
 
-/* The top of the news window stays put while the news scrolls under it. The
-   window's own panel is glass; the stuck block gets enough of the panel's
-   colour that the lines passing under it do not show through. The newspaper
-   keeps its paper. */
-.feed-news-top {
-    position: sticky; top: 0; z-index: 4;
-    background: var(--background-modal, var(--background-primary));
-    background-image: linear-gradient(color-mix(in srgb, var(--background-primary) 55%, transparent), color-mix(in srgb, var(--background-primary) 55%, transparent));
-    margin: 0 -0.25rem; padding: 0 0.25rem;
+/* The top of the news window stays put while the news scrolls under it. At rest
+   it has no colour of its own, so it is the panel itself, whatever the theme or
+   material. Only once the news scrolls under it (.is-stuck, set by the script)
+   does it take the panel's colour, so the lines passing under it do not show
+   through: classic's --background-modal, or a signature material's fill and lift,
+   frosting what is under it when the fill is see-through. No negative side
+   margins: they made the scroller 4px wider than itself, which showed as a
+   horizontal scrollbar under the footer. The newspaper keeps its paper. */
+.feed-news-top { position: sticky; top: 0; z-index: 4; background: transparent; }
+.feed-news-top.is-stuck { background: var(--background-modal, var(--background-primary)); }
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .modal.feed-news-modal:not(.is-paper) .feed-news-top.is-stuck {
+    background-color: var(--ov-fill, var(--background-modal));
+    background-image: linear-gradient(var(--ov-lift-3, transparent), var(--ov-lift-3, transparent));
+    -webkit-backdrop-filter: blur(var(--ov-blur, 0px));
+    backdrop-filter: blur(var(--ov-blur, 0px));
 }
 .modal.feed-news-modal.is-paper .feed-news-top { background: #f4efe4; background-image: none; }
 .feed-news-top .feed-news-head { margin-bottom: 0; }
@@ -1049,3 +1137,115 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 .feed-watch-check { display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; }
 .feed-watch-check input { flex: 0 0 auto; margin-top: 0.2rem; }
 .feed-watch-check small { display: block; margin-top: 0.15rem; color: var(--text-secondary); font-size: var(--text-xs, 0.78rem); }
+
+/* The news window wears the theme: the chrome below (cards, links, the footer's
+   buttons and keys, the time bar) is drawn from the theme's tokens and, in a
+   signature material, from the layer tokens (--ov-*) the other modals use, so
+   it follows every theme and material. Only the newspaper (.is-paper) keeps a
+   paper look of its own; its overrides come after each rule. */
+
+/* The list beside the article scrolls down only. */
+.feed-news-side { overflow-x: hidden; overflow-y: auto; }
+
+/* The other items beside the article: a quiet tint of the panel, not a block of
+   the page colour, with the material's rule and item corner. */
+.modal.feed-news-modal:not(.is-paper) .feed-news-card {
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    border-color: var(--ov-rule-soft, var(--border-secondary));
+    border-radius: var(--ov-r-item, 10px);
+}
+.modal.feed-news-modal:not(.is-paper) .feed-news-card:hover,
+.modal.feed-news-modal:not(.is-paper) .feed-news-card:focus-visible {
+    background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 10%, transparent));
+    border-color: color-mix(in srgb, var(--accent-primary) 50%, var(--border-secondary));
+}
+.modal.feed-news-modal:not(.is-paper) .feed-news-card:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+.modal.feed-news-modal:not(.is-paper) .feed-news-card-image,
+.modal.feed-news-modal:not(.is-paper) .feed-news-entry-image,
+.modal.feed-news-modal:not(.is-paper) .feed-news-image { border-radius: var(--ov-r-item, 8px); }
+.modal.feed-news-modal.is-wide:not(.is-paper) .feed-news-entry {
+    border-color: var(--ov-rule-soft, var(--border-secondary)); border-radius: var(--ov-r-item, 10px);
+}
+
+/* Links in a summary: the theme's accent, underlined; the newspaper's ink there. */
+.feed-news-summary a { color: var(--accent-primary); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent-primary) 45%, transparent); text-underline-offset: 2px; }
+.feed-news-summary a:hover { text-decoration-color: currentColor; }
+.feed-news-summary a:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 2px; }
+.feed-news-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 2px; }
+.is-paper .feed-news-summary a { color: #8a2d1d; text-decoration-color: color-mix(in srgb, #8a2d1d 45%, transparent); }
+.is-paper .feed-news-summary a:focus-visible, .is-paper .feed-news-link:focus-visible { outline-color: #1d1a14; }
+
+/* The time bar: a slim line in the accent on a hairline of the panel. */
+.feed-news-bar { height: 2px; border-radius: 999px; background: color-mix(in srgb, var(--text-primary) 12%, transparent); }
+.feed-news-bar > i { border-radius: inherit; background: var(--feed-news-color); }
+.is-paper .feed-news-bar { background: #cdc3a8; }
+
+/* The footer: one set of buttons, all the same height, corner, border and type;
+   Open page is a button like Mark read; the keys are chips in a row. */
+.feed-news-foot { flex-wrap: wrap; row-gap: 0.5rem; column-gap: 0.4rem; }
+.modal-overlay.show .modal .feed-news .feed-news-foot .modal-button,
+.modal-overlay.show .modal .feed-news .feed-news-mark {
+    flex: 0 0 auto; width: auto; min-width: 2.25rem; min-height: 2.25rem; height: auto; margin: 0;
+    padding: 0 var(--space-3, 0.75rem); box-sizing: border-box;
+    border: 1px solid var(--ov-rule, var(--border-primary)); border-radius: var(--ov-r-control, var(--layout-radius-sm, 6px));
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent); color: var(--text-primary);
+    font-family: inherit; line-height: 1; transform: none;
+}
+.modal-overlay.show .modal .feed-news .feed-news-foot .modal-button .modal-button-name,
+.modal-overlay.show .modal .feed-news .feed-news-mark .modal-button-name {
+    font-size: var(--text-sm, 0.85rem); font-weight: var(--font-weight-semibold, 600); white-space: nowrap; line-height: 1;
+}
+.modal-overlay.show .modal .feed-news .feed-news-foot .modal-button:hover,
+.modal-overlay.show .modal .feed-news .feed-news-mark:hover {
+    transform: none; background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 12%, transparent));
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+}
+.modal-overlay.show .modal .feed-news .feed-news-foot .modal-button:focus-visible {
+    outline: 2px solid var(--accent-primary); outline-offset: 1px; box-shadow: none;
+}
+/* Open page goes on to the site: the accent, like the hover card's Open reader. */
+.modal-overlay.show .modal .feed-news .feed-news-foot .feed-news-open {
+    color: var(--accent-primary); border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+/* Two groups: the way through the news on the left (Index, ‹ ›, the time left),
+   what to do with this item on the right (Mark read, Open page, the keys). */
+.modal-overlay.show .modal .feed-news .feed-news-foot > .feed-news-mark,
+.modal-overlay.show .modal .feed-news .feed-news-foot > .feed-news-open { margin-left: auto; }
+.modal-overlay.show .modal .feed-news .feed-news-foot > .feed-news-mark + .feed-news-open { margin-left: 0; }
+.feed-news-foot .feed-news-left { flex: none; margin: 0 0 0 0.35rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.feed-news-keys { align-items: center; gap: 0.35rem 0.9rem; margin: 0 0 0 0.5rem; }
+.feed-news-keys > span { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+.feed-news-keys kbd {
+    font-family: var(--font-family-mono, ui-monospace, monospace); line-height: 1.4;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent); border-color: var(--ov-rule-soft, var(--border-secondary));
+}
+.feed-news-foot > .feed-news-keys:first-child, .feed-news-foot > .feed-news-left + .feed-news-keys { margin-left: auto; }
+/* One column is a narrow window: the keys take a row of their own at the right
+   instead of breaking into the buttons' row. */
+.modal.feed-news-modal:not(.is-wide) .feed-news-foot > .feed-news-keys { flex: 1 0 100%; justify-content: flex-end; margin-left: 0; }
+
+/* The newspaper's own buttons: paper, ink and its serif. */
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-foot .modal-button,
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-mark {
+    background: #e4dcc6; border-color: #b9ad8c; color: #1d1a14; border-radius: 4px; font-family: Georgia, 'Times New Roman', serif;
+}
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-foot .modal-button:hover,
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-mark:hover { background: #d9cfb3; border-color: #8f8466; }
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-foot .feed-news-open { background: #1d1a14; border-color: #1d1a14; color: #f4efe4; }
+.modal-overlay.show .modal.is-paper .feed-news .feed-news-foot .modal-button:focus-visible { outline-color: #1d1a14; }
+.is-paper .feed-news-keys kbd { font-family: Georgia, 'Times New Roman', serif; }
+.is-paper .feed-news-keys { font-family: Georgia, 'Times New Roman', serif; }
+
+/* Touch and narrow screens: 44px targets, all alike. */
+@media (hover: none), (pointer: coarse), (max-width: 720px) {
+    .modal-overlay.show .modal .feed-news .feed-news-foot .modal-button,
+    .modal-overlay.show .modal .feed-news .feed-news-mark { min-height: 44px; min-width: 44px; }
+}
+@media (max-width: 720px) {
+    /* The time left takes the last row of its own, centred, under the buttons. */
+    .feed-news-foot .feed-news-left { order: 5; flex: 1 0 100%; margin: 0; text-align: center; }
+    /* Two columns of headlines fold into one: the look stays, the columns go. */
+    .feed-news-index.is-wide { grid-template-columns: minmax(0, 1fr); }
+    .is-paper .is-wide > .feed-news-item:nth-child(2) { border-top: 1px solid #cdc3a8; }
+}

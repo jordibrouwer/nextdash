@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, useGlassLook } = require('./e2e-helpers');
 
 /**
  * What a category sits on: glass, card or open.
@@ -45,9 +45,16 @@ async function setSurface(page, word) {
 }
 
 test.describe('category surface', () => {
-    test('a fresh page is drawn on glass', async ({ page }) => {
+    test('a fresh page follows its look: glass on Tidal Slate, open on an ink look', async ({ page }) => {
+        // Since v1.24.0 a fresh install starts on Tidal Slate (dark), a frost
+        // look: its categories are drawn on glass.
         await openDashboard(page);
         await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'glass');
+        // Neutral (dark) is an ink look: its categories are text on the page,
+        // with no pane round them.
+        await useGlassLook(page, 'neutral-dark');
+        await openDashboard(page);
+        await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'open');
     });
 
     test('glass is see-through and blurred, card is solid, open has no pane', async ({ page }) => {

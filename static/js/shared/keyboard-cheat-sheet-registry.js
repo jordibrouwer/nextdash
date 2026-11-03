@@ -245,6 +245,7 @@
                 { keys: '1 / 2 / 3  ·  [ / ]', cheatKey: 'lvPanelTabs', fallback: 'Details, Health or Usage in the side panel' },
                 { keys: 'e / Shift + E', cheatKey: 'lvEdit', fallback: 'Edit in the side panel / in the full dialog', print: true },
                 { keys: 'x / Shift + X', cheatKey: 'lvSelect', fallback: 'Select a row / a range of rows' },
+                { keys: 'Ctrl/Cmd + A', cheatKey: 'lvSelectAll', fallback: 'Select every bookmark shown' },
                 { keys: 'd', cheatKey: 'lvDelete', fallback: 'Delete the bookmark (undo is offered)' },
                 { keys: 'g / End', cheatKey: 'lvFirstLast', fallback: 'First / last row' },
                 { keys: '/', cheatKey: 'lvSearch', fallback: 'Search the list', print: true },
@@ -525,6 +526,16 @@
                 { keys: ':metadata', printOmit: true, cheatKey: 'ctMetadata', fallback: 'Open the Bookmarks view on missing previews, or Config → Bookmarks' },
                 { keys: ':monitor off', printOmit: true, cheatKey: 'ctMonitor', fallback: 'Turn availability checking off for every bookmark at once (asks for confirmation first)' },
                 { keys: ':telemetry on / off', printOmit: true, cheatKey: 'ctTelemetry', fallback: 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)' },
+            ],
+        },
+        {
+            id: 'sectionFeedNews',
+            titleKey: 'sectionFeedNews',
+            titleFallback: 'The news (watched feeds)',
+            rows: [
+                { keys: 'j / k', cheatKey: 'fnMove', fallback: 'In the news: the next or previous item (on the front page, the next or previous row)', print: true, printFallback: 'In the news: next / previous item' },
+                { keys: '← / →', cheatKey: 'fnStep', fallback: 'In an article: the previous or next item' },
+                { keys: 'Esc', cheatKey: 'fnClose', fallback: 'Close the news at once; the Index button goes back to the front page' },
             ],
         },
         {

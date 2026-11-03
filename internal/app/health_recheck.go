@@ -97,6 +97,12 @@ func (h *Handlers) StartHealthRecheckScheduler(stop <-chan struct{}) {
 // and one is due. The scope mirrors the health page's "Retest all" (includeFlagged)
 // so background runs can clear a broken row the same way a manual run does.
 func (h *Handlers) maybeRunHealthAutoRecheck() {
+	// One at a time: the 60-second retry of a held run can land on the
+	// 15-minute tick's run.
+	if !h.recheckRunning.CompareAndSwap(false, true) {
+		return
+	}
+	defer h.recheckRunning.Store(false)
 	if !h.store.GetSettings().HealthAutoRecheckEnabled {
 		return
 	}
@@ -114,10 +120,44 @@ func (h *Handlers) maybeRunHealthAutoRecheck() {
 		logError(logComponentHealth, "the scheduled re-check did not run: %v", err)
 		return
 	}
+	// A run that looked offline held its failures back; it did not complete
+	// its job. Not stamped, so it is still due, and tried again shortly rather
+	// than at the next 15-minute tick.
+	if result.NetworkDown {
+		logInfo(logComponentHealth, "the scheduled re-check held back %s: this server looks offline", plural(result.HeldOffline, "failed check", "failed checks"))
+		h.scheduleRecheckRetry()
+		return
+	}
+	// Failures held for the startup grace: one quick retry per process, which
+	// confirms them (it comes after the 45-second gap). Past that, a new first
+	// failure is left to the monitor ticks and the next scheduled run; the run
+	// is not stamped, so it stays due.
+	if result.HeldGrace > 0 {
+		logInfo(logComponentHealth, "the scheduled re-check held back %s: this server has only just started", plural(result.HeldGrace, "first failure", "first failures"))
+		if h.graceRetryUsed.CompareAndSwap(false, true) {
+			h.scheduleRecheckRetry()
+		}
+		return
+	}
 	// Stamp completion even when nothing was eligible, so an empty dashboard does not
 	// re-run the (cheap but pointless) scan every check interval.
 	if err := h.markHealthAutoRecheck(time.Now()); err != nil {
 		logWarn(logComponentHealth, "the re-check ran but its run time could not be recorded (%v); the next one may come early", err)
 	}
 	logInfo(logComponentHealth, "the scheduled re-check covered %s", plural(result.Tested, "bookmark", "bookmarks"))
+}
+
+// scheduleRecheckRetry runs the re-check again shortly; never two waiting.
+func (h *Handlers) scheduleRecheckRetry() {
+	if !h.recheckRetryPending.CompareAndSwap(false, true) {
+		return
+	}
+	after := h.recheckAfter
+	if after == nil {
+		after = func(d time.Duration, f func()) { time.AfterFunc(d, f) }
+	}
+	after(networkGuardRetryAfter, func() {
+		h.recheckRetryPending.Store(false)
+		h.maybeRunHealthAutoRecheck()
+	})
 }

@@ -87,7 +87,7 @@ test.describe('the config commands name the config that exists', () => {
         expect(sections.length).toBeGreaterThan(0);
 
         const labels = {
-            overview: 'Overview', bookmarks: 'Bookmarks', inbox: 'Inbox', appearance: 'Appearance',
+            overview: 'Overview', bookmarks: 'Bookmarks', 'feed-watch': 'Watch feeds', inbox: 'Inbox', appearance: 'Appearance',
             structure: 'Structure', behavior: 'Behavior', finders: 'Finders',
             'data-backups': 'Data & backups', widgets: 'Widgets', containers: 'Containers',
             unraid: 'Unraid', glances: 'Glances', monitoring: 'Monitoring', 'status-page': 'Status page', assistant: 'AI Assistant', stats: 'Statistics',

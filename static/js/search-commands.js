@@ -327,6 +327,7 @@ class SearchCommandsComponent {
     _CONFIG_SECTIONS = [
         { id: 'overview', labelKey: 'commands.configOverview', fallback: 'Overview' },
         { id: 'bookmarks', labelKey: 'commands.configBookmarks', fallback: 'Bookmarks' },
+        { id: 'feed-watch', labelKey: 'config.sectionFeedWatch', fallback: 'Watch feeds' },
         { id: 'inbox', labelKey: 'commands.configInbox', fallback: 'Inbox' },
         { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
         { id: 'structure', labelKey: 'commands.configStructure', fallback: 'Structure' },

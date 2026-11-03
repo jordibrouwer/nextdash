@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, useGlassLook } = require('./e2e-helpers');
 
 /**
  * A widget with a background of its own.
@@ -10,6 +10,9 @@ const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlocki
  * it a frame: automatic where the surface is open, always, or never.
  */
 async function openDashboard(page) {
+    // The corners below are a glass look's: Neutral, the fresh install's, has a
+    // smaller radius.
+    await useGlassLook(page);
     await page.setViewportSize({ width: 1400, height: 900 });
     await markWhatsNewSeen(page);
     await page.goto('/');

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, useGlassLook } = require('./e2e-helpers');
 
 /**
  * Where the keyboard cursor ends up after the inline editor closes.
@@ -95,6 +95,9 @@ test.describe('keyboard selection after the inline editor closes', () => {
     }
 
     test('the edited row is visibly highlighted, not just marked selected', async ({ page }) => {
+        // A look that paints the selected row: ink, Neutral's, marks it with an
+        // underlined name and leaves the row's paint alone.
+        await useGlassLook(page);
         await setup(page);
 
         // A control row selected the ordinary way, to compare the edited row
