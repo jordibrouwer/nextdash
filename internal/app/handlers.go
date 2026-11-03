@@ -2987,13 +2987,35 @@ func (h *Handlers) ThemeBackdrops(w http.ResponseWriter, r *http.Request) {
 		Size     string `json:"size"`
 		Position string `json:"position"`
 	}
+	// The colours a recipe drawn as an SVG needs are values, not variables, so when the page says which
+	// theme is on screen the thumbnails are drawn with that theme's own colours.
+	base := ThemeColors{AccentPrimary: "var"}
+	if id := normalizeLegacyThemeID(strings.TrimSpace(r.URL.Query().Get("theme"))); id != "" {
+		colors := h.store.GetColors()
+		if tc, ok := colors.BuiltIn[id]; ok {
+			base = tc
+		} else if tc, ok := colors.Custom[id]; ok {
+			base = tc
+		}
+	}
 	looks := make(map[string]look, len(themeBackdropRecipes))
 	for _, name := range themeBackdropRecipes {
-		l := themeBackdropSeeded("recipe:"+name, ThemeColors{Backdrop: name, AccentPrimary: "var"}, seed)
+		tc := base
+		tc.Backdrop = name
+		l := themeBackdropSeeded("recipe:"+name, tc, seed)
 		looks[name] = look{Image: l.Image, Size: l.Size, Position: l.Position}
 	}
+	categories := make(map[string]string, len(themeBackdropRecipes))
+	labels := make(map[string]string, len(themeBackdropRecipes))
+	for _, name := range themeBackdropRecipes {
+		categories[name] = themeBackdropCategoryOf(name)
+		labels[name] = themeBackdropLabelOf(name)
+	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"recipes": themeBackdropRecipes, "looks": looks, "seed": seed})
+	json.NewEncoder(w).Encode(map[string]any{
+		"recipes": themeBackdropRecipes, "looks": looks, "seed": seed,
+		"categories": categories, "categoryOrder": themeBackdropCategoryOrder, "labels": labels,
+	})
 }
 
 /*
