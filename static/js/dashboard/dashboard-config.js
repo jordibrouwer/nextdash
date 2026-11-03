@@ -4430,6 +4430,7 @@ class DashboardConfig {
             action('check-update', 'config.actionCheckUpdate', 'Check for an update', 'upgrade version new release', 'overview'),
             action('backups', 'config.actionBackups', 'Make or restore a backup', 'backup restore export import data zip', 'data-backups'),
             action('import', 'config.actionImport', 'Import bookmarks', 'import browser html csv pocket raindrop', 'data-backups'),
+            action('changed', 'config.actionChanged', 'Show what I changed from the defaults', 'modified different default customised diff reset', 'overview'),
         ];
     }
 
@@ -4448,6 +4449,7 @@ class DashboardConfig {
             await this.openThemeBrowser();
             return;
         }
+        if (id === 'changed') { this.openChangedSettings(); return; }
         if (id === 'whats-new') { await this.openWhatsNew(); return; }
         if (id === 'check-update') {
             if (this.section !== 'overview') this.selectSection('overview', 'keyboard');
@@ -5139,6 +5141,13 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${intro}</p>
+            ${(() => {
+                // Its own element: the band copies the intro's text and drops
+                // the paragraph, and a button inside it went with it.
+                const n = this.changedSettings().length;
+                return n ? `<p class="config-view-changed"><button type="button" class="config-link-btn" data-overview-action="changed">${esc(
+                    this.t('config.overviewChanged', '{n} settings changed from the defaults →').replace('{n}', String(n)))}</button></p>` : '';
+            })()}
             ${this.renderOverviewUpdateNotice()}
             ${this.renderOverviewAttentionLine()}
             <div class="config-overview-grid">
@@ -6308,6 +6317,10 @@ class DashboardConfig {
             const go = e.target.closest('[data-overview-go]');
             if (go) {
                 this.handleOverviewGo(go);
+                return;
+            }
+            if (e.target.closest('[data-overview-action="changed"]')) {
+                this.openChangedSettings();
                 return;
             }
             if (e.target.closest('[data-overview-action="whats-new"]')) {
@@ -9752,6 +9765,78 @@ class DashboardConfig {
             out.push(entry);
         });
         return out;
+    }
+
+    /** A value as the changed-settings list prints it: On/Off, text, or a dash when empty. */
+    changedValueText(value) {
+        if (value === undefined || value === null || value === '') return '—';
+        if (typeof value === 'boolean') return value ? this.t('config.on', 'On') : this.t('config.off', 'Off');
+        if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
+        const text = String(value);
+        return text.length > 60 ? `${text.slice(0, 57)}…` : text;
+    }
+
+    /**
+     * Every setting that is not at its installation default, in one list, with
+     * what it is now and what it was out of the box. Each row goes to the
+     * setting; Copy puts the list on the clipboard as text, for a bug report or
+     * to compare two installs. Read-only: nothing here changes a setting.
+     */
+    openChangedSettings() {
+        if (this.isSettingsJumpOpen?.()) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const entries = this.changedSettings().map((entry) => ({
+            entry,
+            // An absent number is the zero it was stored as (isFieldDefault says
+            // the same), so it is printed as one rather than as a dash.
+            now: this.changedValueText(typeof this.fieldMeta(entry.field)?.def === 'number' ? Number(s[entry.field] ?? 0) : s[entry.field]),
+            was: this.changedValueText(this.fieldMeta(entry.field)?.def),
+        })).sort((a, b) => `${a.entry.subtitle} ${a.entry.title}`.localeCompare(`${b.entry.subtitle} ${b.entry.title}`));
+        this._changedList = entries;
+        const body = entries.length
+            ? `<ul class="config-settings-jump-results config-changed-list" role="list">${entries.map((row, i) => `
+                <li class="config-settings-jump-result" data-changed-index="${i}" tabindex="0" role="listitem">
+                    <span class="config-settings-jump-result-title">${esc(row.entry.title)}</span>
+                    <span class="config-settings-jump-result-sub">${esc(row.entry.subtitle)} · ${esc(
+                        this.t('config.changedNow', 'now {now}, default {was}')
+                            .replace('{now}', row.now).replace('{was}', row.was))}</span>
+                </li>`).join('')}</ul>`
+            : `<p class="config-settings-jump-empty">${esc(this.t('config.changedNone', 'Every setting is at its default.'))}</p>`;
+        window.AppModal.show({
+            title: this.t('config.changedTitle', 'What you changed')
+                + (entries.length ? ` (${entries.length})` : ''),
+            htmlMessage: `<div class="config-settings-jump config-changed">
+                ${entries.length ? `<button type="button" class="config-btn config-btn--small" data-changed-copy>${esc(this.t('config.changedCopy', 'Copy as text'))}</button>` : ''}
+                <div class="config-settings-jump-body">${body}</div></div>`,
+            confirmText: this.t('config.close', 'Close'),
+            showCancel: false,
+            modalClass: 'config-settings-jump-modal config-changed-modal keyboard-cheat-sheet-modal',
+        });
+        // The element inside the message, replaced on every show: AppModal's own
+        // panel is one element for every dialog, and a listener put on it would
+        // stay for the next one.
+        const modal = document.querySelector('.config-changed');
+        if (!modal) return;
+        const go = (row) => {
+            const item = this._changedList?.[Number(row?.getAttribute('data-changed-index'))];
+            if (item) void this.activateSettingsJumpEntry(item.entry);
+        };
+        modal.addEventListener('click', (e) => {
+            if (e.target.closest('[data-changed-copy]')) {
+                const text = (this._changedList || []).map((r) => `${r.entry.subtitle} › ${r.entry.title}: ${r.now} (default ${r.was})`).join('\n');
+                // navigator.clipboard is missing on a plain-http address; the
+                // failure is a message, not a TypeError.
+                void Promise.resolve().then(() => navigator.clipboard.writeText(text)).then(
+                    () => this.notify?.(this.t('config.changedCopied', 'Copied.'), 'success'),
+                    () => this.notify?.(this.t('config.changedCopyFailed', 'Could not copy.'), 'error'));
+                return;
+            }
+            go(e.target.closest('[data-changed-index]'));
+        });
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') go(e.target.closest?.('[data-changed-index]'));
+        });
     }
 
     /**
