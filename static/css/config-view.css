@@ -10482,3 +10482,96 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
     color: var(--accent-success);
     background: color-mix(in srgb, var(--accent-success) 16%, transparent);
 }
+
+
+/* Config → Data & backups: what can be brought in, a card per kind of source. */
+.config-import-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+    gap: 10px;
+}
+
+.config-import-card {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 11px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-secondary);
+}
+
+.config-import-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.config-import-head b {
+    font-weight: 600;
+}
+
+.config-import-files {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.config-import-files code {
+    padding: 0 6px;
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--accent-primary, currentColor) 18%, transparent);
+    color: var(--text-primary);
+    font-size: calc(var(--font-size-text) * 0.8);
+}
+
+.config-import-from {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-text) * 0.88);
+    line-height: 1.4;
+}
+
+.config-import-gets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.config-import-chip {
+    padding: 0 7px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-text) * 0.8);
+    line-height: 1.6;
+}
+
+/* Carried: a check before the word, in the success tint. */
+.config-import-chip.is-yes {
+    border-color: color-mix(in srgb, var(--accent-success, #2fa968) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-success, #2fa968) 14%, transparent);
+    color: var(--text-primary);
+}
+
+.config-import-chip.is-yes::before {
+    content: "✓ ";
+}
+
+/* Not carried: struck through, so it reads as an answer to "does it bring…?". */
+.config-import-chip.is-no {
+    text-decoration: line-through;
+    opacity: 0.75;
+}
+
+.config-import-card .config-btn {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.config-import-foot {
+    margin: 10px 0 0;
+    color: var(--text-muted);
+    font-size: calc(var(--font-size-text) * 0.85);
+}
