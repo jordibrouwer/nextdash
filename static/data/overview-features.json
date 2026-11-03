@@ -2,6 +2,86 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureBackdropsTitle",
+      "titleFallback": "New backdrops give the themes a whole new look. Try it!",
+      "whatKey": "config.overviewNewFeatureBackdropsWhat",
+      "whatFallback": "Many themes shared the same few backdrops, so they looked alike.",
+      "howKey": "config.overviewNewFeatureBackdropsHow",
+      "howFallback": "Every theme family now has a backdrop of its own, drawn in its colours: 266 in all. The picker starts short, with this theme's backdrop, ones like it and the ones you used lately.",
+      "enableKey": "config.overviewNewFeatureBackdropsEnable",
+      "enableFallback": "Press Shift + A to open the theme studio and go to the Backdrop tab.",
+      "ctaKey": "config.overviewNewFeatureBackdropsCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance"
+      },
+      "since": "v1.25.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTabsClockCountdownTitle",
+      "titleFallback": "Tabs, Clock and Countdown widgets",
+      "whatKey": "config.overviewNewFeatureTabsClockCountdownWhat",
+      "whatFallback": "A page with many widgets took a lot of room, and there was no clock for another time zone.",
+      "howKey": "config.overviewNewFeatureTabsClockCountdownHow",
+      "howFallback": "A Tabs widget puts several widgets of one page in one tile, a tab each. Clock shows the time in any time zone, and Countdown counts down to a date.",
+      "enableKey": "config.overviewNewFeatureTabsClockCountdownEnable",
+      "enableFallback": "Config → Widgets → Add a widget, then pick Tabs, Clock or Countdown.",
+      "ctaKey": "config.overviewNewFeatureTabsClockCountdownCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.25.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureLayoutHistoryTitle",
+      "titleFallback": "Layout history: go back to an earlier arrangement",
+      "whatKey": "config.overviewNewFeatureLayoutHistoryWhat",
+      "whatFallback": "Rearranging a page was a one-way street.",
+      "howKey": "config.overviewNewFeatureLayoutHistoryHow",
+      "howFallback": "nextDash keeps earlier arrangements of each page. See what restoring one would change, then restore it. A restore keeps what it replaces, so you can undo it.",
+      "enableKey": "config.overviewNewFeatureLayoutHistoryEnable",
+      "enableFallback": "Press Ctrl+Shift+K and choose Restore an earlier layout of this page.",
+      "ctaKey": "config.overviewNewFeatureLayoutHistoryCta",
+      "ctaFallback": "Open Overview →",
+      "go": {
+        "section": "overview"
+      },
+      "since": "v1.25.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSearchSumsTitle",
+      "titleFallback": "Search answers sums",
+      "whatKey": "config.overviewNewFeatureSearchSumsWhat",
+      "whatFallback": "A quick calculation meant opening a calculator.",
+      "howKey": "config.overviewNewFeatureSearchSumsHow",
+      "howFallback": "Type a sum in search and the answer is the top row: 15% of 240, 2+2*3 or 5 km in mi. Enter copies it. Nothing leaves your browser.",
+      "enableKey": "config.overviewNewFeatureSearchSumsEnable",
+      "enableFallback": "Open search and type a sum.",
+      "ctaKey": "config.overviewNewFeatureSearchSumsCta",
+      "ctaFallback": "Open the dashboard →",
+      "go": {
+        "view": "dashboard"
+      },
+      "since": "v1.25.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWhatChangedTitle",
+      "titleFallback": "What you changed, and importing another dashboard",
+      "whatKey": "config.overviewNewFeatureWhatChangedWhat",
+      "whatFallback": "Nobody remembers which settings they changed, and moving over from another dashboard meant retyping every link.",
+      "howKey": "config.overviewNewFeatureWhatChangedHow",
+      "howFallback": "The Settings panel of the Overview lists what differs from the defaults under What changed, with Copy as text. Data & backups imports a Homepage, Dashy or Homer configuration (.yaml) as bookmarks and categories.",
+      "enableKey": "config.overviewNewFeatureWhatChangedEnable",
+      "enableFallback": "Config → Overview → Settings → What changed. To import, open Data & backups and pick the configuration file.",
+      "ctaKey": "config.overviewNewFeatureWhatChangedCta",
+      "ctaFallback": "Open Overview →",
+      "go": {
+        "section": "overview"
+      },
+      "since": "v1.25.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureWatchFeedsTitle",
       "titleFallback": "Watch feeds: a paper for the sites you follow",
       "whatKey": "config.overviewNewFeatureWatchFeedsWhat",
