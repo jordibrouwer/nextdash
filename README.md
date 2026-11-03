@@ -24,6 +24,18 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
 
 🎨 **384 themes and a theme studio.** 192 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic. **Aurora Glass** is the default on a new install (an install that already chose a theme keeps it), and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 75 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#17a-the-new-look)* · *[Manual: Appearance](MANUAL.md#17-appearance)*
 
+<p align="center">
+  <img src="screenshots/nextdash-themes-dark.jpg" alt="All 192 dark themes, each shown on the same dashboard" width="100%" />
+  <br />
+  <sub><b>All 192 dark themes</b> — the same dashboard in every theme, each with its own material and backdrop.</sub>
+</p>
+
+<p align="center">
+  <img src="screenshots/nextdash-themes-light.jpg" alt="All 192 light themes, each shown on the same dashboard" width="100%" />
+  <br />
+  <sub><b>All 192 light themes</b> — the light half of every family.</sub>
+</p>
+
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
 📖 **[User manual (MANUAL.md)](MANUAL.md)** — how everything works, from the first launch to self-hosting. · [Glossary](MANUAL.md#glossary)
