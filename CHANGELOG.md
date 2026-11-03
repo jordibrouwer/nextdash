@@ -172,6 +172,7 @@ Widgets get a lot more to do: a Tabs widget, Clock and Countdown, duplicate, set
 - **new — A backdrop recipe for every theme.** Each backdrop pair, each Look and Ocean (its own sonar) has a recipe of its own, drawn in the theme's colours.
 - **new — A better backdrop picker.** A short view, groups, search and thumbnails that load when you scroll to them. The backdrop settings sit with the backdrops in the theme studio.
 - **fix — The backdrop groups are in English.** The groups in the backdrop picker (Patterns, Colour & glow, Fire & light, Nature & water, Sky & space, Materials, Paper & ink, Tech) were Dutch in every language; they are English now and translated in the other five.
+- **fix — The eight neutral themes draw their own backdrop.** Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete and Black still pointed at an old shared recipe, so their new backdrops were never drawn.
 - **new — Aurora Glass is the default theme** on new installs. Installs that already chose a theme keep it.
 - **new — Tag colours.** Give a tag a colour; it shows in the tag cloud, the rows and the preview.
 

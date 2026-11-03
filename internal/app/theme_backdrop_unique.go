@@ -12,7 +12,9 @@ the deeper ground, like every other recipe, and none of them is in a pool.
 func themeBackdropLouche(k backdropKit) []backdropLayer {
 	v := k.veil
 	return []backdropLayer{
-		{image: k.blob(30, 18, 70, 56, k.cool, 50) + ", " + k.blob(78, 40, 60, 50, k.accent, 46) + ", " + k.blob(46, 92, 90, 38, k.warm, 30)},
+		{image: k.blob(30, 18, 70, 56, k.cool, 50)},
+		{image: k.blob(78, 40, 60, 50, k.accent, 46)},
+		{image: k.blob(46, 92, 90, 38, k.warm, 30)},
 		{image: "linear-gradient(180deg, transparent 0, " + v(k.ground, 96) + " 78%)"},
 		{image: "repeating-linear-gradient(90deg, " + v(k.accent, 36) + " 0 3px, transparent 3px " + k.px(23) + ")"},
 		{image: "repeating-linear-gradient(90deg, " + v(k.warm, 26) + " 0 2px, transparent 2px " + k.px(37) + ")"},
