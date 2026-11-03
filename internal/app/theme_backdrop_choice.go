@@ -152,41 +152,41 @@ var themeBackdropChoice = map[string]string{
 	"slate-light":                 "slate",               // glas onder een zacht lichtgordijn
 	"slate-one-light":             "slateone",            // editorlijnen
 	"smoked-plum-light":           "smokedplum",          // patroon in plaats van een kleurvlak
-	"solar-ember-light":           "rays",                // patroon in plaats van een kleurvlak
-	"solar-flats-light":           "ruled",               // uit het paper-pakket (was horizon)
-	"solar-wind-light":            "zigzag",              // patroon in plaats van een kleurvlak
-	"squid-ink-light":             "halftone",            // uit het ink-pakket (was rings)
-	"static-noise-light":          "grain",               // past bij het thema
-	"steel-dawn-light":            "herring",             // patroon in plaats van een kleurvlak
-	"stone-light":                 "dunes",               // zand en steen
-	"storm-petrel-light":          "zigzag",              // past bij het thema
-	"sumi-ink-light":              "mountains",           // inktlandschap
-	"sunflower-ink-light":         "topo",                // uit het ink-pakket (was rings)
-	"synth-sunset-light":          "waves",               // (blijft waves)
-	"tarnished-brass-light":       "herring",             // patroon in plaats van een kleurvlak
-	"terminal-amber-light":        "scanlines",           // beeldbuis
-	"terracotta-studio-light":     "dunes",               // aarde
-	"thunderhead-light":           "rays",                // past bij het thema
-	"tidal-slate-light":           "seigaiha",            // past bij het thema
-	"tidepool-lens-light":         "moire",               // patroon in plaats van een kleurvlak
-	"tomorrow-dusk-light":         "sunset",              // past bij het thema
-	"tyrian-light":                "deco",                // patroon in plaats van een kleurvlak
-	"ultraviolet-light":           "isocube",             // patroon in plaats van een kleurvlak
-	"unraid-azure-light":          "cellgrid",            // het tekenraster van een terminal
-	"unraid-black-light":          "digirain",            // de groene regen uit The Matrix, hier in het accent
-	"unraid-blaze-light":          "crt",                 // rood fosfor: scanlines en een rollende band
-	"unraid-ember-light":          "bootlog",             // een bootlog die voorbij scrolt
-	"vampire-castle-light":        "checker",             // patroon in plaats van een kleurvlak
-	"velocity-ink-light":          "mountains",           // uit het ink-pakket (was chevron)
-	"vermilion-seal-light":        "halftone",            // stempel
-	"violet-shades-light":         "moire",               // patroon in plaats van een kleurvlak
-	"vivid-hyper-light":           "bauhaus",             // patroon in plaats van een kleurvlak
-	"volcanic-ash-light":          "grain",               // past bij het thema
-	"wheat-field-light":           "herring",             // past bij het thema
-	"winter-ember-light":          "stitch",              // patroon in plaats van een kleurvlak
-	"zen-ember-light":             "ruled",               // past bij het thema
-	"zinc-light":                  "dotgrid",             // fijn stippenraster
-	"chalk-light":                 "ruled",               // schriftlijnen op kalk
-	"concrete-light":              "bricks",              // patroon in plaats van een kleurvlak
-	"black-light":                 "stars",               // sterren op zwart
+	"solar-ember-light":           "solarember",          // patroon in plaats van een kleurvlak
+	"solar-flats-light":           "solarflats",          // uit het paper-pakket (was horizon)
+	"solar-wind-light":            "solarwind",           // patroon in plaats van een kleurvlak
+	"squid-ink-light":             "squidink",            // uit het ink-pakket (was rings)
+	"static-noise-light":          "staticnoise",         // past bij het thema
+	"steel-dawn-light":            "steeldawn",           // patroon in plaats van een kleurvlak
+	"stone-light":                 "stone",               // zand en steen
+	"storm-petrel-light":          "stormpetrel",         // past bij het thema
+	"sumi-ink-light":              "sumiink",             // inktlandschap
+	"sunflower-ink-light":         "sunflowerink",        // uit het ink-pakket (was rings)
+	"synth-sunset-light":          "synthsunset",         // (blijft waves)
+	"tarnished-brass-light":       "tarnishedbrass",      // patroon in plaats van een kleurvlak
+	"terminal-amber-light":        "terminalamber",       // beeldbuis
+	"terracotta-studio-light":     "terracottastudio",    // aarde
+	"thunderhead-light":           "thunderhead",         // past bij het thema
+	"tidal-slate-light":           "tidalslate",          // past bij het thema
+	"tidepool-lens-light":         "tidepoollens",        // patroon in plaats van een kleurvlak
+	"tomorrow-dusk-light":         "tomorrowdusk",        // past bij het thema
+	"tyrian-light":                "tyrian",              // patroon in plaats van een kleurvlak
+	"ultraviolet-light":           "ultraviolet",         // patroon in plaats van een kleurvlak
+	"unraid-azure-light":          "unraidazure",         // het tekenraster van een terminal
+	"unraid-black-light":          "unraidblack",         // de groene regen uit The Matrix, hier in het accent
+	"unraid-blaze-light":          "unraidblaze",         // rood fosfor: scanlines en een rollende band
+	"unraid-ember-light":          "unraidember",         // een bootlog die voorbij scrolt
+	"vampire-castle-light":        "vampirecastle",       // patroon in plaats van een kleurvlak
+	"velocity-ink-light":          "velocityink",         // uit het ink-pakket (was chevron)
+	"vermilion-seal-light":        "vermilionseal",       // stempel
+	"violet-shades-light":         "violetshades",        // patroon in plaats van een kleurvlak
+	"vivid-hyper-light":           "vividhyper",          // patroon in plaats van een kleurvlak
+	"volcanic-ash-light":          "volcanicash",         // past bij het thema
+	"wheat-field-light":           "wheatfield",          // past bij het thema
+	"winter-ember-light":          "winterember",         // patroon in plaats van een kleurvlak
+	"zen-ember-light":             "zenember",            // past bij het thema
+	"zinc-light":                  "zinc",                // fijn stippenraster
+	"chalk-light":                 "chalk",               // schriftlijnen op kalk
+	"concrete-light":              "concrete",            // patroon in plaats van een kleurvlak
+	"black-light":                 "black",               // sterren op zwart
 }
