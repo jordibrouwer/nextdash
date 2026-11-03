@@ -26,20 +26,18 @@
     }
 
     /* Tone by how little room is left. Cache is not pressure, so it never counts. */
-    function tone(usedPercent) {
-        if (usedPercent >= 95) return 'bad';
-        if (usedPercent >= 85) return 'warn';
-        return 'good';
+    function tone(usedPercent, limits) {
+        return U().usageTone(usedPercent, limits || U().usageLimits({}));
     }
 
     /** The four figures the tile breaks into once there is room for them. */
-    function statsRow(dash, mem) {
+    function statsRow(dash, mem, limits) {
         const s = S();
         return [
             {
                 value: s.formatBytes(mem.usedBytes),
                 label: label(dash, 'dashboard.widgetMemoryUsedLabel', 'in use'),
-                tone: tone(mem.usedPercent),
+                tone: tone(mem.usedPercent, limits),
             },
             {
                 value: s.formatBytes(mem.availableBytes),
@@ -71,6 +69,7 @@
         const config = widget?.config || {};
         const showSwap = config.showSwap === true;
         const showCache = config.showCache === true;
+        const limits = u.usageLimits(config);
 
         panel.appendChild(u.headline(
             `${Math.round(mem.usedPercent)}%`,
@@ -79,7 +78,7 @@
                 .replace('{total}', s.formatBytes(mem.totalBytes)),
         ));
 
-        panel.appendChild(u.meter(mem.usedBytes, mem.totalBytes, tone(mem.usedPercent)));
+        panel.appendChild(u.meter(mem.usedBytes, mem.totalBytes, tone(mem.usedPercent, limits)));
 
         /*
          * Four abreast on a wide tile, two on a narrow one: the stat grid
@@ -90,7 +89,7 @@
          * it whether or not the box was ticked. Narrow, where there is room
          * for two figures, the box still decides.
          */
-        const grid = u.statGrid(statsRow(dash, mem));
+        const grid = u.statGrid(statsRow(dash, mem, limits));
         if (!showCache) grid.children[2]?.classList.add('dashboard-widget-wide-only');
         panel.appendChild(grid);
 

@@ -140,6 +140,9 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "refreshSeconds", Kind: "int", Min: 2, Max: 3600},
 		{Key: "showSwap", Kind: "bool"},
 		{Key: "showCache", Kind: "bool"},
+		// Where the figure turns amber and red, in percent used.
+		{Key: "warnAt", Kind: "int", Min: 1, Max: 99},
+		{Key: "criticalAt", Kind: "int", Min: 2, Max: 100},
 	},
 	WidgetTypeDisks: {
 		{Key: "refreshSeconds", Kind: "int", Min: 5, Max: 3600},
@@ -149,6 +152,9 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "labels", Kind: "list"},
 		{Key: "showMeter", Kind: "bool"},
 		{Key: "showInodes", Kind: "bool"},
+		// Where a disk turns amber and red, in percent used.
+		{Key: "warnAt", Kind: "int", Min: 1, Max: 99},
+		{Key: "criticalAt", Kind: "int", Min: 2, Max: 100},
 	},
 	WidgetTypeCPU: {
 		// One second is the floor: below that the delta between two /proc reads
