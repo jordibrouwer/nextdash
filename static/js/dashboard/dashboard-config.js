@@ -9889,7 +9889,7 @@ class DashboardConfig {
                         this.t('config.changedNow', 'now {now}, default {was}')
                             .replace('{now}', row.now).replace('{was}', row.was))}</span>
                 </li>`).join('')}</ul>`
-            : `<p class="config-settings-jump-empty">${esc(this.t('config.changedNone', 'Every setting is at its default.'))}</p>`;
+            : `<p class="config-settings-jump-empty">${esc(this.t('config.changedNoneAll', 'Every setting is at its default.'))}</p>`;
         window.AppModal.show({
             title: this.t('config.changedTitle', 'What you changed')
                 + (entries.length ? ` (${entries.length})` : ''),

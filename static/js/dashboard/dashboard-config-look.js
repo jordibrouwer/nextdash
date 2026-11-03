@@ -409,7 +409,7 @@
                 </button>
                 ${ui.open ? `
                 <div class="config-backdrop-chips" role="group" aria-label="${e(t('config.backdropGroups', 'Groups'))}">
-                    ${['', ...cats].map((c) => `<button type="button" class="config-backdrop-chip${ui.cat === c ? ' is-active' : ''}" data-backdrop-cat="${e(c)}" aria-pressed="${ui.cat === c}">${e(c || t('config.backdropAllGroups', 'All'))}</button>`).join('')}
+                    ${['', ...cats].map((c) => `<button type="button" class="config-backdrop-chip${ui.cat === c ? ' is-active' : ''}" data-backdrop-cat="${e(c)}" aria-pressed="${ui.cat === c}">${e(c ? t('config.backdropCat.' + c.toLowerCase().replace(/[^a-z]+/g, '-'), c) : t('config.backdropAllGroups', 'All'))}</button>`).join('')}
                 </div>
                 <input type="search" class="config-input config-backdrop-search" data-backdrop-search value="${e(ui.q)}" placeholder="${e(t('config.backdropSearch', 'Search backdrops…'))}" aria-label="${e(t('config.backdropSearch', 'Search backdrops…'))}">
                 <div class="config-backdrop-all" data-backdrop-all></div>
