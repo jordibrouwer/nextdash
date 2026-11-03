@@ -9399,7 +9399,7 @@ class DashboardConfig {
         rowHighlight: { info: ['rowHighlightInfoTitle', 'rowHighlightInfoMessage',
             'How a row lights up', 'Subtle lets the accent reach a little way in from the left edge of the row you are on. Strong carries it much further across, which is easier to pick out at a glance or from a distance.'],
             hint: 'rowHighlightHint', def: 'subtle' },
-        showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: false },
+        showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: false },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
         colorizeStatus: { info: ['colorizeStatusInfoTitle', 'colorizeStatusInfoMessage'], def: true },

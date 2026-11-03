@@ -103,7 +103,7 @@ class Dashboard {
             showThemeStudioButton: true,
             showCollapseAllButton: false,
             showAddBookmarkButton: true,
-            showStatus: false,
+            showStatus: true,
             colorizeStatus: true,
             showPing: false,
             statusOfflineRetries: 3,
