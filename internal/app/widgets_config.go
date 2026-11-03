@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	neturl "net/url"
+	"strconv"
 	"strings"
 )
 
@@ -479,6 +480,20 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 		}
 	}
 
+	/*
+	 * When the widget is on the dashboard, for every type: a window of the day
+	 * ("07:00" to "09:30", running past midnight when the end is before the
+	 * start) and the days of the week. Both times or neither -- one alone has
+	 * no meaning -- and all seven days is the same as saying nothing.
+	 */
+	if from, until := widgetClockTime(config["showFrom"]), widgetClockTime(config["showUntil"]); from != "" && until != "" {
+		clean["showFrom"] = from
+		clean["showUntil"] = until
+	}
+	if days := widgetConfigList(config["showDays"], widgetWeekdays); len(days) > 0 && len(days) < len(widgetWeekdays) {
+		clean["showDays"] = days
+	}
+
 	// The one nested setting, handled before the flat ones below.
 	if widgetType == WidgetTypeCustom {
 		if fields := sanitizeCustomWidgetFields(config["fields"]); fields != nil {
@@ -830,4 +845,27 @@ func sanitizeCustomWidgetFields(raw any) []any {
 		return nil
 	}
 	return out
+}
+
+// widgetWeekdays are the days a widget may be limited to, as the browser reads
+// them (Monday first, the way the settings list them).
+var widgetWeekdays = []string{"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
+
+// widgetClockTime reads "HH:MM" and returns it zero-padded, or "" for anything
+// else: no seconds, no 24:00, no free text.
+func widgetClockTime(raw any) string {
+	text, ok := raw.(string)
+	if !ok {
+		return ""
+	}
+	text = strings.TrimSpace(text)
+	if len(text) != 5 || text[2] != ':' {
+		return ""
+	}
+	hour, errH := strconv.Atoi(text[:2])
+	minute, errM := strconv.Atoi(text[3:])
+	if errH != nil || errM != nil || hour < 0 || hour > 23 || minute < 0 || minute > 59 {
+		return ""
+	}
+	return text
 }

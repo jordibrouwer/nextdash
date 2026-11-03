@@ -372,6 +372,9 @@ class DashboardRenderCore {
             // In a stack's tabs: drawn there, not here. Still in the order, so
             // taking it out of the stack puts it back where it stood.
             if (heldInStacks.has(widget.id)) return;
+            // Outside its window of the day, or off today: kept in the order
+            // and out of the grid, like a widget that is switched off.
+            if (!this.widgetIsScheduledNow(widget)) return;
             columnBlocks.push({
                 widget,
                 category: {
@@ -436,6 +439,7 @@ class DashboardRenderCore {
             });
         });
 
+        this.watchWidgetSchedules();
         return this.applyBlockOrder(columnBlocks);
     }
 
@@ -1071,6 +1075,64 @@ class DashboardRenderCore {
         if (!Number.isFinite(asked) || asked <= 1) return 1;
         const available = Number(this.getEffectiveColumnsPerRow?.()) || 1;
         return Math.max(1, Math.min(2, Math.trunc(asked), available));
+    }
+
+    /**
+     * Whether a widget's own schedule (showFrom/showUntil/showDays) has it on
+     * the dashboard at this moment, by the browser's clock. No schedule is
+     * always on.
+     */
+    widgetIsScheduledNow(widget, now = new Date()) {
+        const c = widget?.config || {};
+        const days = Array.isArray(c.showDays) ? c.showDays : [];
+        const clock = /^(\d\d):(\d\d)$/;
+        const from = clock.exec(String(c.showFrom || ''));
+        const until = clock.exec(String(c.showUntil || ''));
+        const at = now.getHours() * 60 + now.getMinutes();
+        const start = from && until ? Number(from[1]) * 60 + Number(from[2]) : 0;
+        const end = from && until ? Number(until[1]) * 60 + Number(until[2]) : 0;
+        const overnight = start > end;
+        // The day belongs to where the window starts: Friday 22:00-02:00 is
+        // still on at Saturday 01:00.
+        const dayIndex = (now.getDay() + (overnight && at < end ? 6 : 0)) % 7;
+        if (days.length && !days.includes(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dayIndex])) return false;
+        if (!from || !until || start === end) return true;
+        return overnight ? at >= start || at < end : at >= start && at < end;
+    }
+
+    /*
+     * The dashboard follows the clock: once a minute, when any widget has a
+     * schedule and what is on the page no longer matches it, the grid is drawn
+     * again. A tab left open overnight shows the morning's widgets in the
+     * morning. One timer for the page, and none while nothing is scheduled.
+     */
+    watchWidgetSchedules() {
+        const d = this.dash;
+        const scheduled = (d.widgets || []).filter((w) => w?.config?.showFrom || w?.config?.showDays);
+        if (!scheduled.length) {
+            if (this._scheduleTimer) { clearInterval(this._scheduleTimer); this._scheduleTimer = null; }
+            return;
+        }
+        this._scheduleSignature = scheduled.map((w) => `${w.id}:${this.widgetIsScheduledNow(w) ? 1 : 0}`).join('|');
+        if (this._scheduleTimer) return;
+        this._scheduleTimer = setInterval(() => {
+            if (document.visibilityState !== 'visible') return;
+            const now = (d.widgets || []).filter((w) => w?.config?.showFrom || w?.config?.showDays);
+            const signature = now.map((w) => `${w.id}:${this.widgetIsScheduledNow(w) ? 1 : 0}`).join('|');
+            if (signature === this._scheduleSignature) return;
+            // Not under someone's hands: a menu, a rename, a drag or a dialog
+            // open, or another view on screen. The change waits for the next
+            // minute rather than redrawing the grid out from under them.
+            const busy = d.activeView !== 'bookmarks'
+                || document.getElementById('widget-context-menu')
+                || document.querySelector('.category-rename-input, #app-modal.show, .category-menu')
+                || window.__dragReorderState?.selected;
+            if (busy) return;
+            this._scheduleSignature = signature;
+            const y = window.scrollY || 0;
+            d.renderDashboard?.({ animate: false, forceFull: true });
+            window.scrollTo(0, y);
+        }, 60_000);
     }
 
     /**

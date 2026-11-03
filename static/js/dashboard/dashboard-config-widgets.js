@@ -2488,7 +2488,8 @@
 
     renderWidgetSettings(stored, index) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const fields = DashboardConfig.WIDGET_SETTINGS[stored.type] || [];
+        // Its own settings, then the ones every widget has (when it is shown).
+        const fields = [...(DashboardConfig.WIDGET_SETTINGS[stored.type] || []), ...DashboardConfig.WIDGET_SCHEDULE_FIELDS];
         // No early return for a type with no fields of its own: width applies to
         // every widget, so the panel is never empty.
 
@@ -2629,10 +2630,11 @@
             return `
                 <div class="config-widget-field">
                     <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
-                    <input type="text" id="${id}" class="config-text"
+                    <input type="${field.input === 'time' ? 'time' : 'text'}" id="${id}" class="config-text"
                         data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                         data-widget-kind="text" maxlength="${field.maxlength || 200}"
                         value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
+                    ${field.hint ? `<p class="config-widget-field-hint">${esc(this.t(field.hint[0], field.hint[1]))}</p>` : ''}
                 </div>`;
         }
         /*

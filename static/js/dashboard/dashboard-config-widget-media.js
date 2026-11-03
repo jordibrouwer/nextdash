@@ -668,7 +668,7 @@
         // three sections as every other widget; `rows` arrives pre-joined, so
         // they are drawn per field here.
         const sorted = { connection: '', display: '', advanced: '' };
-        for (const field of DashboardConfig.WIDGET_SETTINGS[widget.type] || []) {
+        for (const field of [...(DashboardConfig.WIDGET_SETTINGS[widget.type] || []), ...DashboardConfig.WIDGET_SCHEDULE_FIELDS]) {
             sorted[this.widgetFieldSection(field.key)] += this.renderWidgetField(field, widget, index);
         }
         const grid = (html) => (html ? `<div class="config-custom-grid">${html}</div>` : '');

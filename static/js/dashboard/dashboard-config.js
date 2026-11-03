@@ -17515,8 +17515,32 @@ class DashboardConfig {
      */
     static WIDGET_FIELD_SECTIONS = {
         connection: ['url', 'method', 'feedUrls', 'host'],
-        advanced: ['refreshSeconds', 'ttl', 'click', 'target'],
+        advanced: ['refreshSeconds', 'ttl', 'click', 'target', 'showFrom', 'showUntil', 'showDays'],
     };
+
+    /*
+     * When a widget is on the dashboard, for every type: between two times of
+     * day and on some days of the week. Outside the table of any one type for
+     * the reason Width is -- it belongs to all of them. Both times or neither;
+     * all seven days is the same as none. Mirrors the shared keys in
+     * sanitizeWidgetConfig (widgets_config.go).
+     */
+    static WIDGET_SCHEDULE_FIELDS = [
+        { key: 'showFrom', kind: 'text', input: 'time', maxlength: 5,
+          label: ['config.widgetShowFrom', 'Show from (time of day)'],
+          hint: ['config.widgetShowWindowHint', 'Both times, or neither. The widget is off the dashboard outside them; an end before the start runs past midnight.'] },
+        { key: 'showUntil', kind: 'text', input: 'time', maxlength: 5,
+          label: ['config.widgetShowUntil', 'Show until (time of day)'] },
+        { key: 'showDays', kind: 'checkset',
+          label: ['config.widgetShowDays', 'Show on'],
+          hint: ['config.widgetShowDaysHint', 'With none ticked the widget shows every day.'],
+          options: [
+              ['mon', ['config.widgetDayMon', 'Mon']], ['tue', ['config.widgetDayTue', 'Tue']],
+              ['wed', ['config.widgetDayWed', 'Wed']], ['thu', ['config.widgetDayThu', 'Thu']],
+              ['fri', ['config.widgetDayFri', 'Fri']], ['sat', ['config.widgetDaySat', 'Sat']],
+              ['sun', ['config.widgetDaySun', 'Sun']],
+          ] },
+    ];
 
     /*
      * Emby asks the same questions as Jellyfin, under its own name. Only a

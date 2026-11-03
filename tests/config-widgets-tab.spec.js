@@ -124,7 +124,7 @@ test.describe('the widgets tab', () => {
         if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
         const detail = page.locator('.config-widget-detail').first();
         await expect(detail.locator('.config-widget-detail-head')).toBeVisible();
-        await expect(detail.locator('.config-widget-settings-body')).toBeVisible();
+        await expect(detail.locator('.config-widget-settings-body').first()).toBeVisible();
         await expect(detail.locator('.config-widget-detail-foot [data-widget-delete]')).toBeVisible();
         await expect(detail.locator('.config-widget-detail-foot')).toContainText('Structure');
     });
