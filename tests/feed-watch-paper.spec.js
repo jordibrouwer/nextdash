@@ -230,6 +230,35 @@ test('returning to the tab does not cover another window', async ({ page, reques
     await expect(modal(page)).toHaveCount(0);
 });
 
+test('the News button goes back to the article that was open; from the front page it starts at the front', async ({ page }) => {
+    await openDashboard(page);
+    await newsButton(page).click();
+    await item(page, 'A two').locator('.feed-news-entry').click();
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('A two');
+    await page.keyboard.press('Escape');
+    await expect(modal(page)).toBeHidden();
+    await newsButton(page).click();
+    await expect(modal(page).locator('.feed-news-title')).toHaveText('A two');
+    await modal(page).locator('[data-feed-news-index]').click();
+    await page.keyboard.press('Escape');
+    await expect(modal(page)).toBeHidden();
+    await newsButton(page).click();
+    await expect(modal(page).locator('.feed-news-section-name')).toHaveText(['Site B', 'Site A']);
+});
+
+test('the News button hides when every feed is paused and returns with one that runs', async ({ page, request }) => {
+    const pause = async (site, paused) => expect((await request.post('/api/feeds/watch/feed', {
+        headers, data: { bookmarkUrl: site.url, feedUrl: `${site.base}/feed/`, paused },
+    })).ok()).toBe(true);
+    await pause(siteA, true);
+    await pause(siteB, true);
+    await openDashboard(page);
+    await expect(newsButton(page)).toBeHidden();
+    await pause(siteB, false);
+    await page.reload();
+    await expect(newsButton(page)).toBeVisible();
+});
+
 test('on a phone the sections stack, the controls are 44 px and nothing runs off the side', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await openDashboard(page);
