@@ -2458,7 +2458,7 @@ class DashboardRenderCore {
      * through scrollIntoView: the reader's offset is the thing to preserve, not
      * the block's position in the viewport.
      */
-    redrawKeepingPlace(blockId) {
+    redrawKeepingPlace(blockId, { forceFull = true } = {}) {
         const d = this.dash;
         const selector = blockId
             ? `#dashboard-layout .category[data-category-id="${CSS.escape(String(blockId))}"]`
@@ -2478,7 +2478,7 @@ class DashboardRenderCore {
         // reader's eyes.
         const anchorTop = before ? before.getBoundingClientRect().top : null;
 
-        d.renderDashboard?.({ animate: false, forceFull: true });
+        d.renderDashboard?.({ animate: false, forceFull });
 
         // Returns whether it had to move anything, which is what tells the
         // caller the layout is still settling.

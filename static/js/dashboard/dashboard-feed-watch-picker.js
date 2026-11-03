@@ -70,7 +70,8 @@
         }
         global.CheckMode.assign(bookmark, 'periodic');
         global.CheckMode.syncLocalCopies({ pageId, url: bookmark.url, mode: 'periodic', bookmarkRef: ref });
-        d.renderDashboard?.({ incremental: false });
+        if (d.renderCore?.redrawKeepingPlace) d.renderCore.redrawKeepingPlace();
+        else d.renderDashboard?.({ incremental: false });
         d.updateHealthBadge?.();
     }
 
