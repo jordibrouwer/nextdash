@@ -228,16 +228,18 @@ class DashboardCategoryMenu {
                 key: 'Enter',
             },
             /*
-             * Only the custom tile reads from outside, so it is the only one
-             * where asking again means anything: every other widget draws from
-             * what nextDash already holds and is redrawn by whatever changed it.
+             * The tiles whose answer can be older than their clock says:
+             * custom, and the media, Beszel and Home Assistant tiles
+             * (widgetCanRefreshNow). The machine's own figures beat every few
+             * seconds off nothing held back, and the rest sit behind a server
+             * copy a click cannot get past, so asking again means nothing.
              *
              * It earns a place because the tile's own clock and the short hold
              * on a failure combine badly for one reader: someone who has just
              * corrected a wrong API key sees the same error for another half
              * minute with no way to hurry it. This is that way.
              */
-            ...(widget?.type === 'custom' ? [{
+            ...(this.dash.renderCore?.widgetCanRefreshNow?.(widget) ? [{
                 id: 'refresh',
                 label: this.t('widgetMenuRefresh', 'Refresh now'),
                 icon: '↻',
@@ -374,7 +376,9 @@ class DashboardCategoryMenu {
             return;
         }
         if (action === 'refresh') {
-            await d.renderCore?.refreshCustomWidgetNow?.(widget);
+            await d.renderCore?.refreshWidgetNow?.(widget);
+            return;
+        }
             return;
         }
         if (action === 'settings') {

@@ -850,6 +850,55 @@ class DashboardRenderCore {
         this.startCustomWidgetTimer(widget);
     }
 
+    /*
+     * "Refresh now" for every tile that keeps a clock.
+     *
+     * Custom has its own (above): it holds a failure for thirty seconds and the
+     * answer lives in its own store. The rest all go through runWidgetTick,
+     * which forgets what the tile held and draws it again; a service-backed
+     * tile is told to skip the server's held answer as well, so the click asks
+     * the service and not a copy that is up to a TTL old. Same rules as a beat
+     * otherwise: it waits for one already running, holds the others off while
+     * it runs, and restarts the clock from now.
+     */
+    /*
+     * Which tiles a click can truly bring up to date: the ones whose answer
+     * can be older than their clock says. Custom holds a failure for thirty
+     * seconds; the media, Beszel and Home Assistant tiles come through the
+     * server's copy of a service's answer, kept for up to a TTL, which a forced
+     * read skips. The machine's own figures (processor, memory, disks, Docker)
+     * beat every few seconds off nothing held back, so a button there would
+     * only win a moment. Weather, calendar and RSS hold a server copy for a
+     * quarter of an hour that a click cannot get past, and Glances and Unraid
+     * keep theirs elsewhere.
+     */
+    widgetCanRefreshNow(widget) {
+        if (!widget?.id || !this.widgetPollSpec(widget)) return false;
+        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel)/
+            .test(String(widget.type));
+    }
+
+    async refreshWidgetNow(widget) {
+        if (!this.widgetCanRefreshNow(widget)) return;
+        if (widget.type === 'custom') return this.refreshCustomWidgetNow(widget);
+        const d = this.dash;
+        this._widgetTicking = this._widgetTicking || new Map();
+        const pending = this._widgetTicking.get(widget.id);
+        if (pending) await pending.catch(() => {});
+        d._widgetForce = d._widgetForce || new Set();
+        d._widgetForce.add(widget.id);
+        const run = this.runWidgetTick(widget);
+        this._widgetTicking.set(widget.id, run);
+        try {
+            await run;
+        } finally {
+            if (this._widgetTicking.get(widget.id) === run) this._widgetTicking.delete(widget.id);
+            // Spent by the request, or unused by a tile that never asks one.
+            d._widgetForce.delete(widget.id);
+        }
+        this.startWidgetTimer(widget);
+    }
+
     async _refreshCustomWidgetBody(widget, d, pageId, body) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
