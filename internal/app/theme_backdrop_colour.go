@@ -110,6 +110,52 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 		return themeBackdropOrchidBloom(k)
 	case "sonar":
 		return themeBackdropSonar(k)
+	case "lookember":
+		return themeBackdropLookEmber(k)
+	case "looksupernova":
+		return themeBackdropLookSupernova(k)
+	case "looksolarflare":
+		return themeBackdropLookSolarFlare(k)
+	case "lookcandyburst":
+		return themeBackdropLookCandyBurst(k)
+	case "lookmagma":
+		return themeBackdropLookMagma(k)
+	case "looklagoon":
+		return themeBackdropLookLagoon(k)
+	case "lookconfetti":
+		return themeBackdropLookConfetti(k)
+	case "lookkoi":
+		return themeBackdropLookKoi(k)
+	case "looktropic":
+		return themeBackdropLookTropic(k)
+	case "looktwilight":
+		return themeBackdropLookTwilight(k)
+	case "lookorchid":
+		return themeBackdropLookOrchid(k)
+	case "lookminthaze":
+		return themeBackdropLookMintHaze(k)
+	case "lookcobalt":
+		return themeBackdropLookCobalt(k)
+	case "looknorthern":
+		return themeBackdropLookNorthern(k)
+	case "lookpolar":
+		return themeBackdropLookPolar(k)
+	case "lookverdant":
+		return themeBackdropLookVerdant(k)
+	case "lookberry":
+		return themeBackdropLookBerry(k)
+	case "lookgoldenhour":
+		return themeBackdropLookGoldenHour(k)
+	case "lookneonalley":
+		return themeBackdropLookNeonAlley(k)
+	case "lookfilm":
+		return themeBackdropLookFilm(k)
+	case "lookdusk":
+		return themeBackdropLookDusk(k)
+	case "lookopal":
+		return themeBackdropLookOpal(k)
+	case "lookholo":
+		return themeBackdropLookHolo(k)
 	case "solarember":
 		return themeBackdropSolarEmber(k)
 	case "solarflats":
