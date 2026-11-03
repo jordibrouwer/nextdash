@@ -209,3 +209,143 @@ func (h *Handlers) SavePageBlocksHandler(w http.ResponseWriter, r *http.Request)
 	// actually stored rather than assuming its own version took.
 	writeJSON(w, PageBlocksResponse{PageID: pageID, Widgets: savedWidgets, Order: savedOrder})
 }
+
+/*
+DuplicateWidgetHandler answers POST /api/pages/{id}/widgets/{widget}/duplicate.
+
+A copy is made here rather than in the browser because the browser never has the
+whole widget: a tokenless read leaves out the addresses (see
+redactWidgetAddresses), and a widget PUT without them is stored without them.
+The server holds the original, so it copies the original -- address, feeds,
+entities and all.
+
+The copy stands right after the source, in the order and in the list. A sign-in
+the source minted for itself (credential "widget:<id>") is copied under the new
+id, because that id is how the tile finds it; a shared sign-in is only pointed at
+again. An optional body {"title": "..."} names the copy, so the browser can
+write the word "copy" in the reader's language; without it the title is kept.
+*/
+func (h *Handlers) DuplicateWidgetHandler(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == http.MethodOptions {
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	pageID, ok := pageIDFromRequest(r)
+	if !ok {
+		http.Error(w, "Invalid page ID", http.StatusBadRequest)
+		return
+	}
+	if !h.pageExists(pageID) {
+		http.Error(w, "No such page", http.StatusNotFound)
+		return
+	}
+	sourceID := strings.TrimSpace(mux.Vars(r)["widget"])
+
+	var body struct {
+		Title *string `json:"title"`
+	}
+	if r.Body != nil {
+		// An empty body is fine: only the title is optional.
+		_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&body)
+	}
+
+	widgets, order := h.store.GetPageBlocks(pageID)
+	at := -1
+	for i := range widgets {
+		if widgets[i].ID == sourceID {
+			at = i
+			break
+		}
+	}
+	if at < 0 {
+		http.Error(w, "No such widget", http.StatusNotFound)
+		return
+	}
+	source := widgets[at]
+
+	newID := newWidgetID()
+	if newID == "" {
+		http.Error(w, "Could not make an id", http.StatusInternalServerError)
+		return
+	}
+	// Deep, through JSON: a config holds lists and nested values, and a shallow
+	// copy would have the two widgets editing one another's settings.
+	config := map[string]any{}
+	if len(source.Config) > 0 {
+		raw, err := json.Marshal(source.Config)
+		if err == nil {
+			_ = json.Unmarshal(raw, &config)
+		}
+	}
+	copied := Widget{ID: newID, Type: source.Type, Title: source.Title, Config: config}
+	// A widget sits in one stack at most: the copy of a stack starts empty
+	// rather than quietly taking its members from the first.
+	if source.Type == WidgetTypeStack {
+		delete(config, "members")
+	}
+	if body.Title != nil {
+		copied.Title = *body.Title
+	}
+
+	ownOld := widgetCredentialPrefix + sourceID
+	ownNew := widgetCredentialPrefix + newID
+	copiedCredential := false
+	// Only a sign-in the source minted for itself: one it shares is pointed at
+	// again by the copied config, not copied.
+	if chosen, _ := config["credentialId"].(string); chosen != "" && chosen != ownOld {
+		// shared: nothing to copy
+	} else if credential, found := lookupHealthCredential(ownOld); found {
+		if err := saveHealthCredential(ownNew, credential); err != nil {
+			respondStorePersistError(w, err)
+			return
+		}
+		copiedCredential = true
+		if chosen, _ := config["credentialId"].(string); chosen == ownOld {
+			config["credentialId"] = ownNew
+		}
+	}
+
+	next := make([]Widget, 0, len(widgets)+1)
+	next = append(next, widgets[:at+1]...)
+	next = append(next, copied)
+	next = append(next, widgets[at+1:]...)
+
+	nextOrder := make([]string, 0, len(order)+1)
+	placed := false
+	for _, id := range order {
+		nextOrder = append(nextOrder, id)
+		if id == sourceID {
+			nextOrder = append(nextOrder, newID)
+			placed = true
+		}
+	}
+	if !placed {
+		nextOrder = append(nextOrder, newID)
+	}
+
+	if err := h.store.SavePageBlocks(pageID, next, nextOrder); err != nil {
+		// A sign-in written for a copy that was refused would sit in the file
+		// with nothing pointing at it.
+		if copiedCredential {
+			_ = deleteHealthCredential(ownNew)
+		}
+		if errors.Is(err, errUnknownWidgetType) || errors.Is(err, errTooManyWidgets) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		respondStorePersistError(w, err)
+		return
+	}
+
+	savedWidgets, savedOrder := h.store.GetPageBlocks(pageID)
+	if savedWidgets == nil {
+		savedWidgets = []Widget{}
+	}
+	writeJSON(w, struct {
+		PageBlocksResponse
+		ID string `json:"id"`
+	}{PageBlocksResponse{PageID: pageID, Widgets: savedWidgets, Order: savedOrder}, newID})
+}

@@ -244,6 +244,13 @@ class DashboardCategoryMenu {
                 label: this.t('widgetMenuRefresh', 'Refresh now'),
                 icon: '↻',
             }] : []),
+            {
+                // The widget again, right after this one, with its settings and
+                // its sign-in; the server makes it (duplicateWidget).
+                id: 'duplicate',
+                label: this.t('widgetMenuDuplicate', 'Duplicate'),
+                icon: '⧉',
+            },
             // Same move Config -> Widgets offers, from where the widget is.
             ...this.movePageEntries(widget.id),
             {
@@ -379,6 +386,15 @@ class DashboardCategoryMenu {
             await d.renderCore?.refreshWidgetNow?.(widget);
             return;
         }
+        if (action === 'duplicate') {
+            const name = this.widgetName(widget);
+            const id = await d.renderCore?.duplicateWidget?.(widget,
+                String(widget.title || '').trim()
+                    ? this.t('widgetDuplicateTitle', '{name} (copy)', { name })
+                    : '');
+            if (id) {
+                d.showNotification?.(this.t('widgetDuplicated', '“{name}” duplicated.', { name }), 'success');
+            }
             return;
         }
         if (action === 'settings') {

@@ -864,6 +864,51 @@ class DashboardRenderCore {
      * it runs, and restarts the clock from now.
      */
     /*
+     * A second copy of a widget, standing right after it.
+     *
+     * The server makes it: this browser holds a widget with its addresses left
+     * out, and a copy written from that would have no server, no feeds and no
+     * sign-in. What comes back is the page as stored, so the grid is drawn from
+     * the same answer a reload would give. Resolves to the new id, or null.
+     */
+    async duplicateWidget(widget, title) {
+        const d = this.dash;
+        const pageId = Number(d.currentPageId);
+        if (!widget?.id || !Number.isFinite(pageId)) return null;
+        if (this.blocksBelongElsewhere?.()) return null;
+        // A drag still waiting out its debounce would write the old order,
+        // without the copy, after this.
+        await this.flushPendingBlockOrderSave?.();
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json' };
+        if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+        try {
+            const res = await fetcher(`/api/pages/${pageId}/widgets/${encodeURIComponent(widget.id)}/duplicate`, {
+                method: 'POST', headers, body: JSON.stringify({ title }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const made = await res.json();
+            // Re-read with this browser's own rights: the answer above is the
+            // whole widget, and the grid should hold what a read would give it.
+            const read = await fetcher(`/api/pages/${pageId}/blocks`);
+            const blocks = read.ok ? await read.json() : made;
+            if (!this.onSamePage(pageId)) return made.id || null;
+            d.widgets = blocks.widgets || [];
+            d.blockOrder = blocks.order || [];
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
+            // Config's cached list lacks the copy; a save from it would delete it.
+            this.forgetWidgetConfigCache?.();
+            this.forgetWidgetCaches?.();
+            d.renderDashboard?.({ animate: false, forceFull: true });
+            return made.id || null;
+        } catch (_error) {
+            d.showErrorNotification?.(d.formatDashboardLabel?.('widgetDuplicateFailed', {},
+                'Could not duplicate the widget.') || 'Could not duplicate the widget.');
+            return null;
+        }
+    }
+
+    /*
      * Which tiles a click can truly bring up to date: the ones whose answer
      * can be older than their clock says. Custom holds a failure for thirty
      * seconds; the media, Beszel and Home Assistant tiles come through the

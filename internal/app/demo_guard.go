@@ -121,7 +121,7 @@ var demoAllowedWrites = []string{
 	"/api/discovery/add", "/api/discovery/ack", "/api/discovery/close", "/api/discovery/host-seen",
 	"/api/discovery/ignore", "/api/discovery/unignore", "/api/discovery/link", "/api/discovery/undo-add", "/api/discovery/accept", "/api/discovery/run", "/api/discovery/undo",
 	"/api/inbox", "/api/inbox/batch", "/api/logs", "/api/onboarding/template", "/api/onboarding/start-empty",
-	"/api/pages", "/api/pages/template", "/api/pages/{id:[0-9]+}", "/api/pages/{id:[0-9]+}/blocks",
+	"/api/pages", "/api/pages/template", "/api/pages/{id:[0-9]+}", "/api/pages/{id:[0-9]+}/blocks", "/api/pages/{id:[0-9]+}/widgets/{widget}/duplicate",
 	"/api/pages/{id:[0-9]+}/template", "/api/previews/clear", "/api/previews/images/clear",
 	"/api/settings", "/api/tags/catalogue", "/api/tags/keywords/clear", "/api/tags/rewrite", "/api/tags/scan", "/api/tags/scan/reset",
 	"/api/track-clienterror", "/api/track-keys", "/api/track-nav", "/api/track-open", "/api/track-search",
