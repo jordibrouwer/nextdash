@@ -24405,6 +24405,7 @@ class DashboardConfig {
         await Promise.all([
             this._statsInboxAgg === undefined ? this.loadStatsInbox() : null,
             this._statsHealth === undefined ? this.loadStatsHealth() : null,
+            this._statsFeeds === undefined ? this.loadStatsFeeds() : null,
         ].filter(Boolean)).catch(() => {});
         // The memo lives for one paint, and an export is not one: a bookmark
         // renamed or opened since the last paint would go out under its old
@@ -24485,6 +24486,34 @@ class DashboardConfig {
         const inbox = this._statsInboxAgg;
         rows.push(['inbox_included', inbox ? 1 : 0]);
         rows.push(['health_included', this._statsHealth ? 1 : 0]);
+        // Watch feeds is a third server tab. Off or empty it contributes
+        // nothing, and `included,0` says so rather than leaving the file silent.
+        const feeds = this._statsFeeds;
+        const feedsIn = Boolean(feeds && feeds.enabled && (feeds.feeds || []).length);
+        rows.push(['feeds_included', feedsIn ? 1 : 0]);
+        if (feedsIn) {
+            const tot = feeds.totals || {};
+            rows.push(['feeds_period_days', feeds.days]);
+            rows.push(['feeds_watched', tot.feeds || 0]);
+            rows.push(['feeds_items_last_7_days', tot.published || 0]);
+            rows.push(['feeds_read_last_7_days', tot.read || 0]);
+            rows.push(['feeds_read_pct_last_7_days', tot.readPct || 0]);
+            rows.push(['feeds_unread_now', tot.unreadNow || 0]);
+            rows.push(['feeds_errors_last_7_days', tot.failed || 0]);
+            rows.push(['feeds_push_last_7_days', feeds.health?.push || 0]);
+            rows.push(['feeds_webhooks_last_7_days', feeds.health?.webhooks || 0]);
+            (feeds.feeds || []).forEach((f) => {
+                const label = f.title && f.title !== f.name ? `${f.name} · ${f.title}` : f.name;
+                rows.push([`feed_items:${label}`, f.published]);
+                rows.push([`feed_read:${label}`, f.read]);
+                rows.push([`feed_unread:${label}`, f.unread]);
+                rows.push([`feed_state:${label}`, f.state]);
+            });
+            (feeds.daily || []).forEach((d) => {
+                rows.push([`feed_items_published:${d.date}`, d.published]);
+                rows.push([`feed_items_read:${d.date}`, d.read]);
+            });
+        }
         if (inbox) {
             rows.push(['inbox_waiting', Number(this._statsInboxItems?.length || 0)]);
             rows.push(['inbox_added_lifetime', Number(inbox.totalAdded || 0)]);

@@ -179,6 +179,25 @@ test.describe('with two watched feeds', () => {
         expect(overflow).toBeLessThanOrEqual(0);
     });
 
+    test('the CSV export carries the feed figures', async ({ page }) => {
+        await openStatsFeeds(page);
+        const download = page.waitForEvent('download');
+        await page.locator('[data-stats-action="export"]').click();
+        const file = await download;
+        const csv = require('fs').readFileSync(await file.path(), 'utf8');
+        const rows = Object.fromEntries(csv.split('\n').map((line) => {
+            const at = line.lastIndexOf(',');
+            return [line.slice(0, at).replace(/^"|"$/g, ''), line.slice(at + 1)];
+        }));
+        expect(rows.feeds_included).toBe('1');
+        expect(rows.feeds_watched).toBe('2');
+        expect(rows.feeds_items_last_7_days).toBe('4');
+        expect(rows.feeds_read_last_7_days).toBe('2');
+        expect(rows.feeds_unread_now).toBe('2');
+        expect(rows['feed_items:Alpha Blog · Alpha Posts']).toBe('3');
+        expect(rows['feed_read:Beta Blog · Beta Posts']).toBe('1');
+    });
+
     test('Reset in Config → Watch feeds clears the numbers', async ({ page, request }) => {
         expect((await stats(request, '?days=7')).totals.published).toBe(4);
         await openStatsFeeds(page);
