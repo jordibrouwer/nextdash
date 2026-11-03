@@ -4403,9 +4403,69 @@ class DashboardConfig {
      * than appended, so a field that is both declared and rendered appears
      * once — with the scrape's selector, since that one can be focused now.
      */
+    /**
+     * Things to do, not settings to change: each one goes somewhere and opens
+     * something, and never changes anything by itself (no backup is made, no
+     * check run, until the reader presses the button where it lives). They sit
+     * in the same list as the settings so one search finds both.
+     */
+    settingsJumpActionEntries() {
+        const action = (id, titleKey, title, keywords, section) => ({
+            id: `action:${id}`,
+            kind: 'action',
+            action: id,
+            title: this.t(titleKey, title),
+            subtitle: this.t('config.settingsSearchActionSub', 'Action'),
+            keywords,
+            // Where it lands, so the shared plumbing for "which section" has an
+            // answer; the action itself decides what opens.
+            section,
+            subTab: null,
+            focusSelector: null,
+        });
+        return [
+            action('add-widget', 'config.actionAddWidget', 'Add a widget', 'new tile widgets picker catalogue', 'widgets'),
+            action('theme-studio', 'config.actionThemeStudio', 'Open the theme studio', 'look colours theme designer studio', 'appearance'),
+            action('whats-new', 'config.actionWhatsNew', 'Show what’s new', 'release notes changes version news', 'overview'),
+            action('check-update', 'config.actionCheckUpdate', 'Check for an update', 'upgrade version new release', 'overview'),
+            action('backups', 'config.actionBackups', 'Make or restore a backup', 'backup restore export import data zip', 'data-backups'),
+            action('import', 'config.actionImport', 'Import bookmarks', 'import browser html csv pocket raindrop', 'data-backups'),
+        ];
+    }
+
+    /** Runs an action entry. Returns once it has handed over to where it lives. */
+    async runSettingsJumpAction(id) {
+        if (id === 'add-widget') {
+            if (this.section !== 'widgets') {
+                this.selectSection('widgets', 'keyboard');
+                if (!(await this.ensureSection('widgets')) || this.section !== 'widgets') return;
+            }
+            await new Promise((r) => requestAnimationFrame(r));
+            if (typeof this.openWidgetCatalogue === 'function') this.openWidgetCatalogue();
+            return;
+        }
+        if (id === 'theme-studio') {
+            await this.openThemeBrowser();
+            return;
+        }
+        if (id === 'whats-new') { await this.openWhatsNew(); return; }
+        if (id === 'check-update') {
+            if (this.section !== 'overview') this.selectSection('overview', 'keyboard');
+            await this.runUpdateCheck();
+            return;
+        }
+        if (id === 'backups' || id === 'import') {
+            // Whatever tab was last open there (Reset, Trash) is the wrong one.
+            this.dbTab = 'backups';
+            this.selectSection('data-backups', 'keyboard');
+            if (!(await this.ensureSection('data-backups'))) return;
+        }
+    }
+
     getSettingsJumpEntries() {
         const byId = new Map();
         this.buildSettingsJumpNavEntries().forEach((e) => byId.set(e.id, e));
+        this.settingsJumpActionEntries().forEach((e) => byId.set(e.id, e));
 
         const fieldEntries = this.settingsJumpFieldEntries();
         fieldEntries.forEach((e) => byId.set(e.id, e));
@@ -4726,6 +4786,10 @@ class DashboardConfig {
         });
         window.AppModal.hide();
         this.cleanupSettingsJumpHandler();
+        if (entry.kind === 'action') {
+            await this.runSettingsJumpAction(entry.action);
+            return;
+        }
         if (entry.section !== this.section) {
             this.selectSection(entry.section, 'keyboard');
             // A section whose script is still on its way draws when it lands
