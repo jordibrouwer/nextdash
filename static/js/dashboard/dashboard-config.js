@@ -8093,11 +8093,14 @@ class DashboardConfig {
                     return;
                 }
                 const body = document.getElementById('config-view-body');
+                // The body is replaced whole, keyboard legend and all: the legend
+                // is drawn again, or the page came back 63px shorter.
                 if (body) {
                     body.innerHTML = this.renderAppearance();
                     const container = document.getElementById('dashboard-layout');
                     if (container) {
                         this.bindAppearanceControls(container);
+                        this.bindFormKeyboardLegend(container);
                         // The fresh body carries the intro line again; lifted to
                         // the band as repaintBackupSection does, or it showed twice.
                         this._fillShellHeadFromSection(container);
@@ -14273,7 +14276,10 @@ class DashboardConfig {
             // would move the reader to a different control.
             const next = document.querySelector(`[${attr}="${CSS.escape(field)}"]`);
             if (!next) return;
-            next.focus?.();
+            // Without preventScroll the browser scrolls the control into view,
+            // which moves a reader who changed a setting somewhere else on the
+            // page: it is only the focus that is being put back.
+            next.focus?.({ preventScroll: true });
             // Text inputs keep the caret too, or typing resumes at the wrong end.
             if (selectionStart != null && next.setSelectionRange) {
                 try { next.setSelectionRange(selectionStart, selectionEnd); } catch { /* not a text input */ }
