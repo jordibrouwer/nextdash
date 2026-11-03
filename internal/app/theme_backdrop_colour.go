@@ -22,7 +22,13 @@ type backdropKit struct {
 	dark                       bool
 	px                         func(n int) string
 	tile                       func(n int) string
+	hex                        backdropHex // the theme's own colours, for the recipes drawn as an SVG
 }
+
+// backdropHex is the four colours and the ground as the theme wrote them. A gradient can say
+// var(--accent-primary); an SVG in a data: URI cannot see the page's variables, so the recipes
+// drawn as one are given the values.
+type backdropHex struct{ accent, second, warm, cool, ground string }
 
 // themeBackdropColourLayers draws a recipe. Every recipe is drawn with all four colours of the
 // theme, over a deeper ground, with two colour fields and a diagonal wash in the spots the
@@ -62,6 +68,46 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 		return themeBackdropCraquelure(k)
 	case "ribbons":
 		return themeBackdropRibbons(k)
+	case "candleglow":
+		return themeBackdropCandleGlow(k)
+	case "candyglow":
+		return themeBackdropCandyGlow(k)
+	case "cloudbank":
+		return themeBackdropCloudBank(k)
+	case "fizz":
+		return themeBackdropFizz(k)
+	case "static":
+		return themeBackdropStatic(k)
+	case "graphiteglow":
+		return themeBackdropGraphiteGlow(k)
+	case "skyline":
+		return themeBackdropSkyline(k)
+	case "marbled":
+		return themeBackdropMarbled(k)
+	case "tubes":
+		return themeBackdropTubes(k)
+	case "contrib":
+		return themeBackdropContrib(k)
+	case "pcb":
+		return themeBackdropPCB(k)
+	case "swells":
+		return themeBackdropSwells(k)
+	case "nebulabands":
+		return themeBackdropNebulaBands(k)
+	case "lightbands":
+		return themeBackdropLightBands(k)
+	case "twill":
+		return themeBackdropTwill(k)
+	case "sandripples":
+		return themeBackdropSandripples(k)
+	case "mirage":
+		return themeBackdropMirage(k)
+	case "twilight":
+		return themeBackdropTwilight(k)
+	case "minimap":
+		return themeBackdropMinimap(k)
+	case "orchidbloom":
+		return themeBackdropOrchidBloom(k)
 	}
 	if themeBackdropIsPattern(name) {
 		return themeBackdropPattern(name, k)

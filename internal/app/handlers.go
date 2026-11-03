@@ -3873,6 +3873,10 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	layers := themeBackdropColourLayers(name, backdropKit{
 		accent: accent, second: second, warm: warm, cool: cool, ground: deep,
 		veil: veil, soft: soft, blob: blob, line: line, rnd: rnd, px: px, tile: tile, dark: dark,
+		hex: backdropHex{
+			accent: backdropHexOr(firstNonEmpty(tc.AccentPrimary, tc.AccentSuccess)), second: backdropHexOr(tc.AccentError),
+			warm: backdropHexOr(tc.AccentWarning), cool: backdropHexOr(tc.AccentSuccess), ground: backdropHexOr(tc.BackgroundPrimary),
+		},
 	})
 	// Chrome keeps its grey page with one soft diagonal sheen, as it had before the colour recipes.
 	if strings.HasPrefix(themeID, "gloss-liquid-chrome") {
@@ -3901,7 +3905,7 @@ var themeBackdropRecipes = []string{
 	"dots", "rack", "digirain", "cellgrid", "bootlog", "crt",
 	"scales", "seigaiha", "diamonds", "bricks", "checker", "zigzag", "isocube", "tartan", "rays",
 	"stitch", "moire", "deco", "terrazzo", "bauhaus", "circuit", "triangles", "dotsoff", "herring", "windows", "bubbles", "petals", "bamboo", "oceanblue",
-	"louche", "planking", "orbits", "floes", "curtains", "panda", "plankton", "compass", "craquelure", "ribbons",
+	"louche", "planking", "orbits", "floes", "curtains", "panda", "plankton", "compass", "craquelure", "ribbons", "candleglow", "candyglow", "cloudbank", "fizz", "static", "graphiteglow", "skyline", "marbled", "tubes", "contrib", "pcb", "swells", "nebulabands", "lightbands", "twill", "sandripples", "mirage", "twilight", "minimap", "orchidbloom",
 }
 
 // themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the
