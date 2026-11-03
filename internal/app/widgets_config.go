@@ -195,6 +195,8 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "tags", Kind: "list"},
 		{Key: "downOnly", Kind: "bool"},
 		{Key: "sparkline", Kind: "bool"},
+		// Response time over the last day beside each row (needs timed checks).
+		{Key: "latency", Kind: "bool"},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
 	WidgetTypeCerts: {

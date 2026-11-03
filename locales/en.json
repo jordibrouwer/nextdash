@@ -7782,6 +7782,8 @@
     "widgetCountdownDateHint": "The widget’s title says what it counts to. Past the date it counts the days since.",
     "widgetCountdownTime": "Time of day (optional)",
     "widgetCountdownShowTime": "Count in hours and minutes near the end",
+    "widgetLatency": "Show the response time of the last day",
+    "widgetLatencyHint": "A small line and the latest figure beside each row that is up. Reads each row’s own history, so it is kept to the rows shown.",
     "widgetStackMembers": "Widgets in the tabs",
     "widgetStackMembersHint": "Each ticked widget becomes a tab, in page order, and leaves the grid while it is held here. Its settings stay under Widgets.",
     "widgetStackNoMembers": "Add other widgets to this page first; each becomes a tab here.",

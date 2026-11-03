@@ -44,6 +44,81 @@
         return wrap;
     }
 
+    /*
+     * Response time over the last day, for the rows that ask for it.
+     *
+     * Not part of the facts every page load carries: that payload is one
+     * letter per check and should stay so. When a tile asks for latency it
+     * reads each shown row's own history (at most twenty rows), once, and
+     * keeps the answer for five minutes. A row with no timed check in the day
+     * simply shows no line.
+     */
+    const LATENCY_KEEP_MS = 5 * 60 * 1000;
+
+    function latencyFor(dash, url) {
+        dash._widgetLatency = dash._widgetLatency || new Map();
+        const held = dash._widgetLatency.get(url);
+        // The promise is kept, not the answer: a tile that is drawn again while
+        // the history is on its way asks for the same one, not another.
+        if (held && held.until > Date.now()) return held.promise;
+        const promise = readLatency(url);
+        dash._widgetLatency.set(url, { promise, until: Date.now() + LATENCY_KEEP_MS });
+        return promise;
+    }
+
+    async function readLatency(url) {
+        let value = null;
+        try {
+            const send = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+            const res = await send(`/api/health/history?url=${encodeURIComponent(url)}`);
+            if (res.ok) {
+                const data = await res.json();
+                const since = Date.now() - 24 * 3600 * 1000;
+                const timed = (data.samples || []).filter((s) => s.t >= since && s.u && s.p > 0);
+                if (timed.length >= 2) {
+                    // 24 steps of the day, each the mean of its checks; an empty hour is skipped.
+                    const buckets = new Map();
+                    timed.forEach((s) => {
+                        const slot = Math.min(23, Math.floor((s.t - since) / (3600 * 1000)));
+                        const cell = buckets.get(slot) || { sum: 0, n: 0 };
+                        cell.sum += s.p;
+                        cell.n += 1;
+                        buckets.set(slot, cell);
+                    });
+                    const points = [...buckets.entries()].sort((a, b) => a[0] - b[0])
+                        .map(([slot, cell]) => ({ slot, ms: cell.sum / cell.n }));
+                    value = { points, last: timed[timed.length - 1].p };
+                }
+            }
+        } catch (_error) {
+            value = null;
+        }
+        return value;
+    }
+
+    /** The line itself: a small SVG, hours across and milliseconds up. */
+    function latencyLine(latency) {
+        const NS = 'http://www.w3.org/2000/svg';
+        const wrap = document.createElement('span');
+        wrap.className = 'dashboard-widget-latency';
+        const svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 48 14');
+        svg.setAttribute('aria-hidden', 'true');
+        const peak = Math.max(...latency.points.map((p) => p.ms), 1);
+        const floor = Math.min(...latency.points.map((p) => p.ms));
+        const span = Math.max(peak - floor, peak * 0.2, 1);
+        const path = document.createElementNS(NS, 'polyline');
+        path.setAttribute('points', latency.points
+            .map((p) => `${((p.slot / 23) * 46 + 1).toFixed(1)},${(12.5 - ((p.ms - floor) / span) * 11).toFixed(1)}`).join(' '));
+        path.setAttribute('class', 'dashboard-widget-latency-line');
+        svg.appendChild(path);
+        const text = document.createElement('span');
+        text.className = 'dashboard-widget-latency-last';
+        text.textContent = `${Math.round(latency.last)} ms`;
+        wrap.append(svg, text);
+        return wrap;
+    }
+
     /**
      * The rows, from whichever report is in hand.
      *
@@ -118,6 +193,7 @@
         const maxRows = Math.min(Math.max(Number(config.rows) || 5, 1), 20);
         const downOnly = config.downOnly === true;
         const wantSpark = config.sparkline !== false;
+        const wantLatency = config.latency === true;
         const tags = Array.isArray(config.tags) ? config.tags : null;
 
         let shown = rows;
@@ -209,6 +285,12 @@
             if (wantSpark && row.heartbeat?.length) {
                 button.appendChild(sparkline(row.heartbeat));
             }
+            if (wantLatency && !row.down) {
+                void latencyFor(dash, row.url).then((latency) => {
+                    // The tile may have been drawn again while the history came in.
+                    if (latency && button.isConnected) button.appendChild(latencyLine(latency));
+                });
+            }
             /*
              * A monitored row stands for a bookmark, so it carries its address.
              *
@@ -237,4 +319,5 @@
 
     window.DashboardWidgets = window.DashboardWidgets || {};
     window.DashboardWidgets.uptime = render;
+    window.DashboardWidgetUptime = { latencyFor, latencyLine };
 })();

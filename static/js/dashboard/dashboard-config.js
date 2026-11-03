@@ -17495,6 +17495,8 @@ class DashboardConfig {
         uptime: [
             { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },
             { key: 'sparkline', kind: 'bool', defaultOn: true, label: ['config.widgetSparkline', 'Show a sparkline per row'] },
+            { key: 'latency', kind: 'bool', label: ['config.widgetLatency', 'Show the response time of the last day'],
+              hint: ['config.widgetLatencyHint', 'A small line and the latest figure beside each row that is up. Reads each row’s own history, so it is kept to the rows shown.'] },
             { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
