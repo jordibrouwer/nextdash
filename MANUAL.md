@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Berry**; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
+| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Aurora Glass**; 190+ theme families in light and dark, twelve characters, 75 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 | 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
@@ -3784,7 +3784,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 ### 17.1 Themes
 
-nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Berry** — dark, with Berry (light) for auto dark mode. An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§17A](#17a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§17A.3](#17a3-everyone-gets-aurora-glass-and-the-way-back)).
+nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Aurora Glass** — dark, with Aurora Glass (light) for auto dark mode. An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§17A](#17a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§17A.3](#17a3-everyone-gets-aurora-glass-and-the-way-back)).
 
 **Theme** on the Theme tab lists every theme by name. Beside it:
 
@@ -4134,7 +4134,7 @@ The new look is drawn per material, and the themes were redrawn with it. Keeping
 
 **Aurora Glass** — northern light behind a pane you can see through — was the default theme of version 1.22.0, and that release moved every existing install onto it.
 
-- **A fresh install** started on Aurora Glass and saw nothing of what follows. A fresh install now starts on **Berry** instead, and still sees no dialog.
+- **A fresh install** starts on Aurora Glass and sees nothing of what follows: no dialog.
 - **An existing install** moved onto it **once**, when it first ran this release. It stays on the half it was on: a dark theme became Aurora Glass dark, a light one Aurora Glass light. An install that was already on Aurora Glass moved nowhere and sees no dialog.
 - **What stays.** Your bookmarks, categories, pages, settings and your own themes are exactly as you left them. Only the theme changed, and the theme you had is remembered.
 - **A dialog says so, once.** It names the theme you had and the theme you have now, tells you what changed, and ends with *This message appears once.* It comes before any corner card. The corner cards that invited you to a theme browser, to the clock and weather and to Berry are gone; Berry is no longer the default, so there is nobody to invite.

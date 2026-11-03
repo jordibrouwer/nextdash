@@ -1236,10 +1236,10 @@ const defaultFeedNewsWidgetID = "w_000000000004"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "look-berry-dark"
+const defaultThemeID = "aurora-glass-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "look-berry-light"
+const defaultThemeLightID = "aurora-glass-light"
 
 // auroraGlassThemeID and auroraGlassThemeLightID are where the one-time move of
 // v1.22.0 puts an install (migrateToAuroraGlass). They were the defaults then;
@@ -1254,7 +1254,7 @@ The fallback depth and glow.
 
 Glass and a soft glow: the answer for a theme with no archetype of its own
 (themeIdealDepth, themeIdealGlow), and what an incomplete settings file gets.
-A fresh install itself is on "follow", so its theme answers -- Berry, a
+A fresh install itself is on "follow", so its theme answers -- Slate, a
 glass theme, draws at glass with a soft glow. Contrast
 stays at defaultInkGap, which reads as Normal in Appearance, and the backdrop
 is the theme's own.
