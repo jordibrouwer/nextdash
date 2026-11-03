@@ -13364,6 +13364,9 @@ class DashboardConfig {
         if (this.dash.settings?.enableSessionTips === false) return;
         this._monitoringTutorialAsked = true;
         if (!(await this.loadMonitoringTour())) return;
+        // The script came in while the reader moved on: a tour for a section
+        // that is no longer on screen would open over another one.
+        if (this.section !== 'monitoring' || !this.isActiveView()) { this._monitoringTutorialAsked = false; return; }
         window.MonitoringTutorial?.maybeShow?.();
     }
 
@@ -13398,6 +13401,9 @@ class DashboardConfig {
         if (this.dash.settings?.enableSessionTips === false) return;
         this._unraidTutorialAsked = true;
         if (!(await this.loadUnraidTour())) return;
+        // The script came in while the reader moved on: a tour for a section
+        // that is no longer on screen would open over another one.
+        if (this.section !== 'unraid' || !this.isActiveView()) { this._unraidTutorialAsked = false; return; }
         window.UnraidTutorial?.maybeShow?.();
     }
 
@@ -13432,6 +13438,9 @@ class DashboardConfig {
         if (this.dash.settings?.enableSessionTips === false) return;
         this._assistantTutorialAsked = true;
         if (!(await this.loadAssistantTour())) return;
+        // The script came in while the reader moved on: a tour for a section
+        // that is no longer on screen would open over another one.
+        if (this.section !== 'assistant' || !this.isActiveView()) { this._assistantTutorialAsked = false; return; }
         window.AssistantTutorial?.maybeShow?.();
     }
 

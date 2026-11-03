@@ -3738,6 +3738,9 @@
         if (this.dash.settings?.enableSessionTips === false) return;
         this._widgetsTutorialAsked = true;
         if (!(await this.loadWidgetsTour())) return;
+        // The script came in while the reader moved on: a tour for a section
+        // that is no longer on screen would open over another one.
+        if (this.section !== 'widgets' || !this.isActiveView()) { this._widgetsTutorialAsked = false; return; }
         window.WidgetsTutorial?.maybeShow?.();
     },
 
