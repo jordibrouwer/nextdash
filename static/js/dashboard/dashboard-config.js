@@ -5202,13 +5202,6 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${intro}</p>
-            ${(() => {
-                // Its own element: the band copies the intro's text and drops
-                // the paragraph, and a button inside it went with it.
-                const n = this.changedSettings().length;
-                return n ? `<p class="config-view-changed"><button type="button" class="config-link-btn" data-overview-action="changed">${esc(
-                    this.t('config.overviewChanged', '{n} settings changed from the defaults →').replace('{n}', String(n)))}</button></p>` : '';
-            })()}
             ${this.renderOverviewUpdateNotice()}
             ${this.renderOverviewAttentionLine()}
             <div class="config-overview-grid">
@@ -5221,6 +5214,7 @@ class DashboardConfig {
                         ${this.renderOverviewHealthWidget()}
                         ${this.renderOverviewDigestWidget()}
                         ${this.renderOverviewStatsWidget()}
+                        ${this.renderOverviewSettingsWidget()}
                         ${this.renderOverviewFeaturesBanner()}
                     </div>
                 </div>
@@ -5513,6 +5507,36 @@ class DashboardConfig {
      * The score keeps its heaviest deduction as the reason: a number without
      * its biggest cause is a verdict the reader cannot act on.
      */
+    /**
+     * How far this install has moved from the defaults, as a panel like the
+     * others: the figure, where the changes are, and a way into the full list.
+     * Nothing to read when nothing has moved, which is also a fact worth stating.
+     */
+    renderOverviewSettingsWidget() {
+        const changed = this.changedSettings();
+        const bySection = new Map();
+        changed.forEach((entry) => {
+            const name = this.sectionLabel(entry.section);
+            bySection.set(name, (bySection.get(name) || 0) + 1);
+        });
+        const rows = [...bySection.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+        return this.renderOverviewWidget({
+            id: 'settings',
+            title: this.t('config.overviewSettingsTitle', 'Settings'),
+            go: changed.length ? { changed: true } : null,
+            goLabel: this.t('config.overviewSettingsList', 'What changed'),
+            body: this.renderOverviewFigure(
+                changed.length,
+                changed.length === 1
+                    ? this.t('config.overviewSettingsOne', 'setting changed from the default')
+                    : this.t('config.overviewSettingsMany', 'settings changed from the defaults'))
+                + (rows.length ? this.renderOverviewRows(rows) : ''),
+            note: this.dash.escapeHtml(changed.length
+                ? ''
+                : this.t('config.overviewSettingsNone', 'Everything is as it came out of the box.')),
+        });
+    }
+
     renderOverviewStatsWidget() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.computeStats();
@@ -6380,10 +6404,6 @@ class DashboardConfig {
                 this.handleOverviewGo(go);
                 return;
             }
-            if (e.target.closest('[data-overview-action="changed"]')) {
-                this.openChangedSettings();
-                return;
-            }
             if (e.target.closest('[data-overview-action="whats-new"]')) {
                 void this.openWhatsNew();
                 return;
@@ -6417,6 +6437,11 @@ class DashboardConfig {
             return;
         }
         // Edit mode lives on the dashboard: leave Config and switch it on.
+        // The list of what was changed from the defaults.
+        if (target.changed) {
+            this.openChangedSettings();
+            return;
+        }
         if (target.editMode) {
             this.closeConfigView();
             window.dashboardInstance?.editMode?.enter?.();

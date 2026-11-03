@@ -89,7 +89,7 @@ test.describe('What you changed', () => {
         await expect(page.locator('.config-changed-modal [data-changed-copy]')).toBeVisible();
     });
 
-    test('the Overview link opens the list', async ({ page }) => {
+    test('the Overview panel opens the list', async ({ page }) => {
         await openConfig(page);
         await page.evaluate(() => {
             const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
@@ -97,9 +97,11 @@ test.describe('What you changed', () => {
             window.dashboardInstance.settings[entry.field] = !c.fieldMeta(entry.field).def;
             c.repaintOverview();
         });
-        const link = page.locator('[data-overview-action="changed"]');
-        await expect(link).toBeVisible();
-        await link.click();
+        // A panel among the others, with the figure and a way in.
+        const panel = page.locator('.config-widget--settings');
+        await expect(panel).toBeVisible();
+        await expect(panel.locator('.config-widget-value')).not.toHaveText('0');
+        await panel.locator('[data-overview-go]').click();
         await expect(page.locator('.config-changed-modal [data-changed-index]').first()).toBeVisible({ timeout: 10_000 });
     });
 
