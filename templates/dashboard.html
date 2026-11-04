@@ -130,6 +130,7 @@
     <link rel="stylesheet" href="{{asset "css/feed-row.css"}}">
     <link rel="stylesheet" href="{{asset "css/feed-watch.css"}}">
     <link rel="stylesheet" href="{{asset "css/notification-bell.css"}}">
+    <link rel="stylesheet" href="{{asset "css/coach-note.css"}}">
     <link rel="stylesheet" href="{{asset "css/changes-tour.css"}}">
     <link rel="stylesheet" href="{{asset "css/digest.css"}}">
     <link rel="stylesheet" href="{{asset "css/edit-mode.css"}}">
@@ -638,7 +639,11 @@
     <script src="{{asset "js/dashboard-quickstart.js"}}" defer></script>
     <!-- The notifications bell and its registry: sources register against it, so it loads before them. -->
     <script src="{{asset "js/notification-bell-model.js"}}" defer></script>
+    <!-- One-time coach notes (the bell's, the action bar's); before the bell, which defines one. -->
+    <script src="{{asset "js/coach-note.js"}}" defer></script>
     <script src="{{asset "js/notification-bell.js"}}" defer></script>
+    <!-- After the bell: its note waits for the bell's to go. -->
+    <script src="{{asset "js/action-bar-intro.js"}}" defer></script>
     <script src="{{asset "js/health-bell-source.js"}}" defer></script>
     <!-- Shared bottom-left notice card; must precede the cards that define one. -->
     <script src="{{asset "js/notice-card.js"}}" defer></script>

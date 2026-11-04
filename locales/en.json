@@ -11443,8 +11443,16 @@
     "toolCreateCategory": "Create a category",
     "toolRenameCategory": "Rename a category"
   },
+  "coachNote": {
+    "actionBarTitle": "Your action bar",
+    "actionBarBody": "Everything you can do here, one click away: add a bookmark, search, commands, edit mode and the look. Hover a button for its name and key; Config → Appearance → Action bar moves it or hides it.",
+    "ok": "Got it"
+  },
   "bell": {
     "title": "Notifications",
+    "introTitle": "Your notifications",
+    "introBody": "New things that need you land here: tips, clean-ups and updates. Read them now and then; they no longer pop up on the dashboard.",
+    "introOk": "Got it",
     "markAllRead": "Mark all read",
     "more": "More below",
     "no": "No",

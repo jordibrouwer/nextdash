@@ -90,6 +90,12 @@ async function markWhatsNewSeen(page, options = {}) {
             // health-check-mode and dashboard-retry-label each found it instead
             // of their own message.
             localStorage.setItem('nextdash:search-mode-key-announced', rel);
+            // The one-time note that points at the notifications bell: it sits
+            // over the top-right corner, where many tests click.
+            localStorage.setItem('nextdash:bell-intro-seen', '1');
+            // Likewise the note that introduces the action bar: it stands over
+            // the bar's edge or the header, where many tests click.
+            localStorage.setItem('nextdash:action-bar-intro-seen', '1');
             if (confirmCheatsheet) {
                 localStorage.setItem('nextdash:dashboard-cheatsheet-promo-confirmed-v1', '1');
             }

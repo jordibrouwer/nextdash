@@ -62,6 +62,8 @@ const row = (page, id) => page.locator(`.notification-bell-row[data-bell-id="${i
 async function openPanel(page) {
     await page.locator('.notification-bell-button').click();
     await expect(page.locator('.notification-bell-panel')).toBeVisible();
+    // Measured once it has grown out of the bell.
+    await expect(page.locator('.notification-bell-panel')).not.toHaveClass(/is-growing/);
     // Under the bell and fully on screen, not clipped by the header.
     const box = await page.locator('.notification-bell-panel').boundingBox();
     const bell = await page.locator('.notification-bell-button').boundingBox();
@@ -389,6 +391,20 @@ test('a refresh that finds more unread shakes, pulses and rings; the same or few
     await setState(page, 'probe-state', null);
     await refresh(page); // lower
     expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
+
+    // The same row back, unchanged (a view switch, a source that blinks):
+    // not new, so no second ring.
+    await page.waitForTimeout(1200);
+    await setState(page, 'probe-state', { count: 1, text: 'new row' });
+    await refresh(page);
+    expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
+
+    // Switching views and back refreshes without ringing.
+    await page.evaluate(() => { window.dashboardInstance.activeView = 'docker'; });
+    await refresh(page);
+    await page.evaluate(() => { window.dashboardInstance.activeView = 'bookmarks'; });
+    await refresh(page);
+    expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
 });
 
 test('with bellSound off the bell still moves but stays silent', async ({ page }) => {
@@ -511,15 +527,21 @@ test('the bell reports its use as `bell` events with fixed words only', async ({
     expect(['shake', 'pulse', 'none']).toContain(got[0].props.after);
 
     const actions = page.locator('.notification-bell-row[data-bell-id="probe-actions"] .notification-bell-action');
-    await actions.nth(0).click();
+    // Secondary buttons first: the primary one closes the panel.
     await actions.nth(1).click();
     await actions.nth(2).click();
+    await actions.nth(0).click();
+    await expect(page.locator('.notification-bell-panel')).toBeHidden();
     got = await take();
     expect(got.map((g) => g.props)).toEqual([
-        { action: 'row-action', source: 'probe-actions', name: 'primary' },
         { action: 'row-action', source: 'probe-actions', name: 'secondary-1' },
         { action: 'row-action', source: 'probe-actions', name: 'named' },
+        { action: 'row-action', source: 'probe-actions', name: 'primary' },
+        { action: 'close', via: 'action' },
     ]);
+    await page.locator('.notification-bell-button').click();
+    await expect(page.locator('.notification-bell-panel')).not.toHaveClass(/is-growing/);
+    await take();
 
     await page.locator('.notification-bell-more').click();
     expect((await take()).map((g) => g.props)).toEqual([{ action: 'more' }]);
@@ -548,4 +570,191 @@ test('the bell reports its use as `bell` events with fixed words only', async ({
     expect((await take()).map((g) => g.props)).toEqual([{ action: 'close', via: 'escape' }]);
 
     expect(JSON.stringify(got)).not.toContain('Secret');
+});
+
+test('the mouse leaving the bell and its panel for a second closes it; coming back in time keeps it', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+        window.__tracks = [];
+        window.nextdashTrack = (name, props) => window.__tracks.push({ name, props });
+    });
+    const panel = page.locator('.notification-bell-panel');
+    const away = { x: 5, y: 400 };
+
+    // Back within the second: still open.
+    await page.locator('.notification-bell-button').click();
+    await expect(panel).toBeVisible();
+    await page.mouse.move(away.x, away.y);
+    await page.waitForTimeout(400);
+    await page.locator('.notification-bell-button').hover();
+    await page.waitForTimeout(1000);
+    await expect(panel).toBeVisible();
+
+    // Away for longer than a second: closed, and counted as a close by leaving.
+    await page.mouse.move(away.x, away.y);
+    await page.waitForTimeout(1300);
+    await expect(panel).toBeHidden();
+    const closes = await page.evaluate(() => window.__tracks.filter((e) => e.props?.action === 'close').map((e) => e.props));
+    expect(closes).toEqual([{ action: 'close', via: 'leave' }]);
+});
+
+test('a panel opened from the keyboard does not close because the mouse is elsewhere', async ({ page }) => {
+    await loadDashboard(page);
+    await page.mouse.move(5, 400);
+    await page.locator('.notification-bell-button').focus();
+    await page.keyboard.press('Enter');
+    const panel = page.locator('.notification-bell-panel');
+    await expect(panel).toBeVisible();
+    await page.waitForTimeout(1300);
+    await expect(panel).toBeVisible();
+});
+
+test('the panel grows out of the bell and shrinks back into it', async ({ page }) => {
+    await loadDashboard(page);
+    const panel = page.locator('.notification-bell-panel');
+    await page.locator('.notification-bell-button').click();
+    await expect(panel).toHaveClass(/is-growing/);
+    // Its own animation, not a theme's overlay fade winning over it.
+    expect(await panel.evaluate((p) => getComputedStyle(p).animationName)).toBe('notification-bell-grow');
+    const origin = await panel.evaluate((p) => p.style.transformOrigin);
+    // The origin is the bell's centre: right of the panel's middle, above its top.
+    const [ox, oy] = origin.split(' ').map((v) => parseFloat(v));
+    const width = await panel.evaluate((p) => p.offsetWidth);
+    expect(ox).toBeGreaterThan(width / 2);
+    expect(oy).toBeLessThan(0);
+    await expect(panel).not.toHaveClass(/is-growing/);
+
+    await page.locator('.notification-bell-button').click();
+    await expect(panel).toHaveClass(/is-shrinking/);
+    expect(await panel.evaluate((p) => getComputedStyle(p).animationName)).toBe('notification-bell-shrink');
+    await expect(panel).toBeHidden();
+    await expect(panel).not.toHaveClass(/is-shrinking/);
+
+    // Opened again in the middle of shrinking: it stays open.
+    await page.locator('.notification-bell-button').click();
+    await expect(panel).not.toHaveClass(/is-growing/);
+    await page.locator('.notification-bell-button').click();
+    await expect(panel).toHaveClass(/is-shrinking/);
+    await page.locator('.notification-bell-button').click();
+    await page.waitForTimeout(400);
+    await expect(panel).toBeVisible();
+    await expect(panel).not.toHaveClass(/is-shrinking/);
+});
+
+test('a short hover opens the bell, and a click right after it keeps it open', async ({ page }) => {
+    await loadDashboard(page);
+    const panel = page.locator('.notification-bell-panel');
+    await page.mouse.move(5, 400);
+    await page.locator('.notification-bell-button').hover();
+    await expect(panel).toBeVisible({ timeout: 2000 });
+    // The click the person meant to give anyway: it must not close it again.
+    await page.locator('.notification-bell-button').click();
+    await page.waitForTimeout(400);
+    await expect(panel).toBeVisible();
+    await expect(panel).not.toHaveClass(/is-shrinking/);
+    // A later click still closes it.
+    await page.waitForTimeout(800);
+    await page.locator('.notification-bell-button').click();
+    await expect(panel).toBeHidden();
+});
+
+test('passing over the bell quickly does not open it', async ({ page }) => {
+    await loadDashboard(page);
+    const panel = page.locator('.notification-bell-panel');
+    await page.mouse.move(5, 400);
+    await page.locator('.notification-bell-button').hover();
+    await page.mouse.move(5, 400);
+    await page.waitForTimeout(600);
+    await expect(panel).toBeHidden();
+});
+
+test.describe('the one-time note under the bell', () => {
+    async function freshBrowser(page) {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            localStorage.removeItem('nextdash:bell-intro-seen');
+            window.DiscoverabilityState.resetSettingPromoSeen('bell-intro', { persist: false });
+        });
+        // The test setup marks the note seen before every load (it covers the
+        // corner other tests click in), so ask for it again as a fresh install would.
+        await page.evaluate(() => {
+            window.DiscoverabilityState.schedulePersist = () => {};
+            window.NotificationBell.scheduleIntro();
+        });
+    }
+    const intro = (page) => page.locator('.coach-note[data-coach-note="bell-intro"]');
+
+    test('shows once after onboarding, points at the bell, and Got it puts it away for good', async ({ page }) => {
+        await freshBrowser(page);
+        await expect(intro(page)).toBeVisible({ timeout: 8000 });
+        await expect(intro(page)).toContainText('Your notifications');
+        await expect(page.locator('.notification-bell-button')).toHaveClass(/coach-note-anchor-ring/);
+        const [ib, bb] = [await intro(page).boundingBox(), await page.locator('.notification-bell-button').boundingBox()];
+        expect(ib.y).toBeGreaterThan(bb.y + bb.height);
+        // The arrow sits under the bell's centre.
+        await expect(intro(page)).toHaveClass(/is-placed/);
+        await page.waitForTimeout(400);
+        const arrowX = await intro(page).evaluate((n) => {
+            const r = n.getBoundingClientRect();
+            return r.left + parseFloat(getComputedStyle(n).getPropertyValue('--coach-arrow'));
+        });
+        expect(Math.abs(arrowX - (bb.x + bb.width / 2))).toBeLessThan(4);
+        await intro(page).getByRole('button', { name: 'Got it' }).click();
+        await expect(intro(page)).toHaveCount(0);
+        await expect(page.locator('.notification-bell-button')).not.toHaveClass(/coach-note-anchor-ring/);
+        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('bell-intro'))).toBe(true);
+    });
+
+    test('opening the bell also counts as seen', async ({ page }) => {
+        await freshBrowser(page);
+        await expect(intro(page)).toBeVisible({ timeout: 8000 });
+        await page.evaluate(() => window.NotificationBell.open());
+        await expect(intro(page)).toHaveCount(0);
+        expect(await page.evaluate(() => localStorage.getItem('nextdash:bell-intro-seen'))).toBe('1');
+    });
+
+    test('waits while onboarding is not done', async ({ page }) => {
+        await freshBrowser(page);
+        await page.evaluate(() => { window.dashboardInstance.settings.onboardingCompleted = false; });
+        await page.waitForTimeout(5000);
+        await expect(intro(page)).toHaveCount(0);
+        await page.evaluate(() => { window.dashboardInstance.settings.onboardingCompleted = true; });
+        await expect(intro(page)).toBeVisible({ timeout: 6000 });
+    });
+});
+
+test('the coloured answer slides its row away, the rows below move up, then the panel shrinks and the action runs', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+        window.__ran = [];
+        ['probe-answer', 'probe-below'].forEach((id) => window.NotificationBell.register({
+            id, group: 'system', kind: 'quiet', icon: '*', no: 'state',
+            actions: [
+                { label: 'Go there', primary: true, onClick: () => {
+                    window.__ran.push({ id, panelOpen: !document.querySelector('.notification-bell-panel').hidden
+                        && !document.querySelector('.notification-bell-panel').classList.contains('is-shrinking') });
+                } },
+                { label: 'Other', onClick: () => window.__ran.push({ id, other: true }) },
+            ],
+            state: async () => ({ count: 1, text: `row ${id}` }),
+        }));
+    });
+    await refresh(page);
+    await openPanel(page);
+    const panel = page.locator('.notification-bell-panel');
+
+    // A plain button does not close anything.
+    await row(page, 'probe-answer').getByRole('button', { name: 'Other' }).click();
+    await page.waitForTimeout(300);
+    await expect(panel).toBeVisible();
+
+    const belowBefore = (await row(page, 'probe-below').boundingBox()).y;
+    await row(page, 'probe-answer').getByRole('button', { name: 'Go there' }).click();
+    // The row slides away and the next one moves up, while the panel is still open.
+    await expect.poll(async () => (await row(page, 'probe-below').boundingBox())?.y ?? 0, { timeout: 2000 }).toBeLessThan(belowBefore - 5);
+    expect(await page.evaluate(() => window.__ran.filter((r) => !r.other).length)).toBe(0);
+    // Then the panel shrinks, and the action runs once it is on its way out.
+    await expect(panel).toBeHidden();
+    const ran = await page.evaluate(() => window.__ran.filter((r) => !r.other));
+    expect(ran).toEqual([{ id: 'probe-answer', panelOpen: false }]);
 });

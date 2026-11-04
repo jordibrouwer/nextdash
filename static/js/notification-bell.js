@@ -193,18 +193,37 @@
     }
 
     /** Called after every full refresh with what is unread now. */
+    /*
+     * What the bell has already announced, as one key per unread row and its
+     * state (id, count, ids). Only a key it has not seen before shakes the bell
+     * and rings: a row that drops out and comes back unchanged — a source whose
+     * state depends on the view, a view switch that refreshes everything — is
+     * not new. The first refresh after load fills it silently (it shakes, as
+     * agreed, but never rings).
+     */
+    let announced = null;
+
+    function rowKey(r) {
+        return `${r.source.id}|${r.entry.count}|${(r.entry.ids || []).join(',')}`;
+    }
+
     function noticeUnread(unread) {
-        const before = lastUnread;
         lastUnread = unread;
-        if (unread <= 0) return;
-        if (before === null) {
-            shake();
-            pulse();
-        } else if (unread > before) {
-            shake();
-            pulse();
-            if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound();
+        const keys = rows().filter((r) => r.visible && r.unread && (r.kind === 'urgent' || r.kind === 'quiet' || r.kind === 'tip')).map(rowKey);
+        if (announced === null) {
+            announced = new Set(keys);
+            if (unread > 0) {
+                shake();
+                pulse();
+            }
+            return;
         }
+        const fresh = keys.filter((k) => !announced.has(k));
+        keys.forEach((k) => announced.add(k));
+        if (!fresh.length) return;
+        shake();
+        pulse();
+        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound();
     }
 
     function remind() {
@@ -225,7 +244,9 @@
 
     function changed() {
         updateBadges();
-        if (isOpen) renderPanel();
+        // Also while closed or closing: a row that was answered must not wait,
+        // stale, in a hidden panel until the next open.
+        renderPanel();
     }
 
     function answerNo(row) {
@@ -259,6 +280,26 @@
         changed();
     }
 
+    /** Slide a row out to the right, then fold its height so the rows below move up. */
+    async function leaveRow(li) {
+        const still = global.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+            || document.body.classList.contains('no-animations');
+        if (still || typeof li.animate !== 'function') return;
+        try {
+            await li.animate(
+                [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(110%)', opacity: 0 }],
+                { duration: 220, easing: 'ease-in', fill: 'forwards' },
+            ).finished;
+            const h = li.getBoundingClientRect().height;
+            li.style.overflow = 'hidden';
+            await li.animate(
+                [{ height: `${h}px`, marginTop: getComputedStyle(li).marginTop, paddingTop: getComputedStyle(li).paddingTop, paddingBottom: getComputedStyle(li).paddingBottom },
+                    { height: '0px', marginTop: '0px', paddingTop: '0px', paddingBottom: '0px' }],
+                { duration: 180, easing: 'ease-out', fill: 'forwards' },
+            ).finished;
+        } catch { /* an interrupted animation still ends in the close */ }
+    }
+
     function renderRow(row) {
         const { source, entry } = row;
         const li = el('li', 'notification-bell-row');
@@ -282,8 +323,17 @@
             b.addEventListener('click', () => {
                 track({ action: 'row-action', source: source.id, name: action.name || (action.primary ? 'primary' : `secondary-${index}`) });
                 if (action.marksRead) writeRead(row);
-                try { action.onClick(row); } catch (err) { console.warn('bell action failed', err); }
-                changed();
+                const run = () => {
+                    try { action.onClick(row); } catch (err) { console.warn('bell action failed', err); }
+                    changed();
+                };
+                if (!action.primary) { run(); return; }
+                // The coloured answer takes the person somewhere. First the row
+                // slides away and the rows below close the gap, then the panel
+                // shrinks into the bell, and only then the action runs, so its
+                // destination does not open under a panel still on its way out.
+                li.querySelectorAll('button').forEach((btn) => { btn.disabled = true; });
+                void leaveRow(li).then(() => { close('action'); run(); });
             });
             actions.appendChild(b);
         });
@@ -381,24 +431,76 @@
         if (!panel || isOpen) return;
         isOpen = true;
         looked = true;
+        global.CoachNote?.dismiss(INTRO_ID, 'open');
         const { red, grey } = counts();
         const recent = lastAnim.kind !== 'none' && Date.now() - lastAnim.at <= 60 * 1000;
         track({ action: 'open', total: red + grey, rows: rows().filter((r) => r.visible).length, after: recent ? lastAnim.kind : 'none' });
         renderPanel();
+        cancelShrink();
         panel.hidden = false;
         keepOnScreen();
         updateMore();
+        animatePanel('is-growing');
         button.setAttribute('aria-expanded', 'true');
+    }
+
+    /*
+     * The panel grows out of the bell and shrinks back into it. The origin is
+     * the bell's centre in the panel's own coordinates, measured after
+     * keepOnScreen() placed it and before the scale changes its box.
+     */
+    let shrinkTimer = null;
+
+    function growOrigin() {
+        const p = panel.getBoundingClientRect();
+        const b = button.getBoundingClientRect();
+        panel.style.transformOrigin = `${Math.round(b.left + b.width / 2 - p.left)}px ${Math.round(b.top + b.height / 2 - p.top)}px`;
+    }
+
+    function animatePanel(className) {
+        panel.classList.remove('is-growing', 'is-shrinking');
+        growOrigin();
+        void panel.offsetWidth; // start the animation over
+        panel.classList.add(className);
+    }
+
+    function cancelShrink() {
+        clearTimeout(shrinkTimer);
+        shrinkTimer = null;
+        panel.classList.remove('is-shrinking');
+    }
+
+    function finishShrink() {
+        if (isOpen) return;
+        cancelShrink();
+        panel.hidden = true;
     }
 
     window.addEventListener('resize', () => { if (isOpen) { keepOnScreen(); updateMore(); } });
 
+    /*
+     * A mouse that leaves the bell and its panel for a second closes the panel:
+     * it was a glance, and the panel should not sit over the dashboard after
+     * it. Coming back within the second keeps it open; touch and keyboard
+     * never start the countdown.
+     */
+    const LEAVE_CLOSE_MS = 1000;
+    let leaveTimer = null;
+
+    function cancelLeave() {
+        clearTimeout(leaveTimer);
+        leaveTimer = null;
+    }
+
     function close(via) {
+        cancelLeave();
         if (!panel || !isOpen) return;
         if (typeof via === 'string') track({ action: 'close', via });
         isOpen = false;
-        panel.hidden = true;
         button.setAttribute('aria-expanded', 'false');
+        animatePanel('is-shrinking');
+        // animationend hides it; the timer is the fallback when no animation runs.
+        shrinkTimer = setTimeout(finishShrink, 260);
     }
 
     async function refreshOne(rec) {
@@ -460,21 +562,87 @@
         [redEl, greyEl].forEach((badge) => badge.addEventListener('animationend', (event) => {
             if (event.target === badge) badge.classList.remove('is-pulsing');
         }));
-        button.addEventListener('click', () => (isOpen ? close('button') : open()));
+        /*
+         * A short hover over the bell opens it. Someone who meant to click
+         * often clicks just after it opened; that click must not close it
+         * again, so a click right after a hover-open leaves it open.
+         */
+        const HOVER_OPEN_MS = 300;
+        const CLICK_GRACE_MS = 1000;
+        let hoverTimer = null;
+        let hoverOpenedAt = 0;
+        button.addEventListener('pointerenter', (event) => {
+            if (event.pointerType !== 'mouse' || isOpen) return;
+            clearTimeout(hoverTimer);
+            hoverTimer = setTimeout(() => {
+                if (isOpen) return;
+                open();
+                hoverOpenedAt = Date.now();
+            }, HOVER_OPEN_MS);
+        });
+        button.addEventListener('pointerleave', () => clearTimeout(hoverTimer));
+        button.addEventListener('click', () => {
+            clearTimeout(hoverTimer);
+            if (isOpen && Date.now() - hoverOpenedAt < CLICK_GRACE_MS) {
+                hoverOpenedAt = 0;
+                return;
+            }
+            hoverOpenedAt = 0;
+            if (isOpen) close('button');
+            else open();
+        });
         host.appendChild(button);
 
         panel = el('div', 'notification-bell-panel');
         panel.setAttribute('role', 'dialog');
         panel.setAttribute('aria-label', t('title', 'Notifications'));
         panel.hidden = true;
+        panel.addEventListener('animationend', (event) => {
+            if (event.target !== panel) return;
+            if (event.animationName === 'notification-bell-shrink') finishShrink();
+            else panel.classList.remove('is-growing');
+        });
         host.appendChild(panel);
 
         document.addEventListener('pointerdown', (event) => {
             if (isOpen && !host.contains(event.target)) close('outside');
         });
+        host.addEventListener('pointerleave', (event) => {
+            if (!isOpen || event.pointerType !== 'mouse') return;
+            cancelLeave();
+            leaveTimer = setTimeout(() => close('leave'), LEAVE_CLOSE_MS);
+        });
+        host.addEventListener('pointerenter', cancelLeave);
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && isOpen) { close('escape'); button.focus(); }
         });
+    }
+
+    /*
+     * The first time the bell is drawn, after an install (once the start guide
+     * is done) or an update: a balloon under it that says this is where things
+     * that need you arrive, and that they no longer pop up. It is a coach note
+     * (coach-note.js), which keeps it to once, ever, waits until no start
+     * guide, What's New or other modal is open, and pulses the bell while it
+     * shows. "Got it", opening the bell, or Escape put it away.
+     */
+    const INTRO_ID = 'bell-intro';
+
+    function defineIntro() {
+        global.CoachNote?.define({
+            id: INTRO_ID,
+            localKey: 'nextdash:bell-intro-seen',
+            anchor: () => button,
+            title: () => t('introTitle', 'Your notifications'),
+            body: () => t('introBody', 'New things that need you land here: tips, clean-ups and updates. Read them now and then; they no longer pop up on the dashboard.'),
+            okLabel: () => t('introOk', 'Got it'),
+            onShown: () => track({ action: 'intro', via: 'shown' }),
+            onDone: (via) => track({ action: 'intro', via }),
+        });
+    }
+
+    function scheduleIntro() {
+        global.CoachNote?.schedule(INTRO_ID);
     }
 
     function startTimers() {
@@ -489,9 +657,11 @@
         build();
         updateBadges();
         startTimers();
+        defineIntro();
+        scheduleIntro();
     }
 
-    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, counts, playSound };
+    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, counts, playSound, scheduleIntro };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

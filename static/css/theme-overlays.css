@@ -638,7 +638,10 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     }
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .notification-bell-panel, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
+/* The notifications bell panel is left out here: it grows out of the bell
+   (notification-bell.css), and this rule would win over that. The
+   no-animations and effects-off rules below still stop it. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
     animation: ovIn calc(var(--ov-ease-in) * var(--enter-scale, 0.5) / 0.5) ease-out both;
 }
 

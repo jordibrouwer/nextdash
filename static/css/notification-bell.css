@@ -177,3 +177,25 @@
     0% { transform: scale(1); opacity: 0.7; }
     100% { transform: scale(2.2); opacity: 0; }
 }
+
+/* Opening grows the panel out of the bell; closing shrinks it back in. The
+   origin is set from script to the bell's centre, wherever keepOnScreen()
+   moved the panel. Reduced motion is handled by reduced-motion.css. */
+.notification-bell-panel.is-growing {
+    animation: notification-bell-grow 180ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+
+.notification-bell-panel.is-shrinking {
+    animation: notification-bell-shrink 140ms ease-in both;
+    pointer-events: none;
+}
+
+@keyframes notification-bell-grow {
+    from { opacity: 0; transform: scale(0.08); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes notification-bell-shrink {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.08); }
+}
