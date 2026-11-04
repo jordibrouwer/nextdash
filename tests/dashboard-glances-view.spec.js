@@ -1800,12 +1800,13 @@ test.describe('Glances page: names, focus and contrast', () => {
             for (const id of SECTIONS) {
                 await openView(page, `#glances/${id}`);
                 if (theme) await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
-                // The theme attribute has no event to wait on; its repaint takes a frame or two.
-                await page.waitForTimeout(400);
                 // The view rises in on arrival; text is read once it has settled.
                 await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/);
-                const result = await audit(page);
-                expect(result, `section ${id}`).toEqual({ unnamed: [], hiddenFocusable: [], weak: [] });
+                // The theme attribute has no event to wait on, and its colours
+                // ease over from the last theme: read until they have arrived.
+                // Polled, not slept: 400 ms caught them mid-way on a slow runner.
+                await expect.poll(() => audit(page), { message: `section ${id}`, timeout: 5_000 })
+                    .toEqual({ unnamed: [], hiddenFocusable: [], weak: [] });
             }
         });
     }
