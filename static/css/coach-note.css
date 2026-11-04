@@ -122,3 +122,46 @@
     outline: 2px solid var(--accent-primary);
     outline-offset: 4px;
 }
+
+/* A note that asks for one short text (the name to greet by). */
+.coach-note-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 0.6rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.45rem);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.coach-note-input:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
+.coach-note-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.coach-note-actions .coach-note-ok {
+    margin-left: 0;
+}
+
+.coach-note-skip {
+    padding: 0.3rem 0.8rem;
+    border: 0;
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.coach-note-skip:hover {
+    color: var(--text-primary);
+}

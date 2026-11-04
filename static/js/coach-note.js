@@ -175,15 +175,45 @@
         const title = el('p', 'coach-note-title', text(def, 'title', ''));
         title.id = titleId;
         const body = el('p', 'coach-note-body', text(def, 'body', ''));
-        const ok = el('button', 'coach-note-ok', text(def, 'okLabel', 'Got it'));
-        ok.type = 'button';
-        ok.addEventListener('click', () => dismiss(def.id, 'ok'));
-        node.append(title, body, ok);
+        let field = null;
+        if (def.input) {
+            // A note that asks for one short text: the field, then "Not now" and "Save".
+            field = el('input', 'coach-note-input');
+            field.type = 'text';
+            field.maxLength = def.input.maxLength || 40;
+            field.placeholder = text(def.input, 'placeholder', '');
+            field.setAttribute('aria-label', text(def.input, 'label', text(def, 'title', '')));
+            field.autocomplete = 'off';
+            const row = el('div', 'coach-note-actions');
+            const skip = el('button', 'coach-note-skip', text(def, 'skipLabel', 'Not now'));
+            skip.type = 'button';
+            skip.addEventListener('click', () => dismiss(def.id, 'skip'));
+            const save = el('button', 'coach-note-ok', text(def, 'okLabel', 'Save'));
+            save.type = 'button';
+            const submit = () => {
+                const value = field.value.trim();
+                if (!value) { field.focus({ preventScroll: true }); return; }
+                try { def.onSubmit?.(value); } catch { /* a note's own save never breaks it */ }
+                dismiss(def.id, 'save');
+            };
+            save.addEventListener('click', submit);
+            field.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') { event.preventDefault(); submit(); }
+            });
+            row.append(skip, save);
+            node.append(title, body, field, row);
+        } else {
+            const ok = el('button', 'coach-note-ok', text(def, 'okLabel', 'Got it'));
+            ok.type = 'button';
+            ok.addEventListener('click', () => dismiss(def.id, 'ok'));
+            node.append(title, body, ok);
+        }
         document.body.appendChild(node);
         active = { id: def.id, def, node, anchor: null };
         // Measured while hidden, then shown and grown.
         place(active);
         node.classList.add('is-placed');
+        if (field) field.focus({ preventScroll: true });
         try { def.onShown?.(); } catch { /* a note's analytics never break it */ }
         followTimer = setInterval(schedulePlace, 500);
     }
