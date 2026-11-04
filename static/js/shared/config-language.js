@@ -38,6 +38,16 @@ class ConfigLanguage {
      * Load translations for a specific language
      * @param {string} lang - Language code
      */
+    /**
+     * Whether a config key travels in the help scope: the Help tab's prose and
+     * the Overview's news stream (internal/app/locale_scope.go). The two keys the
+     * server keeps in core are never in `config` here until the core load puts
+     * them there, and then they are simply kept with everything else.
+     */
+    static isLazyConfigKey(key) {
+        return key.startsWith('help') || key.startsWith('overview');
+    }
+
     /** The URL for one scope of one language, with the deploy fingerprint. */
     static localeUrl(lang, scope) {
         const version = ConfigLanguage.assetVersion();
@@ -50,8 +60,8 @@ class ConfigLanguage {
     /**
      * Load the translations the dashboard needs to draw itself.
      *
-     * Not the whole file: a third of it is the Help tab's prose — 182 KB of the
-     * 570 KB in English — read only by the config module, which is itself loaded
+     * Not the whole file: the Help tab's prose and the Overview's news stream are
+     * over a third of it, read only by the config module, which is itself loaded
      * on demand. Those keys arrive with it, through ensureHelpTranslations.
      */
     async loadTranslations(lang) {
@@ -67,7 +77,7 @@ class ConfigLanguage {
                 // was a help page of headings with no text under them.
                 const keptHelp = this._helpLoadedFor === lang
                     ? Object.fromEntries(Object.entries(this.translations?.config || {})
-                        .filter(([k]) => k.startsWith('help')))
+                        .filter(([k]) => ConfigLanguage.isLazyConfigKey(k)))
                     : null;
                 this.translations = await response.json();
                 this.currentLanguage = lang;

@@ -2,6 +2,8 @@ package app
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -67,5 +69,70 @@ func TestLocaleWithoutScopeIsUnchanged(t *testing.T) {
 	}
 	if !strings.Contains(string(raw), "helpX") {
 		t.Fatal("fixture broken")
+	}
+}
+
+// The Overview's news stream is the second block only the config module reads.
+// It travels in the help scope, except for the keys other modules print.
+func TestNarrowLocaleCarriesTheOverviewWithHelp(t *testing.T) {
+	raw := []byte(`{"config": {
+        "helpSearchTitle": "Searching",
+        "overviewNewFeatureXTitle": "A thing",
+        "overviewUpdateAvailableBody": "Update body",
+        "overviewUpdateAvailableCta": "View release",
+        "columnsLabel": "Columns"}}`)
+	read := func(scope string) map[string]string {
+		out, err := narrowLocale(raw, scope)
+		if err != nil {
+			t.Fatalf("%s: %v", scope, err)
+		}
+		var doc map[string]map[string]string
+		if err := json.Unmarshal(out, &doc); err != nil {
+			t.Fatalf("%s json: %v", scope, err)
+		}
+		return doc["config"]
+	}
+	core, help := read("core"), read("help")
+	if _, ok := core["overviewNewFeatureXTitle"]; ok {
+		t.Error("a news stream string travelled in the core scope")
+	}
+	if help["overviewNewFeatureXTitle"] != "A thing" || help["helpSearchTitle"] != "Searching" {
+		t.Error("the help scope is missing the news stream or the help prose")
+	}
+	for _, key := range []string{"overviewUpdateAvailableBody", "overviewUpdateAvailableCta", "columnsLabel"} {
+		if core[key] == "" {
+			t.Errorf("%s must stay in the core scope", key)
+		}
+		if _, ok := help[key]; ok {
+			t.Errorf("%s travelled in the help scope as well", key)
+		}
+	}
+}
+
+// Every key lands in exactly one of the two scopes, in the files as shipped.
+func TestLocaleScopesPartitionTheShippedFiles(t *testing.T) {
+	for _, lang := range []string{"en", "nl", "de", "fr", "zh", "es"} {
+		raw, err := os.ReadFile(filepath.Join("..", "..", "locales", lang+".json"))
+		if err != nil {
+			t.Fatalf("%s: %v", lang, err)
+		}
+		var whole map[string]map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &whole); err != nil {
+			t.Fatalf("%s: %v", lang, err)
+		}
+		count := func(scope string) int {
+			out, err := narrowLocale(raw, scope)
+			if err != nil {
+				t.Fatalf("%s %s: %v", lang, scope, err)
+			}
+			var doc map[string]map[string]json.RawMessage
+			if err := json.Unmarshal(out, &doc); err != nil {
+				t.Fatalf("%s %s: %v", lang, scope, err)
+			}
+			return len(doc["config"])
+		}
+		if core, help := count("core"), count("help"); core+help != len(whole["config"]) {
+			t.Errorf("%s: core %d + help %d != %d config keys", lang, core, help, len(whole["config"]))
+		}
 	}
 }
