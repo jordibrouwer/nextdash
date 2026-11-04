@@ -219,11 +219,16 @@ test.describe('collections move like any other block', () => {
     // it, and the move used to say it again.
     test('a collection width that fails to save gives one error', async ({ page }) => {
         await openDashboard(page);
-        // A fixed wait: the page saves its own settings a debounce (700 ms) after
-        // load, and that save has to be in before the route below makes them fail.
-        await page.waitForTimeout(1000);
-        await page.route('**/api/settings', (route) => (route.request().method() === 'POST'
-            ? route.fulfill({ status: 500, body: 'nope' }) : route.fallback()));
+        // Only the save that makes Mine wide fails. The page saves settings of
+        // its own for a while after load (seen tips, the current page), and
+        // failing those too counted their errors against the width.
+        await page.route('**/api/settings', (route) => {
+            const req = route.request();
+            let body = null;
+            try { body = req.method() === 'POST' ? req.postDataJSON() : null; } catch { /* not JSON */ }
+            return Number(body?.collectionColumns?.[MINE]) === 2
+                ? route.fulfill({ status: 500, body: 'nope' }) : route.fallback();
+        });
         await page.evaluate(() => {
             const d = window.dashboardInstance;
             window.__errors = 0;
