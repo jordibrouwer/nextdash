@@ -23,7 +23,7 @@
     // closed. Per browser, like the seen mark, and keyed by the snapshot so a
     // new digest starts over.
     const PROGRESS_KEY = 'nextdashDigestProgress';
-    // When the card shows: snoozed, seen, and the two reminders after "Got it".
+    // When the card shows: once per digest, until it is answered.
     // The rules are DigestCardState's; this only keeps them per browser.
     const CARD_KEY = 'nextdashDigestCard';
     let latest = null;
@@ -54,13 +54,13 @@
     function seenAt() {
         try { return Number(global.localStorage?.getItem(SEEN_KEY)) || 0; } catch (_) { return 0; }
     }
-    /** The card's state for this digest. A digest seen before the card kept state is taken as read: no reminders. */
+    /** The card's state for this digest. A digest seen before the card kept state is taken as read. */
     function readCard(s) {
         let stored = null;
         try { stored = JSON.parse(global.localStorage?.getItem(CARD_KEY) || 'null'); } catch (_) { /* private mode, or a value from elsewhere */ }
         const state = global.DigestCardState.forSnapshot(stored, s.generatedAt);
         if (state === stored || !seenAt() || seenAt() < s.generatedAt) return state;
-        return { ...state, seenAt: Date.now(), windowClosed: true };
+        return { ...state, seenAt: Date.now() };
     }
     function writeCard(state) {
         try { global.localStorage?.setItem(CARD_KEY, JSON.stringify(state)); } catch (_) { /* private mode */ }
@@ -763,9 +763,8 @@
     async function openDigest() {
         const s = latest || await fetchLatest();
         if (!s || !global.AppModal?.show) return false;
-        // Opening the digest is reading it: seen, and no reminders after.
+        // Opening the digest is reading it: seen.
         markSeen();
-        updateCard((state) => global.DigestCardState.closeWindow(state));
         card.close();
         removeBar();
         const progress = readProgress(s);
@@ -1019,9 +1018,6 @@
         dismissLabel: () => t('dashboard.digestDismiss', 'Got it'),
         dismissName: 'seen',
         canShow: async () => shouldShow(await fetchLatest()),
-        // A reminder day is used up once the card is drawn, so a reload the
-        // same day stays quiet.
-        onShown: () => updateCard(global.DigestCardState.shown),
         onDismiss: markSeen,
         actionAttr: 'data-digest-action',
         actions: [
@@ -1030,11 +1026,6 @@
                 label: () => t('dashboard.digestRead', 'Read the digest'),
                 primary: true,
                 onClick: () => { void openDigest(); },
-            },
-            {
-                name: 'snooze',
-                label: () => t('dashboard.digestSnooze', 'Snooze 1 day'),
-                onClick: (handle) => { updateCard(global.DigestCardState.snooze); handle.close(); },
             },
             {
                 name: 'seen',

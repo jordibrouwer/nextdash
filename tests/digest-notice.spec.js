@@ -95,7 +95,7 @@ test.describe('the weekly digest card', () => {
     });
 });
 
-test.describe('snooze and reminders on the card', () => {
+test.describe('the card shows once per digest', () => {
     const DAY = 24 * 60 * 60 * 1000;
 
     async function dayLater(page, base, days) {
@@ -105,24 +105,16 @@ test.describe('snooze and reminders on the card', () => {
         await dismissBlockingOverlays(page);
     }
 
-    test('Snooze 1 day hides the card until tomorrow', async ({ page, request }) => {
+    test('the card has no Snooze button', async ({ page, request }) => {
         await seedAndSend(request);
-        const base = Date.now();
-        await page.clock.install({ time: base });
         await loadDashboard(page);
         await forgetSeen(page);
         expect(await renderCard(page)).toBe(true);
-
-        await page.locator(`${CARD} [data-digest-action="snooze"]`).click();
-        await expect(page.locator(CARD)).toHaveCount(0);
-        await dayLater(page, base, 0);
-        expect(await renderCard(page)).toBe(false);
-
-        await dayLater(page, base, 1);
-        expect(await renderCard(page)).toBe(true);
+        await expect(page.locator(CARD)).toBeVisible();
+        await expect(page.locator(`${CARD} [data-digest-action="snooze"]`)).toHaveCount(0);
     });
 
-    test('Got it brings the card back on the next two days, then not', async ({ page, request }) => {
+    test('Got it ends the card on every later day', async ({ page, request }) => {
         await seedAndSend(request);
         const base = Date.now();
         await page.clock.install({ time: base });
@@ -131,19 +123,27 @@ test.describe('snooze and reminders on the card', () => {
         expect(await renderCard(page)).toBe(true);
         await page.locator(`${CARD} [data-digest-action="seen"]:not([data-notice-dismiss])`).click();
 
-        await dayLater(page, base, 0);
-        expect(await renderCard(page)).toBe(false);
-        await dayLater(page, base, 1);
+        for (const days of [0, 1, 2, 3]) {
+            await dayLater(page, base, days);
+            expect(await renderCard(page)).toBe(false);
+        }
+    });
+
+    test('the x ends the card as well', async ({ page, request }) => {
+        await seedAndSend(request);
+        const base = Date.now();
+        await page.clock.install({ time: base });
+        await loadDashboard(page);
+        await forgetSeen(page);
         expect(await renderCard(page)).toBe(true);
+        await page.locator(`${CARD} [data-notice-dismiss]`).first().click();
+        await expect(page.locator(CARD)).toHaveCount(0);
+
         await dayLater(page, base, 1);
-        expect(await renderCard(page)).toBe(false); // one reminder a day
-        await dayLater(page, base, 2);
-        expect(await renderCard(page)).toBe(true);
-        await dayLater(page, base, 3);
         expect(await renderCard(page)).toBe(false);
     });
 
-    test('reading the digest ends the reminders', async ({ page, request }) => {
+    test('reading the digest ends the card', async ({ page, request }) => {
         await seedAndSend(request);
         const base = Date.now();
         await page.clock.install({ time: base });
@@ -157,6 +157,15 @@ test.describe('snooze and reminders on the card', () => {
         await dayLater(page, base, 1);
         expect(await renderCard(page)).toBe(false);
         await dayLater(page, base, 2);
+        expect(await renderCard(page)).toBe(false);
+    });
+
+    test('card state stored by an older version still loads', async ({ page, request }) => {
+        const sent = await seedAndSend(request);
+        await loadDashboard(page);
+        await forgetSeen(page);
+        await page.evaluate((at) => window.localStorage.setItem('nextdashDigestCard',
+            JSON.stringify({ generatedAt: at, seenAt: Date.now(), snoozedUntil: 0, remindersDone: 0, windowClosed: false })), sent.generatedAt);
         expect(await renderCard(page)).toBe(false);
     });
 });
