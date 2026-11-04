@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.25.2 — 4 November 2026](#v1252--4-november-2026)
+- [v1.26.0 — 4 November 2026](#v1260--4-november-2026)
 - [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
 - [v1.25.0 — 3 November 2026](#v1250--3-november-2026)
 - [v1.24.2 — 2 November 2026](#v1242--2-november-2026)
@@ -135,7 +135,37 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.25.2 — 4 November 2026
+## v1.26.0 — 4 November 2026
+
+A notifications bell in the navigation bar, a greeting with your name beside a large clock, a Clock widget with a face, the moon and the sun, and a lighter start: the theme stylesheet shrinks from 9.4 MB to 379 KB. Eight fixes from a code review ride along, and a new install starts on Tarnished Brass.
+
+### Notifications
+
+- **new — A notifications bell in the navigation bar.** New things that need you wait in the bell instead of popping up on the dashboard: maintenance and privacy questions, urgent notices and outages, the notice that an update was installed and the one that a new release is out (no toast any more), the digest card (once per digest) and the tips. Rows are grouped (Health, Clean up, System, Privacy, Tips). **No** answers a question for good and the row slides away; **Mark read** and **Mark all read** clear the rest. The bell keeps its place in a folded header, its header and a *More below* arrow stay put while the list scrolls, and a first-time note explains it.
+- **new — The bell shakes and rings for something new.** It shakes and pulses, with a short bell tone you can switch off in Config (*Bell sound for new notifications*).
+- **new — Config can bring back dismissed notifications.** *Bring back dismissed notifications* puts every answered **No** and every read row back in the bell.
+- **new — Tips: two a day, each leading to its own place.** Two new tips a day wait in the bell, whether or not yesterday's were read. Each has a button to the place it is about (Config, the Inbox, the Bookmarks view, Containers, the tag cloud, the palette and more).
+- **new — Mark read in the Watch feeds popover.** The popover has a **Mark read** button, quieter than the Reader button beside it.
+- **new — Bell usage in the analytics.** The bell reports how it is used, in fixed words and bucketed counts; the text of a notification never leaves.
+- **new — One-time notes for the bell and the action bar.** A short coach note says what the bell is and what the action bar offers, once.
+
+### Header
+
+- **new — A large clock in the classic header.** The clock placement *Large clock, greeting beside it* draws the time large with the greeting on its side and a halo on both corners; the other two placements keep their single line.
+- **new — Your name in the greeting.** *Your name* (Config → Appearance → Date & time, in its own *Greeting* group) turns the first line into "Good evening, Jordi"; it changes with the hour. Leave it empty to be greeted without a name.
+- **new — The quick start asks for the name,** in a new *About you* step, and existing users are asked once in a coach note.
+- **new — Tarnished Brass is the theme of a new install.** Installs that already chose a theme keep it.
+
+### Clock and Countdown
+
+- **new — The Clock widget has a face.** A large analogue clock, other places listed under it (the face shows the first three), with a seconds hand, the moon and its phase and sunrise, sunset and daylight for your weather location. The moon and the sun appear when the widget is two columns wide; *Plain lines of time* keeps the old look.
+- **new — The Countdown shows its figure large,** in the middle, with the date under it.
+
+### What's new
+
+- **new — A compact What's new window.** A Ko-fi bar replaces the card, and the screenshots open larger on a click.
+
+### Fixes from a code review
 
 Eight fixes from a code review: the calculator reads a decimal comma, a Tabs widget off its schedule gives its widgets back, copying a widget no longer undoes a save made at the same moment, the digest charts count real days and show a day that was down, and a few edge cases in importing, the Tabs settings and the backdrop picker.
 
