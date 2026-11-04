@@ -333,6 +333,11 @@
                 // shrinks into the bell, and only then the action runs, so its
                 // destination does not open under a panel still on its way out.
                 li.querySelectorAll('button').forEach((btn) => { btn.disabled = true; });
+                // A row that slid away must stay away: the person has taken it up.
+                // It is put aside the way a plain "No" does, until it gets worse,
+                // but without the source's onNo, since nothing was declined. A tip
+                // is already gone once read.
+                if (source.kind !== 'tip') States()?.markBellNo(source.id, markOf(entry));
                 void leaveRow(li).then(() => { close('action'); run(); });
             });
             actions.appendChild(b);

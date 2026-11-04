@@ -145,6 +145,7 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 - **new — The bell shakes and rings for something new.** It shakes and pulses, with a short bell tone you can switch off in Config (*Bell sound for new notifications*).
 - **new — Config can bring back dismissed notifications.** *Bring back dismissed notifications* puts every answered **No** and every read row back in the bell.
 - **new — Tips: two a day, each leading to its own place.** Two new tips a day wait in the bell, whether or not yesterday's were read. Each has a button to the place it is about (Config, the Inbox, the Bookmarks view, Containers, the tag cloud, the palette and more).
+- **fix — A row you took up stays away.** Pressing the coloured button on a row (*Start*, *Open the Inbox*) slid the row out and closed the panel, but the row was back the next time the bell opened. It is now put aside until it gets worse, the way **No** does, without telling the source that anything was declined.
 - **new — Mark read in the Watch feeds popover.** The popover has a **Mark read** button, quieter than the Reader button beside it.
 - **new — Bell usage in the analytics.** The bell reports how it is used, in fixed words and bucketed counts; the text of a notification never leaves.
 - **new — One-time notes for the bell and the action bar.** A short coach note says what the bell is and what the action bar offers, once.

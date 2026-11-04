@@ -183,6 +183,37 @@ test('a source whose state throws is nothing, and the others stay', async ({ pag
     expect(errors.filter((e) => /bell|boom/i.test(e))).toEqual([]);
 });
 
+test('the coloured answer takes the row away for good, until it gets worse; the source never hears a No', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+        window.__acted = 0;
+        window.__noes = 0;
+        window.__state = { count: 4, text: 'review text' };
+        window.NotificationBell.register({
+            id: 'probe-start', group: 'cleanup', kind: 'quiet', icon: '*', no: 'state',
+            state: async () => window.__state,
+            onNo: () => { window.__noes++; },
+            actions: [{ label: () => 'Start', primary: true, onClick: () => { window.__acted++; } }],
+        });
+        return window.NotificationBell.refreshAll();
+    });
+    await openPanel(page);
+    await row(page, 'probe-start').getByRole('button', { name: 'Start' }).click();
+    await expect.poll(() => page.evaluate(() => window.__acted)).toBe(1);
+    expect(await page.evaluate(() => window.__noes)).toBe(0);
+
+    // Opened again once the panel has shrunk away, the row is not back.
+    await expect(page.locator('.notification-bell-panel')).toBeHidden();
+    await page.evaluate(() => window.NotificationBell.open());
+    await expect(page.locator('.notification-bell-panel')).toBeVisible();
+    await expect(row(page, 'probe-start')).toHaveCount(0);
+
+    // Worse than it was when it was taken up: it returns.
+    await page.evaluate(() => { window.__state = { count: 5, text: 'review text' }; });
+    await refresh(page);
+    await expect(row(page, 'probe-start')).toBeVisible();
+});
+
 test('actions with marksRead set read first, and the bell shows in the containers view', async ({ page }) => {
     await loadDashboard(page);
     await page.evaluate(() => {
