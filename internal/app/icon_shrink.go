@@ -26,8 +26,9 @@ smaller, is stored exactly as it arrived.
 const iconMaxEdge = 192
 
 // iconMaxPixels refuses to decode a picture that would unpack to more than this
-// many pixels: a small file can declare a huge canvas.
-const iconMaxPixels = 36 << 20
+// many pixels: a small file can declare a huge canvas, and 2048 square is
+// already 16 MB as NRGBA. Larger ones are stored as they arrived.
+const iconMaxPixels = 2048 * 2048
 
 // iconIcoWanted is the entry of an .ico that is kept: the smallest one at least
 // this wide, or the widest there is.
@@ -44,6 +45,12 @@ func shrinkIconBytes(data []byte, ext string) ([]byte, string) {
 	}
 	if ext != ".png" && ext != ".jpg" {
 		return original, originalExt // GIFs may move; SVG is already vector; WebP has no decoder here
+	}
+
+	// An animated PNG would be flattened to its first frame, and a JPEG turned
+	// by its EXIF orientation would come out sideways: both are left alone.
+	if (ext == ".png" && bytes.Contains(data, []byte("acTL"))) || (ext == ".jpg" && jpegIsRotated(data)) {
+		return original, originalExt
 	}
 
 	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
@@ -171,4 +178,64 @@ func boxResize(src image.Image, w, h int) *image.NRGBA {
 
 func clampByte(v float64) uint8 {
 	return uint8(math.Max(0, math.Min(255, math.Round(v))))
+}
+
+// jpegIsRotated is true when the file's EXIF block asks for an orientation
+// other than the upright one. Go's decoder ignores the tag, and the re-encode
+// would drop it, so the picture would be stored the wrong way up.
+func jpegIsRotated(data []byte) bool {
+	if len(data) < 4 || data[0] != 0xFF || data[1] != 0xD8 {
+		return false
+	}
+	for i := 2; i+4 <= len(data); {
+		if data[i] != 0xFF {
+			return false
+		}
+		marker := data[i+1]
+		if marker == 0xDA || marker == 0xD9 { // start of scan, end of image
+			return false
+		}
+		size := int(binary.BigEndian.Uint16(data[i+2 : i+4]))
+		if size < 2 || i+2+size > len(data) {
+			return false
+		}
+		seg := data[i+4 : i+2+size]
+		if marker == 0xE1 && bytes.HasPrefix(seg, []byte("Exif\x00\x00")) {
+			return exifOrientation(seg[6:]) > 1
+		}
+		i += 2 + size
+	}
+	return false
+}
+
+// exifOrientation reads tag 0x0112 from the first directory of a TIFF block, or
+// 0 when there is none.
+func exifOrientation(tiff []byte) int {
+	if len(tiff) < 8 {
+		return 0
+	}
+	var order binary.ByteOrder
+	switch string(tiff[:2]) {
+	case "II":
+		order = binary.LittleEndian
+	case "MM":
+		order = binary.BigEndian
+	default:
+		return 0
+	}
+	ifd := int(order.Uint32(tiff[4:8]))
+	if ifd < 8 || ifd+2 > len(tiff) {
+		return 0
+	}
+	count := int(order.Uint16(tiff[ifd : ifd+2]))
+	for n := 0; n < count; n++ {
+		at := ifd + 2 + n*12
+		if at+12 > len(tiff) {
+			return 0
+		}
+		if order.Uint16(tiff[at:at+2]) == 0x0112 {
+			return int(order.Uint16(tiff[at+8 : at+10]))
+		}
+	}
+	return 0
 }

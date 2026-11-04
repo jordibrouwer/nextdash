@@ -3,8 +3,10 @@ package app
 import (
 	"bytes"
 	"encoding/binary"
+	"hash/crc32"
 	"image"
 	"image/color"
+	"image/jpeg"
 	"image/png"
 	"math/rand"
 	"os"
@@ -155,5 +157,92 @@ func TestSavedIconIsTheShrunkOne(t *testing.T) {
 	}
 	if w, _ := sizeOf(t, data); w != iconMaxEdge {
 		t.Errorf("stored icon is %d px wide", w)
+	}
+}
+
+// pngWithChunk is png with an extra, valid chunk of the given name before IDAT.
+func pngWithChunk(t *testing.T, base []byte, name string, data []byte) []byte {
+	t.Helper()
+	i := bytes.Index(base, []byte("IDAT")) - 4
+	chunk := make([]byte, 0, 12+len(data))
+	chunk = binary.BigEndian.AppendUint32(chunk, uint32(len(data)))
+	chunk = append(chunk, name...)
+	chunk = append(chunk, data...)
+	chunk = binary.BigEndian.AppendUint32(chunk, crc32.ChecksumIEEE(chunk[4:]))
+	return append(append(append([]byte{}, base[:i]...), chunk...), base[i:]...)
+}
+
+func TestShrinkIconLeavesAnAnimatedPNG(t *testing.T) {
+	in := pngWithChunk(t, noisePNG(t, 512, 512, 255), "acTL", []byte{0, 0, 0, 2, 0, 0, 0, 0})
+	if out, _ := shrinkIconBytes(in, ".png"); !bytes.Equal(out, in) {
+		t.Error("an animated PNG was flattened to one frame")
+	}
+}
+
+func TestShrinkIconLeavesAPictureTooLargeToDecodeHere(t *testing.T) {
+	// 2100 square is over the cap; flat, so the file itself is small.
+	img := image.NewNRGBA(image.Rect(0, 0, 2100, 2100))
+	for i := range img.Pix {
+		img.Pix[i] = 255
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	in := buf.Bytes()
+	if out, _ := shrinkIconBytes(in, ".png"); !bytes.Equal(out, in) {
+		t.Error("a picture over the pixel cap was decoded and rewritten")
+	}
+}
+
+// jpegWithOrientation is a minimal JPEG with an EXIF block saying `orientation`.
+func jpegWithOrientation(t *testing.T, w, h, orientation int) []byte {
+	t.Helper()
+	img := image.NewNRGBA(image.Rect(0, 0, w, h))
+	rng := rand.New(rand.NewSource(2))
+	for i := range img.Pix {
+		img.Pix[i] = uint8(rng.Intn(256))
+	}
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, nil); err != nil {
+		t.Fatal(err)
+	}
+	tiff := []byte{'M', 'M', 0, 42, 0, 0, 0, 8, 0, 1, 0x01, 0x12, 0, 3, 0, 0, 0, 1, byte(orientation >> 8), byte(orientation), 0, 0, 0, 0, 0, 0}
+	seg := append([]byte("Exif\x00\x00"), tiff...)
+	app1 := []byte{0xFF, 0xE1, byte((len(seg) + 2) >> 8), byte(len(seg) + 2)}
+	return append(append(append([]byte{0xFF, 0xD8}, app1...), seg...), buf.Bytes()[2:]...)
+}
+
+func TestShrinkIconTurnedJPEGIsLeftAloneAndUprightOneIsShrunk(t *testing.T) {
+	turned := jpegWithOrientation(t, 400, 400, 6)
+	if out, ext := shrinkIconBytes(turned, ".jpg"); !bytes.Equal(out, turned) || ext != ".jpg" {
+		t.Error("a JPEG that is turned by its EXIF tag was re-encoded, which drops the tag")
+	}
+	upright := jpegWithOrientation(t, 400, 400, 1)
+	out, _ := shrinkIconBytes(upright, ".jpg")
+	if w, _ := sizeOf(t, out); w != iconMaxEdge {
+		t.Errorf("an upright JPEG was %d px wide after, want %d", w, iconMaxEdge)
+	}
+}
+
+// Colour, not only alpha: a red square stays red.
+func TestShrinkIconKeepsColour(t *testing.T) {
+	img := image.NewNRGBA(image.Rect(0, 0, 400, 400))
+	for i := 0; i < len(img.Pix); i += 4 {
+		img.Pix[i], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = 200, 30, 40, 255
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	// A flat picture compresses to nothing, so it is only kept when smaller; give it noise to lose.
+	out, _ := shrinkIconBytes(buf.Bytes(), ".png")
+	got, err := png.Decode(bytes.NewReader(out))
+	if err != nil {
+		t.Skip("a flat picture is already smaller than its shrunk copy and was kept as it was")
+	}
+	c := color.NRGBAModel.Convert(got.At(5, 5)).(color.NRGBA)
+	if c.R < 198 || c.R > 202 || c.G < 28 || c.G > 32 || c.B < 38 || c.B > 42 {
+		t.Errorf("colour = %v, want about 200,30,40", c)
 	}
 }
