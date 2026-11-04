@@ -1027,7 +1027,7 @@
         const storedGone = this.dash.settings?.theme === id;
         const wasActive = storedGone || shownBefore === id;
         if (storedGone) {
-            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'aurora-glass-dark';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'tarnished-brass-dark';
         }
         if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();

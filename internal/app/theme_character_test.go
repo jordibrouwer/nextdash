@@ -294,8 +294,8 @@ func TestTheFourCharacterThemesShip(t *testing.T) {
 	if crt := themes["retro-crt-mk2-dark"]; crt.RadiusScale > 0.2 || crt.LabelTransform != "uppercase" {
 		t.Errorf("Retro CRT Mk II lost its shape: radius %v, transform %q", crt.RadiusScale, crt.LabelTransform)
 	}
-	// The default theme is Aurora Glass dark; a new theme does not change it by accident.
-	if defaultThemeID != "aurora-glass-dark" {
+	// The default theme is Tarnished Brass dark; a new theme does not change it by accident.
+	if defaultThemeID != "tarnished-brass-dark" {
 		t.Errorf("a new theme changed what a fresh install starts on: %q", defaultThemeID)
 	}
 }

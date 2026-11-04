@@ -2,11 +2,11 @@ package app
 
 import "testing"
 
-// Aurora Glass is the theme a fresh install starts on, with its light half for auto dark
+// Tarnished Brass is the theme a fresh install starts on, with its light half for auto dark
 // mode. An install from before v1.22.0 is moved onto Aurora Glass once (see
 // aurora_glass_migration_test.go) and keeps whatever it chooses afterwards.
-func TestAuroraGlassIsTheDefaultTheme(t *testing.T) {
-	if defaultThemeID != "aurora-glass-dark" || defaultThemeLightID != "aurora-glass-light" {
+func TestTarnishedBrassIsTheDefaultTheme(t *testing.T) {
+	if defaultThemeID != "tarnished-brass-dark" || defaultThemeLightID != "tarnished-brass-light" {
 		t.Fatalf("defaults are %q / %q", defaultThemeID, defaultThemeLightID)
 	}
 	themes := getDefaultBuiltInThemes()
