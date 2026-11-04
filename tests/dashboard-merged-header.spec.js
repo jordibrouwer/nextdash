@@ -357,35 +357,37 @@ test('the classic placement puts the clock on its own line with the name under i
         const title = document.querySelector('.header-identity .title');
         return {
             clock: r('.date-time-line'),
+            dateBlock: r('#date-element'),
             weather: r('.date-weather-line'),
             title: r('.header-identity .title'),
             track: r('.header-track'),
             actions: r('.header-actions'),
             titleSize: parseFloat(window.getComputedStyle(title).fontSize),
+            clockSize: parseFloat(window.getComputedStyle(document.querySelector('.date-time-line')).fontSize),
             bodySize: parseFloat(window.getComputedStyle(document.body).fontSize),
         };
     });
 
     /*
-     * The weather sits under the time when there is one -- a store with no
-     * location set draws the clock alone, and that is not what this is about.
+     * The time is the large thing in this corner, and the weather stands in
+     * the column beside it, behind the accent rule -- not under the time.
      */
+    expect(shape.clockSize, `the clock is ${shape.clockSize}px`)
+        .toBeGreaterThan(shape.bodySize * 2.5);
     if (shape.weather) {
-        expect(shape.weather.y - shape.clock.bottom, 'the two clock lines drifted apart')
-            .toBeLessThanOrEqual(6);
-        expect(shape.weather.x, 'the weather is not under the time').toBe(shape.clock.x);
+        expect(shape.weather.x, 'the weather is not beside the time')
+            .toBeGreaterThan(shape.clock.x + shape.clock.w);
     }
 
-    // The name is a line of its own, under them, in the title's type.
+    // The name is a small label under the clock, on the left edge.
     expect(shape.title.y, 'the name is not under the clock')
-        .toBeGreaterThanOrEqual((shape.weather || shape.clock).bottom);
+        .toBeGreaterThanOrEqual(shape.clock.bottom);
     expect(shape.title.x, 'the name left the left edge').toBe(shape.clock.x);
-    // Bigger than the page's own type, and not the full title size the band
-    // it used to stand in called for.
+    // A notch above the page's own type: a label, not the old headline.
     expect(shape.titleSize, `the name is ${shape.titleSize}px`)
-        .toBeGreaterThan(shape.bodySize * 1.5);
+        .toBeGreaterThan(shape.bodySize * 1.1);
     expect(shape.titleSize, `the name is ${shape.titleSize}px`)
-        .toBeLessThan(shape.bodySize * 3);
+        .toBeLessThan(shape.bodySize * 1.8);
 
     /*
      * And the controls keep the first line to themselves. The fitter counts
@@ -393,7 +395,8 @@ test('the classic placement puts the clock on its own line with the name under i
      * counted among them and the ladder started hiding the clock and the
      * actions on a window with room to spare.
      */
-    expect(shape.track.y, 'the pages dropped off the first line').toBe(shape.clock.y);
+    expect(shape.track.y, 'the pages dropped off the first line').toBeLessThanOrEqual(shape.dateBlock.bottom);
+    expect(shape.track.y, 'the pages dropped off the first line').toBeGreaterThanOrEqual(shape.dateBlock.y - 1);
     expect(shape.actions.w, 'the actions were folded away').toBeGreaterThan(0);
     expect(shape.track.x, 'the pages overlap the clock').toBeGreaterThan(shape.clock.x);
 
