@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openAllBackdrops, pickBackdropFromAll } = require('./e2e-helpers');
 
 /**
  * A custom theme can say everything a packaged one can: the theme colour and
@@ -68,7 +68,7 @@ test('titles, weight and backdrop are kept', async ({ page }) => {
     const id = await openEditor(page);
     await page.locator('[data-theme-char-choice="labelTransform"][data-value="uppercase"]').click();
     await page.locator('[data-theme-char-select="labelWeight"]').selectOption('800');
-    await page.locator('[data-theme-backdrop-tile="rings"]').click();
+    await pickBackdropFromAll(page.locator('[data-theme-backdrops]'), 'rings', 'data-theme-backdrop-tile');
     await expect.poll(async () => {
         const t = (await colors(page)).custom[id];
         return [t.labelTransform, t.labelWeight, t.backdrop];
@@ -78,12 +78,14 @@ test('titles, weight and backdrop are kept', async ({ page }) => {
 
 test('every backdrop is offered as a tile, and a late one saves', async ({ page }) => {
     const id = await openEditor(page);
-    const tiles = page.locator('[data-theme-backdrops] [data-theme-backdrop-tile]');
-    // Automatic, and one tile per backdrop the server knows.
+    const picker = page.locator('[data-theme-backdrops]');
+    // Automatic up front, and in the whole library one tile per backdrop the server knows.
     const known = (await (await page.request.get('/api/themes/meta')).json()).backdrops.length;
-    await expect(tiles).toHaveCount(known + 1);
-    await page.locator('[data-theme-backdrop-tile="prism"]').click();
-    await expect(page.locator('[data-theme-backdrop-tile="prism"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(picker.locator('[data-theme-backdrop-tile=""]')).toHaveCount(1);
+    const all = await openAllBackdrops(picker);
+    await expect(all.locator('[data-theme-backdrop-tile]')).toHaveCount(known);
+    await pickBackdropFromAll(picker, 'prism', 'data-theme-backdrop-tile');
+    await expect(all.locator('[data-theme-backdrop-tile="prism"]')).toHaveAttribute('aria-pressed', 'true');
     await expect.poll(async () => (await colors(page)).custom[id].backdrop).toBe('prism');
     await page.locator('[data-theme-backdrop-tile=""]').click();
     await expect.poll(async () => (await colors(page)).custom[id].backdrop).toBeUndefined();
@@ -121,7 +123,7 @@ test('editing a custom theme leaves the packaged themes their character', async 
 test('a theme file carries the character there and back', async ({ page }) => {
     const id = await openEditor(page);
     await page.locator('[data-theme-char="radiusScale"]').fill('0.4');
-    await page.locator('[data-theme-backdrop-tile="scanlines"]').click();
+    await pickBackdropFromAll(page.locator('[data-theme-backdrops]'), 'scanlines', 'data-theme-backdrop-tile');
     await expect.poll(async () => (await colors(page)).custom[id].backdrop).toBe('scanlines');
 
     const download = page.waitForEvent('download');

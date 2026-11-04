@@ -726,6 +726,30 @@ async function openConfigPanel(page, target) {
 }
 
 /**
+ * Open the whole backdrop library in a picker the way a reader does: its
+ * "All backdrops" button. `picker` is a locator for the picker (the
+ * [data-backdrop-grid] or [data-theme-backdrops] box). Returns the list.
+ */
+async function openAllBackdrops(picker) {
+    const toggle = picker.locator('[data-backdrop-all-toggle]');
+    await toggle.waitFor({ state: 'visible' });
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+    const all = picker.locator('[data-backdrop-all]');
+    await all.waitFor({ state: 'visible' });
+    return all;
+}
+
+/**
+ * Pick a backdrop by name from the whole library: open it, search for the
+ * name, click its tile. `attr` is the tile attribute the picker uses.
+ */
+async function pickBackdropFromAll(picker, name, attr = 'data-backdrop-recipe') {
+    const all = await openAllBackdrops(picker);
+    await picker.locator('[data-backdrop-search]').fill(name);
+    await all.locator(`[${attr}="${name}"]`).click();
+}
+
+/**
  * Open a Help tab the way a reader does: from the row when it is there,
  * otherwise from the More topics menu, where everything past Basics lives.
  */
@@ -741,6 +765,8 @@ async function openHelpTab(page, tab) {
 }
 
 module.exports = {
+    openAllBackdrops,
+    pickBackdropFromAll,
     openHelpTab,
     openConfigPanel,
     setChip,

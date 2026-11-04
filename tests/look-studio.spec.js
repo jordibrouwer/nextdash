@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, useGlassLook } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, useGlassLook, pickBackdropFromAll } = require('./e2e-helpers');
 
 /**
  * The theme browser as a look studio: a panel docked beside the dashboard
@@ -91,7 +91,7 @@ test.describe('the look studio', () => {
 
         await page.locator('[data-studio-tab="backdrop"]').click();
         await page.locator('[data-backdrop-mode="pick"]').click();
-        await page.locator('[data-backdrop-recipe="waves"]').click();
+        await pickBackdropFromAll(page.locator('[data-backdrop-grid]'), 'waves');
         await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe('waves');
         await expect.poll(() => dirtyTabs(page)).toEqual(['backdrop']);
 
@@ -120,7 +120,7 @@ test.describe('the look studio', () => {
         const pickWaves = async () => {
             await page.locator('[data-studio-tab="backdrop"]').click();
             await studio(page).locator('[data-backdrop-mode="pick"]').click();
-            await studio(page).locator('[data-backdrop-recipe="waves"]').click();
+            await pickBackdropFromAll(studio(page).locator('[data-backdrop-grid]'), 'waves');
             await expect.poll(() => bodyAttr(page, 'data-backdrop-recipe')).toBe('waves');
         };
 

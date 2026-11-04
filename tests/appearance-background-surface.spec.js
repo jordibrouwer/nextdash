@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, setChip, openConfigPanel } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, setChip, openConfigPanel, openAllBackdrops, pickBackdropFromAll } = require('./e2e-helpers');
 
 /**
  * Appearance → Background and Surface, and the category header on Rows.
@@ -77,10 +77,12 @@ test.describe('the Background and Surface tabs', () => {
         await openConfigPanel(page, 'Backdrop');
 
         await page.locator('[data-backdrop-mode="pick"]').click();
-        // One thumbnail per backdrop the server knows, however many that is.
+        // The whole library holds one thumbnail per backdrop the server knows, however many that is.
         const known = (await (await page.request.get('/api/themes/meta')).json()).backdrops.length;
-        await expect(page.locator('.config-backdrop-thumb')).toHaveCount(known);
-        await page.locator('[data-backdrop-recipe="hexagons"]').click();
+        const picker = page.locator('[data-backdrop-grid]');
+        const all = await openAllBackdrops(picker);
+        await expect(all.locator('.config-backdrop-thumb')).toHaveCount(known);
+        await pickBackdropFromAll(picker, 'hexagons');
         await expect.poll(() => page.getAttribute('body', 'data-backdrop-recipe')).toBe('hexagons');
 
         await reloadDashboard(page);
@@ -90,7 +92,8 @@ test.describe('the Background and Surface tabs', () => {
         await openTab(page, 'background');
         // Opened by its header before the reload, and remembered.
         await expect(page.locator('[data-backdrop-mode="pick"]')).toBeVisible();
-        await expect(page.locator('.config-backdrop-thumb.is-active')).toHaveAttribute('data-backdrop-recipe', 'hexagons');
+        // Shown again in the short picker (under Used lately), and marked as the one in use.
+        await expect(page.locator('.config-backdrop-thumb.is-active').first()).toHaveAttribute('data-backdrop-recipe', 'hexagons');
 
         await page.locator('[data-backdrop-mode="follow"]').click();
         await expect.poll(() => page.getAttribute('body', 'data-backdrop-recipe')).toBe('');
