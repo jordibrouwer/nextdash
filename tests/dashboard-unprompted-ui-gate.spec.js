@@ -5,7 +5,8 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
 /**
  * The shared "may unprompted UI take the screen right now" gate.
  *
- * The occasional keyboard tip and the what's-new prompt both show something
+ * The occasional keyboard tip (now a bell row, which does not interrupt) and
+ * the what's-new prompt both used to show something
  * the user never asked for, and both used to carry their own copy of the
  * conditions under which that is allowed — copies that had already drifted:
  * the tip knew not to compete with the quick-start card, the what's-new
@@ -82,68 +83,5 @@ test.describe('canShowUnpromptedUi is the one gate both callers ask', () => {
         // into the shared gate must not start blocking what's-new, which was
         // always allowed alongside the card.
         expect(results.postOnboardingWithQuickstart, 'what\'s-new lost its quickstart exemption').toBe(true);
-    });
-
-    test('the keyboard tip refuses while the quick-start card is up, and agrees once it goes', async ({ page }) => {
-        await openDashboard(page);
-        await makeScreenFree(page);
-
-        const results = await page.evaluate(() => {
-            const d = window.dashboardInstance;
-            // Clear the server-side multi-day gap and the once-per-load guard so
-            // shouldShow() is deciding on screen state alone.
-            window.DiscoverabilityState?.setTipsNotBefore?.(0);
-            d.settings.enableSessionTips = true;
-
-            const card = document.createElement('div');
-            card.className = 'quickstart-card';
-            document.body.appendChild(card);
-            const withCard = window.DashboardKeyboardTip.shouldShow();
-            const gateWithCard = d.promos.canShowUnpromptedUi();
-            card.remove();
-
-            const withoutCard = window.DashboardKeyboardTip.shouldShow();
-            const gateWithoutCard = d.promos.canShowUnpromptedUi();
-
-            return { withCard, gateWithCard, withoutCard, gateWithoutCard };
-        });
-
-        // The tip's answer must track the shared gate, not a private copy.
-        expect(results.gateWithCard).toBe(false);
-        expect(results.withCard, 'the tip ignored the shared gate').toBe(false);
-        expect(results.gateWithoutCard).toBe(true);
-        expect(results.withoutCard, 'the tip stayed blocked after the gate opened').toBe(true);
-    });
-
-    // The check above passes either way, because the tip's fallback branch
-    // duplicates the gate's conditions on purpose — same answer, different
-    // route. This one proves the route: the tip must actually consult
-    // promos.canShowUnpromptedUi rather than reasoning on its own, so that a
-    // future condition added to the gate reaches the tip for free. That is the
-    // entire point of sharing the primitive.
-    test('the tip asks the shared gate rather than re-deriving the answer', async ({ page }) => {
-        await openDashboard(page);
-        await makeScreenFree(page);
-
-        const observed = await page.evaluate(() => {
-            const d = window.dashboardInstance;
-            window.DiscoverabilityState?.setTipsNotBefore?.(0);
-            d.settings.enableSessionTips = true;
-
-            const original = d.promos.canShowUnpromptedUi.bind(d.promos);
-            let calls = 0;
-            d.promos.canShowUnpromptedUi = (...args) => {
-                calls += 1;
-                return original(...args);
-            };
-            try {
-                window.DashboardKeyboardTip.shouldShow();
-            } finally {
-                d.promos.canShowUnpromptedUi = original;
-            }
-            return calls;
-        });
-
-        expect(observed, 'shouldShow() never consulted the shared gate').toBeGreaterThan(0);
     });
 });

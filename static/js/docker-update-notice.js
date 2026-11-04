@@ -4,7 +4,7 @@
  * The check is off by default because it sends requests to the image
  * registries. Someone who has linked the Docker socket and keeps coming back to
  * the Containers view is the person it is for, so after the third visit the
- * Containers view offers it once, in the corner the app uses for invitations.
+ * notifications bell offers it once, as a tip that stays until it is read.
  * Nothing changes unless "Turn on (daily)" is pressed.
  */
 (function initDockerUpdateNotice(global) {
@@ -12,10 +12,7 @@
 
     const PROMO_ID = 'docker-update-offer-v1';
     const OPENS_KEY = 'nextdashDockerViewOpens';
-    const SNOOZE_KEY = 'nextdashDockerUpdateOfferSnoozeUntil';
     const MIN_OPENS = 3;
-    const SNOOZE_DAYS = 30;
-    const SHOW_DELAY_MS = 2500;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -41,23 +38,6 @@
         }
     }
 
-    function isSnoozed() {
-        try {
-            const until = Number(global.localStorage?.getItem(SNOOZE_KEY));
-            return Number.isFinite(until) && until > Date.now();
-        } catch {
-            return false;
-        }
-    }
-
-    function snooze() {
-        try {
-            global.localStorage?.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000));
-        } catch {
-            /* asking again is the smaller failure */
-        }
-    }
-
     function hasAnswered() {
         return global.DiscoverabilityState?.hasSeenSettingPromo?.(PROMO_ID) === true;
     }
@@ -78,10 +58,10 @@
         const status = d.docker?._module?.status ?? d.docker?.status;
         if (status?.socket !== true) return false;
         if (opens() < MIN_OPENS) return false;
-        return !hasAnswered() && !isSnoozed();
+        return !hasAnswered();
     }
 
-    async function turnOn(handle) {
+    async function turnOn() {
         const d = dash();
         if (!d) return;
         const before = d.settings.dockerUpdateInterval;
@@ -90,55 +70,44 @@
             if ((await d.saveSettings({ keys: ['dockerUpdateInterval'] })) === false) throw new Error('not saved');
         } catch {
             d.settings.dockerUpdateInterval = before;
-            handle.showError(t('dashboard.dockerUpdateNoticeFailed', 'Could not turn this on. Try again in Config.'));
+            d.showNotification?.(t('dashboard.dockerUpdateNoticeFailed', 'Could not turn this on. Try again in Config.'), 'error');
             return;
         }
         track('enable');
         markAnswered();
-        handle.close();
     }
 
+    // A tip in the bell, in every view: "Turn on (daily)" turns the check on
+    // and reads the row, and "Mark read" lets it go without. Either way it does
+    // not come back; the switch in Config is the way to change your mind.
     const card = global.NoticeCard.define({
         id: 'docker-update-notice',
-        view: 'docker',
-        showDelayMs: SHOW_DELAY_MS,
         title: () => t('dashboard.dockerUpdateNoticeTitle', 'Check images for updates?'),
-        body: () => t('dashboard.dockerUpdateNoticeBody',
-            'nextDash can ask the image registries once a day whether your containers have a newer image. This sends requests to those registries. Nothing updates by itself.'),
-        dismissLabel: () => t('dashboard.dockerUpdateNoticeDismiss', 'Dismiss'),
-        dismissName: 'dismiss',
-        canShow: eligible,
-        // One line that says where to turn it on. It counts as "not now": it
-        // comes back after the snooze, and the switch in Config turns it off
-        // for good.
-        toast: {
-            message: () => t('dashboard.dockerUpdateNoticeToast', 'Check images for updates? Turn it on under Config → Containers → Updates. nextDash then asks the image registries once a day; nothing updates by itself.'),
-            duration: 20000,
-            onShown: () => snooze(),
+        bell: {
+            kind: 'tip',
+            group: 'tips',
+            icon: '\u{1F433}',
+            no: 'forever',
+            state: async () => (eligible() ? {
+                count: 1,
+                text: t('dashboard.dockerUpdateNoticeToast', 'Check images for updates? Turn it on under Config → Containers → Updates. nextDash then asks the image registries once a day; nothing updates by itself.'),
+            } : null),
+            actions: [
+                {
+                    label: () => t('dashboard.dockerUpdateNoticeEnable', 'Turn on (daily)'),
+                    primary: true,
+                    marksRead: true,
+                    onClick: () => { void turnOn(); },
+                },
+            ],
         },
-        onShown: () => track('shown'),
-        onDismiss: () => { snooze(); track('dismiss'); },
-        actionAttr: 'data-du-action',
-        actions: [
-            {
-                name: 'enable',
-                label: () => t('dashboard.dockerUpdateNoticeEnable', 'Turn on (daily)'),
-                primary: true,
-                onClick: (handle) => { void turnOn(handle); },
-            },
-            {
-                name: 'later',
-                label: () => t('dashboard.dockerUpdateNoticeLater', 'Not now'),
-                onClick: (handle) => { snooze(); track('later'); handle.close(); },
-            },
-            {
-                name: 'never',
-                label: () => t('dashboard.dockerUpdateNoticeNever', 'Never'),
-                quiet: true,
-                onClick: (handle) => { markAnswered(); track('never'); handle.close(); },
-            },
-        ],
     });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', card.autoStart, { once: true });
+    } else {
+        card.autoStart();
+    }
 
     /** Called once per Containers view open, after its status has loaded. */
     function onViewReady() {
@@ -147,14 +116,13 @@
         } catch {
             /* the card then simply never reaches its third visit */
         }
-        card.stop();
-        card.autoStart();
+        void global.NotificationBell?.refreshAll?.();
     }
 
     global.DashboardDockerUpdateNotice = {
         card,
         onViewReady,
-        shouldShow: card.shouldShow,
+        shouldShow: eligible,
         PROMO_ID,
     };
 }(typeof window !== 'undefined' ? window : globalThis));

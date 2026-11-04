@@ -8,6 +8,8 @@
  * live until Apply. The card names the key and the two tabs that are most
  * often what a reader wants, and opens the studio on request.
  *
+ * It waits in the notifications bell (group Tips) until it is read.
+ *
  * Everyone is asked once. A fresh install is not greeted on its first day —
  * it is still finding its way around, and the setup cards come first — so for
  * those the card waits a day from the moment the settings file was written
@@ -19,10 +21,6 @@
 
     const PROMO_ID = 'theme-studio-hint-v1';
     const NEWCOMER_WAIT_MS = 24 * 60 * 60 * 1000;
-    // After the side-rail and theme-browser cards, which are the same kind of
-    // one-time ask; the corner queue decides the order, the delay only keeps
-    // this one from racing them on load.
-    const SHOW_DELAY_MS = 15000;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -53,10 +51,9 @@
         return Date.now() - at >= NEWCOMER_WAIT_MS;
     }
 
-    function openStudio(card) {
+    function openStudio() {
         const d = dash();
         markAnswered();
-        card.close();
         if (!d?.config?.openThemeBrowser) {
             global.location.hash = 'config/appearance';
             return;
@@ -66,48 +63,44 @@
         });
     }
 
+    /*
+     * A tip in the bell, not a corner card or a toast: it waits there until it
+     * is read (the bell's "Mark read" or the button below), and then it is gone
+     * for good. The day a fresh install waits is the only timing left.
+     */
     const card = global.NoticeCard.define({
         id: 'theme-studio-notice',
-        showDelayMs: SHOW_DELAY_MS,
         title: () => t('dashboard.themeStudioNoticeTitle', 'Not happy with how it looks?'),
-        body: () => t('dashboard.themeStudioNoticeBody',
-            'Press Shift+A to open the theme studio. Besides the theme itself, Surface sets depth, glow and corners, and Layout sets width, spacing and columns. Everything previews on the page while you try it, and nothing is saved until you press Apply.'),
-        dismissLabel: () => t('dashboard.themeStudioNoticeDismiss', 'Dismiss'),
-        dismissName: 'dismiss',
-        canShow: () => !hasAnswered() && oldEnough(),
-        onDismiss: markAnswered,
-        // A hint, not a question: one line, and the studio a click away.
-        toast: {
-            message: () => t('dashboard.themeStudioNoticeToast', 'Not happy with how it looks? Press Shift+A to open the theme studio.'),
-            duration: 14000,
-            onShown: markAnswered,
+        bell: {
+            kind: 'tip',
+            group: 'tips',
+            icon: '\u{1F3A8}',
+            no: 'forever',
+            state: async () => (hasAnswered() || !oldEnough() ? null : {
+                count: 1,
+                text: t('dashboard.themeStudioNoticeToast', 'Not happy with how it looks? Press Shift+A to open the theme studio.'),
+            }),
+            actions: [
+                {
+                    label: () => t('dashboard.themeStudioNoticeOpen', 'Open the studio'),
+                    primary: true,
+                    marksRead: true,
+                    onClick: () => openStudio(),
+                },
+            ],
         },
-        actionAttr: 'data-ts-action',
-        actions: [
-            {
-                name: 'open',
-                label: () => t('dashboard.themeStudioNoticeOpen', 'Open the studio'),
-                primary: true,
-                onClick: openStudio,
-            },
-            {
-                name: 'dismiss',
-                label: () => t('dashboard.themeStudioNoticeNoThanks', 'No thanks'),
-                onClick: (c) => { markAnswered(); c.close(); },
-            },
-        ],
     });
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', card.autoStart, { once: true });
+    } else {
         card.autoStart();
     }
 
     global.DashboardThemeStudioNotice = {
-        render: card.renderSync,
-        shouldShow: card.shouldShowSync,
-        dismiss: () => { markAnswered(); card.close(); },
-        open: () => openStudio(card),
+        shouldShow: () => !hasAnswered() && oldEnough(),
+        dismiss: markAnswered,
+        open: () => openStudio(),
         PROMO_ID,
     };
 }(typeof window !== 'undefined' ? window : globalThis));

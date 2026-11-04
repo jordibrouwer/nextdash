@@ -9,6 +9,12 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
 const PROMO_ID = 'inbox-extension-notice-v1';
 const card = (page) => page.locator('.inbox-extension-notice-card');
 const toast = (page) => page.locator('#app-notification.show');
+const row = (page) => page.locator('.notification-bell-row[data-bell-id="inbox-extension-notice"]');
+
+async function openBell(page) {
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
+}
 
 async function load(page, { bySource = { paste: 3 }, settings = {}, opens = 3 } = {}) {
     await page.setViewportSize({ width: 1500, height: 950 });
@@ -21,8 +27,8 @@ async function load(page, { bySource = { paste: 3 }, settings = {}, opens = 3 } 
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(({ id, settings, opens }) => {
+        window.DiscoverabilityState.schedulePersist = () => {};
         window.DiscoverabilityState?.resetSettingPromoSeen?.(id, { persist: false });
-        localStorage.removeItem('nextdashInboxExtensionSnoozeUntil');
         localStorage.setItem('nextdashInboxOpens', String(opens));
         document.querySelectorAll('.quickstart-card').forEach((el) => el.remove());
         const d = window.dashboardInstance;
@@ -36,7 +42,7 @@ async function load(page, { bySource = { paste: 3 }, settings = {}, opens = 3 } 
 }
 
 const inView = (page, view) => page.evaluate((v) => { window.dashboardInstance.activeView = v; }, view);
-const shouldShow = (page) => page.evaluate(() => window.DashboardInboxExtensionNotice.card.shouldShow());
+const shouldShow = (page) => page.evaluate(() => window.DashboardInboxExtensionNotice.shouldShow());
 
 test.describe('the Inbox browser-extension invitation', () => {
     test('the empty Inbox carries the extension line, once tracked, and the setting hides it', async ({ page }) => {
@@ -61,16 +67,24 @@ test.describe('the Inbox browser-extension invitation', () => {
         expect(off).toBe(false);
     });
 
-    test('the toast shows in the Inbox view after three opens when the extension was never used', async ({ page }) => {
+    test('after three opens it is a tip in the bell, with no toast and no corner card', async ({ page }) => {
         await load(page);
         await inView(page, 'inbox');
         expect(await shouldShow(page)).toBe(true);
-        expect(await page.evaluate(() => window.DashboardInboxExtensionNotice.card.render())).toBe(true);
-        await expect(toast(page)).toBeVisible();
-        await expect(toast(page)).toContainText('Fill your Inbox from the browser');
-        await expect(page.locator('#app-notification')).not.toHaveClass(/has-action/);
+        await openBell(page);
+        await expect(row(page)).toBeVisible();
+        await expect(row(page)).toContainText('Fill your Inbox from the browser');
+        await expect(page.locator('.notification-bell-group[data-bell-group="tips"]')).toContainText('Fill your Inbox from the browser');
+        await expect(toast(page)).toHaveCount(0);
         await expect(card(page)).toHaveCount(0);
-        expect(await page.evaluate(() => window.__tracked.some(([n, p]) => n === 'inbox-ext-cta' && p.action === 'shown'))).toBe(true);
+    });
+
+    test('it shows in every view, not only the Inbox', async ({ page }) => {
+        await load(page);
+        await inView(page, 'bookmarks');
+        expect(await shouldShow(page)).toBe(true);
+        await openBell(page);
+        await expect(row(page)).toBeVisible();
     });
 
     test('opens are counted by the view hook', async ({ page }) => {
@@ -81,41 +95,34 @@ test.describe('the Inbox browser-extension invitation', () => {
         expect(await shouldShow(page)).toBe(true);
     });
 
-    test('no toast when the extension has saved something, the setting is off, or it was answered', async ({ page }) => {
+    test('no row when the extension has saved something, the setting is off, or it was answered', async ({ page }) => {
         await load(page, { bySource: { extension: 1 } });
-        await inView(page, 'inbox');
         expect(await shouldShow(page)).toBe(false);
 
         await load(page, { settings: { enableInboxExtensionNotice: false } });
-        await inView(page, 'inbox');
         expect(await shouldShow(page)).toBe(false);
 
         await load(page);
-        await inView(page, 'inbox');
         await page.evaluate((id) => window.DiscoverabilityState.markSettingPromoSeen(id, { persist: false }), PROMO_ID);
         expect(await shouldShow(page)).toBe(false);
     });
 
-    test('no toast outside the Inbox view', async ({ page }) => {
+    test('Mark read lets it go for good', async ({ page }) => {
         await load(page);
-        await inView(page, 'bookmarks');
-        expect(await shouldShow(page)).toBe(false);
+        await openBell(page);
+        await row(page).getByRole('button', { name: 'Mark read' }).click();
+        await expect(row(page)).toHaveCount(0);
+        await page.evaluate(() => window.NotificationBell.refreshAll());
+        await expect(row(page)).toHaveCount(0);
     });
 
-    test('showing the toast snoozes it, so a reload does not show it again', async ({ page }) => {
+    test('Get the extension opens the page, counts as answered and reads the row', async ({ page }) => {
         await load(page);
-        await inView(page, 'inbox');
-        await page.evaluate(() => window.DashboardInboxExtensionNotice.card.render());
-        await expect(toast(page)).toBeVisible();
-        await expect(card(page)).toHaveCount(0);
-        expect(await shouldShow(page)).toBe(false);
-        const until = await page.evaluate(() => Number(localStorage.getItem('nextdashInboxExtensionSnoozeUntil')));
-        expect(until - Date.now()).toBeGreaterThan(13 * 86400000);
-        // Snoozed, not answered: it comes back after the snooze.
-        expect(await page.evaluate((id) => window.DiscoverabilityState.hasSeenSettingPromo(id), PROMO_ID)).toBe(false);
-        await page.reload();
-        await page.waitForFunction(() => window.dashboardInstance?.inbox && window.DashboardInboxExtensionNotice, null, { timeout: 15_000 });
-        await page.evaluate(() => { window.dashboardInstance.activeView = 'inbox'; localStorage.setItem('nextdashInboxOpens', '3'); });
-        expect(await shouldShow(page)).toBe(false);
+        await openBell(page);
+        await row(page).getByRole('button', { name: 'Get the extension' }).click();
+        await expect(row(page)).toHaveCount(0);
+        expect(await page.evaluate(() => window.__opened.length)).toBe(1);
+        expect(await page.evaluate((id) => window.DiscoverabilityState.hasSeenSettingPromo(id), PROMO_ID)).toBe(true);
+        expect(await page.evaluate(() => window.__tracked.some(([n, p]) => n === 'inbox-ext-cta' && p.action === 'get'))).toBe(true);
     });
 });

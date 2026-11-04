@@ -39,8 +39,11 @@ async function load(page) {
         window.DiscoverabilityState.schedulePersist = () => {};
         // Put the real Task 5 rows away, so the grey count is only about this spec.
         ['tag-suggestions-notice', 'health-review-notice', 'health-recheck-offer', 'kept-pile',
-            'install-count-notice', 'analytics-notice']
+            'install-count-notice', 'analytics-notice', 'theme-studio-notice', 'docker-update-notice',
+            'inbox-extension-notice', 'pwa-install-hint']
             .forEach((id) => window.DiscoverabilityState.markBellNo(id, { count: 1, ids: [], forever: true }, { persist: false }));
+        // Keyboard tips are chosen on a timer, so switch them off rather than name them.
+        window.dashboardInstance.settings.enableSessionTips = false;
     });
 }
 

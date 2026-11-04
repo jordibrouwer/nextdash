@@ -1,30 +1,32 @@
 /**
  * Occasional keyboard tips.
  *
- * Shows one cheat-sheet tip as a toast. The tips themselves are not a new list:
- * they are the same translated strings Config → Help renders, read from
- * window.ConfigHelpTips, so the two can never drift apart.
+ * One cheat-sheet tip at a time waits in the notifications bell (group Tips)
+ * until it is read. The tips themselves are not a new list: they are the same
+ * translated strings Config → Help renders, read from window.ConfigHelpTips,
+ * so the two can never drift apart.
  *
- * What actually limits the frequency is DiscoverabilityState.tipsAllowedNow(),
- * held server-side: at most one tip in any 24 hours, across reloads, tabs and
- * devices. `shownThisLoad` below is only a within-page-load guard so the auto-start timer and a manual call cannot both
- * fire; it is not the rate limit and resets on every reload.
+ * What limits the frequency is DiscoverabilityState.tipsAllowedNow(), held
+ * server-side: at most one tip in any 24 hours, across reloads, tabs and
+ * devices. The clock starts when a tip is read, not when it appears, so the
+ * next tip is offered only once the previous one is read and a day has passed.
+ * The tip waiting in the bell is remembered in localStorage so a reload shows
+ * the same one rather than drawing another.
  *
- * Deliberately conservative. v2026.07.17 removed every tour, spotlight and promo
- * balloon, so this only earns its place by staying rare and easy to switch off:
- * one tip per 24 hours at most, each tip once ever, never over a modal or during
- * onboarding, and a single toggle in Config → General.
+ * Deliberately conservative: each tip once ever, none during onboarding, and a
+ * single toggle in Config → General (the row is then simply absent).
  */
 (function initKeyboardTip(global) {
     'use strict';
 
-    const SHOW_DELAY_MS = 6000;
-    const RETRY_MS = 1500;
-    const MAX_RETRIES = 20;
+    const CURRENT_KEY = 'nextdash-keyboard-tip-current';
+    const ID_PREFIX = 'keyboard-tip:';
+    const FIRST_TICK_MS = 4000;
+    const TICK_EVERY_MS = 5 * 60 * 1000;
 
-    let shownThisLoad = false;
-    let retries = 0;
-    let timer = null;
+    let bellHandle = null;
+    // The tip waiting in the bell, if any; null while none is offered.
+    let current = null;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -53,116 +55,128 @@
         return value && value !== full ? value : '';
     }
 
-    function pickTip() {
-        const state = global.DiscoverabilityState;
-        const ids = allTipIds().filter((id) => tipText(id));
-        if (!ids.length) return null;
-        const unseen = state?.hasSeenTip
-            ? ids.filter((id) => !state.hasSeenTip(id))
-            : ids;
-        if (!unseen.length) return null;
-        return unseen[Math.floor(Math.random() * unseen.length)];
+    /** The tip as plain text: the bell draws text, and the strings carry <code>. */
+    function plainText(html) {
+        const holder = document.createElement('template');
+        holder.innerHTML = html;
+        return holder.content.textContent.trim();
     }
 
+    function bellIdOf(tipId) {
+        return `${ID_PREFIX}${tipId}`;
+    }
+
+    /** Whether the person has already read this tip's row in the bell. */
+    function wasRead(tipId) {
+        return Boolean(global.DiscoverabilityState?.getBellRecord?.(bellIdOf(tipId))?.read);
+    }
+
+    function remembered() {
+        try {
+            return global.localStorage?.getItem(CURRENT_KEY) || null;
+        } catch {
+            return null;
+        }
+    }
+
+    function remember(tipId) {
+        try {
+            if (tipId) global.localStorage?.setItem(CURRENT_KEY, tipId);
+            else global.localStorage?.removeItem(CURRENT_KEY);
+        } catch { /* a reload may then draw another tip: harmless */ }
+    }
+
+    /** Tips worth offering: written in this language, not seen, not read in the bell. */
+    function candidates() {
+        const state = global.DiscoverabilityState;
+        return allTipIds().filter((id) => tipText(id)
+            && !(state?.hasSeenTip && state.hasSeenTip(id))
+            && !wasRead(id));
+    }
+
+    function pickTip() {
+        const ids = candidates();
+        if (!ids.length) return null;
+        return ids[Math.floor(Math.random() * ids.length)];
+    }
+
+    /** Whether a new tip may be offered at all (not whether one is waiting). */
     function shouldShow() {
         const d = dash();
-        if (!d || shownThisLoad) return false;
+        if (!d) return false;
         if (d.settings?.enableSessionTips === false) return false;
         // No tips in the public demo: the bar and the tour already speak.
         if (global.DemoLock?.on) return false;
-        // The block-move intro (animation and card) has the screen until it is answered.
-        if (document.body.classList.contains('is-block-move-intro')) return false;
-
-        // Whether unprompted UI may take the screen is one shared question,
-        // answered by dashboard-promos.js for every module that asks it. A tip
-        // does compete with the start guide bar, so it does not take the
-        // what's-new prompt's exemption.
-        if (typeof d.promos?.canShowUnpromptedUi === 'function') {
-            if (!d.promos.canShowUnpromptedUi()) return false;
-        } else {
-            // promos is part of the same bundle, so this only happens if the tip
-            // timer fires mid-construction. Falling back to the same checks
-            // rather than showing regardless: the point of the gate is that an
-            // unprompted toast never lands on top of something else.
-            if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
-            if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
-            if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
-            if (document.querySelector('.quickstart-card')) return false;
-        }
-
+        // Rotating tips are not for phones, as before.
+        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
         return global.DiscoverabilityState?.tipsAllowedNow?.() !== false;
     }
 
-    function show() {
-        const d = dash();
-        // Guard here as well as in attempt(): show() is the public entry point and
-        // the auto-start timer can still be pending when something else calls it.
-        if (shownThisLoad) return false;
-        const id = pickTip();
-        if (!id) return false;
-        const html = tipText(id);
-        if (!html) return false;
-
-        const label = t('sessionTipLabel', 'Tip');
-        // Tip strings are our own translated markup (they contain <code>), never
-        // user input, so inserting them as HTML is safe here.
-        const message = `<strong class="app-notification-tip-label">${label}</strong> ${html}`;
-
-        const opts = {
-            duration: 12000,
-            actionLabel: t('sessionTipAction', 'Cheat sheet'),
-            onAction: () => {
-                if (typeof d.showKeyboardCheatSheet === 'function') {
-                    d.showKeyboardCheatSheet();
-                }
-            },
-            allowHtml: true,
-        };
-
-        // 'promo', not 'info': this is an unprompted tip on a 12s timer, and
-        // AppNotification lets a real notification take the slot from a promo
-        // rather than queue behind it. Sent as 'info' it held the queue, so a
-        // confirmation for something the user had just done — a delete and its
-        // Undo — waited out the tip and effectively never appeared.
-        if (global.AppNotification?.show) {
-            global.AppNotification.show(message, 'promo', opts);
-        } else {
-            return false;
-        }
-
-        shownThisLoad = true;
-        clearTimeout(timer);
-        timer = null;
-        global.DiscoverabilityState?.markTipSeen?.(id);
+    /** The tip is read: count it as shown, the way the toast did, and let go of it. */
+    function settle(tipId) {
+        global.DiscoverabilityState?.markTipSeen?.(tipId);
         global.DiscoverabilityState?.noteTipShown?.();
-        global.nextdashTrack?.('tip:shown', { tip: id });
-        return true;
+        global.nextdashTrack?.('tip:shown', { tip: tipId });
+        bellHandle?.unregister();
+        bellHandle = null;
+        current = null;
+        remember(null);
     }
 
-    function attempt() {
-        if (shownThisLoad) return;
-        if (!shouldShow()) {
-            retries += 1;
-            if (retries <= MAX_RETRIES) {
-                timer = setTimeout(attempt, RETRY_MS);
-            }
-            return;
-        }
-        if (!show()) {
-            retries += 1;
-            if (retries <= MAX_RETRIES) {
-                timer = setTimeout(attempt, RETRY_MS);
-            }
-        }
+    function source(tipId) {
+        return {
+            id: bellIdOf(tipId),
+            group: 'tips',
+            kind: 'tip',
+            icon: '\u2328\uFE0F',
+            no: 'forever',
+            // Switching the tips off in Config takes the row away at the next refresh.
+            state: async () => (dash()?.settings?.enableSessionTips === false || global.DemoLock?.on
+                ? null
+                : { count: 1, text: plainText(tipText(tipId)) }),
+            actions: [{
+                label: () => t('sessionTipAction', 'Cheat sheet'),
+                primary: true,
+                marksRead: true,
+                onClick: () => dash()?.showKeyboardCheatSheet?.(),
+            }],
+        };
     }
+
+    /**
+     * One look at the bell's tip: settle it if it was read, or put up the next
+     * one when none is waiting and the 24 hours allow it. Returns the tip now
+     * in the bell, or null.
+     */
+    function tick() {
+        if (!global.NotificationBell || !allTipIds().length) return null;
+        if (current && wasRead(current)) settle(current);
+        if (!current) {
+            const saved = remembered();
+            let next = null;
+            if (saved && candidates().includes(saved)) next = saved;
+            else if (shouldShow()) next = pickTip();
+            if (next) {
+                current = next;
+                remember(next);
+                bellHandle = global.NotificationBell.register(source(next));
+                void bellHandle.refresh();
+            }
+        }
+        return current;
+    }
+
+    let ticker = null;
 
     function autoStart() {
-        clearTimeout(timer);
-        retries = 0;
-        timer = setTimeout(attempt, SHOW_DELAY_MS);
+        if (ticker) return;
+        // Shortly after load, then whenever the page is looked at again.
+        setTimeout(tick, FIRST_TICK_MS);
+        ticker = setInterval(tick, TICK_EVERY_MS);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); });
     }
 
-    global.DashboardKeyboardTip = { autoStart, attempt, show, shouldShow, pickTip };
+    global.DashboardKeyboardTip = { autoStart, shouldShow, pickTip, tick, current: () => current };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', autoStart, { once: true });

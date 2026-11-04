@@ -10,12 +10,18 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
 const PROMO_ID = 'docker-update-offer-v1';
 const card = (page) => page.locator('.docker-update-notice-card');
 const toast = (page) => page.locator('#app-notification.show');
+const row = (page) => page.locator('.notification-bell-row[data-bell-id="docker-update-notice"]');
+
+async function openBell(page) {
+  await page.evaluate(() => window.NotificationBell.refreshAll());
+  await page.evaluate(() => window.NotificationBell.open());
+}
 
 async function load(page, { socket = true, opens = 3, settings = {} } = {}) {
   await mockDocker(page, { socket });
   await markWhatsNewSeen(page);
   await page.addInitScript((n) => {
-    try { localStorage.setItem('nextdashDockerViewOpens', String(n - 1)); localStorage.removeItem('nextdashDockerUpdateOfferSnoozeUntil'); } catch { /* none */ }
+    try { localStorage.setItem('nextdashDockerViewOpens', String(n - 1)); } catch { /* none */ }
   }, opens);
   await page.goto('/');
   await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -23,6 +29,8 @@ async function load(page, { socket = true, opens = 3, settings = {} } = {}) {
   await dismissBlockingOverlays(page);
   await page.evaluate(({ id, settings }) => {
     const d = window.dashboardInstance;
+    // Marks written by these tests must not reach the ./data the dev server shares.
+    window.DiscoverabilityState.schedulePersist = () => {};
     window.DiscoverabilityState?.resetSettingPromoSeen?.(id, { persist: false });
     d.settings.quickStart = { ...(d.settings.quickStart || {}), analyticsChoiceMade: true };
     Object.assign(d.settings, { dockerViewEnabled: true, dockerUpdateInterval: 'off', enableDockerUpdateNotice: true }, settings);
@@ -37,13 +45,15 @@ async function openView(page) {
 }
 
 test.describe('the image-update invitation', () => {
-  test('it appears in the Containers view on the third visit', async ({ page }) => {
+  test('it is a tip in the bell on the third visit, with no toast and no corner card', async ({ page }) => {
     await load(page, { opens: 3 });
     await openView(page);
-    await expect(toast(page)).toBeVisible({ timeout: 15_000 });
-    await expect(toast(page)).toContainText('Check images for updates?');
-    await expect(toast(page)).toContainText('Config → Containers → Updates');
-    await expect(page.locator('#app-notification')).not.toHaveClass(/has-action/);
+    await openBell(page);
+    await expect(row(page)).toBeVisible();
+    await expect(row(page)).toContainText('Check images for updates?');
+    await expect(row(page)).toContainText('Config → Containers → Updates');
+    await expect(page.locator('.notification-bell-group[data-bell-group="tips"]')).toContainText('Check images for updates?');
+    await expect(toast(page)).toHaveCount(0);
     await expect(card(page)).toHaveCount(0);
   });
 
@@ -51,10 +61,11 @@ test.describe('the image-update invitation', () => {
     await load(page, { opens: 2 });
     await openView(page);
     expect(await page.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(false);
-    await expect(card(page)).toHaveCount(0);
+    await openBell(page);
+    await expect(row(page)).toHaveCount(0);
   });
 
-  test('not without a linked socket, with checks on, with the setting off, or in the dashboard view', async ({ page }) => {
+  test('not without a linked socket, with checks on, or with the setting off', async ({ page }) => {
     await load(page, { socket: false });
     await openView(page);
     expect(await page.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(false);
@@ -67,21 +78,31 @@ test.describe('the image-update invitation', () => {
     expect(await other.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(false);
     await other.evaluate(() => { window.dashboardInstance.settings.enableDockerUpdateNotice = true; });
     expect(await other.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(true);
-    // Back in the bookmarks view the corner stays clear.
+    // The row is in the bell in every view, not only the Containers view.
     await other.evaluate(() => window.dashboardInstance.docker.closeDockerView());
-    expect(await other.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(false);
+    expect(await other.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(true);
     await other.close();
   });
 
-  test('showing the toast snoozes it and changes nothing', async ({ page }) => {
+  test('Mark read lets it go for good and changes nothing', async ({ page }) => {
     await load(page);
     await openView(page);
-    await expect(toast(page)).toBeVisible({ timeout: 15_000 });
-    await expect(card(page)).toHaveCount(0);
-    expect(await page.evaluate(() => Number(localStorage.getItem('nextdashDockerUpdateOfferSnoozeUntil')) > Date.now())).toBe(true);
-    expect(await page.evaluate(() => window.DashboardDockerUpdateNotice.shouldShow())).toBe(false);
+    await openBell(page);
+    await row(page).getByRole('button', { name: 'Mark read' }).click();
+    await expect(row(page)).toHaveCount(0);
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await expect(row(page)).toHaveCount(0);
     expect(await page.evaluate(() => window.dashboardInstance.settings.dockerUpdateInterval)).toBe('off');
-    // Snoozed, not answered: it comes back after the snooze.
-    expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('docker-update-offer-v1'))).toBe(false);
+  });
+
+  test('Turn on (daily) switches the check on and reads the row', async ({ page }) => {
+    await load(page);
+    await page.evaluate(() => { window.dashboardInstance.saveSettings = async () => true; });
+    await openView(page);
+    await openBell(page);
+    await row(page).getByRole('button', { name: 'Turn on (daily)' }).click();
+    await expect(row(page)).toHaveCount(0);
+    expect(await page.evaluate(() => window.dashboardInstance.settings.dockerUpdateInterval)).toBe('24h');
+    expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('docker-update-offer-v1'))).toBe(true);
   });
 });

@@ -19,6 +19,8 @@ async function load(page, settings = {}) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(({ id, settings }) => {
+        window.DiscoverabilityState.schedulePersist = () => {};
+        window.DiscoverabilityState.noteTipCardShown(0, { persist: false });
         localStorage.removeItem('nextdash:last-corner-card-at');
         window.DiscoverabilityState?.resetSettingPromoSeen?.(id, { persist: false });
         Object.assign(window.dashboardInstance.settings, { firstRunInstall: false, firstRunAt: 0 }, settings);
@@ -75,5 +77,21 @@ test.describe('the edit mode hint', () => {
         await load(page);
         await page.evaluate(() => window.dashboardInstance.editMode.enter());
         expect(await page.evaluate(() => window.DashboardEditModeNotice.shouldShow())).toBe(false);
+    });
+
+    test('it shares the one tip slot: a week between two tip cards', async ({ page }) => {
+        await load(page);
+        await page.evaluate(() => window.DiscoverabilityState.noteTipCardShown(Date.now() - 2 * 24 * 3600 * 1000, { persist: false }));
+        expect(await page.evaluate(() => window.DashboardEditModeNotice.shouldShow())).toBe(false);
+        await page.evaluate(() => window.DiscoverabilityState.noteTipCardShown(Date.now() - 8 * 24 * 3600 * 1000, { persist: false }));
+        expect(await page.evaluate(() => window.DashboardEditModeNotice.shouldShow())).toBe(true);
+    });
+
+    test('drawing it starts the tip slot', async ({ page }) => {
+        await load(page);
+        expect(await page.evaluate(() => window.DiscoverabilityState.getTipCardShownAt())).toBe(0);
+        await page.evaluate(() => window.DashboardEditModeNotice.render());
+        await expect(card(page)).toBeVisible();
+        expect(Date.now() - await page.evaluate(() => window.DiscoverabilityState.getTipCardShownAt())).toBeLessThan(10_000);
     });
 });
