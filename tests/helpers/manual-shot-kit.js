@@ -82,7 +82,7 @@ const DEMO_THEME = 'matrix-bluepill-dark';
  * fresh install, so the server's one-time move to Aurora Glass has nothing to
  * do and its dialog stays away.
  */
-const SHOT_THEME = process.env.SHOT_THEME || 'oceanic-steel-dark';
+const SHOT_THEME = process.env.SHOT_THEME || 'tarnished-brass-dark';
 
 /** A port nothing else is on (never 8080: the OS hands out a free one). */
 function freePort() {
@@ -776,7 +776,7 @@ async function shot(page, name) {
     await page.evaluate(() => document.activeElement?.blur?.());
     // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(300);
-    fs.mkdirSync(OUT, { recursive: true });
+    fs.mkdirSync(path.dirname(path.join(OUT, name)), { recursive: true });
     await page.screenshot({ path: path.join(OUT, name), type: 'jpeg', quality: 82 });
 }
 
@@ -798,7 +798,7 @@ async function crop(page, locator, name, pad = 24, maxHeight = Infinity) {
         width: Math.min(view.width - x, Math.ceil(box.width + pad * 2)),
         height: Math.min(view.height - y, Math.ceil(box.height + pad * 2), maxHeight),
     };
-    fs.mkdirSync(OUT, { recursive: true });
+    fs.mkdirSync(path.dirname(path.join(OUT, name)), { recursive: true });
     await page.screenshot({ path: path.join(OUT, name), type: 'jpeg', quality: 82, clip });
 }
 

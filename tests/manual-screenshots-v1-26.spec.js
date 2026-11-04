@@ -131,3 +131,108 @@ test('03 the Clock widget with a face, and the DNS tiles', async ({ page }) => {
     await snap(page, page.locator('.dashboard-widget[data-widget-id="w_v12600000002"]'), 'v126-dns-pulse.jpg', { pad: 16 });
     await snap(page, page.locator('.dashboard-widget[data-widget-id="w_v12600000003"]'), 'v126-dns-tiles.jpg', { pad: 16 });
 });
+
+/*
+ * The pictures of v1.25 that no spec took until now: a Tabs tile, the list of
+ * what you changed, and the earlier layouts of a page. Each is also shot as a
+ * full frame (v125-*.jpg) for nextdash.cc.
+ */
+const { mockMedia } = require('./helpers/media-mock');
+
+function v125Data(dir) {
+    const pagesFile = path.join(dir, 'pages.json');
+    const pages = readJSON(pagesFile);
+    if (!(pages.order || []).includes(4)) pages.order = [...(pages.order || []), 4];
+    writeJSON(pagesFile, pages);
+    const settingsFile = path.join(dir, 'settings.json');
+    writeJSON(settingsFile, { ...readJSON(settingsFile), smartTodayPageIds: [1, 2, 3], feedsEnabled: false, showGridKeyLegend: false, showCategoryCount: true, webSearchEngine: 'searxng', webSearchSearxngUrl: 'http://searx.lab.example' });
+    const widgets = [
+        { id: 'w_v12500000001', type: 'stack', title: 'At a glance', config: { members: ['w_v12500000011', 'w_v12500000012', 'w_v12500000013'] } },
+        { id: 'w_v12500000011', type: 'health', title: 'Health' },
+        { id: 'w_v12500000012', type: 'weather', title: 'Weather' },
+        { id: 'w_v12500000013', type: 'notes', title: 'Notes', config: { text: '[x] Renew the domain\n[x] Clean out the Inbox\n[ ] Check the backup report' } },
+        { id: 'w_v12500000002', type: 'clock', title: 'World', config: { look: 'list', zones: ['Tokyo=Asia/Tokyo', 'New York=America/New_York'] } },
+        { id: 'w_v12500000003', type: 'countdown', title: 'Winter holiday', config: { date: '2026-12-19' } },
+        { id: 'w_v12500000004', type: 'jellyfin-playing', config: { server: 'http://jellyfin.lab.example:8096' } },
+        { id: 'w_v12500000005', type: 'jellyfin', config: { server: 'http://jellyfin.lab.example:8096' } },
+    ];
+    writeJSON(path.join(dir, 'bookmarks-4.json'), {
+        page: { id: 4, name: 'Overview' },
+        categories: [],
+        widgets: widgets.filter((w) => !['w_v12500000011', 'w_v12500000012', 'w_v12500000013'].includes(w.id)).concat(widgets.filter((w) => ['w_v12500000011', 'w_v12500000012', 'w_v12500000013'].includes(w.id))),
+        blockOrder: ['w_v12500000001', 'w_v12500000002', 'w_v12500000003', 'w_v12500000004', 'w_v12500000005'],
+        bookmarks: [],
+    });
+}
+
+test.describe('v1.25 pictures', () => {
+    test.use({ dataTweak: { run: v125Data } });
+
+    test('16 a Tabs tile', async ({ page }) => {
+        await prepare(page);
+        await mockMedia(page);
+        await openDashboard(page);
+        await page.keyboard.press('4');
+        const tabs = page.locator('.dashboard-widget[data-widget-id="w_v12500000001"]');
+        await tabs.waitFor({ state: 'visible', timeout: 15_000 });
+        await tabs.getByRole('tab', { name: 'Weather' }).click();
+        // Pacing for the capture, not a condition: the tab's tile finishes drawing.
+        await page.waitForTimeout(1_200);
+        await shot(page, 'v125-tabs.jpg');
+        await shot(page, '16-tabs.jpg');
+    });
+
+    test('18 what you changed', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await page.waitForSelector('.config-view', { timeout: 15_000 });
+        await page.waitForFunction(() => window.dashboardInstance?.config, null, { timeout: 15_000 });
+        // Pacing for the capture, not a condition: Config settles after the first open.
+        await page.waitForTimeout(2_000);
+        await shot(page, 'v125-overview.jpg');
+        await page.evaluate(() => (window.dashboardInstance.config._module || window.dashboardInstance.config).openChangedSettings());
+        const modal = page.locator('#app-modal.show .modal');
+        await modal.waitFor({ state: 'visible' });
+        await page.waitForTimeout(800);
+        await shot(page, 'v125-changed.jpg');
+        await snap(page, modal, '18-what-you-changed.jpg', { pad: 24 });
+    });
+
+    test('18 earlier layouts of a page', async ({ page }) => {
+        test.setTimeout(150_000);
+        await prepare(page);
+        await openDashboard(page);
+        const api = (method, url, body) => page.evaluate(async ([m, u, b]) => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            const res = await f(u, { method: m, headers: h, body: b ? JSON.stringify(b) : undefined });
+            return res.ok ? res.json() : { error: res.status };
+        }, [method, url, body]);
+        const note = (id, title) => ({ id, type: 'notes', title, config: { text: title } });
+        const a = note('w_aaaaaaaaaaa1', 'Reading list');
+        const b = note('w_aaaaaaaaaaa2', 'Ideas');
+        const c = note('w_aaaaaaaaaaa3', 'Shopping');
+        // The history files a layout only once the last one is older than a burst of edits.
+        await api('PUT', '/api/pages/1/blocks', { widgets: [a, b, c] });
+        await page.waitForTimeout(21_000);
+        await api('PUT', '/api/pages/1/blocks', { widgets: [a, b] });
+        await page.waitForTimeout(21_000);
+        await api('PUT', '/api/pages/1/blocks', { widgets: [a] });
+        // The entries are stamped by the server's clock; the list words their age by the browser's.
+        await page.clock.setFixedTime(new Date(Date.now() + 5_000));
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await page.waitForSelector('.config-view', { timeout: 15_000 });
+        await page.waitForFunction(() => window.dashboardInstance?.config, null, { timeout: 15_000 });
+        await page.evaluate(() => {
+            const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
+            return c.activateSettingsJumpEntry(c.getSettingsJumpEntries().find((e) => e.action === 'layout-history'));
+        });
+        const box = page.locator('.config-layout-history-box');
+        await box.waitFor({ state: 'visible', timeout: 10_000 });
+        await page.waitForTimeout(800);
+        await shot(page, 'v125-layout-history.jpg');
+        await snap(page, page.locator('#app-modal.show .modal'), '18-layout-history.jpg', { pad: 24 });
+    });
+});

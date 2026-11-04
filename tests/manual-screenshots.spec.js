@@ -636,6 +636,7 @@ test.describe('category count', () => {
         await prepare(page);
         await openDashboard(page);
         await snap(page, page.locator('.dashboard-section.section-controls .header-top'), '04-header.jpg');
+        await row(page, 'GitHub').scrollIntoViewIfNeeded();
         await snap(page, row(page, 'GitHub'), '04-bookmark-row.jpg', { pad: 8 });
         const header = page.locator('#category-title-tools');
         await scrollToTop(page, header, 300);
