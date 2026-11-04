@@ -274,11 +274,22 @@
         renderBmHealthModalFixFirstCard(health) {
             const esc = (v) => this.dash.escapeHtml(v);
             const issues = Array.isArray(health.report?.issues) ? health.report.issues : [];
+            const reasonOf = (i) => health.reasonEntries?.(i)?.[0]?.label || '';
+            // Two bookmarks that share an address have the same problem and the same line
+            // ("Duplicate URL in 2 bookmarks"): they are one place to start, not two.
+            const seen = new Set();
             const worst = issues.filter((i) => Number(i.score) < 90)
-                .sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0)).slice(0, 5);
+                .sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0))
+                .filter((i) => {
+                    const key = `${i.url || ''}\u0000${reasonOf(i)}`;
+                    if (!i.url || seen.has(key)) return !i.url;
+                    seen.add(key);
+                    return true;
+                })
+                .slice(0, 5);
             if (!worst.length) return '';
             const rows = worst.map((i) => {
-                const why = health.reasonEntries?.(i)?.[0]?.label || '';
+                const why = reasonOf(i);
                 const score = Number(i.score) || 0;
                 return `<li><span title="${esc(i.url || '')}">${esc(i.name || health.formatUrlDisplay(i.url))}${why
                     ? `<small class="bm-health-modal-fix-why">${esc(why)}</small>` : ''}</span>

@@ -93,6 +93,21 @@ test.describe('bookmarks: the collection health modal', () => {
   });
 });
 
+test('Fix first lists two bookmarks that share an address once, not twice', async ({ page }) => {
+  await openBookmarksWithHealth(page, (issues) => {
+    // The second and third bookmark are one address on two pages: the same line each.
+    const shared = issues[1].url;
+    return issues.map((i, n) => (n === 1 || n === 2
+      ? { ...i, url: shared, status: 'healthy', flags: ['duplicate'], score: 85, reasons: ['Duplicate URL in 2 bookmarks'], reasonDetails: [] }
+      : i));
+  }, { report: (issues) => ({ summary: fullSummary(issues) }) });
+  await page.locator('[data-bm-health-summary]').click();
+  const rows = page.locator('#app-modal.show [data-bm-health-modal-card="fix-first"] li');
+  // The broken one, and the shared address once.
+  await expect(rows).toHaveCount(2);
+  await expect(rows.filter({ hasText: 'Duplicate URL in 2 bookmarks' })).toHaveCount(1);
+});
+
 test('Collection health in the view header\'s menu opens it', async ({ page }) => {
   await openBookmarksWithHealth(page, undefined, { view: 'library' });
   await page.locator('.config-view--library .lvs-header-actions [data-bm-header-more]').click();

@@ -182,6 +182,10 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 - **fix — The saved panel no longer stands open.** A rule in `popup.css` had lost its selector line and swallowed the `.hidden` rule after it, so *Bookmark saved… open in nextDash* showed under the buttons from the first look, and the form did not hide after a save.
 - **fix — The duplicate-address warning shows again.** The panel carried both a `hidden` class and the `hidden` attribute `popup.js` sets; once the `.hidden` rule was back, the class kept the warning out of sight for good. It now uses the attribute alone.
 
+### Bookmarks view
+
+- **fix — Fix first lists a shared address once.** Two bookmarks with the same address gave two identical lines in *Collection health → Fix first* (*Docker Hub — Duplicate URL in 2 bookmarks*, twice). They are one place to start now.
+
 ### Fixes from a code review
 
 Eight fixes from a code review: the calculator reads a decimal comma, a Tabs widget off its schedule gives its widgets back, copying a widget no longer undoes a save made at the same moment, the digest charts count real days and show a day that was down, and a few edge cases in importing, the Tabs settings and the backdrop picker.
