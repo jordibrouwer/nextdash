@@ -92,20 +92,21 @@
 .notification-bell-more {
     position: absolute;
     right: 10px;
-    bottom: 8px;
+    bottom: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border-radius: 50%;
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     color: var(--accent-primary);
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
     cursor: pointer;
 }
+.notification-bell-more svg { width: 20px; height: 20px; }
 .notification-bell-more[hidden] { display: none; }
 .notification-bell-more:hover { border-color: var(--accent-primary); }
 .notification-bell-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
