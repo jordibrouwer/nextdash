@@ -56,6 +56,7 @@
     let lastUnread = null;     // unread after the previous refresh; null until the first one
     let looked = true;         // the panel was opened since the last shake
     let audioCtx = null;
+    let lastAnim = { kind: 'none', at: 0 };   // the last thing that drew the eye, for analytics
 
     const GROUP_FALLBACK = {
         health: 'Health', cleanup: 'Clean up', system: 'System', privacy: 'Privacy', tips: 'Tips',
@@ -131,8 +132,14 @@
         node.classList.add(className);
     }
 
+    /** How the bell is used: fixed words and bucketed counts only, never row text. */
+    function track(props) {
+        try { global.nextdashTrack?.('bell', props); } catch { /* analytics never breaks the bell */ }
+    }
+
     function shake() {
         if (!button) return;
+        lastAnim = { kind: 'shake', at: Date.now() };
         restart(button, 'is-shaking');
         looked = false;
     }
@@ -203,7 +210,10 @@
     function remind() {
         if (document.visibilityState !== 'visible' || looked || isOpen) return;
         const { red, grey } = counts();
-        if (red + grey > 0) pulse();
+        if (red + grey > 0) {
+            lastAnim = { kind: 'pulse', at: Date.now() };
+            pulse();
+        }
     }
 
     function el(tag, className, text) {
@@ -224,6 +234,7 @@
         const mark = markOf(entry);
         if (source.no === 'forever') mark.forever = true;
         States().markBellNo(source.id, mark);
+        track({ action: 'no', source: source.id });
         try { source.onNo?.(row); } catch (err) { console.warn('bell onNo failed', err); }
         changed();
     }
@@ -236,11 +247,14 @@
     }
 
     function markRead(row) {
+        track({ action: 'read', source: row.source.id });
         writeRead(row);
         changed();
     }
 
     function markAllRead() {
+        const { red, grey } = counts();
+        track({ action: 'read-all', total: red + grey });
         rows().filter((r) => r.visible).forEach(writeRead);
         changed();
     }
@@ -261,11 +275,12 @@
         body.appendChild(line);
 
         const actions = el('div', 'notification-bell-row-actions');
-        (source.actions || []).forEach((action) => {
+        (source.actions || []).forEach((action, index) => {
             const b = el('button', 'notification-bell-action', typeof action.label === 'function' ? action.label() : action.label);
             b.type = 'button';
             if (action.primary) b.classList.add('is-primary');
             b.addEventListener('click', () => {
+                track({ action: 'row-action', source: source.id, name: action.name || (action.primary ? 'primary' : `secondary-${index}`) });
                 if (action.marksRead) writeRead(row);
                 try { action.onClick(row); } catch (err) { console.warn('bell action failed', err); }
                 changed();
@@ -302,8 +317,9 @@
         more.type = 'button';
         more.hidden = true;
         more.setAttribute('aria-label', t('more', 'More below'));
-        more.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>';
+        more.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>';
         more.addEventListener('click', () => {
+            track({ action: 'more' });
             const reduced = global.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
             body.scrollBy({ top: body.clientHeight, behavior: reduced ? 'auto' : 'smooth' });
         });
@@ -365,6 +381,9 @@
         if (!panel || isOpen) return;
         isOpen = true;
         looked = true;
+        const { red, grey } = counts();
+        const recent = lastAnim.kind !== 'none' && Date.now() - lastAnim.at <= 60 * 1000;
+        track({ action: 'open', total: red + grey, rows: rows().filter((r) => r.visible).length, after: recent ? lastAnim.kind : 'none' });
         renderPanel();
         panel.hidden = false;
         keepOnScreen();
@@ -374,8 +393,9 @@
 
     window.addEventListener('resize', () => { if (isOpen) { keepOnScreen(); updateMore(); } });
 
-    function close() {
+    function close(via) {
         if (!panel || !isOpen) return;
+        if (typeof via === 'string') track({ action: 'close', via });
         isOpen = false;
         panel.hidden = true;
         button.setAttribute('aria-expanded', 'false');
@@ -440,7 +460,7 @@
         [redEl, greyEl].forEach((badge) => badge.addEventListener('animationend', (event) => {
             if (event.target === badge) badge.classList.remove('is-pulsing');
         }));
-        button.addEventListener('click', () => (isOpen ? close() : open()));
+        button.addEventListener('click', () => (isOpen ? close('button') : open()));
         host.appendChild(button);
 
         panel = el('div', 'notification-bell-panel');
@@ -450,10 +470,10 @@
         host.appendChild(panel);
 
         document.addEventListener('pointerdown', (event) => {
-            if (isOpen && !host.contains(event.target)) close();
+            if (isOpen && !host.contains(event.target)) close('outside');
         });
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && isOpen) { close(); button.focus(); }
+            if (event.key === 'Escape' && isOpen) { close('escape'); button.focus(); }
         });
     }
 

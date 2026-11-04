@@ -479,3 +479,73 @@ test('no arrow when everything fits', async ({ page }) => {
     await openPanel(page);
     await expect(page.locator('.notification-bell-more')).toBeHidden();
 });
+
+/** How the bell is used, as events with fixed words and no row text. */
+test('the bell reports its use as `bell` events with fixed words only', async ({ page }) => {
+    await loadDashboard(page);
+    await addRows(page, 12);
+    await page.evaluate(() => {
+        window.__tracks = [];
+        window.nextdashTrack = (name, props) => window.__tracks.push({ name, props });
+        window.__clicked = [];
+        window.NotificationBell.register({
+            id: 'probe-actions', group: 'system', kind: 'urgent', icon: '*', no: 'state',
+            actions: [
+                { label: 'Secret first label', primary: true, onClick: () => {} },
+                { label: 'Secret second label', onClick: () => {} },
+                { label: 'Secret third label', name: 'named', onClick: () => {} },
+            ],
+            state: async () => ({ count: 1, text: 'Secret row text' }),
+        });
+    });
+    await refresh(page);
+    const take = () => page.evaluate(() => window.__tracks.splice(0));
+    await take();
+
+    await page.locator('.notification-bell-button').click();
+    let got = await take();
+    expect(got).toHaveLength(1);
+    expect(got[0].name).toBe('bell');
+    expect(Object.keys(got[0].props).sort()).toEqual(['action', 'after', 'rows', 'total']);
+    expect(got[0].props.action).toBe('open');
+    expect(['shake', 'pulse', 'none']).toContain(got[0].props.after);
+
+    const actions = page.locator('.notification-bell-row[data-bell-id="probe-actions"] .notification-bell-action');
+    await actions.nth(0).click();
+    await actions.nth(1).click();
+    await actions.nth(2).click();
+    got = await take();
+    expect(got.map((g) => g.props)).toEqual([
+        { action: 'row-action', source: 'probe-actions', name: 'primary' },
+        { action: 'row-action', source: 'probe-actions', name: 'secondary-1' },
+        { action: 'row-action', source: 'probe-actions', name: 'named' },
+    ]);
+
+    await page.locator('.notification-bell-more').click();
+    expect((await take()).map((g) => g.props)).toEqual([{ action: 'more' }]);
+
+    await row(page, 'probe-extra-0').locator('.notification-bell-dismiss').click();
+    expect((await take()).map((g) => g.props)).toEqual([{ action: 'no', source: 'probe-extra-0' }]);
+
+    await row(page, 'probe-tip').locator('.notification-bell-dismiss').click();
+    expect((await take()).map((g) => g.props)).toEqual([{ action: 'read', source: 'probe-tip' }]);
+
+    await page.locator('.notification-bell-markall').click();
+    got = await take();
+    expect(got).toHaveLength(1);
+    expect(Object.keys(got[0].props).sort()).toEqual(['action', 'total']);
+    expect(got[0].props.action).toBe('read-all');
+
+    await page.locator('.notification-bell-button').click();
+    expect((await take()).map((g) => g.props)).toEqual([{ action: 'close', via: 'button' }]);
+    await page.locator('.notification-bell-button').click();
+    await take();
+    await page.mouse.click(5, 400);
+    expect((await take()).map((g) => g.props)).toEqual([{ action: 'close', via: 'outside' }]);
+    await page.locator('.notification-bell-button').click();
+    await take();
+    await page.keyboard.press('Escape');
+    expect((await take()).map((g) => g.props)).toEqual([{ action: 'close', via: 'escape' }]);
+
+    expect(JSON.stringify(got)).not.toContain('Secret');
+});
