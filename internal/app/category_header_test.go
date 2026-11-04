@@ -104,9 +104,10 @@ func TestThemeBackdropsEndpointAnswersEveryRecipe(t *testing.T) {
 	}
 }
 
-// The theme browser previews a roll before it is saved, so /api/theme.css
-// takes the seed from the query, and never lets a cache keep that answer.
-func TestThemeCSSTakesSeedFromQuery(t *testing.T) {
+// The theme browser previews a roll before it is saved, so the backdrops take
+// the seed from the query -- they are the only part of the theme stylesheet the
+// seed draws -- and never let a cache keep that answer without asking.
+func TestThemeBackdropCSSTakesSeedFromQuery(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
 	h := &Handlers{store: NewStore()}
@@ -115,18 +116,19 @@ func TestThemeCSSTakesSeedFromQuery(t *testing.T) {
 		h.CustomThemeCSS(rec, httptest.NewRequest("GET", url, nil))
 		return rec.Body.String(), rec.Header().Get("Cache-Control")
 	}
-	plain, cache := get("/api/theme.css")
-	if !strings.Contains(cache, "no-store") {
-		t.Errorf("Cache-Control = %q, want no-store", cache)
+	const ask = "/api/theme.css?scope=backdrop&theme=dark&recipe=aurora"
+	plain, cache := get(ask)
+	if plain == "" {
+		t.Fatal("the backdrop of dark and of aurora came back empty")
 	}
-	rolled, cache := get("/api/theme.css?seed=9")
-	if !strings.Contains(cache, "no-store") {
-		t.Errorf("seeded Cache-Control = %q, want no-store", cache)
+	if !strings.Contains(cache, "no-cache") {
+		t.Errorf("Cache-Control = %q, want no-cache", cache)
 	}
+	rolled, _ := get(ask + "&seed=9")
 	if rolled == plain {
-		t.Error("seed=9 served the same stylesheet as the stored seed")
+		t.Error("seed=9 served the same backdrops as the stored seed")
 	}
-	if junk, _ := get("/api/theme.css?seed=x"); junk != plain {
+	if junk, _ := get(ask + "&seed=x"); junk != plain {
 		t.Error("an unreadable seed should fall back to the stored one")
 	}
 	if stored := normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed; stored != 0 {

@@ -307,6 +307,8 @@ func (h *Handlers) pageTemplateFuncsFor() template.FuncMap {
 		return template.CSS(h.customThemeCSS())
 	}
 	funcs["themeCSSURL"] = h.themeCSSURL
+	funcs["themeBackdropCSS"] = h.themeBackdropInline
+	funcs["themeBackdropIDs"] = h.themeBackdropInlineIDs
 	return funcs
 }
 
@@ -4051,6 +4053,26 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 // the backdrop: the same recipe, drawn with other positions. Seed 0 is the
 // roll the theme's id has always had.
 func renderThemeCSSBlockSeeded(selector string, tc ThemeColors, seed int) string {
+	return renderThemeCSSBlockWith(selector, tc, seed, true)
+}
+
+// renderThemeBackdropBlock is the four backdrop variables of one theme and
+// nothing else: the part of renderThemeCSSBlockSeeded that weighs ~24 KB of
+// inline SVG. It is served apart from the colours -- see themeBackdropCSSFor.
+func renderThemeBackdropBlock(selector string, tc ThemeColors, seed int) string {
+	backdrop := themeBackdropSeeded(selector, sanitizeThemeColors(tc), seed)
+	return `html[data-theme="` + selector + `"] {
+    --theme-backdrop: ` + backdrop.Image + `;
+    --theme-backdrop-size: ` + backdrop.Size + `;
+    --theme-backdrop-scrim: ` + backdrop.Scrim + `;
+    --theme-backdrop-position: ` + backdrop.Position + `;
+}
+`
+}
+
+// renderThemeCSSBlockWith writes one theme's variables. With backdrop false the
+// four --theme-backdrop* lines are left out and the recipe is never drawn.
+func renderThemeCSSBlockWith(selector string, tc ThemeColors, seed int, withBackdrop bool) string {
 	s := sanitizeThemeColors(tc)
 	/*
 	 * The theme's own colour, or the success colour when it has none.
@@ -4068,7 +4090,15 @@ func renderThemeCSSBlockSeeded(selector string, tc ThemeColors, seed int) string
 	// once per theme and the block stays a list of tokens.
 	labelTransform, labelSpacing, labelWeight := archetypeLabel(tc)
 	grainAngle, grainScale := archetypeGrain(tc)
-	backdrop := themeBackdropSeeded(selector, s, seed)
+	backdropVars := ""
+	if withBackdrop {
+		backdrop := themeBackdropSeeded(selector, s, seed)
+		backdropVars = `    --theme-backdrop: ` + backdrop.Image + `;
+    --theme-backdrop-size: ` + backdrop.Size + `;
+    --theme-backdrop-scrim: ` + backdrop.Scrim + `;
+    --theme-backdrop-position: ` + backdrop.Position + `;
+`
+	}
 	return `html[data-theme="` + selector + `"] {
     --text-primary: ` + s.TextPrimary + `;
     --text-secondary: ` + s.TextSecondary + `;
@@ -4086,11 +4116,7 @@ func renderThemeCSSBlockSeeded(selector string, tc ThemeColors, seed int) string
     --accent-info: ` + themeAccentInfo(tc) + `;
     --accent-vivid: ` + themeAccentVivid(tc) + `;
     --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
-    --theme-backdrop: ` + backdrop.Image + `;
-    --theme-backdrop-size: ` + backdrop.Size + `;
-    --theme-backdrop-scrim: ` + backdrop.Scrim + `;
-    --theme-backdrop-position: ` + backdrop.Position + `;
-    --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;
+` + backdropVars + `    --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;
     --theme-surface-blur: ` + themeSurfaceBlur(tc) + `px;
     --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
     --theme-surface-step: ` + themeSurfaceStep(tc) + `;
@@ -4129,6 +4155,10 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 	if raw := strings.TrimSpace(r.URL.Query().Get("neutralAccent")); raw != "" {
 		accent = normalizeNeutralAccent(raw)
 	}
+	if r.URL.Query().Get("scope") == "backdrop" {
+		h.serveThemeBackdropCSS(w, r, seed, accent)
+		return
+	}
 	css := h.customThemeCSSSeeded(seed, accent)
 	// The page links this file by the hash of its content. A request that
 	// carries exactly that hash can never see different bytes under it, so it
@@ -4138,6 +4168,41 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	}
 	w.Write([]byte(css))
+}
+
+/*
+serveThemeBackdropCSS answers /api/theme.css?scope=backdrop&theme=a,b&recipe=c.
+
+The colours of every theme travel in the stylesheet the page links; their
+backdrops do not, because that was 8 of its 9 MB. A page asks for the ones it is
+about to show -- the theme on screen, the recipe a reader picked -- and puts the
+answer in a <style> of its own.
+
+The answer depends on colors.json, the seed and the neutral accent, none of
+which is in the address, so it is revalidated rather than kept: an ETag of the
+bytes turns "nothing changed" into an empty 304.
+*/
+func (h *Handlers) serveThemeBackdropCSS(w http.ResponseWriter, r *http.Request, seed int, accent string) {
+	q := r.URL.Query()
+	css := h.themeBackdropCSSFor(splitCSV(q.Get("theme")), splitCSV(q.Get("recipe")), seed, accent)
+	etag := `"` + themeCSSHash(css) + `"`
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("ETag", etag)
+	if r.Header.Get("If-None-Match") == etag {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+	w.Write([]byte(css))
+}
+
+func splitCSV(raw string) []string {
+	var out []string
+	for _, part := range strings.Split(raw, ",") {
+		if part = strings.TrimSpace(part); part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }
 
 func themeCSSHash(css string) string {
@@ -4162,6 +4227,39 @@ func (h *Handlers) customThemeCSS() string {
 	return h.customThemeCSSSeeded(normalizeBackdropTuning(settings.BackdropTuning).Seed, normalizeNeutralAccent(settings.NeutralAccent))
 }
 
+/*
+themeBackdropInline is the backdrop of the theme the page opens on, and of the
+recipe it opens with, for a <style> in the head. The linked stylesheet has the
+colours of every theme but no backdrops, so without this the first paint would
+wait for a second request before the picture behind the bookmarks appeared.
+*/
+func (h *Handlers) themeBackdropInline(theme, recipe string) template.CSS {
+	settings := h.store.GetSettings()
+	return template.CSS(h.themeBackdropCSSFor(h.themeBackdropInlineIDList(theme), splitCSV(recipe),
+		normalizeBackdropTuning(settings.BackdropTuning).Seed, normalizeNeutralAccent(settings.NeutralAccent)))
+}
+
+// themeBackdropInlineIDs names what themeBackdropInline drew, so the page's
+// script knows which backdrops it already has.
+func (h *Handlers) themeBackdropInlineIDs(theme string) string {
+	return strings.Join(h.themeBackdropInlineIDList(theme), ",")
+}
+
+func (h *Handlers) themeBackdropInlineIDList(theme string) []string {
+	if strings.TrimSpace(theme) == "" {
+		return nil
+	}
+	id := sanitizeCSSIdent(normalizeLegacyThemeID(strings.TrimSpace(theme)))
+	colors := h.store.GetColors()
+	if _, ok := colors.BuiltIn[id]; ok {
+		return []string{id}
+	}
+	if _, ok := themeColorsOf(id, colors); ok {
+		return []string{id}
+	}
+	return nil
+}
+
 // themeCSSMemo keeps the last rendered theme stylesheet. Rendering it walks
 // every theme -- 331 blocks, ~600 KB -- and the page needs it twice per load:
 // once for the hash in its link, once when that link is fetched. The data
@@ -4180,13 +4278,28 @@ func (h *Handlers) customThemeCSSSeeded(seed int, accent string) string {
 	if h.themeCSSMemo.key == key && h.themeCSSMemo.css != "" {
 		return h.themeCSSMemo.css
 	}
-	css := h.renderThemeCSS(seed, accent)
+	css := h.renderThemeTokensCSS(seed, accent)
 	h.themeCSSMemo.key = key
 	h.themeCSSMemo.css = css
 	return css
 }
 
+// renderThemeCSS is every theme with its backdrop. The page no longer links
+// this one -- see renderThemeTokensCSS -- but it is the whole answer and the
+// tests hold the backdrops to it.
 func (h *Handlers) renderThemeCSS(seed int, neutralAccent string) string {
+	return h.renderThemeCSSWith(seed, neutralAccent, true)
+}
+
+// renderThemeTokensCSS is every theme's colours and surfaces, without the
+// backdrops. Those are inline SVG, ~24 KB a theme, and made the stylesheet
+// 9 MB for 386 blocks of which one is on screen. They arrive per theme from
+// themeBackdropCSSFor instead.
+func (h *Handlers) renderThemeTokensCSS(seed int, neutralAccent string) string {
+	return h.renderThemeCSSWith(seed, neutralAccent, false)
+}
+
+func (h *Handlers) renderThemeCSSWith(seed int, neutralAccent string, withBackdrop bool) string {
 	colors := h.store.GetColors()
 
 	// Built with a Builder: this renders ~150 theme blocks and the += version
@@ -4196,10 +4309,10 @@ func (h *Handlers) renderThemeCSS(seed int, neutralAccent string) string {
 	b.Grow(96 << 10)
 	b.WriteString("/* Custom Theme Variables - Loaded from colors.json */\n\n")
 	b.WriteString("/* Light Theme Variables */\n")
-	b.WriteString(renderThemeCSSBlockSeeded("light", colors.Light, seed))
+	b.WriteString(renderThemeCSSBlockWith("light", colors.Light, seed, withBackdrop))
 	b.WriteString("\n")
 	b.WriteString("/* Dark Theme Variables */\n")
-	b.WriteString(renderThemeCSSBlockSeeded("dark", colors.Dark, seed))
+	b.WriteString(renderThemeCSSBlockWith("dark", colors.Dark, seed, withBackdrop))
 	b.WriteString("\n")
 
 	// Add custom themes CSS. Sorted, as the built-ins are: the page links this
@@ -4219,7 +4332,7 @@ func (h *Handlers) renderThemeCSS(seed int, neutralAccent string) string {
 		b.WriteString("/* Custom Theme: ")
 		b.WriteString(safeID)
 		b.WriteString(" */\n")
-		b.WriteString(renderThemeCSSBlockSeeded(safeID, themeColors, seed))
+		b.WriteString(renderThemeCSSBlockWith(safeID, themeColors, seed, withBackdrop))
 		b.WriteString("\n")
 	}
 
@@ -4237,14 +4350,89 @@ func (h *Handlers) renderThemeCSS(seed int, neutralAccent string) string {
 		b.WriteString("/* Built-in Theme: ")
 		b.WriteString(safeID)
 		b.WriteString(" */\n")
-		b.WriteString(renderThemeCSSBlockSeeded(safeID, applyNeutralAccent(colors.BuiltIn[themeID], neutralAccent), seed))
+		b.WriteString(renderThemeCSSBlockWith(safeID, applyNeutralAccent(colors.BuiltIn[themeID], neutralAccent), seed, withBackdrop))
 		b.WriteString("\n")
 	}
 
-	b.WriteString("/* Backdrop recipes a reader put behind a theme */\n")
-	b.WriteString(themeBackdropOverrideCSS(seed))
+	if withBackdrop {
+		b.WriteString("/* Backdrop recipes a reader put behind a theme */\n")
+		b.WriteString(themeBackdropOverrideCSS(seed))
+	}
 
 	return b.String()
+}
+
+// themeBackdropMaxAsk caps how many themes and recipes one request may name.
+// A page asks for the one or two it is showing; the cap keeps a crafted query
+// from rendering the whole catalogue on a request.
+const themeBackdropMaxAsk = 8
+
+/*
+themeBackdropCSSFor is the backdrop of the named themes and of the named
+recipes, as the rules the full stylesheet used to carry for them.
+
+A theme id the install does not have draws nothing, as does a recipe the code
+does not know. The block is the same bytes renderThemeCSS writes for that theme,
+so a page that has both gets one cascade, whichever arrived first.
+*/
+func (h *Handlers) themeBackdropCSSFor(themes, recipes []string, seed int, neutralAccent string) string {
+	colors := h.store.GetColors()
+	var b strings.Builder
+	seen := map[string]bool{}
+	for _, raw := range themes {
+		if len(seen) >= themeBackdropMaxAsk {
+			break
+		}
+		if strings.TrimSpace(raw) == "" {
+			continue // normalizeLegacyThemeID turns nothing into "dark"
+		}
+		id := sanitizeCSSIdent(normalizeLegacyThemeID(strings.TrimSpace(raw)))
+		if id == "" || seen[id] {
+			continue
+		}
+		seen[id] = true
+		// The order the full stylesheet writes them in, last one wins: light and
+		// dark, then custom themes, then built-ins (the only ones that wear the
+		// neutral accent).
+		if tc, ok := colors.BuiltIn[id]; ok {
+			b.WriteString(renderThemeBackdropBlock(id, applyNeutralAccent(tc, neutralAccent), seed))
+		} else if tc, ok := themeColorsOf(id, colors); ok {
+			b.WriteString(renderThemeBackdropBlock(id, tc, seed))
+		}
+	}
+	known := map[string]bool{}
+	for _, name := range themeBackdropRecipes {
+		known[name] = true
+	}
+	taken := map[string]bool{}
+	for _, name := range recipes {
+		name = strings.TrimSpace(name)
+		if len(taken) >= themeBackdropMaxAsk {
+			break
+		}
+		if !known[name] || taken[name] {
+			continue
+		}
+		taken[name] = true
+		b.WriteString(themeBackdropRecipeRule(name, seed))
+	}
+	return b.String()
+}
+
+// themeColorsOf is the palette an id names, and whether it names one. Unlike
+// themeColorsFor it does not fall back to the default theme: a stylesheet for a
+// theme that is not there should be empty, not the default's colours.
+func themeColorsOf(id string, colors ColorTheme) (ThemeColors, bool) {
+	if tc, ok := colors.Custom[id]; ok {
+		return tc, true
+	}
+	switch id {
+	case "light":
+		return colors.Light, true
+	case "dark":
+		return colors.Dark, true
+	}
+	return ThemeColors{}, false
 }
 
 /*
@@ -4263,16 +4451,22 @@ the same dial.
 func themeBackdropOverrideCSS(seed int) string {
 	var b strings.Builder
 	for _, name := range themeBackdropRecipes {
-		look := themeBackdropSeeded("recipe:"+name, ThemeColors{Backdrop: name, AccentPrimary: "var"}, seed)
-		b.WriteString(`html body[data-backdrop-recipe="` + name + `"] {
+		b.WriteString(themeBackdropRecipeRule(name, seed))
+	}
+	return b.String()
+}
+
+// themeBackdropRecipeRule is the one rule themeBackdropOverrideCSS writes for a
+// recipe.
+func themeBackdropRecipeRule(name string, seed int) string {
+	look := themeBackdropSeeded("recipe:"+name, ThemeColors{Backdrop: name, AccentPrimary: "var"}, seed)
+	return `html body[data-backdrop-recipe="` + name + `"] {
     --theme-backdrop: ` + look.Image + `;
     --theme-backdrop-size: ` + look.Size + `;
     --theme-backdrop-scrim: ` + look.Scrim + `;
     --theme-backdrop-position: ` + look.Position + `;
 }
-`)
-	}
-	return b.String()
+`
 }
 
 func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {

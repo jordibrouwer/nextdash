@@ -870,6 +870,139 @@
         }
     }
 
+    /*
+     * Backdrops, one theme at a time.
+     *
+     * /api/theme.css holds the colours of every theme and none of their
+     * backdrops: those are inline SVG, 24 KB a theme, and were 8 of its 9 MB.
+     * The page carries the backdrop of the theme it opens on in
+     * #nextdash-backdrop-css. This keeps that element in step with whatever
+     * the document says it is showing, so every writer of data-theme (the
+     * picker, a preview, auto dark, a rename) and of data-backdrop-recipe gets
+     * its picture without knowing the split exists.
+     *
+     * Until the answer arrives the page shows the theme without its backdrop,
+     * which the stylesheet already draws as "none".
+     */
+    const backdropCSS = (function () {
+        const loaded = { themes: new Set(), recipes: new Set() };
+        let ready = false;
+        let generation = 0;
+        // What a held, unsaved change asked for: the studio previews a roll or an
+        // accent before saving, and a theme fetched meanwhile must match it.
+        let query = '';
+
+        function element() {
+            return document.getElementById('nextdash-backdrop-css');
+        }
+
+        function words(value) {
+            return String(value || '').split(',').map((w) => w.trim()).filter(Boolean);
+        }
+
+        function adopt(style) {
+            if (ready) {
+                return;
+            }
+            ready = true;
+            words(style.getAttribute('data-themes')).forEach((id) => loaded.themes.add(id));
+            words(style.getAttribute('data-recipes')).forEach((id) => loaded.recipes.add(id));
+        }
+
+        function shown() {
+            return {
+                theme: document.documentElement.getAttribute('data-theme') || '',
+                recipe: document.body ? (document.body.getAttribute('data-backdrop-recipe') || '') : ''
+            };
+        }
+
+        function url(themes, recipes) {
+            const parts = ['scope=backdrop'];
+            if (themes.length) parts.push(`theme=${encodeURIComponent(themes.join(','))}`);
+            if (recipes.length) parts.push(`recipe=${encodeURIComponent(recipes.join(','))}`);
+            return `/api/theme.css?${parts.join('&')}${query}`;
+        }
+
+        function ensure() {
+            const style = element();
+            if (!style || typeof fetch !== 'function') {
+                return;
+            }
+            adopt(style);
+            const { theme, recipe } = shown();
+            const themes = theme && !loaded.themes.has(theme) ? [theme] : [];
+            const recipes = recipe && !loaded.recipes.has(recipe) ? [recipe] : [];
+            if (!themes.length && !recipes.length) {
+                return;
+            }
+            // Marked at once so a burst of changes asks once; given back on failure.
+            themes.forEach((id) => loaded.themes.add(id));
+            recipes.forEach((id) => loaded.recipes.add(id));
+            const mine = generation;
+            fetch(url(themes, recipes))
+                .then((res) => (res.ok ? res.text() : Promise.reject(new Error(String(res.status)))))
+                .then((css) => {
+                    if (mine === generation && css) {
+                        style.appendChild(document.createTextNode(css));
+                    }
+                })
+                .catch(() => {
+                    if (mine === generation) {
+                        themes.forEach((id) => loaded.themes.delete(id));
+                        recipes.forEach((id) => loaded.recipes.delete(id));
+                    }
+                });
+        }
+
+        /**
+         * Draws what is on screen again, after something that is baked into the
+         * backdrops changed: a saved theme, the roll, the accent of the neutrals.
+         * The old rules stay until the new ones are in, so nothing flashes.
+         */
+        function reload(options) {
+            const style = element();
+            if (!style || typeof fetch !== 'function') {
+                return Promise.resolve();
+            }
+            adopt(style);
+            generation += 1;
+            const mine = generation;
+            const seed = Number.isInteger(options && options.seed) ? `&seed=${options.seed}` : '';
+            const word = String((options && options.neutralAccent) || '');
+            const accent = /^[a-z]{3,8}$/.test(word) ? `&neutralAccent=${word}` : '';
+            query = seed + accent;
+            const { theme, recipe } = shown();
+            const themes = theme ? [theme] : [];
+            const recipes = recipe ? [recipe] : [];
+            loaded.themes = new Set(themes);
+            loaded.recipes = new Set(recipes);
+            return fetch(url(themes, recipes))
+                .then((res) => (res.ok ? res.text() : null))
+                .then((css) => {
+                    if (mine === generation && css !== null) {
+                        style.textContent = css;
+                    }
+                })
+                .catch(() => { /* the backdrops on screen stay, which is the safe half */ });
+        }
+
+        new MutationObserver(ensure).observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme']
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.body) {
+                new MutationObserver(ensure).observe(document.body, {
+                    attributes: true,
+                    attributeFilter: ['data-backdrop-recipe']
+                });
+            }
+            ensure();
+        });
+
+        return { ensure, reload };
+    })();
+
     // Apply theme and fontSize immediately
     const theme = getTheme();
     const fontSize = getFontSize();
@@ -893,6 +1026,8 @@
     
     // Export functions for use by other scripts (e.g., config.js)
     window.ThemeLoader = {
+        // Fetches the backdrops of what is on screen again; see backdropCSS above.
+        reloadBackdropCSS: backdropCSS.reload,
         // Exported so callers can ask "is this still the packaged default?"
         // without spelling the id again -- a third copy of it would be a third
         // thing to keep in step (see TestThemeLoaderAgreesWithTheServerDefault).

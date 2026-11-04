@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"io"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -38,7 +39,7 @@ func TestThemeCSSIsImmutableOnlyUnderItsOwnHash(t *testing.T) {
 	if got := getThemeCSS(h, query).Header().Get("Cache-Control"); !strings.Contains(got, "immutable") {
 		t.Errorf("own hash: Cache-Control = %q, want immutable", got)
 	}
-	for _, q := range []string{"", "?v=000000000000", "?t=1", query + "&seed=7"} {
+	for _, q := range []string{"", "?v=000000000000", "?t=1"} {
 		if got := getThemeCSS(h, q).Header().Get("Cache-Control"); !strings.Contains(got, "no-store") {
 			t.Errorf("%q: Cache-Control = %q, want no-store", q, got)
 		}
@@ -124,5 +125,107 @@ func TestBundleIsServedPrecompressed(t *testing.T) {
 	}
 	if !bytes.Equal(decoded, plain.Body.Bytes()) || !bytes.Contains(decoded, []byte(".probe{color:red}")) {
 		t.Fatalf("decoded bundle differs from the plain one:\n%q\n%q", decoded, plain.Body.Bytes())
+	}
+}
+
+/*
+The stylesheet the page links is every theme's colours and none of their
+backdrops. They were 8 of its 9 MB, for 386 themes of which one is on screen;
+they come per theme from scope=backdrop instead.
+*/
+func TestThemeCSSCarriesNoBackdrops(t *testing.T) {
+	h := themeCSSTestHandlers(t)
+	tokens := h.customThemeCSS()
+	if strings.Contains(tokens, "--theme-backdrop") || strings.Contains(tokens, "data-backdrop-recipe") {
+		t.Fatal("the linked theme stylesheet still carries backdrops")
+	}
+	if !strings.Contains(tokens, `html[data-theme="dark"]`) || !strings.Contains(tokens, "--accent-primary") {
+		t.Fatal("the linked theme stylesheet lost the colours")
+	}
+	if full := h.renderThemeCSS(0, neutralAccentTheme); len(tokens)*4 > len(full) {
+		t.Errorf("tokens %d B against %d B in full: the split saved too little to be worth it", len(tokens), len(full))
+	}
+}
+
+// What scope=backdrop writes for a theme is what the full stylesheet writes
+// for it, byte for byte: a page that has both gets the cascade it always had.
+func TestThemeBackdropScopeMatchesTheFullStylesheet(t *testing.T) {
+	h := themeCSSTestHandlers(t)
+	full := h.renderThemeCSS(0, neutralAccentTheme)
+	for _, id := range []string{"light", "dark", defaultThemeID} {
+		got := h.themeBackdropCSSFor([]string{id}, nil, 0, neutralAccentTheme)
+		if got == "" || !strings.Contains(got, `html[data-theme="`+id+`"]`) {
+			t.Fatalf("%s: no backdrop block", id)
+		}
+		for _, line := range strings.Split(strings.TrimSpace(got), "\n") {
+			if strings.Contains(line, "--theme-backdrop") && !strings.Contains(full, line) {
+				t.Fatalf("%s: a backdrop line of the scoped answer is not in the full stylesheet: %.120s", id, line)
+			}
+		}
+	}
+	rule := themeBackdropRecipeRule("aurora", 0)
+	if got := h.themeBackdropCSSFor(nil, []string{"aurora"}, 0, neutralAccentTheme); got != rule || !strings.Contains(full, rule) {
+		t.Error("the recipe rule differs between the scoped answer and the full stylesheet")
+	}
+}
+
+// A theme or recipe the install does not have draws nothing, and one request
+// cannot ask for the whole catalogue.
+func TestThemeBackdropScopeIgnoresWhatItDoesNotKnow(t *testing.T) {
+	h := themeCSSTestHandlers(t)
+	if got := h.themeBackdropCSSFor([]string{"no-such-theme", ""}, []string{"no-such-recipe"}, 0, neutralAccentTheme); got != "" {
+		t.Errorf("unknown theme and recipe answered %.80q", got)
+	}
+	var many []string
+	for i := 0; i < 40; i++ {
+		many = append(many, "custom-"+strconv.Itoa(i))
+	}
+	colors := h.store.GetColors()
+	if colors.Custom == nil {
+		colors.Custom = map[string]ThemeColors{}
+	}
+	for _, id := range many {
+		colors.Custom[id] = colors.Dark
+	}
+	if err := h.store.SaveColors(colors); err != nil {
+		t.Fatal(err)
+	}
+	got := h.themeBackdropCSSFor(many, nil, 0, neutralAccentTheme)
+	if n := strings.Count(got, `html[data-theme="`); n != themeBackdropMaxAsk {
+		t.Errorf("40 themes asked for, %d answered, want the cap of %d", n, themeBackdropMaxAsk)
+	}
+}
+
+// The answer depends on things that are not in its address, so it is
+// revalidated; an unchanged answer is an empty 304.
+func TestThemeBackdropScopeRevalidates(t *testing.T) {
+	h := themeCSSTestHandlers(t)
+	rec := httptest.NewRecorder()
+	h.CustomThemeCSS(rec, httptest.NewRequest("GET", "/api/theme.css?scope=backdrop&theme=dark", nil))
+	etag := rec.Header().Get("ETag")
+	if etag == "" || rec.Body.Len() == 0 {
+		t.Fatalf("no ETag or no body: %q", etag)
+	}
+	req := httptest.NewRequest("GET", "/api/theme.css?scope=backdrop&theme=dark", nil)
+	req.Header.Set("If-None-Match", etag)
+	again := httptest.NewRecorder()
+	h.CustomThemeCSS(again, req)
+	if again.Code != 304 || again.Body.Len() != 0 {
+		t.Errorf("unchanged answer = %d with %d bytes, want an empty 304", again.Code, again.Body.Len())
+	}
+}
+
+// The page opens on its theme's backdrop inline, so the first paint does not
+// wait for a second request; the ids it names are the ones it drew.
+func TestThemeBackdropInlineNamesWhatItDrew(t *testing.T) {
+	h := themeCSSTestHandlers(t)
+	if ids := h.themeBackdropInlineIDs("dark"); ids != "dark" {
+		t.Errorf("ids = %q", ids)
+	}
+	if css := string(h.themeBackdropInline("dark", "")); !strings.Contains(css, `html[data-theme="dark"]`) {
+		t.Error("the inline backdrop is not the theme's own")
+	}
+	if ids := h.themeBackdropInlineIDs("no-such-theme"); ids != "" {
+		t.Errorf("an unknown theme named %q as drawn", ids)
 	}
 }
