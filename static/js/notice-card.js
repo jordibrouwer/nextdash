@@ -45,6 +45,47 @@
  *         onShown: () => markAnswered(),
  *     }
  *
+ * A card may also report to the notifications bell in the navigation bar, with
+ * `bell: { ... }`. The bell is a list of rows, each one a source that can say
+ * "there is something here" at any moment; a card becomes such a source and
+ * keeps its id. `kind` decides what happens to the corner:
+ *
+ *     // 'urgent': the card behaves exactly as above, in the corner, and also
+ *     // has a row in the bell for as long as `state` reports something.
+ *     bell: { kind: 'urgent', group: 'system', icon: '!', no: 'state',
+ *             state: async () => (broken ? { count: 1, text: 'Alerts are off' } : null) }
+ *
+ *     // 'quiet': never in the corner and never a toast. autoStart() only
+ *     // registers the row. For things worth knowing, not worth interrupting for.
+ *     bell: { kind: 'quiet', group: 'cleanup', icon: '*', no: 'forever',
+ *             state: async () => ({ count: unused.length, ids: unused, text: 'Unused icons' }) }
+ *
+ *     // 'tip': like 'quiet', for a suggestion; the bell offers "Mark read".
+ *     bell: { kind: 'tip', group: 'tips', icon: '?', no: 'forever',
+ *             state: async () => ({ count: 1, text: 'Try the side rail' }) }
+ *
+ *     // 'health': like 'quiet', for a monitored thing that is not well.
+ *     bell: { kind: 'health', group: 'health', icon: '+', no: { threshold: 3 },
+ *             state: async () => (down ? { count: down, text: `${down} down` } : null) }
+ *
+ * `bell.state` is required in practice: it is what decides whether the row is
+ * there. A card's `canShow` is not turned into a state on its own, because
+ * "may I interrupt now" and "is there something to report" are different
+ * questions. Without `bell.state` the row falls back to canShow, with the
+ * card's title and body as its text. `bell.actions` are the row's buttons;
+ * without them the card's own `actions` are used, called with the card's
+ * handle (close() on it does nothing when no corner card is up). The bell draws
+ * its own "No" / "Mark read" button, so none is declared here. The corner's
+ * etiquette (an unfinished onboarding, phones with corner cards hidden, the
+ * quiet after the start guide) does not apply to the bell; it is not an
+ * interruption.
+ *
+ * Tips share one slot: a card with `tipSlot: true` is not shown while another
+ * tip card was drawn within the last seven days, and drawing one starts the
+ * seven days. It comes on top of `minGapAfterCardMs`, which still applies.
+ *
+ *     NoticeCard.define({ id: 'tip-a', tipSlot: true, canShow: () => true, … });
+ *
  * The returned handle exposes render/autoStart/close for tests and for a manual
  * re-prompt from config, matching what the hand-written cards exposed.
  */
@@ -62,6 +103,10 @@
     const TEARDOWN_MS = 260;
     // How long after the start guide is finished no card is shown: ten seconds.
     const QUIET_AFTER_GUIDE_S = 10;
+
+    // The one tip slot: a week between two tip cards.
+    const TIP_SLOT_MS = 7 * 24 * 3600 * 1000;
+    const BELL_ONLY = ['quiet', 'tip', 'health'];
 
     function dash() {
         return global.dashboardInstance || null;
@@ -361,15 +406,48 @@ canShow every time.
 
         const handle = { close, showError, get element() { return cardEl; } };
 
+        // A quiet, tip or health card lives in the bell only.
+        const bellOnly = BELL_ONLY.includes(spec.bell?.kind);
+        let bellHandle = null;
+
+        /** Register with the bell, once; calling it again does nothing. */
+        function registerWithBell() {
+            if (!spec.bell || bellHandle || !global.NotificationBell) return;
+            const b = spec.bell;
+            const state = b.state || (async () => (
+                (await spec.canShow?.()) !== false
+                    ? { count: 1, text: `${text(spec.title)} \u2014 ${text(spec.body)}` }
+                    : null));
+            const actions = b.actions || (spec.actions || []).map((action) => ({
+                label: text(action.label),
+                primary: action.primary,
+                onClick: () => action.onClick?.(handle),
+            }));
+            bellHandle = global.NotificationBell.register({
+                id: spec.id, group: b.group, kind: b.kind, icon: b.icon, no: b.no, state, actions,
+            });
+        }
+
+        /** True while the tip slot is taken by a card drawn in the last week. */
+        function tipSlotTaken() {
+            if (spec.tipSlot !== true) return false;
+            const at = Number(global.DiscoverabilityState?.getTipCardShownAt?.()) || 0;
+            return Date.now() - at < TIP_SLOT_MS;
+        }
+
         function gateSync() {
+            if (bellOnly) return false;
             if (cardEl) return false;
+            if (tipSlotTaken()) return false;
             if (!cornerIsFree(cardClass, { essential: spec.essential === true, view: spec.view })) return false;
             if (waitingOutGap(spec)) return false;
             return spec.canShow?.() !== false;
         }
 
         async function shouldShow() {
+            if (bellOnly) return false;
             if (cardEl) return false;
+            if (tipSlotTaken()) return false;
             if (!cornerIsFree(cardClass, { essential: spec.essential === true, view: spec.view })) return false;
             if (waitingOutGap(spec)) return false;
             // Async so a card may consult something that needs awaiting.
@@ -390,6 +468,7 @@ canShow every time.
             const options = { duration: cfg.duration ?? 12000 };
             d.showNotification(message, cfg.type || 'info', options);
             noteCardShown();
+            if (spec.tipSlot === true) global.DiscoverabilityState?.noteTipCardShown?.(Date.now());
             cfg.onShown?.(handle);
             spec.onShown?.(handle);
             return true;
@@ -449,6 +528,7 @@ canShow every time.
             document.body.appendChild(el);
             cardEl = el;
             noteCardShown();
+            if (spec.tipSlot === true) global.DiscoverabilityState?.noteTipCardShown?.(Date.now());
             if (spec.essential === true) {
                 // Above the start guide bar when it holds the corner.
                 const checklist = document.querySelector('.quickstart-card:not(.notice-card)');
@@ -485,6 +565,9 @@ canShow every time.
          * the queue above.
          */
         function autoStart() {
+            registerWithBell();
+            // The bell row is all a quiet card has; nothing is queued or drawn.
+            if (bellOnly) return;
             pending = setTimeout(() => {
                 pending = null;
                 enqueue({
