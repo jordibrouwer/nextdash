@@ -244,7 +244,7 @@
         const w = s.week || {};
         const panels = [
             { label: t('dashboard.digestOpensPerDay', 'Bookmarks opened per day'), html: dayBars(w.opensByDay, s.generatedAt) },
-            { label: t('dashboard.digestUptimePerDay', 'Uptime per day'), html: uptimeLine(w.uptimeByDay) },
+            { label: t('dashboard.digestUptimePerDay', 'Uptime per day'), html: uptimeLine(w.uptimeDays) },
         ].filter((p) => p.html);
         if (!panels.length) return '';
         return `<div class="digest-charts">${panels.map((p) => `
@@ -277,9 +277,9 @@
         return `<span class="digest-spark" role="img" aria-label="${esc(t('dashboard.digestOpensPerDay', 'Bookmarks opened per day'))}">${cols}</span>`;
     }
 
-    /** Uptime per day as a line. Days without checks leave a gap. */
+    /** Uptime per day as a line. Days without checks (-1) leave a gap; a day at 0% is a point. */
     function uptimeLine(values) {
-        const pts = (values || []).map((v, i) => (v > 0 ? { v, i } : null)).filter(Boolean);
+        const pts = (values || []).map((v, i) => (typeof v === 'number' && v >= 0 ? { v, i } : null)).filter(Boolean);
         if (pts.length < 2) return '';
         const low = Math.min(95, ...pts.map((p) => p.v));
         const x = (i) => 4 + (i / 6) * 92;

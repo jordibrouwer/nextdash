@@ -1,7 +1,9 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -307,5 +309,48 @@ func TestDigestUsageItemsCarryCountsAgesAndPages(t *testing.T) {
 	}
 	if u.InboxOldestDays != 12 {
 		t.Fatalf("oldest inbox item %d days, want 12", u.InboxOldestDays)
+	}
+}
+
+// A day on which every check failed is 0%, a day without checks is -1: the
+// chart has to tell an outage from silence.
+func TestDigestUptimeByDayTellsAnOutageFromNoChecks(t *testing.T) {
+	settings := allOn()
+	settings.MaintenanceTimeZone = "UTC"
+	in := digestInput{Now: digestNow, Settings: settings, Samples: map[string][]HealthSample{
+		"https://a": {
+			{T: time.Date(2026, 10, 11, 10, 0, 0, 0, time.UTC).UnixMilli(), Up: false},
+			{T: time.Date(2026, 10, 12, 7, 0, 0, 0, time.UTC).UnixMilli(), Up: true},
+		},
+	}}
+	w := buildDigest(in).Week
+	if w == nil {
+		t.Fatal("checks make week figures")
+	}
+	want := []float64{-1, -1, -1, -1, -1, 0, 100}
+	if !reflect.DeepEqual(w.UptimeByDay, want) {
+		t.Fatalf("uptime by day = %v, want %v", w.UptimeByDay, want)
+	}
+	raw, _ := json.Marshal(w)
+	if !strings.Contains(string(raw), `"uptimeDays":[-1,`) {
+		t.Errorf("json = %s, want the days under uptimeDays", raw)
+	}
+}
+
+// An open on Sunday evening is Sunday's, also when the digest is made on
+// Monday morning: the bars are calendar days, not 24-hour spans ending now.
+func TestDigestOpensByDayCountsCalendarDays(t *testing.T) {
+	settings := allOn()
+	settings.MaintenanceTimeZone = "UTC"
+	sundayEvening := time.Date(2026, 10, 11, 20, 0, 0, 0, time.UTC).UnixMilli()
+	in := digestInput{Now: digestNow, Settings: settings, Bookmarks: []Bookmark{
+		{Name: "A", URL: "https://a", OpenCount: 1, LastOpened: sundayEvening, OpenLog: []int64{sundayEvening}},
+	}}
+	w := buildDigest(in).Week
+	if w == nil || len(w.OpensByDay) != 7 {
+		t.Fatalf("week = %+v", w)
+	}
+	if w.OpensByDay[5] != 1 || w.OpensByDay[6] != 0 {
+		t.Fatalf("opens by day = %v, want the open on Sunday (5), not Monday (6)", w.OpensByDay)
 	}
 }

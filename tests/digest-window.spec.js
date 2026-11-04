@@ -190,6 +190,19 @@ test.describe('the digest window: the week in figures, the Overview and the deta
         await expect(stats.nth(3)).toContainText('4 new');
     });
 
+    test('the uptime chart draws a day at 0% and leaves a day without checks out', async ({ page }) => {
+        const win = await openWindow(page, snapshot({ week: { uptime: 80, uptimeDays: [-1, 100, 0, 100, -1, 100, 100] } }));
+        const dots = win.locator('.digest-line-chart circle');
+        await expect(dots).toHaveCount(5);
+        await expect(dots.nth(1).locator('title')).toHaveText('0%');
+    });
+
+    test('a digest saved under the old key, where 0 meant no checks, draws no uptime chart', async ({ page }) => {
+        const win = await openWindow(page, snapshot({ week: { uptime: 80, uptimeByDay: [0, 100, 0, 100, 0, 100, 100] } }));
+        await expect(win.locator('.digest-stats')).toBeVisible();
+        await expect(win.locator('.digest-line-chart')).toHaveCount(0);
+    });
+
     test('a snapshot without week figures shows only what it has: the Inbox', async ({ page }) => {
         const win = await openWindow(page, snapshot());
         const stats = win.locator('.digest-stats .digest-stat');
