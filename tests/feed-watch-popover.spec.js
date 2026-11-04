@@ -37,8 +37,14 @@ async function stubNews(page, count = 6, { long = false } = {}) {
 const link = (page) => row(page, 'Stub Blog');
 const badge = (page) => link(page).locator('.bookmark-news-badge');
 const pop = (page) => page.locator('.feed-news-pop');
-// It grows in; measure it once it has.
-const settled = (page) => pop(page).evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+// It grows in; measure it once it has. An animation cut short (the popover
+// placed or drawn again) rejects its `finished`; wait out whatever runs next.
+const settled = (page) => pop(page).evaluate(async (el) => {
+    const running = () => el.getAnimations().filter((a) => a.playState !== 'finished');
+    for (let tries = 0; running().length && tries < 20; tries += 1) {
+        await Promise.allSettled(running().map((a) => a.finished));
+    }
+});
 
 test.describe('on a touch screen', () => {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
