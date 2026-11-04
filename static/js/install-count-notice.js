@@ -77,6 +77,8 @@
             group: 'privacy',
             icon: '\u{1F512}',
             no: 'forever',
+            // "No" says the same as "Fine by me": the question is answered.
+            onNo: markAnswered,
             state: bellState,
             actions: [
                 {

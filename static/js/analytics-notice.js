@@ -72,6 +72,17 @@
     }
 
     /**
+     * "No" in the bell is a real decline, as "No thanks" on the old card was:
+     * record the choice so Config and the next load see it as answered.
+     */
+    function declined() {
+        const qs = state();
+        if (!qs || qs.analyticsChoiceMade === true) return;
+        qs.analyticsChoiceMade = true;
+        Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
+    }
+
+    /**
      * Turn analytics on. The tracker <script> is emitted server-side, so the page
      * has to reload before anything is actually measured — same as the config
      * checkbox and `:telemetry on`.
@@ -193,6 +204,7 @@
             group: 'privacy',
             icon: '\u{1F4CA}',
             no: 'forever',
+            onNo: declined,
             state: bellState,
             actions: [
                 { label: () => t('dashboard.analyticsNoticeOptIn', 'Turn on'), primary: true, onClick: optIn },

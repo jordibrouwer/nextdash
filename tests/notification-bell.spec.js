@@ -21,6 +21,12 @@ async function loadDashboard(page, { persist = false } = {}) {
     await dismissBlockingOverlays(page);
     await page.evaluate((keep) => {
         if (!keep) window.DiscoverabilityState.schedulePersist = () => {};
+        // The real quiet sources (maintenance, privacy) report on their own data;
+        // these tests count only their probes, so put the real rows away.
+        // (Not when the test persists: those marks would reach the shared ./data.)
+        if (!keep) ['tag-suggestions-notice', 'health-review-notice', 'health-recheck-offer', 'kept-pile',
+            'install-count-notice', 'analytics-notice']
+            .forEach((id) => window.DiscoverabilityState.markBellNo(id, { count: 1, ids: [], forever: true }, { persist: false }));
         window.__probeState = {};
         window.__handles = {};
         const probe = (id, group, kind, no, extra = {}) => {
@@ -248,4 +254,21 @@ test('a folded header keeps the bell while the other destinations go', async ({ 
     expect(await page.evaluate(() => document.querySelector('.header-destinations').lastElementChild.id)).toBe('page-nav-bell-host');
     const rect = await page.locator('.notification-bell-button').boundingBox();
     expect(rect.x + rect.width).toBeLessThanOrEqual(1000);
+});
+
+test('onNo is called once with the row when No is pressed', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+        window.__noCalls = [];
+        window.NotificationBell.register({
+            id: 'probe-onno', group: 'privacy', kind: 'quiet', icon: '*', no: 'forever',
+            state: async () => ({ count: 1, text: 'onno text' }),
+            onNo: (r) => window.__noCalls.push({ id: r.source.id, count: r.entry.count }),
+        });
+    });
+    await refresh(page);
+    await openPanel(page);
+    await row(page, 'probe-onno').getByRole('button', { name: 'No', exact: true }).click();
+    await expect(row(page, 'probe-onno')).toHaveCount(0);
+    expect(await page.evaluate(() => window.__noCalls)).toEqual([{ id: 'probe-onno', count: 1 }]);
 });

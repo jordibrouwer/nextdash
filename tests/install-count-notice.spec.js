@@ -95,5 +95,8 @@ test.describe('the install count notice', () => {
         await expect(page.locator(ROW)).toHaveCount(0);
         await page.evaluate(() => window.NotificationBell.refreshAll());
         await expect(page.locator(ROW)).toHaveCount(0);
+        // And it is an answer, like "Fine by me": Config sees the promo as seen.
+        expect(await page.evaluate((id) => window.DiscoverabilityState.hasSeenSettingPromo(id), PROMO_ID)).toBe(true);
+        expect(await page.evaluate(() => window.dashboardInstance.settings.installPingEnabled)).toBe(true);
     });
 });

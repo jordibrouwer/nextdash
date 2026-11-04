@@ -10,12 +10,16 @@
  * What the person has read or answered "No" to is kept by DiscoverabilityState
  * (it persists server-side); nothing is stored here.
  *
- *   NotificationBell.register({ id, group, kind, icon, no, state, actions })
+ *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo })
  *     -> { refresh(), unregister() }
  *
  * `state()` resolves to null when there is nothing to report, or to
  * { count, ids?, text, at? }. A state() that throws counts as null, so one
  * broken source never takes the others down.
+ *
+ * `onNo(row)` is optional: called once, after the "No" mark is written, for a
+ * source whose "No" is also an answer something else has to know about (a
+ * setting, a promo). A throwing onNo is logged and ignored.
  */
 (function (global) {
     'use strict';
@@ -114,6 +118,7 @@
         const mark = markOf(entry);
         if (source.no === 'forever') mark.forever = true;
         States().markBellNo(source.id, mark);
+        try { source.onNo?.(row); } catch (err) { console.warn('bell onNo failed', err); }
         changed();
     }
 

@@ -94,5 +94,9 @@ test.describe('analytics in the bell', () => {
         await expect(page.locator(ROW)).toHaveCount(0);
         await page.evaluate(() => window.NotificationBell.refreshAll());
         await expect(page.locator(ROW)).toHaveCount(0);
+        // A real decline, as "No thanks" was: the choice is recorded, analytics stays off.
+        expect(await page.evaluate(() => window.dashboardInstance.settings.quickStart.analyticsChoiceMade)).toBe(true);
+        expect(await page.evaluate(() => window.dashboardInstance.settings.analyticsOptIn)).toBe(false);
+        expect(await page.evaluate(() => window.DashboardAnalyticsNotice.state())).toBeNull();
     });
 });
