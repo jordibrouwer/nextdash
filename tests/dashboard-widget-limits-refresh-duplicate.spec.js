@@ -220,6 +220,53 @@ test.describe('Tabs', () => {
         expect(options.map((o) => o.split('|')[0]).sort()).toEqual([IDS.a, IDS.b].sort());
         expect(options.some((o) => o.includes('Scratch'))).toBe(true);
     });
+
+    test('a widget another stack holds is not offered to a second one', async ({ page }) => {
+        await withAStack(page);
+        await putWidgets(page, [
+            { id: IDS.a, type: 'notes', title: 'Scratch', config: { text: 'alpha note' } },
+            { id: IDS.b, type: 'notes', title: 'Todo', config: { text: 'beta note' } },
+            { id: IDS.s, type: 'stack', title: 'Pad', config: { members: [IDS.a] } },
+            { id: 'w_dddddddddddd', type: 'stack', title: 'Second', config: {} },
+        ]);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+        await expect.poll(() => page.evaluate(
+            () => (window.dashboardInstance.config._module?._widgetBlocks || []).length)).toBeGreaterThan(0);
+        const offered = await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config._module;
+            const of = (id) => cfg.widgetSiblingOptions(cfg._widgetBlocks.findIndex((b) => b.id === id)).map(([v]) => v);
+            return { first: of('w_cccccccccccc'), second: of('w_dddddddddddd') };
+        });
+        expect(offered.first.sort()).toEqual([IDS.a, IDS.b].sort());
+        expect(offered.second).toEqual([IDS.b]);
+    });
+
+    test('with six tabs ticked the other boxes wait, and unticking one frees them', async ({ page }) => {
+        await openDashboard(page);
+        const notes = Array.from({ length: 7 }, (_, i) => ({ id: `w_note0000000${i}`, type: 'notes', title: `N${i}`, config: { text: String(i) } }));
+        await putWidgets(page, [...notes, { id: IDS.s, type: 'stack', title: 'Pad', config: { members: notes.slice(0, 6).map((n) => n.id) } }]);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+        await expect.poll(() => page.evaluate(
+            () => (window.dashboardInstance.config._module?._widgetBlocks || []).length)).toBeGreaterThan(0);
+        const out = await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config._module;
+            const index = cfg._widgetBlocks.findIndex((b) => b.type === 'stack');
+            const box = document.createElement('div');
+            box.className = 'config-widget-detail';
+            box.innerHTML = cfg.renderWidgetSettings(cfg._widgetBlocks[index], index);
+            document.body.appendChild(box);
+            const inputs = () => [...box.querySelectorAll('[data-widget-setting="members"]')];
+            const disabledBefore = inputs().filter((i) => i.disabled).map((i) => i.value);
+            const first = inputs()[0];
+            first.checked = false;
+            cfg.updateWidgetDraft(index, first);
+            const disabledAfter = inputs().filter((i) => i.disabled).map((i) => i.value);
+            box.remove();
+            return { disabledBefore, disabledAfter };
+        });
+        expect(out.disabledBefore).toEqual(['w_note00000006']);
+        expect(out.disabledAfter).toEqual([]);
+    });
 });
 
 test.describe('A widget on a schedule', () => {

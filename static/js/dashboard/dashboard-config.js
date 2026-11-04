@@ -17564,7 +17564,8 @@ class DashboardConfig {
             { key: 'showTime', kind: 'bool', label: ['config.widgetCountdownShowTime', 'Count in hours and minutes near the end'] },
         ],
         stack: [
-            { key: 'members', kind: 'checkset', optionsFrom: 'siblings',
+            // max: widgetMaxStackMembers in widgets.go, which drops the rest unsaid.
+            { key: 'members', kind: 'checkset', optionsFrom: 'siblings', max: 6,
               label: ['config.widgetStackMembers', 'Widgets in the tabs'],
               hint: ['config.widgetStackMembersHint',
                      'Each ticked widget becomes a tab, in page order, and leaves the grid while it is held here. Its settings stay under Widgets.'] },
