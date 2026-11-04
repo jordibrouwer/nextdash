@@ -2,8 +2,10 @@ package app
 
 import (
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -134,5 +136,36 @@ func TestLocaleScopesPartitionTheShippedFiles(t *testing.T) {
 		if core, help := count("core"), count("help"); core+help != len(whole["config"]) {
 			t.Errorf("%s: core %d + help %d != %d config keys", lang, core, help, len(whole["config"]))
 		}
+	}
+}
+
+// A key in the help scope is only there when the config module opens. Script
+// outside that module that prints one gets the English fallback in every other
+// language until then; so a script that does must have its key kept in core.
+func TestNoScriptOutsideConfigReadsALazyKey(t *testing.T) {
+	re := regexp.MustCompile(`config\.((?:help|overview)[A-Za-z0-9_]*)`)
+	root := filepath.Join("..", "..", "static", "js")
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".js") {
+			return err
+		}
+		// The config module and the sections split out of it load after the
+		// help scope is in (dashboard-config-loader.js waits for it).
+		if strings.HasPrefix(d.Name(), "dashboard-config") && strings.Contains(path, filepath.Join("js", "dashboard")) {
+			return nil
+		}
+		src, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		for _, m := range re.FindAllStringSubmatch(string(src), -1) {
+			if localeKeyIsLazy(m[1]) {
+				t.Errorf("%s reads config.%s, which only travels in the help scope; add it to localeHelpAlways", path, m[1])
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

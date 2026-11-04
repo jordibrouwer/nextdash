@@ -43,6 +43,7 @@ var localeHelpAlways = map[string]bool{
 	"helpSupportKofi":             true,
 	"overviewUpdateAvailableBody": true,
 	"overviewUpdateAvailableCta":  true,
+	"overviewUpdateDismiss":       true,
 }
 
 // localeKeyIsLazy is true for a config key that travels in the help scope.
