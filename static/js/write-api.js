@@ -40,8 +40,12 @@
     }
 
     /** fetch() with X-NextDash-Token merged when configured. */
+    // Counts the writes this tab has started; see nextDashFetchShared.
+    let writeEpoch = 0;
+
     global.nextDashFetch = function nextDashFetch(url, init) {
         const options = { ...(init || {}) };
+        if (String(options.method || 'GET').toUpperCase() !== 'GET') writeEpoch += 1;
         options.headers = global.nextDashWriteHeaders(options.headers);
         return fetch(url, options).then((response) => {
             try {
@@ -61,19 +65,23 @@
      * page load asked for the same answer two or three times, a round trip each.
      * Callers that arrive while the first is still on its way share it.
      *
-     * Nothing is kept once it has answered: the next call asks the server again,
-     * so a caller that has just changed something never reads an older answer
-     * than the one it would have got. Each caller gets its own copy of the
-     * response, as the body can be read once.
+     * Nothing is kept once it has answered: the next call asks the server again.
+     * A request is only shared with callers that started in the same write
+     * epoch: a read made after a write began (through nextDashFetch) never joins
+     * one that started before it, which could answer with the state from before
+     * the write. Writes made some other way are not counted; a caller that reads
+     * right after one passes `fresh: true` and gets its own request.
+     * Each caller gets its own copy of the response, as the body can be read once.
      */
     const inFlight = new Map();
     global.nextDashFetchShared = function nextDashFetchShared(url, init) {
         const options = init || {};
         const method = String(options.method || 'GET').toUpperCase();
-        if (method !== 'GET' || options.signal || typeof fetch !== 'function') {
-            return fetch(url, options);
+        if (method !== 'GET' || options.signal || options.fresh || typeof fetch !== 'function') {
+            const { fresh, ...plain } = options;
+            return fetch(url, plain);
         }
-        const key = `${url}|${options.cache || ''}`;
+        const key = `${url}|${options.cache || ''}|${writeEpoch}`;
         let pending = inFlight.get(key);
         if (!pending) {
             pending = fetch(url, options);

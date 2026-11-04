@@ -633,9 +633,13 @@ class DashboardData {
         d._pageDataCache.delete(Number(pageId));
     }
 
-    async fetchDataRevision() {
+    /**
+     * @param {{fresh?: boolean}} [options] fresh: after a write of ours, so the
+     *   answer cannot be one an earlier read was already waiting for.
+     */
+    async fetchDataRevision({ fresh = false } = {}) {
         try {
-            const res = await (window.nextDashFetchShared || fetch)('/api/data-revision', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/data-revision', { cache: 'no-store', fresh });
             if (!res.ok) {
                 return null;
             }
@@ -1734,7 +1738,7 @@ class DashboardData {
              * another device.
              */
             try {
-                await this.fetchDataRevision();
+                await this.fetchDataRevision({ fresh: true });
                 if (this._lastSettingsRevision && !movedElsewhere) {
                     d._serverSettingsRevision = this._lastSettingsRevision;
                 }

@@ -212,7 +212,7 @@
         // both get this far, and only one of them may ask.
         asking = true;
         try {
-            const res = await (window.nextDashFetchShared || fetch)('/api/discovery', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/discovery', { cache: 'no-store', fresh: true });
             const data = res.ok ? await res.json() : null;
             if (!data?.enabled || !data.cardDone || !(data.pending || []).length) {
                 asking = false;

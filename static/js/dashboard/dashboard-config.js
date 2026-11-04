@@ -8903,7 +8903,7 @@ class DashboardConfig {
                 // reads our own theme change as another device's and runs a full
                 // settings refresh against it on the next focus.
                 try {
-                    await this.dash.data?.fetchDataRevision?.();
+                    await this.dash.data?.fetchDataRevision?.({ fresh: true });
                     const seen = this.dash.data?._lastSettingsRevision;
                     if (seen) this.dash._serverSettingsRevision = seen;
                 } catch { /* the poll corrects itself on its next pass */ }
