@@ -17,11 +17,21 @@
 
     class CalcError extends Error {}
 
+    /*
+     * A comma before exactly three digits groups thousands (1,000 or 12,500);
+     * any other comma is a decimal one, as Dutch, German and French write it
+     * (2,5 or 0,75). Stripping every comma read 2,5 as 25.
+     */
+    function numeric(text) {
+        return String(text).replace(/,(?=\d{3}(?!\d))/g, '').replace(/,/g, '.');
+    }
+
     /* ---------- arithmetic ---------- */
 
     function tokenize(text) {
         const tokens = [];
-        const source = text.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/,/g, '');
+        const raw = text.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+        const source = numeric(raw);
         let i = 0;
         while (i < source.length) {
             const ch = source[i];
@@ -140,7 +150,7 @@
     function convert(text) {
         const m = UNIT_RE.exec(text);
         if (!m) return null;
-        const amount = Number(m[1].replace(/,/g, ''));
+        const amount = Number(numeric(m[1]));
         if (!Number.isFinite(amount)) return null;
         const from = m[2].toLowerCase();
         const to = m[3].toLowerCase();
@@ -197,7 +207,7 @@
 
             const percent = PERCENT_OF.exec(text);
             if (percent) {
-                const value = (Number(percent[1].replace(/,/g, '')) / 100) * Number(percent[2].replace(/,/g, ''));
+                const value = (Number(numeric(percent[1])) / 100) * Number(numeric(percent[2]));
                 if (Number.isFinite(value)) return { expression: text.trim(), result: format(value), copy: plain(value) };
                 return null;
             }

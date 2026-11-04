@@ -40,6 +40,13 @@ test.describe('the calculator', () => {
         expect(out.negExp).toBe('0.5');
     });
 
+    test('reads a decimal comma as a decimal, and a comma before three digits as thousands', async ({ page }) => {
+        await openDashboard(page);
+        const out = await page.evaluate(() => ['1,5 + 1', '15% van 2,5', '2,5 km in m', '1,000 + 1', '1,234,567 + 1', '1,2,3 + 1']
+            .map((q) => window.SearchCalc.evaluate(q)?.copy ?? null));
+        expect(out).toEqual(['2.5', '0.375', '2500', '1001', '1234568', null]);
+    });
+
     test('leaves words, dates, lone numbers and nonsense alone', async ({ page }) => {
         await openDashboard(page);
         const out = await page.evaluate(() => ['github', '2026-11-03', '42', '3-', '1/0', '5 + ', 'alert(1)', '=1+1', '=7', '5 apples in pears', '1.2.3+1',
