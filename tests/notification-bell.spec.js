@@ -191,3 +191,23 @@ test('actions with marksRead set read first, and the bell shows in the container
     await page.evaluate(() => { window.dashboardInstance.activeView = 'docker'; });
     await expect(page.locator('.notification-bell-button')).toBeVisible();
 });
+
+test('No on a forever source stays hidden when its count rises, and the record says forever', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+        window.__probeState['probe-forever'] = { count: 2, text: 'forever text' };
+        window.NotificationBell.register({
+            id: 'probe-forever', group: 'privacy', kind: 'quiet', icon: '*', no: 'forever',
+            state: async () => window.__probeState['probe-forever'],
+        });
+        return window.NotificationBell.refreshAll();
+    });
+    await openPanel(page);
+    await row(page, 'probe-forever').getByRole('button', { name: 'No', exact: true }).click();
+    await expect(row(page, 'probe-forever')).toHaveCount(0);
+    expect(await page.evaluate(() => window.DiscoverabilityState.getBellRecord('probe-forever').no.forever)).toBe(true);
+
+    await setState(page, 'probe-forever', { count: 9, text: 'forever text' });
+    await refresh(page);
+    await expect(row(page, 'probe-forever')).toHaveCount(0);
+});

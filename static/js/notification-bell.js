@@ -110,7 +110,10 @@
 
     function answerNo(row) {
         const { source, entry } = row;
-        States().markBellNo(source.id, markOf(entry), source.no === 'forever' ? { forever: true } : {});
+        // `forever` belongs to the mark itself; the third argument is only persist options.
+        const mark = markOf(entry);
+        if (source.no === 'forever') mark.forever = true;
+        States().markBellNo(source.id, mark);
         changed();
     }
 

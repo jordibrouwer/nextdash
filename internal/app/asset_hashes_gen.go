@@ -313,7 +313,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/monitoring-tutorial.js":                              "269769c60b4c",
 	"js/notice-card.js":                                      "c63d60ec5fb6",
 	"js/notification-bell-model.js":                          "d91696b34cd8",
-	"js/notification-bell.js":                                "58fb7ba918d5",
+	"js/notification-bell.js":                                "4210302961e3",
 	"js/overlay-layers.js":                                   "3204b5438ddb",
 	"js/push-notifications.js":                               "412ff2fa2214",
 	"js/push-service-worker.js":                              "579b27227012",
