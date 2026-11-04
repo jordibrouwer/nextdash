@@ -159,8 +159,19 @@ test.describe('the bookmark icon', () => {
 
         const src = page.locator(`.bookmarks-list[data-category-id="${srcCat}"] .bookmark-link.reorder-item`).first();
         const dst = page.locator(`.bookmarks-list[data-category-id="${dstCat}"] .bookmark-link.reorder-item`).first();
-        const ib = await src.locator('.bookmark-icon-slot').boundingBox();
-        const db = await dst.boundingBox();
+        // Measured once the grid holds still: icons and widgets landing late
+        // move the rows, and a drop aimed at where a row was misses it.
+        let ib = null;
+        let db = null;
+        let last = '';
+        await expect.poll(async () => {
+            ib = await src.locator('.bookmark-icon-slot').boundingBox();
+            db = await dst.boundingBox();
+            const now = JSON.stringify([ib, db]);
+            const same = Boolean(ib && db) && now === last;
+            last = now;
+            return same;
+        }, { timeout: 10_000, intervals: [250] }).toBe(true);
         if (!ib || !db) throw new Error('missing boxes');
 
         await page.mouse.move(ib.x + ib.width / 2, ib.y + ib.height / 2);
