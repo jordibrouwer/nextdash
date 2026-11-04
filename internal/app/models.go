@@ -505,6 +505,7 @@ type Settings struct {
 	PageSwitcherTextMigrated        bool           `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
 	PageSwitcherClassicMigrated     bool           `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
 	HeaderClockPlacement            string         `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
+	GreetingName                    string         `json:"greetingName,omitempty"`                  // Name the header greets by ("Good evening, Jordi"); empty greets without one
 	PageSwitcherStyle               string         `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
 	ActionBarPosition               string         `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
 	ActionBarEnabled                bool           `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
@@ -3722,6 +3723,7 @@ const (
 	// large type under them.
 	headerClockClassic          = "classic"
 	defaultHeaderClockPlacement = headerClockClassic
+	maxGreetingNameRunes        = 40
 )
 
 /*
@@ -4010,6 +4012,12 @@ func clampBookmarkSettings(s *Settings) {
 	case headerClockBesideName, headerClockOwnZone, headerClockClassic:
 	default:
 		s.HeaderClockPlacement = defaultHeaderClockPlacement
+	}
+	// A greeting is one short line beside the clock: a pasted paragraph would
+	// push the pages off the header row.
+	s.GreetingName = strings.TrimSpace(s.GreetingName)
+	if r := []rune(s.GreetingName); len(r) > maxGreetingNameRunes {
+		s.GreetingName = strings.TrimSpace(string(r[:maxGreetingNameRunes]))
 	}
 	switch s.PageSwitcherStyle {
 	case pageSwitcherClassic, pageSwitcherSegmented, pageSwitcherText, pageSwitcherCompact:

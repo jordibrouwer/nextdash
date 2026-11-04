@@ -9410,6 +9410,7 @@ class DashboardConfig {
         maxPageTabs: { info: ['maxPageTabsInfoTitle', 'maxPageTabsInfoMessage'], def: 4 },
         maxHeaderActions: { info: ['maxHeaderActionsInfoTitle', 'maxHeaderActionsInfoMessage'], def: 2 },
         headerClockPlacement: { hint: 'headerClockPlacementHint', def: 'classic' },
+        greetingName: { def: '' },
         pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'classic' },
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'right' },
@@ -10586,8 +10587,12 @@ class DashboardConfig {
                         options: [
                             opt('beside-name', t('config.headerClockBesideName', 'Beside the view name')),
                             opt('own-zone', t('config.headerClockOwnZone', 'In a column of their own')),
-                            opt('classic', t('config.headerClockClassic', 'On their own line, name underneath')),
+                            opt('classic', t('config.headerClockClassic', 'Large clock, greeting beside it')),
                         ] },
+                    // Read by the large clock only: the other two placements
+                    // keep their one line of time and date.
+                    { field: 'greetingName', type: 'text', special: 'datetime',
+                        label: t('config.greetingNameLabel', 'Your name, for the greeting beside the clock') },
                 ],
             },
             {
