@@ -336,7 +336,8 @@ test.describe('config dashboard view (scaffold)', () => {
         await openBackupFolds(page);
 
         for (const action of ['csv-export', 'browser-import', 'settings-export', 'settings-import']) {
-            await expect(page.locator(`[data-backup-action="${action}"]`)).toBeVisible();
+            // Import cards that read through the same picker share an action.
+            await expect(page.locator(`[data-backup-action="${action}"]`).first()).toBeVisible();
         }
         // reset-onboarding moved to Behavior → General, beside the tips toggle:
         // sitting in the danger panel next to "Delete ALL data" made replaying

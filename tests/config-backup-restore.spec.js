@@ -50,7 +50,7 @@ test.describe('backup download and restore', () => {
         await expect.poll(() => page.evaluate(async (n) =>
             (await (await fetch('/api/bookmarks?all=true')).json()).some((b) => b.name === n), marker)).toBe(true);
 
-        await page.locator('[data-backup-action="import"]').click();
+        await page.getByRole('button', { name: 'Import backup…' }).click();
         await page.locator('#config-import-input').setInputFiles(saved);
         await expect(page.locator('#config-confirm-modal')).toBeVisible();
         await page.locator('[data-confirm="ok"]').click();

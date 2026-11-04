@@ -148,11 +148,14 @@ test.describe('Backups & data is read top to bottom', () => {
         await openBackups(page);
         const body = page.locator('#config-db-body');
         await expect(body.locator('[data-db-status]')).toBeVisible();
-        await expect(body.locator('.config-db-group')).toHaveText(['Protect', 'Restore', 'Move']);
+        await expect(body.locator('.config-db-group')).toHaveText(['Protect', 'Restore', 'Bring things in', 'Move']);
         // Nothing is folded away: the buttons are on the page.
         for (const action of ['run', 'download', 'import', 'html-export', 'csv-export', 'csv-import', 'browser-import', 'settings-export', 'settings-import']) {
-            await expect(body.locator(`[data-backup-action="${action}"]`)).toBeVisible();
+            // Several import cards share one action (browser, services and
+            // dashboards all read through the same picker), so look at the first.
+            await expect(body.locator(`[data-backup-action="${action}"]`).first()).toBeVisible();
         }
+        await expect(body.locator('.config-import-card')).toHaveCount(6);
     });
 
     test('an ℹ opens its explanation in a dialog', async ({ page }) => {
