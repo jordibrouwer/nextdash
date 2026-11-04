@@ -41,35 +41,71 @@ async function visitAfterUpgrade(page, lastSeen = OLD_RELEASE) {
 
 const card = (page) => page.locator('.updated-notice-card');
 const toast = (page) => page.locator('#app-notification.show');
+const row = (page) => page.locator('.notification-bell-row[data-bell-id="updated-notice"]');
+
+/** Ask the bell to look again and open it. */
+async function openBell(page) {
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    // A panel that is still shrinking away counts as open; wait it out.
+    await expect(page.locator('.notification-bell-panel')).not.toHaveClass(/is-shrinking/);
+    if (await page.locator('.notification-bell-panel').isHidden()) {
+        await page.locator('.notification-bell-button').click();
+    }
+}
 
 test.describe('the updated notice', () => {
-    test('appears after the notes are closed and names both versions', async ({ page }) => {
+    // Closing the notes marks them read with a debounced write. These tests end
+    // quickly after that, so flush it: otherwise the worker's server still has
+    // the old release and the next test sees an update that is not there.
+    test.afterEach(async ({ page }) => {
+        await page.evaluate(() => window.DiscoverabilityState?.persistNow?.()).catch(() => {});
+    });
+
+    test('waits in the bell after the notes are closed and names both versions', async ({ page }) => {
         await visitAfterUpgrade(page);
         const modal = page.locator('.whats-new-modal');
         await expect(modal).toBeVisible({ timeout: 20_000 });
-        // Not on top of the notes.
-        await expect(card(page)).toHaveCount(0);
         const to = await page.evaluate(() => String(window.NEXTDASH_WHATS_NEW_RELEASE).replace(/^.*-v/, 'v'));
         await page.keyboard.press('Escape');
-        await expect(toast(page)).toBeVisible({ timeout: 15_000 });
-        await expect(toast(page)).toContainText('Updated from v1.3.0 to ' + to);
-        await expect(toast(page)).not.toContainText('dashboard.updatedNotice');
-        await expect(toast(page)).toContainText('The notes are under the');
-        await expect(page.locator('#app-notification')).not.toHaveClass(/has-action/);
+        await openBell(page);
+        await expect(row(page)).toContainText('Updated from v1.3.0 to ' + to);
+        await expect(row(page)).not.toContainText('dashboard.updatedNotice');
+        // No toast and no corner card any more: the bell is where it waits.
+        await page.waitForTimeout(3000);
+        await expect(toast(page)).toHaveCount(0);
         await expect(card(page)).toHaveCount(0);
-        // Showing it once is final: it counts as answered.
-        expect(await page.evaluate(() => window.DashboardUpdatedNotice.shouldShow())).toBe(false);
+        expect(await page.evaluate(() => window.DashboardUpdatedNotice.shouldShow())).toBe(true);
     });
 
-    test('showing it counts as answered: a reload does not show it again', async ({ page }) => {
+    test('stays across a reload until the notes are opened from the row', async ({ page }) => {
         await visitAfterUpgrade(page);
         await expect(page.locator('.whats-new-modal [data-wn-content]')).toBeVisible({ timeout: 20_000 });
         await page.keyboard.press('Escape');
-        await expect(toast(page)).toContainText('Updated from', { timeout: 15_000 });
-        await expect(card(page)).toHaveCount(0);
-        expect(await page.evaluate(() => window.DashboardUpdatedNotice.shouldShow())).toBe(false);
+        await openBell(page);
+        await expect(row(page)).toBeVisible();
+        // The notes were marked read when they closed; save that before the
+        // reload, or the debounced write is lost and the notes open again.
+        await page.evaluate(() => window.DiscoverabilityState.persistNow());
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissBlockingOverlays(page);
+        await openBell(page);
+        await expect(row(page)).toBeVisible();
+        await row(page).getByRole('button', { name: "What's new" }).click();
+        await expect(page.locator('.whats-new-modal')).toBeVisible();
+        expect(await page.evaluate(() => window.DashboardUpdatedNotice.shouldShow())).toBe(false);
+        await page.keyboard.press('Escape');
+        await openBell(page);
+        await expect(row(page)).toHaveCount(0);
+    });
+
+    test('No in the bell counts as seen', async ({ page }) => {
+        await visitAfterUpgrade(page);
+        await expect(page.locator('.whats-new-modal [data-wn-content]')).toBeVisible({ timeout: 20_000 });
+        await page.keyboard.press('Escape');
+        await openBell(page);
+        await row(page).getByRole('button', { name: 'No' }).click();
+        await expect(row(page)).toHaveCount(0);
         expect(await page.evaluate(() => window.DashboardUpdatedNotice.shouldShow())).toBe(false);
     });
 
