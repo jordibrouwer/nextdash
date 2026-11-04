@@ -50,6 +50,10 @@ assert.strictEqual(M.rowStatus({ ...th, count: 68 }, { no: { count: 48 } }).visi
 const tip = { id: 'p', kind: 'tip', count: 1, no: 'state' };
 assert.strictEqual(M.rowStatus(tip, { read: { count: 1 } }).visible, false);
 assert.deepStrictEqual(M.rowStatus(tip, {}), { visible: true, unread: true });
+// ...unless it comes back as a new one: a daily tip carries the day as its id
+const daily = { ...tip, ids: ['2026-11-05'] };
+assert.strictEqual(M.rowStatus(daily, { read: { count: 1, ids: ['2026-11-05'] } }).visible, false);
+assert.deepStrictEqual(M.rowStatus(daily, { read: { count: 1, ids: ['2026-11-04'] } }), { visible: true, unread: true });
 
 // badge
 const rows = [

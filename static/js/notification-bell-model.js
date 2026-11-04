@@ -10,7 +10,7 @@
  *   - Read: a row stays read until it gets worse than when it was read.
  *   - No: a row answered "No" stays hidden until it gets worse (by its own
  *     threshold, when it has one). "No, forever" hides it for good.
- *   - A tip that was read is gone.
+ *   - A tip that was read is gone, until it reports a new id (a daily tip).
  *   - Badge: red counts unread urgent rows, grey counts unread quiet rows and
  *     tips. Health rows never count.
  */
@@ -39,7 +39,9 @@
                 visible = isWorse(no, entry, threshold);
             }
         }
-        if (visible && entry.kind === 'tip' && s.read) visible = false;
+        // A read tip is gone, unless it comes back as a new one (new ids): a
+        // tip offered again each day carries the day as its id.
+        if (visible && entry.kind === 'tip' && s.read && !isWorse(s.read, entry)) visible = false;
         const unread = !s.read || isWorse(s.read, entry);
         return { visible, unread };
     }
