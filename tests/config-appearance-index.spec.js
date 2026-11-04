@@ -8,10 +8,10 @@ const {
 } = require('./e2e-helpers');
 
 /**
- * A long Appearance tab lists its panels above the preview.
+ * Every Appearance tab lists its panels under the preview.
  *
- * Only past three panels; choosing an entry opens that panel and brings it on
- * screen, and the filter narrows the list with the panels.
+ * Choosing an entry opens that panel and brings it on screen, the filter
+ * narrows the list with the panels, and the preview stays put across tabs.
  */
 async function openAppearanceTab(page, tab) {
     await page.setViewportSize({ width: 1500, height: 950 });
@@ -34,18 +34,22 @@ const index = (page) => page.locator('[data-panel-index]');
 const entries = (page) => page.locator('[data-panel-index] [data-panel-index-key]');
 
 test.describe('the panel index', () => {
-    test('a tab of more than three panels lists them; a shorter one does not', async ({ page }) => {
+    test('every tab lists its panels under the preview', async ({ page }) => {
         await openAppearanceTab(page, 'datetime');
         await expect(index(page)).toBeVisible();
-        const panels = await page.locator('#config-appearance-body .config-panel--fold').count();
-        expect(panels).toBeGreaterThan(3);
-        await expect(entries(page)).toHaveCount(panels);
         await expect(entries(page)).toHaveText(['Clock & weather', 'Date & time', 'Weather', 'Calendar']);
+        const previewTop = async () => (await page.locator('[data-config-preview]').boundingBox())?.y;
+        const top = await previewTop();
+        const indexTop = (await index(page).boundingBox())?.y ?? 0;
+        expect(indexTop).toBeGreaterThan(top ?? Infinity);
 
         await page.locator('[data-appearance-tab="header"]').click();
         await expect(page.locator('[data-appearance-tab="header"]')).toHaveAttribute('aria-selected', 'true');
-        expect(await page.locator('#config-appearance-body .config-panel--fold').count()).toBeLessThan(4);
-        await expect(index(page)).toBeHidden();
+        const panels = await page.locator('#config-appearance-body .config-panel--fold').count();
+        expect(panels).toBeLessThan(4);
+        await expect(index(page)).toBeVisible();
+        await expect(entries(page)).toHaveCount(panels);
+        expect(await previewTop()).toBe(top);
     });
 
     test('choosing an entry opens its panel and brings it on screen', async ({ page }) => {
@@ -64,8 +68,8 @@ test.describe('the panel index', () => {
         await openAppearanceTab(page, 'datetime');
         await expect(index(page)).toBeVisible();
         await page.locator('[data-settings-filter]').first().fill('temperature');
-        await expect(index(page)).toBeHidden();
+        await expect(entries(page)).toHaveText(['Weather']);
         await page.locator('[data-settings-filter]').first().fill('');
-        await expect(index(page)).toBeVisible();
+        await expect(entries(page)).toHaveCount(4);
     });
 });

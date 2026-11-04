@@ -160,6 +160,7 @@ Eight fixes from a code review: the calculator reads a decimal comma, a Tabs wid
 
 ### Appearance
 
+- **new — Every Appearance tab lists its sections under the preview.** The list beside the settings now shows on every tab, not only on Date & weather, and stands under the preview, so the preview stays in place when you switch tabs. The entries are larger, and the section in view is marked with a bar.
 - **fix — The backdrop picker no longer holds on to old thumbnails.** Each search keystroke made a new observer for lazy painting and never let the old one go, so hundreds of thumbnails that were no longer on the page stayed in memory. One observer per picker now, released when the picker is drawn again.
 
 ---

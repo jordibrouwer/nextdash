@@ -45,8 +45,11 @@
         [0.58, 'inkGapMax', 'Maximum'],
     ];
 
-    /** A tab needs more panels than this before it gets an index. */
-    global.DashboardConfig.APPEARANCE_INDEX_MIN_PANELS = 4;
+    /**
+     * Every tab with a panel gets the index, so the column under the preview
+     * reads the same on each tab.
+     */
+    global.DashboardConfig.APPEARANCE_INDEX_MIN_PANELS = 1;
 
     Object.assign(global.DashboardConfig.prototype, {
 
@@ -1629,10 +1632,10 @@
             : '';
         const preview = !subpageOf && window.ConfigPreview
             ? `<aside class="config-tabpage-side" aria-label="${esc(this.t('config.previewLabel', 'Preview'))}">
-                   <nav class="config-panel-index" data-panel-index hidden
-                        aria-label="${esc(this.t('config.panelIndexLabel', 'On this tab'))}"></nav>
                    <p class="config-tabpage-side-label">${esc(this.t('config.previewLabel', 'Preview'))}</p>
                    <div data-config-preview>${window.ConfigPreview.render(this, this.appearanceTab)}</div>
+                   <nav class="config-panel-index" data-panel-index hidden
+                        aria-label="${esc(this.t('config.panelIndexLabel', 'On this tab'))}"></nav>
                </aside>`
             : '';
         const shell = (body) => `
@@ -1767,11 +1770,10 @@
     },
 
     /**
-     * The list of a long tab's panels above the preview, marking the one in
-     * view.
+     * The list of a tab's panels under the preview, marking the one in view.
      *
-     * Only past three panels: with their summaries, three folded panels fit on
-     * one screen and a list of them would only repeat it. Built from the
+     * Under the preview rather than above it: the list is as long as the tab,
+     * and above it moved the preview on every change of tab. Built from the
      * panels on screen, so the filter and "Only changed" narrow it too.
      * Choosing an entry opens that panel and brings it into view.
      */
@@ -1788,7 +1790,7 @@
         }
         const esc = (v) => this.dash.escapeHtml(v);
         const titleOf = (panel) => String(panel.querySelector('.config-panel-fold')?.textContent || '').trim();
-        nav.innerHTML = panels.map((panel) => `
+        nav.innerHTML = `<p class="config-panel-index-label">${esc(this.t('config.panelIndexLabel', 'On this tab'))}</p>` + panels.map((panel) => `
             <button type="button" class="config-panel-index-item" data-panel-index-key="${esc(panel.getAttribute('data-fold-key'))}">${esc(titleOf(panel))}</button>`).join('');
         nav.hidden = false;
         const markKey = (key) => nav.querySelectorAll('[data-panel-index-key]').forEach((btn) => {

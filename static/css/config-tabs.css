@@ -106,34 +106,47 @@
     top: 12px;
 }
 
-/* The panels of a long tab, above the preview; the one in view is marked. */
+/* The panels of the tab, under the preview; the one in view is marked. */
 .config-panel-index {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    margin: 0 0 14px;
-    padding-left: 10px;
-    border-left: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    gap: 2px;
+    margin: 18px 0 0;
 }
 
 .config-panel-index[hidden] {
     display: none;
 }
 
-.config-panel-index-item {
-    padding: 3px 0;
-    border: 0;
-    background: none;
+.config-panel-index-label {
+    margin: 0 0 6px;
+    font-size: 0.8em;
     color: var(--text-muted, inherit);
+}
+
+.config-panel-index-item {
+    padding: 7px 12px;
+    border: 0;
+    border-left: 2px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 0 6px 6px 0;
+    background: none;
+    color: var(--text-secondary, var(--text-primary, inherit));
     font: inherit;
-    font-size: 0.85em;
+    font-size: 0.95em;
     text-align: left;
     cursor: pointer;
 }
 
-.config-panel-index-item:hover,
+.config-panel-index-item:hover {
+    color: var(--text-primary, inherit);
+    background: color-mix(in srgb, var(--text-primary, #fff) 6%, transparent);
+}
+
 .config-panel-index-item[aria-current="true"] {
+    border-left-color: var(--accent-color, var(--accent-primary, currentColor));
     color: var(--accent-color, var(--text-primary, inherit));
+    background: color-mix(in srgb, var(--accent-color, var(--accent-primary, #6af)) 12%, transparent);
+    font-weight: 600;
 }
 
 .config-panel-index-item:focus-visible {
