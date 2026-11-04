@@ -106,6 +106,9 @@ test.describe('config info + reset affordances', () => {
             // Carried for the ↺ button and the changed-settings count; it has no
             // control of its own, so there is nothing for an ℹ to sit beside.
             'newBookmarkCategory',
+            // The bell's sound carries a hint line under the toggle, and the name for the
+            // greeting a note above it: the explanation is on screen, so no ℹ.
+            'bellSound', 'greetingName',
             // Reads as part of the toggle above it, which carries the ℹ.
             'rowTagsMax', 'smartAddedLimit',
             // The category header: the panel's note says what the five do and
@@ -126,8 +129,6 @@ test.describe('config info + reset affordances', () => {
             // The two review offers carry a hint line under the toggle that
             // says what the card does and what switching it off leaves alone,
             // so the explanation is on screen rather than behind an ℹ.
-            // A two-choice select whose options say it (a day, a week).
-            'sessionTipsFrequency',
             'enableTagSuggestionNotice', 'enableHealthReviewNotice', 'enableDockerUpdateNotice', 'enableHealthRecheckNotice', 'enableInboxExtensionNotice', 'enableUpdatedNotice', 'enableSectionTours',
             // The Kept pair, for the same reason: the hint under each says what
             // it does in a sentence — "Adds a Kept tab to the inbox, and makes

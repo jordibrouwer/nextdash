@@ -1047,7 +1047,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 
 **Occasional tips.** Tips do not pop up over your work. Two keyboard tips a day wait in the notifications bell ([§4](#the-notifications-bell)), a new pair each calendar day whether or not yesterday's were read, never one you have already read, each with a button to the place it is about. **Show occasional keyboard tips** (Behavior → Privacy & sync → Onboarding) turns them off.
 
-<p align="center"><img src="screenshots/manual.md/17-onboarding-tips.jpg" alt="Config, Behavior, Privacy and sync, the Onboarding group: Show occasional keyboard tips, the Keyboard tips come list set to About once a day, and the switch Offer a tour the first time a section opens" width="760"></p>
+<p align="center"><img src="screenshots/manual.md/17-onboarding-tips.jpg" alt="Config, Behavior, Privacy and sync, the Onboarding group: the switch Show occasional keyboard tips and the switch Offer a tour the first time a section opens" width="760"></p>
 
 **Tours on a first visit.** **Offer a tour the first time a section opens** (the same group, on by default) decides whether Monitoring, Widgets, the Inbox, the Bookmarks view and the other sections open their tour by themselves the first time you visit. It needs the keyboard tips switch on. Switched off, every tour is still one click away on its **Tour** button.
 

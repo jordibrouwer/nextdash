@@ -138,11 +138,20 @@ test('17 find settings recent', async ({ page }) => {
     await snap(page, finder, '17-find-settings-recent.jpg', { pad: 4, keepFocus: true });
 });
 
-test('17 onboarding tips frequency', async ({ page }) => {
+
+// The kit puts the keyboard tips away so no tip sits over a picture; this scene shows them on.
+const tipsOn = { run: (dir) => {
+    const kit = require('./helpers/manual-shot-kit');
+    const file = kit.path.join(dir, 'settings.json');
+    kit.writeJSON(file, { ...kit.readJSON(file), enableSessionTips: true });
+} };
+test.describe('onboarding tips picture', () => {
+    test.use({ dataTweak: tipsOn });
+test('17 onboarding tips', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'behavior');
     await page.locator('[data-behavior-tab="privacy"]').first().click();
-    const select = page.locator('[data-behavior-field="sessionTipsFrequency"]');
+    const select = page.locator('[data-behavior-field="enableSessionTips"]');
     await select.waitFor();
     const group = page.locator('#config-section-panel .config-panel', { has: select }).first();
     // The group's title sits under the sticky head unless it is scrolled clear of it.
@@ -154,4 +163,5 @@ test('17 onboarding tips frequency', async ({ page }) => {
     // Pacing for the capture, not a condition: the section finishes scrolling.
     await page.waitForTimeout(600);
     await snap(page, group, '17-onboarding-tips.jpg', { pad: 14, maxHeight: 420 });
+});
 });

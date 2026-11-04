@@ -18,7 +18,7 @@ const writeJSON = (file, data) => fs.writeFileSync(file, `${JSON.stringify(data,
 /** Settings that differ from the defaults, three on Behavior General and two on Privacy and sync. */
 function changedData(dir) {
     const file = path.join(dir, 'settings.json');
-    writeJSON(file, { ...readJSON(file), lockLayout: true, openInNewTab: false, rememberScrollPosition: false, showSiteNews: false, sessionTipsFrequency: 'daily' });
+    writeJSON(file, { ...readJSON(file), lockLayout: true, openInNewTab: false, rememberScrollPosition: false, showSiteNews: false });
 }
 
 /** Three stored backups, each with its age in its name. */

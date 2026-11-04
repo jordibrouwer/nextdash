@@ -146,6 +146,7 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 - **new — Config can bring back dismissed notifications.** *Bring back dismissed notifications* puts every answered **No** and every read row back in the bell.
 - **new — Tips: two a day, each leading to its own place.** Two new tips a day wait in the bell, whether or not yesterday's were read. Each has a button to the place it is about (Config, the Inbox, the Bookmarks view, Containers, the tag cloud, the palette and more).
 - **fix — A row you took up stays away.** Pressing the coloured button on a row (*Start*, *Open the Inbox*) slid the row out and closed the panel, but the row was back the next time the bell opened. It is now put aside until it gets worse, the way **No** does, without telling the source that anything was declined.
+- **fix — Tips no longer offer a pace they do not keep.** *Keyboard tips come* (a day or a week) is gone from Behavior → Privacy & sync → Onboarding: the bell holds two tips a day whatever it said. Its hint and the ℹ of *Show occasional keyboard tips* describe the bell now, and the offers for tag suggestions and link review say they wait there, in six languages.
 - **new — Mark read in the Watch feeds popover.** The popover has a **Mark read** button, quieter than the Reader button beside it.
 - **new — Bell usage in the analytics.** The bell reports how it is used, in fixed words and bucketed counts; the text of a notification never leaves.
 - **new — One-time notes for the bell and the action bar.** A short coach note says what the bell is and what the action bar offers, once.
@@ -175,7 +176,6 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 - **docs — Translations.** The bell, the greeting, the tip buttons, the action-bar note and the AdGuard Home and Pi-hole widgets in Dutch, German, French, Spanish and Chinese. Forty-one strings that only had an English fallback in the code (the DNS widgets, the What's new footer, *Mark read* in the Watch feeds popover) are now in `en.json` and translated. The French header clock option and the greeting strings no longer show English.
 - **docs — Config → Help.** *Header & action buttons* covers the large clock, the greeting and the bell; *Alerts & notifications* has a paragraph on the bell; *Widget kinds* counts fifty-three kinds, adds AdGuard Home and Pi-hole and describes the clock face.
 - **docs — Tips.** Four new tips: the bell, your name in the greeting, the clock face and the DNS widgets. Each leads to its place from the bell.
-- **docs — The manual and Help say where things wait.** Seven passages of the manual and five Help and tip texts (the digest, the Behavior notices, the inbox and Containers offers) no longer speak of corner cards, toasts and one tip a day: they describe the notifications bell, in six languages.
 
 ### Browser extension
 

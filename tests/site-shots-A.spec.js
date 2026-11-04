@@ -349,11 +349,18 @@ test.describe('behavior', () => {
         await shot(page, 'behavior/shot-4.jpg');
     });
 
+    test.describe('with tips on', () => {
+        test.use({ dataTweak: { run: (dir) => {
+            const kit = require('./helpers/manual-shot-kit');
+            const file = kit.path.join(dir, 'settings.json');
+            kit.writeJSON(file, { ...kit.readJSON(file), enableSessionTips: true });
+        } } });
     test('behavior privacy and sync', async ({ page }) => {
         await prepare(page);
         await openBehavior(page, 'privacy');
         await scrollToTop(page, panelTitled(page, /^Privacy$/), 90);
         await shot(page, 'behavior/shot-5.jpg');
+    });
     });
 });
 

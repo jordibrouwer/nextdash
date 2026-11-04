@@ -203,8 +203,7 @@
      * an earlier version runs out instead of being dropped.
      */
     function tipsWindowMs() {
-        const frequency = global.dashboardInstance?.settings?.sessionTipsFrequency;
-        return frequency === 'weekly' ? TIPS_WEEK_MS : TIPS_WINDOW_MS;
+        return TIPS_WINDOW_MS;
     }
 
     function tipsAllowedNow(now = Date.now()) {

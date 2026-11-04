@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
- * Config → Behavior → Onboarding: how often keyboard tips come, and whether a
+ * Config → Behavior → Onboarding: whether keyboard tips come, and whether a
  * section offers its tour on the first visit. Both are read where the thing is
  * decided, so the tests set the setting and ask that decision.
  */
@@ -17,27 +17,25 @@ async function open(page) {
 }
 
 test.describe('tips settings', () => {
-    test('weekly spaces tips a week apart, daily a day', async ({ page }) => {
+    test('a tip is spaced a day apart, whatever an older install stored', async ({ page }) => {
         await open(page);
-        const allowed = (frequency, agoMs) => page.evaluate(({ frequency, agoMs }) => {
-            window.dashboardInstance.settings.sessionTipsFrequency = frequency;
+        const allowed = (stored, agoMs) => page.evaluate(({ stored, agoMs }) => {
+            // A setting from before the choice was removed must not change the pace.
+            window.dashboardInstance.settings.sessionTipsFrequency = stored;
             const state = window.DiscoverabilityState;
             const exported = state.exportState();
             exported.tipsShownAt = [Date.now() - agoMs];
             exported.tipsNotBefore = 0;
             state.init(exported);
             return state.tipsAllowedNow();
-        }, { frequency, agoMs });
+        }, { stored, agoMs });
         const DAY = 24 * 60 * 60 * 1000;
-        expect(await allowed('daily', 2 * DAY)).toBe(true);
-        expect(await allowed('daily', 0.5 * DAY)).toBe(false);
-        expect(await allowed('weekly', 2 * DAY)).toBe(false);
-        expect(await allowed('weekly', 8 * DAY)).toBe(true);
-        // A browser that never chose is daily.
         expect(await allowed('', 2 * DAY)).toBe(true);
+        expect(await allowed('', 0.5 * DAY)).toBe(false);
+        expect(await allowed('weekly', 2 * DAY)).toBe(true);
     });
 
-    test('the Onboarding group carries the frequency and the tours switch', async ({ page }) => {
+    test('the Onboarding group carries the tips and the tours switches, and no pace', async ({ page }) => {
         await open(page);
         await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
@@ -45,10 +43,10 @@ test.describe('tips settings', () => {
             await c.openConfigView('behavior');
         });
         const group = page.locator('#config-section-panel');
-        await expect(group.locator('[data-behavior-field="sessionTipsFrequency"]')).toBeVisible();
+        await expect(group.locator('[data-behavior-field="enableSessionTips"]')).toBeVisible();
         await expect(group.locator('[data-behavior-field="enableSectionTours"]')).toBeVisible();
-        await group.locator('[data-behavior-field="sessionTipsFrequency"]').selectOption('weekly');
-        expect(await page.evaluate(() => window.dashboardInstance.settings.sessionTipsFrequency)).toBe('weekly');
+        // The bell holds two tips a day: there is no pace to choose any more.
+        await expect(group.locator('[data-behavior-field="sessionTipsFrequency"]')).toHaveCount(0);
     });
 
     for (const [name, on] of [['offers the tour on a first visit while the switch is on', true], ['keeps a first visit quiet once the switch is off', false]]) {

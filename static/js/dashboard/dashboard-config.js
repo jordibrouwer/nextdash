@@ -9361,7 +9361,6 @@ class DashboardConfig {
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         enableSectionTours: { hint: 'sectionToursHint', def: true },
-        sessionTipsFrequency: { def: 'daily' },
         enableTagSuggestionNotice: { hint: 'tagSuggestionNoticeHint', def: true },
         enableHealthReviewNotice: { hint: 'healthReviewNoticeHint', def: true },
         enableDockerUpdateNotice: { hint: 'dockerUpdateNoticeHint', def: true },
@@ -10499,10 +10498,6 @@ class DashboardConfig {
                 note: t('config.generalGroupOnboardingNote', 'The Quick start bar and guide, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
                     bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
-                    { field: 'sessionTipsFrequency', type: 'select', label: t('config.sessionTipsFrequencyLabel', 'Keyboard tips come'), options: [
-                        opt('daily', t('config.sessionTipsDaily', 'About once a day')),
-                        opt('weekly', t('config.sessionTipsWeekly', 'About once a week')),
-                    ] },
                     bool('enableSectionTours', 'config.sectionToursLabel', 'Offer a tour the first time a section opens'),
                     // The two cards that offer a review on their own. Here
                     // rather than beside the feature each belongs to, because
