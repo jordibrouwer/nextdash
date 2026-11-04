@@ -396,19 +396,16 @@ test('the menu offers folding and the widget’s settings', async ({ page }) => 
     await expect(page.locator('#widget-context-menu [data-action="fold"]')).toContainText(/unfold/i);
 });
 
-test('Settings… opens Config → Widgets', async ({ page }) => {
+test('Settings… opens the widget’s settings sheet over the dashboard', async ({ page }) => {
     await dashboardWithAWidget(page);
 
     await page.locator('.dashboard-widget .category-title').click({ button: 'right' });
     await page.locator('#widget-context-menu [data-action="settings"]').click();
 
-    await expect.poll(() => page.evaluate(() => {
-        const config = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-        return config?.section || '';
-    }), { timeout: 15_000 }).toBe('widgets');
-    // And on screen, not only in the object: the reader asked for the panel.
-    await expect(page.locator('.config-widget-list, [data-widget-catalogue]').first())
+    // On screen, not only in the object: the reader asked for the settings.
+    await expect(page.locator('#config-widget-overlay .config-widget-sheet'))
         .toBeVisible({ timeout: 15_000 });
+    await expect(page).not.toHaveURL(/#config/);
 });
 
 /*
