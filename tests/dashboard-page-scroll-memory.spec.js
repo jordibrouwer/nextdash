@@ -111,7 +111,12 @@ test.describe('the dashboard remembers where you were on a page', () => {
         await openDashboard(page);
         const otherId = await addProbePage(page, PROBE_PAGE);
 
-        const result = await page.evaluate(async (targetId) => {
+        // A reload of the page you are on, started behind the test's back (the
+        // page's own settings saves after load, a revision poll), can overtake
+        // the switch: loadPageBookmarks then answers false and nothing moved.
+        // On a loaded runner that happens now and then; the round is run again
+        // then, and only then.
+        const round = () => page.evaluate(async (targetId) => {
             const d = window.dashboardInstance;
             const home = d.currentPageId;
 
@@ -120,12 +125,20 @@ test.describe('the dashboard remembers where you were on a page', () => {
             document.getElementById('dashboard-layout').appendChild(spacer);
             window.scrollTo({ top: 500, behavior: 'instant' });
 
-            await d.data.loadPageBookmarks(targetId);
+            const overtaken = async () => {
+                spacer.remove();
+                if (Number(d.currentPageId) !== Number(home)) await d.data.loadPageBookmarks(home);
+                d.data.takeRememberedScroll(home);
+                return null;
+            };
+            const landed = async (id) => (await d.data.loadPageBookmarks(id)) && Number(d.currentPageId) === Number(id);
+
+            if (!await landed(targetId)) return overtaken();
             const onOther = window.scrollY;
 
             // Coming home: the grid is short again, so keep it scrollable for
             // the restore to have somewhere to go.
-            await d.data.loadPageBookmarks(home);
+            if (!await landed(home)) return overtaken();
             document.getElementById('dashboard-layout').appendChild(spacer);
             await new Promise((resolve) => requestAnimationFrame(resolve));
             await new Promise((resolve) => setTimeout(resolve, 100));
@@ -134,6 +147,9 @@ test.describe('the dashboard remembers where you were on a page', () => {
             spacer.remove();
             return { onOther, restored, leftOver: d.data.takeRememberedScroll(home) };
         }, otherId);
+        let result = null;
+        for (let attempt = 0; attempt < 3 && !result; attempt += 1) result = await round();
+        if (!result) throw new Error('the page switch never landed');
 
         // The new page opened at the top...
         expect(result.onOther).toBe(0);
