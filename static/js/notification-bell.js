@@ -26,6 +26,11 @@
  * action with `marksRead: true` or from "Mark all read". Not called for a row
  * that was already read. A throwing onRead is logged and ignored.
  *
+ * The bell also draws the eye: a shake and a pulse when something unread is
+ * there on load, a shake, a pulse and a short bell tone when a refresh finds
+ * more unread than the one before (the tone follows the `bellSound` setting),
+ * and a quiet pulse once a minute until the panel is opened.
+ *
  * `onReset()` is optional and undoes what onNo did: called by
  * `NotificationBell.resetDismissed()` for each source whose forever "No" it
  * cleared (and only those), before the bell looks again. A throwing onReset is
@@ -36,6 +41,7 @@
 
     const FIRST_REFRESH_MS = 3000;
     const REFRESH_EVERY_MS = 5 * 60 * 1000;
+    const REMINDER_EVERY_MS = 60 * 1000;
     const Model = global.NotificationBellModel;
     const States = () => global.DiscoverabilityState;
 
@@ -47,6 +53,9 @@
     let panel = null;
     let isOpen = false;
     let timer = null;
+    let lastUnread = null;     // unread after the previous refresh; null until the first one
+    let looked = true;         // the panel was opened since the last shake
+    let audioCtx = null;
 
     const GROUP_FALLBACK = {
         health: 'Health', cleanup: 'Clean up', system: 'System', privacy: 'Privacy', tips: 'Tips',
@@ -108,6 +117,93 @@
         const total = red + grey;
         const label = t('title', 'Notifications');
         button.setAttribute('aria-label', total > 0 ? `${label} (${total})` : label);
+    }
+
+    /*
+     * Attention. prefers-reduced-motion is handled by reduced-motion.css, which
+     * cuts every animation to a hundredth of a millisecond; the class is still
+     * removed on animationend, so nothing is left behind. The sound is not
+     * motion and plays regardless.
+     */
+    function restart(node, className) {
+        node.classList.remove(className);
+        void node.offsetWidth; // force a reflow so the animation starts over
+        node.classList.add(className);
+    }
+
+    function shake() {
+        if (!button) return;
+        restart(button, 'is-shaking');
+        looked = false;
+    }
+
+    function pulse() {
+        [redEl, greyEl].forEach((badge) => { if (badge && !badge.hidden) restart(badge, 'is-pulsing'); });
+    }
+
+    /** One shared context, made on first use. */
+    function context() {
+        if (audioCtx) return audioCtx;
+        const Ctx = global.AudioContext || global.webkitAudioContext;
+        if (!Ctx) return null;
+        try { audioCtx = new Ctx(); } catch { audioCtx = null; }
+        return audioCtx;
+    }
+
+    /** A short bell: three sine partials, a quick attack and about a second of decay. */
+    function ring(ctx) {
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.exponentialRampToValueAtTime(0.2, now + 0.008);
+        master.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
+        master.connect(ctx.destination);
+        [[660, 1], [1320, 0.45], [1980, 0.2]].forEach(([freq, level]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.value = level;
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(now);
+            osc.stop(now + 1.2);
+        });
+    }
+
+    /**
+     * Play the bell tone. A browser keeps audio shut until the page has been
+     * touched; when the context will not wake, this stays silent.
+     */
+    async function playSound() {
+        try {
+            const ctx = context();
+            if (!ctx) return;
+            if (ctx.state === 'suspended') await ctx.resume();
+            if (ctx.state !== 'running') return;
+            ring(ctx);
+        } catch { /* no sound is not an error */ }
+    }
+
+    /** Called after every full refresh with what is unread now. */
+    function noticeUnread(unread) {
+        const before = lastUnread;
+        lastUnread = unread;
+        if (unread <= 0) return;
+        if (before === null) {
+            shake();
+            pulse();
+        } else if (unread > before) {
+            shake();
+            pulse();
+            if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound();
+        }
+    }
+
+    function remind() {
+        if (document.visibilityState !== 'visible' || looked || isOpen) return;
+        const { red, grey } = counts();
+        if (red + grey > 0) pulse();
     }
 
     function el(tag, className, text) {
@@ -240,6 +336,7 @@
     function open() {
         if (!panel || isOpen) return;
         isOpen = true;
+        looked = true;
         renderPanel();
         panel.hidden = false;
         keepOnScreen();
@@ -264,6 +361,8 @@
     async function refreshAll() {
         await Promise.all([...sources.values()].map(refreshOne));
         changed();
+        const { red, grey } = counts();
+        noticeUnread(red + grey);
     }
 
     /** Forget every forever "No", tell the sources that had one, and look again. */
@@ -306,6 +405,12 @@
         redEl.hidden = true;
         greyEl.hidden = true;
         button.append(redEl, greyEl);
+        button.addEventListener('animationend', (event) => {
+            if (event.animationName === 'notification-bell-shake') button.classList.remove('is-shaking');
+        });
+        [redEl, greyEl].forEach((badge) => badge.addEventListener('animationend', (event) => {
+            if (event.target === badge) badge.classList.remove('is-pulsing');
+        }));
         button.addEventListener('click', () => (isOpen ? close() : open()));
         host.appendChild(button);
 
@@ -328,6 +433,7 @@
         const tick = () => { if (document.visibilityState === 'visible') refreshAll(); };
         timer = setInterval(tick, REFRESH_EVERY_MS);
         document.addEventListener('visibilitychange', tick);
+        setInterval(remind, REMINDER_EVERY_MS);
     }
 
     function init() {
@@ -336,7 +442,7 @@
         startTimers();
     }
 
-    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, counts };
+    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, counts, playSound };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

@@ -108,3 +108,41 @@
         width: min(360px, calc(100vw - 16px));
     }
 }
+
+/* Drawing the eye. The bell glyph swings and rests; the badges swell while a
+   ring spreads from them and fades. prefers-reduced-motion is covered by
+   reduced-motion.css, which shortens every animation to nothing. */
+.notification-bell-button.is-shaking svg {
+    transform-origin: 50% 12%;
+    animation: notification-bell-shake 0.8s ease-in-out;
+}
+.notification-bell-badge.is-pulsing { animation: notification-bell-swell 1s ease-out; }
+.notification-bell-badge.is-pulsing::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 2px solid currentColor;
+    opacity: 0;
+    pointer-events: none;
+    animation: notification-bell-ring 1s ease-out;
+}
+.notification-bell-red.is-pulsing::after { border-color: var(--accent-error); }
+.notification-bell-grey.is-pulsing::after { border-color: var(--text-tertiary, #8a8a8a); }
+@keyframes notification-bell-shake {
+    0%, 100% { transform: rotate(0); }
+    15% { transform: rotate(18deg); }
+    30% { transform: rotate(-16deg); }
+    45% { transform: rotate(12deg); }
+    60% { transform: rotate(-9deg); }
+    75% { transform: rotate(5deg); }
+    90% { transform: rotate(-2deg); }
+}
+@keyframes notification-bell-swell {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.35); }
+}
+@keyframes notification-bell-ring {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(2.2); opacity: 0; }
+}

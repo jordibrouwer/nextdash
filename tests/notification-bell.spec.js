@@ -324,3 +324,103 @@ test.describe('bringing dismissed rows back', () => {
         expect(await page.evaluate(() => window.__resets)).toEqual(['reset-forever']);
     });
 });
+
+/**
+ * The bell draws the eye. The classes come and go with the animations, so a
+ * MutationObserver records every time one is added; playSound is stubbed to
+ * count calls (the real one needs a user gesture).
+ */
+async function watchAttention(page) {
+    await page.evaluate(() => {
+        window.__seen = { shake: 0, pulse: 0, sound: 0 };
+        window.NotificationBell.playSound = () => { window.__seen.sound++; };
+        // A remove-then-add in one tick yields two records for one animation, so
+        // count a class only when it was absent at the previous record.
+        const on = new WeakMap();
+        const obs = new MutationObserver((list) => list.forEach((m) => {
+            if (m.attributeName !== 'class') return;
+            const isBtn = m.target.classList.contains('notification-bell-button');
+            const cls = isBtn ? 'is-shaking' : 'is-pulsing';
+            if (!isBtn && !m.target.classList.contains('notification-bell-badge')) return;
+            const was = (m.oldValue || '').split(/\s+/).includes(cls);
+            if (!was && m.target.classList.contains(cls) && !on.get(m.target)) {
+                window.__seen[isBtn ? 'shake' : 'pulse']++;
+                on.set(m.target, true);
+            }
+            if (was) on.set(m.target, true); else if (!m.target.classList.contains(cls)) on.set(m.target, false);
+        }));
+        obs.observe(document.querySelector('.notification-bell-button'), { attributes: true, attributeOldValue: true, subtree: true });
+    });
+}
+const seen = (page) => page.evaluate(() => window.__seen);
+
+test('the bell shakes and pulses once on load when something is unread, without a sound', async ({ page }) => {
+    // The clock holds the bell's own first refresh back until the watcher is in place.
+    await page.clock.install();
+    await loadDashboard(page);
+    await page.evaluate(() => {
+        window.__early = { shake: false, sound: 0 };
+        window.NotificationBell.playSound = () => { window.__early.sound++; };
+        new MutationObserver(() => {
+            if (document.querySelector('.notification-bell-button.is-shaking') && document.querySelector('.notification-bell-badge.is-pulsing')) window.__early.shake = true;
+        }).observe(document.querySelector('.notification-bell-button'), { attributes: true, subtree: true });
+    });
+    // The first refresh is the one the bell makes itself, a few seconds after load.
+    await page.clock.runFor(4000);
+    await page.waitForFunction(() => window.__early.shake, null, { timeout: 10_000 });
+    // (Other notices call refreshAll as they load, before these probes exist, so a
+    // sound may follow when the probes first show; that is a rise, not "on load".)
+});
+
+test('a refresh that finds more unread shakes, pulses and rings; the same or fewer does nothing', async ({ page }) => {
+    await loadDashboard(page);
+    await refresh(page);
+    await page.waitForTimeout(1200); // let the load animation finish
+    await watchAttention(page);
+
+    // The badges count rows, so a new row is what raises the number.
+    await setState(page, 'probe-state', { count: 1, text: 'new row' });
+    await refresh(page);
+    expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
+    expect((await seen(page)).pulse).toBeGreaterThan(0);
+
+    await page.waitForTimeout(1200);
+    await refresh(page); // same count
+    await setState(page, 'probe-state', null);
+    await refresh(page); // lower
+    expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
+});
+
+test('with bellSound off the bell still moves but stays silent', async ({ page }) => {
+    await loadDashboard(page);
+    await refresh(page);
+    await page.waitForTimeout(1200);
+    await watchAttention(page);
+    await page.evaluate(() => { window.dashboardInstance.settings.bellSound = false; });
+    await setState(page, 'probe-state', { count: 1, text: 'new row' });
+    await refresh(page);
+    expect(await seen(page)).toMatchObject({ shake: 1, sound: 0 });
+});
+
+test('a reminder pulses every minute without shaking, until the panel is opened', async ({ page }) => {
+    await page.clock.install();
+    await loadDashboard(page);
+    await page.clock.runFor(4000); // the first refresh
+    // It shakes and pulses on load; let that finish so only the reminder is seen.
+    await page.locator('.notification-bell-button.is-shaking').waitFor({ timeout: 10_000 });
+    await expect(page.locator('.notification-bell-badge.is-pulsing')).toHaveCount(0, { timeout: 5000 });
+    await expect(page.locator('.notification-bell-button.is-shaking')).toHaveCount(0, { timeout: 5000 });
+    await watchAttention(page);
+    await page.clock.runFor(60_000);
+    let now = await seen(page);
+    expect(now.pulse).toBeGreaterThan(0);
+    expect(now.shake).toBe(0);
+    expect(now.sound).toBe(0);
+
+    await page.locator('.notification-bell-button').click();
+    await page.keyboard.press('Escape');
+    const before = (await seen(page)).pulse;
+    await page.clock.runFor(120_000);
+    now = await seen(page);
+    expect(now.pulse).toBe(before);
+});

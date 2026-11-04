@@ -9368,6 +9368,7 @@ class DashboardConfig {
         enableHealthRecheckNotice: { hint: 'healthRecheckNoticeHint', def: true },
         enableInboxExtensionNotice: { hint: 'inboxExtensionNoticeHint', def: true },
         enableUpdatedNotice: { hint: 'updatedNoticeHint', def: true },
+        bellSound: { hint: 'bellSoundHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
         lockLayout: { info: ['lockLayoutInfoTitle', 'lockLayoutInfoMessage'], def: false },
         // Date, time & weather
@@ -10515,6 +10516,7 @@ class DashboardConfig {
                     bool('enableHealthRecheckNotice', 'config.healthRecheckNoticeLabel', 'Offer to re-check links'),
                     bool('enableInboxExtensionNotice', 'config.inboxExtensionNoticeLabel', 'Offer the browser extension'),
                     bool('enableUpdatedNotice', 'config.updatedNoticeLabel', 'Show what changed after an update'),
+                    bool('bellSound', 'config.bellSoundLabel', 'Bell sound for new notifications'),
                 ],
             },
             {

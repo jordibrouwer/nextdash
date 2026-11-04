@@ -174,3 +174,22 @@ func TestViewOfferSettingsDefaultOnAndKeepAnExplicitOff(t *testing.T) {
 		}
 	}
 }
+
+// The bell sound is on for a file written before the key existed, and an
+// explicit off stays off.
+func TestBellSoundDefaultsOnAndKeepsAnExplicitOff(t *testing.T) {
+	read := func(body string) Settings {
+		dir := t.TempDir()
+		t.Setenv("NEXTDASH_DATA_DIR", dir)
+		if err := os.WriteFile(filepath.Join(dir, "settings.json"), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return NewStore().GetSettings()
+	}
+	if !read(`{"currentPage":1}`).BellSound {
+		t.Error("bellSound read as off for a file that never mentioned it")
+	}
+	if read(`{"currentPage":1,"bellSound":false}`).BellSound {
+		t.Error("the backfill overwrote an explicit off")
+	}
+}
