@@ -43,8 +43,11 @@ test.describe('pages and categories modal', () => {
     await name.press('Tab');
     await expect.poll(() => posted.length).toBeGreaterThan(0);
     expect(posted[0][0].name).toBe('Renamed page');
-    // The first Escape leaves the field it is in, the second closes the modal.
-    await page.keyboard.press('Escape');
+    // Where focus lands after the Tab depends on whether the saved page has
+    // repainted yet (the colour field, or the tab strip once it has). A field
+    // swallows the first Escape, so leave it first: one Escape closes the
+    // modal, and a second would leave the Config view and take the rail with it.
+    await page.evaluate(() => document.activeElement?.blur());
     await page.keyboard.press('Escape');
     await expect(modal(page)).toHaveCount(0);
     await expect(page.locator('#config-bm-rail')).toContainText('Renamed page');
