@@ -11423,5 +11423,17 @@
     "toolAdd": "Add a bookmark",
     "toolCreateCategory": "Create a category",
     "toolRenameCategory": "Rename a category"
+  },
+  "bell": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "no": "No",
+    "markRead": "Mark read",
+    "empty": "Nothing needs you right now.",
+    "group_health": "Health",
+    "group_cleanup": "Clean up",
+    "group_system": "System",
+    "group_privacy": "Privacy",
+    "group_tips": "Tips"
   }
 }

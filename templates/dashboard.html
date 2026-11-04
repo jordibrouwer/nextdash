@@ -129,6 +129,7 @@
     <link rel="stylesheet" href="{{asset "css/tag-colors.css"}}">
     <link rel="stylesheet" href="{{asset "css/feed-row.css"}}">
     <link rel="stylesheet" href="{{asset "css/feed-watch.css"}}">
+    <link rel="stylesheet" href="{{asset "css/notification-bell.css"}}">
     <link rel="stylesheet" href="{{asset "css/changes-tour.css"}}">
     <link rel="stylesheet" href="{{asset "css/digest.css"}}">
     <link rel="stylesheet" href="{{asset "css/edit-mode.css"}}">
@@ -407,6 +408,8 @@
                             </svg>
                         </a>
                     </div>{{end}}
+                    <!-- The notifications bell: always the last of the cluster; JS fills it. -->
+                    <div id="page-nav-bell-host" class="page-nav-bell-host"></div>
                     </div>
                 </div>
             </div>
@@ -633,6 +636,9 @@
     <script src="{{asset "js/hypr-mode.js"}}" defer></script>
     <script src="{{asset "js/reorder.js"}}" defer></script>
     <script src="{{asset "js/dashboard-quickstart.js"}}" defer></script>
+    <!-- The notifications bell and its registry: sources register against it, so it loads before them. -->
+    <script src="{{asset "js/notification-bell-model.js"}}" defer></script>
+    <script src="{{asset "js/notification-bell.js"}}" defer></script>
     <!-- Shared bottom-left notice card; must precede the cards that define one. -->
     <script src="{{asset "js/notice-card.js"}}" defer></script>
     <script src="{{asset "js/analytics-notice.js"}}" defer></script>
