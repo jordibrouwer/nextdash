@@ -979,9 +979,16 @@
             return fetch(url(themes, recipes))
                 .then((res) => (res.ok ? res.text() : null))
                 .then((css) => {
-                    if (mine === generation && css !== null) {
-                        style.textContent = css;
+                    if (mine !== generation || css === null) {
+                        return;
                     }
+                    // What the page holds now is exactly what this answer holds:
+                    // a backdrop ensure() added while this was on its way is in
+                    // the text being replaced, so it is asked for again below.
+                    loaded.themes = new Set(themes);
+                    loaded.recipes = new Set(recipes);
+                    style.textContent = css;
+                    ensure();
                 })
                 .catch(() => { /* the backdrops on screen stay, which is the safe half */ });
         }

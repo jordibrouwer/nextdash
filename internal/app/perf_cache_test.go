@@ -229,3 +229,17 @@ func TestThemeBackdropInlineNamesWhatItDrew(t *testing.T) {
 		t.Errorf("an unknown theme named %q as drawn", ids)
 	}
 }
+
+// Behind a gzipping proxy the ETag comes back weak; it must still match.
+func TestThemeBackdropScopeAcceptsAWeakETag(t *testing.T) {
+	h := themeCSSTestHandlers(t)
+	rec := httptest.NewRecorder()
+	h.CustomThemeCSS(rec, httptest.NewRequest("GET", "/api/theme.css?scope=backdrop&theme=dark", nil))
+	req := httptest.NewRequest("GET", "/api/theme.css?scope=backdrop&theme=dark", nil)
+	req.Header.Set("If-None-Match", "W/"+rec.Header().Get("ETag"))
+	again := httptest.NewRecorder()
+	h.CustomThemeCSS(again, req)
+	if again.Code != 304 {
+		t.Errorf("a weak ETag got %d, want 304", again.Code)
+	}
+}

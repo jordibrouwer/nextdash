@@ -18,6 +18,12 @@
          not say "Dashboard" and then change its mind. A deep link to another
          page is corrected by the script, as it always was. */}}
     <title>{{if and .EnableCustomTitle .CustomTitle}}{{if and .ShowPageInTitle .LandingPageName}}{{.LandingPageName}} — {{end}}{{.CustomTitle}}{{else if .LandingPageName}}{{.LandingPageName}} — nextDash{{else}}nextDash{{end}}</title>
+    <!-- The linked sheet has every theme's colours and none of their backdrops
+         (inline SVG, 8 of its former 9 MB). The theme this page opens on brings its
+         own here; theme-loader.js (below) asks /api/theme.css?scope=backdrop for any other
+         one the page switches to, and adds it to this element.
+         Above the scripts so that theme-loader.js finds it the first time it runs. -->
+    <style id="nextdash-backdrop-css" data-themes="{{themeBackdropIDs .Theme}}" data-recipes="{{.BackdropRecipe}}">{{themeBackdropCSS .Theme .BackdropRecipe}}</style>
     <!-- Hashed URLs for scripts fetched at runtime, read by asset-map.js. Passed
          as a data attribute rather than an inline script: the CSP is script-src
          'self' with no 'unsafe-inline', and loosening that for one JSON blob is
@@ -68,11 +74,6 @@
          the first paint free of that and a repeat visit free of both. The theme
          switch swaps the link for a fresh one — see reloadThemeCSS. -->
     <link rel="stylesheet" id="nextdash-theme-css" href="{{themeCSSURL}}">
-    <!-- The linked sheet has every theme's colours and none of their backdrops
-         (inline SVG, 8 of its former 9 MB). The theme this page opens on brings its
-         own here; theme-loader.js asks /api/theme.css?scope=backdrop for any other
-         one the page switches to, and adds it to this element. -->
-    <style id="nextdash-backdrop-css" data-themes="{{themeBackdropIDs .Theme}}" data-recipes="{{.BackdropRecipe}}">{{themeBackdropCSS .Theme .BackdropRecipe}}</style>
     <!-- Deliberately unversioned: fonts.css requests this exact URL from a static
          stylesheet, which is served as-is and so cannot render the asset helper.
          A hashed URL here would not match it, making the browser fetch the font

@@ -4188,7 +4188,7 @@ func (h *Handlers) serveThemeBackdropCSS(w http.ResponseWriter, r *http.Request,
 	etag := `"` + themeCSSHash(css) + `"`
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("ETag", etag)
-	if r.Header.Get("If-None-Match") == etag {
+	if match := r.Header.Get("If-None-Match"); match != "" && etagMatches(match, etag) {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}

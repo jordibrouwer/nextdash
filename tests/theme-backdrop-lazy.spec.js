@@ -83,3 +83,38 @@ test('a held roll is asked for again, and a theme fetched after it carries the s
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'absinthe-dark'));
     expect((await next).url()).toContain('seed=7');
 });
+
+test('the backdrop element comes before theme-loader, which looks for it as it first runs', async ({ page }) => {
+    await openDashboard(page);
+    const before = await page.evaluate(() => {
+        const style = document.getElementById('nextdash-backdrop-css');
+        const loader = document.querySelector('script[src*="theme-loader"]');
+        return Boolean(style && loader && (style.compareDocumentPosition(loader) & Node.DOCUMENT_POSITION_FOLLOWING));
+    });
+    expect(before).toBe(true);
+});
+
+test('a backdrop asked for while a reload is on its way is not lost to it', async ({ page }) => {
+    await openDashboard(page);
+    // Hold the reload's answer until the theme has changed and been answered.
+    let release;
+    const gate = new Promise((resolve) => { release = resolve; });
+    let held = false;
+    await page.route('**/api/theme.css?scope=backdrop*', async (route) => {
+        if (!held && route.request().url().includes('seed=5')) {
+            held = true;
+            await gate;
+        }
+        await route.continue();
+    });
+    await page.evaluate(() => { window.ThemeLoader.reloadBackdropCSS({ seed: 5 }); });
+    await expect.poll(() => held).toBe(true);
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'absinthe-dark'));
+    await expect.poll(() => backdropOf(page)).not.toBe('');
+    const text = () => page.locator('#nextdash-backdrop-css').evaluate((el) => el.textContent);
+    await expect.poll(async () => (await text()).includes('absinthe-dark')).toBe(true);
+    release();
+    // The reload lands and replaces the text; absinthe-dark is on screen, so it is asked for again.
+    await expect.poll(async () => (await text()).includes('absinthe-dark'), { timeout: 10_000 }).toBe(true);
+    expect(await backdropOf(page)).not.toBe('');
+});
