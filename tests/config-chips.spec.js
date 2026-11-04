@@ -81,10 +81,10 @@ test.describe('chip groups', () => {
     test('one reset for the group puts back only the chips that differ', async ({ page }) => {
         await openTab(page, 'display');
         await openConfigPanel(page, chip(page, 'showStatus'));
-        // Row status: online/offline and ping times ship off on a new install.
+        // Row status: online/offline ships on and ping times off on a new install.
         const status = chip(page, 'showStatus');
         const ping = chip(page, 'showPing');
-        await expect(status).toHaveAttribute('aria-pressed', 'false');
+        await expect(status).toHaveAttribute('aria-pressed', 'true');
         await expect(ping).toHaveAttribute('aria-pressed', 'false');
         await expect(page.locator('[data-reset-group]')).toHaveCount(0);
 
@@ -96,7 +96,7 @@ test.describe('chip groups', () => {
 
         await reset.click();
         await expect(chip(page, 'showPing')).toHaveAttribute('aria-pressed', 'false');
-        await expect(chip(page, 'showStatus')).toHaveAttribute('aria-pressed', 'false');
+        await expect(chip(page, 'showStatus')).toHaveAttribute('aria-pressed', 'true');
         await expect(page.locator('[data-reset-group]')).toHaveCount(0);
         await settingsSaved(page);
     });
