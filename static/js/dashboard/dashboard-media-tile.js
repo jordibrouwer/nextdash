@@ -832,6 +832,7 @@
     window.DashboardMediaTile = {
         register,
         targetFor,
+        go,
         formatBytes,
         meterTone,
         meterBar,

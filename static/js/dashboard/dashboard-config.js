@@ -14909,7 +14909,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'domains', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
@@ -17246,7 +17246,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -17414,6 +17414,53 @@ class DashboardConfig {
     static BESZEL_SYSTEM_SETTINGS = [DashboardConfig.BESZEL_METERS, ...DashboardConfig.BESZEL_TAIL];
     static BESZEL_ATTENTION_SETTINGS = [DashboardConfig.BESZEL_HIDE_PAUSED, ...DashboardConfig.BESZEL_TAIL];
     static BESZEL_STORAGE_SETTINGS = [...DashboardConfig.BESZEL_TAIL];
+
+    /*
+     * AdGuard Home and Pi-hole, mirroring dnsFields in widgets_dns.go. The look
+     * is the tile's whole character; the parts are what it draws. The click
+     * opens the card with the top ten first, unlike the poster tiles.
+     */
+    static DNS_LOOK = {
+        key: 'look', kind: 'choice', label: ['config.widgetDnsLook', 'Look'],
+        options: [
+            ['pulse', ['config.widgetDnsLookPulse', 'Pulse — one big figure and the last day']],
+            ['leaders', ['config.widgetDnsLookLeaders', 'Leaderboard — top lists with bars']],
+            ['tiles', ['config.widgetDnsLookTiles', 'Tiles — four figures and a chart']],
+            ['mix', ['config.widgetDnsLookMix', 'Mix — pulse on top, lists below']],
+        ],
+    };
+
+    static dnsParts(extras) {
+        const options = [
+            ['figures', ['config.widgetDnsPartFigures', 'Figures']],
+            ['chart', ['config.widgetDnsPartChart', 'Last 24 hours']],
+            ['blocked', ['config.widgetDnsPartBlocked', 'Top blocked domains']],
+            ['clients', ['config.widgetDnsPartClients', 'Top clients']],
+            ['protection', ['config.widgetDnsPartProtection', 'Protection status']],
+        ];
+        if (extras) {
+            options.push(['types', ['config.widgetDnsPartTypes', 'Query types']],
+                ['upstreams', ['config.widgetDnsPartUpstreams', 'Upstreams']]);
+        }
+        return {
+            key: 'parts', kind: 'checkset', label: ['config.widgetDnsParts', 'Parts to show'],
+            defaults: options.map(([key]) => key), options,
+        };
+    }
+
+    static DNS_TAIL = [
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['detail', ['config.widgetDnsClickDetail', 'Shows the top ten first']],
+              ['open', ['config.widgetMediaClickOpen', 'Opens it in the service']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
+        { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    static ADGUARD_SETTINGS = [DashboardConfig.DNS_LOOK, DashboardConfig.dnsParts(false), ...DashboardConfig.DNS_TAIL];
+    static PIHOLE_SETTINGS = [DashboardConfig.DNS_LOOK, DashboardConfig.dnsParts(true), ...DashboardConfig.DNS_TAIL];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -17725,6 +17772,8 @@ class DashboardConfig {
         'beszel-system': DashboardConfig.BESZEL_SYSTEM_SETTINGS,
         'beszel-attention': DashboardConfig.BESZEL_ATTENTION_SETTINGS,
         'beszel-storage': DashboardConfig.BESZEL_STORAGE_SETTINGS,
+        adguard: DashboardConfig.ADGUARD_SETTINGS,
+        pihole: DashboardConfig.PIHOLE_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

@@ -3250,6 +3250,8 @@
             'beszel-system': 'One Beszel system in full: processor, memory and disk, with the last hour of load beside them.',
             'beszel-attention': 'Only the Beszel systems that need a look — down, or running hot or full — or a line saying none do.',
             'beszel-storage': 'The disks of every Beszel system, fullest first.',
+            adguard: 'AdGuard Home at a glance — queries, how much is blocked, and the top domains and clients.',
+            pihole: 'Pi-hole at a glance — queries, how much is blocked, the top domains and clients, query types and upstreams.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
