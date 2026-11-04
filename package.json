@@ -29,6 +29,7 @@
     "test:news-stream": "node tests/news-stream-model.test.cjs",
     "test:edit-mode-model": "node tests/edit-mode-model.test.cjs",
     "test:widget-state": "node tests/widget-state.test.cjs",
+    "test:bell-model": "node tests/notification-bell-model.test.cjs",
     "test:checkup-model": "node tests/checkup-model.test.cjs",
     "test:usually-now": "node tests/usually-now-model.test.cjs",
     "test:digest-card-state": "node tests/digest-card-state.test.cjs",
