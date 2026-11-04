@@ -100,3 +100,63 @@ func TestMergeSettingsFromBodyDiscoverabilityState(t *testing.T) {
 		t.Fatalf("theme = %q, want dark", merged.Theme)
 	}
 }
+
+func bellStoredState() *DiscoverabilityState {
+	return &DiscoverabilityState{
+		Bell: map[string]BellRecord{
+			"tag-review": {Read: &BellMark{Count: 12, IDs: []string{"a", "b"}}, No: &BellMark{Count: 3, Forever: true}},
+			"other":      {Read: &BellMark{Count: 5}},
+		},
+	}
+}
+
+// A tab that never heard of a row must not delete the mark another tab made.
+func TestMergeSettingsKeepsBellRowsTheWriteDoesNotMention(t *testing.T) {
+	t.Parallel()
+
+	stored := Settings{DiscoverabilityState: bellStoredState()}
+	body := []byte(`{"discoverabilityState":{"bell":{"fresh":{"read":{"count":1}}}}}`)
+	merged, err := mergeSettingsFromBody(stored, body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bell := merged.DiscoverabilityState.Bell
+	if bell["tag-review"].Read == nil || bell["tag-review"].Read.Count != 12 || bell["other"].Read == nil {
+		t.Errorf("stored rows lost: %+v", bell)
+	}
+	if bell["fresh"].Read == nil || bell["fresh"].Read.Count != 1 {
+		t.Errorf("new row missing: %+v", bell)
+	}
+
+	// An older client sends no bell at all: everything stays.
+	merged, err = mergeSettingsFromBody(stored, []byte(`{"discoverabilityState":{"seenTips":["x"]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(merged.DiscoverabilityState.Bell) != 2 {
+		t.Errorf("bell dropped by a write without it: %+v", merged.DiscoverabilityState.Bell)
+	}
+}
+
+// For a row the write does mention, the write is authoritative: resetting the
+// "No" answers sends the record without it and it must stay gone.
+func TestMergeSettingsBellResetOfNoSurvives(t *testing.T) {
+	t.Parallel()
+
+	stored := Settings{DiscoverabilityState: bellStoredState()}
+	body := []byte(`{"discoverabilityState":{"bell":{"tag-review":{"read":{"count":12}},"other":{}}}}`)
+	merged, err := mergeSettingsFromBody(stored, body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bell := merged.DiscoverabilityState.Bell
+	if bell["tag-review"].No != nil {
+		t.Errorf("reset No came back: %+v", bell["tag-review"].No)
+	}
+	if bell["tag-review"].Read == nil || bell["tag-review"].Read.Count != 12 {
+		t.Errorf("read mark lost: %+v", bell["tag-review"])
+	}
+	if _, ok := bell["other"]; ok {
+		t.Errorf("empty record kept: %+v", bell["other"])
+	}
+}

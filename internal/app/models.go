@@ -1210,6 +1210,25 @@ type DiscoverabilityState struct {
 	SeenTips []string `json:"seenTips,omitempty"`
 	// SeenSettingPromos lists dismissed config setting highlight popovers.
 	SeenSettingPromos []string `json:"seenSettingPromos,omitempty"`
+	// Bell holds what the notification bell was told per row id: how much the
+	// person has read and what they answered "No" to.
+	Bell map[string]BellRecord `json:"bell,omitempty"`
+	// TipCardShownAt is when the tip card last showed (Unix ms).
+	TipCardShownAt int64 `json:"tipCardShownAt,omitempty"`
+}
+
+// BellRecord is the pair of marks kept for one bell row.
+type BellRecord struct {
+	Read *BellMark `json:"read,omitempty"`
+	No   *BellMark `json:"no,omitempty"`
+}
+
+// BellMark remembers a count and the ids behind it. Forever makes a No mark
+// survive new items, until the person resets the answers.
+type BellMark struct {
+	Count   int      `json:"count"`
+	IDs     []string `json:"ids,omitempty"`
+	Forever bool     `json:"forever,omitempty"`
 }
 
 /*

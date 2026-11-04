@@ -2708,7 +2708,47 @@ func mergeSettingsFromBody(stored Settings, body []byte) (Settings, error) {
 	if err := json.Unmarshal(mergedJSON, &settings); err != nil {
 		return Settings{}, err
 	}
+	if _, wrote := incoming["discoverabilityState"]; wrote {
+		settings.DiscoverabilityState = keepStoredBellRecords(stored.DiscoverabilityState, settings.DiscoverabilityState)
+	}
 	return settings, nil
+}
+
+/*
+keepStoredBellRecords merges bell marks per row id when a write replaces
+discoverabilityState as a whole.
+
+A client sends the state it loaded plus its own changes, so a second tab that
+marks one row would otherwise wipe a mark the first tab made on another row.
+Ids the incoming write does not mention are therefore kept from the stored
+state. For an id it does mention, the incoming record is authoritative, not the
+"greater" of the two: that is what lets "reset my No answers" send a record
+without its No mark and have it stay gone. A record with neither mark is
+dropped. Stale tabs can only clobber a row they also hold, and the later write
+wins there.
+*/
+func keepStoredBellRecords(stored, incoming *DiscoverabilityState) *DiscoverabilityState {
+	if incoming == nil {
+		return incoming
+	}
+	merged := make(map[string]BellRecord, len(incoming.Bell))
+	if stored != nil {
+		for id, rec := range stored.Bell {
+			if _, sent := incoming.Bell[id]; !sent {
+				merged[id] = rec
+			}
+		}
+	}
+	for id, rec := range incoming.Bell {
+		if rec.Read != nil || rec.No != nil {
+			merged[id] = rec
+		}
+	}
+	if len(merged) == 0 {
+		merged = nil
+	}
+	incoming.Bell = merged
+	return incoming
 }
 
 func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {

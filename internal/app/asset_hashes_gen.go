@@ -285,7 +285,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/device-settings-merge.js":                            "27169b28f5f6",
 	"js/digest-card-state.js":                                "92cce3476097",
 	"js/digest-notice.js":                                    "04a424a1fd04",
-	"js/discoverability-state.js":                            "d07c29a6d47e",
+	"js/discoverability-state.js":                            "c67b84034729",
 	"js/docker-update-notice.js":                             "6230f3b50a44",
 	"js/edit-mode-notice.js":                                 "e3362f4c9c1c",
 	"js/feed-watch-tab-badge.js":                             "0633bebc5843",
