@@ -66,6 +66,10 @@ test.describe('urgent sources in the bell', () => {
         await expect(row).toBeVisible();
         await expect(row).toContainText('v9.9.9');
         await expect(row.getByRole('button', { name: "What's new" })).toBeVisible();
+        await expect(row.getByRole('button', { name: 'View release' })).toBeVisible();
+        // The bell is the only signal: no toast bottom-right.
+        await page.waitForTimeout(500);
+        await expect(page.locator('#app-notification.show')).toHaveCount(0);
 
         await row.getByRole('button', { name: 'No', exact: true }).click();
         await expect(row).toHaveCount(0);

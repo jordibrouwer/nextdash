@@ -1,16 +1,12 @@
 // GitHub release update notice — enabled by default via Config → Behavior → Privacy.
 //
 // Polls /api/update-status (server-side GitHub check), marks the ★ button when a
-// newer release exists, and shows an in-app toast while the tab is visible and
-// focused. No web push — updates are surfaced only during active use.
+// newer release exists, and puts a red row in the notifications bell (which
+// shakes and rings). No toast and no web push: the bell is where it waits.
 (function () {
     'use strict';
 
     const DISMISS_KEY = 'nextdash:dismissed-update-tag';
-    const TOAST_SHOWN_KEY = 'nextdash:update-toast-shown-tag';
-
-    /** @type {object|null|undefined} */
-    let pendingUpdateToast = null;
 
     function isLocked() {
         return !!document.querySelector('meta[name="nextdash-update-check-locked"]');
@@ -20,10 +16,6 @@
         if (isLocked()) return false;
         const val = window.dashboardInstance?.settings?.updateCheckEnabled;
         return val !== false;
-    }
-
-    function isAppActivelyUsed() {
-        return document.visibilityState === 'visible' && document.hasFocus();
     }
 
     window.nextdashUpdateCheckEnabled = isEnabled;
@@ -54,60 +46,9 @@
         }
     }
 
-    function rememberPendingUpdate(status) {
-        if (status?.updateAvailable && status.latest && !isDismissed(status)) {
-            pendingUpdateToast = status;
-            return;
-        }
-        pendingUpdateToast = null;
-    }
-
-    function showUpdateToast(status) {
-        if (!status?.updateAvailable || !status.latest || isDismissed(status)) return;
-        try {
-            if (localStorage.getItem(TOAST_SHOWN_KEY) === status.latest) return;
-        } catch { /* no-op */ }
-
-        try { localStorage.setItem(TOAST_SHOWN_KEY, status.latest); } catch { /* no-op */ }
-
-        const message = translate(
-            'dashboard.updateAvailableToast',
-            'nextDash {latest} is available on GitHub.',
-            { latest: status.latest }
-        );
-        const actionLabel = translate('dashboard.updateAvailableToastAction', 'View release');
-        const dash = window.dashboardInstance;
-        if (!dash?.showNotification) return;
-
-        dash.showNotification(message, 'update', {
-            duration: 9000,
-            actionLabel,
-            onAction: () => {
-                const url = status.releaseUrl || 'https://github.com/jordibrouwer/nextdash/releases/latest';
-                window.open(url, '_blank', 'noopener,noreferrer');
-            },
-        });
-        pendingUpdateToast = null;
-    }
-
-    function maybeShowUpdateToast(status) {
-        if (!status?.updateAvailable || !status.latest || isDismissed(status)) {
-            rememberPendingUpdate(null);
-            return;
-        }
-        rememberPendingUpdate(status);
-        if (!isAppActivelyUsed()) return;
-        showUpdateToast(status);
-    }
-
-    function tryShowPendingUpdateToast() {
-        if (!pendingUpdateToast || !isAppActivelyUsed()) return;
-        showUpdateToast(pendingUpdateToast);
-    }
-
     /*
-     * The bell row for a newer release. It reports the same status the ★ and
-     * the toast act on, so a dismissed release or a switched-off check takes
+     * The bell row for a newer release. It reports the same status the ★
+     * acts on, so a dismissed release or a switched-off check takes
      * the row away too. The release tag is the row's id: "No" holds until a
      * newer release than the one answered shows up.
      */
@@ -135,8 +76,17 @@
             state: bellState,
             actions: [
                 {
-                    label: () => translate('dashboard.whatsNewAria', "What's new"),
+                    name: 'release',
+                    label: () => translate('dashboard.updateAvailableToastAction', 'View release'),
                     primary: true,
+                    onClick: () => {
+                        const url = bellStatus?.releaseUrl || 'https://github.com/jordibrouwer/nextdash/releases/latest';
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                    },
+                },
+                {
+                    name: 'whats-new',
+                    label: () => translate('dashboard.whatsNewAria', "What's new"),
                     onClick: () => { window.openWhatsNewModal?.({ force: true }); },
                 },
             ],
@@ -168,7 +118,6 @@
     }
 
     function clearUpdateCheckUi() {
-        pendingUpdateToast = null;
         if (window.dashboardInstance) {
             window.dashboardInstance.updateStatus = null;
         }
@@ -276,7 +225,6 @@
         if (!tag) return;
         try { localStorage.setItem(DISMISS_KEY, tag); } catch (_) { /* no-op */ }
         applyBadge(window.dashboardInstance?.updateStatus || null);
-        rememberPendingUpdate(null);
         window.dashboardInstance?.config?.repaintOverview?.();
         window.nextdashSyncWhatsNewUpdateBar?.();
     };
@@ -297,12 +245,6 @@
             window.dispatchEvent(new CustomEvent('nextdash:update-status', { detail: status }));
             window.nextdashSyncWhatsNewUpdateBar?.();
             window.dashboardInstance?.config?.repaintOverview?.();
-            if (refresh) {
-                maybeShowUpdateToast(status);
-            } else {
-                rememberPendingUpdate(status);
-                tryShowPendingUpdateToast();
-            }
             return status;
         });
     };
@@ -317,7 +259,4 @@
     window.addEventListener('nextdash:update-status', function (e) {
         applyBadge(e.detail || null);
     });
-
-    document.addEventListener('visibilitychange', tryShowPendingUpdateToast);
-    window.addEventListener('focus', tryShowPendingUpdateToast);
 })();
