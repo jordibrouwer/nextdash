@@ -56,6 +56,11 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.25.1 (2026-11-04)
+- Manual: a heading for the times and days a widget shows, the Watch feeds news widget, and the settings of each widget kind
+- Manual: the phone settings and every search command and key that was missing
+- No change to the app itself
+
 ### v1.25.0 (2026-11-03)
 - Widgets: a Tabs widget, Clock and Countdown, Duplicate, set times and days per widget, and amber and red limits for disks and memory
 - Search: it answers sums and unit conversions, and has six more commands
@@ -83,12 +88,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Action bar: resting on a button shows its name first, then its key
 - Notices: four hints are toasts now
 - Fixes: an unreadable file is never overwritten
-
-### v1.23.0 (2026-10-30)
-- Assistant: ask in plain words with :ask or =, through Claude, OpenAI or a server of your own; it looks things up and changes nothing by itself
-- MCP: 17 tools in five groups, with edit and delete for bookmarks, health, inbox and containers
-- Theme studio: it draws with the material of the views
-- Fixes: a background save sends only its own keys, the Quick start fits shorter windows, and the preview card stays off the hovered row
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -96,7 +95,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-11-03</Date>
+  <Date>2026-11-04</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
