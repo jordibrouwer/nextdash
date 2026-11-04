@@ -169,6 +169,12 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 
 - **new — A compact What's new window.** A Ko-fi bar replaces the card, and the screenshots open larger on a click.
 
+### Docs
+
+- **docs — Translations.** The bell, the greeting, the tip buttons, the action-bar note and the AdGuard Home and Pi-hole widgets in Dutch, German, French, Spanish and Chinese. Forty-one strings that only had an English fallback in the code (the DNS widgets, the What's new footer, *Mark read* in the Watch feeds popover) are now in `en.json` and translated. The French header clock option and the greeting strings no longer show English.
+- **docs — Config → Help.** *Header & action buttons* covers the large clock, the greeting and the bell; *Alerts & notifications* has a paragraph on the bell; *Widget kinds* counts fifty-three kinds, adds AdGuard Home and Pi-hole and describes the clock face.
+- **docs — Tips.** Four new tips: the bell, your name in the greeting, the clock face and the DNS widgets. Each leads to its place from the bell.
+
 ### Fixes from a code review
 
 Eight fixes from a code review: the calculator reads a decimal comma, a Tabs widget off its schedule gives its widgets back, copying a widget no longer undoes a save made at the same moment, the digest charts count real days and show a day that was down, and a few edge cases in importing, the Tabs settings and the backdrop picker.
