@@ -109,6 +109,18 @@ test.describe('on a touch screen', () => {
         await expect(modal.locator('.feed-news-section')).toHaveCount(1);
     });
 
+    test('Mark read clears the site\'s news and closes the popover without opening anything', async ({ page, context }) => {
+        await stubNews(page, 3);
+        await openDashboard(page);
+        let opened = 0;
+        context.on('page', () => { opened += 1; });
+        await badge(page).tap();
+        await pop(page).locator('[data-pop-markread]').tap();
+        await expect(pop(page)).toHaveCount(0);
+        await expect(badge(page)).toHaveCount(0);
+        expect(opened).toBe(0);
+    });
+
     test('with six or fewer there is no "+n more"', async ({ page }) => {
         await stubNews(page, 3);
         await openDashboard(page);
@@ -449,9 +461,9 @@ test.describe('on a desktop', () => {
         const reader = pop(page).locator('[data-pop-reader]');
         await expect(reader).toHaveText('Reader');
         await expect(reader).toHaveAttribute('aria-label', 'Open the reader for Stub Blog');
-        // Between the bar to the site and the ×.
+        // Between the bar to the site and the ×, after Mark read.
         const order = await pop(page).locator('.feed-news-pop-head > *').evaluateAll((els) => els.map((el) => el.className));
-        expect(order).toEqual(['feed-news-pop-site', 'feed-news-pop-reader', 'feed-news-pop-close']);
+        expect(order).toEqual(['feed-news-pop-site', 'feed-news-pop-markread', 'feed-news-pop-reader', 'feed-news-pop-close']);
         await reader.click();
         const modal = page.locator('#app-modal .modal.feed-news-modal');
         await expect(modal).toBeVisible();
