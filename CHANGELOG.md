@@ -163,6 +163,14 @@ Eight fixes from a code review: the calculator reads a decimal comma, a Tabs wid
 - **new — Every Appearance tab lists its sections under the preview.** The list beside the settings now shows on every tab, not only on Date & weather, and stands under the preview, so the preview stays in place when you switch tabs. The entries are larger, and the section in view is marked with a bar.
 - **fix — The backdrop picker no longer holds on to old thumbnails.** Each search keystroke made a new observer for lazy painting and never let the old one go, so hundreds of thumbnails that were no longer on the page stayed in memory. One observer per picker now, released when the picker is drawn again.
 
+### Performance
+
+- **fix — The theme stylesheet no longer carries every backdrop.** `/api/theme.css` held the colours of all 386 theme blocks and, inside each, an inline SVG backdrop of ~24 KB: 9.4 MB, 920 KB gzipped, in front of the first paint. It is now 379 KB (41 KB gzipped). The page opens with the backdrop of its own theme inline (`#nextdash-backdrop-css`); `theme-loader.js` watches `data-theme` and `data-backdrop-recipe` and asks `/api/theme.css?scope=backdrop&theme=…&recipe=…` for any other the document switches to, whoever writes the attribute. On a 10 Mbit line with 80 ms latency a cold load paints in 0.6 s instead of 2.0 s. The seed and the neutral accent follow the same route (`reloadBackdropCSS`), and the endpoint is revalidated by ETag. At most 8 themes and 8 recipes per request.
+- **new — Icons are stored at a size they are drawn at.** A fetched or uploaded PNG or JPEG larger than 192 px is scaled down (alpha kept) and a multi-size `.ico` is stored as its 64 px PNG; a 512 px, 324 KB icon becomes 59 KB. Anything unreadable, animated, vector or an `.ico` of bitmaps only is stored as it arrived, and a result that is not smaller is dropped. Icons already stored are not rewritten.
+- **fix — Start-up asks for the same answer once.** The update status, the app discovery and the data revision were each fetched two or three times by their separate readers, and two health-trend tiles each fetched the whole series. Callers that arrive while a request is on its way now share it (`nextDashFetchShared`); nothing is kept once it has answered.
+- **fix — What's new recordings wait until they are seen.** Every spotlight recording started downloading (300 KB each) when the window opened, whether it was on screen or not. They now load and play when scrolled into view, and pause when scrolled out.
+- **fix — The Overview's text is fetched with the settings.** The ~99 KB of Overview strings joined the Help prose in the lazy locale scope (`scope=help`), so the language file every dashboard loads is 17% smaller (181 KB gzipped from 220 KB). The two strings the update notice and the What's new window print stay in the core scope.
+
 ---
 
 ## v1.25.1 — 4 November 2026
