@@ -211,3 +211,41 @@ test('No on a forever source stays hidden when its count rises, and the record s
     await refresh(page);
     await expect(row(page, 'probe-forever')).toHaveCount(0);
 });
+
+test('the bell stays reachable on a phone, with a panel that fits the screen', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loadDashboard(page);
+    await refresh(page);
+    const rect = await page.locator('.notification-bell-button').boundingBox();
+    expect(rect).not.toBeNull();
+    expect(rect.width).toBeGreaterThan(0);
+    expect(rect.height).toBeGreaterThan(0);
+    expect(rect.x).toBeGreaterThanOrEqual(0);
+    expect(rect.x + rect.width).toBeLessThanOrEqual(390);
+    await openPanel(page);
+    const panel = await page.locator('.notification-bell-panel').boundingBox();
+    expect(panel.x).toBeGreaterThanOrEqual(0);
+    expect(panel.x + panel.width).toBeLessThanOrEqual(390);
+    expect(panel.width).toBeLessThanOrEqual(360);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('a folded header keeps the bell while the other destinations go', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 800 });
+    await loadDashboard(page);
+    // A zone that takes most of the row stands in for a long page name: the
+    // measurement then has no room for the destinations and folds them.
+    await page.evaluate(() => {
+        const filler = document.createElement('div');
+        filler.id = 'probe-filler';
+        filler.innerHTML = '<span style="display:block;width:640px;height:10px"></span>';
+        document.querySelector('.dashboard-section.section-controls .header-top').appendChild(filler);
+        window.dashboardInstance.pageNav.fitHeaderZones();
+    });
+    expect(await page.evaluate(() => Number(document.body.getAttribute('data-header-fit')))).toBeGreaterThanOrEqual(1);
+    await expect(page.locator('.notification-bell-button')).toBeVisible();
+    await expect(page.locator('.library-link').first()).toBeHidden();
+    expect(await page.evaluate(() => document.querySelector('.header-destinations').lastElementChild.id)).toBe('page-nav-bell-host');
+    const rect = await page.locator('.notification-bell-button').boundingBox();
+    expect(rect.x + rect.width).toBeLessThanOrEqual(1000);
+});

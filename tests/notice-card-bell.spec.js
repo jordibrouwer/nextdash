@@ -106,9 +106,8 @@ test.describe('NoticeCard bell option', () => {
         });
         await define(page, 'probe-phone', { bell: { kind: 'quiet' } });
         await openBell(page);
-        // Attached rather than visible: the panel's own layout on a phone is the
-        // bell's business; this asserts the corner rule does not remove the row.
-        await expect(row(page, 'probe-phone')).toHaveCount(1);
+        // The bell stays in the narrow header, so the row is there to be seen.
+        await expect(row(page, 'probe-phone')).toBeVisible();
         expect(await page.evaluate(() => window.NoticeCard.cornerIsFree('x'))).toBe(false);
     });
 });

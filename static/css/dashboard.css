@@ -8908,11 +8908,13 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
    friends), so a step keyed on one body attribute lost the cascade and hid
    nothing at all. */
 
-/* 1 — the destinations. Shift+I, Shift+H and Shift+S still reach them. */
-body[data-header-fit="1"] .dashboard-section.section-controls .header-destinations,
-body[data-header-fit="2"] .dashboard-section.section-controls .header-destinations,
-body[data-header-fit="3"] .dashboard-section.section-controls .header-destinations,
-body[data-header-fit="4"] .dashboard-section.section-controls .header-destinations,
+/* 1 — the destinations. Shift+I, Shift+H and Shift+S still reach them. The
+   box itself stays and so does the bell in it: quiet notifications live only
+   in the bell, so it has to be reachable at every width, a phone included. */
+body[data-header-fit="1"] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host),
+body[data-header-fit="2"] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host),
+body[data-header-fit="3"] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host),
+body[data-header-fit="4"] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host),
 body[data-header-fit="1"] .dashboard-section.section-controls .header-zone-divider,
 body[data-header-fit="2"] .dashboard-section.section-controls .header-zone-divider,
 body[data-header-fit="3"] .dashboard-section.section-controls .header-zone-divider,
@@ -8962,8 +8964,9 @@ body[data-header-fit="4"] .dashboard-section.section-controls .date-badge-mobile
     body[data-header-clock] .dashboard-section.section-controls .header-identity .header-top-primary,
     body[data-header-clock] .dashboard-section.section-controls #date-badge-mobile,
     body[data-header-clock] .dashboard-section.section-controls .date-badge-mobile:not(:empty),
-    body[data-header-clock] .dashboard-section.section-controls .header-actions,
-    body[data-header-clock] .dashboard-section.section-controls .page-walk-hint {
+    body[data-header-clock] .dashboard-section.section-controls .page-walk-hint,
+    body[data-header-clock] .dashboard-section.section-controls .header-actions > :not(.header-destinations),
+    body[data-header-clock] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host) {
         display: none;
     }
 
@@ -8974,9 +8977,17 @@ body[data-header-fit="4"] .dashboard-section.section-controls .date-badge-mobile
            name plus a tab and a chip is 54px more than there is, and a name
            that is cut short still says where you are where a switcher pushed
            off the edge stops working. */
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto auto;
         padding: 0.5rem 0.75rem;
         gap: var(--space-2, 0.5rem);
+    }
+
+    /* What is left of the actions is the bell: a column of its own at the far
+       right, whichever way the clock and the switcher are placed. */
+    body[data-header-clock] .dashboard-section.section-controls .header-actions {
+        grid-column: 3;
+        grid-row: 1;
+        justify-self: end;
     }
 
     body[data-header-clock] .dashboard-section.section-controls .title {

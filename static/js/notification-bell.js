@@ -197,13 +197,34 @@
         });
     }
 
+    /*
+     * The panel hangs from the bell's right edge. On a phone the bell is not
+     * at the edge of the screen (the row has padding), so a panel as wide as
+     * the screen would stick out on the left: slide it back inside, keeping
+     * eight pixels to either side.
+     */
+    function keepOnScreen() {
+        if (!panel || panel.hidden) return;
+        panel.style.right = '';
+        const rect = panel.getBoundingClientRect();
+        const edge = 8;
+        const width = document.documentElement.clientWidth;
+        let shift = 0;
+        if (rect.left < edge) shift = edge - rect.left;
+        else if (rect.right > width - edge) shift = (width - edge) - rect.right;
+        if (shift) panel.style.right = `${-shift}px`;
+    }
+
     function open() {
         if (!panel || isOpen) return;
         isOpen = true;
         renderPanel();
         panel.hidden = false;
+        keepOnScreen();
         button.setAttribute('aria-expanded', 'true');
     }
+
+    window.addEventListener('resize', () => { if (isOpen) keepOnScreen(); });
 
     function close() {
         if (!panel || !isOpen) return;
