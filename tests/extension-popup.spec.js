@@ -60,6 +60,18 @@ async function launchExtension() {
 test.describe('extension popup', () => {
     test.setTimeout(60_000);
 
+    test('the saved panel is out of sight until a bookmark is saved', async () => {
+        const { close, page } = await launchExtension();
+        try {
+            // A rule that lost its selector line swallowed the .hidden rule after it:
+            // the panel then stood open under the buttons from the first look.
+            await expect(page.locator('#save-success-panel')).toHaveClass(/hidden/);
+            await expect(page.locator('#save-success-panel')).toBeHidden();
+        } finally {
+            await close();
+        }
+    });
+
     test('loads popup, saves settings, and saves a bookmark', async ({ baseURL }) => {
         const { close, extensionId, page } = await launchConfigured(baseURL);
         try {

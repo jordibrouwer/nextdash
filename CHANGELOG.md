@@ -176,6 +176,10 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 - **docs — Config → Help.** *Header & action buttons* covers the large clock, the greeting and the bell; *Alerts & notifications* has a paragraph on the bell; *Widget kinds* counts fifty-three kinds, adds AdGuard Home and Pi-hole and describes the clock face.
 - **docs — Tips.** Four new tips: the bell, your name in the greeting, the clock face and the DNS widgets. Each leads to its place from the bell.
 
+### Browser extension
+
+- **fix — The saved panel no longer stands open.** A rule in `popup.css` had lost its selector line and swallowed the `.hidden` rule after it, so *Bookmark saved… open in nextDash* showed under the buttons from the first look, and the form did not hide after a save.
+
 ### Fixes from a code review
 
 Eight fixes from a code review: the calculator reads a decimal comma, a Tabs widget off its schedule gives its widgets back, copying a widget no longer undoes a save made at the same moment, the digest charts count real days and show a day that was down, and a few edge cases in importing, the Tabs settings and the backdrop picker.
