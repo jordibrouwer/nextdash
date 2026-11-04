@@ -403,6 +403,9 @@
             const order = data.categoryOrder || [];
             const cats = order.filter((c) => data.recipes.some((n) => catOf(n) === c));
             const total = data.recipes.length;
+            // Drawn again: the tiles the last drawing observed are about to go.
+            grid._bdObserver?.disconnect();
+            grid._bdObserver = null;
             grid.innerHTML = `
                 ${opts.auto ? `<div class="config-backdrop-row"><button type="button" class="config-backdrop-thumb${chosen === '' ? ' is-active' : ''}" ${attr}="" aria-pressed="${chosen === ''}"><span class="config-backdrop-sw"></span><span class="config-backdrop-name">${e(t('config.themeCharAuto', 'Automatic'))}</span></button></div>` : ''}
                 ${own && data.looks[own] ? group(opts.ownTitle || t('config.backdropOwnTitle', 'This theme'), [own], ' config-backdrop-thumb--big') : ''}
@@ -427,14 +430,20 @@
                 };
                 const lazy = [...root.querySelectorAll('[data-backdrop-lazy]')];
                 if (!('IntersectionObserver' in window)) { lazy.forEach(paint); return; }
-                const io = new IntersectionObserver((entries) => {
-                    entries.forEach((en) => { if (en.isIntersecting) { paint(en.target); io.unobserve(en.target); } });
-                }, { rootMargin: '120px' });
-                lazy.forEach((el) => io.observe(el));
+                // One observer per picker: a new one per keystroke in the search
+                // kept every tile it had been given, long after the tile was gone.
+                if (!grid._bdObserver) {
+                    const io = new IntersectionObserver((entries) => {
+                        entries.forEach((en) => { if (en.isIntersecting) { paint(en.target); io.unobserve(en.target); } });
+                    }, { rootMargin: '120px' });
+                    grid._bdObserver = io;
+                }
+                lazy.forEach((el) => grid._bdObserver.observe(el));
             };
             const fillAll = () => {
                 const box = grid.querySelector('[data-backdrop-all]');
                 if (!box) return;
+                box.querySelectorAll('[data-backdrop-lazy]').forEach((el) => grid._bdObserver?.unobserve(el));
                 const q = ui.q.trim().toLowerCase();
                 // A search looks through the whole library; the group only narrows the list while there is none.
                 const names = data.recipes.filter((n) => (q
