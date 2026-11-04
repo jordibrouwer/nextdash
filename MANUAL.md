@@ -921,11 +921,25 @@ This manual calls the page of categories and widgets the **dashboard grid**, to 
 
 The header has three zones.
 
-- **Left — clock, weather and name.** The time and date, the weather line, and the name of the page or view (*main*, *config*). Click the date for a week overview; a **Calendar URL** (Appearance → Date & weather) adds an *Open calendar* link. **Clock and weather** chooses where they stand: beside the view name (the default), in a column of their own, or on their own line with the name underneath.
+- **Left — clock, weather and name.** The time and date, the weather line, and the name of the page or view (*main*, *config*). Click the date for a week overview; a **Calendar URL** (Appearance → Date & weather) adds an *Open calendar* link. **Clock and weather** chooses where they stand: beside the view name (the default), in a column of their own, or on their own line with the name underneath. A fourth placement, **Large clock, greeting beside it**, draws the time large with a greeting that follows the hour (*Good evening, Jordi*); **Your name**, in the *Greeting* group under Appearance → Date & time, is the name in it, and empty means a greeting without one. The quick start asks for the name once.
 - **Middle — the page switcher.** See [below](#the-page-switcher).
-- **Right — the destinations.** **Dashboard** (⌂), **Bookmarks** (a badge for a broken link or another problem), **Inbox** (an unread count), **Containers** (a badge for updates waiting) and **config** (the gear). Each destination can be switched off; its key keeps working. There is no Health icon — its badge and its list live on the Bookmarks icon now.
+- **Right — the destinations.** **Dashboard** (⌂), **Bookmarks** (a badge for a broken link or another problem), **Inbox** (an unread count), **Containers** (a badge for updates waiting) and **config** (the gear). Each destination can be switched off; its key keeps working. There is no Health icon — its badge and its list live on the Bookmarks icon now. At the far right stands the **notifications bell** ([below](#the-notifications-bell)).
 
 **Button style** draws the header controls plain (underlined when current) or each in its own box. As the window narrows, the header folds its parts away in a fixed order, so the switcher and the destinations stay reachable.
+
+<p align="center"><img src="screenshots/manual.md/04-header-clock.jpg" alt="The header with a large clock reading 21:46, the greeting Good evening, Jordi, the date and weather, the page tabs, and the notifications bell with a count at the right" width="860"></p>
+<p align="center"><sub>The large clock with its greeting; the bell is the last button on the right.</sub></p>
+
+<a id="the-notifications-bell"></a>
+
+#### 🔔 The notifications bell
+
+What needs you waits in the bell instead of popping up over your work: questions about privacy and maintenance, urgent notices and outages, the note that an update was installed or that a new release is out, the weekly digest, a pile of kept links, and two tips a day. Rows are grouped (*Health*, *Clean up*, *System*, *Privacy*, *Tips*), each with the button that answers it. **Mark read** clears a row, **No** answers a question for good, and **Mark all read** clears the lot. A tip has a button to the place it is about: Config, the Inbox, the Bookmarks view, Containers, the tag cloud or the palette.
+
+<p align="center"><img src="screenshots/manual.md/04-bell.jpg" alt="The notifications bell open: a Clean up group with two questions, each with Start and No, and a Tips group with three tips" width="860"></p>
+<p align="center"><sub>The bell, open.</sub></p>
+
+The bell shakes and pulses for something new, with a short tone; **Bell sound for new notifications** under Config → Behavior switches the tone off, and **Bring back dismissed notifications** there puts every answered row back.
 
 <a id="the-page-switcher"></a>
 
@@ -3057,12 +3071,15 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **RSS** | The newest articles from up to ten feed addresses set on the widget, merged newest first |
 | **Watch feeds news** | The sites with new items from the feeds you watch ([§14](#14-watch-feeds)). **Layout**: *Sites, one row each*, *Headlines with pictures* or *Compact chips*. It fetches nothing itself; every way in leads to the news window |
 | **Notes** | A text of your own, read as Markdown, with checkboxes you tick on the tile; up to 6,000 characters |
-| **Clock** | The time where you are, and in the other places you add as **Name=Region/City** (for example `Tokyo=Asia/Tokyo`), with *tomorrow* or *yesterday* where the date differs. **Use a 12-hour clock** and **Show today's date** are switches |
+| **Clock** | The time where you are, and in the other places you add as **Name=Region/City** (for example `Tokyo=Asia/Tokyo`), with *tomorrow* or *yesterday* where the date differs. **Look** is *A large clock face, other places below it* (the first three places) or *Plain lines of time*. The face can show a seconds hand, and, two columns wide, the moon with its phase and sunrise, sunset and the hours of daylight for the weather location (Appearance → Date & weather). **Use a 12-hour clock** and **Show today's date** are switches |
 | **Countdown** | The days left to a **Date**, or since it. The widget's title says what it counts to. An optional **Time of day** and **Count in hours and minutes near the end** switch the figure to hours and minutes in the last two days |
 | **Tabs** | Several widgets of the page in one tile, one tab each. **Widgets in the tabs** lists the other widgets of the page; each one you tick becomes a tab, in page order, and leaves the grid while the tabs hold it. Up to six tabs; a widget sits in one Tabs widget at most, and a widget moved to another page leaves the tabs. Its settings stay under Widgets. Only the tab in view is drawn |
 
 <p align="center"><img src="screenshots/manual.md/15-weather.jpg" alt="The Weather tile: rain at 16 °C in Leiden and the next five days" width="380"> <img src="screenshots/manual.md/15-rss.jpg" alt="The RSS tile: five headlines, newest first, each with its age" width="380"></p>
 <p align="center"><sub>The Weather and RSS tiles.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/16-clock-face.jpg" alt="A Clock widget two columns wide: an analogue face with the date and three places under it, and the moon, sunrise and sunset beside it" width="560"></p>
+<p align="center"><sub>The Clock, two columns wide.</sub></p>
 
 <p align="center"><img src="screenshots/manual.md/16-tabs.jpg" alt="A dashboard with a Tabs tile, at a glance, holding three widgets as tabs named Health, Weather and Notes, with the Weather tab open, beside a Clock, a Countdown and two Jellyfin tiles" width="860"></p>
 <p align="center"><sub>A Tabs tile: three widgets of the page in one tile, one tab each.</sub></p>
@@ -3077,6 +3094,18 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **Sonarr**, **Radarr** | The episodes and films coming up in the next days (a week unless you choose up to 30), a film released today staying on the list until the day is over, and what is downloading, with posters. The same four layouts; in the strip, *Upcoming* and *Queue* are the tabs |
 | **Seerr** | Requests in Overseerr or Jellyseerr, under *Pending*, *Approved* and *Available*, with who asked and the poster. Show every request or one state, films, series or both, from everyone or one person |
 | **qBittorrent**, **SABnzbd** | What is downloading, paused and finished, with progress, speed and time left, and the client's speeds and counts on top. As one list or a tab per part (*Downloading*, *Paused*, *Done*). Without posters, and in the order you choose |
+
+*What is the network blocking?*
+
+| Kind | Shows |
+|---|---|
+| **AdGuard Home** | Queries, how many were blocked, the last day by the hour, and the top blocked domains and clients. Four looks: *Pulse* (one large percentage and the last day, the default), *Leaderboard*, *Tiles* and *Mix* (two columns only); **Parts to show** picks the rest |
+| **Pi-hole** | The same, with the number of domains on the lists, the query types and the upstreams as extra parts |
+
+A click opens the top ten with a button to the service (or goes straight there when the click is set to open it). Fill in the address and the sign-in the service wants (AdGuard Home: username and password; Pi-hole: password) and press **Connect**; the sign-in stays on the server.
+
+<p align="center"><img src="screenshots/manual.md/16-dns-pulse.jpg" alt="The AdGuard Home tile in the Pulse look: 31% blocked, 5,710 of 18,420, and a strip for the last day" width="380"> <img src="screenshots/manual.md/16-dns-tiles.jpg" alt="The Pi-hole tile in the Tiles look: queries, blocked, ratio and average" width="380"></p>
+<p align="center"><sub>AdGuard Home in the Pulse look and Pi-hole in the Tiles look.</sub></p>
 
 *What is going on at home?*
 
