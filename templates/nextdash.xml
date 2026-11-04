@@ -23,8 +23,8 @@
 NextDash is a lightweight, self-hosted bookmark dashboard that features a minimalist, keyboard-driven interface with extensive customization options, making it the perfect personal dashboard for power users. Based on the excellent ThinkDashboard.
 
 Key features:
-• Keyboard-driven navigation for fast access to all your bookmarks
-• Extensive theme and layout customization, with a theme studio beside the dashboard and a theme editor
+• Keyboard-driven navigation for fast access to all your bookmarks, and a search that answers sums such as 15% of 240
+• Extensive theme and layout customization, with a theme studio beside the dashboard, a theme editor and 266 backdrops drawn in the themes' colours
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Edit mode: change categories, widgets and pages right on the dashboard
@@ -32,7 +32,7 @@ Key features:
 • Watch feeds: follow the RSS, Atom or JSON Feed of sites you choose, with news on the bookmark, in its preview card and in a news window
 • An assistant you ask in plain words, on Claude, OpenAI or a server of your own: it looks things up and changes nothing by itself
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
-• Widgets beside your bookmarks: 48 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
+• Widgets beside your bookmarks: 51 built-in kinds (tabs, clock, countdown, uptime, feeds, weather, disks, containers and more) plus a Custom widget for any JSON API
 • Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library
 • Finds the web apps in your Docker containers and offers them as bookmarks, with an icon and a status check (needs the Docker socket below)
 • Glances on the dashboard: a page for the hosts you run Glances on, with processes, containers, graphs and incidents, and a widget for one host
@@ -56,6 +56,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.25.0 (2026-11-03)
+- Widgets: a Tabs widget, Clock and Countdown, Duplicate, set times and days per widget, and amber and red limits for disks and memory
+- Search: it answers sums and unit conversions, and has six more commands
+- Config: a list of what you changed from the defaults, earlier layouts of a page you can restore, and import of a Homepage, Dashy or Homer configuration
+- Themes: a backdrop for every theme, a shorter backdrop picker, and Aurora Glass is the theme a new install starts on
+- Tags: give a tag a colour, shown in the tag cloud, the rows and the preview
+- Fixes: the backdrop groups are in English, and the eight neutral themes draw their own backdrop
+
 ### v1.24.2 (2026-11-02)
 - Watch feeds: Config has a Feeds tab and a Settings tab, like the other sections
 - Watch feeds: the news popover has its Reader button on a phone too
@@ -69,7 +77,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 
 ### v1.24.0 (2026-11-02)
 - Watch feeds: follow the RSS, Atom or JSON Feed of any site, with a stripe, a badge and the newest headline on the bookmark, a preview card that leads with the news, and a news window on Shift+N in three layouts
-- Appearance: Aurora Glass (dark) is the theme a new install starts on
+- Appearance: Tidal Slate (dark) is the theme a new install starts on
 - Bookmarks view: Ctrl/Cmd+A and a button select every bookmark shown
 - Health: a server with no connection holds its failures back, and the first 15 minutes after a start hold a bookmark's first failed check
 - Action bar: resting on a button shows its name first, then its key
@@ -81,16 +89,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - MCP: 17 tools in five groups, with edit and delete for bookmarks, health, inbox and containers
 - Theme studio: it draws with the material of the views
 - Fixes: a background save sends only its own keys, the Quick start fits shorter windows, and the preview card stays off the hovered row
-
-### v1.22.5 (2026-10-29)
-- Recent bookmarks: * shows tiles with the day you opened them, from every page, ten at a time
-- Tag view: show bookmarks with any tag or with every tag, put a tag on ticked rows with Add tag, and sort by score
-- Action bar: a theme studio button, and a docked bar comes back when you rest the pointer on its edge
-- Dashboard: every window opens in the middle, and the page filter (Shift+F) takes several words
-- Edit mode: the panel says what is in a block and offers its actions
-- Glances: the Hosts table puts hosts in trouble first, sorts, names the fullest disk's mount and draws the processor's last hour
-- Appearance: Ocean is the theme a new install starts on
-- Fixes: a setting changed on another device survives closing the theme studio, and a right-click menu stays open in edit mode
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -98,7 +96,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-11-02</Date>
+  <Date>2026-11-03</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
