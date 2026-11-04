@@ -236,3 +236,34 @@ test.describe('v1.25 pictures', () => {
         await snap(page, page.locator('#app-modal.show .modal'), '18-layout-history.jpg', { pad: 24 });
     });
 });
+
+/*
+ * The README's dashboard picture: the first page with the widgets the seed
+ * gives it (health, weather, uptime, the inbox and a note) and none of the
+ * media tiles, 1920 x 1200, in the default look.
+ */
+function readmeData(dir) {
+    const file = path.join(dir, 'bookmarks-1.json');
+    const home = readJSON(file);
+    const showcase = new Set(['w_s00000000001', 'w_s00000000002', 'w_s00000000003']);
+    const kept = (home.widgets || []).filter((w) => !showcase.has(w.id));
+    const have = new Set(kept.map((w) => w.type));
+    const extra = [['weather', 'w_r00000000001'], ['uptime', 'w_r00000000002'], ['inbox', 'w_r00000000003']]
+        .filter(([type]) => !have.has(type)).map(([type, id]) => ({ id, type }));
+    home.widgets = [...kept, ...extra];
+    const lead = [...kept.filter((w) => w.type === 'health'), ...extra, ...kept.filter((w) => w.type === 'notes')].map((w) => w.id);
+    home.blockOrder = [...lead, ...(home.blockOrder || []).filter((id) => !showcase.has(id) && !lead.includes(id))];
+    writeJSON(file, home);
+    const settingsFile = path.join(dir, 'settings.json');
+    writeJSON(settingsFile, { ...readJSON(settingsFile), showGridKeyLegend: false, greetingName: 'Jordi', columnsPerRow: 4 });
+}
+
+test.describe('README dashboard', () => {
+    test.use({ viewport: { width: 1920, height: 1200 }, dataTweak: { run: readmeData } });
+
+    test('nextdash-dashboard for the README', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        await shot(page, 'readme/nextdash-dashboard.jpg');
+    });
+});

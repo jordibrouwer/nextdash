@@ -175,6 +175,7 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 
 - **docs — Translations.** The bell, the greeting, the tip buttons, the action-bar note and the AdGuard Home and Pi-hole widgets in Dutch, German, French, Spanish and Chinese. Forty-one strings that only had an English fallback in the code (the DNS widgets, the What's new footer, *Mark read* in the Watch feeds popover) are now in `en.json` and translated. The French header clock option and the greeting strings no longer show English.
 - **docs — Config → Help.** *Header & action buttons* covers the large clock, the greeting and the bell; *Alerts & notifications* has a paragraph on the bell; *Widget kinds* counts fifty-three kinds, adds AdGuard Home and Pi-hole and describes the clock face.
+- **docs — README and manual: the default look.** A fresh install starts on Tarnished Brass in the manual (§17, §17A.3) and the README, which also counts fifty-three widget kinds, names the Clock face, AdGuard Home, Pi-hole and the bell, and has a new dashboard picture. The other README pictures (Containers, Glances, the Bookmarks view, Inbox, search, Config and Unraid) are retaken on the current app, each in the theme its caption names; the two collages of all themes are unchanged.
 - **docs — Tips.** Four new tips: the bell, your name in the greeting, the clock face and the DNS widgets. Each leads to its place from the bell.
 
 ### Browser extension
