@@ -595,7 +595,10 @@
         display: flex;
         flex-direction: row-reverse;
         justify-content: space-between;
-        margin: 0;
+        /* Keep the toggle's 8px hover padding outside the column: with margin 0
+           its words sat 8px right of every other label, and the box 8px left
+           of the control edge. */
+        margin: 0 -8px;
     }
 
     #config-appearance-body .config-field-row:has(> .config-toggle) > .config-field-affordances {
