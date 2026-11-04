@@ -270,10 +270,7 @@ class DashboardPromos {
         window.openWhatsNewModal({
             force,
             ifBlockingModalOpen: force ? undefined : () => d.isModalOpen(),
-            // Disclose the analytics once the release notes are out of the way,
-            // so the two cards never compete for the same corner.
             onClose: () => {
-                window.DashboardAnalyticsNotice?.scheduleAfterWhatsNew?.();
                 // The card that names the versions comes after the notes, not on them.
                 window.DashboardUpdatedNotice?.scheduleAfterWhatsNew?.();
             },

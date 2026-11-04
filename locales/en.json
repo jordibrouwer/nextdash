@@ -2542,6 +2542,7 @@
     "keptPileNoticeOpen": "Open Unsorted",
     "keptPileNoticeDismiss": "Dismiss",
     "keptPileNoticeBody": "{count} of the links you kept have been waiting over a month for a page. Bookmarks → Unsorted files them: tick a few and move them, or promote one at a time.",
+    "keptPileBellText": "{count} kept links waiting over a month",
     "unsortedReviewTitle": "Work through the kept links",
     "unsortedReviewDoneTitle": "That is the run",
     "inboxKeyMarkRead": "mark read",

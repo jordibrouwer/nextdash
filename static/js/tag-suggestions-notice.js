@@ -1,11 +1,11 @@
 /**
- * The corner card that offers a round of tag review.
+ * The bell row that offers a round of tag review.
  *
  * A collection grows faster than anyone tags it, and the panel in Config →
  * Bookmarks only helps the reader who thinks to go and look at it. This is the
- * app saying, now and then, that there is something worth accepting -- in the
- * one shape that does not demand an answer: a card in the corner with three
- * ways out, none of which is "deal with this now".
+ * app saying that there is something worth accepting -- in the one shape that
+ * does not demand an answer: a quiet row in the notifications bell. "No" there
+ * hides it until one more proposal has come up.
  *
  * It leans only on the sources that need no network: a rule you wrote, the
  * tags you already gave a site's other bookmarks, and the shipped catalogue
@@ -19,37 +19,13 @@
     if (!global.NoticeCard?.define) return;
 
     /*
-     * Ten proposals before the corner says anything.
+     * Ten proposals before the bell says anything.
      *
      * Below that it is not worth a card: the reader can tag three bookmarks
      * faster than they can read an offer to do so, and an offer that arrives
      * for three is one they learn to wave away before reading.
      */
     const MIN_TO_OFFER = 10;
-
-    /*
-     * Late enough that the dashboard is the dashboard first.
-     *
-     * The same nine seconds the link-review offer waits: long enough that the
-     * page has settled and the reader has looked at what they came for, short
-     * enough to still belong to this visit.
-     */
-    const SHOW_DELAY_MS = 9000;
-
-    const DONE_KEY = 'tagSuggestionNoticeDoneOn';
-    const SNOOZE_KEY = 'tagSuggestionNoticeSnoozeUntil';
-    /*
-     * How many proposals stood the last time the reader answered.
-     *
-     * Without it, accepting one group of a pile leaves the rest above the
-     * threshold and the card comes straight back -- which reads as nagging
-     * rather than as offering. It asks again once ten *new* ones have
-     * accumulated on top of whatever was left.
-     */
-    const SEEN_KEY = 'tagSuggestionNoticeSeenCount';
-
-    let lastCount = 0;
-    let lastTop = null;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -67,56 +43,6 @@
             (acc, [name, value]) => acc.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value)),
             text,
         );
-    }
-
-    function todayKey() {
-        const now = new Date();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        return `${now.getFullYear()}-${month}-${day}`;
-    }
-
-    function read(key) {
-        try {
-            return global.localStorage?.getItem(key);
-        } catch (err) {
-            // A private window, or site data switched off. Asking again is the
-            // smaller failure of the two.
-            return null;
-        }
-    }
-
-    function write(key, value) {
-        try {
-            global.localStorage?.setItem(key, value);
-        } catch (err) {
-            // Same: the offer is not worth breaking a page over.
-        }
-    }
-
-    function isDoneToday() {
-        return read(DONE_KEY) === todayKey();
-    }
-
-    function markDoneToday() {
-        write(DONE_KEY, todayKey());
-        write(SEEN_KEY, String(lastCount));
-    }
-
-    function isSnoozed() {
-        const until = Number(read(SNOOZE_KEY));
-        return Number.isFinite(until) && until > Date.now();
-    }
-
-    function remindInThirtyDays() {
-        write(SNOOZE_KEY, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
-        write(SEEN_KEY, String(lastCount));
-    }
-
-    /** What was standing the last time this was answered. */
-    function answeredAt() {
-        const seen = Number(read(SEEN_KEY));
-        return Number.isFinite(seen) && seen > 0 ? seen : 0;
     }
 
     /*
@@ -200,59 +126,40 @@
         return name ? { name, count: best.count } : null;
     }
 
+    /*
+     * The bell row: how many bookmarks could take a tag, or null when it is
+     * switched off or below the threshold.
+     */
+    async function bellState() {
+        if (dash()?.settings?.enableTagSuggestionNotice === false) return null;
+        await ensureCatalogue();
+        const count = proposalCount();
+        if (count < MIN_TO_OFFER) return null;
+        return {
+            count,
+            text: t('dashboard.tagSuggestionsNoticeTitle', '{count} bookmarks could take a tag', { count }),
+        };
+    }
+
     const card = global.NoticeCard.define({
         id: 'tag-suggestions-notice',
-        showDelayMs: SHOW_DELAY_MS,
-        title: () => t('dashboard.tagSuggestionsNoticeTitle', '{count} bookmarks could take a tag',
-            { count: lastCount }),
-        body: () => {
-            const base = t('dashboard.tagSuggestionsNoticeBody',
-                'Worked out from the tags you already use and the sites nextDash knows. Nothing is tagged until you say so.');
-            if (!lastTop) return base;
-            return `${base} ${t('dashboard.tagSuggestionsNoticeTopCategory',
-                '{category}: {count} without a tag', { category: lastTop.name, count: lastTop.count })}`;
-        },
-        dismissLabel: () => t('dashboard.tagSuggestionsNoticeLater', 'Not today'),
-        dismissName: 'later',
-        canShow: async () => {
-            if (dash()?.settings?.enableTagSuggestionNotice === false) return false;
-            if (isDoneToday()) return false;
-            if (isSnoozed()) return false;
-            await ensureCatalogue();
-            const count = proposalCount();
-            // Ten *new* ones since the last answer, so accepting part of a pile
-            // does not bring the card straight back for the remainder.
-            if (count < MIN_TO_OFFER || count < answeredAt() + MIN_TO_OFFER) return false;
-            lastCount = count;
-            lastTop = topUntaggedCategory();
-            return true;
-        },
-        // The × and "Not today" mean the same thing: not now, ask tomorrow.
-        onDismiss: markDoneToday,
-        actionAttr: 'data-tag-suggestions-notice-action',
-        actions: [
-            {
-                name: 'start',
-                label: () => t('dashboard.tagSuggestionsNoticeStart', 'Start'),
-                primary: true,
-                onClick: (handle) => {
-                    handle.close();
-                    markDoneToday();
-                    void open();
+        title: () => 'Tag suggestions',
+        bell: {
+            kind: 'quiet',
+            group: 'cleanup',
+            icon: '\u{1F3F7}',
+            // "No" is remembered with the count it was said at; one more
+            // proposal brings the row back.
+            no: 'state',
+            state: bellState,
+            actions: [
+                {
+                    label: () => t('dashboard.tagSuggestionsNoticeStart', 'Start'),
+                    primary: true,
+                    onClick: () => { void open(); },
                 },
-            },
-            {
-                name: 'later',
-                label: () => t('dashboard.tagSuggestionsNoticeLater', 'Not today'),
-                onClick: (handle) => { markDoneToday(); handle.close(); },
-            },
-            {
-                name: 'remind',
-                quiet: true,
-                label: () => t('dashboard.tagSuggestionsNoticeRemindLater', 'Remind me in 30 days'),
-                onClick: (handle) => { remindInThirtyDays(); handle.close(); },
-            },
-        ],
+            ],
+        },
     });
 
     /*
@@ -285,9 +192,8 @@
     }
 
     /*
-     * Started the way the other cards are: on its own, once the document is
-     * there. define() builds the card and waits out its delay; nothing shows
-     * until canShow says so.
+     * Registered with the bell as soon as the document is there; the row asks
+     * bellState() for its count whenever the bell refreshes.
      */
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', card.autoStart, { once: true });
@@ -296,8 +202,8 @@
     }
 
     global.TagSuggestionsNotice = {
-        ...card,
         open,
+        state: bellState,
         proposalCount,
         topUntaggedCategory,
         ensureCatalogue,

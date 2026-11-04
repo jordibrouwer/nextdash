@@ -1,49 +1,24 @@
 /**
- * One-time invitation to turn privacy-friendly analytics on.
+ * Invitation to turn privacy-friendly analytics on, as a quiet row in the
+ * notifications bell (Privacy).
  *
- * Shown a few seconds after the what's-new modal closes, but only when the
- * quick-start setup card is not competing for attention. A button on the card
- * opens a fuller explanation in the same modal style as what's new: why the
- * measurement exists and what it does and does not record.
+ * The row has two buttons: "Turn on", and "What is recorded?", which opens a
+ * fuller explanation in the same modal style as what's new: why the
+ * measurement exists and what it does and does not record. "No" in the bell
+ * hides the row for good.
  *
  * Answer-state lives in settings.quickStart.analyticsChoiceMade (server-side,
- * per user) so the card is answered once per user rather than once per browser.
- * That is deliberately not the older seenAnalyticsNotice flag: the card it
- * belonged to only announced that analytics was already on, so dismissing it
- * acknowledged a statement instead of answering a question. Those users still
- * get asked exactly once.
+ * per user), set when analytics is turned on. That is deliberately not the
+ * older seenAnalyticsNotice flag: the card it belonged to only announced that
+ * analytics was already on, so dismissing it acknowledged a statement instead
+ * of answering a question. Those users still get the row.
  *
- * Leaving the question open is not an answer either. Closing the card with ×,
- * or reading the detail without deciding, snoozes it on an escalating schedule
- * (see SNOOZE_DAYS) rather than asking again on the next load — a hesitant user
- * should not be badgered, and should not be silently written off as a no.
- * Merely being shown also starts a short cooldown (SHOWN_COOLDOWN_DAYS), so
- * reloading past an untouched card does not put it straight back on screen.
- *
- * Nothing renders when the user is already opted in, has already answered, is
- * inside a snooze window, or the operator set DISABLE_TELEMETRY — asking would
- * then be pointless or a lie.
+ * Nothing is reported when the user is already opted in, has already
+ * answered, or the operator set DISABLE_TELEMETRY -- asking would then be
+ * pointless or a lie.
  */
 (function () {
     'use strict';
-
-    const SHOW_DELAY_MS = 3500;
-
-    // Days to wait after each time the question is left open. Escalating, and
-    // capped at the last entry: someone who keeps ignoring it is answering in
-    // practice, so the card becomes rare rather than disappearing outright.
-    const SNOOZE_DAYS = [3, 14, 45];
-
-    // Cooldown applied the moment the card is shown, so reloading past an
-    // untouched card does not re-show it. Short, because ignoring a card once is
-    // much weaker evidence than actively dismissing it.
-    const SHOWN_COOLDOWN_DAYS = 1;
-
-    let pending = null;
-
-    function nowSeconds() {
-        return Math.floor(Date.now() / 1000);
-    }
 
     function dash() {
         return window.dashboardInstance || null;
@@ -73,118 +48,27 @@
         return d.settings.quickStart;
     }
 
-    /**
-     * Record that the user actually answered — turned analytics on, or declined.
-     *
-     * Deliberately a different flag from the legacy seenAnalyticsNotice, which
-     * only recorded that someone dismissed the older card announcing analytics
-     * was already on. Acknowledging a statement is not answering a question, so
-     * those users are asked once here.
-     */
-    function markChoiceMade() {
-        const qs = state();
-        if (!qs || qs.analyticsChoiceMade === true) return;
-        qs.analyticsChoiceMade = true;
-        qs.analyticsAskAfter = 0; // answered; no snooze left to honour
-        Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
+    /** Whether the operator switched telemetry off for the whole server. */
+    function lockedOff() {
+        return !!document.querySelector('meta[name="nextdash-telemetry-locked"]');
     }
 
     /**
-     * Put the question away for a while without recording an answer.
-     *
-     * Used when the user leaves it open rather than deciding — closing the card
-     * with ×, or reading the detail and closing the modal. Asking again on the
-     * very next load would badger someone who is merely hesitating, so back off
-     * and raise the interval each time it happens.
+     * The bell row: 1 while analytics is off, not answered and not locked off,
+     * null otherwise. Once someone opts in -- or has declined -- this never
+     * returns.
      */
-    function snooze() {
-        const qs = state();
-        if (!qs) return;
-        // Escalate per *user* action, counted directly rather than inferred from
-        // analyticsAskAfter: the shown-cooldown also pushes that timestamp into
-        // the future, which would otherwise read as "already snoozed" and pin the
-        // schedule at its first step forever.
-        const index = Math.min(Number(qs.analyticsSnoozes) || 0, SNOOZE_DAYS.length - 1);
-        qs.analyticsSnoozes = index + 1;
-        const until = nowSeconds() + SNOOZE_DAYS[index] * 86400;
-        if (until > (Number(qs.analyticsAskAfter) || 0)) {
-            qs.analyticsAskAfter = until;
-        }
-        Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
-    }
-
-    /**
-     * Cool down simply because the card was put on screen.
-     *
-     * Without this, reloading while the card sits there untouched shows it again
-     * on every single load: nothing is persisted until the user clicks. Someone
-     * who opens the dashboard ten times a day would face it ten times.
-     *
-     * Deliberately does not touch analyticsSnoozes — being shown is not the user
-     * hesitating, so it must not consume a step of the escalating schedule. A
-     * later × or detail-close still escalates from where the user actually left
-     * off, and only extends the window (never shortens it).
-     */
-    function coolDownAfterShowing() {
-        const qs = state();
-        if (!qs) return;
-        // First showing only: the install count card counts its wait from here.
-        if (!(Number(qs.analyticsAskedAt) > 0)) qs.analyticsAskedAt = nowSeconds();
-        const until = nowSeconds() + SHOWN_COOLDOWN_DAYS * 86400;
-        if (until <= (Number(qs.analyticsAskAfter) || 0)) return;
-        qs.analyticsAskAfter = until;
-        Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
-    }
-
-    /**
-     * Only ask when there is something to ask for: analytics still off, the
-     * invitation not already answered, and no setup card or blocking modal in
-     * the way. Once someone opts in — or declines — this never returns.
-     */
-    function shouldShow() {
+    async function bellState() {
         const d = dash();
-        if (!d?.settings) return false;
-        if (d.settings.analyticsOptIn === true) return false;
+        if (!d?.settings) return null;
+        if (d.settings.analyticsOptIn === true) return null;
         // The operator kill switch makes the choice moot; asking would be a lie.
-        if (document.querySelector('meta[name="nextdash-telemetry-locked"]')) return false;
-        if (state()?.analyticsChoiceMade === true) return false;
-        // Still inside a snooze window from an earlier, undecided visit.
-        if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return false;
-        if (isOpen()) return false;
-        // Config, health and the inbox are hash routes on this same page, so
-        // without this the card drops on top of whatever the user opened. Only
-        // interrupt the bookmarks view. ("bookmarks" is also the value before the
-        // first view is assigned, which is the dashboard.)
-        if (d.activeView && d.activeView !== 'bookmarks') return false;
-        // Any start guide bar — the setup wizard *or* the checklist that follows
-        // it — owns the same bottom-left corner, so wait until it is gone rather
-        // than stacking a second card on top of it.
-        if (document.querySelector('.quickstart-card:not(.analytics-notice-card)')) return false;
-        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
-        if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
-        return true;
-    }
-
-    // The card element belongs to the shared helper, so closing goes through it.
-    function teardown() {
-        card.close();
-    }
-
-    /** Whether this card is currently on screen. */
-    function isOpen() {
-        return card.element !== null;
-    }
-
-    /** "No thanks" — a real answer, so the card does not come back. */
-    function dismiss() {
-        markChoiceMade();
-        teardown();
-    }
-
-    /** × — no answer given; back off and ask again later. */
-    function askLater() {
-        snooze();
-        teardown();
+        if (lockedOff()) return null;
+        if (state()?.analyticsChoiceMade === true) return null;
+        return {
+            count: 1,
+            text: t('dashboard.analyticsNoticeTitle', 'Privacy-friendly analytics'),
+        };
     }
 
     /**
@@ -204,7 +88,6 @@
             qs.analyticsAskAfter = 0;
         }
         d.settings.analyticsOptIn = true;
-        teardown();
         const done = () => {
             d.isNavigatingAway = true;
             // The reload is what actually loads the tracker, but it also throws
@@ -225,17 +108,10 @@
      * Full explanation, in the same modal chrome as what's new.
      *
      * Reading the detail is not itself an answer: only the modal's confirm
-     * button (optIn) or "No thanks" records one.
-     *
-     * The snooze is applied up front rather than from onCancel, because that
-     * callback only fires for the cancel button — Escape and click-outside
-     * close the modal without it, and those must not leave the question
-     * un-snoozed. Opting in from here overwrites the snooze anyway.
+     * button (optIn) records one, so the row stays after it is closed.
      */
     function openDetails() {
         if (!window.AppModal) return;
-        snooze();
-        teardown();
 
         const section = (title, body) =>
             `<h3 class="analytics-notice-heading">${escape(title)}</h3><p>${body}</p>`;
@@ -307,112 +183,26 @@
         window.location.hash = 'config/behavior/privacy';
     }
 
-    // The card mechanism (markup, transition, corner etiquette) is shared; only
-    // the gating and the three actions below are specific to this notice.
-    // shouldShow() stays here rather than moving into canShow: it is exported and
-    // several tests call it directly.
-    const card = window.NoticeCard.define({
+    // The row is a quiet bell source: the corner card, its snooze schedule and
+    // the polling that waited for a free corner went with it.
+    window.NoticeCard.define({
         id: 'analytics-notice',
         title: () => t('dashboard.analyticsNoticeTitle', 'Privacy-friendly analytics'),
-        body: () => t('dashboard.analyticsNoticeBody',
-            'Analytics is off. Turning it on shares anonymous usage statistics so it is visible which features are used and what can be improved — never bookmark names, URLs, or searches. You can switch it back off at any time.'),
-        dismissLabel: () => t('dashboard.analyticsNoticeDismiss', 'Dismiss'),
-        canShow: () => shouldShow(),
-        // × is "not now" (snooze); "No thanks" below is an actual decline. Same
-        // visual affordance, deliberately different meaning.
-        onDismiss: askLater,
-        onShown: coolDownAfterShowing,
-        actionAttr: 'data-an-action',
-        dismissName: 'later',
-        actions: [
-            { name: 'optin', label: () => t('dashboard.analyticsNoticeOptIn', 'Turn on'), primary: true, onClick: optIn },
-            { name: 'details', label: () => t('dashboard.analyticsNoticeLearnMore', 'What is recorded?'), onClick: openDetails },
-            { name: 'dismiss', label: () => t('dashboard.analyticsNoticeNoThanks', 'No thanks'), onClick: dismiss },
-        ],
-    });
-
-    /**
-     * @returns {boolean} whether the card was actually put on screen.
-     *
-     * Synchronous on purpose: several callers and tests treat the return value
-     * as a plain boolean. This card's gating is synchronous too, so renderSync
-     * gives the answer without a promise.
-     */
-    function render() {
-        return card.renderSync();
-    }
-
-    /** Called when the what's-new modal closes; waits a beat so it doesn't stack. */
-    function scheduleAfterWhatsNew() {
-        if (pending) clearTimeout(pending);
-        pending = setTimeout(() => {
-            pending = null;
-            // A start guide bar may still be up; keep retrying rather than
-            // burning the single chance to disclose this.
-            if (!render()) waitForClearCorner();
-        }, SHOW_DELAY_MS);
-    }
-
-    /** Poll until whatever is occupying the corner goes away, then show. */
-    function waitForClearCorner() {
-        let attempts = 0;
-        const maxAttempts = 40; // ~40 × 1.5s ≈ 60s
-        const tick = () => {
-            attempts += 1;
-            if (isOpen()) return;
-            if (state()?.analyticsChoiceMade === true) return;
-            if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return;
-            if (render()) return;
-            if (attempts < maxAttempts) setTimeout(tick, 1500);
-        };
-        setTimeout(tick, 1500);
-    }
-
-    /**
-     * Show the notice on its own when no what's-new modal is coming.
-     *
-     * Hanging it solely off that modal meant anyone who had already seen the
-     * current release — most existing users — would never be told analytics is
-     * on, which defeats the point of disclosing it. So poll briefly after load:
-     * if the modal does appear, its onClose path takes over and this stays
-     * quiet; if nothing shows up, the card comes out by itself.
-     */
-    function autoStart() {
-        let attempts = 0;
-        const maxAttempts = 20; // ~20 × 1.5s ≈ 30s, then give up for this load
-
-        const tick = () => {
-            attempts += 1;
-            if (isOpen() || pending) return;            // already showing or queued
-            if (state()?.analyticsChoiceMade === true) return;
-            if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return;
-            if (dash()?.settings?.analyticsOptIn === true) return;
-
-            // Let the release notes go first when they are on screen or pending.
-            const whatsNewVisible = !!document.querySelector('.whats-new-modal');
-            if (shouldShow() && !whatsNewVisible) {
-                render();
-                return;
-            }
-            if (attempts < maxAttempts) {
-                setTimeout(tick, 1500);
-            }
-        };
-
-        // Long enough for the dashboard to settle and any auto what's-new to open.
-        setTimeout(tick, 6000);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', autoStart, { once: true });
-    } else {
-        autoStart();
-    }
+        bell: {
+            kind: 'quiet',
+            group: 'privacy',
+            icon: '\u{1F4CA}',
+            no: 'forever',
+            state: bellState,
+            actions: [
+                { label: () => t('dashboard.analyticsNoticeOptIn', 'Turn on'), primary: true, onClick: optIn },
+                { label: () => t('dashboard.analyticsNoticeLearnMore', 'What is recorded?'), onClick: openDetails },
+            ],
+        },
+    }).autoStart();
 
     window.DashboardAnalyticsNotice = {
-        scheduleAfterWhatsNew,
-        render,
-        shouldShow,
+        state: bellState,
         // Exposed so the detail modal can be opened without the card, e.g. from
         // help or a test.
         openDetails,

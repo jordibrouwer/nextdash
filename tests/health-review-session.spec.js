@@ -21,7 +21,23 @@ async function loadDashboard(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.HealthReviewSession?.markDoneToday && localStorage.removeItem('nextdashHealthReviewDoneOn'));
+    await page.evaluate(() => {
+        window.HealthReviewSession?.markDoneToday && localStorage.removeItem('nextdashHealthReviewDoneOn');
+        // A "No" said in a test must not reach the shared ./data.
+        window.dashboardInstance.saveSettings = ((save) => function (opts, ...rest) {
+            // schedulePersist() runs through the module's own closure, so only the
+            // save can be held back: the shared ./data keeps no mark of a test.
+            if (opts?.keys?.length === 1 && opts.keys[0] === 'discoverabilityState') return Promise.resolve(true);
+            return save.call(this, opts, ...rest);
+        })(window.dashboardInstance.saveSettings);
+    });
+}
+
+const ROW = '.notification-bell-row[data-bell-id="health-review-notice"]';
+
+async function openBell(page) {
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
 }
 
 /** How many rows a session would have to work with on this install. */
@@ -79,43 +95,50 @@ test.describe('a review session', () => {
         await done.locator('[data-focus="done-today"]').click();
         await expect(page.locator('.health-focus-card')).toHaveCount(0);
         expect(await page.evaluate(() => window.HealthReviewSession.isDoneToday())).toBe(true);
-        // And the offer is answered: the card does not come back today.
-        expect(await page.evaluate(() => window.HealthReviewSession.shouldShow())).toBe(false);
+        // And the offer is answered: the row does not come back today.
+        expect(await page.evaluate(() => window.HealthReviewSession.state())).toBeNull();
     });
 });
 
-test.describe('the offer on the dashboard', () => {
+test.describe('the offer in the bell', () => {
     test('names what is waiting, and starts the session', async ({ page }) => {
         await loadDashboard(page);
         const total = await candidateCount(page);
-        test.skip(total < 5, 'the card deliberately stays quiet below five');
+        test.skip(total < 5, 'the row deliberately stays quiet below five');
 
-        expect(await page.evaluate(() => window.HealthReviewSession.render())).toBe(true);
-        const card = page.locator('.health-review-notice-card');
-        await expect(card).toBeVisible();
-        // The body counts by condition rather than showing one lump number,
+        await openBell(page);
+        const row = page.locator(ROW);
+        await expect(row).toBeVisible();
+        // The corner is not used: the offer is a quiet row, nothing is drawn there.
+        await expect(page.locator('.health-review-notice-card')).toHaveCount(0);
+        // The text counts by condition rather than showing one lump number,
         // because "4 broken" is a reason to start and "37 issues" is not.
-        await expect(card.locator('.health-review-notice-text')).toContainText(/\d/);
+        await expect(row.locator('.notification-bell-row-label')).toContainText(/\d/);
+        await expect(row.getByRole('button', { name: 'Not today' })).toHaveCount(0);
 
-        await card.locator('[data-health-review-action="start"]').click();
+        await row.getByRole('button', { name: 'Start' }).click();
         await expect(page.locator('.health-focus-card')).toBeVisible({ timeout: 15_000 });
         expect(await page.evaluate(() =>
             Boolean(window.dashboardInstance.config.instance._libFocus.session))).toBe(true);
     });
 
-    test('Not today answers it, without touching the health data', async ({ page }) => {
+    test('No hides it, without touching the health data, and one more link brings it back', async ({ page }) => {
         await loadDashboard(page);
         const total = await candidateCount(page);
-        test.skip(total < 5, 'the card deliberately stays quiet below five');
+        test.skip(total < 5, 'the row deliberately stays quiet below five');
 
-        await page.evaluate(() => window.HealthReviewSession.render());
-        // The × carries the same action name, so this aims at the button.
-        await page.locator('.health-review-notice-card .quickstart-btn[data-health-review-action="later"]').click();
-
-        expect(await page.evaluate(() => window.HealthReviewSession.isDoneToday())).toBe(true);
-        expect(await page.evaluate(() => window.HealthReviewSession.shouldShow())).toBe(false);
-        // Dismissing is an answer about today, not about the bookmarks: the
-        // same links are still waiting.
+        await openBell(page);
+        await page.locator(ROW).getByRole('button', { name: 'No', exact: true }).click();
+        await expect(page.locator(ROW)).toHaveCount(0);
+        // Answering is about the offer, not the bookmarks: the same links are
+        // still waiting.
         expect(await candidateCount(page)).toBe(total);
+
+        // One more reviewable link is "worse" than when it was answered.
+        await page.evaluate((n) => {
+            window.HealthBadgeUtils.fetchBookmarkHealthSummary = async () => ({ unusedCount: n + 1 });
+        }, total);
+        await openBell(page);
+        await expect(page.locator(ROW)).toBeVisible();
     });
 });

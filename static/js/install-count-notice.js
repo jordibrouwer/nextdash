@@ -10,14 +10,15 @@
  *
  * Not shown when the operator has already disabled telemetry for the whole
  * server, or when the person has switched the count off themselves.
+ *
+ * It lives in the notifications bell as a quiet row (Privacy), not in the
+ * corner. The two-day wait behind the analytics question went with the corner:
+ * two rows in a list are not a pile of interruptions.
  */
 (function initInstallCountNotice(global) {
     'use strict';
 
     const PROMO_ID = 'install-count-v1';
-    // Last in the corner's queue, behind the cards that invite something.
-    const SHOW_DELAY_MS = 8000;
-    const WAIT_AFTER_ANALYTICS_DAYS = 2;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -37,59 +38,58 @@
         global.DiscoverabilityState?.markSettingPromoSeen?.(PROMO_ID);
     }
 
-    // Not on the heels of the analytics question: two privacy cards in one
-    // visit read as a pile. Counts from the day the analytics card was first
-    // shown. Installs that answered or opted in before that day was recorded
-    // have nothing to wait behind, so they get the card straight away.
-    function analyticsQuestionHasSettled() {
-        const d = dash();
-        const qs = d?.settings?.quickStart;
-        const askedAt = Number(qs?.analyticsAskedAt) || 0;
-        if (askedAt > 0) return Date.now() / 1000 >= askedAt + WAIT_AFTER_ANALYTICS_DAYS * 86400;
-        return d?.settings?.analyticsOptIn === true || qs?.analyticsChoiceMade === true;
-    }
-
-    function turnOff(card) {
+    function turnOff() {
         const d = dash();
         if (d?.settings) {
             d.settings.installPingEnabled = false;
             Promise.resolve(d.saveSettings?.({ keys: ['installPingEnabled'] })).catch(() => {});
         }
         global.nextdashTrack?.('install-count-notice:off');
-        markAnswered();
-        card.close();
+        answered();
     }
 
+    /** Record the answer where Config reads it, and let the row go at once. */
+    function answered() {
+        markAnswered();
+        void global.NotificationBell?.refreshAll?.();
+    }
+
+    /** The bell row: 1 while the count is unanswered, on, and not locked off. */
+    async function bellState() {
+        if (hasAnswered()) return null;
+        const d = dash();
+        if (d?.telemetryLockedOff === true) return null;
+        if (d?.settings?.installPingEnabled === false) return null;
+        return {
+            count: 1,
+            text: t('dashboard.installCountNoticeTitle', 'nextDash counts installs'),
+        };
+    }
+
+    // A quiet row in the bell, not a corner card. Answering through a button
+    // still records the answer the way Config reads it; "No" in the bell hides
+    // the row for good.
     const card = global.NoticeCard.define({
         id: 'install-count-notice',
-        showDelayMs: SHOW_DELAY_MS,
         title: () => t('dashboard.installCountNoticeTitle', 'nextDash counts installs'),
-        body: () => t('dashboard.installCountNoticeBody',
-            'Once a day this server sends a random id and the version number, so the project can tell how many installs exist. Nothing else leaves: no address, no settings, no bookmarks. You can turn it off here or under Behavior → Privacy & sync.'),
-        dismissLabel: () => t('dashboard.installCountNoticeDismiss', 'Dismiss'),
-        dismissName: 'dismiss',
-        canShow: () => {
-            if (hasAnswered()) return false;
-            const d = dash();
-            if (d?.telemetryLockedOff === true) return false;
-            if (!analyticsQuestionHasSettled()) return false;
-            return d?.settings?.installPingEnabled !== false;
+        bell: {
+            kind: 'quiet',
+            group: 'privacy',
+            icon: '\u{1F512}',
+            no: 'forever',
+            state: bellState,
+            actions: [
+                {
+                    label: () => t('dashboard.installCountNoticeOff', 'Turn it off'),
+                    primary: true,
+                    onClick: turnOff,
+                },
+                {
+                    label: () => t('dashboard.installCountNoticeKeep', 'Fine by me'),
+                    onClick: answered,
+                },
+            ],
         },
-        onDismiss: markAnswered,
-        actionAttr: 'data-install-count-action',
-        actions: [
-            {
-                name: 'keep',
-                label: () => t('dashboard.installCountNoticeKeep', 'Fine by me'),
-                primary: true,
-                onClick: (c) => { markAnswered(); c.close(); },
-            },
-            {
-                name: 'off',
-                label: () => t('dashboard.installCountNoticeOff', 'Turn it off'),
-                onClick: turnOff,
-            },
-        ],
     });
 
     if (document.readyState === 'loading') {
@@ -99,9 +99,7 @@
     }
 
     global.DashboardInstallCountNotice = {
-        render: card.renderSync,
-        shouldShow: card.shouldShowSync,
-        dismiss: () => { markAnswered(); card.close(); },
+        state: bellState,
         PROMO_ID,
     };
 }(typeof window !== 'undefined' ? window : globalThis));

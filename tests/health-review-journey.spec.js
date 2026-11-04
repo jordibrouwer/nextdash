@@ -136,14 +136,15 @@ test.describe('a review session, from the offer to the end', () => {
         await loadDashboard(page);
 
         // ── The offer ───────────────────────────────────────────────────────
-        expect(await page.evaluate(() => window.HealthReviewSession.render())).toBe(true);
-        const notice = page.locator('.health-review-notice-card');
+        await page.evaluate(() => window.NotificationBell.refreshAll());
+        await page.evaluate(() => window.NotificationBell.open());
+        const notice = page.locator('.notification-bell-row[data-bell-id="health-review-notice"]');
         await expect(notice).toBeVisible();
         // It counts by condition rather than as one lump: "1 broken" is a reason
         // to start, "5 issues" is not.
-        await expect(notice.locator('.health-review-notice-text')).toContainText(/\d/);
+        await expect(notice.locator('.notification-bell-row-label')).toContainText(/\d/);
 
-        await notice.locator('[data-health-review-action="start"]').click();
+        await notice.getByRole('button', { name: 'Start' }).click();
         await expect(card(page)).toBeVisible({ timeout: 15_000 });
         expect(await page.evaluate(() =>
             Boolean(window.dashboardInstance.config.instance._libFocus.session))).toBe(true);

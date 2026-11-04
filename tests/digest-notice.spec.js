@@ -296,17 +296,17 @@ test.describe('the digest window', () => {
 
 
 test.describe('the digest and the review card', () => {
-    test('the review card waits while there is an unseen digest', async ({ page, request }) => {
+    test('the review row waits while there is an unseen digest', async ({ page, request }) => {
         await seedAndSend(request);
         await loadDashboard(page);
         await forgetSeen(page);
         await page.evaluate(() => {
             window.localStorage.removeItem('nextdashHealthReviewDoneOn');
-            window.localStorage.removeItem('nextdashHealthReviewSnoozeUntil');
         });
         // Fresh install: every bookmark is never opened, enough for a session.
         expect(await page.evaluate(() => window.DigestNotice.holdsTheWeek())).toBe(true);
-        expect(await page.evaluate(() => window.HealthReviewSession.shouldShow())).toBe(false);
+        // The bell row for the review is held back the same way the corner card was.
+        expect(await page.evaluate(() => window.HealthReviewSession.state())).toBeNull();
     });
 
     test('"Work through" starts a session on the broken links', async ({ page, request }) => {
