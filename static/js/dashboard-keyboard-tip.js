@@ -130,6 +130,8 @@
             kind: 'tip',
             icon: '\u2328\uFE0F',
             no: 'forever',
+            // Reading it counts it as shown right then, so the day's wait starts at the click.
+            onRead: () => { if (current === tipId) settle(tipId); },
             // Switching the tips off in Config takes the row away at the next refresh.
             state: async () => (dash()?.settings?.enableSessionTips === false || global.DemoLock?.on
                 ? null

@@ -55,9 +55,9 @@ test.describe('keyboard tips in the bell', () => {
         await tipRow(page, `keyboard-tip:${id}`).getByRole('button', { name: 'Mark read' }).click();
         await expect(tipRow(page, `keyboard-tip:${id}`)).toHaveCount(0);
 
-        // The next look settles it: seen, and the day's allowance is used.
-        expect(await tick(page)).toBeNull();
+        // Settled at the click, with no refresh or tick in between.
         expect(await page.evaluate((t) => window.DiscoverabilityState.hasSeenTip(t), id)).toBe(true);
+        expect(await tick(page)).toBeNull();
         expect(await page.evaluate(() => window.DiscoverabilityState.tipsAllowedNow())).toBe(false);
         await expect(page.locator('.notification-bell-row[data-bell-id^="keyboard-tip:"]')).toHaveCount(0);
 

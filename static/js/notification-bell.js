@@ -10,7 +10,7 @@
  * What the person has read or answered "No" to is kept by DiscoverabilityState
  * (it persists server-side); nothing is stored here.
  *
- *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo })
+ *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead })
  *     -> { refresh(), unregister() }
  *
  * `state()` resolves to null when there is nothing to report, or to
@@ -20,6 +20,11 @@
  * `onNo(row)` is optional: called once, after the "No" mark is written, for a
  * source whose "No" is also an answer something else has to know about (a
  * setting, a promo). A throwing onNo is logged and ignored.
+ *
+ * `onRead(row)` is optional too, and mirrors it: called once after a read mark
+ * is written for a row that was unread, whether from "Mark read", from an
+ * action with `marksRead: true` or from "Mark all read". Not called for a row
+ * that was already read. A throwing onRead is logged and ignored.
  */
 (function (global) {
     'use strict';
@@ -122,13 +127,20 @@
         changed();
     }
 
-    function markRead(row) {
+    /** Write the read mark; tell the source when the row was unread until now. */
+    function writeRead(row) {
         States().markBellRead(row.source.id, markOf(row.entry));
+        if (!row.unread) return;
+        try { row.source.onRead?.(row); } catch (err) { console.warn('bell onRead failed', err); }
+    }
+
+    function markRead(row) {
+        writeRead(row);
         changed();
     }
 
     function markAllRead() {
-        rows().filter((r) => r.visible).forEach((r) => States().markBellRead(r.source.id, markOf(r.entry)));
+        rows().filter((r) => r.visible).forEach(writeRead);
         changed();
     }
 
@@ -153,7 +165,7 @@
             b.type = 'button';
             if (action.primary) b.classList.add('is-primary');
             b.addEventListener('click', () => {
-                if (action.marksRead) States().markBellRead(source.id, markOf(entry));
+                if (action.marksRead) writeRead(row);
                 try { action.onClick(row); } catch (err) { console.warn('bell action failed', err); }
                 changed();
             });

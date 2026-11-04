@@ -77,7 +77,8 @@
  * handle (close() on it does nothing when no corner card is up). The bell draws
  * its own "No" / "Mark read" button, so none is declared here. `bell.onNo(row)`
  * is called after the bell wrote its "No", for a card whose "No" is also an
- * answer other code must see (a promo marked seen, a setting recorded). The corner's
+ * answer other code must see (a promo marked seen, a setting recorded); `bell.onRead(row)` is
+ * the same for a tip that was read ("Mark read", or a `marksRead` action). The corner's
  * etiquette (an unfinished onboarding, phones with corner cards hidden, the
  * quiet after the start guide) does not apply to the bell; it is not an
  * interruption.
@@ -426,7 +427,7 @@ canShow every time.
                 onClick: () => action.onClick?.(handle),
             }));
             bellHandle = global.NotificationBell.register({
-                id: spec.id, group: b.group, kind: b.kind, icon: b.icon, no: b.no, state, actions, onNo: b.onNo,
+                id: spec.id, group: b.group, kind: b.kind, icon: b.icon, no: b.no, state, actions, onNo: b.onNo, onRead: b.onRead,
             });
         }
 

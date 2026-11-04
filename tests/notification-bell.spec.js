@@ -275,3 +275,28 @@ test('onNo is called once with the row when No is pressed', async ({ page }) => 
     await expect(row(page, 'probe-onno')).toHaveCount(0);
     expect(await page.evaluate(() => window.__noCalls)).toEqual([{ id: 'probe-onno', count: 1 }]);
 });
+
+test('onRead is called once per read path, and not for a row that was already read', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+        window.__reads = [];
+        ['a', 'b', 'c'].forEach((n) => window.NotificationBell.register({
+            id: `probe-read-${n}`, group: 'tips', kind: 'tip', icon: '*', no: 'forever',
+            state: async () => ({ count: 1, text: `read ${n}` }),
+            actions: n === 'b' ? [{ label: 'Do it', marksRead: true, onClick: () => {} }] : [],
+            onRead: (r) => window.__reads.push(r.source.id),
+        }));
+    });
+    await refresh(page);
+    await openPanel(page);
+    await row(page, 'probe-read-a').getByRole('button', { name: 'Mark read' }).click();
+    await row(page, 'probe-read-b').getByRole('button', { name: 'Do it' }).click();
+    expect(await page.evaluate(() => window.__reads)).toEqual(['probe-read-a', 'probe-read-b']);
+    // Mark all read reaches the one row that is still unread, once; the read ones are gone.
+    await page.locator('.notification-bell-markall').click();
+    expect((await page.evaluate(() => window.__reads)).filter((id) => id === 'probe-read-c')).toEqual(['probe-read-c']);
+    expect(await page.evaluate(() => window.__reads.filter((id) => id !== 'probe-read-c'))).toEqual(['probe-read-a', 'probe-read-b']);
+    // Reading an already-read row again (the panel is closed over it) does not call it.
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    expect(await page.evaluate(() => window.__reads.length)).toBe(3);
+});
