@@ -216,10 +216,47 @@
         if (video && (!image || !prefersStill())) {
             const poster = image ? ` poster="${dataUrl(image)}"` : '';
             return `<figure class="wn-media"><video class="wn-media-video" src="${dataUrl(video)}"${poster}
-                autoplay muted loop playsinline preload="metadata" aria-label="${alt}"></video></figure>`;
+                muted loop playsinline preload="none" data-wn-video aria-label="${alt}"></video></figure>`;
         }
         return `<figure class="wn-media"><img class="wn-media-img" src="${dataUrl(image)}" alt="${alt}"
             loading="lazy" decoding="async"></figure>`;
+    }
+
+    /*
+     * A recording starts when it is on screen and stops when it is not.
+     *
+     * They used to autoplay from the moment the modal opened, so a release with
+     * several spotlights downloaded every recording (300 KB each) while only the
+     * first was in view. Now each one waits as its poster, costs nothing, and
+     * loads when the reader scrolls to it.
+     */
+    let mediaObserver = null;
+    function bindMedia(root) {
+        if (!root || typeof root.querySelectorAll !== 'function') return;
+        const videos = root.querySelectorAll('video[data-wn-video]');
+        if (!videos.length) return;
+        if (typeof IntersectionObserver !== 'function') {
+            videos.forEach((video) => { video.preload = 'metadata'; video.play?.().catch(() => {}); });
+            return;
+        }
+        if (!mediaObserver) {
+            mediaObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    const video = entry.target;
+                    if (!video.isConnected) {
+                        mediaObserver.unobserve(video);
+                        return;
+                    }
+                    if (entry.isIntersecting) {
+                        const started = video.play?.();
+                        if (started && typeof started.catch === 'function') started.catch(() => {});
+                    } else {
+                        video.pause?.();
+                    }
+                });
+            }, { threshold: 0.4 });
+        }
+        videos.forEach((video) => mediaObserver.observe(video));
     }
 
     function bodyHtml(body) {
@@ -985,6 +1022,7 @@
                         body.innerHTML = renderRelease(data);
                         body.dataset.loaded = '1';
                         bindItemFolds(body);
+                        bindMedia(body);
                     })
                     .catch(() => {
                         body.innerHTML = `<p class="wn-empty">${wnTranslate(
@@ -1226,6 +1264,7 @@
                         contentRoot.focus({ preventScroll: true });
                     }
                     bindItemFolds(contentRoot);
+                    bindMedia(contentRoot);
                     bindFilter(contentRoot);
                     bindGoButtons(contentRoot);
                     bindEarlierList(contentRoot, sessionId);

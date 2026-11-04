@@ -135,6 +135,18 @@ test.describe("what's new: spotlight and catch-up", () => {
         await expect(modal(page).locator('.wn-rel--headline .wn-block--new li[data-wn-kind="new"]')).toHaveCount(2);
     });
 
+    test('the recording waits as its poster and plays once it is on screen', async ({ page }) => {
+        const asked = [];
+        page.on('request', (req) => { if (req.url().includes('.webm')) asked.push(req.url()); });
+        await openAs(page, 'v9.1.0');
+        const video = modal(page).locator('.wn-rel--headline .wn-spot video');
+        // Not autoplay and not preloaded: the file is asked for when it is seen.
+        await expect(video).toHaveAttribute('preload', 'none');
+        await expect(video).not.toHaveAttribute('autoplay', /.*/);
+        await expect.poll(() => video.evaluate((el) => !/** @type {HTMLVideoElement} */ (el).paused)).toBe(true);
+        expect(asked.length).toBeGreaterThan(0);
+    });
+
     test('with motion turned down the spotlight shows the still', async ({ page }) => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await openAs(page, 'v9.1.0');
