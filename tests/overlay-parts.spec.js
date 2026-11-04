@@ -250,7 +250,7 @@ test.describe('overlay parts', () => {
     });
 
     // ── 3. What's New ─────────────────────────────────────────────────────────────────────────────
-    test('What\'s New lays its entries, earlier releases and developer card on the surface', async ({ page, request }) => {
+    test('What\'s New lays its entries and earlier releases on the surface', async ({ page, request }) => {
         await setTheme(request, THEME_PER_MATERIAL.glass);
         await openDashboard(page);
         await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((c) => c.remove()));
@@ -278,12 +278,9 @@ test.describe('overlay parts', () => {
                 return {
                     entry: read('.wn-entry--new'),
                     earlier: read('.wn-earlier'),
-                    // The ask is the developer card under the headline now.
-                    dev: read('.wn-dev'),
-                    chip: read('.wn-chip'),
                 };
             });
-            for (const key of ['entry', 'earlier', 'dev']) {
+            for (const key of ['entry', 'earlier']) {
                 const part = m[key];
                 expect.soft(part, material + ': .wn-' + key + ' is not on the page').not.toBeNull();
                 if (!part) continue;
@@ -293,8 +290,6 @@ test.describe('overlay parts', () => {
                 expect.soft(part.radius, material + ': ' + key + ' has no corner').toBeGreaterThan(0);
                 expect.soft(parseFloat(part.border), material + ': ' + key + ' has a border').toBe(0);
             }
-            expect.soft(m.chip, material + ': no chip on the page').not.toBeNull();
-            if (m.chip) expect.soft(parseFloat(m.chip.border), material + ': the chip has a border').toBe(0);
         }
     });
 

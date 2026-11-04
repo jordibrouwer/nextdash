@@ -98,19 +98,10 @@ test.describe("what's new: spotlight and catch-up", () => {
         // What is open is not listed again under Earlier.
         const earlier = await modal(page).locator('[data-wn-earlier]').evaluateAll((els) => els.map((el) => el.dataset.wnEarlier));
         expect(earlier).toEqual(['v9.0.0', 'v8.0.0']);
-        // The ask is made once, under the headline release's title and before
-        // its changes -- not repeated in every release that is open.
-        await expect(modal(page).locator('.wn-dev')).toHaveCount(1);
-        const place = await page.evaluate(() => {
-            const card = document.querySelector('.whats-new-modal .wn-dev');
-            const rel = card?.closest('.wn-rel');
-            const groups = rel?.querySelector(':scope > .wn-groups');
-            return {
-                headline: Boolean(rel?.classList.contains('wn-rel--headline')),
-                beforeChanges: Boolean(groups && (card.compareDocumentPosition(groups) & Node.DOCUMENT_POSITION_FOLLOWING)),
-            };
-        });
-        expect(place).toEqual({ headline: true, beforeChanges: true });
+        // The ask is made once, in the bar at the bottom -- not repeated in
+        // every release that is open.
+        await expect(modal(page).locator('.wn-support-btn')).toHaveCount(1);
+        await expect(modal(page).locator('.wn-dev')).toHaveCount(0);
     });
 
     test('a browser that never saw the window gets only the newest release', async ({ page }) => {
@@ -170,28 +161,9 @@ test.describe("what's new: spotlight and catch-up", () => {
         await expect(page.locator('[data-config-section="monitoring"][aria-selected="true"]')).toBeVisible();
     });
 
-    test('the chips narrow every open release', async ({ page }) => {
+    test('there are no filter chips: the window is a short list, not something to narrow', async ({ page }) => {
         await openAs(page, 'v9.0.0');
-        const shown = () => page.$$eval('.whats-new-modal .wn-rel li[data-wn-kind]',
-            (els) => els.filter((el) => el.offsetParent !== null).map((el) => `${el.dataset.wnSectionName}/${el.dataset.wnKind}`));
-
-        await modal(page).locator('[data-wn-filter-value="sec:Alpha"]').click();
-        const alpha = await shown();
-        expect(alpha.length).toBe(4);
-        expect(alpha.every((s) => s.startsWith('Alpha/'))).toBe(true);
-        // v9.1.0 stays: it has an Alpha fix. With Beta it has nothing, and goes.
-        await expect(modal(page).locator('.wn-rel[data-wn-rel="v9.1.0"]')).toBeVisible();
-
-        await modal(page).locator('[data-wn-filter-value="sec:Beta"]').click();
-        await expect(modal(page).locator('.wn-rel[data-wn-rel="v9.1.0"]')).toBeHidden();
-
-        await modal(page).locator('[data-wn-filter-value="kind:new"]').click();
-        const added = await shown();
-        expect(added.length).toBe(4);
-        expect(added.every((s) => s.endsWith('/new'))).toBe(true);
-        await expect(modal(page).locator('[data-wn-filter-value="kind:new"]')).toHaveAttribute('aria-pressed', 'true');
-
-        await modal(page).locator('[data-wn-filter-value=""]').click();
-        expect((await shown()).length).toBe(6);
+        await expect(modal(page).locator('.wn-rel')).toHaveCount(2);
+        await expect(modal(page).locator('[data-wn-filter], .wn-chip')).toHaveCount(0);
     });
 });

@@ -5396,9 +5396,9 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-m
    the modal does not jump when the section menu narrows the list. Lines stay
    short because the cards and the two columns of fixes divide the width. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal:not(.analytics-notice-modal)) .modal {
-    width: min(64rem, calc(100vw - 2.5rem));
-    height: min(52rem, calc(100vh - 4rem));
-    max-height: calc(100vh - 4rem);
+    width: min(34rem, calc(100vw - 2.5rem));
+    height: auto;
+    max-height: min(46rem, calc(100vh - 4rem));
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal:not(.header-sheet),

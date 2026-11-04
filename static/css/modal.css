@@ -190,9 +190,9 @@ body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
    modal does not jump when the section menu narrows the list. The lines stay
    short because the cards and the two columns of fixes divide the width. */
 body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal:not(.analytics-notice-modal)) .modal {
-    width: min(64rem, calc(100vw - 2.5rem));
-    height: min(52rem, calc(100vh - 4rem));
-    max-height: calc(100vh - 4rem);
+    width: min(34rem, calc(100vw - 2.5rem));
+    height: auto;
+    max-height: min(46rem, calc(100vh - 4rem));
 }
 
 body:has(#config-main) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
@@ -3036,3 +3036,105 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-spots {
 
 .modal.whats-new-modal .wn-entry.wn-entry--line { grid-template-columns: 6.5rem minmax(0, 1fr) auto; }
 .modal.whats-new-modal .wn-entry--line .wn-entry-body { font-size: var(--font-size-controls); }
+
+/* ── What's New, compact ─────────────────────────────────────────────
+   One hero (a small picture beside its text), a short list under it, the rest
+   folded, and the Ko-fi ask as a bar that stays at the bottom. The window is
+   as tall as its content up to a cap, so a short release is a small modal. */
+.modal.whats-new-modal .wn-hero { margin-bottom: var(--space-2, 0.5rem); }
+/* One column, a short paragraph: the two-column summary was for the wide modal. */
+.modal.whats-new-modal .wn-hero-lead { columns: auto; max-width: none; font-size: var(--font-size-controls); line-height: 1.5; }
+.modal.whats-new-modal .wn-hero-version { font-size: calc(var(--font-size-text) * 1.6); }
+.modal.whats-new-modal .wn-block { margin-top: var(--space-3, 0.75rem); }
+.modal.whats-new-modal .wn-entry.wn-spot--media {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-3, 0.75rem);
+}
+.modal.whats-new-modal .wn-spot .wn-media { aspect-ratio: 4 / 3; align-self: start; }
+.modal.whats-new-modal .wn-spot .wn-media-img,
+.modal.whats-new-modal .wn-spot .wn-media-video { width: 100%; height: 100%; object-fit: cover; }
+.modal.whats-new-modal .wn-spot .wn-media-img { cursor: zoom-in; }
+.modal.whats-new-modal .wn-spot-title { font-size: calc(var(--font-size-text) * 1.05); }
+@media (max-width: 30rem) {
+    .modal.whats-new-modal .wn-entry.wn-spot--media { grid-template-columns: minmax(0, 1fr); }
+    .modal.whats-new-modal .wn-spot .wn-media { aspect-ratio: 16 / 9; }
+}
+
+/* The rows past the first few. */
+.wn-more { margin-top: var(--space-1-5, 0.4rem); }
+.wn-more > summary {
+    cursor: pointer;
+    list-style: none;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    padding: var(--space-1, 0.25rem) 0;
+}
+.wn-more > summary::-webkit-details-marker { display: none; }
+.wn-more > summary::before { content: '\25B8\00a0'; }
+.wn-more[open] > summary::before { content: '\25BE\00a0'; }
+.wn-more > summary:hover { color: var(--text-primary); }
+.wn-more > summary:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
+/* The bar: the ask, the button and Esc on one row; an update note above it. */
+.modal.whats-new-modal .wn-foot {
+    flex-wrap: wrap;
+    row-gap: var(--space-1-5, 0.4rem);
+}
+.modal.whats-new-modal .wn-foot-update { flex: 1 1 100%; }
+.wn-foot-note {
+    margin: 0;
+    flex: 1 1 12rem;
+    min-width: 12rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.35;
+}
+.modal.whats-new-modal .wn-foot .wn-support-btn { flex: none; }
+/* Esc is already in the header. */
+.modal.whats-new-modal .wn-foot-esc { display: none; }
+
+/* A screenshot, larger, above the modal. */
+.wn-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 2600;
+    display: grid;
+    place-items: center;
+    padding: var(--space-5, 1.5rem);
+    background: color-mix(in srgb, #000 78%, transparent);
+    cursor: zoom-out;
+}
+.wn-lightbox-img {
+    max-width: min(96vw, 80rem);
+    max-height: 90vh;
+    border-radius: var(--radius-4, 0.45rem);
+    box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.6);
+}
+
+/* The hero's explanation stays to three lines; the rows below carry the rest. */
+.modal.whats-new-modal .wn-spot .wn-entry-body {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* The rows: the section as a short label, the title, and the detail folded
+   to two lines (the "more" under it opens the rest). */
+.modal.whats-new-modal .wn-entry.wn-entry--line {
+    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+    padding-block: var(--space-1-5, 0.45rem);
+}
+.modal.whats-new-modal .wn-entry--line .wn-entry-section {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.modal.whats-new-modal .wn-entry--line .wn-entry-body {
+    font-size: var(--font-size-controls);
+}
+.modal.whats-new-modal .wn-entry--line .wn-entry-body.is-folded {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}

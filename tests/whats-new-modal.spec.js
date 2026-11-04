@@ -72,9 +72,9 @@ test.describe("what's new modal", () => {
     test('the ko-fi link is safe to open externally', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
-        // Two ways to it: the developer card and the footer.
+        // One way to it: the bar at the bottom, which stays in view.
         const links = page.locator('.whats-new-modal .wn-kofi-btn, .whats-new-modal .wn-support-btn');
-        await expect(links).toHaveCount(2);
+        await expect(links).toHaveCount(1);
         for (const link of await links.all()) {
             await expect(link).toHaveAttribute('href', 'https://ko-fi.com/jordibrw');
             await expect(link).toHaveAttribute('rel', /noopener/);
@@ -226,24 +226,29 @@ test.describe("what's new modal", () => {
      * button beside it; the footer keeps a one-line version in view while the
      * notes scroll. The header carries only Esc.
      */
-    test('the developer card sits under the headline, and the footer carries the button', async ({ page }) => {
+    test('the Ko-fi ask is a bar at the bottom, with a line of text beside the button', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
-        const place = await page.evaluate(() => {
-            const rel = document.querySelector('.whats-new-modal .wn-rel--headline');
-            const hero = rel?.querySelector(':scope > .wn-hero');
-            const card = rel?.querySelector(':scope > .wn-dev');
-            const groups = rel?.querySelector(':scope > .wn-groups');
-            if (!hero || !card || !groups) return null;
-            const follows = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-            return { afterTitle: follows(hero, card), beforeChanges: follows(card, groups) };
-        });
-        expect(place).toEqual({ afterTitle: true, beforeChanges: true });
-        await expect(page.locator('.whats-new-modal .wn-dev .wn-support-btn')).toBeVisible();
+        await expect(page.locator('.whats-new-modal .wn-dev')).toHaveCount(0);
         await expect(page.locator('.whats-new-modal > .wn-foot .wn-support-btn')).toBeVisible();
+        await expect(page.locator('.whats-new-modal > .wn-foot .wn-foot-note')).toBeVisible();
         await expect(page.locator('.whats-new-modal .modal-header :is(.wn-kofi-btn, .wn-support-btn)')).toHaveCount(0);
-        // The card asks without counting: no tally of changes in it.
-        await expect(page.locator('.whats-new-modal .wn-dev')).not.toContainText(/\d+ changes/);
+    });
+
+    test('a screenshot opens larger, and Escape closes only that layer', async ({ page }) => {
+        await loadDashboard(page);
+        await openWhatsNew(page);
+        const img = page.locator('.whats-new-modal .wn-spot .wn-media-img').first();
+        test.skip(!(await img.count()), 'the newest release has no screenshot in its highlight');
+        await img.click();
+        await expect(page.locator('.wn-lightbox .wn-lightbox-img')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.wn-lightbox')).toHaveCount(0);
+        await expect(page.locator('.whats-new-modal')).toBeVisible();
+        await img.click();
+        await page.locator('.wn-lightbox').click({ position: { x: 5, y: 5 } });
+        await expect(page.locator('.wn-lightbox')).toHaveCount(0);
+        await expect(page.locator('.whats-new-modal')).toBeVisible();
     });
 
     test('a fix is one line that opens to its explanation', async ({ page }) => {
@@ -395,7 +400,7 @@ test('the what\'s-new button is in the bottom-right corner, the toast at the bot
     expect(toast.gap).toBeLessThanOrEqual(toast.edge + 1);
 });
 
-test('Esc sits in the header right corner, over the footer Esc', async ({ page }) => {
+test('Esc sits in the header right corner', async ({ page }) => {
     await loadDashboard(page);
     await openWhatsNew(page);
     await boxSettled(page, '.modal.whats-new-modal .modal-header');
@@ -406,10 +411,8 @@ test('Esc sits in the header right corner, over the footer Esc', async ({ page }
         const pad = parseFloat(getComputedStyle(m.querySelector('.modal-header')).paddingRight) || 0;
         return {
             headEsc: Math.round(box('.modal-header .wn-modal-close').right),
-            footEsc: Math.round(box(':scope > .wn-foot .wn-foot-esc').right),
             corner: Math.round(header.right - pad),
         };
     });
     expect(Math.abs(x.headEsc - x.corner)).toBeLessThanOrEqual(2);
-    expect(Math.abs(x.headEsc - x.footEsc)).toBeLessThanOrEqual(2);
 });

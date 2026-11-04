@@ -140,10 +140,10 @@
 
     /**
      * How much explanation fits before it is folded away, counted in plain
-     * characters so markup does not decide it. Around three lines at the width
+     * characters so markup does not decide it. Around two lines at the width
      * this modal keeps.
      */
-    const ITEM_BODY_FOLD_CHARS = 190;
+    const ITEM_BODY_FOLD_CHARS = 110;
 
     function plainTextLength(html) {
         return String(html || '').replace(/<[^>]*>/g, '').trim().length;
@@ -231,6 +231,46 @@
      * loads when the reader scrolls to it.
      */
     let mediaObserver = null;
+    /*
+     * A screenshot opens larger, in a layer above the modal. Escape and a click
+     * outside put away that layer only: the notes stay where they were. The
+     * key is caught before the modal's own, which would close everything.
+     */
+    function openLightbox(img) {
+        const layer = document.createElement('div');
+        layer.className = 'wn-lightbox';
+        layer.setAttribute('role', 'dialog');
+        layer.setAttribute('aria-modal', 'true');
+        layer.setAttribute('aria-label', img.alt || wnTranslate('dashboard.whatsNewZoomLabel', 'Screenshot'));
+        const big = document.createElement('img');
+        big.className = 'wn-lightbox-img';
+        big.src = img.currentSrc || img.src;
+        big.alt = img.alt || '';
+        layer.appendChild(big);
+        const close = () => {
+            document.removeEventListener('keydown', onKey, true);
+            layer.remove();
+        };
+        function onKey(event) {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            close();
+        }
+        layer.addEventListener('click', close);
+        document.addEventListener('keydown', onKey, true);
+        document.body.appendChild(layer);
+    }
+
+    function bindLightbox(root) {
+        root?.addEventListener('click', (event) => {
+            const img = event.target.closest?.('.wn-media-img');
+            if (!img || !root.contains(img)) return;
+            openLightbox(img);
+        });
+    }
+
     function bindMedia(root) {
         if (!root || typeof root.querySelectorAll !== 'function') return;
         const videos = root.querySelectorAll('video[data-wn-video]');
@@ -356,6 +396,9 @@
      * as a highlight its first new change stands in, so the top of the modal is
      * never just a list; older releases only spotlight what was marked.
      */
+    /** New changes shown as rows before the rest fold away behind "n more". */
+    const VISIBLE_NEW_ROWS = 4;
+
     function renderReleaseBody(sections, { leads = false } = {}) {
         const added = [];
         const fixed = [];
@@ -369,7 +412,12 @@
                 (item.badge === 'new' ? added : fixed).push({ item, section: section.title, index });
             });
         });
-        let spots = added.filter(({ item }) => item.highlight === true);
+        // One hero: the newest release's first highlight (or, with none marked,
+        // its first new change). Every other highlight is a row like the rest,
+        // and an older release opened beside it has no hero at all, so the
+        // modal stays one picture and a short list.
+        const marked = added.filter(({ item }) => item.highlight === true);
+        let spots = leads ? marked.slice(0, 1) : [];
         if (!spots.length && leads && added.length) spots = [added[0]];
         const rest = added.filter((entry) => !spots.includes(entry));
 
@@ -395,15 +443,25 @@
         if (spots.length) {
             parts.push(`
             <section class="wn-block wn-block--spot" data-wn-block>
-                <ul class="wn-entries wn-spots${spots.length > 1 ? ' wn-spots--multi' : ''}">${spots.map(renderSpotlight).join('')}</ul>
+                <ul class="wn-entries wn-spots">${spots.map(renderSpotlight).join('')}</ul>
             </section>`);
         }
         if (rest.length) {
             const label = spots.length
                 ? wnTranslate('dashboard.whatsNewBlockAlsoNew', 'also new')
                 : wnTranslate('dashboard.whatsNewBlockNew', 'new');
+            // The first few stay in view; the others open on request, so a big
+            // release is a short list and one line saying how much more there is.
+            const shown = rest.slice(0, VISIBLE_NEW_ROWS);
+            const hidden = rest.slice(VISIBLE_NEW_ROWS);
+            const more = hidden.length
+                ? `<details class="wn-more">
+                        <summary>${wnTranslate('dashboard.whatsNewMoreNew', '{n} more new', { n: hidden.length })}</summary>
+                        <ul class="wn-entries wn-lines">${hidden.map(renderNewRow).join('')}</ul>
+                    </details>`
+                : '';
             parts.push(block('new', label, rest.length,
-                `<ul class="wn-entries wn-lines">${rest.map(renderNewRow).join('')}</ul>`));
+                `<ul class="wn-entries wn-lines">${shown.map(renderNewRow).join('')}</ul>${more}`));
         }
         keyGroups.forEach(({ section, index }) => parts.push(renderKeyGroup(section, index)));
         if (fixed.length) {
@@ -444,8 +502,7 @@
                         ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
                     </div>
                     ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
-                </header>
-                ${buildDeveloperHtml()}`
+                </header>`
             : `<header class="wn-rel-head">
                     <h3 class="wn-rel-version">${tag}</h3>
                     ${date ? `<span class="wn-rel-date">${date}</span>` : ''}
@@ -483,64 +540,6 @@
     }
 
     /*
-     * One row of chips over every release that is open: all, only what is
-     * new, or one section. Left out when there is nothing to narrow.
-     */
-    function buildFilterHtml(releases) {
-        const names = [];
-        const perSection = new Map();
-        let total = 0;
-        let added = 0;
-        let fixed = 0;
-        releases.forEach((data) => {
-            const kinds = countKinds(data.sections);
-            added += kinds.added;
-            fixed += kinds.fixed;
-            (data.sections || []).forEach((section) => {
-                const n = (section.items || []).length;
-                total += n;
-                if (!section.title) return;
-                if (!names.includes(section.title)) names.push(section.title);
-                perSection.set(section.title, (perSection.get(section.title) || 0) + n);
-            });
-        });
-        if (names.length < 2 && total < 4) return '';
-        const chip = (value, label, count, pressed = false) =>
-            `<button type="button" class="wn-chip" data-wn-filter-value="${escapeAttr(value)}" aria-pressed="${pressed}">${label}<span class="wn-chip-count">${count}</span></button>`;
-        return `
-            <div class="wn-filter" role="group" data-wn-filter
-                aria-label="${escapeAttr(wnTranslate('dashboard.whatsNewSections', 'Sections'))}">
-                ${chip('', wnTranslate('dashboard.whatsNewFilterAll', 'All'), total, true)}
-                ${chip('kind:new', wnTranslate('dashboard.whatsNewFilterNew', 'New only'), added)}
-                ${fixed ? chip('kind:fix', wnTranslate('dashboard.whatsNewFilterFixed', 'Fixed only'), fixed) : ''}
-                ${names.length > 1 ? names.map((name) => chip(`sec:${name}`, name, perSection.get(name))).join('') : ''}
-            </div>`;
-    }
-
-
-    /*
-     * Who makes this, under the headline of the newest release.
-     *
-     * The ask used to close the notes, as a card of its own: read after the
-     * changes it was asking about, and missed by everyone who stopped at the
-     * first screen. It is now two things. This card says who built what is
-     * listed below it, with the Ko-fi button beside it; the footer keeps a
-     * one-line version in view while the notes scroll.
-     */
-    function buildDeveloperHtml() {
-        return `
-            <section class="wn-dev" aria-label="${escapeAttr(wnTranslate('dashboard.whatsNewSupportLabel', 'Support nextDash'))}">
-                <span class="wn-dev-avatar" aria-hidden="true">JB</span>
-                <div class="wn-dev-text">
-                    <h4 class="wn-dev-title">${wnTranslate('dashboard.whatsNewSupportTitle', 'nextDash has a team of one.')}</h4>
-                    <p class="wn-dev-note">${wnTranslate('dashboard.whatsNewDevText',
-                        'Every change here was built, tested and written up in evenings and weekends.')}</p>
-                </div>
-                <a class="wn-support-btn" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">\u2615 ${wnTranslate('dashboard.whatsNewDevButton', 'Support on Ko-fi')}</a>
-            </section>`;
-    }
-
-    /*
      * The open releases: the newest, then every unread one, then the support
      * card. The filter and the "since your last visit" line sit above them.
      */
@@ -548,45 +547,9 @@
         const [first, ...unread] = releases;
         return `
             ${buildSinceHtml(releases, unreadCount)}
-            ${buildFilterHtml(releases)}
             ${renderReleaseArticle(first, { headline: true })}
             ${unread.map((data) => renderReleaseArticle(data, { unread: true })).join('')}
         `;
-    }
-
-    /*
-     * The chips act on what is drawn: nothing is fetched or re-rendered. A
-     * release opened from Earlier is left alone; its rows are its own.
-     */
-    function bindFilter(root) {
-        const bar = root?.querySelector('[data-wn-filter]');
-        if (!bar) return;
-        bar.addEventListener('click', (event) => {
-            const chip = event.target.closest('[data-wn-filter-value]');
-            if (!chip) return;
-            bar.querySelectorAll('[data-wn-filter-value]').forEach((el) => {
-                el.setAttribute('aria-pressed', String(el === chip));
-            });
-            const value = chip.getAttribute('data-wn-filter-value') || '';
-            const keep = (el) => {
-                if (!value) return true;
-                if (value.startsWith('kind:')) return el.getAttribute('data-wn-kind') === value.slice(5);
-                return `sec:${el.getAttribute('data-wn-section-name')}` === value;
-            };
-            root.querySelectorAll(':scope > .wn-rel').forEach((rel) => {
-                rel.querySelectorAll('li[data-wn-kind], .wn-group--keys').forEach((el) => {
-                    el.hidden = !keep(el);
-                });
-                rel.querySelectorAll('[data-wn-block]').forEach((block) => {
-                    const shown = [...block.querySelectorAll('li[data-wn-kind]')].filter((li) => !li.hidden).length;
-                    block.hidden = shown === 0;
-                    const count = block.querySelector('[data-wn-block-count]');
-                    if (count) count.textContent = String(shown);
-                });
-                rel.hidden = !rel.querySelector('li[data-wn-kind]:not([hidden]), .wn-group--keys:not([hidden])');
-            });
-            root.closest('.modal-body')?.scrollTo({ top: 0 });
-        });
     }
 
     /*
@@ -633,7 +596,9 @@
         return `
             <div class="wn-foot" data-wn-foot>
                 <div class="wn-foot-update" data-wn-foot-update></div>
-                <a class="wn-support-btn wn-support-btn--small" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">\u2615 ${wnTranslate('dashboard.whatsNewSupportCoffee', 'Buy me a coffee')}</a>
+                <p class="wn-foot-note">${wnTranslate('dashboard.whatsNewFootNote',
+                    'nextDash is built by one person, in evenings and weekends.')}</p>
+                <a class="wn-support-btn" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">\u2615 ${wnTranslate('dashboard.whatsNewDevButton', 'Support on Ko-fi')}</a>
                 <span class="wn-foot-esc"><span class="wn-foot-key">Esc</span> ${
                     wnTranslate('dashboard.whatsNewFootClose', 'to close')}</span>
             </div>
@@ -1267,8 +1232,8 @@
                     }
                     bindItemFolds(contentRoot);
                     bindMedia(contentRoot);
-                    bindFilter(contentRoot);
                     bindGoButtons(contentRoot);
+                    bindLightbox(contentRoot);
                     bindEarlierList(contentRoot, sessionId);
                     // The shell replaced everything the skeleton had, footer
                     // included, so the live status bar has to be put back into
