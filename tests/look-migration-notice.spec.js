@@ -13,10 +13,13 @@ async function withMigration(page, migration, theme) {
     /*
      * The theme for real, not in the page's copy only: a save the page makes
      * on its own (a tip seen) takes the server's answer for the settings it
-     * did not touch, so a theme that only the page held went back.
+     * did not touch, so a theme that only the page held went back. The same
+     * holds for the migration: an earlier test left it answered on the server,
+     * and a save's answer (the onboarding marked done, say) put that back.
      */
     if (theme) {
-        const res = await page.request.post('/api/settings', { data: { theme }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        const data = migration ? { theme, lookMigration: migration } : { theme };
+        const res = await page.request.post('/api/settings', { data, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
         if (!res.ok()) throw new Error(`theme not set: HTTP ${res.status()}`);
     }
     await page.route('**/api/settings', async (route) => {
