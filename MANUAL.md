@@ -242,6 +242,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 
 - [The kinds](#161-the-kinds)
 - [Adding and arranging](#162-adding-and-arranging)
+  - [When a widget shows](#widget-when-it-shows)
 - [On the dashboard](#163-on-the-dashboard)
 - [System widgets and what they need](#164-system-widgets-and-what-they-need)
 - [The Custom widget](#165-the-custom-widget)
@@ -1053,7 +1054,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Updated** — a toast after an upgrade, once the release notes are closed: *Updated from v1.21.0 to v1.22.0. The notes are under the ★ button.* It reports what happened and never asks anything; it comes once per version and not on a new install.
 - **Others** — browser notifications, the theme studio and the tour of what moved.
 
-Each review card has a switch under Behavior → Privacy & sync → Onboarding, the four above included (*Offer image update checks*, *Offer to re-check links*, *Offer the browser extension*, *Show what changed after an update*). The same place lists the cards — kept links, the theme studio, tag suggestions, health review, the install count, the weekly digest and analytics — each with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
+Each review card has a switch under Behavior → Privacy & sync → Onboarding, the four above included (*Offer image update checks*, *Offer to re-check links*, *Offer the browser extension*, *Show what changed after an update*) and *Offer to review tag suggestions*. The same place lists the cards — kept links, the theme studio, tag suggestions, health review, the install count, the weekly digest and analytics — each with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
 <a id="the-link-preview-card"></a>
 
@@ -1397,7 +1398,14 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `Tab` | Onto the `//`, where `Space` picks the block up ([§9.2](#92-categories)) |
 | `Shift + F10` | The header menu |
 
-The arrow keys walk into a widget and through its rows; `Enter` does what clicking the row does.
+The arrow keys walk into a widget and through its rows; `Enter` does what clicking the row does. On a row:
+
+| Keys | Action |
+|------|--------|
+| `Ctrl/Cmd + Enter` | Open the address the row stands for in a new tab, where it has one (the Uptime rows do) |
+| `Shift + F10` | The menu for the row and its widget: the row's own action first, then rename, width and close (right-click does the same) |
+
+On a tab of a **Tabs** widget, `←` and `→` move one tab, `Home` goes to the first and `End` to the last. Holding the pointer on a widget's title renames it, as on a category header; a double-click does the same.
 
 <a id="75-selecting-several"></a>
 
@@ -1586,6 +1594,9 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:monitor` · `:monitor off` | How many bookmarks are checked · switch checking off everywhere (asks first) |
 | `:config [section]` | A config section, for example `:config appearance` |
 | `:backup` · `:export` · `:trash` | Backups · download a backup · the trash |
+| `:share` · `:import` | Share the page on screen as a template file ([§9.8](#98-page-templates)) · restore from a backup (`.zip`) or import a page from a template file |
+| `:archive <bookmark>` | Keep a local copy of that bookmark's page, or of the bookmark the cursor is on when you type no name ([§12.6](#126-keeping-a-copy-of-a-page)) |
+| `:ask [question]` · `:tour [name]` | Open the assistant, and ask a question straight away when one follows ([§24.11](#2411-the-assistant)) · list the guided tours and replay one |
 | `:favicons fetch` · `:favicons on\|off` | Download every icon again · show icons |
 | `:metadata` | Bookmarks without a preview |
 | `:theme <name>` · `:dark` | Theme · flip light and dark |
@@ -1593,6 +1604,11 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:depth` · `:surface` · `:effects` · `:widgetbg` · `:widgetopacity` · `:glow` · `:contrast` · `:backdrop` · `:pattern` · `:harmonize` | Surfaces ([§17](#17-appearance)) |
 | `:layout <preset>` · `:density` · `:columns <1-6>` · `:spacing` · `:columngap` · `:margins` · `:width on\|off\|all` · `:rows` · `:packed` · `:fontsize` | Grid |
 | `:switcher` · `:buttonstyle` · `:maxtabs` · `:maxactions` · `:buttons` · `:header` | Header and action buttons |
+| `:action` / `:actionbar` · `:action on\|off` · `:action keys [on\|off]` · `:action hide [seconds]` | Where the action bar stands (`right`, `left`, `bottom`, `header` or `menu`, one menu behind a button), switch it on or off, show the key on each button, and how long a docked bar waits before it slides away (0, 2, 5, 10 or 30 seconds) |
+| `:clock` · `:time` · `:unit` | Where the header clock stands (on its own line, beside the view name, or in a column of its own) · 24-hour or 12-hour time · weather in °C or °F |
+| `:weather` · `:weather <town>` | Which town the weather is read from, with *Clear the town*; a town after it sets that town and switches the weather line on |
+| `:highlight subtle\|strong` · `:items [n]` | How strongly the row under the cursor is lit · how many bookmarks a category shows before *+N more* (0 shows every bookmark; 5, 8, 10, 15 or 20, or any number up to 200) |
+| `:collapse on\|off` · `:empty on\|off` · `:tags on\|off` | Start every category folded or open · hide categories with nothing in them · show tags on the rows |
 | `:preview` · `:title` · `:opacity` · `:animations` · `:status` · `:shortcuts` · `:lang` | Display toggles |
 | `:locklayout` | Lock or unlock drag and drop |
 | `:legend` · `:hypr` | The key legend under the grid on or off · Hypr mode on or off ([§6](#hypr-mode)) |
@@ -1855,7 +1871,7 @@ nextDash proposes tags for bookmarks that lack them. It never tags anything behi
 - **In the rows** of the Bookmarks view, the inbox and the tag view: a dashed chip after a row's tags. Click it to add the tag, **×** to turn it down. A suggestion comes first in the row; when there is no room, the row's own tags fold into **+n**, and further suggestions into **+N**. **+N** opens a list of every suggestion for that row, each to add or turn down; **+n** lists the tags the row already carries. A line over the list counts them, *7 tag suggestions in this list · Add all*.
 - **One bookmark at a time** — in the bookmark form, the Bookmarks view's side panel, `Shift + T` and the selection's tag picker, under **Suggested** ([§10.1](#101-tags-on-a-bookmark)). In the form and the tag popover, **Read page** reads that one page when nothing else turns up.
 - **Grouped** — Config → Bookmarks → Tag suggestions proposes one tag for a whole group: every bookmark on a site, or every bookmark an app or rule covers. Each row names its source and its count; click the row or its count to open the group and leave single bookmarks out. **Apply** tags the rest (undo in the toast). At most 25 rows show at a time.
-- **A corner card** offers a look when ten suggestions are waiting; switch it off under Behavior → Privacy & sync → Onboarding.
+- **A corner card** offers a look when ten suggestions are waiting; switch it off with **Offer to review tag suggestions** under Behavior → Privacy & sync → Onboarding.
 
 Opening a view never goes online by itself: the rows show what the catalogue, your rules, your own tags and pages already read can say.
 
@@ -2067,7 +2083,7 @@ An **ⓘ** beside the menu explains the view, and **Tour** next to it plays a fi
 - **Monitors** — a row of figures (down now, average response over 24 hours, outages and total downtime over 30 days, the longest outage, the monitor with the most outages), then fleet cards: uptime across all monitors, the least available over 7 days, what got slower than last week, and outages — which monitors went down, how often and for how long, drawn as a 30-day lane per monitor (the full list behind **Show list**).
 - **Trend** — a trend chart over 90 days with series pills (healthy %, score, broken, monitors down, stale, unchecked) and its figures beside it: now, change over the period, lowest, highest, average, spread, days up and down, the biggest rise and fall in a day. Under it, **Every monitor, per day**: a bar a day for the uptime of all monitors together and the day's mean response as a line, with its own figures (checks, days without a miss, lowest and slowest day, uptime over 30 days), and **Uptime by weekday**.
 
-The charts here, in Statistics and in a bookmark's health in large have a time axis and a value axis, a tooltip, a drag to zoom, and the arrow keys with the point read out under the chart; a screen reader gets each chart as a table.
+The charts here, in Statistics and in a bookmark's health in large have a time axis and a value axis, a tooltip, a drag to zoom, and the arrow keys with the point read out under the chart (`Shift` steps ten readings); a screen reader gets each chart as a table. On a focused chart, `+` and `-` zoom in and out around the reading and `0` shows the whole range.
 
 It fits one screen, and steps its cards down on a small window.
 
@@ -2195,7 +2211,7 @@ Set the mode in the bookmark form, the Bookmarks view's side panel, the right-cl
 
 | Tab | Group | Settings |
 |---|---|---|
-| **Checks** | **Checks in this browser** | How often, skip fast pings, retries for offline bookmarks |
+| **Checks** | **Checks in this browser** | How often, skip fast pings, **Retries before offline** (1–10) and **Delay between retries (ms)** (100–3000, 450 by default; it only applies while retries are still running) |
 | | **Checks on the server** | Re-check in the background (on by default) and how often, the **check timeout** (5–30 s), **spot pages that answer 200 but say "not found"**, **Serve uptime badges** and when certificate warnings start |
 | | **Monitored bookmarks on the dashboard** | How much they stand out: only when there is a problem (default), always, or never |
 | **Notifications** | **Downtime alerts** and **Browser notifications** | See [§12.4](#124-alerts) |
@@ -2283,7 +2299,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 - **ntfy** alerts carry **Open link** and **Health** buttons, and a failure is sent at a higher priority than a recovery. Fill in **Address of this dashboard** for the Health button; it links to `/#health`, which redirects into the Bookmarks view.
 - Local addresses are refused unless *Allow local bookmarks* is on.
 - **Many at once** — when a host takes many bookmarks down together, the alerts are collapsed into one message. Certificate warnings are always separate.
-- **Certificates** — warnings at 30, 7 and 3 days before expiry, through the same channels, and to any webhook subscribed to `health.cert-expiring` ([§20.3](#203-webhooks)).
+- **Certificates** — by default warnings at 30, 7 and 3 days before expiry; **Warn about certificates** (Monitoring → Checks) offers *Default (30 days ahead)* or *n days ahead* (3 to 120), and the two later warnings follow in the same proportion. They go through the same channels, and to any webhook subscribed to `health.cert-expiring` ([§20.3](#203-webhooks)).
 - **Domains** — the registration behind your bookmarks, looked up through the registries' public RDAP service. On by default; **Monitoring → Checks → Look up when my domains expire** switches it off. Only the domain names of checked and monitored bookmarks are looked up, one request per domain a day, and each name goes to the registry of its extension (Verisign for `.com`, for example). Warnings come at 60, 7 and 3 days (**Warn about domains** moves the first), by the same channels, and to any webhook subscribed to `health.domain-expiring`. Not every registry publishes a date: `.nl` answers without one, and `.de`, `.io`, `.be`, `.eu` and a few others have no RDAP service. Those domains are listed as having no date and are never warned about. In the Bookmarks view a bookmark whose domain is close gets a **Domain** badge, and the **Domains** filter lists them.
 
 <a id="muting-one-bookmark"></a>
@@ -2292,7 +2308,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 
 <a id="browser-notifications"></a>
 
-**Browser notifications** reach a device even with nextDash closed. Switch them on from the dashboard card or under Monitoring → Notifications, then press **Enable on this device** and allow notifications. A test notification follows.
+**Browser notifications** reach a device even with nextDash closed. Switch them on from the dashboard card or under Monitoring → Notifications, then press **Enable on this device** and allow notifications. A test notification follows. **Contact address for push services** (under Monitoring → Notifications, with these settings) is an address push services can reach you at if a notification is misused; some of them require one.
 
 | Notifies about | Default |
 |---|---|
@@ -2316,7 +2332,7 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 - **Where it arrives** — every week as a card in the corner of the dashboard, *Your week in nextDash*, that names the one or two things that matter most; and as a browser notification when those are on, through the service under **Downtime alerts**. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
 - **The card** — **Read the digest** opens the window. **Snooze 1 day** hides the card until tomorrow. **Got it** marks it seen; unless you opened the window, the card returns once the next day and once the day after, and then stays away until the next digest. Progress, snooze and reminders are kept per browser.
 - **Reading it** — along the top is **the week in figures**: bookmarks opened, bookmarks added, uptime with the number of outages, and the links in the Inbox with how many are new, each next to the week before (▲ and ▼, green when it went the better way). A figure with nothing behind it is left out, so a new install shows a short row. The Overview carries two charts: **Bookmarks opened per day** as seven bars, and **Uptime per day** as a line. Lines that show a number of days spell them out (*3 days left*, *down for 2 days*). The window opens on an **Overview**, one line per part saying where it stands, and lists the parts on the left in three groups: **Needs you** (broken links, certificates, domains, container updates), **Tidy up** (the checkup, never opened, not opened in 30 days) and **Good to know** (the Inbox, most opened, what is new in nextDash), with a sentence on top that names what matters most. The part you pick is shown in full on the right: what it means, the names behind the count with what matters about each — a broken link with its page, since when it is down and what the last check said; the most opened with how often; never opened with their page; not opened lately with how long ago; the Inbox with how long its oldest link has waited — certificates and domains as bars of days left, and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Start the checkup**, **Review**, **Open Inbox**, **Open What's new**. The close button at the top and **Close** at the bottom are always in view; only the middle scrolls. After a part's button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the one after; it closes itself once every part is opened. Its **×** asks first, because the digest may still hold something important: **Keep it** or **Close until Monday**. Clicking the push notification opens the same window.
-- **Setting it up** — Monitoring → Notifications → **Weekly digest**: **On** (the day), **At** (the hour), and which parts go in — **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**; broken links and certificates always stay. The figures along the top follow the parts: uptime and outages stay with the broken links, while the opens, the added bookmarks and the Inbox go with **Include most opened, unused and Inbox**. **The latest digest → Show** opens the last one again, as does the digest panel in Config → Overview; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
+- **Setting it up** — Monitoring → Notifications → **Weekly digest**: **On** (the day), **At** (the hour), and which parts go in — **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**, **Include what the watched feeds published**; broken links and certificates always stay. The figures along the top follow the parts: uptime and outages stay with the broken links, while the opens, the added bookmarks and the Inbox go with **Include most opened, unused and Inbox**. **The latest digest → Show** opens the last one again, as does the digest panel in Config → Overview; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
 
 <p align="center"><img src="screenshots/manual.md/12-weekly-digest.jpg" alt="The weekly digest window: the week in figures along the top, the Overview chosen on the left above three groups of parts (Needs you, Tidy up, Good to know), and on the right one line per part saying where it stands" width="860"></p>
 <p align="center"><sub>The weekly digest: the week in figures on top, the Overview on the right.</sub></p>
@@ -2363,7 +2379,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 Set up under **Data & backups → Sources**.
 
 - **Web Archive** — **Archive new bookmarks** asks the Internet Archive to keep a copy the day you save a link. An archive.org key pair ([archive.org/account/s3.php](https://archive.org/account/s3.php)) raises the daily allowance; **Save a copy…** tests it. The panel says what became of a capture.
-- **Local copies** — saves a whole page (text, styling, images) as one file in your data directory, using [monolith](https://github.com/Y2Z/monolith), which the container includes. Pages up to 52 MB. **Bookmarks → Local copies** lists copies per bookmark, says why a copy failed or saved an empty page, and can remove them all (it says how much space that frees).
+- **Local copies** — saves a whole page (text, styling, images) as one file in your data directory, using [monolith](https://github.com/Y2Z/monolith), which the container includes. Pages up to 52 MB. For a page that is not a bookmark, paste its address in **Page to save** and press **Save a copy…**. **Bookmarks → Local copies** lists copies per bookmark, says why a copy failed or saved an empty page, and can remove them all (it says how much space that frees).
 - **archive.today** — a second archive that keeps what it captured.
 
 On a bookmark's Health tab, **Find in Web Archive** reads the archive's index for the last capture that was a real page.
@@ -2574,7 +2590,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.2 What you see
 
-- **News.** A bookmark with news gets a stripe, a bold name, the newest headline, a badge with a halo and a dot on the page tab; a feed icon marks watched bookmarks (**Settings → Show a feed icon on watched bookmarks**, on). One toast covers all sites, the browser tab shows a count, and **Push notifications → Notify when a watched feed has news** (on by default) sends a notification. Hovering shows the preview card that leads with the news (**Open reader**, **Open page** and a pager for up to three items, [§4](#the-link-preview-card)). Clicking a row with news opens a popover with six headlines, a **Reader** button and an open-site button; "+n more" expands it in place up to 10. On a phone there is no hover: a tap shows the headlines first (five), **Reader** opens the news window, and the bar on top goes to the site.
+- **News.** The **Watch feeds news** widget ([§16.1](#161-the-kinds)) lists the sites with news on the dashboard. A bookmark with news gets a stripe, a bold name, the newest headline, a badge with a halo and a dot on the page tab; a feed icon marks watched bookmarks (**Settings → Show a feed icon on watched bookmarks**, on). One toast covers all sites, the browser tab shows a count, and **Notify when a watched feed has news** (Config → Watch feeds → Settings, on by default) sends a notification. Hovering shows the preview card that leads with the news (**Open reader**, **Open page** and a pager for up to three items, [§4](#the-link-preview-card)). Clicking a row with news opens a popover with six headlines, a **Reader** button and an open-site button; "+n more" expands it in place up to 10. On a phone there is no hover: a tap shows the headlines first (five), **Reader** opens the news window, and the bar on top goes to the site.
 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-flow.svg" alt="A site feed is read by the nextDash server on the interval you chose, from 30 minutes to 24 hours. What it finds appears in three places: a row on the dashboard with a stripe, a bold name and a badge; the preview card on hover, with Open reader and Open page; and the news window opened with Shift and N, which comes in three layouts. Small dots travel from the feed to the server and on to the three places, which light up when the news arrives" width="720"></p>
 <p align="center"><sub>From feed to screen: nextDash reads, and the news shows on the row, in the preview card and in the news window.</sub></p>
@@ -2603,7 +2619,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.4 Managing it
 
-- **Manage in one place.** **Config → Watch feeds** has two tabs, like the other sections. **Feeds** lists every watched feed with its newest item; per feed you can **mute** it, **pause** it or set a **word filter**. **Settings** holds how long the news stays open, how it is shown, the feed icon, the statistics and the notifications. **Stats → Watch feeds** shows the numbers, with a period switch. Nothing is sent to anyone: nextDash only reads the feeds.
+- **Manage in one place.** **Config → Watch feeds** has two tabs, like the other sections. **Feeds** lists every watched feed with its newest item; per feed you can **mute** it, **pause** it or set a **word filter**. **Settings** holds how long the news stays open, how it is shown, the feed icon, the statistics and the notifications (see **What the settings do** below). **Stats → Watch feeds** shows the numbers, with a period switch. Nothing is sent to anyone: nextDash only reads the feeds.
 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-config.jpg" alt="Config, Watch feeds: six watched feeds with their newest count, when they were checked, the interval and a Mute button; one feed shows Paused, one Muted and one a word filter, and above the list Open the paper, Check all now and Watch more" width="720"></p>
 <p align="center"><sub>Config → Watch feeds: every feed with its news, interval, mute, pause and word filter.</sub></p>
@@ -2611,6 +2627,14 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-stats.jpg" alt="Stats, Watch feeds tab: tiles for feeds watched, items this week, read share, unread now, errors and busiest feed, a bar chart of items per day with a period switch, health this week, a table per feed and a heat map of when a site publishes" width="640"></p>
 <p align="center"><sub>Stats → Watch feeds: what the feeds publish, what you read and how their checks go.</sub></p>
 
+- **What the settings do.** On **Config → Watch feeds → Settings**:
+  - **Keep the news modal open for** — 15 minutes, 30 (the default), 1 hour or 2 hours; see **When it goes away** below.
+  - **Show news as** — *Newspaper*, *Two columns* or *One column*.
+  - **Open the news when I come back to the tab** (off) — when you return to the tab and a feed that is not muted has unread news, the news opens by itself, once per return. Never on a phone or tablet.
+  - **Show a feed icon on watched bookmarks** (on).
+  - **Keep statistics about watched feeds** (on) — counts what the feeds publish, what you read and how their checks go, for Stats → Watch feeds. Only numbers are kept, never titles or text. **Keep daily numbers for** takes 30 days, 90 days (the default) or 1 year; older days are added up per week and kept for two years, and a feed you stopped watching is forgotten 90 days after it stops. **Reset feed statistics → Reset** forgets every counted number, after asking; counting starts again from now.
+  - **Notify when a watched feed has news** (on) and **Also send news to the alert channel (ntfy, Gotify, Discord…)** (off) — the second sends the same news through the service set under Downtime alerts ([§12.4](#124-alerts)).
+  - **Mute** on a feed (**Toast and push** in its detail, or the **Mute** button on its row) — a muted feed still counts and shows in the news window, but never produces the toast, the push or the alert channel message, and never opens the news on return.
 - **When it goes away.** Opening the bookmark (or an article's headline) clears its count. The purple mark and the window close by themselves after 15, 30 (default), 60 or 120 minutes, counted from when the tab is in view; the news itself stays until you open the bookmark. `status:watched` and `status:unwatched` search for followed bookmarks.
 - **What it keeps.** The ten newest new items of each feed, with their text and picture, and 50 recent entries as short copies without pictures; the ids of the last 75 entries are remembered so nothing counts as new twice. A feed that fails five times in a row is paused and tried again once a day. **Check watched feeds now** polls them all at once.
 
@@ -2688,7 +2712,7 @@ Selecting a container opens its side panel, with four tabs. Its head shows the c
 The **✎** on the icon in the panel's head chooses what the container shows: **Choose app icon…** opens the icon search, **Use letter** keeps the plain letter, and **Automatic** goes back to the icon the sets matched. The choice is kept per container name, so it survives an update. nextDash's own container has no pencil.
 
 - **Overview** — an accordion of **Details**, **Health**, **Updates**, **Timeline**, **Network**, **Custom**, **Bookmark**, **Volumes** and **Environment**. **Health**, for a container with a healthcheck, shows its status, how many checks failed in a row, the check it runs, and the last five checks — each a mark and a time, a failed one with its exit code and output. **Volumes** lists each mount by where it appears in the container, with where it comes from under it and a tag for its kind (bind, volume) and for read-only. **Updates** is [§15.5](#155-actions-and-updates). **Timeline** is what happened to the container, newest first: starts and stops (by you or by nextDash), crashes with their exit code, out-of-memory kills, a run of crashes as one *Kept restarting* line, health changes, pauses, updates and rollbacks. nextDash writes these down from Docker's own events, whatever the notices are set to — a hundred per container, for thirty days, from the moment this version runs. **Details** also gives its size (written, and with its image) and says whether its notices are on, muted or off. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it. **Bookmark** shows the bookmark of its web UI — name, address, what its checks say and how it was found — with **Open in Bookmarks**, and **Linked bookmark** to choose: *Automatic* (naming what it found), *No bookmark*, or any bookmark by hand.
-- **Resources** — CPU, memory, size, **Network** (in and out) and **Disk I/O** (read and written), with four charts under them: CPU, memory, network and disk I/O over the last hour — one cursor across the four, a tooltip, a drag to zoom (double-click or `0` back), and the arrow keys to walk the points with the value read out. Network and disk are rates between two samples, so they show a dash until there are two. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
+- **Resources** — CPU, memory, size, **Network** (in and out) and **Disk I/O** (read and written), with four charts under them: CPU, memory, network and disk I/O over the last hour — one cursor across the four, a tooltip, a drag to zoom (double-click or `0` back), and the arrow keys to walk the points with the value read out (`Shift` steps ten; `+` and `-` zoom in and out around the reading, `0` shows the whole hour). Network and disk are rates between two samples, so they show a dash until there are two. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
 - **From Glances** — for a container the linked Glances host knows: what Glances recorded about it, with **Open in Glances ↗**; the moments it restarted are marked on the Glances graphs ([§16A.6](#16a6-the-docker-host)).
 - **Logs** — the last lines, with **Refresh** and **Open logs window** ([§15.8](#158-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
@@ -2965,7 +2989,6 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 |---|---|
 | **Inbox** | How much is waiting, and how old the oldest is. A line under the rows counts the snoozed links (*3 asleep*); a link saved from another tab or the extension shows without a reload, and a snoozed link comes back when it wakes |
 | **Unsorted** | Links kept from the inbox without a page yet — newest first, at random, by one tag or grouped under every tag, with each address under its title. A row opens the Bookmarks view on Unsorted, with that bookmark's side panel; the overflow row reads **Open Unsorted**. |
-| **Feeds** | Feeds with news, and feeds that stopped after repeated failures; a stopped feed has a **Retry** button that tries it again now instead of tomorrow, and **Retry all** tries every stopped feed at once |
 | **Sources** | What each import source last did |
 
 *What needs tidying?*
@@ -3032,6 +3055,7 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **Weather** | Current conditions and a forecast (3 days, 5 days or 24 hours), from the settings under Appearance → Date & weather; wide, it adds what it feels like, the wind, the humidity and the chance of rain |
 | **Calendar** | What is coming up, from the **Calendar feed URL (.ics)** under Appearance → Date & weather |
 | **RSS** | The newest articles from up to ten feed addresses set on the widget, merged newest first |
+| **Watch feeds news** | The sites with new items from the feeds you watch ([§14](#14-watch-feeds)). **Layout**: *Sites, one row each*, *Headlines with pictures* or *Compact chips*. It fetches nothing itself; every way in leads to the news window |
 | **Notes** | A text of your own, read as Markdown, with checkboxes you tick on the tile; up to 6,000 characters |
 | **Clock** | The time where you are, and in the other places you add as **Name=Region/City** (for example `Tokyo=Asia/Tokyo`), with *tomorrow* or *yesterday* where the date differs. **Use a 12-hour clock** and **Show today's date** are switches |
 | **Countdown** | The days left to a **Date**, or since it. The widget's title says what it counts to. An optional **Time of day** and **Count in hours and minutes near the end** switch the figure to hours and minutes in the last two days |
@@ -3067,6 +3091,30 @@ And the **Custom** widget, which reads any service that answers with JSON ([§16
 
 A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile is a link to the rows behind it.
 
+**Settings per kind.** Besides the ones named above, the settings panel of these kinds offers the following. Switches are off unless a default says on. **Rows to show** is 1 to 20 and is five by default, except Sources (six) and Backups (three).
+
+| Kind | Settings |
+|---|---|
+| **Processor** | **Refresh every (seconds)** (1 to 3600, 5 by default), **Show load average**, **Show core count** |
+| **Memory** | **Refresh every (seconds)** (2 to 3600, 10 by default), **Show the file cache**, **Show swap** |
+| **Disks** | **Disks to show** (paths such as `/mnt/user`), **Names for them** (written `path=name`), **Show a bar per disk** (on), **Show how full the file table is**, **Refresh every (seconds)** (5 to 3600, 60 by default) |
+| **Containers** | **Refresh every (seconds)** (2 to 3600, 30 by default), **Name what is failing**, **Name what just restarted** |
+| **Container list** | **Rows per column** (1 to 20, 6 by default), **Refresh every (seconds)** (5 to 3600, 30 by default) |
+| **Health** | **Figures to show**: *Broken*, *Down now*, *Content changed*, *Healthy*; none ticked shows all four |
+| **Uptime** | **Only what is down now**, **Show a sparkline per row** (on), **Only bookmarks with these tags**, **Rows to show** |
+| **Certificates** | **Expiring within (days)** (1 to 730, 30 by default), **Rows to show** |
+| **Domains** | **Expiring within (days)** (1 to 730, 60 by default), **Rows to show** |
+| **Health trend** | **Days to plot** (7 to 90, 30 by default) |
+| **Inbox** | **Rows to show**, **Show where each link came from** (on) |
+| **Sources** | **Only sources that failed**, **Rows to show** |
+| **Neglected** | **Not opened for (days)** (7 to 730, 180 by default), **Count bookmarks never opened** (on), **Only bookmarks with these tags**, **Rows to show** |
+| **Archive** | **Count only the links that are already broken**, **Rows to show** |
+| **Blind spots** | **Count as stale after (days)** (1 to 730, 30 by default), **Count bookmarks with checking switched off**, **Rows to show** |
+| **Duplicates** | **Report from this many copies** (2 to 20, 2 by default), **Rows to show** |
+| **Trash** | **Mark as urgent within (days)** (1 to 30, 7 by default), **Rows to show** |
+| **Backups** | **List the backups themselves** (on), **Rows to show** |
+| **Jellyfin — now playing**, **Emby — now playing**, **Plex — now playing** | **Hide who is watching** (hides the names of the viewers), **Refresh every (seconds)** (5 to 300, 10 by default) |
+
 <a id="162-adding-and-arranging"></a>
 
 ### 16.2 Adding and arranging
@@ -3094,7 +3142,13 @@ Every widget's settings come in the same three folding sections, in this order, 
 - **Display** — what you see on the tile: the page, the width, what to show, the order, how many rows, the style and, for Custom, the figures. It is open.
 - **Advanced** — how often it refreshes, how long an answer is kept, where a click goes, and when the widget shows. It is folded.
 
-**When a widget shows.** Every kind has, under Advanced, **Show from (time of day)**, **Show until (time of day)** and **Show on** (Mon to Sun). Outside them the widget is off the dashboard; its settings are kept. Set both times or neither. An end before the start runs past midnight. With no day ticked the widget shows every day, and so it does with all seven ticked.
+<a id="widget-when-it-shows"></a>
+
+#### 🕒 When a widget shows
+
+Every kind has, under Advanced, **Show from (time of day)**, **Show until (time of day)** and **Show on** (Mon to Sun). Outside them the widget is off the dashboard; its settings are kept. Set both times or neither. An end before the start runs past midnight. With no day ticked the widget shows every day, and so it does with all seven ticked.
+
+A clock that shows only in office hours: **Show from** `08:00`, **Show until** `18:00`, **Show on** Mon to Fri. A widget for the night shift: from `22:00` until `06:00`, which runs past midnight into the next morning.
 
 Open or shut a section yourself, or work in one, and it stays that way while Config is open, even as the panel redraws; close Config and they go back to these starting states. Save and Discard stay below the sections and cover all three.
 
@@ -3132,7 +3186,7 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 
 Then the settings of the kind. Sonarr and Radarr: **Show** (what is coming, what is downloading, or both) and **Look ahead** (1–30 days). Seerr: **Show** (every request, waiting for approval, approved and on its way, or arrived) and **Films or series**. qBittorrent and SABnzbd: **Show** (everything, downloading, paused or finished), **Order** (newest, furthest along or fastest first), **Leave out what has finished**, **Leave out the speeds on top**, and a layout of **One list** or **A tab per part**. All of them: **A click** (open the item in the service, or show its details here first), where it opens, **Items to show** and **Refresh every** — a minute at least for the first three, 15 seconds for the download clients, which change while you look. The keys stay on the server, as with Jellyfin. Seerr's posters come from TMDB, which your server fetches without any key. A failure keeps the last answer and says how old it is; a refused key or sign-in says so on the tile.
 
-**Home Assistant** — fill in the address of your Home Assistant (`http://homeassistant.local:8123`) and a **long-lived access token** (Home Assistant: your profile, under Security) and press **Connect**. The server lists your entities in a searchable list you can narrow by kind (lights, switches, sensors, scenes and so on); pick up to 60 and set their order with ↑ and ↓. Then the **Layout** (a **list** of loose items, or a **strip** with a tab per room), **Group by** (room, kind or nothing), **Show when it last changed**, what **A click** does, where it opens, **Items to show** and **Refresh every** (15 seconds at least, 30 by default). Lights, switches, fans and `input_boolean` entities switch with one click and a scene or a script has a **Start** button; switching needs the write token, like the other actions. A lock, a cover or a door is shown and never operated. The token stays on the server.
+**Home Assistant** — fill in the address of your Home Assistant (`http://homeassistant.local:8123`) and a **long-lived access token** (Home Assistant: your profile, under Security) and press **Connect**. The server lists your entities in a searchable list you can narrow by kind (lights, switches, sensors, scenes and so on); pick up to 60 and set their order with ↑ and ↓. Then the **Layout** (a **list** of loose items, or a **strip** with a tab per room), **Group by** (room, kind or nothing), **Show since when**, what **A click** does, where it opens, **Items to show** and **Refresh every** (15 seconds at least, 30 by default). Lights, switches, fans and `input_boolean` entities switch with one click and a scene or a script has a **Start** button; switching needs the write token, like the other actions. A lock, a cover or a door is shown and never operated. The token stays on the server.
 
 **Beszel** — fill in the hub's address (`http://beszel.local:8090`), and the **Email** and **Password** of a Beszel user who can see the systems; a read-only user is enough. Press **Connect**: nextDash signs in itself and says *Connected to Beszel* with how many systems it found, then lists them. **Beszel systems**, **Beszel attention** and **Beszel storage** take **Systems** as boxes to tick — all ticked means every system, including one added to the hub later — and **Beszel system** takes one **System**. Then **Figures to show** (Processor, Memory, Disk and Temperature to start with, plus Graphics card, Network and Load; a figure the agent does not report is left out, never shown as zero), **Order** for Beszel systems (**By name**, **Busiest first** or **Trouble first**), **Leave out paused systems**, what **A click** does (open the system in Beszel, or show its details here first), where it opens, **Items to show** and **Refresh every** (30 seconds at least, a minute by default — Beszel measures once a minute). The four tiles on one page ask the hub once per refresh, not four times. The password stays on the server, and nextDash signs in again when the session runs out. A hub that does not answer says *could not be reached*; a refused password says so on the tile.
 
@@ -4072,7 +4126,7 @@ Each chip group has **Show all / Hide all**.
 
 - **Clock & weather** — leads the tab: where they stand — beside the view name, in a column of their own, or on their own line.
 - **Date & time** — show date, show time (chips), date format, 12- or 24-hour clock.
-- **Weather** — on or off, **Location source** (a city you type, or *Automatic (by IP)*), Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings, and with Fahrenheit the Glances page writes its temperatures in °F too.
+- **Weather** — on or off, **Location source** (a city you type in **Weather location**, or *Automatic (by IP)*), Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings, and with Fahrenheit the Glances page writes its temperatures in °F too.
 - **Calendar** — **Calendar URL** (the link in the date popover) and **Calendar feed URL (.ics)** (what the Calendar widget reads).
 
 <a id="179-finding-and-resetting"></a>
@@ -4333,7 +4387,7 @@ The other tabs:
 
 - **Tags** — rename or delete a tag everywhere ([§10.3](#103-managing-tags)).
 - **Tag suggestions** and **Your rules** — [§10.4](#104-tag-suggestions).
-- **Settings** — what a new bookmark starts with (**Availability**, which is **Periodic** unless you change it; pinned; monitor interval), when bulk actions ask first, the stale threshold, and the archive used for *See an old copy*.
+- **Settings** — what a new bookmark starts with (**Availability**, which is **Periodic** unless you change it; pinned; monitor interval), when bulk actions ask first, the stale threshold, and **Archive service**, the address used for *See an old copy* (`https://web.archive.org/web/*/{url}` by default; `{url}` stands for the bookmark's address, so a self-hosted ArchiveBox or archive.today works too).
 - **Local copies** — [§12.6](#126-keeping-a-copy-of-a-page).
 
 <details>
@@ -4349,7 +4403,7 @@ The other tabs:
 
 | Tab | Settings |
 |---|---|
-| **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§16](#16-widgets)) |
+| **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **On phones and tablets** ([§23](#23-phones-tablets-and-the-installed-app)); **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§16](#16-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
 | **Privacy & sync** | **Count this install** (on by default, [§24.8](#248-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips and how often they come, whether a section offers its tour on a first visit, the review and offer cards, every tour (replay it with its button), *Show quick start again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
 
@@ -4519,6 +4573,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 | **Health** | Healthy share, broken, uptime over 30 days, average response, certificates expiring within 30 days, health score | **Status now and over time** (with **Open Health**), **Certificates**, **Issues by type**, **Archive coverage**, **Notifications** — open alerts and how long they have been down, what is held in quiet hours, push devices, webhooks, the alert service and the last weekly digest |
 | **Server** | Containers running, unhealthy, updates waiting, crashes in 30 days, Unraid array used, last backup | **Container trouble and updates** per day, **Most restless**, **Resources now**, **Docker disk**, **Unraid disks**, **Unraid** (parity, VMs, UPS, notices), **Automatic backups** and **Container updates**. A panel without a connection says what is missing and links to where to set it up |
 
+- **Watch feeds** has a tab of its own: the numbers behind [§14.4](#144-managing-it).
 - **Showing** narrows every figure to one page. It appears only when there is more than one page. The inbox and the health report cannot be narrowed, and say so. The choice is not remembered.
 - Tiles show the direction since last week. A tag or a table row leads to the bookmarks behind it.
 - **Stale** follows **count as neglected after** under Config → Bookmarks, the same threshold the Bookmarks view uses.
@@ -4632,7 +4687,7 @@ Links are counted first, then you choose where they go: this page, a new page, o
 
 ### 20.2 Sources
 
-A **source** is a service bookmarks keep arriving from. Each panel asks for its token, where the bookmarks go, and offers **import now** and the last result. Every run **previews** before it writes, and remembers where it got to.
+A **source** is a service bookmarks keep arriving from. Each panel asks for its token, where the bookmarks go (**Page to import onto**, and **Category for imported bookmarks**, used only for bookmarks the service files nowhere: folders and collections keep their own names), and offers **import now** and the last result. Every run **previews** before it writes, and remembers where it got to.
 
 | Source | Needs |
 |---|---|
@@ -4644,7 +4699,7 @@ A **source** is a service bookmarks keep arriving from. Each panel asks for its 
 
 nextDash only reads from these services. Tokens are stored in `sources.json` with owner-only permissions and left out of backups unless you include tokens. The **Sources** widget shows the last result of each.
 
-The **Web Archive** and **Local copies** panels live on this tab too ([§12.6](#126-keeping-a-copy-of-a-page)).
+The **Web Archive** and **Local copies** panels live on this tab too ([§12.6](#126-keeping-a-copy-of-a-page)). In **Local copies**, **Page to save** takes the address of any page you have in hand and **Save a copy…** stores it.
 
 <details>
 <summary>📷 Screenshot — Data & backups → Sources, full page</summary>
@@ -4917,6 +4972,8 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 | **Theme editor** | Read-only | Full |
 | **Quick start bar** | Skipped | Shown on first visit |
 
+**On phones and tablets.** Three switches under **Config → Behavior → General → On phones and tablets** act on a touch screen only; on a computer they change nothing. **Open links in a new tab on phones** (off) opens bookmark and result links in a new tab; without it they open in the same tab, whatever **Open links in a new tab** says. **Hide notifications on phones (errors stay)** (on) keeps the toasts away so nothing covers the page; errors still show. **Hide corner cards on phones** (on) holds back the invitations and reports in the bottom-left corner; they are not dismissed and show again on a computer or when you switch it off.
+
 
 <a id="touch-gestures"></a>
 
@@ -4926,7 +4983,7 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 |---|---|
 | Long-press a bookmark | Edit in place |
 | Drag the grip over a bookmark's icon | Move it; the rest of the row scrolls the page, so a swipe that starts on a row never grabs it |
-| Long-press a category header | Rename |
+| Long-press a category header or a widget title | Rename |
 | Swipe sideways | Change page |
 | Tap search | The search panel, with its mode tabs |
 

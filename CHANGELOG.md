@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
 - [v1.25.0 — 3 November 2026](#v1250--3-november-2026)
 - [v1.24.2 — 2 November 2026](#v1242--2-november-2026)
 - [v1.24.1 — 2 November 2026](#v1241--2-november-2026)
@@ -133,6 +134,21 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
+## v1.25.1 — 4 November 2026
+
+The manual now covers the widget schedule, the Watch feeds news widget, the settings of each widget kind, the phone settings and every search command and key that was missing. No change to the app itself. Held back from the What's new window (`hideFromModal`), so v1.25.0 keeps leading it.
+
+### Docs
+
+- **docs — The manual says when a widget shows.** §16.2 has its own heading, *When a widget shows*, in the table of contents, with an example for office hours and one that runs past midnight.
+- **docs — The Watch feeds news widget is in the widget table,** with its three layouts, and the row for a *Feeds* widget that no longer exists is gone. §14.2 points to the widget.
+- **docs — Settings per widget kind.** A table at the end of §16.1 lists what the settings panel of Processor, Memory, Disks, Containers, Health, Uptime, Certificates, Domains, Neglected, Trash, Backups and the other kinds offers, with ranges and defaults.
+- **docs — Settings that were missing.** On phones and tablets (§18.5, §23); the Watch feeds settings, statistics and the alert channel (§14.4); the digest with feeds, the contact address for push and the delay between retries (§12); the page and category for imports and *Page to save* (§20.2); *Offer to review tag suggestions*; *Archive service* and *Weather location*; and certificate warnings from 3 to 120 days.
+- **docs — Commands and keys.** §8.5 lists `:action`, `:clock`, `:time`, `:unit`, `:weather`, `:highlight`, `:items`, `:collapse`, `:empty`, `:tags`, `:share`, `:import`, `:archive`, `:ask` and `:tour`. §7.4 has the keys on a widget row and in a Tabs widget, and the chart keys are in §11.8 and §15.3.
+- **docs — README.** The two collages of all 192 dark and 192 light themes sit behind a collapsed link.
+
+---
+
 ## v1.25.0 — 3 November 2026
 
 Widgets get a lot more to do: a Tabs widget, Clock and Countdown, duplicate, set times and days, and limits for disks and memory. Search answers sums, Config shows what you changed from the defaults, a page keeps a history of its layouts, Homepage, Dashy and Homer configurations can be imported, and the backdrops are redrawn one recipe per theme. A fresh install starts on Aurora Glass.
@@ -173,6 +189,7 @@ Widgets get a lot more to do: a Tabs widget, Clock and Countdown, duplicate, set
 - **new — A better backdrop picker.** A short view, groups, search and thumbnails that load when you scroll to them. The backdrop settings sit with the backdrops in the theme studio.
 - **fix — The backdrop groups are in English.** The groups in the backdrop picker (Patterns, Colour & glow, Fire & light, Nature & water, Sky & space, Materials, Paper & ink, Tech) were Dutch in every language; they are English now and translated in the other five.
 - **fix — The eight neutral themes draw their own backdrop.** Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete and Black still pointed at an old shared recipe, so their new backdrops were never drawn.
+- **fix — The backdrop picker keeps the focus on the tile you clicked.** In *All backdrops* a click put the focus on the copy of that backdrop under *Used lately*, so the keyboard carried on from the wrong place. It stays on the tile you chose.
 - **new — Aurora Glass is the default theme** on new installs. Installs that already chose a theme keep it.
 - **new — Tag colours.** Give a tag a colour; it shows in the tag cloud, the rows and the preview.
 
