@@ -503,10 +503,32 @@
         const note = past
             ? label(dash, 'dashboard.widgetCountdownAgo', '{unit} ago').replace('{unit}', unit)
             : label(dash, 'dashboard.widgetCountdownLeft', '{unit} left').replace('{unit}', unit);
-        panel.appendChild(u.headline(figure, note));
-        const when = new Intl.DateTimeFormat(undefined, config.time
-            ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' }).format(target);
-        panel.appendChild(u.footnote(name ? `${name} · ${when}` : when));
+        /*
+         * What is left, large and in the middle, with the moment it counts to
+         * under it. The name is already the widget's title, so it is not said
+         * again here; it stays on the line as a tooltip.
+         */
+        const wrap = document.createElement('div');
+        wrap.className = `dashboard-countdown${past ? ' is-past' : ''}`;
+        const big = document.createElement('div');
+        big.className = 'dashboard-countdown-figure';
+        big.textContent = figure;
+        const small = document.createElement('div');
+        small.className = 'dashboard-countdown-unit';
+        small.textContent = note;
+        const when = document.createElement('div');
+        when.className = 'dashboard-countdown-when';
+        if (name) when.title = name;
+        const day = document.createElement('span');
+        day.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(target);
+        when.appendChild(day);
+        if (config.time) {
+            const at = document.createElement('span');
+            at.textContent = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(target);
+            when.appendChild(at);
+        }
+        wrap.append(big, small, when);
+        panel.appendChild(wrap);
         keepTicking(body, 60000, () => drawCountdown(body, widget, dash));
     }
 
