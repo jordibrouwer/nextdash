@@ -1166,12 +1166,14 @@ class DashboardRenderCore {
     /**
      * The ids held in tabs by a stack that is on the page. A stack that is
      * switched off holds nothing: its widgets are back in the grid, since a
-     * hidden stack would otherwise take its members out of sight with it.
+     * hidden stack would otherwise take its members out of sight with it. The
+     * same goes for a stack outside its window of the day or off today.
      */
     stackMemberIds() {
         const held = new Set();
         (this.dash.widgets || []).forEach((widget) => {
             if (widget?.type !== 'stack' || widget?.config?.enabled === false) return;
+            if (!this.widgetIsScheduledNow(widget)) return;
             (Array.isArray(widget.config?.members) ? widget.config.members : [])
                 .forEach((id) => held.add(String(id)));
         });

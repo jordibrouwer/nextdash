@@ -307,4 +307,17 @@ test.describe('A widget on a schedule', () => {
         ]);
         await expect(page.locator('.dashboard-stack-tab')).toHaveText(['Now'], { timeout: 15_000 });
     });
+
+    test('a stack off its schedule gives its widgets back to the grid', async ({ page }) => {
+        await core(page);
+        const today = await page.evaluate(() => ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()]);
+        const other = today === 'mon' ? 'tue' : 'mon';
+        await putWidgets(page, [
+            { id: 'w_aaaaaaaaaaaa', type: 'notes', title: 'One', config: { text: 'a' } },
+            { id: 'w_bbbbbbbbbbbb', type: 'notes', title: 'Two', config: { text: 'b' } },
+            { id: 'w_cccccccccccc', type: 'stack', title: 'Pad', config: { members: ['w_aaaaaaaaaaaa', 'w_bbbbbbbbbbbb'], showDays: [other] } },
+        ]);
+        await expect(page.locator('.dashboard-widget[data-widget-type="notes"]')).toHaveCount(2, { timeout: 15_000 });
+        await expect(page.locator('.dashboard-widget[data-widget-type="stack"]')).toHaveCount(0);
+    });
 });
