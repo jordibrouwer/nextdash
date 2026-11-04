@@ -300,3 +300,27 @@ test('onRead is called once per read path, and not for a row that was already re
     await page.evaluate(() => window.NotificationBell.refreshAll());
     expect(await page.evaluate(() => window.__reads.length)).toBe(3);
 });
+
+test.describe('bringing dismissed rows back', () => {
+    test('resetDismissed calls onReset only for sources whose forever No was cleared', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.__resets = [];
+            const mk = (id, no) => window.NotificationBell.register({
+                id, group: 'cleanup', kind: 'quiet', icon: '*', no,
+                state: async () => ({ count: 1, text: `${id} text` }),
+                onReset: () => window.__resets.push(id),
+            });
+            mk('reset-forever', 'forever');
+            mk('reset-state', 'state');
+            mk('reset-untouched', 'forever');
+            const ds = window.DiscoverabilityState;
+            ds.markBellNo('reset-forever', { count: 1, ids: [], forever: true }, { persist: false });
+            ds.markBellNo('reset-state', { count: 1, ids: [] }, { persist: false });
+        });
+        const cleared = await page.evaluate(() => window.NotificationBell.resetDismissed());
+        expect(cleared).toContain('reset-forever');
+        expect(cleared).not.toContain('reset-state');
+        expect(await page.evaluate(() => window.__resets)).toEqual(['reset-forever']);
+    });
+});

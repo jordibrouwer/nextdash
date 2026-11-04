@@ -79,6 +79,8 @@
             no: 'forever',
             // "No" says the same as "Fine by me": the question is answered.
             onNo: markAnswered,
+            // Config's "Bring back dismissed notifications": the No is undone.
+            onReset: () => global.DiscoverabilityState?.resetSettingPromoSeen?.(PROMO_ID),
             state: bellState,
             actions: [
                 {

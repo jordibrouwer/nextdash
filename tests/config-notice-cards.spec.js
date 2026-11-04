@@ -32,71 +32,52 @@ test.describe('notice cards on the config panel', () => {
         stateBefore = null;
     });
 
-    test('an answered promo card is put back and the others stay answered', async ({ page }) => {
+    test('the cards that moved to the bell are no longer listed', async ({ page }) => {
         await openPanel(page);
-        await page.evaluate(() => {
-            const s = window.DiscoverabilityState;
-            s.markSettingPromoSeen('theme-studio-hint-v1', { persist: false });
-            s.markSettingPromoSeen('kept-pile-v1', { persist: false });
-            window.dashboardInstance.config.render();
-        });
-        const studio = page.locator('[data-notice-card="theme-studio"]');
-        await expect(studio).toBeEnabled({ timeout: 10_000 });
-        // Tag suggestions is one nobody has answered.
-        await expect(page.locator('[data-notice-card="tag-suggestions"]')).toBeDisabled();
-        await studio.click();
-        await expect.poll(() => page.evaluate(
-            () => window.DiscoverabilityState.hasSeenSettingPromo('theme-studio-hint-v1')), { timeout: 10_000 }).toBe(false);
-        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('kept-pile-v1'))).toBe(true);
+        await expect(page.locator('[data-notice-cards]')).toBeVisible();
+        for (const id of ['kept-pile', 'theme-studio', 'tag-suggestions', 'install-count', 'analytics',
+            'health-review', 'health-recheck-offer', 'docker-update', 'inbox-extension']) {
+            await expect(page.locator(`[data-notice-card="${id}"]`)).toHaveCount(0);
+        }
+        await expect(page.locator('[data-notice-card="digest"]')).toHaveCount(1);
     });
 
-    test('the digest and install-count cards are listed and put back', async ({ page }) => {
+    test('the digest card is listed and put back', async ({ page }) => {
         await openPanel(page);
         await page.evaluate(() => {
             localStorage.setItem('nextdashDigestSeenAt', '1760000000000');
-            window.DiscoverabilityState.markSettingPromoSeen('install-count-v1', { persist: false });
+            localStorage.setItem('nextdashDigestCard', JSON.stringify({ generatedAt: 1760000000000, seenAt: 1760000000000 }));
             window.dashboardInstance.config.render();
         });
         const digest = page.locator('[data-notice-card="digest"]');
         await expect(digest).toBeEnabled({ timeout: 10_000 });
-        await expect(page.locator('[data-notice-card="install-count"]')).toBeEnabled();
         await digest.click();
         await expect.poll(() => page.evaluate(
-            () => localStorage.getItem('nextdashDigestSeenAt')), { timeout: 10_000 }).toBeNull();
+            () => [localStorage.getItem('nextdashDigestSeenAt'), localStorage.getItem('nextdashDigestCard')]),
+        { timeout: 10_000 }).toEqual([null, null]);
     });
 
-    test('an analytics answer kept in the settings is put back, and opting in leaves nothing to put back', async ({ page }) => {
+    test('Bring back dismissed notifications puts a bell "No" back in the bell', async ({ page }) => {
+        const ROW = '.notification-bell-row[data-bell-id="install-count-notice"]';
         await openPanel(page);
         await page.evaluate(() => {
             const d = window.dashboardInstance;
-            d.settings.analyticsOptIn = false;
-            d.settings.quickStart = { ...(d.settings.quickStart || {}), analyticsChoiceMade: true };
-            d.config.render();
+            window.DiscoverabilityState.resetSettingPromoSeen('install-count-v1', { persist: false });
+            d.settings.installPingEnabled = true;
+            d.telemetryLockedOff = false;
         });
-        const btn = page.locator('[data-notice-card="analytics"]');
-        await expect(btn).toBeEnabled({ timeout: 10_000 });
-        await btn.click();
-        await expect.poll(() => page.evaluate(
-            () => window.dashboardInstance.settings.quickStart.analyticsChoiceMade), { timeout: 10_000 }).toBe(false);
-        await page.evaluate(() => {
-            const d = window.dashboardInstance;
-            d.settings.analyticsOptIn = true;
-            d.settings.quickStart.analyticsChoiceMade = true;
-            d.config.render();
-        });
-        await expect(page.locator('[data-notice-card="analytics"]')).toBeDisabled();
-    });
+        await page.evaluate(() => window.NotificationBell.refreshAll());
+        await page.evaluate(() => window.NotificationBell.open());
+        await page.locator(ROW).getByRole('button', { name: 'No', exact: true }).click();
+        await expect(page.locator(ROW)).toHaveCount(0);
+        await page.evaluate(() => window.NotificationBell.refreshAll());
+        await expect(page.locator(ROW)).toHaveCount(0);
+        await page.evaluate(() => window.NotificationBell.close());
 
-    test('a card kept in this browser is put back by clearing its keys', async ({ page }) => {
-        await openPanel(page);
-        await page.evaluate(() => {
-            localStorage.setItem('nextdashHealthReviewDoneOn', '2026-01-01');
-            window.dashboardInstance.config.render();
-        });
-        const btn = page.locator('[data-notice-card="health-review"]');
-        await expect(btn).toBeEnabled({ timeout: 10_000 });
-        await btn.click();
-        await expect.poll(() => page.evaluate(
-            () => localStorage.getItem('nextdashHealthReviewDoneOn')), { timeout: 10_000 }).toBeNull();
+        await page.getByRole('button', { name: 'Bring back dismissed notifications' }).click();
+        await expect(page.locator('.toast, [role="status"]').filter({ hasText: 'back in the bell' }).first()).toBeVisible({ timeout: 10_000 });
+
+        await page.evaluate(() => window.NotificationBell.open());
+        await expect(page.locator(ROW)).toBeVisible({ timeout: 10_000 });
     });
 });

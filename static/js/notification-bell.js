@@ -10,7 +10,7 @@
  * What the person has read or answered "No" to is kept by DiscoverabilityState
  * (it persists server-side); nothing is stored here.
  *
- *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead })
+ *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead, onReset })
  *     -> { refresh(), unregister() }
  *
  * `state()` resolves to null when there is nothing to report, or to
@@ -25,6 +25,11 @@
  * is written for a row that was unread, whether from "Mark read", from an
  * action with `marksRead: true` or from "Mark all read". Not called for a row
  * that was already read. A throwing onRead is logged and ignored.
+ *
+ * `onReset()` is optional and undoes what onNo did: called by
+ * `NotificationBell.resetDismissed()` for each source whose forever "No" it
+ * cleared (and only those), before the bell looks again. A throwing onReset is
+ * logged and ignored.
  */
 (function (global) {
     'use strict';
@@ -261,6 +266,16 @@
         changed();
     }
 
+    /** Forget every forever "No", tell the sources that had one, and look again. */
+    async function resetDismissed() {
+        const cleared = States().resetBellNo() || [];
+        cleared.forEach((id) => {
+            try { sources.get(id)?.source.onReset?.(); } catch (err) { console.warn('bell onReset failed', err); }
+        });
+        await refreshAll();
+        return cleared;
+    }
+
     function register(source) {
         const rec = { source, entry: null };
         sources.set(source.id, rec);
@@ -321,7 +336,7 @@
         startTimers();
     }
 
-    global.NotificationBell = { register, refreshAll, open, close, counts };
+    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, counts };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

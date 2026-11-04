@@ -13458,44 +13458,15 @@ class DashboardConfig {
     /**
      * The corner cards that answer once, and a way to ask for one again.
      *
-     * Each card remembers an answer in its own place: three in the synced list
-     * of promos, two in this browser's storage. Whichever it is, a card you
+     * Most notices now live in the bell, which has its own way back (the
+     * button under the list). What is listed here are the cards that are still
+     * corner cards: each remembers an answer in its own place, and a card you
      * waved away had no road back. Here the answered ones can be put back; the
      * card then turns up the next time its own moment comes, not at once.
-     * Analytics is left out on purpose: it is an opt-in, not a hint.
      */
     static NOTICE_CARDS = [
-        { id: 'kept-pile', promo: 'kept-pile-v1', labelKey: 'config.noticeKeptPile', label: 'Kept links piling up' },
-        { id: 'theme-studio', promo: 'theme-studio-hint-v1', labelKey: 'config.noticeThemeStudio', label: 'Theme studio shortcut' },
-        { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
-          labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
-        { id: 'install-count', promo: 'install-count-v1', labelKey: 'config.noticeInstallCount', label: 'Install count' },
-        { id: 'digest', keys: ['nextdashDigestSeenAt', 'nextdashDigestProgress'],
+        { id: 'digest', keys: ['nextdashDigestSeenAt', 'nextdashDigestProgress', 'nextdashDigestCard'],
           labelKey: 'config.noticeDigest', label: 'Weekly digest' },
-        // Analytics keeps its answer in the settings, not the browser: a choice
-        // made, or a snooze that has not run out. Someone who turned analytics
-        // on has nothing left to be asked, so there is nothing to put back.
-        { id: 'analytics', labelKey: 'config.noticeAnalytics', label: 'Analytics',
-          answered(dash) {
-              const qs = dash.settings?.quickStart || {};
-              if (dash.settings?.analyticsOptIn === true) return false;
-              return qs.analyticsChoiceMade === true || (Number(qs.analyticsAskAfter) || 0) > Math.floor(Date.now() / 1000);
-          },
-          async reset(dash) {
-              const qs = dash.settings.quickStart = dash.settings.quickStart || {};
-              qs.analyticsChoiceMade = false;
-              qs.analyticsAskAfter = 0;
-              qs.analyticsSnoozes = 0;
-              await dash.saveSettings?.();
-          } },
-        { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
-          labelKey: 'config.noticeHealthReview', label: 'Health review' },
-        { id: 'health-recheck-offer', keys: ['nextdashHealthRecheckOfferDoneOn', 'nextdashHealthRecheckOfferSnoozeUntil'],
-          labelKey: 'config.noticeHealthRecheck', label: 'Link re-check offer' },
-        { id: 'docker-update', promo: 'docker-update-offer-v1', keys: ['nextdashDockerUpdateOfferSnoozeUntil', 'nextdashDockerViewOpens'],
-          labelKey: 'config.noticeDockerUpdate', label: 'Image update check' },
-        { id: 'inbox-extension', promo: 'inbox-extension-notice-v1', keys: ['nextdashInboxExtensionSnoozeUntil', 'nextdashInboxOpens'],
-          labelKey: 'config.noticeInboxExtension', label: 'Browser extension for the Inbox' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */
@@ -13526,7 +13497,25 @@ class DashboardConfig {
         return `
                 <p class="config-panel-note">${esc(this.t('config.noticeCardsHint',
                     'The small cards in the corner of the dashboard. One you answered comes back the next time its moment arrives.'))}</p>
-                <ul class="config-notice-list" data-notice-cards>${rows}</ul>`;
+                <ul class="config-notice-list" data-notice-cards>${rows}</ul>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-behavior-action="bring-back-bell">${esc(this.t('config.bellBringBack', 'Bring back dismissed notifications'))}</button>
+                </div>`;
+    }
+
+    /**
+     * Forget every "No, don't ask again" given in the bell, and look again.
+     * Read marks and a No that only covers the current items stay.
+     */
+    async bringBackBellNotices() {
+        try {
+            await window.NotificationBell?.resetDismissed?.();
+            await window.DiscoverabilityState?.persistNow?.();
+        } catch {
+            this.notify(this.t('config.bellBringBackError', 'Could not bring the notifications back.'), 'error');
+            return;
+        }
+        this.notify(this.t('config.bellBringBackDone', 'Dismissed notifications are back in the bell.'), 'success');
     }
 
     async replayNoticeCard(id) {
@@ -13798,6 +13787,7 @@ class DashboardConfig {
                 const action = btn.getAttribute('data-behavior-action');
                 if (action === 'reset-onboarding') void this.resetOnboarding();
                 if (action === 'whats-new') void this.openWhatsNew();
+                if (action === 'bring-back-bell') void this.bringBackBellNotices();
             });
         });
         container.querySelectorAll('[data-notice-card]').forEach((btn) => {

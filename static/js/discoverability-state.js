@@ -372,22 +372,23 @@
      * only cover the current items stay. The record is kept without its `no`
      * (even when that leaves it empty) because the server takes a record the
      * client sends per id as the truth: a merge that kept the "greater" mark
-     * would bring the cleared No back.
+     * would bring the cleared No back. Returns the ids it cleared.
      */
     function resetBellNo(options = {}) {
-        let changed = false;
+        const cleared = [];
         Object.keys(state.bell || {}).forEach((id) => {
             if (state.bell[id].no && state.bell[id].no.forever) {
                 delete state.bell[id].no;
                 bellMarkedHere.add(id);
-                changed = true;
+                cleared.push(id);
             }
         });
-        if (!changed) return;
+        if (!cleared.length) return cleared;
         applyToDashboardSettings();
         if (options.persist !== false) {
             schedulePersist();
         }
+        return cleared;
     }
 
     function getTipCardShownAt() {

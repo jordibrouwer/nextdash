@@ -82,6 +82,14 @@
         Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
     }
 
+    /** Undo `declined` when Config brings dismissed notifications back. */
+    function undeclined() {
+        const qs = state();
+        if (!qs || qs.analyticsChoiceMade !== true) return;
+        qs.analyticsChoiceMade = false;
+        Promise.resolve(dash()?.saveSettings?.({ keys: ['quickStart'] })).catch(() => {});
+    }
+
     /**
      * Turn analytics on. The tracker <script> is emitted server-side, so the page
      * has to reload before anything is actually measured — same as the config
@@ -205,6 +213,7 @@
             icon: '\u{1F4CA}',
             no: 'forever',
             onNo: declined,
+            onReset: undeclined,
             state: bellState,
             actions: [
                 { label: () => t('dashboard.analyticsNoticeOptIn', 'Turn on'), primary: true, onClick: optIn },
