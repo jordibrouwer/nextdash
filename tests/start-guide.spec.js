@@ -346,6 +346,21 @@ test.describe('inside the modal', () => {
         await expect(modal(page)).toBeVisible();
     });
 
+    test('the name: saved as the greeting name, and the header greets by it at once', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        await modal(page).locator('[data-sg-name]').fill('  Jordi ');
+        await modal(page).locator('[data-sg-name]').press('Enter');
+        await expect.poll(async () => (await stored(page)).greetingName).toBe('Jordi');
+        await expect(page.locator('.date-greeting')).toContainText('Jordi');
+        await expect(modal(page)).toBeVisible();
+        // Cleared again, the greeting loses the name and keeps the greeting.
+        await modal(page).locator('[data-sg-name]').fill('');
+        await modal(page).locator('[data-sg-name]').press('Enter');
+        await expect.poll(async () => (await stored(page)).greetingName || '').toBe('');
+        await expect(page.locator('.date-greeting')).not.toContainText('Jordi');
+    });
+
     test('changing the language changes the dashboard and the guide at once, without a reload', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);

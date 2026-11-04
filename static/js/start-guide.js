@@ -562,7 +562,7 @@
             // nearest thing) once the content is drawn again.
             const active = document.activeElement;
             const focusKey = active && panel.contains(active)
-                ? ['data-sg-language', 'data-sg-city', 'data-sg-unit', 'data-sg-keep', 'data-sg-empty', 'data-sg-starter-server', 'data-sg-starter-create', 'data-sg-lang-switch']
+                ? ['data-sg-language', 'data-sg-name', 'data-sg-city', 'data-sg-unit', 'data-sg-keep', 'data-sg-empty', 'data-sg-starter-server', 'data-sg-starter-create', 'data-sg-lang-switch']
                     .map((attr) => (active.hasAttribute?.(attr) ? `[${attr}${attr === 'data-sg-unit' ? `="${active.getAttribute(attr)}"` : ''}]` : ''))
                     .find(Boolean) || ''
                 : '';
@@ -574,6 +574,7 @@
             const lang = d.settings?.language || 'en';
             const unit = d.settings?.weatherUnit === 'fahrenheit' ? 'fahrenheit' : 'celsius';
             const city = d.settings?.weatherLocation || '';
+            const name = d.settings?.greetingName || '';
             const answered = ['keep', 'empty'].includes(this.state().templatePicked);
             const hasChoice = this.replacesMain && !answered;
             const starter = this.renderStarter();
@@ -621,7 +622,10 @@
                 ${hasChoice ? `<p class="sg-label sg-label-top">${esc(tq('guideExampleLinks', 'Example links'))}</p>${choices}` : starter}
                 <div class="sg-minis">
                     <div class="sg-mini">
-                        <p class="sg-label">${esc(tq('guideWeather', 'Weather'))}</p>
+                        <p class="sg-label">${esc(tq('guideAboutYou', 'About you'))}</p>
+                        <div class="sg-weather sg-name">
+                            <input id="sg-name" type="text" data-sg-name autocomplete="given-name" maxlength="40" value="${esc(name)}" placeholder="${esc(tq('guideNamePlaceholder', 'Your name, e.g. Jordi'))}" aria-label="${esc(tq('guideNameLabel', 'Your name, for the greeting'))}">
+                        </div>
                         <div class="sg-weather">
                             <input id="sg-city" type="text" data-sg-city autocomplete="off" value="${esc(city)}" placeholder="${esc(tq('guideCityPlaceholder', 'City, e.g. Amsterdam'))}" aria-label="${esc(tq('guideWeather', 'Weather'))}">
                             <span class="sg-seg" role="group" aria-label="${esc(tq('guideUnit', 'Temperature unit'))}">
@@ -715,6 +719,11 @@
                 if (event.key === 'Enter') { event.preventDefault(); this.saveWeather({ city: city.value }); }
             });
             city.addEventListener('change', () => this.saveWeather({ city: city.value }));
+            const name = panel.querySelector('[data-sg-name]');
+            name.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') { event.preventDefault(); this.saveName(name.value); }
+            });
+            name.addEventListener('change', () => this.saveName(name.value));
             panel.querySelector('[data-sg-language]').addEventListener('change', (event) => {
                 this.langTouched = true;
                 void this.setLanguage(event.target.value);
@@ -1065,6 +1074,19 @@
             this.refresh();
             this.renderModal();
             this.overlay?.querySelector('[data-sg-language]')?.focus({ preventScroll: true });
+        }
+
+        /**
+         * The name the header greets by: the same setting as Config →
+         * Appearance → Date & time, so the line redraws as it is typed in.
+         */
+        saveName(value) {
+            const d = this.dash;
+            const name = String(value || '').trim().slice(0, 40);
+            if (name === (d.settings.greetingName || '')) return;
+            d.settings.greetingName = name;
+            this.save();
+            d.renderDateWeatherLine?.();
         }
 
         saveWeather({ city, unit } = {}) {
