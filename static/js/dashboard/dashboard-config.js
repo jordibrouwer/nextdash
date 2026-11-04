@@ -10567,6 +10567,22 @@ class DashboardConfig {
                 ],
             },
             {
+                // The greeting beside the large clock. First on the tab: the
+                // clock group under it sets where the line stands, this sets
+                // what its first line says.
+                section: 'appearance',
+                tab: 'datetime',
+                order: -20,
+                title: t('config.appearanceGreetingTitle', 'Greeting'),
+                note: t('config.appearanceGreetingNote', 'The first line beside the large clock: "Good evening, Jordi". It changes with the hour.'),
+                controls: [
+                    { field: 'greetingName', type: 'text', special: 'datetime',
+                        label: t('config.greetingNameLabel', 'Your name') },
+                    { type: 'note',
+                      text: t('config.greetingNameNote', 'Leave it empty to be greeted without a name. The large clock is the clock placement below; the other two placements keep their single line.') },
+                ],
+            },
+            {
                 // Where the line is drawn, as against what it says: the three
                 // groups around this one set the date, the temperature and the
                 // feed, and this one is about the header that carries them.
@@ -10589,10 +10605,6 @@ class DashboardConfig {
                             opt('own-zone', t('config.headerClockOwnZone', 'In a column of their own')),
                             opt('classic', t('config.headerClockClassic', 'Large clock, greeting beside it')),
                         ] },
-                    // Read by the large clock only: the other two placements
-                    // keep their one line of time and date.
-                    { field: 'greetingName', type: 'text', special: 'datetime',
-                        label: t('config.greetingNameLabel', 'Your name, for the greeting beside the clock') },
                 ],
             },
             {

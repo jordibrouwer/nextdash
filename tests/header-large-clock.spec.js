@@ -79,3 +79,15 @@ test('the halo follows the theme background on both corners', async ({ page }) =
     expect(light.left, 'the halo ignores the theme').not.toBe(dark.left);
     expect(light.right, 'the halo ignores the theme').not.toBe(dark.right);
 });
+
+test('the name is set in Config → Appearance → Date & time, in a group of its own', async ({ page }) => {
+    await open(page);
+    await page.evaluate(() => { location.hash = '#config/appearance/datetime'; });
+    const field = page.locator('[data-behavior-field="greetingName"]');
+    await expect(field).toBeVisible({ timeout: 10_000 });
+    await field.fill('Sam');
+    await field.blur();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.greetingName)).toBe('Sam');
+    await page.evaluate(() => { location.hash = '#1'; });
+    await expect(page.locator('.date-greeting')).toContainText('Sam');
+});

@@ -97,11 +97,15 @@ test.describe('the grouped strip', () => {
 });
 
 test.describe('settings that moved home', () => {
-    test('Clock & weather leads Date & weather and is gone from Header', async ({ page }) => {
+    test('Greeting and Clock & weather lead Date & weather and Clock & weather is gone from Header', async ({ page }) => {
         await open(page, '#config/appearance/datetime');
-        await expect(page.locator('[data-behavior-field="headerClockPlacement"]')).toBeVisible();
-        const first = await page.locator('#config-appearance-body .config-panel-title').first().textContent();
-        expect(first).toBe('Clock & weather');
+        // The first panel is the one that stands open; the clock group is
+        // folded under it, still on this tab.
+        await expect(page.locator('[data-behavior-field="greetingName"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="headerClockPlacement"]')).toHaveCount(1);
+        // The greeting leads (what the first line says), the clock group follows.
+        const titles = await page.locator('#config-appearance-body .config-panel-title').allTextContents();
+        expect(titles.slice(0, 2)).toEqual(['Greeting', 'Clock & weather']);
         await tab(page, 'header').click();
         await expect(tab(page, 'header')).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator('[data-behavior-field="headerClockPlacement"]')).toHaveCount(0);
