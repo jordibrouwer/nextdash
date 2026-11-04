@@ -35,6 +35,13 @@ async function setup(page) {
     await ready(page);
 }
 
+/*
+ * Save and edit picks the new theme and draws the look studio's editor for it: a theme pick, the
+ * look put back and the theme grid redrawn. With the CPU slowed six times that took four to six
+ * seconds, and on a busy runner it went past the default five and passed only on a retry.
+ */
+const EDITOR_DRAWN = { timeout: 15_000 };
+
 async function openStudio(page) {
     await page.locator('body').click({ position: { x: 5, y: 5 } }).catch(() => {});
     await page.keyboard.press('Shift+A');
@@ -53,7 +60,7 @@ test('Save as theme makes both halves with the look on screen, picks it and open
     await expect(dialog.locator('[data-save-theme-look]')).toBeChecked();
     await expect(dialog.locator('[data-save-theme-pair]')).toBeChecked();
     await dialog.locator('[data-save-theme-submit]').click();
-    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible();
+    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible(EDITOR_DRAWN);
     await expect(dialog).toHaveCount(0);
 
     const c = await colors(page);
@@ -75,7 +82,7 @@ test('Cancel after Save as theme keeps the theme but puts the previous one back'
     await openStudio(page);
     await page.locator('[data-studio-save-theme]').click();
     await page.locator('[data-save-theme-dialog] [data-save-theme-submit]').click();
-    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible();
+    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible(EDITOR_DRAWN);
     await page.locator('[data-studio-cancel]').click();
     await expect(page.locator('[data-look-studio]')).toHaveCount(0);
     expect(Object.keys((await colors(page)).custom).length).toBeGreaterThan(0);
@@ -100,7 +107,7 @@ test('Save as theme does not redraw the page for the look already on it', async 
         spy(d, 'renderDashboard');
     });
     await page.locator('[data-save-theme-dialog] [data-save-theme-submit]').click();
-    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible();
+    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible(EDITOR_DRAWN);
     // The one bar redraw is the pick's own, as for any theme picked here.
     expect(await page.evaluate(() => window.__redraws)).toEqual(['applyChromeSettings']);
 });
