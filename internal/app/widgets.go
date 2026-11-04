@@ -162,6 +162,9 @@ const (
 	WidgetTypeBeszelSystem    WidgetType = "beszel-system"
 	WidgetTypeBeszelAttention WidgetType = "beszel-attention"
 	WidgetTypeBeszelStorage   WidgetType = "beszel-storage"
+	// The DNS blocker types show queries, what is blocked and who asks.
+	WidgetTypeAdguard WidgetType = "adguard"
+	WidgetTypePihole  WidgetType = "pihole"
 	// WidgetTypeGlances is one Glances host from nextDash's own record of it:
 	// meters or the processor's last hour, opening the Glances page.
 	WidgetTypeGlances WidgetType = "glances"
@@ -243,6 +246,8 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeBeszelSystem:    {},
 	WidgetTypeBeszelAttention: {},
 	WidgetTypeBeszelStorage:   {},
+	WidgetTypeAdguard:         {},
+	WidgetTypePihole:          {},
 	WidgetTypeGlances:         {},
 
 	WidgetTypeUnraid:              {},
