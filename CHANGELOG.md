@@ -180,6 +180,7 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 ### Browser extension
 
 - **fix — The saved panel no longer stands open.** A rule in `popup.css` had lost its selector line and swallowed the `.hidden` rule after it, so *Bookmark saved… open in nextDash* showed under the buttons from the first look, and the form did not hide after a save.
+- **fix — The duplicate-address warning shows again.** The panel carried both a `hidden` class and the `hidden` attribute `popup.js` sets; once the `.hidden` rule was back, the class kept the warning out of sight for good. It now uses the attribute alone.
 
 ### Fixes from a code review
 

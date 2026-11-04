@@ -155,6 +155,25 @@ test.describe('extension popup', () => {
         }
     });
 
+    // The panel is shown and hidden through the `hidden` attribute that popup.js sets.
+    // A `hidden` class beside it only held while popup.css lost its .hidden rule;
+    // once the rule was back, the warning could never show.
+    test('typing an address that is already on the page shows the duplicate warning', async ({ baseURL }) => {
+        const { context, close, serviceWorker, extensionId } = await launchConfigured(baseURL);
+        try {
+            const url = `https://extension-dup-${Date.now()}.example.com/`;
+            expect(await serviceWorker.evaluate((u) => quickSaveBookmark('Dup', u), url)).toEqual({ ok: true });
+            const popup = await context.newPage();
+            await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+            await expect(popup.locator('#page-select option')).not.toHaveCount(0, { timeout: 15_000 });
+            await expect(popup.locator('#bookmark-url-duplicate-panel')).toBeHidden();
+            await popup.locator('#bookmark-url').fill(url);
+            await expect(popup.locator('#bookmark-url-duplicate-panel')).toBeVisible({ timeout: 10_000 });
+        } finally {
+            await close();
+        }
+    });
+
     // Quick save (keyboard command, context menu) checks for a duplicate
     // before it fetches the icon: a duplicate is not saved, so its icon file
     // would refer to nothing.
