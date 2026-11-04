@@ -340,7 +340,13 @@
         const dismiss = el('button', 'notification-bell-action notification-bell-dismiss',
             source.kind === 'tip' ? t('markRead', 'Mark read') : t('no', 'No'));
         dismiss.type = 'button';
-        dismiss.addEventListener('click', () => (source.kind === 'tip' ? markRead(row) : answerNo(row)));
+        // "No" (or "Mark read" on a tip) takes the row away the same way the
+        // coloured answer does: it slides out and the rows below move up. The
+        // panel stays open, since the person is still going through it.
+        dismiss.addEventListener('click', () => {
+            li.querySelectorAll('button').forEach((btn) => { btn.disabled = true; });
+            void leaveRow(li).then(() => (source.kind === 'tip' ? markRead(row) : answerNo(row)));
+        });
         actions.appendChild(dismiss);
         body.appendChild(actions);
 

@@ -146,6 +146,8 @@ test.describe('tips in the bell', () => {
         const ids = await tick(page);
         await openBell(page);
         await tipRow(page, `keyboard-tip:${ids[1]}`).getByRole('button', { name: 'Mark read' }).click();
+        // The read is written once the row has slid away.
+        await expect(tipRow(page, `keyboard-tip:${ids[1]}`)).toHaveCount(0);
         // Even if the day's record is lost and read again, today's mark keeps it out.
         await page.evaluate(() => window.NotificationBell.refreshAll());
         expect(await tick(page)).not.toContain(ids[1]);

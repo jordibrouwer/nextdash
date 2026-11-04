@@ -292,6 +292,8 @@ test('onRead is called once per read path, and not for a row that was already re
     await refresh(page);
     await openPanel(page);
     await row(page, 'probe-read-a').getByRole('button', { name: 'Mark read' }).click();
+    // Mark read is written once the row has slid away.
+    await expect(row(page, 'probe-read-a')).toHaveCount(0);
     await row(page, 'probe-read-b').getByRole('button', { name: 'Do it' }).click();
     expect(await page.evaluate(() => window.__reads)).toEqual(['probe-read-a', 'probe-read-b']);
     // Mark all read reaches the one row that is still unread, once; the read ones are gone.
@@ -547,9 +549,11 @@ test('the bell reports its use as `bell` events with fixed words only', async ({
     expect((await take()).map((g) => g.props)).toEqual([{ action: 'more' }]);
 
     await row(page, 'probe-extra-0').locator('.notification-bell-dismiss').click();
+    await expect(row(page, 'probe-extra-0')).toHaveCount(0);
     expect((await take()).map((g) => g.props)).toEqual([{ action: 'no', source: 'probe-extra-0' }]);
 
     await row(page, 'probe-tip').locator('.notification-bell-dismiss').click();
+    await expect(row(page, 'probe-tip')).toHaveCount(0);
     expect((await take()).map((g) => g.props)).toEqual([{ action: 'read', source: 'probe-tip' }]);
 
     await page.locator('.notification-bell-markall').click();
@@ -757,4 +761,24 @@ test('the coloured answer slides its row away, the rows below move up, then the 
     await expect(panel).toBeHidden();
     const ran = await page.evaluate(() => window.__ran.filter((r) => !r.other));
     expect(ran).toEqual([{ id: 'probe-answer', panelOpen: false }]);
+});
+
+test('No slides its row away and the rows below move up, while the panel stays open', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+        ['probe-no', 'probe-under'].forEach((id) => window.NotificationBell.register({
+            id, group: 'system', kind: 'quiet', icon: '*', no: 'state',
+            state: async () => ({ count: 1, text: `row ${id}` }),
+        }));
+    });
+    await refresh(page);
+    await openPanel(page);
+    const before = (await row(page, 'probe-under').boundingBox()).y;
+    await row(page, 'probe-no').locator('.notification-bell-dismiss').click();
+    // Still there while it slides: the No is written after the animation.
+    expect(await page.evaluate(() => window.DiscoverabilityState.getBellRecord('probe-no').no)).toBeUndefined();
+    await expect(row(page, 'probe-no')).toHaveCount(0);
+    expect((await row(page, 'probe-under').boundingBox()).y).toBeLessThan(before - 5);
+    await expect(page.locator('.notification-bell-panel')).toBeVisible();
+    expect(await page.evaluate(() => window.DiscoverabilityState.getBellRecord('probe-no').no)).toBeTruthy();
 });
