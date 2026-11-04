@@ -180,21 +180,21 @@ test.describe('the digest window: the week in figures, the Overview and the deta
         const stats = win.locator('.digest-stats .digest-stat');
         await expect(stats).toHaveCount(4);
         await expect(stats.nth(0)).toContainText('142');
-        await expect(stats.nth(0).locator('.digest-stat-delta')).toHaveText('▲ 18');
+        await expect(stats.nth(0).locator('.digest-stat-delta')).toHaveText('▲ 18 vs last week');
         await expect(stats.nth(0).locator('.digest-stat-delta')).toHaveClass(/is-good/);
-        await expect(stats.nth(1).locator('.digest-stat-delta')).toHaveText('= 7');
+        await expect(stats.nth(1).locator('.digest-stat-delta')).toHaveText('same as last week');
         await expect(stats.nth(2)).toContainText('99.6%');
         await expect(stats.nth(2)).toContainText('2 outages');
-        await expect(stats.nth(2).locator('.digest-stat-delta')).toHaveText('▼ 0.3');
+        await expect(stats.nth(2).locator('.digest-stat-delta')).toHaveText('▼ 0.3 pt vs last week');
         await expect(stats.nth(2).locator('.digest-stat-delta')).toHaveClass(/is-bad/);
-        await expect(stats.nth(3)).toContainText('4 new this week');
+        await expect(stats.nth(3)).toContainText('4 new');
     });
 
     test('a snapshot without week figures shows only what it has: the Inbox', async ({ page }) => {
         const win = await openWindow(page, snapshot());
         const stats = win.locator('.digest-stats .digest-stat');
         await expect(stats).toHaveCount(1);
-        await expect(stats.first()).toContainText('in the Inbox');
+        await expect(stats.first()).toContainText('In the Inbox');
         await expect(stats.first().locator('.digest-stat-delta')).toHaveCount(0);
     });
 
@@ -218,7 +218,7 @@ test.describe('the digest window: the week in figures, the Overview and the deta
         await expect(lines).toHaveCount(2);
         await expect(lines.nth(0)).toContainText('Old homelab wiki');
         await expect(lines.nth(0)).toContainText('Homelab · connection refused');
-        await expect(lines.nth(0)).toContainText('down 12 d');
+        await expect(lines.nth(0)).toContainText('down for 12 days');
         await expect(win.locator('.digest-detail [data-digest-part="broken"]')).toContainText('and 5 more');
     });
 
@@ -229,9 +229,9 @@ test.describe('the digest window: the week in figures, the Overview and the deta
         const win = await openWindow(page, snap);
         await win.locator('.digest-row[data-digest-row="top"]').click();
         const top = win.locator('.digest-detail [data-digest-part="top"] .digest-line');
-        await expect(top.nth(0)).toContainText('1 · GitHub');
-        await expect(top.nth(0)).toContainText('31 opens');
-        await expect(top.nth(1)).toContainText('1 open');
+        await expect(top.nth(0)).toContainText('1. GitHub');
+        await expect(top.nth(0)).toContainText('31 times');
+        await expect(top.nth(1)).toContainText('1 time');
         await win.locator('.digest-row[data-digest-row="inbox"]').click();
         await expect(win.locator('.digest-detail [data-digest-part="inbox"]')).toContainText('The oldest has waited 42 days.');
     });

@@ -381,7 +381,7 @@ test.describe('tiles, bars and the ways in', () => {
         await choose(win, 'certificates');
         const certs = win.locator('[data-digest-part="certificates"] .digest-days-row');
         await expect(certs.locator('.digest-days-name')).toHaveText(['old.example', 'soon.example', 'later.example']);
-        await expect(certs.first().locator('.digest-days-value')).toHaveText('expired 21 d');
+        await expect(certs.first().locator('.digest-days-value')).toHaveText('expired 21 days ago');
         await expect(certs.first()).toHaveClass(/is-bad/);
 
         // Domains: a bar for what is coming, a count for the rest.
