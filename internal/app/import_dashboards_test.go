@@ -5,8 +5,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 const homepageServices = `
@@ -256,5 +259,30 @@ func TestParseDashboardConfigRefusesDeepNesting(t *testing.T) {
 	b.WriteString(indent + "- s:\n" + indent + "    href: http://a.example\n")
 	if _, _, err := ParseDashboardConfig([]byte(b.String())); err == nil {
 		t.Fatal("40 levels of groups were read")
+	}
+}
+
+// One group listing the same aliased mapping of services many times: the rows
+// stop at the budget instead of running to list length times mapping size.
+func TestParseHomepageAliasFanOutStopsAtTheBudget(t *testing.T) {
+	var b strings.Builder
+	b.WriteString("- G:\n  - &a\n")
+	for i := 0; i < 300; i++ {
+		b.WriteString("    s" + strconv.Itoa(i) + ": {href: http://x.example}\n")
+	}
+	for i := 0; i < 300; i++ {
+		b.WriteString("  - *a\n")
+	}
+	var doc yaml.Node
+	if err := yaml.Unmarshal([]byte(b.String()), &doc); err != nil {
+		t.Fatal(err)
+	}
+	reader := &configReader{onPath: map[*yaml.Node]bool{}}
+	reader.homepageGroups(resolveAlias(doc.Content[0]), "", 0)
+	if !reader.failed {
+		t.Fatal("90,000 rows were read without failing")
+	}
+	if len(reader.rows) > dashboardConfigMaxRows+1 {
+		t.Fatalf("kept %d rows past a budget of %d", len(reader.rows), dashboardConfigMaxRows)
 	}
 }
