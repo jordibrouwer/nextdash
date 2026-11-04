@@ -133,7 +133,7 @@
     function fetchStatus(refresh) {
         if (!isEnabled()) return Promise.resolve(null);
         const url = '/api/update-status' + (refresh ? '?refresh=1' : '');
-        return fetch(url, { cache: 'no-store' })
+        return (window.nextDashFetchShared || fetch)(url, { cache: 'no-store' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .catch(function () { return null; });
     }

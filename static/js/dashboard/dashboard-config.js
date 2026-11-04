@@ -6272,7 +6272,7 @@ class DashboardConfig {
     /** GitHub release status from /api/update-status (server-side check). */
     async loadUpdateStatus() {
         try {
-            const res = await fetch('/api/update-status', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/update-status', { cache: 'no-store' });
             this._updateStatus = res.ok ? await res.json() : null;
             if (this.dash) this.dash.updateStatus = this._updateStatus;
             window.dispatchEvent(new CustomEvent('nextdash:update-status', { detail: this._updateStatus }));

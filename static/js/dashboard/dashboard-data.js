@@ -635,7 +635,7 @@ class DashboardData {
 
     async fetchDataRevision() {
         try {
-            const res = await fetch('/api/data-revision', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/data-revision', { cache: 'no-store' });
             if (!res.ok) {
                 return null;
             }

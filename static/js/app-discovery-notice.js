@@ -68,7 +68,7 @@
         const d = dash();
         if (!d?.settings || d.settings.discoverApps === false) return [];
         try {
-            const res = await fetch('/api/discovery', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/discovery', { cache: 'no-store' });
             if (!res.ok) return [];
             const data = await res.json();
             return Array.isArray(data.recentAdds) ? data.recentAdds : [];
@@ -212,7 +212,7 @@
         // both get this far, and only one of them may ask.
         asking = true;
         try {
-            const res = await fetch('/api/discovery', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/discovery', { cache: 'no-store' });
             const data = res.ok ? await res.json() : null;
             if (!data?.enabled || !data.cardDone || !(data.pending || []).length) {
                 asking = false;

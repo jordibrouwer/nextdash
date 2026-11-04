@@ -52,4 +52,35 @@
             return response;
         });
     };
+
+    /*
+     * One request for the same GET asked twice at once.
+     *
+     * Start-up has several readers of the same few routes -- the update status,
+     * the app discovery, the data revision -- each fetching for itself, so one
+     * page load asked for the same answer two or three times, a round trip each.
+     * Callers that arrive while the first is still on its way share it.
+     *
+     * Nothing is kept once it has answered: the next call asks the server again,
+     * so a caller that has just changed something never reads an older answer
+     * than the one it would have got. Each caller gets its own copy of the
+     * response, as the body can be read once.
+     */
+    const inFlight = new Map();
+    global.nextDashFetchShared = function nextDashFetchShared(url, init) {
+        const options = init || {};
+        const method = String(options.method || 'GET').toUpperCase();
+        if (method !== 'GET' || options.signal || typeof fetch !== 'function') {
+            return fetch(url, options);
+        }
+        const key = `${url}|${options.cache || ''}`;
+        let pending = inFlight.get(key);
+        if (!pending) {
+            pending = fetch(url, options);
+            inFlight.set(key, pending);
+            const clear = () => { if (inFlight.get(key) === pending) inFlight.delete(key); };
+            pending.then(clear, clear);
+        }
+        return pending.then((response) => response.clone());
+    };
 })(typeof window !== 'undefined' ? window : globalThis);

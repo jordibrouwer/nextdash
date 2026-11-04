@@ -40,6 +40,15 @@
      */
     async function load(dash) {
         if (dash._widgetTrend) return dash._widgetTrend;
+        // Tiles render side by side and each asked on its own, so a page with
+        // two of them fetched the whole series twice. They share the one in flight.
+        if (!dash._widgetTrendLoading) {
+            dash._widgetTrendLoading = fetchTrend(dash).finally(() => { dash._widgetTrendLoading = null; });
+        }
+        return dash._widgetTrendLoading;
+    }
+
+    async function fetchTrend(dash) {
         try {
             const res = await fetch('/api/health/trend');
             if (!res.ok) return null;
