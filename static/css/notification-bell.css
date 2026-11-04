@@ -67,8 +67,9 @@
     z-index: var(--layer-page-popover, 50);
     width: min(24rem, calc(100vw - 1rem));
     max-height: min(32rem, calc(100vh - 6rem));
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     box-sizing: border-box;
     padding: var(--space-2, 0.6rem) var(--space-3, 0.7rem);
     background: var(--background-secondary);
@@ -78,7 +79,36 @@
     color: var(--text-primary);
 }
 .notification-bell-panel[hidden] { display: none; }
-.notification-bell-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
+/* Only the body scrolls, so the head stays put; its scrollbar is hidden. */
+.notification-bell-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+}
+.notification-bell-body::-webkit-scrollbar { display: none; }
+/* Says there is more below, over the corner of the body. */
+.notification-bell-more {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+.notification-bell-more[hidden] { display: none; }
+.notification-bell-more:hover { border-color: var(--accent-primary); }
+.notification-bell-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
 .notification-bell-empty { margin: 0.4rem 0; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
 .notification-bell-group-head {
     display: flex; justify-content: space-between; margin: 0.6rem 0 0.25rem;

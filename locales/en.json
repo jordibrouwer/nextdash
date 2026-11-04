@@ -11433,6 +11433,7 @@
   "bell": {
     "title": "Notifications",
     "markAllRead": "Mark all read",
+    "more": "More below",
     "no": "No",
     "markRead": "Mark read",
     "empty": "Nothing needs you right now.",

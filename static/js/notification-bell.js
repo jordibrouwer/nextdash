@@ -294,9 +294,37 @@
         head.appendChild(all);
         panel.appendChild(head);
 
+        // The head stays put; only the body scrolls, with its scrollbar hidden,
+        // so a small arrow says when there is more below.
+        const body = el('div', 'notification-bell-body');
+        panel.appendChild(body);
+        const more = el('button', 'notification-bell-more');
+        more.type = 'button';
+        more.hidden = true;
+        more.setAttribute('aria-label', t('more', 'More below'));
+        more.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>';
+        more.addEventListener('click', () => {
+            const reduced = global.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            body.scrollBy({ top: body.clientHeight, behavior: reduced ? 'auto' : 'smooth' });
+        });
+        panel.appendChild(more);
+        body.addEventListener('scroll', updateMore, { passive: true });
+        renderBody(body);
+        updateMore();
+    }
+
+    /** Show the arrow only while the body can scroll further down. */
+    function updateMore() {
+        const body = panel?.querySelector('.notification-bell-body');
+        const more = panel?.querySelector('.notification-bell-more');
+        if (!body || !more) return;
+        more.hidden = !(body.scrollTop + body.clientHeight < body.scrollHeight - 2);
+    }
+
+    function renderBody(target) {
         const visible = rows().filter((r) => r.visible);
         if (!visible.length) {
-            panel.appendChild(el('p', 'notification-bell-empty', t('empty', 'Nothing needs you right now.')));
+            target.appendChild(el('p', 'notification-bell-empty', t('empty', 'Nothing needs you right now.')));
             return;
         }
         Model.GROUP_ORDER.forEach((group) => {
@@ -311,7 +339,7 @@
             const ul = el('ul', 'notification-bell-list');
             inGroup.forEach((row) => ul.appendChild(renderRow(row)));
             section.appendChild(ul);
-            panel.appendChild(section);
+            target.appendChild(section);
         });
     }
 
@@ -340,10 +368,11 @@
         renderPanel();
         panel.hidden = false;
         keepOnScreen();
+        updateMore();
         button.setAttribute('aria-expanded', 'true');
     }
 
-    window.addEventListener('resize', () => { if (isOpen) keepOnScreen(); });
+    window.addEventListener('resize', () => { if (isOpen) { keepOnScreen(); updateMore(); } });
 
     function close() {
         if (!panel || !isOpen) return;

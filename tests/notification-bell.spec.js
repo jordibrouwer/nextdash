@@ -424,3 +424,58 @@ test('a reminder pulses every minute without shaking, until the panel is opened'
     now = await seen(page);
     expect(now.pulse).toBe(before);
 });
+
+/** Enough extra quiet rows that the panel body has to scroll. */
+async function addRows(page, n) {
+    await page.evaluate((count) => {
+        for (let i = 0; i < count; i++) {
+            const id = `probe-extra-${i}`;
+            window.__probeState[id] = { count: 1, text: `${id} text` };
+            window.NotificationBell.register({ id, group: 'cleanup', kind: 'quiet', icon: '*', no: 'state', state: async () => window.__probeState[id] });
+        }
+    }, n);
+    await refresh(page);
+}
+
+test('the panel head stays put while the body scrolls, with no scrollbar', async ({ page }) => {
+    await loadDashboard(page);
+    await addRows(page, 12);
+    await openPanel(page);
+    const body = page.locator('.notification-bell-body');
+    const head = page.locator('.notification-bell-head');
+    const offset = async () => (await head.boundingBox()).y - (await page.locator('.notification-bell-panel').boundingBox()).y;
+    const before = await offset();
+    expect(await body.evaluate((n) => n.scrollHeight > n.clientHeight)).toBe(true);
+    expect(await body.evaluate((n) => getComputedStyle(n).scrollbarWidth)).toBe('none');
+    await body.evaluate((n) => { n.scrollTop = n.scrollHeight; });
+    // Measured from the panel's own top, so a page that settles by a pixel does not count.
+    expect(await offset()).toBeCloseTo(before, 1);
+    const after = await head.boundingBox();
+    const panelBox = await page.locator('.notification-bell-panel').boundingBox();
+    expect(after.y).toBeGreaterThanOrEqual(panelBox.y);
+    expect(after.y + after.height).toBeLessThanOrEqual(panelBox.y + panelBox.height);
+});
+
+test('an arrow says there is more below, until the end, and scrolls on click', async ({ page }) => {
+    await loadDashboard(page);
+    await addRows(page, 12);
+    await openPanel(page);
+    const more = page.locator('.notification-bell-more');
+    const body = page.locator('.notification-bell-body');
+    await expect(more).toBeVisible();
+    const top = await body.evaluate((n) => n.scrollTop);
+    await more.click();
+    await expect.poll(() => body.evaluate((n) => n.scrollTop)).toBeGreaterThan(top);
+    await body.evaluate((n) => { n.scrollTop = n.scrollHeight; });
+    await expect(more).toBeHidden();
+});
+
+test('no arrow when everything fits', async ({ page }) => {
+    await loadDashboard(page);
+    await setState(page, 'probe-quiet', null);
+    await setState(page, 'probe-health', null);
+    await setState(page, 'probe-tip', null);
+    await refresh(page);
+    await openPanel(page);
+    await expect(page.locator('.notification-bell-more')).toBeHidden();
+});
