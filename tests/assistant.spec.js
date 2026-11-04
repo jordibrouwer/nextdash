@@ -117,7 +117,11 @@ async function openApp(page) {
 async function palette(page, text) {
     await page.evaluate(() => { document.body.focus(); });
     await page.keyboard.press(':');
+    // Typed before the palette is up, the letters land nowhere; and Enter
+    // before the (debounced) search has read them runs nothing.
+    await expect(page.locator('#shortcut-search.show')).toBeVisible();
     await page.keyboard.type(text);
+    await expect(page.locator('#search-query')).toContainText(text);
 }
 
 const panel = (page) => page.locator('.assistant-panel');
