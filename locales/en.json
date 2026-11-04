@@ -11435,6 +11435,7 @@
     "group_cleanup": "Clean up",
     "group_system": "System",
     "group_privacy": "Privacy",
-    "group_tips": "Tips"
+    "group_tips": "Tips",
+    "healthView": "View"
   }
 }

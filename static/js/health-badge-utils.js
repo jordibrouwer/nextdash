@@ -101,6 +101,8 @@
     let healthDomainSummary = null;
     const healthFacts = new Map();
     let healthFactsAt = 0;
+    /** Keys of the monitored bookmarks the last report found down. */
+    let healthDownKeys = [];
     /** When the server built the report these facts came from. */
     let healthFactsGeneratedAt = 0;
 
@@ -167,6 +169,7 @@
         healthDomains = report?.domains || {};
         healthDomainSummary = report?.domainSummary || null;
         healthFacts.clear();
+        healthDownKeys = [];
         (rows || issues).forEach((entry) => {
             const key = factsKey(entry?.url);
             if (!key) return;
@@ -221,6 +224,8 @@
             // nothing else to report yet.
             if (!facts.monitor && facts.uptime30d === null && !facts.certExpiresAt && !facts.brokenSince) return;
             healthFacts.set(key, facts);
+            // Down now: the bookmarks behind the red "down" count.
+            if (facts.monitor && facts.downSince > 0) healthDownKeys.push(key);
         });
         healthFactsAt = Date.now();
         healthFactsGeneratedAt = Number(report?.generatedAt) || 0;
@@ -296,6 +301,8 @@
         /** {enabled, watched, noDate} from the last report, or null before one arrived. */
         get domainSummary() { return healthDomainSummary; },
         get size() { return healthFacts.size; },
+        /** Keys of the monitored bookmarks found down by the last report. */
+        get downKeys() { return healthDownKeys.slice(); },
         get updatedAt() { return healthFactsAt; },
         get generatedAt() { return healthFactsGeneratedAt; },
         fleetUptime24h,

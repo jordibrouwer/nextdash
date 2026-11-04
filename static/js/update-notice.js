@@ -105,7 +105,58 @@
         showUpdateToast(pendingUpdateToast);
     }
 
+    /*
+     * The bell row for a newer release. It reports the same status the ★ and
+     * the toast act on, so a dismissed release or a switched-off check takes
+     * the row away too. The release tag is the row's id: "No" holds until a
+     * newer release than the one answered shows up.
+     */
+    let bellStatus = null;
+    let bellHandle = null;
+
+    function bellState() {
+        const status = bellStatus;
+        if (!isEnabled() || !status?.updateAvailable || !status.latest || isDismissed(status)) return null;
+        return {
+            count: 1,
+            ids: [status.latest],
+            text: translate('dashboard.updateAvailableToast', 'nextDash {latest} is available on GitHub.', { latest: status.latest }),
+        };
+    }
+
+    function registerWithBell() {
+        if (bellHandle || !window.NotificationBell) return;
+        bellHandle = window.NotificationBell.register({
+            id: 'update-notice',
+            group: 'system',
+            kind: 'urgent',
+            icon: '\u2B06\uFE0F',
+            no: 'state',
+            state: bellState,
+            actions: [
+                {
+                    label: () => translate('dashboard.whatsNewAria', "What's new"),
+                    primary: true,
+                    onClick: () => { window.openWhatsNewModal?.({ force: true }); },
+                },
+            ],
+        });
+        void bellHandle.refresh();
+    }
+
+    // This script loads before the bell's (which is deferred), so the row is
+    // registered once the document has run its deferred scripts.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', registerWithBell, { once: true });
+    } else {
+        registerWithBell();
+    }
+
     function applyBadge(status) {
+        // Every path that changes what the ★ shows passes through here, so the
+        // bell follows it from here too.
+        bellStatus = status || null;
+        void bellHandle?.refresh();
         const btn = document.getElementById('whats-new-btn');
         if (!btn) return;
         btn.classList.remove('has-update-available');

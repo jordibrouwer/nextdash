@@ -500,6 +500,8 @@ class DashboardVisual {
              * eventually disagree with the badge two centimetres away.
              */
             d.healthSummary = summary;
+            // The bell's outage row reads this same summary.
+            window.HealthBellSource?.refresh?.();
             d.renderCore?.refreshWidgets?.('health');
             // The trend tile reads the same score, counts and last day.
             d.renderCore?.refreshWidgets?.('trend');
