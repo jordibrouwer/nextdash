@@ -161,6 +161,10 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 - **new — The Clock widget has a face.** A large analogue clock, other places listed under it (the face shows the first three), with a seconds hand, the moon and its phase and sunrise, sunset and daylight for your weather location. The moon and the sun appear when the widget is two columns wide; *Plain lines of time* keeps the old look.
 - **new — The Countdown shows its figure large,** in the middle, with the date under it.
 
+### DNS blockers
+
+- **new — AdGuard Home and Pi-hole widgets.** One tile for both, on the shared media base: queries, how many were blocked, a day by the hour, and the top blocked domains and clients. Four looks, chosen in the settings: *pulse* (one big blocked percentage and the last day as a strip, the default), *leaders* (the top lists with bars), *tiles* (four figures and the hourly chart) and *mix* (pulse on top, the lists below, two columns only). A click opens a card with the top ten lists and a button to the service, or goes straight there when the click is set to open. A figure the service did not send is not drawn, and no queries has no percentage rather than 0 %.
+
 ### What's new
 
 - **new — A compact What's new window.** A Ko-fi bar replaces the card, and the screenshots open larger on a click.
@@ -175,6 +179,7 @@ Eight fixes from a code review: the calculator reads a decimal comma, a Tabs wid
 
 ### Widgets
 
+- **new — Settings in a widget's menu opens its sheet over the dashboard.** The same sheet the edit panel's Settings opens, so you stay where you are; Config → Widgets opens only when the sheet cannot be drawn.
 - **fix — A Tabs widget off its schedule gives its widgets back.** Outside its time window or on a day it is off, a Tabs widget is not drawn, and the widgets in its tabs now stand in the grid instead of disappearing with it.
 - **fix — Copying a widget keeps a widget saved meanwhile.** The copy is inserted into the page as it stands at that moment, under one lock, so a widget added or changed in another tab while the copy was made is no longer written away.
 - **fix — The Tabs settings offer only what can be kept.** A widget that another Tabs widget already holds is no longer offered, and with six tabs ticked the other boxes wait until one is unticked; before, the server dropped both without a word on save.
@@ -190,6 +195,7 @@ Eight fixes from a code review: the calculator reads a decimal comma, a Tabs wid
 
 ### Appearance
 
+- **fix — Checkbox rows in Appearance line up with the other labels.** The toggle's hover padding sat inside the column, so its words stood 8 px right of every other label and the box 8 px left of the control's edge.
 - **new — Every Appearance tab lists its sections under the preview.** The list beside the settings now shows on every tab, not only on Date & weather, and stands under the preview, so the preview stays in place when you switch tabs. The entries are larger, and the section in view is marked with a bar.
 - **fix — The backdrop picker no longer holds on to old thumbnails.** Each search keystroke made a new observer for lazy painting and never let the old one go, so hundreds of thumbnails that were no longer on the page stayed in memory. One observer per picker now, released when the picker is drawn again.
 
