@@ -174,14 +174,16 @@ test.describe('a release flagged hideFromModal', () => {
     // v1.25.0 leads now, with v1.24.0 under it (v1.24.1 and v1.24.2 stay held back).
     // v1.22.4 led and brought every held-back release into the modal; nothing is flagged hideFromModal any more. v1.22.5 led, with v1.22.4 under it; v1.23.0 led, with v1.22.5 under it; v1.24.0 leads now, with v1.23.0 under it. v1.24.1 and v1.24.2 were held back, so v1.24.0 keeps leading.
     // v1.21.0 led, with v1.20.1 under it; v1.21.1 led, with v1.21.0 under it. v1.21.2 and v1.21.3 were held back, so v1.21.1 kept leading; v1.22.0 leads now, with v1.21.1 under it. v1.22.1, v1.22.2 and v1.22.3 were held back, so v1.22.0 keeps leading.
-    test('v1.25.0 leads the modal, v1.24.1 and v1.24.2 are held back, and every release before it shows under it', async ({ page }) => {
+    test('v1.25.0 leads the modal, v1.25.1, v1.24.1 and v1.24.2 are held back, and every release before it shows under it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        expect(index[0].tag).toBe('v1.25.0');
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.24.2', 'v1.24.1']);
+        // v1.25.1 is held back and sits on top of the index, so v1.25.0 is the first release the modal shows.
+        expect(index[0].tag).toBe('v1.25.1');
+        expect(index.find((e) => !e.hideFromModal).tag).toBe('v1.25.0');
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.25.1', 'v1.24.2', 'v1.24.1']);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -197,6 +199,7 @@ test.describe('a release flagged hideFromModal', () => {
         await expect.poll(shownTags).toContain('v1.25.0');
         expect(await shownTags()).toContain('v1.24.0');
         // Held back: recorded in the index, not shown.
+        expect(await shownTags()).not.toContain('v1.25.1');
         expect(await shownTags()).not.toContain('v1.24.1');
         expect(await shownTags()).not.toContain('v1.24.2');
         expect(await shownTags()).toContain('v1.23.0');
@@ -276,6 +279,6 @@ test.describe('a release flagged hideFromModal', () => {
         expect(src).toContain("DASHBOARD_RELEASE = '2026.11-dashboard-release-v1.25.0'");
         // The data token moves regardless: the index changed, and a browser
         // holding its old copy would never learn v1.25.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v363'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v364'");
     });
 });

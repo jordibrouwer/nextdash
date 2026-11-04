@@ -1,0 +1,21 @@
+{
+  "tag": "v1.25.1",
+  "date": "4 November 2026",
+  "releasedAt": "2026-11-04",
+  "modalLead": "The manual covers the widget schedule, the Watch feeds news widget and the settings of each widget kind.",
+  "sections": [
+    {
+      "title": "Manual",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>When a widget shows.</strong> The manual has a heading for the times and days a widget is shown, with two examples."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The Watch feeds news widget and the settings of each widget kind</strong> are in the manual, with the phone settings and every search command and key that was missing."
+        }
+      ]
+    }
+  ]
+}

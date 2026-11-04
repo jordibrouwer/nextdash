@@ -136,11 +136,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.25.1 — 4 November 2026
 
-A click in the backdrop picker keeps the focus on the tile you clicked, and the manual now covers the widget schedule, the Watch feeds news widget, the settings of each widget kind, the phone settings and every search command and key that was missing.
-
-### Themes
-
-- **fix — The backdrop picker keeps the focus on the tile you clicked.** In *All backdrops* a click put the focus on the copy of that backdrop under *Used lately*, so the keyboard carried on from the wrong place. It stays on the tile you chose.
+The manual now covers the widget schedule, the Watch feeds news widget, the settings of each widget kind, the phone settings and every search command and key that was missing. No change to the app itself. Held back from the What's new window (`hideFromModal`), so v1.25.0 keeps leading it.
 
 ### Docs
 
@@ -193,6 +189,7 @@ Widgets get a lot more to do: a Tabs widget, Clock and Countdown, duplicate, set
 - **new — A better backdrop picker.** A short view, groups, search and thumbnails that load when you scroll to them. The backdrop settings sit with the backdrops in the theme studio.
 - **fix — The backdrop groups are in English.** The groups in the backdrop picker (Patterns, Colour & glow, Fire & light, Nature & water, Sky & space, Materials, Paper & ink, Tech) were Dutch in every language; they are English now and translated in the other five.
 - **fix — The eight neutral themes draw their own backdrop.** Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete and Black still pointed at an old shared recipe, so their new backdrops were never drawn.
+- **fix — The backdrop picker keeps the focus on the tile you clicked.** In *All backdrops* a click put the focus on the copy of that backdrop under *Used lately*, so the keyboard carried on from the wrong place. It stays on the tile you chose.
 - **new — Aurora Glass is the default theme** on new installs. Installs that already chose a theme keep it.
 - **new — Tag colours.** Give a tag a colour; it shows in the tag cloud, the rows and the preview.
 
