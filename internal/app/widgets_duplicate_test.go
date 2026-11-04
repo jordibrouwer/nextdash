@@ -100,3 +100,49 @@ func TestDuplicateWidgetRefusesAnUnknownWidget(t *testing.T) {
 		t.Errorf("code = %d, want 404", code)
 	}
 }
+
+// blocksMeanwhileStore runs a write right after the first read of a page's
+// blocks, standing in for a second tab that saves while a copy is made.
+type blocksMeanwhileStore struct {
+	Store
+	between func()
+}
+
+func (s *blocksMeanwhileStore) GetPageBlocks(pageID int) ([]Widget, []string) {
+	widgets, order := s.Store.GetPageBlocks(pageID)
+	if f := s.between; f != nil {
+		s.between = nil
+		f()
+	}
+	return widgets, order
+}
+
+// A widget saved between the copy's read and its write survives the copy.
+func TestDuplicateWidgetKeepsAWidgetAddedMeanwhile(t *testing.T) {
+	h := newTestHandlers(t)
+	saved := callBlocks(t, h, http.MethodPut, `{"widgets":[{"type":"health","title":"Status"}]}`)
+	source := saved.Widgets[0]
+	inner := h.store
+	h.store = &blocksMeanwhileStore{Store: inner, between: func() {
+		widgets, order := inner.GetPageBlocks(1)
+		widgets = append(widgets, Widget{ID: "w_meanwhile01", Type: WidgetTypeHealth, Title: "Meanwhile"})
+		if err := inner.SavePageBlocks(1, widgets, order); err != nil {
+			t.Fatalf("save meanwhile: %v", err)
+		}
+	}}
+
+	code, out := duplicate(t, h, source.ID, "")
+	if code != http.StatusOK {
+		t.Fatalf("duplicate = %d", code)
+	}
+	titles := []string{}
+	for _, widget := range out.Widgets {
+		titles = append(titles, widget.Title)
+	}
+	if len(out.Widgets) != 3 {
+		t.Fatalf("widgets = %v, want the source, its copy and the one saved meanwhile", titles)
+	}
+	if out.Widgets[1].ID != out.ID {
+		t.Errorf("widgets = %v: the copy is not right after the source", titles)
+	}
+}

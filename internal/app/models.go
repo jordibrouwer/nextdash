@@ -1620,6 +1620,9 @@ type Store interface {
 	// because an order is only meaningful beside the things it orders.
 	GetPageBlocks(pageID int) ([]Widget, []string)
 	SavePageBlocks(pageID int, widgets []Widget, order []string) error
+	// InsertWidgetAfter adds one widget right after another, read and written
+	// under one lock (see widgets.go).
+	InsertWidgetAfter(pageID int, sourceID string, widget Widget) error
 	// LayoutHistory is a page's earlier arrangements, newest first; RestoreLayout
 	// saves one back and always keeps the layout it replaces (see layout_history.go).
 	LayoutHistory(pageID int) []LayoutSnapshot

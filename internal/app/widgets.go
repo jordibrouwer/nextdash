@@ -658,7 +658,60 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 func (fs *FileStore) savePageBlocks(pageID int, widgets []Widget, order []string, forceHistory bool) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
+	return fs.savePageBlocksLocked(pageID, widgets, order, forceHistory)
+}
 
+// errNoSuchWidget is InsertWidgetAfter's answer for a source that is not on the page.
+var errNoSuchWidget = errors.New("no such widget")
+
+/*
+InsertWidgetAfter puts a new widget right after another one, in the list and in
+the block order, reading both under the same lock it writes them in. A copy
+built from a list read earlier and saved whole would undo any widget added or
+changed in between.
+*/
+func (fs *FileStore) InsertWidgetAfter(pageID int, sourceID string, widget Widget) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	page, err := fs.readPageWithBookmarksLocked(pageID)
+	if err != nil {
+		return err
+	}
+	widgets := normalizeWidgets(page.Widgets)
+	order := resolveBlockOrder(page.BlockOrder, page.Categories, widgets)
+	at := -1
+	for i := range widgets {
+		if widgets[i].ID == sourceID {
+			at = i
+			break
+		}
+	}
+	if at < 0 {
+		return errNoSuchWidget
+	}
+	next := make([]Widget, 0, len(widgets)+1)
+	next = append(next, widgets[:at+1]...)
+	next = append(next, widget)
+	next = append(next, widgets[at+1:]...)
+
+	nextOrder := make([]string, 0, len(order)+1)
+	placed := false
+	for _, id := range order {
+		nextOrder = append(nextOrder, id)
+		if id == sourceID {
+			nextOrder = append(nextOrder, widget.ID)
+			placed = true
+		}
+	}
+	if !placed {
+		nextOrder = append(nextOrder, widget.ID)
+	}
+	return fs.savePageBlocksLocked(pageID, next, nextOrder, false)
+}
+
+// savePageBlocksLocked is savePageBlocks with the store lock already held.
+func (fs *FileStore) savePageBlocksLocked(pageID int, widgets []Widget, order []string, forceHistory bool) error {
 	fs.ensureDataDir()
 
 	page, err := fs.readPageWithBookmarksLocked(pageID)

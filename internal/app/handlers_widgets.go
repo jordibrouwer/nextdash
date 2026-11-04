@@ -254,7 +254,7 @@ func (h *Handlers) DuplicateWidgetHandler(w http.ResponseWriter, r *http.Request
 		_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&body)
 	}
 
-	widgets, order := h.store.GetPageBlocks(pageID)
+	widgets, _ := h.store.GetPageBlocks(pageID)
 	at := -1
 	for i := range widgets {
 		if widgets[i].ID == sourceID {
@@ -310,29 +310,17 @@ func (h *Handlers) DuplicateWidgetHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	next := make([]Widget, 0, len(widgets)+1)
-	next = append(next, widgets[:at+1]...)
-	next = append(next, copied)
-	next = append(next, widgets[at+1:]...)
-
-	nextOrder := make([]string, 0, len(order)+1)
-	placed := false
-	for _, id := range order {
-		nextOrder = append(nextOrder, id)
-		if id == sourceID {
-			nextOrder = append(nextOrder, newID)
-			placed = true
-		}
-	}
-	if !placed {
-		nextOrder = append(nextOrder, newID)
-	}
-
-	if err := h.store.SavePageBlocks(pageID, next, nextOrder); err != nil {
+	// Inserted into the list as it stands now, not into the one read above: a
+	// widget added in between would otherwise be written away.
+	if err := h.store.InsertWidgetAfter(pageID, sourceID, copied); err != nil {
 		// A sign-in written for a copy that was refused would sit in the file
 		// with nothing pointing at it.
 		if copiedCredential {
 			_ = deleteHealthCredential(ownNew)
+		}
+		if errors.Is(err, errNoSuchWidget) {
+			http.Error(w, "No such widget", http.StatusNotFound)
+			return
 		}
 		if errors.Is(err, errUnknownWidgetType) || errors.Is(err, errTooManyWidgets) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
