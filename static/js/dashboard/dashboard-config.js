@@ -2848,6 +2848,7 @@ class DashboardConfig {
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
         this.bindFormKeyboard(container);
         this.bindFormKeyboardLegend(container);
+        this.bindSettingPageHold();
         this.cacheSettingsJumpFields();
         if (this.isActiveView()) {
             this.updateConfigShellHead();
@@ -2878,6 +2879,72 @@ class DashboardConfig {
         return pairs
             .map(([k, label]) => `<span><kbd>${esc(k)}</kbd> ${esc(label)}</span>`)
             .join('');
+    }
+
+    /**
+     * A setting that is changed does not move the page.
+     *
+     * Changing a setting saves it and draws the panel again, a few times over
+     * about a second, and in some browsers (Safari was the one that showed it)
+     * the page ends up somewhere else: further up, with the reader who had
+     * scrolled down left looking at a different part of the settings. Whatever
+     * moves it, the way back is the same: note where the page was when the
+     * control was used and put it back for as long as the change is settling.
+     * The reader taking the page back (wheel, touch, a key, the scrollbar)
+     * ends it at once. One listener for every tab, so a setting added later is
+     * covered without anyone remembering to.
+     */
+    bindSettingPageHold() {
+        if (this._settingPageHoldBound) return;
+        this._settingPageHoldBound = true;
+        const CONTROL = 'input[type="checkbox"], input[type="radio"], input[type="range"], select, '
+            + '.config-choices button, button[data-behavior-type="chip"], .config-toggle';
+        const onUse = (event) => {
+            if (!this.isActiveView()) return;
+            const target = event.target;
+            if (!target?.closest?.('#config-view-body')) return;
+            // Choosing a tab or a section is meant to move the page.
+            if (target.closest('.config-subtab, .config-subtabs, [data-appearance-goto], [data-filter-elsewhere]')) return;
+            if (!target.closest(CONTROL)) return;
+            this.holdPageFor(1500);
+        };
+        document.addEventListener('change', onUse, true);
+        document.addEventListener('click', onUse, true);
+    }
+
+    /**
+     * Put the page back to where it is now whenever something moves it, for
+     * `ms` milliseconds or until the reader scrolls it themselves.
+     */
+    holdPageFor(ms) {
+        this._pageHold?.stop?.();
+        const root = document.documentElement;
+        const y = window.scrollY;
+        const held = root.style.minHeight;
+        // As tall as it is now, so a panel that is empty for a moment cannot
+        // leave the page too short to hold the position.
+        root.style.minHeight = `${root.scrollHeight}px`;
+        const until = performance.now() + ms;
+        const takeBack = ['wheel', 'touchstart', 'keydown'];
+        let frame = 0;
+        let over = false;
+        const stop = () => {
+            if (over) return;
+            over = true;
+            cancelAnimationFrame(frame);
+            root.style.minHeight = held;
+            takeBack.forEach((name) => window.removeEventListener(name, stop, true));
+            if (this._pageHold?.stop === stop) this._pageHold = null;
+        };
+        const keep = () => {
+            if (over) return;
+            if (Math.abs(window.scrollY - y) > 0.5) window.scrollTo({ top: y, behavior: 'instant' });
+            if (performance.now() >= until) { stop(); return; }
+            frame = requestAnimationFrame(keep);
+        };
+        takeBack.forEach((name) => window.addEventListener(name, stop, { capture: true, passive: true }));
+        this._pageHold = { stop };
+        frame = requestAnimationFrame(keep);
     }
 
     /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
@@ -4336,9 +4403,132 @@ class DashboardConfig {
      * than appended, so a field that is both declared and rendered appears
      * once — with the scrape's selector, since that one can be focused now.
      */
+    /**
+     * Things to do, not settings to change: each one goes somewhere and opens
+     * something, and never changes anything by itself (no backup is made, no
+     * check run, until the reader presses the button where it lives). They sit
+     * in the same list as the settings so one search finds both.
+     */
+    settingsJumpActionEntries() {
+        const action = (id, titleKey, title, keywords, section) => ({
+            id: `action:${id}`,
+            kind: 'action',
+            action: id,
+            title: this.t(titleKey, title),
+            subtitle: this.t('config.settingsSearchActionSub', 'Action'),
+            keywords,
+            // Where it lands, so the shared plumbing for "which section" has an
+            // answer; the action itself decides what opens.
+            section,
+            subTab: null,
+            focusSelector: null,
+        });
+        return [
+            action('add-widget', 'config.actionAddWidget', 'Add a widget', 'new tile widgets picker catalogue', 'widgets'),
+            action('theme-studio', 'config.actionThemeStudio', 'Open the theme studio', 'look colours theme designer studio', 'appearance'),
+            action('whats-new', 'config.actionWhatsNew', 'Show what’s new', 'release notes changes version news', 'overview'),
+            action('check-update', 'config.actionCheckUpdate', 'Check for an update', 'upgrade version new release', 'overview'),
+            action('backups', 'config.actionBackups', 'Make or restore a backup', 'backup restore export import data zip', 'data-backups'),
+            action('import', 'config.actionImport', 'Import bookmarks', 'import browser html csv pocket raindrop', 'data-backups'),
+            action('layout-history', 'config.actionLayoutHistory', 'Restore an earlier layout of this page', 'undo history widgets arrangement rollback back', 'overview'),
+            action('changed', 'config.actionChanged', 'Show what I changed from the defaults', 'modified different default customised diff reset', 'overview'),
+        ];
+    }
+
+    /**
+     * Earlier arrangements of this page, newest first, each with what restoring
+     * it would change. A restore is a save like any other, so the layout it
+     * replaces is kept too: nothing here is final.
+     */
+    async openLayoutHistory() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pageId = Number(this.dash.currentPageId) || Number(this.dash.pages?.[0]?.id) || 1;
+        let entries = [];
+        try {
+            const res = await this.writeFetch(`/api/pages/${pageId}/layout-history`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            entries = ((await res.json()).entries || []).filter((e) => e.changed);
+        } catch {
+            this.notify(this.t('config.layoutHistoryError', 'Could not read the layout history.'), 'error');
+            return;
+        }
+        const page = (this.dash.pages || []).find((p) => Number(p.id) === pageId)?.name || '';
+        const summary = (e) => {
+            const parts = [];
+            if (e.brings?.length) parts.push(this.t('config.layoutHistoryBrings', 'brings back {names}').replace('{names}', e.brings.join(', ')));
+            if (e.removes?.length) parts.push(this.t('config.layoutHistoryRemoves', 'takes away {names}').replace('{names}', e.removes.join(', ')));
+            if (e.reordered && !parts.length) parts.push(this.t('config.layoutHistoryOrder', 'puts the blocks in another order'));
+            return parts.join(' · ') || this.t('config.layoutHistorySettings', 'changes widget settings');
+        };
+        const body = entries.length
+            ? `<ul class="config-settings-jump-results config-layout-history" role="list">${entries.map((e) => `
+                <li class="config-settings-jump-result" role="listitem">
+                    <span class="config-settings-jump-result-title">${esc(this.formatRelative(e.at))}</span>
+                    <span class="config-settings-jump-result-sub">${esc(summary(e))}</span>
+                    <button type="button" class="config-btn config-btn--small" data-layout-restore="${esc(e.id)}">${esc(this.t('config.layoutHistoryRestore', 'Restore'))}</button>
+                </li>`).join('')}</ul>`
+            : `<p class="config-settings-jump-empty">${esc(this.t('config.layoutHistoryNone', 'No earlier layouts yet. They are kept when widgets are added, moved, closed or changed.'))}</p>`;
+        window.AppModal.show({
+            title: this.t('config.layoutHistoryTitle', 'Earlier layouts of “{page}”').replace('{page}', page),
+            htmlMessage: `<div class="config-layout-history-box"><p class="config-panel-note">${esc(this.t('config.layoutHistoryNote',
+                'The widgets of this page and the order of its blocks, not the links. Restoring keeps the layout it replaces, so you can go back.'))}</p>${body}</div>`,
+            confirmText: this.t('config.close', 'Close'),
+            showCancel: false,
+            modalClass: 'config-settings-jump-modal keyboard-cheat-sheet-modal',
+        });
+        // Inside the message, which is new on every show: AppModal's own panel is shared.
+        document.querySelector('.config-layout-history-box')?.addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-layout-restore]');
+            if (!button) return;
+            button.disabled = true;
+            try {
+                const res = await this.writeFetch(`/api/pages/${pageId}/layout-history/${encodeURIComponent(button.getAttribute('data-layout-restore'))}/restore`, { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                window.AppModal.hide();
+                await this.dash.renderCore?.reloadPageBlocks?.(pageId);
+                this.notify(this.t('config.layoutHistoryRestored', 'Layout restored. It is in the list again if you want the one it replaced.'), 'success');
+            } catch {
+                button.disabled = false;
+                this.notify(this.t('config.layoutHistoryRestoreError', 'Could not restore that layout.'), 'error');
+            }
+        });
+    }
+
+    /** Runs an action entry. Returns once it has handed over to where it lives. */
+    async runSettingsJumpAction(id) {
+        if (id === 'add-widget') {
+            if (this.section !== 'widgets') {
+                this.selectSection('widgets', 'keyboard');
+                if (!(await this.ensureSection('widgets')) || this.section !== 'widgets') return;
+            }
+            await new Promise((r) => requestAnimationFrame(r));
+            if (typeof this.openWidgetCatalogue === 'function') this.openWidgetCatalogue();
+            return;
+        }
+        if (id === 'theme-studio') {
+            await this.openThemeBrowser();
+            return;
+        }
+        if (id === 'layout-history') { await this.openLayoutHistory(); return; }
+        if (id === 'changed') { this.openChangedSettings(); return; }
+        if (id === 'whats-new') { await this.openWhatsNew(); return; }
+        if (id === 'check-update') {
+            if (this.section !== 'overview') this.selectSection('overview', 'keyboard');
+            await this.runUpdateCheck();
+            return;
+        }
+        if (id === 'backups' || id === 'import') {
+            // Whatever tab was last open there (Reset, Trash) is the wrong one.
+            this.dbTab = 'backups';
+            this.selectSection('data-backups', 'keyboard');
+            if (!(await this.ensureSection('data-backups'))) return;
+        }
+    }
+
     getSettingsJumpEntries() {
         const byId = new Map();
         this.buildSettingsJumpNavEntries().forEach((e) => byId.set(e.id, e));
+        this.settingsJumpActionEntries().forEach((e) => byId.set(e.id, e));
 
         const fieldEntries = this.settingsJumpFieldEntries();
         fieldEntries.forEach((e) => byId.set(e.id, e));
@@ -4659,6 +4849,10 @@ class DashboardConfig {
         });
         window.AppModal.hide();
         this.cleanupSettingsJumpHandler();
+        if (entry.kind === 'action') {
+            await this.runSettingsJumpAction(entry.action);
+            return;
+        }
         if (entry.section !== this.section) {
             this.selectSection(entry.section, 'keyboard');
             // A section whose script is still on its way draws when it lands
@@ -5020,6 +5214,7 @@ class DashboardConfig {
                         ${this.renderOverviewHealthWidget()}
                         ${this.renderOverviewDigestWidget()}
                         ${this.renderOverviewStatsWidget()}
+                        ${this.renderOverviewSettingsWidget()}
                         ${this.renderOverviewFeaturesBanner()}
                     </div>
                 </div>
@@ -5312,6 +5507,36 @@ class DashboardConfig {
      * The score keeps its heaviest deduction as the reason: a number without
      * its biggest cause is a verdict the reader cannot act on.
      */
+    /**
+     * How far this install has moved from the defaults, as a panel like the
+     * others: the figure, where the changes are, and a way into the full list.
+     * Nothing to read when nothing has moved, which is also a fact worth stating.
+     */
+    renderOverviewSettingsWidget() {
+        const changed = this.changedSettings();
+        const bySection = new Map();
+        changed.forEach((entry) => {
+            const name = this.sectionLabel(entry.section);
+            bySection.set(name, (bySection.get(name) || 0) + 1);
+        });
+        const rows = [...bySection.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+        return this.renderOverviewWidget({
+            id: 'settings',
+            title: this.t('config.overviewSettingsTitle', 'Settings'),
+            go: changed.length ? { changed: true } : null,
+            goLabel: this.t('config.overviewSettingsList', 'What changed'),
+            body: this.renderOverviewFigure(
+                changed.length,
+                changed.length === 1
+                    ? this.t('config.overviewSettingsOne', 'setting changed from the default')
+                    : this.t('config.overviewSettingsMany', 'settings changed from the defaults'))
+                + (rows.length ? this.renderOverviewRows(rows) : ''),
+            note: this.dash.escapeHtml(changed.length
+                ? ''
+                : this.t('config.overviewSettingsNone', 'Everything is as it came out of the box.')),
+        });
+    }
+
     renderOverviewStatsWidget() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.computeStats();
@@ -5554,6 +5779,22 @@ class DashboardConfig {
     }
 
     /**
+     * The automatic backups' status, for the "last backup failed" chip. Needs
+     * the write token, so a browser without one simply gets no chip. Repaints
+     * once when it lands and the answer differs.
+     */
+    loadOverviewBackups() {
+        const auth = window.DashboardWidgetUtils?.authFetch;
+        if (typeof auth !== 'function') return Promise.resolve(null);
+        return auth('/api/auto-backups').then((res) => (res.ok ? res.json() : null)).then((data) => {
+            const changed = String(data?.lastRunError || '') !== String(this._overviewBackups?.lastRunError || '');
+            this._overviewBackups = data;
+            if (changed && this.isActiveView() && this.section === 'overview') this.repaintOverview();
+            return data;
+        }).catch(() => null);
+    }
+
+    /**
      * The latest weekly digest for the overview's panel. Repaints once when it
      * lands; no digest yet leaves the panel out.
      */
@@ -5612,6 +5853,17 @@ class DashboardConfig {
         const containerUpdates = (this._overviewContainers || [])
             .filter((c) => c.update?.status === 'available').length;
         const say = (key, fallback, n) => this.t(key, fallback).replace('{n}', String(n));
+        // Certificates that run out within two weeks, from the report the
+        // header badge already fetched (expiresAt is in milliseconds).
+        const certs = window.HealthFacts?.certificates || d.healthReport?.certificates || sum.certificates || {};
+        const certCutoff = Date.now() + 14 * 86400000;
+        const certsDue = Object.values(certs)
+            .filter((c) => Number(c?.expiresAt) > 0 && Number(c.expiresAt) <= certCutoff).length;
+        // Tiles on the page in view that could not read what they show. Only
+        // the page that has been drawn knows, so this is a floor, not a count.
+        const widgetsFailing = (window.WidgetState?.snapshot?.() || [])
+            .filter((w) => w.state === 'error').length;
+        const backupFailed = String(this._overviewBackups?.lastRunError || '').trim() !== '' ? 1 : 0;
 
         return [
             {
@@ -5662,6 +5914,27 @@ class DashboardConfig {
                 sentence: say('config.overviewSentenceContainerUpdates', '{n} containers have an update waiting.', containerUpdates),
                 cta: this.t('config.overviewOpenContainers', 'Open containers'),
                 action: { view: 'docker' },
+            },
+            {
+                n: certsDue, tone: 'crit',
+                label: this.t('config.overviewCertsDue', 'Certificates expiring'),
+                sentence: say('config.overviewSentenceCertsDue', '{n} certificates run out within two weeks.', certsDue),
+                cta: this.t('config.overviewFixInHealth', 'Open health'),
+                action: { view: 'health' },
+            },
+            {
+                n: widgetsFailing, tone: 'warn',
+                label: this.t('config.overviewWidgetsFailing', 'Widgets that cannot read'),
+                sentence: say('config.overviewSentenceWidgetsFailing', '{n} widgets on the dashboard could not read what they show.', widgetsFailing),
+                cta: this.t('config.overviewOpenWidgets', 'Open widgets'),
+                action: { section: 'widgets' },
+            },
+            {
+                n: backupFailed, tone: 'crit',
+                label: this.t('config.overviewBackupFailed', 'Last backup failed'),
+                sentence: this.t('config.overviewSentenceBackupFailed', 'The last automatic backup did not finish.'),
+                cta: this.t('config.overviewOpenBackups', 'Open backups'),
+                action: { section: 'data-backups', dbTab: 'backups' },
             },
         ].filter((i) => i.n > 0);
     }
@@ -5985,6 +6258,7 @@ class DashboardConfig {
         // Also not awaited: a slow Docker daemon must not hold the page up.
         // The panel appears when the list lands.
         void this.loadOverviewContainers();
+        void this.loadOverviewBackups();
         void this.loadOverviewDigest();
         if (d.settings?.updateCheckEnabled !== false && !document.querySelector('meta[name="nextdash-update-check-locked"]')) {
             jobs.push(this.loadUpdateStatus());
@@ -6163,6 +6437,11 @@ class DashboardConfig {
             return;
         }
         // Edit mode lives on the dashboard: leave Config and switch it on.
+        // The list of what was changed from the defaults.
+        if (target.changed) {
+            this.openChangedSettings();
+            return;
+        }
         if (target.editMode) {
             this.closeConfigView();
             window.dashboardInstance?.editMode?.enter?.();
@@ -7504,8 +7783,9 @@ class DashboardConfig {
     }
 
     async importBrowserBookmarks(file) {
-        if (!/\.(html?|htm)$/i.test(file.name)) {
-            this.notify(this.t('config.browserImportInvalidFile', 'Please choose an HTML bookmarks file.'), 'error');
+        // A bookmarks file, or the configuration of Homepage, Dashy or Homer.
+        if (!/\.(html?|htm|ya?ml)$/i.test(file.name)) {
+            this.notify(this.t('config.browserImportInvalidFile', 'Please choose an HTML bookmarks file, or a Homepage, Dashy or Homer configuration (.yaml).'), 'error');
             return;
         }
         const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
@@ -8093,11 +8373,14 @@ class DashboardConfig {
                     return;
                 }
                 const body = document.getElementById('config-view-body');
+                // The body is replaced whole, keyboard legend and all: the legend
+                // is drawn again, or the page came back 63px shorter.
                 if (body) {
                     body.innerHTML = this.renderAppearance();
                     const container = document.getElementById('dashboard-layout');
                     if (container) {
                         this.bindAppearanceControls(container);
+                        this.bindFormKeyboardLegend(container);
                         // The fresh body carries the intro line again; lifted to
                         // the band as repaintBackupSection does, or it showed twice.
                         this._fillShellHeadFromSection(container);
@@ -8449,7 +8732,7 @@ class DashboardConfig {
                 return `
                 <div class="config-field config-theme-char config-theme-char--tiles" data-theme-char-row="${esc(f.prop)}">
                     <span class="config-field-label">${esc(label)}</span>
-                    <div class="config-theme-backdrops config-backdrop-grid" data-theme-backdrops role="group" aria-label="${esc(label)}"></div>
+                    <div class="config-theme-backdrops config-backdrop-picker" data-theme-backdrops role="group" aria-label="${esc(label)}"></div>
                 </div>`;
             }
             let control;
@@ -9116,7 +9399,7 @@ class DashboardConfig {
         rowHighlight: { info: ['rowHighlightInfoTitle', 'rowHighlightInfoMessage',
             'How a row lights up', 'Subtle lets the accent reach a little way in from the left edge of the row you are on. Strong carries it much further across, which is easier to pick out at a glance or from a distance.'],
             hint: 'rowHighlightHint', def: 'subtle' },
-        showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: false },
+        showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: false },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
         colorizeStatus: { info: ['colorizeStatusInfoTitle', 'colorizeStatusInfoMessage'], def: true },
@@ -9259,7 +9542,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'tidal-slate-dark' },
+        theme: { def: 'aurora-glass-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -9569,6 +9852,78 @@ class DashboardConfig {
             out.push(entry);
         });
         return out;
+    }
+
+    /** A value as the changed-settings list prints it: On/Off, text, or a dash when empty. */
+    changedValueText(value) {
+        if (value === undefined || value === null || value === '') return '—';
+        if (typeof value === 'boolean') return value ? this.t('config.on', 'On') : this.t('config.off', 'Off');
+        if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
+        const text = String(value);
+        return text.length > 60 ? `${text.slice(0, 57)}…` : text;
+    }
+
+    /**
+     * Every setting that is not at its installation default, in one list, with
+     * what it is now and what it was out of the box. Each row goes to the
+     * setting; Copy puts the list on the clipboard as text, for a bug report or
+     * to compare two installs. Read-only: nothing here changes a setting.
+     */
+    openChangedSettings() {
+        if (this.isSettingsJumpOpen?.()) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const entries = this.changedSettings().map((entry) => ({
+            entry,
+            // An absent number is the zero it was stored as (isFieldDefault says
+            // the same), so it is printed as one rather than as a dash.
+            now: this.changedValueText(typeof this.fieldMeta(entry.field)?.def === 'number' ? Number(s[entry.field] ?? 0) : s[entry.field]),
+            was: this.changedValueText(this.fieldMeta(entry.field)?.def),
+        })).sort((a, b) => `${a.entry.subtitle} ${a.entry.title}`.localeCompare(`${b.entry.subtitle} ${b.entry.title}`));
+        this._changedList = entries;
+        const body = entries.length
+            ? `<ul class="config-settings-jump-results config-changed-list" role="list">${entries.map((row, i) => `
+                <li class="config-settings-jump-result" data-changed-index="${i}" tabindex="0" role="listitem">
+                    <span class="config-settings-jump-result-title">${esc(row.entry.title)}</span>
+                    <span class="config-settings-jump-result-sub">${esc(row.entry.subtitle)} · ${esc(
+                        this.t('config.changedNow', 'now {now}, default {was}')
+                            .replace('{now}', row.now).replace('{was}', row.was))}</span>
+                </li>`).join('')}</ul>`
+            : `<p class="config-settings-jump-empty">${esc(this.t('config.changedNoneAll', 'Every setting is at its default.'))}</p>`;
+        window.AppModal.show({
+            title: this.t('config.changedTitle', 'What you changed')
+                + (entries.length ? ` (${entries.length})` : ''),
+            htmlMessage: `<div class="config-settings-jump config-changed">
+                ${entries.length ? `<button type="button" class="config-btn config-btn--small" data-changed-copy>${esc(this.t('config.changedCopy', 'Copy as text'))}</button>` : ''}
+                <div class="config-settings-jump-body">${body}</div></div>`,
+            confirmText: this.t('config.close', 'Close'),
+            showCancel: false,
+            modalClass: 'config-settings-jump-modal config-changed-modal keyboard-cheat-sheet-modal',
+        });
+        // The element inside the message, replaced on every show: AppModal's own
+        // panel is one element for every dialog, and a listener put on it would
+        // stay for the next one.
+        const modal = document.querySelector('.config-changed');
+        if (!modal) return;
+        const go = (row) => {
+            const item = this._changedList?.[Number(row?.getAttribute('data-changed-index'))];
+            if (item) void this.activateSettingsJumpEntry(item.entry);
+        };
+        modal.addEventListener('click', (e) => {
+            if (e.target.closest('[data-changed-copy]')) {
+                const text = (this._changedList || []).map((r) => `${r.entry.subtitle} › ${r.entry.title}: ${r.now} (default ${r.was})`).join('\n');
+                // navigator.clipboard is missing on a plain-http address; the
+                // failure is a message, not a TypeError.
+                void Promise.resolve().then(() => navigator.clipboard.writeText(text)).then(
+                    () => this.notify?.(this.t('config.changedCopied', 'Copied.'), 'success'),
+                    () => this.notify?.(this.t('config.changedCopyFailed', 'Could not copy.'), 'error'));
+                return;
+            }
+            go(e.target.closest('[data-changed-index]'));
+        });
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') go(e.target.closest?.('[data-changed-index]'));
+        });
     }
 
     /**
@@ -13294,6 +13649,9 @@ class DashboardConfig {
         if (this.dash.settings?.enableSessionTips === false) return;
         this._monitoringTutorialAsked = true;
         if (!(await this.loadMonitoringTour())) return;
+        // The script came in while the reader moved on: a tour for a section
+        // that is no longer on screen would open over another one.
+        if (this.section !== 'monitoring' || !this.isActiveView()) { this._monitoringTutorialAsked = false; return; }
         window.MonitoringTutorial?.maybeShow?.();
     }
 
@@ -13328,6 +13686,9 @@ class DashboardConfig {
         if (this.dash.settings?.enableSessionTips === false) return;
         this._unraidTutorialAsked = true;
         if (!(await this.loadUnraidTour())) return;
+        // The script came in while the reader moved on: a tour for a section
+        // that is no longer on screen would open over another one.
+        if (this.section !== 'unraid' || !this.isActiveView()) { this._unraidTutorialAsked = false; return; }
         window.UnraidTutorial?.maybeShow?.();
     }
 
@@ -13362,6 +13723,9 @@ class DashboardConfig {
         if (this.dash.settings?.enableSessionTips === false) return;
         this._assistantTutorialAsked = true;
         if (!(await this.loadAssistantTour())) return;
+        // The script came in while the reader moved on: a tour for a section
+        // that is no longer on screen would open over another one.
+        if (this.section !== 'assistant' || !this.isActiveView()) { this._assistantTutorialAsked = false; return; }
         window.AssistantTutorial?.maybeShow?.();
     }
 
@@ -14273,7 +14637,10 @@ class DashboardConfig {
             // would move the reader to a different control.
             const next = document.querySelector(`[${attr}="${CSS.escape(field)}"]`);
             if (!next) return;
-            next.focus?.();
+            // Without preventScroll the browser scrolls the control into view,
+            // which moves a reader who changed a setting somewhere else on the
+            // page: it is only the focus that is being put back.
+            next.focus?.({ preventScroll: true });
             // Text inputs keep the caret too, or typing resumes at the wrong end.
             if (selectionStart != null && next.setSelectionRange) {
                 try { next.setSelectionRange(selectionStart, selectionEnd); } catch { /* not a text input */ }
@@ -14544,7 +14911,7 @@ class DashboardConfig {
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
-        ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes']],
+        ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
@@ -15161,8 +15528,9 @@ class DashboardConfig {
                 // Same .is-selected / aria-pressed pair the dashboard's own tag
                 // cloud uses, so the two clouds behave alike.
                 const selected = this._tagQuery === tag;
+                const hue = window.TagColors?.get(tag) || '';
                 return `<button type="button"
-                    class="tag-cloud-word is-${classes.get(tag)}${selected ? ' is-selected' : ''}"
+                    class="tag-cloud-word is-${classes.get(tag)}${selected ? ' is-selected' : ''}"${hue ? ` data-tag-color="${esc(hue)}"` : ''}
                     data-tag-cloud="${esc(tag)}" role="listitem" aria-pressed="${selected ? 'true' : 'false'}"
                     style="--tag-index:${i}"
                     title="${esc(tag)} — ${esc(label)}" aria-label="${esc(tag)}. ${esc(label)}">
@@ -15171,6 +15539,35 @@ class DashboardConfig {
                 </button>`;
             }).join('');
         return `<div class="tag-cloud-wordcloud config-tag-cloud" role="list">${words}</div>`;
+    }
+
+    /** The colour choice for one tag: none, or a name from the palette. */
+    renderTagColorSelect(tag) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = window.TagColors?.get(tag) || '';
+        const names = {
+            red: ['config.tagColorRed', 'Red'], orange: ['config.tagColorOrange', 'Orange'],
+            yellow: ['config.tagColorYellow', 'Yellow'], green: ['config.tagColorGreen', 'Green'],
+            teal: ['config.tagColorTeal', 'Teal'], blue: ['config.tagColorBlue', 'Blue'],
+            purple: ['config.tagColorPurple', 'Purple'], pink: ['config.tagColorPink', 'Pink'],
+        };
+        const options = (window.TagColors?.PALETTE || []).map((name) =>
+            `<option value="${name}"${current === name ? ' selected' : ''}>${esc(this.t(...names[name]))}</option>`).join('');
+        return `<select class="config-select config-tag-swatch"${current ? ` data-tag-color="${esc(current)}"` : ''}
+            data-tag-color-for="${esc(tag)}" aria-label="${esc(this.t('config.tagColorAria', 'Colour for {tag}').replace('{tag}', tag))}">
+            <option value=""${current ? '' : ' selected'}>${esc(this.t('config.tagColorNone', 'No colour'))}</option>${options}</select>`;
+    }
+
+    /** Saves one tag's colour. Empty removes it. Follows a rename through renameTagColor. */
+    async setTagColor(tag, color) {
+        const key = String(tag || '').trim().toLowerCase();
+        if (!key) return;
+        const next = { ...(this.dash.settings.tagColors || {}) };
+        if (color && window.TagColors?.PALETTE.includes(color)) next[key] = color; else delete next[key];
+        // {} rather than a missing key: the server keeps what an omitted key held.
+        this.dash.settings.tagColors = next;
+        await this.saveSettingsWithFeedback();
+        this.dash.renderDashboard?.({ animate: false });
     }
 
     renderTagsManager() {
@@ -15187,6 +15584,7 @@ class DashboardConfig {
             <li class="config-crud-row" data-tag-row="${esc(tag)}">
                 <div class="config-crud-fields">
                     <input type="text" class="config-text" data-tag-rename="${esc(tag)}" value="${esc(tag)}">
+                    ${this.renderTagColorSelect(tag)}
                     ${this.renderStatMeta(count, scales[i], 'config.tagBookmarkCount', '{count} bookmarks')}
                 </div>
                 <div class="config-crud-row-actions">
@@ -15286,6 +15684,13 @@ class DashboardConfig {
                 void this.rewriteTag(from, to);
             });
         });
+        container.querySelectorAll('[data-tag-color-for]').forEach((select) => {
+            select.addEventListener('change', () => {
+                const value = select.value;
+                if (value) select.setAttribute('data-tag-color', value); else select.removeAttribute('data-tag-color');
+                void this.setTagColor(select.getAttribute('data-tag-color-for'), value);
+            });
+        });
         container.querySelectorAll('[data-tag-delete]').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const tag = btn.getAttribute('data-tag-delete');
@@ -15322,6 +15727,19 @@ class DashboardConfig {
     async rewriteTag(from, to) {
         await window.TagRewrite.rewrite(this.dash, from, to, {
             onDone: async () => {
+                // The colour belongs to the tag: it follows a rename (a merge
+                // keeps the colour of the tag it merged into) and goes with a delete.
+                const colors = this.dash.settings.tagColors;
+                const was = String(from || '').trim().toLowerCase();
+                if (colors && Object.prototype.hasOwnProperty.call(colors, was)) {
+                    const moved = { ...colors };
+                    const color = moved[was];
+                    delete moved[was];
+                    const now = String(to || '').trim().toLowerCase();
+                    if (now && !moved[now]) moved[now] = color;
+                    this.dash.settings.tagColors = moved;
+                    await this.saveSettingsWithFeedback();
+                }
                 this._tagList = null;
                 await this.loadTagsManager();
                 await this.refreshBookmarksAfterWrite({ silent: true });
@@ -16828,7 +17246,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -17082,6 +17500,28 @@ class DashboardConfig {
             { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
         ],
+        clock: [
+            { key: 'zones', kind: 'tags',
+              label: ['config.widgetClockZones', 'Other places'],
+              hint: ['config.widgetClockZonesHint',
+                     'Comma separated, as Name=Region/City — for example Tokyo=Asia/Tokyo, New York=America/New_York. Your own time is always shown first.'] },
+            { key: 'hour12', kind: 'bool', label: ['config.widgetClockHour12', 'Use a 12-hour clock'] },
+            { key: 'showDate', kind: 'bool', label: ['config.widgetClockShowDate', 'Show today’s date'] },
+        ],
+        countdown: [
+            { key: 'date', kind: 'text', input: 'date', maxlength: 10,
+              label: ['config.widgetCountdownDate', 'Date'],
+              hint: ['config.widgetCountdownDateHint', 'The widget’s title says what it counts to. Past the date it counts the days since.'] },
+            { key: 'time', kind: 'text', input: 'time', maxlength: 5,
+              label: ['config.widgetCountdownTime', 'Time of day (optional)'] },
+            { key: 'showTime', kind: 'bool', label: ['config.widgetCountdownShowTime', 'Count in hours and minutes near the end'] },
+        ],
+        stack: [
+            { key: 'members', kind: 'checkset', optionsFrom: 'siblings',
+              label: ['config.widgetStackMembers', 'Widgets in the tabs'],
+              hint: ['config.widgetStackMembersHint',
+                     'Each ticked widget becomes a tab, in page order, and leaves the grid while it is held here. Its settings stay under Widgets.'] },
+        ],
         memory: [
             { key: 'refreshSeconds', kind: 'int', min: 2, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
@@ -17091,6 +17531,12 @@ class DashboardConfig {
               hint: ['config.widgetMemoryCacheHint',
                      'Memory the machine is keeping warm and will hand back the moment anything needs it.'] },
             { key: 'showSwap', kind: 'bool', label: ['config.widgetMemoryShowSwap', 'Show swap'] },
+            { key: 'warnAt', kind: 'int', min: 1, max: 99,
+              label: ['config.widgetUsageWarnAt', 'Amber from (% used)'],
+              hint: ['config.widgetUsageWarnAtHint', 'Empty means 85. A disk that is meant to run full can be told so here.'] },
+            { key: 'criticalAt', kind: 'int', min: 2, max: 100,
+              label: ['config.widgetUsageCriticalAt', 'Red from (% used)'],
+              hint: ['config.widgetUsageCriticalAtHint', 'Empty means 95. It has to be above the amber limit, or both fall back to the defaults.'] },
         ],
         disks: [
             { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
@@ -17108,6 +17554,12 @@ class DashboardConfig {
                      'Written as path=name, so /mnt/user=Files. Without one a disk shows its path.'] },
             { key: 'showMeter', kind: 'bool', defaultOn: true, label: ['config.widgetDisksMeter', 'Show a bar per disk'] },
             { key: 'showInodes', kind: 'bool', label: ['config.widgetDisksInodesToggle', 'Show how full the file table is'] },
+            { key: 'warnAt', kind: 'int', min: 1, max: 99,
+              label: ['config.widgetUsageWarnAt', 'Amber from (% used)'],
+              hint: ['config.widgetUsageWarnAtHint', 'Empty means 85. A disk that is meant to run full can be told so here.'] },
+            { key: 'criticalAt', kind: 'int', min: 2, max: 100,
+              label: ['config.widgetUsageCriticalAt', 'Red from (% used)'],
+              hint: ['config.widgetUsageCriticalAtHint', 'Empty means 95. It has to be above the amber limit, or both fall back to the defaults.'] },
         ],
         cpu: [
             { key: 'refreshSeconds', kind: 'int', min: 1, max: 3600,
@@ -17130,6 +17582,8 @@ class DashboardConfig {
         uptime: [
             { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },
             { key: 'sparkline', kind: 'bool', defaultOn: true, label: ['config.widgetSparkline', 'Show a sparkline per row'] },
+            { key: 'latency', kind: 'bool', label: ['config.widgetLatency', 'Show the response time of the last day'],
+              hint: ['config.widgetLatencyHint', 'A small line and the latest figure beside each row that is up. Reads each row’s own history, so it is kept to the rows shown.'] },
             { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
@@ -17424,8 +17878,32 @@ class DashboardConfig {
      */
     static WIDGET_FIELD_SECTIONS = {
         connection: ['url', 'method', 'feedUrls', 'host'],
-        advanced: ['refreshSeconds', 'ttl', 'click', 'target'],
+        advanced: ['refreshSeconds', 'ttl', 'click', 'target', 'showFrom', 'showUntil', 'showDays'],
     };
+
+    /*
+     * When a widget is on the dashboard, for every type: between two times of
+     * day and on some days of the week. Outside the table of any one type for
+     * the reason Width is -- it belongs to all of them. Both times or neither;
+     * all seven days is the same as none. Mirrors the shared keys in
+     * sanitizeWidgetConfig (widgets_config.go).
+     */
+    static WIDGET_SCHEDULE_FIELDS = [
+        { key: 'showFrom', kind: 'text', input: 'time', maxlength: 5,
+          label: ['config.widgetShowFrom', 'Show from (time of day)'],
+          hint: ['config.widgetShowWindowHint', 'Both times, or neither. The widget is off the dashboard outside them; an end before the start runs past midnight.'] },
+        { key: 'showUntil', kind: 'text', input: 'time', maxlength: 5,
+          label: ['config.widgetShowUntil', 'Show until (time of day)'] },
+        { key: 'showDays', kind: 'checkset',
+          label: ['config.widgetShowDays', 'Show on'],
+          hint: ['config.widgetShowDaysHint', 'With none ticked the widget shows every day.'],
+          options: [
+              ['mon', ['config.widgetDayMon', 'Mon']], ['tue', ['config.widgetDayTue', 'Tue']],
+              ['wed', ['config.widgetDayWed', 'Wed']], ['thu', ['config.widgetDayThu', 'Thu']],
+              ['fri', ['config.widgetDayFri', 'Fri']], ['sat', ['config.widgetDaySat', 'Sat']],
+              ['sun', ['config.widgetDaySun', 'Sun']],
+          ] },
+    ];
 
     /*
      * Emby asks the same questions as Jellyfin, under its own name. Only a
@@ -24534,6 +25012,7 @@ class DashboardConfig {
         await Promise.all([
             this._statsInboxAgg === undefined ? this.loadStatsInbox() : null,
             this._statsHealth === undefined ? this.loadStatsHealth() : null,
+            this._statsFeeds === undefined ? this.loadStatsFeeds() : null,
         ].filter(Boolean)).catch(() => {});
         // The memo lives for one paint, and an export is not one: a bookmark
         // renamed or opened since the last paint would go out under its old
@@ -24614,6 +25093,34 @@ class DashboardConfig {
         const inbox = this._statsInboxAgg;
         rows.push(['inbox_included', inbox ? 1 : 0]);
         rows.push(['health_included', this._statsHealth ? 1 : 0]);
+        // Watch feeds is a third server tab. Off or empty it contributes
+        // nothing, and `included,0` says so rather than leaving the file silent.
+        const feeds = this._statsFeeds;
+        const feedsIn = Boolean(feeds && feeds.enabled && (feeds.feeds || []).length);
+        rows.push(['feeds_included', feedsIn ? 1 : 0]);
+        if (feedsIn) {
+            const tot = feeds.totals || {};
+            rows.push(['feeds_period_days', feeds.days]);
+            rows.push(['feeds_watched', tot.feeds || 0]);
+            rows.push(['feeds_items_last_7_days', tot.published || 0]);
+            rows.push(['feeds_read_last_7_days', tot.read || 0]);
+            rows.push(['feeds_read_pct_last_7_days', tot.readPct || 0]);
+            rows.push(['feeds_unread_now', tot.unreadNow || 0]);
+            rows.push(['feeds_errors_last_7_days', tot.failed || 0]);
+            rows.push(['feeds_push_last_7_days', feeds.health?.push || 0]);
+            rows.push(['feeds_webhooks_last_7_days', feeds.health?.webhooks || 0]);
+            (feeds.feeds || []).forEach((f) => {
+                const label = f.title && f.title !== f.name ? `${f.name} · ${f.title}` : f.name;
+                rows.push([`feed_items:${label}`, f.published]);
+                rows.push([`feed_read:${label}`, f.read]);
+                rows.push([`feed_unread:${label}`, f.unread]);
+                rows.push([`feed_state:${label}`, f.state]);
+            });
+            (feeds.daily || []).forEach((d) => {
+                rows.push([`feed_items_published:${d.date}`, d.published]);
+                rows.push([`feed_items_read:${d.date}`, d.read]);
+            });
+        }
         if (inbox) {
             rows.push(['inbox_waiting', Number(this._statsInboxItems?.length || 0)]);
             rows.push(['inbox_added_lifetime', Number(inbox.totalAdded || 0)]);

@@ -28,6 +28,13 @@
     let pendingSection = null;
     /** Set once the sub-tab is chosen deliberately (click or deep link). */
     let subTabTouched = false;
+    /**
+     * Whether the page has been taken to the setting already, for this arrival.
+     * Arriving on a section scrolls to the setting once; a repaint after a
+     * change (which schedules the same section again) must not, or the page
+     * jumps to the promo's setting every time any setting is changed.
+     */
+    let arrivalScrolled = false;
     /** @type {{ config?: object } | null} */
     let pendingCtx = null;
     let onReposition = null;
@@ -333,7 +340,10 @@
         const { field, target } = resolveAnchor(promo);
         if (!field || !target) return false;
 
-        field.scrollIntoView({ block: 'center', behavior: 'auto' });
+        if (!arrivalScrolled) {
+            arrivalScrolled = true;
+            field.scrollIntoView({ block: 'center', behavior: 'auto' });
+        }
 
         const pop = document.createElement('div');
         pop.className = 'config-setting-promo';
@@ -470,6 +480,7 @@
         // pendingSection is null on the very first schedule, which is also when a
         // deep link has just named a sub-tab — clearing there would discard it.
         if (pendingSection !== null && section !== pendingSection) subTabTouched = false;
+        if (pendingSection === null || section !== pendingSection) arrivalScrolled = false;
         pendingSection = section;
         pendingCtx = ctx;
         scheduleTimer = setTimeout(() => {

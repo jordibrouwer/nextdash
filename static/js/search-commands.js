@@ -59,7 +59,7 @@ class SearchCommandsComponent {
                 id: 'navigate-search',
                 label: 'Search & navigate',
                 labelKey: 'commands.groupNavigateSearch',
-                commands: ['save', 'saved', 'history', 'sort', 'page', 'category', 'recent', 'overview', 'inbox', 'filter'],
+                commands: ['save', 'saved', 'history', 'sort', 'page', 'category', 'recent', 'overview', 'inbox', 'unsorted', 'news', 'cloud', 'filter'],
             },
             {
                 id: 'look-and-feel',
@@ -71,7 +71,7 @@ class SearchCommandsComponent {
                     'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
                     'buttons', 'action', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs', 'maxactions',
                     'clock', 'time', 'unit', 'weather', 'spacing', 'columngap', 'margins', 'highlight', 'items',
-                    'collapse', 'empty', 'tags', 'shortcuts', 'locklayout',
+                    'collapse', 'empty', 'tags', 'shortcuts', 'locklayout', 'legend', 'hypr', 'studio',
                 ],
             },
             {
@@ -145,6 +145,12 @@ class SearchCommandsComponent {
             'previews': this.handlePreviewCardsCommand.bind(this),
             'packed': this.handlePackedColumnsCommand.bind(this),
             'locklayout': this.handleLockLayoutCommand.bind(this),
+            'legend': this.handleKeyLegendCommand.bind(this),
+            'hypr': this.handleHyprModeCommand.bind(this),
+            'studio': this.handleStudioCommand.bind(this),
+            'unsorted': this.handleUnsortedCommand.bind(this),
+            'news': this.handleNewsCommand.bind(this),
+            'cloud': this.handleTagCloudCommand.bind(this),
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
             'duplicates': this.handleDuplicateCommand.bind(this),
@@ -692,6 +698,9 @@ class SearchCommandsComponent {
         if (potentialCommand === 'language') potentialCommand = 'lang';
         if (potentialCommand === 'animation') potentialCommand = 'animations';
         if (potentialCommand === 'lock-layout') potentialCommand = 'locklayout';
+        if (potentialCommand === 'feeds') potentialCommand = 'news';
+        if (potentialCommand === 'keylegend') potentialCommand = 'legend';
+        if (potentialCommand === 'themes') potentialCommand = 'studio';
         if (potentialCommand === 'collection') potentialCommand = 'collections';
 
         // :tag:humor shorthand (same as :tag humor / :tag tag:humor)
@@ -4772,6 +4781,93 @@ class SearchCommandsComponent {
         const enabled = dashboard.settings.lockLayout === true;
         const apply = (value) => this.setLockLayout(dashboard, value);
         return this._handleSimpleToggle(args, { shortcut: ':LOCKLAYOUT', prefix: 'locklayout', enabled, apply });
+    }
+
+    handleKeyLegendCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.showGridKeyLegend === true;
+        // toggleGridKeyLegend flips and announces; only call it when the asked state differs.
+        const apply = (value) => {
+            if (value !== enabled) void dashboard.toggleGridKeyLegend?.();
+            return this._paletteRefresh(value ? 'legend:on' : 'legend:off');
+        };
+        return this._handleSimpleToggle(args, { shortcut: ':LEGEND', prefix: 'legend', enabled, apply });
+    }
+
+    handleHyprModeCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.hyprMode === true;
+        const apply = (value) => {
+            dashboard.settings.hyprMode = value;
+            window.hyprMode?.setEnabled?.(value);
+            if (typeof dashboard.saveSettings === 'function') dashboard.saveSettings();
+            return this._paletteRefresh(value ? 'hypr:on' : 'hypr:off');
+        };
+        return this._handleSimpleToggle(args, { shortcut: ':HYPR', prefix: 'hypr', enabled, apply });
+    }
+
+    // The theme browser, the same window Shift+A opens.
+    handleStudioCommand() {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard?.config?.openThemeBrowser) return [];
+        return [{
+            name: this._t('commands.studioLabel', 'Browse themes'),
+            shortcut: ':STUDIO',
+            type: 'command',
+            action: () => this._runOverlayAction(() => { void dashboard.config.openThemeBrowser(); }),
+        }];
+    }
+
+    // The Bookmarks view on Unsorted, the same as Shift+U.
+    handleUnsortedCommand() {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard?.openUnsortedBookmarks) return [];
+        return [{
+            name: this._t('commands.unsortedLabel', 'Unsorted bookmarks'),
+            shortcut: ':UNSORTED',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                void dashboard.openUnsortedBookmarks();
+                return { navigate: true };
+            },
+        }];
+    }
+
+    // The news of the feeds you watch, the same window as Shift+N. With no feed
+    // watched it points at where to start following one.
+    handleNewsCommand() {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const watched = [...(dashboard.feedWatch?.byKey?.values?.() || [])].some((entry) => (entry?.feeds?.length || 0) > 0);
+        if (watched && window.FeedWatchNews) {
+            return [{
+                name: this._t('commands.newsLabel', 'News of the feeds you watch'),
+                shortcut: ':NEWS',
+                type: 'command',
+                action: () => this._runOverlayAction(() => { void window.FeedWatchNews.open({ source: 'button' }); }),
+            }];
+        }
+        return [{
+            name: this._t('commands.newsNone', 'No feed watched yet — open Watch feeds'),
+            shortcut: ':NEWS',
+            type: 'command',
+            action: () => this._runOverlayAction(() => this._openConfigSection({ id: 'feed-watch' })),
+        }];
+    }
+
+    // The tag cloud, the same window `/` opens.
+    handleTagCloudCommand() {
+        const cloud = window.DashboardTagCloud;
+        if (!cloud?.isEligible?.()) return [];
+        return [{
+            name: this._t('commands.cloudLabel', 'Tag cloud'),
+            shortcut: ':CLOUD',
+            type: 'command',
+            action: () => this._runOverlayAction(() => { cloud.openModal(); }),
+        }];
     }
 
     handleShortcutTooltipsCommand(args) {

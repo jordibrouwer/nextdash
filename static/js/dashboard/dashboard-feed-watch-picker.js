@@ -70,7 +70,8 @@
         }
         global.CheckMode.assign(bookmark, 'periodic');
         global.CheckMode.syncLocalCopies({ pageId, url: bookmark.url, mode: 'periodic', bookmarkRef: ref });
-        d.renderDashboard?.({ incremental: false });
+        if (d.renderCore?.redrawKeepingPlace) d.renderCore.redrawKeepingPlace();
+        else d.renderDashboard?.({ incremental: false });
         d.updateHealthBadge?.();
     }
 
@@ -121,11 +122,13 @@
                             + `<small>${esc(t('dashboard.feedWatchAlsoCheckHint', 'The site is asked anyway; this adds a daily availability check for the bookmark.'))}</small></span></label>`
                         : '')
                     + `<div class="feed-watch-foot">`
-                    + `<button type="button" class="modal-button" data-feed-watch-save><span class="modal-button-name">${esc(t('dashboard.feedWatchSave', 'Save'))}</span></button>`
-                    + `<button type="button" class="modal-button" data-feed-watch-cancel><span class="modal-button-name">${esc(t('dashboard.cancel', 'Cancel'))}</span></button>`
                     + (watched
                         ? `<button type="button" class="modal-button danger feed-watch-stop" data-feed-watch-stop><span class="modal-button-name">${esc(t('dashboard.feedWatchStop', 'Stop watching'))}</span></button>`
                         : '')
+                    + `<div class="feed-watch-foot-end">`
+                    + `<button type="button" class="modal-button feed-watch-save" data-feed-watch-save><span class="modal-button-name">${esc(t('dashboard.feedWatchSave', 'Save'))}</span></button>`
+                    + `<button type="button" class="modal-button feed-watch-cancel" data-feed-watch-cancel><span class="modal-button-name">${esc(t('dashboard.cancel', 'Cancel'))}</span></button>`
+                    + `</div>`
                     + `</div></div>`,
                 showCancel: false,
                 modalClass: 'feed-watch-modal',

@@ -179,8 +179,15 @@
             // With the write token: Home Assistant says from it whether this
             // reader may switch, and a bare fetch would always read "no".
             const send = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
-            const res = await send(`/api/widgets/${service.id}?pageId=${encodeURIComponent(pageId)}`
-                + `&id=${encodeURIComponent(widget.id)}`);
+            // "Refresh now" asks the service again instead of the server's
+            // held answer. Once: the flag is spent by the request it caused.
+            const forced = dash._widgetForce?.delete(widget.id) === true;
+            const base = `/api/widgets/${service.id}?pageId=${encodeURIComponent(pageId)}`
+                + `&id=${encodeURIComponent(widget.id)}`;
+            let res = await send(forced ? `${base}&refresh=1` : base);
+            // A forced read needs the write token; a reader without one still
+            // gets the ordinary answer rather than an error on the tile.
+            if (forced && (res.status === 401 || res.status === 403)) res = await send(base);
             if (!res.ok) {
                 window.WidgetState?.fromResult(widget.id, null, [], window.WidgetState.meta(widget, pageId, false));
                 return null;

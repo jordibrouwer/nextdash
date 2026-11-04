@@ -171,17 +171,18 @@
         const days = daysSince(since);
         return days < 1
             ? t('dashboard.digestDownToday', 'down today')
-            : t('dashboard.digestDownDays', 'down {days} d', { days });
+            : t('dashboard.digestDownDays', 'down for {days} days', { days });
     }
 
     /** One line of detail: a name, what sits under it, and a value on the right. */
     function rowsHtml(rows) {
         if (!rows?.length) return '';
-        const lines = rows.map(({ name, sub, value }) => `
+        const lines = rows.map(({ name, sub, value, bar }, i) => `
             <div class="digest-line">
                 <span class="digest-line-main">
                     <span class="digest-line-name" title="${esc(name)}">${esc(name)}</span>
                     ${sub ? `<small class="digest-line-sub">${esc(sub)}</small>` : ''}
+                    ${bar === undefined ? '' : `<span class="digest-line-bar" aria-hidden="true"><span style="width:${Math.max(4, Math.min(100, bar))}%;--digest-i:${i}"></span></span>`}
                 </span>
                 ${value ? `<span class="digest-line-value">${esc(value)}</span>` : ''}
             </div>`).join('');
@@ -198,38 +199,123 @@
         const w = s.week || {};
         const inbox = s.usage?.inbox || 0;
         const cards = [];
+        const vs = t('dashboard.digestVsLast', 'vs last week');
         const arrow = (now, prev, good, unit = '') => {
             const diff = Math.round((now - prev) * 10) / 10;
-            if (!diff) return `<span class="digest-stat-delta is-same">= ${prev}${unit}</span>`;
+            if (!diff) return `<span class="digest-stat-delta is-same">${esc(t('dashboard.digestSameAsLast', 'same as last week'))}</span>`;
             const tone = good ? ((diff > 0) === (good === 'up') ? 'is-good' : 'is-bad') : 'is-same';
-            return `<span class="digest-stat-delta ${tone}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff)}${unit}</span>`;
+            return `<span class="digest-stat-delta ${tone}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff)}${unit} ${esc(vs)}</span>`;
         };
         if (w.opens || w.opensPrev) {
-            cards.push({ value: w.opens || 0, delta: arrow(w.opens || 0, w.opensPrev || 0, 'up'), label: t('dashboard.digestStatOpens', 'bookmarks opened') });
+            cards.push({
+                value: w.opens || 0, delta: arrow(w.opens || 0, w.opensPrev || 0, 'up'),
+                label: t('dashboard.digestStatOpens', 'Opened'),
+                            });
         }
         if (w.added || w.addedPrev) {
-            cards.push({ value: w.added || 0, delta: arrow(w.added || 0, w.addedPrev || 0, ''), label: t('dashboard.digestStatAdded', 'added this week') });
+            cards.push({ value: w.added || 0, delta: arrow(w.added || 0, w.addedPrev || 0, ''), label: t('dashboard.digestStatAdded', 'Added this week') });
         }
         if (w.uptime) {
             const outages = w.outages ? ' · ' + count(w.outages, 'dashboard.digestOutage', '1 outage', '{count} outages') : '';
             cards.push({
                 value: `${w.uptime}%`,
-                delta: w.uptimePrev ? arrow(w.uptime, w.uptimePrev, 'up') : '',
-                label: t('dashboard.digestStatUptime', 'uptime') + outages,
-            });
+                delta: w.uptimePrev ? arrow(w.uptime, w.uptimePrev, 'up', ' pt') : '',
+                label: t('dashboard.digestStatUptime', 'Uptime') + outages,
+                            });
         }
         if (inbox) {
             cards.push({
                 value: inbox, delta: '',
-                label: t('dashboard.digestStatInbox', 'in the Inbox') + (w.inboxNew ? ' · ' + t('dashboard.digestStatInboxNew', '{count} new this week', { count: w.inboxNew }) : ''),
+                label: t('dashboard.digestStatInbox', 'In the Inbox') + (w.inboxNew ? ' · ' + t('dashboard.digestStatInboxNew', '{count} new', { count: w.inboxNew }) : ''),
             });
         }
         if (!cards.length) return '';
-        return `<div class="digest-stats" role="group" aria-label="${esc(t('dashboard.digestStatsLabel', 'The week in figures'))}">${cards.map((c) => `
+        return `${cards.length ? `<div class="digest-stats" role="group" aria-label="${esc(t('dashboard.digestStatsLabel', 'The week in figures'))}">${cards.map((c) => `
             <div class="digest-stat">
-                <span class="digest-stat-value">${esc(String(c.value))}${c.delta}</span>
                 <span class="digest-stat-label">${esc(c.label)}</span>
+                <span class="digest-stat-value">${esc(String(c.value))}</span>
+                ${c.delta}
+                ${c.chart || ''}
+            </div>`).join('')}</div>` : ''}`;
+    }
+
+    /** The two charts of the Overview: opened per day, uptime per day. */
+    function chartsHtml(s) {
+        const w = s.week || {};
+        const panels = [
+            { label: t('dashboard.digestOpensPerDay', 'Bookmarks opened per day'), html: dayBars(w.opensByDay, s.generatedAt) },
+            { label: t('dashboard.digestUptimePerDay', 'Uptime per day'), html: uptimeLine(w.uptimeByDay) },
+        ].filter((p) => p.html);
+        if (!panels.length) return '';
+        return `<div class="digest-charts">${panels.map((p) => `
+            <div class="digest-stat">
+                <span class="digest-stat-label">${esc(p.label)}</span>
+                ${p.html}
             </div>`).join('')}</div>`;
+    }
+
+    /** Short weekday names for the seven days ending at the snapshot, oldest first. */
+    function dayNames(endMs) {
+        const lang = dash()?.settings?.language || undefined;
+        return Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(Number(endMs) - (6 - i) * DAY_MS);
+            try { return d.toLocaleDateString(lang, { weekday: 'short' }); } catch (_) { return d.toLocaleDateString(undefined, { weekday: 'short' }); }
+        });
+    }
+
+    /** Seven bars, one per day: how many bookmarks were opened. */
+    function dayBars(values, endMs) {
+        if (!values?.length) return '';
+        const max = Math.max(...values, 1);
+        const names = dayNames(endMs);
+        const cols = values.map((v, i) => `
+            <span class="digest-spark-col" title="${esc(names[i])}: ${v}">
+                <span class="digest-spark-val">${v || ''}</span>
+                <span class="digest-spark-bar" style="height:${v ? Math.max(8, Math.round((v / max) * 100)) : 3}%;--digest-i:${i}"></span>
+                <span class="digest-spark-day">${esc(names[i].slice(0, 2))}</span>
+            </span>`).join('');
+        return `<span class="digest-spark" role="img" aria-label="${esc(t('dashboard.digestOpensPerDay', 'Bookmarks opened per day'))}">${cols}</span>`;
+    }
+
+    /** Uptime per day as a line. Days without checks leave a gap. */
+    function uptimeLine(values) {
+        const pts = (values || []).map((v, i) => (v > 0 ? { v, i } : null)).filter(Boolean);
+        if (pts.length < 2) return '';
+        const low = Math.min(95, ...pts.map((p) => p.v));
+        const x = (i) => 4 + (i / 6) * 92;
+        const y = (v) => 4 + (1 - (v - low) / (100 - low)) * 32;
+        const line = pts.map((p) => `${x(p.i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+        const dots = pts.map((p) => `<circle cx="${x(p.i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.2"${p.v < 99 ? ' class="is-low"' : ''}><title>${p.v}%</title></circle>`).join('');
+        return `<svg class="digest-line-chart" viewBox="0 0 100 40" preserveAspectRatio="none" role="img" aria-label="${esc(t('dashboard.digestUptimePerDay', 'Uptime per day'))}"><polyline points="${line}" /> ${dots}</svg>`;
+    }
+
+    /**
+     * The whole collection in one bar: how much is in use, how much has gone
+     * quiet and how much was never opened. The first two come from the counts
+     * the digest already has; what is left of the total is "in use".
+     */
+    function collectionBar(s) {
+        const total = s.week?.bookmarks || 0;
+        const g = s.usage || {};
+        if (!total) return '';
+        const never = Math.min(total, g.neverOpened || 0);
+        const stale = Math.min(total - never, g.stale || 0);
+        const active = total - never - stale;
+        const seg = [
+            { n: active, tone: 'ok', label: t('dashboard.digestColActive', 'In use') },
+            { n: stale, tone: 'warn', label: t('dashboard.digestColStale', 'Not opened for {days} days', { days: g.staleDays || 30 }) },
+            { n: never, tone: 'quiet', label: t('dashboard.digestColNever', 'Never opened') },
+        ].filter((x) => x.n > 0);
+        return `
+            <div class="digest-collection">
+                <div class="digest-collection-head"><span>${esc(t('dashboard.digestColTitle', 'Your {count} bookmarks', { count: total }))}</span></div>
+                <div class="digest-collection-bar" role="img" aria-label="${esc(seg.map((x) => `${x.label}: ${x.n}`).join(', '))}">
+                    ${seg.map((x, i) => `<span class="digest-tone--${x.tone}" style="flex:${x.n};--digest-i:${i}"></span>`).join('')}
+                </div>
+                <div class="digest-collection-legend">
+                    ${seg.map((x) => `<span class="digest-tone--${x.tone}"><i></i>${esc(x.label)} <b>${x.n}</b> <small>${Math.round((x.n / total) * 100)}%</small></span>`).join('')}
+                </div>
+            </div>`;
     }
 
     function chips(names, total, extra = '') {
@@ -239,6 +325,21 @@
         const more = rest ? `<span class="digest-chip digest-chip--more">${esc(t('dashboard.digestMore', 'and {count} more', { count: rest }))}</span>` : '';
         const tail = extra ? `<span class="digest-chip digest-chip--more">${esc(extra)}</span>` : '';
         return `<div class="digest-chips">${list.map((n) => `<span class="digest-chip">${esc(n)}</span>`).join('')}${more}${tail}</div>`;
+    }
+
+    /** "and 1 other" or "and 3 others". */
+    function andOthers(n) {
+        return n === 1 ? t('dashboard.digestAndOtherOne', 'and 1 other') : t('dashboard.digestAndOthers', 'and {count} others', { count: n });
+    }
+
+    /** The image's own name and tag, not the registry path in front of it. */
+    function imageName(image) { return String(image).split('/').pop(); }
+
+    /** "x runs out in 12 days" or "x expired 3 days ago". */
+    function expirySentence(it) {
+        return it.days < 0
+            ? t('dashboard.digestSumExpired', '{name} expired {days} days ago', { name: it.name, days: -it.days })
+            : t('dashboard.digestSumExpires', '{name} runs out in {days} days', { name: it.name, days: it.days });
     }
 
     /**
@@ -264,8 +365,8 @@
             const tone = it.days <= 7 ? 'bad' : (it.days <= warnBelow ? 'warn' : 'ok');
             const width = it.days <= 0 ? 100 : Math.max(3, Math.min(100, Math.round((it.days / scale) * 100)));
             const value = it.days < 0
-                ? t('dashboard.digestExpiredAgo', 'expired {days} d', { days: -it.days })
-                : t('dashboard.digestDaysLeft', '{days} d', { days: it.days });
+                ? t('dashboard.digestExpiredAgo', 'expired {days} days ago', { days: -it.days })
+                : t('dashboard.digestDaysLeft', '{days} days left', { days: it.days });
             return `
                 <div class="digest-days-row is-${tone}" style="--digest-i:${i}">
                     <span class="digest-days-name" title="${esc(it.name)}">${esc(it.name)}</span>
@@ -276,7 +377,26 @@
         return `<div class="digest-days">${rows}</div>`;
     }
 
-    function partHtml({ id, tone, title, intro, note, names, total, more, bars: barsHtml, rows, action, target, work }, state, i) {
+    /** The number the part stands on, big, with what it counts. */
+    function hero(id, n) {
+        if (n === undefined || n === null || n === '') return '';
+        const label = {
+            broken: count(n, 'dashboard.digestHeroBroken', 'link that does not open', 'links that do not open'),
+            certificates: count(n, 'dashboard.digestHeroCerts', 'certificate to renew', 'certificates to renew'),
+            domains: count(n, 'dashboard.digestHeroDomains', 'domain to renew', 'domains to renew'),
+            updates: count(n, 'dashboard.digestHeroUpdates', 'container has an update', 'containers have an update'),
+            checkup: count(n, 'dashboard.digestHeroCheckup', 'bookmark to tidy up', 'bookmarks to tidy up'),
+            never: count(n, 'dashboard.digestHeroNever', 'bookmark never opened', 'bookmarks never opened'),
+            stale: count(n, 'dashboard.digestHeroStale', 'bookmark you stopped using', 'bookmarks you stopped using'),
+            inbox: count(n, 'dashboard.digestHeroInbox', 'link waiting to be sorted', 'links waiting to be sorted'),
+            news: count(n, 'dashboard.digestHeroNews', 'new version', 'new versions'),
+        }[id];
+        if (!label) return '';
+        const text = String(label).replace(/^\d+\s*/, '');
+        return `<p class="digest-hero"><span class="digest-hero-num">${esc(String(n))}</span><span class="digest-hero-label">${esc(text)}</span></p>`;
+    }
+
+    function partHtml({ id, tone, title, intro, note, names, total, count: count_, more, bars: barsHtml, rows, action, target, work }, state, i) {
         const done = state.visited.includes(id);
         const next = !done && state.next === id;
         let button = '';
@@ -293,6 +413,7 @@
                     <h3 class="digest-part-title"><span class="digest-part-dot" aria-hidden="true">${done ? '✓' : ''}</span>${esc(title)}</h3>
                     ${button}
                 </div>
+                ${hero(id, count_)}
                 ${intro ? `<p class="digest-part-intro">${esc(intro)}</p>` : ''}
                 <p class="digest-part-note">${esc(note)}</p>
                 ${barsHtml || ''}
@@ -496,40 +617,48 @@
             broken.rows = items.map((b) => ({ name: b.name, sub: [b.where, b.error].filter(Boolean).join(' · '), value: downFor(b.since) }));
             broken.names = null;
             broken.more = left(broken, items.length);
-            broken.summary = [items[0].name, downFor(items[0].since)].filter(Boolean).join(' · ') + (broken.count > 1 ? ` +${broken.count - 1}` : '');
+            broken.summary = [items[0].name, downFor(items[0].since)].filter(Boolean).join(', ') + (broken.count > 1 ? ' ' + andOthers(broken.count - 1) : '');
         }
         const certs = by('certificates');
         if (certs) {
             const first = expiries(h.certsExpiring)[0];
-            if (first) certs.summary = `${first.name} · ${t('dashboard.digestDaysLeft', '{days} d', { days: first.days })}`;
+            if (first) certs.summary = expirySentence(first) + (certs.count > 1 ? ' ' + andOthers(certs.count - 1) : '');
         }
         const domains = by('domains');
         if (domains) {
             const first = expiries(h.domainsExpiring)[0];
-            if (first) domains.summary = `${first.name} · ${t('dashboard.digestDaysLeft', '{days} d', { days: first.days })}`;
+            if (first) domains.summary = expirySentence(first) + (domains.count > 1 ? ' ' + andOthers(domains.count - 1) : '');
         }
         const updates = by('updates');
         if (updates && u.available?.length) {
             // The image's own name and tag, not the registry path in front of it.
-            updates.summary = u.available.slice(0, 2).map((image) => String(image).split('/').pop()).join(' · ') + (u.available.length > 2 ? ` +${u.available.length - 2}` : '');
+            updates.summary = imageName(u.available[0]) + (u.available.length > 1 ? ' ' + andOthers(u.available.length - 1) : '') + ' ' + t('dashboard.digestSumUpdates', 'can be updated');
+            updates.rows = u.available.map((image) => {
+                const full = String(image);
+                const [repo, tag] = imageName(full).split(':');
+                return { name: repo, sub: full.includes('/') ? full.slice(0, full.lastIndexOf('/')) : '', value: tag || 'latest' };
+            });
+            updates.names = null;
         }
         const top = by('top');
         if (top && !g.topOpenedItems?.length && g.topOpened?.length) top.summary = g.topOpened.join(' · ');
         if (top && g.topOpenedItems?.length) {
             const items = g.topOpenedItems;
-            top.rows = items.map((it, i) => ({ name: `${i + 1} · ${it.name}`, value: count(it.count, 'dashboard.digestOpens', '1 open', '{count} opens') }));
+            top.rows = items.map((it, i) => ({ name: `${i + 1}. ${it.name}`, value: count(it.count, 'dashboard.digestOpens', '1 time', '{count} times'), bar: (it.count / items[0].count) * 100 }));
             top.names = null;
-            top.summary = items.map((it) => `${it.name} ${it.count}`).join(' · ');
+            top.summary = `${items[0].name} ` + t('dashboard.digestSumTop', '({count}x), your most opened', { count: items[0].count });
         }
         const checkup = by('checkup');
-        if (checkup) checkup.summary = count(checkup.count, 'dashboard.digestSumCheckup', '1 worth a look', '{count} worth a look');
+        if (checkup) checkup.summary = count(checkup.count, 'dashboard.digestSumCheckup', '1 bookmark is worth a look', '{count} bookmarks are worth a look');
         const news = by('news');
         if (news && s.news?.releases?.length) {
             const releases = s.news.releases;
-            news.summary = releases.slice(0, 2).join(' · ') + (releases.length > 2 ? ` +${releases.length - 2}` : '');
+            news.summary = releases.length === 1
+                ? t('dashboard.digestSumNewsOne', 'Version {v} is out', { v: releases[0] })
+                : t('dashboard.digestSumNewsMany', '{count} new versions, latest {v}', { count: releases.length, v: releases[0] });
         }
         const never = by('never');
-        if (never) never.summary = count(never.count, 'dashboard.digestSumNever', '1 never opened', '{count} never opened');
+        if (never) never.summary = count(never.count, 'dashboard.digestSumNever', '1 bookmark was never opened', '{count} bookmarks were never opened');
         if (never && g.neverOpenedItems?.length) {
             const items = g.neverOpenedItems;
             never.rows = items.map((it) => ({ name: it.name, sub: it.where || '' }));
@@ -539,20 +668,20 @@
         const stale = by('stale');
         if (stale && g.staleItems?.length) {
             const items = g.staleItems;
-            stale.rows = items.map((it) => ({ name: it.name, value: t('dashboard.digestAgoDays', '{days} d ago', { days: it.days }) }));
+            stale.rows = items.map((it) => ({ name: it.name, value: t('dashboard.digestAgoDays', '{days} days ago', { days: it.days }), bar: (it.days / items[0].days) * 100 }));
             stale.names = null;
             stale.more = left(stale, items.length);
-            stale.summary = `${items[0].name} · ${t('dashboard.digestAgoDays', '{days} d ago', { days: items[0].days })}`;
+            stale.summary = t('dashboard.digestSumStale', '{name} was last opened {days} days ago', { name: items[0].name, days: items[0].days });
         }
         const inbox = by('inbox');
         if (inbox && g.inboxOldestDays >= 1) {
-            inbox.summary = t('dashboard.digestSumInbox', '{count} waiting, the oldest {days} d', { count: g.inbox, days: g.inboxOldestDays });
+            inbox.summary = t('dashboard.digestSumInbox', '{count} waiting, the oldest for {days} days', { count: g.inbox, days: g.inboxOldestDays });
             inbox.note += ' ' + t('dashboard.digestInboxOldest', 'The oldest has waited {days} days.', { days: g.inboxOldestDays });
         }
     }
 
     /** The Overview: every part with the one line that says where it stands. */
-    function overviewHtml(parts, state) {
+    function overviewHtml(parts, state, snapshot) {
         const rows = GROUPS.flatMap((g) => g.parts).map((id) => parts.find((p) => p.id === id)).filter(Boolean).map((p) => {
             const done = state.visited.includes(p.id);
             return `
@@ -563,7 +692,7 @@
         }).join('');
         return `
             <section class="digest-part digest-tone--accent" data-digest-part="overview">
-                <div class="digest-part-head"><h3 class="digest-part-title">${esc(t('dashboard.digestOverview', 'Overview'))}</h3></div>
+                ${chartsHtml(snapshot)}
                 <div class="digest-lines digest-lines--overview">${rows}</div>
             </section>`;
     }
@@ -651,7 +780,10 @@
                 <p class="digest-summary">${esc(cardBody(s))}</p>
                 ${statsHtml(s)}
                 <div class="digest-split">
-                    <nav class="digest-list" aria-label="${esc(t('dashboard.digestListLabel', 'Parts of the digest'))}">${listHtml(parts, state, selected)}</nav>
+                    <div class="digest-side">
+                        ${collectionBar(s)}
+                        <nav class="digest-list" aria-label="${esc(t('dashboard.digestListLabel', 'Parts of the digest'))}">${listHtml(parts, state, selected)}</nav>
+                    </div>
                     <div class="digest-detail"></div>
                 </div>
             </div>`;
@@ -673,7 +805,7 @@
         const showDetail = (id) => {
             selected = id;
             const index = Math.max(0, parts.findIndex((p) => p.id === id));
-            detail.innerHTML = id === 'overview' ? overviewHtml(parts, state) : (parts[index] ? partHtml(parts[index], state, 0) : '');
+            detail.innerHTML = id === 'overview' ? overviewHtml(parts, state, s) : (parts[index] ? partHtml(parts[index], state, 0) : '');
             win.querySelectorAll('.digest-row').forEach((row) => {
                 const on = row.getAttribute('data-digest-row') === id;
                 row.classList.toggle('is-selected', on);

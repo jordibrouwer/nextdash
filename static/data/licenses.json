@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T22:27:33.254Z",
+  "generatedAt": "2026-11-03T23:11:16.788Z",
   "groups": [
     {
       "name": "Go modules",
@@ -21,6 +21,12 @@
           "version": "v0.62.0",
           "license": "BSD-3-Clause",
           "url": "https://pkg.go.dev/golang.org/x/net@v0.62.0"
+        },
+        {
+          "name": "gopkg.in/yaml.v3",
+          "version": "v3.0.1",
+          "license": "Apache-2.0",
+          "url": "https://pkg.go.dev/gopkg.in/yaml.v3@v3.0.1"
         }
       ]
     },

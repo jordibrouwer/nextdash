@@ -1,0 +1,51 @@
+/* Tabs: several widgets of one page in a single tile (dashboard-widget-stack.js). */
+.dashboard-widget-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.dashboard-stack-tabs {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.dashboard-stack-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.dashboard-stack-tab {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 11rem;
+    padding: 0.3rem 0.6rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    opacity: 0.65;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dashboard-stack-tab:hover,
+.dashboard-stack-tab:focus-visible {
+    opacity: 1;
+}
+
+.dashboard-stack-tab--on {
+    opacity: 1;
+    border-bottom-color: var(--accent, currentColor);
+}
+
+.dashboard-stack-panel {
+    min-width: 0;
+}

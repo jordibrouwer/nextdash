@@ -418,7 +418,11 @@ class DashboardFeedWatch {
             this._renderQueued = true;
             requestAnimationFrame(() => {
                 this._renderQueued = false;
-                this.dash?.renderDashboard?.();
+                // Keeps the reader's place: a watch saved from the modal must
+                // not throw the page back to the top.
+                const rc = this.dash?.renderCore;
+                if (rc?.redrawKeepingPlace) rc.redrawKeepingPlace(null, { forceFull: false });
+                else this.dash?.renderDashboard?.();
             });
         };
         document.addEventListener('feedwatch:changed', queueRender);

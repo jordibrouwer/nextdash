@@ -76,10 +76,19 @@ type digestWeek struct {
 	Outages     int     `json:"outages,omitempty"`
 	OutagesPrev int     `json:"outagesPrev,omitempty"`
 	InboxNew    int     `json:"inboxNew,omitempty"`
+	// Bookmarks is how many the dashboard holds (the unsorted page left out),
+	// the whole the never-opened and not-opened-lately counts are parts of.
+	Bookmarks int `json:"bookmarks,omitempty"`
+	// OpensByDay and UptimeByDay hold seven values, oldest day first, for the
+	// window's charts. An uptime of 0 is a day without checks, not a day down.
+	OpensByDay  []int     `json:"opensByDay,omitempty"`
+	UptimeByDay []float64 `json:"uptimeByDay,omitempty"`
 }
 
 func (w digestWeek) empty() bool {
-	return w == digestWeek{}
+	return w.Opens == 0 && w.OpensPrev == 0 && w.Added == 0 && w.AddedPrev == 0 &&
+		w.Uptime == 0 && w.UptimePrev == 0 && w.Outages == 0 && w.OutagesPrev == 0 &&
+		w.InboxNew == 0 && w.Bookmarks == 0 && len(w.OpensByDay) == 0 && len(w.UptimeByDay) == 0
 }
 
 // digestBroken is one broken link with what the window says about it: where it
@@ -342,11 +351,16 @@ func buildDigestWeek(in digestInput) *digestWeek {
 	twoWeeksAgo := in.Now.Add(-2 * digestNewWindow)
 	now := in.Now.UnixMilli()
 	if in.Settings.DigestUsage {
+		perDay := make([]int, 7)
 		for _, bm := range in.Bookmarks {
+			if bm.PageID != unsortedPageID {
+				w.Bookmarks++
+			}
 			for _, ts := range bm.OpenLog {
 				switch {
 				case ts >= weekAgo.UnixMilli() && ts <= now:
 					w.Opens++
+					perDay[digestDayIndex(ts, weekAgo)]++
 				case ts >= twoWeeksAgo.UnixMilli() && ts < weekAgo.UnixMilli():
 					w.OpensPrev++
 				}
@@ -366,12 +380,23 @@ func buildDigestWeek(in digestInput) *digestWeek {
 				w.InboxNew++
 			}
 		}
+		if w.Opens > 0 {
+			w.OpensByDay = perDay
+		}
 	}
 	if in.Settings.DigestHealth {
 		inputs := make([]fleetMonitorInput, 0, len(in.Samples))
+		var dayUp, dayTotal [7]int
 		for url, samples := range in.Samples {
 			inputs = append(inputs, fleetMonitorInput{url: url, samples: samples, days: in.Days[url]})
 			for _, s := range samples {
+				if s.T >= weekAgo.UnixMilli() && s.T <= now && !s.Maint {
+					d := digestDayIndex(s.T, weekAgo)
+					dayTotal[d]++
+					if s.Up {
+						dayUp[d]++
+					}
+				}
 				if !s.Alerted {
 					continue
 				}
@@ -393,11 +418,35 @@ func buildDigestWeek(in digestInput) *digestWeek {
 		if prev := both.Samples - this.Samples; prev > 0 {
 			w.UptimePrev = digestPercent(bothUp-thisUp, prev)
 		}
+		byDay := make([]float64, 7)
+		hasData := false
+		for i := range byDay {
+			if dayTotal[i] > 0 {
+				byDay[i] = digestPercent(dayUp[i], dayTotal[i])
+				hasData = true
+			}
+		}
+		if hasData {
+			w.UptimeByDay = byDay
+		}
 	}
 	if w.empty() {
 		return nil
 	}
 	return &w
+}
+
+// digestDayIndex is which of the seven days after start a moment falls on, 0
+// for the oldest and 6 for the one ending now.
+func digestDayIndex(ts int64, start time.Time) int {
+	i := int(time.UnixMilli(ts).Sub(start) / (24 * time.Hour))
+	if i < 0 {
+		return 0
+	}
+	if i > 6 {
+		return 6
+	}
+	return i
 }
 
 // digestPercent is up over total as a percentage with one decimal.

@@ -707,12 +707,14 @@
             tiles.addEventListener('click', (event) => {
                 const btn = event.target.closest('[data-theme-backdrop-tile]');
                 if (!btn) return;
+                const value = btn.getAttribute('data-theme-backdrop-tile') || '';
                 tiles.querySelectorAll('[data-theme-backdrop-tile]').forEach((b) => {
-                    const on = b === btn;
+                    const on = (b.getAttribute('data-theme-backdrop-tile') || '') === value;
                     b.classList.toggle('is-active', on);
                     b.setAttribute('aria-pressed', String(on));
                 });
-                setValue('backdrop', btn.getAttribute('data-theme-backdrop-tile') || undefined, { save: true });
+                this.rememberBackdrop(value);
+                setValue('backdrop', value || undefined, { save: true });
             });
             void this.paintThemeBackdropTiles(container, theme);
         }
@@ -1022,7 +1024,7 @@
         const storedGone = this.dash.settings?.theme === id;
         const wasActive = storedGone || shownBefore === id;
         if (storedGone) {
-            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'tidal-slate-dark';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'aurora-glass-dark';
         }
         if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();

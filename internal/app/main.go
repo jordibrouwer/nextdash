@@ -174,6 +174,9 @@ func Run(files assetFS) {
 	// ids and widget ids in one list, so a widget can sit between categories.
 	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.GetPageBlocksHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.SavePageBlocksHandler).Methods("PUT", "OPTIONS")
+	r.HandleFunc("/api/pages/{id:[0-9]+}/widgets/{widget}/duplicate", handlers.DuplicateWidgetHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/pages/{id:[0-9]+}/layout-history", handlers.LayoutHistoryHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/pages/{id:[0-9]+}/layout-history/{snapshot}/restore", handlers.RestoreLayoutHandler).Methods("POST", "OPTIONS")
 	// Page templates: one page as a file to share, and back in as a new page.
 	r.HandleFunc("/api/pages/{id:[0-9]+}/template/hosts", handlers.PageTemplateHosts).Methods("GET")
 	r.HandleFunc("/api/pages/{id:[0-9]+}/template", handlers.ExportPageTemplate).Methods("POST")

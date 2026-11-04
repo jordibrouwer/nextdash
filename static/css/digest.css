@@ -14,6 +14,18 @@
  * its dot. The window comes in once: the chosen part rises and the bars grow. Reduced motion
  * is handled globally (reduced-motion.css); the in-app switch is below.
  */
+/* The window reads in Inter, larger than the dashboard's small print: the digest is read once a week, not scanned. */
+.modal.digest-modal,
+.digest-window,
+.digest-bar {
+    --digest-text: 1.05rem;
+    --digest-small: 0.9375rem;
+    font-family: 'Inter', var(--font-family-ui, system-ui), sans-serif;
+    font-feature-settings: 'cv11', 'ss03';
+}
+
+.modal.digest-modal * { font-family: inherit; }
+
 .digest-window {
     --digest-bad: var(--accent-error, #e5534b);
     --digest-warn: var(--accent-warning, #d29922);
@@ -35,7 +47,7 @@
 
 .digest-window-when {
     margin: 0;
-    font-size: var(--font-size-small, 0.72rem);
+    font-size: var(--digest-small);
     color: var(--text-tertiary);
 }
 
@@ -78,6 +90,7 @@
 /* Days left: a name, a bar, a number. */
 .digest-days {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.4rem;
     margin-top: var(--space-2, 0.55rem);
 }
@@ -87,7 +100,7 @@
     grid-template-columns: minmax(0, 11rem) minmax(3rem, 1fr) auto;
     align-items: center;
     gap: 0.65rem;
-    font-size: var(--font-size-small, 0.8rem);
+    font-size: var(--digest-small);
 }
 
 .digest-days-row.is-bad { --digest-tone: var(--digest-bad); }
@@ -149,7 +162,7 @@ body.no-animations .digest-days-fill {
     align-items: center;
     gap: var(--space-2, 0.55rem);
     margin: 0;
-    font-size: var(--font-size-text);
+    font-size: var(--digest-text);
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -162,7 +175,7 @@ body.no-animations .digest-days-fill {
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--font-size-small, 0.8rem);
+    font-size: var(--digest-small);
     cursor: pointer;
     white-space: nowrap;
 }
@@ -178,7 +191,7 @@ body.no-animations .digest-days-fill {
 
 .digest-part-note {
     margin: var(--space-1, 0.3rem) 0 0;
-    font-size: var(--font-size-small, 0.8rem);
+    font-size: var(--digest-small);
     color: var(--text-secondary);
     line-height: 1.5;
 }
@@ -195,7 +208,7 @@ body.no-animations .digest-days-fill {
     border-radius: var(--radius-3, 4px);
     background: color-mix(in srgb, var(--text-primary) 7%, transparent);
     color: var(--text-primary);
-    font-size: var(--font-size-small, 0.78rem);
+    font-size: var(--digest-small);
     overflow-wrap: anywhere;
 }
 
@@ -239,7 +252,7 @@ body.no-animations .digest-days-fill {
     border-radius: 999px;
     background: var(--background-primary);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
-    font-size: var(--font-size-small, 0.8rem);
+    font-size: var(--digest-small);
 }
 
 .digest-bar button {
@@ -335,7 +348,7 @@ body.no-animations .digest-days-fill {
 .modal.digest-modal {
     display: flex;
     flex-direction: column;
-    max-height: min(92vh, 46rem);
+    max-height: min(95vh, 60rem);
     overflow: hidden;
 }
 
@@ -360,11 +373,14 @@ body.no-animations .digest-days-fill {
 
 .modal.digest-modal .modal-title {
     white-space: nowrap;
+    font-size: 1.35rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
 }
 
 .digest-progress {
     margin-left: auto;
-    font-size: var(--font-size-small, 0.78rem);
+    font-size: var(--digest-small);
     font-weight: 400;
     color: var(--text-tertiary);
 }
@@ -392,8 +408,8 @@ body.no-animations .digest-days-fill {
 }
 
 .digest-summary {
-    margin: var(--space-2, 0.4rem) 0 var(--space-3, 0.8rem);
-    font-size: var(--font-size-text);
+    margin: 0.2rem 0 var(--space-2, 0.5rem);
+    font-size: var(--digest-text);
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -401,30 +417,46 @@ body.no-animations .digest-days-fill {
 /* The week in figures, above the list: each next to the week before. */
 .digest-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-2, 0.5rem);
     margin: 0 0 var(--space-3, 0.8rem);
 }
 
 .digest-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-    padding: 0.5rem 0.7rem;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 0.55rem;
+    row-gap: 0.1rem;
+    padding: 0.55rem 0.8rem;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-5, 8px);
     background: color-mix(in srgb, var(--text-primary) 4%, transparent);
 }
 
+/* Label on top, the figure and its change on one line, the chart under them. */
+.digest-stat > .digest-stat-label,
+.digest-stat > .digest-spark,
+.digest-stat > .digest-line-chart {
+    grid-column: 1 / -1;
+}
+
+.digest-stat > .digest-stat-delta {
+    font-size: 0.8rem;
+    line-height: 1.25;
+}
+
 .digest-stat-value {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.7rem;
+    font-weight: 650;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
     color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
 }
 
 .digest-stat-delta {
-    margin-left: 0.45rem;
-    font-size: var(--font-size-small, 0.72rem);
+    font-size: var(--digest-small);
     font-weight: 500;
     color: var(--text-tertiary);
 }
@@ -433,7 +465,7 @@ body.no-animations .digest-days-fill {
 .digest-stat-delta.is-bad { color: var(--digest-bad); }
 
 .digest-stat-label {
-    font-size: var(--font-size-small, 0.72rem);
+    font-size: var(--digest-small);
     color: var(--text-tertiary);
 }
 
@@ -449,13 +481,13 @@ body.no-animations .digest-days-fill {
     justify-content: space-between;
     align-items: baseline;
     gap: var(--space-3, 0.8rem);
-    padding: 0.4rem 0;
+    padding: 0.5rem 0;
     border: 0;
     border-bottom: 1px solid var(--border-primary);
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--font-size-small, 0.82rem);
+    font-size: var(--digest-small);
     text-align: left;
 }
 
@@ -474,13 +506,14 @@ body.no-animations .digest-days-fill {
 
 .digest-line-sub {
     color: var(--text-tertiary);
-    font-size: var(--font-size-small, 0.72rem);
+    font-size: var(--digest-small);
     overflow-wrap: anywhere;
 }
 
 .digest-line-value {
     flex: none;
-    max-width: 55%;
+    max-width: 60%;
+    line-height: 1.4;
     color: var(--text-secondary);
     text-align: right;
     overflow-wrap: anywhere;
@@ -505,7 +538,7 @@ body.no-animations .digest-days-fill {
 
 .digest-split {
     display: grid;
-    grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr);
+    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
     gap: var(--space-4, 1.4rem);
     align-items: start;
 }
@@ -513,12 +546,12 @@ body.no-animations .digest-days-fill {
 .digest-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3, 0.8rem);
+    gap: var(--space-2, 0.5rem);
 }
 
 .digest-list-label {
     margin: 0 0 0.2rem 0.6rem;
-    font-size: var(--font-size-small, 0.72rem);
+    font-size: var(--digest-small);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -530,13 +563,13 @@ body.no-animations .digest-days-fill {
     align-items: center;
     gap: var(--space-2, 0.55rem);
     width: 100%;
-    padding: 0.45rem 0.6rem;
+    padding: 0.45rem 0.7rem;
     border: 1px solid transparent;
     border-radius: var(--radius-5, 8px);
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--font-size-small, 0.82rem);
+    font-size: var(--digest-small);
     text-align: left;
     cursor: pointer;
 }
@@ -594,7 +627,258 @@ body.no-animations .digest-days-fill {
 /* What the subject is, and why there is a notice: above the figures. */
 .digest-part-intro {
     margin: var(--space-2, 0.5rem) 0 var(--space-1, 0.3rem);
-    font-size: var(--font-size-small, 0.82rem);
-    line-height: 1.5;
+    font-size: var(--digest-small);
+    line-height: 1.6;
     color: var(--text-secondary);
+}
+
+/* The number a part stands on. */
+.digest-hero {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: var(--space-3, 0.8rem) 0 var(--space-1, 0.3rem);
+}
+
+.digest-hero-num {
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--digest-tone);
+    font-variant-numeric: tabular-nums;
+}
+
+.digest-hero-label {
+    font-size: var(--digest-text);
+    color: var(--text-secondary);
+}
+
+/* A relative bar under a row's name (most opened, longest unopened). */
+.digest-line-bar {
+    display: block;
+    height: 6px;
+    margin-top: 0.4rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+    overflow: hidden;
+}
+
+.digest-line-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--digest-tone, var(--digest-accent));
+    transform-origin: left;
+    animation: digest-grow 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(var(--digest-i, 0) * 70ms + 300ms);
+}
+
+/* Charts inside the figures: bars per day, uptime per day. */
+.digest-spark {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    height: 3.8rem;
+    margin-top: 0.5rem;
+}
+
+.digest-spark-col {
+    display: grid;
+    grid-template-rows: 0.9rem 1fr 0.9rem;
+    justify-items: center;
+    min-width: 0;
+}
+
+.digest-spark-bar {
+    align-self: end;
+    width: 100%;
+    max-width: 1.4rem;
+    border-radius: 3px 3px 1px 1px;
+    background: var(--digest-accent);
+    transform-origin: bottom;
+    animation: digest-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(var(--digest-i, 0) * 50ms + 300ms);
+}
+
+.digest-spark-val,
+.digest-spark-day {
+    font-size: 0.7rem;
+    line-height: 0.9rem;
+    color: var(--text-tertiary);
+    text-transform: capitalize;
+}
+
+.digest-line-chart {
+    width: 100%;
+    height: 2.8rem;
+    margin-top: 0.4rem;
+    overflow: visible;
+}
+
+.digest-line-chart polyline {
+    fill: none;
+    stroke: var(--digest-ok);
+    stroke-width: 1.6;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: round;
+}
+
+.digest-line-chart circle { fill: var(--digest-ok); }
+.digest-line-chart circle.is-low { fill: var(--digest-warn); }
+
+/* The whole collection in one bar. */
+.digest-collection {
+    margin: 0 0 var(--space-2, 0.5rem);
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.digest-collection-head {
+    font-size: var(--digest-small);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.digest-collection-bar {
+    display: flex;
+    gap: 3px;
+    height: 0.55rem;
+    margin: 0.35rem 0;
+}
+
+.digest-collection-bar > span {
+    min-width: 6px;
+    border-radius: 4px;
+    background: var(--digest-tone);
+    transform-origin: left;
+    animation: digest-grow 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(var(--digest-i, 0) * 120ms + 300ms);
+}
+
+.digest-collection-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.2rem;
+    font-size: var(--digest-small);
+    color: var(--text-secondary);
+}
+
+.digest-collection-legend i {
+    display: inline-block;
+    width: 0.65rem;
+    height: 0.65rem;
+    margin-right: 0.4rem;
+    border-radius: 50%;
+    background: var(--digest-tone);
+}
+
+.digest-collection-legend b { color: var(--text-primary); font-weight: 650; }
+.digest-collection-legend small { color: var(--text-tertiary); font-size: inherit; }
+
+body.no-animations .digest-line-bar > span,
+body.no-animations .digest-spark-bar,
+body.no-animations .digest-collection-bar > span {
+    animation: none;
+}
+
+
+/* The Overview's parts in two columns: a name over its sentence, so the whole week fits without a scrollbar. */
+.digest-lines--overview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--space-4, 1.2rem);
+}
+
+.digest-lines--overview .digest-line {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 0.3rem 0;
+}
+
+.digest-lines--overview .digest-line:last-child {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.digest-lines--overview .digest-line-value {
+    max-width: none;
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 700px) {
+    .digest-lines--overview {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Four figures in one row: a label stays on one line. */
+.digest-stat-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    .digest-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* The left column holds the week's figures and the list, and stays in view while the detail scrolls. */
+.digest-side {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.digest-side .digest-collection { margin: 0; padding: 0.4rem 0.6rem; }
+.digest-side .digest-collection-legend { gap: 0.15rem 0.8rem; font-size: 0.8rem; }
+.digest-side .digest-collection-legend small { display: none; }
+
+.digest-charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 0.8rem);
+}
+
+/* On a phone the column sits above the detail and scrolls with it. */
+@media (max-width: 700px) {
+    .digest-side {
+        position: static;
+    }
+}
+
+/* The week's figures stay in the head; only the list and the detail scroll. */
+.modal.digest-modal .modal-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal.digest-modal .digest-window {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.digest-window > .digest-stats,
+.digest-window > .digest-summary,
+.digest-window > .digest-window-when {
+    flex: none;
+}
+
+.digest-window > .digest-split {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }

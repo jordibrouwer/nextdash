@@ -3,7 +3,9 @@ package app
 import (
 	"fmt"
 	neturl "net/url"
+	"strconv"
 	"strings"
+	"time"
 )
 
 /*
@@ -136,10 +138,31 @@ var widgetFields = map[WidgetType][]widgetField{
 		// Rows per column: a tile drawn two wide shows twice as many.
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
+	WidgetTypeClock: {
+		// "Label=Region/City" or just "Region/City"; the browser knows which
+		// zones exist, so an unknown one is shown as such rather than dropped.
+		{Key: "zones", Kind: "list"},
+		{Key: "hour12", Kind: "bool"},
+		{Key: "showDate", Kind: "bool"},
+	},
+	WidgetTypeCountdown: {
+		// A calendar date (YYYY-MM-DD) and, optionally, a time of day (HH:MM).
+		{Key: "date", Kind: "date"},
+		{Key: "time", Kind: "clock"},
+		{Key: "showTime", Kind: "bool"},
+	},
+	WidgetTypeStack: {
+		// Ids of other widgets on the page, in tab order; pruneStackMembers
+		// decides which of them are real.
+		{Key: "members", Kind: "list"},
+	},
 	WidgetTypeMemory: {
 		{Key: "refreshSeconds", Kind: "int", Min: 2, Max: 3600},
 		{Key: "showSwap", Kind: "bool"},
 		{Key: "showCache", Kind: "bool"},
+		// Where the figure turns amber and red, in percent used.
+		{Key: "warnAt", Kind: "int", Min: 1, Max: 99},
+		{Key: "criticalAt", Kind: "int", Min: 2, Max: 100},
 	},
 	WidgetTypeDisks: {
 		{Key: "refreshSeconds", Kind: "int", Min: 5, Max: 3600},
@@ -149,6 +172,9 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "labels", Kind: "list"},
 		{Key: "showMeter", Kind: "bool"},
 		{Key: "showInodes", Kind: "bool"},
+		// Where a disk turns amber and red, in percent used.
+		{Key: "warnAt", Kind: "int", Min: 1, Max: 99},
+		{Key: "criticalAt", Kind: "int", Min: 2, Max: 100},
 	},
 	WidgetTypeCPU: {
 		// One second is the floor: below that the delta between two /proc reads
@@ -169,6 +195,8 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "tags", Kind: "list"},
 		{Key: "downOnly", Kind: "bool"},
 		{Key: "sparkline", Kind: "bool"},
+		// Response time over the last day beside each row (needs timed checks).
+		{Key: "latency", Kind: "bool"},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
 	WidgetTypeCerts: {
@@ -468,6 +496,20 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 		}
 	}
 
+	/*
+	 * When the widget is on the dashboard, for every type: a window of the day
+	 * ("07:00" to "09:30", running past midnight when the end is before the
+	 * start) and the days of the week. Both times or neither -- one alone has
+	 * no meaning -- and all seven days is the same as saying nothing.
+	 */
+	if from, until := widgetClockTime(config["showFrom"]), widgetClockTime(config["showUntil"]); from != "" && until != "" {
+		clean["showFrom"] = from
+		clean["showUntil"] = until
+	}
+	if days := widgetConfigList(config["showDays"], widgetWeekdays); len(days) > 0 && len(days) < len(widgetWeekdays) {
+		clean["showDays"] = days
+	}
+
 	// The one nested setting, handled before the flat ones below.
 	if widgetType == WidgetTypeCustom {
 		if fields := sanitizeCustomWidgetFields(config["fields"]); fields != nil {
@@ -528,6 +570,16 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 		case "entityList":
 			if list := homeAssistantEntityList(raw); len(list) > 0 {
 				clean[field.Key] = list
+			}
+		case "date":
+			if text, isString := raw.(string); isString {
+				if parsed, err := time.Parse("2006-01-02", strings.TrimSpace(text)); err == nil {
+					clean[field.Key] = parsed.Format("2006-01-02")
+				}
+			}
+		case "clock":
+			if at := widgetClockTime(raw); at != "" {
+				clean[field.Key] = at
 			}
 		case "urlList":
 			// Its own kind rather than a list of strings: a list entry is
@@ -695,7 +747,7 @@ func widgetTypeNames() []string {
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker, WidgetTypeContainers,
-		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes,
+		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeFeedNews, WidgetTypeNotes, WidgetTypeStack, WidgetTypeClock, WidgetTypeCountdown,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
@@ -819,4 +871,27 @@ func sanitizeCustomWidgetFields(raw any) []any {
 		return nil
 	}
 	return out
+}
+
+// widgetWeekdays are the days a widget may be limited to, as the browser reads
+// them (Monday first, the way the settings list them).
+var widgetWeekdays = []string{"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
+
+// widgetClockTime reads "HH:MM" and returns it zero-padded, or "" for anything
+// else: no seconds, no 24:00, no free text.
+func widgetClockTime(raw any) string {
+	text, ok := raw.(string)
+	if !ok {
+		return ""
+	}
+	text = strings.TrimSpace(text)
+	if len(text) != 5 || text[2] != ':' {
+		return ""
+	}
+	hour, errH := strconv.Atoi(text[:2])
+	minute, errM := strconv.Atoi(text[3:])
+	if errH != nil || errM != nil || hour < 0 || hour > 23 || minute < 0 || minute > 59 {
+		return ""
+	}
+	return text
 }

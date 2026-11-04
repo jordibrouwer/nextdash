@@ -142,6 +142,7 @@ func cloneSettings(in Settings) Settings {
 	out.SmartMostUsedPageIds = slices.Clone(in.SmartMostUsedPageIds)
 	out.Collections = slices.Clone(in.Collections)
 	out.CollectionColumns = maps.Clone(in.CollectionColumns)
+	out.TagColors = maps.Clone(in.TagColors)
 	out.TagRules = slices.Clone(in.TagRules)
 	out.DismissedTagSuggestions = slices.Clone(in.DismissedTagSuggestions)
 	out.ThemeIconStyling = maps.Clone(in.ThemeIconStyling)

@@ -29,6 +29,9 @@
     // When the paper was last opened by hand, so coming back to the tab does
     // not open it again for news already read in this window.
     const BY_HAND_KEY = 'nextdash.feedWatchPaperByHand';
+    // The article the reader was on when the paper was closed, for the News
+    // button to go back to. One session, one tab: not a setting.
+    const LEFT_ON_KEY = 'nextdash.feedWatchPaperLeftOn';
 
     let state = null;   // { fresh, earlier, order, focusKey, index, mode, timer, timed }
 
@@ -547,6 +550,26 @@
      *   focusKey: one site's paper. source: 'button' (the News button: no clock)
      *   or 'return' (coming back to the tab); anything else is the window's news.
      */
+    /** Item ids repeat from one feed to the next; a feed does not. */
+    function itemKey(item) {
+        return [item.bookmarkUrl, item.feedUrl, item.id].join('\n');
+    }
+
+    function readLeftOn() {
+        try { return sessionStorage.getItem(LEFT_ON_KEY) || ''; } catch { return ''; }
+    }
+
+    /** Closing on an article remembers it; closing on the front page forgets. */
+    function rememberLeftOn() {
+        if (!state) return;
+        const open = state.mode === 'article' ? listed()[state.index] : null;
+        const id = open ? itemKey(open) : '';
+        try {
+            if (id) sessionStorage.setItem(LEFT_ON_KEY, id);
+            else sessionStorage.removeItem(LEFT_ON_KEY);
+        } catch { /* no storage */ }
+    }
+
     async function open({ focusKey = '', focusItemId = '', source = '' } = {}) {
         const watch = dash()?.feedWatch;
         if (!watch) return;
@@ -568,6 +591,13 @@
             // The newspaper opens on its front page; the two-column and one-column
             // layouts open on an article, the others beside it or one at a time.
             target.mode = everything.length > 1 && !focusItemId && currentView() === 'paper' ? 'index' : 'article';
+            // The News button goes back to the article the reader left, when it
+            // is still in the paper; a push or the toast starts at the front.
+            const leftOn = source === 'button' && !focusItemId ? everything.findIndex((i) => itemKey(i) === readLeftOn()) : -1;
+            if (leftOn >= 0) {
+                target.index = leftOn;
+                target.mode = 'article';
+            }
         };
         // Already showing (a push landed on ?news=1 and the toast was clicked
         // too): refill it in place. Showing the panel again would replace the
@@ -588,6 +618,7 @@
             modalClass: 'feed-news-modal',
             initialFocusSelector: '[data-feed-news-open], [data-feed-news-close]',
             onHide: () => {
+                rememberLeftOn();
                 clearInterval(state?.timer);
                 document.removeEventListener('click', onClick, true);
                 global.removeEventListener('keydown', onKey, true);
@@ -611,8 +642,8 @@
         if (state) global.AppModal.hide();
     }
 
-    /* The News button beside What's new: shown once a feed is watched, with
-       the number of unread items. */
+    /* The News button beside What's new: shown while at least one feed is being
+       followed (not paused, not given up on), with the number of unread items. */
     function unreadTotal(watch) {
         return Number(watch?.unreadTotal?.() ?? watch?.totalNew?.()) || 0;
     }
@@ -621,7 +652,8 @@
         const button = document.getElementById('feed-news-btn');
         const watch = dash()?.feedWatch;
         if (!button || !watch) return;
-        const watched = (watch.byKey?.size || 0) > 0;
+        const watched = [...(watch.byKey?.values?.() || [])].some((entry) => (entry.feeds || [])
+            .some((f) => f.paused !== true && f.retired !== true));
         const unread = unreadTotal(watch);
         button.hidden = !watched;
         button.dataset.unread = String(unread);

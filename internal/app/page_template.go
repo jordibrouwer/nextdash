@@ -724,6 +724,30 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 		widgetIDs[oldID] = normalized.ID
 		plan.widgets = append(plan.widgets, normalized)
 	}
+	// A stack names its members by id, and the ids just changed.
+	for i, widget := range plan.widgets {
+		if widget.Type != WidgetTypeStack {
+			continue
+		}
+		var remapped []string
+		if list, ok := widget.Config["members"].([]string); ok {
+			for _, id := range list {
+				if newID, known := widgetIDs[id]; known {
+					remapped = append(remapped, newID)
+				}
+			}
+		}
+		config := make(map[string]any, len(widget.Config))
+		for key, value := range widget.Config {
+			config[key] = value
+		}
+		if len(remapped) > 0 {
+			config["members"] = remapped
+		} else {
+			delete(config, "members")
+		}
+		plan.widgets[i].Config = config
+	}
 	for _, id := range tpl.BlockOrder {
 		if newID, ok := widgetIDs[id]; ok {
 			plan.order = append(plan.order, newID)

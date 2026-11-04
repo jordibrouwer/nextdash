@@ -172,6 +172,16 @@ const (
 	// WidgetTypeNotes holds a short text of the reader's own, some lines of it
 	// tickable. The text is the widget's config, so it travels with the page.
 	WidgetTypeNotes WidgetType = "notes"
+	// WidgetTypeStack is a frame that holds other widgets of the same page as
+	// tabs, one showing at a time. Its members are ids in config; they stay
+	// widgets of the page (their settings, their sign-ins, their place in the
+	// order) and are left out of the grid while a stack holds them.
+	WidgetTypeStack WidgetType = "stack"
+	// WidgetTypeClock shows the time in a few places, WidgetTypeCountdown the
+	// days left to (or since) a date. Both are drawn in the browser from their
+	// config alone: no service is asked and nothing is stored but the settings.
+	WidgetTypeClock     WidgetType = "clock"
+	WidgetTypeCountdown WidgetType = "countdown"
 
 	// The Unraid widgets read the Unraid server set under Config -> Containers
 	// (unraid_settings.go). One connection for all of them: a widget only says
@@ -214,6 +224,9 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeFeedNews:        {},
 	WidgetTypeCustom:          {},
 	WidgetTypeNotes:           {},
+	WidgetTypeStack:           {},
+	WidgetTypeClock:           {},
+	WidgetTypeCountdown:       {},
 	WidgetTypeJellyfin:        {},
 	WidgetTypeEmby:            {},
 	WidgetTypeSonarr:          {},
@@ -459,7 +472,78 @@ func normalizeWidgetsForSave(widgets []Widget) ([]Widget, error) {
 	if len(out) == 0 {
 		return nil, nil
 	}
-	return out, nil
+	return pruneStackMembers(out), nil
+}
+
+// widgetMaxStackMembers is how many tabs one stack holds. Past a handful the tab
+// strip is a menu, and there is a menu for that: the page.
+const widgetMaxStackMembers = 6
+
+/*
+pruneStackMembers makes every stack's members true.
+
+A member is a widget of this same page that is not itself a stack, held by at
+most one stack (the first in page order keeps it), up to widgetMaxStackMembers,
+in the order the stack lists them. Deleting a widget, moving it to another page
+or importing a template can all leave a stack naming something that is not
+there; here is the one place that is put right, on every read and every write,
+so no caller has to remember to.
+*/
+func pruneStackMembers(widgets []Widget) []Widget {
+	hasStack := false
+	for _, widget := range widgets {
+		if widget.Type == WidgetTypeStack {
+			hasStack = true
+			break
+		}
+	}
+	if !hasStack {
+		return widgets
+	}
+	candidates := make(map[string]bool, len(widgets))
+	for _, widget := range widgets {
+		if widget.Type != WidgetTypeStack {
+			candidates[widget.ID] = true
+		}
+	}
+	taken := map[string]bool{}
+	out := make([]Widget, len(widgets))
+	copy(out, widgets)
+	for i, widget := range out {
+		if widget.Type != WidgetTypeStack {
+			continue
+		}
+		var kept []string
+		switch list := widget.Config["members"].(type) {
+		case []string:
+			kept = append(kept, list...)
+		case []any:
+			for _, item := range list {
+				if id, ok := item.(string); ok {
+					kept = append(kept, id)
+				}
+			}
+		}
+		members := make([]string, 0, len(kept))
+		for _, id := range kept {
+			if !candidates[id] || taken[id] || len(members) >= widgetMaxStackMembers {
+				continue
+			}
+			taken[id] = true
+			members = append(members, id)
+		}
+		config := make(map[string]any, len(widget.Config))
+		for key, value := range widget.Config {
+			config[key] = value
+		}
+		if len(members) > 0 {
+			config["members"] = members
+		} else {
+			delete(config, "members")
+		}
+		out[i].Config = config
+	}
+	return out
 }
 
 func normalizeWidgets(widgets []Widget) []Widget {
@@ -485,7 +569,7 @@ func normalizeWidgets(widgets []Widget) []Widget {
 	if len(out) == 0 {
 		return nil
 	}
-	return out
+	return pruneStackMembers(out)
 }
 
 /*
@@ -561,6 +645,12 @@ else in the file belongs to somebody else, and a save that carried a stale copy
 of the bookmarks would undo whatever was written between the read and the write.
 */
 func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string) error {
+	return fs.savePageBlocks(pageID, widgets, order, false)
+}
+
+// savePageBlocks is SavePageBlocks, with the choice of whether the layout it
+// replaces is always kept (a restore) or kept once per burst of edits (the rest).
+func (fs *FileStore) savePageBlocks(pageID int, widgets []Widget, order []string, forceHistory bool) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -570,6 +660,8 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 	if err != nil {
 		return err
 	}
+	previousPageWidgets := append([]Widget(nil), page.Widgets...)
+	previousPageOrder := append([]string(nil), page.BlockOrder...)
 
 	// nil keeps what is stored, read under this lock: a drag sends only the
 	// order, and reading the widgets before taking it wrote back a list that
@@ -584,6 +676,9 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 	if order == nil {
 		order = page.BlockOrder
 	}
+	// What the page held before, for the layout history.
+	previousWidgets := normalizeWidgets(previousPageWidgets)
+	previousOrder := resolveBlockOrder(previousPageOrder, page.Categories, previousWidgets)
 	// Resolved rather than stored as given, so a caller cannot write an order
 	// naming blocks that do not exist -- or leave one out and make it vanish.
 	page.BlockOrder = resolveBlockOrder(order, page.Categories, page.Widgets)
@@ -593,6 +688,12 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 		return err
 	}
 	fs.invalidateReadCache()
+	if now := normalizeWidgets(page.Widgets); !sameLayout(previousWidgets, previousOrder, now, page.BlockOrder) {
+		// A widget that disappears always files the layout it was in, burst or
+		// not: removing is the edit most worth being able to take back, and the
+		// state before a burst may be from before the widget was set up.
+		fs.recordLayoutSnapshot(pageID, previousWidgets, previousOrder, forceHistory || widgetDisappeared(previousWidgets, now))
+	}
 	return nil
 }
 
@@ -601,3 +702,17 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 // the timer started, so a beat found it still valid by milliseconds and drew
 // the same figures again: up to twice the TTL between real fetches.
 const widgetBeatSlack = 3 * time.Second
+
+// widgetDisappeared reports whether the earlier list has a widget the later one lacks.
+func widgetDisappeared(before, after []Widget) bool {
+	still := make(map[string]struct{}, len(after))
+	for _, w := range after {
+		still[w.ID] = struct{}{}
+	}
+	for _, w := range before {
+		if _, ok := still[w.ID]; !ok {
+			return true
+		}
+	}
+	return false
+}

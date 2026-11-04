@@ -2768,6 +2768,8 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	// would otherwise put the old address back with the next unrelated save.
 	settings.UnraidServers = h.store.GetSettings().UnraidServers
 
+	settings.TagColors = sanitizeTagColors(settings.TagColors)
+
 	// Validate and sanitize collections.
 	//
 	// Anything dropped here is reported back rather than discarded in silence.
@@ -2985,13 +2987,35 @@ func (h *Handlers) ThemeBackdrops(w http.ResponseWriter, r *http.Request) {
 		Size     string `json:"size"`
 		Position string `json:"position"`
 	}
+	// The colours a recipe drawn as an SVG needs are values, not variables, so when the page says which
+	// theme is on screen the thumbnails are drawn with that theme's own colours.
+	base := ThemeColors{AccentPrimary: "var"}
+	if id := normalizeLegacyThemeID(strings.TrimSpace(r.URL.Query().Get("theme"))); id != "" {
+		colors := h.store.GetColors()
+		if tc, ok := colors.BuiltIn[id]; ok {
+			base = tc
+		} else if tc, ok := colors.Custom[id]; ok {
+			base = tc
+		}
+	}
 	looks := make(map[string]look, len(themeBackdropRecipes))
 	for _, name := range themeBackdropRecipes {
-		l := themeBackdropSeeded("recipe:"+name, ThemeColors{Backdrop: name, AccentPrimary: "var"}, seed)
+		tc := base
+		tc.Backdrop = name
+		l := themeBackdropSeeded("recipe:"+name, tc, seed)
 		looks[name] = look{Image: l.Image, Size: l.Size, Position: l.Position}
 	}
+	categories := make(map[string]string, len(themeBackdropRecipes))
+	labels := make(map[string]string, len(themeBackdropRecipes))
+	for _, name := range themeBackdropRecipes {
+		categories[name] = themeBackdropCategoryOf(name)
+		labels[name] = themeBackdropLabelOf(name)
+	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"recipes": themeBackdropRecipes, "looks": looks, "seed": seed})
+	json.NewEncoder(w).Encode(map[string]any{
+		"recipes": themeBackdropRecipes, "looks": looks, "seed": seed,
+		"categories": categories, "categoryOrder": themeBackdropCategoryOrder, "labels": labels,
+	})
 }
 
 /*
@@ -3873,6 +3897,10 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	layers := themeBackdropColourLayers(name, backdropKit{
 		accent: accent, second: second, warm: warm, cool: cool, ground: deep,
 		veil: veil, soft: soft, blob: blob, line: line, rnd: rnd, px: px, tile: tile, dark: dark,
+		hex: backdropHex{
+			accent: backdropHexOr(firstNonEmpty(tc.AccentPrimary, tc.AccentSuccess)), second: backdropHexOr(tc.AccentError),
+			warm: backdropHexOr(tc.AccentWarning), cool: backdropHexOr(tc.AccentSuccess), ground: backdropHexOr(tc.BackgroundPrimary),
+		},
 	})
 	// Chrome keeps its grey page with one soft diagonal sheen, as it had before the colour recipes.
 	if strings.HasPrefix(themeID, "gloss-liquid-chrome") {
@@ -3901,6 +3929,12 @@ var themeBackdropRecipes = []string{
 	"dots", "rack", "digirain", "cellgrid", "bootlog", "crt",
 	"scales", "seigaiha", "diamonds", "bricks", "checker", "zigzag", "isocube", "tartan", "rays",
 	"stitch", "moire", "deco", "terrazzo", "bauhaus", "circuit", "triangles", "dotsoff", "herring", "windows", "bubbles", "petals", "bamboo", "oceanblue",
+	"louche", "planking", "orbits", "floes", "curtains", "panda", "plankton", "compass", "craquelure", "ribbons",
+	"candleglow", "candyglow", "cloudbank", "fizz", "static", "graphiteglow", "skyline", "marbled", "tubes", "contrib", "pcb", "swells", "nebulabands", "lightbands", "twill", "sandripples", "mirage", "twilight", "minimap", "orchidbloom",
+	"kevlarweave", "lavendermist", "librarymahogany", "licoricelayer", "limesoda", "marigolddusk", "matrixbluepill", "matrixconstruct", "matrixrain", "matrixredpill",
+	"emberash", "emeraldmatrix", "foresteverglade", "forestmoss", "forgedtitanium", "foundryiron", "foxnight", "frostfern", "frostedjuniper", "frozenlavender", "glaciermint", "glossamberresin", "glossaubergine", "glossbutterscotch", "glosscandylacquer", "glosscinnabar", "glossemeraldenamel", "glossjade", "glossliquidchrome", "glossneontide", "glossobsidianmirror", "glosspearl", "glossrosegold", "glosssapphirenight", "glossultraviolet", "graphiteprism", "graphitetwill", "gray", "greatwave", "gunmetalbronze", "harbourfog", "hermeticteal", "hoarfrost", "horizonglow", "icebergdrift", "indigoletterpress", "irismeadow", "irongall", "jungleneon", "kelpdrift", "midnightfirefly", "midnightink", "midnightneon", "miragesand", "monochromemist", "moonlitsteel", "mossstone", "mulberrysilk", "nebulanursery", "neongrid", "neutral", "nocturneink", "nordicfrost", "obsidiangold", "oceandepth", "oceanicsteel", "olivedrab", "owlhours", "oxbloodleather", "palenight", "paperink", "pastelmountain", "patinaverdigris", "peacock", "pistachiocream", "polardawn", "polarnight", "porcelainblue", "porcelain", "prismveil", "racelivery", "rainwindow", "retrocrt", "retrocrtmk2", "retrogroove", "rhubarbtart", "rosepine", "rosetitanium", "rosewaterpane", "royalamethyst", "rustedrail", "saffronrobe", "sakuranight", "saltflat", "satinnickel", "seaglass", "signalflare", "slate", "slateone", "smokedplum", "sonar",
+	"lookember", "looksupernova", "looksolarflare", "lookcandyburst", "lookmagma", "looklagoon", "lookconfetti", "lookkoi", "looktropic", "looktwilight", "lookorchid", "lookminthaze", "lookcobalt", "looknorthern", "lookpolar", "lookverdant", "lookberry", "lookgoldenhour", "lookneonalley", "lookfilm", "lookdusk", "lookopal", "lookholo",
+	"solarember", "solarflats", "solarwind", "squidink", "staticnoise", "steeldawn", "stone", "stormpetrel", "sumiink", "sunflowerink", "synthsunset", "tarnishedbrass", "terminalamber", "terracottastudio", "thunderhead", "tidalslate", "tidepoollens", "tomorrowdusk", "tyrian", "ultraviolet", "unraidazure", "unraidblack", "unraidblaze", "unraidember", "vampirecastle", "velocityink", "vermilionseal", "violetshades", "vividhyper", "volcanicash", "wheatfield", "winterember", "zenember", "zinc", "chalk", "concrete", "black",
 }
 
 // themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the

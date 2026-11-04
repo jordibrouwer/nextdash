@@ -203,6 +203,7 @@
                 { keys: 'Shift + F10 on row', cheatKey: 'wgRowMenu', fallback: 'Menu for the row and its widget — the row\u2019s own action first, then rename, width, close (right-click does the same)' },
                 { keys: 'Shift + Home', cheatKey: 'wgHeader', fallback: 'Step from a widget row up to its header, where the widget\u2019s own keys act; on its top row, \u2191 does the same' },
                 { keys: 'Enter / Space on header', cheatKey: 'wgFold', fallback: 'Fold the widget shut, or open it again; . folds every block on the page', print: true, printFallback: 'Fold a widget' },
+                { keys: '← → Home End on tab', cheatKey: 'wgTabs', fallback: 'Move between the tabs of a Tabs widget: ← and → one tab, Home the first, End the last', print: true, printFallback: 'Switch tab in a Tabs widget' },
                 { keys: 'F2 on widget', cheatKey: 'wgRename', fallback: 'Rename the widget — an empty name falls back to the type\u2019s own', print: true, printFallback: 'Rename widget' },
                 { keys: 'Shift + W on widget', cheatKey: 'wgWidth', fallback: 'One column or two, the same key a category uses for its width', print: true, printFallback: 'Widget across two columns' },
                 { keys: 'Delete on widget', cheatKey: 'wgClose', fallback: 'Close the widget — it keeps its settings, and Config → Widgets switches it back on', print: true, printFallback: 'Close widget (Config → Widgets brings it back)' },

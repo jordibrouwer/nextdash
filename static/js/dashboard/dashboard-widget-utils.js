@@ -418,6 +418,38 @@
         return !pageId || Number(bookmark?.pageId) === Number(pageId);
     }
 
+    /*
+     * Where a "how full" figure turns amber and red.
+     *
+     * A tile that reads one machine's disks has no way to know that a 98%
+     * full archive disk is fine and a 90% full system disk is not, so the two
+     * limits are the reader's to move. A pair that does not make sense (a
+     * missing one, or a red that comes before the amber) is ignored as a pair
+     * rather than half-applied: a limit nobody asked for is worse than the
+     * default.
+     */
+    function usageLimits(config, defaults = { warn: 85, bad: 95 }) {
+        const whole = (value, min, max) => {
+            const n = Number(value);
+            return Number.isInteger(n) && n >= min && n <= max ? n : null;
+        };
+        const asked = { warn: whole(config?.warnAt, 1, 99), bad: whole(config?.criticalAt, 2, 100) };
+        // One limit on its own is honoured: the other is the default, moved
+        // out of the way when the one given would otherwise cross it.
+        let warn = asked.warn ?? defaults.warn;
+        let bad = asked.bad ?? defaults.bad;
+        if (asked.warn !== null && asked.bad === null && bad <= warn) bad = Math.min(100, warn + 1);
+        if (asked.bad !== null && asked.warn === null && warn >= bad) warn = Math.max(1, bad - 1);
+        return bad > warn ? { warn, bad } : { ...defaults };
+    }
+
+    /** Tone for a percentage used, against limits from usageLimits. */
+    function usageTone(percent, limits) {
+        if (percent >= limits.bad) return 'bad';
+        if (percent >= limits.warn) return 'warn';
+        return 'good';
+    }
+
     /** A bookmark whose last check failed. Empty lastError is what reachable means. */
     function isBroken(bookmark) {
         return String(bookmark?.lastError || '').trim() !== '';
@@ -427,6 +459,6 @@
         appendOverflowRow, rowLimit, label, openHealthFiltered, openConfigTab, authFetch,
         bindRowAction,
         panel, statGrid, meter, headline, footnote, rowList, row, say, asOf, refreshMs,
-        daysSince, bytes, host, bookmarksOf, onPage, isBroken, DAY_MS,
+        daysSince, bytes, host, bookmarksOf, onPage, isBroken, usageLimits, usageTone, DAY_MS,
     };
 })();

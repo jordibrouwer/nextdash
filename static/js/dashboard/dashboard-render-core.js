@@ -363,11 +363,18 @@ class DashboardRenderCore {
          * order does not name should be "it appears", not "it appears last for
          * ever". Anything not in the order keeps the position it is pushed in.
          */
+        const heldInStacks = this.stackMemberIds();
         (d.widgets || []).forEach((widget) => {
             // Switched off: kept in the order and out of the grid, so turning it
             // back on returns it to the place the reader put it rather than to
             // the end.
             if (widget?.config?.enabled === false) return;
+            // In a stack's tabs: drawn there, not here. Still in the order, so
+            // taking it out of the stack puts it back where it stood.
+            if (heldInStacks.has(widget.id)) return;
+            // Outside its window of the day, or off today: kept in the order
+            // and out of the grid, like a widget that is switched off.
+            if (!this.widgetIsScheduledNow(widget)) return;
             columnBlocks.push({
                 widget,
                 category: {
@@ -432,6 +439,7 @@ class DashboardRenderCore {
             });
         });
 
+        this.watchWidgetSchedules();
         return this.applyBlockOrder(columnBlocks);
     }
 
@@ -767,8 +775,7 @@ class DashboardRenderCore {
                 .forEach((key) => delete held[key]);
         });
 
-        const block = document.querySelector(
-            `.dashboard-widget[data-widget-id="${CSS.escape(String(widget.id))}"]`);
+        const block = this.widgetBlockEl(widget.id);
         const body = block?.querySelector('.dashboard-widget-body');
         // Gone from the page: the tile was closed or the reader moved on, and
         // the clock has nothing left to draw into.
@@ -825,8 +832,7 @@ class DashboardRenderCore {
         const d = this.dash;
         const pageId = Number(d?.currentPageId) || Number(d?.pages?.[0]?.id) || 1;
 
-        const block = document.querySelector(
-            `.dashboard-widget[data-widget-id="${CSS.escape(String(widget.id))}"]`);
+        const block = this.widgetBlockEl(widget.id);
         const body = block?.querySelector('.dashboard-widget-body');
         if (!body) return;
 
@@ -848,6 +854,125 @@ class DashboardRenderCore {
         // The clock restarts from now, so pressing this does not leave a beat
         // arriving a second later.
         this.startCustomWidgetTimer(widget);
+    }
+
+    /*
+     * "Refresh now" for every tile that keeps a clock.
+     *
+     * Custom has its own (above): it holds a failure for thirty seconds and the
+     * answer lives in its own store. The rest all go through runWidgetTick,
+     * which forgets what the tile held and draws it again; a service-backed
+     * tile is told to skip the server's held answer as well, so the click asks
+     * the service and not a copy that is up to a TTL old. Same rules as a beat
+     * otherwise: it waits for one already running, holds the others off while
+     * it runs, and restarts the clock from now.
+     */
+    /*
+     * A second copy of a widget, standing right after it.
+     *
+     * The server makes it: this browser holds a widget with its addresses left
+     * out, and a copy written from that would have no server, no feeds and no
+     * sign-in. What comes back is the page as stored, so the grid is drawn from
+     * the same answer a reload would give. Resolves to the new id, or null.
+     */
+    async duplicateWidget(widget, title) {
+        const d = this.dash;
+        const pageId = Number(d.currentPageId);
+        if (!widget?.id || !Number.isFinite(pageId)) return null;
+        if (this.blocksBelongElsewhere?.()) return null;
+        // A drag still waiting out its debounce would write the old order,
+        // without the copy, after this.
+        await this.flushPendingBlockOrderSave?.();
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json' };
+        if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+        try {
+            const res = await fetcher(`/api/pages/${pageId}/widgets/${encodeURIComponent(widget.id)}/duplicate`, {
+                method: 'POST', headers, body: JSON.stringify({ title }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const made = await res.json();
+            // Re-read with this browser's own rights: the answer above is the
+            // whole widget, and the grid should hold what a read would give it.
+            const read = await fetcher(`/api/pages/${pageId}/blocks`);
+            const blocks = read.ok ? await read.json() : made;
+            if (!this.onSamePage(pageId)) return made.id || null;
+            d.widgets = blocks.widgets || [];
+            d.blockOrder = blocks.order || [];
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
+            // Config's cached list lacks the copy; a save from it would delete it.
+            this.forgetWidgetConfigCache?.();
+            this.forgetWidgetCaches?.();
+            d.renderDashboard?.({ animate: false, forceFull: true });
+            return made.id || null;
+        } catch (_error) {
+            d.showErrorNotification?.(d.formatDashboardLabel?.('widgetDuplicateFailed', {},
+                'Could not duplicate the widget.') || 'Could not duplicate the widget.');
+            return null;
+        }
+    }
+
+    /*
+     * Read this page's blocks again from the server and draw the grid from them.
+     * For a change made on the server's side of things (a restored layout) that
+     * this browser did not make itself. False when the reader has moved to
+     * another page meanwhile or the read failed.
+     */
+    async reloadPageBlocks(pageId = Number(this.dash.currentPageId)) {
+        const d = this.dash;
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetcher(`/api/pages/${pageId}/blocks`);
+            if (!res.ok || !this.onSamePage(pageId)) return false;
+            const blocks = await res.json();
+            d.widgets = blocks.widgets || [];
+            d.blockOrder = blocks.order || [];
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
+            this.forgetWidgetConfigCache?.();
+            this.forgetWidgetCaches?.();
+            d.renderDashboard?.({ animate: false, forceFull: true });
+            return true;
+        } catch (_error) {
+            return false;
+        }
+    }
+
+    /*
+     * Which tiles a click can truly bring up to date: the ones whose answer
+     * can be older than their clock says. Custom holds a failure for thirty
+     * seconds; the media, Beszel and Home Assistant tiles come through the
+     * server's copy of a service's answer, kept for up to a TTL, which a forced
+     * read skips. The machine's own figures (processor, memory, disks, Docker)
+     * beat every few seconds off nothing held back, so a button there would
+     * only win a moment. Weather, calendar and RSS hold a server copy for a
+     * quarter of an hour that a click cannot get past, and Glances and Unraid
+     * keep theirs elsewhere.
+     */
+    widgetCanRefreshNow(widget) {
+        if (!widget?.id || !this.widgetPollSpec(widget)) return false;
+        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel)/
+            .test(String(widget.type));
+    }
+
+    async refreshWidgetNow(widget) {
+        if (!this.widgetCanRefreshNow(widget)) return;
+        if (widget.type === 'custom') return this.refreshCustomWidgetNow(widget);
+        const d = this.dash;
+        this._widgetTicking = this._widgetTicking || new Map();
+        const pending = this._widgetTicking.get(widget.id);
+        if (pending) await pending.catch(() => {});
+        d._widgetForce = d._widgetForce || new Set();
+        d._widgetForce.add(widget.id);
+        const run = this.runWidgetTick(widget);
+        this._widgetTicking.set(widget.id, run);
+        try {
+            await run;
+        } finally {
+            if (this._widgetTicking.get(widget.id) === run) this._widgetTicking.delete(widget.id);
+            // Spent by the request, or unused by a tile that never asks one.
+            d._widgetForce.delete(widget.id);
+        }
+        this.startWidgetTimer(widget);
     }
 
     async _refreshCustomWidgetBody(widget, d, pageId, body) {
@@ -952,7 +1077,7 @@ class DashboardRenderCore {
          * in the tile can.
          */
         const cursor = d.keyboardNavigation?.captureWidgetCursor?.() || null;
-        document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"]`)
+        document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"], .dashboard-widget-member[data-widget-type="${CSS.escape(String(type))}"]`)
             .forEach((block) => {
                 const widget = (d.widgets || []).find((w) => w.id === block.dataset.widgetId);
                 const body = block.querySelector('.dashboard-widget-body');
@@ -977,6 +1102,89 @@ class DashboardRenderCore {
         return Math.max(1, Math.min(2, Math.trunc(asked), available));
     }
 
+    /**
+     * Whether a widget's own schedule (showFrom/showUntil/showDays) has it on
+     * the dashboard at this moment, by the browser's clock. No schedule is
+     * always on.
+     */
+    widgetIsScheduledNow(widget, now = new Date()) {
+        const c = widget?.config || {};
+        const days = Array.isArray(c.showDays) ? c.showDays : [];
+        const clock = /^(\d\d):(\d\d)$/;
+        const from = clock.exec(String(c.showFrom || ''));
+        const until = clock.exec(String(c.showUntil || ''));
+        const at = now.getHours() * 60 + now.getMinutes();
+        const start = from && until ? Number(from[1]) * 60 + Number(from[2]) : 0;
+        const end = from && until ? Number(until[1]) * 60 + Number(until[2]) : 0;
+        const overnight = start > end;
+        // The day belongs to where the window starts: Friday 22:00-02:00 is
+        // still on at Saturday 01:00.
+        const dayIndex = (now.getDay() + (overnight && at < end ? 6 : 0)) % 7;
+        if (days.length && !days.includes(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dayIndex])) return false;
+        if (!from || !until || start === end) return true;
+        return overnight ? at >= start || at < end : at >= start && at < end;
+    }
+
+    /*
+     * The dashboard follows the clock: once a minute, when any widget has a
+     * schedule and what is on the page no longer matches it, the grid is drawn
+     * again. A tab left open overnight shows the morning's widgets in the
+     * morning. One timer for the page, and none while nothing is scheduled.
+     */
+    watchWidgetSchedules() {
+        const d = this.dash;
+        const scheduled = (d.widgets || []).filter((w) => w?.config?.showFrom || w?.config?.showDays);
+        if (!scheduled.length) {
+            if (this._scheduleTimer) { clearInterval(this._scheduleTimer); this._scheduleTimer = null; }
+            return;
+        }
+        this._scheduleSignature = scheduled.map((w) => `${w.id}:${this.widgetIsScheduledNow(w) ? 1 : 0}`).join('|');
+        if (this._scheduleTimer) return;
+        this._scheduleTimer = setInterval(() => {
+            if (document.visibilityState !== 'visible') return;
+            const now = (d.widgets || []).filter((w) => w?.config?.showFrom || w?.config?.showDays);
+            const signature = now.map((w) => `${w.id}:${this.widgetIsScheduledNow(w) ? 1 : 0}`).join('|');
+            if (signature === this._scheduleSignature) return;
+            // Not under someone's hands: a menu, a rename, a drag or a dialog
+            // open, or another view on screen. The change waits for the next
+            // minute rather than redrawing the grid out from under them.
+            const busy = d.activeView !== 'bookmarks'
+                || document.getElementById('widget-context-menu')
+                || document.querySelector('.category-rename-input, #app-modal.show, .category-menu')
+                || window.__dragReorderState?.selected;
+            if (busy) return;
+            this._scheduleSignature = signature;
+            const y = window.scrollY || 0;
+            d.renderDashboard?.({ animate: false, forceFull: true });
+            window.scrollTo(0, y);
+        }, 60_000);
+    }
+
+    /**
+     * The ids held in tabs by a stack that is on the page. A stack that is
+     * switched off holds nothing: its widgets are back in the grid, since a
+     * hidden stack would otherwise take its members out of sight with it.
+     */
+    stackMemberIds() {
+        const held = new Set();
+        (this.dash.widgets || []).forEach((widget) => {
+            if (widget?.type !== 'stack' || widget?.config?.enabled === false) return;
+            (Array.isArray(widget.config?.members) ? widget.config.members : [])
+                .forEach((id) => held.add(String(id)));
+        });
+        return held;
+    }
+
+    /**
+     * Where a widget is drawn: its block, or, when a stack holds it, the panel
+     * of the tab it is in. Beats, refreshes and redraws all look it up here.
+     */
+    widgetBlockEl(id) {
+        const key = CSS.escape(String(id));
+        return document.querySelector(
+            `.dashboard-widget[data-widget-id="${key}"], .dashboard-widget-member[data-widget-id="${key}"]`);
+    }
+
     /** A readable name for a type, for a widget with no title of its own. */
     widgetTypeLabel(type) {
         const d = this.dash;
@@ -991,6 +1199,9 @@ class DashboardRenderCore {
     static WIDGET_TYPE_NAMES = {
         containers: 'Container list',
         notes: 'Notes',
+        stack: 'Tabs',
+        clock: 'Clock',
+        countdown: 'Countdown',
         'feed-news': 'Watch feeds news',
         jellyfin: 'Jellyfin',
         emby: 'Emby',
@@ -2247,7 +2458,7 @@ class DashboardRenderCore {
      * through scrollIntoView: the reader's offset is the thing to preserve, not
      * the block's position in the viewport.
      */
-    redrawKeepingPlace(blockId) {
+    redrawKeepingPlace(blockId, { forceFull = true } = {}) {
         const d = this.dash;
         const selector = blockId
             ? `#dashboard-layout .category[data-category-id="${CSS.escape(String(blockId))}"]`
@@ -2267,7 +2478,7 @@ class DashboardRenderCore {
         // reader's eyes.
         const anchorTop = before ? before.getBoundingClientRect().top : null;
 
-        d.renderDashboard?.({ animate: false, forceFull: true });
+        d.renderDashboard?.({ animate: false, forceFull });
 
         // Returns whether it had to move anything, which is what tells the
         // caller the layout is still settling.

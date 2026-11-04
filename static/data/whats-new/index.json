@@ -1,5 +1,11 @@
 [
   {
+    "id": "v1.25.0",
+    "tag": "v1.25.0",
+    "date": "3 November 2026",
+    "releasedAt": "2026-11-03"
+  },
+  {
     "id": "v1.24.2",
     "tag": "v1.24.2",
     "date": "2 November 2026",

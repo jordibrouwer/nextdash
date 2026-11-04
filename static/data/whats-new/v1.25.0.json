@@ -1,0 +1,111 @@
+{
+  "tag": "v1.25.0",
+  "date": "3 November 2026",
+  "releasedAt": "2026-11-03",
+  "modalLead": "Widgets can now sit in Tabs, show a clock or count down to a date, and every theme has a backdrop of its own: 266 in all, behind the new default theme Aurora Glass. Search answers sums, and Config shows what you changed and keeps earlier layouts of a page.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Tabs, Clock and Countdown.</strong> A Tabs widget puts several widgets of one page in one tile, a Clock shows the time in any time zone, and a Countdown counts the days to a date. Add them from <strong>Add a widget</strong>.",
+          "highlight": true,
+          "title": "Tabs, clocks and countdowns",
+          "link": "#config/widgets",
+          "linkLabel": "Add a widget",
+          "media": {
+            "image": "media/v1.25.0-tabs-clock-countdown.jpg",
+            "alt": "A Tabs tile with the tabs Health, Weather and Notes on a dashboard page"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Duplicate and Refresh now.</strong> Right-click a widget to duplicate it with its settings; media, Beszel, Home Assistant and Custom widgets also have Refresh now."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Show a widget only on set times and days</strong>, and amber and red limits for the disk and memory widgets."
+        }
+      ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Search answers sums.</strong> Type <code>15% of 240</code>, <code>2+2*3</code> or <code>5 km in mi</code> and the answer is the top row; Enter copies it. Nothing leaves your browser.",
+          "highlight": true,
+          "title": "Search answers sums",
+          "media": {
+            "image": "media/v1.25.0-search-sums.jpg",
+            "alt": "The search panel with 15% of 240 answered as 36 in the top row"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Six more commands:</strong> <code>:news</code>, <code>:unsorted</code>, <code>:cloud</code>, <code>:studio</code>, <code>:legend</code> and <code>:hypr</code>."
+        }
+      ]
+    },
+    {
+      "title": "Look and feel",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A backdrop for every theme.</strong> The themes have a new look: each of the 192 theme families has a backdrop of its own in its colours. The picker starts short, with this theme's backdrop, ones like it and those you used lately. Try it!",
+          "highlight": true,
+          "title": "A backdrop for every theme",
+          "link": "#config/appearance",
+          "linkLabel": "Try it",
+          "media": {
+            "image": "media/v1.25.0-backdrops.jpg",
+            "alt": "The backdrop picker with This theme, Like it and All backdrops (266)"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Aurora Glass is the default theme</strong> on new installs. A new install also shows the online/offline status on its rows; installs that already exist keep their settings."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tag colours.</strong> Give a tag a colour in Config → Bookmarks → Tags; it shows in the tag cloud and on the rows."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>See what you changed.</strong> The Overview lists every setting that differs from its default, with a Copy as text button.",
+          "link": "#config/overview",
+          "linkLabel": "Open Overview"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Layout history.</strong> nextDash keeps earlier layouts of each page; open the history, see what a restore would change, and restore it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Import a Homepage, Dashy or Homer configuration</strong> from Data and backups.",
+          "link": "#config/data",
+          "linkLabel": "Open Data & backups"
+        }
+      ]
+    },
+    {
+      "title": "Watch feeds and assistant",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A clearer weekly digest</strong>, with charts, and the watched feed figures in the statistics CSV."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The backdrop groups are in English,</strong> and the Config page no longer moves while a setting is saved."
+        }
+      ]
+    }
+  ]
+}

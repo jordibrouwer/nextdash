@@ -1617,6 +1617,7 @@ class DashboardPreview {
                 const chip = document.createElement('span');
                 chip.className = 'bookmark-tag-chip';
                 chip.textContent = tag;
+                window.TagColors?.paint(chip, tag);
                 tagsEl.appendChild(chip);
             });
             tagsEl.hidden = tags.length === 0;

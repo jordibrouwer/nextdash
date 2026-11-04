@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo-ascii-on-black-large.png" alt="nextDash" width="720">
+  <img src="header.svg" alt="nextDash: your links, your services, your homelab. in one place." width="100%">
 </p>
 
 # nextDash
@@ -14,15 +14,27 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
 - **Health and monitoring.** Dead links, uptime with 30 days of history, certificate and domain expiry, page drift and a public status page, with alerts to ntfy, Slack, Discord, Telegram and more, or a push notification on your phone.
 - **Containers and homelab.** A Containers view for the Docker host: logs, start, stop, update with a rollback, and each container linked to its bookmark. Widgets for Unraid, Jellyfin, Sonarr, Home Assistant, Beszel and Glances.
 - **Widgets** for what is going on: weather, calendar, feeds, inbox, your machine, and any service that answers with JSON.
-- **Looks.** 384 themes, 75 backdrops and a theme studio, in six languages.
+- **Looks.** 384 themes, 266 backdrops and a theme studio, in six languages.
 - **An assistant, if you want one.** Ask in plain words with Claude, OpenAI or a model of your own, and decide what happens to what it suggests. Off until you turn it on.
 - **Yours to keep.** One Go binary and plain JSON files, automatic backups, a 30-day trash, and imports from every browser, Pocket, Raindrop, linkding and more.
 
 <p align="center">
-  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Oceanic Steel: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
+  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Aurora Glass: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
 </p>
 
-🎨 **384 themes and a theme studio.** 192 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic. **Tidal Slate** is the default on a new install (an install that already chose a theme keeps it), and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 75 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#17a-the-new-look)* · *[Manual: Appearance](MANUAL.md#17-appearance)*
+🎨 **384 themes and a theme studio.** 192 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic. **Aurora Glass** is the default on a new install (an install that already chose a theme keeps it), and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 266 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#17a-the-new-look)* · *[Manual: Appearance](MANUAL.md#17-appearance)*
+
+<p align="center">
+  <img src="screenshots/nextdash-themes-dark.jpg" alt="All 192 dark themes, each shown on the same dashboard" width="100%" />
+  <br />
+  <sub><b>All 192 dark themes</b> — the same dashboard in every theme, each with its own material and backdrop.</sub>
+</p>
+
+<p align="center">
+  <img src="screenshots/nextdash-themes-light.jpg" alt="All 192 light themes, each shown on the same dashboard" width="100%" />
+  <br />
+  <sub><b>All 192 light themes</b> — the light half of every family.</sub>
+</p>
 
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
@@ -83,7 +95,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> <i>(Oceanic Steel)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
+      <sub><b>Dashboard</b> <i>(Aurora Glass)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
@@ -448,7 +460,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Pages and categories, each with an icon, a colour and a sort; drag categories and widgets into place — wide across two columns, or onto another page — and spread a category across columns. Share a page as a template file: your own addresses become names the importer fills in. *[Manual §9](MANUAL.md#9-pages-categories-and-collections)*
 - **Edit mode** changes the dashboard in place: `Shift + M` (or the pencil in the action bar, or *Edit in panel…* in a category's or widget's menu) puts an outline on every block, a click chooses one, and a panel beside the page edits its name, icon, width, view and sorting, a widget's settings included. Double-click a title to rename it. *[Manual §4](MANUAL.md#edit-mode)*
 - Add a link with one key, the full form, a paste, the extension, the share sheet or a bookmarklet — or right-click a category header and choose **Add new bookmark**, with that category already chosen. *[Manual §5](MANUAL.md#5-adding-bookmarks)*
-- Tags, notes, shortcuts and pins, a preview card that says what a page is without opening it, and a QR code (`Shift + J`) to open a bookmark on your phone. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
+- Tags (each can have a colour), notes, shortcuts and pins, a preview card that says what a page is without opening it, and a QR code (`Shift + J`) to open a bookmark on your phone. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
 - A **tag cloud** (`/`) and a **tag view** per tag: every bookmark with that tag from every page in one table, with related tags, bulk actions, and rename, merge or remove for the tag. *[Manual §10](MANUAL.md#10-tags)*
 - **Tag suggestions** tag whole groups at once — from your own tags, a catalogue of some 51,000 sites in 471 subjects, a Wikidata lookup for sites it does not know (only the host name leaves the server, and you can switch it off), and rules you write. The lookup also runs quietly for a link that arrives in the inbox or your bookmarks, and shows what it finds as a chip. They show in the rows of the tag view, the Bookmarks view and the inbox, with **Add all**. Nothing is tagged until you accept. *[Manual §10.4](MANUAL.md#104-tag-suggestions)*
 - A **Bookmarks view** for the whole collection: a rail of pages, categories and health filters, one-line rows with a score and open counts, and a side panel with Details, Health and Usage. Group, sort, work through what needs attention, export to CSV. *[Bookmarks view](MANUAL.md#11-the-bookmarks-view)*
@@ -463,6 +475,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - One panel for search, commands and finders, plus search from the browser's address bar. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - **Usually now** puts the bookmarks you tend to open around this time of day at the top of the empty search panel, and `→` on a result unfolds what you can do with it: open, open in a new tab, edit, copy the address, show in the list, move. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - Filters for tag, category, page, status, added and opened — each also in the negative. *[Manual §8.2](MANUAL.md#82-filters)*
+- **Search answers sums.** Type `15% of 240`, `2+2*3` or `5 km in mi` and the answer is the top row; `Enter` copies it. It is worked out in your browser. *[Manual §8.1](MANUAL.md#81-just-type)*
 
 **Health and monitoring**
 
@@ -477,7 +490,8 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Widgets**
 
-- Forty-eight kinds: health, uptime, certificates, **domains** (registrations about to run out), trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar, RSS, **Notes** (Markdown with checkboxes and slash commands), and seven that read an **Unraid** server through its API — an overview, the array, parity, shares, VMs, UPS and its notifications — set up once under **Config → Unraid**, eleven media widgets: **Jellyfin**, **Emby** and **Plex** (what was added lately; Plex is read through Tautulli), each with a *now playing* tile that shows who is watching what, **Sonarr** and **Radarr** (what is coming and in the queue), **Seerr** (requests), and **qBittorrent** and **SABnzbd** (downloads), with posters where there are any, a **Home Assistant** widget, four **Beszel** widgets that read a Beszel hub — every system, one system in full, only the systems that need a look, and every disk — and a **Glances** widget for one host, as three meters or the processor's last hour. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §16](MANUAL.md#16-widgets)*
+- Fifty-one kinds: health, uptime, certificates, **domains** (registrations about to run out), trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar, RSS, **Notes** (Markdown with checkboxes and slash commands), **Tabs** (several widgets in one tile), **Clock** and **Countdown**, and seven that read an **Unraid** server through its API — an overview, the array, parity, shares, VMs, UPS and its notifications — set up once under **Config → Unraid**, eleven media widgets: **Jellyfin**, **Emby** and **Plex** (what was added lately; Plex is read through Tautulli), each with a *now playing* tile that shows who is watching what, **Sonarr** and **Radarr** (what is coming and in the queue), **Seerr** (requests), and **qBittorrent** and **SABnzbd** (downloads), with posters where there are any, a **Home Assistant** widget, four **Beszel** widgets that read a Beszel hub — every system, one system in full, only the systems that need a look, and every disk — and a **Glances** widget for one host, as three meters or the processor's last hour. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §16](MANUAL.md#16-widgets)*
+- Every widget can be duplicated from its menu and shown only between set times and on set days; the disk and memory widgets take their own amber and red limits. *[Manual §16.2](MANUAL.md#162-adding-and-arranging)*
 - A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §16.2](MANUAL.md#162-adding-and-arranging)*
 - A **Custom widget** reads any service that answers with JSON, with 41 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant, Uptime Kuma, Beszel and more — each tested against the service's recorded answer. *[Manual §16.5](MANUAL.md#165-the-custom-widget)*
 
@@ -493,13 +507,14 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - **Containers and bookmarks know each other.** A container's web UI is matched to its bookmark, and the row shows that bookmark's health in colour; the bookmark names the container it runs in. Monitor the bookmark and you watch the service from the outside while the Containers view watches it from the inside. *[Self-hosted guide](MANUAL.md#self-hosted-guide)*
 - **One place for bad news.** Container notices — stopped, restarting, unhealthy, too much CPU or memory, an automatic update done or rolled back — use the same alert channels and phone push notifications as downtime and certificate alerts. Mute one container or one bookmark without muting the rest. *[Self-hosted guide](MANUAL.md#sh-get-told)*
 - **Updates at night, with a way back.** Pick containers that update themselves in a window you choose; each one is watched for five minutes and put back on its old image if it fails. *[Containers view](MANUAL.md#155-actions-and-updates)*
+- **Layout history and what you changed.** nextDash keeps earlier arrangements of each page and restores one from Find settings (`Ctrl/Cmd + Shift + K`); a list shows every setting that differs from the default. *[Manual §18.3](MANUAL.md#183-finding-a-setting)*
 - **Config → Overview** is the install at a glance: one line for what needs you, then a panel each for bookmarks, the inbox, containers, health and statistics, beside the newest posts from nextdash.cc, the newest features and a tip of the day. **About** has a Project tab, an Install tab with the facts of your install that **Copy diagnostics** puts on the clipboard for a bug report, and the news. *[Manual §18.8](MANUAL.md#188-overview-help-and-about)*
 
 **Appearance**
 
-- 192 theme families in light and dark, each on a material that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — with a signature or Classic way to draw it, eight neutrals with one accent, ThinkDashboard Classic and an editor for your own. A new install starts on Tidal Slate (dark, with its light half for your system's light mode); an install that already chose a theme keeps it. *[Manual §17](MANUAL.md#17-appearance)*
+- 192 theme families in light and dark, each on a material that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — with a signature or Classic way to draw it, eight neutrals with one accent, ThinkDashboard Classic and an editor for your own. A new install starts on Aurora Glass (dark, with its light half for your system's light mode); an install that already chose a theme keeps it. *[Manual §17](MANUAL.md#17-appearance)*
 - **A theme studio beside the dashboard.** It opens beside the dashboard and changes the page live: the theme, its backdrop, depth and card glass, the category headers and the type. Twelve ready-made looks set them in one go; Compare shows what you had, and nothing is saved until Apply. *[Theme studio](MANUAL.md#the-theme-studio)*
-- 75 backdrops, from aurora and dunes to stars and hexagons, each material with a pool of its own and each theme with one picked for it — or choose your own and tune it with intensity, scale, blur, tint and a quiet centre. *[Manual §17.4](MANUAL.md#174-type-and-background)*
+- More than 260 backdrops, from aurora and dunes to stars and hexagons, with a recipe of its own for each theme, Look and Ocean drawn in that theme's colours — or choose your own from a picker with groups, search and thumbnails, and tune it with intensity, scale, blur, tint and a quiet centre. *[Manual §17.4](MANUAL.md#174-type-and-background)*
 - Character, depth, glow, effects, card glass and contrast for any theme; category header styles, layout presets, columns, density and fonts. *[Manual §17.3](MANUAL.md#173-surfaces)*
 - A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu, in five sizes. *[Manual §4](MANUAL.md#4-the-dashboard)*
 - **Appearance in nine tabs, three groups.** Panels fold to a line of their values, runs of switches are chips, and a list of panels sits above the preview on long tabs. *[Manual §17](MANUAL.md#17-appearance)*
@@ -508,7 +523,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Data**
 
-- Import the bookmark file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep — plus CSV. Export to HTML and CSV. *[Manual §20.1](MANUAL.md#201-backups-data)*
+- Import the bookmark file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep — plus CSV, and the links of a Homepage, Dashy or Homer configuration. Cards under Data & backups say what each kind of file brings along. Export to HTML and CSV. *[Manual §20.1](MANUAL.md#201-backups-data)*
 - **Sources** keep bookmarks arriving from GitHub stars, Raindrop.io, Hacker News, YouTube and Mastodon. *[Manual §20.2](MANUAL.md#202-sources)*
 - Automatic backups of the whole data directory, and a 30-day trash. *[Manual §20](MANUAL.md#20-data-backups-and-import)*
 - A server log and an activity trail in the app. *[Manual §21](MANUAL.md#21-logs)*
@@ -526,7 +541,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - **A capture route** — `GET /add?url=…&title=…` saves to the inbox and answers with a readable page, so anything that can open a URL or run `curl` can save to nextDash. *[Manual §22.2](MANUAL.md#222-capture-without-the-extension)*
 - **[`integrations/`](integrations/)** — a shell one-liner, two Raycast commands, a **Dropzone 5** action, a Ulauncher extension, and recipes for Alfred and Apple Shortcuts, all built on that route. The [Dropzone 5 action](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos) also has its own repository. *[`integrations/README.md`](integrations/README.md)*
 - **A bookmarklet and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet for your install; installed as an app, nextDash joins the share sheet. *[Manual §23](MANUAL.md#23-phones-tablets-and-the-installed-app)*
-- **Outgoing webhooks** — seven events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme. *[Manual §20.3](MANUAL.md#203-webhooks)*
+- **Outgoing webhooks** — eight events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme. *[Manual §20.3](MANUAL.md#203-webhooks)*
 - **An MCP endpoint** — 23 tools for MCP clients: search, add, edit and delete bookmarks, query and count them, read Health, statistics, the Inbox and the containers, and control them. Off until you switch it on, with a switch for each group of tools. *[Manual §24.6](MANUAL.md#246-the-mcp-endpoint)*
 - **An assistant** — ask about your bookmarks, Health or containers in plain words, with Claude, OpenAI or a server of your own such as Ollama. It changes nothing by itself: what it suggests waits under its answer for your click. Off until you turn it on. *[Manual §24.11](MANUAL.md#2411-the-assistant)*
 - **What nextDash asks for by itself** — three things, each with a switch under **Config → Behavior → Privacy & sync** and a variable that turns it off for the whole server: a daily **install count** (a random install id and the release you run; on Unraid also the word Unraid; `DISABLE_TELEMETRY`), a daily check on GitHub for a **newer release** (`DISABLE_UPDATE_CHECK`), and the **nextdash.cc news feed**, every 90 minutes (`DISABLE_NEWS_FEED`). None of them carries bookmarks, settings or addresses. The optional usage analytics (off until you turn them on) add a random install code, and send a hostname of just `lan`, `domain` or `localhost` instead of your address. *[Manual §24.7](MANUAL.md#247-what-nextdash-contacts)*
