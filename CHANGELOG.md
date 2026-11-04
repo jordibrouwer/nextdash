@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.25.2 — 4 November 2026](#v1252--4-november-2026)
 - [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
 - [v1.25.0 — 3 November 2026](#v1250--3-november-2026)
 - [v1.24.2 — 2 November 2026](#v1242--2-november-2026)
@@ -131,6 +132,35 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.25.2 — 4 November 2026
+
+Eight fixes from a code review: the calculator reads a decimal comma, a Tabs widget off its schedule gives its widgets back, copying a widget no longer undoes a save made at the same moment, the digest charts count real days and show a day that was down, and a few edge cases in importing, the Tabs settings and the backdrop picker.
+
+### Search
+
+- **fix — The calculator reads a decimal comma.** `1,5 + 1` is 2.5 and `15% van 2,5` is 0.375; before, every comma was dropped and 2,5 became 25. A comma before exactly three digits still groups thousands (`1,000`, `1,234,567`).
+
+### Widgets
+
+- **fix — A Tabs widget off its schedule gives its widgets back.** Outside its time window or on a day it is off, a Tabs widget is not drawn, and the widgets in its tabs now stand in the grid instead of disappearing with it.
+- **fix — Copying a widget keeps a widget saved meanwhile.** The copy is inserted into the page as it stands at that moment, under one lock, so a widget added or changed in another tab while the copy was made is no longer written away.
+- **fix — The Tabs settings offer only what can be kept.** A widget that another Tabs widget already holds is no longer offered, and with six tabs ticked the other boxes wait until one is unticked; before, the server dropped both without a word on save.
+
+### Digest
+
+- **fix — A day that was down shows on the uptime chart.** A day on which every check failed was stored as 0, the same value as a day without checks, and left out of the line. Days without checks are now `-1` under a new key (`uptimeDays`), so a digest saved before draws no uptime chart rather than false outages.
+- **fix — The bars of opened bookmarks are calendar days.** They counted 24-hour spans ending at the moment the digest was made, so an evening landed under the next day's name. They now follow the days in the time zone the digest is sent in.
+
+### Import
+
+- **fix — A Homepage file with aliases stops at its limit.** A group listing the same aliased set of services many times kept adding rows after the import's budget was spent, so a small file could take minutes and a lot of memory before it was refused. It now stops at the limit.
+
+### Appearance
+
+- **fix — The backdrop picker no longer holds on to old thumbnails.** Each search keystroke made a new observer for lazy painting and never let the old one go, so hundreds of thumbnails that were no longer on the page stayed in memory. One observer per picker now, released when the picker is drawn again.
 
 ---
 
