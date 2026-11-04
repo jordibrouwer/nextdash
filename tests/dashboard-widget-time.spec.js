@@ -75,7 +75,7 @@ test.describe('Countdown', () => {
 test.describe('Clock', () => {
     test('shows here first, then each place, and marks a place that is not known', async ({ page }) => {
         await openDashboard(page);
-        await putWidgets(page, [{ type: 'clock', title: 'World', config: { zones: ['Tokyo=Asia/Tokyo', 'Nowhere=Mars/Olympus'] } }]);
+        await putWidgets(page, [{ type: 'clock', title: 'World', config: { look: 'list', zones: ['Tokyo=Asia/Tokyo', 'Nowhere=Mars/Olympus'] } }]);
         const rows = page.locator('.dashboard-widget[data-widget-type="clock"] .dashboard-widget-row');
         await expect(rows).toHaveCount(3, { timeout: 15_000 });
         await expect(rows.nth(0)).toContainText('Here');
@@ -90,7 +90,7 @@ test.describe('Clock', () => {
             const d = window.dashboardInstance;
             const body = document.createElement('div');
             document.body.appendChild(body);
-            const widget = { id: 'probe', type: 'clock', config: { zones: ['Asia/Tokyo'] } };
+            const widget = { id: 'probe', type: 'clock', config: { look: 'list', zones: ['Asia/Tokyo'] } };
             window.DashboardWidgets.clock(body, widget, d);
             const first = body._ndTimeTimer;
             window.DashboardWidgets.clock(body, widget, d);
@@ -99,6 +99,95 @@ test.describe('Clock', () => {
             return { replaced: first !== second };
         });
         expect(out.replaced).toBe(true);
+    });
+
+    test('the large face shows the other places under it, three at most, and no row for here', async ({ page }) => {
+        await openDashboard(page);
+        await putWidgets(page, [{
+            id: 'w_dddddddddddd', type: 'clock', title: 'World',
+            config: { zones: ['Tokyo=Asia/Tokyo', 'New York=America/New_York', 'Sydney=Australia/Sydney', 'Lima=America/Lima'], showDate: true },
+        }]);
+        const tile = page.locator('.dashboard-widget[data-widget-id="w_dddddddddddd"]');
+        await expect(tile.locator('.dashboard-clock-svg')).toBeVisible({ timeout: 15_000 });
+        const rows = tile.locator('.dashboard-clock-main .dashboard-widget-row');
+        await expect(rows).toHaveCount(3);
+        await expect(rows.nth(0)).toContainText('Tokyo');
+        await expect(rows.nth(2)).toContainText('Sydney');
+        await expect(tile.locator('.dashboard-clock-date')).toBeVisible();
+    });
+
+    test('one column shows the face and the places only; the moon and sun are for two columns', async ({ page }) => {
+        await openDashboard(page);
+        await putWidgets(page, [{ id: 'w_eeeeeeeeeeee', type: 'clock', config: { zones: ['Asia/Tokyo'] } }]);
+        const tile = page.locator('.dashboard-widget[data-widget-id="w_eeeeeeeeeeee"]');
+        await expect(tile.locator('.dashboard-clock-svg')).toBeVisible({ timeout: 15_000 });
+        // Built, but hidden by width.
+        await expect(tile.locator('.dashboard-clock-moon')).toHaveCount(1);
+        await expect(tile.locator('.dashboard-clock-moon')).toBeHidden();
+    });
+
+    test('settings can turn the moon, the sun and the seconds hand off', async ({ page }) => {
+        await openDashboard(page);
+        const out = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const body = document.createElement('div');
+            document.body.appendChild(body);
+            const widget = { id: 'probe', type: 'clock', config: { showMoon: false, showSun: false, showSeconds: false } };
+            window.DashboardWidgets.clock(body, widget, d);
+            const result = {
+                sky: body.querySelectorAll('.dashboard-clock-sky').length,
+                secondHidden: body.querySelector('.dashboard-clock-hand-second')?.style.display === 'none',
+            };
+            if (body._ndClockStop) body._ndClockStop();
+            body.remove();
+            return result;
+        });
+        expect(out.sky).toBe(0);
+        expect(out.secondHidden).toBe(true);
+    });
+
+    test('the hands stop once the clock leaves the page, and drawing again starts one loop only', async ({ page }) => {
+        await openDashboard(page);
+        const out = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const body = document.createElement('div');
+            document.body.appendChild(body);
+            const widget = { id: 'probe', type: 'clock', config: {} };
+            window.DashboardWidgets.clock(body, widget, d);
+            const first = body._ndClockStop;
+            window.DashboardWidgets.clock(body, widget, d);
+            const second = body._ndClockStop;
+            body.remove();
+            await new Promise((resolve) => setTimeout(resolve, 1200));
+            return { replaced: first !== second, stopped: body._ndClockStop === null };
+        });
+        expect(out.replaced).toBe(true);
+        expect(out.stopped).toBe(true);
+    });
+
+    test('the moon: a known new and full moon, and the sun in Amsterdam on a November day', async ({ page }) => {
+        await openDashboard(page);
+        const out = await page.evaluate(() => {
+            const t = window.DashboardWidgetTime;
+            const newMoon = t.moonOf(new Date(Date.UTC(2026, 10, 9, 12)));
+            const fullMoon = t.moonOf(new Date(Date.UTC(2026, 10, 24, 14)));
+            const sun = t.sunTimes(new Date(2026, 10, 4, 12), 52.37, 4.9);
+            const polar = t.sunTimes(new Date(2026, 5, 21, 12), 78.2, 15.6);
+            const night = t.sunTimes(new Date(2026, 11, 21, 12), 78.2, 15.6);
+            return {
+                newLit: newMoon.lit, fullLit: fullMoon.lit,
+                riseUtc: sun.rise.getUTCHours() * 60 + sun.rise.getUTCMinutes(),
+                setUtc: sun.set.getUTCHours() * 60 + sun.set.getUTCMinutes(),
+                alwaysUp: polar.always === true, neverUp: night.never === true,
+            };
+        });
+        expect(out.newLit).toBeLessThan(0.03);
+        expect(out.fullLit).toBeGreaterThan(0.97);
+        // Sunrise 06:41 and sunset 16:09 UTC, give or take a few minutes.
+        expect(Math.abs(out.riseUtc - (6 * 60 + 41))).toBeLessThan(6);
+        expect(Math.abs(out.setUtc - (16 * 60 + 9))).toBeLessThan(6);
+        expect(out.alwaysUp).toBe(true);
+        expect(out.neverUp).toBe(true);
     });
 
     test('the time maths: day numbers differ across the date line', async ({ page }) => {

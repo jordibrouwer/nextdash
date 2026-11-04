@@ -21,6 +21,17 @@ func TestCountdownDropsWhatIsNotADate(t *testing.T) {
 	}
 }
 
+func TestClockKeepsItsLookAndSkyFlags(t *testing.T) {
+	got := sanitizeWidgetConfig(WidgetTypeClock, map[string]any{"look": "list", "showSeconds": false, "showMoon": false, "showSun": true})
+	if got["look"] != "list" || got["showSeconds"] != false || got["showMoon"] != false || got["showSun"] != true {
+		t.Errorf("got %v", got)
+	}
+	got = sanitizeWidgetConfig(WidgetTypeClock, map[string]any{"look": "sundial"})
+	if _, kept := got["look"]; kept {
+		t.Errorf("an unknown look survived: %v", got)
+	}
+}
+
 func TestClockKeepsItsZonesAndFlags(t *testing.T) {
 	got := sanitizeWidgetConfig(WidgetTypeClock, map[string]any{"zones": []any{"Tokyo=Asia/Tokyo", "Europe/London"}, "hour12": true, "showDate": true})
 	zones, _ := got["zones"].([]string)
