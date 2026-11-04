@@ -1075,6 +1075,8 @@
     const onAbortOf = (options) => typeof options?.onAbort === 'function';
 
     window.__whatsNewOpen = function openWhatsNewModal(options) {
+        // The recordings of a window that was closed are gone; so is what watched them.
+        if (mediaObserver) { mediaObserver.disconnect(); mediaObserver = null; }
         options = options || {};
         const force = options.force === true;
         // Never by itself in the public demo: every visitor is new there, and
