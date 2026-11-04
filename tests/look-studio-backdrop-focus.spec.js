@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, openAllBackdrops } = require('./e2e-helpers');
 
 /**
  * Picking a backdrop far down the grid in the look studio repaints the tab and fills the grid
@@ -19,12 +19,15 @@ test('a picked backdrop keeps the focus and the scroll', async ({ page }) => {
     await page.click('[data-studio-tab="backdrop"]');
     const pick = page.locator('[data-backdrop-mode="pick"]');
     if ((await pick.getAttribute('aria-pressed')) !== 'true') await pick.click();
-    const thumb = page.locator('[data-backdrop-recipe]').nth(30);
+    // Far down the whole library, which opens behind its own button.
+    const all = await openAllBackdrops(page.locator('[data-backdrop-grid]'));
+    const thumb = all.locator('[data-backdrop-recipe]').nth(30);
     await thumb.scrollIntoViewIfNeeded();
     const name = await thumb.getAttribute('data-backdrop-recipe');
     const pane = page.locator('[data-studio-pane]');
     const before = await pane.evaluate((el) => el.scrollTop);
     await thumb.click();
-    await expect(page.locator(`button[data-backdrop-recipe="${name}"]`)).toBeFocused();
+    // The tile that was clicked, in the list it was clicked in: not its copy under Used lately.
+    await expect(all.locator(`button[data-backdrop-recipe="${name}"]`)).toBeFocused();
     expect(Math.abs((await pane.evaluate((el) => el.scrollTop)) - before)).toBeLessThan(4);
 });

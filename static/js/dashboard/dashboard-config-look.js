@@ -354,7 +354,11 @@
             if (restore) {
                 const pane = grid.closest('[data-studio-pane]');
                 if (pane && restore.top !== null) pane.scrollTop = restore.top;
-                grid.querySelector(`[data-backdrop-recipe="${CSS.escape(restore.recipe)}"]`)?.focus({ preventScroll: true });
+                // The tile in the list it was clicked in: the same recipe can also stand under
+                // This theme, Like it or Used lately, and the first of those is somewhere else.
+                const sel = `[data-backdrop-recipe="${CSS.escape(restore.recipe)}"]`;
+                const tile = (restore.inAll && grid.querySelector(`[data-backdrop-all] ${sel}`)) || grid.querySelector(sel);
+                tile?.focus({ preventScroll: true });
             }
         },
 
@@ -805,7 +809,11 @@
                     this.rememberBackdrop(this._lastBackdropPick);
                     // The tab is painted again and its grid fills in after a fetch: remember where
                     // the reader was, so the chosen thumbnail keeps the focus and the scroll.
-                    this._backdropRestore = { recipe: this._lastBackdropPick, top: grid.closest('[data-studio-pane]')?.scrollTop ?? null };
+                    this._backdropRestore = {
+                        recipe: this._lastBackdropPick,
+                        top: grid.closest('[data-studio-pane]')?.scrollTop ?? null,
+                        inAll: Boolean(btn.closest('[data-backdrop-all]')),
+                    };
                     this.setBackdropChoice(this._lastBackdropPick);
                 });
             });
