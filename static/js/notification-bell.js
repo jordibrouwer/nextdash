@@ -528,6 +528,38 @@
         let next = null;
         try { next = await rec.source.state(); } catch { next = null; }
         rec.entry = next && Number.isFinite(next.count) ? next : null;
+        stampAge(rec.source.id, rec.entry);
+    }
+
+    /*
+     * How old a row is: when it last got worse (more of the thing, or new ids;
+     * the same rule that rings the bell). A row that only shrinks keeps its
+     * time; one that goes away starts again when it returns. A source that
+     * gives its own `at` is believed. Kept per device in localStorage, so a
+     * reload does not make every row "just now".
+     */
+    const SINCE_KEY = 'nextdash-bell-since';
+
+    function readSince() {
+        try { return JSON.parse(localStorage.getItem(SINCE_KEY)) || {}; } catch { return {}; }
+    }
+
+    function stampAge(id, entry) {
+        const all = readSince();
+        if (!entry) {
+            if (id in all) {
+                delete all[id];
+                try { localStorage.setItem(SINCE_KEY, JSON.stringify(all)); } catch { /* none */ }
+            }
+            return;
+        }
+        if (entry.at) return;
+        const now = { count: entry.count, ids: entry.ids || [] };
+        const prev = all[id];
+        const at = prev && !Model.isWorse(prev, entry) ? prev.at : Date.now();
+        all[id] = { ...now, at };
+        try { localStorage.setItem(SINCE_KEY, JSON.stringify(all)); } catch { /* none */ }
+        entry.at = at;
     }
 
     async function refreshAll() {

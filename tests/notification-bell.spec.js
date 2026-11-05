@@ -843,3 +843,48 @@ test('No slides its row away and the rows below move up, while the panel stays o
     await expect(page.locator('.notification-bell-panel')).toBeVisible();
     expect(await page.evaluate(() => window.DiscoverabilityState.getBellRecord('probe-no').no)).toBeTruthy();
 });
+
+/**
+ * How old a row is: set when it last got worse, kept when it only shrinks,
+ * kept across a reload (localStorage, per device).
+ */
+test.describe('the age of a row', () => {
+    const timeOf = (page, id) => row(page, id).locator('.notification-bell-row-time');
+    const open = async (page) => {
+        await refresh(page);
+        await page.evaluate(() => window.NotificationBell.open());
+    };
+
+    test('a new row says how old it is, and a shrinking row keeps its age', async ({ page }) => {
+        await loadDashboard(page);
+        // Pretend the quiet probe has been there for three hours at its current size.
+        await page.evaluate(() => {
+            const all = JSON.parse(localStorage.getItem('nextdash-bell-since') || '{}');
+            all['probe-quiet'] = { count: 3, ids: [], at: Date.now() - 3 * 3600 * 1000 };
+            localStorage.setItem('nextdash-bell-since', JSON.stringify(all));
+        });
+        await open(page);
+        await expect(timeOf(page, 'probe-quiet')).toContainText(/3/);
+        await expect(timeOf(page, 'probe-quiet')).toContainText(/h/i);
+        // A row nobody stamped before starts now.
+        await expect(timeOf(page, 'probe-urgent')).not.toContainText(/h/i);
+        await expect(timeOf(page, 'probe-urgent')).toHaveText(/.+/);
+
+        // It shrinks: the age stays.
+        await setState(page, 'probe-quiet', { count: 2, text: 'probe-quiet text' });
+        await refresh(page);
+        await expect(timeOf(page, 'probe-quiet')).toContainText(/3/);
+
+        // It grows: the age starts over.
+        await setState(page, 'probe-quiet', { count: 5, text: 'probe-quiet text' });
+        await refresh(page);
+        await expect(timeOf(page, 'probe-quiet')).not.toContainText(/3/);
+    });
+
+    test('a source that gives its own time is believed', async ({ page }) => {
+        await loadDashboard(page);
+        await setState(page, 'probe-health', { count: 2, text: 'health text', at: Date.now() - 2 * 86400 * 1000 });
+        await open(page);
+        await expect(timeOf(page, 'probe-health')).toContainText(/2/);
+    });
+});
