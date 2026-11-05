@@ -56,6 +56,7 @@ test.describe('NoticeCard bell option', () => {
             window.dashboardInstance.showNotification = () => { window.__toasts += 1; };
         });
         await define(page, 'probe-quiet', { bell: { kind: 'quiet' } });
+        // Checks that nothing happens: a quiet notice must raise no toast, so give one a chance to appear.
         await page.waitForTimeout(1500);
         expect(await page.evaluate(() => window.__toasts)).toBe(0);
         await expect(page.locator('.probe-quiet-card')).toHaveCount(0);

@@ -821,7 +821,7 @@ type Settings struct {
 	EnableHealthRecheckNotice  bool   `json:"enableHealthRecheckNotice"`
 	EnableInboxExtensionNotice bool   `json:"enableInboxExtensionNotice"`
 	EnableUpdatedNotice        bool   `json:"enableUpdatedNotice"`
-	BellSound                  bool   `json:"bellSound"` // A short bell tone when the notifications bell gets something new (on unless turned off)
+	BellSound                  bool   `json:"bellSound"`                      // A short bell tone when the notifications bell gets something new (on unless turned off)
 	EnableSectionTours         bool   `json:"enableSectionTours"`             // The one-time tour on a section's first visit (needs enableSessionTips too)
 	SessionTipsFrequency       string `json:"sessionTipsFrequency,omitempty"` // "weekly" spaces the keyboard tips a week apart; anything else is daily
 	ShowShortcutTooltips       bool   `json:"showShortcutTooltips"`           // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)

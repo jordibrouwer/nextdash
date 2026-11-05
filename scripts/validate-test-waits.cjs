@@ -36,6 +36,22 @@ const EXEMPT = new Map([
     ['manual-screenshots-v1-21.spec.js', 'screenshots for the manual, never run in CI'],
     ['readme-screenshots.spec.js', 'screenshots for the README, never run in CI'],
     ['manual-screenshots-v1-22-4.spec.js', 'screenshots for the manual, never run in CI'],
+    ['manual-screenshots-v1-23.spec.js', 'screenshots for the manual, never run in CI'],
+    ['manual-screenshots-v1-26.spec.js', 'screenshots for the manual, never run in CI'],
+    ['readme-shots-1.spec.js', 'screenshots for the README, never run in CI'],
+    ['readme-shots-2.spec.js', 'screenshots for the README, never run in CI'],
+    ['readme-shots-3.spec.js', 'screenshots for the README, never run in CI'],
+    ['site-shots-A.spec.js', 'pictures for nextdash.cc, never run in CI'],
+    ['site-shots-B.spec.js', 'pictures for nextdash.cc, never run in CI'],
+    ['site-shots-C.spec.js', 'pictures for nextdash.cc, never run in CI'],
+    ['site-shots-D.spec.js', 'pictures for nextdash.cc, never run in CI'],
+    ['site-shots-E.spec.js', 'pictures for nextdash.cc, never run in CI'],
+    ['site-loops-LA.spec.js', 'recordings for nextdash.cc, never run in CI'],
+    ['site-loops-LB.spec.js', 'recordings for nextdash.cc, never run in CI'],
+    ['site-loops-LC.spec.js', 'recordings for nextdash.cc, never run in CI'],
+    ['site-loops-LD.spec.js', 'recordings for nextdash.cc, never run in CI'],
+    ['site-loops-LE.spec.js', 'recordings for nextdash.cc, never run in CI'],
+    ['site-loops-LW.spec.js', 'recordings for nextdash.cc, never run in CI'],
 ]);
 
 const SLEEP = /\bwaitForTimeout\s*\(/;

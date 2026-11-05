@@ -57,6 +57,7 @@ test('switching theme brings that theme\'s backdrop, by whatever writes data-the
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'absinthe-dark'));
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'absinthe-dark'));
+    // Checks that nothing happens: no further request after the theme is back.
     await page.waitForTimeout(300);
     expect(again).toBeLessThanOrEqual(1);
 });

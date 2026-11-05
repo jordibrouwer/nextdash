@@ -148,6 +148,7 @@ test.describe('coach notes', () => {
         await load(page);
         await placeBar(page, 'right', false);
         await ask(page, ['action-bar-intro']);
+        // Checks that nothing shows: the note is not due before onboarding, so give it time to wrongly appear.
         await page.waitForTimeout(5000);
         await expect(note(page, 'action-bar-intro')).toHaveCount(0);
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('action-bar-intro'))).toBe(false);
@@ -210,6 +211,7 @@ test('seen survives a reload', async ({ page }) => {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0 && window.CoachNote, null, { timeout: 15_000 });
     // The promo marks are not persisted here, so only this browser remembers.
     await page.evaluate(() => { window.CoachNote.schedule('bell-intro'); window.CoachNote.schedule('action-bar-intro'); });
+    // Checks that nothing shows: give the notes time to wrongly appear.
     await page.waitForTimeout(5000);
     await expect(page.locator('.coach-note')).toHaveCount(0);
 });

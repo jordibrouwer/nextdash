@@ -410,6 +410,7 @@ test('the bell shakes and pulses once on load when something is unread, without 
 test('a refresh that finds more unread shakes, pulses and rings; the same or fewer does nothing', async ({ page }) => {
     await loadDashboard(page);
     await refresh(page);
+    // Time itself: the load animation runs for about a second.
     await page.waitForTimeout(1200); // let the load animation finish
     await watchAttention(page);
 
@@ -419,6 +420,7 @@ test('a refresh that finds more unread shakes, pulses and rings; the same or few
     expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
     expect((await seen(page)).pulse).toBeGreaterThan(0);
 
+    // Time itself: past the bell's cooldown, so the same count is judged on its own.
     await page.waitForTimeout(1200);
     await refresh(page); // same count
     await setState(page, 'probe-state', null);
@@ -443,6 +445,7 @@ test('a refresh that finds more unread shakes, pulses and rings; the same or few
 test('with bellSound off the bell still moves but stays silent', async ({ page }) => {
     await loadDashboard(page);
     await refresh(page);
+    // Time itself: the load animation runs for about a second.
     await page.waitForTimeout(1200);
     await watchAttention(page);
     await page.evaluate(() => { window.dashboardInstance.settings.bellSound = false; });
@@ -620,13 +623,16 @@ test('the mouse leaving the bell and its panel for a second closes it; coming ba
     await page.locator('.notification-bell-button').click();
     await expect(panel).toBeVisible();
     await page.mouse.move(away.x, away.y);
+    // Time itself: the leave timer runs while the pointer is away.
     await page.waitForTimeout(400);
     await page.locator('.notification-bell-button').hover();
+    // Time itself: back within the second, so the leave timer must not close it.
     await page.waitForTimeout(1000);
     await expect(panel).toBeVisible();
 
     // Away for longer than a second: closed, and counted as a close by leaving.
     await page.mouse.move(away.x, away.y);
+    // Time itself: away for longer than the leave delay.
     await page.waitForTimeout(1300);
     await expect(panel).toBeHidden();
     const closes = await page.evaluate(() => window.__tracks.filter((e) => e.props?.action === 'close').map((e) => e.props));
@@ -640,6 +646,7 @@ test('a panel opened from the keyboard does not close because the mouse is elsew
     await page.keyboard.press('Enter');
     const panel = page.locator('.notification-bell-panel');
     await expect(panel).toBeVisible();
+    // Checks that nothing happens: a keyboard open has no leave timer, so give it longer than one.
     await page.waitForTimeout(1300);
     await expect(panel).toBeVisible();
 });
@@ -671,6 +678,7 @@ test('the panel grows out of the bell and shrinks back into it', async ({ page }
     await page.locator('.notification-bell-button').click();
     await expect(panel).toHaveClass(/is-shrinking/);
     await page.locator('.notification-bell-button').click();
+    // Checks that nothing happens: the second click must not close the panel again.
     await page.waitForTimeout(400);
     await expect(panel).toBeVisible();
     await expect(panel).not.toHaveClass(/is-shrinking/);
@@ -684,6 +692,7 @@ test('a short hover opens the bell, and a click right after it keeps it open', a
     await expect(panel).toBeVisible({ timeout: 2000 });
     // The click the person meant to give anyway: it must not close it again.
     await page.locator('.notification-bell-button').click();
+    // Checks that nothing happens: this click must not close the panel again.
     await page.waitForTimeout(400);
     await expect(panel).toBeVisible();
     await expect(panel).not.toHaveClass(/is-shrinking/);
@@ -699,6 +708,7 @@ test('passing over the bell quickly does not open it', async ({ page }) => {
     await page.mouse.move(5, 400);
     await page.locator('.notification-bell-button').hover();
     await page.mouse.move(5, 400);
+    // Time itself: the leave delay runs after the pointer goes away.
     await page.waitForTimeout(600);
     await expect(panel).toBeHidden();
 });
@@ -728,6 +738,7 @@ test.describe('the one-time note under the bell', () => {
         expect(ib.y).toBeGreaterThan(bb.y + bb.height);
         // The arrow sits under the bell's centre.
         await expect(intro(page)).toHaveClass(/is-placed/);
+        // Time itself: the arrow's transition settles before it is measured.
         await page.waitForTimeout(400);
         const arrowX = await intro(page).evaluate((n) => {
             const r = n.getBoundingClientRect();
@@ -751,6 +762,7 @@ test.describe('the one-time note under the bell', () => {
     test('waits while onboarding is not done', async ({ page }) => {
         await freshBrowser(page);
         await page.evaluate(() => { window.dashboardInstance.settings.onboardingCompleted = false; });
+        // Checks that nothing shows: the intro waits while onboarding is not done.
         await page.waitForTimeout(5000);
         await expect(intro(page)).toHaveCount(0);
         await page.evaluate(() => { window.dashboardInstance.settings.onboardingCompleted = true; });
@@ -780,6 +792,7 @@ test('the coloured answer slides its row away, the rows below move up, then the 
 
     // A plain button does not close anything.
     await row(page, 'probe-answer').getByRole('button', { name: 'Other' }).click();
+    // Checks that nothing happens: a plain button closes nothing.
     await page.waitForTimeout(300);
     await expect(panel).toBeVisible();
 
