@@ -41,7 +41,8 @@ async function open(page, hash = '#docker', bookmarks = BOOKMARKS) {
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
     });
     await page.goto(`/${hash}`);
-    await expect(page.locator('[data-docker-row="sonarr"]')).toBeVisible();
+    // The Docker view loads its scripts one after another, which takes longer than 5 s on a loaded runner; 15 s is the boot budget config-help.spec.js uses.
+    await expect(page.locator('[data-docker-row="sonarr"]')).toBeVisible({ timeout: 15_000 });
     return { state, saved };
 }
 
