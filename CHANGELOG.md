@@ -167,6 +167,7 @@ Watched news no longer piles up while you are away: it stops counting after a se
 - **docs — Manual.** §4 names the *Watch feeds* group in the bell, the age on each row, the chime and the hourly nudge, and says the hover card stays away in the phone layout; §14 describes the one bell row, the *9+* count, ten items in the hover card with the total, the new *Count news as unread for* setting, and *Bell and push* on a muted feed.
 - **docs — Config → Help.** *Watch feeds* and *Alerts & notifications* describe the bell row, the expiry, the pager with its total, the age on each row and the hourly nudge, and no longer mention a dot on the page tab or a toast.
 - **docs — Tips.** A new tip, *News stops counting after a day*, leads to the setting; the tips for the hover card pager and the bell say ten items and the age of a row. The unused toast strings are gone.
+- **docs — Pictures.** The manual's pictures of the bell (with a *Watch feeds* row and the age of each row), of the news popover and of Config → Watch feeds are taken again, and the bell page and the Watch feeds page on nextdash.cc describe the expiry, the chime, the nod and the hourly nudge, with new bell pictures.
 - **docs — Translations.** The new strings in Dutch, German, French, Spanish and Chinese: the setting and its choices, the bell row, the tip and the changed Help text. A muted feed's switch now reads *Bell and push*.
 
 ---
