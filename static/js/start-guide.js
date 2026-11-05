@@ -210,7 +210,13 @@
 
         /** `keys` when only those changed (the guide's progress); the whole copy otherwise. */
         save(keys) {
-            Promise.resolve(this.dash.saveSettings?.(keys ? { keys } : undefined)).catch(() => {});
+            // One after the other. Leaving the city field for °F saves twice in
+            // the same moment, each with the whole copy, and the server keeps
+            // whichever arrives last: the first one, with °C, sometimes did.
+            // Queued, each goes out once the one before has landed, and reads
+            // the settings as they are then.
+            const run = () => Promise.resolve(this.dash.saveSettings?.(keys ? { keys } : undefined)).catch(() => {});
+            this.saving = (this.saving || Promise.resolve()).then(run);
         }
 
         /** Count these steps as done, and say so on the bar. */
@@ -236,6 +242,13 @@
                     this.platform = data.platform === 'unraid' ? 'unraid' : '';
                 }
             } catch { /* the steps still make sense without the choice */ }
+            // Finished while this script and the templates were still loading
+            // (another tab, the reader closing it): no bar. Built anyway, it
+            // held the corner until the next place() took it down again.
+            if (this.dash.settings?.onboardingCompleted === true) {
+                this.onDone();
+                return;
+            }
             this.buildBar();
             this.timers.push(setTimeout(() => this.reveal(), BAR_DELAY_MS));
             this.timers.push(setInterval(() => this.place(), PLACE_MS));

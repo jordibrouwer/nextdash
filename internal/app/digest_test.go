@@ -136,6 +136,27 @@ func TestDigestTestHandlerSendsAndStores(t *testing.T) {
 	}
 }
 
+// A factory reset is a fresh install: the old data's digest must not be
+// offered to it as "your week".
+func TestResetForgetsTheDigest(t *testing.T) {
+	h, _ := digestTestHandlers(t, "")
+	seedBroken(h, time.Now())
+	h.DigestTest(httptest.NewRecorder(), httptest.NewRequest("POST", "/api/digest/test", nil))
+	if readDigestState().Latest == nil {
+		t.Fatal("setup: no digest stored")
+	}
+	rec := httptest.NewRecorder()
+	h.ResetAllData(rec, httptest.NewRequest("POST", "/api/reset", strings.NewReader(`{"confirm":true}`)))
+	if rec.Code != 200 {
+		t.Fatalf("reset: %d %s", rec.Code, rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	h.DigestLatest(rec, httptest.NewRequest("GET", "/api/digest/latest", nil))
+	if rec.Code != 204 {
+		t.Fatalf("after a reset the digest is still offered: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestDigestTestHandlerNeedsTheWriteToken(t *testing.T) {
 	h, sent := digestTestHandlers(t, "")
 	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")

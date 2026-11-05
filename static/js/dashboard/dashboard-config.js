@@ -8314,6 +8314,13 @@ class DashboardConfig {
         // them back to Theme & type half a second later. Only the strip's click
         // said so before.
         window.ConfigSettingPromo?.markSubTabChosen?.();
+        // The last tab asked for wins. A switch waits on saves (and, to
+        // General, on applying the theme), so a second click made meanwhile
+        // could finish first and be overtaken: General then Rows ended on
+        // General. Counted before the early return, so clicking back to the
+        // tab still on screen cancels a switch that is still waiting too.
+        const ask = (this._appearanceTabAsk || 0) + 1;
+        this._appearanceTabAsk = ask;
         if (tab === this.appearanceTab) return;
         if (this._settingsSavePromise) {
             await this._settingsSavePromise;
@@ -8332,6 +8339,7 @@ class DashboardConfig {
             this.clearThemePreview();
             await this.applyThemeChoice(this._themeSelected);
         }
+        if (ask !== this._appearanceTabAsk) return;
         this.appearanceTab = tab;
         this.restoreConfigHash();
         // Leaving the tab drops any unsaved preview so the dashboard
@@ -25304,9 +25312,23 @@ class DashboardConfig {
                 if (typeof lang.translations?.config?.helpStartBody !== 'string') return;
                 const body = document.getElementById('config-help-body');
                 if (!body) { this.render(); return; }
-                body.innerHTML = this.renderHelpBody();
-                this.bindHelpActions(body);
+                this.repaintHelpBodyKeepingSearch(body);
             });
+    }
+
+    /**
+     * Repaint the help body for something that arrived late -- the help prose,
+     * the release heading -- without dropping a search already typed.
+     *
+     * Both land a moment after Help opens, and on a slow answer the reader has
+     * searched by then: writing the tab's prose back over the results left the
+     * query in the field and nothing found under it.
+     */
+    repaintHelpBodyKeepingSearch(body) {
+        const searching = !!String(this.helpQuery || '').trim();
+        body.innerHTML = searching ? this.renderHelpSearchResults() : this.renderHelpBody();
+        this.bindHelpActions(body);
+        if (searching) this.bindHelpResultJumps(body);
     }
 
     renderHelp() {
@@ -26363,8 +26385,7 @@ class DashboardConfig {
             if (this.section !== 'help' || this.helpTab !== 'start' || !this._latestRelease) return;
             const body = document.getElementById('config-help-body');
             if (!body) return;
-            body.innerHTML = this.renderHelpBody();
-            this.bindHelpActions(body);
+            this.repaintHelpBodyKeepingSearch(body);
         });
     }
 

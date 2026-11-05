@@ -323,6 +323,13 @@
         const paintButtons = () => {
             connectBtn.disabled = !current || busy;
         };
+        // Until a host's settings are read the form stays shut: a change made before
+        // has nothing to be saved onto, and an answer to Test connection would be
+        // wiped when the settings arrive. A read that fails keeps it shut.
+        const holdForm = (shut) => {
+            root.querySelectorAll('[data-glances-field], [data-glances-block], [data-glances-line], [data-glances-notify]')
+                .forEach((el) => { el.disabled = shut; });
+        };
 
         const failure = async (res) => {
             if (res.status === 401 || res.status === 403) {
@@ -764,6 +771,7 @@
                 result.textContent = '';
                 saved.textContent = '';
                 wipedEl.textContent = '';
+                holdForm(false);
                 paint(cfg);
                 paintOpen();
                 void refreshLink();
@@ -826,6 +834,8 @@
             }
         });
 
+        holdForm(true);
+        paintButtons();
         await loadHost('');
         paintButtons();
     },

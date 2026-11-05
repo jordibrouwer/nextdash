@@ -187,12 +187,19 @@ A notifications bell in the navigation bar, a greeting with your name beside a l
 
 - **fix — Fix first lists a shared address once.** Two bookmarks with the same address gave two identical lines in *Collection health → Fix first* (*Docker Hub — Duplicate URL in 2 bookmarks*, twice). They are one place to start now.
 
+### Reset and start-up
+
+- **fix — A factory reset forgets the weekly digest.** `digest.json` survived *Reset all data*, so a digest made before the reset was offered to the new install as its first week, and the link-review row waited behind it. The file goes with the rest now.
+- **fix — The Quick start leaves no bar behind when it was finished already.** When its script arrived after the guide had been answered, it still drew its bar for half a second before taking it away. It checks first and draws nothing.
+- **fix — The Quick start keeps °F when you click it straight after typing a city.** Leaving the city field and clicking the unit saved twice at once, and the save with the old unit sometimes landed last. The Quick start's saves now go out one after the other.
+
 ### Fixes from a code review
 
 Eight fixes from a code review: the calculator reads a decimal comma, a Tabs widget off its schedule gives its widgets back, copying a widget no longer undoes a save made at the same moment, the digest charts count real days and show a day that was down, and a few edge cases in importing, the Tabs settings and the backdrop picker.
 
 ### Search
 
+- **fix — A Help search keeps its results when the page is slow.** The release heading and the Help text arrive a moment after *Config → Help* opens; when they came after you had already searched, Help wrote *Getting started* back over the results, with your words still in the box. They now redraw the results instead.
 - **fix — The calculator reads a decimal comma.** `1,5 + 1` is 2.5 and `15% van 2,5` is 0.375; before, every comma was dropped and 2,5 became 25. A comma before exactly three digits still groups thousands (`1,000`, `1,234,567`).
 
 ### Widgets
@@ -201,6 +208,7 @@ Eight fixes from a code review: the calculator reads a decimal comma, a Tabs wid
 - **fix — A Tabs widget off its schedule gives its widgets back.** Outside its time window or on a day it is off, a Tabs widget is not drawn, and the widgets in its tabs now stand in the grid instead of disappearing with it.
 - **fix — Copying a widget keeps a widget saved meanwhile.** The copy is inserted into the page as it stands at that moment, under one lock, so a widget added or changed in another tab while the copy was made is no longer written away.
 - **fix — The Tabs settings offer only what can be kept.** A widget that another Tabs widget already holds is no longer offered, and with six tabs ticked the other boxes wait until one is unticked; before, the server dropped both without a word on save.
+- **fix — Config → Glances waits for its settings before it can be used.** A click on *Test connection* in the moment before the settings were read got its answer, which was then wiped when they arrived; a choice made in that moment was not saved at all. The fields and the button stay shut until the settings are in.
 
 ### Digest
 
@@ -216,6 +224,7 @@ Eight fixes from a code review: the calculator reads a decimal comma, a Tabs wid
 - **fix — Checkbox rows in Appearance line up with the other labels.** The toggle's hover padding sat inside the column, so its words stood 8 px right of every other label and the box 8 px left of the control's edge.
 - **new — Every Appearance tab lists its sections under the preview.** The list beside the settings now shows on every tab, not only on Date & weather, and stands under the preview, so the preview stays in place when you switch tabs. The entries are larger, and the section in view is marked with a bar.
 - **fix — The backdrop picker no longer holds on to old thumbnails.** Each search keystroke made a new observer for lazy painting and never let the old one go, so hundreds of thumbnails that were no longer on the page stayed in memory. One observer per picker now, released when the picker is drawn again.
+- **fix — The last Appearance tab you click is the one that stays.** Clicking *Theme* and then *Rows* straight away, while the theme was still being saved, could end on *Theme*: the first switch finished last and took the page back. A switch that has been overtaken now stops.
 
 ### Performance
 

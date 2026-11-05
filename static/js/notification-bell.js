@@ -336,9 +336,13 @@
                 // A row that slid away must stay away: the person has taken it up.
                 // It is put aside the way a plain "No" does, until it gets worse,
                 // but without the source's onNo, since nothing was declined. A tip
-                // is already gone once read.
-                if (source.kind !== 'tip') States()?.markBellNo(source.id, markOf(entry));
-                void leaveRow(li).then(() => { close('action'); run(); });
+                // is already gone once read. Written once the row has left: a mark
+                // made earlier would redraw the panel and cut the slide short.
+                void leaveRow(li).then(() => {
+                    if (source.kind !== 'tip') States()?.markBellNo(source.id, markOf(entry));
+                    close('action');
+                    run();
+                });
             });
             actions.appendChild(b);
         });
