@@ -68,6 +68,33 @@ test('04 preview card with news', async ({ page, server }) => {
     await crop(page, card, '04-preview-card-news.jpg');
 });
 
+test('04 the bell with watched news and the age of each row', async ({ page, server }) => {
+    await withNews(page, server);
+    await openDashboard(page);
+    await page.evaluate(() => {
+        try { localStorage.removeItem('nextdash-keyboard-tip-current'); localStorage.removeItem('nextdash-keyboard-tips-offered'); } catch { /* none */ }
+        window.dashboardInstance.settings.enableSessionTips = true;
+    });
+    await page.evaluate(() => window.DashboardKeyboardTip?.tick?.());
+    await page.evaluate(() => window.dashboardInstance.feedWatch.load({ force: true }));
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    // The first look stamped every row "now": give each an age that reads like a real day.
+    await page.evaluate(() => {
+        const all = JSON.parse(localStorage.getItem('nextdash-bell-since') || '{}');
+        const ages = { 'feed-watch': 4 * 60_000 };
+        const spread = [38 * 60_000, 3 * 3600_000, 26 * 3600_000, 2 * 86400_000, 4 * 86400_000];
+        let n = 0;
+        Object.keys(all).forEach((id) => { all[id].at = Date.now() - (ages[id] ?? spread[n++ % spread.length]); });
+        localStorage.setItem('nextdash-bell-since', JSON.stringify(all));
+    });
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
+    await page.locator('.notification-bell-row[data-bell-id="feed-watch"]').waitFor({ state: 'visible' });
+    // Pacing for the capture, not a condition: the panel finishes sliding in.
+    await page.waitForTimeout(900);
+    await shot(page, '04-bell.jpg');
+});
+
 test('12 click popover on a row with news', async ({ page, server }) => {
     await withNews(page, server);
     await openDashboard(page);
