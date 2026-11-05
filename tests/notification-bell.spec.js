@@ -929,7 +929,8 @@ test('every hour that something is unread the bell shakes and pulses, without a 
     await loadDashboard(page);
     await refresh(page);
     await page.clock.runFor(2000); // the load animation
-    await page.waitForTimeout(1200); // its animation ends in real time, not on the fake clock
+    // Time itself: the load shake ends in real time, not on the fake clock, and the next shake must start from rest.
+    await page.waitForTimeout(1200);
     await watchAttention(page);
     // Nothing changes: no refresh finds more. A minute only pulses.
     await page.clock.runFor(61 * 1000);
@@ -948,6 +949,7 @@ test('the hourly nudge stays quiet when nothing is unread', async ({ page }) => 
     await page.evaluate(() => { Object.keys(window.__probeState).forEach((id) => { window.__probeState[id] = null; }); });
     await refresh(page);
     await page.clock.runFor(2000);
+    // Time itself: the load shake ends in real time, so the check that nothing shakes later starts from rest.
     await page.waitForTimeout(1200);
     await watchAttention(page);
     await page.clock.runFor(60 * 60 * 1000 + 5000);

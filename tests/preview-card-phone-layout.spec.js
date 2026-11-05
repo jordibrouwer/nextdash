@@ -44,8 +44,10 @@ test('the card is off in the phone layout and back at a wider window', async ({ 
     // The window narrows to a phone: the open card goes, and no new one opens.
     await page.setViewportSize({ width: 600, height: 900 });
     await expect(card(page)).toHaveCount(0);
+    // Pacing: the layout redraws as the width changes, and a hover before it settles is on a row that goes.
     await page.waitForTimeout(600);
     await hoverRow(page);
+    // Checks that nothing happens: the hover delay is 100 ms, so after this a card would have opened.
     await page.waitForTimeout(900);
     await expect(card(page)).toHaveCount(0);
 

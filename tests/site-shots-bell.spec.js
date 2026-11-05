@@ -71,6 +71,7 @@ test('bell shot-1 and shot-2', async ({ page }) => {
     await openBellWithAges(page);
     await shot(page, 'shot-1.jpg');
     await page.evaluate(() => { const b = document.querySelector('.notification-bell-body'); if (b) b.scrollTop = b.scrollHeight; });
+    // Pacing for the capture, not a condition: the scroll settles before the frame is taken.
     await page.waitForTimeout(400);
     await shot(page, 'shot-2.jpg');
 });
