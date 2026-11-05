@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.26.0 — 4 November 2026](#v1260--4-november-2026)
+- [v1.26.0 — 5 November 2026](#v1260--5-november-2026)
 - [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
 - [v1.25.0 — 3 November 2026](#v1250--3-november-2026)
 - [v1.24.2 — 2 November 2026](#v1242--2-november-2026)
@@ -135,7 +135,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.26.0 — 4 November 2026
+## v1.26.0 — 5 November 2026
 
 A notifications bell in the navigation bar, a greeting with your name beside a large clock, a Clock widget with a face, the moon and the sun, and a lighter start: the theme stylesheet shrinks from 9.4 MB to 379 KB. Eight fixes from a code review ride along, and a new install starts on Tarnished Brass.
 
