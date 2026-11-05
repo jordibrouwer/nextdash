@@ -64,7 +64,13 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    z-index: var(--layer-page-popover, 50);
+    /*
+     * Above a list view's header band (sticky band + 1300) and its rail drawer
+     * (+ 1400), and below the modals (2000). On a theme without backdrop blur
+     * the band is not boxed into a stacking context of its own, so at the plain
+     * popover layer (1100) its buttons and selects drew over this panel.
+     */
+    z-index: calc(var(--layer-sticky-band, 5) + 1500);
     width: min(24rem, calc(100vw - 1rem));
     max-height: min(32rem, calc(100vh - 6rem));
     display: flex;

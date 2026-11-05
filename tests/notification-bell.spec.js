@@ -888,3 +888,38 @@ test.describe('the age of a row', () => {
         await expect(timeOf(page, 'probe-health')).toContainText(/2/);
     });
 });
+
+test('the panel draws over a list view header, also on a theme without backdrop blur', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => { window.location.hash = '#inbox'; });
+    await page.waitForSelector('.lvs-header', { timeout: 15_000 });
+    // Without blur the header band has no stacking context of its own and
+    // competes with the panel on z-index alone.
+    await page.addStyleTag({ content: '.lvs, .lvs * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
+    // The panel grows in; measure it once it has its size.
+    await page.waitForFunction(() => document.querySelector('.notification-bell-panel')?.getBoundingClientRect().width > 300);
+    const foreign = await page.evaluate(() => {
+        const panel = document.querySelector('.notification-bell-panel');
+        const r = panel.getBoundingClientRect();
+        const hits = new Set();
+        for (let y = r.top + 8; y < r.bottom; y += 14) {
+            for (let x = r.left + 8; x < r.right; x += 24) {
+                const el = document.elementFromPoint(x, y);
+                if (el && !panel.contains(el)) hits.add(`${el.tagName}.${String(el.className).slice(0, 30)}`);
+            }
+        }
+        return [...hits];
+    });
+    // The check means nothing unless the header's buttons really sit under the panel.
+    const under = await page.evaluate(() => {
+        const r = document.querySelector('.notification-bell-panel').getBoundingClientRect();
+        return [...document.querySelectorAll('.lvs-header-actions button')].filter((b) => {
+            const q = b.getBoundingClientRect();
+            return q.width > 0 && q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top;
+        }).length;
+    });
+    expect(under).toBeGreaterThan(0);
+    expect(foreign).toEqual([]);
+});
