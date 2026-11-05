@@ -56,6 +56,18 @@ test('the window select saves and the news modal uses it', async ({ page, reques
     expect(await page.evaluate(() => window.dashboardInstance.feedWatch.windowMs())).toBe(3_600_000);
 });
 
+test('the expiry select saves news age', async ({ page, request }) => {
+    await openFresh(page);
+    await page.locator('[data-fw-tab="settings"]').click();
+    const select = page.locator('[data-behavior-field="feedWatchExpireHours"]');
+    await expect(select).toBeVisible();
+    await expect(select.locator('option')).toHaveCount(8);
+    await expect(select).toHaveValue('24');
+    await select.selectOption('168');
+    await expect.poll(async () => (await (await request.get('/api/settings')).json()).feedWatchExpireHours).toBe(168);
+    await request.post('/api/settings', { data: { feedWatchExpireHours: 24 }, headers });
+});
+
 test('Check all now polls and reports how many are watched', async ({ page, request }) => {
     expect((await request.post('/api/feeds/watch', {
         headers, data: { bookmarkUrl: site.url, feeds: [{ feedUrl: `${site.base}/feed/`, intervalMinutes: 1440 }] },

@@ -103,6 +103,7 @@
         'pushNotifyNews',
         'notifyNewsTarget',
         'feedWatchWindowMinutes',
+        'feedWatchExpireHours',
         'feedWatchNewsView',
         'feedWatchOpenOnReturn',
         'feedStatsEnabled',

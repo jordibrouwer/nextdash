@@ -4098,6 +4098,7 @@ class DashboardConfig {
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
         feedWatchWindowMinutes: ['feed', 'watch', 'news', 'modal', 'minutes', 'window'],
+        feedWatchExpireHours: ['feed', 'watch', 'news', 'expire', 'old', 'unread', 'count', 'badge', 'hours', 'days'],
         feedWatchNewsView: ['feed', 'watch', 'news', 'newspaper', 'columns', 'layout', 'modal'],
         showFeedWatchIcon: ['feed', 'watch', 'icon', 'rss', 'bookmark', 'row', 'mark'],
         feedWatchOpenOnReturn: ['feed', 'watch', 'news', 'open', 'return', 'tab', 'automatic', 'newspaper'],
@@ -9471,6 +9472,7 @@ class DashboardConfig {
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: true },
         feedWatchWindowMinutes: { def: 30 },
+        feedWatchExpireHours: { def: 24 },
         feedWatchNewsView: { def: 'paper' },
         showFeedWatchIcon: { info: ['showFeedWatchIconInfoTitle', 'showFeedWatchIconInfoMessage'], def: true },
         feedWatchOpenOnReturn: { info: ['feedWatchOpenOnReturnInfoTitle', 'feedWatchOpenOnReturnInfoMessage'], def: false },
@@ -11212,7 +11214,7 @@ class DashboardConfig {
                 tab: 'settings',
                 title: t('config.feedsTitle', 'Watch feeds'),
                 demoLocked: true,
-                note: t('config.feedsNote', 'Feeds you follow from a bookmark (Watch this feed…) are asked on their own interval. When something new appears, the bookmark gets a purple count, a toast and the news window. Both settings below are per install; the window says how long the news stays in view once you are back.'),
+                note: t('config.feedsNote', 'Feeds you follow from a bookmark (Watch this feed…) are asked on their own interval. When something new appears, the bookmark gets a purple count, a bell notification and the news window. Both settings below are per install; the window says how long the news stays in view once you are back.'),
                 controls: [
                     // Feeds you chose to follow, from Watch this feed… on a
                     // bookmark: their news gets a toast, a purple mark and the
@@ -11224,6 +11226,16 @@ class DashboardConfig {
                     {
                         type: 'note',
                         text: t('config.feedWatchWindowNote', 'After news arrives, the news modal and the purple mark stay for this long once you are back in nextDash.'),
+                    },
+                    { field: 'feedWatchExpireHours', type: 'select', label: t('config.feedWatchExpireLabel', 'Count news as unread for'), options: [
+                        opt(4, t('config.feedWatchExpire4', '4 hours')), opt(8, t('config.feedWatchExpire8', '8 hours')),
+                        opt(24, t('config.feedWatchExpire24', '1 day')), opt(48, t('config.feedWatchExpire48', '2 days')),
+                        opt(72, t('config.feedWatchExpire72', '3 days')), opt(168, t('config.feedWatchExpire168', '7 days')),
+                        opt(336, t('config.feedWatchExpire336', '14 days')), opt(720, t('config.feedWatchExpire720', '30 days')),
+                    ] },
+                    {
+                        type: 'note',
+                        text: t('config.feedWatchExpireNote', 'News nobody opened stops counting after this long. The purple count, the hover card and the bell leave it out; the news modal still shows it, dimmed.'),
                     },
                     { field: 'feedWatchNewsView', type: 'select', label: t('config.feedWatchNewsViewLabel', 'Show news as'), options: [
                         opt('paper', t('config.feedWatchNewsViewPaper', 'Newspaper')),

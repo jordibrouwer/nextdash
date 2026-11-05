@@ -98,7 +98,7 @@ test.describe('config info + reset affordances', () => {
             'pushNotifyRelease', 'pushNotifySubject', 'pushNotifyNews', 'notifyNewsTarget',
             // The two news-window settings: the group's note says what they do and
             // the options name themselves (15 minutes, Newspaper), so no ℹ.
-            'feedWatchWindowMinutes', 'feedWatchNewsView',
+            'feedWatchWindowMinutes', 'feedWatchExpireHours', 'feedWatchNewsView',
             // Listed in FIELD_META for the ↺ button and the changed-settings
             // count, with a comment saying they carry no ℹ of their own: a
             // field with no `def` reports itself unchanged whatever it holds.
