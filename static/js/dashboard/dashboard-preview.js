@@ -23,6 +23,21 @@ class DashboardPreview {
 
     constructor(dashboard) {
         this.dash = dashboard;
+        // The phone layout has no use for a hover card, and it comes back as the
+        // window widens: the rows keep their handlers, so only the showing is
+        // gated (showBookmarkPreviewCard), and a card already open goes when the
+        // window narrows.
+        try {
+            const query = window.matchMedia?.(DashboardPreview.PHONE);
+            query?.addEventListener?.('change', (event) => {
+                if (event.matches) this.hideBookmarkPreviewCard?.();
+            });
+        } catch { /* no matchMedia */ }
+    }
+
+    /** True in the phone layout (the same width the other views fold at). */
+    phoneLayout() {
+        return Boolean(window.matchMedia?.(DashboardPreview.PHONE).matches);
     }
 
     /**
@@ -1155,7 +1170,7 @@ class DashboardPreview {
     }
 
     showBookmarkPreviewCard(preview, event = null, context = null) {
-        if (this.suppressed()) return;
+        if (this.suppressed() || this.phoneLayout()) return;
         /*
          * No card for a row that is no longer on screen. A view that replaces
          * the grid takes the hovered row away without a mouseleave, so its
@@ -1973,4 +1988,5 @@ class DashboardPreview {
 
 }
 
+DashboardPreview.PHONE = '(max-width: 767px)';
 window.DashboardPreview = DashboardPreview;
