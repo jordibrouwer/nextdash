@@ -39,7 +39,7 @@ async function openDashboard(page) {
 }
 
 const openFinders = (page) => page.evaluate(
-    () => window.dashboardInstance.searchComponent._openInMode('?'),
+    () => window.dashboardInstance.searchComponent._openInMode('!'),
 );
 const query = (page) => page.evaluate(
     () => window.dashboardInstance.searchComponent.currentQuery,
@@ -50,15 +50,15 @@ test.describe('the finder line', () => {
         await openDashboard(page);
         await twoFinders(page);
         await openFinders(page);
-        expect(await query(page)).toBe('?');
+        expect(await query(page)).toBe('!');
 
-        await page.keyboard.press('Shift+Slash');
+        await page.keyboard.type('!');
         // Must not happen: a second "?" landing in the query. The query already
         // reads "?", so there is no new state to wait for.
         await page.waitForTimeout(250);
 
         // Already in finders: the key has nothing left to do.
-        expect(await query(page)).toBe('?');
+        expect(await query(page)).toBe('!');
     });
 
     test('a search typed after ? keeps its spaces and carries no stray ?', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('the finder line', () => {
         await twoFinders(page);
         await openFinders(page);
 
-        await page.keyboard.press('Shift+Slash');
+        await page.keyboard.type('!');
         await page.keyboard.type('jordibrw.nl');
         await page.keyboard.press('Space');
         await page.keyboard.type('test');
@@ -115,7 +115,7 @@ test.describe('a freshly built overlay', () => {
         // typing the letter again would land in the search text.
         const shortcut = await page.evaluate(() =>
             (window.dashboardInstance.finders || []).find((f) => f.shortcut)?.shortcut || '');
-        await expect.poll(() => query(page)).toBe(`?${shortcut.toUpperCase()} `);
+        await expect.poll(() => query(page)).toBe(`!${shortcut.toUpperCase()} `);
     });
 });
 

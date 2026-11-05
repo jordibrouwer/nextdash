@@ -272,10 +272,10 @@
                 title: f('dashTourBarTitle', 'The action bar'),
                 visual: (() => {
                     const keys = [['+', f('dashTourBarAdd', 'add')], ['>', f('dashTourKeySearch', 'search')],
-                        [':', f('dashTourKeyCommands', 'commands')], ['?', f('dashTourKeyFinders', 'finders')],
+                        [':', f('dashTourKeyCommands', 'commands')], ['!', f('dashTourKeyFinders', 'finders')],
                         ['/', f('dashTourKeyTagCloud', 'tag cloud')], ['*', f('dashTourBarRecent', 'recent')],
                         [',', f('dashTourBarPages', 'pages')], ['.', f('dashTourBarFold', 'fold all')],
-                        ['!', f('dashTourKeyCheat', 'cheat sheet')]];
+                        ['?', f('dashTourKeyCheat', 'cheat sheet')]];
                     return svg(`
                         ${keys.map(([k, l], i) => {
         const x = 12 + (i % 3) * 112;
@@ -355,7 +355,7 @@
                     ${row(12, 50, 300, 'Grafana', { dot: 'ok', kind: 'accent', motion: anim('appear') })}
                     ${row(12, 78, 300, f('dashTourS2Docs', 'Grafana docs'), { dot: 'ok', motion: anim('appear', 0.15) })}
                     ${label(12, 124, f('dashTourS2Enter', 'Enter opens the top result'), 'dtv-caption')}
-                    ${[['>', f('dashTourKeySearch', 'search')], [':', f('dashTourKeyCommands', 'commands')], ['?', f('dashTourKeyFinders', 'finders')]]
+                    ${[['>', f('dashTourKeySearch', 'search')], [':', f('dashTourKeyCommands', 'commands')], ['!', f('dashTourKeyFinders', 'finders')]]
                         .map(([k, l], i) => `${keycap(332, 14 + i * 30, k)}${label(358, 28 + i * 30, l)}`).join('')}
                     ${keycap(332, 104, 'Shift+Enter')}${label(332, 140, f('dashTour4SearchWeb', 'the web'))}
                 `, f('dashTourS2Alt', 'Typed letters go to the search line, and its three modes')),
@@ -485,7 +485,7 @@
                     const tiles = [[f('dashTourTileHealth', 'Health'), f('dashTourTileHealthValue', '2 broken'), 'bad'],
                         [f('dashTourTileWeather', 'Weather'), '19°C', 'accent'],
                         [f('dashTourTileContainers', 'Containers'), '9 / 10', 'ok']];
-                    const keys = [['Shift+A', f('dashTour4KeyThemes', 'themes')], [',', f('dashTourKeyConfig', 'config')], ['!', f('dashTourKeyCheat', 'cheat sheet')]];
+                    const keys = [['Shift+A', f('dashTour4KeyThemes', 'themes')], [',', f('dashTourKeyConfig', 'config')], ['?', f('dashTourKeyCheat', 'cheat sheet')]];
                     return svg(`
                         ${tiles.map(([title, value, kind], i) => `
                             <g class="dtv-anim dtv-a-drop" style="animation-delay:${(i * 0.15).toFixed(2)}s">

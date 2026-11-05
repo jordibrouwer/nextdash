@@ -272,7 +272,7 @@ class DashboardUiHelpers {
             chip.className = 'cheat-sheet-modal-key';
             chip.dataset.modalHeaderExtra = 'true';
             chip.setAttribute('aria-hidden', 'true');
-            chip.textContent = '!';
+            chip.textContent = '?';
             document.getElementById('modal-title')?.after(chip);
 
             const close = document.createElement('button');

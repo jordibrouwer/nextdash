@@ -137,7 +137,7 @@ test('switching a button off does not switch off its key', async ({ page }) => {
     await expect(page.locator('#help-button')).toBeHidden();
 
     // The key still opens it: the button is a way in, not the only one.
-    await page.keyboard.press('Shift+Digit1');
+    await page.keyboard.press('Shift+Slash');
     await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal'))
         .toBeVisible({ timeout: 15_000 });
 });
@@ -236,7 +236,7 @@ test('the actions are always in the same order', async ({ page }) => {
     // Pages sits after recents: both open a panel you came for, and the sheet
     // that lists every key stays last.
     // The edit-mode pencil and the theme studio come last: they sort after the others, so they never push one into the fold.
-    expect(keys).toBe('+ > : ? / * , . ! ⇧M ⇧A');
+    expect(keys).toBe('+ > : ! / * , . ? ⇧M ⇧A');
 });
 
 /*
@@ -427,7 +427,7 @@ test('an action shows its key and names itself to a screen reader', async ({ pag
     expect(read.recents.word).toBe('recents');
     expect(read.cheat.word).toBe('cheat');
     expect([read.add.key, read.search.key, read.recents.key, read.cheat.key])
-        .toEqual(['+', '>', '*', '!']);
+        .toEqual(['+', '>', '*', '?']);
 
     for (const [name, one] of Object.entries(read)) {
         expect(one.drawn, `the ${name} button has no icon`).toBe(true);

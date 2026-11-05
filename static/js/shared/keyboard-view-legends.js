@@ -64,9 +64,9 @@
         { line: 2, keys: '>', legendKey: 'dashboardKeySearch', cheatKey: 'dvSearch', fallback: 'search' },
         { line: 2, keys: '/', legendKey: 'dashboardKeyTags', cheatKey: 'dvTags', fallback: 'tags' },
         { line: 2, keys: '*', legendKey: 'dashboardKeyRecent', cheatKey: 'dvRecent', fallback: 'recent' },
-        { line: 2, keys: '?', legendKey: 'dashboardKeyFinders', cheatKey: 'dvFinders', fallback: 'finders' },
+        { line: 2, keys: '!', legendKey: 'dashboardKeyFinders', cheatKey: 'dvFinders', fallback: 'finders' },
         { line: 2, keys: ':', legendKey: 'dashboardKeyCommands', cheatKey: 'dvCommands', fallback: 'commands' },
-        { line: 2, keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
+        { line: 2, keys: '?', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
         // Line 3: going somewhere, and adding. Views first; the helpers behind them.
         { line: 3, keys: '1\u20139', legendKey: 'dashboardKeyPage', cheatKey: 'dvPage', fallback: 'page' },
         { line: 3, keys: '+', legendKey: 'dashboardKeyAddBookmark', cheatKey: 'dvAddBookmark', fallback: 'add bookmark' },

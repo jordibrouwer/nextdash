@@ -138,7 +138,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
   - [Searching the web](#searching-the-web)
 - [From the browser's address bar](#84-from-the-browsers-address-bar)
 - [Commands (`:`)](#85-commands)
-- [Finders (`?`)](#86-finders)
+- [Finders (`!`)](#86-finders)
 
 </details>
 
@@ -651,7 +651,7 @@ What a check of your setup can look like, all from the keyboard:
 | `#docker?filter=updates` | The containers with an update waiting |
 | `#bookmarks?health=monitored` | Every monitored bookmark, with its uptime |
 
-The full list is in [§15.4](#154-keys) and on `!`.
+The full list is in [§15.4](#154-keys) and on `?`.
 
 ---
 
@@ -969,16 +969,16 @@ The bell shakes and pulses for something new, with a short tone (news from watch
 | Add | `+` | The full bookmark form |
 | Search | `>` | The search panel |
 | Commands | `:` | The command palette |
-| Finders | `?` | Finders |
+| Finders | `!` | Finders |
 | Tag cloud | `/` | The tag cloud; pick a tag to open its tag view |
 | Recent | `*` | Recent bookmarks — from every view |
 | Pages | `Shift + P` | The pages panel |
 | Fold all | `.` | Folds or unfolds every category and widget |
-| Cheat sheet | `!` | The cheat sheet |
+| Cheat sheet | `?` | The cheat sheet |
 | Edit | `Shift + E` | Edit mode ([see below](#edit-mode)) |
 | Theme studio | `Shift + A` | The theme studio ([§17.1](#the-theme-studio)); last in the bar, and left out on a phone |
 
-Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
+Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `?` the cheat sheet. With every button off, the surround disappears too.
 
 **Where the fixed buttons stand.** A fresh install puts the bar in **a column on the right** that slides into the edge after **2 seconds**, so the page has it out of the way until it is wanted.
 
@@ -1307,9 +1307,9 @@ Ten tiles fit on a page; a pager in the foot says where you are ("11–20 of 34"
 ## 7. ⌨️ Keyboard
 
 > [!NOTE]
-> **In short:** every action on a bookmark is `Shift` plus a letter, and the cheat sheet (`!` or `F1`) lists them all. This chapter is the full key map.
+> **In short:** every action on a bookmark is `Shift` plus a letter, and the cheat sheet (`?` or `F1`) lists them all. This chapter is the full key map.
 
-With the cursor on a bookmark, its actions are **plain letters**, as in the Inbox: `e` edits, `m` moves, `t` tags, `p` pins, `c` sets checking, `r` shows it in the Bookmarks view, `v` the preview card, `s` shares, `q` shows a QR code, `d` deletes (it asks first) and `f` filters the grid by its tag; `x` ticks and `j` and `k` move. With no cursor on the grid the same letters start a search: `Esc`, or ten idle seconds, hands them back. `Shift` plus a letter never acts on a bookmark; it is a view or panel wherever you are (`Shift + C` is Containers). A small strip beside the page name says what the keys do right now. The right-click menu shows each key, and the cheat sheet (**`!`** or **`F1`**) lists all of them.
+With the cursor on a bookmark, its actions are **plain letters**, as in the Inbox: `e` edits, `m` moves, `t` tags, `p` pins, `c` sets checking, `r` shows it in the Bookmarks view, `v` the preview card, `s` shares, `q` shows a QR code, `d` deletes (it asks first) and `f` filters the grid by its tag; `x` ticks and `j` and `k` move. With no cursor on the grid the same letters start a search: `Esc`, or ten idle seconds, hands them back. `Shift` plus a letter never acts on a bookmark; it is a view or panel wherever you are (`Shift + C` is Containers). A small strip beside the page name says what the keys do right now. The right-click menu shows each key, and the cheat sheet (**`?`** or **`F1`**) lists all of them.
 
 <a id="71-views-and-panels"></a>
 
@@ -1327,13 +1327,13 @@ With the cursor on a bookmark, its actions are **plain letters**, as in the Inbo
 | `,` or `<` | Config (`Esc` leaves) |
 | `Shift + A` | The theme studio |
 | `Shift + E` | Edit mode ([§4](#edit-mode)) |
-| `>` `:` `?` | Search, commands, finders — from every view |
+| `>` `:` `!` | Search, commands, finders — from every view |
 | `+` · `Ctrl + Shift + A` · `&` | Full bookmark form · from anywhere · quick add |
 | `/` | Tag cloud (type to find a tag, `Enter` opens its tag view, `Shift + Enter` stacks) |
 | `Shift + T` | The tag view of every bookmark ([§10.2](#102-filtering-by-tag)) |
 | `*` | Recent bookmarks — from every view |
 | `Shift + P` | The Pages panel (`n` there makes a new page) |
-| `!` or `F1` | Cheat sheet |
+| `?` or `F1` | Cheat sheet |
 | `.` | Fold or unfold every category and widget |
 | `Shift + N` | The notification center (the bell), and closes it again |
 | `Shift + W` | With no category or widget under the cursor, the news of the feeds you watch (when at least one feed is watched) |
@@ -1346,7 +1346,7 @@ With the cursor on a bookmark, its actions are **plain letters**, as in the Inbo
 
 The Containers view opens with `Shift + C`, its header icon or `:docker`. The Glances page opens with `Shift + G`, its header icon or `:glances`; its own keys are in [§16A.11](#16a11-keys).
 
-`>` `:` `?` and `*` work in every view — the Bookmarks view, the inbox, Containers and config too — not only on the dashboard. A view that uses one of these keys for itself keeps it. Quick add (`&`) and the full form (`+`) stay with the bookmark grid.
+`>` `:` `!` and `*` work in every view — the Bookmarks view, the inbox, Containers and config too — not only on the dashboard. A view that uses one of these keys for itself keeps it. Quick add (`&`) and the full form (`+`) stay with the bookmark grid.
 
 <a id="72-moving-on-the-grid"></a>
 
@@ -1447,7 +1447,7 @@ A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Co
 
 ### 7.6 The cheat sheet
 
-**`!`** or **`F1`** opens the cheat sheet, with a search field at the top. It opens on the section for the view you are in, and lists more than 250 keys and commands by topic — Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the **Glances view**, the Config view, search modes and every command. The topics stand side by side in columns, and each row names an action. Pick a row — with the arrows or a click — and the **dock** under the list shows the keys that do it; the keys are also read out with the row by a screen reader. The search field finds an action, a key or a section name and ignores spaces, so `shift + c` finds Shift+C. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
+**`?`** or **`F1`** opens the cheat sheet, with a search field at the top. It opens on the section for the view you are in, and lists more than 250 keys and commands by topic — Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the **Glances view**, the Config view, search modes and every command. The topics stand side by side in columns, and each row names an action. Pick a row — with the arrows or a click — and the **dock** under the list shows the keys that do it; the keys are also read out with the row by a screen reader. The search field finds an action, a key or a section name and ignores spaces, so `shift + c` finds Shift+C. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
 
 While a panel is open, the grid behind it does not react. `Tab` stays inside the panel, and `Escape` closes it and puts focus back where it was.
 
@@ -1467,14 +1467,14 @@ While a panel is open, the grid behind it does not react. `Tab` stays inside the
 ## 8. 🔎 Search, commands and finders
 
 > [!NOTE]
-> **In short:** one panel with three modes: type to search your bookmarks, `:` for commands, `?` for finders that search another site. Filters narrow it, and it can reach other pages and the web.
+> **In short:** one panel with three modes: type to search your bookmarks, `:` for commands, `!` for finders that search another site. Filters narrow it, and it can reach other pages and the web.
 
 Search, commands and finders are three modes of one panel, which opens in the middle of the window like every other dashboard modal (only the theme studio stays docked at the side, so the page it previews stays in view). A rail on its left lists the modes; the one you are in is marked, and a mode your words do not reach is dimmed. `Tab` switches between them.
 
 ```
 >  search     — your bookmarks, with filters
 :  commands   — actions: :theme, :open last 5, …
-?  finders    — ?g query → another site
+!  finders    — !g query → another site
 =  assistant  — ask a question; your latest conversations at a lone =
 @  everywhere — search all pages at once
 ⇧↵ the web    — the same words, asked of a search engine
@@ -1505,7 +1505,7 @@ With the panel empty, the first group is **Usually now**: up to three bookmarks 
 <p align="center"><img src="screenshots/manual.md/08-search-actions.jpg" alt="A bookmark result in the search panel with its actions unfolded: Open, Open in new tab, Copy URL, Edit, Show in list and Move to" width="860"></p>
 <p align="center"><sub>Right arrow on a result unfolds its actions under the row.</sub></p>
 
-**The keyboard tour.** Until you have seen it, the empty panel also lists *Take the keyboard tour* under a **Keyboard** heading (open from the start in Hypr mode, a closed group otherwise). It never opens by itself. Four steps: just start typing, commands start with a colon, finders search the web for you, and three more single keys — `/`, `*` and `!`. `:tour keyboard` plays it any time, and so does the Tour list in Behavior → Privacy & sync → Onboarding.
+**The keyboard tour.** Until you have seen it, the empty panel also lists *Take the keyboard tour* under a **Keyboard** heading (open from the start in Hypr mode, a closed group otherwise). It never opens by itself. Four steps: just start typing, commands start with a colon, finders search the web for you, and three more single keys — `/`, `*` and `?`. `:tour keyboard` plays it any time, and so does the Tour list in Behavior → Privacy & sync → Onboarding.
 
 <p align="center"><img src="screenshots/manual.md/08-keyboard-tour.jpg" alt="The keyboard tour on its second step, Commands start with a colon: a drawing of the command line with :new and :tag, and the Next and Back buttons" width="520"></p>
 
@@ -1519,7 +1519,7 @@ With the panel empty, the first group is **Usually now**: up to three bookmarks 
 
 **Switch search mode** (Behavior → Keyboard & search, or **`Shift + X`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way. With letters already typed, **`/`** does the same by hand and switches this one search; the letters stay where they are.
 
-**A sum answers itself.** Type `15% of 240`, `2+2*3` or `5 km in mi` and the answer is the top row of the list, written as *expression = answer*. **`Enter`** copies the answer and says *Copied*. Sums use `+ - * / ^ %` and brackets. A conversion reads *number unit* `in` (or `to`) *unit* and covers length, weight, volume, time, data sizes, speed and temperature. It is worked out in your browser by a small parser of its own; nothing is sent anywhere and nothing is evaluated as code. Only what is plainly a sum is answered: a word or a shortcut never is, and neither is a phrase, range, phone number or date such as `24/7`, `20-30`, `06-12345678` or `03-11-2026`. A `-` or `/` counts as an operator only with a space on both sides. The answer shows in the ordinary search, not after `:`, `?`, `@` or a leading `=`, and the row is not counted in your search history.
+**A sum answers itself.** Type `15% of 240`, `2+2*3` or `5 km in mi` and the answer is the top row of the list, written as *expression = answer*. **`Enter`** copies the answer and says *Copied*. Sums use `+ - * / ^ %` and brackets. A conversion reads *number unit* `in` (or `to`) *unit* and covers length, weight, volume, time, data sizes, speed and temperature. It is worked out in your browser by a small parser of its own; nothing is sent anywhere and nothing is evaluated as code. Only what is plainly a sum is answered: a word or a shortcut never is, and neither is a phrase, range, phone number or date such as `24/7`, `20-30`, `06-12345678` or `03-11-2026`. A `-` or `/` counts as an operator only with a space on both sides. The answer shows in the ordinary search, not after `:`, `!`, `@` or a leading `=`, and the row is not counted in your search history.
 
 **Behavior → Keyboard & search** also holds fuzzy suggestions for near-misses, *include finders in search*, *keep search open when empty* and the search hint. *Search unsorted bookmarks* (on by default) lets search reach links kept on **Bookmarks → Unsorted** ([§11.11](#1111-unsorted-and-promote)); they stay out of every other list.
 
@@ -1646,9 +1646,9 @@ The palette is drawn like the dashboard: its fill follows how solid the categori
 
 <a id="86-finders"></a>
 
-### 8.6 Finders (`?`)
+### 8.6 Finders (`!`)
 
-`?shortcut query` sends the query to another site: `?g nextdash` searches Google. A fresh install has DuckDuckGo on `du` and Brave Search on `b` (an install that already existed was given Brave Search once; delete it and it stays deleted). `?w` without a query opens the site's own search page.
+`!shortcut query` sends the query to another site: `!g nextdash` searches Google. A fresh install has DuckDuckGo on `du` and Brave Search on `b` (an install that already existed was given Brave Search once; delete it and it stays deleted). `?w` without a query opens the site's own search page.
 
 <p align="center"><img src="screenshots/manual.md/08-finders.jpg" alt="The search panel on its finders tab: a question mark typed, and the two finders Brave Search and DuckDuckGo with their shortcuts" width="840"></p>
 <p align="center"><sub><kbd>?</kbd> lists the finders with their shortcuts.</sub></p>
@@ -4217,7 +4217,7 @@ The same drawing reaches every part of the app, in four levels of elevation:
 
 A few things came with it:
 
-- **The cheat sheet** (`!`) has a search field, lists its topics in columns, and shows the keys of the row you pick in a dock underneath. Its cards stay whole in Safari.
+- **The cheat sheet** (`?`) has a search field, lists its topics in columns, and shows the keys of the row you pick in a dock underneath. Its cards stay whole in Safari.
 - **Add and edit bookmark** has two columns and a live preview ([§5](#5-adding-bookmarks)).
 - **The popover arrow** points at the control you pressed, follows it when the popover is hidden and shown, and clears when it hides.
 - **Bookmark rows** take one inset from one variable, so icons line up with and without a ping.
@@ -4996,7 +4996,7 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 |---|---|---|
 | **Header** | The page name and a **← →** hint: swipe sideways to change page. The clock, the page tabs and the destinations drop away | Full header |
 | **Action buttons** | Search | As configured |
-| **Commands and finders** | The `:` and `?` tabs in the search panel | Buttons or keys |
+| **Commands and finders** | The `:` and `!` tabs in the search panel | Buttons or keys |
 | **Tag filter** | `tag:` in search, or `:tag` | The tag cloud (`/`) |
 | **Page filter** | A bar stays above the bookmarks, full width; it does not take focus until you tap it, and the **×** and `Escape` empty it | `Shift + F` |
 | **Preview cards** | Off | As configured |
@@ -5637,7 +5637,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Category | A named section on a page, with its own sort order and, if you like, an icon and several columns. | [§9.2](#92-categories) |
 | Certificate | A monitored site's certificate: warnings go out 30, 7 and 3 days before it expires, and the Certificates widget lists those expiring soon. | [§12.4](#124-alerts) |
 | Character | One of twelve archetypes a theme names; it decides what kind of surface the theme draws, such as lacquer, glass or neon. | [§17.2](#172-character) |
-| Cheat sheet | A searchable list of keys and commands, opened with `!` or `F1`. | [§7.6](#76-the-cheat-sheet) |
+| Cheat sheet | A searchable list of keys and commands, opened with `?` or `F1`. | [§7.6](#76-the-cheat-sheet) |
 | Collection health | A modal with Overview, Monitors and Trend tabs for the whole library, opened with `h` in the Bookmarks view. | [§11.8](#118-collection-health) |
 | Command (`:`) | A line typed after `:` in the command palette to change or open something. | [§8.5](#85-commands) |
 | Config | A view inside the dashboard, in the same tab, where every setting lives in sections. | [§18](#18-config) |
@@ -5678,7 +5678,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Filter | A way to narrow what is shown: `tag:`, `category:`, `status:` and more in search, and the rail's groups in the Bookmarks view. | [§8.2](#82-filters) |
-| Finder (`?`) | A shortcut that sends a query to another site, as in `?g nextdash`. | [§8.6](#86-finders) |
+| Finder (`!`) | A shortcut that sends a query to another site, as in `!g nextdash`. | [§8.6](#86-finders) |
 | Watch feeds | Follows the RSS or Atom feed of a site you choose and tells you when it publishes something. | [§14](#14-watch-feeds) |
 | Glances | A server that reports one machine's processor, memory, disks, processes and containers. nextDash reads a Glances 4 host for its Glances page and widget. | [§16A](#16a-glances) |
 | Glances page | The view for one Glances host, opened with `Shift + G` or `:glances`, with Overview, Processes, Containers, Disks, Network, Insights, History, Alerts and Hosts sections. | [§16A.1](#16a1-opening-it) |

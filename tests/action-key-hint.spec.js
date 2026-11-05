@@ -70,7 +70,7 @@ test('the key follows the button', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'left', showActionKeys: false });
     const button = await hover(page, '#help-button');
     await expect(hint(page).locator('.action-key-hint-name')).toHaveText('cheat');
-    await expect(hint(page).locator('kbd')).toHaveText('!');
+    await expect(hint(page).locator('kbd')).toHaveText('?');
     // Docked on the left, so it stands to the right.
     const box = await hint(page).boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(button.x + button.width);

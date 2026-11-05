@@ -66,7 +66,7 @@ test('loop finders: ? du nextdash', async ({ page }) => {
     await page.mouse.move(5, 895);
     const startAt = now(t0);
     await rest(page, 1_500);
-    await page.keyboard.press('?');
+    await page.keyboard.press('!');
     await page.locator('#shortcut-search .search-container').waitFor();
     await rest(page, 2_000);
     await page.keyboard.type('du nextdash', { delay: 180 });

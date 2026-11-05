@@ -26,7 +26,7 @@
     /** The keys that open some part of the search stack. */
     // Not '*': the toolbar opens Recent bookmarks on it without the search
     // bundle, and taking the key here opened the search panel instead.
-    const OPENING_KEYS = ['>', ':', '?', '/'];
+    const OPENING_KEYS = ['>', ':', '!', '/'];
 
     function bundleHref() {
         const marker = document.querySelector('[data-nextdash-search-js]');
@@ -128,7 +128,7 @@
             initialiseComponent();
             const search = global.dashboardInstance?.searchComponent;
             if (!search) return;
-            if (key === ':' || key === '?') {
+            if (key === ':' || key === '!') {
                 search._openInMode?.(key);
             } else if (key === '*') {
                 // Recent bookmarks has its own entry point; fall back to the

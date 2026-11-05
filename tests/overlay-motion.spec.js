@@ -22,7 +22,7 @@ async function openSheet(page, request, off) {
     // Pacing: a settled page, so the pace read below is the modal's own and not the page's first paint.
     await page.waitForTimeout(600);
     if (off) await page.evaluate(() => document.body.classList.add('no-view-animations'));
-    await page.locator('body').press('!');
+    await page.locator('body').press('?');
     await expect(page.locator('.modal-overlay.show .modal').first()).toBeVisible({ timeout: 10_000 });
     return page.evaluate(() => {
         const cs = getComputedStyle(document.querySelector('.modal-overlay.show .modal'));

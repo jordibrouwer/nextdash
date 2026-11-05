@@ -79,7 +79,7 @@ test('the cheat sheet lists the keys added since the last release', async ({ pag
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
 
-    await page.keyboard.press('!');
+    await page.keyboard.press('?');
     const sheet = page.locator('#app-modal.show .keyboard-cheat-sheet-modal');
     await expect(sheet).toBeVisible({ timeout: 10_000 });
     // The groups are <details>; a collapsed one hides its rows from innerText.

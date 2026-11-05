@@ -49,7 +49,7 @@ test.describe('dashboard inert after overlays', () => {
     });
 
     test('dashboard is clickable after closing cheat sheet modal', async ({ page }) => {
-        await page.keyboard.press('!');
+        await page.keyboard.press('?');
         const modal = page.locator('#app-modal.show');
         await expect(modal).toBeVisible({ timeout: 5000 });
         await page.evaluate(() => {

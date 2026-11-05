@@ -66,34 +66,34 @@ test.describe('typing into a finder', () => {
         await dashboard(page);
         await setFinders(page, ['b']);
 
-        await page.keyboard.type('?');
-        await expect.poll(() => query(page)).toBe('?B ');
+        await page.keyboard.type('!');
+        await expect.poll(() => query(page)).toBe('!B ');
         await page.keyboard.type('Jordi Brouwer');
 
-        expect(await query(page), 'the search text was shouted').toBe('?B Jordi Brouwer');
+        expect(await query(page), 'the search text was shouted').toBe('!B Jordi Brouwer');
     });
 
     test('and punctuation a search needs gets through', async ({ page }) => {
         await dashboard(page);
         await setFinders(page, ['b']);
 
-        await page.keyboard.type('?');
-        await expect.poll(() => query(page)).toBe('?B ');
+        await page.keyboard.type('!');
+        await expect.poll(() => query(page)).toBe('!B ');
         await page.keyboard.type("site:nl a/b&c='d'");
 
         expect(await query(page), 'characters were dropped on the way in')
-            .toBe("?B site:nl a/b&c='d'");
+            .toBe("!B site:nl a/b&c='d'");
     });
 
     test('but the shortcut itself is still matched loosely', async ({ page }) => {
         await dashboard(page);
         await setFinders(page, ['b', 'g']);
 
-        await page.keyboard.type('?');
+        await page.keyboard.type('!');
         await page.keyboard.type('g');
 
         // Lower case in, upper case on screen: the shortcut is a key, not text.
-        expect(await query(page)).toBe('?G ');
+        expect(await query(page)).toBe('!G ');
     });
 });
 
@@ -102,35 +102,35 @@ test.describe('entering finder mode', () => {
         await dashboard(page);
         await setFinders(page, ['b']);
 
-        await page.keyboard.type('?');
-        await expect.poll(() => query(page)).toBe('?B ');
+        await page.keyboard.type('!');
+        await expect.poll(() => query(page)).toBe('!B ');
 
         // And the terms go where they are meant to, rather than being read as
         // more of the shortcut.
         await page.keyboard.type('jordibrw.nl');
-        await expect.poll(() => query(page)).toBe('?B jordibrw.nl');
+        await expect.poll(() => query(page)).toBe('!B jordibrw.nl');
     });
 
     test('two finders: the question is real, so it is still asked', async ({ page }) => {
         await dashboard(page);
         await setFinders(page, ['b', 'g']);
 
-        await page.keyboard.type('?');
-        await expect.poll(() => query(page)).toBe('?');
+        await page.keyboard.type('!');
+        await expect.poll(() => query(page)).toBe('!');
 
         // Picking one still completes with its space, as it always did.
         await page.keyboard.type('g');
-        await expect.poll(() => query(page)).toBe('?G ');
+        await expect.poll(() => query(page)).toBe('!G ');
     });
 
     test('no finders at all: nothing to choose, so nothing is chosen', async ({ page }) => {
         await dashboard(page);
         await setFinders(page, []);
 
-        await page.keyboard.type('?');
+        await page.keyboard.type('!');
         // The panel says there are none and offers the way to add one; putting
         // a shortcut there would be inventing a finder that does not exist.
-        await expect.poll(() => query(page)).toBe('?');
+        await expect.poll(() => query(page)).toBe('!');
     });
 
     test('the mode tab goes in the same way as the key', async ({ page }) => {
@@ -141,7 +141,7 @@ test.describe('entering finder mode', () => {
         await page.waitForSelector('.search-mode-tab[data-mode="finder"]', { timeout: 10_000 });
         await page.click('.search-mode-tab[data-mode="finder"]');
 
-        await expect.poll(() => query(page)).toBe('?B ');
+        await expect.poll(() => query(page)).toBe('!B ');
         await closeSearch(page);
     });
 
@@ -151,7 +151,7 @@ test.describe('entering finder mode', () => {
 
         // What the toolbar's finders button calls. Driven here rather than
         // through the button because the button is off by default.
-        await page.evaluate(() => window.dashboardInstance.searchComponent._openInMode('?'));
-        await expect.poll(() => query(page)).toBe('?B ');
+        await page.evaluate(() => window.dashboardInstance.searchComponent._openInMode('!'));
+        await expect.poll(() => query(page)).toBe('!B ');
     });
 });

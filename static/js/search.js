@@ -215,7 +215,7 @@ class SearchComponent {
                 if (e.isComposing) return;
                 const raw = e.target.value;
                 const inCommandMode = this.currentQuery.startsWith(':');
-                const inFinderMode = this.currentQuery.startsWith('?');
+                const inFinderMode = this.currentQuery.startsWith('!');
                 const inGlobalMode = this.currentQuery.startsWith('@');
                 // Past the space a finder query is search text, so it keeps
                 // its case and its punctuation -- the same split the key
@@ -225,7 +225,7 @@ class SearchComponent {
                 const shouts = (inFinderMode && !inFinderText) || inGlobalMode;
                 const value = shouts ? raw.toUpperCase() : raw;
                 const allowedChar = (ch) => (shouts
-                    ? /^[A-Z0-9: \?/#\.\-_]$/.test(ch)
+                    ? /^[A-Z0-9: !/#\.\-_]$/.test(ch)
                     : SearchComponent.isTypedChar(ch));
                 // The field's value is what was typed. A paste, a swipe-typed
                 // word or an autocorrection inserts several characters at
@@ -379,7 +379,7 @@ class SearchComponent {
         if (findersButton) {
             findersButton.addEventListener('click', () => {
                 this._openVia = 'button';
-                this._openInMode('?');
+                this._openInMode('!');
             });
         }
 
@@ -447,7 +447,7 @@ class SearchComponent {
      * than a mode, has no pill in the switch, and reads as a variant of search
      * rather than as a fourth place to be.
      */
-    static MODE_ENTRY = { '>': '', ':': ':', '?': '?', '/': 'tag:', '*': '*', '=': '=' };
+    static MODE_ENTRY = { '>': '', ':': ':', '!': '!', '/': 'tag:', '*': '*', '=': '=' };
 
     static WEB_RECENT_KEY = 'nextdash.webSearchRecent';
 
@@ -484,15 +484,15 @@ class SearchComponent {
      */
     _isAtModeEntry() {
         const q = this.currentQuery;
-        if (q === '' || q === ':' || q === '?') return true;
+        if (q === '' || q === ':' || q === '!') return true;
         if (q === SearchComponent.TAG_MODE_QUERY || q === SearchComponent.RECENT_MODE_QUERY) return true;
         if (q === SearchComponent.ASSISTANT_MODE_QUERY) return true;
-        return /^\?[A-Za-z0-9]*\s?$/.test(q) && q !== '?';
+        return /^![A-Za-z0-9]*\s?$/.test(q) && q !== '!';
     }
 
     /** The query a mode key opens its mode with. */
     _modeEntryQuery(key) {
-        return key === '?' ? this.finderModeQuery() : (SearchComponent.MODE_ENTRY[key] ?? '');
+        return key === '!' ? this.finderModeQuery() : (SearchComponent.MODE_ENTRY[key] ?? '');
     }
 
     /** Whether the query is in the assistant mode: it starts with `=`. */
@@ -761,10 +761,10 @@ class SearchComponent {
     finderModeQuery() {
         const finders = this.findersComponent?.finders;
         if (!Array.isArray(finders) || finders.length !== 1) {
-            return '?';
+            return '!';
         }
         const only = finders[0];
-        return only?.shortcut ? `?${String(only.shortcut).toUpperCase()} ` : '?';
+        return only?.shortcut ? `!${String(only.shortcut).toUpperCase()} ` : '!';
     }
 
     /** Open the panel on the list of what was opened last. */
@@ -790,7 +790,7 @@ class SearchComponent {
             this.selectedMatchIndex = 0;
         }
         this.commandsComponent.resetState();
-        this.currentQuery = prefix === '?' ? this.finderModeQuery() : prefix;
+        this.currentQuery = prefix === '!' ? this.finderModeQuery() : prefix;
         this._beginSearchSession();
         this.updateSearch();
         this.renderSearchMatches();
@@ -810,7 +810,7 @@ class SearchComponent {
     _trackModeOpen() {
         const mode = this.currentQuery.startsWith(':')
             ? 'commands'
-            : this.currentQuery.startsWith('?')
+            : this.currentQuery.startsWith('!')
                 ? 'finders'
                 : this._isRecentMode()
                     ? 'recents'
@@ -955,7 +955,7 @@ class SearchComponent {
     _isInboxLauncherKey(e, key) {
         return key === '>'
             || key === ':'
-            || key === '?'
+            || key === '!'
             || e.key === '@'
             || e.key === '='
             || e.key === ','
@@ -1213,7 +1213,7 @@ class SearchComponent {
          * the key is advertised was the one place it did nothing. The sheet
          * opens over the panel; the panel keeps whatever was typed.
          */
-        if (this.searchActive && e.key === '!' && this._isAtModeEntry()) {
+        if (this.searchActive && e.key === '?' && this._isAtModeEntry()) {
             e.preventDefault();
             e.stopPropagation();
             window.dashboardInstance?.showKeyboardCheatSheet?.();
@@ -1274,7 +1274,7 @@ class SearchComponent {
          * Only past the space: before it, every character is part of the
          * shortcut, and the launchers still have their say there.
          */
-        if (this.currentQuery.startsWith('?') && this.currentQuery.includes(' ')
+        if (this.currentQuery.startsWith('!') && this.currentQuery.includes(' ')
                 && e.key.length === 1 && SearchComponent.isTypedChar(e.key)) {
             e.preventDefault();
             this.addToQuery(e.key);
@@ -1385,10 +1385,10 @@ class SearchComponent {
         // searched for literally. Typing "jordibrw.nl" looked for
         // "??JORDIBRW.NL". You are already in finders; the key has nothing left
         // to do, so it does nothing.
-        if (key === '?') {
+        if (key === '!') {
             e.preventDefault();
-            if (!this.currentQuery.startsWith('?')) {
-                this.addToQuery('?');
+            if (!this.currentQuery.startsWith('!')) {
+                this.addToQuery('!');
                 // Still through addToQuery for the `?` itself: it starts the
                 // search session, resets the command state and arms the
                 // shortcut open. Only the prompt it leaves behind is replaced,
@@ -1397,7 +1397,7 @@ class SearchComponent {
                 // addToQuery swallows a lone space after `?` (an empty
                 // shortcut matches no finder).
                 const entry = this.finderModeQuery();
-                if (entry !== '?' && this.currentQuery.endsWith('?')) {
+                if (entry !== '!' && this.currentQuery.endsWith('!')) {
                     this.currentQuery = `${this.currentQuery.slice(0, -1)}${entry}`;
                     this._scheduleUpdateSearch();
                 }
@@ -1440,7 +1440,7 @@ class SearchComponent {
         // Handle space key for commands, finders, global search, and normal-search filters
         if (key === ' ' && (
             this.currentQuery.startsWith(':')
-            || this.currentQuery.startsWith('?')
+            || this.currentQuery.startsWith('!')
             || this.currentQuery.startsWith('@')
             || (this.searchActive && this._isNormalSearchMode())
         )) {
@@ -1510,7 +1510,7 @@ class SearchComponent {
         // after that space rather than as the shortcut letter it was meant to
         // be -- "?" then Space then "jordi" searched for "? jordi" and always
         // found nothing.
-        if (key === ' ' && this.currentQuery.startsWith('?') && !this.currentQuery.slice(1).trim()) {
+        if (key === ' ' && this.currentQuery.startsWith('!') && !this.currentQuery.slice(1).trim()) {
             return;
         }
         this.currentQuery += key;
@@ -1537,7 +1537,7 @@ class SearchComponent {
             if (this.findersComponent.shortcuts.has(trimmed.toLowerCase())) {
                 this.currentQuery = `?${trimmed.toUpperCase()} `;
             }
-        } else if (key !== ' ' && this.currentQuery.startsWith('?')) {
+        } else if (key !== ' ' && this.currentQuery.startsWith('!')) {
             this.currentQuery = this.findersComponent.completeShortcutWithSpace(this.currentQuery);
         }
 
@@ -1815,7 +1815,7 @@ class SearchComponent {
 
     _isNormalSearchMode() {
         return !this.currentQuery.startsWith(':')
-            && !this.currentQuery.startsWith('?')
+            && !this.currentQuery.startsWith('!')
             && !this.currentQuery.startsWith('@')
             && !this._isAssistantMode();
     }
@@ -2014,7 +2014,7 @@ class SearchComponent {
         // A command's list (`:tag work`, `:stale 30`) or the recents is not a
         // search: kept, "work" would rank that bookmark first for good.
         const raw = String(this.currentQuery || '').trim();
-        if (raw.startsWith(':') || raw.startsWith('?') || raw === SearchComponent.RECENT_MODE_QUERY) return;
+        if (raw.startsWith(':') || raw.startsWith('!') || raw === SearchComponent.RECENT_MODE_QUERY) return;
         const url = bookmark && bookmark.url;
         const q = this.normalizePickQuery(this.currentQuery);
         if (!url || !q) return;
@@ -2637,7 +2637,7 @@ class SearchComponent {
              */
             // Handle commands
             this.searchMatches = this.commandsComponent.handleCommand(this.currentQuery);
-        } else if (this.currentQuery.startsWith('?')) {
+        } else if (this.currentQuery.startsWith('!')) {
             // Handle finders
             this.searchMatches = this.findersComponent.handleQuery(this.currentQuery);
         } else if (this._isAssistantMode()) {
@@ -2781,7 +2781,7 @@ class SearchComponent {
             if (String(query || '').trim()) this.lastNonCommandQuery = this.currentQuery;
         }
 
-        if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?') && !this._isAssistantMode() && this.currentQuery.length > 0) {
+        if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('!') && !this._isAssistantMode() && this.currentQuery.length > 0) {
             const raw = this._stripModeSwitchPrefix(this.currentQuery);
             const filterAutocompleteMatches = this._isCompleteFilterQuery(raw)
                 ? []
@@ -2875,7 +2875,7 @@ class SearchComponent {
         { id: 'all', prefix: null, labelKey: 'dashboard.scopeAll', fallback: 'everything' },
         { id: 'bookmarks', prefix: '', labelKey: 'dashboard.scopeBookmarks', fallback: 'bookmarks' },
         { id: 'commands', prefix: ':', labelKey: 'dashboard.commandsLabel', fallback: 'commands' },
-        { id: 'finders', prefix: '?', labelKey: 'dashboard.findersLabel', fallback: 'finders' },
+        { id: 'finders', prefix: '!', labelKey: 'dashboard.findersLabel', fallback: 'finders' },
         { id: 'tags', prefix: '/', labelKey: 'dashboard.tagsLabel', fallback: 'tags' },
         { id: 'recent', prefix: '*', labelKey: 'dashboard.headerRecentsLabel', fallback: 'recents' },
     ];
@@ -2893,7 +2893,7 @@ class SearchComponent {
         const q = this.currentQuery || '';
         if (this._isRecentMode()) return 'recent';
         if (q.startsWith(':')) return 'commands';
-        if (q.startsWith('?')) return 'finders';
+        if (q.startsWith('!')) return 'finders';
         if (this._isAssistantMode(q)) return 'assistant';
         if (q.startsWith(SearchComponent.TAG_MODE_QUERY)) return 'tags';
         return 'all';
@@ -2952,7 +2952,7 @@ class SearchComponent {
         if (q.startsWith(SearchComponent.TAG_MODE_QUERY)) {
             return q.slice(SearchComponent.TAG_MODE_QUERY.length).trim();
         }
-        if (q.startsWith('?')) {
+        if (q.startsWith('!')) {
             // Before the space a finder query is its shortcut, after it the text.
             const rest = q.slice(1);
             const space = rest.indexOf(' ');
@@ -3539,7 +3539,7 @@ class SearchComponent {
         if (q.startsWith(':')) {
             mode = 'command';
             label = this.language ? this.language.t('dashboard.searchModeCommand', 'CMD') : 'CMD';
-        } else if (q.startsWith('?')) {
+        } else if (q.startsWith('!')) {
             mode = 'finder';
             label = this.language ? this.language.t('dashboard.searchModeFinder', 'FIND') : 'FIND';
         } else if (this._isAssistantMode(q)) {
@@ -3570,7 +3570,7 @@ class SearchComponent {
         // to press when a single-letter bookmark shortcut would fire instead.
         const chevron = document.querySelector('.search-chevron');
         if (chevron) {
-            const KEYS = { search: '>', command: ':', finder: '?', global: '@', fuzzy: '/', tag: '/', recent: '*', assistant: '=' };
+            const KEYS = { search: '>', command: ':', finder: '!', global: '@', fuzzy: '/', tag: '/', recent: '*', assistant: '=' };
             chevron.textContent = KEYS[mode] || '>';
             chevron.dataset.mode = mode;
         }
@@ -3653,7 +3653,7 @@ class SearchComponent {
              * match against because no finder exists yet. Saying so, with the
              * way to fix it, beats "No matches found ?".
              */
-            if (this.currentQuery.startsWith('?')
+            if (this.currentQuery.startsWith('!')
                 && !this.findersComponent?.finders?.length) {
                 const t = (key, fallback) => (this.language ? (this.language.t(key) || fallback) : fallback);
 
@@ -4464,7 +4464,7 @@ class SearchComponent {
     /** The query as the web would get it, or '' where the panel is not searching. */
     _webQuery() {
         const raw = String(this.currentQuery || '').trim();
-        if (!raw || raw.startsWith(':') || raw.startsWith('?') || this._isAssistantMode(raw)) return '';
+        if (!raw || raw.startsWith(':') || raw.startsWith('!') || this._isAssistantMode(raw)) return '';
         const text = raw.replace(/^[/>*@]+/, '').trim();
         // A filter (tag mode's "tag:", "status:dead", a half-typed
         // "category:") is a question for this dashboard, not for the web.
@@ -4741,7 +4741,7 @@ class SearchComponent {
 
     recordSearchHistory(query) {
         const cleanedQuery = (query || '').trim();
-        if (!cleanedQuery || cleanedQuery.startsWith(':') || cleanedQuery.startsWith('?') || cleanedQuery.startsWith('=') || cleanedQuery === '/') {
+        if (!cleanedQuery || cleanedQuery.startsWith(':') || cleanedQuery.startsWith('!') || cleanedQuery.startsWith('=') || cleanedQuery === '/') {
             return;
         }
         const normalized = cleanedQuery.toLowerCase();

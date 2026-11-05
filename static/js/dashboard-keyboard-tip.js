@@ -242,7 +242,7 @@
         tipFindShortcutMode: c('behavior/search'),
         tipFindGridShortcut: p(''),
         tipFindAllPages: p('@'),
-        tipFindFinders: p('?'),
+        tipFindFinders: p('!'),
         tipFindTagCloud: f('tagcloud'),
         tipFindTagView: v('tags'),
         tipFindTagColour: c('bookmarks/tags'),

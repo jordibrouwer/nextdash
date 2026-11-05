@@ -156,7 +156,7 @@ test('in the header the keys leave the bar alone', async ({ page }) => {
 test('switched off draws no actions, and their keys still work', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'bottom', actionBarEnabled: false });
     await expect(bar(page)).toBeHidden();
-    await page.locator('body').press('!');
+    await page.locator('body').press('?');
     await expect(page.locator('.keyboard-cheat-sheet-modal')).toBeVisible();
 });
 
@@ -188,7 +188,7 @@ test('the key chips switch off in config, and the keys keep working', async ({ p
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await expect(page.locator('#search-button .search-button-icon')).toBeHidden();
-    await page.locator('body').press('!');
+    await page.locator('body').press('?');
     await expect(page.locator('.keyboard-cheat-sheet-modal')).toBeVisible();
 });
 

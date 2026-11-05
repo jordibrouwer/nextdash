@@ -265,7 +265,7 @@ test('a switched-off action is in neither place, and its key still works', async
     await expect(page.locator('.header-action-menu')).toHaveCount(0);
 
     // The keys never cared where the button was, or whether there is one.
-    await page.keyboard.press('!');
+    await page.keyboard.press('?');
     await expect(page.locator('.cheat-sheet-group').first(), 'the key stopped working').toBeVisible();
 });
 

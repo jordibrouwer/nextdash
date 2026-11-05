@@ -91,17 +91,17 @@ for (const view of VIEWS) {
 
     test('! opens the shortcut sheet', async ({ page }) => {
       await openView(page, view);
-      await page.keyboard.press('!');
+      await page.keyboard.press('?');
       await expect(page.locator('#cheat-sheet-filter')).toBeVisible();
     });
 
     {
       test('? opens the finders', async ({ page }) => {
         await openView(page, view);
-        await page.keyboard.press('?');
+        await page.keyboard.press('!');
         await expect(searchOpen(page)).toBeVisible();
         // The last finder used may be filled in after the prefix.
-        await expect(query(page)).toHaveText(/^\?/);
+        await expect(query(page)).toHaveText(/^!/);
       });
     }
   });

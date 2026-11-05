@@ -56,7 +56,7 @@ test.describe('dashboard overlay focus', () => {
 
     test('cheat sheet shortcut moves focus into modal', async ({ page }) => {
         await closeDashboardOverlays(page);
-        await page.keyboard.press('!');
+        await page.keyboard.press('?');
         await expect(page.locator('#app-modal.show')).toBeVisible({ timeout: 5000 });
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
         await page.evaluate(() => {
@@ -74,7 +74,7 @@ test.describe('dashboard overlay focus', () => {
 
     test('cheat sheet keeps tab focus trapped and supports keyboard scrolling', async ({ page }) => {
         await closeDashboardOverlays(page);
-        await page.keyboard.press('!');
+        await page.keyboard.press('?');
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
         await page.evaluate(() => {
             window.DashboardFeaturePromos?.dismissOpen?.();
@@ -127,7 +127,7 @@ test.describe('dashboard overlay focus', () => {
 
     test('cheat sheet filter shows empty state when nothing matches', async ({ page }) => {
         await closeDashboardOverlays(page);
-        await page.keyboard.press('!');
+        await page.keyboard.press('?');
         await expect(page.locator('#cheat-sheet-filter')).toBeVisible({ timeout: 5000 });
         await page.fill('#cheat-sheet-filter', 'zzznomatchzzz');
         await expect(page.locator('#cheat-sheet-no-results')).toBeVisible();
@@ -137,7 +137,7 @@ test.describe('dashboard overlay focus', () => {
 
     test('cheat sheet selects the focused row with Space', async ({ page }) => {
         await closeDashboardOverlays(page);
-        await page.keyboard.press('!');
+        await page.keyboard.press('?');
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
         await page.evaluate(() => {
             window.DashboardFeaturePromos?.dismissOpen?.();

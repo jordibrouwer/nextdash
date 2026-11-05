@@ -18,7 +18,7 @@ test.describe('the cheat sheet covers widgets', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        await page.keyboard.press('!');
+        await page.keyboard.press('?');
         const sheet = page.locator('.keyboard-cheat-sheet');
         await expect(sheet).toBeVisible({ timeout: 15_000 });
 

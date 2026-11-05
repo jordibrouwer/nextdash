@@ -20,11 +20,11 @@ class DashboardToolbar {
             { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['+'] },
             { id: 'search-button', labelKey: 'dashboard.tooltipSearch', keys: ['>'] },
             { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
-            { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
+            { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['!'] },
             { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
             { id: 'tag-cloud-toggle-btn', labelKey: 'dashboard.tagCloudToggleAria', keys: ['/'] },
             { id: 'collapse-all-button', labelKey: 'dashboard.collapseAllLabel', keys: ['.'] },
-            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] },
+            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['?', 'F1'] },
             // No key: the star is a button you click, and a chip reading "★"
             // told people to press a key that does not exist.
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] },
@@ -183,7 +183,7 @@ class DashboardToolbar {
                 d.toggleRecentBookmarksModal();
             }
 
-            if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '!') {
+            if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '?') {
                 if (d.isModalOpen()) {
                     return;
                 }

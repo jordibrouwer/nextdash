@@ -157,7 +157,7 @@ test('06 context menu', async ({ page }) => {
 test('07 cheat sheet', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await page.keyboard.press('!');
+    await page.keyboard.press('?');
     await page.locator('#app-modal.show .keyboard-cheat-sheet-modal').waitFor();
     await page.waitForTimeout(600);
     await crop(page, modal(page), '07-cheat-sheet.jpg');
@@ -728,7 +728,7 @@ test('07 focus and selection', async ({ page }) => {
 test('08 finders', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await page.keyboard.press('?');
+    await page.keyboard.press('!');
     await page.waitForTimeout(800);
     await snap(page, page.locator('#shortcut-search .search-container'), '08-finders.jpg', { pad: 4, keepFocus: true });
 });

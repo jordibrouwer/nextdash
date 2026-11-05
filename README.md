@@ -475,7 +475,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Search and keyboard**
 
-- Everything is reachable from the keyboard: one rule for the shortcuts and a searchable cheat sheet on `!`. *[Manual §7](MANUAL.md#7-keyboard)*
+- Everything is reachable from the keyboard: one rule for the shortcuts and a searchable cheat sheet on `?`. *[Manual §7](MANUAL.md#7-keyboard)*
 - A key legend under the grid keeps the main keys in sight (`Shift + H` switches it off), a dashboard tour of ten steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
 - One panel for search, commands and finders, plus search from the browser's address bar. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - **Usually now** puts the bookmarks you tend to open around this time of day at the top of the empty search panel, and `→` on a result unfolds what you can do with it: open, open in a new tab, edit, copy the address, show in the list, move. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*

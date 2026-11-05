@@ -150,7 +150,7 @@ const withWikipedia = {
 test('finders 1: the finders tab', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await page.keyboard.press('?');
+    await page.keyboard.press('!');
     await page.locator('#shortcut-search .search-container').waitFor();
     // Pacing for the capture, not a condition: the list finishes drawing before the frame is taken.
     await page.waitForTimeout(800);
@@ -173,7 +173,7 @@ test('finders 2: Config, Finders', async ({ page }) => {
 test('finders 3: ?W raspberry pi', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
-    await page.keyboard.press('?');
+    await page.keyboard.press('!');
     await page.locator('#shortcut-search .search-container').waitFor();
     await page.keyboard.type('W raspberry pi', { delay: 30 });
     // Pacing for the capture, not a condition: the list narrows before the frame is taken.

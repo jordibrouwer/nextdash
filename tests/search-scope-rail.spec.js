@@ -150,7 +150,7 @@ test('the commands scope opens on its headings, closed', async ({ page }) => {
 
 test('! opens the cheat sheet from inside the panel', async ({ page }) => {
     await openSearch(page);
-    await page.keyboard.press('!');
+    await page.keyboard.press('?');
     await expect(page.locator('.cheat-sheet-group').first()).toBeVisible();
 
     const sheet = await page.evaluate(() => ({

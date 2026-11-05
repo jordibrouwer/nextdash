@@ -40,7 +40,7 @@ async function openFinders(page) {
         fc.finders = finders;
         fc.shortcuts = new Map(finders.map((finder) => [finder.shortcut, finder]));
     });
-    await page.keyboard.press('?');
+    await page.keyboard.press('!');
     await expect
         .poll(() => page.evaluate(() => Boolean(window.dashboardInstance?.searchComponent?.isActive?.())),
             { timeout: 15_000 })
@@ -54,11 +54,11 @@ const currentQuery = (page) => page.evaluate(
 test.describe('finders mode ignores a leading space', () => {
     test('space right after ? does not enter the query', async ({ page }) => {
         await openFinders(page);
-        expect(await currentQuery(page)).toBe('?');
+        expect(await currentQuery(page)).toBe('!');
 
         await page.keyboard.press('Space');
         // Nothing to complete a shortcut from yet, so the space is not typed.
-        expect(await currentQuery(page)).toBe('?');
+        expect(await currentQuery(page)).toBe('!');
     });
 
     test('typing after that space reads as finder letters, not as text after it', async ({ page }) => {
@@ -71,7 +71,7 @@ test.describe('finders mode ignores a leading space', () => {
         // keystrokes as they arrive (shortcuts are stored and shown that way),
         // so the letters themselves are as typed by the keyboard handler, not
         // by this test.
-        expect(await currentQuery(page)).toBe('?JORDI');
+        expect(await currentQuery(page)).toBe('!JORDI');
     });
 
     test('a real finder shortcut still completes with its trailing space', async ({ page }) => {
@@ -84,6 +84,6 @@ test.describe('finders mode ignores a leading space', () => {
         // gets its trailing space.
         await page.keyboard.type(shortcut);
 
-        expect(await currentQuery(page)).toBe(`?${shortcut.toUpperCase()} `);
+        expect(await currentQuery(page)).toBe(`!${shortcut.toUpperCase()} `);
     });
 });

@@ -102,7 +102,7 @@ test.describe('dashboard tour', () => {
             'Pages, categories, bookmarks',
             'With the mouse',
             'Start typing',
-            'Two keys to open, Shift to act',
+            'Two keys to open, one letter to act',
             'Edit mode: change it right here',
             'Adding: paste, + or the extension',
             'Tags: the cloud and a view per tag',

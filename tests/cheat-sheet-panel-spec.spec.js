@@ -26,7 +26,7 @@ async function openCheatSheet(page, depth) {
     if (depth) await page.evaluate((d) => document.body.setAttribute('data-depth', d), depth);
 
     // Through the key someone presses, not through the renderer.
-    await page.keyboard.press('Shift+Digit1');
+    await page.keyboard.press('Shift+Slash');
     await page.waitForSelector('.keyboard-cheat-sheet', { timeout: 20_000 });
 }
 
@@ -51,7 +51,7 @@ test.describe('the cheat sheet panel', () => {
         await openCheatSheet(page);
 
         const chip = await page.locator('.cheat-sheet-modal-key').textContent();
-        expect((chip || '').trim(), 'the header does not name the key that opens it').toBe('!');
+        expect((chip || '').trim(), 'the header does not name the key that opens it').toBe('?');
 
         await page.locator('.cheat-sheet-modal-close').click();
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toHaveCount(0);

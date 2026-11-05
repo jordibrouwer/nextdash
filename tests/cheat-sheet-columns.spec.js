@@ -21,7 +21,7 @@ async function openSheet(page, view = '') {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');
     }
     // Through the key someone presses, not through the renderer.
-    await page.keyboard.press('Shift+Digit1');
+    await page.keyboard.press('Shift+Slash');
     await page.waitForSelector('.keyboard-cheat-sheet .cheat-sheet-group', { timeout: 20_000 });
 }
 

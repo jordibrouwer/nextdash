@@ -867,7 +867,7 @@ test.describe('the comma opens config', () => {
         // And it is rendered, not just present in the data. keysToHtml splits
         // the combo into separate <kbd> elements, so match the row by its
         // description and assert the keys cell shows the comma.
-        await page.keyboard.press('!');
+        await page.keyboard.press('?');
         // Rows show only what they do; the keys appear in the dock once chosen.
         const row = page.locator('.cheat-sheet-row')
             .filter({ hasText: found[0] }).first();

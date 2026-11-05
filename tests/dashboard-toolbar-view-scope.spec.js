@@ -119,7 +119,7 @@ test.describe('the header actions, and what the keys do inside a view', () => {
 
     test('! still opens the keyboard cheat sheet inside a view', async ({ page }) => {
         await openConfig(page);
-        await page.keyboard.press('!');
+        await page.keyboard.press('?');
         await expect(page.locator('.keyboard-cheat-sheet')).toBeVisible({ timeout: 10_000 });
     });
 

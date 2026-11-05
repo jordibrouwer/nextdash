@@ -21,8 +21,8 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * modifier.
  */
 
-const KEY = { '>': 'Shift+Period', ':': 'Shift+Semicolon', '?': 'Shift+Slash' };
-const MODE = { '>': 'search', ':': 'command', '?': 'finder' };
+const KEY = { '>': 'Shift+Period', ':': 'Shift+Semicolon', '!': 'Shift+Digit1' };
+const MODE = { '>': 'search', ':': 'command', '!': 'finder' };
 
 async function dashboard(page) {
     await page.setViewportSize({ width: 1400, height: 1000 });
@@ -52,8 +52,8 @@ async function openIn(page, key) {
 }
 
 test.describe('the command surface switches mode on a key', () => {
-    for (const from of ['>', ':', '?']) {
-        for (const to of ['>', ':', '?']) {
+    for (const from of ['>', ':', '!']) {
+        for (const to of ['>', ':', '!']) {
             if (from === to) continue;
             test(`${from} then ${to} lands in ${MODE[to]}`, async ({ page }) => {
                 await dashboard(page);
@@ -90,7 +90,7 @@ test.describe('past the entry a mode key is a character', () => {
         await openIn(page, ':');
 
         await page.keyboard.type('new https://example.com/a');
-        await page.keyboard.press(KEY['?']);
+        await page.keyboard.press('Shift+Slash');
         await page.keyboard.type('b=1');
 
         // Every one of these was lost before: the first slash was read as the
@@ -116,12 +116,12 @@ test.describe('past the entry a mode key is a character', () => {
 
     test('a finder keeps its terms when a mode key is one of them', async ({ page }) => {
         await dashboard(page);
-        await openIn(page, '?');
+        await openIn(page, '!');
 
         await page.keyboard.type('a');
         await page.keyboard.press(KEY['>']);
         await page.keyboard.type('b');
 
-        await expect.poll(() => state(page).then((s) => s.query)).toBe('?B a>b');
+        await expect.poll(() => state(page).then((s) => s.query)).toBe('!B a>b');
     });
 });

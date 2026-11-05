@@ -79,7 +79,7 @@ test('a panel does not inherit the previous one\'s header', async ({ page }) => 
     await page.keyboard.press('Escape');
     await expect(page.locator('#app-modal.show')).toHaveCount(0);
 
-    await page.keyboard.press('Shift+Digit1');
+    await page.keyboard.press('Shift+Slash');
     await page.waitForSelector('#app-modal.show .keyboard-cheat-sheet-modal', { timeout: 20_000 });
     await page.keyboard.press('Escape');
     await expect(page.locator('#app-modal.show')).toHaveCount(0);

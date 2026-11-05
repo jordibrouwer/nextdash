@@ -254,7 +254,7 @@ function openPace(page, selector) {
 
 test.describe('modals', () => {
     const MODALS = [
-        { name: 'the cheat sheet', key: '!', panel: '.modal-overlay.show .modal' },
+        { name: 'the cheat sheet', key: '?', panel: '.modal-overlay.show .modal' },
         { name: 'the bookmark form', key: '+', panel: '.bookmark-form-modal.show .bookmark-form-modal-dialog' },
         { name: 'the tag cloud', key: '/', panel: '#tag-cloud-modal' },
     ];
@@ -274,7 +274,7 @@ test.describe('modals', () => {
     test('with Animations in views and modals off, a modal is simply there', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => document.body.classList.add('no-view-animations'));
-        await page.locator('body').press('!');
+        await page.locator('body').press('?');
         await expect(page.locator('.modal-overlay.show .modal').first()).toBeVisible();
         expect(await openTransition(page, '.modal-overlay.show .modal')).toBeNull();
     });
