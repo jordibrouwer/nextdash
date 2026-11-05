@@ -84,6 +84,24 @@ async function waitForServer(baseURL, timeoutMs = 60_000) {
  * @returns {Promise<{ baseURL: string, stop: () => Promise<void> }>}
  */
 async function startWorkerServer(workerIndex, env) {
+    // freePort closes its probe before the server binds, so another process
+    // can take the port in between; the server then dies on "address already
+    // in use" and every test of that worker fails. That one failure is worth a
+    // new port -- anything else the server exits on is still thrown at once.
+    for (let attempt = 1; ; attempt += 1) {
+        try {
+            return await startWorkerServerOnce(workerIndex, env);
+        } catch (error) {
+            if (attempt >= 3 || !(/** @type {any} */ (error)).portTaken) throw error;
+        }
+    }
+}
+
+/**
+ * @param {number} workerIndex
+ * @param {Record<string, string>} env
+ */
+async function startWorkerServerOnce(workerIndex, env) {
     const port = await freePort();
     const baseURL = `http://localhost:${port}`;
     const dataDir = path.join(os.tmpdir(), `nextdash-e2e-w${workerIndex}-${process.pid}`);
@@ -104,9 +122,13 @@ async function startWorkerServer(workerIndex, env) {
     child.stderr.on('data', (chunk) => { output += chunk.toString().slice(0, 2000); });
 
     const exited = new Promise((_, reject) => {
-        child.on('exit', (code) => {
+        // 'close', not 'exit': 'exit' can fire before the last of stderr is
+        // read, and the bind error is the last line the server writes.
+        child.on('close', (code) => {
             if (code !== 0 && code !== null) {
-                reject(new Error(`worker ${workerIndex} server exited with ${code}:\n${output.slice(-1000)}`));
+                const error = new Error(`worker ${workerIndex} server exited with ${code}:\n${output.slice(-1000)}`);
+                /** @type {any} */ (error).portTaken = /address already in use/i.test(output);
+                reject(error);
             }
         });
     });
