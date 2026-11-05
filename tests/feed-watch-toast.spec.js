@@ -3,9 +3,9 @@ const { test, expect } = require('./fixtures');
 const { startStubSite, installWithBookmark, openDashboard, keyOf, newsItem, headers } = require('./helpers/feed-watch');
 
 /**
- * Telling the reader: one merged toast, a count in the tab title, and ?news=1
- * (where a push notification lands). The watch routes are stubbed; two
- * bookmarks have news, 2 items on one and 1 on the other.
+ * Telling the reader: one merged row in the notifications bell, a count in the
+ * tab title, and ?news=1 (where a push notification lands). The watch routes
+ * are stubbed; two bookmarks have news, 2 items on one and 1 on the other.
  */
 let site;
 test.beforeEach(async ({ request }) => {
@@ -20,6 +20,11 @@ test.beforeEach(async ({ request }) => {
 test.afterEach(async () => { await site.close(); });
 
 const toast = (page) => page.locator('#app-notification.show');
+const bellRow = (page) => page.locator('.notification-bell-row[data-bell-id="feed-watch"]');
+const openBell = async (page) => {
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
+};
 const modal = (page) => page.locator('#app-modal .modal.feed-news-modal');
 
 async function stubTwoSites(page) {
@@ -39,11 +44,13 @@ async function stubTwoSites(page) {
     }));
 }
 
-test('news on two sites gives one merged toast whose click opens the news modal', async ({ page }) => {
+test('news on two sites gives one merged bell row whose Read opens the news modal', async ({ page }) => {
     await stubTwoSites(page);
     await openDashboard(page);
-    await expect(toast(page)).toContainText('2 sites have news');
-    await toast(page).locator('.app-notification-action').click();
+    await openBell(page);
+    await expect(bellRow(page)).toHaveCount(1);
+    await expect(bellRow(page)).toContainText('3 new from 2 watched feeds');
+    await bellRow(page).getByRole('button', { name: 'Read', exact: true }).click();
     await expect(modal(page)).toBeVisible();
     // It opens on the index of what is new.
     await expect(modal(page).locator('.feed-news-entry')).toHaveCount(3);
@@ -51,15 +58,16 @@ test('news on two sites gives one merged toast whose click opens the news modal'
     await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 3');
 });
 
-test('the toast is not repeated for news already announced', async ({ page }) => {
+test('news never makes a toast, and a reload brings back the one row', async ({ page }) => {
     await stubTwoSites(page);
     await openDashboard(page);
-    await expect(toast(page)).toContainText('2 sites have news');
+    await openBell(page);
+    await expect(bellRow(page)).toHaveCount(1);
     await page.reload();
     await openDashboard(page);
-    // No toast should appear: a fixed wait, so a late one would show up before the zero count is read.
-    await page.waitForTimeout(1500);
-    await expect(page.locator('#app-notification.show', { hasText: 'sites have news' })).toHaveCount(0);
+    await openBell(page);
+    await expect(bellRow(page)).toHaveCount(1);
+    await expect(page.locator('#app-notification.show', { hasText: 'have news' })).toHaveCount(0);
 });
 
 test('the tab title shows the count and keeps it when the title is rewritten', async ({ page }) => {
@@ -99,7 +107,7 @@ async function markWhatsNew(page) {
     await markWhatsNewSeen(page);
 }
 
-test('opening the news again while it is open (?news=1, then the toast) leaves a working modal', async ({ page }) => {
+test('opening the news again while it is open (?news=1, then the bell Read) leaves a working modal', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await stubTwoSites(page);
@@ -107,9 +115,10 @@ test('opening the news again while it is open (?news=1, then the toast) leaves a
     await page.goto('/?news=1');
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await expect(modal(page)).toBeVisible();
-    // The toast still arrives for the same news; its Read opens the news again.
-    await expect(toast(page)).toContainText('2 sites have news');
-    await toast(page).locator('.app-notification-action').click();
+    // The bell still holds a row for the same news; its Read opens the news again.
+    await openBell(page);
+    await expect(bellRow(page)).toContainText('3 new from 2 watched feeds');
+    await page.evaluate(() => window.FeedWatchNews.open());
     await expect(modal(page).locator('.feed-news-entry')).toHaveCount(3);
     expect(await page.evaluate(() => window.FeedWatchNews.isOpen())).toBe(true);
     await modal(page).locator('.feed-news-entry').first().click();
@@ -141,20 +150,23 @@ test.describe('a muted feed', () => {
             : route.fulfill({ contentType: 'application/json', body: JSON.stringify(list) })));
     }
 
-    test('only the loud site is announced; the muted one still counts in the tab title', async ({ page }) => {
+    test('only the loud site is in the bell; the muted one still counts in the tab title', async ({ page }) => {
         await stubMuted(page, { a: { n: 2, muted: true }, b: { n: 1, muted: false } });
         await openDashboard(page);
-        await expect(toast(page)).toContainText('Site B has news');
+        await openBell(page);
+        await expect(bellRow(page)).toContainText('1 new from a watched feed');
         await expect(page).toHaveTitle(/^\(3\) /);
     });
 
-    test('muted news alone makes no toast, and its badge does not pulse', async ({ page }) => {
+    test('muted news alone makes no bell row, and its badge does not pulse', async ({ page }) => {
         await stubMuted(page, { a: { n: 2, muted: true }, b: null });
         await openDashboard(page);
         const badge = page.locator('.bookmark-news-badge').first();
         await expect(badge).toHaveText('2');
         await expect(badge).toHaveClass(/is-muted/);
         expect(await badge.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+        await openBell(page);
+        await expect(bellRow(page)).toHaveCount(0);
         await expect(toast(page)).toHaveCount(0);
     });
 });

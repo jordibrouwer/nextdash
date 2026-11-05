@@ -30,8 +30,12 @@ const badge = (page) => link(page).locator('.bookmark-news-badge');
 const pop = (page) => page.locator('.feed-news-pop');
 const modal = (page) => page.locator('#app-modal .modal.feed-news-modal');
 const newsButton = (page) => page.locator('#feed-news-btn');
-// On a phone there is no News button: the toast's Read is the way in.
-const openPaper = async (page) => { await page.locator('#app-notification.show').getByRole('button', { name: 'Read' }).tap(); };
+// On a phone there is no News button: the Read of the bell row is the way in.
+const openPaper = async (page) => {
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
+    await page.locator('.notification-bell-row[data-bell-id="feed-watch"]').getByRole('button', { name: 'Read', exact: true }).tap();
+};
 
 /** Watch the stub feed, publish `count` posts and let the server poll once. */
 async function publish(request, count) {
@@ -145,10 +149,10 @@ test.describe('on a touch screen, against the real server', () => {
         expect(await storedCount(request)).toBe(3);
     });
 
-    test('the toast opens the paper in one column, and Mark all read clears the badge', async ({ page, request }) => {
+    test('the bell row opens the paper in one column, and Mark all read clears the badge', async ({ page, request }) => {
         await publish(request, 3);
         await openDashboard(page);
-        // The News button is a desktop control; a phone opens the paper from the toast.
+        // The News button is a desktop control; a phone opens the paper from the bell row.
         await expect(newsButton(page)).toBeHidden();
         await openPaper(page);
         await expect(modal(page)).toBeVisible();

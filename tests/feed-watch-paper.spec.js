@@ -38,6 +38,12 @@ test.afterEach(async () => {
     await siteB.close();
 });
 
+const bellRow = (page) => page.locator('.notification-bell-row[data-bell-id="feed-watch"]');
+async function openBellRow(page) {
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
+    await bellRow(page).waitFor({ state: 'visible' });
+}
 const modal = (page) => page.locator('#app-modal .modal.feed-news-modal');
 const newsButton = (page) => page.locator('#feed-news-btn');
 const section = (page, name) => modal(page).locator('.feed-news-section', { has: page.locator('.feed-news-section-name', { hasText: name }) });
@@ -98,11 +104,11 @@ test('the News button opens one paper with a section per site, newest site first
     await expect.poll(() => page.evaluate(() => window.ScrollLock.isLocked())).toBe(false);
 });
 
-test('the toast Read opens the same paper', async ({ page }) => {
+test('the bell row Read opens the same paper', async ({ page }) => {
     await openDashboard(page);
-    const toast = page.locator('#app-notification.show');
-    await expect(toast).toContainText('2 sites have news');
-    await toast.locator('.app-notification-action').click();
+    await openBellRow(page);
+    await expect(bellRow(page)).toContainText('watched feeds');
+    await bellRow(page).getByRole('button', { name: 'Read', exact: true }).click();
     await expectTwoSections(page);
 });
 
@@ -237,9 +243,10 @@ test('returning to the tab does not cover another window', async ({ page, reques
 test('on a phone the sections stack, the controls are 44 px and nothing runs off the side', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await openDashboard(page);
-    // No News button on a phone: the toast's Read opens the paper.
+    // No News button on a phone: the bell row's Read opens the paper.
     await expect(newsButton(page)).toBeHidden();
-    await page.locator('#app-notification.show').getByRole('button', { name: 'Read' }).click();
+    await openBellRow(page);
+    await bellRow(page).getByRole('button', { name: 'Read', exact: true }).click();
     await expectTwoSections(page);
     const box = async (locator) => /** @type {{x:number,y:number,width:number,height:number}} */ (await locator.boundingBox());
     const toggle = await box(item(page, 'B one').locator('.feed-news-toggle'));

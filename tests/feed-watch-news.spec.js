@@ -222,7 +222,9 @@ test('the header switches between newspaper, two columns and one column, and the
     await modal(page).locator('[data-feed-news-view="paper"]').click();
     await modal(page).locator('[data-feed-news-close]').click();
     await page.setViewportSize({ width: 600, height: 900 });
-    await openFromCard(page);
+    // The hover card is off in the phone layout, so the news opens another way.
+    await page.evaluate(() => window.FeedWatchNews.open());
+    await expect(modal(page)).toBeVisible();
     await expect(modal(page).locator('[data-feed-news-view]')).toHaveCount(3);
     await expect(modal(page)).toHaveClass(/is-paper/);
     await modal(page).locator('[data-feed-news-view="wide"]').click();
