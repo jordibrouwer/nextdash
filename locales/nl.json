@@ -11536,10 +11536,14 @@
     "markRead": "Als gelezen markeren",
     "empty": "Er is nu niets voor jou.",
     "group_health": "Gezondheid",
+    "group_news": "Watch feeds",
     "group_cleanup": "Opruimen",
     "group_system": "Systeem",
     "group_privacy": "Privacy",
     "group_tips": "Tips",
-    "healthView": "Bekijken"
+    "healthView": "Bekijken",
+    "feedWatchOne": "{count} nieuw van een gevolgde feed",
+    "feedWatchMany": "{count} nieuw van {sites} gevolgde feeds",
+    "feedWatchRead": "Lezen"
   }
 }

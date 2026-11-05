@@ -11536,10 +11536,14 @@
     "markRead": "Als gelesen markieren",
     "empty": "Im Moment braucht dich nichts.",
     "group_health": "Zustand",
+    "group_news": "Watch-Feeds",
     "group_cleanup": "Aufräumen",
     "group_system": "System",
     "group_privacy": "Datenschutz",
     "group_tips": "Tipps",
-    "healthView": "Ansehen"
+    "healthView": "Ansehen",
+    "feedWatchOne": "{count} neu aus einem beobachteten Feed",
+    "feedWatchMany": "{count} neu aus {sites} beobachteten Feeds",
+    "feedWatchRead": "Lesen"
   }
 }

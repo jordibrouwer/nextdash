@@ -11536,10 +11536,14 @@
     "markRead": "Mark read",
     "empty": "Nothing needs you right now.",
     "group_health": "Health",
+    "group_news": "Watch feeds",
     "group_cleanup": "Clean up",
     "group_system": "System",
     "group_privacy": "Privacy",
     "group_tips": "Tips",
-    "healthView": "View"
+    "healthView": "View",
+    "feedWatchOne": "{count} new from a watched feed",
+    "feedWatchMany": "{count} new from {sites} watched feeds",
+    "feedWatchRead": "Read"
   }
 }

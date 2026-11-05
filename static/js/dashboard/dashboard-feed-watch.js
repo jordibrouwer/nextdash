@@ -5,7 +5,7 @@
  * other thing: a feed followed on purpose, whose newest entries the server keeps
  * with their words so they can be read here. This holds the server's answer for
  * the length of a page view and hands it to the row badge, the hover card, the
- * news modal and the toast.
+ * news modal and the bell.
  *
  * Opening the bookmark is what clears the news, as it is for Fresh: lastOpened is
  * already kept, and a second notion of "read" would be a second thing to get wrong.
@@ -156,7 +156,7 @@ class DashboardFeedWatch {
 
     /**
      * How many bookmarks have news. A muted feed counts in the badges and the
-     * paper but never calls out, so `loud` leaves it out for the toast.
+     * paper but never calls out, so `loud` leaves it out for the bell.
      */
     sitesWithNews({ loud = false } = {}) {
         let n = 0;
@@ -344,42 +344,6 @@ class DashboardFeedWatch {
      * Keep the window honest: re-evaluate when the tab comes back, and on a
      * slow tick (a fast one while the news modal is open, for its bar).
      */
-    /**
-     * Tell the reader once that watched feeds have news: one toast however many
-     * sites, and not again for news already announced on this device.
-     */
-    announce() {
-        if (document.visibilityState === 'hidden') return;
-        if (this._evaluateWindow() === 'closed' || this._evaluateWindow() === 'none') return;
-        const newest = this.newestNewAt({ loud: true });
-        let announced = 0;
-        try { announced = Number(localStorage.getItem('nextdash.feedWatchToasted')) || 0; } catch { /* no storage */ }
-        if (!(newest > announced)) return;
-        try { localStorage.setItem('nextdash.feedWatchToasted', String(newest)); } catch { /* no storage */ }
-
-        const d = this.dash;
-        const t = (key, fb, vars) => {
-            let text = d?.language?.t?.(key);
-            if (!text || text === key) text = fb;
-            Object.keys(vars || {}).forEach((name) => { text = text.replace(`{${name}}`, () => String(vars[name])); });
-            return text;
-        };
-        const sites = this.sitesWithNews({ loud: true });
-        let message;
-        if (sites === 1) {
-            const entry = [...this.byKey.entries()].find(([, e]) => Number(e.newCount) > 0 && e.muted !== true);
-            const name = (d?.allBookmarks || []).find((b) => this.key(b.url) === entry?.[0])?.name || entry?.[0] || '';
-            message = t('dashboard.feedWatchToastOne', '{site} has news', { site: name });
-        } else {
-            message = t('dashboard.feedWatchToastMany', '{n} sites have news', { n: sites });
-        }
-        d?.showNotification?.(message, 'info', {
-            actionLabel: t('dashboard.feedWatchRead', 'Read'),
-            onAction: () => { void window.FeedWatchNews?.open(); },
-            duration: 10000,
-        });
-    }
-
     start() {
         if (this._timer !== null) return;
         // The server polls each feed at most hourly; this only picks up what it
@@ -391,11 +355,7 @@ class DashboardFeedWatch {
             this._evaluateWindow();
             const open = this._phase === 'open' || this._phase === 'pending';
             window.FeedWatchTabBadge?.set(open ? this.totalNew() : 0);
-            // The first toast waits for the page to settle: the dashboard's own
-            // start-up messages cleared a toast shown while it was loading.
-            if (this._settled) this.announce();
         };
-        setTimeout(() => { this._settled = true; this.announce(); }, 1500);
         document.addEventListener('feedwatch:changed', refreshSignals);
         // ?news=1 is where a push notification lands.
         try {
@@ -409,7 +369,6 @@ class DashboardFeedWatch {
         document.addEventListener('visibilitychange', () => {
             this._evaluateWindow();
             if (document.visibilityState === 'visible') {
-                this.announce();
                 void this.load({ force: true });
             }
         });

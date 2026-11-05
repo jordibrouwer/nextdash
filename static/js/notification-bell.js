@@ -59,7 +59,7 @@
     let lastAnim = { kind: 'none', at: 0 };   // the last thing that drew the eye, for analytics
 
     const GROUP_FALLBACK = {
-        health: 'Health', cleanup: 'Clean up', system: 'System', privacy: 'Privacy', tips: 'Tips',
+        health: 'Health', news: 'Watch feeds', cleanup: 'Clean up', system: 'System', privacy: 'Privacy', tips: 'Tips',
     };
 
     /** Locale lookup with an English fallback, the way neighbouring panels do it. */
@@ -202,6 +202,9 @@
      * agreed, but never rings).
      */
     let announced = null;
+    // The last state announced per source: a row whose count only falls (one
+    // site opened, an item expired) has a new key but is not new news.
+    const lastAnnounced = new Map();
 
     function rowKey(r) {
         return `${r.source.id}|${r.entry.count}|${(r.entry.ids || []).join(',')}`;
@@ -209,17 +212,20 @@
 
     function noticeUnread(unread) {
         lastUnread = unread;
-        const keys = rows().filter((r) => r.visible && r.unread && (r.kind === 'urgent' || r.kind === 'quiet' || r.kind === 'tip')).map(rowKey);
+        const shown = rows().filter((r) => r.visible && r.unread && (r.kind === 'urgent' || r.kind === 'quiet' || r.kind === 'tip'));
+        const keys = shown.map(rowKey);
         if (announced === null) {
             announced = new Set(keys);
+            shown.forEach((r) => lastAnnounced.set(r.source.id, r.entry));
             if (unread > 0) {
                 shake();
                 pulse();
             }
             return;
         }
-        const fresh = keys.filter((k) => !announced.has(k));
+        const fresh = shown.filter((r) => !announced.has(rowKey(r)) && Model.isWorse(lastAnnounced.get(r.source.id), r.entry));
         keys.forEach((k) => announced.add(k));
+        shown.forEach((r) => lastAnnounced.set(r.source.id, r.entry));
         if (!fresh.length) return;
         shake();
         pulse();

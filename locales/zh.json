@@ -11536,10 +11536,14 @@
     "markRead": "标为已读",
     "empty": "目前没有需要你处理的事项。",
     "group_health": "健康",
+    "group_news": "关注的订阅源",
     "group_cleanup": "清理",
     "group_system": "系统",
     "group_privacy": "隐私",
     "group_tips": "提示",
-    "healthView": "查看"
+    "healthView": "查看",
+    "feedWatchOne": "来自已关注订阅源的 {count} 条新内容",
+    "feedWatchMany": "来自 {sites} 个已关注订阅源的 {count} 条新内容",
+    "feedWatchRead": "阅读"
   }
 }

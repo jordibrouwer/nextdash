@@ -32,9 +32,14 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
     const poll = await request.post('/api/feeds/watch/poll', { headers });
     expect(poll.ok()).toBe(true);
 
-    // 4 · The tab comes back to the front: one toast, a purple count, a count in the title.
+    // 4 · The tab comes back to the front: one bell row (no toast), a purple count, a count in the title.
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await expect(page.locator('#app-notification.show')).toContainText('Stub News has news');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.feedWatch.totalNew())).toBe(2);
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
+    await expect(page.locator('.notification-bell-row[data-bell-id="feed-watch"]')).toContainText('2 new from a watched feed');
+    await expect(page.locator('#app-notification.show')).not.toContainText('has news');
+    await page.evaluate(() => window.NotificationBell.close());
     const badge = row(page, 'Stub News').locator('.bookmark-news-badge');
     await expect(badge).toHaveText('2');
     await expect.poll(() => page.title()).toMatch(/^\(2\) /);

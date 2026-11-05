@@ -11536,10 +11536,14 @@
     "markRead": "Marquer comme lu",
     "empty": "Rien n’a besoin de vous pour l’instant.",
     "group_health": "Santé",
+    "group_news": "Flux suivis",
     "group_cleanup": "Nettoyage",
     "group_system": "Système",
     "group_privacy": "Confidentialité",
     "group_tips": "Astuces",
-    "healthView": "Voir"
+    "healthView": "Voir",
+    "feedWatchOne": "{count} nouveau d’un flux suivi",
+    "feedWatchMany": "{count} nouveaux de {sites} flux suivis",
+    "feedWatchRead": "Lire"
   }
 }
