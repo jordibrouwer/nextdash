@@ -101,11 +101,17 @@ test.describe('statistics: the activity range is remembered', () => {
 });
 
 test.describe('statistics: health loads only when its tab is opened', () => {
-    /** Counts requests to the health endpoint across a run. */
+    /**
+     * Counts requests for the full health report across a run. The compact
+     * ?view=facts read belongs to the dashboard's own start-up (badges, the
+     * bell's health row) and can land a moment late on a slow runner; it is
+     * not what Statistics asks for, so it is not counted here.
+     */
     const trackHealth = (page) => {
         const hits = [];
         page.on('request', (r) => {
-            if (r.url().includes('/api/bookmark-health')) hits.push(r.url());
+            const url = r.url();
+            if (url.includes('/api/bookmark-health') && !url.includes('view=facts')) hits.push(url);
         });
         return hits;
     };
@@ -123,7 +129,8 @@ test.describe('statistics: health loads only when its tab is opened', () => {
         await page.locator('[data-stats-tab="health"]').click();
         // A fixed wait: the check is that no second fetch goes out.
         await page.waitForTimeout(600);
-        expect(hits.length - before).toBe(1);
+        // The urls, so a second fetch names itself in the failure.
+        expect(hits.slice(before)).toHaveLength(1);
     });
 
     test('opening the Health tab fetches it, once', async ({ page }) => {
@@ -141,7 +148,8 @@ test.describe('statistics: health loads only when its tab is opened', () => {
         await page.locator('[data-stats-tab="health"]').click();
         // A fixed wait: the check is that no second fetch goes out.
         await page.waitForTimeout(600);
-        expect(hits.length - before).toBe(1);
+        // The urls, so a second fetch names itself in the failure.
+        expect(hits.slice(before)).toHaveLength(1);
     });
 
     test('back to the Health tab while it is still loading does not ask twice', async ({ page }) => {
