@@ -58,6 +58,31 @@ test('the hover card pages through ten unread items', async ({ page }) => {
     await expect(page.locator('#bookmark-preview-card .bookmark-preview-card-news-count')).toHaveText('1 / 10');
 });
 
+test('the hover card names the total when more is unread than it carries', async ({ page }) => {
+    const { key, state } = await setup(page, 10);
+    // 25 unread, of which the server sends the ten newest.
+    state.list = watchPayload(key, items(key, 10));
+    state.list.watches[key].newCount = 25;
+    await page.evaluate(() => window.dashboardInstance.feedWatch.load({ force: true }));
+    await row(page, 'Stub Blog').hover();
+    const card = page.locator('#bookmark-preview-card');
+    await expect(card.locator('.bookmark-preview-card-news-count')).toHaveText('1 / 10 · 25 new');
+    await expect(card.locator('.bookmark-preview-card-news-meta')).not.toContainText('25');
+});
+
+test('a link in the lead takes the lead colour, not the browser blue', async ({ page }) => {
+    const { key, state } = await setup(page, 2);
+    state.list.watches[key].newItems[0].summary = '<p>Article URL: <a href="https://example.com/a">https://example.com/a</a></p>';
+    await page.evaluate(() => window.dashboardInstance.feedWatch.load({ force: true }));
+    await row(page, 'Stub Blog').hover();
+    const link = page.locator('#bookmark-preview-card .bookmark-preview-card-news-lead a');
+    await expect(link).toBeVisible();
+    const [linkColour, leadColour, deco] = await link.evaluate((a) => [
+        getComputedStyle(a).color, getComputedStyle(a.closest('.bookmark-preview-card-news-lead')).color, getComputedStyle(a).textDecorationLine]);
+    expect(linkColour).toBe(leadColour);
+    expect(deco).toBe('none');
+});
+
 test('the tab title keeps the exact count', async ({ page }) => {
     await setup(page, 12);
     await expect.poll(() => page.title()).toMatch(/^\(12\) /);
@@ -101,7 +126,8 @@ test('the bell rings for more news, not when the news only shrinks', async ({ pa
     await page.evaluate(() => window.NotificationBell.refreshAll());
     await page.evaluate(() => {
         window.__sound = 0;
-        window.NotificationBell.playSound = () => { window.__sound++; };
+        window.__tones = [];
+        window.NotificationBell.playSound = (tone) => { window.__sound++; window.__tones.push(tone); };
     });
     await serve(page, state, key, 3); // one site opened, an item expired
     await page.evaluate(() => window.NotificationBell.refreshAll());
@@ -109,4 +135,23 @@ test('the bell rings for more news, not when the news only shrinks', async ({ pa
     await serve(page, state, key, 7);
     await page.evaluate(() => window.NotificationBell.refreshAll());
     expect(await page.evaluate(() => window.__sound)).toBe(1);
+    // News has a tone of its own, not the warning bell, and its own movement:
+    // a nod with a paper (is-news), not the alarm swing.
+    expect(await page.evaluate(() => window.__tones)).toEqual(['chime']);
+    await expect(page.locator('.notification-bell-button')).toHaveClass(/is-shaking/);
+    await expect(page.locator('.notification-bell-button')).toHaveClass(/is-news/);
+});
+
+test('another source still sounds the plain bell', async ({ page }) => {
+    await setup(page, 2);
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => {
+        window.__tones = [];
+        window.NotificationBell.playSound = (tone) => { window.__tones.push(tone); };
+        window.NotificationBell.register({ id: 'probe-other', group: 'system', kind: 'quiet', icon: '*', no: 'state', state: async () => ({ count: 1, ids: ['x'], text: 'other' }) });
+    });
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    expect(await page.evaluate(() => window.__tones)).toEqual(['bell']);
+    await expect(page.locator('.notification-bell-button')).toHaveClass(/is-shaking/);
+    await expect(page.locator('.notification-bell-button')).not.toHaveClass(/is-news/);
 });

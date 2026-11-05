@@ -119,7 +119,7 @@ test('the pulse plays three times and then rests', async ({ page }) => {
     expect(await badge.evaluate((el) => getComputedStyle(el).animationIterationCount)).toBe('3');
 });
 
-test('another page\'s tab gets a dot while it holds unread news, and loses it once read', async ({ page, request }) => {
+test('another page\'s tab gets no dot for unread news', async ({ page, request }) => {
     const headers = { 'X-NextDash-Token': WRITE_TOKEN };
     const pages = await (await request.get('/api/pages')).json();
     const second = { id: Math.max(...pages.map((p) => Number(p.id))) + 1, name: 'Second' };
@@ -129,58 +129,12 @@ test('another page\'s tab gets a dot while it holds unread news, and loses it on
     expect((await request.post(`/api/bookmarks?page=${second.id}`, {
         data: [{ name: 'Other Blog', url: otherUrl, category: cats[0]?.id || 'cat' }], headers,
     })).ok()).toBe(true);
-
     await page.goto('/');
     const key = await keyOf(page, otherUrl);
-    const state = { list: watchPayload(key, [newsItem(1)]), items: [newsItem(1)] };
-    await stubWatch(page, state);
-    // Opening a bookmark must not leave the dashboard.
-    await page.evaluate(() => window.addEventListener('click', (e) => {
-        if (e.target?.closest?.('a.bookmark-open')) e.preventDefault();
-    }));
-    await openDashboard(page);
-    const tabs = page.locator('#page-navigation .page-nav-btn[role="tab"]');
-    await expect(tabs).toHaveCount(2);
-    await expect(tabs.nth(1).locator('.page-tab-news-dot')).toHaveCount(1);
-    await expect(tabs.nth(1).locator('.page-tab-news-dot')).toHaveText('News');
-    await expect(tabs.nth(0).locator('.page-tab-news-dot')).toHaveCount(0);
-    const dot = await tabs.nth(1).locator('.page-tab-news-dot').evaluate((el) => {
-        const cs = getComputedStyle(el);
-        return { w: cs.width, shadow: cs.boxShadow };
-    });
-    expect(dot.w).toBe('6px');
-    expect(dot.shadow).toMatch(/\b2px\b/);
-
-    // On that page the dot goes (it is the current page); reading the row keeps it gone.
-    await tabs.nth(1).click();
-    await expect(row(page, 'Other Blog').locator('.bookmark-news-badge')).toBeVisible();
-    await expect(page.locator('.page-tab-news-dot')).toHaveCount(0);
-    // The row shows the headlines first; the bar on top opens the site.
-    await row(page, 'Other Blog').locator('a.bookmark-open').click();
-    await page.locator('.feed-news-pop [data-pop-site]').click();
-    await expect(row(page, 'Other Blog').locator('.bookmark-news-badge')).toHaveCount(0);
-    await tabs.nth(0).click();
-    await expect(page.locator('.page-tab-news-dot')).toHaveCount(0);
-});
-
-test('a muted feed on another page puts no dot on its tab', async ({ page, request }) => {
-    const headers = { 'X-NextDash-Token': WRITE_TOKEN };
-    const pages = await (await request.get('/api/pages')).json();
-    const second = { id: Math.max(...pages.map((p) => Number(p.id))) + 1, name: 'Second' };
-    await request.post('/api/pages', { data: [...pages, second], headers });
-    const cats = await (await request.get(`/api/categories?page=${second.id}`)).json();
-    const otherUrl = `${site.base}/other/`;
-    await request.post(`/api/bookmarks?page=${second.id}`, {
-        data: [{ name: 'Other Blog', url: otherUrl, category: cats[0]?.id || 'cat' }], headers,
-    });
-    await page.goto('/');
-    const key = await keyOf(page, otherUrl);
-    const list = watchPayload(key, [newsItem(1)]);
-    list.watches[key].muted = true;
-    await stubWatch(page, { list, items: [newsItem(1)] });
+    await stubWatch(page, { list: watchPayload(key, [newsItem(1)]), items: [newsItem(1)] });
     await openDashboard(page);
     await expect(page.locator('#page-navigation .page-nav-btn[role="tab"]')).toHaveCount(2);
-    // No dot should appear: a fixed wait, so a late render would show up before the zero count is read.
+    // A fixed wait, so a late render would show up before the zero count is read.
     await page.waitForTimeout(800);
     await expect(page.locator('.page-tab-news-dot')).toHaveCount(0);
 });

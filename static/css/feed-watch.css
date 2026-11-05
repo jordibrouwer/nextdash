@@ -153,6 +153,10 @@ body.no-animations .bookmark-news-badge { animation: none; }
 }
 .bookmark-preview-card-news-lead p { margin: 0 0 0.3rem; }
 .bookmark-preview-card-news-lead img { display: none; }
+/* A feed's own links in the lead (Hacker News puts its article and comment
+   addresses there) take the lead's colour, underlined only on hover. */
+.bookmark-preview-card-news-lead a { color: inherit; text-decoration: none; }
+.bookmark-preview-card-news-lead a:hover { text-decoration: underline; }
 
 /* The site, in one line under a thin rule, and its facts muted under that. */
 .bookmark-preview-card-news-site {
@@ -1030,19 +1034,6 @@ body[data-density-mode="dense"] .bookmark-news-line,
 .layout-launcher .bookmark-news-line { display: none; }
 @media (max-width: 600px) {
     .bookmark-news-line { display: none; }
-}
-
-/* A page tab with news on another page: a small accent dot after the label. */
-.page-tab-news-dot {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    margin-inline-start: 0.35em;
-    border-radius: 50%;
-    vertical-align: middle;
-    flex-shrink: 0;
-    background: var(--accent-primary, var(--feed-news-color, #8b5cf6));
-    box-shadow: 0 0 0 2px var(--background-primary);
 }
 
 /* The feed glyph after the name of a watched bookmark that shows no news badge.

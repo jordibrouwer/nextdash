@@ -577,15 +577,18 @@ class DashboardPreview {
             fallback();
         }
         const when = item.publishedAt ? ` · ${this.formatPreviewAgo(item.publishedAt)}` : '';
-        el.querySelector('.bookmark-preview-card-news-meta').textContent =
-            d.formatDashboardLabel('feedWatchNewCount', { n: news.newCount, count: news.newCount }, `${news.newCount} new`) + when;
+        // More unread than the card carries (it holds ten): the pager names the
+        // total after its own count, and the head keeps only the age.
+        const newLabel = d.formatDashboardLabel('feedWatchNewCount', { n: news.newCount, count: news.newCount }, `${news.newCount} new`);
+        const beyondCard = Number(news.newCount) > items.length && items.length > 1;
+        el.querySelector('.bookmark-preview-card-news-meta').textContent = beyondCard ? when.replace(/^ · /, '') : newLabel + when;
         el.querySelector('.bookmark-preview-card-news-title').textContent = String(item.title || '');
         const lead = el.querySelector('.bookmark-preview-card-news-lead');
         // The summary is sanitised by the server when it is stored.
         lead.innerHTML = item.summary ? String(item.summary) : '';
         lead.hidden = !item.summary;
         const count = el.querySelector('.bookmark-preview-card-news-count');
-        if (count) count.textContent = `${(el._page || 0) + 1} / ${items.length}`;
+        if (count) count.textContent = `${(el._page || 0) + 1} / ${items.length}${beyondCard ? ` · ${newLabel}` : ''}`;
         el.dataset.itemId = String(item.id || '');
         const openButton = el.querySelector('[data-feed-news-action="open"]');
         if (openButton) {
