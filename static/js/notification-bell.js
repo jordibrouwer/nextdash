@@ -10,7 +10,9 @@
  * What the person has read or answered "No" to is kept by DiscoverabilityState
  * (it persists server-side); nothing is stored here.
  *
- *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead, onReset })
+ *   NotificationBell.register({ id, group, kind, icon, no, state, actions, onNo, onRead, onReset, sound, animation })
+ *   (`sound: 'chime'` gives a row's arrival a softer tone than the default bell,
+ *   `animation: 'news'` a nod with a paper sliding in instead of the alarm swing)
  *     -> { refresh(), unregister() }
  *
  * `state()` resolves to null when there is nothing to report, or to
@@ -42,6 +44,8 @@
     const FIRST_REFRESH_MS = 3000;
     const REFRESH_EVERY_MS = 5 * 60 * 1000;
     const REMINDER_EVERY_MS = 60 * 1000;
+    // Every hour that something is still unread the bell shakes as well as pulses.
+    const NAG_EVERY_MS = 60 * 60 * 1000;
     const Model = global.NotificationBellModel;
     const States = () => global.DiscoverabilityState;
 
@@ -137,9 +141,12 @@
         try { global.nextdashTrack?.('bell', props); } catch { /* analytics never breaks the bell */ }
     }
 
-    function shake() {
+    function shake(style) {
         if (!button) return;
         lastAnim = { kind: 'shake', at: Date.now() };
+        // A source may ask for its own movement (`animation: 'news'`): a nod and
+        // a small paper sliding in, in place of the alarm swing.
+        button.classList.toggle('is-news', style === 'news');
         restart(button, 'is-shaking');
         looked = false;
     }
@@ -179,16 +186,46 @@
     }
 
     /**
-     * Play the bell tone. A browser keeps audio shut until the page has been
-     * touched; when the context will not wake, this stays silent.
+     * A source's own tone, for news that should not sound like a warning: two
+     * soft rising notes (a major third) on a triangle wave, quick and quiet,
+     * about half a second in all.
      */
-    async function playSound() {
+    function chime(ctx) {
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.exponentialRampToValueAtTime(0.16, now + 0.01);
+        master.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+        master.connect(ctx.destination);
+        [[784, 0], [988, 0.14]].forEach(([freq, delay]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, now + delay);
+            gain.gain.exponentialRampToValueAtTime(1, now + delay + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.5);
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.6);
+        });
+    }
+
+    const TONES = { bell: ring, chime };
+
+    /**
+     * Play a tone: the bell by default, or another by name ('chime'). A browser
+     * keeps audio shut until the page has been touched; when the context will
+     * not wake, this stays silent.
+     */
+    async function playSound(tone = 'bell') {
         try {
             const ctx = context();
             if (!ctx) return;
             if (ctx.state === 'suspended') await ctx.resume();
             if (ctx.state !== 'running') return;
-            ring(ctx);
+            (TONES[tone] || ring)(ctx);
         } catch { /* no sound is not an error */ }
     }
 
@@ -218,7 +255,7 @@
             announced = new Set(keys);
             shown.forEach((r) => lastAnnounced.set(r.source.id, r.entry));
             if (unread > 0) {
-                shake();
+                shake(movementOf(shown));
                 pulse();
             }
             return;
@@ -227,9 +264,13 @@
         keys.forEach((k) => announced.add(k));
         shown.forEach((r) => lastAnnounced.set(r.source.id, r.entry));
         if (!fresh.length) return;
-        shake();
+        shake(movementOf(fresh));
         pulse();
-        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound();
+        // A source may name its own tone (`sound: 'chime'`); when anything fresh
+        // is not such a row, or two sources differ, the plain bell sounds.
+        const tones = new Set(fresh.map((r) => r.source.sound || 'bell'));
+        const tone = tones.size === 1 ? [...tones][0] : 'bell';
+        if (global.dashboardInstance?.settings?.bellSound !== false) global.NotificationBell.playSound(tone);
     }
 
     function remind() {
@@ -239,6 +280,21 @@
             lastAnim = { kind: 'pulse', at: Date.now() };
             pulse();
         }
+    }
+
+    /** The movement for these rows: a source's own when they all agree, else the swing. */
+    function movementOf(list) {
+        const styles = new Set(list.map((r) => r.source.animation || 'swing'));
+        return styles.size === 1 ? [...styles][0] : 'swing';
+    }
+
+    /** The hourly nudge: shake and pulse (no tone) while anything is still unread. */
+    function nag() {
+        if (document.visibilityState !== 'visible') return;
+        const unread = rows().filter((r) => r.visible && r.unread && (r.kind === 'urgent' || r.kind === 'quiet' || r.kind === 'tip'));
+        if (!unread.length) return;
+        shake(movementOf(unread));
+        pulse();
     }
 
     function el(tag, className, text) {
@@ -610,7 +666,9 @@
         greyEl.hidden = true;
         button.append(redEl, greyEl);
         button.addEventListener('animationend', (event) => {
-            if (event.animationName === 'notification-bell-shake') button.classList.remove('is-shaking');
+            if (event.animationName === 'notification-bell-shake' || event.animationName === 'notification-bell-nod') {
+                button.classList.remove('is-shaking', 'is-news');
+            }
         });
         [redEl, greyEl].forEach((badge) => badge.addEventListener('animationend', (event) => {
             if (event.target === badge) badge.classList.remove('is-pulsing');
@@ -704,6 +762,7 @@
         timer = setInterval(tick, REFRESH_EVERY_MS);
         document.addEventListener('visibilitychange', tick);
         setInterval(remind, REMINDER_EVERY_MS);
+        setInterval(nag, NAG_EVERY_MS);
     }
 
     function init() {

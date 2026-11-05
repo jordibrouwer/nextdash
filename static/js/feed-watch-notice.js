@@ -60,6 +60,8 @@
             group: 'news',
             kind: 'tip',
             icon: '\u{1F4F0}',
+            sound: 'chime',   // news is not a warning: its own, softer tone
+            animation: 'news', // and its own movement: a nod, a paper sliding in
             no: 'forever',
             state,
             actions: [

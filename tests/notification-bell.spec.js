@@ -923,3 +923,33 @@ test('the panel draws over a list view header, also on a theme without backdrop 
     expect(under).toBeGreaterThan(0);
     expect(foreign).toEqual([]);
 });
+
+test('every hour that something is unread the bell shakes and pulses, without a tone', async ({ page }) => {
+    await page.clock.install();
+    await loadDashboard(page);
+    await refresh(page);
+    await page.clock.runFor(2000); // the load animation
+    await page.waitForTimeout(1200); // its animation ends in real time, not on the fake clock
+    await watchAttention(page);
+    // Nothing changes: no refresh finds more. A minute only pulses.
+    await page.clock.runFor(61 * 1000);
+    expect((await seen(page)).shake).toBe(0);
+    // An hour on, something is still unread: it shakes too.
+    await page.clock.runFor(60 * 60 * 1000);
+    const after = await seen(page);
+    expect(after.shake).toBeGreaterThan(0);
+    expect(after.pulse).toBeGreaterThan(0);
+    expect(after.sound).toBe(0);
+});
+
+test('the hourly nudge stays quiet when nothing is unread', async ({ page }) => {
+    await page.clock.install();
+    await loadDashboard(page);
+    await page.evaluate(() => { Object.keys(window.__probeState).forEach((id) => { window.__probeState[id] = null; }); });
+    await refresh(page);
+    await page.clock.runFor(2000);
+    await page.waitForTimeout(1200);
+    await watchAttention(page);
+    await page.clock.runFor(60 * 60 * 1000 + 5000);
+    expect((await seen(page)).shake).toBe(0);
+});

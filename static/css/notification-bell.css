@@ -153,6 +153,21 @@
     transform-origin: 50% 12%;
     animation: notification-bell-shake 0.8s ease-in-out;
 }
+/* News: the bell nods once and a small paper slides in beside it, then goes. */
+.notification-bell-button.is-shaking.is-news svg {
+    transform-origin: 50% 12%;
+    animation: notification-bell-nod 0.9s ease-in-out;
+}
+.notification-bell-button.is-shaking.is-news::after {
+    content: '\1F4F0';
+    position: absolute;
+    right: -4px;
+    top: 2px;
+    font-size: 0.95rem;
+    line-height: 1;
+    pointer-events: none;
+    animation: notification-bell-paper 0.9s ease-in-out both;
+}
 .notification-bell-badge.is-pulsing { animation: notification-bell-swell 1s ease-out; }
 .notification-bell-badge.is-pulsing::after {
     content: '';
@@ -166,6 +181,16 @@
 }
 .notification-bell-red.is-pulsing::after { border-color: var(--accent-error); }
 .notification-bell-grey.is-pulsing::after { border-color: var(--text-tertiary, #8a8a8a); }
+@keyframes notification-bell-nod {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-18deg); }
+    60% { transform: rotate(8deg); }
+}
+@keyframes notification-bell-paper {
+    0% { transform: translateX(14px); opacity: 0; }
+    25%, 70% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(14px); opacity: 0; }
+}
 @keyframes notification-bell-shake {
     0%, 100% { transform: rotate(0); }
     15% { transform: rotate(18deg); }
