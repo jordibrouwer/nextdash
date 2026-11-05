@@ -98,7 +98,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 <summary><b>5.</b> <a href="#5-adding-bookmarks">Adding bookmarks</a></summary>
 
 - [Quick add (`&`)](#51-quick-add)
-- [The full form (`+`, `Shift + B`, `Ctrl + Shift + A`)](#52-the-full-form-shift-b-ctrl-shift-a)
+- [The full form (`+`, `Ctrl + Shift + A`)](#52-the-full-form-ctrl-shift-a)
 - [Paste a URL (`Ctrl + V`)](#53-paste-a-url-ctrl-v)
 - [Other routes](#54-other-routes)
 - [A link you already have](#a-link-you-already-have)
@@ -439,7 +439,7 @@ This guide shows how the pieces fit together. Each part links to the chapter wit
 
 | Question | Where you see the answer |
 |---|---|
-| *Is everything running?* | The **Containers view** (`Shift + Y`): every container with a status glow, CPU, RAM, healthcheck, restarts and an orange **↑** for an update waiting ([§15](#15-containers)) |
+| *Is everything running?* | The **Containers view** (`Shift + C`): every container with a status glow, CPU, RAM, healthcheck, restarts and an orange **↑** for an update waiting ([§15](#15-containers)) |
 | *How is a machine doing over time?* | The **Glances page** (`Shift + G`): processor, memory, disks, processes and containers of a Glances 4 host, with a record of thirty days, graphs, incidents and a forecast for filling disks ([§16A](#16a-glances)) |
 | *Can I actually reach it?* | The bookmark of its web UI, set to **Monitor**: checked by the server, with uptime, response time and certificate ([§12](#12-checks-health)) |
 | *Which link belongs to which container?* | The bookmark mark on a container's row, in the colour of that bookmark's checks — and the cube after the bookmark's name in the Bookmarks view, in the container's state, with **Runs in** on its side panel ([§15.2](#152-the-list)) |
@@ -626,7 +626,7 @@ Set a widget to two columns and it says more, not the same thing larger: the con
 What a check of your setup can look like, all from the keyboard:
 
 1. Open the homelab page. The Containers widget says *0 incidents*, Uptime is green, nothing waits in Certificates.
-2. Or not: a notice on your phone said the automatic update of Paperless was rolled back at 04:09, and its bookmark sent a downtime alert and a recovery around the same time. `Shift + Y` opens the Containers view; Paperless runs again, on its old image.
+2. Or not: a notice on your phone said the automatic update of Paperless was rolled back at 04:09, and its bookmark sent a downtime alert and a recovery around the same time. `Shift + C` opens the Containers view; Paperless runs again, on its old image.
 3. `Enter` opens its side panel. The **Timeline** shows the update at 04:05, the crashes after it and the rollback. **Updates → History** names both versions.
 4. `l` opens the logs window; search for `error` to see why the new version failed.
 5. The version stays skipped until a newer one arrives. **Hold updates** if you would rather wait for a fix before nextDash tries again.
@@ -640,7 +640,7 @@ What a check of your setup can look like, all from the keyboard:
 
 | Key or command | Does |
 |---|---|
-| <kbd>Shift</kbd> + <kbd>Y</kbd> | Open the Containers view |
+| <kbd>Shift</kbd> + <kbd>C</kbd> | Open the Containers view |
 | <kbd>Shift</kbd> + <kbd>G</kbd> | Open the Glances page |
 | `:docker <name>` | Find a container from anywhere; add `open`, `logs`, `start`, `stop`, `restart`, `pause`, `update` or `remove` |
 | <kbd>s</kbd> · <kbd>r</kbd> · <kbd>p</kbd> · <kbd>u</kbd> | Start or stop, restart, pause, update the selected container |
@@ -797,7 +797,7 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 3. **The bar.** **Close for now** (the ×, a click outside the guide, or `Escape`) folds the guide back into the bar. The bar stays on the dashboard, on every page, until every step is done — it steps aside in Config and the other views, then says **All set**; **Close for good** closes it for ever, after asking. **Show quick start again** (Behavior → Privacy & sync → Onboarding) brings it back. While the bar is up no other corner card shows, and the others wait ten seconds after it is closed; an *Undo* for something you have just done still appears. The ready-made pages are also in the import dialog ([§9.8](#98-page-templates)).
 4. **Example bookmarks.** Kept the example links? A new install starts with 98 links on two pages, so there is something to try search, tags and the keys on. **main** has Development, Docker, Unraid, Self-hosted, Tools and Daily, the **Today** collection and three widgets: Notes at the top right, and Health and Health trend at the bottom; **news** has Tech news, Dev & blogs, Security, Communities, Videos and News. With the Docker socket mounted, a card in the middle of the screen then offers the apps running on this server as bookmarks — once the guide, the tour and any corner card are out of the way ([§15.10](#1510-apps-it-finds-on-its-own)). The inbox starts with ten example links, none of them on the pages, to read, keep, promote or throw away ([§13](#13-inbox)).
 5. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§20](#20-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
-6. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
+6. **Config.** Press **`,`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
 
 **The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Monitoring → Checks. Everything else can wait until you know what you want.
 
@@ -838,7 +838,7 @@ The guide as a new install shows it, in two columns: the choice about the exampl
 
 ### 3.1 Pages
 
-A **page** is a separate set of categories and bookmarks — Work, Home, a project. Each page has a name, an optional emoji and an optional colour dot. Switch with **`1`–`9`** (and **`0`** for a tenth page), **`Shift + ←/→`**, the page switcher in the header, or the pages panel (**`,`**). A page remembers where you were scrolled.
+A **page** is a separate set of categories and bookmarks — Work, Home, a project. Each page has a name, an optional emoji and an optional colour dot. Switch with **`1`–`9`** (and **`0`** for a tenth page), **`Shift + ←/→`**, the page switcher in the header, or the pages panel (**`Shift + P`**). A page remembers where you were scrolled.
 
 <a id="32-categories"></a>
 
@@ -972,10 +972,10 @@ The bell shakes and pulses for something new, with a short tone (news from watch
 | Finders | `?` | Finders |
 | Tag cloud | `/` | The tag cloud; pick a tag to open its tag view |
 | Recent | `*` | Recent bookmarks — from every view |
-| Pages | `,` | The pages panel |
+| Pages | `Shift + P` (no bookmark selected) | The pages panel |
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
-| Edit | `Shift + M` (no bookmark selected) | Edit mode ([see below](#edit-mode)) |
+| Edit | `Shift + E` (no bookmark selected) | Edit mode ([see below](#edit-mode)) |
 | Theme studio | `Shift + A` | The theme studio ([§17.1](#the-theme-studio)); last in the bar, and left out on a phone |
 
 Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
@@ -1011,7 +1011,7 @@ The **★** button in the bottom-right corner opens the release notes. It is lef
 
 Edit mode changes the dashboard itself without a trip to Config: names, icons, widths, views, sorting and a widget's settings, all in a panel beside the page.
 
-**Switching it on.** Press `Shift + M` when no bookmark is selected (with one selected, `Shift + M` still moves that bookmark), click the pencil in the action bar, type `:edit mode`, or pick **Edit in panel…** in the right-click menu of a category or widget, which also chooses that block. `Esc` or `Shift + M` switches it off. The mode is for computers and tablets with a wide window; a phone layout never enters it. **Show the edit-mode button** under Config → Appearance → Action bar hides the pencil; the key keeps working.
+**Switching it on.** Press `Shift + E` when no bookmark is selected (with one selected, `Shift + E` edits that bookmark and `Shift + M` moves it), click the pencil in the action bar, type `:edit mode`, or pick **Edit in panel…** in the right-click menu of a category or widget, which also chooses that block. `Esc` or `Shift + E` switches it off. The mode is for computers and tablets with a wide window; a phone layout never enters it. **Show the edit-mode button** under Config → Appearance → Action bar hides the pencil; the key keeps working.
 
 **While it is on.** A bar at the top says so. A click on a bookmark selects its block instead of opening it, the grid's bare letters, arrows and `Enter` are left alone, and the link preview card stays away and comes back afterwards if you have it on. Clicking a page tab still switches page, and the panel shows that page. `Esc` goes from the inside out: a dialog or menu first, then a field in the panel gives the focus back, then the mode ends.
 
@@ -1043,7 +1043,7 @@ Categories and widgets stand in columns — as many as **Columns per row** allow
 
 A bookmark row shows its icon, name, optional tags, the shortcut letters and, when checked, its status and ping. How the row looks is set under **Appearance → Rows** ([§17](#17-appearance)).
 
-**A key legend** under the grid shows the keys in three lines, on the dashboard view only. The keys that assume you use the keyboard appear at your first cursor move. `Shift + Z` switches the legend off and on, and so does Behavior → Keyboard & search. It is on for new installs.
+**A key legend** under the grid shows the keys in four lines (the cursor, finding things, going somewhere, acting on a bookmark), on the dashboard view only. The keys that assume you use the keyboard appear at your first cursor move. `Shift + H` switches the legend off and on, and so does Behavior → Keyboard & search. It is on for new installs.
 
 **Occasional tips.** Tips do not pop up over your work. Two keyboard tips a day wait in the notifications bell ([§4](#the-notifications-bell)), a new pair each calendar day whether or not yesterday's were read, never one you have already read, each with a button to the place it is about. **Show occasional keyboard tips** (Behavior → Privacy & sync → Onboarding) turns them off.
 
@@ -1124,14 +1124,13 @@ GitHub | https://github.com | gh
 
 </details>
 
-<a id="52-the-full-form-shift-b-ctrl-shift-a"></a>
+<a id="52-the-full-form-ctrl-shift-a"></a>
 
-### 5.2 The full form (`+`, `Shift + B`, `Ctrl + Shift + A`)
+### 5.2 The full form (`+`, `Ctrl + Shift + A`)
 
 One bookmark form is used everywhere: the dashboard, the Bookmarks view, the inbox, config and `:new`.
 
 - **`+`** on the dashboard, or the add button.
-- **`Shift + B`** from anywhere on the dashboard, unless you are typing in a field.
 - **`Ctrl + Shift + A`** from anywhere.
 
 On a screen with a mouse or trackpad the form has two columns. On the left are the fields in the order you fill them in: **address**, **name**, **tags**, **page › category** and the **note**. On the right is the **preview card** — the bookmark as the dashboard will show it — with the **shortcut**, **availability checking** and **pin** under it. `Tab` runs down one column and then the other. On a phone or in a narrow window it is one column, in the same order. It opens with the cursor in the address field, adding and editing alike.
@@ -1236,8 +1235,8 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 |------|-----|--------------|
 | Open in new tab | `Ctrl/Cmd + Enter` | Opens it in the background |
 | Copy URL | `Ctrl + C` | Copies the address |
-| Share… / Copy name + URL | `Shift + L` | The system share sheet where the browser offers one (HTTPS only); otherwise copies name and address |
-| QR code | `Shift + J` | Shows the address as a QR code, to open it on a phone; drawn in the browser, so the address goes nowhere. **Copy URL** in the window copies it |
+| Share… / Copy name + URL | `Shift + S` | The system share sheet where the browser offers one (HTTPS only); otherwise copies name and address |
+| QR code | `Shift + Q` | Shows the address as a QR code, to open it on a phone; drawn in the browser, so the address goes nowhere. **Copy URL** in the window copies it |
 | Edit | `Shift + E` | Edit in place |
 | Pin / Unpin | `Shift + P` | |
 | Tags… | `Shift + T` | The quick tag picker |
@@ -1255,10 +1254,10 @@ The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
 <a id="qr-code"></a>
 
 > [!TIP]
-> **A link on your phone.** Select the bookmark and press **`Shift + J`**, or pick **QR code** in this menu, then scan the code with the phone's camera. On an inbox row the code holds the item's own link, as Share does. The code is drawn in the browser, so the address is not sent anywhere.
+> **A link on your phone.** Select the bookmark and press **`Shift + Q`**, or pick **QR code** in this menu, then scan the code with the phone's camera. On an inbox row the code holds the item's own link, as Share does. The code is drawn in the browser, so the address is not sent anywhere.
 
 <p align="center"><img src="screenshots/manual.md/06-qr-code.jpg" alt="The QR code window for the Encyclopedia bookmark: the code, the address under it and a Copy URL button" width="392"></p>
-<p align="center"><sub>A bookmark as a QR code (<kbd>Shift</kbd> + <kbd>J</kbd>), ready for the phone's camera.</sub></p>
+<p align="center"><sub>A bookmark as a QR code (<kbd>Shift</kbd> + <kbd>Q</kbd>), ready for the phone's camera.</sub></p>
 
 <a id="editing-in-place"></a>
 
@@ -1310,7 +1309,7 @@ Ten tiles fit on a page; a pager in the foot says where you are ("11–20 of 34"
 > [!NOTE]
 > **In short:** every action on a bookmark is `Shift` plus a letter, and the cheat sheet (`!` or `F1`) lists them all. This chapter is the full key map.
 
-Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to search until the cursor is on the grid, and then to the grid. The right-click menu shows each key, and the cheat sheet (**`!`** or **`F1`**) lists all of them.
+Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to search until the cursor is on the grid, and then to the grid, where they look rather than change: `t` filters the grid by the bookmark's tag, `x` ticks, `j` and `k` move. The same letter with `Shift` changes something: `Shift + T` edits the tags. With a bookmark selected, a `Shift` letter acts on it; with nothing selected, the same letter opens a view or panel (`Shift + C` is Checking on a bookmark and Containers on nothing). The right-click menu shows each key, and the cheat sheet (**`!`** or **`F1`**) lists all of them.
 
 <a id="71-views-and-panels"></a>
 
@@ -1321,30 +1320,31 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `1`–`9`, `0` | Go to a page (`0` is the tenth) |
 | `Shift + ←` / `Shift + →` | Previous / next page |
 | `Shift + I` | Inbox |
-| `Shift + H` | The Bookmarks view, the whole list |
+| `Shift + B` | The Bookmarks view, the whole list |
 | `Shift + U` | The Bookmarks view, on Unsorted |
-| `Shift + Y` | Containers |
+| `Shift + C` | Containers, with no bookmark selected (with one selected, Checking) |
 | `Shift + G` | Glances, from every view (once it is set up in Config) |
-| `Shift + S` or `<` | Config (and back) |
+| `,` or `<` | Config (`Esc` leaves) |
 | `Shift + A` | The theme studio |
-| `Shift + M` | With no bookmark selected, edit mode ([§4](#edit-mode)); with one selected, Move |
+| `Shift + E` | With no bookmark selected, edit mode ([§4](#edit-mode)); with one selected, edit in place |
 | `>` `:` `?` | Search, commands, finders — from every view |
-| `+` · `Shift + B` · `&` | Full bookmark form · from anywhere · quick add |
+| `+` · `Ctrl + Shift + A` · `&` | Full bookmark form · from anywhere · quick add |
 | `/` | Tag cloud (type to find a tag, `Enter` opens its tag view, `Shift + Enter` stacks) |
 | `Shift + T` | With no bookmark selected, the tag view of every bookmark ([§10.2](#102-filtering-by-tag)); with one selected, that bookmark's tags |
 | `*` | Recent bookmarks — from every view |
-| `,` | Pages panel (`n` there makes a new page) |
+| `Shift + P` | With no bookmark selected, the Pages panel (`n` there makes a new page); with one selected, Pin |
 | `!` or `F1` | Cheat sheet |
 | `.` | Fold or unfold every category and widget |
-| `Shift + N` | Open the news of the feeds you watch (when at least one feed is watched) |
+| `Shift + N` | The notification center (the bell), and closes it again |
+| `Shift + W` | With no category or widget under the cursor, the news of the feeds you watch (when at least one feed is watched) |
 | `'` or `Shift + O` | Slide a docked action bar away or back |
 | `Shift + F` | Filter this page in place |
-| `Shift + Z` | Key legend under the grid off or on |
+| `Shift + H` | Key legend under the grid off or on |
 | `Shift + K` | Play the dashboard tour again |
-| `Shift + Q` | Switch whether letters search names or shortcuts |
+| `Shift + X` | Switch whether letters search names or shortcuts (with a bookmark selected, `Shift + X` ticks the whole category) |
 | `Esc` | Close the panel; on a bare grid, go to the first page; on the first page, open search |
 
-The Containers view opens with `Shift + Y`, its header icon or `:docker`. The Glances page opens with `Shift + G`, its header icon or `:glances`; its own keys are in [§16A.11](#16a11-keys).
+The Containers view opens with `Shift + C`, its header icon or `:docker`. The Glances page opens with `Shift + G`, its header icon or `:glances`; its own keys are in [§16A.11](#16a11-keys).
 
 `>` `:` `?` and `*` work in every view — the Bookmarks view, the inbox, Containers and config too — not only on the dashboard. A view that uses one of these keys for itself keeps it. Quick add (`&`) and the full form (`+`) stay with the bookmark grid.
 
@@ -1385,8 +1385,8 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `Shift + D` or `Delete` | Delete (asks first; undo in the toast) |
 | `Shift + P` | Pin or unpin |
 | `Shift + C` | Availability checking — `o` off, `p` periodic, `m` monitor |
-| `Shift + L` | Share, or copy name and URL |
-| `Shift + J` | The bookmark as a QR code, to open it on a phone |
+| `Shift + S` | Share, or copy name and URL |
+| `Shift + Q` | The bookmark as a QR code, to open it on a phone |
 | `Shift + R` | Open the bookmark in the Bookmarks view, on its Health tab |
 | `Ctrl + C` | Copy the URL |
 | `Ctrl/Cmd + Enter` | Open in a new tab |
@@ -1446,7 +1446,7 @@ A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Co
 
 ### 7.6 The cheat sheet
 
-**`!`** or **`F1`** opens the cheat sheet, with a search field at the top. It opens on the section for the view you are in, and lists more than 250 keys and commands by topic — Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the **Glances view**, the Config view, search modes and every command. The topics stand side by side in columns, and each row names an action. Pick a row — with the arrows or a click — and the **dock** under the list shows the keys that do it; the keys are also read out with the row by a screen reader. The search field finds an action, a key or a section name and ignores spaces, so `shift + y` finds Shift+Y. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
+**`!`** or **`F1`** opens the cheat sheet, with a search field at the top. It opens on the section for the view you are in, and lists more than 250 keys and commands by topic — Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the **Glances view**, the Config view, search modes and every command. The topics stand side by side in columns, and each row names an action. Pick a row — with the arrows or a click — and the **dock** under the list shows the keys that do it; the keys are also read out with the row by a screen reader. The search field finds an action, a key or a section name and ignores spaces, so `shift + c` finds Shift+C. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
 
 While a panel is open, the grid behind it does not react. `Tab` stays inside the panel, and `Escape` closes it and puts focus back where it was.
 
@@ -1516,7 +1516,7 @@ With the panel empty, the first group is **Usually now**: up to three bookmarks 
 | **Open after a short pause** | The shortcut waits until you stop typing. |
 | **Press Enter to open** | Typing only narrows the list; the shortcut leads it. |
 
-**Switch search mode** (Behavior → Keyboard & search, or **`Shift + Q`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way. With letters already typed, **`/`** does the same by hand and switches this one search; the letters stay where they are.
+**Switch search mode** (Behavior → Keyboard & search, or **`Shift + X`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way. With letters already typed, **`/`** does the same by hand and switches this one search; the letters stay where they are.
 
 **A sum answers itself.** Type `15% of 240`, `2+2*3` or `5 km in mi` and the answer is the top row of the list, written as *expression = answer*. **`Enter`** copies the answer and says *Copied*. Sums use `+ - * / ^ %` and brackets. A conversion reads *number unit* `in` (or `to`) *unit* and covers length, weight, volume, time, data sizes, speed and temperature. It is worked out in your browser by a small parser of its own; nothing is sent anywhere and nothing is evaluated as code. Only what is plainly a sum is answered: a word or a shortcut never is, and neither is a phrase, range, phone number or date such as `24/7`, `20-30`, `06-12345678` or `03-11-2026`. A `-` or `/` counts as an operator only with a space on both sides. The answer shows in the ordinary search, not after `:`, `?`, `@` or a leading `=`, and the row is not counted in your search history.
 
@@ -1671,8 +1671,8 @@ With that setting on (it is by default), a search that matches nothing lists you
 
 ### 9.1 Pages
 
-- **Create** — **New page** in the pages panel (`,`, then `n`), `:page new`, **Structure → Pages**, or **New page…** in the bookmark form.
-- **Add a bookmark** — right-click the header → **Add new bookmark** opens the add-bookmark form ([§5.2](#52-the-full-form-shift-b-ctrl-shift-a)) with this category already chosen. It is not offered on a smart collection or the list of unfiled bookmarks.
+- **Create** — **New page** in the pages panel (`Shift + P`, then `n`), `:page new`, **Structure → Pages**, or **New page…** in the bookmark form.
+- **Add a bookmark** — right-click the header → **Add new bookmark** opens the add-bookmark form ([§5.2](#52-the-full-form-ctrl-shift-a)) with this category already chosen. It is not offered on a smart collection or the list of unfiled bookmarks.
 - **Rename, emoji, colour** — double-click the page tab, or use Structure → Pages.
 - **Reorder** — drag a row in Structure → Pages, or `↑`/`↓` on a focused row.
 - **Delete** — the × in the pages panel (asks twice) or Structure → Pages. The page goes to the trash with its categories and bookmarks.
@@ -1937,7 +1937,7 @@ The **Bookmarks view** is the library: every bookmark on every page, in one work
 </p>
 <p align="center"><sub>The Bookmarks view: filters on the left, the list in the middle, the focused bookmark in the side panel.</sub></p>
 
-Open it with **`Shift + H`** or the Bookmarks icon (the whole list), **`Shift + U`** (on Unsorted), `:health` (on the broken ones), or `/#bookmarks`. Old `/#health` and `/#health/monitors` addresses, and `:health`, still land here, on the matching filter; a search that came with them (`hv_q`) comes along, and `hv_refresh` still re-scans on arrival. See [§11.13](#1113-addresses) for the current address scheme.
+Open it with **`Shift + B`** or the Bookmarks icon (the whole list), **`Shift + U`** (on Unsorted), `:health` (on the broken ones), or `/#bookmarks`. Old `/#health` and `/#health/monitors` addresses, and `:health`, still land here, on the matching filter; a search that came with them (`hv_q`) comes along, and `hv_refresh` still re-scans on arrival. See [§11.13](#1113-addresses) for the current address scheme.
 
 <a id="111-the-rail"></a>
 
@@ -2021,6 +2021,7 @@ The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, 
 | `i` | Open or close the side panel |
 | `1` / `2` / `3`, `[` / `]` | Details, Health or Usage in the side panel |
 | `e` / `Shift + E` | Edit in the side panel / in the full dialog |
+| `t` | Edit the bookmark's tags in the side panel |
 | `x` / `Shift + X` | Select a row / a range |
 | `Ctrl/Cmd + A` | Select every bookmark shown (again to clear) |
 | `d` | Delete (undo is offered) |
@@ -2507,8 +2508,8 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 | `Shift + ↑/↓`, `Ctrl/Cmd + A` | Extend / select all shown (again to untick) |
 | `d` | Delete (undo in the toast) |
 | `u` | Mark unread |
-| `l` | Edit tags |
-| `t` | Triage |
+| `t` | Edit tags |
+| `f` | Triage |
 | `R` | Reload |
 | `Esc` | Clear the selection, then back to the queue, then back to the bookmarks |
 
@@ -2529,7 +2530,7 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 
 ### 13.4 Triage
 
-**Triage** (the button, `t`, or `:inbox triage`) takes you through unread links one at a time, in the same shape as Work through ([§11.7](#117-work-through-and-the-header-band)).
+**Triage** (the button, `f`, or `:inbox triage`) takes you through unread links one at a time, in the same shape as Work through ([§11.7](#117-work-through-and-the-header-band)).
 
 **1. Choose a pile.** Triage counts unread links that are not snoozed. The fullest pile comes first:
 
@@ -2590,7 +2591,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 ## 14. 📰 Watch feeds
 
 > [!NOTE]
-> **In short:** a bookmark with news gets a stripe and a badge, the preview card leads with the headline, and `Shift + N` opens one paper for everything you follow. Follow a site from its right-click menu; nothing is followed until you ask.
+> **In short:** a bookmark with news gets a stripe and a badge, the preview card leads with the headline, and `Shift + W` opens one paper for everything you follow. Follow a site from its right-click menu; nothing is followed until you ask.
 
 **Watch feeds** follows the RSS or Atom feeds of sites you choose and tells you when they publish something. Nothing is followed until you ask.
 
@@ -2600,7 +2601,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 - **Start.** Right-click a bookmark → **Watch this feed…**, or use the same button in the bookmark editor. nextDash lists the feeds the page advertises (and tries the usual addresses when the page says nothing, as it does behind a cookie wall); tick one or more, or paste an address. Choose how often to check: 30 minutes, 1, 2, 4, 6, 12 or 24 hours. **Also check that this page is reachable (Periodic)** is ticked by default while the bookmark's checking is off. Up to 100 feeds can be watched. When you save, nextDash reads the feed once and counts what is already there as seen, so a bookmark shows no news until the site publishes something new; until then a click opens the site as usual. A toast says so.
 - **The window's buttons.** **Stop watching** (when the feed is watched) stands on the left; **Save**, in the accent colour, and **Cancel**, in the warning colour, stand together on the right. Saving leaves the dashboard where it was scrolled. The empty Watch feeds section explains how to start.
-- **Keys.** `Shift + N` opens the news; `#` watches the feed of the bookmark in hand (or changes or stops it).
+- **Keys.** `Shift + W` opens the news; `#` watches the feed of the bookmark in hand (or changes or stops it).
 
 <a id="142-what-you-see"></a>
 
@@ -2620,7 +2621,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.3 The news window
 
-- **The news window** (`Shift + N`, or the news button on a computer) is one paper for everything you watch, with read and unread per item. The news button shows only while at least one feed is followed, not paused and not given up on. Closing the window on an article and pressing the button again returns to that article, if it is still in the paper; the button starts at the front page otherwise, and so do a push notification and the bell row. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the buttons in its header: one column (one article per screen, the new ones first, and the feeds' earlier entries one by one when nothing is new), two columns or a newspaper front page. `j` and `k` move through the news, **Index** goes back to the front page and `Esc` closes the window at once. It follows the theme and its material; only the Newspaper view keeps its own paper look.
+- **The news window** (`Shift + W`, or the news button on a computer) is one paper for everything you watch, with read and unread per item. The news button shows only while at least one feed is followed, not paused and not given up on. Closing the window on an article and pressing the button again returns to that article, if it is still in the paper; the button starts at the front page otherwise, and so do a push notification and the bell row. Choose how it looks under **Bookmarks → Watch feeds → Show news as**, or with the buttons in its header: one column (one article per screen, the new ones first, and the feeds' earlier entries one by one when nothing is new), two columns or a newspaper front page. `j` and `k` move through the news, **Index** goes back to the front page and `Esc` closes the window at once. It follows the theme and its material; only the Newspaper view keeps its own paper look.
 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-news.jpg" alt="The news window in its one-article view: the site name and 1 of 10 in the header with the three layout buttons, a picture, the headline and its lead, and the buttons previous, next, Mark read and Open page with the keys j, k and Esc" width="440"></p>
 <p align="center"><sub>The news window, one article per screen.</sub></p>
@@ -2671,7 +2672,7 @@ The **Containers view** shows the Docker containers on the machine nextDash runs
 
 ### 15.1 Opening it
 
-Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§15.7](#157-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a six-step walkthrough with moving drawings — offered once on your first visit ([§18](#view-tours)).
+Open it with **`Shift + C`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§15.7](#157-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a six-step walkthrough with moving drawings — offered once on your first visit ([§18](#view-tours)).
 
 <a id="152-the-list"></a>
 
@@ -4282,7 +4283,7 @@ The eight neutral themes — Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete 
 ## 18. ⚙️ Config
 
 > [!NOTE]
-> **In short:** Config is a view inside the dashboard, with a section for each part of nextDash. Open it with `Shift + S`, find any setting with `Ctrl/Cmd + Shift + K`, and most Config changes save the moment you make them.
+> **In short:** Config is a view inside the dashboard, with a section for each part of nextDash. Open it with `,`, find any setting with `Ctrl/Cmd + Shift + K`, and most Config changes save the moment you make them.
 
 Config is a **view inside the dashboard**: same tab, no page load.
 
@@ -4293,7 +4294,7 @@ Config is a **view inside the dashboard**: same tab, no page load.
 
 | To open | To leave |
 |---------|----------|
-| **`Shift + S`**, **`<`**, the gear, or `/#config` | **`Escape`** (when nothing is open on top and you are not typing), **`Shift + S`**, **`<`**, `0`–`9` (`0` is the tenth page), or the browser's Back button |
+| **`,`**, **`<`**, the gear, or `/#config` | **`Escape`** (when nothing is open on top and you are not typing), `0`–`9` (`0` is the tenth page), or the browser's Back button |
 
 Config reopens on the section and tab you left, for five minutes after you leave. Each section keeps its tab the same way: back within five minutes, it shows the tab you had open there; later, it opens on its first tab. A link like `/#config/appearance/layout` opens a section and tab directly and wins over the remembered place; `/#config/bookmarks/<pageId>` opens Bookmarks for one page. Moving between sections is not a browser history step.
 
@@ -4560,7 +4561,7 @@ A release opens with a one-line summary, then its **highlight** in a spotlight: 
 
 | Keys | Action |
 |------|--------|
-| `Shift + S` or `<` | Toggle config |
+| `,` or `<` | Open config (`Esc` leaves) |
 | `0`–`9` | Leave for a page (`0` is the tenth; the Inbox is `Shift + I`) |
 | `j` / `k` | Previous / next section |
 | `g` / `End` | First / last section |
@@ -5531,7 +5532,7 @@ See [§16A.12](#16a12-troubleshooting): the page needs a Glances 4 server, its a
 | <kbd>@</kbd> | Search all pages |
 | <kbd>+</kbd> · <kbd>&amp;</kbd> | Add · quick add |
 | <kbd>Ctrl</kbd> + <kbd>V</kbd> | Paste a URL |
-| <kbd>1</kbd>–<kbd>9</kbd> · <kbd>,</kbd> | Pages · pages panel |
+| <kbd>1</kbd>–<kbd>9</kbd> · <kbd>Shift</kbd> + <kbd>P</kbd> | Pages · pages panel |
 | <kbd>&#42;</kbd> · <kbd>/</kbd> · <kbd>!</kbd> | Recent · tags · cheat sheet |
 | <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> · <kbd>j</kbd> <kbd>k</kbd> | Move |
 | <kbd>Esc</kbd> | Back, or home |
@@ -5540,12 +5541,12 @@ See [§16A.12](#16a12-troubleshooting): the page needs a Glances 4 server, its a
 | <kbd>Shift</kbd> + <kbd>T</kbd> | Tags |
 | <kbd>Shift</kbd> + <kbd>D</kbd> | Delete |
 | <kbd>Shift</kbd> + <kbd>C</kbd> | Availability checking |
-| <kbd>Shift</kbd> + <kbd>H</kbd> | Bookmarks view (broken) |
+| <kbd>Shift</kbd> + <kbd>B</kbd> | Bookmarks view |
 | <kbd>Shift</kbd> + <kbd>U</kbd> | Bookmarks view (Unsorted) |
 | <kbd>Shift</kbd> + <kbd>I</kbd> | Inbox |
-| <kbd>Shift</kbd> + <kbd>Y</kbd> | Containers |
+| <kbd>Shift</kbd> + <kbd>C</kbd> | Containers |
 | <kbd>Shift</kbd> + <kbd>G</kbd> | Glances |
-| <kbd>Shift</kbd> + <kbd>S</kbd> | Config |
+| <kbd>,</kbd> | Config |
 | <kbd>Shift</kbd> + <kbd>A</kbd> | Themes |
 
 <a id="config"></a>
@@ -5554,7 +5555,7 @@ See [§16A.12](#16a12-troubleshooting): the page needs a Glances 4 server, its a
 
 | Keys | What they do |
 |---|---|
-| <kbd>Shift</kbd> + <kbd>S</kbd> or <kbd>&lt;</kbd> | Open or close config |
+| <kbd>,</kbd> or <kbd>&lt;</kbd> | Open config |
 | <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd> | Find a setting |
 | <kbd>j</kbd> / <kbd>k</kbd> | Previous / next section |
 | <kbd>Alt</kbd> + <kbd>←</kbd> / <kbd>→</kbd> or <kbd>[</kbd> <kbd>]</kbd> | Previous / next tab |
@@ -5640,7 +5641,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Command (`:`) | A line typed after `:` in the command palette to change or open something. | [§8.5](#85-commands) |
 | Config | A view inside the dashboard, in the same tab, where every setting lives in sections. | [§18](#18-config) |
 | Container | A Docker container on the machine nextDash runs on, listed and managed in the Containers view. | [§15](#15-containers) |
-| Containers view | The view for those containers, opened with `Shift + Y` or `:docker`, with a Containers and a Disk tab. | [§15.1](#151-opening-it) |
+| Containers view | The view for those containers, opened with `Shift + C` or `:docker`, with a Containers and a Disk tab. | [§15.1](#151-opening-it) |
 | Corner card | A card in the corner that offers something once, such as a review round or browser notifications; one at a time, and each can be dismissed. | [§4](#corner-cards) |
 | Custom theme | A theme of your own, made or recoloured in the theme editor and listed beside the packaged ones. | [§17.5](#175-custom-themes) |
 | Custom widget | A widget that reads figures from any service that answers with JSON. | [§16.5](#165-the-custom-widget) |
@@ -5754,7 +5755,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 
 | Term | Meaning | Explained in |
 |---|---|---|
-| QR code | A bookmark's address drawn as a code to scan with a phone, from `Shift + J` or the row menu; drawn in the browser, so the address goes nowhere. | [§6](#qr-code) |
+| QR code | A bookmark's address drawn as a code to scan with a phone, from `Shift + Q` or the row menu; drawn in the browser, so the address goes nowhere. | [§6](#qr-code) |
 | Quick add (`&`) | Press `&`, type a name, address and optional shortcut on one line, and press Enter. | [§5.1](#51-quick-add) |
 | Quick start | The bar at the bottom of a new install's dashboard, and the guide it opens: what to do with the example links, the language, the weather and ten next steps. | [§2](#first-launch) |
 | Quiet hours | A window in which alerts are held and then summed up in one message when it ends; the downtime still counts. | [§12.5](#quiet-hours) |
