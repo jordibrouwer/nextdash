@@ -939,7 +939,7 @@ What needs you waits in the bell instead of popping up over your work: questions
 <p align="center"><img src="screenshots/manual.md/04-bell.jpg" alt="The notifications bell open: a Clean up group with two questions, each with Start and No, and a Tips group with three tips" width="860"></p>
 <p align="center"><sub>The bell, open.</sub></p>
 
-The bell shakes and pulses for something new, with a short tone; **Bell sound for new notifications** under Config → Behavior switches the tone off, and **Bring back dismissed notifications** there puts every answered row back.
+The bell shakes and pulses for something new, with a short tone (news from watched feeds has a softer two-note chime of its own); while anything is still unread the badge pulses once a minute and the bell shakes and pulses once an hour, without a tone; **Bell sound for new notifications** under Config → Behavior switches the tone off, and **Bring back dismissed notifications** there puts every answered row back.
 
 <a id="the-page-switcher"></a>
 
@@ -1079,6 +1079,8 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 1. **What the page is** — icon, title, one address and a status pill.
 2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. A bookmark that is a video — YouTube, Vimeo, Dailymotion, or a file that ends in `.mp4` — carries a small **▶** on the corner of its icon (beside the name when icons are off), and the card opens on the thumbnail with a play button over it.
 3. **What you know about it** — last check and ping, uptime, certificate expiry, opens and last opened, shortcut and location.
+
+The card is not shown in the phone layout (a window narrower than 768 px); it comes back when the window widens.
 
 The page's picture stands on the left of the card, beside the text.
 
@@ -2604,7 +2606,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.2 What you see
 
-- **News.** The **Watch feeds news** widget ([§16.1](#161-the-kinds)) lists the sites with news on the dashboard. A bookmark with news gets a stripe, a bold name, the newest headline, a badge with a halo (from ten items on it reads *9+*) and a dot on the page tab; a feed icon marks watched bookmarks (**Settings → Show a feed icon on watched bookmarks**, on). One row in the notifications bell ([§4](#the-notifications-bell)) covers all sites and is updated in place as more arrives, the browser tab shows a count, and **Notify when a watched feed has news** (Config → Watch feeds → Settings, on by default) sends a notification. Hovering shows the preview card that leads with the news (**Open reader**, **Open page** and a pager for up to ten items, [§4](#the-link-preview-card)). Clicking a row with news opens a popover with six headlines, a **Reader** button and an open-site button; "+n more" expands it in place up to 10. On a phone there is no hover: a tap shows the headlines first (five), **Reader** opens the news window, and the bar on top goes to the site.
+- **News.** The **Watch feeds news** widget ([§16.1](#161-the-kinds)) lists the sites with news on the dashboard. A bookmark with news gets a stripe, a bold name, the newest headline, a badge with a halo (from ten items on it reads *9+*); a feed icon marks watched bookmarks (**Settings → Show a feed icon on watched bookmarks**, on). One row in the notifications bell ([§4](#the-notifications-bell)) covers all sites and is updated in place as more arrives, the browser tab shows a count, and **Notify when a watched feed has news** (Config → Watch feeds → Settings, on by default) sends a notification. Hovering shows the preview card that leads with the news (**Open reader**, **Open page** and a pager for up to ten items, [§4](#the-link-preview-card)). Clicking a row with news opens a popover with six headlines, a **Reader** button and an open-site button; "+n more" expands it in place up to 10. On a phone there is no hover: a tap shows the headlines first (five), **Reader** opens the news window, and the bar on top goes to the site.
 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-flow.svg" alt="A site feed is read by the nextDash server on the interval you chose, from 30 minutes to 24 hours. What it finds appears in three places: a row on the dashboard with a stripe, a bold name and a badge; the preview card on hover, with Open reader and Open page; and the news window opened with Shift and N, which comes in three layouts. Small dots travel from the feed to the server and on to the three places, which light up when the news arrives" width="720"></p>
 <p align="center"><sub>From feed to screen: nextDash reads, and the news shows on the row, in the preview card and in the news window.</sub></p>
