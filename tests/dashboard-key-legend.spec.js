@@ -64,7 +64,7 @@ test.describe('the dashboard key legend', () => {
 
         await page.keyboard.press('ArrowDown');
         await expect(more.first()).toBeVisible({ timeout: 5_000 });
-        await expect(legend(page)).toContainText('Shift+E');
+        await expect(legend(page)).toContainText('to search');
 
         await page.evaluate(() => { window.open = () => null; });
         await page.keyboard.press('Enter');

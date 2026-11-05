@@ -150,7 +150,7 @@ test.describe('the keys are announced where the button is', () => {
 
         const config = page.locator('.config-link-anchor');
         if (await config.count()) {
-            await expect(config).toHaveAttribute('aria-keyshortcuts', 'Shift+S');
+            await expect(config).toHaveAttribute('aria-keyshortcuts', ',');
         }
     });
 });

@@ -519,7 +519,7 @@ flowchart LR
 
 A running container is not the same as a working service. A container can be *up* while its web UI shows an error page, its database is gone or its certificate has expired. The bookmark checks the service the way you use it — from the outside.
 
-1. Open the bookmark (from the container's row, or the Bookmarks view) and set its availability to **Monitor** — `Shift + C` on the dashboard, `c` in the Bookmarks view.
+1. Open the bookmark (from the container's row, or the Bookmarks view) and set its availability to **Monitor** — `c` on the dashboard, `c` in the Bookmarks view.
 2. Choose how often: 5 minutes to 24 hours, 15 minutes by default.
 3. For a service that answers *200* while it is broken, open **Expected response** and give it a phrase that only shows when it works, or the status codes that count as healthy.
 4. For a service behind a sign-in, give it an **Address to check instead** — a `/health` or `/api/status` endpoint — and, if needed, a stored sign-in from a Custom widget.
@@ -972,10 +972,10 @@ The bell shakes and pulses for something new, with a short tone (news from watch
 | Finders | `?` | Finders |
 | Tag cloud | `/` | The tag cloud; pick a tag to open its tag view |
 | Recent | `*` | Recent bookmarks — from every view |
-| Pages | `Shift + P` (no bookmark selected) | The pages panel |
+| Pages | `Shift + P` | The pages panel |
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
-| Edit | `Shift + E` (no bookmark selected) | Edit mode ([see below](#edit-mode)) |
+| Edit | `Shift + E` | Edit mode ([see below](#edit-mode)) |
 | Theme studio | `Shift + A` | The theme studio ([§17.1](#the-theme-studio)); last in the bar, and left out on a phone |
 
 Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working: `+` adds a bookmark, `>` opens search, `!` the cheat sheet. With every button off, the surround disappears too.
@@ -1011,7 +1011,7 @@ The **★** button in the bottom-right corner opens the release notes. It is lef
 
 Edit mode changes the dashboard itself without a trip to Config: names, icons, widths, views, sorting and a widget's settings, all in a panel beside the page.
 
-**Switching it on.** Press `Shift + E` when no bookmark is selected (with one selected, `Shift + E` edits that bookmark and `Shift + M` moves it), click the pencil in the action bar, type `:edit mode`, or pick **Edit in panel…** in the right-click menu of a category or widget, which also chooses that block. `Esc` or `Shift + E` switches it off. The mode is for computers and tablets with a wide window; a phone layout never enters it. **Show the edit-mode button** under Config → Appearance → Action bar hides the pencil; the key keeps working.
+**Switching it on.** Press `Shift + E` (whatever is selected), click the pencil in the action bar, type `:edit mode`, or pick **Edit in panel…** in the right-click menu of a category or widget, which also chooses that block. `Esc` or `Shift + E` switches it off. The mode is for computers and tablets with a wide window; a phone layout never enters it. **Show the edit-mode button** under Config → Appearance → Action bar hides the pencil; the key keeps working.
 
 **While it is on.** A bar at the top says so. A click on a bookmark selects its block instead of opening it, the grid's bare letters, arrows and `Enter` are left alone, and the link preview card stays away and comes back afterwards if you have it on. Clicking a page tab still switches page, and the panel shows that page. `Esc` goes from the inside out: a dialog or menu first, then a field in the panel gives the focus back, then the mode ends.
 
@@ -1074,7 +1074,7 @@ Each review card has a switch under Behavior → Privacy & sync → Onboarding, 
 
 ### 🃏 The link preview card
 
-Hovering a bookmark — or pressing **`Shift + V`** on the selected row — opens a card in a fixed order:
+Hovering a bookmark — or pressing **`v`** on the selected row — opens a card in a fixed order:
 
 1. **What the page is** — icon, title, one address and a status pill.
 2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. A bookmark that is a video — YouTube, Vimeo, Dailymotion, or a file that ends in `.mp4` — carries a small **▶** on the corner of its icon (beside the name when icons are off), and the card opens on the thumbnail with a play button over it.
@@ -1092,7 +1092,7 @@ The page's picture stands on the left of the card, beside the text.
 
 A row with nothing to say is left out. **Config → Appearance → Previews** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
 
-**Playing a video.** Nothing reaches YouTube or Vimeo while you hover: the poster is the picture your own server already fetched, and the player is built when you press it. From the keyboard, `Shift + V` puts the cursor on the play button and `Enter` starts it. `Esc` closes the card and ends the video, and so do the **✕** over the player and a click anywhere else — a click inside the player hands the keyboard to the provider, so `Esc` only works again once your pointer leaves the card.
+**Playing a video.** Nothing reaches YouTube or Vimeo while you hover: the poster is the picture your own server already fetched, and the player is built when you press it. From the keyboard, `v` puts the cursor on the play button and `Enter` starts it. `Esc` closes the card and ends the video, and so do the **✕** over the player and a click anywhere else — a click inside the player hands the keyboard to the provider, so `Esc` only works again once your pointer leaves the card.
 
 The picture and the site icon are fetched **by your server** and stored under `data/preview-images/`, so hovering never tells the site you looked. The first hover shows the text at once and the picture a moment later. Untick **Image** and no picture is fetched or stored; set the cards to **Off** and nothing is fetched for them at all. **Data & backups → Icons & previews** caps the stored pictures at 50, 200 or 500 MB and can remove them all. Pictures are left out of backups; they are fetched again when needed.
 
@@ -1144,7 +1144,7 @@ On a screen with a mouse or trackpad the form has two columns. On the left are t
 
 Change the address and the whole read starts again; only the latest one counts.
 
-- **Page › category** is one field. It opens the same list as **Move to…** (`Shift + M`), with a filter at the top: type to narrow it, arrows and `Enter` to pick. Its first rows are **New category on …** and **New page…**; after a new page, the form asks for its first category.
+- **Page › category** is one field. It opens the same list as **Move to…** (`m`), with a filter at the top: type to narrow it, arrows and `Enter` to pick. Its first rows are **New category on …** and **New page…**; after a new page, the form asks for its first category.
 - **ⓘ** beside **Tags**, **Shortcut** and the checking choice explains each one.
 - **Availability** is the same **Off / Periodic / Monitor** choice as everywhere, with the interval for Monitor. A new bookmark starts on **Periodic**; change that under Config → Bookmarks → **New bookmarks → Availability** (an install that still had Off from before was moved to Periodic once).
 - The **shortcut** field warns when a shortcut is taken, and says which letters the grid itself uses.
@@ -1235,16 +1235,16 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 |------|-----|--------------|
 | Open in new tab | `Ctrl/Cmd + Enter` | Opens it in the background |
 | Copy URL | `Ctrl + C` | Copies the address |
-| Share… / Copy name + URL | `Shift + S` | The system share sheet where the browser offers one (HTTPS only); otherwise copies name and address |
-| QR code | `Shift + Q` | Shows the address as a QR code, to open it on a phone; drawn in the browser, so the address goes nowhere. **Copy URL** in the window copies it |
-| Edit | `Shift + E` | Edit in place |
-| Pin / Unpin | `Shift + P` | |
-| Tags… | `Shift + T` | The quick tag picker |
-| Move to… | `Shift + M` | Another category or page |
-| Checking | `Shift + C` | Off / Periodic / Monitor |
-| Show in list | `Shift + R` | Opens the bookmark in the Bookmarks view, with its Health section open |
+| Share… / Copy name + URL | `s` | The system share sheet where the browser offers one (HTTPS only); otherwise copies name and address |
+| QR code | `q` | Shows the address as a QR code, to open it on a phone; drawn in the browser, so the address goes nowhere. **Copy URL** in the window copies it |
+| Edit | `e` | Edit in place |
+| Pin / Unpin | `p` | |
+| Tags… | `t` | The quick tag picker |
+| Move to… | `m` | Another category or page |
+| Checking | `c` | Off / Periodic / Monitor |
+| Show in list | `r` | Opens the bookmark in the Bookmarks view, with its Health section open |
 | Select / Select all in category | `x` / `X` | Starts a selection |
-| Delete | `Shift + D` | Asks first; undo in the toast; the trash keeps it 30 days |
+| Delete | `d` or `Delete` | Asks first; undo in the toast; the trash keeps it 30 days |
 
 The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
 
@@ -1254,7 +1254,7 @@ The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
 <a id="qr-code"></a>
 
 > [!TIP]
-> **A link on your phone.** Select the bookmark and press **`Shift + Q`**, or pick **QR code** in this menu, then scan the code with the phone's camera. On an inbox row the code holds the item's own link, as Share does. The code is drawn in the browser, so the address is not sent anywhere.
+> **A link on your phone.** Select the bookmark and press **`q`**, or pick **QR code** in this menu, then scan the code with the phone's camera. On an inbox row the code holds the item's own link, as Share does. The code is drawn in the browser, so the address is not sent anywhere.
 
 <p align="center"><img src="screenshots/manual.md/06-qr-code.jpg" alt="The QR code window for the Encyclopedia bookmark: the code, the address under it and a Copy URL button" width="392"></p>
 <p align="center"><sub>A bookmark as a QR code (<kbd>Shift</kbd> + <kbd>Q</kbd>), ready for the phone's camera.</sub></p>
@@ -1263,7 +1263,7 @@ The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
 
 ### ✏️ Editing in place
 
-**`Shift + E`**, a long press, or **Edit** opens the bookmark form over the row, with the page dimmed behind it. **Save** or **`Ctrl + Enter`** writes it; **`Esc`** or a click outside closes it, asking first when something changed. While it is open, the grid keys, swiping and paste are paused. Deleting from the form asks first and offers undo.
+**`e`**, a long press, or **Edit** opens the bookmark form over the row, with the page dimmed behind it. **Save** or **`Ctrl + Enter`** writes it; **`Esc`** or a click outside closes it, asking first when something changed. While it is open, the grid keys, swiping and paste are paused. Deleting from the form asks first and offers undo.
 
 <p align="center"><img src="screenshots/manual.md/06-edit-in-place.jpg" alt="The edit bookmark form over the dashboard with the cursor in the address field: name, preview card, tags, page and category, shortcut, checking, pinned and note, with Delete, Cancel and Save" width="628"></p>
 <p align="center"><sub>Editing in place: the bookmark's own form, opened with <kbd>Shift</kbd> + <kbd>E</kbd>.</sub></p>
@@ -1309,7 +1309,7 @@ Ten tiles fit on a page; a pager in the foot says where you are ("11–20 of 34"
 > [!NOTE]
 > **In short:** every action on a bookmark is `Shift` plus a letter, and the cheat sheet (`!` or `F1`) lists them all. This chapter is the full key map.
 
-Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to search until the cursor is on the grid, and then to the grid, where they look rather than change: `t` filters the grid by the bookmark's tag, `x` ticks, `j` and `k` move. The same letter with `Shift` changes something: `Shift + T` edits the tags. With a bookmark selected, a `Shift` letter acts on it; with nothing selected, the same letter opens a view or panel (`Shift + C` is Checking on a bookmark and Containers on nothing). The right-click menu shows each key, and the cheat sheet (**`!`** or **`F1`**) lists all of them.
+With the cursor on a bookmark, its actions are **plain letters**, as in the Inbox: `e` edits, `m` moves, `t` tags, `p` pins, `c` sets checking, `r` shows it in the Bookmarks view, `v` the preview card, `s` shares, `q` shows a QR code, `d` deletes (it asks first) and `f` filters the grid by its tag; `x` ticks and `j` and `k` move. With no cursor on the grid the same letters start a search: `Esc`, or ten idle seconds, hands them back. `Shift` plus a letter never acts on a bookmark; it is a view or panel wherever you are (`Shift + C` is Containers). A small strip beside the page name says what the keys do right now. The right-click menu shows each key, and the cheat sheet (**`!`** or **`F1`**) lists all of them.
 
 <a id="71-views-and-panels"></a>
 
@@ -1322,17 +1322,17 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + I` | Inbox |
 | `Shift + B` | The Bookmarks view, the whole list |
 | `Shift + U` | The Bookmarks view, on Unsorted |
-| `Shift + C` | Containers, with no bookmark selected (with one selected, Checking) |
+| `Shift + C` | Containers |
 | `Shift + G` | Glances, from every view (once it is set up in Config) |
 | `,` or `<` | Config (`Esc` leaves) |
 | `Shift + A` | The theme studio |
-| `Shift + E` | With no bookmark selected, edit mode ([§4](#edit-mode)); with one selected, edit in place |
+| `Shift + E` | Edit mode ([§4](#edit-mode)) |
 | `>` `:` `?` | Search, commands, finders — from every view |
 | `+` · `Ctrl + Shift + A` · `&` | Full bookmark form · from anywhere · quick add |
 | `/` | Tag cloud (type to find a tag, `Enter` opens its tag view, `Shift + Enter` stacks) |
-| `Shift + T` | With no bookmark selected, the tag view of every bookmark ([§10.2](#102-filtering-by-tag)); with one selected, that bookmark's tags |
+| `Shift + T` | The tag view of every bookmark ([§10.2](#102-filtering-by-tag)) |
 | `*` | Recent bookmarks — from every view |
-| `Shift + P` | With no bookmark selected, the Pages panel (`n` there makes a new page); with one selected, Pin |
+| `Shift + P` | The Pages panel (`n` there makes a new page) |
 | `!` or `F1` | Cheat sheet |
 | `.` | Fold or unfold every category and widget |
 | `Shift + N` | The notification center (the bell), and closes it again |
@@ -1378,16 +1378,17 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 
 | Keys | Action |
 |------|--------|
-| `Shift + E` | Edit in place |
-| `Shift + V` | Preview card, kept open |
-| `Shift + M` | Move to another category or page |
-| `Shift + T` | Tags |
-| `Shift + D` or `Delete` | Delete (asks first; undo in the toast) |
-| `Shift + P` | Pin or unpin |
-| `Shift + C` | Availability checking — `o` off, `p` periodic, `m` monitor |
-| `Shift + S` | Share, or copy name and URL |
-| `Shift + Q` | The bookmark as a QR code, to open it on a phone |
-| `Shift + R` | Open the bookmark in the Bookmarks view, on its Health tab |
+| `e` | Edit in place |
+| `v` | Preview card, kept open |
+| `m` | Move to another category or page |
+| `t` | Tags |
+| `d` or `Delete` | Delete (asks first; undo in the toast) |
+| `p` | Pin or unpin |
+| `c` | Availability checking — `o` off, `p` periodic, `m` monitor |
+| `s` | Share, or copy name and URL |
+| `q` | The bookmark as a QR code, to open it on a phone |
+| `f` | Filter the grid by the bookmark's tag |
+| `r` | Open the bookmark in the Bookmarks view, on its Health tab |
 | `Ctrl + C` | Copy the URL |
 | `Ctrl/Cmd + Enter` | Open in a new tab |
 | `t` | Filter the grid by this bookmark's tag |
@@ -1724,7 +1725,7 @@ Click a header, or press `Enter` on it, to fold the category. **`.`** folds or u
 
 - Drag a row within its category or onto another. A click still opens; a long press still edits.
 - `Alt + ↑/↓` moves the selected bookmark within its category; `Shift + Alt + ←/→` moves it to the next category.
-- `Shift + M` moves it to any category or page.
+- `m` moves it to any category or page.
 - Moves can be undone from the toast for eight seconds.
 - **Lock layout** (Behavior → General, or `:locklayout`) turns dragging and moving off for bookmarks, categories and widgets.
 
@@ -1810,13 +1811,13 @@ A file is at most 2 MB.
 ## 10. 🏷️ Tags
 
 > [!NOTE]
-> **In short:** tags are free labels, stored in lower case. Add them in the form or with `Shift + T`, filter by them, manage them in one place and accept suggestions. Notes are covered here too.
+> **In short:** tags are free labels, stored in lower case. Add them in the form or with `t`, filter by them, manage them in one place and accept suggestions. Notes are covered here too.
 
 <a id="101-tags-on-a-bookmark"></a>
 
 ### 10.1 Tags on a bookmark
 
-- Set them in the bookmark form, the side panel in the Bookmarks view, with `Shift + T`, or with `:tag +name`. The form, the side panel, `Shift + T` and the selection's tag picker each show the tags this bookmark is likely to want, under **Suggested**; `Shift + T` opens at the top of its list, with those first.
+- Set them in the bookmark form, the side panel in the Bookmarks view, with `t`, or with `:tag +name`. The form, the side panel, `t` and the selection's tag picker each show the tags this bookmark is likely to want, under **Suggested**; `Shift + T` opens at the top of its list, with those first.
 - Stored in lower case, trimmed, without duplicates. Autocomplete offers the tags you already use.
 - **Tags on rows** (Appearance → Rows → Bookmark display) shows them as chips on the dashboard — the first few, then a count. The chips are labels only; to see everything with a tag, use the tag cloud (`/`) or select the bookmark and press `t`.
 
@@ -1843,10 +1844,10 @@ A file is at most 2 MB.
 - On a row, `Shift` plus `E`, `P`, `T`, `M`, `D`, `C`, `R`, `L` or `J` does what it does on the dashboard: edit, pin, tags, move, delete, check mode, health, share link and QR code. `Delete` deletes, `Ctrl/Cmd + C` copies the address, and the row menu is the dashboard's. The cheat sheet has a **Tag view** section with all of it ([§7.6](#76-the-cheat-sheet)).
 - `x` ticks a row. `Alt`+click ticks one, `Shift`+click ticks a range, and the tick in the header ticks everything shown. A bar then offers **Open**, **Add tag…**, **Move to…**, **Delete** and **Clear**. **Add tag…** puts one or more tags (separate them with commas; the tags in use are suggested) on every ticked bookmark, and can be undone. **Move to…** takes a page; categories belong to one page, so they are offered only when every bookmark is on the same one.
 - `Escape` lets go of one thing at a time: the side panel, then the selection. After that it leaves the view and takes you back to the page you opened it from. In the search box, `Escape` first clears what you typed. The home icon and your browser's Back button do the same.
-- Ways in: the tag cloud, `t` on a selected bookmark (it opens the view for that bookmark's tag), `:filter <tag>`, or `Shift + T` with no bookmark selected (below).
+- Ways in: the tag cloud, `f` on a selected bookmark (it filters by that bookmark's tag), `:filter <tag>`, or `Shift + T` (below).
 - The view's address is `#tag/<tag>` (several tags are joined with `+`, and `?all` marks an **and** view, as in `#tag/linux+security?all`). Bookmark it or share it, and it opens on the same tags.
 
-**The tag view of every bookmark.** `Shift + T` with no bookmark selected opens the tag view with no tag picked: every bookmark from every page in one table. The header says how many have no tags, and the rail starts with a **Without tags** filter that keeps the list to those, followed by the tags in use. Click a tag there to open its own tag view; Back returns here. The address is `#tags`. With a bookmark selected, `Shift + T` still opens that bookmark's Tags popover.
+**The tag view of every bookmark.** `Shift + T` opens the tag view with no tag picked: every bookmark from every page in one table. The header says how many have no tags, and the rail starts with a **Without tags** filter that keeps the list to those, followed by the tags in use. Click a tag there to open its own tag view; Back returns here. The address is `#tags`. With a bookmark selected, `Shift + T` still opens that bookmark's Tags popover.
 - Tag chips on dashboard rows are labels only; they are not clickable.
 - `tag:work` in search narrows results without opening the view.
 
@@ -1885,7 +1886,7 @@ nextDash proposes tags for bookmarks that lack them. It never tags anything behi
 **Where you see them.**
 
 - **In the rows** of the Bookmarks view, the inbox and the tag view: a dashed chip after a row's tags. Click it to add the tag, **×** to turn it down. A suggestion comes first in the row; when there is no room, the row's own tags fold into **+n**, and further suggestions into **+N**. **+N** opens a list of every suggestion for that row, each to add or turn down; **+n** lists the tags the row already carries. A line over the list counts them, *7 tag suggestions in this list · Add all*.
-- **One bookmark at a time** — in the bookmark form, the Bookmarks view's side panel, `Shift + T` and the selection's tag picker, under **Suggested** ([§10.1](#101-tags-on-a-bookmark)). In the form and the tag popover, **Read page** reads that one page when nothing else turns up.
+- **One bookmark at a time** — in the bookmark form, the Bookmarks view's side panel, `t` and the selection's tag picker, under **Suggested** ([§10.1](#101-tags-on-a-bookmark)). In the form and the tag popover, **Read page** reads that one page when nothing else turns up.
 - **Grouped** — Config → Bookmarks → Tag suggestions proposes one tag for a whole group: every bookmark on a site, or every bookmark an app or rule covers. Each row names its source and its count; click the row or its count to open the group and leave single bookmarks out. **Apply** tags the rest (undo in the toast). At most 25 rows show at a time.
 - **A row in the notifications bell** offers a look when ten suggestions are waiting; switch it off with **Offer to review tag suggestions** under Behavior → Privacy & sync → Onboarding.
 
@@ -2220,7 +2221,7 @@ Every bookmark has one of three modes:
 | **Periodic** | Checked now and then; flagged when broken |
 | **Monitor** | Checked by the server on its own interval (5 minutes to 24 hours, default 15 minutes), with 30 days of history, uptime, outages and alerts. Includes everything Periodic does. |
 
-Set the mode in the bookmark form, the Bookmarks view's side panel, the right-click menu, with **`Shift + C`**, or with **`c`** in the Bookmarks view. On a monitored row the menu also shows the **check interval**: 5m, 15m, 30m, 1h, 6h or 24h.
+Set the mode in the bookmark form, the Bookmarks view's side panel, the right-click menu, with **`c`** on the dashboard or in the Bookmarks view. On a monitored row the menu also shows the **check interval**: 5m, 15m, 30m, 1h, 6h or 24h.
 
 **Nothing checked at all?** In the Bookmarks view, pick **Unchecked** under Health in the rail, tick every row with `X`, and set the checking to **Periodic** under **Edit…** ([§11.4](#114-selecting-several)).
 
@@ -5710,7 +5711,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Layout history | The earlier arrangements nextDash keeps of a page's widgets and block order, which Find settings can restore. | [§18.3](#layout-history) |
-| Link preview card | The card that opens when you hover a bookmark or press `Shift + V`: what the page is, what it says, your note and tags. | [§4](#the-link-preview-card) |
+| Link preview card | The card that opens when you hover a bookmark or press `v`: what the page is, what it says, your note and tags. | [§4](#the-link-preview-card) |
 | Logs window | A window that follows a container's log as it is written, with search and filter. | [§15.8](#158-the-logs-window) |
 | Look | A ready-made combination of backdrop, surface, headers and type that leaves the theme's colours alone. | [§17.1](#looks) |
 
@@ -5755,7 +5756,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 
 | Term | Meaning | Explained in |
 |---|---|---|
-| QR code | A bookmark's address drawn as a code to scan with a phone, from `Shift + Q` or the row menu; drawn in the browser, so the address goes nowhere. | [§6](#qr-code) |
+| QR code | A bookmark's address drawn as a code to scan with a phone, from `q` or the row menu; drawn in the browser, so the address goes nowhere. | [§6](#qr-code) |
 | Quick add (`&`) | Press `&`, type a name, address and optional shortcut on one line, and press Enter. | [§5.1](#51-quick-add) |
 | Quick start | The bar at the bottom of a new install's dashboard, and the guide it opens: what to do with the example links, the language, the weather and ten next steps. | [§2](#first-launch) |
 | Quiet hours | A window in which alerts are held and then summed up in one message when it ends; the downtime still counts. | [§12.5](#quiet-hours) |

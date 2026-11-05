@@ -32,12 +32,16 @@ test('the cheat sheet lists the keys of today and none of the retired ones', asy
     await load(page);
     const keys = await registryKeys(page);
     const has = (needle) => keys.some((k) => k.includes(needle));
-    for (const now of ['Shift + B', 'Shift + C (no row selected)', 'Shift + E (no row selected)', 'Shift + N',
-        'Shift + W (no block selected)', 'Shift + P (no row selected)', 'Shift + Q', 'Shift + S', 'Shift + H', 'Shift + X (no row selected)']) {
+    for (const now of ['Shift + B', 'Shift + C', 'Shift + E', 'Shift + N',
+        'Shift + W', 'Shift + P', 'Shift + H', 'Shift + X (no row selected)']) {
         expect(has(now), `missing ${now}`).toBe(true);
     }
-    for (const gone of ['Shift + Y', 'Shift + J', 'Shift + L', 'Shift + Z']) {
+    for (const gone of ['Shift + Y', 'Shift + J', 'Shift + L', 'Shift + Z', 'Shift + Q']) {
         expect(keys.some((k) => k === gone || k.startsWith(`${gone} `)), `still lists ${gone}`).toBe(false);
+    }
+    // The row's actions are plain letters now.
+    for (const letter of ['E', 'M', 'T', 'P', 'C', 'S', 'Q', 'R', 'V', 'D']) {
+        expect(keys, `missing the row letter ${letter}`).toContain(letter);
     }
     // Shift + H is the key legend on the grid; in the Bookmarks view the row's own health keeps it.
     expect(keys.filter((k) => /^Shift \+ H\b/.test(k) && !k.startsWith('Shift + Home')).sort())
@@ -55,6 +59,6 @@ test('the Inbox legend has t for tags and f for triage, and no l', async ({ page
 test('the dashboard legend names the keys of today and no retired key', async ({ page }) => {
     await load(page);
     const keys = await page.evaluate(() => window.KeyboardViewLegends.DASHBOARD_VIEW.map((r) => r.keys));
-    for (const now of ['Shift+W', 'Shift+N', 'Shift+B', 'Shift+I', ',', 'Shift+S', 'Shift+Q', 'Shift+H']) expect(keys).toContain(now);
-    for (const gone of ['Shift+Y', 'Shift+J', 'Shift+L', 'Shift+Z']) expect(keys).not.toContain(gone);
+    for (const now of ['Shift+W', 'Shift+N', 'Shift+B', 'Shift+I', ',', 'Shift+H', 'e', 'm', 't', 'p', 'd', 's', 'q', 'f', 'Esc']) expect(keys).toContain(now);
+    for (const gone of ['Shift+Y', 'Shift+J', 'Shift+L', 'Shift+Z', 'Shift+Q', 'Shift+E', 'Shift+M', 'Shift+T', 'Shift+D']) expect(keys).not.toContain(gone);
 });

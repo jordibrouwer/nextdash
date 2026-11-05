@@ -81,15 +81,18 @@
         { line: 3, more: true, keys: 'Shift+F', legendKey: 'dashboardKeyFilter', cheatKey: 'dvFilter', fallback: 'filter' },
         { line: 3, more: true, keys: 'Shift+K', legendKey: 'dashboardKeyTour', cheatKey: 'dvTour', fallback: 'tour' },
         { line: 3, more: true, keys: 'Shift+H', legendKey: 'dashboardKeyHideLegend', cheatKey: 'dvHideLegend', fallback: 'hide legend' },
-        // Line 4: what to do with the bookmark under the cursor.
-        { line: 4, keys: 'Shift+E', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
-        { line: 4, keys: 'Shift+M', legendKey: 'dashboardKeyMoveBookmark', cheatKey: 'dvMoveBookmark', fallback: 'move to' },
-        { line: 4, keys: 'Shift+T', legendKey: 'dashboardKeyTag', cheatKey: 'dvTag', fallback: 'tag' },
-        { line: 4, keys: 'Shift+P', legendKey: 'dashboardKeyPin', cheatKey: 'dvPin', fallback: 'pin' },
-        { line: 4, keys: 'Shift+D', legendKey: 'dashboardKeyDelete', cheatKey: 'dvDelete', fallback: 'delete' },
+        // Line 4: what to do with the bookmark under the cursor. Plain letters,
+        // as in the Inbox; Esc hands the letters back to the search line.
+        { line: 4, keys: 'e', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
+        { line: 4, keys: 'm', legendKey: 'dashboardKeyMoveBookmark', cheatKey: 'dvMoveBookmark', fallback: 'move to' },
+        { line: 4, keys: 't', legendKey: 'dashboardKeyTag', cheatKey: 'dvTag', fallback: 'tag' },
+        { line: 4, keys: 'p', legendKey: 'dashboardKeyPin', cheatKey: 'dvPin', fallback: 'pin' },
+        { line: 4, keys: 'Esc', legendKey: 'dashboardKeyEscSearch', cheatKey: 'dvEscSearch', fallback: 'to search' },
         { line: 4, keys: '\u2318/Ctrl+Enter', legendKey: 'dashboardKeyNewTab', cheatKey: 'dvNewTab', fallback: 'new tab' },
-        { line: 4, more: true, keys: 'Shift+S', legendKey: 'dashboardKeyShare', cheatKey: 'dvShare', fallback: 'share' },
-        { line: 4, more: true, keys: 'Shift+Q', legendKey: 'dashboardKeyQr', cheatKey: 'dvQr', fallback: 'QR code' },
+        { line: 4, more: true, keys: 'd', legendKey: 'dashboardKeyDelete', cheatKey: 'dvDelete', fallback: 'delete' },
+        { line: 4, more: true, keys: 's', legendKey: 'dashboardKeyShare', cheatKey: 'dvShare', fallback: 'share' },
+        { line: 4, more: true, keys: 'q', legendKey: 'dashboardKeyQr', cheatKey: 'dvQr', fallback: 'QR code' },
+        { line: 4, more: true, keys: 'f', legendKey: 'dashboardKeyFilterTag', cheatKey: 'dvFilterTag', fallback: 'filter by tag' },
         { line: 4, more: true, keys: '#', legendKey: 'dashboardKeyWatchFeed', cheatKey: 'dvWatchFeed', fallback: 'watch feed' },
     ];
 

@@ -880,8 +880,8 @@
             global.AppModal.show({
                 title: tq('guideTipsTitle', 'Your page is ready'),
                 htmlMessage: `<ul class="sg-tips">
-                    ${line(tq('guideTipsEdit', 'Edit'), tq('guideTipsEditText', 'Right-click a bookmark and choose Edit, or select it and press {key}.'), 'Shift+E')}
-                    ${line(tq('guideTipsDelete', 'Delete'), tq('guideTipsDeleteText', 'Right-click a bookmark and choose Delete, or select it and press {key}.'), 'Shift+D')}
+                    ${line(tq('guideTipsEdit', 'Edit'), tq('guideTipsEditText', 'Right-click a bookmark and choose Edit, or select it and press {key}.'), 'E')}
+                    ${line(tq('guideTipsDelete', 'Delete'), tq('guideTipsDeleteText', 'Right-click a bookmark and choose Delete, or select it and press {key}.'), 'D')}
                     ${line(tq('guideTipsAdd', 'Add'), tq('guideTipsAddText', 'Press {key} for the full form, or paste a link anywhere on the page.'), '+')}
                     ${line(tq('guideTipsMonitor', 'Monitor'), tq('guideTipsMonitorText', 'To watch a service, right-click it, choose Checking, then Monitor and pick how often, for example every hour. The {key} view shows when one is down.'), 'Bookmarks')}
                     </ul>${hasAddress ? `<p class="sg-tips-note">${esc(tq('guideTipsAddress', 'The links use the server address you entered. Edit any link whose address is different.'))}</p>` : ''}`,

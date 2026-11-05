@@ -18,18 +18,25 @@ async function focusFirstRow(page) {
 }
 
 test.describe('row actions from the keyboard', () => {
-    test('Shift+P pins and unpins the selected row', async ({ page }) => {
+    test('P pins and unpins the selected row', async ({ page }) => {
         await focusFirstRow(page);
         const before = await page.evaluate(() =>
             !!window.dashboardInstance.keyboardNavigation.getSelectedBookmark().pinned);
 
-        await page.keyboard.press('Shift+P');
+        await page.keyboard.press('p');
         await expect.poll(() => page.evaluate(() =>
             !!window.dashboardInstance.keyboardNavigation.getSelectedBookmark()?.pinned),
         { timeout: 5_000 }).toBe(!before);
+
+        // Put it back: the pin is stored, and a pinned first bookmark moves the
+        // cursor's first row into the Pinned collection for every later test.
+        await page.keyboard.press('p');
+        await expect.poll(() => page.evaluate(() =>
+            !!window.dashboardInstance.keyboardNavigation.getSelectedBookmark()?.pinned),
+        { timeout: 5_000 }).toBe(before);
     });
 
-    test('Shift+S hands the row to the share path', async ({ page }) => {
+    test('S hands the row to the share path', async ({ page }) => {
         await focusFirstRow(page);
         const shared = await page.evaluate(async () => {
             const d = window.dashboardInstance;
@@ -43,7 +50,7 @@ test.describe('row actions from the keyboard', () => {
         expect(shared).toBeTruthy();
     });
 
-    test('Shift+R reveals the row in Health, not just the view', async ({ page }) => {
+    test('R reveals the row in Health, not just the view', async ({ page }) => {
         await focusFirstRow(page);
         const ref = await page.evaluate(() => {
             const d = window.dashboardInstance;
@@ -71,9 +78,9 @@ test.describe('row actions from the keyboard', () => {
         selected: !!document.querySelector('#config-bm-list .config-bm-row.keyboard-selected'),
     }));
 
-    test('Shift+R lands on the row in a styled Bookmarks view', async ({ page }) => {
+    test('R lands on the row in a styled Bookmarks view', async ({ page }) => {
         await focusFirstRow(page);
-        await page.keyboard.press('Shift+R');
+        await page.keyboard.press('r');
         await expect.poll(() => viewStyled(page), { timeout: 10_000 })
             .toEqual({ sheet: true, library: true, selected: true });
     });
@@ -83,7 +90,7 @@ test.describe('row actions from the keyboard', () => {
         await page.locator('.bookmark-link.keyboard-selected').click({ button: 'right' });
         const item = page.locator('#bookmark-context-menu [data-action="health"]');
         await expect(item).toContainText('Show in list');
-        await expect(item).toContainText('Shift+R');
+        await expect(item).toContainText('R');
         // Every key chip whole: at the shared 16rem cap the widest row cut
         // "Shift+C" to "Shi…" and the label pushed this one off the edge.
         const cut = await page.evaluate(() => [...document.querySelectorAll('#bookmark-context-menu [data-action]')]

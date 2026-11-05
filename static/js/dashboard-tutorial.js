@@ -367,17 +367,17 @@
             },
             // 3 — shortcuts, the cursor and the Shift keys
             {
-                title: f('dashTour4KeysTitle', 'Two keys to open, Shift to act'),
+                title: f('dashTour4KeysTitle', 'Two keys to open, one letter to act'),
                 visual: (() => {
-                    const keys = [['gh', f('dashTour4KeyOpen', 'opens GitHub')], ['Shift+E', f('dashTourKeyEdit', 'edit')],
-                        ['Shift+M', f('dashTourKeyMove', 'move')], ['Shift+T', f('dashTourKeyTags', 'tags')]];
+                    const keys = [['gh', f('dashTour4KeyOpen', 'opens GitHub')], ['e', f('dashTourKeyEdit', 'edit')],
+                        ['m', f('dashTourKeyMove', 'move')], ['t', f('dashTourKeyTags', 'tags')]];
                     return svg(`
                         ${category(12, 10, 150, f('dashTourCatDev', 'Development'), [['GitHub', 'ok', 'gh'], ['GitLab', 'ok', ''], ['MDN', 'ok', 'md']])}
                         <rect x="17" y="33" width="140" height="24" rx="5" class="dtv-select dtv-anim dtv-a-cursor"/>
                         ${keys.map(([k, l], i) => `${keycap(180, 12 + i * 30, k, i === 0 ? anim('press', 0) : NONE)}${label(180 + keyWidth(k) + 6, 26 + i * 30, l)}`).join('')}
                         <g class="dtv-anim dtv-a-panel">
                             <rect x="330" y="12" width="140" height="112" rx="8" class="dtv-panel"/>
-                            ${[[f('dashTourMenuEdit', 'Edit'), '⇧E'], [f('dashTourMenuMove', 'Move'), '⇧M'], [f('dashTourMenuTags', 'Tags'), '⇧T'], [f('dashTourMenuDelete', 'Delete'), '⇧D']]
+                            ${[[f('dashTourMenuEdit', 'Edit'), 'E'], [f('dashTourMenuMove', 'Move'), 'M'], [f('dashTourMenuTags', 'Tags'), 'T'], [f('dashTourMenuDelete', 'Delete'), 'D']]
                                 .map(([l, k], i) => `${label(342, 36 + i * 24, l, 'dtv-title')}${label(460, 36 + i * 24, k, 'dtv-label', 'end')}`).join('')}
                         </g>
                     `, f('dashTour4KeysAlt', 'A bookmark with a shortcut, a cursor on the grid, the Shift keys and the right-click menu'));
@@ -385,7 +385,7 @@
                 body: `<p>${esc(f('dashTour4KeysBody1',
                     'Give a bookmark a shortcut of one or two letters, and typing it on the dashboard opens it: no search, no Enter.'))}</p>
                     <p>${esc(f('dashTour4KeysBody2',
-                    'The arrow keys start a cursor on the grid. On a bookmark, every action is Shift plus a letter: Shift+E edits, Shift+M moves, Shift+T tags. The right-click menu shows them all.'))}</p>
+                    'The arrow keys start a cursor on the grid. With the cursor on a bookmark, its actions are plain letters: e edits, m moves, t tags, p pins. Esc hands the letters back to the search. The right-click menu shows them all.'))}</p>
                     ${example ? `<p class="dtv-try">${esc(f('dashTourS3Try', 'On this page: type {key} for {name}.')
                         .replace('{key}', String(example.shortcut).toLowerCase()).replace('{name}', example.name))}</p>` : ''}`,
             },
@@ -406,7 +406,7 @@
                     </g>
                 `, f('dashTour4EditAlt', 'The dashboard in edit mode: a category chosen, and its panel on the right')),
                 body: `<p>${esc(f('dashTour4EditBody1',
-                    'Press Shift+E with no bookmark selected, or click the pencil in the action bar, to edit the dashboard itself. Click a category, widget or page tab and a panel opens on the right.'))}</p>
+                    'Press Shift+E, or click the pencil in the action bar, to edit the dashboard itself. Click a category, widget or page tab and a panel opens on the right.'))}</p>
                     <p>${esc(f('dashTour4EditBody2',
                     'Rename it, change its width, view and sorting, or open a widget\'s settings: all of it right here, saved as you go. Right-click a category or widget and choose Edit in panel to start there. Esc or Shift+E leaves.'))}</p>`,
             },
