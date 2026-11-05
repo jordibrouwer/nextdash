@@ -1284,6 +1284,7 @@ class SearchComponent {
         // Handle > key to open normal search
         if (key === '>') {
             e.preventDefault();
+            this._openedByChevron = true;
             this.openSearchInterface();
             return;
         }
@@ -1623,6 +1624,7 @@ class SearchComponent {
         this.cancelPendingShortcutOpen();
         const mode = this.shortcutOpenMode();
         if (mode === 'enter') return;
+        if (this._holdShortcuts) return;
 
         const match = this.exactShortcutMatch();
         if (!match) return;
@@ -1644,7 +1646,7 @@ class SearchComponent {
             // The query has to be the one the timer was armed for: another key,
             // a backspace or a closed panel all mean this is no longer what the
             // user is asking for.
-            if (!this.searchActive || this.currentQuery !== query) return;
+            if (!this.searchActive || this.currentQuery !== query || this._holdShortcuts) return;
             const stillMatching = this.exactShortcutMatch();
             if (!stillMatching) return;
             window.nextdashRecordKey?.(stillMatching.shortcut);
@@ -3214,6 +3216,11 @@ class SearchComponent {
         // what loses the row -- closeSearch() puts the cursor back there.
         const nav = window.dashboardInstance?.keyboardNavigation;
         this._gridCursorBeforeSearch = Number.isFinite(nav?.currentIndex) ? nav.currentIndex : -1;
+        // A search opened with > or from a cursor on the grid is a search: a
+        // bookmark's shortcut shows up in the results and does not open on its
+        // own. Only typing with no cursor and no > opens a shortcut directly.
+        this._holdShortcuts = this._openedByChevron === true || this._gridCursorBeforeSearch >= 0;
+        this._openedByChevron = false;
         this._searchSessionOpen = true;
         nav?.clearSelection?.({ restoreFocus: false });
         // The open event is fired from _trackModeOpen(), which knows whether this
@@ -3345,6 +3352,7 @@ class SearchComponent {
         // abandoned here.
         this.cancelPendingShortcutOpen();
         this.searchActive = false;
+        this._holdShortcuts = false;
         // Reset so reopening the same mode counts as a new open.
         this._lastTrackedMode = null;
         this.emptyStateExpandedGroups.clear();

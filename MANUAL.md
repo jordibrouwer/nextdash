@@ -2602,7 +2602,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 - **Start.** Right-click a bookmark → **Watch this feed…**, or use the same button in the bookmark editor. nextDash lists the feeds the page advertises (and tries the usual addresses when the page says nothing, as it does behind a cookie wall); tick one or more, or paste an address. Choose how often to check: 30 minutes, 1, 2, 4, 6, 12 or 24 hours. **Also check that this page is reachable (Periodic)** is ticked by default while the bookmark's checking is off. Up to 100 feeds can be watched. When you save, nextDash reads the feed once and counts what is already there as seen, so a bookmark shows no news until the site publishes something new; until then a click opens the site as usual. A toast says so.
 - **The window's buttons.** **Stop watching** (when the feed is watched) stands on the left; **Save**, in the accent colour, and **Cancel**, in the warning colour, stand together on the right. Saving leaves the dashboard where it was scrolled. The empty Watch feeds section explains how to start.
-- **Keys.** `Shift + W` opens the news; `#` watches the feed of the bookmark in hand (or changes or stops it).
+- **Keys.** `Shift + W` opens the news; `w` watches the feed of the bookmark in hand (or changes or stops it).
 
 <a id="142-what-you-see"></a>
 

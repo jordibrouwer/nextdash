@@ -130,7 +130,8 @@ test.describe('search', () => {
             });
             await d.loadAllBookmarks?.();
         });
-        await openSearch(page);
+        // Typed on the dashboard with no cursor and no >: that is the one way a
+        // shortcut opens on its own (after > it only shows up in the results).
         await page.evaluate(() => {
             const sc = window.dashboardInstance.searchComponent;
             sc.settings.shortcutOpenMode = 'instant';

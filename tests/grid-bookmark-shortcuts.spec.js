@@ -9,9 +9,11 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * the grid the same letter opened the panel with `y` typed into it — one extra
  * key and a panel in the way for a bookmark the reader had already named.
  *
- * With the cursor on a row the letter opens the bookmark. With no cursor —
- * which is what Escape leaves you with — it still starts a search, because
- * that is the only thing a letter can mean when nothing is selected.
+ * Typing a shortcut opens its bookmark only with no cursor and no `>`:
+ *  - no cursor: the shortcut opens the bookmark at once (instant mode);
+ *  - cursor on a row: the letters are the cursor's (e m t p ...); any other
+ *    letter starts a search where the shortcut is only a result;
+ *  - after `>`: the same, the search shows the shortcut and does not open it.
  */
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1500, height: 900 });
@@ -62,43 +64,51 @@ const searchOpen = (page) => page.evaluate(
     () => window.dashboardInstance.searchComponent?.isActive?.() === true,
 );
 
-test('with the cursor on a row, the letter opens the bookmark', async ({ page }) => {
+test('with the cursor on a row, a shortcut letter starts a search and does not open the bookmark', async ({ page }) => {
     await openDashboard(page);
-    const url = await seedShortcut(page, 'q');
+    await seedShortcut(page, 'z');
     await watchOpens(page);
 
-    // The cursor arrives the way a reader puts it there.
     await page.keyboard.press('ArrowDown');
     await expect(page.locator('.bookmark-link.keyboard-selected')).toHaveCount(1);
 
-    await page.keyboard.press('q');
-
-    await expect.poll(() => opened(page), { timeout: 10_000 })
-        .toContain(url);
-    expect(await searchOpen(page), 'the panel opened as well').toBe(false);
-});
-
-test('with nothing selected, the same letter starts a search', async ({ page }) => {
-    await openDashboard(page);
-    await seedShortcut(page, 'q');
-    await watchOpens(page);
-    // With "Enter opens": in instant mode the search the letter starts opens
-    // the matching bookmark at once and closes again, which is that mode's
-    // point. This passed there only because the search reopened itself 50 ms
-    // after the open, which was a bug.
-    await page.evaluate(() => {
-        const d = window.dashboardInstance;
-        d.settings.shortcutOpenMode = 'enter';
-        d.searchComponent.settings = d.settings;
-    });
-
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.bookmark-link.keyboard-selected')).toHaveCount(0);
-
-    await page.keyboard.press('q');
+    await page.keyboard.press('z');
 
     await expect.poll(() => searchOpen(page), { timeout: 10_000 }).toBe(true);
+    await page.waitForTimeout(600);
+    expect(await opened(page), 'the shortcut opened the bookmark').toEqual([]);
+    expect(await searchOpen(page)).toBe(true);
+});
+
+test('with nothing selected, typing a shortcut opens the bookmark directly', async ({ page }) => {
+    await openDashboard(page);
+    const url = await seedShortcut(page, 'z');
+    await watchOpens(page);
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.shortcutOpenMode = 'instant';
+        d.searchComponent.settings = d.settings;
+    });
+    await page.keyboard.press('z');
+    await expect.poll(() => opened(page), { timeout: 10_000 }).toContain(url);
+});
+
+test('after >, a shortcut shows up in the results and does not open', async ({ page }) => {
+    await openDashboard(page);
+    await seedShortcut(page, 'z');
+    await watchOpens(page);
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.shortcutOpenMode = 'instant';
+        d.searchComponent.settings = d.settings;
+    });
+    await page.keyboard.press('>');
+    await expect.poll(() => searchOpen(page), { timeout: 10_000 }).toBe(true);
+    await page.keyboard.press('z');
+    await page.waitForTimeout(600);
+    expect(await opened(page), 'the shortcut opened the bookmark').toEqual([]);
+    expect(await searchOpen(page)).toBe(true);
+    expect(await page.evaluate(() => window.dashboardInstance.searchComponent.searchMatches.length)).toBeGreaterThan(0);
 });
 
 test('the letters the grid uses stay the grid’s', async ({ page }) => {
@@ -121,24 +131,4 @@ test('the letters the grid uses stay the grid’s', async ({ page }) => {
         () => window.dashboardInstance.keyboardNavigation.currentIndex,
     ), { timeout: 5_000 }).toBe(first + 1);
     expect(await opened(page), 'j opened a bookmark instead of moving the cursor').toEqual([]);
-});
-
-// A longer shortcut sharing the letter ("qx" beside "q") held search's own
-// match back, but not the grid's: after any search the cursor was on a row,
-// and typing "qx" opened the bookmark behind "q".
-test('with the cursor on a row, a letter a longer shortcut starts with starts a search', async ({ page }) => {
-    await openDashboard(page);
-    await watchOpens(page);
-    // In memory only: the shared data dir keeps its own shortcuts.
-    await page.evaluate(() => {
-        const s = window.dashboardInstance.searchComponent;
-        const [a, b] = window.dashboardInstance.bookmarks;
-        s.shortcuts.set('q', a);
-        s.shortcuts.set('qx', b);
-    });
-    await page.keyboard.press('ArrowDown');
-    await expect(page.locator('.bookmark-link.keyboard-selected')).toHaveCount(1);
-    await page.keyboard.press('q');
-    await expect.poll(() => searchOpen(page), { timeout: 10_000 }).toBe(true);
-    expect(await opened(page)).toEqual([]);
 });

@@ -296,21 +296,6 @@ class KeyboardNavigation {
                 }
             }
 
-            // # (Shift+3 on most keyboards) — watch the feed of the bookmark in hand.
-            // Every plain Shift+letter is taken, and a Shift+Alt chord got in the way
-            // of Safari's own shortcuts. Matched on the character typed, so it is the
-            // same key on any layout; AltGr, which types # on some of them, is allowed.
-            if (e.key === '#' && !e.metaKey && !e.repeat
-                && ((!e.ctrlKey && !e.altKey) || e.getModifierState?.('AltGraph'))) {
-                if (this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() });
-                    return;
-                }
-            }
-
             // Alt+←/→ on a category header — reorder the category itself.
             //
             // Shift+Home already steps from a row up to its header, where F2,
@@ -593,7 +578,7 @@ class KeyboardNavigation {
      * already: with the cursor on a row the letters act on it. Shift is never a
      * row action, so every Shift letter can be a global key.
      */
-    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd']);
+    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w']);
 
     /** Without any key or click for this long, the row cursor leaves the grid (what Esc does). */
     static ROW_CURSOR_IDLE_MS = 10000;
@@ -845,6 +830,8 @@ class KeyboardNavigation {
             case 'v': this.togglePreviewCardForCurrent(); break;
             case 's': this.shareCurrent(); break;
             case 'q': this.qrCurrent(); break;
+            // Watch the feed of this bookmark .
+            case 'w': void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() }); break;
             default: break;
         }
         return true;
@@ -1556,76 +1543,12 @@ class KeyboardNavigation {
         this.syncGridActiveDescendant();
     }
 
-    /**
-     * Letters the grid keeps for itself.
-     *
-     * j/k are the cursor, x ticks a row, g arms the jump chord. A bookmark
-     * whose shortcut is one of these is still reachable the way it always was
-     * -- open search and type it -- but on the grid the key does its own job,
-     * because a reader who is walking rows with j cannot have j mean "open the
-     * bookmark called jellyfin" halfway down the page.
-     */
-    static GRID_RESERVED_LETTERS = new Set(['j', 'k', 'x', 'g', 'e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd']);
-
-    /**
-     * A bookmark's own key, pressed while the cursor is on the grid.
-     *
-     * Shortcuts have always been search's: you open the panel, type the letter
-     * and it opens. On the grid the same letter opened the panel with the
-     * letter typed into it instead -- one more key and a panel in the way, for
-     * a bookmark the reader had already named. With the cursor on a row the
-     * letter opens the bookmark; with no cursor it still starts a search, which
-     * is what Escape leaves you with.
-     *
-     * @returns {boolean} whether the key was spent on a bookmark
-     */
-    _openShortcutFromGrid(key) {
-        if (typeof key !== 'string' || key.length !== 1 || !/[a-z]/i.test(key)) {
-            return false;
-        }
-        const letter = key.toLowerCase();
-        if (KeyboardNavigation.GRID_RESERVED_LETTERS.has(letter)) {
-            return false;
-        }
-        const search = this.dashboard?.searchComponent;
-        const bookmark = search?.shortcuts?.get?.(letter);
-        if (!bookmark || !bookmark.url) {
-            return false;
-        }
-        // The guards search's own match makes. A longer shortcut sharing the
-        // letter ("nc" beside "n") or a finder starting with it means the
-        // typing may not be finished, and "Enter opens" or "delay" mean the
-        // letter does not open on its own: the letter starts a search instead.
-        const longer = [...(search.shortcuts?.keys?.() || [])].some((k) => k !== letter && k.startsWith(letter));
-        const finderShares = Boolean(search.settings?.includeFindersInSearch)
-            && [...(search.findersComponent?.shortcuts?.keys?.() || [])].some((f) => String(f).startsWith(letter));
-        const mode = typeof search.shortcutOpenMode === 'function' ? search.shortcutOpenMode() : 'instant';
-        if (longer || finderShares || mode !== 'instant') {
-            return false;
-        }
-        // Through search's own opener: it records the open, honours Hypr mode
-        // and closes anything search has on screen, which is what a shortcut
-        // typed into the panel does.
-        search.openBookmark(bookmark);
-        return true;
-    }
-
-
     handleKeyPress(e) {
         const key = e.key;
 
-        // A bookmark's own key wins while the cursor is on the grid -- except
-        // the handful of letters the grid itself uses, which are checked inside.
-        if (
-            this._gridNavActive()
-            && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-            && !this._gPressed
-            && this._openShortcutFromGrid(key)
-        ) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return;
-        }
+        // With the cursor on the grid a bookmark's own shortcut does not open
+        // it: the letters belong to the cursor, and any other letter starts a
+        // search in which the shortcut is only a result (search.js holds it).
 
         // G + P: jump to first pinned bookmark on the page
         if (this._gPressed && (key === 'p' || key === 'P')) {

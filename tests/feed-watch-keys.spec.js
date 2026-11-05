@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { startStubSite, installWithBookmark, openDashboard, row, keyOf, watchPayload, newsItem, stubWatch } = require('./helpers/feed-watch');
 
 /**
- * Keys for watched feeds: # watches the focused bookmark's feed,
+ * Keys for watched feeds: w watches the focused bookmark's feed,
  * Shift+W opens the paper, j / k read inside it. Real key presses; the
  * watch routes are stubbed with one watched bookmark and three unread items.
  */
@@ -30,27 +30,30 @@ async function setup(page, { watched = true } = {}) {
     await expect.poll(() => page.evaluate(() => window.dashboardInstance?.feedWatch?.byKey?.size || 0)).toBe(watched ? 1 : 0);
 }
 
-test('# on a focused bookmark opens the feed picker for it', async ({ page }) => {
+test('w on a focused bookmark opens the feed picker for it', async ({ page }) => {
     await setup(page, { watched: false });
-    // The arrow keys start the cursor on the grid, as for every row action
-    // (the first stop is the bookmark's copy in the Today collection).
     await page.keyboard.press('ArrowDown');
     await expect(page.locator('.keyboard-selected')).toHaveAttribute('data-bookmark-url', site.url);
-    await page.keyboard.type('#');
+    await page.keyboard.press('w');
     await expect(page.locator('[data-feed-watch-picker]')).toBeVisible();
 });
 
-test('# with no bookmark in hand does nothing', async ({ page }) => {
+test('w with no bookmark in hand does not open the picker, and # is no longer a key', async ({ page }) => {
     await setup(page, { watched: false });
     await page.locator('body').click({ position: { x: 2, y: 2 } });
+    await page.keyboard.type('w');
+    await expect(page.locator('[data-feed-watch-picker]')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('ArrowDown');
     await page.keyboard.type('#');
+    await page.waitForTimeout(400);
     await expect(page.locator('[data-feed-watch-picker]')).toHaveCount(0);
 });
 
 test('the context menu shows the key beside Watch this feed', async ({ page }) => {
     await setup(page, { watched: false });
     await row(page, 'Stub Blog').click({ button: 'right' });
-    await expect(page.getByRole('menuitem', { name: /Watch this feed/ })).toContainText('#');
+    await expect(page.getByRole('menuitem', { name: /Watch this feed/ })).toContainText('W');
 });
 
 test('Shift+W opens the paper when a feed is watched, and not otherwise', async ({ page }) => {

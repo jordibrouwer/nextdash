@@ -313,7 +313,7 @@ class DashboardContextMenu {
                     ? this.t('dashboard.feedWatchManage', 'Watching feed…')
                     : this.t('dashboard.feedWatchStart', 'Watch this feed…'),
                 icon: '◎',
-                key: '#',
+                key: 'W',
             },
             ...(currentMode
                 ? [{

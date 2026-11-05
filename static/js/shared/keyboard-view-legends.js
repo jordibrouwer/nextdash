@@ -93,7 +93,7 @@
         { line: 4, more: true, keys: 's', legendKey: 'dashboardKeyShare', cheatKey: 'dvShare', fallback: 'share' },
         { line: 4, more: true, keys: 'q', legendKey: 'dashboardKeyQr', cheatKey: 'dvQr', fallback: 'QR code' },
         { line: 4, more: true, keys: 'f', legendKey: 'dashboardKeyFilterTag', cheatKey: 'dvFilterTag', fallback: 'filter by tag' },
-        { line: 4, more: true, keys: '#', legendKey: 'dashboardKeyWatchFeed', cheatKey: 'dvWatchFeed', fallback: 'watch feed' },
+        { line: 4, more: true, keys: 'w', legendKey: 'dashboardKeyWatchFeed', cheatKey: 'dvWatchFeed', fallback: 'watch feed' },
     ];
 
     /** @type {LegendRow[]} */
