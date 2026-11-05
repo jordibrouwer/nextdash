@@ -1213,9 +1213,12 @@
                 } else if (key === ',' || key === '.') {
                     const Chart = window.DashboardGlancesChart;
                     const id = this._hoverChart || this.hostEl?.querySelector('[data-glances-chart]')?.getAttribute('data-glances-chart');
-                    if (!id || !Chart?.stepRange) return;
-                    if (!Chart.stepRange(id, key === '.' ? 1 : -1)) return;
-                    void this.refresh({ force: true });
+                    // The keys are the view's own even with nothing to step (the
+                    // shortest range, a section with no graph): letting them
+                    // fall through would open Config, which `,` is outside here.
+                    if (id && Chart?.stepRange && Chart.stepRange(id, key === '.' ? 1 : -1)) {
+                        void this.refresh({ force: true });
+                    }
                 } else if (key === 'r') {
                     void this.refresh({ force: true });
                 } else if (key === '/') {

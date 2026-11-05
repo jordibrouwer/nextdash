@@ -320,25 +320,27 @@ class KeyboardNavigation {
                     this.togglePreviewCardForCurrent();
                     return;
                 }
-                // Shift+L — share, or copy "name — URL" where no share sheet
-                // exists. It was Shift+S, which also opens config when no row is
-                // selected: the only key in the app whose meaning depended on
-                // whether something was selected, and two lines of cheat sheet
-                // to explain. Shift+S is config now, always.
-                if (e.code === 'KeyL') {
+                // Shift+S — share, or copy "name — URL" where no share sheet
+                // exists. S for Share, next to Q for the QR code. Shift+L is the
+                // old key and says so for a couple of releases.
+                if (e.code === 'KeyS' || e.code === 'KeyL') {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    if (e.code === 'KeyL') window.ShiftKeyAliases?.notice('Shift + L', 'Shift + S');
                     this.shareCurrent();
                     return;
                 }
                 // Shift+J — the selected bookmark as a QR code, to open it on a
                 // phone. J because it was the one Shift letter left that says
                 // nothing else: G is "to the end" in every list.
-                if (e.code === 'KeyJ') {
+                // Q for QR now; J is the old key and says so for a couple of
+                // releases.
+                if (e.code === 'KeyQ' || e.code === 'KeyJ') {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    if (e.code === 'KeyJ') window.ShiftKeyAliases?.notice('Shift + J', 'Shift + Q');
                     this.qrCurrent();
                     return;
                 }
@@ -365,6 +367,18 @@ class KeyboardNavigation {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    return;
+                }
+                // No block under the cursor: W is for Watch, the news of the
+                // feeds you watch (it was Shift+N). Nothing watched leaves the
+                // key alone.
+                if (window.FeedWatchNews && this._anyFeedWatched()) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    if (!e.repeat) {
+                        void window.FeedWatchNews.open({ source: 'button' });
+                    }
                     return;
                 }
             }
@@ -473,20 +487,6 @@ class KeyboardNavigation {
                     e.stopPropagation();
                     return;
                 }
-            }
-
-            // Shift+N — the news of the feeds you watch. Nothing watched leaves the
-            // key alone. It was "add a category" once; that is still in the
-            // category menu, the edit panel and the button under the last category.
-            if (e.code === 'KeyN' && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-                && window.FeedWatchNews && this._anyFeedWatched()) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                e.stopPropagation();
-                if (!e.repeat) {
-                    void window.FeedWatchNews.open({ source: 'button' });
-                }
-                return;
             }
 
             // WAI-ARIA grid: Ctrl/Cmd+Home / Ctrl/Cmd+End — first / last bookmark
@@ -2791,7 +2791,7 @@ class KeyboardNavigation {
     }
 
     /**
-     * Shift+L — share, or copy "name — URL" where no share sheet exists.
+     * Shift+S — share, or copy "name — URL" where no share sheet exists.
      *
      * Was right-click only: no command, no key, and absent from the cheat sheet,
      * even though it is the only path that copies the name with the address.

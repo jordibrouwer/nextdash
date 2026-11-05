@@ -1007,6 +1007,16 @@ class DashboardUiHelpers {
              * Escape -- stay with the panel.
              */
             const typing = document.activeElement?.id === 'page-overview-filter';
+            // Shift+P opened the panel and closes it again, with the filter in
+            // focus too: a capital P is only a letter once there is a word to
+            // put it in.
+            if (e.shiftKey && e.code === 'KeyP' && !e.ctrlKey && !e.altKey && !e.metaKey
+                && !(typing && filterInput?.value)) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.AppModal?.hide?.();
+                return;
+            }
             // A digit is a page's key wherever it is pressed: "3" means the
             // third page, filtered or not, typed into or not. Every other
             // character belongs to whatever is being typed.
@@ -1031,7 +1041,7 @@ class DashboardUiHelpers {
                 filterInput.dispatchEvent(new Event('input', { bubbles: true }));
                 return;
             }
-            if (e.key === ',') {
+            if (e.key === ',' || (e.shiftKey && e.code === 'KeyP')) {
                 e.preventDefault();
                 e.stopPropagation();
                 window.AppModal?.hide?.();
@@ -1200,7 +1210,7 @@ class DashboardUiHelpers {
             chip.className = 'page-overview-modal-key';
             chip.dataset.modalHeaderExtra = 'true';
             chip.setAttribute('aria-hidden', 'true');
-            chip.textContent = ',';
+            chip.textContent = 'Shift+P';
             document.getElementById('modal-title')?.after(chip);
 
             const close = document.createElement('button');

@@ -2048,11 +2048,21 @@ class DashboardConfig {
         if (!e.ctrlKey && !e.metaKey && !e.altKey && e.shiftKey) {
             const d = this.dash;
             // e.code, not e.key — layout-safe, same as dashboard-setup.js.
-            if (e.code === 'KeyH' && d.health?.isEnabled?.()) {
+            if (e.code === 'KeyB' && d.health?.isEnabled?.()) {
+                // Inside the Bookmarks view you are there: the filter you have
+                // stays. (Shift+H on a row there is the row's own, handled
+                // before this.)
+                if (d.activeView === 'library') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return true;
+                }
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 this.saveLastConfigLocation();
-                void d.health.openHealthView();
+                // The whole list, as the key does from the grid and the header
+                // button does -- not the Broken filter openHealthView lands on.
+                void this.openLibraryView();
                 return true;
             }
             if (e.code === 'KeyI' && d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
@@ -2062,9 +2072,10 @@ class DashboardConfig {
                 void d.inbox.openInboxView();
                 return true;
             }
-            if (e.code === 'KeyY' && d.docker?.isEnabled?.()) {
+            if ((e.code === 'KeyC' || e.code === 'KeyY') && d.docker?.isEnabled?.()) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                if (e.code === 'KeyY') window.ShiftKeyAliases?.notice('Shift + Y', 'Shift + C');
                 this.saveLastConfigLocation();
                 void d.docker.openDockerView();
                 return true;
@@ -3803,6 +3814,15 @@ class DashboardConfig {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+                return true;
+            }
+            // t: tags, as on the dashboard. The side panel opens on the row and
+            // the cursor goes to its Tags field.
+            if (e.key === 't') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+                document.querySelector('#config-bm-panel [data-bm-field="tags"]')?.focus();
                 return true;
             }
             // The full dialog, as Shift+E is on the dashboard grid.
@@ -21772,6 +21792,7 @@ class DashboardConfig {
             ['i', this.t('config.bmKeyPanel', 'panel')],
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
+            ['t', this.t('config.bmKeyTags', 'tags')],
             ['a', this.t('config.bmKeyAddSuggested', 'add suggested')],
             ['g / End', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
@@ -25795,7 +25816,7 @@ class DashboardConfig {
         // ── Configuring ────────────────────────────────────────────────────
         'config.helpConfigTitle': [
             { kind: 'panelMap', value: 'rail', captionKey: 'config.helpArtConfigRail', caption: 'Sections down the left' },
-            { kind: 'keys', value: ['Shift + S', 'Esc'], captionKey: 'config.helpArtConfigKeys', caption: 'In and out' },
+            { kind: 'keys', value: [',', 'Esc'], captionKey: 'config.helpArtConfigKeys', caption: 'In and out' },
         ],
         'config.helpBehaviorTitle': [
             { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtBehaviorTabs', caption: 'Four tabs' },
@@ -25988,7 +26009,7 @@ class DashboardConfig {
                 ],
                 captionKey: 'config.helpArtHealthTiles', caption: 'The filters, in the rail',
             },
-            { kind: 'keys', value: ['Shift + H'] },
+            { kind: 'keys', value: ['Shift + B'] },
         ],
         'config.helpBmPanelTitle': [
             {
@@ -26045,7 +26066,7 @@ class DashboardConfig {
                 captionKey: 'config.helpArtOverlayKeys', caption: 'The overlays',
             },
             {
-                kind: 'keys', value: ['Shift + H', 'Shift + U', 'Shift + I', 'Shift + S'],
+                kind: 'keys', value: ['Shift + B', 'Shift + U', 'Shift + I', ','],
                 captionKey: 'config.helpArtViewKeys', caption: 'The views',
             },
             {
@@ -27303,13 +27324,13 @@ class DashboardConfig {
             kbd('?', this.t('config.tipFinders', 'Open finders')),
             kbd('!', this.t('config.tipCheatsheet', 'Open the keyboard cheat sheet')),
             kbd('+', this.t('config.tipAddBookmark', 'Add a bookmark')),
-            kbd('Shift + B', this.t('config.tipAddBookmarkShift', 'Open the new-bookmark form')),
+            kbd('Ctrl + Shift + A', this.t('config.tipAddBookmarkShift', 'Open the new-bookmark form')),
             kbd('.', this.t('config.tipCollapseAll', 'Collapse or expand every category')),
             kbd('Shift + W', this.t('config.tipCategoryWidth', 'Set how many columns the focused category covers')),
-            kbd('Shift + H', this.t('config.tipHealth', 'Open the Bookmarks view, on Broken')),
+            kbd('Shift + B', this.t('config.tipHealth', 'Open the Bookmarks view')),
             kbd('Shift + U', this.t('config.helpTipUnsorted', 'Open Bookmarks → Unsorted')),
             kbd('Shift + I', this.t('config.tipInbox', 'Open the inbox')),
-            kbd('Shift + S', this.t('config.tipConfig', 'Open config')),
+            kbd(',', this.t('config.tipConfig', 'Open config')),
         ];
     }
 

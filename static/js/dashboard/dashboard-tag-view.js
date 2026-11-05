@@ -585,7 +585,11 @@
             KeyD: 'delete',
             KeyC: 'check-mode',
             KeyR: 'health',
+            KeyS: 'share',
+            // The old key for sharing; still works, and says so.
             KeyL: 'share',
+            KeyQ: 'qr',
+            // The old key for the QR code; still works, and says so.
             KeyJ: 'qr',
         };
 
@@ -1954,6 +1958,8 @@
                 const rowAction = e.shiftKey ? DashboardTagView.ROW_KEYS[e.code] : (e.key === 'Delete' ? 'delete' : null);
                 if (rowAction && this.focusIndex >= 0) {
                     swallow();
+                    if (e.code === 'KeyJ') window.ShiftKeyAliases?.notice('Shift + J', 'Shift + Q');
+                    if (e.code === 'KeyL') window.ShiftKeyAliases?.notice('Shift + L', 'Shift + S');
                     this.runRowAction(rowAction);
                     return;
                 }

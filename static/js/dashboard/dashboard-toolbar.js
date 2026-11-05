@@ -30,9 +30,9 @@ class DashboardToolbar {
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] },
             // An action button like the rest, not a header destination.
             // Desktop only: the mode does not exist on a phone layout.
-            { id: 'edit-mode-button', labelKey: 'dashboard.editModeAria', keys: ['Shift+M'], when: () => d.editMode && !d.editMode.isMobileLayout?.() },
+            { id: 'edit-mode-button', labelKey: 'dashboard.editModeAria', keys: ['Shift+E'], when: () => d.editMode && !d.editMode.isMobileLayout?.() },
             { id: 'theme-studio-button', labelKey: 'dashboard.themeStudioAria', keys: ['Shift+A'] },
-            { id: 'page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
+            { id: 'page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: ['Shift+P'] },
             {
                 selector: '#page-nav-inbox-btn',
                 labelKey: 'dashboard.inboxPageTitle',
@@ -49,7 +49,7 @@ class DashboardToolbar {
             {
                 selector: '.config-link-anchor',
                 labelKey: 'dashboard.config',
-                keys: ['Shift+S'],
+                keys: [','],
                 header: true,
                 when: () => d.config?.isEnabled?.(),
             },

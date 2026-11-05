@@ -243,7 +243,7 @@ class DashboardContextMenu {
         // Right-clicking a row that is part of a selection means "act on the
         // selection" — acting on the one row under the cursor would silently
         // ignore what the user had already ticked. The entries call the same
-        // multiSelect methods Shift+Z and the toolbar use, so all three routes
+        // multiSelect methods Shift+H and the toolbar use, so all three routes
         // share one implementation of what a bulk move or delete means.
         // Not on a tag view row: that view ticks its rows itself, and the grid's
         // selection would act on rows that are not on screen.
@@ -281,8 +281,8 @@ class DashboardContextMenu {
         const singleActions = (bookmarkRef.scope === 'inbox' ? inboxActions : [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${mod}+Enter` },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
-            { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'Shift+L' },
-            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Shift+J' },
+            { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'Shift+S' },
+            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Shift+Q' },
             { id: 'edit', divider: true, label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎', key: 'Shift+E' },
             // Pin had no pointer route at all from the grid — not a row button,
             // not an entry here — while every other one-bit row action did.

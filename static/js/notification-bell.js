@@ -777,7 +777,15 @@
         scheduleIntro();
     }
 
-    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, counts, playSound, scheduleIntro };
+    /** Shift+N: the bell opens, and the same key closes it. */
+    function toggle() {
+        if (!panel) return false;
+        if (isOpen) close('key');
+        else open();
+        return true;
+    }
+
+    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, toggle, counts, playSound, scheduleIntro };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

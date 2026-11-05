@@ -1,7 +1,7 @@
 /**
  * Edit mode: an editing state for the dashboard.
  *
- * Switched with the pencil button in the action bar, `:edit mode`, or Shift + M
+ * Switched with the pencil button in the action bar, `:edit mode`, or Shift + E
  * when no bookmark row is selected (with a row selected Shift + M keeps moving
  * the bookmark). While it is on the dashboard says so, bookmarks cannot be
  * opened, and a click on a block selects it for the panel at the right
@@ -148,7 +148,7 @@ class DashboardEditMode {
         const bar = document.createElement('div');
         bar.id = 'edit-mode-bar';
         bar.setAttribute('role', 'status');
-        bar.textContent = this.t('editMode.bar', 'Editing · Esc or Shift + M to finish');
+        bar.textContent = this.t('editMode.bar', 'Editing · Esc or Shift + E to finish');
         document.body.appendChild(bar);
         this._bar = bar;
     }
@@ -223,15 +223,19 @@ class DashboardEditMode {
             else void this.exit();
             return;
         }
-        if (e.shiftKey && plain && e.code === 'KeyM' && !this._typing(e) && (this.active || this._onGrid())) {
+        if (e.shiftKey && plain && (e.code === 'KeyE' || e.code === 'KeyM') && !this._typing(e) && (this.active || this._onGrid())) {
             const kn = this.dash?.keyboardNavigation;
             const rowSelected = Boolean(kn && kn.currentIndex >= 0 && kn.getSelectedBookmark?.());
             const action = model.editKey({ active: this.active, rowSelected });
-            // A row selected: the bookmark's own Shift + M answers, as it always did.
+            // A row selected: the bookmark's own Shift + E (edit) or Shift + M
+            // (move) answers, as it always did.
             if (action === 'row-action') return;
             if (this.isMobileLayout()) return;
             e.preventDefault();
             e.stopImmediatePropagation();
+            // Shift + M switched the mode before Shift + E did; it still does,
+            // and says so for a couple of releases.
+            if (e.code === 'KeyM') window.ShiftKeyAliases?.notice('Shift + M', 'Shift + E');
             if (action === 'enter') this.enter();
             else void this.exit();
             return;

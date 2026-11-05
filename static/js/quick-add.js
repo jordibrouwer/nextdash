@@ -72,21 +72,9 @@ class QuickAddWidget {
         return Boolean(e?.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && e.code === 'KeyA');
     }
 
-    static matchesShiftBShortcut(e) {
-        if (!e?.shiftKey || e.ctrlKey || e.altKey || e.metaKey || e.code !== 'KeyB') {
-            return false;
-        }
-        if (QuickAddWidget.isTypingTarget(e)) {
-            return false;
-        }
-        if (document.body.classList.contains('bookmark-inline-edit-active')) {
-            return false;
-        }
-        return true;
-    }
-
     static matchesAddBookmarkShortcut(e) {
-        return QuickAddWidget.matchesChordShortcut(e) || QuickAddWidget.matchesShiftBShortcut(e);
+        // Ctrl+Shift+A only. Shift+B opens the Bookmarks view now.
+        return QuickAddWidget.matchesChordShortcut(e);
     }
 
     attachGlobalShortcut() {

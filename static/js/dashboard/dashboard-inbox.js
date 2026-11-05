@@ -2963,9 +2963,12 @@ class DashboardInbox {
             void this.markUnreadFromRow(selected);
             return true;
         }
-        if (e.key === 'l' && selected) {
+        // t: tags, as on the dashboard and in the Bookmarks view. l is the old
+        // key and says so for a couple of releases.
+        if ((e.key === 't' || e.key === 'l') && selected) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            if (e.key === 'l') window.ShiftKeyAliases?.notice('l', 't');
             void this.editTags(selected);
             return true;
         }
@@ -2990,9 +2993,12 @@ class DashboardInbox {
             this.applyKeyboardSelection(cards);
             return true;
         }
-        if (e.key === 't' && !onRowControl) {
+        // f: work through the list, as in the Bookmarks view. t started it
+        // before; with no row in hand it still does, and says so.
+        if ((e.key === 'f' || e.key === 't') && !onRowControl) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            if (e.key === 't') window.ShiftKeyAliases?.notice('t', 'f');
             void this.startTriage();
             return true;
         }

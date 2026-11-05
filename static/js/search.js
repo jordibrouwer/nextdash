@@ -1404,14 +1404,16 @@ class SearchComponent {
             return;
         }
 
-        // , opens the page overview overlay. Guarded on !searchActive like the 0
+        // , opens the config view (the page overview is Shift+P). Guarded on !searchActive like the 0
         // shortcut below: these three sit above the printable-character branches,
         // so without the guard they were unreachable as characters -- ",", "+"
         // and "&" simply could not be typed into a search, a filter or a
         // ":new https://…?a=1&b=2" command.
         if (e.key === ',' && !this.searchActive) {
             e.preventDefault();
-            window.dashboardInstance?.showPageOverlay?.();
+            const dash = window.dashboardInstance;
+            if (dash?.config?.openConfigView) void dash.config.openConfigView();
+            else window.location.href = '/config';
             return;
         }
 

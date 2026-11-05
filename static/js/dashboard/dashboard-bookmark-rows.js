@@ -1466,7 +1466,7 @@ class DashboardBookmarkRows {
      * that presume the keyboard is in use (`more`) stay hidden until it is:
      * KeyboardNavigation stamps data-grid-keys on <body> at the first cursor
      * move and clears it again on Enter, when the reader has arrived where
-     * they were going. Shift+Z switches the whole legend off and on.
+     * they were going. Shift+H switches the whole legend off and on.
      *
      * Rebuilt only when the text changes: this runs on every render, and the
      * legend is constant unless the language does.
