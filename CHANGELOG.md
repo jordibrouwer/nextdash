@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.26.1 — 5 November 2026](#v1261--5-november-2026)
 - [v1.26.0 — 5 November 2026](#v1260--5-november-2026)
 - [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
 - [v1.25.0 — 3 November 2026](#v1250--3-november-2026)
@@ -132,6 +133,25 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.26.1 — 5 November 2026
+
+Watched news no longer piles up while you are away: it stops counting after a set age, and the bell holds one line for it instead of a toast. Every row in the bell now says how old it is, and the bell panel no longer sits under the buttons of the Inbox, Containers and Glances views.
+
+### Watch feeds
+
+- **new — News stops counting after a while.** *Count news as unread for* (Config → Watch feeds) takes 4 or 8 hours, 1 day (the default), 2, 3, 7, 14 or 30 days. News nobody opened for that long leaves the purple count, the hover card and the bell. The news window still lists it, dimmed like read news, until newer news pushes it out.
+- **new — The bell holds one line for new news.** The toast is gone. A single row, *N new from M watched feeds*, in its own *Watch feeds* group, is updated in place when more arrives instead of adding another. It leaves when the news is read or has expired, **Mark read** puts it away until there is more, and a bookmark whose feeds are all muted stays out of it.
+- **new — The hover card pages through ten items.** It used to show the three newest unread items; it now carries up to ten.
+- **new — The purple count stops at 9+.** From ten unread items on, the count on a bookmark reads *9+*; the tab title keeps the exact number.
+
+### Notifications
+
+- **new — Every row in the bell says how old it is.** The time (*5 min ago*, *2 days ago*) sits on the right of the row and starts over when the row gets worse: more of the thing, or something new in it. A row that only shrinks keeps its age, and the times survive a reload on the same device.
+- **fix — The bell rings only for more, not for less.** When a row's count fell (one site opened, an item expired), the next refresh counted it as new and rang again. It now rings when something is added.
+- **fix — The bell panel draws over the view headers.** On a theme without backdrop blur the buttons and selects in the header of the Inbox, Containers and Glances views showed over the panel. The panel now sits above them.
 
 ---
 
