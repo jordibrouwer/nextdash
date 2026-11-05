@@ -68,7 +68,7 @@
         const d = dash();
         if (!d?.settings || d.settings.discoverApps === false) return [];
         try {
-            const res = await fetch('/api/discovery', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/discovery', { cache: 'no-store' });
             if (!res.ok) return [];
             const data = await res.json();
             return Array.isArray(data.recentAdds) ? data.recentAdds : [];
@@ -77,10 +77,27 @@
         }
     }
 
+    /** The bell asks the server again, so an answered row goes at once. */
+    function refreshBell() {
+        void global.NotificationBell?.refreshAll?.();
+    }
+
     function acknowledge(list) {
         const names = list.map((a) => a.name);
         if (!names.length) return Promise.resolve();
-        return post('/api/discovery/ack', { names }).catch(() => {});
+        return post('/api/discovery/ack', { names }).catch(() => {}).then(refreshBell);
+    }
+
+    /**
+     * The bell row: the adds nobody has acknowledged yet, or null. The ids are
+     * the adds' bookmark keys, so "No" holds until another app is added.
+     */
+    async function bellState() {
+        const list = await pendingAdds();
+        if (!list.length) return null;
+        // The row's buttons act on the adds the card knows about.
+        adds = list;
+        return { count: list.length, ids: list.map((a) => a.key), text: title() };
     }
 
     function title() {
@@ -128,6 +145,7 @@
             adds = [];
             card.close();
             await refreshDashboard().catch(() => {});
+            refreshBell();
         } finally {
             undoing = false;
         }
@@ -159,6 +177,9 @@
         // The Undo for something already done: shown during the quick start
         // and on a phone too.
         essential: true,
+        // Urgent: the corner card stays as it is, and the bell lists the same
+        // adds (red) for as long as they are unacknowledged.
+        bell: { kind: 'urgent', group: 'system', icon: '\u2795', no: 'state', state: bellState },
         title,
         body,
         dismissLabel: () => t('notice.close', 'Close'),
@@ -212,7 +233,7 @@
         // both get this far, and only one of them may ask.
         asking = true;
         try {
-            const res = await fetch('/api/discovery', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/discovery', { cache: 'no-store', fresh: true });
             const data = res.ok ? await res.json() : null;
             if (!data?.enabled || !data.cardDone || !(data.pending || []).length) {
                 asking = false;

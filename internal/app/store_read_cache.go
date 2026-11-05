@@ -171,9 +171,32 @@ func cloneSettings(in Settings) Settings {
 		ds.TipsShownAt = slices.Clone(ds.TipsShownAt)
 		ds.SeenTips = slices.Clone(ds.SeenTips)
 		ds.SeenSettingPromos = slices.Clone(ds.SeenSettingPromos)
+		ds.Bell = cloneBellRecords(ds.Bell)
 		out.DiscoverabilityState = &ds
 	}
 	return out
+}
+
+// cloneBellRecords copies the map, the marks and their id slices, so a caller
+// changing the copy cannot reach the cached original.
+func cloneBellRecords(in map[string]BellRecord) map[string]BellRecord {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]BellRecord, len(in))
+	for id, rec := range in {
+		out[id] = BellRecord{Read: cloneBellMark(rec.Read), No: cloneBellMark(rec.No)}
+	}
+	return out
+}
+
+func cloneBellMark(in *BellMark) *BellMark {
+	if in == nil {
+		return nil
+	}
+	m := *in
+	m.IDs = slices.Clone(in.IDs)
+	return &m
 }
 
 func cloneNestedMap[V any](in map[string]map[string]V) map[string]map[string]V {

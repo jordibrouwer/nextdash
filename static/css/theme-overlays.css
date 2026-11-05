@@ -101,6 +101,7 @@ html[data-theme] body:is([data-material-style="classic"], :not([data-material]),
 
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .date-popover,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .page-tab-popover,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notification-bell-panel,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .move-popover,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .field-popover,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .custom-select-options,
@@ -166,6 +167,7 @@ html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :no
 
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .date-popover,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .page-tab-popover,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .notification-bell-panel,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .move-popover,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .field-popover,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .custom-select-options,
@@ -517,6 +519,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .date-popover,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .page-tab-popover,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .notification-bell-panel,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .move-popover,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .field-popover,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .custom-select-options,
@@ -635,6 +638,9 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     }
 }
 
+/* The notifications bell panel is left out here: it grows out of the bell
+   (notification-bell.css), and this rule would win over that. The
+   no-animations and effects-off rules below still stop it. */
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
     animation: ovIn calc(var(--ov-ease-in) * var(--enter-scale, 0.5) / 0.5) ease-out both;
 }
@@ -652,8 +658,8 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     transition-duration: calc(var(--ov-ease-out) * var(--enter-scale, 0.5) / 0.5);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box),
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-view-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-animations :is(.date-popover, .page-tab-popover, .notification-bell-panel, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box),
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-view-animations :is(.date-popover, .page-tab-popover, .notification-bell-panel, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
     animation: none;
 }
 
@@ -1445,7 +1451,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 /* ── Effects off: the layers are flat. No blur, no grain, no crop marks, no fade; the fill, the rim and the level stay. ── */
 html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification),
-html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .notification-bell-panel, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
     --paper-grain: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -1455,7 +1461,7 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([
     background-image: linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
 }
 
-html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .notification-bell-panel, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
     background-image: linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
 }
 

@@ -292,6 +292,8 @@
             + `<button type="button" class="feed-news-pop-site" data-pop-site aria-label="${esc(t('dashboard.feedWatchPopoverOpenSite', 'Open {name}', { name: bookmark.name || bookmark.url }))}">`
             + `<span class="feed-news-pop-name" id="feed-news-pop-name">${esc(bookmark.name || bookmark.url)}</span>`
             + `<span class="feed-news-pop-count">${esc(t('dashboard.feedWatchNewCount', '{n} new', { n: count }))}</span></button>`
+            // Every unread headline of this site is read at once, without opening any.
+            + `<button type="button" class="feed-news-pop-markread" data-pop-markread>${esc(t('dashboard.feedWatchPopoverMarkRead', 'Mark read'))}</button>`
             // The paper on this site alone, on a phone too.
             + `<button type="button" class="feed-news-pop-reader" data-pop-reader aria-label="${esc(t('dashboard.feedWatchPopoverReaderLabel', 'Open the reader for {name}', { name: bookmark.name || bookmark.url }))}">${esc(t('dashboard.feedWatchPopoverReader', 'Reader'))}</button>`
             + `<button type="button" class="feed-news-pop-close" data-pop-close aria-label="${esc(t('dashboard.close', 'Close'))}">×</button></div>`
@@ -315,6 +317,11 @@
         el.addEventListener('click', (event) => {
             event.stopPropagation();
             if (event.target.closest('[data-pop-close]')) { close(); return; }
+            if (event.target.closest('[data-pop-markread]')) {
+                dash()?.feedWatch?.markSeen(bookmark);
+                close();
+                return;
+            }
             if (event.target.closest('[data-pop-reader]')) {
                 const focusKey = dash()?.feedWatch?.key(bookmark.url);
                 close();

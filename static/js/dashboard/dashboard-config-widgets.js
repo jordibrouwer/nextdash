@@ -2701,12 +2701,16 @@
                     'Add other widgets to this page first; each becomes a tab here.'))}</p>
             </div>`;
         }
+        // A list with a ceiling (a stack's six tabs): once it is full, the
+        // boxes not ticked wait, rather than a seventh being dropped on save.
+        const full = Number(field.max) > 0 && Array.isArray(chosen) && chosen.length >= Number(field.max);
         const boxes = options.map(([value, text]) => `
             <label class="config-toggle config-toggle--inline">
                 <input type="checkbox" data-widget-setting="${esc(field.key)}"
                     data-widget-index="${index}" data-widget-kind="checkset"
                     ${(field.defaults || []).includes(value) ? 'data-widget-default' : ''}
-                    value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
+                    ${Number(field.max) > 0 ? `data-widget-max="${Number(field.max)}"` : ''}
+                    value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : (full ? 'disabled' : '')}>
                 <span>${esc(typeof text === 'string' ? text : this.t(text[0], text[1]))}</span>
             </label>`).join('');
         return `
@@ -2729,9 +2733,19 @@
         const self = blocks[index];
         if (!self?.isWidget) return [];
         const core = this.dash.renderCore;
+        const samePage = (block) => self.pageId == null || block.pageId == null || Number(block.pageId) === Number(self.pageId);
+        // A widget sits in one stack at most, and the server drops it from any
+        // second one on save: what another stack holds is not offered here,
+        // unless this stack already holds it too.
+        const own = new Set(Array.isArray(self.config?.members) ? self.config.members.map(String) : []);
+        const elsewhere = new Set();
+        blocks.forEach((block) => {
+            if (!block.isWidget || block.type !== 'stack' || block.id === self.id || !samePage(block)) return;
+            (Array.isArray(block.config?.members) ? block.config.members : []).forEach((id) => elsewhere.add(String(id)));
+        });
         return blocks
-            .filter((block) => block.isWidget && block.id !== self.id && block.type !== 'stack'
-                && (self.pageId == null || block.pageId == null || Number(block.pageId) === Number(self.pageId)))
+            .filter((block) => block.isWidget && block.id !== self.id && block.type !== 'stack' && samePage(block)
+                && (!elsewhere.has(String(block.id)) || own.has(String(block.id))))
             .map((block) => {
                 const kind = core?.widgetTypeLabel?.(block.type) || block.type;
                 const title = String(block.title || '').trim();
@@ -3250,6 +3264,8 @@
             'beszel-system': 'One Beszel system in full: processor, memory and disk, with the last hour of load beside them.',
             'beszel-attention': 'Only the Beszel systems that need a look — down, or running hot or full — or a line saying none do.',
             'beszel-storage': 'The disks of every Beszel system, fullest first.',
+            adguard: 'AdGuard Home at a glance — queries, how much is blocked, and the top domains and clients.',
+            pihole: 'Pi-hole at a glance — queries, how much is blocked, the top domains and clients, query types and upstreams.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -4400,6 +4416,10 @@
             // all ticked is six tabs, not "the default".
             if (DashboardConfig.WIDGET_SETTINGS.stack?.some((f) => f.key === key && f.optionsFrom)) {
                 value = chosen.length ? chosen : undefined;
+            }
+            const max = Number(input.getAttribute('data-widget-max'));
+            if (max > 0) {
+                boxes.forEach((box) => { box.disabled = !box.checked && chosen.length >= max; });
             }
         }
 

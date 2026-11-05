@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.26.0 — 5 November 2026](#v1260--5-november-2026)
 - [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
 - [v1.25.0 — 3 November 2026](#v1250--3-november-2026)
 - [v1.24.2 — 2 November 2026](#v1242--2-november-2026)
@@ -131,6 +132,108 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.26.0 — 5 November 2026
+
+A notifications bell in the navigation bar, a greeting with your name beside a large clock, a Clock widget with a face, the moon and the sun, and a lighter start: the theme stylesheet shrinks from 9.4 MB to 379 KB. Eight fixes from a code review ride along, and a new install starts on Tarnished Brass.
+
+### Notifications
+
+- **new — A notifications bell in the navigation bar.** New things that need you wait in the bell instead of popping up on the dashboard: maintenance and privacy questions, urgent notices and outages, the notice that an update was installed and the one that a new release is out (no toast any more), the digest card (once per digest) and the tips. Rows are grouped (Health, Clean up, System, Privacy, Tips). **No** answers a question for good and the row slides away; **Mark read** and **Mark all read** clear the rest. The bell keeps its place in a folded header, its header and a *More below* arrow stay put while the list scrolls, and a first-time note explains it.
+- **new — The bell shakes and rings for something new.** It shakes and pulses, with a short bell tone you can switch off in Config (*Bell sound for new notifications*).
+- **new — Config can bring back dismissed notifications.** *Bring back dismissed notifications* puts every answered **No** and every read row back in the bell.
+- **new — Tips: two a day, each leading to its own place.** Two new tips a day wait in the bell, whether or not yesterday's were read. Each has a button to the place it is about (Config, the Inbox, the Bookmarks view, Containers, the tag cloud, the palette and more).
+- **fix — A row you took up stays away.** Pressing the coloured button on a row (*Start*, *Open the Inbox*) slid the row out and closed the panel, but the row was back the next time the bell opened. It is now put aside until it gets worse, the way **No** does, without telling the source that anything was declined.
+- **fix — Tips no longer offer a pace they do not keep.** *Keyboard tips come* (a day or a week) is gone from Behavior → Privacy & sync → Onboarding: the bell holds two tips a day whatever it said. Its hint and the ℹ of *Show occasional keyboard tips* describe the bell now, and the offers for tag suggestions and link review say they wait there, in six languages.
+- **new — Mark read in the Watch feeds popover.** The popover has a **Mark read** button, quieter than the Reader button beside it.
+- **new — Bell usage in the analytics.** The bell reports how it is used, in fixed words and bucketed counts; the text of a notification never leaves.
+- **new — One-time notes for the bell and the action bar.** A short coach note says what the bell is and what the action bar offers, once.
+
+### Header
+
+- **new — A large clock in the classic header.** The clock placement *Large clock, greeting beside it* draws the time large with the greeting on its side and a halo on both corners; the other two placements keep their single line.
+- **new — Your name in the greeting.** *Your name* (Config → Appearance → Date & time, in its own *Greeting* group) turns the first line into "Good evening, Jordi"; it changes with the hour. Leave it empty to be greeted without a name.
+- **new — The quick start asks for the name,** in a new *About you* step, and existing users are asked once in a coach note.
+- **new — Tarnished Brass is the theme of a new install.** Installs that already chose a theme keep it.
+
+### Clock and Countdown
+
+- **new — The Clock widget has a face.** A large analogue clock, other places listed under it (the face shows the first three), with a seconds hand, the moon and its phase and sunrise, sunset and daylight for your weather location. The moon and the sun appear when the widget is two columns wide; *Plain lines of time* keeps the old look.
+- **new — The Countdown shows its figure large,** in the middle, with the date under it.
+
+### DNS blockers
+
+- **new — AdGuard Home and Pi-hole widgets.** One tile for both, on the shared media base: queries, how many were blocked, a day by the hour, and the top blocked domains and clients. Four looks, chosen in the settings: *pulse* (one big blocked percentage and the last day as a strip, the default), *leaders* (the top lists with bars), *tiles* (four figures and the hourly chart) and *mix* (pulse on top, the lists below, two columns only). A click opens a card with the top ten lists and a button to the service, or goes straight there when the click is set to open. A figure the service did not send is not drawn, and no queries has no percentage rather than 0 %.
+
+### What's new
+
+- **new — A compact What's new window.** A Ko-fi bar replaces the card, and the screenshots open larger on a click.
+
+### Docs
+
+- **docs — Translations.** The bell, the greeting, the tip buttons, the action-bar note and the AdGuard Home and Pi-hole widgets in Dutch, German, French, Spanish and Chinese. Forty-one strings that only had an English fallback in the code (the DNS widgets, the What's new footer, *Mark read* in the Watch feeds popover) are now in `en.json` and translated. The French header clock option and the greeting strings no longer show English.
+- **docs — Config → Help.** *Header & action buttons* covers the large clock, the greeting and the bell; *Alerts & notifications* has a paragraph on the bell; *Widget kinds* counts fifty-three kinds, adds AdGuard Home and Pi-hole and describes the clock face.
+- **docs — README and manual: the default look.** A fresh install starts on Tarnished Brass in the manual (§17, §17A.3) and the README, which also counts fifty-three widget kinds, names the Clock face, AdGuard Home, Pi-hole and the bell, and has a new dashboard picture. The other README pictures (Containers, Glances, the Bookmarks view, Inbox, search, Config and Unraid) are retaken on the current app, each in the theme its caption names; the two collages of all themes are unchanged.
+- **docs — Tips.** Four new tips: the bell, your name in the greeting, the clock face and the DNS widgets. Each leads to its place from the bell.
+
+### Browser extension
+
+- **fix — The saved panel no longer stands open.** A rule in `popup.css` had lost its selector line and swallowed the `.hidden` rule after it, so *Bookmark saved… open in nextDash* showed under the buttons from the first look, and the form did not hide after a save.
+- **fix — The duplicate-address warning shows again.** The panel carried both a `hidden` class and the `hidden` attribute `popup.js` sets; once the `.hidden` rule was back, the class kept the warning out of sight for good. It now uses the attribute alone.
+
+### Bookmarks view
+
+- **fix — Fix first lists a shared address once.** Two bookmarks with the same address gave two identical lines in *Collection health → Fix first* (*Docker Hub — Duplicate URL in 2 bookmarks*, twice). They are one place to start now.
+
+### Reset and start-up
+
+- **fix — A factory reset forgets the weekly digest.** `digest.json` survived *Reset all data*, so a digest made before the reset was offered to the new install as its first week, and the link-review row waited behind it. The file goes with the rest now.
+- **fix — The Quick start leaves no bar behind when it was finished already.** When its script arrived after the guide had been answered, it still drew its bar for half a second before taking it away. It checks first and draws nothing.
+- **fix — The Quick start keeps °F when you click it straight after typing a city.** Leaving the city field and clicking the unit saved twice at once, and the save with the old unit sometimes landed last. The Quick start's saves now go out one after the other.
+
+### Fixes from a code review
+
+Eight fixes from a code review: the calculator reads a decimal comma, a Tabs widget off its schedule gives its widgets back, copying a widget no longer undoes a save made at the same moment, the digest charts count real days and show a day that was down, and a few edge cases in importing, the Tabs settings and the backdrop picker.
+
+### Search
+
+- **fix — A Help search keeps its results when the page is slow.** The release heading and the Help text arrive a moment after *Config → Help* opens; when they came after you had already searched, Help wrote *Getting started* back over the results, with your words still in the box. They now redraw the results instead.
+- **fix — The calculator reads a decimal comma.** `1,5 + 1` is 2.5 and `15% van 2,5` is 0.375; before, every comma was dropped and 2,5 became 25. A comma before exactly three digits still groups thousands (`1,000`, `1,234,567`).
+
+### Widgets
+
+- **new — Settings in a widget's menu opens its sheet over the dashboard.** The same sheet the edit panel's Settings opens, so you stay where you are; Config → Widgets opens only when the sheet cannot be drawn.
+- **fix — A Tabs widget off its schedule gives its widgets back.** Outside its time window or on a day it is off, a Tabs widget is not drawn, and the widgets in its tabs now stand in the grid instead of disappearing with it.
+- **fix — Copying a widget keeps a widget saved meanwhile.** The copy is inserted into the page as it stands at that moment, under one lock, so a widget added or changed in another tab while the copy was made is no longer written away.
+- **fix — The Tabs settings offer only what can be kept.** A widget that another Tabs widget already holds is no longer offered, and with six tabs ticked the other boxes wait until one is unticked; before, the server dropped both without a word on save.
+- **fix — Config → Glances waits for its settings before it can be used.** A click on *Test connection* in the moment before the settings were read got its answer, which was then wiped when they arrived; a choice made in that moment was not saved at all. The fields and the button stay shut until the settings are in.
+
+### Digest
+
+- **fix — A day that was down shows on the uptime chart.** A day on which every check failed was stored as 0, the same value as a day without checks, and left out of the line. Days without checks are now `-1` under a new key (`uptimeDays`), so a digest saved before draws no uptime chart rather than false outages.
+- **fix — The bars of opened bookmarks are calendar days.** They counted 24-hour spans ending at the moment the digest was made, so an evening landed under the next day's name. They now follow the days in the time zone the digest is sent in.
+
+### Import
+
+- **fix — A Homepage file with aliases stops at its limit.** A group listing the same aliased set of services many times kept adding rows after the import's budget was spent, so a small file could take minutes and a lot of memory before it was refused. It now stops at the limit.
+
+### Appearance
+
+- **fix — Checkbox rows in Appearance line up with the other labels.** The toggle's hover padding sat inside the column, so its words stood 8 px right of every other label and the box 8 px left of the control's edge.
+- **new — Every Appearance tab lists its sections under the preview.** The list beside the settings now shows on every tab, not only on Date & weather, and stands under the preview, so the preview stays in place when you switch tabs. The entries are larger, and the section in view is marked with a bar.
+- **fix — The backdrop picker no longer holds on to old thumbnails.** Each search keystroke made a new observer for lazy painting and never let the old one go, so hundreds of thumbnails that were no longer on the page stayed in memory. One observer per picker now, released when the picker is drawn again.
+- **fix — The last Appearance tab you click is the one that stays.** Clicking *Theme* and then *Rows* straight away, while the theme was still being saved, could end on *Theme*: the first switch finished last and took the page back. A switch that has been overtaken now stops.
+
+### Performance
+
+- **fix — The theme stylesheet no longer carries every backdrop.** `/api/theme.css` held the colours of all 386 theme blocks and, inside each, an inline SVG backdrop of ~24 KB: 9.4 MB, 920 KB gzipped, in front of the first paint. It is now 379 KB (41 KB gzipped). The page opens with the backdrop of its own theme inline (`#nextdash-backdrop-css`, above the scripts so `theme-loader.js` finds it on its first run); `theme-loader.js` watches `data-theme` and `data-backdrop-recipe` and asks `/api/theme.css?scope=backdrop&theme=…&recipe=…` for any other the document switches to, whoever writes the attribute. On a 10 Mbit line with 80 ms latency a cold load paints in 0.6 s instead of 2.0 s. The seed and the neutral accent follow the same route (`reloadBackdropCSS`), and the endpoint is revalidated by ETag (weak ones from a proxy match). A reload that lands while another theme was being fetched asks for that one again. At most 8 themes and 8 recipes per request.
+- **new — Icons are stored at a size they are drawn at.** A fetched or uploaded PNG or JPEG larger than 192 px is scaled down (alpha kept) and a multi-size `.ico` whose best entry (the smallest of 64 px or more) is a PNG is stored as that PNG; a 512 px, 324 KB icon becomes 59 KB. Anything unreadable, animated (GIF, APNG), vector, a JPEG turned by its EXIF orientation, larger than 2048 px square, or an `.ico` whose best entry is a bitmap is stored as it arrived, and a result that is not smaller is dropped. Icons already stored are not rewritten.
+- **fix — Start-up asks for the same answer once.** The update status, the app discovery and the data revision were each fetched two or three times by their separate readers, and two health-trend tiles each fetched the whole series. Callers that arrive while a request is on its way now share it (`nextDashFetchShared`); nothing is kept once it has answered, and a read made after one of our writes began never joins a request that started before it (`fresh: true` for the reads that follow a save).
+- **fix — What's new recordings wait until they are seen.** Every spotlight recording started downloading (300 KB each) when the window opened, whether it was on screen or not. They now load and play when scrolled into view, and pause when scrolled out; closing the window lets go of what watched them.
+- **new — Media tiles show their last answer while the real one is on its way.** After a reload, a Jellyfin, Arr, Seerr, downloads, Home Assistant or Beszel tile drew its waiting line until the service answered. It now draws the answer from a moment ago at once, with how old it is, and replaces it when the real one arrives. The answer is kept in `sessionStorage` for the tab only, never shown when older than ten minutes, shown without its controls, and a failed or partial answer is not kept. If the service does not answer, the held picture stays on screen with its age instead of "unreachable".
+- **fix — The Overview's text is fetched with the settings.** The ~99 KB of Overview strings joined the Help prose in the lazy locale scope (`scope=help`), so the language file every dashboard loads is 17% smaller (181 KB gzipped from 220 KB). The three strings the update notice and the What's new window print stay in the core scope, and a test fails when another script outside the config module starts reading one that is not.
 
 ---
 

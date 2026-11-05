@@ -3146,7 +3146,7 @@ class SearchCommandsComponent {
             shortcut: ':CLOCK',
             apply: 'chrome',
             options: [
-                { value: 'classic', label: t('config.headerClockClassic', 'On their own line, name underneath') },
+                { value: 'classic', label: t('config.headerClockClassic', 'Large clock, greeting beside it') },
                 { value: 'beside-name', label: t('config.headerClockBesideName', 'Beside the view name') },
                 { value: 'own-zone', label: t('config.headerClockOwnZone', 'In a column of their own') },
             ],

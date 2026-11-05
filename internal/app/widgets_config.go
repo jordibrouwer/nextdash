@@ -144,6 +144,13 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "zones", Kind: "list"},
 		{Key: "hour12", Kind: "bool"},
 		{Key: "showDate", Kind: "bool"},
+		// "face" is the large analogue clock (the default), "list" the plain
+		// lines of time. The rest only belong to the face: the seconds hand,
+		// and the moon and the sun, which a tile drawn wide adds beside it.
+		{Key: "look", Kind: "string", Allowed: []string{"face", "list"}},
+		{Key: "showSeconds", Kind: "bool"},
+		{Key: "showMoon", Kind: "bool"},
+		{Key: "showSun", Kind: "bool"},
 	},
 	WidgetTypeCountdown: {
 		// A calendar date (YYYY-MM-DD) and, optionally, a time of day (HH:MM).
@@ -344,6 +351,8 @@ var widgetFields = map[WidgetType][]widgetField{
 	},
 	WidgetTypeBeszelAttention: beszelFieldsFor(WidgetTypeBeszelAttention),
 	WidgetTypeBeszelStorage:   beszelFieldsFor(WidgetTypeBeszelStorage),
+	WidgetTypeAdguard:         dnsFields(false),
+	WidgetTypePihole:          dnsFields(true),
 	WidgetTypeHomeAssistant: {
 		{Key: "server", Kind: "url"},
 		{Key: "credentialId", Kind: "string"},
@@ -753,6 +762,7 @@ func widgetTypeNames() []string {
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
 		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
 		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage,
+		WidgetTypeAdguard, WidgetTypePihole,
 		WidgetTypeGlances,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone

@@ -282,6 +282,7 @@ button[type="submit"].btn-primary {
     margin-top: 0.45rem;
 }
 
+.save-success-panel {
   margin-top: var(--padding-medium);
   padding: var(--padding-medium);
   border: var(--border-width) solid var(--accent-success);

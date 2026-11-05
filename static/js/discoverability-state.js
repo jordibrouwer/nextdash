@@ -20,6 +20,8 @@
         tipsShownAt: [],
         seenTips: [],
         seenSettingPromos: [],
+        bell: {},
+        tipCardShownAt: 0,
     };
     let persistTimer = null;
     let migrateScheduled = false;
@@ -27,6 +29,37 @@
     // was saved still lands afterwards, and init() took it whole: a tour just
     // closed showed again on the next visit to its view.
     const markedHere = new Set();
+    // The same guard for bell rows, by id: a row marked or reset on this page
+    // keeps the local record when a stale read lands.
+    const bellMarkedHere = new Set();
+
+    function cleanBellMark(raw) {
+        if (!raw || typeof raw !== 'object') return undefined;
+        const mark = {
+            count: Math.max(0, Math.floor(Number(raw.count) || 0)),
+        };
+        if (Array.isArray(raw.ids) && raw.ids.length) {
+            mark.ids = raw.ids.map((id) => String(id || '').trim()).filter(Boolean);
+        }
+        if (raw.forever === true) mark.forever = true;
+        return mark;
+    }
+
+    function cleanBell(raw) {
+        const out = {};
+        if (!raw || typeof raw !== 'object') return out;
+        Object.keys(raw).forEach((id) => {
+            const key = String(id || '').trim();
+            if (!key || !raw[id] || typeof raw[id] !== 'object') return;
+            const record = {};
+            const read = cleanBellMark(raw[id].read);
+            const no = cleanBellMark(raw[id].no);
+            if (read) record.read = read;
+            if (no) record.no = no;
+            out[key] = record;
+        });
+        return out;
+    }
 
     function normalizeIncoming(raw) {
         if (!raw || typeof raw !== 'object') {
@@ -37,6 +70,8 @@
                 tipsShownAt: [],
                 seenTips: [],
                 seenSettingPromos: [],
+                bell: {},
+                tipCardShownAt: 0,
             };
         }
         return {
@@ -52,6 +87,8 @@
             seenSettingPromos: Array.isArray(raw.seenSettingPromos)
                 ? raw.seenSettingPromos.map((id) => String(id || '').trim()).filter(Boolean)
                 : [],
+            bell: cleanBell(raw.bell),
+            tipCardShownAt: Number(raw.tipCardShownAt) > 0 ? Number(raw.tipCardShownAt) : 0,
         };
     }
 
@@ -166,8 +203,7 @@
      * an earlier version runs out instead of being dropped.
      */
     function tipsWindowMs() {
-        const frequency = global.dashboardInstance?.settings?.sessionTipsFrequency;
-        return frequency === 'weekly' ? TIPS_WEEK_MS : TIPS_WINDOW_MS;
+        return TIPS_WINDOW_MS;
     }
 
     function tipsAllowedNow(now = Date.now()) {
@@ -297,7 +333,77 @@
         }
     }
 
+    /** The marks kept for one bell row; an empty object when there are none. */
+    function getBellRecord(id) {
+        const key = String(id || '').trim();
+        const record = key && state.bell ? state.bell[key] : null;
+        return record ? JSON.parse(JSON.stringify(record)) : {};
+    }
+
+    function setBellMark(id, kind, mark, options) {
+        const key = String(id || '').trim();
+        const clean = cleanBellMark(mark);
+        if (!key || !clean) return;
+        if (kind === 'read') delete clean.forever;
+        if (!state.bell) state.bell = {};
+        const record = state.bell[key] || {};
+        record[kind] = clean;
+        state.bell[key] = record;
+        bellMarkedHere.add(key);
+        applyToDashboardSettings();
+        if (options?.persist !== false) {
+            schedulePersist();
+        }
+    }
+
+    /** Remember how much of a row the person has read: {count, ids}. */
+    function markBellRead(id, mark, options = {}) {
+        setBellMark(id, 'read', mark, options);
+    }
+
+    /** Remember a "No" for a row: {count, ids, forever?}. */
+    function markBellNo(id, mark, options = {}) {
+        setBellMark(id, 'no', mark, options);
+    }
+
+    /*
+     * Forget every "No" that was given forever; read marks and No marks that
+     * only cover the current items stay. The record is kept without its `no`
+     * (even when that leaves it empty) because the server takes a record the
+     * client sends per id as the truth: a merge that kept the "greater" mark
+     * would bring the cleared No back. Returns the ids it cleared.
+     */
+    function resetBellNo(options = {}) {
+        const cleared = [];
+        Object.keys(state.bell || {}).forEach((id) => {
+            if (state.bell[id].no && state.bell[id].no.forever) {
+                delete state.bell[id].no;
+                bellMarkedHere.add(id);
+                cleared.push(id);
+            }
+        });
+        if (!cleared.length) return cleared;
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+        return cleared;
+    }
+
+    function getTipCardShownAt() {
+        return Number(state.tipCardShownAt) > 0 ? Number(state.tipCardShownAt) : 0;
+    }
+
+    function noteTipCardShown(ms, options = {}) {
+        state.tipCardShownAt = Number(ms) > 0 ? Number(ms) : 0;
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+    }
+
     function exportState() {
+        const bellIds = Object.keys(state.bell || {});
         return {
             lastWhatsNewRelease: state.lastWhatsNewRelease || undefined,
             tipsPromoUntil: state.tipsPromoUntil > 0 ? state.tipsPromoUntil : undefined,
@@ -305,6 +411,8 @@
             tipsShownAt: state.tipsShownAt?.length ? state.tipsShownAt.slice() : undefined,
             seenTips: state.seenTips?.length ? state.seenTips.slice() : undefined,
             seenSettingPromos: state.seenSettingPromos?.length ? state.seenSettingPromos.slice() : undefined,
+            bell: bellIds.length ? JSON.parse(JSON.stringify(state.bell)) : undefined,
+            tipCardShownAt: state.tipCardShownAt > 0 ? state.tipCardShownAt : undefined,
         };
     }
 
@@ -366,7 +474,11 @@
     }
 
     function init(serverState) {
+        const localBell = state.bell || {};
         state = normalizeIncoming(serverState);
+        bellMarkedHere.forEach((key) => {
+            if (localBell[key]) state.bell[key] = localBell[key];
+        });
         markedHere.forEach((key) => {
             if (!state.seenTips.includes(key)) state.seenTips.push(key);
         });
@@ -429,6 +541,12 @@
         hasSeenSettingPromo,
         markSettingPromoSeen,
         resetSettingPromoSeen,
+        getBellRecord,
+        markBellRead,
+        markBellNo,
+        resetBellNo,
+        getTipCardShownAt,
+        noteTipCardShown,
         schedulePersist,
         persistNow,
     };

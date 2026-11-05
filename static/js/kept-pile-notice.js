@@ -7,19 +7,16 @@
  * throwing away what somebody kept is the one thing it must never do on its
  * own.
  *
- * So it says something instead, once, in the corner the other one-time notices
- * use, and only when there is something to say: a real pile, most of it old
- * enough that nobody is coming back for it this week. The card does not file,
- * delete or change a setting — it opens the list, where every tool for the job
+ * So it says something instead, as a quiet row in the notifications bell, and
+ * only when there is something to say: a real pile of old links, old enough
+ * that nobody is coming back for it this week. The row does not file, delete
+ * or change a setting — it opens the list, where every tool for the job
  * already is.
  */
 (function initKeptPileNotice(global) {
     'use strict';
 
     const PROMO_ID = 'kept-pile-v1';
-    // Last in the corner's queue: an announcement about a feature is worth
-    // interrupting a new reader for, a pile of their own links is not.
-    const SHOW_DELAY_MS = 9000;
 
     /**
      * What counts as a pile, and what counts as old.
@@ -47,10 +44,6 @@
         return global.DiscoverabilityState?.hasSeenSettingPromo?.(PROMO_ID) === true;
     }
 
-    function markAnswered() {
-        global.DiscoverabilityState?.markSettingPromoSeen?.(PROMO_ID);
-    }
-
     /** Kept links older than the line, which is what the card is about. */
     function staleCount() {
         const cutoff = Date.now() - STALE_AFTER_DAYS * 86400000;
@@ -60,45 +53,49 @@
         }).length;
     }
 
-    function openKept(card) {
+    /**
+     * Opening the list is not an answer: the row stays until the pile shrinks
+     * or the bell is told "No". (An answer given under the old corner card is
+     * still honoured by hasAnswered().)
+     */
+    function openKept() {
         global.nextdashTrack?.('kept-pile-notice:opened');
-        markAnswered();
-        card.close();
         void dash()?.openUnsortedBookmarks?.();
     }
 
+    /** The bell row: how many kept links are old, or null when there is no pile. */
+    async function bellState() {
+        if (hasAnswered()) return null;
+        // Nothing to say where keeping is switched off.
+        if (dash()?.settings?.unsortedEnabled === false) return null;
+        const count = staleCount();
+        if (count < MIN_STALE) return null;
+        return {
+            count,
+            text: t('keptPileBellText', '{count} kept links waiting over a month', { count }),
+        };
+    }
+
+    // A quiet row in the bell, not a corner card: a pile of kept links is worth
+    // knowing about, not worth interrupting for. "No" hides it until the pile
+    // has grown by twenty.
     const card = global.NoticeCard.define({
         id: 'kept-pile',
-        showDelayMs: SHOW_DELAY_MS,
         title: () => t('keptPileNoticeTitle', 'Kept links are piling up'),
-        body: () => t('keptPileNoticeBody',
-            `${staleCount()} of the links you kept have been waiting over a month for a page. Bookmarks → Unsorted files them: tick a few and move them, or promote one at a time.`,
-            { count: staleCount(), days: STALE_AFTER_DAYS }),
-        dismissLabel: () => t('keptPileNoticeDismiss', 'Dismiss'),
-        dismissName: 'dismiss',
-        canShow: () => {
-            if (hasAnswered()) return false;
-            const d = dash();
-            // Nothing to say where keeping is switched off, and nothing to say
-            // about a list somebody is plainly working through.
-            if (d?.settings?.unsortedEnabled === false) return false;
-            return staleCount() >= MIN_STALE;
+        bell: {
+            kind: 'quiet',
+            group: 'cleanup',
+            icon: '\u{1F5C2}',
+            no: { threshold: 20 },
+            state: bellState,
+            actions: [
+                {
+                    label: () => t('keptPileNoticeOpen', 'Open Unsorted'),
+                    primary: true,
+                    onClick: openKept,
+                },
+            ],
         },
-        onDismiss: markAnswered,
-        actionAttr: 'data-kept-pile-action',
-        actions: [
-            {
-                name: 'open',
-                label: () => t('keptPileNoticeOpen', 'Open Unsorted'),
-                primary: true,
-                onClick: openKept,
-            },
-            {
-                name: 'dismiss',
-                label: () => t('keptPileNoticeLater', 'Not now'),
-                onClick: (c) => { markAnswered(); c.close(); },
-            },
-        ],
     });
 
     if (document.readyState === 'loading') {
@@ -108,9 +105,7 @@
     }
 
     global.DashboardKeptPileNotice = {
-        render: card.renderSync,
-        shouldShow: card.shouldShowSync,
-        dismiss: () => { markAnswered(); card.close(); },
+        state: bellState,
         staleCount,
         PROMO_ID,
         MIN_STALE,

@@ -802,6 +802,10 @@ body.no-animations .start-guide-modal {
     margin: 0.4rem 0 0;
 }
 
+.start-guide-modal .sg-mini .sg-name {
+    margin-bottom: 0.4rem;
+}
+
 .start-guide-modal .sg-mini .sg-weather input {
     flex: 1 1 auto;
     min-width: 0;

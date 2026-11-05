@@ -66,7 +66,7 @@
     }
 
     async function getDiscovery() {
-        const res = await fetch('/api/discovery', { cache: 'no-store' });
+        const res = await (window.nextDashFetchShared || fetch)('/api/discovery', { cache: 'no-store' });
         if (!res.ok) throw new Error(String(res.status));
         return res.json();
     }

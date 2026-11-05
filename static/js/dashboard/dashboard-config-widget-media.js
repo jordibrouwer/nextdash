@@ -380,6 +380,32 @@
         connected: beszelOneConnected,
     };
 
+    /*
+     * AdGuard Home and Pi-hole. AdGuard takes the web interface's own user and
+     * password as Basic auth; Pi-hole v6 asks for a password only, signs in for
+     * a session id and sends it as X-FTL-SID.
+     */
+    Config.MEDIA_SERVICES.adguard = {
+        id: 'adguard',
+        name: 'AdGuard Home',
+        placeholder: 'http://adguard.local:3000',
+        auth: { kind: 'basic' },
+        words: {
+            'key refused': ['config.widgetAdguardErrorSignIn', 'AdGuard Home refused that sign-in.'],
+        },
+    };
+    Config.MEDIA_SERVICES.pihole = {
+        id: 'pihole',
+        name: 'Pi-hole',
+        placeholder: 'http://pi.hole',
+        auth: { kind: 'session', session: {
+            format: 'json', loginPath: '/api/auth', userField: '', passField: 'password',
+            tokenPath: 'session.sid', tokenHeader: 'X-FTL-SID', tokenPrefix: '' } },
+        words: {
+            'key refused': ['config.widgetPiholeErrorSignIn', 'Pi-hole refused that password.'],
+        },
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],
@@ -604,14 +630,16 @@
                     </select>
                 </div>`;
         }
-        if (auth.kind === 'session') {
+        if (auth.kind === 'session' || auth.kind === 'basic') {
+            // Pi-hole v6 asks for a password only.
+            const passwordOnly = auth.kind === 'session' && this.sessionIsPasswordOnly(auth.session);
             return `${mode}
-                <div class="config-widget-field">
+                ${passwordOnly ? '' : `<div class="config-widget-field">
                     <label for="${id('user')}">${esc(this.mediaWord(service, 'user'))}</label>
                     <input type="text" id="${id('user')}" class="config-text" autocomplete="off" spellcheck="false"
                         maxlength="200" data-widget-auth="basicUser" data-widget-index="${index}"
                         value="${esc(auth.basicUser || '')}">
-                </div>
+                </div>`}
                 <div class="config-widget-field">
                     <label for="${id('key')}">${esc(this.mediaWord(service, 'password'))}</label>
                     <input type="password" id="${id('key')}" class="config-text" autocomplete="off"
@@ -720,6 +748,8 @@
         if (secret && shape.kind === 'session') {
             payload.draftCredential = { session: {
                 ...(shape.session || {}), user: String(shape.basicUser || '').trim(), password: secret } };
+        } else if (secret && shape.kind === 'basic') {
+            payload.draftCredential = { basicUser: String(shape.basicUser || '').trim(), basicPassword: secret };
         } else if (secret && shape.kind === 'query') {
             payload.draftCredential = { query: { [shape.queryName]: secret } };
         } else if (secret) {

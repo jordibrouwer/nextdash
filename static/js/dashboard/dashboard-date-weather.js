@@ -194,6 +194,24 @@ class DashboardDateWeather {
     }
 
 
+    /**
+     * "Good evening", or "Good evening, Jordi" once a name is set. The day is
+     * cut in four at 6, 12, 18 and midnight.
+     */
+    formatGreeting(date, t) {
+        const h = date.getHours();
+        const greeting = h < 6 ? t('dashboard.greetingNight', 'Good night')
+            : h < 12 ? t('dashboard.greetingMorning', 'Good morning')
+                : h < 18 ? t('dashboard.greetingAfternoon', 'Good afternoon')
+                    : t('dashboard.greetingEvening', 'Good evening');
+        const name = String(this.dash.settings.greetingName || '').trim();
+        if (!name) return greeting;
+        return t('dashboard.greetingWithName', '{greeting}, {name}')
+            .replace('{greeting}', () => greeting)
+            .replace('{name}', () => name);
+    }
+
+
     renderDateWeatherLine() {
         const d = this.dash;
         const dateElement = document.getElementById('date-element');
@@ -222,16 +240,59 @@ class DashboardDateWeather {
         }
 
         dateElement.textContent = '';
-        if (dateTimeText) {
-            const dateTimeLine = document.createElement('div');
-            dateTimeLine.className = 'date-time-line';
-            dateTimeLine.textContent = dateTimeText;
-            dateTimeLine.setAttribute('role', 'button');
-            dateTimeLine.setAttribute('tabindex', '0');
-            dateTimeLine.setAttribute('aria-haspopup', 'dialog');
-            dateTimeLine.addEventListener('click', () => this.showDatePopover());
-            dateTimeLine.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.showDatePopover(); } });
-            dateElement.appendChild(dateTimeLine);
+
+        /*
+         * The classic placement draws a large clock: the time on its own in big
+         * type, and beside it the greeting, the date and the weather as three
+         * short lines. The other placements keep their single line, which has
+         * to fit beside the view's name.
+         */
+        const bigClock = d.settings.headerClockPlacement === 'classic';
+        dateElement.classList.toggle('date--big-clock', bigClock);
+
+        const makeClockButton = (text, className) => {
+            const el = document.createElement('div');
+            el.className = className;
+            el.textContent = text;
+            el.setAttribute('role', 'button');
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('aria-haspopup', 'dialog');
+            el.addEventListener('click', () => this.showDatePopover());
+            el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.showDatePopover(); } });
+            return el;
+        };
+
+        let weatherHost = dateElement;
+        if (bigClock) {
+            if (timePart) {
+                const clock = makeClockButton(timePart, 'date-time-line date-clock');
+                clock.setAttribute('aria-label', dateTimeText || timePart);
+                dateElement.appendChild(clock);
+            }
+            const side = document.createElement('div');
+            side.className = 'date-side';
+            // Time and date both off means the line is the weather alone; a
+            // greeting over it would be a line nobody asked for.
+            if (timePart || datePart) {
+                const greeting = document.createElement('div');
+                greeting.className = 'date-greeting';
+                greeting.textContent = this.formatGreeting(now, t);
+                side.appendChild(greeting);
+            }
+            if (datePart) {
+                const day = timePart
+                    ? document.createElement('div')
+                    // Without a time there is no clock to click, so the date
+                    // carries the popover instead.
+                    : makeClockButton(datePart, 'date-time-line');
+                day.classList.add('date-day');
+                day.textContent = datePart;
+                side.appendChild(day);
+            }
+            dateElement.appendChild(side);
+            weatherHost = side;
+        } else if (dateTimeText) {
+            dateElement.appendChild(makeClockButton(dateTimeText, 'date-time-line'));
         }
         if (weatherPart) {
             const weatherLine = document.createElement('div');
@@ -244,7 +305,7 @@ class DashboardDateWeather {
             textSpan.className = 'weather-text';
             textSpan.textContent = weatherPart;
             weatherLine.append(iconSpan, textSpan);
-            dateElement.appendChild(weatherLine);
+            weatherHost.appendChild(weatherLine);
         } else if (d.settings.showWeatherWithDate && d.weatherLastError) {
             const errorText = this.getWeatherErrorMessage(d.weatherLastError);
             if (errorText) {
@@ -252,7 +313,7 @@ class DashboardDateWeather {
                 weatherLine.className = 'date-weather-line date-weather-line--error';
                 weatherLine.textContent = errorText;
                 weatherLine.setAttribute('role', 'status');
-                dateElement.appendChild(weatherLine);
+                weatherHost.appendChild(weatherLine);
             }
         }
 

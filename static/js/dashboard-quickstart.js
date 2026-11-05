@@ -110,7 +110,7 @@
         async discoveryInfo() {
             if (this.dash?.settings?.discoverApps === false || this.dash?.settings?.discoveryCardDone === true) return null;
             try {
-                const res = await fetch('/api/discovery', { cache: 'no-store' });
+                const res = await (window.nextDashFetchShared || fetch)('/api/discovery', { cache: 'no-store' });
                 return res.ok ? await res.json() : null;
             } catch {
                 return null;

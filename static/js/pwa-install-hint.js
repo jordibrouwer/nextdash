@@ -1,11 +1,14 @@
 /**
- * One-time mobile toast after onboarding when the app can be added to the home screen.
+ * A tip in the notifications bell, after onboarding, when the app can be added to the
+ * home screen on a phone. It waits there until it is read.
  * Uses the dynamic manifest for the app name (/manifest.webmanifest).
  */
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'nextdash-pwa-install-hint-v1';
+    // Set once the browser reports the app installed. v1 meant "the toast was
+    // shown once"; the tip now returns daily, so that old flag must not hide it.
+    const STORAGE_KEY = 'nextdash-pwa-installed-v2';
     let deferredPrompt = null;
     let manifestNamePromise = null;
     let scheduleTimer = null;
@@ -79,51 +82,74 @@
         return manifestNamePromise;
     }
 
-    async function maybeShow() {
+    /**
+     * What the bell row says, or null while there is nothing to offer: not on
+     * a phone, before onboarding is done, once installed, or when the browser
+     * has no way to install it (no install prompt and not iOS).
+     */
+    /** Today as a local date: the tip is offered again each day until installed. */
+    function today() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    async function hintState() {
         const dash = window.dashboardInstance;
-        if (!dash || typeof dash.showNotification !== 'function') return;
-        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return;
-        if (!isMobile()) return;
-        if (dash.settings?.onboardingCompleted !== true) return;
-        if (hasShown()) return;
-        if (!canInstall()) return;
-        if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) return;
+        if (!dash) return null;
+        if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return null;
+        if (!isMobile()) return null;
+        if (hasShown()) return null; // installed here, as far as the browser told us
+        if (dash.settings?.onboardingCompleted !== true) return null;
+        if (!canInstall()) return null;
 
         const name = await getManifestName();
-
         if (deferredPrompt) {
-            markShown();
-            dash.showNotification(
-                t('pwaInstallHintAndroid', 'Install {name} on your home screen for quick access.', { name }),
-                'info',
-                {
-                    duration: 12000,
-                    actionLabel: t('pwaInstallHintAction', 'Install'),
-                    onAction: async () => {
-                        if (!deferredPrompt) return;
-                        try {
-                            await deferredPrompt.prompt();
-                            await deferredPrompt.userChoice;
-                        } catch { /* ignore */ }
-                        deferredPrompt = null;
-                    },
-                }
-            );
-            return;
+            return { count: 1, ids: [today()], text: t('pwaInstallHintAndroid', 'Install {name} on your home screen for quick access.', { name }) };
         }
-
         if (isIos()) {
-            markShown();
-            dash.showNotification(
-                t(
-                    'pwaInstallHintIos',
-                    'Add {name} to your home screen: tap Share, then "Add to Home Screen".',
-                    { name }
-                ),
-                'info',
-                { duration: 14000 }
-            );
+            return {
+                count: 1,
+                ids: [today()],
+                text: t('pwaInstallHintIos', 'Add {name} to your home screen: tap Share, then "Add to Home Screen".', { name }),
+            };
         }
+        return null;
+    }
+
+    // A tip in the bell (group Tips), not a toast: it waits there until it is
+    // read, and the install button reads it. Read, it comes back the next day
+    // (its id is the date) for as long as the app is not installed.
+    let bellHandle = null;
+
+    function registerWithBell() {
+        if (bellHandle || !window.NotificationBell) return;
+        bellHandle = window.NotificationBell.register({
+            id: 'pwa-install-hint',
+            group: 'tips',
+            kind: 'tip',
+            icon: '\u{1F4F2}',
+            no: 'forever',
+            state: hintState,
+            actions: [{
+                // Only Android has something to press; iOS is told what to tap.
+                label: () => t('pwaInstallHintAction', 'Install'),
+                primary: true,
+                marksRead: true,
+                onClick: async () => {
+                    if (!deferredPrompt) return;
+                    try {
+                        await deferredPrompt.prompt();
+                        await deferredPrompt.userChoice;
+                    } catch { /* ignore */ }
+                    deferredPrompt = null;
+                },
+            }],
+        });
+    }
+
+    async function maybeShow() {
+        registerWithBell();
+        await bellHandle?.refresh();
     }
 
     function scheduleShow(options = {}) {
@@ -138,6 +164,7 @@
     }
 
     function init() {
+        registerWithBell();
         window.addEventListener('beforeinstallprompt', (e) => {
             // preventDefault() suppresses Chrome's own install banner so we can
             // surface our own "add to home screen" hint instead. This makes

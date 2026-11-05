@@ -608,6 +608,15 @@ body.no-animations .feed-news-bar > i { transition: none; }
     color: var(--accent-primary); font: inherit; font-size: var(--text-sm, 0.85rem); font-weight: var(--font-weight-semibold, 600);
     line-height: 1.2; white-space: nowrap; cursor: pointer;
 }
+/* Mark read: the quiet sibling of Reader, no accent fill. */
+.feed-news-pop-markread {
+    flex: none; padding: 0.3rem var(--space-3, 0.75rem); border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 8px); background: transparent; color: var(--text-secondary);
+    font: inherit; font-size: var(--text-sm, 0.85rem); line-height: 1.2; white-space: nowrap; cursor: pointer;
+}
+.feed-news-pop-markread:hover, .feed-news-pop-markread:focus-visible {
+    color: var(--text-primary); background: color-mix(in srgb, var(--accent-primary) 12%, transparent); outline: none;
+}
 .feed-news-pop-reader:hover, .feed-news-pop-reader:focus-visible {
     background: color-mix(in srgb, var(--accent-primary) 24%, transparent); outline: none;
 }
@@ -625,7 +634,7 @@ body.no-animations .feed-news-bar > i { transition: none; }
     .feed-news-pop-more:hover { background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)); }
 }
 @media (hover: none), (pointer: coarse) {
-    .feed-news-pop-reader { min-height: 44px; }
+    .feed-news-pop-reader, .feed-news-pop-markread { min-height: 44px; }
 }
 
 /* The front page of the paper: a section per site, the one with the newest

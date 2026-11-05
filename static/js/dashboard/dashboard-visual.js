@@ -289,7 +289,11 @@ class DashboardVisual {
             const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
             configLink.innerHTML = `<a href="/#config" class="config-link-anchor" aria-label="${label}" title="${label}">${DashboardVisual.CONFIG_ICON_SVG}</a>`;
 
-            this.headerDestinationsHost()?.appendChild(configLink);
+            // The bell stays the last of the cluster, so Config goes in before it.
+            const destinations = this.headerDestinationsHost();
+            const bellHost = destinations?.querySelector(':scope > #page-nav-bell-host');
+            if (bellHost) destinations.insertBefore(configLink, bellHost);
+            else destinations?.appendChild(configLink);
         }
         this.syncConfigLinkActiveState();
     }
@@ -496,6 +500,8 @@ class DashboardVisual {
              * eventually disagree with the badge two centimetres away.
              */
             d.healthSummary = summary;
+            // The bell's outage row reads this same summary.
+            window.HealthBellSource?.refresh?.();
             d.renderCore?.refreshWidgets?.('health');
             // The trend tile reads the same score, counts and last day.
             d.renderCore?.refreshWidgets?.('trend');

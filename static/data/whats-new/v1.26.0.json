@@ -1,0 +1,84 @@
+{
+  "tag": "v1.26.0",
+  "date": "5 November 2026",
+  "releasedAt": "2026-11-05",
+  "modalLead": "A notifications bell in the navigation bar, a large clock with a greeting by name, a Clock widget with a face, the moon and the sun, AdGuard Home and Pi-hole widgets, and a much lighter start.",
+  "sections": [
+    {
+      "title": "Notifications",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A notifications bell in the navigation bar.</strong> Questions, urgent notices, update news and two tips a day wait in the bell instead of popping up on the dashboard. It shakes and rings once for something new; you can switch the tone off in Config.",
+          "highlight": true,
+          "title": "A bell for what needs you",
+          "link": "#config/behavior/privacy",
+          "linkLabel": "Open Behavior",
+          "media": {
+            "image": "media/v1.26.0-bell.jpg",
+            "alt": "The notifications bell open in the navigation bar, with two rows and a tip"
+          }
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A row you took up stays away.</strong> Pressing <em>Start</em> or <em>Open the Inbox</em> on a row no longer brings it back the next time the bell opens."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Mark read in the Watch feeds popover,</strong> and Config can bring back dismissed notifications."
+        }
+      ]
+    },
+    {
+      "title": "Header",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A large clock and your name in the greeting.</strong> The clock placement <em>Large clock, greeting beside it</em> draws the time large with a greeting on its side; add <em>Your name</em> under Appearance → Date &amp; weather and it says “Good evening, Jordi”.",
+          "highlight": true,
+          "title": "A large clock and a greeting",
+          "link": "#config/appearance/datetime",
+          "linkLabel": "Open Date & weather",
+          "media": {
+            "image": "media/v1.26.0-greeting.jpg",
+            "alt": "The classic header with a large clock and the greeting Good evening beside it"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tarnished Brass is the look of a new install.</strong> Installs that already chose a look keep it."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The Clock widget has a face.</strong> A large analogue clock with a seconds hand, other places under it, the moon and its phase, and sunrise, sunset and daylight for your weather location. The Countdown shows its figure large."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>AdGuard Home and Pi-hole widgets.</strong> Queries, how many were blocked, a day by the hour, and the top blocked domains and clients, in four looks."
+        }
+      ]
+    },
+    {
+      "title": "Start-up and fixes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A lighter start.</strong> The theme stylesheet shrinks from 9.4 MB to 379 KB, icons are stored at the size they are drawn at, and media tiles show their last answer while the new one loads."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A compact What’s new window.</strong> A Ko-fi bar replaces the card, and the screenshots open larger on a click."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Fixes from a review.</strong> A factory reset forgets the weekly digest, Fix first lists a shared address once, a Help search keeps its results, the calculator reads a decimal comma, and the last Appearance tab you click is the one that stays."
+        }
+      ]
+    }
+  ]
+}

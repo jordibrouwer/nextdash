@@ -24,7 +24,7 @@
             const service = global.DashboardConfig.MEDIA_SERVICES?.[type];
             if (!service) return null;
             const setup = service.setup || service.id;
-            return setup === 'beszel' || setup === 'homeassistant' ? null : 'media';
+            return ['beszel', 'homeassistant', 'adguard', 'pihole'].includes(setup) ? null : 'media';
         },
 
         widgetWizardPages() {

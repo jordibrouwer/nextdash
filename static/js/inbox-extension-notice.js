@@ -11,9 +11,7 @@
 
     const PROMO_ID = 'inbox-extension-notice-v1';
     const OPENS_KEY = 'nextdashInboxOpens';
-    const SNOOZE_KEY = 'nextdashInboxExtensionSnoozeUntil';
     const MIN_OPENS = 3;
-    const SNOOZE_DAYS = 14;
     // Same target as the "Get the browser extension" step in the start guide
     // (static/js/start-guide.js DOCS_URL, which is not exported).
     const EXTENSION_URL = 'http://www.nextdash.cc/docs/browser-extension-and-capture.html';
@@ -47,20 +45,7 @@
         try {
             global.localStorage?.setItem(OPENS_KEY, String(opens() + 1));
         } catch (_) { /* storage unavailable: the card just never qualifies */ }
-    }
-
-    function isSnoozed() {
-        try {
-            return Date.now() < (Number(global.localStorage?.getItem(SNOOZE_KEY)) || 0);
-        } catch (_) {
-            return false;
-        }
-    }
-
-    function snooze() {
-        try {
-            global.localStorage?.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * 86400000));
-        } catch (_) { /* nothing to do */ }
+        void global.NotificationBell?.refreshAll?.();
     }
 
     function hasAnswered() {
@@ -89,55 +74,38 @@
         if (!d) return false;
         if (d.settings?.enableInboxExtensionNotice === false) return false;
         if (d.settings?.inboxEnabled === false) return false;
-        if (hasAnswered() || isSnoozed()) return false;
+        if (hasAnswered()) return false;
         if (opens() < MIN_OPENS) return false;
         return extensionNeverUsed();
     }
 
+    // A tip in the bell, in every view; it stays until it is read, and then it
+    // does not come back. The switch in Config turns the offer off altogether.
     const card = global.NoticeCard.define({
         id: 'inbox-extension-notice',
-        view: 'inbox',
-        actionAttr: 'data-inbox-ext-action',
-        dismissName: 'dismiss',
-        showDelayMs: 4000,
         title: () => t('dashboard.inboxExtensionNoticeTitle', 'Fill your Inbox from the browser'),
-        body: () => t('dashboard.inboxExtensionNoticeBody',
-            'The browser extension saves the page you are on straight to your Inbox, so you can sort it later.'),
-        dismissLabel: () => t('dashboard.inboxExtensionNoticeLater', 'Not now'),
-        canShow: shouldShow,
-        // One line, no button. It counts as "not now": the offer comes back
-        // after the snooze, and the switch in Config turns it off for good.
-        toast: {
-            message: () => t('dashboard.inboxExtensionNoticeToast', 'Fill your Inbox from the browser: the extension saves the page you are on straight to it.'),
-            duration: 15000,
-            onShown: () => snooze(),
-        },
-        onShown: () => track('shown'),
-        onDismiss: () => { snooze(); track('dismiss'); },
-        actions: [
-            {
-                name: 'get',
-                primary: true,
-                label: () => t('dashboard.inboxExtensionNoticeGet', 'Get the extension'),
-                onClick: (handle) => {
-                    global.open(EXTENSION_URL, '_blank', 'noopener');
-                    markAnswered();
-                    track('get');
-                    handle.close();
+        bell: {
+            kind: 'tip',
+            group: 'tips',
+            icon: '\u{1F4E5}',
+            no: 'forever',
+            state: async () => ((await shouldShow()) ? {
+                count: 1,
+                text: t('dashboard.inboxExtensionNoticeToast', 'Fill your Inbox from the browser: the extension saves the page you are on straight to it.'),
+            } : null),
+            actions: [
+                {
+                    label: () => t('dashboard.inboxExtensionNoticeGet', 'Get the extension'),
+                    primary: true,
+                    marksRead: true,
+                    onClick: () => {
+                        global.open(EXTENSION_URL, '_blank', 'noopener');
+                        markAnswered();
+                        track('get');
+                    },
                 },
-            },
-            {
-                name: 'later',
-                label: () => t('dashboard.inboxExtensionNoticeLater', 'Not now'),
-                onClick: (handle) => { snooze(); track('later'); handle.close(); },
-            },
-            {
-                name: 'never',
-                quiet: true,
-                label: () => t('dashboard.inboxExtensionNoticeNever', "Don't show again"),
-                onClick: (handle) => { markAnswered(); track('never'); handle.close(); },
-            },
-        ],
+            ],
+        },
     });
 
     if (document.readyState === 'loading') {

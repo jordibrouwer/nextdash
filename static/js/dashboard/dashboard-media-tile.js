@@ -166,6 +166,41 @@
         return say(dash, widget, 'perSecond', { size: formatBytes(bytes) });
     }
 
+    /*
+     * The last answer of each tile, kept for the length of the tab.
+     *
+     * After a reload every tile showed its waiting line until the service
+     * answered -- a quarter of a second on a LAN, a good deal more over a VPN.
+     * The answer from a moment ago is a better first picture than a blank one:
+     * it is drawn at once, with how old it is, and replaced the moment the real
+     * one arrives. Only for HELD_MAX_AGE_MS; an older number would be a guess
+     * dressed up as a reading. sessionStorage, so another tab or a later visit
+     * never starts from an answer it did not see.
+     */
+    const HELD_MAX_AGE_MS = 10 * 60 * 1000;
+    const HELD_MAX_BYTES = 200_000;
+    const heldKey = (service, pageId, widget) => `nextdash:media-held:${service.id}:${pageId}:${widget.id}`;
+
+    function readHeld(service, pageId, widget) {
+        try {
+            const raw = window.sessionStorage.getItem(heldKey(service, pageId, widget));
+            const held = raw ? JSON.parse(raw) : null;
+            if (!held || !held.result || !Number(held.at)) return null;
+            if (Date.now() - held.at > HELD_MAX_AGE_MS || held.at > Date.now() + 60_000) return null;
+            return held;
+        } catch { return null; }
+    }
+
+    function saveHeld(service, pageId, widget, result) {
+        try {
+            // A failed or partial answer is not a picture worth coming back to.
+            if (!result || result.error || result.partial || result.stale) return;
+            const raw = JSON.stringify({ at: Date.now(), result });
+            if (raw.length > HELD_MAX_BYTES) return;
+            window.sessionStorage.setItem(heldKey(service, pageId, widget), raw);
+        } catch { /* private mode, or full: the tile just waits as before */ }
+    }
+
     /** One answer per widget for its own TTL, so a repaint is not a round trip. */
     async function load(dash, widget, pageId, service) {
         dash._widgetMedia = dash._widgetMedia || {};
@@ -196,6 +231,7 @@
             // A half answer is looked at again soon, as the server does.
             const keep = result.partial ? Math.min(ttlMs(widget, service), 30_000) : ttlMs(widget, service);
             dash._widgetMedia[key] = { result, until: Date.now() + keep };
+            saveHeld(service, pageId, widget, result);
             window.WidgetState?.fromResult(widget.id, result, result?.items, window.WidgetState.meta(widget, pageId, false));
             return result;
         } catch (error) {
@@ -778,13 +814,35 @@
         const pageId = Number(dash?.currentPageId) || Number(dash?.pages?.[0]?.id) || 1;
         const activeTab = body.querySelector('[data-media-tab][aria-selected="true"]')?.dataset.mediaTab;
         const focused = body.contains(document.activeElement) ? focusKey(document.activeElement) : '';
+        // The answer from a moment ago, drawn at once while the real one is on its way.
+        let showingHeld = false;
+        if (!quiet) {
+            const held = readHeld(service, pageId, widget);
+            if (held) {
+                // Read-only: the controls are for an answer that is current.
+                paint(body, widget, dash, service, { ...held.result, controls: false }, { pageId, activeTab, focused, heldAt: held.at });
+                showingHeld = true;
+                quiet = true;
+            }
+        }
         if (!quiet) sayIn(body, 'dashboard-widget-waiting', say(dash, widget, 'waiting'));
 
         const result = await load(dash, widget, pageId, service);
+        // No answer: what is on screen stays, with its age, rather than a blank "unreachable".
+        if (!result && showingHeld) return;
         if (!result) {
             sayIn(body, 'dashboard-widget-empty', errorText(dash, widget, 'unreachable'));
             return;
         }
+        paint(body, widget, dash, service, result, { pageId, activeTab, focused });
+    }
+
+    /** Draws one answer, fresh or held. */
+    function paint(body, widget, dash, service, result, { pageId, activeTab, focused, heldAt = 0 }) {
+        // A held answer says how old it is, in the line a stale one already uses.
+        const stamp = (wrap) => {
+            if (heldAt) wrap.appendChild(textBlock('p', 'media-stale', agoText(dash, widget, heldAt)));
+        };
         const items = Array.isArray(result.items) ? result.items : [];
         entityState.set(widget.id, { pageId, controls: result.controls === true,
             redraw: () => render(body, widget, dash, service, { quiet: true }) });
@@ -802,6 +860,7 @@
                 wrap.appendChild(textBlock('p', 'media-stale',
                     `${errorText(dash, widget, result.error)} · ${agoText(dash, widget, result.fetchedAt)}`));
             }
+            stamp(wrap);
             return;
         }
         const chosen = widget?.config?.layout || service.defaultLayout;
@@ -827,11 +886,13 @@
             wrap.appendChild(textBlock('p', 'media-stale',
                 `${errorText(dash, widget, result.error)} · ${agoText(dash, widget, result.fetchedAt)}`));
         }
+        stamp(wrap);
     }
 
     window.DashboardMediaTile = {
         register,
         targetFor,
+        go,
         formatBytes,
         meterTone,
         meterBar,

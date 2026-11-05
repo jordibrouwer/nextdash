@@ -398,13 +398,20 @@ class DashboardCategoryMenu {
             return;
         }
         if (action === 'settings') {
-            // This widget's own settings, open and focused, the rest closed.
+            // This widget's own settings in the sheet, over the dashboard: the same
+            // sheet the edit panel's Settings opens, so the reader stays where they are.
             // The widgets code loads on demand, so it is asked for first.
             const config = d.config;
-            if (typeof config?.ensureSection === 'function' && await config.ensureSection('widgets')
-                && typeof config.openWidgetSettings === 'function') {
-                await config.openWidgetSettings(widget.id);
-                return;
+            if (typeof config?.ensureSection === 'function' && await config.ensureSection('widgets')) {
+                if (typeof config.openWidgetSheetOverDashboard === 'function'
+                    && await config.openWidgetSheetOverDashboard(widget.id)) {
+                    return;
+                }
+                // The sheet could not be drawn: Config → Widgets has the same fields.
+                if (typeof config.openWidgetSettings === 'function') {
+                    await config.openWidgetSettings(widget.id);
+                    return;
+                }
             }
             window.DashboardWidgetUtils?.openConfigTab?.(d, 'widgets');
             return;

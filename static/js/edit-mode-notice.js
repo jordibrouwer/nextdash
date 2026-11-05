@@ -63,6 +63,8 @@
 
     const card = global.NoticeCard.define({
         id: 'edit-mode-notice',
+        // Shares the one tip slot: a week between two tip cards.
+        tipSlot: true,
         showDelayMs: SHOW_DELAY_MS,
         minGapAfterCardMs: GAP_AFTER_CARD_MS,
         title: () => t('dashboard.editModeNoticeTitle', 'Edit the dashboard right where it is'),

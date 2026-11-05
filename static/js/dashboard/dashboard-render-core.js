@@ -46,6 +46,9 @@ class DashboardRenderCore {
         'beszel-system': { configKey: 'ttl', floor: 30, fallback: 60 },
         'beszel-attention': { configKey: 'ttl', floor: 30, fallback: 60 },
         'beszel-storage': { configKey: 'ttl', floor: 30, fallback: 60 },
+        // A DNS blocker counts live, but its day-strip changes by the hour.
+        adguard: { configKey: 'ttl', floor: 30, fallback: 60 },
+        pihole: { configKey: 'ttl', floor: 30, fallback: 60 },
         // nextDash's own record: a beat is as old as its pace, so a half minute is fresh enough.
         glances: { configKey: 'refreshSeconds', floor: 15, fallback: 30 },
         'jellyfin-playing': { configKey: 'ttl', floor: 5, fallback: 10 },
@@ -950,7 +953,7 @@ class DashboardRenderCore {
      */
     widgetCanRefreshNow(widget) {
         if (!widget?.id || !this.widgetPollSpec(widget)) return false;
-        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel)/
+        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole)/
             .test(String(widget.type));
     }
 
@@ -1163,12 +1166,14 @@ class DashboardRenderCore {
     /**
      * The ids held in tabs by a stack that is on the page. A stack that is
      * switched off holds nothing: its widgets are back in the grid, since a
-     * hidden stack would otherwise take its members out of sight with it.
+     * hidden stack would otherwise take its members out of sight with it. The
+     * same goes for a stack outside its window of the day or off today.
      */
     stackMemberIds() {
         const held = new Set();
         (this.dash.widgets || []).forEach((widget) => {
             if (widget?.type !== 'stack' || widget?.config?.enabled === false) return;
+            if (!this.widgetIsScheduledNow(widget)) return;
             (Array.isArray(widget.config?.members) ? widget.config.members : [])
                 .forEach((id) => held.add(String(id)));
         });
@@ -1216,6 +1221,8 @@ class DashboardRenderCore {
         'beszel-system': 'Beszel system',
         'beszel-attention': 'Beszel attention',
         'beszel-storage': 'Beszel storage',
+        adguard: 'AdGuard Home',
+        pihole: 'Pi-hole',
         glances: 'Glances',
         'jellyfin-playing': 'Jellyfin — now playing',
         'emby-playing': 'Emby — now playing',

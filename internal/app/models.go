@@ -505,6 +505,7 @@ type Settings struct {
 	PageSwitcherTextMigrated        bool           `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
 	PageSwitcherClassicMigrated     bool           `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
 	HeaderClockPlacement            string         `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
+	GreetingName                    string         `json:"greetingName,omitempty"`                  // Name the header greets by ("Good evening, Jordi"); empty greets without one
 	PageSwitcherStyle               string         `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
 	ActionBarPosition               string         `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
 	ActionBarEnabled                bool           `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
@@ -820,6 +821,7 @@ type Settings struct {
 	EnableHealthRecheckNotice  bool   `json:"enableHealthRecheckNotice"`
 	EnableInboxExtensionNotice bool   `json:"enableInboxExtensionNotice"`
 	EnableUpdatedNotice        bool   `json:"enableUpdatedNotice"`
+	BellSound                  bool   `json:"bellSound"`                      // A short bell tone when the notifications bell gets something new (on unless turned off)
 	EnableSectionTours         bool   `json:"enableSectionTours"`             // The one-time tour on a section's first visit (needs enableSessionTips too)
 	SessionTipsFrequency       string `json:"sessionTipsFrequency,omitempty"` // "weekly" spaces the keyboard tips a week apart; anything else is daily
 	ShowShortcutTooltips       bool   `json:"showShortcutTooltips"`           // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
@@ -1209,6 +1211,25 @@ type DiscoverabilityState struct {
 	SeenTips []string `json:"seenTips,omitempty"`
 	// SeenSettingPromos lists dismissed config setting highlight popovers.
 	SeenSettingPromos []string `json:"seenSettingPromos,omitempty"`
+	// Bell holds what the notification bell was told per row id: how much the
+	// person has read and what they answered "No" to.
+	Bell map[string]BellRecord `json:"bell,omitempty"`
+	// TipCardShownAt is when the tip card last showed (Unix ms).
+	TipCardShownAt int64 `json:"tipCardShownAt,omitempty"`
+}
+
+// BellRecord is the pair of marks kept for one bell row.
+type BellRecord struct {
+	Read *BellMark `json:"read,omitempty"`
+	No   *BellMark `json:"no,omitempty"`
+}
+
+// BellMark remembers a count and the ids behind it. Forever makes a No mark
+// survive new items, until the person resets the answers.
+type BellMark struct {
+	Count   int      `json:"count"`
+	IDs     []string `json:"ids,omitempty"`
+	Forever bool     `json:"forever,omitempty"`
 }
 
 /*
@@ -1236,10 +1257,10 @@ const defaultFeedNewsWidgetID = "w_000000000004"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "aurora-glass-dark"
+const defaultThemeID = "tarnished-brass-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "aurora-glass-light"
+const defaultThemeLightID = "tarnished-brass-light"
 
 // auroraGlassThemeID and auroraGlassThemeLightID are where the one-time move of
 // v1.22.0 puts an install (migrateToAuroraGlass). They were the defaults then;
@@ -1620,6 +1641,9 @@ type Store interface {
 	// because an order is only meaningful beside the things it orders.
 	GetPageBlocks(pageID int) ([]Widget, []string)
 	SavePageBlocks(pageID int, widgets []Widget, order []string) error
+	// InsertWidgetAfter adds one widget right after another, read and written
+	// under one lock (see widgets.go).
+	InsertWidgetAfter(pageID int, sourceID string, widget Widget) error
 	// LayoutHistory is a page's earlier arrangements, newest first; RestoreLayout
 	// saves one back and always keeps the layout it replaces (see layout_history.go).
 	LayoutHistory(pageID int) []LayoutSnapshot
@@ -1808,6 +1832,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			EnableHealthRecheckNotice:  true,
 			EnableInboxExtensionNotice: true,
 			EnableUpdatedNotice:        true,
+			BellSound:                  true,
 			EnableSectionTours:         true,
 			ShowShortcutTooltips:       false,
 			ShowGridKeyLegend:          true,
@@ -3719,6 +3744,7 @@ const (
 	// large type under them.
 	headerClockClassic          = "classic"
 	defaultHeaderClockPlacement = headerClockClassic
+	maxGreetingNameRunes        = 40
 )
 
 /*
@@ -4007,6 +4033,12 @@ func clampBookmarkSettings(s *Settings) {
 	case headerClockBesideName, headerClockOwnZone, headerClockClassic:
 	default:
 		s.HeaderClockPlacement = defaultHeaderClockPlacement
+	}
+	// A greeting is one short line beside the clock: a pasted paragraph would
+	// push the pages off the header row.
+	s.GreetingName = strings.TrimSpace(s.GreetingName)
+	if r := []rune(s.GreetingName); len(r) > maxGreetingNameRunes {
+		s.GreetingName = strings.TrimSpace(string(r[:maxGreetingNameRunes]))
 	}
 	switch s.PageSwitcherStyle {
 	case pageSwitcherClassic, pageSwitcherSegmented, pageSwitcherText, pageSwitcherCompact:
@@ -4552,6 +4584,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			EnableHealthRecheckNotice:       true,
 			EnableInboxExtensionNotice:      true,
 			EnableUpdatedNotice:             true,
+			BellSound:                       true,
 			EnableSectionTours:              true,
 			ShowShortcutTooltips:            false,
 			ShowGridKeyLegend:               true,
@@ -5237,6 +5270,9 @@ func (fs *FileStore) getSettingsShared() Settings {
 		}
 		if _, ok := rawSettings["enableUpdatedNotice"]; !ok {
 			settings.EnableUpdatedNotice = true
+		}
+		if _, ok := rawSettings["bellSound"]; !ok {
+			settings.BellSound = true
 		}
 		if _, ok := rawSettings["enableSectionTours"]; !ok {
 			settings.EnableSectionTours = true

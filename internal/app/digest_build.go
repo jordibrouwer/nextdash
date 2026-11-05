@@ -79,10 +79,13 @@ type digestWeek struct {
 	// Bookmarks is how many the dashboard holds (the unsorted page left out),
 	// the whole the never-opened and not-opened-lately counts are parts of.
 	Bookmarks int `json:"bookmarks,omitempty"`
-	// OpensByDay and UptimeByDay hold seven values, oldest day first, for the
-	// window's charts. An uptime of 0 is a day without checks, not a day down.
+	// OpensByDay and UptimeByDay hold seven calendar days, oldest first and
+	// today last, for the window's charts. An uptime of -1 is a day without
+	// checks; 0 is a day on which every check failed. Its key is new with that
+	// meaning: a digest saved before used 0 for "no checks", and read under the
+	// old key would draw those days as outages.
 	OpensByDay  []int     `json:"opensByDay,omitempty"`
-	UptimeByDay []float64 `json:"uptimeByDay,omitempty"`
+	UptimeByDay []float64 `json:"uptimeDays,omitempty"`
 }
 
 func (w digestWeek) empty() bool {
@@ -350,6 +353,8 @@ func buildDigestWeek(in digestInput) *digestWeek {
 	weekAgo := in.Now.Add(-digestNewWindow)
 	twoWeeksAgo := in.Now.Add(-2 * digestNewWindow)
 	now := in.Now.UnixMilli()
+	// The charts count calendar days in the zone the digest is sent by.
+	loc := quietLocation(in.Settings)
 	if in.Settings.DigestUsage {
 		perDay := make([]int, 7)
 		for _, bm := range in.Bookmarks {
@@ -360,7 +365,9 @@ func buildDigestWeek(in digestInput) *digestWeek {
 				switch {
 				case ts >= weekAgo.UnixMilli() && ts <= now:
 					w.Opens++
-					perDay[digestDayIndex(ts, weekAgo)]++
+					if d, ok := digestDayIndex(ts, in.Now, loc); ok {
+						perDay[d]++
+					}
 				case ts >= twoWeeksAgo.UnixMilli() && ts < weekAgo.UnixMilli():
 					w.OpensPrev++
 				}
@@ -391,10 +398,11 @@ func buildDigestWeek(in digestInput) *digestWeek {
 			inputs = append(inputs, fleetMonitorInput{url: url, samples: samples, days: in.Days[url]})
 			for _, s := range samples {
 				if s.T >= weekAgo.UnixMilli() && s.T <= now && !s.Maint {
-					d := digestDayIndex(s.T, weekAgo)
-					dayTotal[d]++
-					if s.Up {
-						dayUp[d]++
+					if d, ok := digestDayIndex(s.T, in.Now, loc); ok {
+						dayTotal[d]++
+						if s.Up {
+							dayUp[d]++
+						}
 					}
 				}
 				if !s.Alerted {
@@ -421,6 +429,7 @@ func buildDigestWeek(in digestInput) *digestWeek {
 		byDay := make([]float64, 7)
 		hasData := false
 		for i := range byDay {
+			byDay[i] = -1
 			if dayTotal[i] > 0 {
 				byDay[i] = digestPercent(dayUp[i], dayTotal[i])
 				hasData = true
@@ -436,17 +445,20 @@ func buildDigestWeek(in digestInput) *digestWeek {
 	return &w
 }
 
-// digestDayIndex is which of the seven days after start a moment falls on, 0
-// for the oldest and 6 for the one ending now.
-func digestDayIndex(ts int64, start time.Time) int {
-	i := int(time.UnixMilli(ts).Sub(start) / (24 * time.Hour))
-	if i < 0 {
-		return 0
+// digestDayIndex is which of the last seven calendar days in loc a moment
+// falls on: 6 for today, 0 for six days ago. A moment outside them is not on
+// the chart. Whole 24-hour spans ending now put an evening under the next
+// day's name.
+func digestDayIndex(ts int64, now time.Time, loc *time.Location) (int, bool) {
+	dayOf := func(t time.Time) int64 {
+		t = t.In(loc)
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC).Unix() / 86400
 	}
-	if i > 6 {
-		return 6
+	i := 6 - int(dayOf(now)-dayOf(time.UnixMilli(ts)))
+	if i < 0 || i > 6 {
+		return 0, false
 	}
-	return i
+	return i, true
 }
 
 // digestPercent is up over total as a percentage with one decimal.

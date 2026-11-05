@@ -1,0 +1,104 @@
+/*
+ * The DNS blocker tiles (AdGuard Home, Pi-hole). One button holds the tile;
+ * the terse body carries .dashboard-widget-narrow-only and the fuller one
+ * .dashboard-widget-wide-only, which the panel's container query shows and
+ * hides (dashboard.css), so a two-column widget on a narrow dashboard reads
+ * as the one-column version.
+ */
+.dns-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.dns-tile:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.dns-tile span { min-width: 0; }
+
+.dns-head { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; }
+.dns-dot { flex: none; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--accent-success); }
+.dns-dot[data-state="off"] { background: transparent; box-shadow: inset 0 0 0 2px var(--accent-warning); }
+.dns-state, .dns-head-pct { margin-left: auto; font-size: var(--font-size-small); font-weight: 400; color: var(--text-secondary, inherit); }
+.dns-state[data-tone="warn"] { color: var(--accent-warning); }
+
+.dns-body { display: flex; flex-direction: column; gap: 0.6rem; }
+.dns-body--split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 1rem; align-items: start; }
+.dns-col { display: flex; flex-direction: column; gap: 0.6rem; }
+.dns-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+
+.dns-pct { display: flex; flex-direction: column; gap: 0.2rem; }
+.dns-big { font-size: 1.9rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+.dns-sub, .dns-foot { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+
+.dns-strip { display: flex; align-items: flex-end; gap: 2px; height: 2.4rem; }
+.dns-strip--tall { height: 3.2rem; }
+.dns-bar {
+    flex: 1 1 0;
+    min-width: 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    border-radius: 1px 1px 0 0;
+    background: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    overflow: hidden;
+}
+.dns-bar-blocked { display: block; width: 100%; background: var(--accent-error); }
+
+.dns-list { display: flex; flex-direction: column; gap: 0.15rem; }
+.dns-list-title { font-size: var(--font-size-small); color: var(--text-tertiary); }
+.dns-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.6rem;
+    padding: 0.15rem 0;
+    border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+.dns-row:has(.dns-row-bar) { grid-template-columns: minmax(0, 1fr) minmax(2rem, 4.5rem) auto; }
+.dns-row-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dns-row-count { font-size: var(--font-size-small); color: var(--text-secondary, inherit); font-variant-numeric: tabular-nums; }
+.dns-row-bar {
+    display: block;
+    height: 5px;
+    border-radius: 999px;
+    background: linear-gradient(to right, var(--accent-primary) calc(var(--p, 0) * 100%),
+        color-mix(in srgb, currentColor 15%, transparent) 0);
+}
+.dns-row-bar[data-tone="bad"] {
+    background: linear-gradient(to right, var(--accent-error) calc(var(--p, 0) * 100%),
+        color-mix(in srgb, currentColor 15%, transparent) 0);
+}
+
+.dns-figures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; }
+.dns-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--radius-md, 8px);
+    background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.dns-figure-value { font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.dns-figure-value[data-tone="bad"] { color: var(--accent-error); }
+.dns-figure-label { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+
+.dns-types { display: flex; flex-direction: column; gap: 0.25rem; }
+.dns-stack { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 1px; }
+.dns-slice { display: block; min-width: 3px; background: var(--accent-primary); }
+.dns-slice[data-slice="b"] { background: var(--accent-success); }
+.dns-slice[data-slice="c"] { background: var(--accent-warning); }
+.dns-slice[data-slice="d"] { background: var(--text-tertiary); }
+
+/* The card a click opens. */
+.dns-detail-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; padding: 0 1rem; }
+.dns-detail-col { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.dns-detail-col p { margin: 0; }
+@media (max-width: 30rem) {
+    .dns-detail-cols { grid-template-columns: 1fr; }
+}

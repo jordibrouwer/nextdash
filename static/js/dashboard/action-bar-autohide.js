@@ -63,6 +63,8 @@
     let hidden = false;
     /** Called by a key: stays until the key again, or the pointer passes over and leaves. */
     let pinned = false;
+    /** Held out by something that points at the bar (a coach note): no timer runs. */
+    let held = false;
     /** Called by the pointer: goes soon after the pointer leaves it. */
     let summoned = false;
     /** The pointer has been within the margin since the bar was called. */
@@ -150,7 +152,7 @@
         clearTimeout(timer);
         timer = null;
         const wait = seconds();
-        if (pinned || !wait || !docked() || !enabled() || touchOnly()) return;
+        if (pinned || held || !wait || !docked() || !enabled() || touchOnly()) return;
         timer = setTimeout(() => {
             timer = null;
             if (inUse()) {
@@ -488,8 +490,19 @@
         return true;
     }
 
+    /**
+     * A coach note points at the bar: bring it out and keep it out, with no
+     * timer, until the note lets go. Then the delay runs as it always does.
+     */
+    function hold(on) {
+        held = on === true;
+        if (held) show();
+        else arm();
+    }
+
     global.ActionBarAutoHide = {
         sync,
+        hold,
         toggle,
         show,
         isHidden: () => hidden,

@@ -50,6 +50,18 @@ func writeDigestState(st digestState) {
 	}
 }
 
+// resetDigestState forgets the stored digest, for a factory reset. The
+// snapshot names the previous data's links and inbox items, and the dashboard
+// offered it to the fresh install as "your week". Without the file the next
+// tick only records the current slot, as on a new install.
+func resetDigestState() {
+	digestMu.Lock()
+	defer digestMu.Unlock()
+	if err := os.Remove(digestStatePath()); err != nil && !os.IsNotExist(err) {
+		logWarn(logComponentNotify, "the digest could not be removed: %v", err)
+	}
+}
+
 // digestDue is the latest slot at or before now, and its date as the key.
 func digestDue(s Settings, now time.Time) (time.Time, string) {
 	loc := quietLocation(s)

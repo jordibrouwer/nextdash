@@ -213,6 +213,8 @@ type MediaResult struct {
 	// Counts is how many systems are up, down, paused and pending, over every
 	// system the tile chose; set by the Beszel tiles only.
 	Counts map[string]int `json:"counts,omitempty"`
+	// Dns is the figures of a DNS blocker tile (AdGuard Home, Pi-hole).
+	Dns *MediaDns `json:"dns,omitempty"`
 	// Controls says this reader may switch things. Set per request, after
 	// the shared cache: never stored with the answer.
 	Controls bool `json:"controls,omitempty"`

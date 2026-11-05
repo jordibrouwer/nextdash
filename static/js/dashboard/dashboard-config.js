@@ -6272,7 +6272,7 @@ class DashboardConfig {
     /** GitHub release status from /api/update-status (server-side check). */
     async loadUpdateStatus() {
         try {
-            const res = await fetch('/api/update-status', { cache: 'no-store' });
+            const res = await (window.nextDashFetchShared || fetch)('/api/update-status', { cache: 'no-store' });
             this._updateStatus = res.ok ? await res.json() : null;
             if (this.dash) this.dash.updateStatus = this._updateStatus;
             window.dispatchEvent(new CustomEvent('nextdash:update-status', { detail: this._updateStatus }));
@@ -8314,6 +8314,13 @@ class DashboardConfig {
         // them back to Theme & type half a second later. Only the strip's click
         // said so before.
         window.ConfigSettingPromo?.markSubTabChosen?.();
+        // The last tab asked for wins. A switch waits on saves (and, to
+        // General, on applying the theme), so a second click made meanwhile
+        // could finish first and be overtaken: General then Rows ended on
+        // General. Counted before the early return, so clicking back to the
+        // tab still on screen cancels a switch that is still waiting too.
+        const ask = (this._appearanceTabAsk || 0) + 1;
+        this._appearanceTabAsk = ask;
         if (tab === this.appearanceTab) return;
         if (this._settingsSavePromise) {
             await this._settingsSavePromise;
@@ -8332,6 +8339,7 @@ class DashboardConfig {
             this.clearThemePreview();
             await this.applyThemeChoice(this._themeSelected);
         }
+        if (ask !== this._appearanceTabAsk) return;
         this.appearanceTab = tab;
         this.restoreConfigHash();
         // Leaving the tab drops any unsaved preview so the dashboard
@@ -8903,7 +8911,7 @@ class DashboardConfig {
                 // reads our own theme change as another device's and runs a full
                 // settings refresh against it on the next focus.
                 try {
-                    await this.dash.data?.fetchDataRevision?.();
+                    await this.dash.data?.fetchDataRevision?.({ fresh: true });
                     const seen = this.dash.data?._lastSettingsRevision;
                     if (seen) this.dash._serverSettingsRevision = seen;
                 } catch { /* the poll corrects itself on its next pass */ }
@@ -9361,13 +9369,13 @@ class DashboardConfig {
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         enableSectionTours: { hint: 'sectionToursHint', def: true },
-        sessionTipsFrequency: { def: 'daily' },
         enableTagSuggestionNotice: { hint: 'tagSuggestionNoticeHint', def: true },
         enableHealthReviewNotice: { hint: 'healthReviewNoticeHint', def: true },
         enableDockerUpdateNotice: { hint: 'dockerUpdateNoticeHint', def: true },
         enableHealthRecheckNotice: { hint: 'healthRecheckNoticeHint', def: true },
         enableInboxExtensionNotice: { hint: 'inboxExtensionNoticeHint', def: true },
         enableUpdatedNotice: { hint: 'updatedNoticeHint', def: true },
+        bellSound: { hint: 'bellSoundHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
         lockLayout: { info: ['lockLayoutInfoTitle', 'lockLayoutInfoMessage'], def: false },
         // Date, time & weather
@@ -9410,6 +9418,7 @@ class DashboardConfig {
         maxPageTabs: { info: ['maxPageTabsInfoTitle', 'maxPageTabsInfoMessage'], def: 4 },
         maxHeaderActions: { info: ['maxHeaderActionsInfoTitle', 'maxHeaderActionsInfoMessage'], def: 2 },
         headerClockPlacement: { hint: 'headerClockPlacementHint', def: 'classic' },
+        greetingName: { def: '' },
         pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'classic' },
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'right' },
@@ -9542,7 +9551,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'aurora-glass-dark' },
+        theme: { def: 'tarnished-brass-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -10497,10 +10506,6 @@ class DashboardConfig {
                 note: t('config.generalGroupOnboardingNote', 'The Quick start bar and guide, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
                     bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
-                    { field: 'sessionTipsFrequency', type: 'select', label: t('config.sessionTipsFrequencyLabel', 'Keyboard tips come'), options: [
-                        opt('daily', t('config.sessionTipsDaily', 'About once a day')),
-                        opt('weekly', t('config.sessionTipsWeekly', 'About once a week')),
-                    ] },
                     bool('enableSectionTours', 'config.sectionToursLabel', 'Offer a tour the first time a section opens'),
                     // The two cards that offer a review on their own. Here
                     // rather than beside the feature each belongs to, because
@@ -10514,6 +10519,7 @@ class DashboardConfig {
                     bool('enableHealthRecheckNotice', 'config.healthRecheckNoticeLabel', 'Offer to re-check links'),
                     bool('enableInboxExtensionNotice', 'config.inboxExtensionNoticeLabel', 'Offer the browser extension'),
                     bool('enableUpdatedNotice', 'config.updatedNoticeLabel', 'Show what changed after an update'),
+                    bool('bellSound', 'config.bellSoundLabel', 'Bell sound for new notifications'),
                 ],
             },
             {
@@ -10566,6 +10572,22 @@ class DashboardConfig {
                 ],
             },
             {
+                // The greeting beside the large clock. First on the tab: the
+                // clock group under it sets where the line stands, this sets
+                // what its first line says.
+                section: 'appearance',
+                tab: 'datetime',
+                order: -20,
+                title: t('config.appearanceGreetingTitle', 'Greeting'),
+                note: t('config.appearanceGreetingNote', 'The first line beside the large clock: "Good evening, Jordi". It changes with the hour.'),
+                controls: [
+                    { field: 'greetingName', type: 'text', special: 'datetime',
+                        label: t('config.greetingNameLabel', 'Your name') },
+                    { type: 'note',
+                      text: t('config.greetingNameNote', 'Leave it empty to be greeted without a name. The large clock is the clock placement below; the other two placements keep their single line.') },
+                ],
+            },
+            {
                 // Where the line is drawn, as against what it says: the three
                 // groups around this one set the date, the temperature and the
                 // feed, and this one is about the header that carries them.
@@ -10586,7 +10608,7 @@ class DashboardConfig {
                         options: [
                             opt('beside-name', t('config.headerClockBesideName', 'Beside the view name')),
                             opt('own-zone', t('config.headerClockOwnZone', 'In a column of their own')),
-                            opt('classic', t('config.headerClockClassic', 'On their own line, name underneath')),
+                            opt('classic', t('config.headerClockClassic', 'Large clock, greeting beside it')),
                         ] },
                 ],
             },
@@ -13441,44 +13463,15 @@ class DashboardConfig {
     /**
      * The corner cards that answer once, and a way to ask for one again.
      *
-     * Each card remembers an answer in its own place: three in the synced list
-     * of promos, two in this browser's storage. Whichever it is, a card you
+     * Most notices now live in the bell, which has its own way back (the
+     * button under the list). What is listed here are the cards that are still
+     * corner cards: each remembers an answer in its own place, and a card you
      * waved away had no road back. Here the answered ones can be put back; the
      * card then turns up the next time its own moment comes, not at once.
-     * Analytics is left out on purpose: it is an opt-in, not a hint.
      */
     static NOTICE_CARDS = [
-        { id: 'kept-pile', promo: 'kept-pile-v1', labelKey: 'config.noticeKeptPile', label: 'Kept links piling up' },
-        { id: 'theme-studio', promo: 'theme-studio-hint-v1', labelKey: 'config.noticeThemeStudio', label: 'Theme studio shortcut' },
-        { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
-          labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
-        { id: 'install-count', promo: 'install-count-v1', labelKey: 'config.noticeInstallCount', label: 'Install count' },
-        { id: 'digest', keys: ['nextdashDigestSeenAt', 'nextdashDigestProgress'],
+        { id: 'digest', keys: ['nextdashDigestSeenAt', 'nextdashDigestProgress', 'nextdashDigestCard'],
           labelKey: 'config.noticeDigest', label: 'Weekly digest' },
-        // Analytics keeps its answer in the settings, not the browser: a choice
-        // made, or a snooze that has not run out. Someone who turned analytics
-        // on has nothing left to be asked, so there is nothing to put back.
-        { id: 'analytics', labelKey: 'config.noticeAnalytics', label: 'Analytics',
-          answered(dash) {
-              const qs = dash.settings?.quickStart || {};
-              if (dash.settings?.analyticsOptIn === true) return false;
-              return qs.analyticsChoiceMade === true || (Number(qs.analyticsAskAfter) || 0) > Math.floor(Date.now() / 1000);
-          },
-          async reset(dash) {
-              const qs = dash.settings.quickStart = dash.settings.quickStart || {};
-              qs.analyticsChoiceMade = false;
-              qs.analyticsAskAfter = 0;
-              qs.analyticsSnoozes = 0;
-              await dash.saveSettings?.();
-          } },
-        { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
-          labelKey: 'config.noticeHealthReview', label: 'Health review' },
-        { id: 'health-recheck-offer', keys: ['nextdashHealthRecheckOfferDoneOn', 'nextdashHealthRecheckOfferSnoozeUntil'],
-          labelKey: 'config.noticeHealthRecheck', label: 'Link re-check offer' },
-        { id: 'docker-update', promo: 'docker-update-offer-v1', keys: ['nextdashDockerUpdateOfferSnoozeUntil', 'nextdashDockerViewOpens'],
-          labelKey: 'config.noticeDockerUpdate', label: 'Image update check' },
-        { id: 'inbox-extension', promo: 'inbox-extension-notice-v1', keys: ['nextdashInboxExtensionSnoozeUntil', 'nextdashInboxOpens'],
-          labelKey: 'config.noticeInboxExtension', label: 'Browser extension for the Inbox' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */
@@ -13509,7 +13502,25 @@ class DashboardConfig {
         return `
                 <p class="config-panel-note">${esc(this.t('config.noticeCardsHint',
                     'The small cards in the corner of the dashboard. One you answered comes back the next time its moment arrives.'))}</p>
-                <ul class="config-notice-list" data-notice-cards>${rows}</ul>`;
+                <ul class="config-notice-list" data-notice-cards>${rows}</ul>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-behavior-action="bring-back-bell">${esc(this.t('config.bellBringBack', 'Bring back dismissed notifications'))}</button>
+                </div>`;
+    }
+
+    /**
+     * Forget every "No, don't ask again" given in the bell, and look again.
+     * Read marks and a No that only covers the current items stay.
+     */
+    async bringBackBellNotices() {
+        try {
+            await window.NotificationBell?.resetDismissed?.();
+            await window.DiscoverabilityState?.persistNow?.();
+        } catch {
+            this.notify(this.t('config.bellBringBackError', 'Could not bring the notifications back.'), 'error');
+            return;
+        }
+        this.notify(this.t('config.bellBringBackDone', 'Dismissed notifications are back in the bell.'), 'success');
     }
 
     async replayNoticeCard(id) {
@@ -13781,6 +13792,7 @@ class DashboardConfig {
                 const action = btn.getAttribute('data-behavior-action');
                 if (action === 'reset-onboarding') void this.resetOnboarding();
                 if (action === 'whats-new') void this.openWhatsNew();
+                if (action === 'bring-back-bell') void this.bringBackBellNotices();
             });
         });
         container.querySelectorAll('[data-notice-card]').forEach((btn) => {
@@ -14909,7 +14921,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'domains', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
@@ -17246,7 +17258,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -17416,6 +17428,53 @@ class DashboardConfig {
     static BESZEL_STORAGE_SETTINGS = [...DashboardConfig.BESZEL_TAIL];
 
     /*
+     * AdGuard Home and Pi-hole, mirroring dnsFields in widgets_dns.go. The look
+     * is the tile's whole character; the parts are what it draws. The click
+     * opens the card with the top ten first, unlike the poster tiles.
+     */
+    static DNS_LOOK = {
+        key: 'look', kind: 'choice', label: ['config.widgetDnsLook', 'Look'],
+        options: [
+            ['pulse', ['config.widgetDnsLookPulse', 'Pulse — one big figure and the last day']],
+            ['leaders', ['config.widgetDnsLookLeaders', 'Leaderboard — top lists with bars']],
+            ['tiles', ['config.widgetDnsLookTiles', 'Tiles — four figures and a chart']],
+            ['mix', ['config.widgetDnsLookMix', 'Mix — pulse on top, lists below']],
+        ],
+    };
+
+    static dnsParts(extras) {
+        const options = [
+            ['figures', ['config.widgetDnsPartFigures', 'Figures']],
+            ['chart', ['config.widgetDnsPartChart', 'Last 24 hours']],
+            ['blocked', ['config.widgetDnsPartBlocked', 'Top blocked domains']],
+            ['clients', ['config.widgetDnsPartClients', 'Top clients']],
+            ['protection', ['config.widgetDnsPartProtection', 'Protection status']],
+        ];
+        if (extras) {
+            options.push(['types', ['config.widgetDnsPartTypes', 'Query types']],
+                ['upstreams', ['config.widgetDnsPartUpstreams', 'Upstreams']]);
+        }
+        return {
+            key: 'parts', kind: 'checkset', label: ['config.widgetDnsParts', 'Parts to show'],
+            defaults: options.map(([key]) => key), options,
+        };
+    }
+
+    static DNS_TAIL = [
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['detail', ['config.widgetDnsClickDetail', 'Shows the top ten first']],
+              ['open', ['config.widgetMediaClickOpen', 'Opens it in the service']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
+        { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    static ADGUARD_SETTINGS = [DashboardConfig.DNS_LOOK, DashboardConfig.dnsParts(false), ...DashboardConfig.DNS_TAIL];
+    static PIHOLE_SETTINGS = [DashboardConfig.DNS_LOOK, DashboardConfig.dnsParts(true), ...DashboardConfig.DNS_TAIL];
+
+    /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
      *
      * A table rather than a form per type: the panel is generated from this, and
@@ -17501,12 +17560,25 @@ class DashboardConfig {
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
         ],
         clock: [
+            { key: 'look', kind: 'choice', label: ['config.widgetClockLook', 'Look'],
+              options: [
+                  ['face', ['config.widgetClockLookFace', 'A large clock face, other places below it']],
+                  ['list', ['config.widgetClockLookList', 'Plain lines of time']],
+              ] },
             { key: 'zones', kind: 'tags',
               label: ['config.widgetClockZones', 'Other places'],
               hint: ['config.widgetClockZonesHint',
-                     'Comma separated, as Name=Region/City — for example Tokyo=Asia/Tokyo, New York=America/New_York. Your own time is always shown first.'] },
+                     'Comma separated, as Name=Region/City — for example Tokyo=Asia/Tokyo, New York=America/New_York. Your own time is always shown first. The clock face shows the first three.'] },
             { key: 'hour12', kind: 'bool', label: ['config.widgetClockHour12', 'Use a 12-hour clock'] },
             { key: 'showDate', kind: 'bool', label: ['config.widgetClockShowDate', 'Show today’s date'] },
+            { key: 'showSeconds', kind: 'bool', defaultOn: true,
+              label: ['config.widgetClockShowSeconds', 'Show a seconds hand'] },
+            { key: 'showMoon', kind: 'bool', defaultOn: true,
+              label: ['config.widgetClockShowMoon', 'Show the moon and its phase'],
+              hint: ['config.widgetClockSkyHint', 'The moon and the sun appear when the clock is two columns wide.'] },
+            { key: 'showSun', kind: 'bool', defaultOn: true,
+              label: ['config.widgetClockShowSun', 'Show sunrise and sunset'],
+              hint: ['config.widgetClockSunHint', 'For the weather location in Config → Behavior. Without one there is nothing to calculate from.'] },
         ],
         countdown: [
             { key: 'date', kind: 'text', input: 'date', maxlength: 10,
@@ -17517,7 +17589,8 @@ class DashboardConfig {
             { key: 'showTime', kind: 'bool', label: ['config.widgetCountdownShowTime', 'Count in hours and minutes near the end'] },
         ],
         stack: [
-            { key: 'members', kind: 'checkset', optionsFrom: 'siblings',
+            // max: widgetMaxStackMembers in widgets.go, which drops the rest unsaid.
+            { key: 'members', kind: 'checkset', optionsFrom: 'siblings', max: 6,
               label: ['config.widgetStackMembers', 'Widgets in the tabs'],
               hint: ['config.widgetStackMembersHint',
                      'Each ticked widget becomes a tab, in page order, and leaves the grid while it is held here. Its settings stay under Widgets.'] },
@@ -17725,6 +17798,8 @@ class DashboardConfig {
         'beszel-system': DashboardConfig.BESZEL_SYSTEM_SETTINGS,
         'beszel-attention': DashboardConfig.BESZEL_ATTENTION_SETTINGS,
         'beszel-storage': DashboardConfig.BESZEL_STORAGE_SETTINGS,
+        adguard: DashboardConfig.ADGUARD_SETTINGS,
+        pihole: DashboardConfig.PIHOLE_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
@@ -25237,9 +25312,23 @@ class DashboardConfig {
                 if (typeof lang.translations?.config?.helpStartBody !== 'string') return;
                 const body = document.getElementById('config-help-body');
                 if (!body) { this.render(); return; }
-                body.innerHTML = this.renderHelpBody();
-                this.bindHelpActions(body);
+                this.repaintHelpBodyKeepingSearch(body);
             });
+    }
+
+    /**
+     * Repaint the help body for something that arrived late -- the help prose,
+     * the release heading -- without dropping a search already typed.
+     *
+     * Both land a moment after Help opens, and on a slow answer the reader has
+     * searched by then: writing the tab's prose back over the results left the
+     * query in the field and nothing found under it.
+     */
+    repaintHelpBodyKeepingSearch(body) {
+        const searching = !!String(this.helpQuery || '').trim();
+        body.innerHTML = searching ? this.renderHelpSearchResults() : this.renderHelpBody();
+        this.bindHelpActions(body);
+        if (searching) this.bindHelpResultJumps(body);
     }
 
     renderHelp() {
@@ -26296,8 +26385,7 @@ class DashboardConfig {
             if (this.section !== 'help' || this.helpTab !== 'start' || !this._latestRelease) return;
             const body = document.getElementById('config-help-body');
             if (!body) return;
-            body.innerHTML = this.renderHelpBody();
-            this.bindHelpActions(body);
+            this.repaintHelpBodyKeepingSearch(body);
         });
     }
 

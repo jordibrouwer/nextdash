@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Aurora Glass**; 190+ theme families in light and dark, twelve characters, more than 260 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
+| 🎨 | **A new look, and more than 380 themes** | Every material draws a surface of its own and a fresh install starts on **Tarnished Brass**; 190+ theme families in light and dark, twelve characters, more than 260 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 | 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
@@ -921,11 +921,25 @@ This manual calls the page of categories and widgets the **dashboard grid**, to 
 
 The header has three zones.
 
-- **Left — clock, weather and name.** The time and date, the weather line, and the name of the page or view (*main*, *config*). Click the date for a week overview; a **Calendar URL** (Appearance → Date & weather) adds an *Open calendar* link. **Clock and weather** chooses where they stand: beside the view name (the default), in a column of their own, or on their own line with the name underneath.
+- **Left — clock, weather and name.** The time and date, the weather line, and the name of the page or view (*main*, *config*). Click the date for a week overview; a **Calendar URL** (Appearance → Date & weather) adds an *Open calendar* link. **Clock and weather** chooses where they stand: beside the view name (the default), in a column of their own, or on their own line with the name underneath. A fourth placement, **Large clock, greeting beside it**, draws the time large with a greeting that follows the hour (*Good evening, Jordi*); **Your name**, in the *Greeting* group under Appearance → Date & time, is the name in it, and empty means a greeting without one. The quick start asks for the name once.
 - **Middle — the page switcher.** See [below](#the-page-switcher).
-- **Right — the destinations.** **Dashboard** (⌂), **Bookmarks** (a badge for a broken link or another problem), **Inbox** (an unread count), **Containers** (a badge for updates waiting) and **config** (the gear). Each destination can be switched off; its key keeps working. There is no Health icon — its badge and its list live on the Bookmarks icon now.
+- **Right — the destinations.** **Dashboard** (⌂), **Bookmarks** (a badge for a broken link or another problem), **Inbox** (an unread count), **Containers** (a badge for updates waiting) and **config** (the gear). Each destination can be switched off; its key keeps working. There is no Health icon — its badge and its list live on the Bookmarks icon now. At the far right stands the **notifications bell** ([below](#the-notifications-bell)).
 
 **Button style** draws the header controls plain (underlined when current) or each in its own box. As the window narrows, the header folds its parts away in a fixed order, so the switcher and the destinations stay reachable.
+
+<p align="center"><img src="screenshots/manual.md/04-header-clock.jpg" alt="The header with a large clock reading 21:46, the greeting Good evening, Jordi, the date and weather, the page tabs, and the notifications bell with a count at the right" width="860"></p>
+<p align="center"><sub>The large clock with its greeting; the bell is the last button on the right.</sub></p>
+
+<a id="the-notifications-bell"></a>
+
+#### 🔔 The notifications bell
+
+What needs you waits in the bell instead of popping up over your work: questions about privacy and maintenance, urgent notices and outages, the note that an update was installed or that a new release is out, the weekly digest, a pile of kept links, and two tips a day. Rows are grouped (*Health*, *Clean up*, *System*, *Privacy*, *Tips*), each with the button that answers it. **Mark read** clears a row, **No** answers a question for good, and **Mark all read** clears the lot. A tip has a button to the place it is about: Config, the Inbox, the Bookmarks view, Containers, the tag cloud or the palette.
+
+<p align="center"><img src="screenshots/manual.md/04-bell.jpg" alt="The notifications bell open: a Clean up group with two questions, each with Start and No, and a Tips group with three tips" width="860"></p>
+<p align="center"><sub>The bell, open.</sub></p>
+
+The bell shakes and pulses for something new, with a short tone; **Bell sound for new notifications** under Config → Behavior switches the tone off, and **Bring back dismissed notifications** there puts every answered row back.
 
 <a id="the-page-switcher"></a>
 
@@ -1031,27 +1045,27 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 
 **A key legend** under the grid shows the keys in three lines, on the dashboard view only. The keys that assume you use the keyboard appear at your first cursor move. `Shift + Z` switches the legend off and on, and so does Behavior → Keyboard & search. It is on for new installs.
 
-**Occasional tips.** Now and then the dashboard shows one keyboard tip: at most one a day, counted across your devices, never the same one twice and never over a modal. **Keyboard tips come** (Behavior → Privacy & sync → Onboarding) spaces them *About once a day* (the default) or *About once a week*; the switch above it turns them off.
+**Occasional tips.** Tips do not pop up over your work. Two keyboard tips a day wait in the notifications bell ([§4](#the-notifications-bell)), a new pair each calendar day whether or not yesterday's were read, never one you have already read, each with a button to the place it is about. **Show occasional keyboard tips** (Behavior → Privacy & sync → Onboarding) turns them off.
 
-<p align="center"><img src="screenshots/manual.md/17-onboarding-tips.jpg" alt="Config, Behavior, Privacy and sync, the Onboarding group: Show occasional keyboard tips, the Keyboard tips come list set to About once a day, and the switch Offer a tour the first time a section opens" width="760"></p>
+<p align="center"><img src="screenshots/manual.md/17-onboarding-tips.jpg" alt="Config, Behavior, Privacy and sync, the Onboarding group: the switch Show occasional keyboard tips and the switch Offer a tour the first time a section opens" width="760"></p>
 
 **Tours on a first visit.** **Offer a tour the first time a section opens** (the same group, on by default) decides whether Monitoring, Widgets, the Inbox, the Bookmarks view and the other sections open their tour by themselves the first time you visit. It needs the keyboard tips switch on. Switched off, every tour is still one click away on its **Tour** button.
 
 <a id="corner-cards"></a>
 
-**Corner cards** offer things once, one card at a time, in the bottom-left corner. Each can be dismissed with the **×**. Four hints are not corner cards any more: the theme studio hint, *Updated from … to …*, the Inbox extension invitation and the image-update invitation appear as a one-line toast with no buttons, and the line says where to go. Showing one counts as answered, or snoozed for the two invitations; the switches in Config still turn them off.
+**Notices.** What nextDash wants to offer or tell you waits as a row in the notifications bell ([§4](#the-notifications-bell)) rather than appearing over your work. In the bell, **No** answers an offer (it comes back only when there is more to show) and **Mark read** clears a tip. The few offers that need an answer on the spot, such as the apps found on your Docker host, also appear as a card in the bottom-left corner, one at a time, which can be dismissed with the **×**. The theme studio hint, *Updated from … to …*, the Inbox extension invitation and the image-update invitation wait in the bell as well; the switches in Config still turn them off.
 
-- **Link review** — *10 links to review* once five or more bookmarks need a decision. **Start** runs a session over the worst ten ([§11.7](#117-work-through-and-the-header-band)); **Not today** brings it back tomorrow; **Remind me in 30 days** puts it away for a month.
+- **Link review** — *10 links to review* once five or more bookmarks need a decision. **Start** runs a session over the worst ten ([§11.7](#117-work-through-and-the-header-band)); **No** puts it away until more links need a decision.
 - **Kept links** — ten or more links you kept have waited over a month in **Unsorted**. **Open Unsorted** shows them; the card never files or deletes anything.
 - **Tag suggestions** — a round of tag review when there is something worth accepting ([§10.4](#104-tag-suggestions)).
 - **Clock and weather** — asks for a town, a clock and a unit when no location is set.
 - **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§24.7](#247-what-nextdash-contacts)). It waits two days after the analytics question, so the two privacy cards never arrive in one visit.
 - **Moving blocks** — once, a see-through copy of the first category glides to its next place to show that blocks can be moved, and a card under its `//` offers **Try it**. The first time you pick a block up, a card beside the landing box lists the keys until **Got it**.
-- **Theme studio** — a toast, *Not happy with how it looks? Press Shift+A to open the theme studio.* Shown once; a new install is shown it after its first day.
-- **Image updates** — a toast in the Containers view, from the third visit: *Check images for updates?* names where to switch on the daily check (Config → Containers → Updates), which sends requests to the image registries. It comes back in 30 days until you do. Nothing updates by itself ([§15.5](#155-actions-and-updates)).
+- **Theme studio** — a row in the bell, *Not happy with how it looks? Press Shift+A to open the theme studio.* Shown once; a new install is shown it after its first day.
+- **Image updates** — a row in the bell, from the third visit to the Containers view: *Check images for updates?* names where to switch on the daily check (Config → Containers → Updates), which sends requests to the image registries. It comes back in 30 days until you do. Nothing updates by itself ([§15.5](#155-actions-and-updates)).
 - **Re-check links** — *Last link check was 9 days ago* when the newest check is a week old or more and re-checking in the background is off. **Re-check now** runs the checks, **Every day** switches the background re-check on at 24 hours, and **Not now** brings it back tomorrow and **Remind me in 30 days** puts it away.
-- **Browser extension** — a toast in the Inbox, after a few visits and while nothing has ever arrived from the extension, saying the extension saves the page you are on straight to the Inbox. It comes back in two weeks ([§22](#22-browser-extension-and-capture)).
-- **Updated** — a toast after an upgrade, once the release notes are closed: *Updated from v1.21.0 to v1.22.0. The notes are under the ★ button.* It reports what happened and never asks anything; it comes once per version and not on a new install.
+- **Browser extension** — a row in the bell, after a few visits and while nothing has ever arrived from the extension, saying the extension saves the page you are on straight to the Inbox. It comes back in two weeks ([§22](#22-browser-extension-and-capture)).
+- **Updated** — a row in the bell after an upgrade, once the release notes are closed: *Updated from v1.21.0 to v1.22.0. The notes are under the ★ button.* It reports what happened and never asks anything; it comes once per version and not on a new install.
 - **Others** — browser notifications, the theme studio and the tour of what moved.
 
 Each review card has a switch under Behavior → Privacy & sync → Onboarding, the four above included (*Offer image update checks*, *Offer to re-check links*, *Offer the browser extension*, *Show what changed after an update*) and *Offer to review tag suggestions*. The same place lists the cards — kept links, the theme studio, tag suggestions, health review, the install count, the weekly digest and analytics — each with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
@@ -1871,7 +1885,7 @@ nextDash proposes tags for bookmarks that lack them. It never tags anything behi
 - **In the rows** of the Bookmarks view, the inbox and the tag view: a dashed chip after a row's tags. Click it to add the tag, **×** to turn it down. A suggestion comes first in the row; when there is no room, the row's own tags fold into **+n**, and further suggestions into **+N**. **+N** opens a list of every suggestion for that row, each to add or turn down; **+n** lists the tags the row already carries. A line over the list counts them, *7 tag suggestions in this list · Add all*.
 - **One bookmark at a time** — in the bookmark form, the Bookmarks view's side panel, `Shift + T` and the selection's tag picker, under **Suggested** ([§10.1](#101-tags-on-a-bookmark)). In the form and the tag popover, **Read page** reads that one page when nothing else turns up.
 - **Grouped** — Config → Bookmarks → Tag suggestions proposes one tag for a whole group: every bookmark on a site, or every bookmark an app or rule covers. Each row names its source and its count; click the row or its count to open the group and leave single bookmarks out. **Apply** tags the rest (undo in the toast). At most 25 rows show at a time.
-- **A corner card** offers a look when ten suggestions are waiting; switch it off with **Offer to review tag suggestions** under Behavior → Privacy & sync → Onboarding.
+- **A row in the notifications bell** offers a look when ten suggestions are waiting; switch it off with **Offer to review tag suggestions** under Behavior → Privacy & sync → Onboarding.
 
 Opening a view never goes online by itself: the rows show what the catalogue, your rules, your own tags and pages already read can say.
 
@@ -2058,7 +2072,7 @@ Re-check stays in the row beside the main button when that button is Open. Keep 
 
 **3. The end of a pile.** Work through counts what the run did — fixed, deleted, kept, snoozed — and offers the next pile that still has bookmarks (**Start: …**), or **Back to the list**.
 
-**Ten links, two minutes.** When five or more bookmarks need a decision, a card in the corner says *10 links to review* and names what is waiting — for instance how many are broken or never opened. **Start** runs a session over the worst ten in this same view. It ends with a count of what you dealt with — skipping is not handling — and offers **Another ten** while more are waiting. **Done for today** puts the offer away until tomorrow; **Not today** on the card does the same, and **Remind me in 30 days** puts it away for a month without touching any bookmark. **Offer to review links** under Behavior → Privacy & sync → Onboarding switches the card off; link checking itself stays on.
+**Ten links, two minutes.** When five or more bookmarks need a decision, a row in the notifications bell says *10 links to review* and names what is waiting — for instance how many are broken or never opened. **Start** runs a session over the worst ten in this same view. It ends with a count of what you dealt with — skipping is not handling — and offers **Another ten** while more are waiting. **Done for today** puts the offer away until tomorrow; **No** on the row puts it away until more links need a decision. Neither touches any bookmark. **Offer to review links** under Behavior → Privacy & sync → Onboarding switches the offer off; link checking itself stays on.
 
 When the row has a preview nextDash could fetch but the bookmark does not store, its reason reads *"Preview fetched, not saved yet"* and a **Save preview** button (**`s`**) writes it onto the bookmark.
 
@@ -2329,7 +2343,7 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 **Weekly digest.** Once a week nextDash sums up what needs you: links that broke, certificates that run out soon, container updates, what is worth tidying up, bookmarks nobody opens, links waiting in the Inbox, and what you opened most. It goes out on **Monday at 08:00** by default, in the time zone of the quiet hours, and cannot be switched off. A fresh install gets its first digest after at least a week: a digest is only sent when its slot falls seven or more days after the install.
 
-- **Where it arrives** — every week as a card in the corner of the dashboard, *Your week in nextDash*, that names the one or two things that matter most; and as a browser notification when those are on, through the service under **Downtime alerts**. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
+- **Where it arrives** — every week as a card, *Your week in nextDash*, that waits in the notifications bell once per digest and names the one or two things that matter most; and as a browser notification when those are on, through the service under **Downtime alerts**. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
 - **The card** — **Read the digest** opens the window. **Snooze 1 day** hides the card until tomorrow. **Got it** marks it seen; unless you opened the window, the card returns once the next day and once the day after, and then stays away until the next digest. Progress, snooze and reminders are kept per browser.
 - **Reading it** — along the top is **the week in figures**: bookmarks opened, bookmarks added, uptime with the number of outages, and the links in the Inbox with how many are new, each next to the week before (▲ and ▼, green when it went the better way). A figure with nothing behind it is left out, so a new install shows a short row. The Overview carries two charts: **Bookmarks opened per day** as seven bars, and **Uptime per day** as a line. Lines that show a number of days spell them out (*3 days left*, *down for 2 days*). The window opens on an **Overview**, one line per part saying where it stands, and lists the parts on the left in three groups: **Needs you** (broken links, certificates, domains, container updates), **Tidy up** (the checkup, never opened, not opened in 30 days) and **Good to know** (the Inbox, most opened, what is new in nextDash), with a sentence on top that names what matters most. The part you pick is shown in full on the right: what it means, the names behind the count with what matters about each — a broken link with its page, since when it is down and what the last check said; the most opened with how often; never opened with their page; not opened lately with how long ago; the Inbox with how long its oldest link has waited — certificates and domains as bars of days left, and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Start the checkup**, **Review**, **Open Inbox**, **Open What's new**. The close button at the top and **Close** at the bottom are always in view; only the middle scrolls. After a part's button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the one after; it closes itself once every part is opened. Its **×** asks first, because the digest may still hold something important: **Keep it** or **Close until Monday**. Clicking the push notification opens the same window.
 - **Setting it up** — Monitoring → Notifications → **Weekly digest**: **On** (the day), **At** (the hour), and which parts go in — **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**, **Include what the watched feeds published**; broken links and certificates always stay. The figures along the top follow the parts: uptime and outages stay with the broken links, while the opens, the added bookmarks and the Inbox go with **Include most opened, unused and Inbox**. **The latest digest → Show** opens the last one again, as does the digest panel in Config → Overview; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
@@ -2908,7 +2922,7 @@ With the Docker socket mounted, nextDash notices which containers are web apps a
 
 Nothing outside nextDash is asked: only the Docker socket and its own checks, never a proxy's or another container's API. Databases, message brokers, socket proxies, updaters and nextDash itself are never proposed, and neither is a container that already has a bookmark — matched the same way the Containers view links one ([§15.2](#152-the-list)).
 
-**The first time.** Once the Quick start guide, the tour and any corner card are out of the way, a card in the middle of the screen says how many apps are running here, grouped by kind — Media, Media management, Downloads, Monitoring, Network, Home, Documents & photos, Development, Tools — and all ticked. **Add** puts the ticked ones on the page: one category per kind, at the top, each bookmark with its icon, a status check and a link to its container. While the page still holds the links nextDash starts with, **Replace the starter links on this page** clears them as well. A notice afterwards offers **Show**, **Undo** and **Done**. **Not now** adds nothing; the apps stay in the Containers view.
+**The first time.** Once the Quick start guide, the tour and any card in the corner are out of the way, a card in the middle of the screen says how many apps are running here, grouped by kind — Media, Media management, Downloads, Monitoring, Network, Home, Documents & photos, Development, Tools — and all ticked. **Add** puts the ticked ones on the page: one category per kind, at the top, each bookmark with its icon, a status check and a link to its container. While the page still holds the links nextDash starts with, **Replace the starter links on this page** clears them as well. A notice afterwards offers **Show**, **Undo** and **Done**. **Not now** adds nothing; the apps stay in the Containers view.
 
 <p align="center"><img src="screenshots/manual.md/14-discovery-card.jpg" alt="The apps card in the middle of the screen: Found on this server, 4 apps are running here, with Plex under Media, Jellyseerr under Media management, Grafana under Monitoring and Home Assistant under Home, all ticked, and the buttons Add 4 apps and Not now" width="460"></p>
 <p align="center"><sub>The first card: what is running, grouped by kind.</sub></p>
@@ -3057,12 +3071,15 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **RSS** | The newest articles from up to ten feed addresses set on the widget, merged newest first |
 | **Watch feeds news** | The sites with new items from the feeds you watch ([§14](#14-watch-feeds)). **Layout**: *Sites, one row each*, *Headlines with pictures* or *Compact chips*. It fetches nothing itself; every way in leads to the news window |
 | **Notes** | A text of your own, read as Markdown, with checkboxes you tick on the tile; up to 6,000 characters |
-| **Clock** | The time where you are, and in the other places you add as **Name=Region/City** (for example `Tokyo=Asia/Tokyo`), with *tomorrow* or *yesterday* where the date differs. **Use a 12-hour clock** and **Show today's date** are switches |
+| **Clock** | The time where you are, and in the other places you add as **Name=Region/City** (for example `Tokyo=Asia/Tokyo`), with *tomorrow* or *yesterday* where the date differs. **Look** is *A large clock face, other places below it* (the first three places) or *Plain lines of time*. The face can show a seconds hand, and, two columns wide, the moon with its phase and sunrise, sunset and the hours of daylight for the weather location (Appearance → Date & weather). **Use a 12-hour clock** and **Show today's date** are switches |
 | **Countdown** | The days left to a **Date**, or since it. The widget's title says what it counts to. An optional **Time of day** and **Count in hours and minutes near the end** switch the figure to hours and minutes in the last two days |
 | **Tabs** | Several widgets of the page in one tile, one tab each. **Widgets in the tabs** lists the other widgets of the page; each one you tick becomes a tab, in page order, and leaves the grid while the tabs hold it. Up to six tabs; a widget sits in one Tabs widget at most, and a widget moved to another page leaves the tabs. Its settings stay under Widgets. Only the tab in view is drawn |
 
 <p align="center"><img src="screenshots/manual.md/15-weather.jpg" alt="The Weather tile: rain at 16 °C in Leiden and the next five days" width="380"> <img src="screenshots/manual.md/15-rss.jpg" alt="The RSS tile: five headlines, newest first, each with its age" width="380"></p>
 <p align="center"><sub>The Weather and RSS tiles.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/16-clock-face.jpg" alt="A Clock widget two columns wide: an analogue face with the date and three places under it, and the moon, sunrise and sunset beside it" width="560"></p>
+<p align="center"><sub>The Clock, two columns wide.</sub></p>
 
 <p align="center"><img src="screenshots/manual.md/16-tabs.jpg" alt="A dashboard with a Tabs tile, at a glance, holding three widgets as tabs named Health, Weather and Notes, with the Weather tab open, beside a Clock, a Countdown and two Jellyfin tiles" width="860"></p>
 <p align="center"><sub>A Tabs tile: three widgets of the page in one tile, one tab each.</sub></p>
@@ -3077,6 +3094,18 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **Sonarr**, **Radarr** | The episodes and films coming up in the next days (a week unless you choose up to 30), a film released today staying on the list until the day is over, and what is downloading, with posters. The same four layouts; in the strip, *Upcoming* and *Queue* are the tabs |
 | **Seerr** | Requests in Overseerr or Jellyseerr, under *Pending*, *Approved* and *Available*, with who asked and the poster. Show every request or one state, films, series or both, from everyone or one person |
 | **qBittorrent**, **SABnzbd** | What is downloading, paused and finished, with progress, speed and time left, and the client's speeds and counts on top. As one list or a tab per part (*Downloading*, *Paused*, *Done*). Without posters, and in the order you choose |
+
+*What is the network blocking?*
+
+| Kind | Shows |
+|---|---|
+| **AdGuard Home** | Queries, how many were blocked, the last day by the hour, and the top blocked domains and clients. Four looks: *Pulse* (one large percentage and the last day, the default), *Leaderboard*, *Tiles* and *Mix* (two columns only); **Parts to show** picks the rest |
+| **Pi-hole** | The same, with the number of domains on the lists, the query types and the upstreams as extra parts |
+
+A click opens the top ten with a button to the service (or goes straight there when the click is set to open it). Fill in the address and the sign-in the service wants (AdGuard Home: username and password; Pi-hole: password) and press **Connect**; the sign-in stays on the server.
+
+<p align="center"><img src="screenshots/manual.md/16-dns-pulse.jpg" alt="The AdGuard Home tile in the Pulse look: 31% blocked, 5,710 of 18,420, and a strip for the last day" width="380"> <img src="screenshots/manual.md/16-dns-tiles.jpg" alt="The Pi-hole tile in the Tiles look: queries, blocked, ratio and average" width="380"></p>
+<p align="center"><sub>AdGuard Home in the Pulse look and Pi-hole in the Tiles look.</sub></p>
 
 *What is going on at home?*
 
@@ -3857,7 +3886,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 ### 17.1 Themes
 
-nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Aurora Glass** — dark, with Aurora Glass (light) for auto dark mode. An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§17A](#17a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§17A.3](#17a3-everyone-gets-aurora-glass-and-the-way-back)).
+nextDash ships **190+ theme families**, each with a light and a dark half — more than 380 themes in all. A fresh install starts on **Tarnished Brass** — dark, with Tarnished Brass (light) for auto dark mode. (Before v1.26.0 it started on Aurora Glass.) An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§17A](#17a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§17A.3](#17a3-everyone-gets-aurora-glass-and-the-way-back)).
 
 **Theme** on the Theme tab lists every theme by name. Beside it:
 
@@ -4201,10 +4230,10 @@ The new look is drawn per material, and the themes were redrawn with it. Keeping
 
 **Aurora Glass** — northern light behind a pane you can see through — was the default theme of version 1.22.0, and that release moved every existing install onto it.
 
-- **A fresh install** starts on Aurora Glass and sees nothing of what follows: no dialog.
+- **A fresh install** now starts on Tarnished Brass (it started on Aurora Glass in v1.22.0 and later) and sees nothing of what follows: no dialog.
 - **An existing install** moved onto it **once**, when it first ran this release. It stays on the half it was on: a dark theme became Aurora Glass dark, a light one Aurora Glass light. An install that was already on Aurora Glass moved nowhere and sees no dialog.
 - **What stays.** Your bookmarks, categories, pages, settings and your own themes are exactly as you left them. Only the theme changed, and the theme you had is remembered.
-- **A dialog says so, once.** It names the theme you had and the theme you have now, tells you what changed, and ends with *This message appears once.* It comes before any corner card. The corner cards that invited you to a theme browser, to the clock and weather and to Berry are gone; Berry is no longer the default, so there is nobody to invite.
+- **A dialog says so, once.** It names the theme you had and the theme you have now, tells you what changed, and ends with *This message appears once.* It comes before anything in the bell or the corner. The cards that invited you to a theme browser, to the clock and weather and to Berry are gone; Berry is no longer the default, so there is nobody to invite.
 
 <p align="center"><img src="screenshots/manual.md/16a-migration-dialog.jpg" alt="The dialog that explains the move to Aurora Glass: the theme you had and the theme you have now, a line that your bookmarks, categories, settings and own themes are as you left them, and the buttons Go back, Open the Theme Studio and Got it" width="560"></p>
 <p align="center"><sub>The dialog an existing install sees once.</sub></p>
@@ -4405,7 +4434,7 @@ The other tabs:
 |---|---|
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **On phones and tablets** ([§23](#23-phones-tablets-and-the-installed-app)); **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§16](#16-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
-| **Privacy & sync** | **Count this install** (on by default, [§24.8](#248-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips and how often they come, whether a section offers its tour on a first visit, the review and offer cards, every tour (replay it with its button), *Show quick start again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
+| **Privacy & sync** | **Count this install** (on by default, [§24.8](#248-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips (they wait in the bell, two a day) and the bell's sound, whether a section offers its tour on a first visit, the review and offer notices, every tour (replay it with its button), *Show quick start again*, *Bring back dismissed notifications*, and the list of notices — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
 
 Watch feeds has its own section (Feeds · Settings, [§14](#14-watch-feeds)), and so has Finders; neither is a Behavior tab.
 

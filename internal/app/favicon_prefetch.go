@@ -110,6 +110,9 @@ func saveIconBytes(data []byte, ext string) (string, error) {
 		}
 	}
 
+	// A 512 px PNG or a six-size .ico is drawn at 16 to 64 px; see icon_shrink.go.
+	data, ext = shrinkIconBytes(data, ext)
+
 	iconsDir := filepath.Join(ResolveDataDir(), "icons")
 	if err := os.MkdirAll(iconsDir, 0755); err != nil {
 		return "", err

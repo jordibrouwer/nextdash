@@ -71,6 +71,8 @@
         'beszel-system': { rows: [['nas', ''], ['temp', '54°']], bars: [['cpu', 0.23], ['mem', 0.61], ['disk', 0.88, 'warn']] },
         'beszel-attention': { rows: [['nas', 'disk 88%', 'warn'], ['pihole', 'down', 'bad']] },
         'beszel-storage': { bars: [['nas /', 0.88, 'warn'], ['htpc /', 0.41]] },
+        adguard: { big: '31%', rows: [['blocked today', ''], ['doubleclick.net', '812']] },
+        pihole: { big: '24%', rows: [['blocked today', ''], ['doubleclick.net', '812']] },
         glances: { rows: [['Home', 'healthy']], bars: [['cpu', 0.22], ['mem', 0.61], ['disk', 0.83, 'warn']] },
         custom: { rows: [['queued', '7'], ['paused', '2']] },
     };
@@ -100,6 +102,8 @@
         'beszel-system': '1.20',
         'beszel-attention': '1.20',
         'beszel-storage': '1.20',
+        adguard: '1.26',
+        pihole: '1.26',
     };
 
     /** "v1.19.4" -> [1, 19]; anything else, an old date tag included, -> null. */

@@ -5396,9 +5396,9 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-m
    the modal does not jump when the section menu narrows the list. Lines stay
    short because the cards and the two columns of fixes divide the width. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal:not(.analytics-notice-modal)) .modal {
-    width: min(64rem, calc(100vw - 2.5rem));
-    height: min(52rem, calc(100vh - 4rem));
-    max-height: calc(100vh - 4rem);
+    width: min(34rem, calc(100vw - 2.5rem));
+    height: auto;
+    max-height: min(46rem, calc(100vh - 4rem));
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
@@ -7960,23 +7960,111 @@ body[data-header-clock="classic"] .dashboard-section.section-controls .header-to
     min-width: 0;
 }
 
+/*
+ * The large clock.
+ *
+ * The time stands on its own at three times the page's type, and beside it,
+ * behind a rule in the theme's accent, three short lines: the greeting, the
+ * date and the weather. It replaced a line of 0.65rem grey that read as a
+ * footnote -- the clock is what most people look at this corner for.
+ *
+ * Every colour is the theme's own: the text in --text-primary, the rule in
+ * --accent-primary. What keeps it readable over a busy or bright backdrop is
+ * the halo, below.
+ */
 body[data-header-clock="classic"] .dashboard-section.section-controls .header-identity .date {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3, 0.9rem);
+    color: var(--text-primary);
 }
 
-body[data-header-clock="classic"] .dashboard-section.section-controls .date-time-line {
-    font-size: calc(var(--font-size-text) * 1.14);
-    color: var(--text-secondary);
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-clock {
+    font-size: calc(var(--font-size-text) * 3.2);
+    font-weight: var(--font-weight-black, 800);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
     white-space: nowrap;
+    cursor: pointer;
 }
 
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-side {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding-left: var(--space-3, 0.75rem);
+    border-left: 2px solid var(--accent-primary, currentColor);
+}
+
+/* Without a clock there is no rule to stand behind. */
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-side:first-child {
+    padding-left: 0;
+    border-left: 0;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-greeting {
+    font-size: calc(var(--font-size-text) * 1.2);
+    font-weight: var(--font-weight-bold, 700);
+    line-height: 1.2;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-day,
 body[data-header-clock="classic"] .dashboard-section.section-controls .date-weather-line {
     font-size: var(--font-size-text);
-    color: var(--text-secondary);
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--text-primary);
+    opacity: 0.85;
     white-space: nowrap;
+}
+
+/*
+ * The halo: a shadow in the theme's background colour, so light text gets a
+ * dark edge and dark text a light one. Barely visible on a plain backdrop; on
+ * a pattern or a bright photo it lifts the letters off it. Icons are SVG and
+ * do not take text-shadow, so they get the same edge as a drop-shadow filter.
+ */
+body[data-header-clock="classic"] .dashboard-section.section-controls {
+    --header-halo: color-mix(in srgb, var(--background-primary, #000) 78%, transparent);
+    --header-halo-text: 0 0 1px var(--header-halo), 0 1px 2px var(--header-halo), 0 0 12px var(--header-halo);
+    --header-halo-icon: drop-shadow(0 0 1px var(--header-halo)) drop-shadow(0 0 5px var(--header-halo));
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-identity,
+body[data-header-clock="classic"] .dashboard-section.section-controls .title-wrapper {
+    text-shadow: var(--header-halo-text);
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-identity svg {
+    filter: var(--header-halo-icon);
+}
+
+/*
+ * The same halo on the right: the pages, the shortcuts and the destinations
+ * stand on the same backdrop and were just as faint on it. The halo does the
+ * lifting and each control keeps its own resting, hover and active colour;
+ * the count badges keep their own colours and their own edge.
+ */
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-track,
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-actions {
+    text-shadow: var(--header-halo-text);
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-track svg,
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-actions svg {
+    filter: var(--header-halo-icon);
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-actions :is(.page-inbox-badge, .health-badge, .docker-update-badge) {
+    text-shadow: none;
 }
 
 body[data-header-clock="classic"] .dashboard-section.section-controls .header-track,
@@ -7992,14 +8080,16 @@ body[data-header-clock="classic"] .dashboard-section.section-controls .title-wra
 }
 
 body[data-header-clock="classic"] .dashboard-section.section-controls .title {
-    /* Two thirds of the old title: the band it used to stand in is gone, so
-       the name no longer has to fill one -- it only has to read as the name of
-       the page, above a grid that starts right under it. */
-    font-size: calc(var(--font-size-title, 3rem) * 0.66);
-    font-weight: var(--font-weight-black, 900);
-    line-height: 1.1;
-    letter-spacing: -0.04em;
-    opacity: 0.8;
+    /* The clock is the large thing in this corner now; the view's name is a
+       label under it that says where you are, a notch above the body's type
+       so it reads at a glance, in the theme's own text colour. */
+    font-size: calc(var(--font-size-text) * 1.3);
+    font-weight: var(--font-weight-black, 800);
+    line-height: 1.2;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    opacity: 0.9;
 }
 
 /*
@@ -8818,11 +8908,13 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
    friends), so a step keyed on one body attribute lost the cascade and hid
    nothing at all. */
 
-/* 1 — the destinations. Shift+I, Shift+H and Shift+S still reach them. */
-body[data-header-fit="1"] .dashboard-section.section-controls .header-destinations,
-body[data-header-fit="2"] .dashboard-section.section-controls .header-destinations,
-body[data-header-fit="3"] .dashboard-section.section-controls .header-destinations,
-body[data-header-fit="4"] .dashboard-section.section-controls .header-destinations,
+/* 1 — the destinations. Shift+I, Shift+H and Shift+S still reach them. The
+   box itself stays and so does the bell in it: quiet notifications live only
+   in the bell, so it has to be reachable at every width, a phone included. */
+body[data-header-fit="1"] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host),
+body[data-header-fit="2"] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host),
+body[data-header-fit="3"] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host),
+body[data-header-fit="4"] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host),
 body[data-header-fit="1"] .dashboard-section.section-controls .header-zone-divider,
 body[data-header-fit="2"] .dashboard-section.section-controls .header-zone-divider,
 body[data-header-fit="3"] .dashboard-section.section-controls .header-zone-divider,
@@ -8872,8 +8964,9 @@ body[data-header-fit="4"] .dashboard-section.section-controls .date-badge-mobile
     body[data-header-clock] .dashboard-section.section-controls .header-identity .header-top-primary,
     body[data-header-clock] .dashboard-section.section-controls #date-badge-mobile,
     body[data-header-clock] .dashboard-section.section-controls .date-badge-mobile:not(:empty),
-    body[data-header-clock] .dashboard-section.section-controls .header-actions,
-    body[data-header-clock] .dashboard-section.section-controls .page-walk-hint {
+    body[data-header-clock] .dashboard-section.section-controls .page-walk-hint,
+    body[data-header-clock] .dashboard-section.section-controls .header-actions > :not(.header-destinations),
+    body[data-header-clock] .dashboard-section.section-controls .header-destinations > :not(.page-nav-bell-host) {
         display: none;
     }
 
@@ -8884,9 +8977,17 @@ body[data-header-fit="4"] .dashboard-section.section-controls .date-badge-mobile
            name plus a tab and a chip is 54px more than there is, and a name
            that is cut short still says where you are where a switcher pushed
            off the edge stops working. */
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto auto;
         padding: 0.5rem 0.75rem;
         gap: var(--space-2, 0.5rem);
+    }
+
+    /* What is left of the actions is the bell: a column of its own at the far
+       right, whichever way the clock and the switcher are placed. */
+    body[data-header-clock] .dashboard-section.section-controls .header-actions {
+        grid-column: 3;
+        grid-row: 1;
+        justify-self: end;
     }
 
     body[data-header-clock] .dashboard-section.section-controls .title {
@@ -10223,4 +10324,291 @@ body[data-action-bar="bottom"] #dashboard-layout {
     stroke-width: 1.4;
     stroke-linejoin: round;
     stroke-linecap: round;
+}
+
+/* ─── Clock: the large face, the moon and the sun ────────────────────────── */
+/*
+ * One column: the face, the date and the other places under it. Two columns
+ * wide: the same on the left and the moon and the sun on the right. The sky
+ * carries .dashboard-widget-wide-only, so a narrow tile drops it with no
+ * redraw, the way the weather tile drops its extra figures.
+ */
+.dashboard-clock {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.9rem;
+}
+
+.dashboard-clock-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.dashboard-clock-face {
+    width: min(100%, 11.5rem);
+    margin: 0 auto;
+}
+
+.dashboard-clock-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.dashboard-clock-ring {
+    fill: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    stroke: var(--border-primary);
+    stroke-width: 2;
+}
+
+.dashboard-clock-tick {
+    stroke: var(--text-tertiary);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+
+.dashboard-clock-tick-major {
+    stroke: var(--text-primary);
+    stroke-width: 4;
+}
+
+.dashboard-clock-num {
+    fill: var(--text-primary);
+    font-size: 20px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-clock-hand {
+    stroke-linecap: round;
+}
+
+.dashboard-clock-hand-hour {
+    stroke: var(--text-primary);
+    stroke-width: 7;
+}
+
+.dashboard-clock-hand-minute {
+    stroke: var(--text-primary);
+    stroke-width: 4.5;
+}
+
+.dashboard-clock-hand-second {
+    stroke: var(--accent-primary);
+    stroke-width: 2;
+}
+
+.dashboard-clock-hub {
+    fill: var(--accent-primary);
+}
+
+.dashboard-clock-date {
+    margin: 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85em;
+}
+
+.dashboard-clock-sky {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: center;
+    min-width: 0;
+}
+
+.dashboard-clock-moon {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.dashboard-clock-moon-svg {
+    flex: 0 0 auto;
+    width: 3.6rem;
+    height: 3.6rem;
+}
+
+.dashboard-clock-sky.is-south .dashboard-clock-moon-svg {
+    transform: scaleX(-1);
+}
+
+.dashboard-clock-moon-dark {
+    fill: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    stroke: var(--border-primary);
+    stroke-width: 2;
+}
+
+.dashboard-clock-moon-lit {
+    fill: var(--text-primary);
+}
+
+.dashboard-clock-sky-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.dashboard-clock-sky-text b {
+    font-weight: 600;
+}
+
+.dashboard-clock-sky-text span,
+.dashboard-clock-sun-note {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin: 0;
+}
+
+.dashboard-clock-sun {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dashboard-clock-sun-times {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dashboard-clock-sun-times div {
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-clock-sun-times span {
+    color: var(--text-secondary);
+    font-size: 0.8em;
+}
+
+.dashboard-clock-sun-times b {
+    font-size: 1.25em;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-clock-sun-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    overflow: hidden;
+}
+
+.dashboard-clock-sun-bar span {
+    display: block;
+    height: 100%;
+    background: var(--accent-primary);
+}
+
+@container (min-width: 28rem) {
+    .dashboard-clock {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: center;
+        gap: 1.4rem;
+    }
+}
+
+.dashboard-clock-sunline {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-clock-sunline[hidden] {
+    display: none;
+}
+
+.dashboard-clock-sunline > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.dashboard-clock-sunline-icon {
+    width: 1.1em;
+    height: 1.1em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.dashboard-clock-sunline-sun {
+    stroke: var(--accent-primary);
+}
+
+/* Two columns wide have the whole sun block; the short line is for one. */
+@container (min-width: 28rem) {
+    .dashboard-clock-narrow-only {
+        display: none;
+    }
+}
+
+/* ─── Countdown: what is left, large and centred, the moment under it ────── */
+.dashboard-countdown {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.4rem 0 0.2rem;
+    text-align: center;
+}
+
+.dashboard-countdown-figure {
+    font-size: 3.6em;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.dashboard-countdown-unit {
+    color: var(--accent-primary);
+    font-size: 0.95em;
+    font-weight: 600;
+    text-transform: lowercase;
+}
+
+.dashboard-countdown-when {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    margin-top: 0.7rem;
+    padding-top: 0.6rem;
+    width: 100%;
+    border-top: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-size: 0.85em;
+}
+
+.dashboard-countdown-when span + span {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Past the date: the figure is a memory, not a deadline. */
+.dashboard-countdown.is-past .dashboard-countdown-figure {
+    color: var(--text-secondary);
+}
+
+.dashboard-countdown.is-past .dashboard-countdown-unit {
+    color: var(--text-tertiary);
+}
+
+@container (min-width: 28rem) {
+    .dashboard-countdown-figure {
+        font-size: 4.6em;
+    }
 }

@@ -1,0 +1,167 @@
+/* One-time coach notes: a balloon with an accent border and an arrow on the
+   side that faces what it points at (data-side is where the balloon stands
+   in relation to its anchor). The anchor pulses a ring while the note is up.
+   Placed from script with position: fixed; --coach-arrow is the arrow's
+   distance along the balloon's edge. */
+.coach-note {
+    position: fixed;
+    z-index: calc(var(--layer-page-popover, 50) + 1);
+    width: min(19rem, calc(100vw - 16px));
+    box-sizing: border-box;
+    padding: 0.8rem 0.9rem 0.75rem;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    border: 2px solid var(--accent-primary);
+    border-radius: var(--radius-6, 0.65rem);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+    visibility: hidden;
+}
+
+.coach-note[data-side="below"] { transform-origin: var(--coach-arrow, 50%) -12px; }
+.coach-note[data-side="above"] { transform-origin: var(--coach-arrow, 50%) calc(100% + 12px); }
+.coach-note[data-side="left"] { transform-origin: calc(100% + 12px) var(--coach-arrow, 50%); }
+.coach-note[data-side="right"] { transform-origin: -12px var(--coach-arrow, 50%); }
+
+/* Measured first (a scaled box measures wrong), then shown and grown. */
+.coach-note.is-placed {
+    visibility: visible;
+    animation: coach-note-grow 220ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+
+@keyframes coach-note-grow {
+    from { opacity: 0; transform: scale(0.08); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.coach-note::before {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--background-secondary);
+    border: 0 solid var(--accent-primary);
+    transform: rotate(45deg);
+}
+
+.coach-note[data-side="below"]::before {
+    top: -8px;
+    left: calc(var(--coach-arrow, 50%) - 7px);
+    border-left-width: 2px;
+    border-top-width: 2px;
+}
+
+.coach-note[data-side="above"]::before {
+    bottom: -8px;
+    left: calc(var(--coach-arrow, 50%) - 7px);
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+}
+
+.coach-note[data-side="left"]::before {
+    right: -8px;
+    top: calc(var(--coach-arrow, 50%) - 7px);
+    border-right-width: 2px;
+    border-top-width: 2px;
+}
+
+.coach-note[data-side="right"]::before {
+    left: -8px;
+    top: calc(var(--coach-arrow, 50%) - 7px);
+    border-left-width: 2px;
+    border-bottom-width: 2px;
+}
+
+.coach-note[data-arrow="none"]::before {
+    display: none;
+}
+
+.coach-note-title {
+    margin: 0 0 0.3rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+.coach-note-title::before {
+    content: "\2726\00a0";
+}
+
+.coach-note-body {
+    margin: 0 0 0.6rem;
+    font-size: var(--text-sm, 0.85rem);
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.coach-note-ok {
+    display: block;
+    margin-left: auto;
+    padding: 0.3rem 0.9rem;
+    border: 0;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.coach-note-anchor-ring {
+    animation: coach-note-ring 1.6s ease-out infinite;
+}
+
+@keyframes coach-note-ring {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 55%, transparent); }
+    70% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent-primary) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* A note without an arrow outlines the whole anchor, following its rounded
+   shape with a little room around it. An outline, not a shadow: materials
+   paint their own shadows on docks and plates. */
+.coach-note-anchor-frame {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 4px;
+}
+
+/* A note that asks for one short text (the name to greet by). */
+.coach-note-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 0.6rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.45rem);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.coach-note-input:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
+.coach-note-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.coach-note-actions .coach-note-ok {
+    margin-left: 0;
+}
+
+.coach-note-skip {
+    padding: 0.3rem 0.8rem;
+    border: 0;
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.coach-note-skip:hover {
+    color: var(--text-primary);
+}

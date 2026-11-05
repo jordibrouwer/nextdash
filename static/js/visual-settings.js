@@ -385,6 +385,13 @@
         // "theme" is sent too: the saved setting may still be the colour the reader just left.
         const accent = /^[a-z]{3,8}$/.test(accentWord) ? `&neutralAccent=${accentWord}` : '';
         const url = `/api/theme.css?t=${Date.now()}${seed}${accent}`;
+        // The backdrops are not in that stylesheet; they follow the roll and the accent.
+        if (global.ThemeLoader && typeof global.ThemeLoader.reloadBackdropCSS === 'function') {
+            global.ThemeLoader.reloadBackdropCSS({
+                seed: options?.seed,
+                neutralAccent: accentWord
+            });
+        }
         // The page links the theme by a content hash. A refresh swaps that link
         // for one with a fresh query below. The inline form is still handled
         // for a page rendered before this change and left open in another tab.

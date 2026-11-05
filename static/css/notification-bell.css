@@ -1,0 +1,201 @@
+/* The notifications bell: the last thing in the navigation bar. A thin divider
+   and a round button, so it does not read as one more view. */
+.page-nav-bell-host {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--header-control-gap, 0.5rem);
+    flex: 0 0 auto;
+}
+.notification-bell-divider {
+    width: 1px;
+    height: 24px;
+    flex: 0 0 auto;
+    background: var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+.notification-bell-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--action-button-size, 28px) + 12px);
+    height: calc(var(--action-button-size, 28px) + 12px);
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    background: var(--surface-glass-page, var(--background-secondary));
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.notification-bell-button:hover,
+.notification-bell-button[aria-expanded="true"] {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+/* Same corner pill as the other destinations' counts: red for what needs you,
+   a neutral grey for what is merely there. */
+.notification-bell-badge {
+    position: absolute;
+    top: -6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--background-secondary) 92%, transparent);
+    z-index: 2;
+}
+.notification-bell-badge[hidden] { display: none; }
+.notification-bell-red { right: -6px; background: var(--accent-error); color: #fff; }
+.notification-bell-grey { right: -6px; background: var(--text-tertiary, #8a8a8a); color: var(--background-primary); }
+/* Both at once: red keeps the corner, grey steps in beside it. */
+.notification-bell-red:not([hidden]) ~ .notification-bell-grey { right: 12px; }
+
+.notification-bell-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: var(--layer-page-popover, 50);
+    width: min(24rem, calc(100vw - 1rem));
+    max-height: min(32rem, calc(100vh - 6rem));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.7rem);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 0.65rem);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+    color: var(--text-primary);
+}
+.notification-bell-panel[hidden] { display: none; }
+/* Only the body scrolls, so the head stays put; its scrollbar is hidden. */
+.notification-bell-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+}
+.notification-bell-body::-webkit-scrollbar { display: none; }
+/* Says there is more below, over the corner of the body. */
+.notification-bell-more {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+.notification-bell-more svg { width: 20px; height: 20px; }
+.notification-bell-more[hidden] { display: none; }
+.notification-bell-more:hover { border-color: var(--accent-primary); }
+.notification-bell-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
+.notification-bell-empty { margin: 0.4rem 0; color: var(--text-secondary); font-size: var(--text-sm, 0.85rem); }
+.notification-bell-group-head {
+    display: flex; justify-content: space-between; margin: 0.6rem 0 0.25rem;
+    font-size: var(--text-xs, 0.72rem); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+.notification-bell-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.notification-bell-row { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.35rem 0.4rem; border-radius: 8px; }
+.notification-bell-row.is-unread { background: color-mix(in srgb, var(--accent-primary) 8%, transparent); }
+.notification-bell-row-icon { flex: 0 0 auto; width: 1.4rem; text-align: center; }
+.notification-bell-row-body { min-width: 0; flex: 1 1 auto; display: grid; gap: 0.25rem; }
+.notification-bell-row-text { display: flex; gap: 0.5rem; justify-content: space-between; font-size: var(--text-sm, 0.85rem); }
+.notification-bell-row-time { flex: 0 0 auto; color: var(--text-secondary); font-size: var(--text-2xs, 0.72rem); }
+.notification-bell-row-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.notification-bell-action {
+    padding: 0.15rem 0.55rem; border-radius: var(--radius-pill, 999px); cursor: pointer;
+    border: 1px solid var(--border-primary); background: transparent; color: var(--text-secondary);
+    font: inherit; font-size: var(--text-xs, 0.78rem);
+}
+.notification-bell-action:hover { color: var(--text-primary); border-color: var(--accent-primary); }
+.notification-bell-action.is-primary { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--background-primary); }
+
+/* A phone: the bell is the right edge of the row, so the panel hangs from it
+   and is never wider than the screen with a margin either side. */
+@media (max-width: 767px) {
+    .notification-bell-panel {
+        width: min(360px, calc(100vw - 16px));
+    }
+}
+
+/* Drawing the eye. The bell glyph swings and rests; the badges swell while a
+   ring spreads from them and fades. prefers-reduced-motion is covered by
+   reduced-motion.css, which shortens every animation to nothing. */
+.notification-bell-button.is-shaking svg {
+    transform-origin: 50% 12%;
+    animation: notification-bell-shake 0.8s ease-in-out;
+}
+.notification-bell-badge.is-pulsing { animation: notification-bell-swell 1s ease-out; }
+.notification-bell-badge.is-pulsing::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 2px solid currentColor;
+    opacity: 0;
+    pointer-events: none;
+    animation: notification-bell-ring 1s ease-out;
+}
+.notification-bell-red.is-pulsing::after { border-color: var(--accent-error); }
+.notification-bell-grey.is-pulsing::after { border-color: var(--text-tertiary, #8a8a8a); }
+@keyframes notification-bell-shake {
+    0%, 100% { transform: rotate(0); }
+    15% { transform: rotate(18deg); }
+    30% { transform: rotate(-16deg); }
+    45% { transform: rotate(12deg); }
+    60% { transform: rotate(-9deg); }
+    75% { transform: rotate(5deg); }
+    90% { transform: rotate(-2deg); }
+}
+@keyframes notification-bell-swell {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.35); }
+}
+@keyframes notification-bell-ring {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Opening grows the panel out of the bell; closing shrinks it back in. The
+   origin is set from script to the bell's centre, wherever keepOnScreen()
+   moved the panel. Reduced motion is handled by reduced-motion.css. */
+.notification-bell-panel.is-growing {
+    animation: notification-bell-grow 180ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+
+.notification-bell-panel.is-shrinking {
+    animation: notification-bell-shrink 140ms ease-in both;
+    pointer-events: none;
+}
+
+@keyframes notification-bell-grow {
+    from { opacity: 0; transform: scale(0.08); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes notification-bell-shrink {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.08); }
+}

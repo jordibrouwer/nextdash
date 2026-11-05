@@ -89,6 +89,11 @@ func (c *configReader) enter(node *yaml.Node, depth int) bool {
 }
 
 func (c *configReader) add(row NetscapeBookmark) {
+	// Past the budget nothing is kept: a group read through an alias can hold
+	// far more services than the file has lines.
+	if c.failed {
+		return
+	}
 	c.rows = append(c.rows, row)
 	if len(c.rows) > dashboardConfigMaxRows {
 		c.failed = true
@@ -179,6 +184,9 @@ func (c *configReader) homepageGroups(seq *yaml.Node, inherited string, depth in
 	c.onPath[seq] = true
 	defer delete(c.onPath, seq)
 	for _, entry := range seq.Content {
+		if c.failed {
+			return
+		}
 		entry = resolveAlias(entry)
 		if entry.Kind != yaml.MappingNode {
 			continue
@@ -207,6 +215,9 @@ func (c *configReader) homepageGroup(group string, seq *yaml.Node, depth int) {
 	c.onPath[seq] = true
 	defer delete(c.onPath, seq)
 	for _, member := range seq.Content {
+		if c.failed {
+			return
+		}
 		member = resolveAlias(member)
 		if member.Kind != yaml.MappingNode {
 			continue

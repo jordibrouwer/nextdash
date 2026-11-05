@@ -359,6 +359,10 @@ func Run(files assetFS) {
 		r.HandleFunc("/api/widgets/"+string(beszelType), handlers.beszelWidgetHandler(beszelType)).Methods("GET", "OPTIONS")
 	}
 	r.HandleFunc("/api/widgets/beszel/setup", handlers.beszelSetupHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/adguard", handlers.dnsWidgetHandler(WidgetTypeAdguard, handlers.fetchAdguard)).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/widgets/adguard/setup", handlers.dnsSetupHandler("AdGuard", handlers.adguardProbe)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/pihole", handlers.dnsWidgetHandler(WidgetTypePihole, handlers.fetchPihole)).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/widgets/pihole/setup", handlers.dnsSetupHandler("Pi-hole", handlers.piholeProbe)).Methods("POST", "OPTIONS")
 	registerGlancesViewRoutes(r, handlers)
 	r.HandleFunc("/api/widgets/homeassistant", handlers.homeAssistantWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/homeassistant/setup", handlers.homeAssistantSetupHandler).Methods("POST", "OPTIONS")

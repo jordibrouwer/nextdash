@@ -8,6 +8,8 @@
  * invitations, with the size of the job stated up front — "10 links to review:
  * 4 broken, 3 never opened, 3 you have not opened in a year".
  *
+ * It is offered as a quiet row in the notifications bell, not in the corner.
+ *
  * Bounded and finishable is the whole design. A session takes ten, ends, counts
  * what was dealt with, and can be declared done for the day. A number that never
  * ends is a number people learn to ignore; the Inbox already understands this
@@ -22,12 +24,6 @@
     // asking about them teaches people to dismiss the card.
     const MIN_TO_OFFER = 5;
     const DONE_KEY = 'nextdashHealthReviewDoneOn';
-    // Deliberately a separate key from DONE_KEY rather than a far-future value
-    // in it: isDoneToday() is exported and read at the end of a focus session,
-    // where it has to keep meaning exactly "done for today".
-    const SNOOZE_KEY = 'nextdashHealthReviewSnoozeUntil';
-    const SNOOZE_DAYS = 30;
-    const SHOW_DELAY_MS = 9000;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -68,33 +64,6 @@
     function markDoneToday() {
         try {
             global.localStorage?.setItem(DONE_KEY, todayKey());
-        } catch {
-            /* nothing to fall back to, and nothing worth breaking over */
-        }
-    }
-
-    /**
-     * A month of quiet, for someone who is not going to do this now.
-     *
-     * "Not today" expires overnight, which is right for a postponement and
-     * wrong for a decision. Nothing here touches a bookmark: this is only about
-     * whether the corner asks. Muting what a bookmark *reports* is the health
-     * view's own per-flag ignore, which is a different thing entirely.
-     */
-    function isSnoozed() {
-        try {
-            const until = Number(global.localStorage?.getItem(SNOOZE_KEY));
-            return Number.isFinite(until) && until > Date.now();
-        } catch {
-            // Same reasoning as isDoneToday: asking again is the smaller failure.
-            return false;
-        }
-    }
-
-    function remindInThirtyDays() {
-        try {
-            const until = Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000;
-            global.localStorage?.setItem(SNOOZE_KEY, String(until));
         } catch {
             /* nothing to fall back to, and nothing worth breaking over */
         }
@@ -159,110 +128,82 @@
         return Boolean(config.startLibraryReviewSession?.({ limit }));
     }
 
+    /**
+     * The bell row: how many links are worth a session, or null when the offer
+     * is off, done for today, held by the weekly digest, or below the line.
+     */
+    async function reviewState() {
+        /*
+         * A switch of its own, in Behavior → General.
+         *
+         * Until now the only way to stop this offer was to switch off link
+         * checking, which is a far heavier thing to give up than the
+         * offer: the checking is the feature, the offer is the reminder.
+         * Default on, so an install that never answered keeps what it has.
+         */
+        if (dash()?.settings?.enableHealthReviewNotice === false) return null;
+        // "Done for today" at the end of a session still means what it says.
+        if (isDoneToday()) return null;
+        if (dash()?.health?.isEnabled?.() === false) return null;
+        // The weekly digest offers the same links; on its day it goes first.
+        if (await global.DigestNotice?.holdsTheWeek?.()) return null;
+        const counts = await reviewCounts();
+        if (!counts || counts.total < MIN_TO_OFFER) return null;
+        lastCounts = counts;
+        const detail = describeCounts(counts);
+        const title = t('dashboard.healthReviewNoticeTitle', '{count} links to review', { count: counts.total });
+        return { count: counts.total, text: detail ? `${title}: ${detail}` : title };
+    }
+
     const card = global.NoticeCard.define({
         id: 'health-review-notice',
-        showDelayMs: SHOW_DELAY_MS,
         title: () => t('dashboard.healthReviewNoticeTitle', '{count} links to review',
             { count: Math.min(SESSION_SIZE, lastCounts?.total || SESSION_SIZE) }),
-        body: () => {
-            const detail = lastCounts ? describeCounts(lastCounts) : '';
-            const lead = t('dashboard.healthReviewNoticeBody',
-                'Two minutes, one at a time: re-check it, open it, or let it go.');
-            return detail ? `${detail}. ${lead}` : lead;
-        },
-        dismissLabel: () => t('dashboard.healthReviewNoticeDismiss', 'Not today'),
-        dismissName: 'later',
-        canShow: async () => {
-            /*
-             * A switch of its own, in Behavior → General.
-             *
-             * Until now the only way to stop this card was to switch off link
-             * checking, which is a far heavier thing to give up than the
-             * offer: the checking is the feature, the card is the reminder.
-             * Default on, so an install that never answered keeps what it has.
-             */
-            if (dash()?.settings?.enableHealthReviewNotice === false) return false;
-            if (isDoneToday()) return false;
-            if (isSnoozed()) return false;
-            if (dash()?.health?.isEnabled?.() === false) return false;
-            // The weekly digest offers the same links; on its day it goes first.
-            if (await global.DigestNotice?.holdsTheWeek?.()) return false;
-            const counts = await reviewCounts();
-            if (!counts || counts.total < MIN_TO_OFFER) return false;
-            lastCounts = counts;
-            return true;
-        },
-        // The × and "Not today" are the same answer: not now, ask again tomorrow.
-        onDismiss: markDoneToday,
-        actionAttr: 'data-health-review-action',
-        actions: [
-            {
-                name: 'start',
-                label: () => t('dashboard.healthReviewNoticeStart', 'Start'),
-                primary: true,
-                onClick: (handle) => {
-                    handle.close();
-                    void start();
+        bell: {
+            kind: 'quiet',
+            group: 'cleanup',
+            icon: '\u{1FA7A}',
+            no: 'state',
+            state: reviewState,
+            actions: [
+                {
+                    label: () => t('dashboard.healthReviewNoticeStart', 'Start'),
+                    primary: true,
+                    onClick: () => { void start(); },
                 },
-            },
-            {
-                name: 'later',
-                label: () => t('dashboard.healthReviewNoticeLater', 'Not today'),
-                onClick: (handle) => { markDoneToday(); handle.close(); },
-            },
-            // Not "Ignore": in this app that word means a bookmark's health
-            // condition stops being reported. This only postpones the offer.
-            {
-                name: 'remind',
-                quiet: true,
-                label: () => t('dashboard.healthReviewNoticeRemindLater', 'Remind me in 30 days'),
-                onClick: (handle) => { remindInThirtyDays(); handle.close(); },
-            },
-        ],
+            ],
+        },
     });
 
     /*
-     * The second card: the last link check is old and nothing is going to run
+     * The second row: the last link check is old and nothing is going to run
      * another.
      *
      * Background re-checks are on by default, so this only meets an install
      * that switched them off. Switching them off is a fine answer; what it
      * leaves is a Health view quietly going out of date, and the way to learn
      * that was to open it. So once the newest check is over a week old the
-     * corner says so, and offers the two ways out: check now, or let the
+     * bell says so, and offers the two ways out: check now, or let the
      * server do it every day. Turning it on is an explicit write, never a
      * migration of the stored false.
      */
     const RECHECK_STALE_DAYS = 7;
-    const RECHECK_DONE_KEY = 'nextdashHealthRecheckOfferDoneOn';
-    const RECHECK_SNOOZE_KEY = 'nextdashHealthRecheckOfferSnoozeUntil';
     const DAY_MS = 24 * 60 * 60 * 1000;
 
     function recheckTrack(action) {
         global.nextdashTrack?.('health-recheck-offer', { action });
     }
 
-    function recheckDoneToday() {
-        try { return global.localStorage?.getItem(RECHECK_DONE_KEY) === todayKey(); } catch { return false; }
-    }
-
-    function recheckSnoozed() {
-        try {
-            const until = Number(global.localStorage?.getItem(RECHECK_SNOOZE_KEY));
-            return Number.isFinite(until) && until > Date.now();
-        } catch { return false; }
-    }
-
     let lastCheckAgeDays = RECHECK_STALE_DAYS;
 
-    /** Whole days since the newest check, or null when the offer has no ground. */
-    async function staleCheckDays() {
+    /** Whole days and time of the newest check, or null when the offer has no ground. */
+    async function staleCheck() {
         const summary = await global.HealthBadgeUtils?.fetchBookmarkHealthSummary?.();
         if (!summary || !(Number(summary.monitoredCount) > 0)) return null;
         const at = Number(summary.lastCheckedAt) || 0;
         if (!at) return null;
         const days = Math.floor((Date.now() - at) / DAY_MS);
-        return days >= RECHECK_STALE_DAYS ? days : null;
+        return days >= RECHECK_STALE_DAYS ? { days, at } : null;
     }
 
     async function recheckNow() {
@@ -270,8 +211,10 @@
         try {
             await fetcher('/api/health/retest-all?scope=all', { method: 'POST' });
             await dash()?.updateHealthBadge?.();
+            // The newest check is new now, so the row has nothing left to say.
+            void global.NotificationBell?.refreshAll?.();
         } catch {
-            /* the health view reports a failed check itself; the card has closed */
+            /* the health view reports a failed check itself */
         }
     }
 
@@ -283,70 +226,57 @@
         try { await d.saveSettings?.({ keys: ['healthAutoRecheckEnabled', 'healthAutoRecheckIntervalHours'] }); } catch { /* the setting stays visible in Behavior */ }
     }
 
+    /**
+     * The bell row: how many days since the newest check, once that is a week
+     * or more. The date of that check is the row's id, so "No" holds until a
+     * newer check has come and gone stale again.
+     */
+    async function recheckState() {
+        const settings = dash()?.settings;
+        if (settings?.enableHealthRecheckNotice === false) return null;
+        if (settings?.healthAutoRecheckEnabled !== false) return null;
+        if (dash()?.health?.isEnabled?.() === false) return null;
+        const stale = await staleCheck();
+        if (!stale) return null;
+        lastCheckAgeDays = stale.days;
+        return {
+            count: stale.days,
+            ids: [new Date(stale.at).toISOString().slice(0, 10)],
+            text: t('dashboard.healthRecheckOfferTitle', 'Last link check was {days} days ago', { days: stale.days }),
+        };
+    }
+
     const recheckCard = global.NoticeCard.define({
         id: 'health-recheck-offer',
-        showDelayMs: SHOW_DELAY_MS,
         title: () => t('dashboard.healthRecheckOfferTitle', 'Last link check was {days} days ago',
             { days: lastCheckAgeDays }),
-        body: () => t('dashboard.healthRecheckOfferBody',
-            'Re-check your links now, or let nextDash re-check them every day.'),
-        dismissLabel: () => t('dashboard.healthRecheckOfferLater', 'Not now'),
-        dismissName: 'later',
-        canShow: async () => {
-            const settings = dash()?.settings;
-            if (settings?.enableHealthRecheckNotice === false) return false;
-            if (settings?.healthAutoRecheckEnabled !== false) return false;
-            if (recheckDoneToday() || recheckSnoozed()) return false;
-            if (dash()?.health?.isEnabled?.() === false) return false;
-            // One health card at a time; the review offer goes first.
-            if (document.querySelector('.health-review-notice-card')) return false;
-            const days = await staleCheckDays();
-            if (days === null) return false;
-            lastCheckAgeDays = days;
-            return true;
-        },
-        onShown: () => recheckTrack('shown'),
-        onDismiss: () => { markRecheckDone(); recheckTrack('later'); },
-        actionAttr: 'data-health-recheck-action',
-        actions: [
-            {
-                name: 'now',
-                label: () => t('dashboard.healthRecheckOfferNow', 'Re-check now'),
-                primary: true,
-                onClick: (handle) => { recheckTrack('now'); handle.close(); void recheckNow(); },
-            },
-            {
-                name: 'auto',
-                label: () => t('dashboard.healthRecheckOfferEveryDay', 'Every day'),
-                onClick: (handle) => { recheckTrack('auto'); handle.close(); void recheckEveryDay(); },
-            },
-            {
-                name: 'later',
-                label: () => t('dashboard.healthRecheckOfferLater', 'Not now'),
-                onClick: (handle) => { markRecheckDone(); recheckTrack('later'); handle.close(); },
-            },
-            {
-                name: 'remind',
-                quiet: true,
-                label: () => t('dashboard.healthRecheckOfferRemind', 'Remind me in 30 days'),
-                onClick: (handle) => {
-                    try { global.localStorage?.setItem(RECHECK_SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * DAY_MS)); } catch { /* storage off */ }
-                    recheckTrack('remind');
-                    handle.close();
+        bell: {
+            kind: 'quiet',
+            group: 'cleanup',
+            icon: '\u{1F50E}',
+            no: 'state',
+            state: recheckState,
+            actions: [
+                {
+                    label: () => t('dashboard.healthRecheckOfferNow', 'Re-check now'),
+                    primary: true,
+                    onClick: () => { recheckTrack('now'); void recheckNow(); },
                 },
-            },
-        ],
+                {
+                    label: () => t('dashboard.healthRecheckOfferEveryDay', 'Every day'),
+                    onClick: () => {
+                        recheckTrack('auto');
+                        // Turning the daily check on makes the row's own gate false.
+                        void recheckEveryDay().then(() => global.NotificationBell?.refreshAll?.());
+                    },
+                },
+            ],
+        },
     });
-
-    function markRecheckDone() {
-        try { global.localStorage?.setItem(RECHECK_DONE_KEY, todayKey()); } catch { /* storage off */ }
-    }
 
     global.HealthRecheckOffer = {
         STALE_DAYS: RECHECK_STALE_DAYS,
-        render: recheckCard.render,
-        shouldShow: recheckCard.shouldShow,
-        isSnoozed: recheckSnoozed,
+        state: recheckState,
     };
 
     if (document.readyState === 'loading') {
@@ -365,9 +295,6 @@
         describeCounts,
         isDoneToday,
         markDoneToday,
-        isSnoozed,
-        remindInThirtyDays,
-        render: card.render,
-        shouldShow: card.shouldShow,
+        state: reviewState,
     };
 }(typeof window !== 'undefined' ? window : globalThis));

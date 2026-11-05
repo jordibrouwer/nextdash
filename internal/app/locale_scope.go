@@ -25,13 +25,38 @@ import (
 // is only those keys, and no scope at all is the whole file, which is what an
 // older client or a direct fetch still gets.
 
-const localeHelpPrefix = "help"
+// The Overview's news stream is the second such block: 944 keys, 99 KB, read only
+// by the config module, which loads the help scope before it draws anything. It
+// rides in that scope rather than getting a third one -- the client already asks
+// for it at the right moment, and has no second moment to ask at.
+//
+// A prefix is only lazy if nothing outside the config module reads a key under
+// it. `overview*` is: its keys are built inside dashboard-config.js, apart from
+// the two below.
+var localeLazyPrefixes = []string{"help", "overview"}
 
-// localeHelpAlways are help-prefixed keys read outside the config module — the
-// What's new modal prints the Ko-fi label — so they stay in the core scope
-// whatever their name suggests.
+// localeHelpAlways are keys under those prefixes that are read outside the
+// config module -- the What's new modal prints the Ko-fi label and the update
+// link, the update notice prints the update body -- so they stay in the core
+// scope whatever their name suggests.
 var localeHelpAlways = map[string]bool{
-	"helpSupportKofi": true,
+	"helpSupportKofi":             true,
+	"overviewUpdateAvailableBody": true,
+	"overviewUpdateAvailableCta":  true,
+	"overviewUpdateDismiss":       true,
+}
+
+// localeKeyIsLazy is true for a config key that travels in the help scope.
+func localeKeyIsLazy(key string) bool {
+	if localeHelpAlways[key] {
+		return false
+	}
+	for _, prefix := range localeLazyPrefixes {
+		if strings.HasPrefix(key, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // A cached narrowing, with what the file looked like when it was made. Splitting
@@ -165,8 +190,7 @@ func narrowLocale(raw []byte, scope string) ([]byte, error) {
 
 	kept := make(map[string]json.RawMessage, len(config))
 	for k, v := range config {
-		isHelp := strings.HasPrefix(k, localeHelpPrefix) && !localeHelpAlways[k]
-		if (scope == "help") == isHelp {
+		if (scope == "help") == localeKeyIsLazy(k) {
 			kept[k] = v
 		}
 	}

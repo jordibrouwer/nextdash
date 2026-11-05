@@ -2,6 +2,89 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureNotificationBellTitle",
+      "titleFallback": "A notifications bell keeps what needs you",
+      "whatKey": "config.overviewNewFeatureNotificationBellWhat",
+      "whatFallback": "Questions, notices and tips popped up on the dashboard, over whatever you were doing.",
+      "howKey": "config.overviewNewFeatureNotificationBellHow",
+      "howFallback": "New things wait in the bell in the navigation bar. It shakes and rings once, shows two tips a day, and a row you took up stays away.",
+      "enableKey": "config.overviewNewFeatureNotificationBellEnable",
+      "enableFallback": "Click the bell in the navigation bar. The tone is Config → Behavior → Privacy & sync → Bell sound.",
+      "ctaKey": "config.overviewNewFeatureNotificationBellCta",
+      "ctaFallback": "Open Behavior →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "privacy"
+      },
+      "since": "v1.26.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureGreetingClockTitle",
+      "titleFallback": "A large clock and a greeting with your name",
+      "whatKey": "config.overviewNewFeatureGreetingClockWhat",
+      "whatFallback": "The header showed the time in one small line, and nothing said who the dashboard was for.",
+      "howKey": "config.overviewNewFeatureGreetingClockHow",
+      "howFallback": "The clock placement Large clock, greeting beside it draws the time large with a greeting on its side. Add your name and it says Good evening, Jordi.",
+      "enableKey": "config.overviewNewFeatureGreetingClockEnable",
+      "enableFallback": "Config → Appearance → Date & weather → Greeting.",
+      "ctaKey": "config.overviewNewFeatureGreetingClockCta",
+      "ctaFallback": "Open Date & weather →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "datetime"
+      },
+      "since": "v1.26.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureClockFaceTitle",
+      "titleFallback": "The Clock widget has a face, the moon and the sun",
+      "whatKey": "config.overviewNewFeatureClockFaceWhat",
+      "whatFallback": "The Clock widget was a row of digits, and showed nothing of the day or the night.",
+      "howKey": "config.overviewNewFeatureClockFaceHow",
+      "howFallback": "A large analogue clock with a seconds hand, other places under it, the moon with its phase, and sunrise, sunset and daylight for your weather location.",
+      "enableKey": "config.overviewNewFeatureClockFaceEnable",
+      "enableFallback": "Add or edit a Clock widget in Config → Widgets.",
+      "ctaKey": "config.overviewNewFeatureClockFaceCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.26.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureDnsBlockersTitle",
+      "titleFallback": "AdGuard Home and Pi-hole widgets",
+      "whatKey": "config.overviewNewFeatureDnsBlockersWhat",
+      "whatFallback": "Your DNS blocker lived in its own tab, away from the dashboard.",
+      "howKey": "config.overviewNewFeatureDnsBlockersHow",
+      "howFallback": "One tile for both: queries, how many were blocked, a day by the hour, and the top blocked domains and clients, in four looks.",
+      "enableKey": "config.overviewNewFeatureDnsBlockersEnable",
+      "enableFallback": "Add a widget in Config → Widgets and pick AdGuard Home or Pi-hole.",
+      "ctaKey": "config.overviewNewFeatureDnsBlockersCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.26.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBrassDefaultTitle",
+      "titleFallback": "Tarnished Brass is the look of a new install",
+      "whatKey": "config.overviewNewFeatureBrassDefaultWhat",
+      "whatFallback": "A new install started in the same plain look as every other dashboard.",
+      "howKey": "config.overviewNewFeatureBrassDefaultHow",
+      "howFallback": "A new install opens in Tarnished Brass, dark and warm. An install that already chose a look keeps it.",
+      "enableKey": "config.overviewNewFeatureBrassDefaultEnable",
+      "enableFallback": "Config → Appearance → General, or Shift + A for the theme studio.",
+      "ctaKey": "config.overviewNewFeatureBrassDefaultCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "general"
+      },
+      "since": "v1.26.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureBackdropsTitle",
       "titleFallback": "New backdrops give the themes a whole new look. Try it!",
       "whatKey": "config.overviewNewFeatureBackdropsWhat",
