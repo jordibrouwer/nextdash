@@ -28,11 +28,12 @@ Key features:
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Edit mode: change categories, widgets and pages right on the dashboard
+• A notifications bell: questions, notices and tips wait there, with their age, instead of popping up over your work
 • A checkup and a weekly digest that tell you what needs attention
 • Watch feeds: follow the RSS, Atom or JSON Feed of sites you choose, with news on the bookmark, in its preview card and in a news window
 • An assistant you ask in plain words, on Claude, OpenAI or a server of your own: it looks things up and changes nothing by itself
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
-• Widgets beside your bookmarks: 51 built-in kinds (tabs, clock, countdown, uptime, feeds, weather, disks, containers and more) plus a Custom widget for any JSON API
+• Widgets beside your bookmarks: 53 built-in kinds (tabs, clock, countdown, uptime, feeds, weather, disks, containers and more) plus a Custom widget for any JSON API
 • Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library
 • Finds the web apps in your Docker containers and offers them as bookmarks, with an icon and a status check (needs the Docker socket below)
 • Glances on the dashboard: a page for the hosts you run Glances on, with processes, containers, graphs and incidents, and a widget for one host
@@ -56,6 +57,19 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.26.1 (2026-11-05)
+- Watch feeds: news nobody opened stops counting after a day (4 hours to 30 days in Config), the hover card pages through ten items and names the total, and the count reads 9+ from ten
+- Notifications: new watched news is one bell row with its own chime and a nodding bell, and every row shows how old it is
+- Notifications: the bell shakes and pulses every hour while something is unread, and rings only for more, not for less
+- Fixes: the bell panel draws over the Inbox, Containers and Glances headers; no hover card in the phone layout; no dot on page tabs
+
+### v1.26.0 (2026-11-05)
+- Notifications: a bell in the navigation bar holds questions, notices and two tips a day instead of popping up
+- Header: a large clock with a greeting by name
+- Widgets: a Clock with a face, the moon and the sun, a Countdown with a large figure, and AdGuard Home and Pi-hole widgets
+- Start-up: the theme stylesheet shrinks from 9.4 MB to 379 KB, and Tarnished Brass is the theme a new install starts on
+- Fixes: eight from a code review, among them a decimal comma in the calculator and a Tabs widget off its schedule
+
 ### v1.25.1 (2026-11-04)
 - Manual: a heading for the times and days a widget shows, the Watch feeds news widget, and the settings of each widget kind
 - Manual: the phone settings and every search command and key that was missing
@@ -74,20 +88,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Watch feeds: the news popover has its Reader button on a phone too
 - Rows: a new install starts without row status (online/offline and ping times)
 - Tag cloud: it keeps its place when it is drawn again
-
-### v1.24.1 (2026-11-02)
-- Watch feeds: the One column news window shows one article at a time, also when nothing is new
-- Watch feeds: the toast after adding a feed says news shows when the site publishes something new
-- Manual: Watch feeds has a chapter of its own
-
-### v1.24.0 (2026-11-02)
-- Watch feeds: follow the RSS, Atom or JSON Feed of any site, with a stripe, a badge and the newest headline on the bookmark, a preview card that leads with the news, and a news window on Shift+N in three layouts
-- Appearance: Tidal Slate (dark) is the theme a new install starts on
-- Bookmarks view: Ctrl/Cmd+A and a button select every bookmark shown
-- Health: a server with no connection holds its failures back, and the first 15 minutes after a start hold a bookmark's first failed check
-- Action bar: resting on a button shows its name first, then its key
-- Notices: four hints are toasts now
-- Fixes: an unreadable file is never overwritten
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -95,7 +95,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-11-04</Date>
+  <Date>2026-11-05</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
