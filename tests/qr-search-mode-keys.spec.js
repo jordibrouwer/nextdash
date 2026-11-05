@@ -32,19 +32,19 @@ const mode = (page) => page.evaluate(() => !!window.dashboardInstance.settings.i
 const qr = (page) => page.locator('#app-modal .modal.bookmark-qr-modal');
 const toasts = (page) => page.evaluate(() => window.__aliasToasts);
 
-test('Shift+Q with a row selected opens the QR code', async ({ page }) => {
+test('Q with a row selected opens the QR code', async ({ page }) => {
     await load(page, { selectRow: true });
     const before = await mode(page);
-    await page.keyboard.press('Shift+Q');
+    await page.keyboard.press('q');
     await expect(qr(page)).toBeVisible();
     expect(await mode(page)).toBe(before);
 });
 
-test('Shift+J with a row selected still opens it and names Shift + Q', async ({ page }) => {
+test('Shift+J with a row selected still opens it and names Q', async ({ page }) => {
     await load(page, { selectRow: true });
     await page.keyboard.press('Shift+J');
     await expect(qr(page)).toBeVisible();
-    expect((await toasts(page)).some((m) => m.includes('Shift + J') && m.includes('Shift + Q'))).toBe(true);
+    expect((await toasts(page)).some((m) => m.includes('Shift+J') && m.includes('Q'))).toBe(true);
 });
 
 test('Shift+X with no row switches the search mode', async ({ page }) => {
@@ -55,12 +55,14 @@ test('Shift+X with no row switches the search mode', async ({ page }) => {
     await expect(qr(page)).toHaveCount(0);
 });
 
-test('Shift+Q with no row still switches the mode and names Shift + X', async ({ page }) => {
+test('Shift+Q is unassigned: it neither switches the mode nor opens the QR code', async ({ page }) => {
     await load(page);
     const before = await mode(page);
     await page.keyboard.press('Shift+Q');
-    await expect.poll(() => mode(page)).toBe(!before);
-    expect((await toasts(page)).some((m) => m.includes('Shift + Q') && m.includes('Shift + X'))).toBe(true);
+    // Nothing visible changes, so give the key handler time to act first.
+    await page.waitForTimeout(400);
+    expect(await mode(page)).toBe(before);
+    await expect(qr(page)).toHaveCount(0);
 });
 
 test('Shift+X with a row selected ticks the whole category, not the mode', async ({ page }) => {

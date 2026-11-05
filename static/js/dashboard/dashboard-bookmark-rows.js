@@ -249,15 +249,14 @@ class DashboardBookmarkRows {
                     { duration, undoCallback }
                 );
             } else {
-                d.showNotification(
-                    d.formatDashboardLabel(
-                        'movedToCategory',
-                        { name: catName },
-                        `Moved to "${catName}"`
-                    ),
-                    'success',
-                    { duration, undoCallback }
+                const movedMessage = d.formatDashboardLabel(
+                    'movedToCategory',
+                    { name: catName },
+                    `Moved to "${catName}"`
                 );
+                // Ctrl/Cmd+Z answers this notice too (keyboard-navigation.js).
+                d._keyUndoMessage = movedMessage;
+                d.showNotification(movedMessage, 'success', { duration, undoCallback });
             }
         }
 

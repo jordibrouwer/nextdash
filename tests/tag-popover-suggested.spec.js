@@ -10,7 +10,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * the bookmark form all knew. The suggestions stand at the top, and taking
  * one is the same click as any other tag in the list.
  */
-test('Shift+T shows the tag the row\'s site agrees on, and a click adds it', async ({ page }) => {
+test('T shows the tag the row\'s site agrees on, and a click adds it', async ({ page }) => {
     // A host of its own, so a second copy from an earlier test or a retry is
     // never the row selected, and the seeds are the only evidence.
     const host = `pop-${Date.now()}.example`;
@@ -43,7 +43,7 @@ test('Shift+T shows the tag the row\'s site agrees on, and a click adds it', asy
         const el = document.querySelector(`.bookmark-link[data-bookmark-url="${u}"]`);
         window.dashboardInstance.keyboardNavigation.selectBookmarkRow(el);
     }, url);
-    await page.keyboard.press('Shift+T');
+    await page.keyboard.press('t');
     const suggested = page.locator('#tag-popover .tag-popover-suggested .move-popover-item[data-tag="homelab"]');
     await expect(suggested).toBeVisible();
     await suggested.click();
@@ -51,7 +51,7 @@ test('Shift+T shows the tag the row\'s site agrees on, and a click adds it', asy
         .find((b) => b.url === u)?.tags || [], url)).toContain('homelab');
 });
 
-test('Shift+T opens at the top of its list, suggestions in view, however long the list', async ({ page }) => {
+test('T opens at the top of its list, suggestions in view, however long the list', async ({ page }) => {
     const host = `top-${Date.now()}.example`;
     await page.setViewportSize({ width: 1400, height: 800 });
     await markWhatsNewSeen(page);
@@ -86,7 +86,7 @@ test('Shift+T opens at the top of its list, suggestions in view, however long th
         const el = document.querySelector(`.bookmark-link[data-bookmark-url="${u}"]`);
         window.dashboardInstance.keyboardNavigation.selectBookmarkRow(el);
     }, url);
-    await page.keyboard.press('Shift+T');
+    await page.keyboard.press('t');
     const pop = page.locator('#tag-popover');
     await expect(pop).toBeVisible();
     const state = await pop.evaluate((el) => {

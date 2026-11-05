@@ -243,6 +243,7 @@ class DashboardMultiSelect {
         });
         document.body.classList.toggle('has-multi-selection', this.isActive());
         this.renderToolbar();
+        this.dash.keyboardNavigation?._syncModeStrip?.();
     }
 
     /**

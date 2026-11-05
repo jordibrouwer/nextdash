@@ -6,7 +6,7 @@ const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 /**
  * A bookmark as a QR code, to open it on a phone.
  *
- * Every entry opens the same window: the right-click menu, Shift+Q on a row,
+ * Every entry opens the same window: the right-click menu, Q on a row,
  * and in the Bookmarks view the row menu and Details → Address. Each test goes
  * in through the control a user would use, then reads the window itself.
  */
@@ -83,9 +83,9 @@ test.describe('bookmark QR code', () => {
         expect(await page.evaluate(() => window.__copied)).toEqual([bookmark.url]);
     });
 
-    test('Shift+Q opens it for the selected row, and Escape closes it', async ({ page }) => {
+    test('Q opens it for the selected row, and Escape closes it', async ({ page }) => {
         const bookmark = await dashboardWithSelectedRow(page);
-        await page.keyboard.press('Shift+Q');
+        await page.keyboard.press('q');
         await expectQrFor(page, bookmark);
         await page.keyboard.press('Escape');
         await expect(modal(page)).toBeHidden();

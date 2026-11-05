@@ -53,10 +53,17 @@ test('Shift+P with no row opens the Pages panel, and again closes it', async ({ 
     await expect(page.locator('.page-overview-modal')).toHaveCount(0);
 });
 
-test('Shift+P with a bookmark selected pins it, not the Pages panel', async ({ page }) => {
+test('P with a bookmark selected pins it, not the Pages panel', async ({ page }) => {
     await loadDashboard(page);
     await page.keyboard.press('ArrowDown');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.keyboardNavigation.currentIndex)).toBeGreaterThanOrEqual(0);
-    await page.keyboard.press('Shift+P');
-    await expect(page.locator('.page-overview-modal')).toHaveCount(0);
+    const pinned = () => page.evaluate(() => !!window.dashboardInstance.keyboardNavigation.getSelectedBookmark()?.pinned);
+    const before = await pinned();
+    try {
+        await page.keyboard.press('p');
+        await expect.poll(pinned, { timeout: 5000 }).toBe(!before);
+        await expect(page.locator('.page-overview-modal')).toHaveCount(0);
+    } finally {
+        if ((await pinned()) !== before) await page.keyboard.press('p');
+    }
 });

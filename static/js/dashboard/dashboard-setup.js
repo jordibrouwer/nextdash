@@ -587,20 +587,15 @@ class DashboardSetup {
             // letters find shortcuts — is the kind of thing you want to change
             // for one search and change back, and walking to Behavior → Search
             // for that is longer than the search itself.
-            // X switches the mode now (Q is the QR code of a selected bookmark).
-            // With the cursor on a bookmark row Shift+X ticks the whole category
-            // instead, and Shift+Q is the QR code; neither reaches here. Shift+Q
-            // with no row is the old key and says so for a couple of releases.
-            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && (e.code === 'KeyX' || e.code === 'KeyQ')
+            // Shift+X switches the mode. With the cursor on a bookmark row Shift+X
+            // ticks the whole category instead (a selection key, not an action),
+            // so it does not reach here. Shift+Q is unassigned: q is the QR code
+            // of the bookmark under the cursor.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyX'
                 && d.isBookmarksView?.() && !d.keyboardNavigation?._cursorOnBookmarkRow?.()) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (e.code === 'KeyQ') {
-                    window.nextdashRecordKey?.('Shift + Q');
-                    window.ShiftKeyAliases?.notice('Shift + Q', 'Shift + X');
-                } else {
-                    window.nextdashRecordKey?.('Shift + X');
-                }
+                window.nextdashRecordKey?.('Shift + X');
                 void d.toggleSearchMode?.();
                 return;
             }

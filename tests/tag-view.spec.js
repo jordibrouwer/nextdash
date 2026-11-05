@@ -93,7 +93,7 @@ test.describe('getting there and back', () => {
         await expect(page.locator('#dashboard-layout .category')).toHaveCount(0);
     });
 
-    test('t on a selected row opens the view', async ({ page }) => {
+    test('f on a selected row opens the view', async ({ page }) => {
         await page.evaluate((url) => {
             const kn = window.dashboardInstance.keyboardNavigation;
             kn.updateNavigableElements();
@@ -101,7 +101,7 @@ test.describe('getting there and back', () => {
             kn.currentIndex = i;
             kn.highlightCurrentElement();
         }, `https://tv-a-${STAMP}.example.com/`);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect(view(page)).toBeVisible();
         await expect.poll(() => hash(page)).toBe(`#tag/${TAG}`);
     });
@@ -161,7 +161,7 @@ test.describe('getting there and back', () => {
             kn.highlightCurrentElement();
         }, `https://tv-a-${STAMP}.example.com/`);
         await link.hover();
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect(view(page)).toBeVisible();
         // Past the hover delay and the preview fetch.
         await page.waitForTimeout(1_500);

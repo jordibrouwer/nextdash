@@ -157,7 +157,7 @@ test('the tag popover offers Read page when nothing is known about a site', asyn
     await expect(row).toBeVisible({ timeout: 15_000 });
     await row.evaluate((el) => window.dashboardInstance.keyboardNavigation.selectBookmarkRow(el));
 
-    await page.keyboard.press('Shift+T');
+    await page.keyboard.press('t');
     const popover = page.locator('#tag-popover');
     await expect(popover).toBeVisible({ timeout: 5_000 });
     const readPage = popover.locator('[data-action="read-page"]');

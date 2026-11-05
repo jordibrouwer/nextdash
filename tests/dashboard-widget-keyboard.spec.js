@@ -153,7 +153,7 @@ test.describe('the bookmark keys stay off a widget', () => {
         const before = await page.evaluate(() =>
             (window.dashboardInstance.bookmarks || []).length);
 
-        await page.keyboard.press('Shift+E');
+        await page.keyboard.press('e');
         await page.keyboard.press('Delete');
         // Nothing should happen, so give an editor or a removal time to show if it were going to.
         await page.waitForTimeout(600);

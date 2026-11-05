@@ -35,20 +35,20 @@ async function clickOpens(page) {
 }
 
 test.describe('edit mode: the state and its keys', () => {
-    test('with a bookmark row selected, Shift + M still moves the bookmark', async ({ page }) => {
+    test('with a bookmark row selected, M moves the bookmark', async ({ page }) => {
         await loadDashboard(page);
         await page.keyboard.press('ArrowDown');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.keyboardNavigation.currentIndex)).toBeGreaterThanOrEqual(0);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('m');
         await expect(page.locator('#move-popover')).toBeVisible();
         expect(await modeOn(page)).toBe(false);
     });
 
-    test('with a bookmark row selected, Shift + E edits the bookmark in place, not the dashboard', async ({ page }) => {
+    test('with a bookmark row selected, E edits the bookmark in place, not the dashboard', async ({ page }) => {
         await loadDashboard(page);
         await page.keyboard.press('ArrowDown');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.keyboardNavigation.currentIndex)).toBeGreaterThanOrEqual(0);
-        await page.keyboard.press('Shift+E');
+        await page.keyboard.press('e');
         expect(await modeOn(page)).toBe(false);
     });
 

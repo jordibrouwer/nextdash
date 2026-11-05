@@ -38,14 +38,14 @@ test.describe('dashboard grid shortcuts', () => {
         await selectFirstBookmark(page);
     });
 
-    test('Shift+M opens move popover without opening search', async ({ page }) => {
-        await page.keyboard.press('Shift+M');
+    test('M opens move popover without opening search', async ({ page }) => {
+        await page.keyboard.press('m');
         await expect(page.locator('#move-popover')).toBeVisible({ timeout: 3000 });
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });
 
-    test('Shift+D opens delete popover without opening search', async ({ page }) => {
-        await page.keyboard.press('Shift+D');
+    test('D opens delete popover without opening search', async ({ page }) => {
+        await page.keyboard.press('d');
         await expect(page.locator('#delete-popover')).toBeVisible({ timeout: 3000 });
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });
@@ -61,9 +61,9 @@ test.describe('dashboard grid shortcuts', () => {
         expect(idxBefore).toBeGreaterThan(0);
 
         for (const { key, cleanup } of [
-            { key: 'Shift+T', cleanup: '_tagPopoverCleanup' },
-            { key: 'Shift+M', cleanup: '_movePopoverCleanup' },
-            { key: 'Shift+D', cleanup: '_deletePopoverCleanup' },
+            { key: 't', cleanup: '_tagPopoverCleanup' },
+            { key: 'm', cleanup: '_movePopoverCleanup' },
+            { key: 'd', cleanup: '_deletePopoverCleanup' },
         ]) {
             await page.keyboard.press(key);
             await expect(page.locator('#tag-popover, #move-popover, #delete-popover').first()).toBeVisible({ timeout: 3000 });
@@ -78,8 +78,8 @@ test.describe('dashboard grid shortcuts', () => {
         }
     });
 
-    test('Shift+T opens tag popover without opening search', async ({ page }) => {
-        await page.keyboard.press('Shift+T');
+    test('T opens tag popover without opening search', async ({ page }) => {
+        await page.keyboard.press('t');
         await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 3000 });
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
         await expect.poll(async () => page.evaluate(() => (
@@ -87,10 +87,9 @@ test.describe('dashboard grid shortcuts', () => {
         ))).toBe(true);
     });
 
-    // Plain c waits for a hold before adding a category; Shift+C deliberately
-    // does not, so a quick press must still open the check-mode menu.
-    test('Shift+C opens the check mode menu on a quick press', async ({ page }) => {
-        await page.keyboard.press('Shift+C');
+    // A quick press of c opens the check-mode menu.
+    test('C opens the check mode menu on a quick press', async ({ page }) => {
+        await page.keyboard.press('c');
         await expect(page.locator('#bookmark-check-mode-menu')).toBeVisible({ timeout: 3000 });
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
         await expect(page.locator('.bookmark-inline-create.category-add-create')).toHaveCount(0);
@@ -154,7 +153,7 @@ test.describe('dashboard grid shortcuts', () => {
     });
 
     test('tag popover arrow keys move focus inside list', async ({ page }) => {
-        await page.keyboard.press('Shift+T');
+        await page.keyboard.press('t');
         await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 3000 });
         await expect.poll(async () => page.evaluate(() => (
             document.activeElement?.id === 'tag-popover'
@@ -178,7 +177,7 @@ test.describe('dashboard grid shortcuts', () => {
     });
 
     test('dashboard stays inert while tag popover open', async ({ page }) => {
-        await page.keyboard.press('Shift+T');
+        await page.keyboard.press('t');
         await expect(page.locator('#tag-popover')).toBeVisible({ timeout: 5000 });
         await expect.poll(async () => page.evaluate(() => (
             document.getElementById('tag-popover')
@@ -202,13 +201,13 @@ test.describe('dashboard grid shortcuts', () => {
         await closeSearch(page);
 
         await selectFirstBookmark(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('m');
         await expect(page.locator('#move-popover')).toBeVisible({ timeout: 3000 });
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });
 
     test('dashboard stays inert while move popover open', async ({ page }) => {
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('m');
         await expect(page.locator('#move-popover')).toBeVisible({ timeout: 3000 });
         await expect.poll(async () => page.evaluate(() => (
             document.getElementById('dashboard-layout')?.hasAttribute('inert') === true

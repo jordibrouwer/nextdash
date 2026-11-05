@@ -129,7 +129,7 @@ test.describe('overlays hand their keys back', () => {
         await load(page);
         const before = await listeners(page);
 
-        // Shift+M acts on the selected row, so select one the way a reader does.
+        // M acts on the selected row, so select one the way a reader does.
         await page.keyboard.press('ArrowDown');
         await expect
             .poll(() => page.evaluate(
@@ -137,8 +137,8 @@ test.describe('overlays hand their keys back', () => {
                 { timeout: 10_000 })
             .toBe(true);
 
-        await page.keyboard.press('Shift+M');
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('m');
+        await page.keyboard.press('m');
 
         await expect
             .poll(() => page.locator('#move-popover').count(), { timeout: 10_000 })

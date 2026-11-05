@@ -309,7 +309,7 @@ test.describe('video bookmarks', () => {
      * both started the video and opened the bookmark in a new tab behind the
      * card. A popup here is the failure.
      */
-    test('Shift+V then Enter plays, and does not open the link', async ({ page }) => {
+    test('V then Enter plays, and does not open the link', async ({ page }) => {
         await openDashboard(page);
 
         const stamp = await page.evaluate(async () => {
@@ -366,7 +366,7 @@ test.describe('video bookmarks', () => {
         }, stamp);
         expect(ready).toBe(true);
 
-        await page.keyboard.press('Shift+V');
+        await page.keyboard.press('v');
         await expect.poll(() => page.evaluate(() => ({
             mode: window.dashboardInstance.previewCardElement?.dataset.previewMode || '',
             focused: document.activeElement?.className || '',

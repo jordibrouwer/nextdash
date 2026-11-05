@@ -2,8 +2,10 @@ const { test, expect } = require('./fixtures');
 const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
- * Shift+letter is one family: every key in it acts on the row under the cursor,
- * and does nothing when there is no row.
+ * The row's own keys are plain letters now (S share, M move, E edit...); Shift is
+ * never a row action. This file keeps the checks that were written for the Shift
+ * family: the row is acted on, nothing happens without one, and the old Shift+L
+ * still shares and names its replacement.
  *
  * Shift+S used to be an exception — share with a row selected, config without
  * one — which is why the row actions live in a capture-phase handler that
@@ -31,7 +33,7 @@ async function selectFirstRow(page) {
         .toBeGreaterThanOrEqual(0);
 }
 
-test.describe('Shift+S shares the focused row', () => {
+test.describe('S shares the focused row', () => {
     test('shares when a row is selected, and stays on the dashboard', async ({ page }) => {
         await load(page);
         await selectFirstRow(page);
@@ -46,7 +48,7 @@ test.describe('Shift+S shares the focused row', () => {
             };
         });
 
-        await page.keyboard.press('Shift+S');
+        await page.keyboard.press('s');
         await expect.poll(() => page.evaluate(() => window.__shared), { timeout: 5000 }).toBe(true);
         expect(await view(page)).toBe('bookmarks');
     });
@@ -70,7 +72,7 @@ test.describe('Shift+S shares the focused row', () => {
     });
 });
 
-test('Shift+L still shares the focused row and names Shift + S', async ({ page }) => {
+test('Shift+L still shares the focused row and names S', async ({ page }) => {
     await load(page);
     await selectFirstRow(page);
     await page.evaluate(() => {
@@ -83,7 +85,7 @@ test('Shift+L still shares the focused row and names Shift + S', async ({ page }
     await page.keyboard.press('Shift+L');
     await expect.poll(() => page.evaluate(() => window.__shared), { timeout: 5000 }).toBe(true);
     const toasts = await page.evaluate(() => window.__aliasToasts);
-    expect(toasts.some((m) => m.includes('Shift + L') && m.includes('Shift + S'))).toBe(true);
+    expect(toasts.some((m) => m.includes('Shift+L') && m.includes('S'))).toBe(true);
 });
 
 test.describe('the rest of the family', () => {
@@ -91,11 +93,11 @@ test.describe('the rest of the family', () => {
     // attempt asserted that the event reached a probe listener, which turned out
     // to measure listener registration order — the move popover opened and the
     // probe fired anyway.
-    test('Shift+M opens the move popover when a row is selected', async ({ page }) => {
+    test('M opens the move popover when a row is selected', async ({ page }) => {
         await load(page);
         await selectFirstRow(page);
 
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('m');
         await expect(page.locator('#move-popover')).toBeVisible();
         expect(await view(page)).toBe('bookmarks');
     });
@@ -113,11 +115,11 @@ test.describe('the rest of the family', () => {
         expect(await view(page)).toBe('bookmarks');
     });
 
-    test('Shift+E opens the inline editor on the focused row', async ({ page }) => {
+    test('E opens the inline editor on the focused row', async ({ page }) => {
         await load(page);
         await selectFirstRow(page);
 
-        await page.keyboard.press('Shift+E');
+        await page.keyboard.press('e');
         await expect(page.locator('.bookmark-inline-form [data-field="name"]')).toBeVisible({ timeout: 5000 });
     });
 

@@ -142,6 +142,7 @@ class DashboardEditMode {
         this._markSelected();
         document.getElementById('edit-mode-button')?.setAttribute('aria-pressed', String(this.active));
         document.dispatchEvent(new CustomEvent('nextdash:edit-mode', { detail: { active: this.active, selected: this.selected } }));
+        this.dash?.keyboardNavigation?._syncModeStrip?.();
     }
 
     _showBar() {
@@ -224,13 +225,16 @@ class DashboardEditMode {
             return;
         }
         if (e.shiftKey && plain && (e.code === 'KeyE' || e.code === 'KeyM') && !this._typing(e) && (this.active || this._onGrid())) {
-            const kn = this.dash?.keyboardNavigation;
-            const rowSelected = Boolean(kn && kn.currentIndex >= 0 && kn.getSelectedBookmark?.());
-            const action = model.editKey({ active: this.active, rowSelected });
-            // A row selected: the bookmark's own Shift + E (edit) or Shift + M
-            // (move) answers, as it always did.
-            if (action === 'row-action') return;
+            // Shift never runs a bookmark action (those are the plain letters
+            // now), so a selected row makes no difference here.
+            const action = model.editKey({ active: this.active, rowSelected: false });
             if (this.isMobileLayout()) return;
+            // The old Shift+M alias is for no bookmark in hand. With one, the
+            // grid's own handler answers (it names the plain m), not edit mode.
+            if (e.code === 'KeyM' && !this.active) {
+                const kn = this.dash?.keyboardNavigation;
+                if (kn && kn.currentIndex >= 0 && kn.getSelectedBookmark?.()) return;
+            }
             e.preventDefault();
             e.stopImmediatePropagation();
             // Shift + M switched the mode before Shift + E did; it still does,

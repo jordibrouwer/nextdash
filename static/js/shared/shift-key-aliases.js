@@ -20,5 +20,16 @@
         dash.showNotification(`${oldKey} is now ${newKey}`, 'info', { duration: 4000 });
     }
 
-    global.ShiftKeyAliases = { notice };
+    // A Shift letter that used to act on a bookmark and now does something
+    // else: one line per key per page load naming the plain letter.
+    function rowNotice(shiftKey, text) {
+        const pair = `row:${shiftKey}`;
+        if (told.has(pair)) return;
+        told.add(pair);
+        const dash = global.dashboardInstance;
+        if (!dash?.showNotification) return;
+        dash.showNotification(text, 'info', { duration: 4000 });
+    }
+
+    global.ShiftKeyAliases = { notice, rowNotice };
 })(window);
