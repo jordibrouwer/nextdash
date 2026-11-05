@@ -700,6 +700,11 @@ class KeyboardNavigation {
         const row = this.navigableElements[this.currentIndex];
         const bookmark = this.getSelectedBookmark?.();
         if (!row || !bookmark || !window.ModeStripSuggest) return null;
+        // A new row is a new combination to look at; the same row stays as it is.
+        if (row !== this._stripRow) {
+            this._stripRow = row;
+            this._stripSeed = (this._stripSeed || 0) + 1;
+        }
         const tags = String(row.getAttribute('data-bookmark-tags') || '').split(',').map((s) => s.trim()).filter(Boolean);
         return window.ModeStripSuggest.suggest({
             tags,
@@ -708,7 +713,7 @@ class KeyboardNavigation {
             video: Boolean(window.VideoLinks?.isVideoLink?.(bookmark.url)),
             unfiled: !String(bookmark.category || '').trim(),
             undo: this._undoHint === true,
-        });
+        }, this._stripSeed || 0);
     }
 
     /** A pin or move just happened: say Ctrl/Cmd+Z undoes it, for as long as its notice shows. */

@@ -95,7 +95,7 @@ test('one letter not yet learned is suggested, and it goes after enough use', as
 });
 
 test('with every letter used enough there is no learning slot', async ({ page }) => {
-    await load(page, { s: 3, q: 3, r: 3, v: 3, c: 3 });
+    await load(page, { s: 3, q: 3, r: 3, v: 3, c: 3, w: 3 });
     await expect(strip(page).locator('kbd.is-tip')).toHaveCount(0);
 });
 
@@ -104,4 +104,23 @@ test('using a letter counts toward learning it', async ({ page }) => {
     await page.evaluate(() => { window.dashboardInstance.contextMenu.shareBookmark = async () => {}; });
     await page.keyboard.press('s');
     await expect.poll(() => page.evaluate(() => window.ModeStripSuggest.uses().s)).toBe(3);
+});
+
+test('each new row shows another combination of keys', async ({ page }) => {
+    await load(page);
+    const seen = new Set();
+    for (let i = 0; i < 6; i += 1) {
+        seen.add((await chips(page)).join(' '));
+        await page.keyboard.press('ArrowDown');
+        await page.waitForTimeout(150);
+    }
+    expect(seen.size).toBeGreaterThan(2);
+});
+
+test('the same row keeps its combination', async ({ page }) => {
+    await load(page);
+    const a = await chips(page);
+    await page.evaluate(() => window.dashboardInstance.keyboardNavigation._syncModeStrip());
+    await page.evaluate(() => window.dashboardInstance.keyboardNavigation._syncModeStrip());
+    expect(await chips(page)).toEqual(a);
 });
