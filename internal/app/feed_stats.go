@@ -276,7 +276,7 @@ func flagWatchReads(file *FeedWatchFile, read map[string]int64, since int64) map
 		wt := &file.Watches[i]
 		for j := range wt.Items {
 			it := &wt.Items[j]
-			if it.ReadCounted || it.FoundAt < since || watchItemUnread(*it, read[wt.BookmarkKey]) {
+			if it.ReadCounted || it.FoundAt < since || watchItemUnread(*it, read[wt.BookmarkKey], 0) {
 				continue
 			}
 			it.ReadCounted = true
@@ -539,6 +539,7 @@ func (h *Handlers) GetFeedStats(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	readAt := watchReadAt(watches, bookmarks)
+	cutoff := h.watchCutoff()
 	period := feedStatsDays(now, days)
 	week := feedStatsDays(now, 7)
 	sum := func(id string, dates []string, pick func(*FeedStatsDay) int) int {
@@ -617,7 +618,7 @@ func (h *Handlers) GetFeedStats(w http.ResponseWriter, r *http.Request) {
 		}
 		failedWeek := sum(id, week, fail)
 		state := feedStatsState(wt, failedWeek)
-		unread := len(watchNewItems(wt, readAt[wt.BookmarkKey]))
+		unread := len(watchNewItems(wt, readAt[wt.BookmarkKey], cutoff))
 		unreadNow += unread
 		p, rr := sum(id, period, pub), sum(id, period, rd)
 		row := feedStatsRow{

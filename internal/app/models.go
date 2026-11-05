@@ -994,6 +994,11 @@ type Settings struct {
 	// after it arrives and they are back: 15, 30, 60 or 120. Anything else
 	// reads as 30.
 	FeedWatchWindowMinutes int `json:"feedWatchWindowMinutes"`
+	// FeedWatchExpireHours is how long an unread item keeps counting, from the
+	// moment it was found: 4, 8, 24, 48, 72, 168, 336 or 720. Older news is no
+	// longer counted or listed as new; the news modal still shows it, read.
+	// Anything else reads as 24.
+	FeedWatchExpireHours int `json:"feedWatchExpireHours"`
 	// FeedWatchNewsView is how the news modal shows an article: "paper" (a
 	// newspaper front page, the default), "wide" (two columns in the app's own
 	// style) or "single" (one column). Anything else reads as "paper".
@@ -1874,6 +1879,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HideCornerCardsMobile:           true,
 			ShowFeedWatchIcon:               true,
 			FeedWatchWindowMinutes:          30,
+			FeedWatchExpireHours:            24,
 			FeedWatchNewsView:               "paper",
 			FeedStatsEnabled:                true,
 			FeedStatsKeepDays:               90,
@@ -4624,6 +4630,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			HideCornerCardsMobile:           true,
 			ShowFeedWatchIcon:               true,
 			FeedWatchWindowMinutes:          30,
+			FeedWatchExpireHours:            24,
 			FeedWatchNewsView:               "paper",
 			FeedStatsEnabled:                true,
 			FeedStatsKeepDays:               90,
@@ -4868,6 +4875,11 @@ func (fs *FileStore) getSettingsShared() Settings {
 		case 15, 30, 60, 120:
 		default:
 			settings.FeedWatchWindowMinutes = 30
+		}
+		switch settings.FeedWatchExpireHours {
+		case 4, 8, 24, 48, 72, 168, 336, 720:
+		default:
+			settings.FeedWatchExpireHours = 24
 		}
 		switch settings.FeedWatchNewsView {
 		case "single", "wide", "paper":

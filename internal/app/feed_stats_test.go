@@ -524,3 +524,13 @@ func TestFeedStatsAReadDuringAPollIsNotCountedTwice(t *testing.T) {
 		t.Fatalf("b counted %d times, want once", n)
 	}
 }
+
+func TestExpiredNewsIsNotCountedAsRead(t *testing.T) {
+	file := FeedWatchFile{Watches: []FeedWatch{{BookmarkKey: "k", Items: []FeedItem{
+		{ID: "old", FoundAt: time.Now().Add(-72 * time.Hour).UnixMilli()},
+	}}}}
+	got := flagWatchReads(&file, map[string]int64{}, 1)
+	if len(got) != 0 || file.Watches[0].Items[0].ReadCounted {
+		t.Fatalf("an expired, never-opened item counted as a read: %v", got)
+	}
+}

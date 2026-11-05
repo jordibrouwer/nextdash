@@ -190,7 +190,7 @@ func TestWatchMutedBookmarkNeedsEveryFeedMuted(t *testing.T) {
 		{BookmarkKey: "https://b.example", FeedURL: "https://b.example/1", Muted: true},
 		{BookmarkKey: "https://b.example", FeedURL: "https://b.example/2", Muted: true},
 	}}
-	got := watchListFor(file, []Bookmark{{URL: "https://a.example"}, {URL: "https://b.example"}})
+	got := watchListFor(file, []Bookmark{{URL: "https://a.example"}, {URL: "https://b.example"}}, 0)
 	if got["https://a.example"].Muted || !got["https://b.example"].Muted {
 		t.Fatalf("a=%v b=%v, want false and true", got["https://a.example"].Muted, got["https://b.example"].Muted)
 	}

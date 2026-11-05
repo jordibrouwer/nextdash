@@ -62,10 +62,29 @@ func itemStamp(it FeedItem) int64 {
 	return it.FoundAt
 }
 
+// watchExpireCutoff is the oldest FoundAt (milliseconds) that still counts as
+// news: now minus the expiry in hours. Zero hours means no cutoff (0).
+func watchExpireCutoff(hours int, now time.Time) int64 {
+	if hours <= 0 {
+		return 0
+	}
+	return now.Add(-time.Duration(hours) * time.Hour).UnixMilli()
+}
+
+// watchCutoff is the cutoff for the reader's expiry setting, right now.
+func (h *Handlers) watchCutoff() int64 {
+	return watchExpireCutoff(h.store.GetSettings().FeedWatchExpireHours, time.Now())
+}
+
 // watchItemUnread is the one rule for what is unread. readAt is the newest
 // open of any bookmark copy or "seen"; an item marked after that keeps its
-// mark, otherwise it is unread when it was found after readAt.
-func watchItemUnread(it FeedItem, readAt int64) bool {
+// mark, otherwise it is unread when it was found after readAt. An item found
+// before cutoff has expired and is never unread, whatever its mark; a cutoff
+// of 0 turns expiry off (reads must never be counted from expiry).
+func watchItemUnread(it FeedItem, readAt int64, cutoff int64) bool {
+	if cutoff > 0 && it.FoundAt < cutoff {
+		return false
+	}
 	if it.MarkedAt > readAt {
 		return !it.MarkedRead
 	}
@@ -73,10 +92,10 @@ func watchItemUnread(it FeedItem, readAt int64) bool {
 }
 
 // watchNewItems are the items of one watch not yet read, by watchItemUnread.
-func watchNewItems(w FeedWatch, readAt int64) []FeedItem {
+func watchNewItems(w FeedWatch, readAt int64, cutoff int64) []FeedItem {
 	var out []FeedItem
 	for _, it := range w.Items {
-		if watchItemUnread(it, readAt) {
+		if watchItemUnread(it, readAt, cutoff) {
 			out = append(out, it)
 		}
 	}
@@ -84,7 +103,7 @@ func watchNewItems(w FeedWatch, readAt int64) []FeedItem {
 }
 
 // watchNewItemsMax is how many unread items the list carries per bookmark.
-const watchNewItemsMax = 3
+const watchNewItemsMax = 10
 
 func newestItemFirst(items []FeedItem) {
 	sort.SliceStable(items, func(i, j int) bool {
@@ -113,7 +132,7 @@ func watchReadAt(file FeedWatchFile, bookmarks []Bookmark) map[string]int64 {
 	return read
 }
 
-func watchListFor(file FeedWatchFile, bookmarks []Bookmark) map[string]watchEntry {
+func watchListFor(file FeedWatchFile, bookmarks []Bookmark, cutoff int64) map[string]watchEntry {
 	live := map[string]bool{}
 	for _, b := range bookmarks {
 		live[canonicalBookmarkURLKey(b.URL)] = true
@@ -132,7 +151,7 @@ func watchListFor(file FeedWatchFile, bookmarks []Bookmark) map[string]watchEntr
 			Muted: w.Muted, Paused: w.Paused, Include: nonNilWords(w.Include), Exclude: nonNilWords(w.Exclude),
 		})
 		entry.Muted = w.Muted && (len(entry.Feeds) == 1 || entry.Muted)
-		fresh := watchNewItems(w, read[w.BookmarkKey])
+		fresh := watchNewItems(w, read[w.BookmarkKey], cutoff)
 		entry.NewCount += len(fresh)
 		if len(fresh) > 0 {
 			newestItemFirst(fresh)
@@ -210,7 +229,7 @@ func (h *Handlers) watchListResponse(file FeedWatchFile) map[string]any {
 	return map[string]any{
 		"limit":   feedWatchLimit,
 		"total":   liveWatches(file, bookmarks),
-		"watches": watchListFor(file, bookmarks),
+		"watches": watchListFor(file, bookmarks, h.watchCutoff()),
 	}
 }
 
@@ -234,6 +253,7 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 	file := readFeedWatchFile()
 	feedWatchMu.Unlock()
 	bookmarks := h.store.GetAllBookmarks()
+	cutoff := h.watchCutoff()
 	read := watchReadAt(file, bookmarks)
 	first := map[string]Bookmark{}
 	for _, b := range bookmarks {
@@ -258,7 +278,7 @@ func (h *Handlers) GetFeedWatchItems(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		for _, it := range wt.Items {
-			unread := watchItemUnread(it, read[wt.BookmarkKey])
+			unread := watchItemUnread(it, read[wt.BookmarkKey], cutoff)
 			it.ImageSource = "" // the client gets our copy, never the remote address
 			items = append(items, outItem{wt.BookmarkKey, b.Name, b.URL, wt.Title, wt.FeedURL, unread, it})
 		}
@@ -490,7 +510,7 @@ func (h *Handlers) WatchFeeds(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not save", http.StatusInternalServerError)
 		return
 	}
-	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks())[key]})
+	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks(), h.watchCutoff())[key]})
 }
 
 // UnwatchFeeds stops every watch of one bookmark and forgets its items.
@@ -607,7 +627,7 @@ func (h *Handlers) MarkFeedWatchRead(w http.ResponseWriter, r *http.Request) {
 	if changed {
 		_ = writeFeedWatchFile(file)
 	}
-	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, bookmarks)[key]})
+	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, bookmarks, h.watchCutoff())[key]})
 }
 
 // PollFeedWatchesNow checks every watch regardless of its interval.
@@ -624,7 +644,7 @@ func (h *Handlers) PollFeedWatchesNow(w http.ResponseWriter, r *http.Request) {
 	writeWatchJSON(w, http.StatusOK, map[string]any{
 		"polled":  polled,
 		"fresh":   len(news),
-		"watches": watchListFor(file, h.store.GetAllBookmarks()),
+		"watches": watchListFor(file, h.store.GetAllBookmarks(), h.watchCutoff()),
 	})
 }
 
@@ -667,7 +687,7 @@ func (h *Handlers) RetryFeedWatch(w http.ResponseWriter, r *http.Request) {
 	feedWatchMu.Lock()
 	file := readFeedWatchFile()
 	feedWatchMu.Unlock()
-	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks())[key]})
+	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks(), h.watchCutoff())[key]})
 }
 
 // UpdateFeedWatch changes the settings of one watched feed; what the body
@@ -734,7 +754,7 @@ func (h *Handlers) UpdateFeedWatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not save", http.StatusInternalServerError)
 		return
 	}
-	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks())[key]})
+	writeWatchJSON(w, http.StatusOK, map[string]any{"watch": watchListFor(file, h.store.GetAllBookmarks(), h.watchCutoff())[key]})
 }
 
 // SetFeedWatchInterval gives every watch of the named bookmarks one interval.

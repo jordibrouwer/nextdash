@@ -165,7 +165,7 @@ func TestWatchListUsesNewestOpenOfEveryCopy(t *testing.T) {
 	file := readFeedWatchFile()
 	bms := e.h.store.GetAllBookmarks()
 	bms[1].LastOpened = time.Now().Add(time.Hour).UnixMilli()
-	if got := watchListFor(file, bms)[e.key].NewCount; got != 0 {
+	if got := watchListFor(file, bms, 0)[e.key].NewCount; got != 0 {
 		t.Fatalf("opening either copy should clear both, got %d", got)
 	}
 }
@@ -424,7 +424,7 @@ func (e *watchEnv) markItem(t *testing.T, id string, read bool) {
 func (e *watchEnv) newCountOpenedAt(openedAt int64) int {
 	bms := e.h.store.GetAllBookmarks()
 	bms[0].LastOpened = openedAt
-	return watchListFor(readFeedWatchFile(), bms)[e.key].NewCount
+	return watchListFor(readFeedWatchFile(), bms, 0)[e.key].NewCount
 }
 
 func TestWatchItemReadWins(t *testing.T) {
@@ -522,7 +522,7 @@ func TestWatchListCarriesNewItems(t *testing.T) {
 		{BookmarkKey: key, FeedURL: "https://blog.example/b.xml", Items: []FeedItem{
 			{ID: "b3", FoundAt: 3000}, {ID: "b4", FoundAt: 4000}}},
 	}}
-	e := watchListFor(file, bms)[key]
+	e := watchListFor(file, bms, 0)[key]
 	var ids []string
 	for _, it := range e.NewItems {
 		ids = append(ids, it.ID)
@@ -530,7 +530,7 @@ func TestWatchListCarriesNewItems(t *testing.T) {
 			t.Fatalf("imageSource leaked: %+v", it)
 		}
 	}
-	if fmt.Sprint(ids) != "[a5 b4 b3]" || e.NewCount != 4 || e.Newest == nil || e.Newest.ID != "a5" {
+	if fmt.Sprint(ids) != "[a5 b4 b3 a2]" || e.NewCount != 4 || e.Newest == nil || e.Newest.ID != "a5" {
 		t.Fatalf("newItems = %v, count %d, newest %+v", ids, e.NewCount, e.Newest)
 	}
 }
@@ -548,7 +548,7 @@ func TestWatchListCarriesLatest(t *testing.T) {
 			Items: []FeedItem{{ID: "3", Title: "Undated", FoundAt: 2000}}},
 		{BookmarkKey: canonicalBookmarkURLKey(bms[1].URL), FeedURL: "https://quiet.example/f.xml"},
 	}}
-	got := watchListFor(file, bms)
+	got := watchListFor(file, bms, 0)
 	if e := got[key]; e.LatestAt != 3000 || e.LatestTitle != "Newest recent" {
 		t.Fatalf("latest = %d %q, want 3000 \"Newest recent\"", e.LatestAt, e.LatestTitle)
 	}
@@ -558,7 +558,7 @@ func TestWatchListCarriesLatest(t *testing.T) {
 	// An undated item counts at the time it was found.
 	file.Watches[0].Recent = nil
 	file.Watches[0].Items = nil
-	if e := watchListFor(file, bms)[key]; e.LatestAt != 2000 || e.LatestTitle != "Undated" {
+	if e := watchListFor(file, bms, 0)[key]; e.LatestAt != 2000 || e.LatestTitle != "Undated" {
 		t.Fatalf("fallback to FoundAt: %d %q", e.LatestAt, e.LatestTitle)
 	}
 }
@@ -591,5 +591,96 @@ func TestWatchCandidatesLightSkipsTheUsualAddresses(t *testing.T) {
 	}
 	if n := count("&light=1"); n != 0 {
 		t.Fatalf("the light lookup reads the page only, got %d", n)
+	}
+}
+
+func TestWatchItemUnreadExpires(t *testing.T) {
+	const cutoff = 1000
+	cases := []struct {
+		name string
+		it   FeedItem
+		want bool
+	}{
+		{"found before the cutoff is expired", FeedItem{FoundAt: 999}, false},
+		{"found at the cutoff still counts", FeedItem{FoundAt: 1000}, true},
+		{"found after the cutoff counts", FeedItem{FoundAt: 2000}, true},
+		{"marked unread by hand still expires", FeedItem{FoundAt: 999, MarkedAt: 5000}, false},
+		{"marked unread by hand inside the age counts", FeedItem{FoundAt: 1500, MarkedAt: 5000}, true},
+	}
+	for _, c := range cases {
+		if got := watchItemUnread(c.it, 0, cutoff); got != c.want {
+			t.Errorf("%s: got %v", c.name, got)
+		}
+	}
+	if !watchItemUnread(FeedItem{FoundAt: 1}, 0, 0) {
+		t.Error("a zero cutoff must keep the old behaviour")
+	}
+}
+
+func TestWatchExpireCutoff(t *testing.T) {
+	now := time.UnixMilli(10 * 3600 * 1000)
+	if got, want := watchExpireCutoff(4, now), int64(6*3600*1000); got != want {
+		t.Errorf("4 h: got %d, want %d", got, want)
+	}
+	if got := watchExpireCutoff(0, now); got != 0 {
+		t.Errorf("0 h: got %d, want 0", got)
+	}
+}
+
+func expiryFile(now int64) FeedWatchFile {
+	var items []FeedItem
+	for i := 0; i < 11; i++ {
+		items = append(items, FeedItem{ID: fmt.Sprintf("n%d", i), FoundAt: now - int64(i+1)*60_000})
+	}
+	items = append(items, FeedItem{ID: "old", FoundAt: now - 3*24*3600*1000})
+	return FeedWatchFile{Watches: []FeedWatch{{BookmarkKey: "k", FeedURL: "https://f/", Items: items}}}
+}
+
+func TestWatchListSkipsExpiredNews(t *testing.T) {
+	now := time.Now().UnixMilli()
+	file := expiryFile(now)
+	bookmarks := []Bookmark{{URL: "https://k"}}
+	file.Watches[0].BookmarkKey = canonicalBookmarkURLKey("https://k")
+	cutoff := watchExpireCutoff(24, time.UnixMilli(now))
+	entry := watchListFor(file, bookmarks, cutoff)[file.Watches[0].BookmarkKey]
+	if entry.NewCount != 11 {
+		t.Fatalf("newCount = %d, want 11 (the 3-day-old item expired)", entry.NewCount)
+	}
+	if len(entry.NewItems) != 10 {
+		t.Fatalf("newItems = %d, want the cap of 10", len(entry.NewItems))
+	}
+	for _, it := range entry.NewItems {
+		if it.ID == "old" {
+			t.Fatal("an expired item is listed as new")
+		}
+	}
+	if all := watchListFor(file, bookmarks, 0)[file.Watches[0].BookmarkKey]; all.NewCount != 12 {
+		t.Fatalf("without a cutoff newCount = %d, want 12", all.NewCount)
+	}
+}
+
+func TestWatchItemsFlagsExpiredAsRead(t *testing.T) {
+	e := newWatchEnv(t)
+	e.watch(t, 360)
+	feedWatchMu.Lock()
+	file := readFeedWatchFile()
+	file.Watches[0].Items = []FeedItem{{ID: "old", Title: "Old", FoundAt: time.Now().Add(-72 * time.Hour).UnixMilli()}}
+	_ = writeFeedWatchFile(file)
+	feedWatchMu.Unlock()
+	rec := httptest.NewRecorder()
+	e.h.GetFeedWatchItems(rec, httptest.NewRequest(http.MethodGet, "/api/feeds/watch/items?all=1", nil))
+	var out struct {
+		Items []struct {
+			ID     string `json:"id"`
+			Unread bool   `json:"unread"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	for _, it := range out.Items {
+		if it.ID == "old" && it.Unread {
+			t.Fatal("an expired item is still flagged unread")
+		}
 	}
 }
