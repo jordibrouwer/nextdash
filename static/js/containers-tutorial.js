@@ -268,7 +268,7 @@
                     </g>
                 `, f('dockerTourS1Alt', 'The summary, the container rows and the side panel of the Containers view')),
                 body: `<p>${esc(f('dockerTour4ViewBody1',
-                    'The Containers view (Shift+Y, or the box icon in the header) lists what runs on your Docker host. Each row glows with its state: running, stopped, unhealthy or waiting for an update.'))}</p>
+                    'The Containers view (Shift+C, or the box icon in the header) lists what runs on your Docker host. Each row glows with its state: running, stopped, unhealthy or waiting for an update.'))}</p>
                     <p>${esc(f('dockerTour4ViewBody2',
                     'The filters on the left count each state, and / searches by name. Without the Docker socket the view says what to set.'))}</p>`,
             },

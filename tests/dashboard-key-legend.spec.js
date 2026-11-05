@@ -7,7 +7,7 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } 
  *
  * Four lines -- the cursor, finding things, adding and pages, and bookmark keys -- on for a fresh
  * install. The rows that presume the keyboard is in use stay hidden until the
- * first cursor move. Shift+Z switches the whole legend off and on, and it only
+ * first cursor move. Shift+H switches the whole legend off and on, and it only
  * shows while the dashboard view itself is open: the grid's container outlives
  * a switch to the Bookmarks view, and the legend used to sit under whatever
  * replaced the grid.
@@ -52,7 +52,7 @@ test.describe('the dashboard key legend', () => {
         await expect(legend(page).locator('.dashboard-legend-line')).toHaveCount(4);
         // Every group names the keys a first visit needs, without a keystroke.
         const text = await legend(page).innerText();
-        for (const key of ['!', '>', '/', '*', '?', ':', '1–9', '+ add bookmark', 'Shift+N', 'Shift+Z', 'Shift+K']) {
+        for (const key of ['!', '>', '/', '*', '?', ':', '1–9', '+ add bookmark', 'Shift+B', 'Shift+I', ',']) {
             expect(text).toContain(key);
         }
         // The rows that act on a row wait until the keyboard is in use.
@@ -73,11 +73,11 @@ test.describe('the dashboard key legend', () => {
         await expect(legend(page)).toBeVisible();
     });
 
-    test('Shift+Z switches it off and on, and the choice is stored', async ({ page }) => {
+    test('Shift+H switches it off and on, and the choice is stored', async ({ page }) => {
         await dashboard(page);
         await expect(legend(page)).toBeVisible();
 
-        await page.keyboard.press('Shift+Z');
+        await page.keyboard.press('Shift+H');
         await expect(legend(page)).toHaveCount(0);
         await expect.poll(() => stored(page)).toBe(false);
 
@@ -86,9 +86,37 @@ test.describe('the dashboard key legend', () => {
         await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 15_000 });
         await expect(legend(page)).toHaveCount(0);
 
-        await page.keyboard.press('Shift+Z');
+        await page.keyboard.press('Shift+H');
         await expect(legend(page)).toBeVisible();
         await expect.poll(() => stored(page)).toBe(true);
+    });
+
+    test('Shift+Z still switches it and names Shift + H', async ({ page }) => {
+        await dashboard(page);
+        await page.evaluate(() => {
+            window.__aliasToasts = [];
+            const d = window.dashboardInstance;
+            const real = d.showNotification.bind(d);
+            d.showNotification = (m, ...rest) => { window.__aliasToasts.push(String(m)); return real(m, ...rest); };
+        });
+        await page.keyboard.press('Shift+Z');
+        await expect(legend(page)).toHaveCount(0);
+        const toasts = await page.evaluate(() => window.__aliasToasts);
+        expect(toasts.some((m) => m.includes('Shift + Z') && m.includes('Shift + H'))).toBe(true);
+        // The setting is stored: put it back for whoever runs next.
+        await page.keyboard.press('Shift+H');
+        await expect(legend(page)).toBeVisible();
+        await expect.poll(() => stored(page)).toBe(true);
+    });
+
+    test('Shift+H inside the Bookmarks view leaves the legend setting alone', async ({ page }) => {
+        await dashboard(page);
+        await page.keyboard.press('Shift+B');
+        await expect(page.locator('body')).toHaveAttribute('data-active-view', 'library', { timeout: 10_000 });
+        const before = await stored(page);
+        await page.keyboard.press('Shift+H');
+        await page.waitForTimeout(400);
+        expect(await stored(page)).toBe(before);
     });
 
     test('it is gone while another view is open, and back with the dashboard', async ({ page }) => {
@@ -96,8 +124,8 @@ test.describe('the dashboard key legend', () => {
         await expect(legend(page)).toBeVisible();
         await expect(page.locator('body')).toHaveAttribute('data-active-view', 'bookmarks');
 
-        // Shift+H opens the Bookmarks view in place; the grid's container stays.
-        await page.keyboard.press('Shift+H');
+        // Shift+B opens the Bookmarks view in place; the grid's container stays.
+        await page.keyboard.press('Shift+B');
         await expect(page.locator('body')).toHaveAttribute('data-active-view', 'library', { timeout: 10_000 });
         await expect(legend(page)).toBeHidden();
 

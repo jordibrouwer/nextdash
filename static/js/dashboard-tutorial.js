@@ -395,7 +395,7 @@
                 visual: svg(`
                     <rect x="12" y="8" width="458" height="22" rx="6" class="dtv-box"/>
                     ${label(24, 23, f('dashTour4EditBar', 'Editing'), 'dtv-title')}
-                    ${keycap(300, 10, 'Shift+M')}${label(372, 24, f('dashTour4EditLeave', 'on / off'))}
+                    ${keycap(300, 10, 'Shift+E')}${label(372, 24, f('dashTour4EditLeave', 'on / off'))}
                     ${category(12, 40, 190, f('dashTourCatDev', 'Development'), [['GitHub', 'ok', ''], ['GitLab', 'ok', '']], anim('bump', 0.2))}
                     <g class="dtv-anim dtv-a-panel">
                         <rect x="250" y="40" width="220" height="104" rx="8" class="dtv-panel"/>
@@ -406,9 +406,9 @@
                     </g>
                 `, f('dashTour4EditAlt', 'The dashboard in edit mode: a category chosen, and its panel on the right')),
                 body: `<p>${esc(f('dashTour4EditBody1',
-                    'Press Shift+M with no bookmark selected, or click the pencil in the action bar, to edit the dashboard itself. Click a category, widget or page tab and a panel opens on the right.'))}</p>
+                    'Press Shift+E with no bookmark selected, or click the pencil in the action bar, to edit the dashboard itself. Click a category, widget or page tab and a panel opens on the right.'))}</p>
                     <p>${esc(f('dashTour4EditBody2',
-                    'Rename it, change its width, view and sorting, or open a widget\'s settings: all of it right here, saved as you go. Right-click a category or widget and choose Edit in panel to start there. Esc or Shift+M leaves.'))}</p>`,
+                    'Rename it, change its width, view and sorting, or open a widget\'s settings: all of it right here, saved as you go. Right-click a category or widget and choose Edit in panel to start there. Esc or Shift+E leaves.'))}</p>`,
             },
             // 4 — adding
             {
@@ -470,13 +470,13 @@
                     ${label(250, 80, f('dashTourS6Bookmarks', 'Bookmarks'), 'dtv-label', 'middle')}
                     ${label(326, 80, f('dashTourS6Inbox', 'Inbox'), 'dtv-label', 'middle')}
                     ${label(402, 80, f('dashTourS6Containers', 'Containers'), 'dtv-label', 'middle')}
-                    ${keycap(236, 98, 'Shift+H')}
+                    ${keycap(236, 98, 'Shift+B')}
                     ${keycap(312, 98, 'Shift+I')}
                 `, f('dashTourS6Alt', 'A broken bookmark, and the header icons with their counts')),
                 body: `<p>${esc(f('dashTour4ViewsBody1',
                     'A dot beside a bookmark says whether it still answers. The icons in the header open the other views, and their badges count what needs you.'))}</p>
                     <p>${esc(f('dashTour4ViewsBody2',
-                    'Bookmarks (Shift+H) lists every bookmark with filters for broken and stale links. The Inbox (Shift+I) holds links you have not placed yet. Containers shows what runs on your server. Each has a Tour button of its own.'))}</p>`,
+                    'Bookmarks (Shift+B) lists every bookmark with filters for broken and stale links. The Inbox (Shift+I) holds links you have not placed yet. Containers shows what runs on your server. Each has a Tour button of its own.'))}</p>`,
             },
             // 7 — widgets, themes and help
             {
@@ -485,7 +485,7 @@
                     const tiles = [[f('dashTourTileHealth', 'Health'), f('dashTourTileHealthValue', '2 broken'), 'bad'],
                         [f('dashTourTileWeather', 'Weather'), '19°C', 'accent'],
                         [f('dashTourTileContainers', 'Containers'), '9 / 10', 'ok']];
-                    const keys = [['Shift+A', f('dashTour4KeyThemes', 'themes')], ['Shift+S', f('dashTourKeyConfig', 'config')], ['!', f('dashTourKeyCheat', 'cheat sheet')]];
+                    const keys = [['Shift+A', f('dashTour4KeyThemes', 'themes')], [',', f('dashTourKeyConfig', 'config')], ['!', f('dashTourKeyCheat', 'cheat sheet')]];
                     return svg(`
                         ${tiles.map(([title, value, kind], i) => `
                             <g class="dtv-anim dtv-a-drop" style="animation-delay:${(i * 0.15).toFixed(2)}s">
