@@ -22,7 +22,11 @@ async function openDashboard(page) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.waitForFunction(() => window.DashboardWidgetUtils != null, null, { timeout: 20_000 });
+    // Both: the utils are a script global and arrive before the dashboard has
+    // loaded its data, while dashboardInstance is set only after that load --
+    // under load the layout is there well before the instance is.
+    await page.waitForFunction(() => window.DashboardWidgetUtils != null
+        && window.dashboardInstance != null, null, { timeout: 20_000 });
 }
 
 test.describe('widget freshness', () => {

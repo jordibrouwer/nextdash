@@ -20,6 +20,20 @@ async function load(page) {
 /** A browser that last read `lastSeen` (a release token), onboarding done. */
 async function visitAfterUpgrade(page, lastSeen = OLD_RELEASE) {
     await load(page);
+    // Not answered in the bell either. Opening the notes from the row puts the
+    // row aside (as its coloured answer), and that mark is saved to the shared
+    // ./data for this same version: the next test began with the row hidden.
+    // A record sent with neither mark is how the server lets one go. After the
+    // settings are in, or their arrival would bring the mark back.
+    await page.waitForFunction(() => window.dashboardInstance?._settingsLoaded === true);
+    await page.evaluate(async () => {
+        const state = window.DiscoverabilityState;
+        const saved = state?.exportState?.();
+        if (!saved?.bell?.['updated-notice']) return;
+        saved.bell['updated-notice'] = {};
+        state.init(saved);
+        await state.persistNow();
+    });
     await page.evaluate((release) => {
         window.DiscoverabilityState?.setLastWhatsNewRelease?.(release);
         localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);

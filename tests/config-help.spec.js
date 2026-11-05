@@ -88,6 +88,24 @@ test.describe('the search covers everywhere help lives', () => {
             { timeout: 10_000 }).toBe('about');
     });
 
+    test('the release heading arriving late leaves the results standing', async ({ page }) => {
+        await openHelp(page);
+        await page.fill('#config-help-search', 'ko-fi');
+        await expect(page.locator('.config-help-result')).toHaveCount(1, { timeout: 10_000 });
+        // On a slow answer the release index lands after the reader has
+        // searched, and its repaint wrote Getting started back over the
+        // results -- the query still in the field, nothing found under it.
+        // Replayed here by asking for the heading again and waiting it out.
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            c._latestRelease = undefined;
+            c.ensureLatestReleaseForHelp();
+            while (c._latestReleaseForHelpPending) await new Promise((r) => setTimeout(r, 20));
+        });
+        await expect(page.locator('.config-help-result')).toHaveCount(1);
+        await expect(page.locator('#config-help-search')).toHaveValue('ko-fi');
+    });
+
     test('a query that matches nothing says so, about help', async ({ page }) => {
         await openHelp(page);
         await page.fill('#config-help-search', 'zzzznothingatall');

@@ -38,8 +38,9 @@ test.describe('config fields line up in a grid', () => {
     test('controls in one panel share a left edge', async ({ page }) => {
         await openSection(page, 'appearance');
         await openSubTab(page, 'data-appearance-tab', 'datetime');
-        // Date & time and Weather fold; open them so their selects are
-        // measured with the rest.
+        // Only the first panel (Greeting, a text field) is open; open the ones
+        // with selects so they are measured rather than read as 0 while folded.
+        await openConfigPanel(page, 'Clock & weather');
         await openConfigPanel(page, 'Date & time');
         await openConfigPanel(page, 'Weather');
 
@@ -67,9 +68,13 @@ test.describe('config fields line up in a grid', () => {
     test('a control keeps its size and its affordances stay beside it', async ({ page }) => {
         await openSection(page, 'appearance');
         await openSubTab(page, 'data-appearance-tab', 'datetime');
+        // The first panel is Greeting, a text field; its select-bearing
+        // neighbour folds, and a folded control measures 0 wide.
+        await openConfigPanel(page, 'Clock & weather');
 
         const row = await page.evaluate(() => {
-            const el = document.querySelector('#config-appearance-body .config-select');
+            const el = [...document.querySelectorAll('#config-appearance-body .config-select')]
+                .find((s) => s.checkVisibility());
             const field = el.closest('.config-field');
             const aff = field.querySelector('.config-field-affordances');
             const s = el.getBoundingClientRect();

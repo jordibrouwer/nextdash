@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, waitForConfigReady } = require('./e2e-helpers');
 
 /**
  * The Glances page (#glances): Config → Glances switches it on, an icon in the navigation and Shift+G
@@ -176,6 +176,19 @@ async function openView(page, hash = HASH) {
     await markWhatsNewSeen(page);
     await page.goto(`/${hash}`);
     await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible({ timeout: 15_000 });
+}
+
+/**
+ * Open Config → Glances on a cold load, and wait until the section that will stay
+ * is on screen. A deep link to Config draws the section once while the data
+ * loads and again when the dashboard has finished starting (the second render
+ * replaces the first, with its own read of the settings), so a click on the
+ * first one is lost and an answer written into it disappears. The dashboard
+ * instance appears in the same task as that second render.
+ */
+async function gotoConfig(page, hash) {
+    await page.goto(hash);
+    await waitForConfigReady(page);
 }
 
 const menuIds = (page) => page.locator('[data-glances-section]')
@@ -476,8 +489,16 @@ test.describe('Glances page: the sections', () => {
         await openView(page, '#glances/history');
         const plot = page.locator('[data-glances-plot="cpu"]');
         await expect(plot).toBeVisible();
-        await plot.hover({ position: { x: 100, y: 30 } });
-        await expect(page.locator('.glances-tip')).toContainText('%');
+        // The card hides on any scroll, and a page that was just opened still
+        // settles its scroll for a second or so (seen as document scroll events
+        // right after the hover): move again, a few pixels over, as a reader
+        // would, until the card stays up.
+        let nudge = 0;
+        await expect(async () => {
+            nudge = (nudge + 1) % 2;
+            await plot.hover({ position: { x: 100 + nudge * 4, y: 30 } });
+            await expect(page.locator('.glances-tip')).toContainText('%', { timeout: 500 });
+        }).toPass({ timeout: 10_000 });
         await expect(page.locator('.glances-crosshair').first()).toBeVisible();
         await page.keyboard.press('.');
         await expect(page.locator('[data-glances-range-select="cpu"]')).toHaveValue('6h');
@@ -757,7 +778,7 @@ test.describe('Config → Glances', () => {
     test('the settings are read, changed and saved without the password coming back', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const server = page.locator('[data-glances-field="server"]');
         await expect(server).toHaveValue(CONFIG.server);
         await expect(page.locator('[data-glances-block="alerts"]')).not.toBeChecked();
@@ -776,7 +797,9 @@ test.describe('Config → Glances', () => {
         await page.locator('[data-glances-field="diskHide"]').blur();
         await expect(page.locator('[data-glances-saved]')).toContainText('Saved');
 
-        expect(state.saved).toMatchObject({
+        // Saves go one at a time: the "Saved" can be an earlier one's, with the
+        // last change still on its way after it.
+        await expect.poll(() => state.saved).toMatchObject({
             enabled: true, server: CONFIG.server, user: 'me', password: 's3cret', refresh: 5,
             diskHide: ['/mnt/cache', '/mnt/user'],
         });
@@ -792,7 +815,7 @@ test.describe('Config → Glances', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: 'Glances 4.5.8', version: '4.5.8', plugins: ['cpu', 'mem'] }) });
         });
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         await page.locator('[data-glances-connect]').click();
         await expect(page.locator('[data-glances-result]')).toContainText('Glances 4.5.8');
     });
@@ -803,8 +826,34 @@ test.describe('Config → Glances', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ error: 'login refused' }) });
         });
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         await page.locator('[data-glances-connect]').click();
+        await expect(page.locator('[data-glances-result]')).toContainText('refused that login');
+    });
+
+    test('the form stays shut until the settings are read', async ({ page }) => {
+        await mockGlances(page);
+        // The settings are held back: before they came in, a click on Test connection
+        // was answered and then wiped, and a change had nothing to be saved onto.
+        let release;
+        const held = new Promise((resolve) => { release = resolve; });
+        await page.route('**/api/glances/config*', async (route) => {
+            if (route.request().method() === 'GET') await held;
+            await route.fallback();
+        });
+        await page.route('**/api/glances/connect', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ error: 'login refused' }) });
+        });
+        await markWhatsNewSeen(page);
+        await gotoConfig(page, '/#config/glances');
+        const connect = page.locator('[data-glances-connect]');
+        const server = page.locator('[data-glances-field="server"]');
+        await expect(connect).toBeDisabled();
+        await expect(server).toBeDisabled();
+        release();
+        await expect(server).toHaveValue(CONFIG.server);
+        await expect(server).toBeEnabled();
+        await connect.click();
         await expect(page.locator('[data-glances-result]')).toContainText('refused that login');
     });
 });
@@ -900,7 +949,7 @@ test.describe('Glances page: recording, insights and the data kept', () => {
     test('Config → Glances has five tabs, each with its own panels, and says what is per host', async ({ page }) => {
         await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const tabs = page.locator('[data-glances-tab]');
         await expect(tabs).toHaveText(['Connection', 'Page', 'Recording', 'Notices', 'Advanced']);
         const shown = () => page.locator('[data-glances-panel]:not([hidden])').evaluateAll((els) => els.map((e) => e.getAttribute('data-glances-panel')));
@@ -929,7 +978,7 @@ test.describe('Glances page: recording, insights and the data kept', () => {
     test('Config → Glances says what is collected and deletes it on confirmation', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances/recording');
+        await gotoConfig(page, '/#config/glances/recording');
         const info = page.locator('[data-glances-collected]');
         await expect(info).toContainText('3400');
         await expect(info).toContainText('2 incidents');
@@ -970,7 +1019,7 @@ test.describe('the connection switch', () => {
         expect(quick1).toBeGreaterThanOrEqual(quick0);
 
         // Config shows it off, and switching it on there is the same switch.
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const config = page.locator('[data-glances-field="connected"]');
         await expect(config).not.toBeChecked();
         await config.setChecked(true, { force: true });
@@ -1273,7 +1322,7 @@ test.describe('how often the host is recorded', () => {
         // The reading is described: how many an hour that is.
         await expect(pick).toHaveAttribute('title', /4 readings an hour/);
         // It is on the page and in the server's status, not in Config.
-        await page.goto('/#config/glances/page');
+        await gotoConfig(page, '/#config/glances/page');
         await expect(page.locator('[data-glances-field="refresh"]')).toBeVisible();
         await expect(page.locator('[data-glances-record]')).toHaveCount(0);
         await openView(page);
@@ -1328,7 +1377,9 @@ test.describe('the ℹ buttons', () => {
         await mockGlances(page);
         await openView(page);
         const cores = page.locator('[data-glances-info="cores"]');
-        await cores.click();
+        // Through clickInfo: the popover closes on any scroll, and under load the
+        // freshly opened page can still be settling when the first click lands.
+        await clickInfo(page, '[data-glances-info="cores"]');
         const pop = page.locator('[data-glances-info-pop]');
         await expect(pop).toHaveAttribute('data-glances-info-pop', 'cores');
         await expect(pop).toContainText('single-threaded');
@@ -1353,7 +1404,7 @@ test.describe('the ℹ buttons', () => {
         await expect(pop).toHaveCount(0);
 
         // Its link goes to the explainer.
-        await cores.click();
+        await clickInfo(page, '[data-glances-info="cores"]');
         await pop.locator('.glances-info-pop-more').click();
         await expect(page.locator('#app-modal .view-explain-modal')).toBeVisible();
     });
@@ -1416,7 +1467,7 @@ test.describe('Config → Glances: reset', () => {
     test('Show Glances and the connection go off together, and the connection follows Show Glances', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const shown = page.locator('[data-glances-field="enabled"]');
         const connected = page.locator('[data-glances-field="connected"]');
         await expect(shown).toBeChecked();
@@ -1450,7 +1501,7 @@ test.describe('Config → Glances: how often an open page reads', () => {
     test('from a second to a quarter of an hour, saved as seconds', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances/page');
+        await gotoConfig(page, '/#config/glances/page');
         // Named apart from Record every, on the Glances page: the two are different things.
         await expect(page.locator('label[for="config-glances-refresh"]')).toHaveText('Refresh while the page is open');
         await expect(page.locator('#config-glances-body')).not.toContainText('Read the host');
@@ -1466,7 +1517,7 @@ test.describe('Config navigation: Glances', () => {
     test('the Glances section carries the "new" badge in the rail', async ({ page }) => {
         await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const item = page.locator('[data-config-section="glances"]');
         await expect(item).toBeVisible();
         await expect(item).toHaveAttribute('data-config-new', /new/i);
@@ -1479,7 +1530,7 @@ test.describe('Config → Glances: every change is kept', () => {
     test('a checkbox or a choice is saved at once, and the field being typed in is left alone', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         await expect(page.locator('[data-glances-field="server"]')).toHaveValue(CONFIG.server);
 
         await page.locator('[data-glances-tab="page"]').click();
@@ -1502,7 +1553,7 @@ test.describe('Config → Glances: every change is kept', () => {
     test('notices per kind of incident: all off at first, each saved at once', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances/notices');
+        await gotoConfig(page, '/#config/glances/notices');
         const boxes = page.locator('[data-glances-notify]');
         await expect(boxes).toHaveCount(6);
         for (let i = 0; i < 6; i += 1) await expect(boxes.nth(i)).not.toBeChecked();
@@ -1523,7 +1574,7 @@ test.describe('Config → Glances: every change is kept', () => {
             }
         });
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const shown = page.locator('[data-glances-field="enabled"]');
         await expect(page.locator('[data-glances-field="server"]')).toHaveValue('');
         await shown.check();
@@ -1558,7 +1609,7 @@ test.describe('the public demo watches Tower', () => {
         await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(1);
 
         // The settings stay the demo's own: the server refuses them, so the section is not there.
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
         await expect(page.locator('[data-config-section="glances"]')).toHaveCount(0);
         await expect(page.locator('[data-glances-field="server"]')).toHaveCount(0);
@@ -1610,7 +1661,7 @@ test.describe('Glances and the Containers view: the same machine', () => {
         const state = await mockGlances(page);
         state.link = { ...state.link, matches: [], onlyGlances: [], onlyDocker: [], byId: 0, byName: 0, problem: 'none-matched', glancesCount: 4, dockerCount: 6 };
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances/advanced');
+        await gotoConfig(page, '/#config/glances/advanced');
         const info = page.locator('[data-glances-link-state]');
         await expect(info).toContainText('0 containers matched');
         await expect(info).toContainText('Glances has 4 containers and Docker has 6, but none belong together');
@@ -1623,7 +1674,7 @@ test.describe('Glances and the Containers view: the same machine', () => {
     test('Config → Glances: Auto, Yes or No, with what was detected and what matched', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances/advanced');
+        await gotoConfig(page, '/#config/glances/advanced');
         const select = page.locator('[data-glances-field="dockerLink"]');
         await expect(select).toHaveValue('auto');
         await expect(select.locator('option')).toHaveText(['Auto', 'Yes', 'No']);
@@ -1653,7 +1704,7 @@ test.describe('Config → Glances: from the address to the page', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: 'Glances 4.5.8', plugins: ['cpu', 'mem'] }) });
         });
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const open = page.locator('[data-glances-open-page]');
         await expect(open).toBeVisible();
         // Leaving the address field tries it without pressing Test connection.
@@ -1674,7 +1725,7 @@ test.describe('Config → Glances: from the address to the page', () => {
             } else await route.fallback();
         });
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         await expect(page.locator('[data-glances-field="server"]')).toHaveValue(CONFIG.server);
         await expect(page.locator('[data-glances-open-page]')).toBeHidden();
     });
@@ -1854,7 +1905,7 @@ test.describe('several hosts', () => {
         const state = await mockGlances(page);
         state.hosts = TWO();
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const tabs = page.locator('[data-glances-host-tab]');
         await expect(tabs).toHaveText(['Home', 'NAS']);
         await expect(page.locator('[data-glances-host-tab="main"]')).toHaveAttribute('aria-pressed', 'true');
@@ -1886,7 +1937,7 @@ test.describe('several hosts', () => {
         const state = await mockGlances(page);
         state.hosts = [{ id: 'main', name: 'Home' }];
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         await expect(page.locator('[data-glances-host-tab]')).toHaveCount(1);
         await expect(page.locator('[data-glances-host-remove]')).toBeHidden();
         state.hosts = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, name: id.toUpperCase() }));
@@ -1898,7 +1949,7 @@ test.describe('several hosts', () => {
     test('Config: Glances readings for the Containers view are on, and keeping Docker\'s own is saved', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances/advanced');
+        await gotoConfig(page, '/#config/glances/advanced');
         const box = page.locator('[data-glances-field="useForContainers"]');
         await expect(box).toBeChecked();
         await box.uncheck();
@@ -1912,7 +1963,7 @@ test.describe('several hosts', () => {
         state.hosts = [{ id: 'main', name: 'Home' }, { id: 'nas', name: 'NAS' }];
         state.link.hostId = 'nas';
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         const line = page.locator('[data-glances-link-docker-host]');
         await expect(line).toContainText('linked to NAS');
         await page.locator('[data-glances-host-tab="nas"]').click();
@@ -2001,7 +2052,7 @@ test.describe('several hosts', () => {
         const state = await mockGlances(page);
         state.hosts = [{ id: 'main', name: 'Home' }, { id: 'pi', name: 'Pi', configured: false }];
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await gotoConfig(page, '/#config/glances');
         await page.locator('[data-glances-host-tab="pi"]').click();
         await expect(page.locator('[data-glances-field="name"]')).toHaveValue('Pi');
         await page.locator('[data-glances-tab="notices"]').click();

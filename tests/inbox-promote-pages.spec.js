@@ -27,6 +27,12 @@ async function twoPages(page) {
     });
     await page.reload();
     await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+    // The layout is in the served HTML; the dashboard that reads it is built
+    // later, and on a busy machine a test could reach for
+    // window.dashboardInstance before it existed. Wait for it, with the page
+    // just added.
+    await page.waitForFunction(() => (window.dashboardInstance?.pages || [])
+        .some((p) => p.name === 'promote-spec-page'), null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
 }

@@ -34,58 +34,65 @@ test.describe('config keyboard discoverability', () => {
             .toBeVisible();
     });
 
-    test('first config open shows the keyboard intro toast once', async ({ page }) => {
-        // The seen tips live in settings on the server, and the two specs above
-        // this one open config and mark this tip seen there. init() only sets
-        // the in-memory copy, so the empty state has to be written back and the
-        // page reloaded onto it — otherwise this "first open" is a second one.
+    /*
+     * The config keys used to be introduced by a toast on a first config open.
+     * Tips wait in the bell now (group Tips), so the same introduction is a bell
+     * row: it comes without a toast, and once read it does not come back.
+     */
+    test('the config keyboard tip waits in the bell once, never as a toast', async ({ page }) => {
         await page.goto('/');
-        await page.waitForFunction(() => window.DiscoverabilityState != null, null, { timeout: 15_000 });
-        await page.evaluate(async () => {
-            window.DiscoverabilityState?.init?.({ seenTips: [] });
-            await window.DiscoverabilityState?.persistNow?.();
-            // The search-mode note is not a tip in that state: it is keyed on
-            // its own localStorage entry, and persistNow rewrites the legacy
-            // keys around it — leaving this one cleared, so it fired again on
-            // the second open and stood where this test counts zero toasts.
-            // Stamped with the release the way markWhatsNewSeen does.
-            try {
-                localStorage.setItem('nextdash:search-mode-key-announced',
-                    window.NEXTDASH_WHATS_NEW_RELEASE || '');
-            } catch { /* private mode */ }
-        });
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView, null, { timeout: 15_000 });
+        await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView
+            && window.NotificationBell && window.DashboardKeyboardTip, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        // The tip is queued behind whatever the view says on opening, so the
-        // first toast to appear is not always this one. Wait for the text
-        // rather than for the element, or the assertion reads a toast that was
-        // on its way out.
-        await expect(page.locator('#app-notification.show'))
-            .toContainText(/j.*k|0.*9|Ctrl.*Shift.*K|cheat sheet|spiekbriefje/i, { timeout: 10_000 });
+        await page.evaluate(() => {
+            window.DiscoverabilityState.forgetTip('tipConfigKeyboard', { persist: false });
+            // Every other tip counts as offered before, so the never-offered
+            // config keyboard tip is sure to fill one of today's two slots.
+            const all = window.ConfigHelpTips.TIP_GROUPS.flatMap((g) => g.tips);
+            localStorage.setItem('nextdash-keyboard-tips-offered',
+                JSON.stringify(all.filter((id) => id !== 'tipConfigKeyboard')));
+            localStorage.removeItem('nextdash-keyboard-tip-current');
+            window.dashboardInstance.settings.enableSessionTips = true;
+            // Every toast is recorded and still shown, so a tip sent as one is seen.
+            window.__toastTexts = [];
+            const show = window.AppNotification.show.bind(window.AppNotification);
+            window.AppNotification.show = (message, ...rest) => {
+                window.__toastTexts.push(String(message));
+                return show(message, ...rest);
+            };
+        });
+        const tipToasts = () => page.evaluate(() => window.__toastTexts
+            .filter((m) => /Ctrl\+Shift\+K|j<\/code>\s*\/\s*<code>k/.test(m)).length);
 
-        await page.evaluate(() => window.AppNotification?.hide?.());
-        await expect(page.locator('#app-notification.show')).toHaveCount(0);
+        try {
+            await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+            await expect(page.locator('#config-view-body')).toBeVisible();
+            expect(await page.evaluate(() => window.DashboardKeyboardTip.tick())).toContain('tipConfigKeyboard');
 
-        console.log('VOOR SLUITEN ->', JSON.stringify(await page.evaluate(() => ({
-            text: (document.querySelector('#app-notification')?.textContent||'').replace(/\s+/g,' ').trim().slice(0,50),
-            shown: !!document.querySelector('#app-notification.show'),
-            queue: window.AppNotification?._queue?.length,
-        }))));
-        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        // Fixed wait: the check is that the notification does not come back.
-        await page.waitForTimeout(900);
-        console.log('SLEUTEL ->', JSON.stringify(await page.evaluate(() => ({
-            announced: localStorage.getItem('nextdash:search-mode-key-announced'),
-            release: window.NEXTDASH_WHATS_NEW_RELEASE,
-        }))));
-        console.log('TWEEDE OPENING ->', JSON.stringify(await page.evaluate(() => ({
-            text: (document.querySelector('#app-notification')?.textContent||'').replace(/\s+/g,' ').trim().slice(0,70),
-            shown: !!document.querySelector('#app-notification.show'),
-        }))));
-        await expect(page.locator('#app-notification.show')).toHaveCount(0);
+            await page.evaluate(() => window.NotificationBell.refreshAll());
+            await page.evaluate(() => window.NotificationBell.open());
+            const row = page.locator('.notification-bell-row[data-bell-id="keyboard-tip:tipConfigKeyboard"]');
+            await expect(row).toBeVisible();
+            await expect(row).toContainText(/j\s*\/\s*k.*Ctrl\+Shift\+K/);
+            await expect(row.getByRole('button', { name: 'Cheat sheet' })).toBeVisible();
+            expect(await tipToasts()).toBe(0);
+
+            await row.getByRole('button', { name: 'Mark read' }).click();
+            await expect(row).toHaveCount(0);
+            expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('tipConfigKeyboard'))).toBe(true);
+
+            // A second config open the same day: no row and no toast.
+            await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+            await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+            await expect(page.locator('#config-view-body')).toBeVisible();
+            expect(await page.evaluate(() => window.DashboardKeyboardTip.tick()) || []).not.toContain('tipConfigKeyboard');
+            await page.evaluate(() => window.NotificationBell.refreshAll());
+            await expect(row).toHaveCount(0);
+            expect(await tipToasts()).toBe(0);
+        } finally {
+            // The seen mark is shared through ./data; leave the tip unseen again.
+            await page.evaluate(() => window.DiscoverabilityState.forgetTip('tipConfigKeyboard'));
+        }
     });
 });

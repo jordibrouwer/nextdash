@@ -38,6 +38,10 @@ async function dashboard(page) {
         document.body.setAttribute('data-depth', 'glass');
         d.config?.applyChromeSettings?.();
         d.renderCore?.renderDashboard?.({ animate: false });
+        // Since v1.26.0 a fresh install is on Tarnished Brass, whose categories
+        // sit on a solid card, and a card surface draws no blur at any depth.
+        // The glass surface is what puts a backdrop-filter on every category.
+        window.ThemeLoader.applyCatSurface('glass');
     });
     await page.waitForSelector('.dashboard-grid.layout-cards .category', { timeout: 20_000 });
 }

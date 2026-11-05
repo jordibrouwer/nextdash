@@ -175,12 +175,15 @@ test.describe('web search in the search panel', () => {
         await typeQuery(page, 'zzweb slow');
 
         // Walk the selection down to the entry row, the last selectable row.
+        // One key at a time, looked at again before the next: on a busy machine
+        // the class was read before the key had moved it, the loop pressed on
+        // past the row and wrapped, and twenty presses ended somewhere else.
         const entry = page.locator('#search-matches .search-web-entry');
-        for (let i = 0; i < 20; i += 1) {
-            if (await entry.evaluate((el) => el.classList.contains('keyboard-selected'))) break;
-            await page.keyboard.press('ArrowDown');
-        }
-        await expect(entry).toHaveClass(/keyboard-selected/);
+        const onEntry = () => entry.evaluate((el) => el.classList.contains('keyboard-selected'));
+        await expect(async () => {
+            if (!(await onEntry())) await page.keyboard.press('ArrowDown');
+            expect(await onEntry()).toBe(true);
+        }).toPass({ intervals: [250], timeout: 15_000 });
 
         await page.keyboard.press('Shift+Enter');
         await expect(page.locator('#search-matches .search-web-loading')).toBeVisible();

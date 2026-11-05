@@ -37,7 +37,7 @@ test.describe('the panel index', () => {
     test('every tab lists its panels under the preview', async ({ page }) => {
         await openAppearanceTab(page, 'datetime');
         await expect(index(page)).toBeVisible();
-        await expect(entries(page)).toHaveText(['Clock & weather', 'Date & time', 'Weather', 'Calendar']);
+        await expect(entries(page)).toHaveText(['Greeting', 'Clock & weather', 'Date & time', 'Weather', 'Calendar']);
         const previewTop = async () => (await page.locator('[data-config-preview]').boundingBox())?.y;
         const top = await previewTop();
         const indexTop = (await index(page).boundingBox())?.y ?? 0;
@@ -70,6 +70,6 @@ test.describe('the panel index', () => {
         await page.locator('[data-settings-filter]').first().fill('temperature');
         await expect(entries(page)).toHaveText(['Weather']);
         await page.locator('[data-settings-filter]').first().fill('');
-        await expect(entries(page)).toHaveCount(4);
+        await expect(entries(page)).toHaveCount(5);
     });
 });

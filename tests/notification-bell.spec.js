@@ -783,11 +783,28 @@ test('the coloured answer slides its row away, the rows below move up, then the 
     await page.waitForTimeout(300);
     await expect(panel).toBeVisible();
 
-    const belowBefore = (await row(page, 'probe-below').boundingBox()).y;
+    // The row slides away and the next one moves up, while the panel is still open
+    // and before the action runs. Watched in the page, frame by frame: the whole
+    // sequence takes about 400ms, and a poll from the test side could look for the
+    // first time after the action had already run, under load.
+    await page.evaluate(() => {
+        const below = () => document.querySelector('.notification-bell-row[data-bell-id="probe-below"]');
+        const start = below().getBoundingClientRect().top;
+        window.__moved = null;
+        const tick = () => {
+            const b = below();
+            if (b && b.getBoundingClientRect().top < start - 5) {
+                const p = document.querySelector('.notification-bell-panel');
+                window.__moved = { panelOpen: !p.hidden && !p.classList.contains('is-shrinking'),
+                    ran: window.__ran.filter((r) => !r.other).length };
+                return;
+            }
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    });
     await row(page, 'probe-answer').getByRole('button', { name: 'Go there' }).click();
-    // The row slides away and the next one moves up, while the panel is still open.
-    await expect.poll(async () => (await row(page, 'probe-below').boundingBox())?.y ?? 0, { timeout: 2000 }).toBeLessThan(belowBefore - 5);
-    expect(await page.evaluate(() => window.__ran.filter((r) => !r.other).length)).toBe(0);
+    await expect.poll(() => page.evaluate(() => window.__moved), { timeout: 2000 }).toEqual({ panelOpen: true, ran: 0 });
     // Then the panel shrinks, and the action runs once it is on its way out.
     await expect(panel).toBeHidden();
     const ran = await page.evaluate(() => window.__ran.filter((r) => !r.other));

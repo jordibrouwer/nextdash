@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, openAllBackdrops, pickBackdropFromAll } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openAllBackdrops, pickBackdropFromAll } = require('./e2e-helpers');
 
 /**
  * A custom theme can say everything a packaged one can: the theme colour and
@@ -11,6 +11,9 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, openAllBackdrops, p
 const colors = (page) => page.evaluate(async () => (await fetch('/api/colors')).json());
 
 async function openEditor(page) {
+    // Without it the one-time action-bar note turns up at a random moment and
+    // stands over the theme row's export button.
+    await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);

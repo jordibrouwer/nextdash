@@ -15,7 +15,9 @@ const ROW = '.notification-bell-row[data-bell-id="install-count-notice"]';
 async function loadWithRowPending(page) {
     await markWhatsNewSeen(page);
     await page.goto('/');
-    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0 && window.NotificationBell, null, { timeout: 15_000 });
+    // Settings too: the bell's marks below arrive with them, and pages come first.
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0
+        && window.dashboardInstance._settingsLoaded === true && window.NotificationBell, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate((id) => {
@@ -27,6 +29,14 @@ async function loadWithRowPending(page) {
             return save.call(this, opts, ...rest);
         })(window.dashboardInstance.saveSettings);
         window.DiscoverabilityState?.resetSettingPromoSeen?.(id, { persist: false });
+        // And the bell's own mark for the row: "Turn it off" puts the row aside
+        // the way a No does, and a mark another test left in the shared ./data
+        // hid the row before this one began. Forgotten here only, not saved.
+        const saved = window.DiscoverabilityState?.exportState?.();
+        if (saved?.bell?.['install-count-notice']) {
+            delete saved.bell['install-count-notice'];
+            window.DiscoverabilityState.init(saved);
+        }
         window.dashboardInstance.settings.installPingEnabled = true;
         window.dashboardInstance.telemetryLockedOff = false;
     }, PROMO_ID);
@@ -66,10 +76,12 @@ test.describe('the install count notice', () => {
         await expect(page.locator(ROW)).toHaveCount(0);
         expect(await page.evaluate(() => window.dashboardInstance.settings.installPingEnabled)).toBe(false);
         expect(await page.evaluate((id) => window.DiscoverabilityState.hasSeenSettingPromo(id), PROMO_ID)).toBe(true);
-        // Put it back: this spec shares a data directory with the others.
+        // Put it back: this spec shares a data directory with the others. This
+        // key only: a whole save also wrote the bell's mark for the row (the
+        // coloured answer puts it aside), and the next test found no row.
         await page.evaluate(async () => {
             window.dashboardInstance.settings.installPingEnabled = true;
-            await window.dashboardInstance.saveSettings();
+            await window.dashboardInstance.saveSettings({ keys: ['installPingEnabled'] });
         });
     });
 

@@ -86,14 +86,27 @@ test('the header stays one row, and nothing is pushed off it', async ({ page }) 
         await d.saveSettings?.();
         d.setupDOM?.();
     });
+    // The bell's badge swells and rings once when it first counts something;
+    // the row is measured at rest.
+    await expect(page.locator('.notification-bell-badge.is-pulsing, .notification-bell-button.is-shaking')).toHaveCount(0);
 
     const fit = await page.evaluate(() => {
         const actions = document.querySelector('.header-actions');
         const header = document.querySelector('.header-top');
         const config = document.querySelector('.config-link');
         const r = config.getBoundingClientRect();
+        // How far the controls reach past the row. Not scrollWidth: the bell
+        // is the last control, and its count pill hangs over its corner by
+        // design (notification-bell.css, as on the other destinations), which
+        // scrollWidth counts as overflow although no control moved.
+        const edge = actions.getBoundingClientRect().right;
+        const reach = Math.max(edge, ...[...actions.querySelectorAll('*')]
+            .filter((el) => !el.closest('.notification-bell-badge'))
+            .map((el) => el.getBoundingClientRect())
+            .filter((box) => box.width > 0)
+            .map((box) => box.right));
         return {
-            overflow: Math.round(actions.scrollWidth - actions.clientWidth),
+            overflow: Math.round(reach - edge),
             // The row is a band with padding, so one row means one shared
             // centre line rather than one shared top edge.
             sameRow: Math.abs(

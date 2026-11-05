@@ -134,10 +134,15 @@ test('giving a kept bookmark a page and a category files it', async ({ page }) =
     await clearSelection(page);
     // By key, not by position: the model filters before the list repaints, so
     // the first rendered row can still be the previous query's.
-    // The box shows on hover (rows keep it out of sight at rest, as in Health).
-    await page.locator('#config-bm-list [data-bm-key*="cfg-move.example"]').hover();
-    await page.locator('#config-bm-list [data-bm-key*="cfg-move.example"] input[type="checkbox"]')
-        .check();
+    // The box shows on hover (rows keep it out of sight at rest, as in Health),
+    // and the list can still repaint once after the search settles: a row drawn
+    // anew is not under the pointer, and its tick stayed hidden for thirty
+    // seconds. Hover again until the tick takes.
+    const row = page.locator('#config-bm-list [data-bm-key*="cfg-move.example"]');
+    await expect(async () => {
+        await row.hover();
+        await row.locator('input[type="checkbox"]').check({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
     await expect.poll(async () => page.evaluate(() => {
         const d = window.dashboardInstance;
         return (d.config.instance || d.config).bmSelected.size;
@@ -178,10 +183,12 @@ test('a whole selection can be filed at once, with a category', async ({ page })
     await expect.poll(async () => (await configView(page)).visible.length, { timeout: 10_000 }).toBe(2);
 
     await clearSelection(page);
-    // The box shows on hover (rows keep it out of sight at rest, as in Health).
-    await page.locator('#config-bm-list [data-bm-key*="cfg-bulkone.example"]').hover();
-    await page.locator('#config-bm-list [data-bm-key*="cfg-bulkone.example"] input[type="checkbox"]')
-        .check();
+    // The box shows on hover; hovered again after a late repaint, as above.
+    const first = page.locator('#config-bm-list [data-bm-key*="cfg-bulkone.example"]');
+    await expect(async () => {
+        await first.hover();
+        await first.locator('input[type="checkbox"]').check({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
     await page.locator('#config-bm-list [data-bm-key*="cfg-bulktwo.example"] input[type="checkbox"]')
         .check();
     await expect.poll(async () => page.evaluate(() => {

@@ -45,9 +45,13 @@ async function setSurface(page, word) {
 }
 
 test.describe('category surface', () => {
-    test('a fresh page follows its look: glass on Tidal Slate, open on an ink look', async ({ page }) => {
-        // Since v1.24.0 a fresh install starts on Tidal Slate (dark), a frost
-        // look: its categories are drawn on glass.
+    test('a fresh page follows its look: card on Tarnished Brass, glass on Tidal Slate, open on an ink look', async ({ page }) => {
+        // Since v1.26.0 a fresh install starts on Tarnished Brass (dark), a
+        // brushed-metal look: its categories are drawn on a solid card.
+        await openDashboard(page);
+        await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'card');
+        // Tidal Slate (dark) is a frost look: its categories are drawn on glass.
+        await useGlassLook(page, 'tidal-slate-dark');
         await openDashboard(page);
         await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'glass');
         // Neutral (dark) is an ink look: its categories are text on the page,

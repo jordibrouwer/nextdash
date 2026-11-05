@@ -78,7 +78,9 @@ test.describe('Appearance folding panels', () => {
 
     test('the first panel is open and a folded one names its values', async ({ page }) => {
         await openAppearanceTab(page, 'datetime');
-        await expect(foldOf(page, 'Clock & weather')).toHaveAttribute('aria-expanded', 'true');
+        // Greeting leads the tab since the large clock got its name field.
+        await expect(foldOf(page, 'Greeting')).toHaveAttribute('aria-expanded', 'true');
+        await expect(foldOf(page, 'Clock & weather')).toHaveAttribute('aria-expanded', 'false');
         const weather = foldOf(page, 'Weather');
         await expect(weather).toHaveAttribute('aria-expanded', 'false');
         await expect(page.locator('[data-behavior-field="weatherUnit"]')).toBeHidden();
@@ -108,13 +110,13 @@ test.describe('Appearance folding panels', () => {
         await expect(foldOf(page, 'Weather')).toHaveAttribute('aria-expanded', 'true');
         await expect(page.locator('[data-behavior-field="weatherUnit"]')).toBeVisible();
         // Folding the first one is remembered too.
-        await foldOf(page, 'Clock & weather').click();
-        await expect(foldOf(page, 'Clock & weather')).toHaveAttribute('aria-expanded', 'false');
+        await foldOf(page, 'Greeting').click();
+        await expect(foldOf(page, 'Greeting')).toHaveAttribute('aria-expanded', 'false');
 
         await page.reload();
         await openAppearanceTab(page, 'datetime');
         await expect(foldOf(page, 'Weather')).toHaveAttribute('aria-expanded', 'true');
-        await expect(foldOf(page, 'Clock & weather')).toHaveAttribute('aria-expanded', 'false');
+        await expect(foldOf(page, 'Greeting')).toHaveAttribute('aria-expanded', 'false');
         await expect(foldOf(page, 'Calendar')).toHaveAttribute('aria-expanded', 'false');
     });
 

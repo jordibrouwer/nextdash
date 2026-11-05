@@ -78,8 +78,14 @@ test.describe('Config overview — your install', () => {
         // Containers only appear with a Docker socket, and the inbox only when
         // it is switched on -- the three that are always there are asserted.
         for (const id of ['bookmarks', 'health', 'stats']) expect(ids).toContain(id);
+        // Settings is the one panel whose way in depends on its content: "What
+        // changed" opens a list, so a fresh install, with nothing moved from
+        // the defaults, shows the figure without a link to an empty list.
+        const changed = await page.evaluate(() => window.dashboardInstance.config.changedSettings().length);
         for (let i = 0; i < ids.length; i += 1) {
-            await expect(panels.nth(i).locator('.config-widget-go')).toBeVisible();
+            const go = panels.nth(i).locator('.config-widget-go');
+            if (ids[i] === 'settings' && !changed) await expect(go).toHaveCount(0);
+            else await expect(go).toBeVisible();
         }
 
         // The figures are the install's own: the bookmarks panel leads with
@@ -105,6 +111,12 @@ test.describe('Config overview — your install', () => {
     });
 
     test('a clean install says so instead of listing zeroes', async ({ page }) => {
+        // The backup chip reads the server's own last run, which a backup spec
+        // elsewhere in the run may have left failed; clean means clean there too.
+        await page.route('**/api/auto-backups', (route) => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({ enabled: false, backups: [], lastRunError: '' }),
+        }));
         await openOverview(page, CLEAN);
 
         await expect(page.locator('.config-overview-attention .config-attention-chip')).toHaveCount(0);

@@ -24,6 +24,11 @@ async function openView(page, view) {
   await mockDocker(page);
   await page.goto('/' + view.hash);
   await page.waitForSelector(view.ready, { timeout: 20_000 });
+  // The view is drawn during loadData(), before init() publishes the
+  // dashboard and wires the toolbar keys and the search component in the
+  // same tick. Under load a key pressed in that gap had no handler at all:
+  // ':' and '!' went nowhere and the overlay never opened.
+  await page.waitForFunction(() => Boolean(window.dashboardInstance), null, { timeout: 20_000 });
   await dismissBlockingOverlays(page);
   // Nothing focused inside the view, the way a reader arrives with the mouse.
   await page.evaluate(() => document.activeElement?.blur?.());

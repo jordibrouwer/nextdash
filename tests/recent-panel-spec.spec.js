@@ -102,22 +102,26 @@ test.describe('the recent bookmarks panel', () => {
         // The slab is a depth cue, and the default depth is flat, which draws
         // none -- so this is asked of a step that draws depth at all.
         await page.evaluate(() => document.body.setAttribute('data-depth', 'rich'));
-        await expect.poll(() => page.evaluate(() => {
-            const bg = (el) => window.getComputedStyle(el).backgroundColor;
-            const c = bg(document.querySelector('.recent-bookmarks-modal-list'));
-            return c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent'
-                && c !== bg(document.querySelector('.recent-bookmarks-modal'));
-        })).toBe(true);
-
-        const same = await page.evaluate(() => {
-            const bg = (el) => window.getComputedStyle(el).backgroundColor;
+        // The ground is the colour and the image together: Tarnished Brass, the
+        // default since v1.26.0, lays its brushed grain over the panel in the
+        // same base colour as the slab (theme-overlays.css), so the panel and the
+        // slab differ in the image they carry, not in the colour beneath it.
+        const read = () => page.evaluate(() => {
+            const color = (el) => window.getComputedStyle(el).backgroundColor;
+            const ground = (el) => `${color(el)} ${window.getComputedStyle(el).backgroundImage}`;
             const list = document.querySelector('.recent-bookmarks-modal-list');
             const panel = document.querySelector('.recent-bookmarks-modal');
             return {
-                listHasGround: bg(list) !== 'rgba(0, 0, 0, 0)' && bg(list) !== 'transparent',
-                differsFromPanel: bg(list) !== bg(panel),
+                listHasGround: color(list) !== 'rgba(0, 0, 0, 0)' && color(list) !== 'transparent',
+                differsFromPanel: ground(list) !== ground(panel),
             };
         });
+        await expect.poll(async () => {
+            const r = await read();
+            return r.listHasGround && r.differsFromPanel;
+        }).toBe(true);
+
+        const same = await read();
 
         expect(same.listHasGround, 'the list has no ground of its own').toBe(true);
         expect(same.differsFromPanel, 'the slab is the same colour as the panel').toBe(true);

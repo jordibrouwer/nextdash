@@ -28,6 +28,21 @@ async function openStats(page, tab = 'overview') {
             c.repaintStatsBody();
         }, tab);
     }
+    /*
+     * Every answer the section asked for repaints the whole body when it lands
+     * -- the trend, the notify lines, the category names -- and a repaint
+     * draws a fresh chart. One landing after the chart was focused left the
+     * keys going to a chart no longer on the page, and the readout of the new
+     * one empty. So the body is let settle first.
+     */
+    await page.waitForFunction(() => {
+        const d = window.dashboardInstance;
+        const c = d.config;
+        const named = (d.pages || []).every((p) => p.id == null || p.id === ''
+            || c._bmCategoriesCache?.has(String(p.id)));
+        return window.DashboardConfigStatsReady === true && named
+            && !(c._statsInFlight && c._statsInFlight.size);
+    }, null, { timeout: 15_000 });
 }
 
 /** A health report carrying a trend, served in place of the real one. */

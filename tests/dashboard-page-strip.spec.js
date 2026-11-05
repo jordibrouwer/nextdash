@@ -466,6 +466,10 @@ test('the narrow header is the name and a page switcher', async ({ page }) => {
             () => [...document.querySelectorAll('#page-navigation .page-nav-btn')]
                 .filter((b) => !b.hidden).length,
         ), { timeout: 5_000 }).toBe(1);
+        // The bell's badge swells and rings once when it first counts something
+        // (notification-bell.css); mid-swell it reaches past the row's padding
+        // for a moment. What is measured is the row at rest.
+        await expect(page.locator('.notification-bell-badge.is-pulsing, .notification-bell-button.is-shaking')).toHaveCount(0);
 
         const seen = await page.evaluate(() => {
             const shown = (sel) => {

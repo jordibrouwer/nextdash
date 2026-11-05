@@ -11,6 +11,12 @@ const drawerOpen = (page) => page.evaluate(() => Boolean(window.dashboardInstanc
 const bar = (page) => page.locator('[data-bm-selbar]');
 
 async function tick(page, n) {
+    // The rows rise in as the view opens. A row still moving is "not stable"
+    // to check(), whose retry then scrolls it to the top, under the sticky
+    // head; the list repaints on that scroll and the new row is not under the
+    // pointer, so its tick stays hidden until the test times out. Hover once
+    // the row has come to rest.
+    await expect.poll(() => bmRow(page, n).evaluate((row) => row.getAnimations().length)).toBe(0);
     await bmRow(page, n).hover();
     await bmRow(page, n).locator('.config-bm-tick').check();
 }

@@ -72,13 +72,31 @@ async function openAs(page, lastSeen) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(async (token) => {
-        // What the server would have hydrated for this reader.
-        window.DiscoverabilityState.getLastWhatsNewRelease = () => token;
+        const KEY = 'nextdash:last-whats-new-dashboard-release';
+        const state = window.DiscoverabilityState;
+        const realGet = state.getLastWhatsNewRelease;
+        let stored = null;
+        // What the server would have hydrated for this reader -- for this one
+        // opening only. The window reads it as it opens; left in place, the
+        // dashboard's own unseen-release check reads it too. Under load that
+        // check is still retrying while this window is open (it waits for a
+        // modal to close), so the moment "Show me" closed the window, the
+        // dashboard opened the notes again for a reader it took to be behind.
+        state.getLastWhatsNewRelease = () => token;
         try {
-            localStorage.setItem('nextdash:last-whats-new-dashboard-release', token);
+            stored = localStorage.getItem(KEY);
+            localStorage.setItem(KEY, token);
         } catch { /* storage off */ }
-        await window.ensureWhatsNewLoaded?.();
-        await window.openWhatsNewModal({ force: true, markSeenOnConfirm: false });
+        try {
+            await window.ensureWhatsNewLoaded?.();
+            await window.openWhatsNewModal({ force: true, markSeenOnConfirm: false });
+        } finally {
+            state.getLastWhatsNewRelease = realGet;
+            try {
+                if (stored === null) localStorage.removeItem(KEY);
+                else localStorage.setItem(KEY, stored);
+            } catch { /* storage off */ }
+        }
     }, lastSeen ? `2026.12-dashboard-release-${lastSeen}` : '');
     await expect(page.locator('.whats-new-modal [data-wn-content]')).toBeVisible();
 }

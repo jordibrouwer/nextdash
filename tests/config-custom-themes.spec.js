@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel, markConfigSettingPromosSeen } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel, markConfigSettingPromosSeen } = require('./e2e-helpers');
 
 /**
  * Start from no custom themes.
@@ -32,6 +32,9 @@ async function resetCustomThemes(page) {
 }
 
 async function openCustomThemes(page) {
+    // Without it the one-time bell and action-bar notes turn up at a random
+    // moment and swallow a click on the Appearance tabs.
+    await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
@@ -51,6 +54,7 @@ async function openCustomThemes(page) {
 
 test.describe('custom theme editor', () => {
     test('Appearance is split into General and Custom themes', async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -243,6 +247,7 @@ test.describe('custom theme editor', () => {
     });
 
     test('the Appearance link opens the theme editor tab', async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -257,6 +262,7 @@ test.describe('custom theme editor', () => {
     });
 
     test('Look opens Custom themes as a page of its own, with a way back', async ({ page }) => {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);

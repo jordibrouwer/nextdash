@@ -706,7 +706,12 @@ test.describe('onboarding settings', () => {
         // be rebound or they go dead.
         await page.locator('[data-behavior-tab="general"]').click();
         await page.locator('[data-behavior-tab="privacy"]').click();
-        await expect(page.locator('[data-behavior-action]')).toHaveCount(2);
+        // The two onboarding actions, and the notices panel's "Bring back
+        // dismissed notifications" since the bell came.
+        await expect(page.locator('[data-behavior-action]')).toHaveCount(3);
+        for (const action of ['reset-onboarding', 'whats-new', 'bring-back-bell']) {
+            await expect(page.locator(`[data-behavior-action="${action}"]`)).toBeVisible();
+        }
 
         await toggle.setChecked(start);
     });

@@ -1,6 +1,8 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
+const {
+    dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel, markWhatsNewSeen, markConfigSettingPromosSeen,
+} = require('./e2e-helpers');
 
 /**
  * Favicon harmonisation is on unless a theme says otherwise.
@@ -19,10 +21,15 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } =
 
 /** Load the dashboard and wait until the instance is ready to be driven. */
 async function loadDashboard(page) {
+    // Before the first navigation: without it the one-time bell note turns up
+    // at a random moment and closes the theme picker under the click.
+    await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The Random theme promo arrives just after Appearance opens and does the same.
+    await markConfigSettingPromosSeen(page);
 }
 
 /** How many elements are currently harmonised, and what the theme stored. */

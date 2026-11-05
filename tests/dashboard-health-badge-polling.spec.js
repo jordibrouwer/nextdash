@@ -167,18 +167,38 @@ test.describe('health badge polling', () => {
         });
 
         const before = await requestCount(page);
-        await page.evaluate(() => {
-            Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
-            document.dispatchEvent(new Event('visibilitychange'));
+        /*
+         * Counted at the badge, not on the wire. The same facts endpoint is
+         * also read by the bell's link-review row, and every settings save
+         * (the onboarding and tour marks the setup writes) reloads the inbox,
+         * which refreshes the bell: under load one of those lands after the
+         * return and read as a second badge fetch. Both handlers run inside
+         * the one visibilitychange dispatch, so the calls made by the return
+         * are all counted by the time dispatchEvent returns.
+         */
+        const badgeCalls = await page.evaluate(() => {
+            const visual = window.dashboardInstance.visual;
+            const original = visual.updateHealthBadge;
+            let calls = 0;
+            visual.updateHealthBadge = function (...args) {
+                calls += 1;
+                return original.apply(this, args);
+            };
+            try {
+                Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+                document.dispatchEvent(new Event('visibilitychange'));
+            } finally {
+                visual.updateHealthBadge = original;
+            }
+            return calls;
         });
 
         // Exactly one refresh, from dashboard.js's own visibilitychange
         // handler. The poller deliberately does not fetch here as well: doing
         // it in both places fetched the report twice on every tab switch.
-        await expect.poll(() => requestCount(page), { timeout: 5_000 }).toBe(before + 1);
-        // A fixed wait: a second fetch, if there were one, needs time to arrive.
-        await page.waitForTimeout(300);
-        expect(await requestCount(page), 'the badge was fetched twice on return').toBe(before + 1);
+        expect(badgeCalls, 'the badge was fetched twice on return').toBe(1);
+        // And that refresh did go out to the server.
+        await expect.poll(() => requestCount(page), { timeout: 5_000 }).toBeGreaterThan(before);
 
         // And the backoff is reset, so the next poll comes at the base delay
         // rather than whatever the outage had crept up to.

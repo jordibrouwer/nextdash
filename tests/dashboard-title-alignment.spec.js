@@ -64,6 +64,15 @@ const measure = (page, widget) => page.evaluate((isWidget) => {
     };
 }, widget);
 
+/**
+ * A look that sets its titles from the left. Tarnished Brass, the default since
+ * v1.26.0, is brushed metal, and under Signature brushed centres a title on its
+ * plate (theme-signature.css): there the // stands wherever the length of the
+ * name puts it, which is the drawing and not a drift. What these two hold is a
+ * title set from the left, as the glass look the suite used to start on does.
+ */
+const useLeftSetTitles = (page) => useGlassLook(page);
+
 test.describe('titles of categories and widgets', () => {
     /*
      * Since 24 October a widget's side padding is wider than a category's
@@ -74,6 +83,7 @@ test.describe('titles of categories and widgets', () => {
      * edge: a title does not drift away from what is under it.
      */
     test('the // stands in the title, at one place for a category and a widget', async ({ page }) => {
+        await useLeftSetTitles(page);
         await openDashboard(page);
         await page.evaluate(() => { window.ThemeLoader.applyWidgetSurface('none'); window.ThemeLoader.applyCatSurface('open'); });
         const category = await measure(page, false);
@@ -87,6 +97,7 @@ test.describe('titles of categories and widgets', () => {
     });
 
     test('on open, the name starts at one place for a category and a widget', async ({ page }) => {
+        await useLeftSetTitles(page);
         await openDashboard(page);
         // A widget with a card of its own (Widget background) has its // inside the
         // card; these two are about a widget without one.

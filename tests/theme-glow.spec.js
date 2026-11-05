@@ -19,11 +19,21 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
 
 /** Pick a theme the way a reader does: through the picker on Appearance. */
 async function chooseTheme(page, themeId) {
-    await page.locator('[data-theme-picker-button]').click();
-    await expect(page.locator('[data-theme-picker-list]')).toBeVisible();
-    await page.locator(`[data-theme-option="${themeId}"]`).click();
-    await expect(page.locator('[data-theme-picker-list]')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(themeId);
+    const list = page.locator('[data-theme-picker-list]');
+    // Appearance draws its body again when a save comes back (persistAppearance),
+    // and opening the tab or picking a theme each sets off one or two of those,
+    // a few hundred milliseconds apart; picking another look saves once more.
+    // A click on a picker that is about to be replaced opens a list that is
+    // thrown away with it, and the new one is closed. So the open and the pick
+    // are tried again until the pick lands on a picker that stays: the list
+    // closed by the pick, and the theme stored.
+    await expect(async () => {
+        if (await list.isHidden()) await page.locator('[data-theme-picker-button]').click();
+        await expect(list).toBeVisible({ timeout: 1000 });
+        await page.locator(`[data-theme-option="${themeId}"]`).click({ timeout: 1000 });
+        await expect(list).toBeHidden({ timeout: 1000 });
+        expect(await page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(themeId);
+    }).toPass();
 }
 
 async function openAppearance(page) {

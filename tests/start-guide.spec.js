@@ -218,6 +218,28 @@ test.describe('where the guide stands', () => {
         await expect(bar(page)).toHaveCount(0);
     });
 
+    test('finished while its script was still loading, it puts up no bar at all', async ({ page, request }) => {
+        // The script is held until the onboarding is finished in the page, as
+        // another tab or a slow connection would. The bar it used to build
+        // anyway held the corner for half a second, and a corner card asked
+        // for in that moment was refused.
+        let release = () => {};
+        const held = new Promise((resolve) => { release = resolve; });
+        await page.route('**/js/start-guide.js*', async (route) => { await held; await route.continue(); });
+        await page.addInitScript(() => {
+            // Looked for every few milliseconds: the bar was up for half a second.
+            window.__barSeen = false;
+            setInterval(() => {
+                if (document.querySelector('[data-start-guide-bar]')) window.__barSeen = true;
+            }, 10);
+        });
+        await freshInstall(page, request);
+        await page.evaluate(() => { window.dashboardInstance.settings.onboardingCompleted = true; });
+        release();
+        await page.waitForFunction(() => typeof window.StartGuide === 'function' && !window.dashboardInstance.quickStart?.guide);
+        expect(await page.evaluate(() => window.__barSeen)).toBe(false);
+    });
+
     test('the corner cards wait ten seconds after the guide is finished', async ({ page, request }) => {
         await freshInstall(page, request, { settings: { onboardingCompleted: true } });
         const free = (completedAt) => page.evaluate((at) => {
@@ -338,10 +360,13 @@ test.describe('inside the modal', () => {
         await modal(page).locator('[data-sg-city]').fill('Utrecht');
         await modal(page).locator('[data-sg-unit="fahrenheit"]').click();
         await modal(page).locator('[data-sg-city]').press('Enter');
-        await expect.poll(async () => (await stored(page)).weatherLocation).toBe('Utrecht');
-        const s = await stored(page);
-        expect(s.weatherUnit).toBe('fahrenheit');
-        expect(s.weatherSource).toBe('manual');
+        // Two saves: leaving the field for the °F button saves the city on its
+        // own, and the button saves the unit after it. Waiting for the city
+        // alone read the first save, before the second had landed.
+        await expect.poll(async () => {
+            const s = await stored(page);
+            return { location: s.weatherLocation, unit: s.weatherUnit, source: s.weatherSource };
+        }).toEqual({ location: 'Utrecht', unit: 'fahrenheit', source: 'manual' });
         // Typing does not fold the modal back.
         await expect(modal(page)).toBeVisible();
     });

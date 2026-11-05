@@ -25,6 +25,15 @@ async function openAppearance(page) {
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView),
         { timeout: 25_000 }).toBe('config');
+    // The tab fetches the colour document in the background, and which way
+    // previewThemeChoice goes hangs on it: before it lands a built-in only gets
+    // the attribute swapped, after it the palette path takes over. Under load
+    // the fetch lands between two previews, the second records the first as
+    // "what to restore", and leaving the picker puts the wrong theme back.
+    await page.waitForFunction(() => {
+        const cfg = window.dashboardInstance.config.instance || window.dashboardInstance.config;
+        return Boolean(cfg._colorsData && !cfg._colorsData._unloaded);
+    }, null, { timeout: 15_000 });
 }
 
 /** The pattern with its colours stripped, so only the shape is compared. */

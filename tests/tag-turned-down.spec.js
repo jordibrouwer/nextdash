@@ -2,6 +2,7 @@
 const { test, expect } = require('./fixtures');
 const {
     markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
+    markInboxTutorialSeen, markBookmarksTutorialSeen,
 } = require('./e2e-helpers');
 
 /**
@@ -45,6 +46,12 @@ async function seed(page, { bookmarks = [], inbox = [], rules = [], dismissed = 
     }, { bookmarks, inbox, rules, dismissed });
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    // The first visit to the Inbox and Bookmarks views opens their one-time
+    // tour, unless the shared e2e data already holds it as seen -- which
+    // depends on what ran before. Its modal then sat over the link to click.
+    // Marked after the reload: these marks live in memory only.
+    await markInboxTutorialSeen(page);
+    await markBookmarksTutorialSeen(page);
 }
 
 const dismissed = (page) => page.evaluate(async () => (await (await fetch('/api/settings')).json()).dismissedTagSuggestions || []);

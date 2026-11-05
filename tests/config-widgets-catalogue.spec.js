@@ -221,28 +221,31 @@ test.describe('new widget kinds', () => {
         }, tag);
     }
 
-    // In catalogue order: the System group (Beszel) comes before Media.
-    const MEDIA = ['beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant'];
+    // The kinds of the newest release that added any, in catalogue order: the
+    // DNS blockers of v1.26. The media and Beszel kinds of v1.20 are older by
+    // then, so they stand as the "older kind" the badge must leave alone.
+    const NEWEST = ['adguard', 'pihole'];
 
-    test('the media kinds lead the picker with a New badge', async ({ page }) => {
+    test('the newest kinds lead the picker with a New badge', async ({ page }) => {
         await openWidgets(page);
-        await setRelease(page, 'v1.20.0');
+        await setRelease(page, 'v1.26.0');
         await page.locator('[data-widget-catalogue]').click();
 
         const strip = page.locator('.config-widget-picker-group--new [data-widget-option]');
-        await expect(strip).toHaveCount(MEDIA.length);
+        await expect(strip).toHaveCount(NEWEST.length);
         expect(await strip.evaluateAll((els) => els.map((el) => el.getAttribute('data-widget-option'))))
-            .toEqual(MEDIA);
-        await expect(page.locator('.config-widget-picker-group--new .config-widget-new-badge')).toHaveCount(MEDIA.length);
+            .toEqual(NEWEST);
+        await expect(page.locator('.config-widget-picker-group--new .config-widget-new-badge')).toHaveCount(NEWEST.length);
         // Opened without a kind asked for, the first new one is the one shown.
         await expect(page.locator('.config-widget-picker-preview .config-widget-new-badge')).toBeVisible();
-        // An older kind carries none.
+        // Older kinds carry none: one from the start, one a few releases back.
         await expect(page.locator('[data-widget-option="health"] .config-widget-new-badge')).toHaveCount(0);
+        await expect(page.locator('[data-widget-option="jellyfin"] .config-widget-new-badge')).toHaveCount(0);
     });
 
     test('a minor release later the badge is gone', async ({ page }) => {
         await openWidgets(page);
-        await setRelease(page, 'v1.21.0');
+        await setRelease(page, 'v1.27.0');
         await page.locator('[data-widget-catalogue]').click();
 
         await expect(page.locator('.modal--widget-catalogue [data-widget-search]')).toBeFocused();

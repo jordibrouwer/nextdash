@@ -23,6 +23,8 @@ async function openTab(page, tab) {
         await c.openConfigView('appearance');
     }, tab);
     await page.waitForSelector('.config-field > .config-panel-note, .config-field > .config-field-hint', { timeout: 20_000 });
+    // A note's width is in ch: measure it in the theme's own font.
+    await page.evaluate(() => document.fonts.ready);
 }
 
 /** Distance from the controls above a note to the note, for every note under a field. */
@@ -31,13 +33,20 @@ const gaps = (page) => page.evaluate(() => {
     for (const note of document.querySelectorAll('.config-field > :is(.config-panel-note, .config-field-hint, .config-field-warning)')) {
         const r = note.getBoundingClientRect();
         if (!r.height || !r.width) continue;
-        // What is above the note in its own columns. A control in the next column
-        // beside a note that holds only the label's column is a different layout,
-        // not a note with no room.
+        // What ends above the note, in any column: the row the note sits under.
+        // A note is capped at 60ch, so under a short label it can stop a fraction
+        // of a pixel before the control's column; measured from its own columns
+        // only, it was measured from the label, which the taller control centres
+        // 10px higher, and the same layout passed or failed on 0.2px of text
+        // width. A control beside the note (it starts above it and ends below its
+        // top) is a different layout, not a note with no room: it is left out.
+        // So is the ℹ/↺ pair: on a row with a note it overhangs by 4px on
+        // purpose (hit area, not layout; config-view.css says so).
         const above = [...note.parentElement.children]
             .filter((el) => {
                 const b = el.getBoundingClientRect();
-                return el !== note && b.height > 0 && b.top < r.top && b.left < r.right - 1 && b.right > r.left + 1;
+                return el !== note && !el.matches('.config-field-affordances')
+                    && b.height > 0 && b.bottom <= r.top + 0.5;
             })
             .map((el) => el.getBoundingClientRect().bottom);
         if (!above.length) continue;

@@ -41,7 +41,14 @@ const categorySaved = (page) => page.waitForResponse((r) => r.url().includes('/a
 
 async function openDashboard(page, { packed = false, columns = 3, itemLimit = 15 } = {}) {
     await page.setViewportSize({ width: 1600, height: 1000 });
-    await markWhatsNewSeen(page);
+    // The Random theme note is not what these test, and it steers: on a
+    // worker whose data is past onboarding, half a second after Appearance
+    // opens it finds its setting hidden and switches the tab back to Theme --
+    // so on a slow run the Layout tab these set by hand was gone before its
+    // panel could be opened.
+    await markWhatsNewSeen(page, {
+        extraPromoConfirmedKeys: ['nextdash:config-setting-promo-seen-v1:random-theme-v2'],
+    });
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);

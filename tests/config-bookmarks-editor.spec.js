@@ -21,6 +21,22 @@ async function openBookmarks(page) {
     await loadDashboard(page);
     await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible();
+    // The list is drawn once before every page's category names are in, and
+    // again when they land (prefetchAllBookmarkCategories). Under load that
+    // second paint fell between a hover and a check: the hovered row was
+    // replaced, its tick box went back out of sight, and the check waited
+    // for it until the test timed out.
+    await page.waitForFunction(() => {
+        const cfg = window.dashboardInstance.config;
+        return !cfg._bmCategoriesInflight?.size && (window.dashboardInstance.pages || [])
+            .every((p) => p.id == null || p.id === '' || cfg._bmCategoriesCache?.has(String(p.id)));
+    }, null, { timeout: 15_000 });
+    // And each paint lets the rows rise in (lvsRise). A check on a moving row
+    // is retried with the page scrolled, the scroll moves the list's row
+    // window, and that redraw drops the hover the tick box needed.
+    await page.locator('#config-bm-list').evaluate((el) => Promise.all(el.getAnimations({ subtree: true })
+        .filter((a) => a.effect?.getTiming?.().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => {}))));
 }
 
 function bookmarkModalForm(page) {
@@ -146,13 +162,17 @@ test.describe('config bookmarks editor', () => {
         const form = bookmarkModalForm(page);
         const interval = form.locator('.bookmark-inline-toggle-select');
 
-        await form.locator('label[for^="bookmark-inline-checkmode-periodic"]').click({ force: true });
+        // Plain clicks, not forced: the dialog's preview and feed rows come
+        // in after it opens and push the pills down, and a forced click
+        // skips the wait for the label to hold still -- it landed where the
+        // label had been, and Monitor was never chosen.
+        await form.locator('label[for^="bookmark-inline-checkmode-periodic"]').click();
         await expect(interval).toBeHidden();
 
-        await form.locator('label[for^="bookmark-inline-checkmode-monitor"]').click({ force: true });
+        await form.locator('label[for^="bookmark-inline-checkmode-monitor"]').click();
         await expect(interval).toBeVisible();
 
-        await form.locator('label[for^="bookmark-inline-checkmode-off"]').click({ force: true });
+        await form.locator('label[for^="bookmark-inline-checkmode-off"]').click();
         await expect(interval).toBeHidden();
     });
 
