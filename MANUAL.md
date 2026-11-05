@@ -936,8 +936,8 @@ The header has three zones.
 
 What needs you waits in the bell instead of popping up over your work: questions about privacy and maintenance, urgent notices and outages, the note that an update was installed or that a new release is out, the weekly digest, a pile of kept links, and two tips a day. Rows are grouped (*Health*, *Watch feeds*, *Clean up*, *System*, *Privacy*, *Tips*), each with the button that answers it. Each row shows on its right how old it is (*5 min ago*, *2 days ago*); the time starts over when the row gets worse, and a row that only shrinks keeps its age. New news from the feeds you watch is one row, *N new from M watched feeds*, that is updated in place and goes when the news is read or has expired. **Mark read** clears a row, **No** answers a question for good, and **Mark all read** clears the lot. A tip has a button to the place it is about: Config, the Inbox, the Bookmarks view, Containers, the tag cloud or the palette.
 
-<p align="center"><img src="screenshots/manual.md/04-bell.jpg" alt="The notifications bell open: a Clean up group with two questions, each with Start and No, and a Tips group with three tips" width="860"></p>
-<p align="center"><sub>The bell, open.</sub></p>
+<p align="center"><img src="screenshots/manual.md/04-bell.jpg" alt="The notifications bell open: a Watch feeds row, 9 new from 5 watched feeds, a Clean up group with two questions, each with Start and No, and a Tips group with three tips; every row shows its age on the right" width="860"></p>
+<p align="center"><sub>The bell, open: one row for new watched news, and the age of each row.</sub></p>
 
 The bell shakes and pulses for something new, with a short tone (news from watched feeds has a softer two-note chime of its own); while anything is still unread the badge pulses once a minute and the bell shakes and pulses once an hour, without a tone; **Bell sound for new notifications** under Config → Behavior switches the tone off, and **Bring back dismissed notifications** there puts every answered row back.
 
