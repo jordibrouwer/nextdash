@@ -284,7 +284,8 @@ test.describe('review fixes', () => {
             const mo = new MutationObserver((list) => { n += list.length; });
             mo.observe(document.getElementById('mode-strip'), { childList: true, subtree: true, characterData: true });
             return new Promise((resolve) => {
-                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+                // The same row, looked at again and again: nothing to rewrite.
+                for (let i = 0; i < 5; i += 1) window.dashboardInstance.keyboardNavigation._syncModeStrip();
                 setTimeout(() => { mo.disconnect(); resolve(n); }, 400);
             });
         });

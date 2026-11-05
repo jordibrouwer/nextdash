@@ -10668,6 +10668,7 @@ body[data-action-bar="bottom"] #dashboard-layout {
     background: var(--surface-1, transparent);
     color: var(--text-primary);
 }
+.mode-strip kbd.is-tip { border-style: dashed; }
 .mode-strip .mode-strip-dot {
     width: 0.65rem;
     height: 0.65rem;

@@ -227,6 +227,7 @@ class KeyboardNavigation {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     d._keyUndoMessage = null;
+                    this._undoHint = false;
                     host.querySelector('.app-notification-action')?.click();
                     return;
                 }
@@ -709,6 +710,33 @@ class KeyboardNavigation {
         this._releaseGridFocus();
     }
 
+    /** What the strip suggests for the bookmark under the cursor (see ModeStripSuggest). */
+    _rowSuggestions() {
+        const row = this.navigableElements[this.currentIndex];
+        const bookmark = this.getSelectedBookmark?.();
+        if (!row || !bookmark || !window.ModeStripSuggest) return null;
+        const tags = String(row.getAttribute('data-bookmark-tags') || '').split(',').map((s) => s.trim()).filter(Boolean);
+        return window.ModeStripSuggest.suggest({
+            tags,
+            pinned: Boolean(bookmark.pinned),
+            offline: row.classList.contains('status-offline'),
+            video: Boolean(window.VideoLinks?.isVideoLink?.(bookmark.url)),
+            unfiled: !String(bookmark.category || '').trim(),
+            undo: this._undoHint === true,
+        });
+    }
+
+    /** A pin or move just happened: say Ctrl/Cmd+Z undoes it, for as long as its notice shows. */
+    _noteUndoable() {
+        this._undoHint = true;
+        clearTimeout(this._undoHintTimer);
+        this._undoHintTimer = setTimeout(() => {
+            this._undoHint = false;
+            this._syncModeStrip();
+        }, 8000);
+        this._syncModeStrip();
+    }
+
     /**
      * Tell the mode strip and the row label what the keys do right now.
      * Edit mode wins over ticked rows, which win over a bare cursor; with the
@@ -722,7 +750,10 @@ class KeyboardNavigation {
         let detail = null;
         if (edit) state = 'edit';
         else if (count > 0) { state = 'multi'; detail = { count }; }
-        else if (onRow) state = 'cursor';
+        else if (onRow) {
+            state = 'cursor';
+            detail = { suggestions: this._rowSuggestions() };
+        }
         window.ModeStrip?.set?.(state, detail);
         const row = (onRow && !edit) ? this.navigableElements[this.currentIndex] : null;
         window.RowLetterHint?.show?.(row);
@@ -799,6 +830,7 @@ class KeyboardNavigation {
         }
         swallow();
         window.nextdashRecordKey?.(letter.toUpperCase());
+        window.ModeStripSuggest?.recordUse?.(letter);
         switch (letter) {
             case 'm': this.openMovePopoverForCurrent(); break;
             case 'd': this.openDeletePopoverForCurrent(); break;
@@ -2980,6 +3012,7 @@ class KeyboardNavigation {
                 || (wasPinned ? 'Unpinned “{name}”' : 'Pinned “{name}”');
             const message = template.replace('{name}', name);
             d._keyUndoMessage = message;
+            this._noteUndoable();
             d.showNotification?.(message, 'success', {
                 duration: 8000,
                 undoCallback: () => { d._keyUndoMessage = null; void commands._persistBookmarkField(bookmark, { pinned: wasPinned }); },

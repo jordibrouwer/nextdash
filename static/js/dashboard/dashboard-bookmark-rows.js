@@ -256,6 +256,7 @@ class DashboardBookmarkRows {
                 );
                 // Ctrl/Cmd+Z answers this notice too (keyboard-navigation.js).
                 d._keyUndoMessage = movedMessage;
+                d.keyboardNavigation?._noteUndoable?.();
                 d.showNotification(movedMessage, 'success', { duration, undoCallback });
             }
         }

@@ -42,15 +42,22 @@
     const keys = (parent, list) => list.forEach((k) => add(parent, 'kbd', k));
 
     /** The strip's content: the full line, or the short one. */
-    function fill(host, state, detail, short) {
+    function fill(host, state, detail, short, bare = false) {
         host.textContent = '';
         dot(host);
         if (state === 'cursor') {
             add(host, 'b', word('modeStripCursor', 'Cursor'));
             sep(host);
             if (!short) {
-                keys(host, ['e', 'm', 't', 'p']);
-                add(host, 'em', '…');
+                const list = detail?.suggestions?.length ? detail.suggestions : [
+                    { key: 'e' }, { key: 'm' }, { key: 't' }, { key: 'p' }];
+                list.forEach((s) => {
+                    const chip = add(host, 'kbd', s.key);
+                    if (s.learn) chip.classList.add('is-tip');
+                    // Verbs are the first thing to go when the line is tight.
+                    if (s.verb && !bare) add(host, 'em', s.verb);
+                });
+                if (!detail?.suggestions?.length) add(host, 'em', '…');
                 sep(host);
             }
             keys(host, ['Esc']);
@@ -96,6 +103,8 @@
         host.hidden = false;
         fill(host, state, detail, false);
         if (host.scrollWidth <= room) return true;
+        fill(host, state, detail, false, true);
+        if (host.scrollWidth <= room) return true;
         fill(host, state, detail, true);
         if (host.scrollWidth <= room) return true;
         host.hidden = true;
@@ -111,7 +120,7 @@
         // Unchanged: leave the line alone. Rewriting it on every arrow key made
         // the live region announce it again each time.
         const same = next.state === current.state
-            && (next.detail?.count ?? null) === (current.detail?.count ?? null)
+            && JSON.stringify(next.detail) === JSON.stringify(current.detail)
             && host && host.dataset.fitW === String(host.parentElement?.clientWidth || 0);
         current = next;
         if (same) return;
