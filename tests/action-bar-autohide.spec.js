@@ -162,7 +162,7 @@ test('switched off draws no actions, and their keys still work', async ({ page }
 
 test('the delay is chosen in config and survives a reload', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 0 });
-    await page.keyboard.press('Shift+S');
+    await page.keyboard.press(',');
     await page.click('[data-config-section="appearance"]');
     await page.locator('[data-appearance-tab="buttonbar"]').click();
     await page.locator('select[data-behavior-field="actionBarAutoHideSeconds"]').selectOption('5');
@@ -179,7 +179,7 @@ test('the key chips switch off in config, and the keys keep working', async ({ p
     const chip = page.locator('#search-button .search-button-icon');
     await expect(chip).toBeVisible();
 
-    await page.keyboard.press('Shift+S');
+    await page.keyboard.press(',');
     await page.click('[data-config-section="appearance"]');
     await page.locator('[data-appearance-tab="buttonbar"]').click();
     await page.locator('[data-behavior-field="showActionKeys"]').uncheck();
@@ -255,11 +255,11 @@ test('a slid-away bar stays away while you browse the views', async ({ page }) =
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
 
     const steps = [
-        ['Shift+H', 'library'],
+        ['Shift+B', 'library'],
         ['Escape', 'bookmarks'],
         ['Shift+I', 'inbox'],
         ['Escape', 'bookmarks'],
-        ['Shift+S', 'config'],
+        [',', 'config'],
         ['Escape', 'bookmarks'],
     ];
     for (const [key, view] of steps) {
@@ -532,7 +532,7 @@ for (const style of ['swell-middle', 'swell-together', 'unfold', 'accordion']) {
 
 test('the style is picked from a select in config', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'bottom' });
-    await page.keyboard.press('Shift+S');
+    await page.keyboard.press(',');
     await page.click('[data-config-section="appearance"]');
     await page.locator('[data-appearance-tab="buttonbar"]').click();
     const select = page.locator('select[data-behavior-field="actionBarIntroStyle"]');
@@ -552,7 +552,7 @@ test('the style is picked from a select in config', async ({ page }) => {
 
 test('a style picked in config plays on the bar at once, and the next one too', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'bottom' });
-    await page.keyboard.press('Shift+S');
+    await page.keyboard.press(',');
     await page.click('[data-config-section="appearance"]');
     await page.locator('[data-appearance-tab="buttonbar"]').click();
     const select = page.locator('select[data-behavior-field="actionBarIntroStyle"]');

@@ -182,7 +182,7 @@ test.describe('dashboard overlay focus', () => {
 
     test('page overview shortcut moves focus into overlay', async ({ page }) => {
         await closeDashboardOverlays(page);
-        await page.keyboard.press(',');
+        await page.keyboard.press('Shift+P');
         await expect(page.locator('#app-modal.show .page-overview-modal')).toBeVisible({ timeout: 5000 });
         await expect(page.locator('.page-overview-modal-item.is-focused .page-overview-modal-link')).toBeVisible({ timeout: 10_000 });
     });

@@ -1187,10 +1187,28 @@ test.describe('Glances in the navigation and the page overview', () => {
         await expect(page.locator('#page-nav-glances-link')).toHaveCount(0);
     });
 
+    test('a comma at the shortest range stays in Glances, and so does one on a page with no graph', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/history');
+        await expect(page.locator('[data-glances-plot="cpu"]')).toBeVisible();
+        const inGlances = () => page.evaluate(() => window.dashboardInstance.activeView);
+        const first = await inGlances();
+        // Walk to the shortest range, then press once more.
+        for (let i = 0; i < 12; i += 1) await page.keyboard.press(',');
+        await page.waitForTimeout(300);
+        expect(await inGlances()).toBe(first);
+        expect(await inGlances()).not.toBe('config');
+        // A section with no graph: the keys belong to the view all the same.
+        await page.keyboard.press('p');
+        await page.keyboard.press(',');
+        await page.waitForTimeout(300);
+        expect(await inGlances()).toBe(first);
+    });
+
     test('the page overview no longer lists Glances, and 0 does nothing there', async ({ page }) => {
         await openDashboard(page);
         await page.locator('body').click({ position: { x: 5, y: 5 } });
-        await page.keyboard.press(',');
+        await page.keyboard.press('Shift+P');
         await expect(page.locator('.page-overview-modal-list')).toBeVisible();
         await expect(page.locator('#page-overview-glances')).toHaveCount(0);
         await expect(page.locator('.page-overview-modal-glances')).toHaveCount(0);

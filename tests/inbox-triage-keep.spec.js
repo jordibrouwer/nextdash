@@ -30,7 +30,7 @@ test('Keep promotes an inbox item to Unsorted without opening a modal', async ({
     await expect.poll(() => page.evaluate(() =>
         (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(0);
 
-    await page.keyboard.press('t');
+    await page.keyboard.press('f');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
     // Triage asks for a pile first; links added just now are new this week,
@@ -146,7 +146,7 @@ test('on the triage card r marks read and moves on, without keeping', async ({ p
     await expect(page.locator('.inbox-layout')).toBeVisible();
     await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
 
-    await page.keyboard.press('t');
+    await page.keyboard.press('f');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
     // Triage asks for a pile first; links added just now are new this week,

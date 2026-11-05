@@ -59,12 +59,12 @@ test.describe('the Health view\'s addresses', () => {
 });
 
 test.describe('the Health view\'s ways in', () => {
-  test('Shift+H on the dashboard opens the Bookmarks view', async ({ page }) => {
+  test('Shift+B on the dashboard opens the Bookmarks view', async ({ page }) => {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
-    await page.keyboard.press('Shift+H');
+    await page.keyboard.press('Shift+B');
     await page.waitForFunction(() => window.dashboardInstance.activeView === 'library', null, { timeout: 15_000 });
     // The view switches before its first render writes the address, as the
     // header button's path does since Shift+H goes through openLibraryView.

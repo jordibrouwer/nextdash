@@ -165,7 +165,7 @@ test.describe('dashboard tour', () => {
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 15_000 });
-        await page.keyboard.press('Shift+H');
+        await page.keyboard.press('Shift+B');
         await expect(page.locator('body')).toHaveAttribute('data-active-view', 'library', { timeout: 10_000 });
         await page.keyboard.press('Shift+K');
         // Nothing to poll for when it does not open: give it the time the

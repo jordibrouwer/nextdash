@@ -816,10 +816,10 @@ test.describe('config dashboard view (scaffold)', () => {
     });
 });
 
-test.describe('Shift+S opens config', () => {
+test.describe('the comma opens config', () => {
     test('opens the view from the bookmark grid and Escape returns', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+S');
+        await page.keyboard.press(',');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
         await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config');
         await page.keyboard.press('Escape');
@@ -834,7 +834,7 @@ test.describe('Shift+S opens config', () => {
         page.on('framenavigated', (f) => {
             if (f === page.mainFrame() && new URL(f.url()).pathname === '/config') navigated = true;
         });
-        await page.keyboard.press('Shift+S');
+        await page.keyboard.press(',');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
         expect(navigated).toBe(false);
         expect(new URL(page.url()).pathname).toBe('/');
@@ -859,14 +859,14 @@ test.describe('Shift+S opens config', () => {
         const found = await page.evaluate(() =>
             (window.dashboardInstance.getKeyboardCheatSheetItems() || [])
                 .flatMap((s) => s.items)
-                .filter((i) => /Shift \+ S/.test(i.keys))
+                .filter((i) => i.keys === ',')
                 .filter((i) => /^Open config/i.test(i.description))
                 .map((i) => i.description));
         expect(found).toHaveLength(1);
         expect(found[0]).toMatch(/config/i);
         // And it is rendered, not just present in the data. keysToHtml splits
         // the combo into separate <kbd> elements, so match the row by its
-        // description and assert the keys cell mentions both Shift and S.
+        // description and assert the keys cell shows the comma.
         await page.keyboard.press('!');
         // Rows show only what they do; the keys appear in the dock once chosen.
         const row = page.locator('.cheat-sheet-row')
@@ -874,8 +874,7 @@ test.describe('Shift+S opens config', () => {
         await expect(row).toBeVisible();
         await row.click();
         const keysText = await page.locator('#cheat-sheet-dock .keyboard-cheat-sheet-keys').innerText();
-        expect(keysText).toMatch(/Shift/i);
-        expect(keysText).toMatch(/\bS\b/);
+        expect(keysText.trim()).toBe(',');
     });
 });
 
@@ -952,10 +951,10 @@ test.describe('config remembers last location', () => {
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
         await page.locator('#config-section-panel').focus();
-        await page.keyboard.press('Shift+H');
+        await page.keyboard.press('Shift+B');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
 
-        await page.keyboard.press('Shift+S');
+        await page.keyboard.press(',');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('bookmarks');
     });
@@ -969,7 +968,7 @@ test.describe('config remembers last location', () => {
         await page.keyboard.press('Shift+I');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');
 
-        await page.keyboard.press('Shift+S');
+        await page.keyboard.press(',');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('behavior');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.behaviorTab)).toBe('privacy');
     });

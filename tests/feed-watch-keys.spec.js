@@ -4,7 +4,7 @@ const { startStubSite, installWithBookmark, openDashboard, row, keyOf, watchPayl
 
 /**
  * Keys for watched feeds: # watches the focused bookmark's feed,
- * Shift+N opens the paper, j / k read inside it. Real key presses; the
+ * Shift+W opens the paper, j / k read inside it. Real key presses; the
  * watch routes are stubbed with one watched bookmark and three unread items.
  */
 test.describe.configure({ mode: 'serial' });
@@ -53,17 +53,17 @@ test('the context menu shows the key beside Watch this feed', async ({ page }) =
     await expect(page.getByRole('menuitem', { name: /Watch this feed/ })).toContainText('#');
 });
 
-test('Shift+N opens the paper when a feed is watched, and not otherwise', async ({ page }) => {
+test('Shift+W opens the paper when a feed is watched, and not otherwise', async ({ page }) => {
     await setup(page, { watched: false });
-    await page.keyboard.press('Shift+KeyN');
+    await page.keyboard.press('Shift+KeyW');
     await expect(modal(page)).toHaveCount(0);
     // It is not "add a category" any more either.
     await expect(page.locator('.bookmark-inline-create.category-add-create')).toHaveCount(0);
 });
 
-test('Shift+N opens the paper; j / k move through it; Enter opens; the legend shows the chips', async ({ page }) => {
+test('Shift+W opens the paper; j / k move through it; Enter opens; the legend shows the chips', async ({ page }) => {
     await setup(page);
-    await page.keyboard.press('Shift+KeyN');
+    await page.keyboard.press('Shift+KeyW');
     await expect(modal(page)).toBeVisible();
     await expect(modal(page).locator('.feed-news-entry')).toHaveCount(3);
 
@@ -96,7 +96,7 @@ test('Shift+N opens the paper; j / k move through it; Enter opens; the legend sh
 
 test('j and k do nothing while typing in a field or with a modifier held', async ({ page }) => {
     await setup(page);
-    await page.keyboard.press('Shift+KeyN');
+    await page.keyboard.press('Shift+KeyW');
     await expect(modal(page)).toBeVisible();
     await modal(page).locator('[data-feed-news-pick]').first().click();
     await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 3');
@@ -112,4 +112,29 @@ test('j and k do nothing while typing in a field or with a modifier held', async
     await page.locator('#fw-keys-probe').blur();
     await page.keyboard.press('Control+j');
     await expect(modal(page).locator('[data-feed-news-chip]')).toHaveText('1 of 3');
+});
+
+const movedRow = (page) => page.locator('.notification-bell-row[data-bell-id="news-moved-notice"]');
+async function openBell(page) {
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => window.NotificationBell.open());
+}
+
+test('the bell tells a feed follower the news moved to Shift+W, once', async ({ page }) => {
+    await setup(page);
+    await page.evaluate(() => { window.DiscoverabilityState.schedulePersist = () => {}; });
+    await openBell(page);
+    await expect(movedRow(page)).toBeVisible();
+    await expect(movedRow(page)).toContainText('Shift+W');
+    await movedRow(page).getByRole('button', { name: 'Open the news' }).click();
+    await expect(modal(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await openBell(page);
+    await expect(movedRow(page)).toHaveCount(0);
+});
+
+test('the bell says nothing about the news key when no feed is watched', async ({ page }) => {
+    await setup(page, { watched: false });
+    await openBell(page);
+    await expect(movedRow(page)).toHaveCount(0);
 });

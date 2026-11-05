@@ -89,7 +89,7 @@ test('with auto-file on, Keep puts a link straight where its neighbours are', as
     await expect.poll(() => page.evaluate(() =>
         (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(0);
 
-    await page.keyboard.press('t');
+    await page.keyboard.press('f');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
     // Triage opens on the pile chooser; the list pile is the one this link is in.
@@ -125,7 +125,7 @@ test('with auto-file on, a link nothing agrees about still lands in Kept', async
     await expect.poll(() => page.evaluate(() =>
         (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(0);
 
-    await page.keyboard.press('t');
+    await page.keyboard.press('f');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
     // Triage opens on the pile chooser; the list pile is the one this link is in.

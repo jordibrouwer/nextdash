@@ -674,7 +674,7 @@ test('06 qr code', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
     await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Shift+J');
+    await page.keyboard.press('Shift+Q');
     await page.locator('#app-modal.show .bookmark-qr-modal').waitFor();
     await page.waitForTimeout(800);
     await snap(page, modal(page), '06-qr-code.jpg', { pad: 4 });
@@ -1323,7 +1323,7 @@ test('full 11 health in large', async ({ page }) => {
     await page.locator('#config-bm-list .config-bm-row', { hasText: 'go.dev' }).first().click();
     await page.waitForTimeout(400);
     await page.keyboard.press('Escape');
-    await page.keyboard.press('Shift+H');
+    await page.keyboard.press('Shift+B');
     await page.locator('#app-modal.show .modal.bm-health-large').waitFor();
     await page.waitForTimeout(2_000);
     await shot(page, '11-health-large.jpg');

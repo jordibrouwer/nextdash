@@ -244,7 +244,7 @@ test('the page you were last on stays marked in config, Bookmarks and the inbox'
     });
     expect(await marked()).toEqual({ count: 1, right: true, view: 'bookmarks' });
 
-    await page.keyboard.press('Shift+S');
+    await page.keyboard.press(',');
     await expect.poll(async () => (await marked()).view).toBe('config');
     expect(await marked()).toEqual({ count: 1, right: true, view: 'config' });
 

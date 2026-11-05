@@ -5,10 +5,11 @@ const { prepareDashboardInteraction } = require('./e2e-helpers');
  * Shift+letter is one family: every key in it acts on the row under the cursor,
  * and does nothing when there is no row.
  *
- * Shift+S used to be the exception — share with a row selected, config without
+ * Shift+S used to be an exception — share with a row selected, config without
  * one — which is why the row actions live in a capture-phase handler that
- * declines the key rather than swallowing it. Share has moved to Shift+L, so
- * Shift+S now means config wherever you press it, and the decline-rather-than-
+ * declines the key rather than swallowing it. Share is Shift+S again (S for
+ * Share, next to Q for the QR code); config is the comma key. Shift+L, the key
+ * share had for a while, still works and says so. The decline-rather-than-
  * swallow rule is what keeps the family from eating keys it has no use for.
  */
 
@@ -30,35 +31,7 @@ async function selectFirstRow(page) {
         .toBeGreaterThanOrEqual(0);
 }
 
-test.describe('Shift+S opens config, whatever is selected', () => {
-    test('with no bookmark selected', async ({ page }) => {
-        await load(page);
-        await clearSelection(page);
-
-        await page.keyboard.press('Shift+S');
-        await expect.poll(() => view(page), { timeout: 10_000 }).toBe('config');
-    });
-
-    test('with a bookmark selected — it no longer shares instead', async ({ page }) => {
-        await load(page);
-        await selectFirstRow(page);
-        await page.evaluate(() => {
-            window.__shared = false;
-            const cm = window.dashboardInstance.contextMenu;
-            const real = cm.shareBookmark?.bind(cm);
-            cm.shareBookmark = (...args) => {
-                window.__shared = true;
-                return real ? real(...args) : undefined;
-            };
-        });
-
-        await page.keyboard.press('Shift+S');
-        await expect.poll(() => view(page), { timeout: 10_000 }).toBe('config');
-        expect(await page.evaluate(() => window.__shared)).toBe(false);
-    });
-});
-
-test.describe('Shift+L shares the focused row', () => {
+test.describe('Shift+S shares the focused row', () => {
     test('shares when a row is selected, and stays on the dashboard', async ({ page }) => {
         await load(page);
         await selectFirstRow(page);
@@ -73,7 +46,7 @@ test.describe('Shift+L shares the focused row', () => {
             };
         });
 
-        await page.keyboard.press('Shift+L');
+        await page.keyboard.press('Shift+S');
         await expect.poll(() => page.evaluate(() => window.__shared), { timeout: 5000 }).toBe(true);
         expect(await view(page)).toBe('bookmarks');
     });
@@ -88,13 +61,29 @@ test.describe('Shift+L shares the focused row', () => {
             cm.shareBookmark = () => { window.__shared = true; };
         });
 
-        await page.keyboard.press('Shift+L');
+        await page.keyboard.press('Shift+S');
         // Must not happen: the share firing with nothing selected. Nothing
         // visible changes, so give the key handler time to act before checking.
         await page.waitForTimeout(400);
         expect(await page.evaluate(() => window.__shared)).toBe(false);
         expect(await view(page)).toBe('bookmarks');
     });
+});
+
+test('Shift+L still shares the focused row and names Shift + S', async ({ page }) => {
+    await load(page);
+    await selectFirstRow(page);
+    await page.evaluate(() => {
+        window.__shared = false;
+        window.__aliasToasts = [];
+        window.dashboardInstance.showNotification = (m) => { window.__aliasToasts.push(String(m)); };
+        const cm = window.dashboardInstance.contextMenu;
+        cm.shareBookmark = () => { window.__shared = true; };
+    });
+    await page.keyboard.press('Shift+L');
+    await expect.poll(() => page.evaluate(() => window.__shared), { timeout: 5000 }).toBe(true);
+    const toasts = await page.evaluate(() => window.__aliasToasts);
+    expect(toasts.some((m) => m.includes('Shift + L') && m.includes('Shift + S'))).toBe(true);
 });
 
 test.describe('the rest of the family', () => {

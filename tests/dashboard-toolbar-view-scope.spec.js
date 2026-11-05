@@ -31,14 +31,14 @@ async function loadDashboard(page) {
 
 async function openConfig(page) {
     await loadDashboard(page);
-    await page.keyboard.press('Shift+S');
+    await page.keyboard.press(',');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
 }
 
 /** Shift+H: the Bookmarks view. */
 async function openBookmarksView(page) {
     await loadDashboard(page);
-    await page.keyboard.press('Shift+H');
+    await page.keyboard.press('Shift+B');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
 }
 
@@ -127,7 +127,7 @@ test.describe('the header actions, and what the keys do inside a view', () => {
         await openConfig(page);
 
         // Shift+H switches views even while sitting inside a different one.
-        await page.keyboard.press('Shift+H');
+        await page.keyboard.press('Shift+B');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
 
         // A digit switches pages, which also returns to the bookmarks grid --

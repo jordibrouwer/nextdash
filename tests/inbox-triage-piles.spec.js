@@ -64,7 +64,7 @@ const card = (page) => page.locator('#inbox-triage-overlay .health-focus-card');
 test.describe('triage, pile first', () => {
     test('t asks which pile, each with its count', async ({ page }) => {
         await openInbox(page);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect(chooser(page)).toBeVisible();
         const piles = await chooser(page).locator('[data-triage-pile]').evaluateAll((els) =>
             els.map((el) => [el.getAttribute('data-triage-pile'), el.querySelector('.health-focus-pile-count')?.textContent]));
@@ -74,7 +74,7 @@ test.describe('triage, pile first', () => {
 
     test('a pile walks its links: waiting longest is oldest first', async ({ page }) => {
         await openInbox(page);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await page.keyboard.press('Enter');
         await expect(card(page).locator('.health-focus-progress')).toHaveText(/^Waiting longest · 1 of 3$/);
         await expect(card(page).locator('.health-focus-title')).toHaveText('Old one');
@@ -82,7 +82,7 @@ test.describe('triage, pile first', () => {
 
     test('the card says where the link came from, and Promote leads', async ({ page }) => {
         await openInbox(page);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await page.keyboard.press('Enter');
         const why = card(page).locator('.health-focus-why');
         await expect(why).toContainText('extension');
@@ -95,7 +95,7 @@ test.describe('triage, pile first', () => {
 
     test('the end of a pile counts what was done and offers the next', async ({ page }) => {
         await openInbox(page);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await page.locator('[data-triage-pile="new"]').click();
         await expect(card(page).locator('.health-focus-progress')).toHaveText(/^New this week · 1 of 2$/);
         await page.keyboard.press('r');
@@ -114,7 +114,7 @@ test.describe('triage, pile first', () => {
             if (route.request().method() === 'PATCH') await new Promise((r) => setTimeout(r, 600));
             await route.fallback();
         });
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await page.locator('[data-triage-pile="new"]').click();
         await expect(card(page).locator('.health-focus-progress')).toHaveText(/^New this week · 1 of 2$/);
         await page.keyboard.press('r');
@@ -126,7 +126,7 @@ test.describe('triage, pile first', () => {
 
     test('Enter on a focused button presses that button', async ({ page }) => {
         await openInbox(page);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         // A pile reached by Tab starts, not the highlighted one.
         await chooser(page).locator('[data-triage-pile="noted"]').focus();
         await page.keyboard.press('Enter');
@@ -147,7 +147,7 @@ test.describe('triage, pile first', () => {
 
     test('a pile that emptied after it was counted leaves the chooser working', async ({ page }) => {
         await openInbox(page);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect(chooser(page).locator('[data-triage-pile="noted"]')).toBeVisible();
         // Read elsewhere while the chooser was up.
         await page.evaluate(() => {
@@ -163,7 +163,7 @@ test.describe('triage, pile first', () => {
 
     test('Escape at the pile leaves without a run', async ({ page }) => {
         await openInbox(page);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect(chooser(page)).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(page.locator('#inbox-triage-overlay')).toHaveCount(0);

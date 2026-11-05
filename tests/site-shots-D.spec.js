@@ -220,7 +220,7 @@ test.describe('watch feeds', () => {
     test('shot-3 the news window as a newspaper', async ({ page, server }) => {
         await withNews(page, server);
         await openDashboard(page);
-        await page.keyboard.press('Shift+N');
+        await page.keyboard.press('Shift+W');
         await page.locator('[data-feed-news]').waitFor({ state: 'visible' });
         await page.locator('.feed-news-view[data-feed-news-view="paper"]').click();
         await page.locator('.feed-news-view[data-feed-news-view="paper"][aria-pressed="true"]').waitFor();

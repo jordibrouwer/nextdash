@@ -4,7 +4,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 
 /**
  * Edit mode (static/js/dashboard/dashboard-edit-mode.js): an editing state for
- * the dashboard, switched with Shift + M when no bookmark row is selected.
+ * the dashboard, switched with Shift + E when no bookmark row is selected.
  */
 
 async function loadDashboard(page) {
@@ -44,13 +44,33 @@ test.describe('edit mode: the state and its keys', () => {
         expect(await modeOn(page)).toBe(false);
     });
 
-    test('with no row selected, Shift + M switches the mode on, shows its bar, and switches it off', async ({ page }) => {
+    test('with a bookmark row selected, Shift + E edits the bookmark in place, not the dashboard', async ({ page }) => {
         await loadDashboard(page);
+        await page.keyboard.press('ArrowDown');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.keyboardNavigation.currentIndex)).toBeGreaterThanOrEqual(0);
+        await page.keyboard.press('Shift+E');
+        expect(await modeOn(page)).toBe(false);
+    });
+
+    test('Shift + M with no row still switches the mode and names Shift + E', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.__aliasToasts = [];
+            window.dashboardInstance.showNotification = (m) => { window.__aliasToasts.push(String(m)); };
+        });
         await page.keyboard.press('Shift+M');
         await expect.poll(() => modeOn(page)).toBe(true);
+        const toasts = await page.evaluate(() => window.__aliasToasts);
+        expect(toasts.some((m) => m.includes('Shift + M') && m.includes('Shift + E'))).toBe(true);
+    });
+
+    test('with no row selected, Shift + E switches the mode on, shows its bar, and switches it off', async ({ page }) => {
+        await loadDashboard(page);
+        await page.keyboard.press('Shift+E');
+        await expect.poll(() => modeOn(page)).toBe(true);
         await expect(page.locator('#edit-mode-bar')).toContainText('Editing');
-        await expect(page.locator('#edit-mode-bar')).toContainText('Shift + M');
-        await page.keyboard.press('Shift+M');
+        await expect(page.locator('#edit-mode-bar')).toContainText('Shift + E');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(false);
         await expect(page.locator('#edit-mode-bar')).toHaveCount(0);
     });
@@ -65,17 +85,17 @@ test.describe('edit mode: the state and its keys', () => {
 
     test('a bookmark cannot be opened while the mode is on, and can be the moment it is off', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         expect(await clickOpens(page)).toBe(false);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(false);
         expect(await clickOpens(page)).toBe(true);
     });
 
     test('the mode ends when the layout turns mobile', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.evaluate(() => {
             window.MobileExperience.isMobileLayout = () => true;
@@ -86,18 +106,18 @@ test.describe('edit mode: the state and its keys', () => {
 
     test('the mode is not remembered across a reload', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?.editMode, null, { timeout: 15_000 });
         expect(await modeOn(page)).toBe(false);
     });
 
-    test('Shift + M in Config is left to Config: the mode does not switch on', async ({ page }) => {
+    test('Shift + E in Config is left to Config: the mode does not switch on', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('overview'); });
         await page.waitForSelector('#config-view-body', { timeout: 15_000 });
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         // A check that something does NOT happen: the key must not switch the mode on, so the switch gets time to show up if it were made.
         await page.waitForTimeout(400);
         expect(await modeOn(page)).toBe(false);
@@ -121,13 +141,13 @@ test.describe('edit mode: the button, the setting and the command', () => {
         await expect(button).toHaveAttribute('aria-pressed', 'false');
     });
 
-    test('with the button switched off in settings it is gone and Shift + M still works', async ({ page, request }) => {
+    test('with the button switched off in settings it is gone and Shift + E still works', async ({ page, request }) => {
         const off = await request.post('/api/settings', { data: { showEditModeButton: false }, headers });
         expect(off.ok()).toBeTruthy();
         try {
             await loadDashboard(page);
             await expect(page.locator('#edit-mode-button')).toBeHidden();
-            await page.keyboard.press('Shift+M');
+            await page.keyboard.press('Shift+E');
             await expect.poll(() => modeOn(page)).toBe(true);
         } finally {
             await request.post('/api/settings', { data: { showEditModeButton: true }, headers });
@@ -164,7 +184,7 @@ test.describe('edit mode: the panel', () => {
     const panel = (page) => page.locator('#edit-mode-panel');
 
     async function select(page, id) {
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
         await expect(panel(page).locator('[data-edit-section="category"]')).toBeVisible();
@@ -207,7 +227,7 @@ test.describe('edit mode: the panel', () => {
 
     test('a page shows how many categories, bookmarks and widgets it has; page 1 cannot be deleted', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.evaluate(() => window.dashboardInstance.editMode.openFor({ kind: 'page', id: window.dashboardInstance.currentPageId }));
         const facts = panel(page).locator('.edit-panel-facts');
@@ -309,7 +329,7 @@ test.describe('edit mode: the panel', () => {
             expect(made.ok()).toBeTruthy();
         }
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         const tabs = page.locator('#page-navigation .page-nav-btn');
         await expect.poll(() => tabs.count()).toBeGreaterThan(1);
@@ -345,7 +365,7 @@ test.describe('edit mode: a widget in the panel', () => {
     const panel = (page) => page.locator('#edit-mode-panel');
 
     async function selectWidget(page) {
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await widgetBlock(page).locator('.category-title').first().click();
         await expect(panel(page).locator('[data-edit-section="widget"]')).toBeVisible();
@@ -396,7 +416,7 @@ test.describe('edit mode: a widget in the panel', () => {
         const put = await request.put('/api/pages/1/blocks', { data: { ...blocks, widgets: [...(blocks.widgets || []), { id, type: 'notes' }] }, headers });
         expect(put.ok()).toBeTruthy();
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.locator(`#dashboard-layout .category.dashboard-widget[data-widget-id="${id}"] .category-title`).first().click();
         await panel(page).locator('[data-edit-action="widget-delete"]').click();
@@ -445,7 +465,7 @@ test.describe('edit mode: a widget in the panel', () => {
         });
         expect(put.ok()).toBeTruthy();
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.locator(`.category.dashboard-widget[data-widget-id="${id}"] .category-title`).first().click();
         await panel(page).locator('[data-edit-action="widget-settings"]').click();
@@ -485,7 +505,7 @@ test.describe('edit mode: Escape goes from the inside out', () => {
     test('a field in the panel gives the focus back first, then Escape leaves the mode', async ({ page, request }) => {
         const id = await makeCategory(request);
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
         const name = page.locator('#edit-mode-panel [data-edit-field="name"]');
@@ -502,7 +522,7 @@ test.describe('edit mode: Escape goes from the inside out', () => {
     test('with a dialog open Escape closes the dialog and the mode stays', async ({ page, request }) => {
         const id = await makeCategory(request);
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
         await page.evaluate(() => window.AppModal.show({ title: 'A dialog', message: 'Open', confirmText: 'OK', showCancel: false }));
@@ -514,7 +534,7 @@ test.describe('edit mode: Escape goes from the inside out', () => {
 
     test('Escape on the grid leaves the mode and does not open the search', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.keyboard.press('Escape');
         await expect.poll(() => modeOn(page)).toBe(false);
@@ -558,13 +578,13 @@ test.describe('edit mode: the bookmark preview is off while it is on', () => {
         expect(await cardShown(page)).toBe(false);
 
         // In the mode it does not, and one that was open goes away.
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await hoverFirstBookmark(page);
         expect(await cardShown(page)).toBe(false);
 
         // Out of the mode it is back, on the same rows, with no reload.
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(false);
         await hoverFirstBookmark(page);
         expect(await cardShown(page)).toBe(true);
@@ -575,9 +595,9 @@ test.describe('edit mode: the bookmark preview is off while it is on', () => {
         expect(off.ok()).toBeTruthy();
         try {
             await loadDashboard(page);
-            await page.keyboard.press('Shift+M');
+            await page.keyboard.press('Shift+E');
             await expect.poll(() => modeOn(page)).toBe(true);
-            await page.keyboard.press('Shift+M');
+            await page.keyboard.press('Shift+E');
             await expect.poll(() => modeOn(page)).toBe(false);
             await hoverFirstBookmark(page);
             expect(await cardShown(page)).toBe(false);
@@ -629,7 +649,7 @@ test.describe('edit mode: what the review found', () => {
         const added = await request.post('/api/bookmarks/add', { data: { page: 1, bookmark: { name: 'EM shortcut', url, shortcut: 'qz' } }, headers });
         expect(added.ok()).toBeTruthy();
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         // A click on the row focuses its link; its letters must not open it.
         await page.locator('#dashboard-layout .category:not(.dashboard-widget) .bookmark-link').first().click();
@@ -645,7 +665,7 @@ test.describe('edit mode: what the review found', () => {
 
     test('Escape closes an open category menu and leaves the mode on', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         const title = page.locator('#dashboard-layout .category:not(.dashboard-widget) .category-title').first();
         await title.click({ button: 'right' });
@@ -655,9 +675,9 @@ test.describe('edit mode: what the review found', () => {
         expect(await modeOn(page)).toBe(true);
     });
 
-    test('opening Config ends the mode, and Shift + M there is Config\'s', async ({ page }) => {
+    test('opening Config ends the mode, and Shift + E there is Config\'s', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('overview'); });
         await expect.poll(() => modeOn(page)).toBe(false);
@@ -667,7 +687,7 @@ test.describe('edit mode: what the review found', () => {
 
     test('a click on the inbox tab does not select page one in the panel', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         const inbox = page.locator('#page-nav-inbox-btn');
         if (await inbox.count() === 0) test.skip(true, 'no inbox tab on this install');
@@ -705,7 +725,7 @@ test.describe('edit mode: review fixes', () => {
         await request.post('/api/categories?page=1', { data: [...list, { id, name: 'Closer' }], headers: { 'X-NextDash-Token': WRITE_TOKEN } });
         await request.post('/api/bookmarks/add', { data: { page: 1, bookmark: { name: 'Closer link', url: `https://${id}.example/`, category: id } }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
         await expect(page.locator('#edit-mode-panel [data-edit-section="category"]')).toBeVisible();
@@ -715,7 +735,7 @@ test.describe('edit mode: review fixes', () => {
 
     test('a shortcut letter typed on a Tab-focused bookmark opens nothing', async ({ page }) => {
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         let swallowed = false;
         await page.evaluate(() => {
@@ -756,7 +776,7 @@ test.describe('edit mode: the smaller review points', () => {
 
     test(':maxactions offers 11, and the pencil carries its key for screen readers', async ({ page }) => {
         await loadDashboard(page);
-        await expect.poll(() => page.locator('#edit-mode-button').getAttribute('aria-keyshortcuts')).toContain('Shift+M');
+        await expect.poll(() => page.locator('#edit-mode-button').getAttribute('aria-keyshortcuts')).toContain('Shift+E');
         await page.keyboard.press(':');
         await page.keyboard.type('maxactions 1');
         // Typing "1" matches the values 1, 10 and 11, besides the command's own row.
@@ -766,7 +786,7 @@ test.describe('edit mode: the smaller review points', () => {
     test('the ring goes back on the chosen block after the grid is redrawn', async ({ page, request }) => {
         const id = await seeded(request, 'Ringed');
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
         await expect(page.locator(`.category[data-category-id="${id}"].is-edit-selected`)).toHaveCount(1);
@@ -777,7 +797,7 @@ test.describe('edit mode: the smaller review points', () => {
     test('Esc in a name field gives the text back and saves nothing', async ({ page, request }) => {
         const id = await seeded(request, 'Keepname');
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
         const field = page.locator('#edit-mode-panel [data-edit-field="name"]');
         await field.fill('Changed by mistake');
@@ -793,7 +813,7 @@ test.describe('edit mode: the smaller review points', () => {
     test('Esc after a saved rename gives back the new name, not the one from before', async ({ page, request }) => {
         const id = await seeded(request, 'Firstname');
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await page.locator(`.category[data-category-id="${id}"] .category-title`).first().click();
         const field = page.locator('#edit-mode-panel [data-edit-field="name"]');
         await field.fill('Secondname');
@@ -815,7 +835,7 @@ test.describe('edit mode: the smaller review points', () => {
             await request.post('/api/pages', { data: [...pages, { id: next, name: 'EM second' }], headers });
         }
         await loadDashboard(page);
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('Shift+E');
         await expect.poll(() => modeOn(page)).toBe(true);
         const other = await page.evaluate(() => window.dashboardInstance.pages.find((p) => String(p.id) !== String(window.dashboardInstance.currentPageId) && Number(p.id) < 999999)?.id);
         await page.evaluate((id) => window.dashboardInstance.loadPageBookmarks(id), other);

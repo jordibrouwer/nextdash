@@ -32,7 +32,7 @@ async function openTriage(page) {
     await expect.poll(() => page.evaluate(() =>
         (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(2);
 
-    await page.keyboard.press('t');
+    await page.keyboard.press('f');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
     // Triage asks for a pile first; links added just now are new this week,

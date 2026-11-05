@@ -49,7 +49,7 @@ async function seedPages(page, count) {
 
 /** Through the key a reader presses, not through showPageOverlay(). */
 async function openSheet(page) {
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.waitForSelector('.page-overview-sheet', { timeout: 10_000 });
     // Until the sheet has stopped moving: two reads of its box agree.
     let lastBox = null;

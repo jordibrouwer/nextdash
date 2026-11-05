@@ -149,7 +149,7 @@ test('Escape closes the panel it opened, and leaves the page alone', async ({ pa
     await goToThirdPage(page);
     const away = await currentPage(page);
 
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.waitForSelector('#app-modal.show .page-overview-modal', { timeout: 10_000 });
 
     await page.keyboard.press('Escape');

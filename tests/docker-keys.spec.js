@@ -9,7 +9,7 @@ async function openView(page) {
   return state;
 }
 
-// The Containers view's own keys -- l, m, d -- and Shift+Y into the view from
+// The Containers view's own keys -- l, m, d -- and Shift+C into the view from
 // the dashboard. None of them is taken anywhere else.
 test.describe('containers keys', () => {
   test('d switches to Disk and back; typed in the search it is just a letter', async ({ page }) => {
@@ -61,16 +61,63 @@ test.describe('containers keys', () => {
     expect(await page.locator('.docker-legend kbd').allInnerTexts()).toEqual(['↑ / ↓', 'Enter', '/', 'x', 'l', 'm', 'd']);
   });
 
-  test('Shift+Y opens Containers from the dashboard', async ({ page }) => {
+  async function loadDashboard(page) {
     await mockDocker(page);
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.keyboard.press('Shift+Y');
+    await page.evaluate(() => document.activeElement?.blur());
+  }
+
+  test('Shift+C opens Containers from the dashboard when no bookmark is selected', async ({ page }) => {
+    await loadDashboard(page);
+    await page.keyboard.press('Shift+C');
     await expect(page.locator('[data-docker-row]')).toHaveCount(4);
     await expect(page).toHaveURL(/#docker$/);
+  });
+
+  test('Shift+C with a bookmark selected is Checking, not Containers', async ({ page }) => {
+    await loadDashboard(page);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Shift+C');
+    expect(await page.evaluate(() => window.dashboardInstance.activeView)).not.toBe('docker');
+    await expect(page).not.toHaveURL(/#docker/);
+  });
+
+  test('Shift+Y still opens Containers and names Shift + C', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+      window.__aliasToasts = [];
+      window.dashboardInstance.showNotification = (m) => { window.__aliasToasts.push(String(m)); };
+    });
+    await page.keyboard.press('Shift+Y');
+    await expect(page.locator('[data-docker-row]')).toHaveCount(4);
+    const toasts = await page.evaluate(() => window.__aliasToasts);
+    expect(toasts.some((m) => m.includes('Shift + Y') && m.includes('Shift + C'))).toBe(true);
+  });
+
+  test('Shift+C inside the Bookmarks view stays with the view', async ({ page }) => {
+    await loadDashboard(page);
+    await page.keyboard.press('Shift+B');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('library');
+    await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+    await page.keyboard.press('Shift+C');
+    expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('library');
+  });
+
+  test('Shift+C typed in a text field opens nothing', async ({ page }) => {
+    await loadDashboard(page);
+    await page.evaluate(() => {
+      const input = document.createElement('input');
+      input.id = 'probe-field';
+      document.body.appendChild(input);
+      input.focus();
+    });
+    await page.keyboard.press('Shift+C');
+    await expect(page.locator('#probe-field')).toHaveValue('C');
+    await expect(page).not.toHaveURL(/#docker/);
   });
 });
 

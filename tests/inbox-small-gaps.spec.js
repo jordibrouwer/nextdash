@@ -119,7 +119,8 @@ test.describe('the inbox says what it knows', () => {
         expect(wired.unread).toBe(true);
         expect(wired.tags).toBe(true);
         expect(wired.keys.join(' '), JSON.stringify(wired.keys)).toContain('u');
-        expect(wired.keys.join(' ')).toContain('l');
+        expect(wired.keys.filter((k) => k === 't')).toHaveLength(1);
+        expect(wired.keys).not.toContain('l');
     });
 
     test('the stats panel says which way the backlog is going', async ({ page }) => {

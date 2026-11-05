@@ -69,7 +69,7 @@ test.describe('triage can be finished', () => {
             await inbox.loadAndRender({ refresh: true });
         });
 
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect.poll(() => page.evaluate(
             () => !!window.dashboardInstance.inbox.triage?.isOpen?.()
         ), { timeout: 10_000 }).toBe(true);
@@ -82,7 +82,7 @@ test.describe('triage can be finished', () => {
 
     test('the last card says the run is over instead of starting again', async ({ page }) => {
         await seedInbox(page, ['Fin last A', 'Fin last B']);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect.poll(() => page.evaluate(
             () => !!window.dashboardInstance.inbox.triage?.isOpen?.()
         ), { timeout: 10_000 }).toBe(true);
@@ -113,7 +113,7 @@ test.describe('triage can be finished', () => {
 
     test('promoting a link puts you back in the run', async ({ page }) => {
         await seedInbox(page, ['Fin promote A', 'Fin promote B', 'Fin promote C']);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect.poll(() => page.evaluate(
             () => !!window.dashboardInstance.inbox.triage?.isOpen?.()
         ), { timeout: 10_000 }).toBe(true);
@@ -140,7 +140,7 @@ test.describe('triage can be finished', () => {
 
     test('a link passed before the promote does not come back after it', async ({ page }) => {
         await seedInbox(page, ['Fin pass A', 'Fin pass B', 'Fin pass C']);
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await page.locator('[data-triage-pile="list"]').click();
         const before = await page.evaluate(() => window.dashboardInstance.inbox.triage.queue.map((i) => i.id));
         expect(before.length).toBeGreaterThan(2);

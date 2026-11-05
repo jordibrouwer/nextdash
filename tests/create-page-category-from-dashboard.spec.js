@@ -49,7 +49,7 @@ async function deleteCategoryByName(page, pageId, name) {
  * for it is testing a setting rather than the overlay.
  */
 async function openPageOverview(page) {
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await expect(page.locator('#app-modal .page-overview-modal-list')).toBeVisible();
 }
 

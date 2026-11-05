@@ -650,8 +650,8 @@ pic('glances-widgets', 'deep-lagoon-dark', async (page) => {
     const tile = (type) => page.locator(`[data-widget-type="${type}"]`);
     const graph = tile('glances').filter({ has: page.locator('a[href$="host=vps"]') });
     await expect(graph.locator('svg.dashboard-widget-glances-spark path')).toBeVisible();
-    // The key legend along the bottom is put away, as a reader does with Shift+Z.
-    await page.keyboard.press('Shift+Z');
+    // The key legend along the bottom is put away, as a reader does with Shift+H.
+    await page.keyboard.press('Shift+H');
     // The toast that says so comes and goes (it lasts a few seconds).
     await page.locator('#app-notification.show').waitFor({ state: 'visible', timeout: 3_000 }).catch(() => {});
     await page.locator('#app-notification.show').waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => {});

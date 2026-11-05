@@ -237,7 +237,7 @@ test.describe('spread', () => {
 test('pages shot 4: the pages panel', async ({ page }) => {
     await prepare(page);
     await openDashboard(page, '#3');
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.locator('.page-overview-modal').waitFor({ state: 'visible' });
     // Pacing for the capture, not a condition: the panel finishes opening.
     await page.waitForTimeout(800);
@@ -255,7 +255,7 @@ test('pages shot 5: the trash with Homelab in it', async ({ page }) => {
         return route.fulfill({ response, json: body });
     });
     await openDashboard(page, '#2');
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.locator('.page-overview-modal').waitFor({ state: 'visible' });
     const del = page.locator('.page-overview-modal-delete[data-page-delete="2"]');
     await del.click();

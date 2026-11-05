@@ -102,7 +102,7 @@ module.exports = {
                 await withNews(page, server, onDone, []);
                 await openDashboard(page);
                 await settle(page);
-                await page.keyboard.press('Shift+N');
+                await page.keyboard.press('Shift+W');
                 await page.locator('[data-feed-news]').waitFor({ state: 'visible' });
                 // The Newspaper layout, opened on its first article: the lead picture and the paper's list of the rest.
                 const view = page.locator('.feed-news-view[data-feed-news-view="paper"]').first();

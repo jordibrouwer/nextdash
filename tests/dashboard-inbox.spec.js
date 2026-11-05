@@ -645,10 +645,10 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator('.inbox-item')).toContainText('Annotated link');
     });
 
-    test('t opens triage from the inbox feed', async ({ page }) => {
+    test('f opens triage from the inbox feed', async ({ page }) => {
         await seedInbox(page, ['Triage me']);
         await page.locator('#dashboard-layout').focus();
-        await page.keyboard.press('t');
+        await page.keyboard.press('f');
         await expect(page.locator('#inbox-triage-overlay')).toBeVisible();
     });
 

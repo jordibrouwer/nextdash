@@ -134,7 +134,7 @@ test('triage says that Keep moves a link to Unsorted', async ({ page }) => {
     await expect(page.locator('#bookmark-context-menu [data-action="inbox-keep"]')).toContainText('Unsorted');
     await page.keyboard.press('Escape');
 
-    await page.keyboard.press('t');
+    await page.keyboard.press('f');
     await expect.poll(() => page.evaluate(() =>
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
     await page.locator('[data-triage-pile="list"]').click();

@@ -5,7 +5,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 /**
  * The bookmark form, with the keyboard alone.
  *
- * Shift+B opens it, Tab walks the column in order, the page › category field
+ * Ctrl+Shift+A opens it, Tab walks the column in order, the page › category field
  * opens and is driven with the keys, a suggested tag is taken with Enter, and
  * Ctrl+Enter saves -- answering the category question with Enter too.
  */
@@ -28,7 +28,7 @@ test('add a bookmark from start to finish without the mouse', async ({ page }) =
     test.skip(!category, 'page has no categories');
 
     await page.evaluate(() => document.activeElement?.blur?.());
-    await page.keyboard.press('Shift+B');
+    await page.keyboard.press('Control+Shift+A');
     await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
     await expect(form.locator('[data-field="url"]')).toBeFocused();
@@ -81,7 +81,7 @@ test('the category question, the pencil menu and a suggestion, by keyboard', asy
     });
     const url = `https://keys2.example/${Date.now()}`;
     await page.evaluate(() => document.activeElement?.blur?.());
-    await page.keyboard.press('Shift+B');
+    await page.keyboard.press('Control+Shift+A');
     const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
     await expect(form.locator('[data-field="url"]')).toBeFocused();
     await page.keyboard.type(url);

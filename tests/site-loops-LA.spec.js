@@ -247,7 +247,7 @@ test('bookmarks view loop', async ({ browser, baseURL }) => {
     await page.mouse.move(5, 895);
     const startAt = (Date.now() - t0) / 1000;
     await hold(page, 900);
-    await page.keyboard.press('Shift+H');
+    await page.keyboard.press('Shift+B');
     const rows = page.locator('#config-bm-list .config-bm-row');
     await rows.first().waitFor();
     await hold(page, 900);

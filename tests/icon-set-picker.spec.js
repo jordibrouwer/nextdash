@@ -20,11 +20,11 @@ async function loadDashboard(page) {
     await dismissBlockingOverlays(page);
 }
 
-/** The new-bookmark form, the way a reader opens it: Shift+B. */
+/** The new-bookmark form, the way a reader opens it: Ctrl+Shift+A. */
 async function openAdd(page) {
     await loadDashboard(page);
     await page.evaluate(() => document.activeElement?.blur());
-    await page.keyboard.press('Shift+KeyB');
+    await page.keyboard.press('Control+Shift+KeyA');
     await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     return page.locator('#bookmark-form-modal .bookmark-inline-form');
 }

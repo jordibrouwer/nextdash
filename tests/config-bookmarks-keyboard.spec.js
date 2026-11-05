@@ -33,6 +33,28 @@ test.describe('config bookmarks keyboard navigation', () => {
         await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).toBeFocused();
     });
 
+    test('t moves focus to the Tags field of the panel', async ({ page }) => {
+        await openBookmarksWithRows(page, [
+            { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },
+        ]);
+
+        await page.locator('#config-bm-list').click();
+        await page.keyboard.press('j');
+        await page.keyboard.press('t');
+        await expect(page.locator('#config-bm-panel [data-bm-field="tags"]')).toBeFocused();
+    });
+
+    test('t typed in the list search is just a t', async ({ page }) => {
+        await openBookmarksWithRows(page, [
+            { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },
+        ]);
+
+        const search = page.locator('#config-bm-search, [data-bm-search]').first();
+        await search.focus();
+        await page.keyboard.type('t');
+        await expect(search).toHaveValue('t');
+    });
+
     test('g and End jump to first and last bookmark rows', async ({ page }) => {
         await openBookmarksWithRows(page, [
             { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },

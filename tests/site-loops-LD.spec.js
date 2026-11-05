@@ -103,7 +103,7 @@ test('loop settings', async ({ page }) => {
         await prepare(page);
         await openDashboard(page);
     }, async () => {
-        await page.keyboard.press('Shift+S');
+        await page.keyboard.press(',');
         await page.locator('.config-overview-tip').waitFor();
         await beat(page, 1_800);
         await page.keyboard.press('ControlOrMeta+Shift+K');

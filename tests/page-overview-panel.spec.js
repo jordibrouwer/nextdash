@@ -22,14 +22,14 @@ async function openPages(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     // Through the key someone presses, not through the renderer.
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.waitForSelector('.page-overview-modal', { timeout: 20_000 });
 }
 
 test('the header names the key and carries the way out', async ({ page }) => {
     await openPages(page);
 
-    expect((await page.locator('.page-overview-modal-key').textContent() || '').trim()).toBe(',');
+    expect((await page.locator('.page-overview-modal-key').textContent() || '').trim()).toBe('Shift+P');
 
     const actions = await page.evaluate(() => {
         const el = document.querySelector('.page-overview-modal .modal-actions');
@@ -109,7 +109,7 @@ test('the cursor opens on the page you are on, not on the first', async ({ page 
         await d.requestPageNavigation(id);
         return id;
     });
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.waitForSelector('.page-overview-modal-list', { timeout: 10_000 });
 
     /*
@@ -188,7 +188,7 @@ test.describe('deleting a page from the overview', () => {
             await d.loadData();
             d.pageNav?.renderPageNavigation?.();
         });
-        await page.keyboard.press(',');
+        await page.keyboard.press('Shift+P');
         await page.waitForSelector('#app-modal.show .page-overview-modal', { timeout: 10_000 });
         return page.locator('.page-overview-modal-item', { hasText: 'doomed' });
     }
@@ -296,7 +296,7 @@ test.describe('the shape of the panel', () => {
 
         await page.keyboard.press('Escape');
         await seedPages(page, 10);
-        await page.keyboard.press(',');
+        await page.keyboard.press('Shift+P');
         await page.waitForSelector('.page-overview-modal', { timeout: 10_000 });
 
         const filter = page.locator('#page-overview-filter');
@@ -325,7 +325,7 @@ test.describe('the shape of the panel', () => {
         await seedPages(page, 10);
         const third = await page.evaluate(() => Number(window.dashboardInstance.pages[2].id));
 
-        await page.keyboard.press(',');
+        await page.keyboard.press('Shift+P');
         await page.waitForSelector('#page-overview-filter', { timeout: 10_000 });
         await page.locator('#page-overview-filter').fill('page-9');
         await expect.poll(() => page.evaluate(
@@ -364,7 +364,7 @@ test.describe('the shape of the panel', () => {
         await expect.poll(() => page.evaluate(
             () => window.dashboardInstance.pages.length), { timeout: 10_000 }).toBe(1);
 
-        await page.keyboard.press(',');
+        await page.keyboard.press('Shift+P');
         await page.waitForSelector('.page-overview-modal', { timeout: 10_000 });
 
         await expect(page.locator('.page-overview-modal-actions.is-alone')).toHaveCount(1);
@@ -437,7 +437,7 @@ test('the new-page entry lines up with the rows above it', async ({ page }) => {
             d.pageNav?.renderPageNavigation?.();
         }
     });
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.waitForSelector('.page-overview-modal', { timeout: 10_000 });
 
     const seen = await page.evaluate(() => {
@@ -488,7 +488,7 @@ test('a long list scrolls the rows, not the panel', async ({ page }) => {
         await d.loadData();
         d.pageNav?.renderPageNavigation?.();
     });
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.waitForSelector('.page-overview-modal-list', { timeout: 10_000 });
 
     const seen = await page.evaluate(() => {
@@ -512,4 +512,49 @@ test('a long list scrolls the rows, not the panel', async ({ page }) => {
     expect(seen.listScrolls, 'the rows do not scroll, so nothing is being tested').toBe(true);
     expect(seen.bodyScrolls, 'the panel grew a second scrollbar').toBe(false);
     expect(seen.footVisible, 'the foot was scrolled out of the panel').toBe(true);
+});
+
+test('Shift+P closes the panel again with more than eight pages, where the filter has the focus', async ({ page }) => {
+    await openPages(page);
+    await page.keyboard.press('Escape');
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const d = window.dashboardInstance;
+        const pages = [...d.pages];
+        for (let i = pages.length; i < 12; i += 1) pages.push({ id: 6400 + i, name: `shiftp-${i}` });
+        const saved = await api('/api/pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pages),
+        });
+        if (!saved.ok) throw new Error(`seeding pages failed: ${saved.status}`);
+        await d.loadData();
+        d.pageNav?.renderPageNavigation?.();
+    });
+    await page.keyboard.press('Shift+P');
+    await page.waitForSelector('.page-overview-modal-list', { timeout: 10_000 });
+    await expect(page.locator('#page-overview-filter')).toBeVisible();
+    await page.keyboard.press('Shift+P');
+    await expect(page.locator('.page-overview-modal')).toHaveCount(0);
+});
+
+test('a capital P typed into a filter that already has letters is a letter, not a close', async ({ page }) => {
+    await openPages(page);
+    await page.keyboard.press('Escape');
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const d = window.dashboardInstance;
+        const pages = [...d.pages];
+        for (let i = pages.length; i < 12; i += 1) pages.push({ id: 6400 + i, name: `shiftp-${i}` });
+        await api('/api/pages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pages) });
+        await d.loadData();
+        d.pageNav?.renderPageNavigation?.();
+    });
+    await page.keyboard.press('Shift+P');
+    await page.waitForSelector('#page-overview-filter', { timeout: 10_000 });
+    await page.locator('#page-overview-filter').focus();
+    await page.keyboard.type('shif');
+    await page.keyboard.press('Shift+P');
+    await expect(page.locator('.page-overview-modal')).toBeVisible();
+    await expect(page.locator('#page-overview-filter')).toHaveValue('shifP');
 });

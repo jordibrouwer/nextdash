@@ -289,7 +289,7 @@ test('loop pages-and-categories', async ({ page }) => {
 
     await rest(page, 1_000);
     // The pages panel.
-    await page.keyboard.press(',');
+    await page.keyboard.press('Shift+P');
     await page.locator('.page-overview-modal').waitFor({ state: 'visible' });
     await rest(page, 2_000);
     await page.keyboard.press('Escape');

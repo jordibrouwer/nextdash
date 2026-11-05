@@ -36,7 +36,7 @@ module.exports = {
             target: (page) => page.locator('section', { has: page.locator('#config-bm-offers') }).first(),
             async setup(page, { openDashboard, settle }) {
                 await openDashboard(page);
-                await page.keyboard.press('Shift+H');
+                await page.keyboard.press('Shift+B');
                 await page.locator('#config-bm-list .config-bm-row').first().waitFor();
                 await page.locator('#config-bm-offers:not([hidden])').waitFor();
                 // Pacing for the capture, not a condition: the chips land a moment after the rows.

@@ -37,7 +37,7 @@ async function openContainers(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.keyboard.press('Shift+Y');
+    await page.keyboard.press('Shift+C');
     await expect(page.locator('.docker-row')).toHaveCount(containers.length);
 }
 

@@ -7,7 +7,7 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
  *
  * The :new form is part of the search stack, which is fetched by the key that
  * opens it -- and the add-bookmark routes are not among those keys. So for the
- * first seconds of a visit on a slow link, the toolbar button and Shift+B
+ * first seconds of a visit on a slow link, the toolbar button and Ctrl+Shift+A
  * found no handler and returned: no form, no message, nothing. The press was
  * not queued either, so it stayed lost after the bundle arrived.
  *
@@ -57,11 +57,11 @@ test.describe('adding a bookmark before the search bundle lands', () => {
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/, { timeout: 15_000 });
     });
 
-    test('Shift+B opens the form', async ({ page }) => {
+    test('Ctrl+Shift+A opens the form', async ({ page }) => {
         const release = await holdBackSearchBundle(page);
         await loadDashboard(page);
 
-        const pressed = page.keyboard.press('Shift+B');
+        const pressed = page.keyboard.press('Control+Shift+A');
         release();
         await pressed;
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/, { timeout: 15_000 });

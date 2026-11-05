@@ -114,10 +114,10 @@ test.describe('add bookmark — Create + New', () => {
         await deleteBookmarkByUrl(page, pageId, uniqueUrl);
     });
 
-    test('Shift+B opens the add-bookmark modal on the dashboard', async ({ page }) => {
+    test('Ctrl+Shift+A opens the add-bookmark modal on the dashboard', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => document.activeElement?.blur());
-        await page.keyboard.press('Shift+KeyB');
+        await page.keyboard.press('Control+Shift+KeyA');
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     });
 
