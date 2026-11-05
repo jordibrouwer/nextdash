@@ -210,6 +210,7 @@
         tipWatchNews: f('news'),
         tipWatchFeedKey: c('feed-watch'),
         tipWatchPreviewPager: f('news'),
+        tipWatchExpiry: c('feed-watch/settings'),
         tipEverydayBell: c('behavior/privacy'),
         // Adding bookmarks
         tipAddPaste: c('inbox/collecting'),

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.26.1 — 5 November 2026](#v1261--5-november-2026)
 - [v1.26.0 — 5 November 2026](#v1260--5-november-2026)
 - [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
 - [v1.25.0 — 3 November 2026](#v1250--3-november-2026)
@@ -132,6 +133,42 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.26.1 — 5 November 2026
+
+Watched news no longer piles up while you are away: it stops counting after a set age, and the bell holds one line for it instead of a toast. Every row in the bell now says how old it is, and the bell panel no longer sits under the buttons of the Inbox, Containers and Glances views.
+
+### Watch feeds
+
+- **new — News stops counting after a while.** *Count news as unread for* (Config → Watch feeds) takes 4 or 8 hours, 1 day (the default), 2, 3, 7, 14 or 30 days. News nobody opened for that long leaves the purple count, the hover card and the bell. The news window still lists it, dimmed like read news, until newer news pushes it out.
+- **new — The bell holds one line for new news.** The toast is gone. A single row, *N new from M watched feeds*, in its own *Watch feeds* group, is updated in place when more arrives instead of adding another. It leaves when the news is read or has expired, **Mark read** puts it away until there is more, and a bookmark whose feeds are all muted stays out of it.
+- **new — The hover card pages through ten items.** It used to show the three newest unread items; it now carries up to ten.
+- **new — The hover card names the total.** When more is unread than the card carries, its pager reads *1 / 10 · 25 new*, and a link in the summary takes the card's text colour instead of the browser's blue.
+- **new — The bell nods for news.** New news from watched feeds moves the bell differently from an alarm: it nods once and a small paper slides in beside it. The hourly nudge does the same when news is all that is unread.
+- **fix — No dot on the page tabs.** A page tab no longer gets a dot when another page holds unread news; the purple count on the bookmark and the bell are the signals.
+- **new — The purple count stops at 9+.** From ten unread items on, the count on a bookmark reads *9+*; the tab title keeps the exact number.
+
+### Preview card
+
+- **new — No hover card in the phone layout.** Below 768 px the card stays away, and it comes back when the window widens, without a redraw.
+
+### Notifications
+
+- **new — News from watched feeds has a tone of its own.** A soft two-note chime instead of the warning bell; the bell keeps its tone for everything else, and *Bell sound for new notifications* still switches both off.
+- **new — A nudge every hour.** While anything is still unread the bell shakes and pulses once an hour, without a tone, on top of the quiet pulse every minute.
+- **new — Every row in the bell says how old it is.** The time (*5 min ago*, *2 days ago*) sits on the right of the row and starts over when the row gets worse: more of the thing, or something new in it. A row that only shrinks keeps its age, and the times survive a reload on the same device.
+- **fix — The bell rings only for more, not for less.** When a row's count fell (one site opened, an item expired), the next refresh counted it as new and rang again. It now rings when something is added.
+- **fix — The bell panel draws over the view headers.** On a theme without backdrop blur the buttons and selects in the header of the Inbox, Containers and Glances views showed over the panel. The panel now sits above them.
+
+### Docs
+
+- **docs — Manual.** §4 names the *Watch feeds* group in the bell, the age on each row, the chime and the hourly nudge, and says the hover card stays away in the phone layout; §14 describes the one bell row, the *9+* count, ten items in the hover card with the total, the new *Count news as unread for* setting, and *Bell and push* on a muted feed.
+- **docs — Config → Help.** *Watch feeds* and *Alerts & notifications* describe the bell row, the expiry, the pager with its total, the age on each row and the hourly nudge, and no longer mention a dot on the page tab or a toast.
+- **docs — Tips.** A new tip, *News stops counting after a day*, leads to the setting; the tips for the hover card pager and the bell say ten items and the age of a row. The unused toast strings are gone.
+- **docs — Pictures.** The manual's pictures of the bell (with a *Watch feeds* row and the age of each row), of the news popover and of Config → Watch feeds are taken again, and the bell page and the Watch feeds page on nextdash.cc describe the expiry, the chime, the nod and the hourly nudge, with new bell pictures.
+- **docs — Translations.** The new strings in Dutch, German, French, Spanish and Chinese: the setting and its choices, the bell row, the tip and the changed Help text. A muted feed's switch now reads *Bell and push*.
 
 ---
 

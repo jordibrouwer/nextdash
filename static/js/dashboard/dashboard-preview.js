@@ -23,6 +23,21 @@ class DashboardPreview {
 
     constructor(dashboard) {
         this.dash = dashboard;
+        // The phone layout has no use for a hover card, and it comes back as the
+        // window widens: the rows keep their handlers, so only the showing is
+        // gated (showBookmarkPreviewCard), and a card already open goes when the
+        // window narrows.
+        try {
+            const query = window.matchMedia?.(DashboardPreview.PHONE);
+            query?.addEventListener?.('change', (event) => {
+                if (event.matches) this.hideBookmarkPreviewCard?.();
+            });
+        } catch { /* no matchMedia */ }
+    }
+
+    /** True in the phone layout (the same width the other views fold at). */
+    phoneLayout() {
+        return Boolean(window.matchMedia?.(DashboardPreview.PHONE).matches);
     }
 
     /**
@@ -400,7 +415,7 @@ class DashboardPreview {
     }
 
     /**
-     * The newest items of a feed the reader watches (up to three, newest
+     * The newest items of a feed the reader watches (up to ten, newest
      * first), while its window is open. Desktop only: a touch screen has no
      * hover, and gets the strip under the row instead.
      */
@@ -413,7 +428,7 @@ class DashboardPreview {
         const phase = watch.windowPhase();
         if (phase !== 'open' && phase !== 'pending') return null;
         const items = (Array.isArray(news.newItems) && news.newItems.length ? news.newItems : [news.newest])
-            .filter((item) => item && item.title).slice(0, 3);
+            .filter((item) => item && item.title).slice(0, 10);
         if (!items.length) return null;
         return { newCount: news.newCount, newest: items[0], items, key: watch.key(bookmark?.url) };
     }
@@ -577,15 +592,18 @@ class DashboardPreview {
             fallback();
         }
         const when = item.publishedAt ? ` · ${this.formatPreviewAgo(item.publishedAt)}` : '';
-        el.querySelector('.bookmark-preview-card-news-meta').textContent =
-            d.formatDashboardLabel('feedWatchNewCount', { n: news.newCount, count: news.newCount }, `${news.newCount} new`) + when;
+        // More unread than the card carries (it holds ten): the pager names the
+        // total after its own count, and the head keeps only the age.
+        const newLabel = d.formatDashboardLabel('feedWatchNewCount', { n: news.newCount, count: news.newCount }, `${news.newCount} new`);
+        const beyondCard = Number(news.newCount) > items.length && items.length > 1;
+        el.querySelector('.bookmark-preview-card-news-meta').textContent = beyondCard ? when.replace(/^ · /, '') : newLabel + when;
         el.querySelector('.bookmark-preview-card-news-title').textContent = String(item.title || '');
         const lead = el.querySelector('.bookmark-preview-card-news-lead');
         // The summary is sanitised by the server when it is stored.
         lead.innerHTML = item.summary ? String(item.summary) : '';
         lead.hidden = !item.summary;
         const count = el.querySelector('.bookmark-preview-card-news-count');
-        if (count) count.textContent = `${(el._page || 0) + 1} / ${items.length}`;
+        if (count) count.textContent = `${(el._page || 0) + 1} / ${items.length}${beyondCard ? ` · ${newLabel}` : ''}`;
         el.dataset.itemId = String(item.id || '');
         const openButton = el.querySelector('[data-feed-news-action="open"]');
         if (openButton) {
@@ -1152,7 +1170,7 @@ class DashboardPreview {
     }
 
     showBookmarkPreviewCard(preview, event = null, context = null) {
-        if (this.suppressed()) return;
+        if (this.suppressed() || this.phoneLayout()) return;
         /*
          * No card for a row that is no longer on screen. A view that replaces
          * the grid takes the hovered row away without a mouseleave, so its
@@ -1970,4 +1988,5 @@ class DashboardPreview {
 
 }
 
+DashboardPreview.PHONE = '(max-width: 767px)';
 window.DashboardPreview = DashboardPreview;

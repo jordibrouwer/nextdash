@@ -17,7 +17,7 @@
 (function (global) {
     'use strict';
 
-    const GROUP_ORDER = ['health', 'cleanup', 'system', 'privacy', 'tips'];
+    const GROUP_ORDER = ['health', 'news', 'cleanup', 'system', 'privacy', 'tips'];
 
     /** True when `next` is worse than `prev`; a missing `prev` always is. */
     function isWorse(prev, next, threshold = 1) {

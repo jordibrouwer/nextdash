@@ -1,0 +1,34 @@
+{
+  "tag": "v1.26.1",
+  "date": "5 November 2026",
+  "releasedAt": "2026-11-05",
+  "modalLead": "Watched news stops counting after a while, the bell holds one line for it, and every row in the bell says how old it is.",
+  "sections": [
+    {
+      "title": "Watch feeds",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>News stops counting after a while.</strong> <em>Count news as unread for</em> in Config \u2192 Watch feeds sets how long: from 4 hours to 30 days, 1 day by default. Older news leaves the purple count, the hover card and the bell."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The bell holds one line for new news</strong> instead of a toast. The hover card pages through ten items, and the purple count stops at 9+."
+        }
+      ]
+    },
+    {
+      "title": "Notifications",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every row in the bell says how old it is.</strong> The time sits on the right and starts over when the row gets worse."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The bell panel draws over the view headers</strong> of the Inbox, Containers and Glances views, and the bell rings only for more, not for less."
+        }
+      ]
+    }
+  ]
+}

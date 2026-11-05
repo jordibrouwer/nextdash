@@ -5,51 +5,6 @@ class DashboardPageNav {
     constructor(dashboard) {
         this.dash = dashboard;
         this.bindPageTemplateDrop();
-        document.addEventListener('feedwatch:changed', () => this.updateFeedNewsDots());
-    }
-
-    /**
-     * A small dot on the tab of every other page that holds a bookmark with
-     * unread, unmuted news -- while the news window is open, the rule the rows
-     * follow. The bookmarks of other pages come from the all-bookmarks list;
-     * when it has not been loaded yet it is asked for once.
-     */
-    updateFeedNewsDots() {
-        const d = this.dash;
-        const watch = d?.feedWatch;
-        const tabs = document.querySelectorAll('#page-navigation .page-nav-btn[role="tab"]');
-        document.querySelectorAll('.page-tab-news-dot').forEach((el) => el.remove());
-        // Read, not evaluated: evaluating is the rows' job, and a change of phase
-        // announces itself with the same event this runs on.
-        const phase = watch?._phase;
-        if (!watch || !tabs.length || this.pageSwitcherStyle() === 'compact' || !(phase === 'open' || phase === 'pending') || watch.sitesWithNews({ loud: true }) === 0) return;
-        if (!Array.isArray(d.allBookmarks) || d.allBookmarks.length === 0) {
-            if (!this._newsDotsLoading && d.data?.loadAllBookmarks) {
-                this._newsDotsLoading = true;
-                Promise.resolve(d.data.loadAllBookmarks()).catch(() => {}).then(() => {
-                    this._newsDotsLoading = false;
-                    if (d.allBookmarks?.length) this.updateFeedNewsDots();
-                });
-            }
-            return;
-        }
-        const pages = new Set();
-        for (const bookmark of d.allBookmarks) {
-            const news = watch.newsFor(bookmark);
-            if (news && !news.muted) pages.add(Number(bookmark.pageId));
-        }
-        const label = d.formatDashboardLabel('feedWatchNews', {}, 'News');
-        d.pages.forEach((page, index) => {
-            const btn = tabs[index];
-            if (!btn || !pages.has(Number(page.id)) || d.samePageId(page.id, d.currentPageId)) return;
-            const dot = document.createElement('span');
-            dot.className = 'page-tab-news-dot';
-            const hidden = document.createElement('span');
-            hidden.className = 'sr-only';
-            hidden.textContent = label;
-            dot.appendChild(hidden);
-            btn.appendChild(dot);
-        });
     }
 
     /**
@@ -342,7 +297,6 @@ class DashboardPageNav {
         // again here -- without it, navigating to a folded-away page left the
         // strip showing the first few and no sign of where you actually were.
         this.fitPageTabs();
-        this.updateFeedNewsDots();
 
         const glancesLink = document.getElementById('page-nav-glances-link');
         if (glancesLink) {
@@ -1063,7 +1017,6 @@ class DashboardPageNav {
         }
 
         this.syncPageWalkButtons();
-        this.updateFeedNewsDots();
 
         // Measured after the tabs are in the DOM: widths are not knowable before
         // the browser has laid them out.

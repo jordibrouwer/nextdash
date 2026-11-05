@@ -35,6 +35,7 @@
                 'tipWatchNews',
                 'tipWatchFeedKey',
                 'tipWatchPreviewPager',
+                'tipWatchExpiry',
                 'tipEverydayBell',
             ],
         },

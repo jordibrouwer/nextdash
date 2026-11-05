@@ -420,8 +420,9 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 		readAt := watchReadAt(file, bookmarks)
 		reads = flagWatchReads(&file, readAt, statsSince)
 		unread = map[string]int{}
+		cutoff := h.watchCutoff()
 		for _, wt := range file.Watches {
-			unread[feedStatsID(wt.BookmarkKey, wt.FeedURL)] = len(watchNewItems(wt, readAt[wt.BookmarkKey]))
+			unread[feedStatsID(wt.BookmarkKey, wt.FeedURL)] = len(watchNewItems(wt, readAt[wt.BookmarkKey], cutoff))
 		}
 	}
 	if len(polled) > 0 || len(reads) > 0 {
