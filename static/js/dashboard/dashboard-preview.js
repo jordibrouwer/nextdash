@@ -400,7 +400,7 @@ class DashboardPreview {
     }
 
     /**
-     * The newest items of a feed the reader watches (up to three, newest
+     * The newest items of a feed the reader watches (up to ten, newest
      * first), while its window is open. Desktop only: a touch screen has no
      * hover, and gets the strip under the row instead.
      */
@@ -413,7 +413,7 @@ class DashboardPreview {
         const phase = watch.windowPhase();
         if (phase !== 'open' && phase !== 'pending') return null;
         const items = (Array.isArray(news.newItems) && news.newItems.length ? news.newItems : [news.newest])
-            .filter((item) => item && item.title).slice(0, 3);
+            .filter((item) => item && item.title).slice(0, 10);
         if (!items.length) return null;
         return { newCount: news.newCount, newest: items[0], items, key: watch.key(bookmark?.url) };
     }
