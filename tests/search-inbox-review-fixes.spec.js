@@ -66,7 +66,7 @@ test.describe('search', () => {
 
     /*
      * setScope took one character off the front, so `tag:` travelled as if it
-     * had been typed: Shift+Tab from the tags opened finders on `?tag:`.
+     * had been typed: Shift+Tab from the tags opened finders on `!tag:`.
      */
     test('Shift+Tab from the tags lands on an empty finder line', async ({ page }) => {
         await dashboard(page);
@@ -76,7 +76,7 @@ test.describe('search', () => {
 
         await page.keyboard.press('Shift+Tab');
 
-        await expect.poll(() => query(page)).toMatch(/^\?/);
+        await expect.poll(() => query(page)).toMatch(/^!/);
         expect(await query(page)).not.toContain('tag:');
     });
 

@@ -80,7 +80,8 @@ for (const view of VIEWS) {
       await openView(page, view);
       await page.keyboard.press(':');
       await expect(searchOpen(page)).toBeVisible();
-      await expect(query(page)).toHaveText(':');
+      // The : is the badge's job; the field stays empty.
+      await expect(query(page)).toHaveText('');
     });
 
     test('* opens recents', async ({ page }) => {
@@ -89,19 +90,19 @@ for (const view of VIEWS) {
       await expect.poll(() => page.evaluate(() => window.dashboardInstance.isRecentBookmarksModalOpen?.() === true)).toBe(true);
     });
 
-    test('! opens the shortcut sheet', async ({ page }) => {
+    test('? opens the shortcut sheet', async ({ page }) => {
       await openView(page, view);
       await page.keyboard.press('?');
       await expect(page.locator('#cheat-sheet-filter')).toBeVisible();
     });
 
     {
-      test('? opens the finders', async ({ page }) => {
+      test('! opens the finders', async ({ page }) => {
         await openView(page, view);
         await page.keyboard.press('!');
         await expect(searchOpen(page)).toBeVisible();
         // The last finder used may be filled in after the prefix.
-        await expect(query(page)).toHaveText(/^!/);
+        await expect(query(page)).toHaveText(/^(B )?$/);
       });
     }
   });

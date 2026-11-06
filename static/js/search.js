@@ -115,6 +115,9 @@ class SearchComponent {
             this.updateSearch();
         });
         this.commandsComponent.getRecentCommands = () => this.recentCommands;
+        // How often each command was run, kept on this device only.
+        this.commandUses = this.loadCommandUses();
+        this.commandsComponent.getMostUsedCommands = () => this.mostUsedCommands(5);
 
         /*
          * Built with the finders it was handed, not with an empty list.
@@ -213,7 +216,10 @@ class SearchComponent {
                 // the value under it reset or doubled what was being typed on
                 // a CJK or predictive keyboard; compositionend syncs instead.
                 if (e.isComposing) return;
+                // The field holds what was typed after the mode key; the mode key
+                // itself is the badge, and stays in currentQuery.
                 const raw = e.target.value;
+                const prefix = (this.currentQuery.startsWith(':') || this.currentQuery.startsWith('!') || this.currentQuery.startsWith('=') || this.currentQuery.startsWith('*')) ? this.currentQuery[0] : '';
                 const inCommandMode = this.currentQuery.startsWith(':');
                 const inFinderMode = this.currentQuery.startsWith('!');
                 const inGlobalMode = this.currentQuery.startsWith('@');
@@ -221,17 +227,19 @@ class SearchComponent {
                 // its case and its punctuation -- the same split the key
                 // handler makes. Before the space it is a shortcut, which is
                 // uppercased on screen and matched case-insensitively.
-                const inFinderText = inFinderMode && this.currentQuery.includes(' ');
+                const inFinderText = inFinderMode && this.currentQuery.slice(1).replace(/^ /, '').includes(' ');
                 const shouts = (inFinderMode && !inFinderText) || inGlobalMode;
                 const value = shouts ? raw.toUpperCase() : raw;
-                const allowedChar = (ch) => (shouts
-                    ? /^[A-Z0-9: !/#\.\-_]$/.test(ch)
-                    : SearchComponent.isTypedChar(ch));
+                // A ! is the finder prefix and never part of a finder's text.
+                const allowedChar = (ch) => (inFinderMode && ch === '!' ? false : (shouts
+                    ? /^[A-Z0-9: /#\.\-_]$/.test(ch)
+                    : SearchComponent.isTypedChar(ch)));
                 // The field's value is what was typed. A paste, a swipe-typed
                 // word or an autocorrection inserts several characters at
                 // once, and a selection deleted takes several away: only the
                 // last character, or one removal, was taken before.
-                const before = shouts ? this.currentQuery.toUpperCase() : this.currentQuery;
+                const display = this._displayQuery();
+                const before = shouts ? display.toUpperCase() : display;
                 if (value.length > before.length && value.startsWith(before)) {
                     for (const ch of value.slice(before.length)) {
                         if (allowedChar(ch)) this.addToQuery(ch);
@@ -241,14 +249,14 @@ class SearchComponent {
                 } else if (value !== before) {
                     // An edit in the middle, or a word replaced.
                     if (!value) {
-                        while (this.currentQuery.length) this.removeLastChar();
+                        while (this.currentQuery.length > prefix.length) this.removeLastChar();
                     } else {
-                        this.currentQuery = [...value].filter(allowedChar).join('');
+                        this.currentQuery = prefix + [...value].filter(allowedChar).join('');
                         this._scheduleUpdateSearch();
                     }
                 }
                 // Keep input synced
-                e.target.value = this.currentQuery;
+                e.target.value = this._displayQuery();
             });
 
             mobileInput.addEventListener('compositionend', () => {
@@ -484,10 +492,10 @@ class SearchComponent {
      */
     _isAtModeEntry() {
         const q = this.currentQuery;
-        if (q === '' || q === ':' || q === '!') return true;
+        if (q === '' || q === ':' || q === '!' || q === '! ') return true;
         if (q === SearchComponent.TAG_MODE_QUERY || q === SearchComponent.RECENT_MODE_QUERY) return true;
         if (q === SearchComponent.ASSISTANT_MODE_QUERY) return true;
-        return /^![A-Za-z0-9]*\s?$/.test(q) && q !== '!';
+        return /^! ?[A-Za-z0-9]*\s?$/.test(q);
     }
 
     /** The query a mode key opens its mode with. */
@@ -1274,8 +1282,8 @@ class SearchComponent {
          * Only past the space: before it, every character is part of the
          * shortcut, and the launchers still have their say there.
          */
-        if (this.currentQuery.startsWith('!') && this.currentQuery.includes(' ')
-                && e.key.length === 1 && SearchComponent.isTypedChar(e.key)) {
+        if (this.currentQuery.startsWith('!') && this.currentQuery.slice(1).replace(/^ /, '').includes(' ')
+                && e.key !== '!' && e.key.length === 1 && SearchComponent.isTypedChar(e.key)) {
             e.preventDefault();
             this.addToQuery(e.key);
             return;
@@ -1397,7 +1405,7 @@ class SearchComponent {
                 // addToQuery swallows a lone space after `?` (an empty
                 // shortcut matches no finder).
                 const entry = this.finderModeQuery();
-                if (entry !== '!' && this.currentQuery.endsWith('!')) {
+                if (this.currentQuery.endsWith('!')) {
                     this.currentQuery = `${this.currentQuery.slice(0, -1)}${entry}`;
                     this._scheduleUpdateSearch();
                 }
@@ -1513,6 +1521,10 @@ class SearchComponent {
         if (key === ' ' && this.currentQuery.startsWith('!') && !this.currentQuery.slice(1).trim()) {
             return;
         }
+        // The ! opens finders and is not part of a shortcut or a search term.
+        if (key === '!' && this.currentQuery.startsWith('!')) {
+            return;
+        }
         this.currentQuery += key;
 
         // A query exists, so search is active -- say so now rather than after the
@@ -1535,7 +1547,7 @@ class SearchComponent {
         if (key === ' ' && this.settings.includeFindersInSearch) {
             const trimmed = this.currentQuery.trim();
             if (this.findersComponent.shortcuts.has(trimmed.toLowerCase())) {
-                this.currentQuery = `?${trimmed.toUpperCase()} `;
+                this.currentQuery = `!${trimmed.toUpperCase()} `;
             }
         } else if (key !== ' ' && this.currentQuery.startsWith('!')) {
             this.currentQuery = this.findersComponent.completeShortcutWithSpace(this.currentQuery);
@@ -2556,7 +2568,25 @@ class SearchComponent {
         return true;
     }
 
+    /**
+     * The mode a query is in is shown by the badge in front of the field, so the
+     * mode key itself (the : of commands, the ! of finders, the = of the assistant, the * of recents) is not printed in the
+     * field. The query keeps it internally; only what is typed after it shows.
+     */
+    _displayQuery() {
+        const q = this.currentQuery || '';
+        return (q.startsWith(':') || q.startsWith('!') || q.startsWith('=') || q.startsWith('*')) ? q.slice(1).replace(/^ /, '') : q;
+    }
+
     removeLastChar() {
+        // A lone mode key is the empty mode: backspace leaves the mode for plain
+        // search, with the panel still open, as an empty field would have it.
+        if (this.currentQuery === ':' || this.currentQuery === '!' || this.currentQuery === '=' || this.currentQuery === '*') {
+            this.currentQuery = '';
+            this.commandsComponent.resetState();
+            this._scheduleUpdateSearch();
+            return;
+        }
         if (this.currentQuery.length > 0) {
             this.currentQuery = this.currentQuery.slice(0, -1);
             this.commandsComponent.resetState();
@@ -2723,8 +2753,8 @@ class SearchComponent {
                     if (finder) {
                         this.searchMatches.push({
                             name: finder.name,
-                            shortcut: `?${finder.shortcut.toUpperCase()}`,
-                            completion: `?${finder.shortcut.toUpperCase()} `,
+                            shortcut: `!${finder.shortcut.toUpperCase()}`,
+                            completion: `!${finder.shortcut.toUpperCase()} `,
                             meta: this.findersComponent.getFinderMeta(finder),
                             type: 'finder-completion'
                         });
@@ -2743,8 +2773,8 @@ class SearchComponent {
                             // If no search text, show as completion
                             this.searchMatches.push({
                                 name: finder.name,
-                                shortcut: `?${finder.shortcut.toUpperCase()}`,
-                                completion: `?${finder.shortcut.toUpperCase()} `,
+                                shortcut: `!${finder.shortcut.toUpperCase()}`,
+                                completion: `!${finder.shortcut.toUpperCase()} `,
                                 meta: this.findersComponent.getFinderMeta(finder),
                                 type: 'finder-completion'
                             });
@@ -2752,7 +2782,7 @@ class SearchComponent {
                             // If there is search text, show as ready to open
                             this.searchMatches.push({
                                 name: finder.name,
-                                shortcut: `?${finder.shortcut.toUpperCase()}`,
+                                shortcut: `!${finder.shortcut.toUpperCase()}`,
                                 searchText: searchText,
                                 url: finder.searchUrl.replace('%s', encodeURIComponent(searchText)),
                                 meta: this.findersComponent.getFinderMeta(finder),
@@ -2930,7 +2960,7 @@ class SearchComponent {
         } else if (scope.id === 'tags') {
             this.currentQuery = SearchComponent.TAG_MODE_QUERY + word;
         } else if (scope.id === 'finders') {
-            this.currentQuery = word ? `?${word}` : this.finderModeQuery();
+            this.currentQuery = word ? `!${word}` : this.finderModeQuery();
         } else {
             this.currentQuery = `${scope.prefix}${word}`;
         }
@@ -2954,7 +2984,7 @@ class SearchComponent {
         }
         if (q.startsWith('!')) {
             // Before the space a finder query is its shortcut, after it the text.
-            const rest = q.slice(1);
+            const rest = q.slice(1).replace(/^ /, '');
             const space = rest.indexOf(' ');
             return (space >= 0 ? rest.slice(space + 1) : rest).trim();
         }
@@ -3146,7 +3176,7 @@ class SearchComponent {
         if (!only) return [];
         return [{
             name: only.name,
-            shortcut: `?${String(only.shortcut || '').toUpperCase()}`,
+            shortcut: `!${String(only.shortcut || '').toUpperCase()}`,
             searchText: query,
             url: String(only.searchUrl || '').replace('%s', encodeURIComponent(query)),
             meta: finders.getFinderMeta?.(only) || null,
@@ -3289,7 +3319,7 @@ class SearchComponent {
 
         if (searchElement && queryElement) {
             this.updateModeIndicator();
-            queryElement.textContent = this.currentQuery;
+            queryElement.textContent = this._displayQuery();
             // Auto-scroll to the right to keep the cursor position visible
             queryElement.scrollLeft = queryElement.scrollWidth;
             searchElement.classList.add('show');
@@ -3314,7 +3344,7 @@ class SearchComponent {
             
             // Focus mobile input to show keyboard (mobile layout only)
             if (mobileInput && window.MobileExperience?.isMobileLayout?.()) {
-                mobileInput.value = this.currentQuery;
+                mobileInput.value = this._displayQuery();
                 mobileInput.focus();
             }
 
@@ -3691,7 +3721,10 @@ class SearchComponent {
             // Show empty container when no matches (no message when opened from button)
             if (this.currentQuery.length > 0) {
                 const t = (key, fallback) => this.language ? (this.language.t(key) || fallback) : fallback;
-                const q = this.currentQuery.trim();
+                // What was typed, without the finder prefix: it is the mode, not
+                // part of the words, and it must not reach the page or the engine.
+                const typed = this.currentQuery.trim();
+                const q = typed.startsWith('!') ? typed.slice(1).trim() : typed;
 
                 // Header: no matches
                 const noMatchElement = document.createElement('div');
@@ -3722,7 +3755,7 @@ class SearchComponent {
                     this.updateSearch();
                     const input = document.getElementById('search-input-mobile');
                     if (input) {
-                        input.value = this.currentQuery;
+                        input.value = this._displayQuery();
                         input.focus();
                     }
                 };
@@ -3751,7 +3784,7 @@ class SearchComponent {
                         const finderHint = document.createElement('div');
                         finderHint.className = 'search-match search-hint-entry';
                         finderHint.innerHTML = `
-                            <span class="search-match-shortcut search-hint-shortcut">?${finderShortcutHtml}</span>
+                            <span class="search-match-shortcut search-hint-shortcut">!${finderShortcutHtml}</span>
                             <span class="search-match-name search-hint-name">${t('dashboard.hintSearchFinder', 'Search on')} ${this._escHtml(finder.name || finderShortcut)}</span>
                         `;
                         const hintFinderAction = () => {
@@ -3896,7 +3929,26 @@ class SearchComponent {
                 const chipRow = document.createElement('div');
                 const selectedClass = mySelectableIndex === this.selectedMatchIndex ? ' keyboard-selected' : '';
                 chipRow.className = `search-history-chip-row command-group-child${selectedClass}`;
-                match.queries.forEach((q) => {
+                // Two lists on one line: recent and most used, side by side, each
+                // with its own small label. The chips stay one list for the keys.
+                const sections = Array.isArray(match.sections) ? match.sections : null;
+                if (sections) chipRow.classList.add('search-chip-row--split');
+                const columns = [];
+                if (sections) {
+                    sections.forEach((section) => {
+                        const col = document.createElement('div');
+                        col.className = 'search-chip-col';
+                        const label = document.createElement('span');
+                        label.className = 'search-chip-col-label';
+                        label.textContent = section.label;
+                        const body = document.createElement('div');
+                        body.className = 'search-chip-col-chips';
+                        col.append(label, body);
+                        chipRow.appendChild(col);
+                        columns.push({ body, from: columns.reduce((n, c) => n + c.count, 0), count: section.count });
+                    });
+                }
+                match.queries.forEach((q, flatIndex) => {
                     const wrap = document.createElement('div');
                     wrap.className = match.type === 'history-chips'
                         ? 'search-history-chip-wrap'
@@ -3909,10 +3961,7 @@ class SearchComponent {
                         : 'search-history-chip';
                     chip.textContent = q;
                     chip.addEventListener('click', () => {
-                        const chipIdx = match.queries.indexOf(q);
-                        if (chipIdx >= 0) {
-                            this.selectedChipIndex = chipIdx;
-                        }
+                        this.selectedChipIndex = flatIndex;
                         this.applySelectedChipQuery(match);
                     });
                     wrap.appendChild(chip);
@@ -3931,7 +3980,8 @@ class SearchComponent {
                         wrap.appendChild(removeBtn);
                     }
 
-                    chipRow.appendChild(wrap);
+                    const home = columns.find((c) => flatIndex >= c.from && flatIndex < c.from + c.count);
+                    (home ? home.body : chipRow).appendChild(wrap);
                 });
                 fragment.appendChild(chipRow);
                 chipRow.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
@@ -4760,6 +4810,24 @@ class SearchComponent {
         }
     }
 
+    loadCommandUses() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem('dashboardCommandUses') || '{}');
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+
+    /** The commands run most often, as ":name", most first (ties: the name). */
+    mostUsedCommands(limit = 5) {
+        return Object.entries(this.commandUses || {})
+            .filter(([name, n]) => name && Number(n) >= 2)
+            .sort((a, b) => Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]))
+            .slice(0, limit)
+            .map(([name]) => `:${name}`);
+    }
+
     saveRecentCommands() {
         try {
             localStorage.setItem('dashboardRecentCommands', JSON.stringify(this.recentCommands.slice(0, 5)));
@@ -4778,6 +4846,13 @@ class SearchComponent {
 
         this.recentCommands = [cleanedQuery, ...this.recentCommands.filter((entry) => entry !== cleanedQuery)].slice(0, 5);
         this.saveRecentCommands();
+        // The name alone is counted, never what followed it.
+        const name = cleanedQuery.slice(1).split(/\s+/)[0].toLowerCase();
+        if (name) {
+            this.commandUses = this.commandUses || {};
+            this.commandUses[name] = (Number(this.commandUses[name]) || 0) + 1;
+            try { localStorage.setItem('dashboardCommandUses', JSON.stringify(this.commandUses)); } catch { /* ignore */ }
+        }
     }
 
     /**
@@ -4883,6 +4958,7 @@ class SearchComponent {
         const result = [];
         const historyMatches = this.getSearchHistoryMatches();
         const recentCommandMatches = this.getRecentCommandMatches();
+        const commandBadgeMatches = this.getCommandBadgeMatches();
         const savedMatches = this.getSavedSearchMatches();
 
         const filterItems = this.getFilterHintItems();
@@ -4923,7 +4999,9 @@ class SearchComponent {
             { id: 'keyboard-tour', label: t('emptyStateKeyboardTourLabel', 'Keyboard'), items: keyboardTourItems, defaultOpen: Boolean(window.hyprMode?.isEnabled?.()) },
             { id: 'usually-now', label: t('emptyStateUsuallyNowLabel', 'Usually now'), items: this.getUsuallyNowMatches(), defaultOpen: true },
             { id: 'recent', label: t('emptyStateRecentLabel', 'Recent'), items: historyMatches, defaultOpen: true },
-            { id: 'recent-commands', label: t('emptyStateRecentCommandsLabel', 'Recent commands'), items: recentCommandMatches, defaultOpen: false },
+            // The commands run lately and run most, as badges: open, because the
+            // ones you reach for are the reason to look at an empty search.
+            { id: 'recent-commands', label: t('emptyStateYourCommandsLabel', 'Your commands'), items: commandBadgeMatches, defaultOpen: true },
             { id: 'saved', label: t('emptyStateSavedLabel', 'Saved searches'), items: savedMatches, defaultOpen: false },
             { id: 'web-recent', label: t('webSearchRecentLabel', 'Recent on the web'), items: this.getWebRecentMatches(), defaultOpen: false },
             { id: 'commands', label: t('emptyStateCommandsGroupLabel', 'Commands'), items: commandItems, defaultOpen: false },
@@ -5106,6 +5184,22 @@ class SearchComponent {
             type: 'history-chips',
             queries: recent,
             _chipCount: recent.length
+        }];
+    }
+
+    /** The recent and the most used commands as one row of two labelled lists. */
+    getCommandBadgeMatches() {
+        const recent = this.recentCommands.slice(0, 5);
+        const most = this.mostUsedCommands(5);
+        if (recent.length === 0 && most.length === 0) return [];
+        const sections = [];
+        if (recent.length) sections.push({ label: this.dashboardLabel('emptyStateRecentCommandsLabel', 'Recent commands'), count: recent.length });
+        if (most.length) sections.push({ label: this.dashboardLabel('emptyStateMostUsedCommandsLabel', 'Most used'), count: most.length });
+        return [{
+            type: 'command-chips',
+            queries: [...recent, ...most],
+            sections,
+            _chipCount: recent.length + most.length
         }];
     }
 

@@ -126,10 +126,10 @@
 
     /** Step 3: `?` sends the rest of the line to a site you chose. */
     function sceneFinders() {
-        return svg(panel('!yt lofi', [
-            { left: '!yt', right: t('keyboardTourSceneFinder', 'Search on YouTube') },
-            { left: '!w', right: t('keyboardTourSceneFinder2', 'Search on Wikipedia') },
-        ]), t('keyboardTour3Alt', 'The search panel with !yt lofi typed and the finders it offers'));
+        return svg(panel('! yt lofi', [
+            { left: '! yt', right: t('keyboardTourSceneFinder', 'Search on YouTube') },
+            { left: '! w', right: t('keyboardTourSceneFinder2', 'Search on Wikipedia') },
+        ]), t('keyboardTour3Alt', 'The search panel with ! yt lofi typed and the finders it offers'));
     }
 
     /** Step 4: the single keys that open the other doors. */

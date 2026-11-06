@@ -433,7 +433,7 @@
                 },
                 { keys: '@', cheatKey: 'smGlobalSearch', fallback: 'Global search — fuzzy search across all pages at once; result shows page name as context' },
                 { keys: ':', cheatKey: 'smCommandPalette', fallback: 'Command palette — 5 collapsible groups at lone : ; recent commands at top; toggles stay open after Enter', print: true, printFallback: 'Commands' },
-                { keys: '!', cheatKey: 'smFinders', fallback: 'Finders — e.g. !g query to search Google', print: true, printFallback: 'Finders' },
+                { keys: '!', cheatKey: 'smFinders', fallback: 'Finders — e.g. ! g query to search Google', print: true, printFallback: 'Finders' },
                 { keys: '=', cheatKey: 'smAssistant', fallback: 'AI Assistant — ask a question; latest conversations at a lone =', print: true, printFallback: 'Assistant' },
                 { keys: '*', cheatKey: 'smRecentPanel', fallback: 'Recent bookmarks panel', print: true, printFallback: 'Recent bookmarks' },
                 { keys: '[ / ] or Page Up / Page Down (recent)', cheatKey: 'smRecentPages', fallback: 'Recent bookmarks — an earlier or later page of ten' },

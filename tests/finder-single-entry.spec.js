@@ -97,6 +97,52 @@ test.describe('typing into a finder', () => {
     });
 });
 
+test.describe('the ! prefix', () => {
+    test('opens finder mode with a space after it, so the prefix and the terms stay apart', async ({ page }) => {
+        await dashboard(page);
+        await setFinders(page, ['b', 'g']);
+
+        await page.keyboard.type('!');
+        await expect.poll(() => query(page)).toBe('!');
+        await page.keyboard.type('g');
+        await expect.poll(() => query(page)).toBe('!G ');
+        await page.keyboard.type('nextdash');
+        expect(await query(page)).toBe('!G nextdash');
+    });
+
+    test('is not typed into the shortcut or the search terms', async ({ page }) => {
+        await dashboard(page);
+        await setFinders(page, ['b', 'g']);
+
+        await page.keyboard.type('!');
+        await page.keyboard.type('!');
+        await expect.poll(() => query(page)).toBe('!');
+        await page.keyboard.type('g');
+        await page.keyboard.type('hello! wor!ld');
+        expect(await query(page), 'a ! reached the search term').toBe('!G hello world');
+    });
+});
+
+test('the ! prefix is not sent to the engine when no finder shortcut matches', async ({ page }) => {
+    await dashboard(page);
+    await setFinders(page, ['b', 'g']);
+    await page.evaluate(() => {
+        window.__sent = [];
+        const f = window.dashboardInstance.searchComponent.findersComponent;
+        f.openFinder = (finder, text) => { window.__sent.push(text); };
+    });
+    await page.keyboard.type('!');
+    await page.keyboard.type('jordi brouwer');
+    await expect(page.locator('.search-no-match-query')).toBeVisible({ timeout: 10_000 });
+    expect(await page.locator('.search-no-match-query').innerText()).not.toContain('!');
+    // The first finder hint, the way Enter runs it.
+    await page.locator('.search-hint-entry', { hasText: /Search on/ }).first().click();
+    await expect.poll(() => page.evaluate(() => window.__sent.length)).toBe(1);
+    const sent = await page.evaluate(() => window.__sent[0]);
+    expect(sent).not.toContain('!');
+    expect(sent.toLowerCase()).toBe('jordi brouwer');
+});
+
 test.describe('entering finder mode', () => {
     test('one finder: the key lands you ready to type', async ({ page }) => {
         await dashboard(page);

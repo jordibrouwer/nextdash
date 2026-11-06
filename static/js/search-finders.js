@@ -65,12 +65,14 @@ class SearchFindersComponent {
             return [];
         }
 
-        const afterQuestion = query.slice(1);
+        // The grammar is "! shortcut terms": one space after the ! keeps the
+        // prefix apart from what is typed after it.
+        const afterQuestion = query.slice(1).replace(/^ /, '');
         const parts = afterQuestion.split(' ');
         const shortcut = parts[0].toLowerCase();
 
-        // If just "?", show available finders
-        if (query === '!') {
+        // If just the prefix, show available finders
+        if (afterQuestion === '') {
             return this.getAvailableFinders();
         }
 
@@ -151,7 +153,7 @@ class SearchFindersComponent {
             return query;
         }
 
-        const afterQuestion = query.slice(1);
+        const afterQuestion = query.slice(1).replace(/^ /, '');
         if (!afterQuestion || afterQuestion.includes(' ')) {
             return query;
         }

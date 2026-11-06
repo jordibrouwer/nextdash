@@ -1474,7 +1474,7 @@ Search, commands and finders are three modes of one panel, which opens in the mi
 ```
 >  search     — your bookmarks, with filters
 :  commands   — actions: :theme, :open last 5, …
-!  finders    — !g query → another site
+!  finders    — ! g query → another site
 =  assistant  — ask a question; your latest conversations at a lone =
 @  everywhere — search all pages at once
 ⇧↵ the web    — the same words, asked of a search engine
@@ -1648,7 +1648,7 @@ The palette is drawn like the dashboard: its fill follows how solid the categori
 
 ### 8.6 Finders (`!`)
 
-`!shortcut query` sends the query to another site: `!g nextdash` searches Google. A fresh install has DuckDuckGo on `du` and Brave Search on `b` (an install that already existed was given Brave Search once; delete it and it stays deleted). `?w` without a query opens the site's own search page.
+`! shortcut query` sends the query to another site: `! g nextdash` searches Google. A fresh install has DuckDuckGo on `du` and Brave Search on `b` (an install that already existed was given Brave Search once; delete it and it stays deleted). `?w` without a query opens the site's own search page.
 
 <p align="center"><img src="screenshots/manual.md/08-finders.jpg" alt="The search panel on its finders tab: a question mark typed, and the two finders Brave Search and DuckDuckGo with their shortcuts" width="840"></p>
 <p align="center"><sub><kbd>?</kbd> lists the finders with their shortcuts.</sub></p>
@@ -5678,7 +5678,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Filter | A way to narrow what is shown: `tag:`, `category:`, `status:` and more in search, and the rail's groups in the Bookmarks view. | [§8.2](#82-filters) |
-| Finder (`!`) | A shortcut that sends a query to another site, as in `!g nextdash`. | [§8.6](#86-finders) |
+| Finder (`!`) | A shortcut that sends a query to another site, as in `! g nextdash`. | [§8.6](#86-finders) |
 | Watch feeds | Follows the RSS or Atom feed of a site you choose and tells you when it publishes something. | [§14](#14-watch-feeds) |
 | Glances | A server that reports one machine's processor, memory, disks, processes and containers. nextDash reads a Glances 4 host for its Glances page and widget. | [§16A](#16a-glances) |
 | Glances page | The view for one Glances host, opened with `Shift + G` or `:glances`, with Overview, Processes, Containers, Disks, Network, Insights, History, Alerts and Hosts sections. | [§16A.1](#16a1-opening-it) |
