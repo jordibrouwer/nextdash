@@ -259,20 +259,20 @@ test.describe('dashboard command palette', () => {
         }, { timeout: 10_000 }).toBe(true);
     });
 
-    test('lone colon shows five command groups, all closed', async ({ page }) => {
+    test('lone colon lists the commands, every group open', async ({ page }) => {
         await page.keyboard.press(':');
         await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
         await expect(page.locator('.search-command-group-header')).toHaveCount(5);
-        // Headings, not sixty commands: opening one is the reader's keystroke.
+        // The commands are listed when the mode opens; the reader closes a
+        // group with a click, not opens one.
         const open = () => page.locator('.search-command-group-arrow')
             .evaluateAll((els) => els.filter((el) => el.textContent.trim() === '▾').length);
-        expect(await open(), 'a group was open before it was asked for').toBe(0);
-        const rowsClosed = await page.locator('.search-match').count();
+        expect(await open(), 'a group was closed when the mode opened').toBe(5);
+        const rowsOpen = await page.locator('.search-match').count();
 
-        // And opening one shows that group, and only that one.
         await page.locator('.search-command-group-header').first().click();
-        await expect.poll(open).toBe(1);
-        expect(await page.locator('.search-match').count()).toBeGreaterThan(rowsClosed);
+        await expect.poll(open).toBe(4);
+        expect(await page.locator('.search-match').count()).toBeLessThan(rowsOpen);
     });
 
     test(':dark toggles auto dark mode', async ({ page }) => {

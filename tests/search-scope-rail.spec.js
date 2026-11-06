@@ -127,7 +127,7 @@ test('tab walks the rail and keeps the word', async ({ page }) => {
     await expect.poll(async () => (await state()).scope, { message: 'shift+tab did not walk back' }).toBe('all');
 });
 
-test('the commands scope opens on its headings, closed', async ({ page }) => {
+test('the commands scope opens with its commands listed', async ({ page }) => {
     await openSearch(page);
     await page.keyboard.press(':');
     await expect(page.locator('.search-command-group-header').first()).toBeVisible();
@@ -141,11 +141,8 @@ test('the commands scope opens on its headings, closed', async ({ page }) => {
     }));
 
     expect(rows.headers, 'the groups are gone entirely').toBeGreaterThan(0);
-    // Sixty commands unfolded before anything was asked for is a list to
-    // scroll, not a menu to read: the headings say what is behind them and
-    // opening one is a keystroke.
-    expect(rows.open, 'a group was open before it was asked for').toBe(0);
-    expect(rows.commands, 'the commands are on screen unasked').toBe(0);
+    expect(rows.open, 'a group was closed when the mode opened').toBe(rows.headers);
+    expect(rows.commands, 'the commands are not listed').toBeGreaterThan(0);
 });
 
 test('! opens the cheat sheet from inside the panel', async ({ page }) => {
