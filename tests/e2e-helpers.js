@@ -88,6 +88,9 @@ async function markWhatsNewSeen(page, options = {}) {
             // Likewise the note that introduces the action bar: it stands over
             // the bar's edge or the header, where many tests click.
             localStorage.setItem('nextdash:action-bar-intro-seen', '1');
+            // And the note that introduces the mode strip: it ringed the strip and held
+            // it awake, and queued ahead of the bell's note in a fresh browser.
+            localStorage.setItem('nextdash:mode-strip-intro-seen', '1');
             if (confirmCheatsheet) {
                 localStorage.setItem('nextdash:dashboard-cheatsheet-promo-confirmed-v1', '1');
             }
