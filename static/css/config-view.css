@@ -2288,6 +2288,113 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
 }
 
 /*
+ * Every native control in Config wears the theme, not the browser's.
+ *
+ * A bare <select> drew the system's stepper arrows and a bare checkbox the
+ * system's white box, on every page of Config, whatever the theme. One rule
+ * for all of them: the select drops its native look for a chevron in the text
+ * colour, the checkbox and radio become a box in the theme's border colour that
+ * fills with the accent when ticked. Written once against .config-view and the
+ * widget sheet, so a control added later is themed without a class of its own.
+ */
+:is(.config-view, .config-widget-overlay) select {
+    -webkit-appearance: none;
+    appearance: none;
+    padding-right: 28px;
+    background-color: var(--card-bg, rgba(128, 128, 128, 0.04));
+    background-image:
+        linear-gradient(45deg, transparent 50%, currentColor 50%),
+        linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    color: var(--text-color, inherit);
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: var(--radius-5, 8px);
+}
+:is(.config-view, .config-widget-overlay) select[multiple],
+:is(.config-view, .config-widget-overlay) select[size]:not([size="1"]) {
+    background-image: none;
+    padding-right: 10px;
+}
+:is(.config-view, .config-widget-overlay) select:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent-color, #4a90d9) 55%, var(--border-color, rgba(128, 128, 128, 0.35)));
+}
+:is(.config-view, .config-widget-overlay) select:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-color, #4a90d9) 70%, transparent);
+    outline-offset: 1px;
+}
+:is(.config-view, .config-widget-overlay) select option {
+    background: var(--background-secondary, #222);
+    color: var(--text-color, inherit);
+}
+
+:is(.config-view, .config-widget-overlay) :is(input[type="checkbox"], input[type="radio"]):not(.config-bm-tick) {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    /* --text-primary, not currentColor: an input's own colour is the system's black. */
+    border: 1.5px solid color-mix(in srgb, var(--text-primary, #888) 55%, transparent);
+    border-radius: 4px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+:is(.config-view, .config-widget-overlay) input[type="radio"]:not(.config-bm-tick) {
+    border-radius: 50%;
+}
+:is(.config-view, .config-widget-overlay) :is(input[type="checkbox"], input[type="radio"]):not(.config-bm-tick):hover:not(:disabled) {
+    border-color: var(--accent-color, #4a90d9);
+}
+:is(.config-view, .config-widget-overlay) :is(input[type="checkbox"], input[type="radio"]):not(.config-bm-tick):checked {
+    background: var(--accent-color, #4a90d9);
+    border-color: var(--accent-color, #4a90d9);
+}
+:is(.config-view, .config-widget-overlay) input[type="checkbox"]:not(.config-bm-tick):checked::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--on-accent, var(--background-primary, #fff));
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+:is(.config-view, .config-widget-overlay) input[type="radio"]:not(.config-bm-tick):checked::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--on-accent, var(--background-primary, #fff));
+}
+:is(.config-view, .config-widget-overlay) input[type="checkbox"]:not(.config-bm-tick):indeterminate {
+    background: var(--accent-color, #4a90d9);
+    border-color: var(--accent-color, #4a90d9);
+}
+:is(.config-view, .config-widget-overlay) input[type="checkbox"]:not(.config-bm-tick):indeterminate::after {
+    content: "";
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    top: 6px;
+    height: 2px;
+    background: var(--on-accent, var(--background-primary, #fff));
+}
+:is(.config-view, .config-widget-overlay) :is(input[type="checkbox"], input[type="radio"]):not(.config-bm-tick):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-color, #4a90d9) 70%, transparent);
+    outline-offset: 2px;
+}
+:is(.config-view, .config-widget-overlay) :is(input[type="checkbox"], input[type="radio"]):disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/*
  * Theme picker — a listbox standing in for a <select>.
  *
  * A native select cannot do what this control is for: while its popup is open
