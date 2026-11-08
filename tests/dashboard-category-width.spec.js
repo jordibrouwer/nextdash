@@ -595,16 +595,16 @@ test.describe('packed columns carries the switch by packing tighter', () => {
 });
 
 test.describe('the switch is reachable from everywhere', () => {
-    test('Shift+W flips it on the focused category', async ({ page }) => {
+    test('W flips it on the focused category', async ({ page }) => {
         await openDashboard(page, { itemLimit: 1 });
         const id = await categoryWith(page, 2);
         await page.locator(`.category[data-category-id="${id}"] .category-title`).click();
 
-        await page.keyboard.press('Shift+W');
+        await page.keyboard.press('w');
         await expect.poll(async () => (await stateOf(page, id)).spread, { timeout: 5000 }).toBe('true');
 
         const cleared = categorySaved(page);
-        await page.keyboard.press('Shift+W');
+        await page.keyboard.press('w');
         await expect.poll(async () => (await stateOf(page, id)).spread, { timeout: 5000 }).toBe('false');
         await cleared;
     });

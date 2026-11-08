@@ -294,6 +294,13 @@ class KeyboardNavigation {
                     }
                     return;
                 }
+                // Nothing watched yet: say what the key is for, and where to read more.
+                if (window.FeedWatchNews && !this._anyFeedWatched()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!e.repeat) this._noFeedsWatchedNotice();
+                    return;
+                }
             }
 
             // Alt+←/→ on a category header — reorder the category itself.
@@ -2729,6 +2736,25 @@ class KeyboardNavigation {
             keyboardNav: false,
         });
         return true;
+    }
+
+    /** Shift+W with no feed watched: one toast that says what the key opens, and a way into Help. */
+    _noFeedsWatchedNotice() {
+        const d = this.dashboard;
+        const t = (key, fallback) => {
+            const v = d?.language?.t?.(`dashboard.${key}`);
+            return v && v !== `dashboard.${key}` ? v : fallback;
+        };
+        d?.showNotification?.(
+            t('watchNewsNone', 'Shift+W opens the news of the feeds you watch, and none are watched yet. Press w on a bookmark to watch its feed.'),
+            'info',
+            {
+                duration: 9000,
+                replace: true,
+                actionLabel: t('watchNewsNoneMore', 'More info'),
+                onAction: () => window.KeyboardPageHelp?.openHelp?.(d, '#config/help/monitoring/fresh'),
+            },
+        );
     }
 
     /** True once at least one bookmark has a feed watched. */

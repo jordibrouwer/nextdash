@@ -36,6 +36,8 @@
                 { keys: 'Shift+B', text: 'Open the Bookmarks view', explain: 'Every bookmark across your pages in one list, to search, filter and clean up.', try: k('B', { shift: true, code: 'KeyB' }) },
                 { keys: 'Shift+N', text: 'Open the notifications bell', explain: 'What needs you waits there: alerts, updates, questions and two tips a day. The same key closes it.', try: k('N', { shift: true, code: 'KeyN' }) },
                 { keys: 'Shift+H', text: 'Hide or show the key legend', explain: 'The legend under the grid lists the keys that work right now.', try: k('H', { shift: true, code: 'KeyH' }) },
+                { keys: 'w', text: 'Watch the feed of the bookmark under the cursor', explain: 'Pick which feeds of the site to follow and how often to check. Its news then shows on the bookmark.' },
+                { keys: 'Shift+W', text: 'Read the news of the feeds you watch', explain: 'Every watched site in one paper, with read and unread per item. With no feed watched yet it says so, and points to help.' },
             ],
         },
         library: {
@@ -140,6 +142,19 @@
                 { keys: 'Esc', text: 'Close the bell', explain: 'Closes it and puts focus back on the bell button.' },
             ],
         },
+        'config:feed-watch': {
+            title: 'Config → Watch feeds',
+            intro: 'The feeds you follow, with the newest item of each. Mute, pause or stop one, or set a word filter.',
+            mode: 'browse',
+            settings: 'feed-watch',
+            steps: [
+                { keys: 'j / k', text: 'Move through the feeds', explain: 'The first press puts the cursor on a feed.', try: k('j') },
+                { keys: 'Enter', text: 'Open the details of a feed', explain: 'Its interval, word filter and newest items.' },
+                { keys: 'm', text: 'Mute it', explain: 'Keeps watching but stops counting its news as unread. Press again to unmute.' },
+                { keys: 'p', text: 'Pause it', explain: 'Stops checking until you press p again.' },
+                { keys: 'd', text: 'Stop watching it', explain: 'Removes the feed from this list. The bookmark stays.' },
+            ],
+        },
         'config:structure': {
             title: 'Config → Structure',
             intro: 'Your pages, categories, tags and collections. Rows you can reorder, rename and delete.',
@@ -204,7 +219,7 @@
     const LINKS = {
         // The bell first: Keys for this page from its Help panel must find it, not the dashboard.
         bell: [P('start', 'Bell')],
-        bookmarks: [P('search', 'Keyboard'), P('search', 'Search'), P('start', 'Bell')],
+        bookmarks: [P('search', 'Keyboard'), P('search', 'Search'), P('start', 'Bell'), P('monitoring', 'Fresh')],
         library: [P('bookmarks', 'BmKeys'), P('bookmarks', 'Library')],
         'tag-view': [P('organizing', 'Tags')],
         inbox: [P('inbox', 'InboxWork'), P('inbox', 'InboxTriage')],
@@ -212,19 +227,21 @@
         docker: [P('containers', 'Containers')],
         glances: [P('glances', 'Glances')],
         config: [P('search', 'ConfigKeyboard')],
+        'config:feed-watch': [P('monitoring', 'Fresh')],
         'config:structure': [P('organizing', 'Workspace')],
         'config:widgets': [P('widgets', 'Widgets')],
     };
 
     /** A step that has a longer answer in Help: its keys -> the index of the panel in LINKS. */
     const MORE = {
-        bookmarks: { ':': 1, 'Shift+B': 0, 'Shift+H': 0, 'Shift+N': 2 },
+        bookmarks: { ':': 1, 'Shift+B': 0, 'Shift+H': 0, 'Shift+N': 2, w: 3, 'Shift+W': 3 },
         bell: { 'Shift+N': 0 },
         library: { 'j / k': 0, x: 0 },
         inbox: { m: 0, f: 1 },
         docker: { l: 0 },
         glances: { 'o p c d n': 0 },
         config: { 'Ctrl/Cmd+Shift+K': 0, 'j / k': 0 },
+        'config:feed-watch': { 'j / k': 0 },
         'config:structure': { 'j / k': 0 },
         'config:widgets': { 'j / k': 0 },
     };
@@ -240,6 +257,7 @@
         docker: ['tipDataContainers', 'tipHostLogs'],
         glances: ['tipGlancesKeys'],
         config: ['tipConfigKeyboard', 'tipConfigRowLetters'],
+        'config:feed-watch': ['tipWatchFeedKey', 'tipWatchExpiry'],
         'config:structure': ['tipConfigRowLetters'],
         'config:widgets': ['tipConfigRowLetters'],
     };

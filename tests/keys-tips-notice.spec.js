@@ -64,3 +64,17 @@ test('nothing shows in the first minute, and the bell stays silent', async ({ pa
     await page.evaluate(() => window.NotificationBell.open());
     await expect(row(page, 'mode-strip-tip')).toHaveCount(0);
 });
+
+test('Shift+W with no feed watched says so in a toast whose button opens the help', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0 && window.FeedWatchNews, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => { window.dashboardInstance.feedWatch = { ...(window.dashboardInstance.feedWatch || {}), byKey: new Map() }; });
+    await page.keyboard.press('Shift+W');
+    const toast = page.locator('.app-notification', { hasText: 'none are watched yet' });
+    await expect(toast).toBeVisible();
+    await toast.getByRole('button', { name: 'More info' }).click();
+    await expect.poll(() => page.evaluate(() => location.hash)).toContain('config/help/monitoring/fresh');
+});

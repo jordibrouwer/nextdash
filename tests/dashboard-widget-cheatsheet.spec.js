@@ -28,7 +28,7 @@ test.describe('the cheat sheet covers widgets', () => {
         // The four that are a widget's own rather than a bookmark's. Rows show only
         // their description, so the keys are found through the filter, which
         // searches them too.
-        for (const keys of ['F2 on widget', 'Shift+W on widget', 'Delete on widget', 'Shift+F10 on row']) {
+        for (const keys of ['F2 on widget', 'W on widget', 'Delete on widget', 'Shift+F10 on row']) {
             await page.locator('#cheat-sheet-filter').fill(keys);
             await expect(page.locator('.cheat-sheet-row:not([hidden])').first(), `no row for ${keys}`).toBeVisible();
         }

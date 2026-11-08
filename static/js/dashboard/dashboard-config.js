@@ -11178,7 +11178,7 @@ class DashboardConfig {
                 tab: 'layout',
                 title: t('config.generalGroupCategoryWidth', 'Categories across columns'),
                 note: t('config.generalCategoryWidthIntro',
-                    'How tall a category gets, and how wide it may be. Width needs two things: a limit below (not Unlimited) and at least two columns. Then set a category with Shift+W on the dashboard, right-click → Width, or per row in Pages & tags → Categories — the settings here only decide what a new category starts at and how far the reset reaches.'),
+                    'How tall a category gets, and how wide it may be. Width needs two things: a limit below (not Unlimited) and at least two columns. Then set a category with W on its title on the dashboard, right-click → Width, or per row in Pages & tags → Categories — the settings here only decide what a new category starts at and how far the reset reaches.'),
                 controls: [
                     { field: 'categoryItemLimit', type: 'select', label: t('config.categoryItemLimitLabelShort', 'Items per category'), special: 'render', options: [
                         opt(10, '10'), opt(15, '15'), opt(20, '20'), opt(25, '25'), opt(30, '30'), opt(50, '50'),
@@ -27795,7 +27795,7 @@ class DashboardConfig {
             kbd('+', this.t('config.tipAddBookmark', 'Add a bookmark')),
             kbd('Ctrl + Shift + A', this.t('config.tipAddBookmarkShift', 'Open the new-bookmark form')),
             kbd('.', this.t('config.tipCollapseAll', 'Collapse or expand every category')),
-            kbd('Shift + W', this.t('config.tipCategoryWidth', 'Set how many columns the focused category covers')),
+            kbd('W', this.t('config.tipCategoryWidth', 'Set how many columns the focused category covers')),
             kbd('Shift + B', this.t('config.tipHealth', 'Open the Bookmarks view')),
             kbd('Shift + U', this.t('config.helpTipUnsorted', 'Open Bookmarks → Unsorted')),
             kbd('Shift + I', this.t('config.tipInbox', 'Open the inbox')),
