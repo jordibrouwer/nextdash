@@ -129,15 +129,15 @@ test.describe('the right-click menu shows the key beside the action', () => {
         await expect(menu).toBeVisible({ timeout: 5000 });
 
         const edit = menu.locator('[data-action="edit"]');
-        await expect(edit.locator('kbd.move-popover-item-key')).toHaveText('Shift+E');
-        await expect(edit).toHaveAttribute('aria-keyshortcuts', 'Shift+E');
+        await expect(edit.locator('kbd.move-popover-item-key')).toHaveText('E');
+        await expect(edit).toHaveAttribute('aria-keyshortcuts', 'e');
 
         // The chip is decoration for a screen reader — the item's own label
         // already says what it does, and aria-keyshortcuts carries the key.
         await expect(edit.locator('kbd.move-popover-item-key')).toHaveAttribute('aria-hidden', 'true');
 
         const delete_ = menu.locator('[data-action="delete"]');
-        await expect(delete_.locator('kbd.move-popover-item-key')).toHaveText('Delete');
+        await expect(delete_.locator('kbd.move-popover-item-key')).toHaveText('D');
     });
 });
 

@@ -49,13 +49,14 @@
      *
      * The attribute takes DOM key names joined by "+", which is close to what a
      * chip reads but not identical: Cmd is Meta there, and a lone capital
-     * letter means Shift plus that letter.
+     * letter is the plain key (a menu chip writes "E" for the key e; Shift is
+     * only ever written out, as in "Shift+E").
      */
     function ariaKeys(keys) {
         const parts = String(keys || '').split('+').map((part) => part.trim()).filter(Boolean);
         if (!parts.length) return '';
         if (parts.length === 1 && /^[A-Z]$/.test(parts[0])) {
-            return `Shift+${parts[0]}`;
+            return parts[0].toLowerCase();
         }
         return parts.map((part) => (part === 'Cmd' ? 'Meta' : part)).join('+');
     }
