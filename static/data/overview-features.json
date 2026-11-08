@@ -2,6 +2,73 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureKeySchemeTitle",
+      "titleFallback": "One set of keys for every view",
+      "whatKey": "config.overviewNewFeatureKeySchemeWhat",
+      "whatFallback": "Every view had grown its own idea of what a key did, and acting on a bookmark meant Shift plus a letter.",
+      "howKey": "config.overviewNewFeatureKeySchemeHow",
+      "howFallback": "With the cursor on a row, plain letters act on it: e edits, m moves, t tags. Shift plus a letter opens a view, and ? opens keys and help for the page you are on.",
+      "enableKey": "config.overviewNewFeatureKeySchemeEnable",
+      "enableFallback": "Press ? on any page, or an arrow key to put the cursor on a bookmark.",
+      "ctaKey": "config.overviewNewFeatureKeySchemeCta",
+      "ctaFallback": "Open the keyboard help →",
+      "go": {
+        "section": "help",
+        "helpTab": "search"
+      },
+      "since": "v1.27.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureModeStripTitle",
+      "titleFallback": "A strip says what your keys do right now",
+      "whatKey": "config.overviewNewFeatureModeStripWhat",
+      "whatFallback": "You could not see whether a letter would search, act on the row under the cursor or do nothing at all.",
+      "howKey": "config.overviewNewFeatureModeStripHow",
+      "howFallback": "A small strip beside the page name says Search, Cursor or Edit mode, suggests keys for the row you are on, and fades after two seconds. Every view has a key legend too.",
+      "enableKey": "config.overviewNewFeatureModeStripEnable",
+      "enableFallback": "Shift+S switches the strip, Shift+H the legend. Both are under Config → Behavior → Keyboard & search.",
+      "ctaKey": "config.overviewNewFeatureModeStripCta",
+      "ctaFallback": "Open Keyboard & search →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "search"
+      },
+      "since": "v1.27.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeaturePaletteTagsTitle",
+      "titleFallback": "Search by tag with #, AND and OR",
+      "whatKey": "config.overviewNewFeaturePaletteTagsWhat",
+      "whatFallback": "Finding bookmarks by several tags meant the tag cloud or typing tag: filters one by one.",
+      "howKey": "config.overviewNewFeaturePaletteTagsHow",
+      "howFallback": "# opens the search panel on your tags. #docker is the same as tag:docker, and AND and OR join tags: docker AND linux OR network.",
+      "enableKey": "config.overviewNewFeaturePaletteTagsEnable",
+      "enableFallback": "Press # on the dashboard and start typing a tag.",
+      "ctaKey": "config.overviewNewFeaturePaletteTagsCta",
+      "ctaFallback": "Go to the dashboard →",
+      "go": {
+        "view": "dashboard"
+      },
+      "since": "v1.27.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHolidayThemesTitle",
+      "titleFallback": "Three holiday themes, with snow and lights",
+      "whatKey": "config.overviewNewFeatureHolidayThemesWhat",
+      "whatFallback": "There was no theme for the season.",
+      "howKey": "config.overviewNewFeatureHolidayThemesHow",
+      "howFallback": "Christmas Classic, Northern Lights and Gingerbread Village draw a tree, a forest or a village behind the cards, with snow or sprinkles falling in front. They stand still with reduced motion.",
+      "enableKey": "config.overviewNewFeatureHolidayThemesEnable",
+      "enableFallback": "Config → Appearance → Theme, or Shift+A, in the Holidays group.",
+      "ctaKey": "config.overviewNewFeatureHolidayThemesCta",
+      "ctaFallback": "Open Theme →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "theme"
+      },
+      "since": "v1.27.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureNotificationBellTitle",
       "titleFallback": "A notifications bell keeps what needs you",
       "whatKey": "config.overviewNewFeatureNotificationBellWhat",

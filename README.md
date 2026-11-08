@@ -14,7 +14,7 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
 - **Health and monitoring.** Dead links, uptime with 30 days of history, certificate and domain expiry, page drift and a public status page, with alerts to ntfy, Slack, Discord, Telegram and more, or a push notification on your phone.
 - **Containers and homelab.** A Containers view for the Docker host: logs, start, stop, update with a rollback, and each container linked to its bookmark. Widgets for Unraid, Jellyfin, Sonarr, Home Assistant, Beszel and Glances.
 - **Widgets** for what is going on: weather, calendar, feeds, inbox, your machine, and any service that answers with JSON.
-- **Looks.** 384 themes, 266 backdrops and a theme studio, in six languages.
+- **Looks.** 390 themes, 267 backdrops and a theme studio, in six languages.
 - **An assistant, if you want one.** Ask in plain words with Claude, OpenAI or a model of your own, and decide what happens to what it suggests. Off until you turn it on.
 - **Yours to keep.** One Go binary and plain JSON files, automatic backups, a 30-day trash, and imports from every browser, Pocket, Raindrop, linkding and more.
 
@@ -22,7 +22,7 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
   <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Tarnished Brass: a large clock with a greeting, the notifications bell in the header, categories in columns, and widgets for health, uptime, the inbox, notes and the weather" width="100%" />
 </p>
 
-🎨 **384 themes and a theme studio.** 192 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic. **Aurora Glass** is the default on a new install (an install that already chose a theme keeps it), and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 266 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#17a-the-new-look)* · *[Manual: Appearance](MANUAL.md#17-appearance)*
+🎨 **390 themes and a theme studio.** 195 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic, plus three holiday themes with snow and lights. **Tarnished Brass** is the default on a new install (an install that already chose a theme keeps it), and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 267 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#17a-the-new-look)* · *[Manual: Appearance](MANUAL.md#17-appearance)*
 
 <details>
 <summary><b>See every theme</b> — all 192 dark and all 192 light, each on the same dashboard</summary>
@@ -47,7 +47,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
 
 📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — every release, new and fix.
 
-🗂️ **[Cheat sheet](nextDash-cheatsheet.pdf?raw=true)** — every keyboard shortcut, printable ([HTML](nextDash-cheatsheet.html?raw=true)). Press **!** or **F1** on the dashboard for the live list. Regenerate with `npm run generate:cheatsheet`.
+🗂️ **[Cheat sheet](nextDash-cheatsheet.pdf?raw=true)** — every keyboard shortcut, printable ([HTML](nextDash-cheatsheet.html?raw=true)). Press **?** or **F1** on the dashboard for the live list. Regenerate with `npm run generate:cheatsheet`.
 
 🌐 **Website:** [nextdash.cc](https://nextdash.cc)
 
@@ -124,7 +124,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-edit-mode.jpg" alt="Edit mode" width="100%" />
       <br />
-      <sub><b>Edit mode</b> <i>(Oceanic Steel)</i> — <kbd>Shift</kbd> + <kbd>M</kbd> or the pencil in the action bar: every block gets an outline, a click chooses one, and a panel beside the page changes its name, icon, width, view and sorting, or a widget's settings, and saves as you type. <kbd>Esc</kbd> leaves.</sub>
+      <sub><b>Edit mode</b> <i>(Oceanic Steel)</i> — <kbd>Shift</kbd> + <kbd>E</kbd> or the pencil in the action bar: every block gets an outline, a click chooses one, and a panel beside the page changes its name, icon, width, view and sorting, or a widget's settings, and saves as you type. <kbd>Esc</kbd> leaves.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-digest.jpg" alt="Weekly digest" width="100%" />
@@ -184,7 +184,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Theme studio" width="100%" />
       <br />
-      <sub><b>The theme studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 192 theme families with a light and a dark half, filtered by material or collection, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
+      <sub><b>The theme studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 195 theme families with a light and a dark half, filtered by material or collection, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
     </td>
   </tr>
   <tr>
@@ -476,7 +476,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Search and keyboard**
 
 - Everything is reachable from the keyboard: one rule for the shortcuts and a searchable cheat sheet on `?`. *[Manual §7](MANUAL.md#7-keyboard)*
-- A key legend under the grid keeps the main keys in sight (`Shift + H` switches it off), a dashboard tour of ten steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
+- A key legend under every view keeps its keys in sight (`Shift + H` switches it off), a strip beside the page name says what your keys do right now (`Shift + S`), `?` opens keys and help for the page you are on, a dashboard tour of ten steps plays again with `Shift + K`, a four-step keyboard tour with `:tour keyboard`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
 - One panel for search, commands and finders, plus search from the browser's address bar. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - **Usually now** puts the bookmarks you tend to open around this time of day at the top of the empty search panel, and `→` on a result unfolds what you can do with it: open, open in a new tab, edit, copy the address, show in the list, move. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - Filters for tag, category, page, status, added and opened — each also in the negative. *[Manual §8.2](MANUAL.md#82-filters)*
