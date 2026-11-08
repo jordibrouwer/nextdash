@@ -292,7 +292,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/discoverability-state.js":                            "6ef2619f2702",
 	"js/docker-update-notice.js":                             "7a325cd59a7a",
 	"js/edit-mode-notice.js":                                 "3453617c2f54",
-	"js/feed-watch-notice.js":                                "7e3857011cca",
+	"js/feed-watch-notice.js":                                "20528f53fa64",
 	"js/feed-watch-tab-badge.js":                             "0633bebc5843",
 	"js/first-start-templates.js":                            "2b85a505fba8",
 	"js/focus-trap-utils.js":                                 "43fe98c93599",

@@ -24,16 +24,21 @@ const items = (key, n) => Array.from({ length: n }, (_, i) => ({
 async function setup(page, count) {
     await page.goto('/');
     const key = await keyOf(page, site.url);
-    const state = { list: watchPayload(key, items(key, count)), items: items(key, count) };
+    const newAt = Date.now();
+    const state = { newAt, list: watchPayload(key, items(key, count), { newAt }), items: items(key, count) };
     await stubWatch(page, state);
     await openDashboard(page);
     return { key, state };
 }
 
-/** Change what the stubbed server answers and let the page pick it up. */
-async function serve(page, state, key, count) {
-    state.list = watchPayload(key, items(key, count));
-    state.items = items(key, count);
+/**
+ * Change what the stubbed server answers and let the page pick it up. newAt
+ * only moves when news arrives, as on the server: pass `arrived` for that.
+ */
+async function serve(page, state, key, count, { arrived = false, list = items(key, count) } = {}) {
+    if (arrived) state.newAt += 1000;
+    state.list = watchPayload(key, list, { newAt: state.newAt });
+    state.items = list;
     await page.evaluate(() => window.dashboardInstance.feedWatch.load({ force: true }));
 }
 
@@ -132,7 +137,7 @@ test('the bell rings for more news, not when the news only shrinks', async ({ pa
     await serve(page, state, key, 3); // one site opened, an item expired
     await page.evaluate(() => window.NotificationBell.refreshAll());
     expect(await page.evaluate(() => window.__sound)).toBe(0);
-    await serve(page, state, key, 7);
+    await serve(page, state, key, 7, { arrived: true });
     await page.evaluate(() => window.NotificationBell.refreshAll());
     expect(await page.evaluate(() => window.__sound)).toBe(1);
     // News has a tone of its own, not the warning bell, and its own movement:
@@ -140,6 +145,30 @@ test('the bell rings for more news, not when the news only shrinks', async ({ pa
     expect(await page.evaluate(() => window.__tones)).toEqual(['chime']);
     await expect(page.locator('.notification-bell-button')).toHaveClass(/is-shaking/);
     await expect(page.locator('.notification-bell-button')).toHaveClass(/is-news/);
+});
+
+test('reading one of more than ten unread items does not ring, nor bring a read row back', async ({ page }) => {
+    // Twelve unread: the server lists the newest ten. Reading the newest moves
+    // the eleventh into the list, an id the bell has not seen; that is no news.
+    const { key, state } = await setup(page, 12);
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    await page.evaluate(() => {
+        window.__sound = 0;
+        window.NotificationBell.playSound = () => { window.__sound++; };
+        window.DiscoverabilityState.schedulePersist = () => {};
+    });
+    await openBell(page);
+    await bellRows(page).getByRole('button', { name: 'Read', exact: true }).click();
+    await serve(page, state, key, 11, { list: items(key, 12).slice(1) });
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    expect(await page.evaluate(() => window.__sound)).toBe(0);
+    await openBell(page);
+    await expect(bellRows(page)).toHaveCount(0);
+
+    // Real news (a later newAt) still rings.
+    await serve(page, state, key, 12, { arrived: true });
+    await page.evaluate(() => window.NotificationBell.refreshAll());
+    expect(await page.evaluate(() => window.__sound)).toBe(1);
 });
 
 test('another source still sounds the plain bell', async ({ page }) => {
