@@ -57,7 +57,7 @@ const measure = (page, selector) => page.evaluate((sel) => {
 }, selector);
 
 const SHEETS = [
-    { name: 'pages panel', key: ',', selector: '.page-overview-sheet' },
+    { name: 'pages panel', key: 'Shift+P', selector: '.page-overview-sheet' },
     { name: 'recents panel', key: '*', selector: '.recents-sheet' },
 ];
 

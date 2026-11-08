@@ -159,7 +159,7 @@ test('one column with nothing new still shows one article at a time, from the ea
     }));
     expect((await request.post('/api/settings', { data: { feedWatchNewsView: 'single' }, headers })).ok()).toBe(true);
     await openDashboard(page);
-    await page.keyboard.press('Shift+N');
+    await page.keyboard.press('Shift+W');
     await expect(modal(page)).toBeVisible();
 
     // An article, not the front page with all twelve listed.

@@ -130,14 +130,14 @@ test.describe('collections move like any other block', () => {
         await expect.poll(async () => (await settings(page)).collectionColumns?.[STALE]).toBe(2);
     });
 
-    test('Shift+W on a collection title makes it two columns, and back', async ({ page }) => {
+    test('w on a collection title makes it two columns, and back', async ({ page }) => {
         await openDashboard(page);
         await page.locator(`${block(MINE)} .category-title`).focus();
-        await page.keyboard.press('Shift+W');
+        await page.keyboard.press('w');
         await expect(page.locator(block(MINE))).toHaveClass(/category--wide/);
         await expect.poll(async () => (await settings(page)).collectionColumns?.[MINE]).toBe(2);
         await page.locator(`${block(MINE)} .category-title`).focus();
-        await page.keyboard.press('Shift+W');
+        await page.keyboard.press('w');
         await expect(page.locator(block(MINE))).not.toHaveClass(/category--wide/);
         await expect.poll(async () => (await settings(page)).collectionColumns?.[MINE]).toBeUndefined();
     });

@@ -159,12 +159,12 @@ test.describe('dashboard check-mode menu', () => {
         expect(Number(stored?.monitorIntervalMinutes)).toBeGreaterThan(0);
     });
 
-    test('Shift+C opens the same menu from the keyboard', async ({ page }) => {
+    test('c opens the same menu from the keyboard', async ({ page }) => {
         await setup(page);
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
         await page.click('body');
         await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('Shift+C');
+        await page.keyboard.press('c');
 
         await expect(page.locator('#bookmark-check-mode-menu')).toBeVisible();
         await expect(page.locator('#bookmark-check-mode-menu .move-popover-item')).toHaveCount(3);

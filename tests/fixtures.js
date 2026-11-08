@@ -135,6 +135,18 @@ const test = base.test.extend({
         // The start guide opens by itself three seconds after its bar is up; a spec
         // that is not about that would find a modal over what it is clicking.
         await page.addInitScript(() => { window.__e2eStartGuideAutoOpenMs = -1; });
+        // The one-time coach notes (the bell, the action bar, the mode strip) stand
+        // over the header and the bar, where many specs click; the bell's caught
+        // clicks in CI on specs that never call markWhatsNewSeen. Seen on the first
+        // load only: a spec that clears one and reloads to test it keeps it cleared.
+        await page.addInitScript(() => {
+            try {
+                if (sessionStorage.getItem('e2e-coach-notes-seeded') === '1') return;
+                sessionStorage.setItem('e2e-coach-notes-seeded', '1');
+                ['nextdash:bell-intro-seen', 'nextdash:action-bar-intro-seen', 'nextdash:mode-strip-intro-seen']
+                    .forEach((key) => localStorage.setItem(key, '1'));
+            } catch { /* storage refused: the specs that care set it themselves */ }
+        });
         await page.addInitScript(() => {
             let state;
             Object.defineProperty(window, 'DiscoverabilityState', {

@@ -70,11 +70,11 @@ test.describe('bookmark panel tabs', () => {
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
   });
 
-  test('s opens the Health tab', async ({ page }) => {
+  test('2 opens the Health tab', async ({ page }) => {
     const { bookmarks } = await open(page);
     await pick(page, bookmarks[0].name);
     await expect(panel(page).locator('.health-view-score-panel')).toBeAttached();
-    await page.keyboard.press('s');
+    await page.keyboard.press('2');
     await expect(pane(page, 'health')).toBeVisible();
   });
 

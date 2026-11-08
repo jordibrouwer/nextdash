@@ -94,10 +94,8 @@ test('with auto-file on, Keep puts a link straight where its neighbours are', as
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
     // Triage opens on the pile chooser; the list pile is the one this link is in.
     await page.locator('[data-triage-pile="list"]').click();
-    // Shift+K, the Keep key here as in the list. `r` used to keep in triage
-    // and mark read in the list — one letter with two meanings a tab apart —
-    // and it marks read in both now.
-    await page.keyboard.press('Shift+K');
+    // m, the Keep key here as in the list (it was Shift+K). `r` marks read in both.
+    await page.keyboard.press('m');
 
     await expect.poll(async () => page.evaluate(async (u) => {
         const rows = await (await fetch('/api/bookmarks?page=1', { cache: 'no-store' })).json();
@@ -130,10 +128,8 @@ test('with auto-file on, a link nothing agrees about still lands in Kept', async
         !!window.dashboardInstance.inbox.triage?.isOpen?.()), { timeout: 10_000 }).toBe(true);
     // Triage opens on the pile chooser; the list pile is the one this link is in.
     await page.locator('[data-triage-pile="list"]').click();
-    // Shift+K, the Keep key here as in the list. `r` used to keep in triage
-    // and mark read in the list — one letter with two meanings a tab apart —
-    // and it marks read in both now.
-    await page.keyboard.press('Shift+K');
+    // m, the Keep key here as in the list (it was Shift+K). `r` marks read in both.
+    await page.keyboard.press('m');
 
     await expect.poll(async () => page.evaluate(async (u) => {
         const data = await (await fetch('/api/unsorted', { cache: 'no-store' })).json();

@@ -63,7 +63,7 @@ test.describe('config: sections restored from the old config', () => {
         await page.locator('#config-bm-list .config-bm-row').first().waitFor();
         await page.evaluate(() => document.activeElement?.blur?.());
         await page.keyboard.press('j');
-        await page.keyboard.press('Shift+E');
+        await page.keyboard.press('e');
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await expect(form.locator('[data-field="name"]')).not.toHaveValue('');

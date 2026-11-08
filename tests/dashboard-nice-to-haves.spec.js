@@ -54,10 +54,10 @@ test.describe('the category menu', () => {
 
         expect(hints.rename).toBe('F2');
         expect(hints.delete).toBe('Delete');
-        // "Add category" carries its key too now that c acts on the first
-        // press. While it needed a hold, a chip reading "c" would have promised
-        // a tap that went to the shortcut search instead.
-        expect(hints.add).toBe('c');
+        // The title letters: a adds a bookmark here. "Add category" has no
+        // letter of its own any more, so it shows no chip that would promise one.
+        expect(hints['add-bookmark']).toBe('A');
+        expect(hints.add).toBeNull();
     });
 
     test('the chips are decoration, not a second thing to read out', async ({ page }) => {

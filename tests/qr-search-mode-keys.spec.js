@@ -87,7 +87,7 @@ test('Shift+X typed in a text field types an X', async ({ page }) => {
     expect(await mode(page)).toBe(before);
 });
 
-test('Shift+Q on a tag-view row opens the QR code, not the search mode', async ({ page }) => {
+test('q on a tag-view row opens the QR code, not the search mode', async ({ page }) => {
     await load(page);
     const before = await mode(page);
     await page.keyboard.press('Shift+T');
@@ -95,7 +95,7 @@ test('Shift+Q on a tag-view row opens the QR code, not the search mode', async (
     await page.waitForSelector('.tag-view-row', { timeout: 15_000 });
     await page.keyboard.press('ArrowDown');
     await expect(page.locator('.tag-view-row.is-focused')).toHaveCount(1);
-    await page.keyboard.press('Shift+Q');
+    await page.keyboard.press('q');
     await expect(qr(page)).toBeVisible();
     expect(await mode(page)).toBe(before);
 });

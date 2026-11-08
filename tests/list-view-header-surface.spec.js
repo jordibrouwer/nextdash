@@ -56,7 +56,7 @@ function alphaOf(css) {
  * rows pass behind it, and it turns nearly solid so they stay a faint shape
  * under the title and the search box.
  */
-for (const [view, key] of [['health', 'Shift+H'], ['inbox', 'Shift+I']]) {
+for (const [view, key] of [['health', 'Shift+B'], ['inbox', 'Shift+I']]) {
     test(`the ${view} header takes its colour from the theme`, async ({ page }) => {
         await openView(page, key);
 

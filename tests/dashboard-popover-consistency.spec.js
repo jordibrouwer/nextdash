@@ -80,9 +80,9 @@ async function tickFirstCurrentPageRow(page) {
 }
 
 const POPOVERS = [
-    { name: 'move', key: 'Shift+M', id: '#move-popover' },
-    { name: 'delete', key: 'Shift+D', id: '#delete-popover' },
-    { name: 'tag', key: 'Shift+T', id: '#tag-popover' },
+    { name: 'move', key: 'm', id: '#move-popover' },
+    { name: 'delete', key: 'd', id: '#delete-popover' },
+    { name: 'tag', key: 't', id: '#tag-popover' },
 ];
 
 test.describe('the row popovers behave alike', () => {

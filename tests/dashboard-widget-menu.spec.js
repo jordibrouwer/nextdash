@@ -119,7 +119,7 @@ test.describe('the widget header carries its own actions', () => {
         await expect(block).toHaveClass(/category--wide/);
 
         // And back, from the keyboard this time.
-        await header(page).press('Shift+W');
+        await header(page).press('w');
         await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 })
             .toBe(undefined);
         await expect(block).not.toHaveClass(/category--wide/);
@@ -173,7 +173,7 @@ test('Config → Widgets shows the title, the width and the switch the header se
     await input.press('Enter');
     await expect.poll(async () => (await storedWidget(page))?.title, { timeout: 15_000 }).toBe('Board');
 
-    await header(page).press('Shift+W');
+    await header(page).press('w');
     await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
 
     await header(page).press('Delete');
@@ -263,7 +263,7 @@ test('the widget keeps its place in the viewport when its width changes', async 
     expect(before).toBeGreaterThanOrEqual(0);
     expect(before).toBeLessThan(await page.evaluate(() => window.innerHeight));
 
-    await block.locator('.category-title').press('Shift+W');
+    await block.locator('.category-title').press('w');
     await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
     await waitForLayoutStable(page);
 
@@ -347,7 +347,7 @@ test('the widget keeps its place with packed columns too', async ({ page }) => {
     const before = await topOf();
     expect(before).toBeGreaterThanOrEqual(0);
 
-    await block.locator('.category-title').press('Shift+W');
+    await block.locator('.category-title').press('w');
     await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
     await waitForLayoutStable(page);
 

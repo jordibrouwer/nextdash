@@ -34,7 +34,7 @@ test.describe('the edit mode hint', () => {
         await load(page);
         expect(await page.evaluate(() => window.DashboardEditModeNotice.render())).toBe(true);
         await expect(card(page)).toBeVisible();
-        await expect(card(page)).toContainText('Shift+M');
+        await expect(card(page)).toContainText('Shift+E');
         await card(page).locator('[data-em-action="open"]').click();
         await expect(card(page)).toHaveCount(0);
         await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-edit-mode'))).toBe('on');
