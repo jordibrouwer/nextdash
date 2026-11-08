@@ -185,6 +185,7 @@ One set of keyboard rules for every view. With the cursor on a row, plain letter
 ### Notifications
 
 - **new — Two key tips in the bell.** One for the mode strip and `Shift + S`, a minute into the first visit; one for the key legend and `Shift + H`, three days later. The start is kept in the seen promos, so it survives a reload and other browsers (`keys-tips-notice.js`).
+- **new — A bell tip that the cheat sheet is now Keys and help.** For an install from before v1.27.0, once the window about the moved keys has been answered: it says that `?` now says where you are, gives first steps to try and searches the Help, with a button that opens it. A fresh install never gets it; read once, it is gone (`keys-help-renamed-notice.js`, `keys-help-renamed-notice.spec.js`).
 - **new — A tip for people who watch feeds.** The news moved from `Shift + N` to `Shift + W`; shown only while a feed is watched (`news-moved-notice.js`).
 - **fix — Reading one feed item no longer rings as news.** The server lists the newest ten items, so reading one moved an older one into the list and the bell took it for news. The row now keys on when news last arrived per site (`feed-watch-notice.js`).
 - **fix — A row that comes back rings again,** even with a lower count than before it went away (5, gone, then 3 stayed silent) (`notification-bell.js`).

@@ -41,6 +41,8 @@
     function markSeen() {
         try { global.localStorage?.setItem(LOCAL_KEY, '1'); } catch { /* private mode */ }
         global.DiscoverabilityState?.markSettingPromoSeen?.(PROMO_ID);
+        // The bell's tip about Keys and help waits for this answer; let it look now.
+        void global.NotificationBell?.refreshAll?.();
     }
 
     const k = (text) => `<kbd>${text}</kbd>`;
@@ -208,6 +210,7 @@
     global.ShortcutsChangedModal = {
         PROMO_ID,
         LOCAL_KEY,
+        seen: () => seen(),
         ask: () => { startedAt = Date.now(); schedule(0); },
         isOpen: () => open,
     };
