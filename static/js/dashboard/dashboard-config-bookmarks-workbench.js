@@ -115,7 +115,6 @@
                             <span>${esc(this.t('config.sortLabel', 'Sort'))}</span>
                             <select class="config-select" id="config-bm-sort">${this.bookmarkSortOptionsHtml()}</select>
                         </label>
-                        <button type="button" class="config-btn config-btn--primary config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     </div>
                     <div class="multi-select-toolbar config-bm-selbar" data-bm-selbar role="toolbar"
                          aria-label="${esc(this.t('dashboard.multiSelectToolbarAria', 'Selection actions'))}" hidden></div>

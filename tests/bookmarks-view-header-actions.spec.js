@@ -18,13 +18,17 @@ async function fromMenu(page, sel) {
 }
 
 test.describe('bookmarks view: the band\'s actions', () => {
-  test('Work through, one Collection menu and ⓘ; the rest is in the menu', async ({ page }) => {
+  test('Add bookmark, Work through, one Collection menu and ⓘ; the rest is in the menu', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
+    // Add bookmark stands first, left of Work through.
+    await expect(band(page).locator('[data-bm-add-bookmark]')).toContainText(/add bookmark/i);
+    const order = await band(page).locator('button:visible').evaluateAll((els) => els.map((el) => el.hasAttribute('data-bm-add-bookmark') ? 'add' : el.hasAttribute('data-bm-work-through') ? 'work' : 'other'));
+    expect(order.slice(0, 2)).toEqual(['add', 'work']);
     await expect(band(page).locator('[data-bm-work-through]')).toContainText('Work through');
     await expect(band(page).locator('[data-bm-header-more]')).toContainText('Collection');
     await expect(band(page).locator('[data-bm-help]')).toBeVisible();
     await expect(band(page).locator('[data-bm-tour]')).toBeVisible();
-    await expect(band(page).locator('button:visible')).toHaveCount(4);
+    await expect(band(page).locator('button:visible')).toHaveCount(5);
     await band(page).locator('[data-bm-header-more]').click();
     for (const sel of ['[data-bm-open-health-modal]', '[data-bm-rot-report]', '[data-bm-open-structure]',
       '[data-bm-export]', '[data-bm-header-action="refresh"]', '[data-bm-header-action="settings"]']) {
