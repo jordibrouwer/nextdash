@@ -140,3 +140,16 @@ test('the strip stays at the top of the window once the page name has scrolled a
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect.poll(pos, { timeout: 5_000 }).not.toBe('fixed');
 });
+
+test('the switch in Config → Behavior says so with a toast too', async ({ page }) => {
+    await load(page);
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+    await page.locator('[data-behavior-tab="search"]').click();
+    const box = page.locator('[data-behavior-field="showModeStrip"]');
+    await box.scrollIntoViewIfNeeded();
+    await box.uncheck();
+    await expect(page.locator('.app-notification', { hasText: 'Mode strip off' })).toBeVisible();
+    await box.check();
+    await expect(page.locator('.app-notification', { hasText: 'Mode strip on' })).toBeVisible();
+    expect(await enabled(page)).toBe(true);
+});

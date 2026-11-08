@@ -14440,6 +14440,12 @@ class DashboardConfig {
                 qs.analyticsAskAfter = 0; // answered; no snooze left to honour
             }
         }
+        // The switch here says the same as Shift+S does: a toast, the strip itself
+        // being the thing that just appeared or went.
+        if (field === 'showModeStrip') {
+            window.ModeStrip?.set?.(window.ModeStrip.current?.().state, window.ModeStrip.current?.().detail);
+            d.showNotification?.(value ? this.t('dashboard.modeStripOn', 'Mode strip on') : this.t('dashboard.modeStripOff', 'Mode strip off'), 'success', { duration: 2000 });
+        }
         if (field === 'updateCheckEnabled') {
             void window.nextdashRefreshUpdateStatus?.(value !== false);
             if (this.section === 'overview') {
