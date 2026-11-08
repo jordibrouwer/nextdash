@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.27.0 — 8 November 2026](#v1270--8-november-2026)
 - [v1.26.1 — 5 November 2026](#v1261--5-november-2026)
 - [v1.26.0 — 5 November 2026](#v1260--5-november-2026)
 - [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
@@ -133,6 +134,78 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.27.0 — 8 November 2026
+
+One set of keyboard rules for every view. With the cursor on a row, plain letters act on that row. Shift plus a letter opens a view or a panel. A mode strip beside the page name says what the keys do right now, every view has a key legend, and `?` opens a Keys and help sheet for the page you are on. Many keys moved, so an existing install is told once in a window it closes with a tick. Three holiday themes, tags in the palette, a Ko-fi card on Config → Overview and two fixes to the bell ride along.
+
+### Keyboard
+
+- **new — Plain letters act on the row under the cursor.** On the dashboard, as in the Inbox: `e` edits, `m` moves, `t` tags, `p` pins, `c` sets checking, `r` shows the bookmark in the Bookmarks view, `v` opens the preview card, `s` shares, `q` shows a QR code, `d` deletes (asks first) and `f` filters the grid by its tag; `x` ticks, `j`/`k` move. With no cursor on the grid the same letters start a search. Held down, a letter acts once (`keyboard-navigation.js`, `dashboard-bookmark-rows.js`, `dashboard-category-menu.js`).
+- **new — Shift opens views and panels.** `Shift + B` the Bookmarks view (was `Shift + H`), `Shift + C` Containers (was `Shift + Y`), `Shift + E` edit mode (was `Shift + M` with nothing selected), `Shift + N` the bell, `Shift + W` the news of watched feeds (was `Shift + N`), `Shift + P` the Pages panel (was `,`), `Shift + H` the key legend (was `Shift + Z`), `Shift + X` the search mode (was `Shift + Q`; with a bookmark selected it ticks the whole category), and `,` opens Config (was `Shift + S`). `Shift + B` no longer opens the bookmark form; `+` and `Ctrl + Shift + A` do.
+- **new — Old keys say what replaced them.** For a couple of releases `Shift + Y`, `Shift + M`, `Shift + J`, `Shift + L` and `Shift + Z` still work and put one line on screen naming the new key, once per pair per page load (`shared/shift-key-aliases.js`). A Shift letter that used to act on a bookmark names the plain letter instead.
+- **new — `!` opens finders, `?` opens the cheat sheet.** The two keys swapped. Finders take `! shortcut query` (`! g nextdash`); the `!` is the mode, never part of the query sent to the site (`search.js`, `search-finders.js`).
+- **new — The mode key is a badge, not text in the field.** The `:` of commands, the `!` of finders, the `=` of the assistant and the `*` of recents show as the badge in front of the search field; Backspace on an empty field leaves the mode with the panel still open. Mode keys pressed on the dashboard no longer land in the search field.
+- **new — One shortcut scheme for every view.** The tag view, the Inbox, the Bookmarks view, Containers, Glances and Config use the same row letters and the same Shift keys. Config's stored backups and trash are lists with a row cursor: `e` names a row, `d` removes it, `u`/`n` move it (`dashboard-tag-view.js`, `dashboard-inbox.js`, `dashboard-config.js`).
+- **new — `Shift + W` explains itself with no feed watched.** It says there is nothing to open instead of doing nothing. `W`, not `Shift + W`, spreads a category.
+- **fix — Menu chips announce the plain key.** A screen reader read *Shift plus E* for a row action whose key is now `e` (`shortcut-format.js`).
+- **new — The Shift+Q search-mode tip is gone,** its key having moved (`dashboard-promos.js`).
+
+### Mode strip
+
+- **new — A line beside the page name says what the keys do.** *Cursor*, *N ticked*, *Edit mode* or an armed `g` chord, with the keys that apply; with none of those it names the mode the keys are in (search on the grid, browse elsewhere). It sits on the page-name line in the classic clock layout, sticks while the page scrolls, stays readable on every theme, fades after two seconds idle and is not drawn below 900 px (`dashboard/dashboard-mode-strip.js`, `dashboard.css`).
+- **new — It suggests keys for the row under the cursor.** At most four: up to two from the row (down, unfiled, no tags or a tag to filter by, pinned, a video), one that rotates through all row letters, and one letter you have used fewer times than the rest; `Ctrl/Cmd + Z` goes first while a pin or move can be undone. The use counts stay in `localStorage` (`dashboard-mode-strip-suggest.js`).
+- **new — `Shift + S` switches it off and on,** with a toast, and so does its switch under Behavior. A one-time note points at the strip, with **Got it** and **Turn it off** (`mode-strip-intro.js`, `coach-note.js`).
+
+### Key legends
+
+- **new — Every view has a key legend.** The dashboard's is four lines now: the cursor, finding things, going somewhere, acting on a bookmark. The tag view, the Inbox, the Bookmarks view, Containers, Glances and Config each get one, sticky, switched with `Shift + H`. Each view has a setting for where its legend sits: below (the default), above, or off (`TagViewKeyLegend`, `ConfigViewKeyLegend`, `GlancesViewKeyLegend` in `models.go`; `shared/keyboard-view-legends.js`).
+- **new — Menus, tours, the start guide and the cheat sheet show the new keys.** The right-click menu names each row letter; the dashboard, Bookmarks, Containers and Inbox tours, the keyboard tour, the printable cheat sheet (`nextDash-cheatsheet.html` and `.pdf`) and the registry follow.
+
+### Keys and help
+
+- **new — `?` opens a sheet for the page you are on.** **This page** says where you are, what it is for and the first steps, each with its key; a safe step (a move, a view, a palette mode, an aid on or off) has a **Try it** button. **All keys** is the full list, the modes and the learning material (every tour, this page's first) have a tab each, and one filter searches across all four, Help prose included. Keys you have not used yet come first. The keys named are checked against the registry by a spec (`shared/keyboard-page-help.js`, `dashboard-ui-helpers.js`).
+- **new — A Help panel opens the sheet on its own page's keys,** and the bell has its own entry.
+
+### Shortcuts-changed window
+
+- **new — Existing installs are told the keys moved.** A window shown once, with the main moves; it closes only after ticking that you have read it, not with Escape or a click beside it. A fresh install never sees it. English only, like What's new (`shortcuts-changed-modal.js`, `modal.css`).
+
+### Search palette
+
+- **new — Tags in the palette.** `#` on the dashboard opens the palette on tags; `#docker` and `tag:docker` mean the same. `AND` and `OR` join tags (`docker AND linux OR network`, AND binds tighter), written the same in every language. While a word is not yet a whole tag the palette offers tags that complete it, then AND and OR. A `#` inside a finder query or a question to the assistant stays text (`search.js`).
+- **new — `:` opens on the commands, with two lists.** Recent and most used side by side on one line, each with its own label; how often each command ran is counted on this device only (`search-commands.js`, `search.css`).
+
+### Notifications
+
+- **new — Two key tips in the bell.** One for the mode strip and `Shift + S`, a minute into the first visit; one for the key legend and `Shift + H`, three days later. The start is kept in the seen promos, so it survives a reload and other browsers (`keys-tips-notice.js`).
+- **new — A tip for people who watch feeds.** The news moved from `Shift + N` to `Shift + W`; shown only while a feed is watched (`news-moved-notice.js`).
+- **fix — Reading one feed item no longer rings as news.** The server lists the newest ten items, so reading one moved an older one into the list and the bell took it for news. The row now keys on when news last arrived per site (`feed-watch-notice.js`).
+- **fix — A row that comes back rings again,** even with a lower count than before it went away (5, gone, then 3 stayed silent) (`notification-bell.js`).
+- **new — The install count is no longer announced.** The notice is gone; the switch stays under Privacy (`install-count-notice.js` removed).
+
+### Config
+
+- **new — A Support card on Config → Overview.** Under its own *Support nextDash* heading, with a Ko-fi button.
+
+### Bookmarks view
+
+- **new — Add Bookmark sits in the view's band,** left of **Work through** (`dashboard-bookmarks-header.js`).
+
+### Themes
+
+- **new — Three holiday themes.** Christmas Classic, Northern Lights and Gingerbread Village, light and dark. Over the backdrop they draw a tree, a forest or a village and lights, with snow or sprinkles falling in front; category headers get snow caps or icing. The snow lands in the same places on every load. Motion stops with reduced motion and with Effects off, leaving a still picture (`theme-holidays.js`, `theme-holidays.css`, `theme_holidays_test.go`).
+- **new — A Holidays group in the theme browser,** shown in place of the archetype in the badge and the Character row (`theme_archetype.go`, `theme-browser.js`).
+- **new — A gingerbread baking-tray backdrop** (`theme_backdrop_holidays.go`).
+
+### Docs
+
+- **docs — Manual and README.** Every key in the manual and README follows the new scheme; §4 describes the four-line legend and `Shift + E` for edit mode, §7 the plain row letters, §8.6 finders on `!`, the tag view, Inbox, Containers and Bookmarks view the `Shift + H` legend.
+- **docs — Config → Help and tips.** Help and the tips name the new keys; the bell has its own Help topic and a `?` for keys and help.
+- **docs — Translations pending.** The new strings (mode strip, Keys and help sheet, tips, Support card) are in English only; Dutch, German, French, Spanish and Chinese show the English until a docs round. Only key names were changed in those files.
+- **docs — Unraid template.** `nextdash.xml` carries the v1.26.1 date and changes.
 
 ---
 
