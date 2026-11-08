@@ -5628,6 +5628,21 @@ body.no-animations .config-new-features-panel-star {
     gap: 10px;
 }
 
+.config-help-keys-link {
+    appearance: none;
+    margin-left: auto;
+    margin-right: 0.4rem;
+    padding: 0.2rem 0.65rem;
+    border: 1px solid var(--accent-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+.config-help-keys-link:hover { background: color-mix(in srgb, var(--accent-primary) 14%, transparent); }
+.config-help-keys-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .config-help-panel-link {
     border: none;
     background: none;

@@ -22402,8 +22402,6 @@ class DashboardConfig {
         void this.ensureBookmarkCategoriesForFilter().then((changed) => {
             if (changed) this.repaintBookmarksList();
         });
-        container.querySelector('#config-bm-add')
-            ?.addEventListener('click', () => this.openAddBookmarkModal());
         container.querySelector('#config-bm-select-all')?.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-select-all]')) this.toggleSelectAllBookmarks();
         });
@@ -25974,6 +25972,7 @@ class DashboardConfig {
             <div class="config-panel config-help-panel" id="help-panel-${esc(id)}" data-help-panel="${esc(id)}">
                 <div class="config-help-panel-head">
                     <h3 class="config-panel-title">${esc(titleOverride || this.t(titleKey, titleFallback))}</h3>
+                    ${this.helpKeysButton(titleKey)}
                     <button type="button" class="config-help-panel-link" data-help-panel-link="${esc(id)}"
                             title="${esc(this.t('config.helpCopyLink', 'Copy a link to this topic'))}"
                             aria-label="${esc(this.t('config.helpCopyLink', 'Copy a link to this topic'))}">🔗</button>
@@ -25984,6 +25983,15 @@ class DashboardConfig {
                 ${extra}
                 ${this.renderHelpSeeAlso(titleKey)}
             </div>`;
+    }
+
+    /** The way back from a panel the cheat sheet quotes: the keys of the page it belongs to. */
+    helpKeysButton(titleKey) {
+        const contexts = window.KeyboardPageHelp?.contextsForPanel?.(titleKey) || [];
+        if (!contexts.length) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.helpKeysForPage', 'Keys for this page');
+        return `<button type="button" class="config-help-keys-link" data-help-keys="${esc(contexts[0])}">${esc(label)}</button>`;
     }
 
     /**
@@ -26038,6 +26046,9 @@ class DashboardConfig {
      * jump lands on the panel rather than on the top of its tab.
      */
     static HELP_PANEL_SEE_ALSO = {
+        'config.helpNotificationsTitle': [
+            { tab: 'start', panel: 'bell', labelKey: 'config.helpBellTitle', label: 'The bell' },
+        ],
         'config.helpContainersTogetherTitle': [
             { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
@@ -26879,6 +26890,8 @@ class DashboardConfig {
                 'config.helpFirstHourBody', '')
             + this.helpPanel('config.helpStartDailyTitle', 'A day with nextDash',
                 'config.helpStartDailyBody', '')
+            + this.helpPanel('config.helpBellTitle', 'The bell',
+                'config.helpBellBody', '')
             + `<div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.helpTipsTitle', 'Everyday keys'))}</h3>
                 <ul class="config-help-tips">${tips}</ul>
@@ -28067,6 +28080,11 @@ class DashboardConfig {
             if (btn.dataset.helpGoBound === '1') return;
             btn.dataset.helpGoBound = '1';
             btn.addEventListener('click', () => this.handleOverviewGo(btn));
+        });
+        container.querySelectorAll('[data-help-keys]').forEach((btn) => {
+            if (btn.dataset.helpKeysBound) return;
+            btn.dataset.helpKeysBound = '1';
+            btn.addEventListener('click', () => this.dash.showKeyboardCheatSheet?.({ context: btn.getAttribute('data-help-keys') }));
         });
         container.querySelectorAll('[data-help-panel-link]').forEach((btn) => {
             if (btn.dataset.helpLinkBound === '1') return;

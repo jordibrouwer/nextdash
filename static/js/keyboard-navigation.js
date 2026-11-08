@@ -734,7 +734,7 @@ class KeyboardNavigation {
     _syncModeStrip() {
         // The Bookmarks view has its own cursor and tells the strip itself
         // (DashboardConfig.syncBookmarkModeStrip); the grid must not clear it.
-        if (['library', 'inbox', 'docker', 'tags', 'config'].includes(this.dashboard?.activeView)) return;
+        if (['library', 'inbox', 'docker', 'tags', 'config', 'glances'].includes(this.dashboard?.activeView)) return;
         const edit = document.body?.getAttribute('data-edit-mode') === 'on';
         const count = this.dashboard?.multiSelect?.count?.() || 0;
         const onRow = this._cursorOnBookmarkRow();

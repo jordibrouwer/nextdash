@@ -434,6 +434,18 @@
         panel.textContent = '';
         const head = el('div', 'notification-bell-head');
         head.appendChild(el('strong', 'notification-bell-title', t('title', 'Notifications')));
+        // ?: keys and help for the bell, the same sheet ? opens on the dashboard.
+        const helpBtn = el('button', 'notification-bell-help', '?');
+        helpBtn.type = 'button';
+        helpBtn.setAttribute('aria-label', t('helpButton', 'Keys and help for the bell'));
+        helpBtn.title = t('helpButton', 'Keys and help for the bell');
+        helpBtn.addEventListener('click', () => {
+            // Focus goes back to the bell button first, so the sheet's own close finds somewhere to return to.
+            button.focus();
+            close('help');
+            void global.dashboardInstance?.showKeyboardCheatSheet?.({ context: 'bell' });
+        });
+        head.appendChild(helpBtn);
         const all = el('button', 'notification-bell-action notification-bell-markall', t('markAllRead', 'Mark all read'));
         all.type = 'button';
         all.addEventListener('click', markAllRead);
