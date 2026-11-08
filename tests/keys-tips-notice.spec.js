@@ -78,3 +78,14 @@ test('Shift+W with no feed watched says so in a toast whose button opens the hel
     await toast.getByRole('button', { name: 'More info' }).click();
     await expect.poll(() => page.evaluate(() => location.hash)).toContain('config/help/monitoring/fresh');
 });
+
+test('on a phone neither key tip is offered, and the key legends stay away', async ({ page }) => {
+    await page.addInitScript(() => {
+        const real = window.matchMedia.bind(window);
+        window.matchMedia = (q) => (/hover: none\) and \(pointer: coarse/.test(q) ? { ...real('all'), matches: true, media: q } : real(q));
+    });
+    await load(page, 3 * 24 * 3600 * 1000 + 60_000);
+    await expect(row(page, 'mode-strip-tip')).toHaveCount(0);
+    await expect(row(page, 'key-legend-tip')).toHaveCount(0);
+    expect(await page.evaluate(() => window.isPhoneDevice())).toBe(true);
+});

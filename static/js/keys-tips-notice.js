@@ -6,7 +6,7 @@
  * visit; the legend tip follows three days after that, so the two do not
  * arrive together. The moment the strip tip first showed is kept as a marker
  * in the seen setting promos ("mode-strip-tip-start:<ms>"), so it survives a
- * reload and is shared across browsers. Each waits in the bell until it is
+ * reload and is shared across browsers. A phone gets neither: they are about keys. Each waits in the bell until it is
  * read ("Mark read" or its button), and then it is gone for good.
  */
 (function initKeysTipsNotice(global) {
@@ -21,6 +21,8 @@
     const SETTLE_MS = 60 * 1000;
     const loadedAt = Date.now();
     const settled = () => Date.now() - loadedAt >= SETTLE_MS;
+    // Both tips are about keys: a phone has none, so neither is offered there.
+    const phone = () => global.isPhoneDevice?.() === true;
 
     const dash = () => global.dashboardInstance || null;
     const state = () => global.DiscoverabilityState;
@@ -64,7 +66,7 @@
             icon: '⌨',
             no: 'forever',
             state: async () => {
-                if (answered(STRIP_ID) || !settled()) return null;
+                if (phone() || answered(STRIP_ID) || !settled()) return null;
                 startedAt();
                 return { count: 1, text: stripText() };
             },
@@ -87,7 +89,7 @@
             icon: '⌨',
             no: 'forever',
             state: async () => {
-                if (answered(LEGEND_ID) || !settled()) return null;
+                if (phone() || answered(LEGEND_ID) || !settled()) return null;
                 const start = startedAt();
                 if (!start || Date.now() < start + LEGEND_DELAY_MS) return null;
                 return { count: 1, text: legendText() };

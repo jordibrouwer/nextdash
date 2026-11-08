@@ -222,3 +222,19 @@ body[data-mobile-layout="true"] .app-notification {
         max-height: calc(100dvh - 2rem);
     }
 }
+
+/*
+ * No key legends on a phone or tablet without a keyboard: the line of keys
+ * under the grid and the lists names keys a finger cannot press. The same
+ * question isPhoneDevice() asks (shared/phone-device.js).
+ */
+@media (hover: none) and (pointer: coarse) {
+    .dashboard-legend,
+    .inbox-legend-wrap,
+    .glances-legend,
+    .config-bm-keyboard-legend,
+    .config-form-keyboard-legend,
+    .config-list-keyboard-legend {
+        display: none !important;
+    }
+}
