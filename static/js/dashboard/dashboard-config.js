@@ -5664,11 +5664,23 @@ class DashboardConfig {
                     </div>
                 </div>
                 <div class="config-overview-aside">
+                    ${zone(this.t('config.overviewZoneSupport', 'Support nextDash'))}
+                    ${this.renderOverviewSupport()}
                     ${zone(this.t('config.overviewZoneNextdash', 'From nextDash'))}
                     ${aside}
                 </div>
             </div>
         `;
+    }
+
+    /** The Ko-fi ask, top right of the Overview: the one thing on the page that wants something. */
+    renderOverviewSupport() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <section class="config-overview-support" aria-label="${esc(this.t('config.overviewZoneSupport', 'Support nextDash'))}">
+                <p class="config-overview-support-text">${esc(this.t('config.overviewSupportText', 'nextDash is free and open-source, built in spare time. If it earns a place on your screen, a coffee keeps it going.'))}</p>
+                ${this.renderKofiSupport().replace(/<div class="help-support-block">[\s\S]*?<span class="help-support-label">[\s\S]*?<\/span>/, '<div class="config-overview-support-cta">')}
+            </section>`;
     }
 
     /** One-line animated pointer to the feature tour on nextdash.cc. */
