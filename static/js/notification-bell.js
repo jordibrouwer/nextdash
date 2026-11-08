@@ -263,6 +263,10 @@
         const fresh = shown.filter((r) => !announced.has(rowKey(r)) && Model.isWorse(lastAnnounced.get(r.source.id), r.entry));
         keys.forEach((k) => announced.add(k));
         shown.forEach((r) => lastAnnounced.set(r.source.id, r.entry));
+        // A row that went away starts again when it returns, as its age does
+        // (stampAge): compared with its old count, 5 then 3 would stay silent.
+        const live = new Set(shown.map((r) => r.source.id));
+        [...lastAnnounced.keys()].forEach((id) => { if (!live.has(id)) lastAnnounced.delete(id); });
         if (!fresh.length) return;
         shake(movementOf(fresh));
         pulse();

@@ -442,6 +442,33 @@ test('a refresh that finds more unread shakes, pulses and rings; the same or few
     expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
 });
 
+test('a row that went away rings again when it returns, even with a lower count', async ({ page }) => {
+    await loadDashboard(page);
+    await refresh(page);
+    await page.waitForTimeout(1200); // let the load animation finish
+    await watchAttention(page);
+
+    await setState(page, 'probe-state', { count: 5, text: 'five' });
+    await refresh(page);
+    expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
+
+    // Shrinking while it stays is not news.
+    await page.waitForTimeout(1200);
+    await setState(page, 'probe-state', { count: 4, text: 'four' });
+    await refresh(page);
+    expect(await seen(page)).toMatchObject({ shake: 1, sound: 1 });
+
+    // Gone, then back with fewer: that is new trouble, so it rings.
+    await setState(page, 'probe-state', null);
+    await refresh(page);
+    await page.waitForTimeout(1200);
+    await setState(page, 'probe-state', { count: 3, text: 'three' });
+    await refresh(page);
+    // The tone is the measure: it sounds only with a fresh row, in the same
+    // branch as the shake (the class observer counts one shake per test).
+    expect((await seen(page)).sound).toBe(2);
+});
+
 test('with bellSound off the bell still moves but stays silent', async ({ page }) => {
     await loadDashboard(page);
     await refresh(page);
