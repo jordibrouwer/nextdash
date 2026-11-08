@@ -154,6 +154,13 @@ func TestNoScriptOutsideConfigReadsALazyKey(t *testing.T) {
 		if strings.HasPrefix(d.Name(), "dashboard-config") && strings.Contains(path, filepath.Join("js", "dashboard")) {
 			return nil
 		}
+		// Keys and help quotes the Help panels, and asks for the help scope
+		// itself before it builds (showKeyboardCheatSheet waits for
+		// ensureHelpTranslations); a panel that is not in yet is left out of
+		// the sheet, not shown in English.
+		if d.Name() == "keyboard-page-help.js" {
+			return nil
+		}
 		src, err := os.ReadFile(path)
 		if err != nil {
 			return err
