@@ -212,7 +212,7 @@ class DashboardCategoryMenu {
                     ? this.t('widgetMenuWidthOne', 'Back to one column')
                     : this.t('widgetMenuWidthTwo', 'Across two columns'),
                 icon: '↔',
-                key: 'Shift+W',
+                key: 'W',
                 detail: canWiden ? '' : this.t('widgetMenuWidthUnavailableShort', 'One column on this dashboard'),
                 disabled: !canWiden && !wide,
             },
