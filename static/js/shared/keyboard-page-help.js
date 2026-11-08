@@ -296,6 +296,29 @@
         return p ? p.innerHTML : html;
     }
 
+    /**
+     * An excerpt from safeHtml cut to about `at` characters at a space. The cut
+     * is made in markup, so a tag it leaves open is closed again: a space inside
+     * <code>Shift + B</code> (in Chinese nearly every space is one) would
+     * otherwise leave <code> open, and the browser carries it over the rest of
+     * the sheet. A text with no space before `at` is cut at `at`, after any
+     * half-cut entity or tag is dropped.
+     */
+    function clipHtml(html, at) {
+        const space = html.lastIndexOf(' ', at);
+        let out = html.slice(0, space > 0 ? space : at);
+        const amp = out.lastIndexOf('&');
+        if (amp > out.lastIndexOf(';')) out = out.slice(0, amp);
+        const lt = out.lastIndexOf('<');
+        if (lt > out.lastIndexOf('>')) out = out.slice(0, lt);
+        const open = [];
+        out.replace(/<(\/?)(code|kbd|strong|em)>/g, (match, close, tag) => {
+            if (close) open.pop(); else open.push(tag);
+            return match;
+        });
+        return `${out}${open.reverse().map((tag) => `</${tag}>`).join('')}…`;
+    }
+
     /** The Help panels a page reads from, with the excerpt, the whole text as plain words and the address. */
     function helpCards(contextId, dash) {
         const id = idFor(contextId, dash);
@@ -309,7 +332,7 @@
                 panel: panelId(link.title),
                 title,
                 excerptPlain: plainText(firstParagraph(body)),
-                excerpt: excerpt.length > 520 ? `${excerpt.slice(0, excerpt.lastIndexOf(' ', 500))}…` : excerpt,
+                excerpt: excerpt.length > 520 ? clipHtml(excerpt, 500) : excerpt,
                 plain: plainText(body),
                 hash: `#config/help/${link.tab}/${panelId(link.title)}`,
             };
@@ -327,7 +350,11 @@
         if (!ids.length) return null;
         const KEY = 'nextdash:sheet-tips-shown';
         let shown = [];
-        try { shown = JSON.parse(global.localStorage?.getItem(KEY) || '[]') || []; } catch (_e) { shown = []; }
+        // Anything but a list (a hand edit, another script) counts as nothing shown yet.
+        try {
+            const stored = JSON.parse(global.localStorage?.getItem(KEY) || '[]');
+            shown = Array.isArray(stored) ? stored : [];
+        } catch (_e) { shown = []; }
         // Only a tip that has its text counts: a locale without it is skipped, not used up.
         const withText = ids.filter((tipId) => t(dash, `config.${tipId}`, ''));
         if (!withText.length) return null;
@@ -429,5 +456,5 @@
         return false;
     }
 
-    global.KeyboardPageHelp = { HELP, MODES, TOURS, LINKS, TIPS, panelId, helpCards, contextsForPanel, tipFor, openHelp, safeHtml, forContext, byId: resolve, modes, run, sendKey, idFor, t };
+    global.KeyboardPageHelp = { HELP, MODES, TOURS, LINKS, TIPS, panelId, helpCards, contextsForPanel, tipFor, openHelp, safeHtml, clipHtml, forContext, byId: resolve, modes, run, sendKey, idFor, t };
 })(window);

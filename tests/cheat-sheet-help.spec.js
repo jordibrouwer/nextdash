@@ -410,3 +410,28 @@ test('an arrow in the corner says the list runs on below, and scrolls it', async
     await page.locator('#cheat-sheet-filter').fill('open');
     await expect(more).toBeVisible();
 });
+
+test('a long Help excerpt cut inside a key closes its tag, so the rest of the sheet keeps its style', async ({ page }) => {
+    await load(page);
+    // The bookmarks page quotes helpKeyboardBody first. Make its first paragraph
+    // run past the cut with a space inside <code> just before character 500.
+    await page.evaluate(async () => {
+        const lang = window.dashboardInstance.language;
+        await lang.ensureHelpTranslations(lang.currentLanguage);
+        lang.translations.config.helpKeyboardBody = `<p>${'word '.repeat(96)}a <code>Shift + B</code> b ${'more '.repeat(30)}</p>`;
+    });
+    await page.keyboard.press('?');
+    await expect(sheet(page).locator('.cs-card-body').first()).toContainText('Shift +');
+    // Nothing after the card may sit inside a <code> the excerpt left open.
+    const leaked = await sheet(page).evaluate((el) => Array.from(el.querySelectorAll('.cs-lbl, .cs-step, .cs-card'))
+        .filter((node) => node.closest('code, kbd, strong, em')).length);
+    expect(leaked).toBe(0);
+});
+
+test('a stored tip list that is not a list does not stop the sheet from opening', async ({ page }) => {
+    await load(page);
+    await page.evaluate(() => localStorage.setItem('nextdash:sheet-tips-shown', '{}'));
+    await page.keyboard.press('?');
+    await expect(sheet(page)).toBeVisible();
+    await expect(sheet(page).locator('.cs-now-title')).toContainText('You are in');
+});
