@@ -1,0 +1,17 @@
+{
+  "tag": "v1.27.1",
+  "date": "8 November 2026",
+  "releasedAt": "2026-11-08",
+  "modalLead": "New pictures in the README and on Unraid's Community Applications, taken on v1.27.0.",
+  "sections": [
+    {
+      "title": "Pictures",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>New screenshots.</strong> The README and the Unraid app page show nextDash as it is now: the mode strip, the key legends and Keys and help."
+        }
+      ]
+    }
+  ]
+}

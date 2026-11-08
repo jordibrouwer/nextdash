@@ -57,6 +57,17 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.27.1 (2026-11-08)
+- Screenshots: new pictures for this page and the README, taken on v1.27.0
+- No change to the app itself
+
+### v1.27.0 (2026-11-08)
+- Keyboard: one set of keys for every view; with the cursor on a row, plain letters act on it (e edits, m moves, t tags), Shift plus a letter opens a view
+- Keyboard: a mode strip beside the page name says what your keys do, every view has a key legend, and ? opens keys and help for the page you are on
+- Search: # searches by tag, with AND and OR, and : opens on your recent and most-used commands
+- Themes: Christmas Classic, Northern Lights and Gingerbread Village, with snow and lights
+- Many keys moved: an existing install is told once, and old keys say what replaced them for a while
+
 ### v1.26.1 (2026-11-05)
 - Watch feeds: news nobody opened stops counting after a day (4 hours to 30 days in Config), the hover card pages through ten items and names the total, and the count reads 9+ from ten
 - Notifications: new watched news is one bell row with its own chime and a nodding bell, and every row shows how old it is
@@ -74,20 +85,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Manual: a heading for the times and days a widget shows, the Watch feeds news widget, and the settings of each widget kind
 - Manual: the phone settings and every search command and key that was missing
 - No change to the app itself
-
-### v1.25.0 (2026-11-03)
-- Widgets: a Tabs widget, Clock and Countdown, Duplicate, set times and days per widget, and amber and red limits for disks and memory
-- Search: it answers sums and unit conversions, and has six more commands
-- Config: a list of what you changed from the defaults, earlier layouts of a page you can restore, and import of a Homepage, Dashy or Homer configuration
-- Themes: a backdrop for every theme, a shorter backdrop picker, and Aurora Glass is the theme a new install starts on
-- Tags: give a tag a colour, shown in the tag cloud, the rows and the preview
-- Fixes: the backdrop groups are in English, and the eight neutral themes draw their own backdrop
-
-### v1.24.2 (2026-11-02)
-- Watch feeds: Config has a Feeds tab and a Settings tab, like the other sections
-- Watch feeds: the news popover has its Reader button on a phone too
-- Rows: a new install starts without row status (online/offline and ping times)
-- Tag cloud: it keeps its place when it is drawn again
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -95,7 +92,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-11-05</Date>
+  <Date>2026-11-08</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
