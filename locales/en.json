@@ -2208,7 +2208,6 @@
     "searchModeNames": "Search mode: letters find names",
     "searchModeShortcuts": "Search mode: letters find shortcuts",
     "searchModeToggleFailed": "Could not save the search mode",
-    "searchModeKeyAnnounce": "Tip: Shift + Q switches the search mode — whether letters find names or shortcuts",
     "mergeConfirmBtn": "Merge duplicates",
     "mergeDuplicateGroup": "Merge duplicate group",
     "mergeDuplicateTitle": "Merge selected duplicate group",

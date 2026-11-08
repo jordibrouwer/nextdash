@@ -2050,7 +2050,6 @@
     "searchModeNames": "Mode de recherche : les lettres trouvent les noms",
     "searchModeShortcuts": "Mode de recherche : les lettres trouvent les raccourcis",
     "searchModeToggleFailed": "Impossible d'enregistrer le mode de recherche",
-    "searchModeKeyAnnounce": "Astuce : Shift + Q change le mode de recherche — si les lettres trouvent les noms ou les raccourcis",
     "mergeConfirmBtn": "Fusionner les doublons",
     "mergeDuplicateGroup": "Fusionner le groupe de doublons",
     "mergeDuplicateTitle": "Fusionner le groupe de doublons sélectionné",

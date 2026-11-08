@@ -2050,7 +2050,6 @@
     "searchModeNames": "搜索模式：字母匹配名称",
     "searchModeShortcuts": "搜索模式：字母匹配快捷方式",
     "searchModeToggleFailed": "无法保存搜索模式",
-    "searchModeKeyAnnounce": "提示：Shift + Q 切换搜索模式——决定字母是匹配名称还是匹配快捷方式",
     "mergeConfirmBtn": "合并重复项",
     "mergeDuplicateGroup": "合并重复分组",
     "mergeDuplicateTitle": "合并选中的重复分组",

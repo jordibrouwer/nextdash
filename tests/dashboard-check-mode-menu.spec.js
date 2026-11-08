@@ -121,9 +121,7 @@ test.describe('dashboard check-mode menu', () => {
         // across that would be waiting on a node no longer in the document.
         await openCheckModeSubmenu(page, await firstRow(page));
         await page.locator('[data-check-mode="monitor"]').click();
-        // Named, not "whatever toast is up": the one-time "Shift + Q switches
-        // the search mode" tip from 79c29ec9 lands on the first load after the
-        // upgrade and holds the slot until it times out.
+        // Named, not "whatever toast is up": another note may hold the slot.
         await expect(page.locator('.app-notification', { hasText: /monitor/i }))
             .toBeVisible({ timeout: 10_000 });
 

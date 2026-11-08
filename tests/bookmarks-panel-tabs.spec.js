@@ -250,9 +250,7 @@ test.describe('bookmark panel: scrolling stays in it', () => {
   });
 
   test('scrolled content stops short of its top and bottom edges', async ({ page }) => {
-    // The one-time "Shift + Q switches the search mode" tip waits while a
-    // modal or a note is up and comes in the corner after it, at a moment of
-    // its own, past the hide() below. Marked as already said.
+    // What's new would open over the drawer on the first load.
     await markWhatsNewSeen(page);
     const { bookmarks } = await open(page);
     // The session tip comes up over the bottom of the screen at a moment of

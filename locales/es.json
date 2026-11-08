@@ -2050,7 +2050,6 @@
     "searchModeNames": "Modo de búsqueda: las letras buscan nombres",
     "searchModeShortcuts": "Modo de búsqueda: las letras buscan atajos",
     "searchModeToggleFailed": "No se pudo guardar el modo de búsqueda",
-    "searchModeKeyAnnounce": "Consejo: Shift + Q cambia el modo de búsqueda, es decir, si las letras buscan nombres o atajos",
     "mergeConfirmBtn": "Fusionar los duplicados",
     "mergeDuplicateGroup": "Fusionar el grupo de duplicados",
     "mergeDuplicateTitle": "Fusionar el grupo de duplicados seleccionado",

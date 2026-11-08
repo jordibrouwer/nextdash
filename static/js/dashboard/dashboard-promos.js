@@ -134,7 +134,6 @@ class DashboardPromos {
         d._postOnboardingPromptsAttempts = 0;
 
         this.maybeShowWhatsNew();
-        this.maybeAnnounceSearchModeKey();
         // After What's new, never on top of it: the tour waits its turn.
         this.scheduleDashboardTour({ delay: 1500 });
     }
@@ -200,54 +199,6 @@ class DashboardPromos {
     async openDashboardTour() {
         if (!(await this.loadDashboardTour())) return false;
         return window.DashboardTutorial?.open?.() === true;
-    }
-
-
-    /**
-     * Say once that Shift+Q switches the search mode.
-     *
-     * The setting moved to Behavior → Search in v1.4.3 and gained a key, and
-     * neither is something you find by looking: the old tickbox was in another
-     * section under a name that described something else, so nobody was going
-     * to notice it had moved, and a key nobody names is a key nobody presses.
-     *
-     * Once per release, keyed the way the what's-new prompt is. Storage that
-     * throws — a private window, blocked site data — means the note is skipped
-     * rather than shown on every load.
-     */
-    maybeAnnounceSearchModeKey(attempt = 0) {
-        const d = this.dash;
-        if (window.DemoLock?.on) return; // no tips in the public demo
-        const release = window.NEXTDASH_WHATS_NEW_RELEASE || '';
-        const key = 'nextdash:search-mode-key-announced';
-        try {
-            if (localStorage.getItem(key) === release) return;
-        } catch {
-            return;
-        }
-        // One thing at a time: on the first load of a release the what's-new
-        // modal is open, and the tip stood in the corner under it. The tip
-        // waits (up to about a minute) and is only marked as announced when it
-        // is actually shown, so closing the tab meanwhile does not lose it.
-        if (document.querySelector('.whats-new-modal') || d.isModalOpen?.()) {
-            if (attempt < 40) setTimeout(() => this.maybeAnnounceSearchModeKey(attempt + 1), 1500);
-            return;
-        }
-        try {
-            localStorage.setItem(key, release);
-        } catch {
-            return;
-        }
-        const text = d.t?.('dashboard.searchModeKeyAnnounce',
-            'Tip: Shift + Q switches the search mode — whether letters find names or shortcuts')
-            || 'Tip: Shift + Q switches the search mode';
-        // 'promo', not 'info', the way dashboard-keyboard-tip sends its own:
-        // this is an unprompted tip on a long timer, and AppNotification gives
-        // way for a real notification only when the promo is the one on screen.
-        // Sent as 'info' it took the slot like an answer to something the user
-        // did, and the confirmation for their next action queued behind it —
-        // switching a bookmark to Periodic showed nothing at all.
-        d.showNotification?.(text, 'promo', { duration: 8000 });
     }
 
 
