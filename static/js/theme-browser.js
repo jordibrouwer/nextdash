@@ -133,9 +133,13 @@
         return (META.themes && META.themes[id]) || {};
     }
 
-    /** The archetype a theme belongs to, or '' for one that names none. */
+    /**
+     * The word a theme is filed under: its group when it has one (Holidays),
+     * otherwise its archetype, or '' for one that names neither.
+     */
     function characterOf(id) {
-        return String(metaFor(id).character || '');
+        const meta = metaFor(id);
+        return String(meta.group || meta.character || '');
     }
 
     /** The collection a theme belongs to, or '' for one in none. */
@@ -610,7 +614,8 @@
             : (id, name) => name || id;
         const palettes = opts.palettes || {};
         META = opts.meta && opts.meta.themes ? opts.meta : { themes: {} };
-        ARCHETYPES = Array.isArray(opts.meta?.archetypes) ? opts.meta.archetypes : [];
+        ARCHETYPES = (Array.isArray(opts.meta?.archetypes) ? opts.meta.archetypes : [])
+            .concat(Array.isArray(opts.meta?.groups) ? opts.meta.groups : []);
         COLLECTIONS = Array.isArray(opts.meta?.collections) ? opts.meta.collections : [];
 
         const families = buildFamilies(palettes, displayName);
