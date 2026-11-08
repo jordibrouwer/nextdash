@@ -391,6 +391,9 @@ test('the bell Help panel leads back to the bell, and its sheet says the keys wo
 });
 
 test('an arrow in the corner says the list runs on below, and scrolls it', async ({ page }) => {
+    // The arrow bobs without end, and a moving target is never stable enough to
+    // click; with less motion asked for it stands still, as it does for such a reader.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await load(page);
     await page.keyboard.press('?');
     const scroller = sheet(page).locator('.cheat-sheet-scroller');

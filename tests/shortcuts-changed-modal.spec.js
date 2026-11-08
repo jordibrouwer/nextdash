@@ -73,6 +73,9 @@ test('another window replacing it does not count as answered: it comes back', as
 });
 
 test('an arrow at the lower right says there is more to read, and goes at the end', async ({ page }) => {
+    // The arrow bobs without end, and a moving target is never stable enough to
+    // click; with less motion asked for it stands still, as it does for such a reader.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await load(page);
     await page.evaluate(() => window.ShortcutsChangedModal.ask());
     await expect(panel(page)).toBeVisible({ timeout: 15_000 });
