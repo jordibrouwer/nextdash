@@ -150,6 +150,7 @@ One set of keyboard rules for every view. With the cursor on a row, plain letter
 - **new — The mode key is a badge, not text in the field.** The `:` of commands, the `!` of finders, the `=` of the assistant and the `*` of recents show as the badge in front of the search field; Backspace on an empty field leaves the mode with the panel still open. Mode keys pressed on the dashboard no longer land in the search field.
 - **new — One shortcut scheme for every view.** The tag view, the Inbox, the Bookmarks view, Containers, Glances and Config use the same row letters and the same Shift keys. Config's stored backups and trash are lists with a row cursor: `e` names a row, `d` removes it, `u`/`n` move it (`dashboard-tag-view.js`, `dashboard-inbox.js`, `dashboard-config.js`).
 - **new — `Shift + W` explains itself with no feed watched.** It says there is nothing to open instead of doing nothing. `W`, not `Shift + W`, spreads a category.
+- **fix — A letter on a widget's row does nothing.** With the cursor on a widget's row, a row letter (`e`, `d`, …) opened the search panel and took the cursor off the grid; the letters belong to no one there and are swallowed, as before the move (`keyboard-navigation.js`, `dashboard-widget-keyboard.spec.js`).
 - **fix — Menu chips announce the plain key.** A screen reader read *Shift plus E* for a row action whose key is now `e` (`shortcut-format.js`).
 - **new — The Shift+Q search-mode tip is gone,** its key having moved (`dashboard-promos.js`).
 

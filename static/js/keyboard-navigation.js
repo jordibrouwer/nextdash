@@ -789,6 +789,14 @@ class KeyboardNavigation {
             return false;
         }
         const letter = this._rowLetterFor(e);
+        // On a widget's row the row letters belong to no one: the cursor is on
+        // the grid, so they are not a search either. Swallowed, the cursor stays.
+        if (letter && this.currentIndex >= 0 && this._isWidgetElement(this.navigableElements[this.currentIndex])) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            return true;
+        }
         if (!letter || !inHand()) {
             return false;
         }
