@@ -159,6 +159,13 @@
                         </div>
                         <p class="config-field-hint">${t('glancesRefreshHint',
                             'How often an open Glances page reads the host for the numbers you see. It is not how often the history is recorded: that is Record every, at the top of the Glances page, and it runs whether or not the page is open.')}</p>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-legend">${t('glancesLegendLabel', 'The key legend')}</label>
+                            <select id="config-glances-legend" class="config-select" data-glances-legend-setting>
+                                ${['above', 'below', 'off'].map((v) => `<option value="${v}"${(this.dash.settings?.glancesViewKeyLegend || 'below') === v ? ' selected' : ''}>${esc(this.t('config.bmViewLegend' + v[0].toUpperCase() + v.slice(1), { above: 'Above the page', below: 'Below the page', off: 'Hidden' }[v]))}</option>`).join('')}
+                            </select>
+                        </div>
+                        <p class="config-field-hint">${t('glancesLegendHint', 'The keys that work on the Glances page, at the foot of it, above it, or hidden. Shift+H switches it off and on there.')}</p>
                         <h4 class="config-panel-subtitle">${t('glancesBlocksTitle', 'Overview shows')}</h4>
                         <div class="config-checkset" data-glances-blocks>${blocks}</div>
                     </div>
@@ -751,6 +758,13 @@
             const target = event.target;
             if (!(target instanceof HTMLElement)) return;
             if (target.matches('[data-glances-field="connected"]')) return; // its own switch
+            // The key legend is one setting for every host, saved with the rest of the settings.
+            if (target.matches('[data-glances-legend-setting]')) {
+                this.dash.settings = this.dash.settings || {};
+                this.dash.settings.glancesViewKeyLegend = target.value;
+                void this.saveSettingsWithFeedback?.();
+                return;
+            }
             if (target.matches('[data-glances-field], [data-glances-block], [data-glances-line], [data-glances-notify]')) schedule();
             // The address or the login was just changed: try it, so a wrong one is said so at once.
             if (target.matches('[data-glances-field="server"], [data-glances-field="user"], [data-glances-field="password"]')

@@ -192,3 +192,14 @@ func TestConfigViewKeyLegendChoices(t *testing.T) {
 		}
 	}
 }
+
+// The Glances key legend takes the same three choices as the other views.
+func TestGlancesViewKeyLegendChoices(t *testing.T) {
+	for in, want := range map[string]string{"": "below", "above": "above", "below": "below", "off": "off", "sideways": "below"} {
+		s := Settings{GlancesViewKeyLegend: in}
+		s.GlancesViewKeyLegend = inboxViewChoice("keyLegend", s.GlancesViewKeyLegend)
+		if s.GlancesViewKeyLegend != want {
+			t.Errorf("%q -> %q, want %q", in, s.GlancesViewKeyLegend, want)
+		}
+	}
+}

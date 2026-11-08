@@ -511,7 +511,9 @@
             this.errorEl.hidden = true;
             this.hostEl = document.createElement('div');
             this.hostEl.className = 'glances-section-host';
-            this.bodyEl.append(this.statusEl, this.errorEl, this.hostEl, this.buildLegend());
+            this.bodyEl.append(this.statusEl, this.errorEl, this.hostEl);
+            this.placeLegend();
+            window.ModeStrip?.set?.(null);
             this.shell.body.appendChild(this.bodyEl);
             // The hover card follows what is under the pointer; the chart under it is the one , and . change.
             this.tipCard?.unbind();
@@ -1156,18 +1158,66 @@
             return el;
         }
 
+        /** Where the legend sits: below the page (default), above it, or off. */
+        legendWhere() {
+            const where = this.dash.settings?.glancesViewKeyLegend;
+            return where === 'above' || where === 'off' ? where : 'below';
+        }
+
+        /** Put the legend where the setting says, replacing the one that was there. */
+        placeLegend() {
+            this.bodyEl?.querySelectorAll('[data-glances-legend]').forEach((el) => el.remove());
+            const where = this.legendWhere();
+            if (where === 'off' || !this.bodyEl) return;
+            const legend = this.buildLegend();
+            if (where === 'above') {
+                legend.classList.add('is-above');
+                this.bodyEl.insertBefore(legend, this.hostEl);
+            } else {
+                legend.classList.add('is-below');
+                this.bodyEl.appendChild(legend);
+            }
+        }
+
+        /** Shift+H: the key legend off and on; what it was set to comes back. */
+        async toggleKeyLegend() {
+            const d = this.dash;
+            d.settings = d.settings || {};
+            const current = this.legendWhere();
+            const next = current === 'off' ? (this._legendWas && this._legendWas !== 'off' ? this._legendWas : 'below') : 'off';
+            if (current !== 'off') this._legendWas = current;
+            d.settings.glancesViewKeyLegend = next;
+            try {
+                if ((await d.saveSettings()) === false) throw new Error('not saved');
+            } catch (_err) {
+                d.settings.glancesViewKeyLegend = current;
+                d.showNotification?.(d.t?.('dashboard.gridKeyLegendToggleFailed', 'Could not save the key legend setting') || 'Could not save the key legend setting', 'error');
+                return;
+            }
+            this.placeLegend();
+            d.showNotification?.(next === 'off'
+                ? (d.t?.('dashboard.gridKeyLegendOff', 'Key legend off') || 'Key legend off')
+                : (d.t?.('dashboard.gridKeyLegendOn', 'Key legend on') || 'Key legend on'), 'success', { duration: 2000 });
+        }
+
         /** The keys of the page, as <kbd> chips: the keys stay as they are, the labels are translated. */
         buildLegend() {
             const wrap = document.createElement('div');
             wrap.className = 'glances-legend';
             wrap.setAttribute('data-glances-legend', '');
+            const has = (id) => this.availableSections().some((def) => def.id === id);
+            const sectionKeys = [['o', 'overview'], ['p', 'processes'], ['c', 'containers'], ['d', 'disks'], ['n', 'network'], ['i', 'insights'], ['h', 'history'], ['a', 'alerts'], ['m', 'hosts']]
+                .filter(([, id]) => has(id)).map(([key]) => key).join(' ');
             [
-                ['o p c d n h a', this.t('dashboard.glancesLegendSections', 'section')],
+                [sectionKeys || 'o p c d n h a', this.t('dashboard.glancesLegendSections', 'section')],
                 ['[ / ]', this.t('dashboard.glancesLegendStep', 'previous / next')],
                 [', / .', this.t('dashboard.glancesLegendRange', 'shorter / longer range')],
                 ['r', this.t('dashboard.glancesLegendRefresh', 'read now')],
                 ['/', this.t('dashboard.glancesLegendSearch', 'search processes')],
                 ['Esc', this.t('dashboard.glancesLegendLeave', 'leave')],
+                ['?', this.t('dashboard.glancesLegendCheat', 'keys and help')],
+                ['Shift+H', this.t('dashboard.dashboardKeyHideLegend', 'hide legend')],
+                ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'mode strip')],
             ].forEach(([key, label]) => {
                 const item = document.createElement('span');
                 item.className = 'glances-legend-key';
@@ -1187,7 +1237,7 @@
             const LETTERS = { o: 'overview', p: 'processes', c: 'containers', d: 'disks', n: 'network', h: 'history', a: 'alerts', i: 'insights', m: 'hosts' };
             this._keyHandler = (e) => {
                 if (!this.isActiveView() || !this.shell) return;
-                if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+                if (e.ctrlKey || e.metaKey || e.altKey || (e.shiftKey && e.code !== 'KeyH')) return;
                 const d = this.dash;
                 if (document.querySelector('dialog[open]') || d.isModalOpen?.() || d.searchComponent?.isActive?.()) return;
                 const active = document.activeElement;
@@ -1195,6 +1245,14 @@
                 if (tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable
                     || (tag === 'INPUT' && active?.type !== 'checkbox')) return;
                 if (d.keyboardNavigation?.isGChordActive?.()) return;
+
+                // Shift+H switches the key legend off and on, as in every view.
+                if (e.shiftKey) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    if (!e.repeat) void this.toggleKeyLegend();
+                    return;
+                }
 
                 const defs = this.availableSections();
                 const step = (dir) => {

@@ -779,6 +779,23 @@
     font-size: var(--font-size-small);
 }
 
+.glances-legend.is-below {
+    /* In view at the foot of the window while the page is longer than the screen. */
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding-bottom: var(--space-2, 0.5rem);
+    background: var(--surface-1, var(--bg-primary, transparent));
+}
+.glances-legend.is-above {
+    margin-top: 0;
+    margin-bottom: var(--space-3, 0.75rem);
+    padding-top: 0;
+    padding-bottom: var(--space-2, 0.5rem);
+    border-top: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
 .glances-legend-key { display: inline-flex; align-items: center; gap: 0.4rem; }
 
 .glances-legend kbd {

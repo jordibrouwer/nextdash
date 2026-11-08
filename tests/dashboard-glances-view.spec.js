@@ -768,7 +768,7 @@ test.describe('Glances page: tables, cards and keys', () => {
         await page.keyboard.press('o');
         await expect(page.locator('[data-glances-open="overview"]')).toBeVisible();
         // The legend names them.
-        await expect(page.locator('[data-glances-legend] kbd')).toHaveCount(6);
+        await expect(page.locator('[data-glances-legend] kbd')).toHaveCount(9);
         // And the letters did not open the shortcut search.
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });

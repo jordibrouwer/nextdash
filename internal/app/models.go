@@ -1179,6 +1179,9 @@ type Settings struct {
 	// ConfigViewKeyLegend places the Config view's key legend: below the page
 	// (the default), above it, or off. Shift + H switches it.
 	ConfigViewKeyLegend string `json:"configViewKeyLegend"`
+	// GlancesViewKeyLegend places the Glances view's key legend: below the page
+	// (the default), above it, or off. Shift + H switches it.
+	GlancesViewKeyLegend string `json:"glancesViewKeyLegend"`
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -3955,6 +3958,7 @@ func clampInboxViewSettings(s *Settings) {
 	s.InboxViewKeyLegend = inboxViewChoice("keyLegend", s.InboxViewKeyLegend)
 	s.TagViewKeyLegend = inboxViewChoice("keyLegend", s.TagViewKeyLegend)
 	s.ConfigViewKeyLegend = inboxViewChoice("keyLegend", s.ConfigViewKeyLegend)
+	s.GlancesViewKeyLegend = inboxViewChoice("keyLegend", s.GlancesViewKeyLegend)
 }
 
 var configBookmarksSortModes = map[string]bool{
