@@ -168,6 +168,7 @@ One set of keyboard rules for every view. With the cursor on a row, plain letter
 
 - **new — `?` opens a sheet for the page you are on.** **This page** says where you are, what it is for and the first steps, each with its key; a safe step (a move, a view, a palette mode, an aid on or off) has a **Try it** button. **All keys** is the full list, the modes and the learning material (every tour, this page's first) have a tab each, and one filter searches across all four, Help prose included. Keys you have not used yet come first. The keys named are checked against the registry by a spec (`shared/keyboard-page-help.js`, `dashboard-ui-helpers.js`).
 - **new — A Help panel opens the sheet on its own page's keys,** and the bell has its own entry.
+- **new — An arrow says the sheet runs on below the fold.** A round arrow in the lower right corner bobs while there is more to scroll, and goes at the end of the list, on a short tab or when the filter leaves nothing to scroll. A click scrolls one screen down and leaves focus in the filter. A `ResizeObserver` on the scroller and its panels follows tab switches, the filter and *show all*; the bob stops under reduced motion (`_setupCheatSheetMoreArrow` in `dashboard-ui-helpers.js`, `.cheat-sheet-more` in `modal.css`, `cheat-sheet-help.spec.js`).
 
 ### Shortcuts-changed window
 

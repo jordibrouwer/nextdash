@@ -388,3 +388,25 @@ test('the bell Help panel leads back to the bell, and its sheet says the keys wo
     await expect(sheet(page).locator('.cs-now-title')).toContainText('The notifications bell');
     await expect(sheet(page).locator('.cs-now-mode')).toContainText('work from anywhere');
 });
+
+test('an arrow in the corner says the list runs on below, and scrolls it', async ({ page }) => {
+    await load(page);
+    await page.keyboard.press('?');
+    const scroller = sheet(page).locator('.cheat-sheet-scroller');
+    const more = sheet(page).locator('.cheat-sheet-more');
+    await tab(page, 'all').click();
+    await expect(more).toBeVisible();
+    await page.locator('#cheat-sheet-filter').focus();
+    await more.click();
+    await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
+    // Typing still goes to the filter after a click on the arrow.
+    await expect(page.locator('#cheat-sheet-filter')).toBeFocused();
+    // At the end of the list it goes.
+    await scroller.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+    await expect(more).toBeHidden();
+    // A filter that finds nothing leaves nothing to scroll.
+    await page.locator('#cheat-sheet-filter').fill('zzzqx');
+    await expect(more).toBeHidden();
+    await page.locator('#cheat-sheet-filter').fill('open');
+    await expect(more).toBeVisible();
+});

@@ -393,6 +393,7 @@ class DashboardUiHelpers {
                     ${tabs.map(([id, label], i) => `<button type="button" role="tab" class="cs-tab${i === 0 ? ' is-active' : ''}" id="cs-tab-${id}" data-cs-tab="${id}" aria-selected="${i === 0 ? 'true' : 'false'}" aria-controls="cs-panel-${id}" tabindex="${i === 0 ? '0' : '-1'}">${esc(label)}</button>`).join('')}
                 </div>
                 <p id="cheat-sheet-no-results" class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
+                <div class="cheat-sheet-scroll-wrap">
                 <div class="cheat-sheet-scroller">
                     <div class="cs-panel cs-panel--this" id="cs-panel-this" role="tabpanel" aria-labelledby="cs-tab-this" data-panel="this">
                         ${pageHelp ? `<div class="cs-now">
@@ -420,6 +421,8 @@ class DashboardUiHelpers {
                         ${learnHtml}
                     </div>
                 </div>
+                <button type="button" class="cheat-sheet-more" hidden tabindex="-1" aria-label="${esc(d.language?.t('bell.more') || 'More below')}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>
+                </div>
                 <div id="cheat-sheet-dock" class="cheat-sheet-dock" aria-live="polite" aria-atomic="true">
                     <span class="cheat-sheet-dock-hint">${esc(dockHint)}</span>
                 </div>
@@ -441,8 +444,11 @@ class DashboardUiHelpers {
             initialFocusSelector: '#cheat-sheet-filter',
             onHide: () => {
                 this._cleanupCheatSheetKeyHandler();
+                this._cheatSheetMoreObserver?.disconnect();
+                this._cheatSheetMoreObserver = null;
             },
         });
+        this._setupCheatSheetMoreArrow();
 
         const cheatHeader = document.querySelector('.keyboard-cheat-sheet-modal .modal-header');
         if (cheatHeader && !cheatHeader.querySelector('.cheat-sheet-modal-key')) {
@@ -607,6 +613,37 @@ class DashboardUiHelpers {
         this._setupCheatSheetKeyboardNav();
     }
 
+
+    /**
+     * The arrow in the sheet's lower right corner: shown while the list runs on
+     * below the fold, as in the bell. A click scrolls one screen down. It
+     * follows the scroll, and a ResizeObserver on the scroller and its panels
+     * catches a tab switch, a filter or "show all" changing what there is to
+     * scroll. Not focusable: the arrow keys and Page Down already scroll.
+     */
+    _setupCheatSheetMoreArrow() {
+        this._cheatSheetMoreObserver?.disconnect();
+        this._cheatSheetMoreObserver = null;
+        const scroller = document.querySelector('.keyboard-cheat-sheet .cheat-sheet-scroller');
+        const more = document.querySelector('.keyboard-cheat-sheet .cheat-sheet-more');
+        if (!scroller || !more) return;
+        const update = () => {
+            more.hidden = !(scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 2);
+        };
+        // A click leaves focus where it was, so typing still goes to the filter.
+        more.addEventListener('mousedown', (e) => e.preventDefault());
+        more.addEventListener('click', () => {
+            const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            scroller.scrollBy({ top: Math.floor(scroller.clientHeight * 0.85), behavior: reduced ? 'auto' : 'smooth' });
+        });
+        scroller.addEventListener('scroll', update, { passive: true });
+        if (typeof ResizeObserver === 'function') {
+            this._cheatSheetMoreObserver = new ResizeObserver(update);
+            this._cheatSheetMoreObserver.observe(scroller);
+            scroller.querySelectorAll('.cs-panel').forEach((panel) => this._cheatSheetMoreObserver.observe(panel));
+        }
+        update();
+    }
 
     _cleanupCheatSheetKeyHandler() {
         if (!this._cheatSheetKeyHandler) {

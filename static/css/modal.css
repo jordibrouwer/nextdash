@@ -1687,11 +1687,52 @@ body.no-animations .modal-button.danger.selected {
     min-height: 0;
 }
 
+/* Holds the scroller and the arrow that sits over its lower right corner. */
+.cheat-sheet-scroll-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .cheat-sheet-scroller {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     padding: 2px 2px var(--space-2, 0.5rem);
+}
+
+/* Says the list runs on below the fold, as the bell's arrow does; it bobs. */
+.cheat-sheet-more {
+    position: absolute;
+    right: 18px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    animation: cheat-sheet-more-bob 1.6s ease-in-out infinite;
+}
+.cheat-sheet-more svg { width: 20px; height: 20px; }
+.cheat-sheet-more[hidden] { display: none; }
+.cheat-sheet-more:hover { border-color: var(--accent-primary); animation-play-state: paused; }
+
+@keyframes cheat-sheet-more-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cheat-sheet-more { animation: none; }
 }
 
 .cheat-sheet-groups {
