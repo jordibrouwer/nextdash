@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.27.2 — 9 November 2026](#v1272--9-november-2026)
 - [v1.27.1 — 8 November 2026](#v1271--8-november-2026)
 - [v1.27.0 — 8 November 2026](#v1270--8-november-2026)
 - [v1.26.1 — 5 November 2026](#v1261--5-november-2026)
@@ -135,6 +136,22 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.27.2 — 9 November 2026
+
+Config looks like the theme everywhere: selects, checkboxes and radios, the preview beside the Appearance tabs and the Watch feeds list. A phone no longer gets key legends or key tips.
+
+### Config
+
+- **fix — Every select, checkbox and radio in Config wears the theme.** They drew the system's stepper arrows and white boxes on every page. Selects now have a chevron in the text colour and the theme's border; checkboxes and radios are a box in the theme's ink that fills with the accent, with a check, a dot or a dash.
+- **fix — The preview beside the Appearance tabs is no longer black.** It sat on the theme's darkest colour with the parts that are not the subject of the open tab dimmed to a third; it now rests on a lifted surface, the cells show, and the dimmed parts stay readable.
+- **new — Watch feeds is a table like Structure.** A framed list with a column head (*Feed*, *Status*, *Checked*, *Check every*), flat rows with a rule between them, a tint on the row under the pointer or the cursor, the summary in the same small line, and *Watch more…* in the accent.
+
+### Keyboard
+
+- **new — No key legends on a phone.** On a touch device without a mouse the line of keys under the grid, the Inbox, Glances and the Config lists stays away, and so do the two key tips in the bell: a finger cannot press them.
 
 ---
 
