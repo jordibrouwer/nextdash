@@ -153,6 +153,13 @@ Config looks like the theme everywhere: selects, checkboxes and radios, the prev
 
 - **new — No key legends on a phone.** On a touch device without a mouse the line of keys under the grid, the Inbox, Glances and the Config lists stays away, and so do the two key tips in the bell: a finger cannot press them.
 
+### Docs
+
+- **docs — Cheat sheet header names `?`.** The lead line of `nextDash-cheatsheet.html` and the PDF (root and `static/`) still said `!` or F1 opens the searchable live list; since v1.27.0 `!` opens finders and `?` opens Keys and help. The line now reads `?` or F1 and names Keys and help (`scripts/generate-cheatsheet.cjs`).
+- **docs — Manual, Help and the picture.** §4 says a phone shows no key legends and §14 describes the Watch feeds list as a table with a column head; the Watch feeds Help panel says the same in all six languages, and `12-watch-feeds-config.jpg` is taken again.
+- **docs — Translations.** The four column heads of the Watch feeds table in Dutch, German, French, Spanish and Chinese.
+- **docs — `static/data/whats-new/v1.27.2.json` and its index entry, held back;** `NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v369`, `DASHBOARD_RELEASE` stays on v1.27.0, and `whats-new-hidden-release.spec.js` names v1.27.2 among the held-back releases.
+
 ---
 
 ## v1.27.1 — 8 November 2026

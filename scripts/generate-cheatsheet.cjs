@@ -312,7 +312,7 @@ const html = `<!DOCTYPE html>
     <pre class="logo" aria-label="nextDash">${esc(logoAscii)}</pre>
     <p class="brand-tag">keyboard shortcuts</p>
   </header>
-  <p class="lead">Press <strong>!</strong> or <strong>F1</strong> on the dashboard for the searchable live list (also <strong>Config → Help → Keyboard</strong>). <code>:cheat</code> and <code>:help</code> open the same modal. This printable sheet is generated from the same source.</p>
+  <p class="lead">Press <strong>?</strong> or <strong>F1</strong> on the dashboard for <strong>Keys and help</strong>, the searchable live list (also <strong>Config → Help → Keyboard</strong>). <code>:cheat</code> and <code>:help</code> open the same modal. This printable sheet is generated from the same source.</p>
   <main class="sheet">
 ${sections.join('\n')}
   </main>
