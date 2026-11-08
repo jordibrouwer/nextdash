@@ -165,7 +165,10 @@
     padding: 10px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
     border-radius: var(--radius-7, 12px);
-    background: var(--background-primary, transparent);
+    /* A page of the dashboard seen small, on a surface lifted from the theme's
+       own: the bare --background-primary is the darkest colour a theme has, and
+       sat in the glass of Config as a black hole on every dark theme. */
+    background: color-mix(in srgb, var(--background-secondary, #888) 88%, var(--text-primary, #fff) 10%);
     font-size: 10px;
     line-height: 1.3;
 }
@@ -176,7 +179,7 @@
 }
 
 .config-preview:not([data-preview-focus="all"]) [data-pv-part] {
-    opacity: 0.35;
+    opacity: 0.55;
 }
 
 .config-preview[data-preview-focus="head"] [data-pv-part="head"],
@@ -197,7 +200,7 @@
 .config-preview[data-preview-focus="clock"] [data-pv-part="head"] > :not(.config-pv-name-block),
 .config-preview[data-preview-focus="clock"] .config-pv-title,
 .config-preview[data-preview-focus="actions"] [data-pv-part="head"] > :not([data-pv-part="actions"]) {
-    opacity: 0.35;
+    opacity: 0.55;
 }
 
 .config-pv-head {
@@ -321,8 +324,8 @@
 .config-pv-grid i {
     height: 22px;
     border-radius: 3px;
-    background: color-mix(in srgb, var(--background-secondary, #888) 80%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border-primary, #888) 50%, transparent);
+    background: color-mix(in srgb, var(--text-primary, #888) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-primary, #888) 24%, transparent);
 }
 
 .config-preview[data-preview-density="compact"] .config-pv-grid i {
