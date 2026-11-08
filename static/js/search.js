@@ -219,7 +219,7 @@ class SearchComponent {
                 // The field holds what was typed after the mode key; the mode key
                 // itself is the badge, and stays in currentQuery.
                 const raw = e.target.value;
-                const prefix = (this.currentQuery.startsWith(':') || this.currentQuery.startsWith('!') || this.currentQuery.startsWith('=') || this.currentQuery.startsWith('*')) ? this.currentQuery[0] : '';
+                const prefix = this._hiddenModePrefix();
                 const inCommandMode = this.currentQuery.startsWith(':');
                 const inFinderMode = this.currentQuery.startsWith('!');
                 const inGlobalMode = this.currentQuery.startsWith('@');
@@ -455,7 +455,7 @@ class SearchComponent {
      * than a mode, has no pill in the switch, and reads as a variant of search
      * rather than as a fourth place to be.
      */
-    static MODE_ENTRY = { '>': '', ':': ':', '!': '!', '/': 'tag:', '*': '*', '=': '=' };
+    static MODE_ENTRY = { '>': '', ':': ':', '!': '!', '/': 'tag:', '#': 'tag:', '*': '*', '=': '=' };
 
     static WEB_RECENT_KEY = 'nextdash.webSearchRecent';
 
@@ -496,6 +496,73 @@ class SearchComponent {
         if (q === SearchComponent.TAG_MODE_QUERY || q === SearchComponent.RECENT_MODE_QUERY) return true;
         if (q === SearchComponent.ASSISTANT_MODE_QUERY) return true;
         return /^! ?[A-Za-z0-9]*\s?$/.test(q);
+    }
+
+    /**
+     * What the tag mode lists: the bookmarks the expression selects, and in
+     * front of them what could be typed next -- tags that complete the word
+     * being typed, or AND and OR once a tag is done.
+     */
+    _tagModeMatches() {
+        const parts = this._tagModeParts();
+        this._tagPartsCache = { query: this.currentQuery, parts };
+        return parts.bookmarks;
+    }
+
+    /** What could be typed next in tag mode, as the completions the Filters group shows. */
+    _tagModeCompletions() {
+        const cached = this._tagPartsCache;
+        return (cached && cached.query === this.currentQuery ? cached.parts : this._tagModeParts()).completions;
+    }
+
+    /** Whether the Filters group shows its rows open in tag mode: not once a finished expression has bookmarks, or Enter would fill AND in instead of opening one. */
+    _tagModeFiltersOpen() {
+        const cached = this._tagPartsCache;
+        const parts = cached && cached.query === this.currentQuery ? cached.parts : this._tagModeParts();
+        return parts.open;
+    }
+
+    _tagModeParts() {
+        const t = (key, fallback, vars = {}) => this.dashboardLabel(key, fallback, vars);
+        const body = String(this.currentQuery).slice(SearchComponent.TAG_MODE_QUERY.length);
+        const parsed = SearchComponent.parseTagExpression(body);
+        const pool = this._collectFilterBookmarkPool();
+        const out = [];
+        const bookmarks = [];
+        const lastToken = parsed.tokens[parsed.tokens.length - 1] || '';
+        const spaced = body === '' || /\s$/.test(body);
+        const lastIsOperator = SearchComponent.isTagOperator(lastToken);
+        const lastIsFilter = parsed.other.includes(lastToken);
+        const typing = !spaced && lastToken && !lastIsOperator && !lastIsFilter;
+        const quote = (tag) => (/\s/.test(tag) ? `"${tag}"` : tag);
+        const add = (completion, name) => out.push({ shortcut: '↳', name, completion, type: 'filter-completion' });
+
+        if (typing) {
+            const base = body.slice(0, body.length - lastToken.length);
+            const prefix = lastToken.replace(/"/g, '').replace(/^#+/, '');
+            this._getTagFilterSuggestions(pool, { prefix, limit: 12 })
+                .forEach((tag) => add(`tag:${base}${quote(tag)} `, t('filterCompletionTag', 'Tag: {value}', { value: tag })));
+        } else if (body === '' || lastIsOperator) {
+            const glue = body === '' || spaced ? '' : ' ';
+            this._getTagFilterSuggestions(pool, { limit: SearchComponent.TOP_TAG_FILTER_SUGGESTIONS })
+                .forEach((tag) => add(`tag:${body}${glue}${quote(tag)} `, t('filterCompletionTag', 'Tag: {value}', { value: tag })));
+        } else if (spaced && !lastIsFilter) {
+            add(`tag:${body}AND `, t('filterCompletionAnd', '{op} — bookmarks that have both tags', { op: 'AND' }));
+            add(`tag:${body}OR `, t('filterCompletionOr', '{op} — bookmarks that have either tag', { op: 'OR' }));
+        }
+
+        if (parsed.groups.length || parsed.not.length) {
+            const filters = this._getActiveFilters(this.parseSearchFilters(parsed.other.join(' ')).filters);
+            pool
+                .filter((bookmark) => SearchComponent.matchesTagExpression(bookmark, parsed.groups, parsed.not)
+                    && this.matchesAdvancedFilters(bookmark, filters))
+                .forEach((bookmark) => bookmarks.push({ shortcut: bookmark.shortcut || 'FILTER', bookmark, type: 'bookmark' }));
+        }
+        // Open while a word is being typed that is not yet a whole tag, or when
+        // nothing matches; closed once the expression finds bookmarks.
+        const wholeTag = typing && pool.some((b) => (b.tags || []).some((tag) => String(tag).toLowerCase() === lastToken.replace(/"/g, '').replace(/^#+/, '').toLowerCase()));
+        const open = !bookmarks.length || lastIsOperator || (typing && !wholeTag);
+        return { completions: out, bookmarks, open };
     }
 
     /** The query a mode key opens its mode with. */
@@ -1228,7 +1295,9 @@ class SearchComponent {
             return;
         }
 
-        if (this.searchActive && Object.prototype.hasOwnProperty.call(SearchComponent.MODE_ENTRY, key) && this._isAtModeEntry()) {
+        // A # starting a finder's search or a question to the assistant is text (a hashtag).
+        const hashIsText = key === '#' && (this.currentQuery.startsWith('!') || this._isAssistantMode());
+        if (this.searchActive && !hashIsText && Object.prototype.hasOwnProperty.call(SearchComponent.MODE_ENTRY, key) && this._isAtModeEntry()) {
             e.preventDefault();
             const next = this._modeEntryQuery(key);
             if (next !== this.currentQuery) {
@@ -1312,6 +1381,18 @@ class SearchComponent {
                 this.commandsComponent.contextBookmark = selected;
             }
             this.addToQuery(':');
+            return;
+        }
+
+        // # on the dashboard opens the palette on the tags, where #tag and tag
+        // mean the same thing. Inside the palette it is a mode key at the entry
+        // (handled above) and a character anywhere else.
+        if (key === '#' && !this.searchActive) {
+            const dash = window.dashboardInstance;
+            if (dash && (!dash.isBookmarksView?.() || dash.config?.isActiveView?.())) return;
+            e.preventDefault();
+            this.openInTagMode();
+            if (!this.searchActive) this.showSearch();
             return;
         }
 
@@ -1884,6 +1965,62 @@ class SearchComponent {
         return String(text || '').match(/(?:[^\s"]+|"[^"]*"?)+/g) || [];
     }
 
+    /**
+     * Tag mode: a query that starts with `tag:`. What follows is a tag
+     * expression -- tags joined with AND and OR, written the same in every
+     * language -- not a search text.
+     */
+    static isTagModeQuery(query) {
+        return String(query || '').startsWith(SearchComponent.TAG_MODE_QUERY);
+    }
+
+    static isTagOperator(token) {
+        return token === 'AND' || token === 'OR';
+    }
+
+    /**
+     * `docker AND linux OR network` -> [['docker', 'linux'], ['network']]:
+     * OR splits the alternatives, AND (or just a space) joins what must all be
+     * there, AND binds tighter. A dangling operator and the other filters
+     * (`status:dead`) are set aside; the latter come back as `other`.
+     */
+    static parseTagExpression(body) {
+        const tokens = SearchComponent.filterTokens(body);
+        const groups = [];
+        const other = [];
+        const not = [];
+        let current = [];
+        tokens.forEach((token) => {
+            if (token === 'OR') {
+                if (current.length) groups.push(current);
+                current = [];
+                return;
+            }
+            if (token === 'AND') return;
+            const negated = token.startsWith('-') && token.length > 1;
+            const core = negated ? token.slice(1) : token;
+            const lower = core.toLowerCase();
+            if (SearchComponent.FILTER_KEYS.some((key) => key !== 'tag' && lower.startsWith(`${key}:`))) {
+                other.push(token);
+                return;
+            }
+            // `tag:x` and `#x` inside the expression name the tag x, as bare x does.
+            const term = core.replace(/"/g, '').replace(/^(tag:)?#*/i, '').trim().toLowerCase();
+            if (!term) return;
+            if (negated) not.push(term); else current.push(term);
+        });
+        if (current.length) groups.push(current);
+        return { groups, other, not, tokens };
+    }
+
+    /** Does a bookmark's tag list satisfy a parsed tag expression? */
+    static matchesTagExpression(bookmark, groups, not = []) {
+        const tags = (bookmark?.tags || []).map((tag) => String(tag).toLowerCase());
+        const has = (term) => tags.some((tag) => tag.includes(term));
+        if (not.some(has)) return false;
+        return groups.length === 0 || groups.some((group) => group.every(has));
+    }
+
     /** A tag as a filter, quoted when it has a space in it. */
     static tagFilter(tag) {
         return /\s/.test(tag) ? `tag:"${tag}"` : `tag:${tag}`;
@@ -1909,6 +2046,19 @@ class SearchComponent {
             const negated = part.startsWith('-') && part.length > 1;
             const body = negated ? part.slice(1) : part;
             const lower = body.toLowerCase();
+            // `#work` (or `##work`) is `tag:work`; a lone # is a tag not yet typed.
+            // #123 and #ff0000 are a number and a colour, not tags: they stay text.
+            if (/^#(\d+|(?=[0-9a-f]*\d)(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8}))$/i.test(body)) {
+                remaining.push(part);
+                return;
+            }
+            if (/^#/.test(body)) {
+                const tagValue = lower.replace(/^#+/, '').replace(/"/g, '');
+                if (tagValue) {
+                    if (negated) filters.not.tag = tagValue; else filters.tag = tagValue;
+                }
+                return;
+            }
             const key = SearchComponent.FILTER_KEYS.find((name) => lower.startsWith(`${name}:`));
             if (!key) {
                 remaining.push(part);
@@ -1982,6 +2132,8 @@ class SearchComponent {
 
         const parts = SearchComponent.filterTokens(text);
         return parts.every((part) => {
+            // A #tag stays open to suggestions while it is being typed.
+            if (/^-?#/.test(part)) return false;
             const lower = part.toLowerCase();
             if (lower.startsWith('status:')) {
                 return SearchComponent.STATUS_FILTER_VALUES.has(lower.slice(7));
@@ -2298,6 +2450,20 @@ class SearchComponent {
             type: 'filter-completion'
         });
 
+        if (/^-?#/.test(currentToken)) {
+            if (/\s$/.test(query)) return [];
+            const value = currentToken.replace(/^-?#+/, '').replace(/"/g, '');
+            return this._getTagFilterSuggestions(pool, {
+                prefix: value,
+                limit: value ? 12 : SearchComponent.TOP_TAG_FILTER_SUGGESTIONS,
+            }).map((tag) => ({
+                shortcut: '↳',
+                name: t('filterCompletionTag', 'Tag: {value}', { value: tag }),
+                completion: `${prefixWithSpace}${currentToken.startsWith('-') ? '-' : ''}#${/\s/.test(tag) ? `"${tag}"` : tag} `,
+                type: 'filter-completion',
+            }));
+        }
+
         if (currentToken === '' || SearchComponent.FILTER_KEYS.includes(currentToken)) {
             return this.getFilterHintItems(prefixWithSpace);
         }
@@ -2575,13 +2741,26 @@ class SearchComponent {
      */
     _displayQuery() {
         const q = this.currentQuery || '';
-        return (q.startsWith(':') || q.startsWith('!') || q.startsWith('=') || q.startsWith('*')) ? q.slice(1).replace(/^ /, '') : q;
+        const prefix = this._hiddenModePrefix();
+        if (!prefix) return q;
+        // The tag mode's "tag:" is a filter word, not a mode key: nothing
+        // follows it but the tag itself, so no space is skipped there.
+        return prefix === 'tag:' ? q.slice(prefix.length) : q.slice(1).replace(/^ /, '');
+    }
+
+    /** What the badge says for the current mode, and the field therefore leaves out: `:` `!` `=` `*` or `tag:`. */
+    _hiddenModePrefix() {
+        const q = this.currentQuery || '';
+        if (q.startsWith(':') || q.startsWith('!') || q.startsWith('=') || q.startsWith('*')) return q[0];
+        if (q.startsWith(SearchComponent.TAG_MODE_QUERY)) return SearchComponent.TAG_MODE_QUERY;
+        return '';
     }
 
     removeLastChar() {
         // A lone mode key is the empty mode: backspace leaves the mode for plain
         // search, with the panel still open, as an empty field would have it.
-        if (this.currentQuery === ':' || this.currentQuery === '!' || this.currentQuery === '=' || this.currentQuery === '*') {
+        if (this.currentQuery === ':' || this.currentQuery === '!' || this.currentQuery === '=' || this.currentQuery === '*'
+            || this.currentQuery === SearchComponent.TAG_MODE_QUERY) {
             this.currentQuery = '';
             this.commandsComponent.resetState();
             this._scheduleUpdateSearch();
@@ -2667,6 +2846,10 @@ class SearchComponent {
              */
             // Handle commands
             this.searchMatches = this.commandsComponent.handleCommand(this.currentQuery);
+        } else if (SearchComponent.isTagModeQuery(this.currentQuery)) {
+            this.searchMatches = this._tagModeMatches();
+            // The last real search, for :save -- a tag search is one.
+            if (this.currentQuery.length > SearchComponent.TAG_MODE_QUERY.length) this.lastNonCommandQuery = this.currentQuery;
         } else if (this.currentQuery.startsWith('!')) {
             // Handle finders
             this.searchMatches = this.findersComponent.handleQuery(this.currentQuery);
@@ -2813,14 +2996,16 @@ class SearchComponent {
 
         if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('!') && !this._isAssistantMode() && this.currentQuery.length > 0) {
             const raw = this._stripModeSwitchPrefix(this.currentQuery);
-            const filterAutocompleteMatches = this._isCompleteFilterQuery(raw)
-                ? []
-                : this.getFilterAutocompleteMatches(raw);
+            const filterAutocompleteMatches = SearchComponent.isTagModeQuery(raw)
+                ? this._tagModeCompletions()
+                : (this._isCompleteFilterQuery(raw) ? [] : this.getFilterAutocompleteMatches(raw));
             if (filterAutocompleteMatches.length > 0) {
                 const currentToken = this._getCurrentFilterToken(raw);
-                const filtersIsExpanded = currentToken.includes(':')
-                    ? true
-                    : !this.emptyStateExpandedGroups.has('filters');
+                const filtersIsExpanded = SearchComponent.isTagModeQuery(raw)
+                    ? this._tagModeFiltersOpen()
+                    : (currentToken.includes(':')
+                        ? true
+                        : !this.emptyStateExpandedGroups.has('filters'));
                 const filterHeader = {
                     type: 'command-group-header',
                     groupId: 'inline_filters',
@@ -2906,7 +3091,7 @@ class SearchComponent {
         { id: 'bookmarks', prefix: '', labelKey: 'dashboard.scopeBookmarks', fallback: 'bookmarks' },
         { id: 'commands', prefix: ':', labelKey: 'dashboard.commandsLabel', fallback: 'commands' },
         { id: 'finders', prefix: '!', labelKey: 'dashboard.findersLabel', fallback: 'finders' },
-        { id: 'tags', prefix: '/', labelKey: 'dashboard.tagsLabel', fallback: 'tags' },
+        { id: 'tags', prefix: '#', labelKey: 'dashboard.tagsLabel', fallback: 'tags' },
         { id: 'recent', prefix: '*', labelKey: 'dashboard.headerRecentsLabel', fallback: 'recents' },
     ];
 
@@ -3600,7 +3785,7 @@ class SearchComponent {
         // to press when a single-letter bookmark shortcut would fire instead.
         const chevron = document.querySelector('.search-chevron');
         if (chevron) {
-            const KEYS = { search: '>', command: ':', finder: '!', global: '@', fuzzy: '/', tag: '/', recent: '*', assistant: '=' };
+            const KEYS = { search: '>', command: ':', finder: '!', global: '@', fuzzy: '/', tag: '#', recent: '*', assistant: '=' };
             chevron.textContent = KEYS[mode] || '>';
             chevron.dataset.mode = mode;
         }

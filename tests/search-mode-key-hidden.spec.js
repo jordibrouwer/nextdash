@@ -98,3 +98,30 @@ test('the * in the open palette switches to recents and is not printed in the fi
     await expect(field(page)).toHaveText('');
     await expect(badge(page)).toHaveText('*');
 });
+
+test('the / opens tags and the "tag:" is not printed in the field', async ({ page }) => {
+    await dashboard(page);
+    await page.keyboard.type('>');
+    await expect(page.locator('#shortcut-search.show')).toBeVisible();
+    await page.keyboard.type('/');
+    await expect.poll(() => internal(page)).toBe('tag:');
+    await expect(page.locator('#shortcut-search.show')).toBeVisible();
+    await expect(field(page)).toHaveText('');
+    await page.keyboard.type('sec');
+    await expect(field(page)).toHaveText('sec');
+    expect(await internal(page)).toBe('tag:sec');
+    // Backspace through the tag, then once more: out of the mode, not into "tag".
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace');
+    await expect.poll(() => internal(page)).toBe('tag:');
+    await page.keyboard.press('Backspace');
+    await expect.poll(() => internal(page)).toBe('');
+});
+
+test('the tags entry in the left column is marked #', async ({ page }) => {
+    await dashboard(page);
+    await page.keyboard.type('>');
+    await expect(page.locator('#shortcut-search.show')).toBeVisible();
+    await expect(page.locator('.search-mode-tab[data-mode="tag"] .search-mode-tab-key')).toHaveText('#');
+});
