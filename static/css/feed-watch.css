@@ -472,6 +472,92 @@ body.no-animations .feed-news-bar > i { transition: none; }
 }
 .fwm-choice span { color: var(--text-secondary); font-size: var(--text-2xs, 0.75rem); }
 .fwm-choice:hover, .fwm-choice:focus-visible { background: color-mix(in srgb, var(--accent-primary) 8%, transparent); border-color: var(--border-secondary); outline: none; }
+/*
+ * The watched feeds as a Structure table: a framed list with a column head,
+ * flat rows that touch with a hairline between them, a tint on the row under
+ * the pointer or the cursor, the summary in the same small mono line, and the
+ * one action that adds (Watch more…) in the accent -- the look of Categories,
+ * Pages and Finders under Structure (config-structure.css), from the same
+ * hairline and tint measures.
+ */
+#config-fw-list {
+    --structure-hair: color-mix(in srgb, var(--border-primary) 55%, transparent);
+    --structure-tint: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    --structure-tint-strong: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    --structure-mono: var(--font-family-mono, ui-monospace, monospace);
+    --fwm-cols: auto minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 0.6fr) 13.5rem;
+}
+#config-fw-list .feed-watch-list-summary {
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-family: var(--structure-mono);
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+#config-fw-list .fwm-toolbar { margin-bottom: var(--space-3, 0.75rem); }
+#config-fw-list .fwm-toolbar [data-fwm-more] {
+    margin-left: auto;
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background: transparent;
+}
+#config-fw-list .fwm-list {
+    gap: 0;
+    border: 1px solid var(--structure-hair);
+    border-radius: var(--radius-4, 8px);
+    overflow: hidden;
+}
+#config-fw-list .fwm-colhead {
+    display: grid;
+    grid-template-columns: var(--fwm-cols);
+    gap: 0.6rem;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 0.6rem;
+    border-bottom: 1px solid var(--structure-hair);
+    font: 11px var(--structure-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    list-style: none;
+}
+#config-fw-list .fwm-colhead > :last-child { text-align: right; }
+#config-fw-list .feed-watch-list-row {
+    box-sizing: border-box;
+    min-height: 46px;
+    padding: 0 0.6rem;
+    border: 0;
+    border-bottom: 1px solid var(--structure-hair);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+#config-fw-list .fwm-list > :last-child { border-bottom: 0; }
+#config-fw-list .feed-watch-list-row:hover,
+#config-fw-list .feed-watch-list-row:focus-within { background: var(--structure-tint); }
+#config-fw-list .feed-watch-list-row.keyboard-selected {
+    background: var(--structure-tint-strong);
+    border-color: var(--structure-hair);
+    box-shadow: inset 3px 0 0 var(--accent-primary), inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+#config-fw-list .feed-watch-list-row.is-open { border-radius: 0; background: var(--structure-tint); }
+#config-fw-list .feed-watch-list-main strong { font-size: var(--font-size-controls); font-weight: 600; }
+#config-fw-list .fwm-detail {
+    margin-top: 0;
+    border: 0;
+    border-bottom: 1px solid var(--structure-hair);
+    border-radius: 0;
+    background: var(--structure-tint);
+}
+#config-fw-list .feed-watch-list-actions .config-btn:not(.config-btn--danger) {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+@media (max-width: 720px) {
+    #config-fw-list .fwm-colhead { display: none; }
+    #config-fw-list .feed-watch-list-row { padding-block: 0.5rem; }
+}
 @media (max-width: 720px) {
     /* Two columns: the tick, then the facts stacked with the controls under them. */
     .feed-watch-list-row { grid-template-columns: auto minmax(0, 1fr); gap: 0.35rem 0.5rem; align-items: start; }

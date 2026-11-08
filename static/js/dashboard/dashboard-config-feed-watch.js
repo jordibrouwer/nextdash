@@ -194,6 +194,9 @@
             </li>${open ? detailHtml(r) : ''}`;
         };
 
+        // The column head of the table, over the same template as its rows.
+        const colHead = () => `<li class="fwm-colhead" aria-hidden="true"><span></span><span>${esc(t('config.feedWatchColFeed', 'Feed'))}</span><span>${esc(t('config.feedWatchColStatus', 'Status'))}</span><span>${esc(t('config.feedWatchColChecked', 'Checked'))}</span><span>${esc(t('config.feedWatchColControls', 'Check every'))}</span></li>`;
+
         const bulkHtml = (n) => `
             <div class="fwm-bulk" role="toolbar" aria-label="${esc(t('config.feedWatchBulkAria', 'Change the selected feeds'))}">
                 <span class="fwm-bulk-count">${esc(t('config.feedWatchSelected', '{n} selected').replace('{n}', String(n)))}</span>
@@ -301,7 +304,7 @@
             const ticked = rows.filter((r) => state.ticked.has(r.id)).length;
             live.innerHTML = rows.length
                 ? summary + toolbar + (ticked ? bulkHtml(ticked) : '')
-                    + `<ul class="fwm-list" role="list">${rows.map(rowHtml).join('')}</ul>` + legendHtml()
+                    + `<ul class="fwm-list" role="list">${colHead()}${rows.map(rowHtml).join('')}</ul>` + legendHtml()
                 : emptyHtml();
             restoreFocus(saved);
         };
