@@ -81,7 +81,7 @@ async function openFirstEditor(page, stats = null) {
     await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press('j');
     await expect(page.locator('#config-bm-list .config-bm-row.keyboard-selected')).toHaveCount(1);
-    await page.keyboard.press('e');
+    await page.keyboard.press('i');
     const panel = page.locator('#config-bm-panel');
     await expect(panel).toHaveAttribute('data-bm-panel-mode', 'single');
     return panel;
@@ -97,7 +97,7 @@ async function openFirstDialog(page) {
     const row = page.locator('#config-bm-list .config-bm-row.keyboard-selected');
     await expect(row).toHaveCount(1);
     const key = await row.getAttribute('data-bm-key');
-    await page.keyboard.press('Shift+E');
+    await page.keyboard.press('e');
     await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
     return key;
 }

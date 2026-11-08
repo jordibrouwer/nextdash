@@ -209,13 +209,22 @@
                 <button type="button" class="config-btn config-btn--small" data-fwm-bulk="clear">${esc(t('config.feedWatchClearSelection', 'Clear'))}</button>
             </div>`;
 
-        const legendHtml = () => `<p class="config-list-keyboard-legend" aria-hidden="true">${this.renderKeyboardLegendPairs([
-            ['j / k', t('config.listKeyMove', 'move')],
-            ['Enter', t('config.feedWatchKeyDetails', 'details')],
-            ['m', t('config.feedWatchKeyMute', 'mute')],
-            ['p', t('config.feedWatchKeyPause', 'pause')],
-            ['Delete', t('config.feedWatchKeyStop', 'stop watching')],
-        ])}</p>`;
+        const legendHtml = () => {
+            const where = this.configLegendWhere?.() || 'below';
+            if (where === 'off') return '';
+            return `<p class="config-list-keyboard-legend${where === 'above' ? ' is-above' : ''}" aria-hidden="true">${this.renderKeyboardLegendPairs([
+                ['j / k', t('config.listKeyMove', 'move')],
+                ['Enter', t('config.feedWatchKeyDetails', 'details')],
+                ['m', t('config.feedWatchKeyMute', 'mute')],
+                ['p', t('config.feedWatchKeyPause', 'pause')],
+                ['d', t('config.feedWatchKeyStop', 'stop watching')],
+                ['Esc', t('config.listKeyClear', 'clear')],
+                ['Alt+↑/↓', t('config.formKeySections', 'sections')],
+                ['?', t('config.formKeyCheatSheet', 'cheat sheet')],
+                ['Shift+H', t('config.formKeyLegend', 'hide / show this')],
+                ['Shift+S', t('config.formKeyModeStrip', 'mode strip')],
+            ])}</p>`;
+        };
 
         /*
          * What had focus, said in a way that survives the repaint: the row and
@@ -635,6 +644,18 @@
         const take = () => { e.preventDefault(); e.stopImmediatePropagation(); };
         const focusCursor = () => {
             paint();
+            const cur = state.cursor ? rowById(state.cursor) : null;
+            if (cur && window.ModeStrip && window.ModeStripSuggest?.suggestConfigRow) {
+                if (state._stripKey !== state.cursor) { state._stripKey = state.cursor; state._stripSeed = (state._stripSeed || 0) + 1; }
+                window.ModeStrip.set('cursor', {
+                    suggestions: window.ModeStripSuggest.suggestConfigRow([
+                        { key: 'm', verb: cur.feed.muted === true ? 'unmute' : 'mute' },
+                        { key: 'p', verb: cur.feed.paused === true ? 'resume' : 'pause' },
+                        { key: 'd', verb: 'stop watching' },
+                        { key: 'Enter', verb: 'details' },
+                    ], state._stripSeed),
+                });
+            }
             const row = document.querySelector(`[data-fw-row="${CSS.escape(state.cursor)}"]`);
             row?.focus({ preventScroll: true });
             row?.scrollIntoView({ block: 'nearest' });
@@ -663,11 +684,12 @@
             void update(r, key === 'm' ? { muted: r.feed.muted !== true } : { paused: r.feed.paused !== true }).then(focusCursor);
             return true;
         }
-        if (key === 'Delete' || key === 'Backspace') {
+        if (key === 'Delete' || key === 'Backspace' || key === 'd') {
             take();
             void stop([r]).then(() => {
                 const left = collect();
                 if (left.length && !rowById(state.cursor)) state.cursor = left[0].id;
+                if (!left.length) { state.cursor = null; window.ModeStrip?.set?.(null); }
                 focusCursor();
             });
             return true;
@@ -675,7 +697,20 @@
         return false;
     }
 
+    /** Esc: drop the row cursor first, then leave. True when there was one. */
+    function clearCursor() {
+        const state = stateOf(this);
+        if (!state.cursor || !this._fwActions) return false;
+        state.cursor = null;
+        window.ModeStrip?.set?.(null);
+        this._fwActions.paint();
+        return true;
+    }
+
     global.ConfigFeedWatch = {
+        clearCursor(config) {
+            return clearCursor.call(config);
+        },
         bindList(config, container) {
             return bindFeedWatchList.call(config, container);
         },

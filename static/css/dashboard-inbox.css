@@ -1452,3 +1452,13 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
     position: absolute;
     inset: -5px 0;
 }
+
+/* The legend stays in view at the foot of the window while the list is longer than
+   the screen, instead of waiting at the very end of it. */
+.inbox-body-own .inbox-legend-wrap {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding-bottom: var(--space-2, 0.5rem);
+    background: var(--surface-1, var(--bg-primary, transparent));
+}

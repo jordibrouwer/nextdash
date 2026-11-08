@@ -62,7 +62,7 @@
             // equal buttons.
             return `
                 ${healthOn ? `<button type="button" class="lvs-action lvs-action--primary" data-bm-work-through
-                        title="${esc(t('config.bmWorkThroughHint', 'Go through this list one bookmark at a time'))}">${esc(t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>` : ''}
+                        title="${esc(t('config.bmWorkThroughHint', 'Go through this list one bookmark at a time'))}">${esc(t('dashboard.healthFocus', 'Work through'))}<kbd>u</kbd></button>` : ''}
                 <span class="config-bm-header-more">
                     <button type="button" class="lvs-action" data-bm-header-more aria-haspopup="menu" aria-expanded="false">${esc(t('config.bmCollectionMenu', 'Collection'))} <span aria-hidden="true">▾</span></button>
                     <div class="config-structure-menu config-bm-header-menu" role="menu" data-bm-header-menu hidden>

@@ -137,7 +137,7 @@ class DashboardConfigContextMenu {
         const healthItems = c.bmHealthIssue?.(bookmark)
             ? [
                 { id: 'recheck', label: this.t('dashboard.healthRecheck', 'Re-check'), icon: '↻' },
-                { id: 'health-details', label: this.t('config.contextHealthDetails', 'Health details'), icon: '♥' },
+                { id: 'health-details', label: this.t('config.contextHealthDetails', 'Health details'), icon: '♥', key: 'V' },
             ]
             : [];
         // Where Config differs from the grid: this list is the one you filter,
@@ -146,43 +146,44 @@ class DashboardConfigContextMenu {
         // with no tags has no tag to narrow to.
         const filterItems = [
             ...(category
-                ? [{ id: 'filter-category', label: this.t('config.contextFilterCategory', 'Show only this category'), icon: '⛃' }]
+                ? [{ id: 'filter-category', label: this.t('config.contextFilterCategory', 'Show only this category'), icon: '⛃', key: 'B' }]
                 : []),
             ...(category
-                ? [{ id: 'find-tags-category', label: this.t('config.contextFindTagsCategory', 'Find tags for this category'), icon: '#' }]
+                ? [{ id: 'find-tags-category', label: this.t('config.contextFindTagsCategory', 'Find tags for this category'), icon: '#', key: '#' }]
                 : []),
-            { id: 'filter-page', label: this.t('config.contextFilterPage', 'Show only this page'), icon: '⌗' },
+            { id: 'filter-page', label: this.t('config.contextFilterPage', 'Show only this page'), icon: '⌗', key: 'W' },
             ...(tags.length
-                ? [{ id: 'filter-tag', label: this.t('config.contextFilterTag', 'Show only tag “{tag}”', { tag: tags[0] }), icon: '#' }]
+                ? [{ id: 'filter-tag', label: this.t('config.contextFilterTag', 'Show only tag “{tag}”', { tag: tags[0] }), icon: '#', key: 'F' }]
                 : []),
         ];
 
         // Fewer entries, in groups. Pin, the dashboard, the title and favicon
         // refreshes, Select, local copies and the Web Archive are left to the
         // side panel, the grid and the tick box, and Re-check to the Health tab.
+        const mod = window.ShortcutFormat?.modifierLabel?.() || 'Ctrl';
         const group = (items) => items.map((item, i) => (i === 0 ? { ...item, divider: true } : item));
         return [
-            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
-            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
-            { id: 'share', label: c.shareBookmarkActionLabel(), icon: '↪' },
-            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦' },
+            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${mod}+Enter` },
+            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
+            { id: 'share', label: c.shareBookmarkActionLabel(), icon: '↪', key: 'S' },
+            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Q' },
             ...group([
                 // Waiting on Unsorted: promote it onto a page, as the Inbox does.
                 ...(c.isUnsortedBookmark?.(bookmark)
                     ? [{ id: 'promote', label: this.t('config.contextPromote', 'Promote…'), icon: '⇪' }] : []),
-                { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎' },
+                { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎', key: 'E' },
                 // With or without tags: one already tagged can still be
                 // missing one, and what it was refused stays refused.
-                { id: 'find-tags', label: this.t('config.contextFindTags', 'Find tags'), icon: '⌕' },
+                { id: 'find-tags', label: this.t('config.contextFindTags', 'Find tags'), icon: '⌕', key: 'Y' },
             ]),
             ...group([
-                { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
+                { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true, key: 'C' },
                 // Re-checking is the Health tab's, one click from here.
                 ...healthItems.filter((item) => item.id !== 'recheck'),
-                ...(healthItems.length ? [{ id: 'health-large', label: this.t('config.contextHealthLarge', 'Health charts…'), icon: '⤢' }] : []),
+                ...(healthItems.length ? [{ id: 'health-large', label: this.t('config.contextHealthLarge', 'Health charts…'), icon: '⤢', key: 'L' }] : []),
             ]),
             ...group(filterItems),
-            { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
+            { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'D' },
         ];
     }
 
@@ -239,14 +240,19 @@ class DashboardConfigContextMenu {
             label.textContent = action.label;
             item.appendChild(label);
 
-            if (action.submenu) {
-                item.setAttribute('aria-haspopup', 'menu');
-                const caret = document.createElement('span');
-                caret.className = 'move-popover-submenu-caret';
-                caret.textContent = '▸';
-                caret.setAttribute('aria-hidden', 'true');
-                item.appendChild(caret);
+            // The key that does the same, as on the dashboard's menu.
+            if (action.key) {
+                const kbd = document.createElement('kbd');
+                kbd.className = 'move-popover-item-key';
+                kbd.textContent = action.key;
+                kbd.setAttribute('aria-hidden', 'true');
+                item.setAttribute('aria-keyshortcuts', action.key);
+                item.appendChild(kbd);
             }
+
+            // The submenu is announced to a screen reader; no arrow is drawn, the
+            // key chip is the only mark at the end of the row.
+            if (action.submenu) item.setAttribute('aria-haspopup', 'menu');
 
             item.addEventListener('click', () => {
                 this.close();
@@ -561,7 +567,7 @@ class DashboardConfigContextMenu {
                 c.openBookmarkByKey(key, { newTab: true });
                 break;
             case 'edit':
-                c.focusWorkbenchPanel(key);
+                void c.openBookmarkEditModal(key);
                 break;
             case 'check-mode':
                 // Not toggleBookmarkMenu: that opens the row's own badge menu,

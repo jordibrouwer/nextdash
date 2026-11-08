@@ -233,22 +233,24 @@ test.describe('bookmarks: score column and Health\'s keys', () => {
     const posts = [];
     page.on('request', (r) => { if (r.method() === 'POST' && /health\/(update-status|cache-scan)/.test(r.url())) posts.push(r.url()); });
     await selectRow(page, bookmarks[0].name);
-    await page.keyboard.press('p');
+    await page.keyboard.press('r');
     await expect.poll(() => posts.length).toBeGreaterThan(0);
   });
 
-  test('Shift+R refetches the report with refresh', async ({ page }) => {
+  test('Shift+R is not a key of the view: refreshing is in the Collection menu', async ({ page }) => {
     const { bookmarks } = await openBookmarksWithHealth(page);
     await selectRow(page, bookmarks[0].name);
-    const refreshed = page.waitForRequest((r) => /\/api\/bookmark-health\?refresh=1/.test(r.url()));
+    let refreshed = false;
+    page.on('request', (r) => { if (/\/api\/bookmark-health\?refresh=1/.test(r.url())) refreshed = true; });
     await page.keyboard.press('Shift+R');
-    await refreshed;
+    await page.waitForTimeout(600);
+    expect(refreshed).toBe(false);
   });
 
-  test('s opens the panel\'s Health tab', async ({ page }) => {
+  test('c opens the panel\'s Health tab', async ({ page }) => {
     const { bookmarks } = await openBookmarksWithHealth(page);
     await selectRow(page, bookmarks[0].name);
-    await page.keyboard.press('s');
+    await page.keyboard.press('c');
     await expect(page.locator('#config-bm-panel [data-bm-pane="health"]')).toBeVisible();
   });
 });

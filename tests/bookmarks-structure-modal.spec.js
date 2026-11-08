@@ -65,14 +65,15 @@ test.describe('pages and categories modal', () => {
     await expect(page).toHaveURL(new RegExp(`#bookmarks/${pageId}`));
   });
 
-  test('P and C open it from the list', async ({ page }) => {
+  test('Shift+P is the Pages panel here too; the structure modal is behind Manage', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press('Shift+P');
-    await expect(modal(page).locator('[data-pt-tab="pages"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.page-overview-modal')).toBeVisible({ timeout: 5000 });
+    await expect(modal(page)).toHaveCount(0);
     await page.keyboard.press('Escape');
-    await page.keyboard.press('Shift+C');
-    await expect(modal(page).locator('[data-pt-tab="categories"]')).toHaveAttribute('aria-selected', 'true');
+    await page.locator('#config-bm-rail [data-bm-manage="pages"]').click();
+    await expect(modal(page).locator('[data-pt-tab="pages"]')).toHaveAttribute('aria-selected', 'true');
   });
 
   test('a delete confirmation opens over it', async ({ page }) => {

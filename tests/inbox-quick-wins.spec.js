@@ -150,10 +150,10 @@ test.describe('inbox quick wins', () => {
             };
         });
 
-        await page.keyboard.press('R');
-        await expect
-            .poll(() => page.evaluate(() => (window.__refreshCalls || []).some(Boolean)), { timeout: 5000 })
-            .toBe(true);
+        // Refreshing is not a key of the view any more (Shift is only for views).
+        await page.keyboard.press('Shift+R');
+        await page.waitForTimeout(500);
+        expect(await page.evaluate(() => (window.__refreshCalls || []).some(Boolean))).toBe(false);
     });
 
     // Q5

@@ -506,9 +506,9 @@ class DashboardInboxTriage {
         }
 
         const key = e.key.toLowerCase();
-        // Keep is Shift+K here as it is in the list, and read first: the
-        // lowercase test below takes k for "previous".
-        if (e.key === 'K') {
+        // Keep is m here as it is in the list (move to Unsorted), and it is read
+        // first, before the generic letters below.
+        if (e.key === 'm') {
             e.preventDefault();
             // A held key repeats every 30 ms or so: card after card went.
             if (e.repeat) return;
@@ -1032,7 +1032,7 @@ class DashboardInboxTriage {
             </div>
 
             <p class="health-focus-legend inbox-triage-hint">${esc(this.t('dashboard.inboxTriageLegend',
-                'j / k to move · Shift+K keeps it (to Unsorted) · Escape to leave'))}</p>
+                'j / k to move · m keeps it (to Unsorted) · Escape to leave'))}</p>
         `;
 
         // Rewriting the card destroys whatever was focused inside it, which

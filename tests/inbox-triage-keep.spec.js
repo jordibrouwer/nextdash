@@ -38,7 +38,7 @@ test('Keep promotes an inbox item to Unsorted without opening a modal', async ({
     await page.locator('[data-triage-pile="new"]').click();
     await expect(page.locator('[data-triage-chooser]')).toHaveCount(0);
 
-    await page.keyboard.press('Shift+K');
+    await page.keyboard.press('m');
 
     // No bookmark form modal opened.
     await expect(page.locator('#bookmark-form-modal, .bookmark-form-modal')).toBeHidden();

@@ -46,13 +46,13 @@ test.describe('the dashboard key legend on touch screens', () => {
 });
 
 test.describe('the dashboard key legend', () => {
-    test('a fresh install shows four lines, with the keyboard rows held back', async ({ page }) => {
+    test('a fresh install shows one wrapping line in priority order, with the keyboard rows held back', async ({ page }) => {
         await dashboard(page);
         await expect(legend(page)).toBeVisible();
-        await expect(legend(page).locator('.dashboard-legend-line')).toHaveCount(4);
+        await expect(legend(page).locator('.dashboard-legend-line')).toHaveCount(1);
         // Every group names the keys a first visit needs, without a keystroke.
         const text = await legend(page).innerText();
-        for (const key of ['!', '>', '/', '*', '?', ':', '1–9', '+ add bookmark', 'Shift+B', 'Shift+I', ',']) {
+        for (const key of ['!', '>', '/', '*', '?', ':', '1–9', '+ add bookmark', 'Shift+B', 'Shift+I', 'Shift+U', 'Shift+T', 'Shift+C', 'Shift+G', ',', 'Shift+P', 'Shift+N', 'Shift+W', 'Shift+A', 'Shift+E', 'Shift+H']) {
             expect(text).toContain(key);
         }
         // The rows that act on a row wait until the keyboard is in use.

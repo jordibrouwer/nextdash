@@ -89,6 +89,7 @@ class Dashboard {
             feedStatsEnabled: true,
             feedStatsKeepDays: 90,
             showGridKeyLegend: true,
+            showModeStrip: true,
             columnsPerRow: 3,
             fontSize: 'm',
             showTitle: true,

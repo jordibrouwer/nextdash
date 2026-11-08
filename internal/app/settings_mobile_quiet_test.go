@@ -34,3 +34,14 @@ func TestShowFeedWatchIconDefaultsOn(t *testing.T) {
 		t.Fatal("an explicit false must stay off")
 	}
 }
+
+func TestShowModeStripDefaultsOn(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+	if !h.store.GetSettings().ShowModeStrip {
+		t.Fatal("a settings file without the key must read as on")
+	}
+	h, _ = healthRecheckTestHandlers(t, `{"showModeStrip":false}`)
+	if h.store.GetSettings().ShowModeStrip {
+		t.Fatal("an explicit false must stay off")
+	}
+}

@@ -488,7 +488,7 @@
                         <span class="search-scope-count" data-scope-count="finders"></span>
                     </button>
                     <button class="search-mode-tab search-scope" data-mode="tag" type="button" aria-pressed="false">
-                        <span class="search-mode-tab-key">/</span>
+                        <span class="search-mode-tab-key">#</span>
                         <span class="search-mode-tab-label" data-i18n="dashboard.tagsLabel">tags</span>
                         <span class="search-scope-count" data-scope-count="tags"></span>
                     </button>
@@ -647,12 +647,14 @@
     <script src="{{asset "js/action-bar-intro.js"}}" defer></script>
     <!-- After the action bar's: asks existing installs what to call them. -->
     <script src="{{asset "js/greeting-name-intro.js"}}" defer></script>
+    <script src="{{asset "js/mode-strip-intro.js"}}" defer></script>
     <script src="{{asset "js/health-bell-source.js"}}" defer></script>
     <script src="{{asset "js/feed-watch-notice.js"}}" defer></script>
     <!-- Shared bottom-left notice card; must precede the cards that define one. -->
     <script src="{{asset "js/notice-card.js"}}" defer></script>
     <script src="{{asset "js/analytics-notice.js"}}" defer></script>
     <script src="{{asset "js/look-migration-notice.js"}}" defer></script>
+    <script src="{{asset "js/shortcuts-changed-modal.js"}}" defer></script>
     <script src="{{asset "js/install-count-notice.js"}}" defer></script>
     <script src="{{asset "js/kept-pile-notice.js"}}" defer></script>
     <script src="{{asset "js/changes-tour.js"}}" defer></script>
@@ -825,7 +827,6 @@
     <script src="{{asset "js/dashboard/dashboard-notifications.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-mode-strip-suggest.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-mode-strip.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-row-letter-hint.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-visual.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-date-weather.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-preview.js"}}" defer></script>

@@ -142,9 +142,9 @@ func TestDockerViewEnabledDefaultsOn(t *testing.T) {
 }
 
 // The Containers key legend takes the Bookmarks and Inbox choices; anything
-// else, or nothing, is where it always stood: above the list.
+// else, or nothing, is where the other views put it: below the list.
 func TestDockerViewKeyLegendChoices(t *testing.T) {
-	for in, want := range map[string]string{"": "above", "above": "above", "below": "below", "off": "off", "sideways": "above"} {
+	for in, want := range map[string]string{"": "below", "above": "above", "below": "below", "off": "off", "sideways": "below"} {
 		s := Settings{DockerViewKeyLegend: in}
 		normalizeDockerSettings(&s)
 		if s.DockerViewKeyLegend != want {
@@ -178,6 +178,17 @@ func TestNormalizeDockerBookmarkLinks(t *testing.T) {
 	for k, v := range want {
 		if got[k] != v {
 			t.Fatalf("%s = %q, want %q (all %v)", k, got[k], v, got)
+		}
+	}
+}
+
+// The Config key legend takes the same three choices as the other views.
+func TestConfigViewKeyLegendChoices(t *testing.T) {
+	for in, want := range map[string]string{"": "below", "above": "above", "below": "below", "off": "off", "sideways": "below"} {
+		s := Settings{ConfigViewKeyLegend: in}
+		s.ConfigViewKeyLegend = inboxViewChoice("keyLegend", s.ConfigViewKeyLegend)
+		if s.ConfigViewKeyLegend != want {
+			t.Errorf("%q -> %q, want %q", in, s.ConfigViewKeyLegend, want)
 		}
 	}
 }

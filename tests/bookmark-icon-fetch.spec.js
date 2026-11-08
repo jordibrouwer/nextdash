@@ -107,7 +107,7 @@ async function openEditor(page, { icon = '' } = {}) {
         .toBeGreaterThan(0);
     await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press('j');
-    await page.keyboard.press('Shift+E');
+    await page.keyboard.press('e');
     await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
 }
 

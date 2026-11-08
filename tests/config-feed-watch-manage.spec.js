@@ -133,7 +133,7 @@ test.describe('one watched feed', () => {
     test('the keys: j moves, Enter opens, m mutes, Delete stops after a confirm', async ({ page, request }) => {
         await openSection(page);
         // The legend names the keys as chips.
-        await expect(list(page).locator('.config-list-keyboard-legend kbd')).toHaveText(['j / k', 'Enter', 'm', 'p', 'Delete']);
+        await expect(list(page).locator('.config-list-keyboard-legend kbd')).toHaveText(['j / k', 'Enter', 'm', 'p', 'd', 'Esc', 'Alt+↑/↓', '?', 'Shift+H', 'Shift+S']);
         await page.locator('body').click({ position: { x: 1, y: 1 } }).catch(() => {});
         await page.evaluate(() => document.activeElement?.blur());
         await page.keyboard.press('j');

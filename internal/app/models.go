@@ -826,6 +826,7 @@ type Settings struct {
 	SessionTipsFrequency       string `json:"sessionTipsFrequency,omitempty"` // "weekly" spaces the keyboard tips a week apart; anything else is daily
 	ShowShortcutTooltips       bool   `json:"showShortcutTooltips"`           // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
 	ShowGridKeyLegend          bool   `json:"showGridKeyLegend"`
+	ShowModeStrip              bool   `json:"showModeStrip"` // The mode strip on the page-name line, in every view (default on)
 	ShortcutOpenMode           string `json:"shortcutOpenMode,omitempty"`
 	RememberScrollPosition     bool   `json:"rememberScrollPosition"`   // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
 	UptimeBadges               bool   `json:"uptimeBadges"`             // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
@@ -1172,6 +1173,12 @@ type Settings struct {
 	InboxViewBadge         bool   `json:"inboxViewBadge"`         // A count on the header's Inbox icon (default on)
 	InboxViewBadgeCounts   string `json:"inboxViewBadgeCounts"`   // What that count counts: unread/all
 	InboxViewKeyLegend     string `json:"inboxViewKeyLegend"`     // The key legend: below/above the list, or off
+	// TagViewKeyLegend places the tag view's key legend: below the list (the
+	// default), above it, or off. Shift + H switches it, as on the other views.
+	TagViewKeyLegend string `json:"tagViewKeyLegend"`
+	// ConfigViewKeyLegend places the Config view's key legend: below the page
+	// (the default), above it, or off. Shift + H switches it.
+	ConfigViewKeyLegend string `json:"configViewKeyLegend"`
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -1841,6 +1848,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			EnableSectionTours:         true,
 			ShowShortcutTooltips:       false,
 			ShowGridKeyLegend:          true,
+			ShowModeStrip:              true,
 			ShortcutOpenMode:           "instant",
 			RememberScrollPosition:     true,
 			DetectSoftNotFound:         true,
@@ -3945,6 +3953,8 @@ func clampInboxViewSettings(s *Settings) {
 	s.InboxViewDblClick = inboxViewChoice("dblClick", s.InboxViewDblClick)
 	s.InboxViewBadgeCounts = inboxViewChoice("badgeCounts", s.InboxViewBadgeCounts)
 	s.InboxViewKeyLegend = inboxViewChoice("keyLegend", s.InboxViewKeyLegend)
+	s.TagViewKeyLegend = inboxViewChoice("keyLegend", s.TagViewKeyLegend)
+	s.ConfigViewKeyLegend = inboxViewChoice("keyLegend", s.ConfigViewKeyLegend)
 }
 
 var configBookmarksSortModes = map[string]bool{
@@ -4594,6 +4604,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			EnableSectionTours:              true,
 			ShowShortcutTooltips:            false,
 			ShowGridKeyLegend:               true,
+			ShowModeStrip:                   true,
 			ShortcutOpenMode:                "instant",
 			RememberScrollPosition:          true,
 			DetectSoftNotFound:              true,
@@ -4846,6 +4857,10 @@ func (fs *FileStore) getSettingsShared() Settings {
 
 	var rawSettings map[string]json.RawMessage
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
+		// On unless turned off: a file written before the strip existed never answered.
+		if _, ok := rawSettings["showModeStrip"]; !ok {
+			settings.ShowModeStrip = true
+		}
 		if _, ok := rawSettings["showCheatSheetButton"]; !ok {
 			settings.ShowCheatSheetButton = true
 		}

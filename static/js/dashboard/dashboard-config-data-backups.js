@@ -163,6 +163,8 @@
     },
 
     bindDataBackupsActions(container) {
+        // The stored backups and the trash are lists with a row cursor.
+        queueMicrotask(() => { if (this.section === 'data-backups') this.bindListKeyboard?.(container); });
         // The folds on this section remember whether they were open, so a
         // repaint after a backup or an import does not shut the panel someone
         // is working in.
@@ -1641,7 +1643,7 @@
                 + 'Set NEXTDASH_AUTO_BACKUP_DIR to an absolute path elsewhere.'))}</p>`
             : '';
         const rows = backups.map((b) => `
-            <li class="config-backup-row">
+            <li class="config-backup-row" data-backup-row="${esc(b.name)}">
                 <div class="config-backup-meta">
                     <span class="config-backup-name" title="${esc(this.formatExactTime(b.createdAt))}">${esc(this.formatRelative(b.createdAt) || b.name)}</span>
                     <span class="config-backup-size">${esc(this.formatBytes(b.size))}${esc(this.backupContentsLabel(b))}</span>
@@ -2105,7 +2107,7 @@
                 ? this.t('config.trashFromPage', 'from {page}').replace('{page}', item.pageName)
                 : '';
             return `
-                <li class="config-backup-row">
+                <li class="config-backup-row" data-trash-row="${esc(item.id)}">
                     <label class="config-toggle config-trash-select">
                         <input type="checkbox" data-trash-select="${esc(item.id)}" ${selected.has(String(item.id)) ? 'checked' : ''}
                                aria-label="${esc(this.t('config.trashSelectItem', 'Select {name}').replace('{name}', name))}">

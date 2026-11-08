@@ -176,7 +176,7 @@ test.describe('Bookmarks view: View settings, clicking', () => {
   test('health in large opens on the period View sets', async ({ page }) => {
     await open(page, { bmViewHealthRange: '7' });
     await row(page, 1).click();
-    await page.keyboard.press('Shift+H');
+    await page.keyboard.press('l');
     await expect(page.locator('[data-bm-large-range]')).toHaveValue('7');
   });
 });

@@ -44,6 +44,8 @@ test.describe('the bookmark panel', () => {
         await page.keyboard.press('i');
         await expect(panel).toBeVisible();
         await expect(panel).toHaveAttribute('data-bm-panel-key', first);
+        // i puts the cursor in the panel's first field; Escape returns it to the list.
+        await page.keyboard.press('Escape');
         await page.keyboard.press('j');
         const second = await page.locator('#config-bm-list .config-bm-row.keyboard-selected').getAttribute('data-bm-key');
         await expect(panel).toHaveAttribute('data-bm-panel-key', second);
@@ -55,7 +57,7 @@ test.describe('the bookmark panel', () => {
         const posts = await capturePosts(page);
         await openBookmarks(page);
         await focusFirstRow(page);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const name = page.locator('#config-bm-panel [data-bm-field="name"]');
         await expect(name).toBeFocused();
         await name.fill('Renamed from the panel');
@@ -67,7 +69,7 @@ test.describe('the bookmark panel', () => {
         await captureRowWrites(page, { status: 500 });
         await openBookmarks(page);
         await focusFirstRow(page);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const note = page.locator('#config-bm-panel [data-bm-field="note"]');
         await note.fill('will not save');
         await page.keyboard.press('Tab');
@@ -86,7 +88,7 @@ test.describe('the bookmark panel', () => {
             other.shortcut = 'ZQ';
             return other.shortcut;
         }, key);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const field = page.locator('#config-bm-panel [data-bm-field="shortcut"]');
         await field.fill(taken);
         await page.keyboard.press('Tab');
@@ -100,7 +102,7 @@ test.describe('the bookmark panel', () => {
         await page.setViewportSize({ width: 1400, height: 800 });
         await openBookmarks(page);
         const key = await focusFirstRow(page);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         await page.locator('#config-bm-panel [data-bm-field="pinned"]').check();
         await expect.poll(() => page.evaluate((k) =>
             window.dashboardInstance.config.findBookmarkByKey(k)?.pinned === true, key)).toBe(true);
@@ -112,20 +114,19 @@ test.describe('the bookmark panel', () => {
         await expect(row.locator('.config-bm-name svg')).toHaveCount(0);
     });
 
-    test('Edit in the right-click menu opens the panel, not a dialog', async ({ page }) => {
+    test('Edit in the right-click menu opens the full dialog, as the e key does; i is the panel', async ({ page }) => {
         await openBookmarks(page);
         const row = page.locator('#config-bm-list .config-bm-row').first();
         await row.click({ button: 'right' });
-        await page.locator('.config-bm-context-menu [data-action="edit"], .config-bm-context-menu :text("Edit")').first().click();
-        await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
-        await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).toBeFocused();
+        await page.locator('.config-bm-context-menu [data-action="edit"]').first().click();
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
     });
 
     test('Escape in a field puts the old value back and returns to the list', async ({ page }) => {
         const posts = await capturePosts(page);
         await openBookmarks(page);
         await focusFirstRow(page);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const name = page.locator('#config-bm-panel [data-bm-field="name"]');
         const before = await name.inputValue();
         await name.fill('typo');
@@ -142,7 +143,7 @@ test.describe('the bookmark panel', () => {
         const tag = await page.evaluate(() => window.dashboardInstance.allBookmarks
             .flatMap((b) => b.tags || []).map((t) => String(t).toLowerCase()).find((t) => t.length > 2));
         test.skip(!tag, 'needs a tagged bookmark');
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const field = page.locator('#config-bm-panel [data-bm-field="tags"]');
         await field.click();
         await field.fill(tag.slice(0, 2));
@@ -167,7 +168,7 @@ test.describe('the bookmark panel', () => {
         await openBookmarks(page);
         const key = await focusFirstRow(page);
         const url = await page.evaluate((k) => window.dashboardInstance.config.findBookmarkByKey(k).url, key);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const interval = page.locator('#config-bm-panel [data-bm-field="monitorInterval"]');
         await page.locator('#config-bm-panel [data-bm-field="checkMode"]').selectOption('off');
         await expect(interval).toBeHidden();
@@ -181,12 +182,12 @@ test.describe('the bookmark panel', () => {
         }).toBe(true);
     });
 
-    test('Shift+E opens the full dialog, and the legend says so', async ({ page }) => {
+    test('e opens the full dialog, and the legend says so', async ({ page }) => {
         await openBookmarks(page);
-        await expect(page.locator('.config-bm-keyboard-legend')).toContainText('Shift E');
-        await expect(page.locator('.config-bm-keyboard-legend')).toContainText('edit in dialog');
+        await expect(page.locator('.config-bm-keyboard-legend')).toContainText('e edit');
+        await expect(page.locator('.config-bm-keyboard-legend')).toContainText('i panel');
         await focusFirstRow(page);
-        await page.keyboard.press('Shift+E');
+        await page.keyboard.press('e');
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
@@ -204,7 +205,7 @@ test.describe('the bookmark panel', () => {
         });
         await openBookmarks(page);
         await focusFirstRow(page);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         await page.locator('#config-bm-panel [data-bm-field="name"]').fill('Renamed while typing on');
         await page.keyboard.press('Tab');
         const url = page.locator('#config-bm-panel [data-bm-field="url"]');
@@ -223,7 +224,7 @@ test.describe('the bookmark panel', () => {
         await openBookmarks(page);
         const first = await focusFirstRow(page);
         const url = await page.evaluate((k) => window.dashboardInstance.config.findBookmarkByKey(k).url, first);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const field = page.locator('#config-bm-panel [data-bm-field="tags"]');
         await field.click();
         // The caret goes to the end explicitly, not with End: on macOS that
@@ -247,7 +248,7 @@ test.describe('the bookmark panel', () => {
         const target = await ensureSecondPage(page);
         await openBookmarks(page);
         await focusFirstRow(page);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const panel = page.locator('#config-bm-panel');
         const name = await panel.locator('[data-bm-field="name"]').inputValue();
         // Reached as a reader does, by focusing it; selectOption alone does not.
@@ -278,7 +279,7 @@ test.describe('the bookmark panel', () => {
     test('the header shows the whole name, and the dialog button its keys', async ({ page }) => {
         await openBookmarks(page);
         const key = await focusFirstRow(page);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const panel = page.locator('#config-bm-panel');
         await panel.locator('[data-bm-field="name"]').fill('Cal');
         await page.keyboard.press('Tab');
@@ -302,7 +303,7 @@ test.describe('the bookmark panel', () => {
     test('changing the category keeps the panel on the bookmark', async ({ page }) => {
         await openBookmarks(page);
         const key = await focusFirstRow(page);
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         const panel = page.locator('#config-bm-panel');
         const name = await panel.locator('[data-bm-field="name"]').inputValue();
         const select = panel.locator('[data-bm-field="category"]');

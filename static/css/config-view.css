@@ -5791,7 +5791,8 @@ body.no-animations .config-new-features-panel-star {
     border-color: var(--accent-primary);
 }
 
-.config-crud-row.keyboard-selected {
+.config-crud-row.keyboard-selected,
+.config-backup-row.keyboard-selected {
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
 }

@@ -278,8 +278,15 @@
             // what the reader can see.
             const visible = new Set(this.rows.map((b) => this.keyOf(b)));
             [...this.selected].forEach((key) => { if (!visible.has(key)) this.selected.delete(key); });
-            shell.body.replaceChildren(this.buildSelectionBar(), table, this.buildLegend());
+            const legend = this.buildLegend();
+            if ((this.dash.settings?.tagViewKeyLegend || 'below') === 'above') {
+                legend.classList?.add('is-above');
+                shell.body.replaceChildren(this.buildSelectionBar(), legend, table);
+            } else {
+                shell.body.replaceChildren(this.buildSelectionBar(), table, legend);
+            }
             this.fitRowTags(table);
+            this.syncModeStrip();
         }
 
         /* ── Toolbar ─────────────────────────────────────────────────────── */
@@ -577,20 +584,20 @@
          * context menu action each one runs there. e.code, like the grid, so
          * the letter holds on any layout.
          */
-        static ROW_KEYS = {
-            KeyE: 'edit',
-            KeyP: 'pin',
-            KeyT: 'tags',
-            KeyM: 'move',
-            KeyD: 'delete',
-            KeyC: 'check-mode',
-            KeyR: 'health',
-            KeyS: 'share',
-            // The old key for sharing; still works, and says so.
-            KeyL: 'share',
-            KeyQ: 'qr',
-            // The old key for the QR code; still works, and says so.
-            KeyJ: 'qr',
+        /**
+         * The row's actions are plain letters, as on the dashboard; Shift is only
+         * for views. Each runs the row menu's action of that name.
+         */
+        static ROW_LETTERS = {
+            p: 'pin',
+            t: 'tags',
+            m: 'move',
+            d: 'delete',
+            c: 'check-mode',
+            r: 'health',
+            s: 'share',
+            q: 'qr',
+            w: 'feed-watch',
         };
 
         /**
@@ -1263,6 +1270,7 @@
             const row = rows[this.focusIndex];
             row?.scrollIntoView?.({ block: 'nearest' });
             row?.querySelector('a.tag-view-open')?.focus?.({ preventScroll: true });
+            this.syncModeStrip();
         }
 
         openFocused() {
@@ -1285,17 +1293,73 @@
         }
 
         static LEGEND = [
-            ['↑ ↓', 'dashboard.tagViewKeyMove', 'move'],
-            ['↵', 'dashboard.tagViewKeyOpen', 'open'],
+            ['j / k', 'dashboard.tagViewKeyMove', 'move'],
+            ['Enter', 'dashboard.tagViewKeyOpen', 'open'],
             ['x', 'dashboard.tagViewKeySelect', 'select'],
             ['i', 'dashboard.tagViewKeyPanel', 'panel'],
             ['e', 'dashboard.tagViewKeyEdit', 'edit'],
+            ['t', 'dashboard.tagViewKeyTags', 'tags'],
+            ['m', 'dashboard.tagViewKeyMove2', 'move to'],
+            ['p', 'dashboard.tagViewKeyPin', 'pin'],
+            ['c', 'dashboard.tagViewKeyChecking', 'checking'],
+            ['s / q', 'dashboard.tagViewKeyShareQr', 'share / QR code'],
+            ['r', 'dashboard.tagViewKeyReveal', 'show in list'],
+            ['w', 'dashboard.tagViewKeyWatch', 'watch feed'],
+            ['d', 'dashboard.tagViewKeyDelete', 'delete'],
             ['a', 'dashboard.tagViewKeyAddSuggested', 'add suggested'],
+            ['Ctrl/Cmd+Enter', 'dashboard.tagViewKeyNewTab', 'new tab'],
+            ['Ctrl/Cmd+C', 'dashboard.tagViewKeyCopyUrl', 'copy URL'],
             ['/', 'dashboard.tagViewKeySearch', 'search'],
-            ['esc', 'dashboard.tagViewKeyBack', 'back'],
+            ['Esc', 'dashboard.tagViewKeyBack', 'back'],
+            ['Shift+H', 'dashboard.dashboardKeyHideLegend', 'hide legend'],
+            ['Shift+S', 'dashboard.dashboardKeyModeStrip', 'mode strip'],
         ];
 
+        /** Shift+H: the key legend off and on; what it was set to comes back. */
+        async toggleKeyLegend() {
+            const d = this.dash;
+            d.settings = d.settings || {};
+            const current = d.settings.tagViewKeyLegend || 'below';
+            const next = current === 'off' ? (this._legendWas && this._legendWas !== 'off' ? this._legendWas : 'below') : 'off';
+            if (current !== 'off') this._legendWas = current;
+            d.settings.tagViewKeyLegend = next;
+            try {
+                if ((await d.saveSettings()) === false) throw new Error('not saved');
+            } catch (_err) {
+                d.settings.tagViewKeyLegend = current;
+                d.showNotification?.(d.t?.('dashboard.gridKeyLegendToggleFailed', 'Could not save the key legend setting') || 'Could not save the key legend setting', 'error');
+                return;
+            }
+            this.render();
+            d.showNotification?.(next === 'off'
+                ? (d.t?.('dashboard.gridKeyLegendOff', 'Key legend off') || 'Key legend off')
+                : (d.t?.('dashboard.gridKeyLegendOn', 'Key legend on') || 'Key legend on'), 'success', { duration: 2000 });
+        }
+
+        /** What the mode strip says in the tag view: the row under the cursor, or the ticked count. */
+        syncModeStrip() {
+            const strip = window.ModeStrip;
+            if (!strip || !this.isActiveView?.()) return;
+            if (this.selected?.size) { strip.set('multi', { count: this.selected.size }); return; }
+            const b = this.focusIndex >= 0 ? this.rows?.[this.focusIndex] : null;
+            if (!b || !window.ModeStripSuggest) { strip.set(null); return; }
+            const key = this.keyOf(b);
+            if (key !== this._stripKey) {
+                this._stripKey = key;
+                this._stripSeed = (this._stripSeed || 0) + 1;
+            }
+            strip.set('cursor', {
+                suggestions: window.ModeStripSuggest.suggest({
+                    tags: (b.tags || []).filter(Boolean),
+                    pinned: Boolean(b.pinned),
+                    unfiled: false,
+                }, this._stripSeed || 0).filter((s) => s.key !== 'v' && s.key !== 'f'),
+            });
+        }
+
         buildLegend() {
+            const where = this.dash.settings?.tagViewKeyLegend || 'below';
+            if (where === 'off') return document.createDocumentFragment();
             const legend = this.el('div', 'tag-view-legend');
             legend.setAttribute('aria-hidden', 'true');
             DashboardTagView.LEGEND.forEach(([key, labelKey, fallback]) => {
@@ -1941,11 +2005,20 @@
                 if (document.querySelector('dialog[open], .tag-view-manage-menu, .move-popover, .bookmark-context-menu, #bookmark-check-mode-menu')) return;
                 const active = document.activeElement;
                 const tag = active?.tagName;
-                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return;
                 const swallow = () => {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 };
+                // The legend switch works from a dropdown or a button too (Shift+H would
+                // only type-ahead there); a text field keeps its letters.
+                const inText = tag === 'TEXTAREA' || active?.isContentEditable
+                    || (tag === 'INPUT' && !/^(checkbox|radio|button)$/.test(active.type || ''));
+                if (e.shiftKey && e.code === 'KeyH' && !e.ctrlKey && !e.metaKey && !e.altKey && !inText) {
+                    swallow();
+                    if (!e.repeat) void this.toggleKeyLegend();
+                    return;
+                }
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return;
                 // Ctrl/Cmd+C copies the row's URL, as on the dashboard, unless
                 // there is text selected to copy instead.
                 if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.code === 'KeyC'
@@ -1954,13 +2027,23 @@
                     this.runRowAction('copy-url');
                     return;
                 }
+                // Ctrl/Cmd+Enter opens the row in a new tab, as on the dashboard.
+                if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key === 'Enter' && this.focusIndex >= 0) {
+                    swallow();
+                    if (!e.repeat) this.runRowAction('open-new-tab');
+                    return;
+                }
+                // Shift+H switches the key legend, as on the dashboard.
+                if (e.shiftKey && e.code === 'KeyH' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                    swallow();
+                    if (!e.repeat) void this.toggleKeyLegend();
+                    return;
+                }
                 if (e.ctrlKey || e.metaKey || e.altKey) return;
-                const rowAction = e.shiftKey ? DashboardTagView.ROW_KEYS[e.code] : (e.key === 'Delete' ? 'delete' : null);
+                const rowAction = e.shiftKey ? null : (e.key === 'Delete' ? 'delete' : DashboardTagView.ROW_LETTERS[e.key]);
                 if (rowAction && this.focusIndex >= 0) {
                     swallow();
-                    if (e.code === 'KeyJ') window.ShiftKeyAliases?.notice('Shift + J', 'Shift + Q');
-                    if (e.code === 'KeyL') window.ShiftKeyAliases?.notice('Shift + L', 'Shift + S');
-                    this.runRowAction(rowAction);
+                    if (!e.repeat) this.runRowAction(rowAction);
                     return;
                 }
                 switch (e.key) {
@@ -2006,10 +2089,14 @@
                         this.searchEl?.focus();
                         return;
                     case 'ArrowDown':
+                    case 'j':
+                        if (e.shiftKey) return;
                         swallow();
                         this.moveFocus(this.focusIndex + 1);
                         return;
                     case 'ArrowUp':
+                    case 'k':
+                        if (e.shiftKey) return;
                         swallow();
                         this.moveFocus(this.focusIndex <= 0 ? 0 : this.focusIndex - 1);
                         return;

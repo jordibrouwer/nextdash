@@ -274,7 +274,7 @@ test.describe('bookmark health, in large', () => {
     await expect(modal(page)).toHaveCount(0);
     await row(page, bookmarks[0].name).click();
     await page.evaluate(() => document.activeElement?.blur?.());
-    await page.keyboard.press('Shift+H');
+    await page.keyboard.press('l');
     await expect(modal(page)).toBeVisible();
   });
 

@@ -598,7 +598,6 @@ class KeyboardNavigation {
         C: 'Shift+C opens Containers',
         R: 'Shift+R does nothing now',
         V: 'Shift+V does nothing now',
-        S: 'Shift+S does nothing now',
         Q: 'Shift+Q does nothing now',
         D: 'Shift+D does nothing now',
     };
@@ -733,6 +732,9 @@ class KeyboardNavigation {
      * cursor off a bookmark row neither shows.
      */
     _syncModeStrip() {
+        // The Bookmarks view has its own cursor and tells the strip itself
+        // (DashboardConfig.syncBookmarkModeStrip); the grid must not clear it.
+        if (['library', 'inbox', 'docker', 'tags', 'config'].includes(this.dashboard?.activeView)) return;
         const edit = document.body?.getAttribute('data-edit-mode') === 'on';
         const count = this.dashboard?.multiSelect?.count?.() || 0;
         const onRow = this._cursorOnBookmarkRow();
@@ -745,8 +747,6 @@ class KeyboardNavigation {
             detail = { suggestions: this._rowSuggestions() };
         }
         window.ModeStrip?.set?.(state, detail);
-        const row = (onRow && !edit) ? this.navigableElements[this.currentIndex] : null;
-        window.RowLetterHint?.show?.(row);
     }
 
     /**
@@ -2949,7 +2949,7 @@ class KeyboardNavigation {
     }
 
     /**
-     * Shift+S — share, or copy "name — URL" where no share sheet exists.
+     * The row letter s (Shift+S is the mode strip's switch now) — share, or copy "name — URL" where no share sheet exists.
      *
      * Was right-click only: no command, no key, and absent from the cheat sheet,
      * even though it is the only path that copies the name with the address.

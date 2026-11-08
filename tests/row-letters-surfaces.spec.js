@@ -19,8 +19,14 @@ test('the legend line for the bookmark shows e m t p and Esc', async ({ page }) 
     await page.keyboard.press('ArrowDown');
     const legend = page.locator('.dashboard-key-legend, #dashboard-key-legend, .dashboard-legend').first();
     await expect(legend).toContainText('to search', { timeout: 5000 });
-    const keys = await page.evaluate(() => window.KeyboardViewLegends.DASHBOARD_VIEW.filter((r) => r.line === 4 && !r.more).map((r) => r.keys));
-    expect(keys).toEqual(expect.arrayContaining(['e', 'm', 't', 'p', 'Esc']));
+    const rows = await page.evaluate(() => window.KeyboardViewLegends.DASHBOARD_VIEW.map((r) => [r.keys, Boolean(r.more)]));
+    const keys = rows.map(([k]) => k);
+    expect(keys).toEqual(expect.arrayContaining(['e', 'm', 't', 'p', 'Esc', 'Shift+H']));
+    // Priority order: everything shown at the start comes before the rows that wait for the keyboard.
+    const firstMore = rows.findIndex(([, more]) => more);
+    expect(firstMore).toBeGreaterThan(0);
+    expect(rows.slice(0, firstMore).every(([, more]) => !more)).toBe(true);
+    expect(rows.slice(firstMore).every(([, more]) => more)).toBe(true);
 });
 
 test('the right-click menu of a bookmark shows plain-letter hints, none with Shift', async ({ page }) => {

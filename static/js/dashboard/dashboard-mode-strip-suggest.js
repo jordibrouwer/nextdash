@@ -69,5 +69,118 @@
         return ctx.undo ? [{ key: 'Ctrl/Cmd+Z', verb: 'undo' }, ...out].slice(0, 4) : out;
     }
 
-    window.ModeStripSuggest = { suggest, recordUse, uses, LEARN_AFTER };
+    // The Bookmarks view has the same letters except the ones that need a dashboard
+    // (the preview card, the feed watch, reveal): the same two-plus-one-plus-one shape.
+    const ALL_LIBRARY = [
+        { key: 'e', verb: 'edit' }, { key: 'm', verb: 'move' }, { key: 't', verb: 'tags' },
+        { key: 'p', verb: 'pin' }, { key: 'f', verb: 'filter by tag' }, { key: 'c', verb: 'checking' },
+        { key: 's', verb: 'share' }, { key: 'q', verb: 'QR code' }, { key: 'd', verb: 'delete' },
+        { key: 'i', verb: 'panel' }, { key: 'x', verb: 'select' }, { key: 'u', verb: 'work through' },
+        { key: 'y', verb: 'find tags' }, { key: 'b', verb: 'only this category' }, { key: 'w', verb: 'only this page' },
+    ];
+    const LEARN_LIBRARY = [
+        { key: 's', verb: 'share' }, { key: 'q', verb: 'QR code' }, { key: 'c', verb: 'checking' },
+        { key: 'i', verb: 'panel' }, { key: 'u', verb: 'work through' },
+        { key: 'y', verb: 'find tags' }, { key: 'b', verb: 'only this category' },
+    ];
+
+    /** @param {{tags?: string[], pinned?: boolean, issue?: boolean, undo?: boolean}} ctx */
+    function suggestLibrary(ctx = {}, seed = 0) {
+        const out = [];
+        const add = (key, verb) => { if (!out.some((s) => s.key === key)) out.push({ key, verb }); };
+        if (ctx.issue) add('r', 're-check');
+        if (ctx.tags?.length) add('f', `filter: ${ctx.tags[0]}`); else add('t', 'add tags');
+        add('p', ctx.pinned ? 'unpin' : 'pin');
+        out.length = Math.min(out.length, 2);
+        const n = Math.max(0, seed | 0);
+        for (let i = 0; i < ALL_LIBRARY.length; i += 1) {
+            const s = ALL_LIBRARY[(n + i) % ALL_LIBRARY.length];
+            if (!out.some((o) => o.key === s.key)) { out.push({ ...s }); break; }
+        }
+        const used = uses();
+        const unlearned = LEARN_LIBRARY.filter((s) => (used[s.key] || 0) < LEARN_AFTER && !out.some((o) => o.key === s.key));
+        if (unlearned.length) out.push({ ...unlearned[n % unlearned.length], learn: true });
+        return out;
+    }
+
+    // The Inbox: the same shape, with the letters of its rows.
+    const ALL_INBOX = [
+        { key: 'p', verb: 'promote' }, { key: 'm', verb: 'keep' }, { key: 'r', verb: 'mark read' },
+        { key: 'n', verb: 'note' }, { key: 'z', verb: 'snooze' }, { key: 't', verb: 'tags' },
+        { key: 's', verb: 'share' }, { key: 'q', verb: 'QR code' }, { key: 'y', verb: 'copy link' },
+        { key: 'd', verb: 'delete' }, { key: 'x', verb: 'select' }, { key: 'f', verb: 'triage' },
+    ];
+    const LEARN_INBOX = [
+        { key: 's', verb: 'share' }, { key: 'q', verb: 'QR code' }, { key: 'y', verb: 'copy link' },
+        { key: 'z', verb: 'snooze' }, { key: 'n', verb: 'note' }, { key: 'f', verb: 'triage' },
+    ];
+
+    /** @param {{unread?: boolean, offer?: boolean, tags?: boolean, kept?: boolean}} ctx */
+    function suggestInbox(ctx = {}, seed = 0) {
+        const out = [];
+        const add = (key, verb) => { if (!out.some((s) => s.key === key)) out.push({ key, verb }); };
+        if (ctx.offer) add('a', 'add suggested tag');
+        add('p', 'promote');
+        if (ctx.unread) add('r', 'mark read'); else add('u', 'mark unread');
+        out.length = Math.min(out.length, 2);
+        const n = Math.max(0, seed | 0);
+        for (let i = 0; i < ALL_INBOX.length; i += 1) {
+            const s = ALL_INBOX[(n + i) % ALL_INBOX.length];
+            if (!out.some((o) => o.key === s.key) && !(s.key === 'm' && ctx.kept === false)) { out.push({ ...s }); break; }
+        }
+        const used = uses();
+        const unlearned = LEARN_INBOX.filter((s) => (used[s.key] || 0) < LEARN_AFTER && !out.some((o) => o.key === s.key));
+        if (unlearned.length) out.push({ ...unlearned[n % unlearned.length], learn: true });
+        return out;
+    }
+
+    // Containers: its own verbs, in the same shape.
+    const ALL_CONTAINER = [
+        { key: 'l', verb: 'logs' }, { key: 's', verb: 'start / stop' }, { key: 'r', verb: 'restart' },
+        { key: 'p', verb: 'pause' }, { key: 'u', verb: 'update' }, { key: 'm', verb: 'mute' },
+        { key: 'w', verb: 'web UI' }, { key: 'y', verb: 'copy ID' }, { key: 'd', verb: 'remove' },
+        { key: 'x', verb: 'select' },
+    ];
+    const LEARN_CONTAINER = [
+        { key: 'l', verb: 'logs' }, { key: 'm', verb: 'mute' }, { key: 'y', verb: 'copy ID' }, { key: 'w', verb: 'web UI' },
+    ];
+
+    /** @param {{running?: boolean, canControl?: boolean, update?: boolean, webui?: boolean, self?: boolean}} ctx */
+    function suggestContainer(ctx = {}, seed = 0) {
+        const out = [];
+        const add = (key, verb) => { if (!out.some((s) => s.key === key)) out.push({ key, verb }); };
+        if (ctx.update && ctx.canControl) add('u', 'update');
+        if (ctx.canControl) add('s', ctx.running ? 'stop' : 'start');
+        add('l', 'logs');
+        out.length = Math.min(out.length, 2);
+        const n = Math.max(0, seed | 0);
+        for (let i = 0; i < ALL_CONTAINER.length; i += 1) {
+            const s = ALL_CONTAINER[(n + i) % ALL_CONTAINER.length];
+            const skip = (!ctx.canControl && ['s', 'r', 'p', 'u', 'd'].includes(s.key)) || (s.key === 'w' && !ctx.webui) || (ctx.self && ['d', 's', 'm'].includes(s.key));
+            if (!out.some((o) => o.key === s.key) && !skip) { out.push({ ...s }); break; }
+        }
+        const used = uses();
+        const unlearned = LEARN_CONTAINER.filter((s) => (used[s.key] || 0) < LEARN_AFTER && !out.some((o) => o.key === s.key) && !(s.key === 'w' && !ctx.webui));
+        if (unlearned.length) out.push({ ...unlearned[n % unlearned.length], learn: true });
+        return out;
+    }
+
+    /**
+     * Config: a row of a list, with whatever letters that list's rows answer.
+     * The first two letters are the row's own (edit, then the next), one more
+     * rotates with every new row, and one is a letter not yet used.
+     * @param {{key: string, verb: string}[]} actions
+     */
+    function suggestConfigRow(actions = [], seed = 0) {
+        const out = actions.slice(0, 2).map((a) => ({ ...a }));
+        const rest = actions.slice(2);
+        const n = Math.max(0, seed | 0);
+        if (rest.length) out.push({ ...rest[n % rest.length] });
+        const used = uses();
+        const unlearned = rest.filter((a) => (used[a.key] || 0) < LEARN_AFTER && !out.some((o) => o.key === a.key));
+        if (unlearned.length) out.push({ ...unlearned[n % unlearned.length], learn: true });
+        return out.slice(0, 4);
+    }
+
+    window.ModeStripSuggest = { suggest, suggestLibrary, suggestInbox, suggestContainer, suggestConfigRow, recordUse, uses, LEARN_AFTER };
 })();

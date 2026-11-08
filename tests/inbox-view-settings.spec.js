@@ -175,10 +175,10 @@ test.describe('the Inbox view follows Config → Inbox', () => {
         await expect(line).toContainText('note');
     });
 
-    test('with Unsorted off the legend drops Shift+K', async ({ page }) => {
+    test('with Unsorted off the legend drops m', async ({ page }) => {
         await open(page, { unsortedEnabled: false });
         await expect(page.locator('.inbox-legend')).toBeVisible();
-        await expect(page.locator('.inbox-legend kbd', { hasText: /^K$/ })).toHaveCount(0);
+        await expect(page.locator('.inbox-legend kbd', { hasText: /^m$/ })).toHaveCount(0);
     });
 
     test('a click can only select the row', async ({ page }) => {

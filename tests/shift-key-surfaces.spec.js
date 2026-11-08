@@ -43,9 +43,11 @@ test('the cheat sheet lists the keys of today and none of the retired ones', asy
     for (const letter of ['E', 'M', 'T', 'P', 'C', 'S', 'Q', 'R', 'V', 'D']) {
         expect(keys, `missing the row letter ${letter}`).toContain(letter);
     }
-    // Shift + H is the key legend on the grid; in the Bookmarks view the row's own health keeps it.
-    expect(keys.filter((k) => /^Shift \+ H\b/.test(k) && !k.startsWith('Shift + Home')).sort())
-        .toEqual(['Shift + H', 'Shift + H (on a row)']);
+    // Shift + H is the key legend, on the grid and in the Bookmarks view alike.
+    // Every view lists the same plain Shift + H, none of them 'on a row'.
+    const hints = keys.filter((k) => /^Shift \+ H\b/.test(k) && !k.startsWith('Shift + Home'));
+    expect(hints.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(hints)).toEqual(new Set(['Shift + H']));
 });
 
 test('the Inbox legend has t for tags and f for triage, and no l', async ({ page }) => {
@@ -60,5 +62,5 @@ test('the dashboard legend names the keys of today and no retired key', async ({
     await load(page);
     const keys = await page.evaluate(() => window.KeyboardViewLegends.DASHBOARD_VIEW.map((r) => r.keys));
     for (const now of ['Shift+W', 'Shift+N', 'Shift+B', 'Shift+I', ',', 'Shift+H', 'e', 'm', 't', 'p', 'd', 's', 'q', 'f', 'Esc']) expect(keys).toContain(now);
-    for (const gone of ['Shift+Y', 'Shift+J', 'Shift+L', 'Shift+Z', 'Shift+Q', 'Shift+E', 'Shift+M', 'Shift+T', 'Shift+D']) expect(keys).not.toContain(gone);
+    for (const gone of ['Shift+Y', 'Shift+J', 'Shift+L', 'Shift+Z', 'Shift+Q', 'Shift+M', 'Shift+D']) expect(keys).not.toContain(gone);
 });

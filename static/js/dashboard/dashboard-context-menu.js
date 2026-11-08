@@ -205,10 +205,10 @@ class DashboardContextMenu {
         // A divider opens a group: the first entry of each carries it.
         const group = (items) => items.map((item, i) => (i === 0 ? { ...item, divider: true } : item));
         const inboxActions = [
-            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
-            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
-            { id: 'share', label: this.shareActionLabel(), icon: '↪' },
-            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦' },
+            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${window.ShortcutFormat?.modifierLabel?.() || 'Ctrl'}+Enter` },
+            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${window.ShortcutFormat?.modifierLabel?.() || 'Ctrl'}+C` },
+            { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'S' },
+            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Q' },
             ...group([
             { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★', key: 'P' },
             // Keep's own entry: the same silent promote-to-Unsorted the triage
@@ -217,7 +217,7 @@ class DashboardContextMenu {
                 id: 'inbox-keep',
                 label: this.t('dashboard.inboxKeepToKept', 'Keep (to Unsorted)'),
                 icon: '▣',
-                key: 'K',
+                key: 'M',
             },
             // Whichever way the row can still go: read, or back to unread. The
             // second was missing entirely — the server accepted it and nothing
@@ -237,7 +237,7 @@ class DashboardContextMenu {
             // buildItemShareUrl preserves the filter, sort, query and domain
             // alongside the item id, so the link reopens the view as the sender
             // had it. That work existed with no entry point offering it.
-            { id: 'inbox-copy-link', label: this.t('dashboard.inboxCopyItemLink', 'Copy link to this item'), icon: '🔗' },
+            { id: 'inbox-copy-link', label: this.t('dashboard.inboxCopyItemLink', 'Copy link to this item'), icon: '🔗', key: 'Y' },
             ]),
             { id: 'inbox-delete', label: this.t('dashboard.inboxDelete', 'Delete'), icon: '✕', danger: true, key: 'D' },
         ];

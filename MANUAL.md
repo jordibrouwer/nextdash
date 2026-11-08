@@ -577,7 +577,7 @@ Because the bookmark is monitored too, an update that leaves the container runni
 
 ### Keep it tidy
 
-- **Disk** (`d` in the Containers view) shows what images, volumes and the build cache take up, and what can be reclaimed. Clear unused or dangling images, the build cache and stopped containers in bulk; volumes go one at a time, after typing **delete**. A dangling image that is still a container's way back says *rollback for …* before you remove it. On Unraid, **Bind mounts** lists the appdata folders each container uses, with **Measure** to size one.
+- **Disk** (`]` in the Containers view) shows what images, volumes and the build cache take up, and what can be reclaimed. Clear unused or dangling images, the build cache and stopped containers in bulk; volumes go one at a time, after typing **delete**. A dangling image that is still a container's way back says *rollback for …* before you remove it. On Unraid, **Bind mounts** lists the appdata folders each container uses, with **Measure** to size one.
 - **The logs window** (`l`, or `:docker <name> logs` from anywhere) follows a container's log live, with search, a filter, stdout and stderr apart, and download.
 - **The timeline** keeps thirty days of what happened to each container — useful after a night of automatic updates, or when a container *seemed* fine.
 - The **Containers** widget can show **reclaimable** space, so a filling disk shows up on the dashboard before it becomes a problem.
@@ -631,7 +631,7 @@ What a check of your setup can look like, all from the keyboard:
 4. `l` opens the logs window; search for `error` to see why the new version failed.
 5. The version stays skipped until a newer one arrives. **Hold updates** if you would rather wait for a fix before nextDash tries again.
 6. Click its bookmark mark: the bookmark's **Health** tab shows the minutes of downtime that matched the crashes.
-7. `d` for Disk: the new image that failed is still on the host, used by nothing. Clear **Unused images** once you are sure — a later update downloads what it needs.
+7. `]` for Disk: the new image that failed is still on the host, used by nothing. Clear **Unused images** once you are sure — a later update downloads what it needs.
 8. Elsewhere, an orange **↑**: `#docker?filter=updates`, read **What's new** for each, and update what you trust.
 
 <a id="sh-keys"></a>
@@ -1847,7 +1847,9 @@ A file is at most 2 MB.
 - Ways in: the tag cloud, `f` on a selected bookmark (it filters by that bookmark's tag), `:filter <tag>`, or `Shift + T` (below).
 - The view's address is `#tag/<tag>` (several tags are joined with `+`, and `?all` marks an **and** view, as in `#tag/linux+security?all`). Bookmark it or share it, and it opens on the same tags.
 
-**The tag view of every bookmark.** `Shift + T` opens the tag view with no tag picked: every bookmark from every page in one table. The header says how many have no tags, and the rail starts with a **Without tags** filter that keeps the list to those, followed by the tags in use. Click a tag there to open its own tag view; Back returns here. The address is `#tags`. With a bookmark selected, `Shift + T` still opens that bookmark's Tags popover.
+**The tag view of every bookmark.** `Shift + T` opens the tag view with no tag picked: every bookmark from every page in one table. The header says how many have no tags, and the rail starts with a **Without tags** filter that keeps the list to those, followed by the tags in use. Click a tag there to open its own tag view; Back returns here. The address is `#tags`.
+
+In the tag view the row letters are the dashboard's: `j`/`k` move, `x` ticks, `i` opens the side panel, `e` edits, `t` tags, `m` moves, `p` pins, `c` sets checking, `s`/`q` share or show a QR code, `r` shows it in the Bookmarks view, `w` watches its feed, `d` deletes, `a` adds the suggested tags, `Ctrl/Cmd + Enter` opens it in a new tab and `Ctrl/Cmd + C` copies its address. A small legend under the list shows them; `Shift + H` hides or shows it, and the strip beside the page name says what the keys do.
 - Tag chips on dashboard rows are labels only; they are not clickable.
 - `tag:work` in search narrows results without opening the view.
 
@@ -2021,21 +2023,22 @@ The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, 
 | `Enter` / `o` | Open the bookmark under the cursor |
 | `i` | Open or close the side panel |
 | `1` / `2` / `3`, `[` / `]` | Details, Health or Usage in the side panel |
-| `e` / `Shift + E` | Edit in the side panel / in the full dialog |
+| `e` | Edit in the full dialog |
 | `t` | Edit the bookmark's tags in the side panel |
+| `m` / `p` / `f` | Move (the side panel, on its Page field) / pin or unpin / show only its tag |
+| `s` / `q` | Share / QR code |
 | `x` / `Shift + X` | Select a row / a range |
 | `Ctrl/Cmd + A` | Select every bookmark shown (again to clear) |
 | `d` | Delete (undo is offered) |
 | `/` | Search the list |
-| `f` | Work through the list |
+| `u` | Work through the list |
 | `h` | Collection health |
-| `Shift + H` (on a row) | That bookmark's health in large |
-| `p` | Re-check |
-| `s` / `c` | Score / checking, in the Health tab |
+| `l` | That bookmark's health in large |
+| `r` | Re-check |
+| `c` | Checking, in the Health tab |
 | `n` / `z` | Ignore / snooze what the report says |
-| `m` | The row menu |
-| `Shift + R` | Refresh the health report |
-| `Shift + P` / `Shift + C` | Pages and categories over the list |
+| `Shift + F10` | The row menu (the Menu key does the same) |
+| `Shift + H` | Show or hide the key legend under the list, as on the dashboard |
 | `Esc` | Clear the selection, close the panel, then leave the view |
 
 <a id="117-work-through-and-the-header-band"></a>
@@ -2083,9 +2086,9 @@ When the row has a preview nextDash could fetch but the bookmark does not store,
 Beside it, the **Collection ▾** menu gathers what a whole-collection toolbar used to hold, in groups:
 
 - **Look at** — **Collection health** (`h`, [§11.8](#118-collection-health)) and **Rot report**.
-- **Organise** — **Pages & categories** (`Shift + P`), **Merge duplicate group…** when exactly one group exists, **Turn on checking…** for everything still Off.
+- **Organise** — **Pages & categories**, **Merge duplicate group…** when exactly one group exists, **Turn on checking…** for everything still Off.
 - **Checks** — **Retest all**, **Open broken links…**, **Fetch previews…**, **Checking off…**.
-- **Export CSV**, **Refresh report** (`Shift + R`), and **Health settings**.
+- **Export CSV**, **Refresh report**, and **Health settings**.
 
 The menu opens with its first item focused; `↑`/`↓`, `Home` and `End` move through it. When the duplicate groups have shrunk to one bookmark each, **Merge duplicate group…** says *No duplicates left to merge.*
 
@@ -2171,7 +2174,7 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 
 ### 11.12 Pages & categories modal
 
-**`Shift + P`** / **`Shift + C`**, **Manage** beside Pages or Categories in the rail, or **Pages & categories** in the Collection menu opens a modal over the list for dragging, moving, merging and tidying pages and categories without leaving the Bookmarks view.
+**Manage** beside Pages or Categories in the rail, or **Pages & categories** in the Collection menu opens a modal over the list for dragging, moving, merging and tidying pages and categories without leaving the Bookmarks view.
 
 <p align="center"><img src="screenshots/manual.md/11-pages-categories.jpg" alt="The Pages and categories modal on its Categories tab: a search, the sort, the page Home, Add category, and the categories and widgets of that page with their bookmark counts and drag handles" width="840"></p>
 <p align="center"><sub>Pages &amp; categories, on the Categories tab.</sub></p>
@@ -2503,7 +2506,7 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 | `p` | Promote to a bookmark |
 | `n` | Note |
 | `r` | Mark read |
-| `Shift + K` | Keep — to Bookmarks → Unsorted (undo in the toast) |
+| `m` | Keep — to Bookmarks → Unsorted (undo in the toast) |
 | `z` | Snooze |
 | `x` | Tick and move on |
 | `Shift + ↑/↓`, `Ctrl/Cmd + A` | Extend / select all shown (again to untick) |
@@ -2511,7 +2514,10 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 | `u` | Mark unread |
 | `t` | Edit tags |
 | `f` | Triage |
-| `R` | Reload |
+| `s` / `q` | Share / QR code |
+| `y` | Copy the link to this item |
+| `Ctrl/Cmd + Enter` / `Ctrl/Cmd + C` | Open in a new tab / copy the address |
+| `Shift + H` | Show or hide the key legend under the list |
 | `Esc` | Clear the selection, then back to the queue, then back to the bookmarks |
 
 <p align="center"><img src="screenshots/manual.md/13-inbox-row.jpg" alt="The first inbox row, outlined, with its right-click menu: open in new tab, copy URL, copy name and URL, QR code, promote, keep, mark read, snooze, note, tags, copy link and delete" width="860"></p>
@@ -2549,7 +2555,7 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 | Key | Action | What it does |
 |---|---|---|
 | `p` | **Promote to a page** | The main button. Opens the bookmark form to file it on a page; after the save, triage carries on at the next link |
-| `Shift + K` | **Keep in Unsorted** | Makes it a bookmark in **Bookmarks → Unsorted** without a page ([§13.5](#135-keeping-a-link-unsorted-and-promote)) |
+| `m` | **Keep in Unsorted** | Makes it a bookmark in **Bookmarks → Unsorted** without a page ([§13.5](#135-keeping-a-link-unsorted-and-promote)) |
 | `n` | **Note** | Adds or edits the note; the card stays |
 | `d` / `Delete` | **Delete** | Removes it from the inbox |
 | `z` | **Snooze** | Picks when it comes back; it leaves the pile until then |
@@ -2571,7 +2577,7 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 
 ### 13.5 Keeping a link: Unsorted and Promote
 
-There is no Kept tab any more. **Keep** — `Shift + K`, the row button, or the right-click menu — takes a link straight to a hidden page called **Unsorted**, in the Bookmarks view, rather than to a second inbox list. **`Shift + U`** or the address `#unsorted` opens the Bookmarks view there directly.
+There is no Kept tab any more. **Keep** — `m`, the row button, or the right-click menu — takes a link straight to a hidden page called **Unsorted**, in the Bookmarks view, rather than to a second inbox list. **`Shift + U`** or the address `#unsorted` opens the Bookmarks view there directly.
 
 An Unsorted bookmark stays off the dashboard, the tag cloud, smart collections and the health summary. It is promoted onto a real page from its **side panel** (a primary **Promote** button) or its **row menu**, in the Bookmarks view — the same bookmark form Inbox's Promote uses, titled **Promote bookmark**, opening on the last page of the dashboard. Search still reaches Unsorted bookmarks while **Search unsorted bookmarks** (Behavior → Keyboard & search) is on, and the **Unsorted widget** shows them on a dashboard page, newest first, at random or by tag; its overflow row reads **Open Unsorted**. See [§11.11](#1111-unsorted-and-promote) for the full picture from the Bookmarks view's side.
 
@@ -2756,7 +2762,7 @@ The **✎** on the icon in the panel's head chooses what the container shows: **
 
 | Key | Action |
 |---|---|
-| `↑` / `↓` | Move through the containers |
+| `j` / `k`, `↑` / `↓` | Move through the containers |
 | `x` / `Space` | Tick or untick the selected container |
 | `Shift + X` / `Shift + ↑/↓` | Tick a run of containers |
 | `Ctrl/Cmd + A` | Tick every container the filter shows; again to clear |
@@ -2766,13 +2772,16 @@ The **✎** on the icon in the panel's head chooses what the container shows: **
 | `r` | Restart it |
 | `p` | Pause it |
 | `u` | Update it |
-| `⌫` / `Delete` | Remove it (asks first; a running one is stopped first); with containers ticked, the ticked ones |
+| `d` / `⌫` / `Delete` | Remove it (asks first; a running one is stopped first); with containers ticked, the ticked ones |
 | `l` | Open its logs window |
 | `m` | Mute or unmute its notices |
-| `d` | Switch between the list and Disk |
+| `w` / `y` | Open its web UI / copy its ID |
+| `Ctrl/Cmd + C` | Copy its name |
+| `[` / `]` | Switch between the list and Disk |
+| `Shift + H` | Show or hide the key legend, as on the dashboard |
 | `Esc` | Clear the ticks, then the selection, close the panel, then leave the view |
 
-The legend above the list names them; **Config → Containers → The key legend** puts it below the list or hides it. Without actions switched on, the legend leaves out the keys that act on Docker.
+The legend below the list names them; **Config → Containers → The key legend** puts it above the list or hides it, and `Shift + H` switches it. Without actions switched on, the legend leaves out the keys that act on Docker.
 
 <a id="155-actions-and-updates"></a>
 

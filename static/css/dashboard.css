@@ -5877,7 +5877,7 @@ body[data-g-chord="armed"]::after {
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-1-5, 0.35rem);
+    gap: var(--space-1, 0.25rem);
     /* Room above, on purpose: the legend is a footnote to the page, and it
        should read as resting below it rather than as its last row. */
     margin: calc(var(--space-6, 2rem) * 2) 0 var(--space-4, 1rem);
@@ -5906,7 +5906,9 @@ body[data-touch-layout="true"] .dashboard-legend {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: var(--space-1-5, 0.35rem) var(--space-4, 1rem);
+    /* Close together, so more fits on a row. */
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    width: 100%;
 }
 
 /* The rows that presume the keyboard is in use: KeyboardNavigation stamps
@@ -10622,6 +10624,33 @@ body[data-action-bar="bottom"] #dashboard-layout {
  */
 .mode-strip { display: none; }
 
+/* It fades after five quiet seconds and rises in when it comes back. */
+.mode-strip {
+    transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s linear 0s;
+}
+.mode-strip.is-idle {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.7s ease, transform 0.7s ease, visibility 0s linear 0.7s;
+}
+.mode-strip.is-entering {
+    animation: mode-strip-in 0.45s ease-out both;
+}
+@keyframes mode-strip-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+}
+body.no-animations .mode-strip,
+body.no-animations .mode-strip.is-idle { transition: none; }
+body.no-animations .mode-strip.is-entering { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+    .mode-strip,
+    .mode-strip.is-idle { transition: none; }
+    .mode-strip.is-entering { animation: none; }
+}
+
 @media (min-width: 900px) {
     body[data-header-clock="classic"] .dashboard-section.section-controls .title-wrapper {
         display: grid;
@@ -10676,27 +10705,21 @@ body[data-action-bar="bottom"] #dashboard-layout {
     background: var(--text-accent, #4a90d9);
     flex: none;
 }
+.mode-strip[data-state="idle"] .mode-strip-dot { background: var(--text-muted, var(--text-secondary)); }
+.mode-strip[data-state="idle"] { opacity: 0.8; }
 .mode-strip[data-state="multi"] .mode-strip-dot { background: var(--text-success, #3fa56b); }
 .mode-strip[data-state="edit"] .mode-strip-dot { background: var(--text-warning, #d9a441); }
 .mode-strip[data-state="chord"] .mode-strip-dot { background: var(--text-pro, #8a63d2); }
 
-.row-letter-hint {
-    position: absolute;
-    right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    font-family: var(--font-mono, monospace);
-    font-size: 0.65rem;
-    line-height: 1.2;
-    letter-spacing: 0;
-    white-space: nowrap;
-    color: var(--text-secondary);
-    background: var(--surface-2, var(--bg-secondary, rgba(128, 128, 128, 0.15)));
-    pointer-events: none;
-}
-@media (max-width: 699px) {
-    .row-letter-hint { display: none; }
+/* The legend of every list view is stuck to the foot of the window, in view while
+   the list is longer than the screen. The dashboard's is not: it is a footnote to
+   the page and rests under it. */
+.config-bm-keyboard-legend:not(.is-above),
+.config-form-keyboard-legend:not(.is-above):not(.is-inline),
+.config-list-keyboard-legend:not(.is-above):not(.is-inline) {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding-bottom: var(--space-2, 0.5rem);
+    background: var(--surface-1, var(--bg-primary, transparent));
 }

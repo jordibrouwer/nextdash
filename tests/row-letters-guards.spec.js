@@ -29,7 +29,7 @@ async function cursorDown(page) {
 test.describe('mode strip', () => {
     test('absent on an idle dashboard', async ({ page }) => {
         await load(page);
-        await expect(strip(page)).toBeHidden();
+        await expect(strip(page)).toContainText('Search');
     });
 
     test('Cursor after ArrowDown, gone after Esc', async ({ page }) => {
@@ -39,7 +39,7 @@ test.describe('mode strip', () => {
         await expect(strip(page)).toContainText('Cursor');
         await expect(strip(page).locator('kbd', { hasText: 'Esc' })).toBeVisible();
         await page.keyboard.press('Escape');
-        await expect(strip(page)).toBeHidden();
+        await expect(strip(page)).toContainText('Search');
     });
 
     test('3 selected after ticking three rows with x', async ({ page }) => {
@@ -49,7 +49,7 @@ test.describe('mode strip', () => {
         await expect(strip(page)).toContainText('3 selected');
         await page.keyboard.press('Escape');
         await page.keyboard.press('Escape');
-        await expect(strip(page)).toBeHidden();
+        await expect(strip(page)).toContainText('Search');
     });
 
     test('Edit mode after Shift+E, gone when it ends', async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe('mode strip', () => {
         await page.keyboard.press('Shift+E');
         await expect(strip(page)).toContainText('Edit mode');
         await page.keyboard.press('Shift+E');
-        await expect(strip(page)).toBeHidden();
+        await expect(strip(page)).toContainText('Search');
     });
 
     for (const width of [1100, 1900]) {
@@ -94,23 +94,11 @@ test.describe('mode strip', () => {
     });
 });
 
-test.describe('label on the focused row', () => {
-    test('on the row under the cursor, gone after Esc', async ({ page }) => {
-        await load(page);
-        await cursorDown(page);
-        const hint = page.locator('.bookmark-link.keyboard-selected .row-letter-hint');
-        await expect(hint).toHaveCount(1);
-        await expect(hint).toContainText('Esc');
-        await expect(hint).toHaveAttribute('aria-hidden', 'true');
-        await page.keyboard.press('Escape');
-        await expect(page.locator('.row-letter-hint')).toHaveCount(0);
-    });
-
-    test('hidden below 700px', async ({ page }) => {
-        await load(page, 690);
-        await cursorDown(page);
-        await expect(page.locator('.row-letter-hint')).toBeHidden();
-    });
+test('no label is drawn on the bookmark row: the strip is the only hint', async ({ page }) => {
+    await load(page);
+    await cursorDown(page);
+    await expect(strip(page)).toBeVisible();
+    await expect(page.locator('.row-letter-hint')).toHaveCount(0);
 });
 
 test.describe('undo', () => {
@@ -166,7 +154,7 @@ test.describe('the cursor lapses', () => {
         await cursorDown(page);
         await page.clock.runFor(10_500);
         await expect.poll(() => index(page)).toBe(-1);
-        await expect(strip(page)).toBeHidden();
+        await expect(strip(page)).toContainText('Search');
         await page.keyboard.press('t');
         // The page clock is faked: let the search line's own timers run.
         await page.clock.runFor(600);
@@ -260,7 +248,7 @@ test.describe('review fixes', () => {
             kn.navigableElements[kn.currentIndex].remove();
             kn.updateNavigableElements();
         });
-        await expect(page.locator('#mode-strip')).toBeHidden();
+        await expect(page.locator('#mode-strip')).toContainText('Search');
         await expect(page.locator('.row-letter-hint')).toHaveCount(0);
     });
 
@@ -291,4 +279,31 @@ test.describe('review fixes', () => {
         });
         expect(mutations).toBe(0);
     });
+});
+
+test('the strip is for the keyboard: a mouse press hides it, a key brings it back', async ({ page }) => {
+    await load(page);
+    await cursorDown(page);
+    await expect(strip(page)).toBeVisible();
+    await page.mouse.click(8, 8);
+    await expect(strip(page)).toBeHidden();
+    // Moving the cursor by key shows it again.
+    await page.keyboard.press('ArrowDown');
+    await expect(strip(page)).toBeVisible();
+});
+
+test('the dashboard legend is one line in priority order and is not sticky', async ({ page }) => {
+    await load(page, 1400);
+    await page.evaluate(() => { window.dashboardInstance.settings.showGridKeyLegend = true; window.dashboardInstance.renderDashboard({ animate: false }); });
+    const legend = page.locator('.dashboard-legend');
+    await expect(legend).toBeVisible();
+    expect(await legend.evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
+    expect(await legend.locator('.dashboard-legend-line').count()).toBe(1);
+    // The first entries are the most useful ones, Shift+H is among the first shown.
+    const first = await legend.locator('kbd').allInnerTexts();
+    expect(first.slice(0, 3)).toEqual(['↑ ↓ ← →', 'Enter', 'x']);
+    expect(first).toContain('Shift+H');
+    // Denser: the keys do not need more rows than a handful at this width.
+    const rows = await legend.locator('span:has(> kbd):visible').evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().top))).size);
+    expect(rows).toBeLessThanOrEqual(3);
 });

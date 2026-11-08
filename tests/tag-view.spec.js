@@ -645,11 +645,11 @@ test.describe('selection, panel and edit', () => {
         await expect(view(page)).toBeVisible();
     });
 
-    test('Shift+T on a row from another page changes that bookmark and no other', async ({ page }) => {
+    test('t on a row from another page changes that bookmark and no other', async ({ page }) => {
         await page.locator('body').click({ position: { x: 5, y: 5 } });
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('Shift+T');
+        await page.keyboard.press('t');
         const popover = page.locator('#tag-popover');
         await expect(popover).toContainText('Sel B');
         const namesByUrl = () => page.evaluate(() => window.dashboardInstance.allBookmarks
@@ -663,11 +663,11 @@ test.describe('selection, panel and edit', () => {
         expect(await namesByUrl()).toEqual(before);
     });
 
-    test('Shift+M on a row from another page offers pages, and moves it from its own', async ({ page }) => {
+    test('m on a row from another page offers pages, and moves it from its own', async ({ page }) => {
         await page.locator('body').click({ position: { x: 5, y: 5 } });
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('Shift+M');
+        await page.keyboard.press('m');
         const popover = page.locator('#move-popover');
         await expect(popover).toBeVisible();
         await expect(popover.locator('.move-popover-item[data-type="category"]')).toHaveCount(0);
@@ -678,10 +678,10 @@ test.describe('selection, panel and edit', () => {
         await expect.poll(() => readUrls(page, ids.other)).not.toContain(`https://sel-b-${N}.example.com/`);
     });
 
-    test('Shift+E opens the bookmark form, and Escape closes only that', async ({ page }) => {
+    test('e opens the bookmark form, and Escape closes only that', async ({ page }) => {
         await page.locator('body').click({ position: { x: 5, y: 5 } });
         await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('Shift+E');
+        await page.keyboard.press('e');
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);

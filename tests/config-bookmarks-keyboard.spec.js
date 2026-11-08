@@ -28,7 +28,7 @@ test.describe('config bookmarks keyboard navigation', () => {
 
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
         await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).toBeFocused();
     });
@@ -88,7 +88,7 @@ test.describe('config bookmarks keyboard navigation', () => {
 
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
-        await page.keyboard.press('e');
+        await page.keyboard.press('i');
         await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).toBeFocused();
 
         // Out of the field first, then the side panel closes, then the
@@ -139,13 +139,17 @@ test.describe('config bookmarks keyboard navigation', () => {
         await expect.poll(async () => (await selected()).length).toBe(3);
     });
 
-    test('m and c no longer open row menus', async ({ page }) => {
+    test('Shift+F10 opens the row menu; m and c open the panel, not a menu', async ({ page }) => {
         await openBookmarksWithRows(page, [{ name: 'A', url: 'https://a.example', pageId: 1 }]);
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
-        await page.keyboard.press('m');
+        await page.keyboard.press('Shift+F10');
+        await expect(page.locator('#config-bm-context-menu')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#config-bm-context-menu')).toHaveCount(0);
         await page.keyboard.press('c');
-        await expect(page.locator('#config-bm-list .health-view-menu:not([hidden])')).toHaveCount(0);
+        await expect(page.locator('#config-bm-context-menu')).toHaveCount(0);
+        await expect(page.locator('#config-bm-panel')).toBeVisible();
     });
 
     test('Enter on a focused rail filter presses it, not the row under the cursor', async ({ page }) => {

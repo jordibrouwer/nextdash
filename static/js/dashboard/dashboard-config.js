@@ -1490,6 +1490,7 @@ class DashboardConfig {
 
     closeConfigView() {
         this.closeWorkbenchOverlays?.();
+        window.ModeStrip?.set?.(null);
         const d = this.dash;
         if (!this.isActiveView()) {
             return false;
@@ -1668,6 +1669,11 @@ class DashboardConfig {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 this.clearListKeyboardSelection();
+                return;
+            }
+            if (this.section === 'feed-watch' && window.ConfigFeedWatch?.clearCursor?.(this)) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
                 return;
             }
             // An open theme picker takes Escape first, to cancel the preview and
@@ -1858,17 +1864,27 @@ class DashboardConfig {
     listKeyboardBodyId() {
         if (this.section === 'structure') return 'config-pt-body';
         if (this.section === 'finders') return 'config-finders-body';
+        if (this.section === 'widgets') return 'config-widgets-body';
+        if (this.section === 'data-backups') return 'config-view-body';
+        if (this.section === 'appearance' && this.appearanceTab === 'custom-themes') return 'config-appearance-body';
         if (this.section === 'bookmarks' && this.bmTab === 'tags') return 'config-bm-body';
         return null;
     }
 
-    shouldUseListKeyboardNav(target) {
+    shouldUseListKeyboardNav(target, e = null) {
         const bodyId = this.listKeyboardBodyId();
         if (!bodyId) return false;
-        if (this._listKeyboardKey) return true;
+        const loose = !target || target === document.body || target.id === 'config-section-panel';
         const body = target?.closest?.(`#${bodyId}`);
-        if (!body) return false;
-        if (target?.closest?.('.config-sub-tabs, [data-pt-tab], [data-bm-tab]')) return false;
+        if (!body && !loose) return false;
+        // A tab strip keeps its own keys, cursor or not.
+        if (target?.closest?.('.config-sub-tabs, .config-subtabs, [data-pt-tab], [data-bm-tab], [data-db-tab]')) return false;
+        if (this._listKeyboardKey) return true;
+        // Data & backups is a page of forms with two lists on it: the page's
+        // arrow keys scroll it, so only j and k (the rows' own keys) reach the
+        // rows from the page; the arrows need focus in a list or a cursor.
+        if (this.section === 'data-backups' && !target?.closest?.('.config-backup-list')
+            && !(e && !e.shiftKey && (e.key === 'j' || e.key === 'k'))) return false;
         return this.getListKeyboardRows().length > 0;
     }
 
@@ -1969,7 +1985,7 @@ class DashboardConfig {
          * whatever the cursor was on. The arrows would have been the defensible
          * choice; letters never were.
          */
-        const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g']);
+        const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
             if (!(this.listKeyboardBodyId() && isTagFilter && listNavFromFilter.has(e.key))) {
                 return false;
@@ -2002,7 +2018,18 @@ class DashboardConfig {
             }
         }
 
-        if (this.shouldUseListKeyboardNav(target) && this.handleListKeyboardNavigation(e)) {
+        // Alt+↑/↓ steps through the sections from anywhere, which is how a list
+        // page (where j/k are rows) is left by keyboard. The status page's
+        // grips use the same chord to reorder their own row.
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
+            && (e.key === 'ArrowUp' || e.key === 'ArrowDown')
+            && !target?.closest?.('[data-sp-grip]')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return this.moveSectionKeyboard(e.key === 'ArrowDown' ? 1 : -1);
+        }
+
+        if (this.shouldUseListKeyboardNav(target, e) && this.handleListKeyboardNavigation(e)) {
             return true;
         }
 
@@ -2016,7 +2043,7 @@ class DashboardConfig {
         }
 
         if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey
-            && !this.shouldUseListKeyboardNav(target)
+            && !this.shouldUseListKeyboardNav(target, e)
             && !this.shouldUseBookmarkKeyboardNav(target)
             && !target?.closest?.('.config-choices, .config-bg-swatches, .config-sub-tabs')) {
             if (e.key === 'j') {
@@ -2045,6 +2072,19 @@ class DashboardConfig {
             return true;
         }
 
+        // Shift+H switches the key legend off and on, here as on the dashboard.
+        if (e.shiftKey && e.code === 'KeyH' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            const bmLegend = this.dash.activeView === 'library'
+                || (this.section === 'bookmarks' && this.bmTab !== 'tags');
+            const hasLegend = bmLegend || this.configLegendWhere() === 'off'
+                || document.querySelector('.config-form-keyboard-legend, .config-list-keyboard-legend');
+            if (!hasLegend) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (!e.repeat) void (bmLegend ? this.toggleBookmarkKeyLegend() : this.toggleConfigKeyLegend());
+            return true;
+        }
+
         if (!e.ctrlKey && !e.metaKey && !e.altKey && e.shiftKey) {
             const d = this.dash;
             // e.code, not e.key — layout-safe, same as dashboard-setup.js.
@@ -2063,6 +2103,21 @@ class DashboardConfig {
                 // The whole list, as the key does from the grid and the header
                 // button does -- not the Broken filter openHealthView lands on.
                 void this.openLibraryView();
+                return true;
+            }
+            // Shift+T and Shift+W open their views from here as from the grid.
+            if (e.code === 'KeyT' && d.tagView?.openAllTags) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                window.nextdashRecordKey?.('Shift + T');
+                this.saveLastConfigLocation();
+                void d.tagView.openAllTags({ returnPageId: d.currentPageId });
+                return true;
+            }
+            if (e.code === 'KeyW' && window.FeedWatchNews && d.keyboardNavigation?._anyFeedWatched?.()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (!e.repeat) void window.FeedWatchNews.open({ source: 'button' });
                 return true;
             }
             if (e.code === 'KeyI' && d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
@@ -2788,6 +2843,7 @@ class DashboardConfig {
             this.bindInboxSection?.(container);
         } else if (this.section === 'widgets') {
             this.bindWidgetsEditor(container);
+            this.bindListKeyboard(container);
             void this.loadWidgetsEditor();
             // The custom widget offers a credential by name; the names are two
             // dozen bytes and cheaper to have than to wait for.
@@ -2958,27 +3014,230 @@ class DashboardConfig {
         frame = requestAnimationFrame(keep);
     }
 
-    /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
+    /* ── The Config key legend ───────────────────────────────────────────── */
+
+    /** Where the legend sits: below the page (default), above it, or off. */
+    configLegendWhere() {
+        const where = this.dash?.settings?.configViewKeyLegend;
+        return where === 'above' || where === 'off' ? where : 'below';
+    }
+
+    /**
+     * One legend for every Config page, built from the keys that page answers.
+     * The keys stay untranslated (they are what is printed on the keyboard);
+     * only the action each one performs is a translated string.
+     */
+    buildConfigLegendPairs(kind) {
+        const t = (k, f) => this.t(k, f);
+        const pairs = [];
+        if (kind === 'list') {
+            pairs.push(['j / k', t('config.listKeyMove', 'move')]);
+            pairs.push(['Enter', this.section === 'data-backups' ? t('config.listKeyButtons', 'to its buttons') : t('config.listKeyEdit', 'edit')]);
+            const row = this.getListKeyboardRows()[0];
+            const actions = row ? this.listRowActions(row) : [];
+            actions.forEach(([key, labelKey, fallback]) => pairs.push([key, t(labelKey, fallback)]));
+            pairs.push(['g / End', t('config.listKeyFirstLast', 'first / last')]);
+            if (this.section === 'bookmarks') pairs.push(['/', t('config.listKeyFilterTags', 'filter tags')]);
+            pairs.push(['Esc', t('config.listKeyClear', 'clear')]);
+            pairs.push(['Alt+↑/↓', t('config.formKeySections', 'sections')]);
+        } else {
+            const page = document.getElementById('config-view-body') || document;
+            pairs.push(['j / k', t('config.formKeySections', 'sections')]);
+            if (page.querySelector('.config-choices, .config-bg-swatches')) pairs.push(['←/→', t('config.formKeyChoices', 'choices')]);
+            if (this.section === 'status-page' && page.querySelector('[data-sp-service], [data-sp-group]')) {
+                pairs.push(['e', t('config.rowKeyRename', 'rename')]);
+                pairs.push(['d', t('config.rowKeyDelete', 'delete')]);
+                pairs.push(['u / n', t('config.rowKeyMove', 'move up / down')]);
+            }
+            if (page.querySelector('.config-range')) pairs.push(['Home / End', t('config.formKeySliders', 'sliders')]);
+            if (page.querySelector('.config-sub-tabs, .config-subtabs')) pairs.push(['[ / ]', t('config.formKeySubtabs', 'sub-tabs')]);
+        }
+        pairs.push(['Ctrl/Cmd+Shift+K', t('config.formKeyFindSetting', 'find setting')]);
+        pairs.push(['?', t('config.formKeyCheatSheet', 'cheat sheet')]);
+        pairs.push(['Shift+H', t('config.formKeyLegend', 'hide / show this')]);
+        pairs.push(['Shift+S', t('config.formKeyModeStrip', 'mode strip')]);
+        return pairs;
+    }
+
+    /** Put the legend on a page, below or above it per the setting. */
+    placeConfigLegend(host, anchor, className, pairs) {
+        const where = this.configLegendWhere();
+        host.querySelectorAll(`.${className}`).forEach((el) => el.remove());
+        if (where === 'off' || !anchor) return null;
+        const legend = document.createElement('p');
+        legend.className = className;
+        legend.setAttribute('aria-hidden', 'true');
+        legend.innerHTML = this.renderKeyboardLegendPairs(pairs);
+        // On the page of forms that also holds the backup lists the legend rests
+        // under its list: stuck to the foot it covered the last rows' buttons.
+        if (this.section === 'data-backups') legend.classList.add('is-inline');
+        if (where === 'above') {
+            legend.classList.add('is-above');
+            if (anchor === host) host.prepend(legend); else anchor.before(legend);
+        } else if (anchor === host) {
+            host.appendChild(legend);
+        } else {
+            anchor.after(legend);
+        }
+        return legend;
+    }
+
+    /** Footer hint on every page that is not a list (Behavior, Appearance, …). */
     bindFormKeyboardLegend(container) {
-        const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs']);
+        const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs',
+            'inbox', 'containers', 'help', 'status-page', 'unraid', 'glances', 'assistant']);
         if (!formSections.has(this.section)) return;
+        if (this.section === 'appearance' && this.appearanceTab === 'custom-themes') {
+            document.querySelectorAll('.config-form-keyboard-legend').forEach((el) => el.remove());
+            return;
+        }
         const body = container?.querySelector('#config-view-body') || document.getElementById('config-view-body');
         if (!body) return;
-        if (body.querySelector('.config-form-keyboard-legend')) return;
-        if (!body.querySelector('.config-choices, .config-range, .config-subtabs')) return;
-        const legend = document.createElement('p');
-        legend.className = 'config-form-keyboard-legend';
-        legend.setAttribute('aria-hidden', 'true');
-        // Keys stay untranslated (they are what is printed on the keyboard);
-        // only the action each one performs is a translated string.
-        legend.innerHTML = this.renderKeyboardLegendPairs([
-            ['←/→', this.t('config.formKeyChoices', 'choices')],
-            ['Home / End', this.t('config.formKeySliders', 'sliders')],
-            ['Alt+←/→', this.t('config.formKeySubtabs', 'sub-tabs')],
-            ['Ctrl/Cmd+Shift+K', this.t('config.formKeyFindSetting', 'find setting')],
-            ['!', this.t('config.formKeyCheatSheet', 'cheat sheet')],
-        ]);
-        body.appendChild(legend);
+        this.placeConfigLegend(body, body.firstElementChild || body, 'config-form-keyboard-legend', this.buildConfigLegendPairs('form'));
+        if (this.configLegendWhere() === 'below') {
+            const legend = body.querySelector('.config-form-keyboard-legend');
+            if (legend) body.appendChild(legend);
+        }
+    }
+
+    /** Shift+H on a Config page that is not the Bookmarks list: the legend, off and on. */
+    async toggleConfigKeyLegend() {
+        const d = this.dash;
+        d.settings = d.settings || {};
+        const current = this.configLegendWhere();
+        const next = current === 'off' ? (this._cfgLegendWas && this._cfgLegendWas !== 'off' ? this._cfgLegendWas : 'below') : 'off';
+        if (current !== 'off') this._cfgLegendWas = current;
+        d.settings.configViewKeyLegend = next;
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch (_err) {
+            d.settings.configViewKeyLegend = current;
+            d.showNotification?.(d.t?.('dashboard.gridKeyLegendToggleFailed', 'Could not save the key legend setting') || 'Could not save the key legend setting', 'error');
+            return;
+        }
+        this.bindFormKeyboardLegend(document);
+        const bodyId = this.listKeyboardBodyId();
+        const listBody = bodyId ? document.getElementById(bodyId) : null;
+        if (listBody) this.appendListKeyboardLegend(listBody);
+        this.paintFeedWatchList?.();
+        d.showNotification?.(next === 'off'
+            ? (d.t?.('dashboard.gridKeyLegendOff', 'Key legend off') || 'Key legend off')
+            : (d.t?.('dashboard.gridKeyLegendOn', 'Key legend on') || 'Key legend on'), 'success', { duration: 2000 });
+    }
+
+    /**
+     * What a letter does on a row of the Structure, Finders and Tags lists.
+     * [letter, string key, fallback, selector of the row's own button | null,
+     * how]. A null selector means "go to the row's first field" -- the same
+     * thing Enter does -- and "focus" puts the cursor in a field instead of
+     * pressing a button, so a rename or a colour is chosen by typing.
+     */
+    listRowActions(row) {
+        if (!row) return [];
+        if (row.hasAttribute('data-page-row')) {
+            return [
+                ['e', 'config.rowKeyEdit', 'edit', null],
+                ['y', 'config.rowKeyDuplicate', 'duplicate', '[data-page-duplicate]'],
+                ['t', 'config.rowKeyTemplate', 'template', '[data-page-template]'],
+                ['u', 'config.rowKeyUp', 'move up', '[data-page-move="up"]'],
+                ['n', 'config.rowKeyDown', 'move down', '[data-page-move="down"]'],
+                ['d', 'config.rowKeyDelete', 'delete', '[data-page-delete]'],
+            ];
+        }
+        if (row.hasAttribute('data-cat-row')) {
+            return [
+                ['e', 'config.rowKeyEdit', 'edit', null],
+                ['y', 'config.rowKeyDuplicate', 'duplicate', '[data-cat-duplicate]'],
+                ['w', 'config.rowKeySpread', 'spread', '[data-cat-spread]'],
+                ['d', 'config.rowKeyDelete', 'delete', '[data-cat-delete]'],
+            ];
+        }
+        if (row.hasAttribute('data-tag-row')) {
+            return [
+                ['e', 'config.rowKeyRename', 'rename', null],
+                ['c', 'config.rowKeyColour', 'colour', 'select', 'focus'],
+                ['d', 'config.rowKeyDelete', 'delete', '[data-tag-delete]'],
+            ];
+        }
+        if (row.hasAttribute('data-collection-row')) {
+            return [
+                ['e', 'config.rowKeyEdit', 'edit', '[data-collection-edit]'],
+                ['d', 'config.rowKeyDelete', 'delete', '[data-collection-delete]'],
+            ];
+        }
+        if (row.hasAttribute('data-backup-row')) {
+            return [
+                ['r', 'config.rowKeyRestore', 'restore', '[data-backup-item="restore"]'],
+                ['o', 'config.rowKeyDownload', 'download', '[data-backup-item="download"]'],
+                ['d', 'config.rowKeyDelete', 'delete', '[data-backup-item="delete"]'],
+            ];
+        }
+        if (row.hasAttribute('data-trash-row')) {
+            return [
+                ['r', 'config.rowKeyRestore', 'restore', '[data-trash-action="restore"]'],
+                ['x', 'config.rowKeySelect', 'select', '[data-trash-select]'],
+                ['d', 'config.rowKeyDeleteForever', 'delete forever', '[data-trash-action="delete"]'],
+            ];
+        }
+        if (row.hasAttribute('data-theme-row')) {
+            return [
+                ['e', 'config.rowKeyEdit', 'edit', '[data-theme-edit]'],
+                ['s', 'config.rowKeyExport', 'export', '[data-theme-export]'],
+                ['u', 'config.rowKeyUp', 'move up', '[data-theme-move="up"]'],
+                ['n', 'config.rowKeyDown', 'move down', '[data-theme-move="down"]'],
+                ['d', 'config.rowKeyDelete', 'delete', '[data-theme-delete]'],
+            ];
+        }
+        if (row.hasAttribute('data-widget-row')) {
+            return [
+                ['e', 'config.rowKeyRename', 'rename', null],
+                ['s', 'config.rowKeySettings', 'settings', '[data-widget-settings]'],
+                ['h', 'config.rowKeyShown', 'shown / hidden', '[data-widget-enabled]'],
+                ['x', 'config.rowKeySelect', 'select', '[data-widget-pick]'],
+            ];
+        }
+        if (row.hasAttribute('data-finder-index')) {
+            return [
+                ['e', 'config.rowKeyEdit', 'edit', null],
+                ['d', 'config.rowKeyDelete', 'delete', '[data-finder-delete]'],
+            ];
+        }
+        return [];
+    }
+
+    /** A letter pressed with the cursor on a row: do what the legend says it does. */
+    runListRowLetter(letter, row) {
+        const action = this.listRowActions(row).find((a) => a[0] === letter);
+        if (!action) return false;
+        const [, , , selector, how] = action;
+        if (!selector) { this.focusListRow(row); }
+        else {
+            const el = row.querySelector(selector);
+            if (!el || el.disabled) return true;
+            if (how === 'focus') el.focus();
+            else el.click();
+        }
+        window.ModeStripSuggest?.recordUse?.(letter);
+        return true;
+    }
+
+    /** The mode strip over a Config list: the row under the cursor and what its letters do. */
+    syncConfigModeStrip() {
+        const strip = window.ModeStrip;
+        if (!strip || this.dash?.activeView !== 'config') return;
+        const key = this._listKeyboardKey;
+        const row = key ? this.getListKeyboardRows().find((r) => this.listRowKey(r) === key) : null;
+        if (!row || !window.ModeStripSuggest?.suggestConfigRow) { strip.set(null); return; }
+        if (key !== this._cfgStripKey) {
+            this._cfgStripKey = key;
+            this._cfgStripSeed = (this._cfgStripSeed || 0) + 1;
+        }
+        strip.set('cursor', {
+            suggestions: window.ModeStripSuggest.suggestConfigRow(
+                this.listRowActions(row).map(([k, , f]) => ({ key: k, verb: f })),
+                this._cfgStripSeed || 0,
+            ),
+        });
     }
 
     /**
@@ -3121,6 +3380,10 @@ class DashboardConfig {
         if (row.hasAttribute('data-tag-row')) return `tag:${row.getAttribute('data-tag-row')}`;
         if (row.hasAttribute('data-finder-index')) return `finder:${row.getAttribute('data-finder-index')}`;
         if (row.hasAttribute('data-collection-row')) return `collection:${row.getAttribute('data-collection-row')}`;
+        if (row.hasAttribute('data-backup-row')) return `backup:${row.getAttribute('data-backup-row')}`;
+        if (row.hasAttribute('data-trash-row')) return `trash:${row.getAttribute('data-trash-row')}`;
+        if (row.hasAttribute('data-theme-row')) return `theme:${row.getAttribute('data-theme-row')}`;
+        if (row.hasAttribute('data-widget-row')) return `widget:${row.getAttribute('data-widget-id') || row.getAttribute('data-widget-row')}`;
         return null;
     }
 
@@ -3133,13 +3396,14 @@ class DashboardConfig {
         // are read-only and carry no key -- and being first in the DOM they took
         // index 0, where listRowKey answered null and the cursor could never
         // move off them. That left the whole tab's up/down, g/G and Enter dead.
-        return Array.from(body.querySelectorAll('.config-crud-list .config-crud-row'))
+        return Array.from(body.querySelectorAll('.config-crud-list .config-crud-row, .config-widget-list .config-widget-row, .config-backup-list .config-backup-row'))
             .filter((row) => this.listRowKey(row) !== null);
     }
 
     clearListKeyboardSelection() {
         this._listKeyboardKey = null;
-        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected, #config-finders-body .config-crud-row.keyboard-selected, #config-bm-body .config-crud-row.keyboard-selected').forEach((row) => {
+        if (this.dash?.activeView === 'config') window.ModeStrip?.set?.(null);
+        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected, #config-finders-body .config-crud-row.keyboard-selected, #config-bm-body .config-crud-row.keyboard-selected, #config-widgets-body .config-widget-row.keyboard-selected, #config-appearance-body .config-crud-row.keyboard-selected, #config-view-body .config-backup-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
             row.removeAttribute('aria-selected');
         });
@@ -3154,6 +3418,7 @@ class DashboardConfig {
             const selected = key !== null && key === this._listKeyboardKey;
             row.classList.toggle('keyboard-selected', selected);
             if (selected) {
+                this._listKeyboardIndex = list.indexOf(row);
                 row.setAttribute('aria-selected', 'true');
                 row.scrollIntoView({
                     block: 'nearest',
@@ -3163,12 +3428,19 @@ class DashboardConfig {
                 row.removeAttribute('aria-selected');
             }
         });
+        this.syncConfigModeStrip();
     }
 
     syncListKeyboardSelectionAfterRender() {
         const rows = this.getListKeyboardRows();
         if (!this._listKeyboardKey || !rows.some((row) => this.listRowKey(row) === this._listKeyboardKey)) {
-            this._listKeyboardKey = null;
+            // A restored or deleted backup leaves the cursor on the row that
+            // took its place, so the next key carries on down the list.
+            const was = this._listKeyboardKey;
+            const at = this._listKeyboardIndex;
+            const kept = /^(backup|trash):/.test(was || '') && rows.length && Number.isInteger(at)
+                ? this.listRowKey(rows[Math.min(at, rows.length - 1)]) : null;
+            this._listKeyboardKey = kept;
         }
         this.applyListKeyboardSelection(rows);
     }
@@ -3192,34 +3464,31 @@ class DashboardConfig {
 
     focusListRow(row) {
         if (!row) return;
-        const field = row.querySelector('.config-crud-fields input:not([type="hidden"]), .config-crud-fields select, .config-crud-fields textarea');
+        const field = row.querySelector('.config-crud-fields input:not([type="hidden"]), .config-crud-fields select, .config-crud-fields textarea, .config-widget-row-title');
         if (field) {
             field.focus();
             return;
         }
-        row.querySelector('.config-crud-row-actions button:not(.config-btn--danger), [data-collection-edit]')?.focus();
+        row.querySelector('.config-crud-row-actions button:not(.config-btn--danger), [data-collection-edit], .config-backup-row-actions button:not(.config-btn--danger)')?.focus();
     }
 
     appendListKeyboardLegend(body) {
         // The list the keys actually drive, not simply the first one on the
         // panel: on Collections that is the read-only sizes table, so the legend
         // promised keys under a table none of them apply to.
-        const lists = Array.from(body?.querySelectorAll('.config-crud-list') || []);
-        const list = lists.find((el) => Array.from(el.querySelectorAll('.config-crud-row'))
+        const lists = Array.from(body?.querySelectorAll('.config-crud-list, .config-widget-list, .config-backup-list') || []);
+        const list = lists.find((el) => Array.from(el.querySelectorAll('.config-crud-row, .config-widget-row, .config-backup-row'))
             .some((row) => this.listRowKey(row) !== null)) || lists[0];
-        if (!list || list.querySelector('.config-panel-empty')) return;
-        if (body.querySelector('.config-list-keyboard-legend')) return;
-        const legend = document.createElement('p');
-        legend.className = 'config-list-keyboard-legend';
-        legend.setAttribute('aria-hidden', 'true');
-        legend.innerHTML = this.renderKeyboardLegendPairs([
-            ['↑/↓', this.t('config.listKeyMove', 'move')],
-            ['Enter', this.t('config.listKeyEdit', 'edit')],
-            ['g / End', this.t('config.listKeyFirstLast', 'first / last')],
-            ['/', this.t('config.listKeyFilterTags', 'filter tags')],
-            ['Esc', this.t('config.listKeyClear', 'clear')],
-        ]);
-        list.after(legend);
+        body?.querySelectorAll('.config-list-keyboard-legend').forEach((el) => el.remove());
+        // Backups and the trash are lists on a page of forms: with rows the
+        // list legend replaces the form legend; without them the form one stays.
+        const keyed = Boolean(list) && Array.from(list.children).some((row) => this.listRowKey(row) !== null);
+        if (this.section === 'data-backups') {
+            if (keyed) document.querySelectorAll('.config-form-keyboard-legend').forEach((el) => el.remove());
+            else this.bindFormKeyboardLegend(document);
+        }
+        if (!list || list.querySelector('.config-panel-empty') || (this.section === 'data-backups' && !keyed)) return;
+        this.placeConfigLegend(body, this.section === 'widgets' ? body : list, 'config-list-keyboard-legend', this.buildConfigLegendPairs('list'));
     }
 
     bindListKeyboard(container) {
@@ -3231,8 +3500,10 @@ class DashboardConfig {
         if (!body.dataset.configListKbdWired) {
             body.dataset.configListKbdWired = '1';
             body.addEventListener('click', (e) => {
-                const row = e.target.closest('.config-crud-row');
+                const row = e.target.closest('.config-crud-row, .config-widget-row, .config-backup-row');
                 if (!row || !body.contains(row)) return;
+                // A press on a backup's own button does its job; the cursor stays out of it.
+                if (row.classList.contains('config-backup-row') && e.target.closest('button, a, input, label')) return;
                 this._listKeyboardKey = this.listRowKey(row);
                 this.applyListKeyboardSelection(this.getListKeyboardRows());
             });
@@ -3247,7 +3518,7 @@ class DashboardConfig {
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
-        const listNavKeys = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g']);
+        const listNavKeys = new Set(['ArrowDown', 'ArrowUp', 'Enter']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
             if (!isTagFilter || !listNavKeys.has(e.key)) {
                 return false;
@@ -3255,8 +3526,8 @@ class DashboardConfig {
         }
 
         const onRowControl = Boolean(
-            target?.closest?.('.config-crud-row')
-            && target?.matches?.('button, a, input, select, textarea')
+            target?.closest?.('.config-crud-row, .config-widget-row, .config-backup-row')
+            && target?.matches?.('button, a, input, select, textarea, label')
         );
 
         // A button of the list's own panel outside the rows: a group head, a
@@ -3265,12 +3536,22 @@ class DashboardConfig {
         // Enter after an arrow edits the row rather than pressing it again.
         const onBodyButton = Boolean(
             !onRowControl
-            && target?.matches?.('button')
+            && target?.matches?.('button, summary, a[href], [role="button"]')
             && target?.closest?.(`#${this.listKeyboardBodyId()}`)
         );
 
         const rows = this.getListKeyboardRows();
         if (!rows.length) return false;
+
+        // j and k are the rows' own keys on a list page, as on the Bookmarks
+        // list; Alt+↑/↓ steps through the sections from here.
+        if (!isTagFilter && !e.shiftKey && (e.key === 'j' || e.key === 'k') && !onRowControl) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (onBodyButton) target.blur();
+            this.moveListKeyboardSelection(e.key === 'j' ? 1 : -1, rows);
+            return true;
+        }
 
         if (e.key === 'ArrowDown') {
             if (onRowControl) return false;
@@ -3300,6 +3581,16 @@ class DashboardConfig {
                 this.focusListRow(row);
             }
             return true;
+        }
+        if (!e.shiftKey && !isTagFilter && !onBodyButton && /^[a-z]$/.test(e.key) && this._listKeyboardKey) {
+            const cursorRow = rows.find((r) => this.listRowKey(r) === this._listKeyboardKey);
+            if (cursorRow && this.listRowActions(cursorRow).some((a) => a[0] === e.key)) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                // Held down, a letter acts once: h would write Shown on every repeat.
+                if (!e.repeat) this.runListRowLetter(e.key, cursorRow);
+                return true;
+            }
         }
         if (e.key === 'g') {
             e.preventDefault();
@@ -3339,8 +3630,36 @@ class DashboardConfig {
         return Array.from(host.querySelectorAll('.config-bm-row'));
     }
 
+    /**
+     * What the mode strip says in the Bookmarks view: the cursor on a row, or the
+     * number of rows ticked. Nothing when the view is not the one on screen.
+     */
+    syncBookmarkModeStrip() {
+        const strip = window.ModeStrip;
+        if (!strip) return;
+        const view = this.dash?.activeView;
+        if (view !== 'library' && !(view === 'config' && this.section === 'bookmarks')) return;
+        const count = this.bmSelected?.size || 0;
+        if (count > 0) { strip.set('multi', { count }); return; }
+        const key = this._bmKeyboardKey;
+        const bookmark = key ? this.findBookmarkByKey(key) : null;
+        if (!bookmark || !window.ModeStripSuggest) { strip.set(null); return; }
+        if (key !== this._bmStripKey) {
+            this._bmStripKey = key;
+            this._bmStripSeed = (this._bmStripSeed || 0) + 1;
+        }
+        strip.set('cursor', {
+            suggestions: window.ModeStripSuggest.suggestLibrary({
+                tags: (bookmark.tags || []).filter(Boolean),
+                pinned: Boolean(bookmark.pinned),
+                issue: Boolean(this._bmHealthModule && this.bmHealthIssue?.(bookmark)),
+            }, this._bmStripSeed || 0),
+        });
+    }
+
     clearBookmarkKeyboardSelection() {
         this._bmKeyboardKey = null;
+        window.ModeStrip?.set?.(null);
         this._bmRevealKey = null;
         this._bmRevealFocusUntil = 0;
         this._bmPanelHoldKey = null;
@@ -3369,6 +3688,7 @@ class DashboardConfig {
             }
         });
         this.repaintWorkbenchPanel?.();
+        this.syncBookmarkModeStrip();
     }
 
     syncBookmarkKeyboardSelectionAfterRender() {
@@ -3585,6 +3905,29 @@ class DashboardConfig {
         if (spark && typeof this.workbenchSparkCell === 'function') spark.outerHTML = this.workbenchSparkCell(bookmark);
     }
 
+    /** Shift+H: the key legend under the list, off and on; what it was set to comes back. */
+    async toggleBookmarkKeyLegend() {
+        const d = this.dash;
+        d.settings = d.settings || {};
+        const current = d.settings.bmViewKeyLegend || 'below';
+        const next = current === 'off' ? (this._bmLegendWas && this._bmLegendWas !== 'off' ? this._bmLegendWas : 'below') : 'off';
+        if (current !== 'off') this._bmLegendWas = current;
+        d.settings.bmViewKeyLegend = next;
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch (_err) {
+            d.settings.bmViewKeyLegend = current;
+            d.showNotification?.(d.t?.('dashboard.gridKeyLegendToggleFailed', 'Could not save the key legend setting') || 'Could not save the key legend setting', 'error');
+            return;
+        }
+        const host = document.getElementById('config-bm-list');
+        host?.querySelectorAll('.config-bm-keyboard-legend').forEach((el) => el.remove());
+        if (host && next !== 'off') this.appendBookmarkKeyboardLegend(host);
+        d.showNotification?.(next === 'off'
+            ? (d.t?.('dashboard.gridKeyLegendOff', 'Key legend off') || 'Key legend off')
+            : (d.t?.('dashboard.gridKeyLegendOn', 'Key legend on') || 'Key legend on'), 'success', { duration: 2000 });
+    }
+
     appendBookmarkKeyboardLegend(host) {
         const feed = host?.querySelector('.config-bm-feed');
         if (!feed || feed.querySelector('.config-panel-empty')) return;
@@ -3692,8 +4035,36 @@ class DashboardConfig {
         return true;
     }
 
+    /**
+     * The two chords of the list, as on the dashboard: Ctrl/Cmd+Enter opens the
+     * row in a new tab, Ctrl/Cmd+C copies its address. Only with the cursor on a
+     * row and none of them in a text field.
+     */
+    handleBookmarkChords(e) {
+        const key = this._bmKeyboardKey;
+        if (!key || !this.isActiveView?.()) return false;
+        const target = e.target;
+        const tag = target?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return false;
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key === 'Enter') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (!e.repeat) this.openBookmarkByKey(key, { newTab: true });
+            return true;
+        }
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.code === 'KeyC'
+            && !String(window.getSelection?.() || '').length) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.handleBookmarkMenuAction('copy-url', key);
+            return true;
+        }
+        return false;
+    }
+
     handleBookmarkKeyboardNavigation(e) {
         if (this.section !== 'bookmarks') return false;
+        if (this.handleBookmarkChords(e)) return true;
         if (e.ctrlKey || e.altKey || e.metaKey) return false;
         if (this.handleBookmarkMenuKeys(e)) return true;
 
@@ -3730,20 +4101,16 @@ class DashboardConfig {
             return false;
         }
 
-        // f: Work through, as in Health.
-        if (!e.shiftKey && e.key === 'f' && typeof this.startLibraryWorkThrough === 'function') {
+        // u: Work through, as in Health. (f is the tag filter, as on the dashboard.)
+        if (!e.shiftKey && e.key === 'u' && typeof this.startLibraryWorkThrough === 'function') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.startLibraryWorkThrough();
             return true;
         }
-        // Shift+P and Shift+C: pages and categories, in the modal over the list.
-        if (e.shiftKey && (e.key === 'P' || e.key === 'C') && typeof this.openStructureModal === 'function') {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this.openStructureModal(e.key === 'P' ? 'pages' : 'categories');
-            return true;
-        }
+        // Shift+P and Shift+C are the Pages panel and Containers here, as
+        // everywhere. Pages & categories over the list is in the Collection
+        // menu and the command palette.
 
         const onRowControl = Boolean(
             target?.closest?.('.config-bm-row')
@@ -3810,10 +4177,77 @@ class DashboardConfig {
                 this.selectBookmarkRange(this._bmKeyboardKey);
                 return true;
             }
+            // e: edit, as on the dashboard -- the full dialog. The side panel is i.
             if (e.key === 'e') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                void this.openBookmarkEditModal(this._bmKeyboardKey);
+                return true;
+            }
+            // m: move. The panel opens on the row and the cursor goes to its Page field.
+            if (e.key === 'm') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
                 void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+                document.querySelector('#config-bm-panel [data-bm-field="page"]')?.focus();
+                return true;
+            }
+            // p: pin or unpin, as on the dashboard.
+            if (e.key === 'p') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const pinKey = this._bmKeyboardKey;
+                const target = this.findBookmarkByKey(pinKey);
+                if (target) void this.saveBookmarkFields(pinKey, { pinned: !target.pinned });
+                return true;
+            }
+            // s: share, q: QR code, as on the dashboard.
+            if (e.key === 's' || e.key === 'q') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.handleBookmarkMenuAction(e.key === 's' ? 'share' : 'qr', this._bmKeyboardKey);
+                return true;
+            }
+            // f: show only this bookmark's tag, as on the dashboard.
+            if (e.key === 'f') {
+                const first = (this.findBookmarkByKey(this._bmKeyboardKey)?.tags || []).filter(Boolean)[0];
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (first) this.filterBookmarksByTag(first);
+                else this.notify?.(this.t('config.bmNoTagToFilter', 'This bookmark has no tags to filter by.'), 'info');
+                return true;
+            }
+            // y: find tags for the bookmark, #: for its category; v: its health
+            // details; b and w: show only its category or its page. Every action of
+            // the row menu has a key, and none of them needs a modifier.
+            if (['y', 'v', 'b', 'w', '#'].includes(e.key)) {
+                const bm = this.findBookmarkByKey(this._bmKeyboardKey);
+                const menu = this.bookmarkContextMenu?.();
+                if (bm && menu) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    if (e.key === 'y') void menu.run('find-tags', this._bmKeyboardKey, bm);
+                    else if (e.key === '#') void menu.run('find-tags-category', this._bmKeyboardKey, bm);
+                    else if (e.key === 'v') {
+                        if (this.bmHealthIssue?.(bm)) this.handleBookmarkMenuAction('health-details', this._bmKeyboardKey);
+                    } else if (e.key === 'b') menu.run('filter-category', this._bmKeyboardKey, bm);
+                    else void menu.run('filter-page', this._bmKeyboardKey, bm);
+                    return true;
+                }
+            }
+            // c: checking, as on the dashboard.
+            if (e.key === 'c') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+                this.openBmHealthPanelSection({ focusCheckMode: true });
+                return true;
+            }
+            // Shift+F10 and the Menu key: the row menu, as on the dashboard.
+            if ((e.key === 'F10' && e.shiftKey) || e.key === 'ContextMenu') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.openBookmarkRowContextMenu(this._bmKeyboardKey);
                 return true;
             }
             // t: tags, as on the dashboard. The side panel opens on the row and
@@ -3823,13 +4257,6 @@ class DashboardConfig {
                 e.stopImmediatePropagation();
                 void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
                 document.querySelector('#config-bm-panel [data-bm-field="tags"]')?.focus();
-                return true;
-            }
-            // The full dialog, as Shift+E is on the dashboard grid.
-            if (e.key === 'E') {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                void this.openBookmarkEditModal(this._bmKeyboardKey);
                 return true;
             }
             if (e.key === 'd') {
@@ -3858,38 +4285,35 @@ class DashboardConfig {
              * report has not reached yet, none of these have anything to
              * act on.
              */
-            if (['p', 's', 'c', 'm', 'n', 'z'].includes(e.key)) {
+            if (['r', 'n', 'z'].includes(e.key)) {
                 const health = this._bmHealthModule;
                 const bookmark = this.findBookmarkByKey(this._bmKeyboardKey);
                 const issue = health && bookmark ? this.bmHealthIssue(bookmark) : null;
                 if (issue) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    if (e.key === 'p') void health.recheckIssue(issue);
-                    else if (e.key === 's') this.openBmHealthPanelSection();
-                    else if (e.key === 'c') this.openBmHealthPanelSection({ focusCheckMode: true });
-                    else if (e.key === 'm') this.openBookmarkRowContextMenu(this._bmKeyboardKey);
+                    if (e.key === 'r') void health.recheckIssue(issue);
                     else if (e.key === 'n') void health.toggleIgnore(issue);
                     else if (e.key === 'z') void health.toggleIgnore(issue, { snooze: true });
                     return true;
                 }
             }
         }
-        // With or without a row in focus: the panel is folded for the list.
+        // i: the side panel. On a row it opens on it and puts the cursor in its first
+        // field (Esc leaves the field, then closes the panel). With no row it just
+        // folds or unfolds.
         if (e.key === 'i') {
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.toggleWorkbenchPanel();
+            if (this._bmKeyboardKey) {
+                void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+            } else {
+                this.toggleWorkbenchPanel();
+            }
             return true;
         }
-        // R refreshes the report itself, not one row — needs the module, not a
-        // selected bookmark, so it works even before anything is picked.
-        if (e.key === 'R' && this._bmHealthModule) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            void this.refreshBmHealth({ refresh: true });
-            return true;
-        }
+        // Refreshing the report is in the Collection menu and the command
+        // palette; Shift+R is not a view, so it is no key of this one.
         // h opens the collection health modal -- how the whole library is
         // doing, not one row -- so like R it needs the module loaded and
         // nothing selected.
@@ -3899,9 +4323,9 @@ class DashboardConfig {
             this.openBmHealthModal?.();
             return true;
         }
-        // H: the selected bookmark's health, in large -- as h is the whole
+        // l: the selected bookmark's health, in large -- as h is the whole
         // collection's.
-        if (e.key === 'H' && this._bmHealthModule) {
+        if (e.key === 'l' && this._bmHealthModule) {
             const key = this._bmKeyboardKey || (this.workbenchPanelMode?.() === 'single' ? this.workbenchPanelKey?.() : '');
             if (key && this.bmHealthIssue?.(this.findBookmarkByKey(key))) {
                 e.preventDefault();
@@ -8366,6 +8790,7 @@ class DashboardConfig {
         // Leaving the tab drops any unsaved preview so the dashboard
         // does not keep showing colours from a theme you stopped editing.
         if (tab !== 'custom-themes') this.clearThemePreview();
+        this.clearListKeyboardSelection();
         this.render();
         if (tab === 'custom-themes') await this.openCustomThemes();
         // openCustomThemes paints its own body after render, so the band is
@@ -9386,6 +9811,7 @@ class DashboardConfig {
         hideCornerCardsMobile: { info: ['hideCornerCardsMobileInfoTitle', 'hideCornerCardsMobileInfoMessage'], def: true },
         globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'], def: true },
         showShortcutTooltips: { info: ['shortcutTooltipsInfoTitle', 'shortcutTooltipsInfoMessage'], def: false },
+        showModeStrip: { info: ['showModeStripInfoTitle', 'showModeStripInfoMessage'], hint: 'modeStripHint', def: true },
         showGridKeyLegend: { info: ['showGridKeyLegendInfoTitle', 'showGridKeyLegendInfoMessage'], hint: 'gridKeyLegendHint', def: true },
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
@@ -9525,7 +9951,7 @@ class DashboardConfig {
         dockerAutoUpdateFrom: { def: 3 },
         dockerAutoUpdateTo: { def: 5 },
         dockerViewCloseOutside: { def: true },
-        dockerViewKeyLegend: { def: 'above' },
+        dockerViewKeyLegend: { def: 'below' },
         dockerHostAddress: { def: '' },
         discoverApps: { def: true },
         discoveryNewApps: { def: 'ask' },
@@ -10489,6 +10915,7 @@ class DashboardConfig {
                     // whether the keyboard explains itself, not how the grid
                     // looks.
                     { ...bool('showGridKeyLegend', 'config.gridKeyLegendLabel', 'Show a key legend under the bookmarks'), special: 'render' },
+                    bool('showModeStrip', 'config.modeStripLabel', 'Show the mode strip (Shift+S)'),
                 ],
             },
             {
@@ -21234,6 +21661,7 @@ class DashboardConfig {
             const box = row.querySelector('.config-bm-tick');
             if (box) box.checked = on;
         });
+        this.syncBookmarkModeStrip?.();
         // A selection of fewer than two has no shared form to show.
         if (this.bmSelected.size < 2) this._bmBulkPanelWanted = false;
         this.syncBookmarkSelectAllButton();
@@ -21782,34 +22210,44 @@ class DashboardConfig {
 
 
     renderBookmarkKeyboardLegend() {
+        // The letters are the dashboard's: the same key does the same thing on a
+        // bookmark here as there. Shift is only for views.
         const keys = [
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
             ['x', this.t('config.bmKeySelect', 'select')],
-            ['Shift X', this.t('config.bmKeyRange', 'range')],
-            ['Ctrl/Cmd A', this.t('config.bmKeySelectAll', 'select all')],
+            ['Shift+X', this.t('config.bmKeyRange', 'range')],
+            ['Ctrl/Cmd+A', this.t('config.bmKeySelectAll', 'select all')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
-            ['Shift E', this.t('config.bmKeyEditDialog', 'edit in dialog')],
             ['i', this.t('config.bmKeyPanel', 'panel')],
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
-            ['d', this.t('config.bookmarksKeyDelete', 'delete')],
             ['t', this.t('config.bmKeyTags', 'tags')],
+            ['m', this.t('config.bmKeyMove', 'move to')],
+            ['p', this.t('config.bmKeyPin', 'pin')],
+            ['f', this.t('config.bmKeyFilterTag', 'filter by tag')],
+            ['c', this.t('config.bmKeyChecking', 'checking')],
+            ['y / #', this.t('config.bmKeyFindTags', 'find tags: bookmark / category')],
+            ['b / w', this.t('config.bmKeyOnlyCategoryPage', 'only this category / page')],
+            ['Ctrl/Cmd+Enter', this.t('dashboardKeyNewTab', 'new tab')],
+            ['Ctrl/Cmd+C', this.t('config.bmKeyCopyUrl', 'copy URL')],
+            ['s', this.t('config.bmKeyShare', 'share')],
+            ['q', this.t('config.bmKeyQr', 'QR code')],
+            ['d', this.t('config.bookmarksKeyDelete', 'delete')],
             ['a', this.t('config.bmKeyAddSuggested', 'add suggested')],
             ['g / End', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
+            ['u', this.t('config.bmKeyWorkThrough', 'work through')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
-            ['Shift P / C', this.t('config.bmKeyStructure', 'pages / categories')],
-            ['f', this.t('config.bmKeyWorkThrough', 'work through')],
             // Health's own keys, listed only once its report has something for
             // them to act on — an empty list has nothing to re-check or ignore.
             ...(this._bmHealthModule ? [
-                ['p', this.t('config.bmKeyRecheck', 're-check')],
-                ['s', this.t('config.bmKeyScore', 'score')],
-                ['c', this.t('config.bmKeyChecking', 'checking')],
-                ['Shift R', this.t('config.bmKeyRefreshReport', 'refresh report')],
-                ['m', this.t('config.bmKeyMenu', 'menu')],
+                ['r', this.t('config.bmKeyRecheck', 're-check')],
                 ['n / z', this.t('config.bmKeyIgnoreSnooze', 'ignore / snooze')],
+                ['v', this.t('config.bmKeyHealthDetails', 'health details')],
+                ['l', this.t('config.bmKeyHealthLarge', 'health, large')],
                 ['h', this.t('config.bmKeyHealthModal', 'collection health')],
             ] : []),
+            ['Shift+H', this.t('dashboard.dashboardKeyHideLegend', 'hide legend')],
+            ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'mode strip')],
         ];
         return this.renderKeyboardLegendPairs(keys);
     }

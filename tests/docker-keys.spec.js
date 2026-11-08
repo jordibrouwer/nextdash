@@ -9,20 +9,20 @@ async function openView(page) {
   return state;
 }
 
-// The Containers view's own keys -- l, m, d -- and Shift+C into the view from
+// The Containers view's own keys -- l, m, w, y, [ and ] -- and Shift+C into the view from
 // the dashboard. None of them is taken anywhere else.
 test.describe('containers keys', () => {
-  test('d switches to Disk and back; typed in the search it is just a letter', async ({ page }) => {
+  test('] and [ switch to Disk and back; typed in the search they are just letters', async ({ page }) => {
     await openView(page);
     await page.locator('[data-docker-search]').focus();
-    await page.keyboard.type('d');
+    await page.keyboard.type(']');
     await expect(page.locator('[data-docker-disk]')).toHaveCount(0);
     await page.locator('[data-docker-search]').fill('');
     await page.locator('[data-docker-search]').blur();
-    await page.keyboard.press('d');
+    await page.keyboard.press(']');
     await expect(page.locator('[data-docker-disk]')).toBeVisible();
     await expect(page).toHaveURL(/#docker\/~disk$/);
-    await page.keyboard.press('d');
+    await page.keyboard.press('[');
     await expect(page.locator('[data-docker-row]')).toHaveCount(4);
   });
 
@@ -51,14 +51,14 @@ test.describe('containers keys', () => {
   test('the legend names every key; read-only leaves out the actions', async ({ page }) => {
     await openView(page);
     const keys = () => page.locator('.docker-legend kbd').allInnerTexts();
-    expect(await keys()).toEqual(['↑ / ↓', 'Enter', '/', 'x', 's', 'r', 'p', 'u', '⌫', 'l', 'm', 'd']);
+    expect(await keys()).toEqual(['j / k', 'Enter', '/', 'x', 's', 'r', 'p', 'u', 'd', 'l', 'm', 'w', 'y', 'Ctrl/Cmd+C', '[ / ]', 'Shift+H', 'Shift+S']);
   });
 
   test('read-only still has a legend, without the action keys', async ({ page }) => {
     await mockDocker(page, { control: false });
     await page.goto('/#docker');
     await expect(page.locator('[data-docker-row]')).toHaveCount(4);
-    expect(await page.locator('.docker-legend kbd').allInnerTexts()).toEqual(['↑ / ↓', 'Enter', '/', 'x', 'l', 'm', 'd']);
+    expect(await page.locator('.docker-legend kbd').allInnerTexts()).toEqual(['j / k', 'Enter', '/', 'x', 'l', 'm', 'w', 'y', 'Ctrl/Cmd+C', '[ / ]', 'Shift+H', 'Shift+S']);
   });
 
   async function loadDashboard(page) {
@@ -122,14 +122,14 @@ test.describe('containers keys', () => {
 });
 
 // Config → Containers → The key legend: the same three choices as Bookmarks
-// and Inbox. Above is where the Containers legend always stood.
+// and Inbox. Below the list is the default now, as in the other views.
 test.describe('containers key legend placement', () => {
   const order = (page) => page.evaluate(() => {
     const body = document.querySelector('.docker-table')?.parentElement;
     return [...(body?.children || [])].map((el) => (el.classList.contains('docker-legend') ? 'legend'
       : el.classList.contains('docker-table') ? 'table' : null)).filter(Boolean);
   });
-  for (const [choice, want] of [[undefined, ['legend', 'table']], ['above', ['legend', 'table']], ['below', ['table', 'legend']], ['off', ['table']]]) {
+  for (const [choice, want] of [[undefined, ['table', 'legend']], ['above', ['legend', 'table']], ['below', ['table', 'legend']], ['off', ['table']]]) {
     test(`legend ${choice || 'by default'}`, async ({ page }) => {
       await mockDocker(page);
       await page.goto('/#docker');

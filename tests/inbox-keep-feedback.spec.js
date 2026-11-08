@@ -109,7 +109,7 @@ test('keeping from the triage card lands on the card own Kept counter', async ({
     await expect(counter).toBeVisible();
     await expect(counter).toContainText('0');
 
-    await page.keyboard.press('Shift+K');
+    await page.keyboard.press('m');
 
     await expect(page.locator('.app-notification', { hasText: 'Kept' })).toBeVisible({ timeout: 5_000 });
     await expect.poll(() => keptHas(page, url), { timeout: 15_000 }).toBe(true);
@@ -120,23 +120,23 @@ test('keeping from the triage card lands on the card own Kept counter', async ({
  * one exit with a tab of its own was reachable by mouse only. Shift+K, shown
  * on the side panel's button and in the legend under the list.
  */
-test('Shift+K keeps the row under the cursor, and the list says so', async ({ page }) => {
+test('m keeps the row under the cursor, and the list says so', async ({ page }) => {
     await bootstrap(page);
     const url = await queue(page, 'Key me');
 
     // The side panel's Keep names its key in its title, as Bookmarks' buttons do.
     await page.locator('.inbox-item', { hasText: 'Key me' }).locator('.inbox-item-title').click();
-    await expect(page.locator('[data-lvs-drawer="inbox"] [data-slp-action="keep"]')).toHaveAttribute('title', /Shift\+K/);
+    await expect(page.locator('[data-lvs-drawer="inbox"] [data-slp-action="keep"]')).toHaveAttribute('title', /\(m\)/);
     await page.keyboard.press('Escape');
     const legend = page.locator('.inbox-body-own .inbox-legend');
-    await expect(legend.locator('span', { has: page.locator('kbd', { hasText: /^K$/ }) }))
+    await expect(legend.locator('span', { has: page.locator('kbd', { hasText: /^m$/ }) }))
         .toContainText('Unsorted');
 
     // Opening the row put the cursor on it, and closing the panel leaves it
     // there. A j now would step past it onto whatever else is queued -- the
     // link the toast test above sent back, when this file runs in one go.
     await expect(page.locator('.inbox-item.keyboard-selected', { hasText: 'Key me' })).toHaveCount(1);
-    await page.keyboard.press('Shift+K');
+    await page.keyboard.press('m');
 
     await expect.poll(() => keptHas(page, url), { timeout: 15_000 }).toBe(true);
     await expect(page.locator('.app-notification', { hasText: 'Kept' })).toBeVisible({ timeout: 5_000 });

@@ -71,7 +71,7 @@ test.describe('bookmarks view: the band\'s actions', () => {
   test('f starts it from the list', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await page.evaluate(() => document.activeElement?.blur?.());
-    await page.keyboard.press('f');
+    await page.keyboard.press('u');
     await expect(page.locator('.health-focus-overlay')).toBeVisible();
   });
 
