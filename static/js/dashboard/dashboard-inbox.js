@@ -163,6 +163,7 @@ class DashboardInbox {
      * specific items without touching the rest.
      */
     renderBulkBar() {
+        this.syncModeStrip?.();
         // The panel steps aside once a real selection exists, so the bulk bar
         // it would cover stays reachable (Containers does the same).
         if (this.checkedIds.size >= 2) this.closeDrawer();
@@ -2766,6 +2767,33 @@ class DashboardInbox {
             return true;
         }
 
+        // The two chords of the dashboard's row menu: Ctrl/Cmd+Enter opens the link
+        // in a new tab, Ctrl/Cmd+C copies its address. Only with the cursor on a
+        // row and none of them in a text field or a button.
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && !typingTarget
+            && (e.key === 'Enter' || e.code === 'KeyC') && this.selectedItemId) {
+            const row = this.items.find((entry) => entry.id === this.selectedItemId);
+            if (row?.url && (e.key === 'Enter' || !String(window.getSelection?.() || '').length)) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (e.key === 'Enter') {
+                    if (!e.repeat) window.open(row.url, '_blank', 'noopener,noreferrer');
+                } else {
+                    this.dash.searchComponent?.commandsComponent?._copyUrlToClipboard?.(row.url,
+                        document.querySelector(`[data-inbox-id="${CSS.escape(String(row.id))}"]`));
+                }
+                return true;
+            }
+        }
+
+        // Shift+H switches the key legend under the list, here as on the dashboard.
+        if (e.shiftKey && e.code === 'KeyH' && !e.ctrlKey && !e.altKey && !e.metaKey && !typingTarget) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (!e.repeat) void this.toggleKeyLegend();
+            return true;
+        }
+
         if (e.ctrlKey || e.altKey || e.metaKey) {
             return false;
         }
@@ -2802,15 +2830,8 @@ class DashboardInbox {
             this.clearChecked();
             return true;
         }
-        // Uppercase R, matching the health view. Lowercase r is taken here by
-        // mark-read.
-        if (e.key === 'R') {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            window.nextdashRecordKey?.('R');
-            void this.refreshFromKeyboard();
-            return true;
-        }
+        // Refreshing the list is the header's button and the command palette;
+        // Shift+R is not a view, so it is no key of this one.
 
         const cards = this.getVisibleItemCards();
         if (!cards.length) {
@@ -2886,10 +2907,9 @@ class DashboardInbox {
             this.promoteItem(selected);
             return true;
         }
-        // Keep, from the list. Shift+K: k moves the cursor up and r marks the
-        // row read, so the letter the word starts with is the shifted one --
-        // the same shape as R for refresh and G for the last row.
-        if (e.key === 'K' && selected && this.keptEnabled()) {
+        // Keep, from the list: m, "move to Unsorted", the dashboard's move letter.
+        // (It was Shift+K; Shift is only for views.)
+        if (e.key === 'm' && selected && this.keptEnabled()) {
             e.preventDefault();
             e.stopImmediatePropagation();
             // A held key repeats, and the row stays selected until the write
@@ -2963,10 +2983,30 @@ class DashboardInbox {
             void this.markUnreadFromRow(selected);
             return true;
         }
-        if (e.key === 'l' && selected) {
+        // t: tags, as on the dashboard and in the Bookmarks view. l is the old
+        // key and says so for a couple of releases.
+        if ((e.key === 't' || e.key === 'l') && selected) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            if (e.key === 'l') window.ShiftKeyAliases?.notice('l', 't');
             void this.editTags(selected);
+            return true;
+        }
+        // s: share, q: QR code, y: copy the link to this item -- every action of
+        // the row menu has a key.
+        if ((e.key === 's' || e.key === 'q' || e.key === 'y') && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const name = selected.previewTitle || selected.title || selected.url;
+            if (e.key === 's') {
+                const shareUrl = this.buildItemShareUrl?.(selected.id);
+                const row = document.querySelector(`[data-inbox-id="${CSS.escape(String(selected.id))}"]`);
+                void this.dash.contextMenu?.shareBookmark?.(shareUrl ? { name, url: shareUrl } : { name, url: selected.url }, row);
+            } else if (e.key === 'q') {
+                void window.BookmarkQR?.show?.({ name, url: selected.url });
+            } else {
+                void this.copyItemLink?.(selected.id);
+            }
             return true;
         }
         // a: the tag on offer in this row, as a click on its chip.
@@ -2990,9 +3030,12 @@ class DashboardInbox {
             this.applyKeyboardSelection(cards);
             return true;
         }
-        if (e.key === 't' && !onRowControl) {
+        // f: work through the list, as in the Bookmarks view. t started it
+        // before; with no row in hand it still does, and says so.
+        if ((e.key === 'f' || e.key === 't') && !onRowControl) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            if (e.key === 't') window.ShiftKeyAliases?.notice('t', 'f');
             void this.startTriage();
             return true;
         }
@@ -3553,7 +3596,32 @@ class DashboardInbox {
         return true;
     }
 
+    /**
+     * What the mode strip says in the Inbox: the cursor on a row with letters that
+     * suit it, or the number of rows ticked. Nothing when the Inbox is not shown.
+     */
+    syncModeStrip() {
+        const strip = window.ModeStrip;
+        if (!strip || !this.isActiveView?.()) return;
+        const count = this.checkedIds?.size || 0;
+        if (count > 0) { strip.set('multi', { count }); return; }
+        const item = this.selectedItemId ? this.items.find((entry) => entry.id === this.selectedItemId) : null;
+        if (!item || !window.ModeStripSuggest) { strip.set(null); return; }
+        if (item.id !== this._stripId) {
+            this._stripId = item.id;
+            this._stripSeed = (this._stripSeed || 0) + 1;
+        }
+        strip.set('cursor', {
+            suggestions: window.ModeStripSuggest.suggestInbox({
+                unread: !item.readAt,
+                offer: Boolean(this.rowOffer?.(item)),
+                kept: this.keptEnabled?.(),
+            }, this._stripSeed || 0),
+        });
+    }
+
     applyKeyboardSelection(cards) {
+        this.syncModeStrip?.();
         const list = Array.isArray(cards) && cards.length ? cards : this.getVisibleItemCards();
         if (!this._pointerSelecting) this.openItemId = this.selectedItemId;
         list.forEach((card) => {
@@ -3579,6 +3647,7 @@ class DashboardInbox {
 
     clearKeyboardSelection() {
         this.selectedItemId = null;
+        window.ModeStrip?.set?.(this.checkedIds?.size ? 'multi' : null, this.checkedIds?.size ? { count: this.checkedIds.size } : undefined);
         this.openItemId = null;
         document.querySelectorAll('.inbox-item[data-inbox-open]').forEach((card) => card.removeAttribute('data-inbox-open'));
         this.unbindPointerNavigation();
@@ -4439,6 +4508,35 @@ class DashboardInbox {
 
     static LEGEND_OPEN_KEY = 'nextdash.inbox.legendOpen';
 
+    /** Shift+H: the key legend under the list, off and on; what it was set to comes back. */
+    async toggleKeyLegend() {
+        const d = this.dash;
+        d.settings = d.settings || {};
+        const current = d.settings.inboxViewKeyLegend || 'below';
+        const next = current === 'off' ? (this._legendWas && this._legendWas !== 'off' ? this._legendWas : 'below') : 'off';
+        if (current !== 'off') this._legendWas = current;
+        d.settings.inboxViewKeyLegend = next;
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch (_err) {
+            d.settings.inboxViewKeyLegend = current;
+            d.showNotification?.(d.t?.('dashboard.gridKeyLegendToggleFailed', 'Could not save the key legend setting') || 'Could not save the key legend setting', 'error');
+            return;
+        }
+        document.querySelectorAll('.inbox-legend-wrap').forEach((el) => el.remove());
+        if (next !== 'off') {
+            const body = document.querySelector('.inbox-feed')?.parentElement || document.querySelector('.inbox-layout');
+            const feed = document.querySelector('.inbox-feed') || document.querySelector('.inbox-list');
+            const legend = this.renderLegend();
+            if (feed && next === 'above') feed.before(legend);
+            else if (feed) feed.after(legend);
+            else body?.appendChild(legend);
+        }
+        d.showNotification?.(next === 'off'
+            ? (d.t?.('dashboard.gridKeyLegendOff', 'Key legend off') || 'Key legend off')
+            : (d.t?.('dashboard.gridKeyLegendOn', 'Key legend on') || 'Key legend on'), 'success', { duration: 2000 });
+    }
+
     renderLegend() {
         const wrap = document.createElement('div');
         wrap.className = 'inbox-legend-wrap';
@@ -4454,7 +4552,7 @@ class DashboardInbox {
         // Shift+K does nothing with Unsorted switched off, so the legend
         // should not offer it either.
         if (!this.keptEnabled()) {
-            const at = keys.findIndex(([k]) => k === 'K');
+            const at = keys.findIndex(([k]) => k === 'm');
             if (at !== -1) keys.splice(at, 1);
         }
         // A double click follows Config → Inbox: the link, or its note.
@@ -4900,7 +4998,7 @@ class DashboardInbox {
         const moreLabel = this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'));
         const helpLabel = this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'));
         host.innerHTML = `
-            <button type="button" class="lvs-action lvs-action--primary inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
+            <button type="button" class="lvs-action lvs-action--primary inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>f</kbd></button>
             <button type="button" class="lvs-action inbox-tour-btn" data-inbox-tour
                     title="${this.escape(this.t('dashboard.inboxTourHint', 'A short tour of the inbox'))}">${this.escape(this.t('dashboard.inboxTour', 'Tour'))}</button>
             <span class="inbox-menu-wrap">

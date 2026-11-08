@@ -263,6 +263,10 @@
         const fresh = shown.filter((r) => !announced.has(rowKey(r)) && Model.isWorse(lastAnnounced.get(r.source.id), r.entry));
         keys.forEach((k) => announced.add(k));
         shown.forEach((r) => lastAnnounced.set(r.source.id, r.entry));
+        // A row that went away starts again when it returns, as its age does
+        // (stampAge): compared with its old count, 5 then 3 would stay silent.
+        const live = new Set(shown.map((r) => r.source.id));
+        [...lastAnnounced.keys()].forEach((id) => { if (!live.has(id)) lastAnnounced.delete(id); });
         if (!fresh.length) return;
         shake(movementOf(fresh));
         pulse();
@@ -430,6 +434,18 @@
         panel.textContent = '';
         const head = el('div', 'notification-bell-head');
         head.appendChild(el('strong', 'notification-bell-title', t('title', 'Notifications')));
+        // ?: keys and help for the bell, the same sheet ? opens on the dashboard.
+        const helpBtn = el('button', 'notification-bell-help', '?');
+        helpBtn.type = 'button';
+        helpBtn.setAttribute('aria-label', t('helpButton', 'Keys and help for the bell'));
+        helpBtn.title = t('helpButton', 'Keys and help for the bell');
+        helpBtn.addEventListener('click', () => {
+            // Focus goes back to the bell button first, so the sheet's own close finds somewhere to return to.
+            button.focus();
+            close('help');
+            void global.dashboardInstance?.showKeyboardCheatSheet?.({ context: 'bell' });
+        });
+        head.appendChild(helpBtn);
         const all = el('button', 'notification-bell-action notification-bell-markall', t('markAllRead', 'Mark all read'));
         all.type = 'button';
         all.addEventListener('click', markAllRead);
@@ -773,7 +789,15 @@
         scheduleIntro();
     }
 
-    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, counts, playSound, scheduleIntro };
+    /** Shift+N: the bell opens, and the same key closes it. */
+    function toggle() {
+        if (!panel) return false;
+        if (isOpen) close('key');
+        else open();
+        return true;
+    }
+
+    global.NotificationBell = { register, refreshAll, resetDismissed, open, close, toggle, counts, playSound, scheduleIntro };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

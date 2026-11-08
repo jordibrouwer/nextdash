@@ -322,6 +322,7 @@
     },
 
     bindAppearanceControls(container) {
+        if (this.appearanceTab === 'custom-themes') this.bindListKeyboard?.(container);
         /*
          * The band is painted before anything binds, not after.
          *

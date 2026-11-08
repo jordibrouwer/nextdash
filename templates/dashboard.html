@@ -153,6 +153,7 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-widget-dns.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-widget-stack.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-widget-glances.css"}}">
+    <link rel="stylesheet" href="{{asset "css/theme-holidays.css"}}">
     <!-- Last: overrides the !important animation rules the sheets above declare. -->
     <link rel="stylesheet" href="{{asset "css/theme-overlays.css"}}">
     <link rel="stylesheet" href="{{asset "css/reduced-motion.css"}}">
@@ -245,6 +246,7 @@
                 <div class="header-identity">
                     <div class="title-wrapper skeleton-hide-while-loading">
                         <h1 class="title"></h1>
+                        <div id="mode-strip" class="mode-strip" role="status" aria-live="polite" hidden></div>
                         <p class="title-breadcrumb" hidden></p>
                     </div>
                 <div class="header-top-primary skeleton-hide-while-loading">
@@ -319,7 +321,7 @@
                             <circle cx="12" cy="12" r="9"/>
                         </svg>
                         <span class="search-button-label" data-i18n="dashboard.findersLabel">finders</span>
-                        <span class="search-button-icon" aria-hidden="true">?</span>
+                        <span class="search-button-icon" aria-hidden="true">!</span>
                     </button>
                     <button id="collapse-all-button" type="button" class="search-button collapse-all-button" data-i18n-aria="dashboard.collapseAllAria" aria-label="Fold every category">
                         <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -354,7 +356,7 @@
                             <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
                         </svg>
                         <span class="search-button-label" data-i18n="dashboard.headerCheatLabel">cheat</span>
-                        <span class="search-button-icon" aria-hidden="true">!</span>
+                        <span class="search-button-icon" aria-hidden="true">?</span>
                     </button>
                     <button id="edit-mode-button" type="button" class="search-button edit-mode-button" aria-pressed="false" data-i18n-aria="dashboard.editModeAria" aria-label="Edit the dashboard" title="Edit the dashboard (Shift + M)">
                         <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -482,12 +484,12 @@
                         <span class="search-scope-count" data-scope-count="commands"></span>
                     </button>
                     <button class="search-mode-tab search-scope" data-mode="finder" type="button" aria-pressed="false">
-                        <span class="search-mode-tab-key">?</span>
+                        <span class="search-mode-tab-key">!</span>
                         <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
                         <span class="search-scope-count" data-scope-count="finders"></span>
                     </button>
                     <button class="search-mode-tab search-scope" data-mode="tag" type="button" aria-pressed="false">
-                        <span class="search-mode-tab-key">/</span>
+                        <span class="search-mode-tab-key">#</span>
                         <span class="search-mode-tab-label" data-i18n="dashboard.tagsLabel">tags</span>
                         <span class="search-scope-count" data-scope-count="tags"></span>
                     </button>
@@ -508,7 +510,7 @@
                         leaves the panel in the scope it was in.
                     -->
                     <button class="search-mode-tab search-scope search-mode-tab--door" data-mode="keys" type="button">
-                        <span class="search-mode-tab-key">!</span>
+                        <span class="search-mode-tab-key">?</span>
                         <span class="search-mode-tab-label" data-i18n="dashboard.headerCheatLabel">keys</span>
                         <span class="search-scope-count"></span>
                     </button>
@@ -608,6 +610,7 @@
     <script src="{{asset "js/theme-browser.js"}}" defer></script>
     <script src="{{asset "js/focus-trap-utils.js"}}" defer></script>
     <script src="{{asset "js/overlay-layers.js"}}" defer></script>
+    <script src="{{asset "js/theme-holidays.js"}}" defer></script>
     <script src="{{asset "js/whats-new-stub.js"}}" defer></script>
     <script src="{{asset "js/layout-utils.js"}}" defer></script>
     <script src="{{asset "js/shared/config-language.js"}}" defer></script>
@@ -646,17 +649,22 @@
     <script src="{{asset "js/action-bar-intro.js"}}" defer></script>
     <!-- After the action bar's: asks existing installs what to call them. -->
     <script src="{{asset "js/greeting-name-intro.js"}}" defer></script>
+    <script src="{{asset "js/mode-strip-intro.js"}}" defer></script>
     <script src="{{asset "js/health-bell-source.js"}}" defer></script>
     <script src="{{asset "js/feed-watch-notice.js"}}" defer></script>
     <!-- Shared bottom-left notice card; must precede the cards that define one. -->
     <script src="{{asset "js/notice-card.js"}}" defer></script>
     <script src="{{asset "js/analytics-notice.js"}}" defer></script>
     <script src="{{asset "js/look-migration-notice.js"}}" defer></script>
-    <script src="{{asset "js/install-count-notice.js"}}" defer></script>
+    <script src="{{asset "js/shortcuts-changed-modal.js"}}" defer></script>
+    <script src="{{asset "js/shared/keyboard-page-help.js"}}" defer></script>
     <script src="{{asset "js/kept-pile-notice.js"}}" defer></script>
     <script src="{{asset "js/changes-tour.js"}}" defer></script>
     <script src="{{asset "js/keyboard-tutorial.js"}}" defer></script>
     <script src="{{asset "js/theme-studio-notice.js"}}" defer></script>
+    <script src="{{asset "js/news-moved-notice.js"}}" defer></script>
+    <script src="{{asset "js/keys-tips-notice.js"}}" defer></script>
+    <script src="{{asset "js/keys-help-renamed-notice.js"}}" defer></script>
     <script src="{{asset "js/edit-mode-notice.js"}}" defer></script>
     <script src="{{asset "js/health-review-notice.js"}}" defer></script>
     <script src="{{asset "js/docker-update-notice.js"}}" defer></script>
@@ -821,12 +829,15 @@
     <script src="{{asset "js/dashboard/dashboard-render-core.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-render-incremental.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-notifications.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-mode-strip-suggest.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-mode-strip.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-visual.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-date-weather.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-preview.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-recent.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-promos.js"}}" defer></script>
     <script src="{{asset "js/shared/keyboard-view-legends.js"}}" defer></script>
+    <script src="{{asset "js/shared/shift-key-aliases.js"}}" defer></script>
     <script src="{{asset "js/shared/keyboard-cheat-sheet-registry.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-ui-helpers.js"}}" defer></script>
     <script src="{{asset "js/dashboard/action-bar-autohide.js"}}" defer></script>

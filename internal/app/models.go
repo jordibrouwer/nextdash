@@ -826,6 +826,7 @@ type Settings struct {
 	SessionTipsFrequency       string `json:"sessionTipsFrequency,omitempty"` // "weekly" spaces the keyboard tips a week apart; anything else is daily
 	ShowShortcutTooltips       bool   `json:"showShortcutTooltips"`           // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
 	ShowGridKeyLegend          bool   `json:"showGridKeyLegend"`
+	ShowModeStrip              bool   `json:"showModeStrip"` // The mode strip on the page-name line, in every view (default on)
 	ShortcutOpenMode           string `json:"shortcutOpenMode,omitempty"`
 	RememberScrollPosition     bool   `json:"rememberScrollPosition"`   // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
 	UptimeBadges               bool   `json:"uptimeBadges"`             // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
@@ -1172,6 +1173,15 @@ type Settings struct {
 	InboxViewBadge         bool   `json:"inboxViewBadge"`         // A count on the header's Inbox icon (default on)
 	InboxViewBadgeCounts   string `json:"inboxViewBadgeCounts"`   // What that count counts: unread/all
 	InboxViewKeyLegend     string `json:"inboxViewKeyLegend"`     // The key legend: below/above the list, or off
+	// TagViewKeyLegend places the tag view's key legend: below the list (the
+	// default), above it, or off. Shift + H switches it, as on the other views.
+	TagViewKeyLegend string `json:"tagViewKeyLegend"`
+	// ConfigViewKeyLegend places the Config view's key legend: below the page
+	// (the default), above it, or off. Shift + H switches it.
+	ConfigViewKeyLegend string `json:"configViewKeyLegend"`
+	// GlancesViewKeyLegend places the Glances view's key legend: below the page
+	// (the default), above it, or off. Shift + H switches it.
+	GlancesViewKeyLegend string `json:"glancesViewKeyLegend"`
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -1841,6 +1851,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			EnableSectionTours:         true,
 			ShowShortcutTooltips:       false,
 			ShowGridKeyLegend:          true,
+			ShowModeStrip:              true,
 			ShortcutOpenMode:           "instant",
 			RememberScrollPosition:     true,
 			DetectSoftNotFound:         true,
@@ -3945,6 +3956,9 @@ func clampInboxViewSettings(s *Settings) {
 	s.InboxViewDblClick = inboxViewChoice("dblClick", s.InboxViewDblClick)
 	s.InboxViewBadgeCounts = inboxViewChoice("badgeCounts", s.InboxViewBadgeCounts)
 	s.InboxViewKeyLegend = inboxViewChoice("keyLegend", s.InboxViewKeyLegend)
+	s.TagViewKeyLegend = inboxViewChoice("keyLegend", s.TagViewKeyLegend)
+	s.ConfigViewKeyLegend = inboxViewChoice("keyLegend", s.ConfigViewKeyLegend)
+	s.GlancesViewKeyLegend = inboxViewChoice("keyLegend", s.GlancesViewKeyLegend)
 }
 
 var configBookmarksSortModes = map[string]bool{
@@ -4594,6 +4608,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			EnableSectionTours:              true,
 			ShowShortcutTooltips:            false,
 			ShowGridKeyLegend:               true,
+			ShowModeStrip:                   true,
 			ShortcutOpenMode:                "instant",
 			RememberScrollPosition:          true,
 			DetectSoftNotFound:              true,
@@ -4846,6 +4861,10 @@ func (fs *FileStore) getSettingsShared() Settings {
 
 	var rawSettings map[string]json.RawMessage
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
+		// On unless turned off: a file written before the strip existed never answered.
+		if _, ok := rawSettings["showModeStrip"]; !ok {
+			settings.ShowModeStrip = true
+		}
 		if _, ok := rawSettings["showCheatSheetButton"]; !ok {
 			settings.ShowCheatSheetButton = true
 		}
@@ -6547,6 +6566,20 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"concrete-light": {Name: "Concrete [light]", TextPrimary: "#171614", TextSecondary: "#3A3736", TextTertiary: "#545250", BackgroundPrimary: "#E0DDDB", BackgroundSecondary: "#EAE7E5", BackgroundDots: "#D6D4D2", BackgroundModal: "rgba(224, 221, 219, 0.92)", BorderPrimary: "#C0BDBB", BorderSecondary: "#D0CDCB", AccentPrimary: "#964100", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "brushed", Collection: "neutrals"},
 		"black-dark":     {Name: "Black [dark]", TextPrimary: "#EEEEEE", TextSecondary: "#C4C4C4", TextTertiary: "#989898", BackgroundPrimary: "#000000", BackgroundSecondary: "#070707", BackgroundDots: "#121212", BackgroundModal: "rgba(0, 0, 0, 0.9)", BorderPrimary: "#292929", BorderSecondary: "#161616", AccentPrimary: "#00D2D3", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "ink", Collection: "neutrals"},
 		"black-light":    {Name: "Black [light]", TextPrimary: "#0B0B0B", TextSecondary: "#3A3A3A", TextTertiary: "#585858", BackgroundPrimary: "#FFFFFF", BackgroundSecondary: "#F7F7F7", BackgroundDots: "#EEEEEE", BackgroundModal: "rgba(255, 255, 255, 0.92)", BorderPrimary: "#D7D7D7", BorderSecondary: "#E4E4E4", AccentPrimary: "#007A7C", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "ink", Collection: "neutrals"},
+
+		// Holidays ─────────────────────────────────────────────────────
+		// Seasonal themes. Each keeps a real material underneath; the browser shows
+		// them as the Holidays group (themeGroupFor), and theme-holidays.js draws
+		// the snow, the tree, the lights and the village over the page.
+		// Christmas Classic: pine green, gold and red, a tree in the corner
+		"holiday-christmas-dark":  {Name: "Christmas Classic [dark]", TextPrimary: "#F3EEE2", TextSecondary: "#CBD3C8", TextTertiary: "#A3B3A7", BackgroundPrimary: "#0A2318", BackgroundSecondary: "#123326", BackgroundDots: "#1B4532", BackgroundModal: "rgba(10, 35, 24, 0.92)", BorderPrimary: "#2E5240", BorderSecondary: "#18342A", AccentPrimary: "#E8C766", AccentSuccess: "#5FC48A", AccentWarning: "#E8A23C", AccentError: "#F0566A", SurfaceAlpha: 0.35, Sheen: 0.5, RadiusScale: 1.1, LabelWeight: 700, Character: "lacquer", Depth: "glass", Surface: "glass", Backdrop: "frostedjuniper"},
+		"holiday-christmas-light": {Name: "Christmas Classic [light]", TextPrimary: "#1E2A22", TextSecondary: "#435048", TextTertiary: "#5B685F", BackgroundPrimary: "#F6F2EA", BackgroundSecondary: "#FFFDF8", BackgroundDots: "#E7E0D2", BackgroundModal: "rgba(246, 242, 234, 0.93)", BorderPrimary: "#D6CDBC", BorderSecondary: "#E8E1D3", AccentPrimary: "#1F6B45", AccentSuccess: "#2C7A4B", AccentWarning: "#8F5D10", AccentError: "#B3192B", SurfaceAlpha: 0.35, Sheen: 0.5, RadiusScale: 1.1, LabelWeight: 700, Character: "lacquer", Depth: "glass", Surface: "glass", Backdrop: "frostedjuniper"},
+		// Northern Lights: a polar night with the aurora moving over a pine forest
+		"holiday-northern-lights-dark":  {Name: "Northern Lights [dark]", TextPrimary: "#EEF6FF", TextSecondary: "#BCCAE0", TextTertiary: "#96A7C4", BackgroundPrimary: "#050816", BackgroundSecondary: "#0D1734", BackgroundDots: "#142247", BackgroundModal: "rgba(5, 8, 22, 0.9)", BorderPrimary: "#25426C", BorderSecondary: "#152647", AccentPrimary: "#7EF0C8", AccentSuccess: "#3DFFB0", AccentWarning: "#FFD27A", AccentError: "#FF7A9E", SurfaceAlpha: 0.2, SurfaceBlur: 18, RadiusScale: 1.4, LabelWeight: 600, Character: "aurora", Depth: "glass", Glow: "off", Surface: "glass", Backdrop: "stars"},
+		"holiday-northern-lights-light": {Name: "Northern Lights [light]", TextPrimary: "#22193D", TextSecondary: "#4A4266", TextTertiary: "#615879", BackgroundPrimary: "#EEE6F7", BackgroundSecondary: "#FAF7FD", BackgroundDots: "#DCD2EE", BackgroundModal: "rgba(238, 230, 247, 0.92)", BorderPrimary: "#CFC3E6", BorderSecondary: "#E2DAF0", AccentPrimary: "#5B32BE", AccentSuccess: "#0E7A58", AccentWarning: "#8A5200", AccentError: "#B8335F", SurfaceAlpha: 0.2, SurfaceBlur: 18, RadiusScale: 1.4, LabelWeight: 600, Character: "aurora", Depth: "glass", Glow: "off", Surface: "glass", Backdrop: "stars"},
+		// Gingerbread Village: biscuit cards piped with icing, a village along the bottom
+		"holiday-gingerbread-dark":  {Name: "Gingerbread Village [dark]", TextPrimary: "#FFF3E4", TextSecondary: "#F0D3B4", TextTertiary: "#EFD2B4", BackgroundPrimary: "#1E130C", BackgroundSecondary: "#3B2416", BackgroundDots: "#2E1D12", BackgroundModal: "rgba(30, 19, 12, 0.92)", BorderPrimary: "#9A6538", BorderSecondary: "#5B3620", AccentPrimary: "#FF8AB3", AccentSuccess: "#7AD39A", AccentWarning: "#FFCF33", AccentError: "#FF6B6B", RadiusScale: 1.6, LabelWeight: 700, LabelTransform: "none", Character: "enamel", Backdrop: "gingerbread"},
+		"holiday-gingerbread-light": {Name: "Gingerbread Village [light]", TextPrimary: "#2E170B", TextSecondary: "#4A2A15", TextTertiary: "#55331F", BackgroundPrimary: "#DCEEF7", BackgroundSecondary: "#EBD6BE", BackgroundDots: "#C5E0EE", BackgroundModal: "rgba(220, 238, 247, 0.93)", BorderPrimary: "#A86D3C", BorderSecondary: "#C08550", AccentPrimary: "#8E1537", AccentSuccess: "#1D6B3E", AccentWarning: "#7A4E00", AccentError: "#A8231B", RadiusScale: 1.6, LabelWeight: 700, LabelTransform: "none", Character: "enamel", Backdrop: "gingerbread"},
 
 		// ThinkDashboard (Classic): the two themes the first release shipped, with the page they had: the
 		// palette's own colour and a grid of dots in the dot colour. Nothing else is drawn, so it

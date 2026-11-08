@@ -47,8 +47,8 @@ class SearchFindersComponent {
     createCompletionMatch(finder) {
         return {
             name: finder.name,
-            shortcut: `?${finder.shortcut.toUpperCase()}`,
-            completion: `?${finder.shortcut.toUpperCase()} `,
+            shortcut: `!${finder.shortcut.toUpperCase()}`,
+            completion: `!${finder.shortcut.toUpperCase()} `,
             meta: this.getFinderMeta(finder),
             useCount: Number(finder.useCount || 0),
             type: 'finder-completion'
@@ -61,16 +61,18 @@ class SearchFindersComponent {
      * @returns {Array} Array of match objects
      */
     handleQuery(query) {
-        if (!query.startsWith('?')) {
+        if (!query.startsWith('!')) {
             return [];
         }
 
-        const afterQuestion = query.slice(1);
+        // The grammar is "! shortcut terms": one space after the ! keeps the
+        // prefix apart from what is typed after it.
+        const afterQuestion = query.slice(1).replace(/^ /, '');
         const parts = afterQuestion.split(' ');
         const shortcut = parts[0].toLowerCase();
 
-        // If just "?", show available finders
-        if (query === '?') {
+        // If just the prefix, show available finders
+        if (afterQuestion === '') {
             return this.getAvailableFinders();
         }
 
@@ -81,7 +83,7 @@ class SearchFindersComponent {
                 const searchText = parts.slice(1).join(' ');
                 return [{
                     name: finder.name,
-                    shortcut: `?${finder.shortcut}`,
+                    shortcut: `!${finder.shortcut}`,
                     searchText: searchText,
                     url: finder.searchUrl.replace('%s', encodeURIComponent(searchText)),
                     meta: this.getFinderMeta(finder),
@@ -147,11 +149,11 @@ class SearchFindersComponent {
      * @returns {string}
      */
     completeShortcutWithSpace(query) {
-        if (!String(query || '').startsWith('?')) {
+        if (!String(query || '').startsWith('!')) {
             return query;
         }
 
-        const afterQuestion = query.slice(1);
+        const afterQuestion = query.slice(1).replace(/^ /, '');
         if (!afterQuestion || afterQuestion.includes(' ')) {
             return query;
         }
@@ -169,7 +171,7 @@ class SearchFindersComponent {
         }
 
         const finder = this.shortcuts.get(shortcut);
-        return `?${finder.shortcut.toUpperCase()} `;
+        return `!${finder.shortcut.toUpperCase()} `;
     }
 
     /**

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.27.0 — 8 November 2026](#v1270--8-november-2026)
 - [v1.26.1 — 5 November 2026](#v1261--5-november-2026)
 - [v1.26.0 — 5 November 2026](#v1260--5-november-2026)
 - [v1.25.1 — 4 November 2026](#v1251--4-november-2026)
@@ -133,6 +134,97 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.27.0 — 8 November 2026
+
+One set of keyboard rules for every view. With the cursor on a row, plain letters act on that row. Shift plus a letter opens a view or a panel. A mode strip beside the page name says what the keys do right now, every view has a key legend, and `?` opens a Keys and help sheet for the page you are on. The strip wears the theme's material. Many keys moved, so an existing install is told once in a window it closes with a tick, and the bell then says the cheat sheet is now Keys and help. Three holiday themes, tags in the palette, a Ko-fi card on Config → Overview and two fixes to the bell ride along.
+
+### Keyboard
+
+- **new — Plain letters act on the row under the cursor.** On the dashboard, as in the Inbox: `e` edits, `m` moves, `t` tags, `p` pins, `c` sets checking, `r` shows the bookmark in the Bookmarks view, `v` opens the preview card, `s` shares, `q` shows a QR code, `d` deletes (asks first) and `f` filters the grid by its tag; `x` ticks, `j`/`k` move. With no cursor on the grid the same letters start a search. Held down, a letter acts once (`keyboard-navigation.js`, `dashboard-bookmark-rows.js`, `dashboard-category-menu.js`).
+- **new — Shift opens views and panels.** `Shift + B` the Bookmarks view (was `Shift + H`), `Shift + C` Containers (was `Shift + Y`), `Shift + E` edit mode (was `Shift + M` with nothing selected), `Shift + N` the bell, `Shift + W` the news of watched feeds (was `Shift + N`), `Shift + P` the Pages panel (was `,`), `Shift + H` the key legend (was `Shift + Z`), `Shift + X` the search mode (was `Shift + Q`; with a bookmark selected it ticks the whole category), and `,` opens Config (was `Shift + S`). `Shift + B` no longer opens the bookmark form; `+` and `Ctrl + Shift + A` do.
+- **new — Old keys say what replaced them.** For a couple of releases `Shift + Y`, `Shift + M`, `Shift + J`, `Shift + L` and `Shift + Z` still work and put one line on screen naming the new key, once per pair per page load (`shared/shift-key-aliases.js`). A Shift letter that used to act on a bookmark names the plain letter instead.
+- **new — `!` opens finders, `?` opens keys and help.** The two keys swapped. Finders take `! shortcut query` (`! g nextdash`); the `!` is the mode, never part of the query sent to the site (`search.js`, `search-finders.js`).
+- **new — The mode key is a badge, not text in the field.** The `:` of commands, the `!` of finders, the `=` of the assistant and the `*` of recents show as the badge in front of the search field; Backspace on an empty field leaves the mode with the panel still open. Mode keys pressed on the dashboard no longer land in the search field.
+- **new — One shortcut scheme for every view.** The tag view, the Inbox, the Bookmarks view, Containers, Glances and Config use the same row letters and the same Shift keys. Config's stored backups and trash are lists with a row cursor: `e` names a row, `d` removes it, `u`/`n` move it (`dashboard-tag-view.js`, `dashboard-inbox.js`, `dashboard-config.js`).
+- **new — `Shift + W` explains itself with no feed watched.** It says there is nothing to open instead of doing nothing. `W`, not `Shift + W`, spreads a category.
+- **fix — A letter on a widget's row does nothing.** With the cursor on a widget's row, a row letter (`e`, `d`, …) opened the search panel and took the cursor off the grid; the letters belong to no one there and are swallowed, as before the move (`keyboard-navigation.js`, `dashboard-widget-keyboard.spec.js`).
+- **fix — The widget menu names `W` for its width,** not `Shift+W`, like the other title letters in that menu.
+- **fix — Menu chips announce the plain key.** A screen reader read *Shift plus E* for a row action whose key is now `e` (`shortcut-format.js`).
+- **new — The Shift+Q search-mode tip is gone,** its key having moved (`dashboard-promos.js`).
+
+### Mode strip
+
+- **new — A line beside the page name says what the keys do.** *Cursor*, *N ticked*, *Edit mode* or an armed `g` chord, with the keys that apply; with none of those it names the mode the keys are in (search on the grid, browse elsewhere). It sits on the page-name line in the classic clock layout, sticks while the page scrolls, stays readable on every theme, fades after two seconds idle and is not drawn below 900 px (`dashboard/dashboard-mode-strip.js`, `dashboard.css`).
+- **new — It suggests keys for the row under the cursor.** At most four: up to two from the row (down, unfiled, no tags or a tag to filter by, pinned, a video), one that rotates through all row letters, and one letter you have used fewer times than the rest; `Ctrl/Cmd + Z` goes first while a pin or move can be undone. The use counts stay in `localStorage` (`dashboard-mode-strip-suggest.js`).
+- **new — `Shift + S` switches it off and on,** with a toast, and so does its switch under Behavior. A one-time note points at the strip, with **Got it** and **Turn it off** (`mode-strip-intro.js`, `coach-note.js`).
+- **fix — The strip's note shows after the strip has faded.** The one-time note waits until the strip is drawn, and a strip that had faded after two quiet seconds counted as not drawn; a note that queued behind another (or a slow page) never showed. Asking for the note now brings the strip back from its fade (`dashboard-mode-strip.js`, `mode-strip-intro.spec.js`).
+- **new — The strip wears the theme.** It is drawn as the other small layers are (the bell, the digest bar): on a Signature material it takes that material's plate, sheen and edge, and stays a pill; Classic keeps its flat plate with the second-level shadow; with Effects off it loses the decoration and keeps the fill. Before, it was one plate in the page's background colour on every theme (`theme-overlays.css`).
+
+### Key legends
+
+- **new — Every view has a key legend.** The dashboard's is four lines now: the cursor, finding things, going somewhere, acting on a bookmark. The tag view, the Inbox, the Bookmarks view, Containers, Glances and Config each get one, sticky, switched with `Shift + H`. Each view has a setting for where its legend sits: below (the default), above, or off (`TagViewKeyLegend`, `ConfigViewKeyLegend`, `GlancesViewKeyLegend` in `models.go`; `shared/keyboard-view-legends.js`).
+- **new — Menus, tours, the start guide and the cheat sheet show the new keys.** The right-click menu names each row letter; the dashboard, Bookmarks, Containers and Inbox tours, the keyboard tour, the printable cheat sheet (`nextDash-cheatsheet.html` and `.pdf`) and the registry follow.
+
+### Keys and help
+
+- **new — `?` opens a sheet for the page you are on.** **This page** says where you are, what it is for and the first steps, each with its key; a safe step (a move, a view, a palette mode, an aid on or off) has a **Try it** button. **All keys** is the full list, the modes and the learning material (every tour, this page's first) have a tab each, and one filter searches across all four, Help prose included. Keys you have not used yet come first. The keys named are checked against the registry by a spec (`shared/keyboard-page-help.js`, `dashboard-ui-helpers.js`).
+- **new — A Help panel opens the sheet on its own page's keys,** and the bell has its own entry.
+- **fix — A long Help quote no longer leaks its key style over the sheet.** The sheet cut a Help paragraph of more than 520 characters at a space in the markup; a space inside `<code>Shift + B</code>` (in Chinese nearly every space is one) left `<code>` open, and the browser carried it over everything below. `clipHtml` closes what the cut leaves open and drops a half-cut entity or tag.
+- **fix — A damaged tip list cannot stop the sheet from opening.** A value in `nextdash:sheet-tips-shown` that was valid JSON but not a list (`{}`, `5`) threw in `tipFor`, so `?` and F1 did nothing. It now counts as no tips shown (`keyboard-page-help.js`).
+- **new — An arrow says the sheet runs on below the fold.** A round arrow in the lower right corner bobs while there is more to scroll, and goes at the end of the list, on a short tab or when the filter leaves nothing to scroll. A click scrolls one screen down and leaves focus in the filter. A `ResizeObserver` on the scroller and its panels follows tab switches, the filter and *show all*; the bob stops under reduced motion (`_setupCheatSheetMoreArrow` in `dashboard-ui-helpers.js`, `.cheat-sheet-more` in `modal.css`, `cheat-sheet-help.spec.js`).
+
+### Shortcuts-changed window
+
+- **new — Existing installs are told the keys moved.** A window shown once, with the main moves; it closes only after ticking that you have read it, not with Escape or a click beside it. A fresh install never sees it. English only, like What's new (`shortcuts-changed-modal.js`, `modal.css`).
+
+### Search palette
+
+- **new — Tags in the palette.** `#` on the dashboard opens the palette on tags; `#docker` and `tag:docker` mean the same. `AND` and `OR` join tags (`docker AND linux OR network`, AND binds tighter), written the same in every language. While a word is not yet a whole tag the palette offers tags that complete it, then AND and OR. A `#` inside a finder query or a question to the assistant stays text (`search.js`).
+- **new — `:` opens on the commands, with two lists.** Recent and most used side by side on one line, each with its own label; how often each command ran is counted on this device only (`search-commands.js`, `search.css`).
+
+### Notifications
+
+- **new — Two key tips in the bell.** One for the mode strip and `Shift + S`, a minute into the first visit; one for the key legend and `Shift + H`, three days later. The start is kept in the seen promos, so it survives a reload and other browsers (`keys-tips-notice.js`).
+- **new — A bell tip that the cheat sheet is now Keys and help.** For an install from before v1.27.0, once the window about the moved keys has been answered: it says that `?` now says where you are, gives first steps to try and searches the Help, with a button that opens it. A fresh install never gets it; read once, it is gone (`keys-help-renamed-notice.js`, `keys-help-renamed-notice.spec.js`).
+- **new — A tip for people who watch feeds.** The news moved from `Shift + N` to `Shift + W`; shown only while a feed is watched (`news-moved-notice.js`).
+- **fix — Reading one feed item no longer rings as news.** The server lists the newest ten items, so reading one moved an older one into the list and the bell took it for news. The row now keys on when news last arrived per site (`feed-watch-notice.js`).
+- **fix — A row that comes back rings again,** even with a lower count than before it went away (5, gone, then 3 stayed silent) (`notification-bell.js`).
+- **new — The install count is no longer announced.** The notice is gone; the switch stays under Privacy (`install-count-notice.js` removed).
+
+### Config
+
+- **new — A Support card on Config → Overview.** Under its own *Support nextDash* heading, with a Ko-fi button.
+
+### Bookmarks view
+
+- **new — Add Bookmark sits in the view's band,** left of **Work through** (`dashboard-bookmarks-header.js`).
+
+### Themes
+
+- **new — Three holiday themes.** Christmas Classic, Northern Lights and Gingerbread Village, light and dark. Over the backdrop they draw a tree, a forest or a village and lights, with snow or sprinkles falling in front; category headers get snow caps or icing. The snow lands in the same places on every load. Motion stops with reduced motion and with Effects off, leaving a still picture (`theme-holidays.js`, `theme-holidays.css`, `theme_holidays_test.go`).
+- **new — A Holidays group in the theme browser,** shown in place of the archetype in the badge and the Character row (`theme_archetype.go`, `theme-browser.js`).
+- **new — A gingerbread baking-tray backdrop** (`theme_backdrop_holidays.go`).
+
+### Docs
+
+- **docs — Manual and README: the keys.** Every key in the manual and README follows the new scheme; §4 describes the four-line legend and `Shift + E` for edit mode, §7 the plain row letters, §8.6 finders on `!`, the tag view, Inbox, Containers and Bookmarks view the `Shift + H` legend.
+- **docs — Config → Help and tips.** Help and the tips name the new keys; the bell has its own Help topic and a `?` for keys and help. Nine texts that still named old keys now follow the scheme: *Daily use* (`e`, `m`, `t`), Appearance (`v` for the preview card), Tags (`Shift + T` whatever is selected), Health charts (`l`), the Inbox, Triage and Unsorted (`m` keeps a link), a Health tip (`l`) and the Structure tip (**Manage** in the rail, since `Shift + P` and `Shift + C` open the Pages panel and Containers). Finders on their own read `! w`, not `?w`, in Help and the manual.
+- **docs — Cheat sheet.** `nextDash-cheatsheet.html` and the PDF (root and `static/`) are generated again: `W`, not `Shift + W`, spreads a widget.
+- **docs — Translations.** The 334 new strings (mode strip, Keys and help sheet with its page help, key legends, tips, notes, Support card, palette tags) and the 98 changed ones in Dutch, German, French, Spanish and Chinese. The locale files are in parity again. `dashboard.cheatsheetTabsLabel` was in `en.json` twice, and the later *Shortcut topics* hid *Keys and help*. `commands.paletteMostUsed` and `config.bmNoTagToFilter` were asked for in the code but missing; they are added in all six.
+- **docs — README.** 390 themes, 195 families and 267 backdrops; **Tarnished Brass** named as the default (it still said Aurora Glass); the cheat sheet on `?`, edit mode on `Shift + E`, and the key legend, mode strip and keys and help in the keyboard lines.
+- **docs — Manual.** The mode strip (§4), the key move with the old keys that still answer (§7), keys and help with its four tabs and the arrow (§7.6), tags as a search mode with `#`, AND and OR (§8), the Holidays group (§17.1) and the Support card on the Overview (§18.8); the cheat sheet line at the top reads `?`, and the quick reference in §26, the preview card, the QR caption and the Bookmarks view's QR line use the new keys.
+- **docs — Config → Overview and About → News & features.** Four entries with `since: v1.27.0` in `overview-features.json`, in six languages: one set of keys, the mode strip, tags in the search panel and the holiday themes.
+- **docs — nextdash.cc.** `feature-pages/v1.27.0-pages.php` puts the new keys on nineteen feature pages and their *Try it* boxes, writes the Keys page anew around the one scheme, the strip, the legends and keys and help, adds tags with AND and OR to Find, the Holidays section to Themes and the legend to Glances. The front page, the stats strip, the gallery intro and the comparison say 390 themes, 195 families, 267 backdrops and 53 widget kinds. New pictures of keys and help, the four-line legend and Christmas Classic.
+- **docs — `static/data/whats-new/v1.27.0.json` and its index entry,** with three highlights and their recordings (`tests/fixtures/whats-new-media/v1.27.0.js`): the search panel, one set of keys and the mode strip. `whats-new-stub.js` names v1.27.0 in `DASHBOARD_RELEASE`, so an upgraded install opens the notes once, and moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v367`; `whats-new-hidden-release.spec.js` follows.
+- **docs — A Go check knows Keys and help.** `TestNoScriptOutsideConfigReadsALazyKey` failed on `keyboard-page-help.js`, which quotes Help panels; the sheet loads the help scope itself before it builds, so the file is exempt, with the reason in the test.
+- **docs — Help drawings use the new keys,** and the bell's Help article gets one: `Shift + N`, `Enter`, `?` (`config.helpArtBellKeys`, six languages). Daily use, Search, Finders, the Config keys and Unsorted drew `?` for finders, `!` for the cheat sheet, `Shift + E` and `Shift + K`.
+- **docs — Thirty specs follow the new keys.** CI on the first push failed 48 tests in 38 specs: most pressed the old keys (`Shift+M`, `Shift+D`, `Shift+T`, `Shift+C`, `Shift+W`, `Shift+Q`, `Shift+K`, `Shift+E`, `,` for pages, `Shift+N` for the news, `s` for the Health tab); the rest clicked into the bell's coach note, which `tests/fixtures.js` now marks seen on a page's first load, with the action-bar and mode-strip notes.
+- **docs — The arrows are clicked standing still in tests, and the keys window waits.** The arrow of the keys window and of Keys and help bobs without end, so a click on it never found it stable in CI; their specs ask for less motion. `tests/fixtures.js` also marks the window about the moved keys seen on a first load, since an install CI counts as existing opened it and the coach notes waited behind it.
+- **docs — Every fixed wait in the tests says why.** `validate:test-waits` failed in CI on 38 bare `waitForTimeout` calls added with the new keys; each now has a reason above it (most guard a check that nothing happens), and one in `bookmarks-shift-b.spec.js` waits for the address instead.
+- **docs — Unraid template.** `nextdash.xml` carries the v1.26.1 date and changes.
 
 ---
 

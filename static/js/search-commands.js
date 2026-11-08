@@ -87,10 +87,9 @@ class SearchCommandsComponent {
                 commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'digest', 'changes', 'telemetry', 'ask'],
             },
         ];
-        // Which groups are open. None is, until the reader opens one: the
-        // palette answers a bare `:` with its five headings rather than with
-        // every command it has.
-        this.expandedGroups = new Set();
+        // Which groups the reader has closed. All are open to begin with: a bare
+        // `:` lists the commands, with the recent and most used on top.
+        this.collapsedGroups = new Set();
 
         // Bookmark pre-selected via keyboard when : was pressed; used to pre-fill context commands
         this.contextBookmark = null;
@@ -248,7 +247,7 @@ class SearchCommandsComponent {
      */
     resetState() {
         this.resetTransientState();
-        this.expandedGroups.clear();
+        this.collapsedGroups.clear();
         // contextBookmark is not reset here: this runs on every keystroke,
         // including the ':' that set it, so :pin, :tag, :move and the rest
         // never saw the selected row. The search clears it when it closes.
@@ -774,10 +773,10 @@ class SearchCommandsComponent {
     }
 
     toggleGroup(groupId) {
-        if (this.expandedGroups.has(groupId)) {
-            this.expandedGroups.delete(groupId);
+        if (this.collapsedGroups.has(groupId)) {
+            this.collapsedGroups.delete(groupId);
         } else {
-            this.expandedGroups.add(groupId);
+            this.collapsedGroups.add(groupId);
         }
     }
 
@@ -793,23 +792,23 @@ class SearchCommandsComponent {
         const result = [];
         const recent = typeof this.getRecentCommands === 'function' ? this.getRecentCommands() : [];
         const recentSlice = recent.slice(0, 5);
-        if (recentSlice.length > 0) {
-            result.push({
-                type: 'command-group-header',
-                groupId: 'palette_recent',
-                label: this._t('commands.paletteRecentCommands', 'Recent commands'),
-                count: recentSlice.length,
-                expanded: true,
-            });
+        // The commands used most, by name: another way in than the last few.
+        const most = (typeof this.getMostUsedCommands === 'function' ? this.getMostUsedCommands() : []).slice(0, 5);
+        if (recentSlice.length > 0 || most.length > 0) {
+            // One line, two lists side by side: recent and most used.
+            const sections = [];
+            if (recentSlice.length) sections.push({ label: this._t('commands.paletteRecentCommands', 'Recent commands'), count: recentSlice.length });
+            if (most.length) sections.push({ label: this._t('commands.paletteMostUsed', 'Most used'), count: most.length });
             result.push({
                 type: 'command-chips',
-                queries: recentSlice,
-                _chipCount: recentSlice.length,
+                queries: [...recentSlice, ...most],
+                sections,
+                _chipCount: recentSlice.length + most.length,
             });
         }
 
         for (const group of this.commandGroups) {
-            const isExpanded = this.expandedGroups.has(group.id);
+            const isExpanded = !this.collapsedGroups.has(group.id);
             result.push({
                 type: 'command-group-header',
                 groupId: group.id,

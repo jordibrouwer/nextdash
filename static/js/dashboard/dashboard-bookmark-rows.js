@@ -249,15 +249,15 @@ class DashboardBookmarkRows {
                     { duration, undoCallback }
                 );
             } else {
-                d.showNotification(
-                    d.formatDashboardLabel(
-                        'movedToCategory',
-                        { name: catName },
-                        `Moved to "${catName}"`
-                    ),
-                    'success',
-                    { duration, undoCallback }
+                const movedMessage = d.formatDashboardLabel(
+                    'movedToCategory',
+                    { name: catName },
+                    `Moved to "${catName}"`
                 );
+                // Ctrl/Cmd+Z answers this notice too (keyboard-navigation.js).
+                d._keyUndoMessage = movedMessage;
+                d.keyboardNavigation?._noteUndoable?.();
+                d.showNotification(movedMessage, 'success', { duration, undoCallback });
             }
         }
 
@@ -1466,7 +1466,7 @@ class DashboardBookmarkRows {
      * that presume the keyboard is in use (`more`) stay hidden until it is:
      * KeyboardNavigation stamps data-grid-keys on <body> at the first cursor
      * move and clears it again on Enter, when the reader has arrived where
-     * they were going. Shift+Z switches the whole legend off and on.
+     * they were going. Shift+H switches the whole legend off and on.
      *
      * Rebuilt only when the text changes: this runs on every render, and the
      * legend is constant unless the language does.
@@ -1484,21 +1484,15 @@ class DashboardBookmarkRows {
             return;
         }
         const rows = window.KeyboardViewLegends.DASHBOARD_VIEW;
-        const lines = [...new Set(rows.map((row) => row.line || 1))].sort();
-        const html = lines.map((line) => {
-            const spans = rows
-                .filter((row) => (row.line || 1) === line)
-                .map((row) => {
-                    const label = d.formatDashboardLabel?.(row.legendKey, {}, row.fallback) ?? row.fallback;
-                    const more = row.more ? ' class="dashboard-legend-more"' : '';
-                    return `<span${more}><kbd>${d.escapeHtml(row.keys)}</kbd> ${d.escapeHtml(label)}</span>`;
-                })
-                .join('');
-            // A line of nothing but `more` rows would leave an empty gap before
-            // the first cursor move, so the whole line waits.
-            const lineMore = rows.filter((row) => (row.line || 1) === line).every((row) => row.more);
-            return `<span class="dashboard-legend-line${lineMore ? ' dashboard-legend-line-more' : ''}">${spans}</span>`;
+        // One wrapping line, in the order of the rows (their priority): what fits on
+        // the first row is what matters most. The rows that presume the keyboard
+        // wait until the cursor has moved.
+        const spans = rows.map((row) => {
+            const label = d.formatDashboardLabel?.(row.legendKey, {}, row.fallback) ?? row.fallback;
+            const more = row.more ? ' class="dashboard-legend-more"' : '';
+            return `<span${more}><kbd>${d.escapeHtml(row.keys)}</kbd> ${d.escapeHtml(label)}</span>`;
         }).join('');
+        const html = `<span class="dashboard-legend-line">${spans}</span>`;
         let legend = host.querySelector(':scope > .dashboard-legend');
         if (!legend) {
             legend = document.createElement('p');

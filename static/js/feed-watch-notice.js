@@ -9,7 +9,7 @@
  * server's count and the row follows.
  *
  * A muted feed never calls out, so it is left out here too. "Mark read" holds
- * until news arrives that the row did not list (new ids), as for any tip.
+ * until news arrives on a site (a later newAt), as for any tip.
  */
 (function initFeedWatchNotice(global) {
     'use strict';
@@ -44,7 +44,10 @@
             if (n <= 0 || entry.muted === true) return;
             count += n;
             sites.push(key);
-            (entry.newItems || []).forEach((item) => ids.push(`${key}:${item.id}`));
+            // One id per site, from when its news last arrived. The item ids
+            // would not do: the server lists only the newest ten, so reading
+            // one moves an older item into the list and that looked like news.
+            ids.push(`${key}:${Number(entry.newAt) || 0}`);
         });
         if (!count) return null;
         const text = sites.length === 1

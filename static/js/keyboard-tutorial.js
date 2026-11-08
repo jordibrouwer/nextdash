@@ -126,10 +126,10 @@
 
     /** Step 3: `?` sends the rest of the line to a site you chose. */
     function sceneFinders() {
-        return svg(panel('?yt lofi', [
-            { left: '?yt', right: t('keyboardTourSceneFinder', 'Search on YouTube') },
-            { left: '?w', right: t('keyboardTourSceneFinder2', 'Search on Wikipedia') },
-        ]), t('keyboardTour3Alt', 'The search panel with ?yt lofi typed and the finders it offers'));
+        return svg(panel('! yt lofi', [
+            { left: '! yt', right: t('keyboardTourSceneFinder', 'Search on YouTube') },
+            { left: '! w', right: t('keyboardTourSceneFinder2', 'Search on Wikipedia') },
+        ]), t('keyboardTour3Alt', 'The search panel with ! yt lofi typed and the finders it offers'));
     }
 
     /** Step 4: the single keys that open the other doors. */
@@ -143,7 +143,7 @@
         return svg(
             card(24, '/', t('keyboardTourSceneCloud', 'Tag cloud'), 0.2)
             + card(173, '*', t('keyboardTourSceneRecent', 'Recent bookmarks'), 0.7)
-            + card(322, '!', t('keyboardTourSceneSheet', 'All the keys'), 1.2),
+            + card(322, '?', t('keyboardTourSceneSheet', 'All the keys'), 1.2),
             t('keyboardTour4Alt', 'Three keys: slash for the tag cloud, star for recent bookmarks, exclamation mark for the cheat sheet'),
         );
     }
@@ -182,7 +182,7 @@
                 visual: sceneFinders(),
                 body: `<p>${sentence('keyboardTour3Body1',
                     'Type {question} and the short name of a finder, then your question. The rest of the line goes to that site, and the results open in a new tab.',
-                    { question: '?' })}</p>
+                    { question: '!' })}</p>
                 <p>${esc(t('keyboardTour3Body2',
                     'You choose the sites yourself in Config → Finders.'))}</p>`,
             },
@@ -191,7 +191,7 @@
                 visual: sceneKeys(),
                 body: `<p>${sentence('keyboardTour4Body1',
                     '{slash} opens the tag cloud, {star} lists the bookmarks you opened recently, and {bang} shows every key in a cheat sheet.',
-                    { slash: '/', star: '*', bang: '!' })}</p>
+                    { slash: '/', star: '*', bang: '?' })}</p>
                 <p>${esc(t('keyboardTour4Body2',
                     'The tour is always one command away: type :tour keyboard.'))}</p>`,
             },

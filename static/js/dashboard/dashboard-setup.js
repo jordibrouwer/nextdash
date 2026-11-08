@@ -478,10 +478,27 @@ class DashboardSetup {
                 return;
             }
 
-            if (e.key === ',') {
+            // , opens the config view (and leaves it again), like < and the old
+            // Shift+S. The Pages panel was on this key; it is Shift+P now.
+            if (e.key === ',' && !e.shiftKey) {
                 e.preventDefault();
                 e.stopPropagation();
                 window.nextdashRecordKey?.(',');
+                window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
+                if (d.config?.openConfigView) {
+                    void d.config.openConfigView();
+                } else {
+                    window.location.href = '/config';
+                }
+                return;
+            }
+
+            // Shift+P: the Pages panel. With a bookmark in hand the row's own
+            // Shift+P (pin) has taken the key before it gets here.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyP') {
+                e.preventDefault();
+                e.stopPropagation();
+                window.nextdashRecordKey?.('Shift + P');
                 d.showPageOverlay();
                 return;
             }
@@ -555,10 +572,12 @@ class DashboardSetup {
             // openHealthView, which landed on the Broken filter -- the old Health
             // view's front page -- so the key and the button opened two
             // different things.
-            if (e.shiftKey && e.code === 'KeyH') {
+            // Shift+B: B for Bookmarks. Shift+H, which it was, is the key
+            // legend now (H for Hints).
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyB') {
                 e.preventDefault();
                 e.stopPropagation();
-                window.nextdashRecordKey?.('Shift + H');
+                window.nextdashRecordKey?.('Shift + B');
                 void d.config?.openLibraryView?.();
                 return;
             }
@@ -568,21 +587,34 @@ class DashboardSetup {
             // letters find shortcuts — is the kind of thing you want to change
             // for one search and change back, and walking to Behavior → Search
             // for that is longer than the search itself.
-            if (e.shiftKey && e.code === 'KeyQ') {
+            // Shift+X switches the mode. With the cursor on a bookmark row Shift+X
+            // ticks the whole category instead (a selection key, not an action),
+            // so it does not reach here. Shift+Q is unassigned: q is the QR code
+            // of the bookmark under the cursor.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyX'
+                && d.isBookmarksView?.() && !d.keyboardNavigation?._cursorOnBookmarkRow?.()) {
                 e.preventDefault();
                 e.stopPropagation();
-                window.nextdashRecordKey?.('Shift + Q');
+                window.nextdashRecordKey?.('Shift + X');
                 void d.toggleSearchMode?.();
                 return;
             }
 
-            // Shift+Z switches the key legend under the grid off and on. Z because
-            // every other Shift letter was taken, and the legend is the one thing
-            // here that is for looking at, not for acting on.
-            if (e.shiftKey && e.code === 'KeyZ' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            // Shift+H (H for Hints) switches the key legend under the grid off and
+            // on; the legend is the one thing here that is for looking at, not
+            // for acting on. Only over the grid: in the Bookmarks view Shift+H on
+            // a row is its own. Shift+Z is the old key and says so for a couple
+            // of releases.
+            if (e.shiftKey && (e.code === 'KeyH' || e.code === 'KeyZ') && !e.ctrlKey && !e.altKey && !e.metaKey
+                && d.isBookmarksView?.()) {
                 e.preventDefault();
                 e.stopPropagation();
-                window.nextdashRecordKey?.('Shift + Z');
+                if (e.code === 'KeyZ') {
+                    window.nextdashRecordKey?.('Shift + Z');
+                    window.ShiftKeyAliases?.notice('Shift + Z', 'Shift + H');
+                } else {
+                    window.nextdashRecordKey?.('Shift + H');
+                }
                 void d.toggleGridKeyLegend?.();
                 return;
             }
@@ -600,6 +632,18 @@ class DashboardSetup {
                 return;
             }
 
+            // Shift+N opens the notification center, the bell, and closes it
+            // again. It was the news; the news is Shift+W now.
+            if (e.shiftKey && e.code === 'KeyN' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (window.NotificationBell?.toggle && !e.repeat) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + N');
+                    window.NotificationBell.toggle();
+                }
+                return;
+            }
+
             if (e.shiftKey && e.code === 'KeyI') {
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                     e.preventDefault();
@@ -610,13 +654,21 @@ class DashboardSetup {
                 return;
             }
 
-            // Containers. Y, as C, D, K, N and O were taken; the Docker-less
-            // install has no view and the key does nothing there.
-            if (e.shiftKey && e.code === 'KeyY') {
+            // Containers. C for Containers; with a bookmark in hand the row's own
+            // Shift+C (availability checking) has already taken the key before
+            // it gets here. Shift+Y is the old key and says so for a couple of
+            // releases. The Docker-less install has no view and the key does
+            // nothing there.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && (e.code === 'KeyC' || e.code === 'KeyY')) {
                 if (d.docker?.isEnabled?.()) {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.nextdashRecordKey?.('Shift + Y');
+                    if (e.code === 'KeyY') {
+                        window.nextdashRecordKey?.('Shift + Y');
+                        window.ShiftKeyAliases?.notice('Shift + Y', 'Shift + C');
+                    } else {
+                        window.nextdashRecordKey?.('Shift + C');
+                    }
                     void d.docker.openDockerView();
                 }
                 return;
@@ -629,20 +681,6 @@ class DashboardSetup {
                     e.stopPropagation();
                     window.nextdashRecordKey?.('Shift + U');
                     void d.openUnsortedBookmarks();
-                }
-                return;
-            }
-
-            // Shift+S opens the config view in place. Unlike '<' above, which
-            // still navigates to the old standalone /config page, this stays
-            // inside the dashboard shell — nothing reloads.
-            if (e.shiftKey && e.code === 'KeyS') {
-                if (d.config?.openConfigView) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.nextdashRecordKey?.('Shift + S');
-                    window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
-                    void d.config.openConfigView();
                 }
                 return;
             }

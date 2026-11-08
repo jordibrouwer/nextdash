@@ -61,8 +61,9 @@
             // at now and then, so it waits in one menu rather than a row of
             // equal buttons.
             return `
+                <button type="button" class="lvs-action" id="config-bm-add" data-bm-add-bookmark>${esc(t('config.addBookmark', 'Add bookmark'))}</button>
                 ${healthOn ? `<button type="button" class="lvs-action lvs-action--primary" data-bm-work-through
-                        title="${esc(t('config.bmWorkThroughHint', 'Go through this list one bookmark at a time'))}">${esc(t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>` : ''}
+                        title="${esc(t('config.bmWorkThroughHint', 'Go through this list one bookmark at a time'))}">${esc(t('dashboard.healthFocus', 'Work through'))}<kbd>u</kbd></button>` : ''}
                 <span class="config-bm-header-more">
                     <button type="button" class="lvs-action" data-bm-header-more aria-haspopup="menu" aria-expanded="false">${esc(t('config.bmCollectionMenu', 'Collection'))} <span aria-hidden="true">▾</span></button>
                     <div class="config-structure-menu config-bm-header-menu" role="menu" data-bm-header-menu hidden>
@@ -113,7 +114,8 @@
         handleLibraryHeaderClick(e) {
             const on = (sel) => e.target.closest(sel);
             if (on('[data-bm-header-menu] [role="menuitem"]')) this.closeLibraryHeaderMenu();
-            if (on('[data-bm-work-through]')) this.startLibraryWorkThrough();
+            if (on('[data-bm-add-bookmark]')) this.openAddBookmarkModal();
+            else if (on('[data-bm-work-through]')) this.startLibraryWorkThrough();
             else if (on('[data-bm-rot-report]')) this._bmHealthModule?.showRotReport?.();
             else if (on('[data-bm-export]')) this.bulkExportCsv?.(this.visibleBookmarks());
             else if (on('[data-bm-help]')) this.showLibraryExplainer();

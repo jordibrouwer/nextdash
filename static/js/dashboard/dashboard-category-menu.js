@@ -108,7 +108,7 @@ class DashboardCategoryMenu {
                     ? this.t('widgetMenuWidthOne', 'Back to one column')
                     : this.t('widgetMenuWidthTwo', 'Across two columns'),
                 icon: '↔',
-                key: 'Shift+W',
+                key: 'W',
                 detail: canWiden ? '' : this.t('widgetMenuWidthUnavailableShort', 'One column on this dashboard'),
                 disabled: !canWiden && !wide,
             },
@@ -212,7 +212,7 @@ class DashboardCategoryMenu {
                     ? this.t('widgetMenuWidthOne', 'Back to one column')
                     : this.t('widgetMenuWidthTwo', 'Across two columns'),
                 icon: '↔',
-                key: 'Shift+W',
+                key: 'W',
                 detail: canWiden ? '' : this.t('widgetMenuWidthUnavailableShort', 'One column on this dashboard'),
                 disabled: !canWiden && !wide,
             },
@@ -243,6 +243,7 @@ class DashboardCategoryMenu {
                 id: 'refresh',
                 label: this.t('widgetMenuRefresh', 'Refresh now'),
                 icon: '↻',
+                key: 'R',
             }] : []),
             {
                 // The widget again, right after this one, with its settings and
@@ -250,6 +251,7 @@ class DashboardCategoryMenu {
                 id: 'duplicate',
                 label: this.t('widgetMenuDuplicate', 'Duplicate'),
                 icon: '⧉',
+                key: 'D',
             },
             // Same move Config -> Widgets offers, from where the widget is.
             ...this.movePageEntries(widget.id),
@@ -259,6 +261,7 @@ class DashboardCategoryMenu {
                 id: 'settings',
                 label: this.t('widgetMenuSettings', 'Settings…'),
                 icon: '⚙',
+                key: 'S',
             },
             {
                 // Closing is not deleting: the widget keeps its settings and any
@@ -335,6 +338,47 @@ class DashboardCategoryMenu {
     /** Whether the block behind this header is folded shut. */
     widgetIsFolded(titleEl) {
         return titleEl?.closest('.category')?.getAttribute('data-collapsed') === 'true';
+    }
+
+    /**
+     * A plain letter on a focused title: the menu entry that carries that letter.
+     * Returns true when the letter belonged to the title (even if the entry is
+     * not on offer for it), false when the key is not one of its letters.
+     * The entries run through the menu's own handlers, so a letter and a click
+     * cannot end up as two behaviours.
+     */
+    runTitleLetter(letter, titleEl, block) {
+        const d = this.dash;
+        const widgetId = block?.getAttribute?.('data-widget-id');
+        if (widgetId) {
+            const widget = (d.widgets || []).find((w) => String(w?.id) === String(widgetId));
+            if (!widget) return false;
+            const map = { r: 'refresh', d: 'duplicate', s: 'settings', w: 'width' };
+            const action = map[letter];
+            if (!action) return false;
+            if (action === 'refresh' && !d.renderCore?.widgetCanRefreshNow?.(widget)) return false;
+            void this.runWidgetAction(action, titleEl, widget);
+            return true;
+        }
+        const span = window.DashboardCategorySpan;
+        const category = span?.categoryFromEl?.(d, block);
+        if (!category) return false;
+        const stored = category.isSmartCollection !== true && category.isVirtualCategory !== true
+            && (d.categories || []).some((cat) => String(cat.id) === String(category.id));
+        const map = { a: 'add-bookmark', t: 'find-tags', v: 'view', i: 'icon', w: 'spread' };
+        const action = map[letter];
+        if (!action) return false;
+        if (!stored && action !== 'spread') return false;
+        if (action === 'spread') {
+            d.keyboardNavigation?.toggleFocusedBlockWidth?.();
+            return true;
+        }
+        if (action === 'view') {
+            this.toggleView(category);
+            return true;
+        }
+        void this.runAction(action, titleEl, category);
+        return true;
     }
 
     /** What the header shows: the widget's own title, or its type's name. */
@@ -580,6 +624,7 @@ class DashboardCategoryMenu {
                 id: 'add-bookmark',
                 label: this.t('categoryMenuAddBookmark', 'Add new bookmark'),
                 icon: '+',
+                key: 'A',
             }] : []),
             { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
             ...this.editPanelEntry(),
@@ -587,6 +632,7 @@ class DashboardCategoryMenu {
                 id: 'find-tags',
                 label: this.t('categoryMenuFindTags', 'Find tags for this category'),
                 icon: '#',
+                key: 'T',
             }] : []),
             ...(stored ? [{
                 id: 'view',
@@ -594,6 +640,7 @@ class DashboardCategoryMenu {
                     ? this.t('categoryMenuViewRows', 'Show as rows')
                     : this.t('categoryMenuViewTiles', 'Show as tiles'),
                 icon: asTiles ? '☰' : '▦',
+                key: 'V',
             }] : []),
             {
                 // A switch, not a size: how many columns a spread category
@@ -612,7 +659,7 @@ class DashboardCategoryMenu {
                     ? this.t('categoryMenuUnspread', 'Back to one column')
                     : this.t('categoryMenuSpread', 'Spread across columns'),
                 icon: '↔',
-                key: 'Shift+W',
+                key: 'W',
                 detail: canSpread ? '' : this.spreadUnavailableText(blockedReason, true),
                 disabled: !canSpread,
             },
@@ -623,9 +670,9 @@ class DashboardCategoryMenu {
             // the inline rename edits the name. The locale strings for this
             // control were still sitting in all four files with no caller: it
             // fell out at some point and left eight identical headers behind.
-            { id: 'icon', label: this.t('categoryMenuInsertIcon', 'Insert icon…'), icon: '☺' },
+            { id: 'icon', label: this.t('categoryMenuInsertIcon', 'Insert icon…'), icon: '☺', key: 'I' },
             ...this.movePageEntries(category.id),
-            { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+', key: 'c' },
+            { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+' },
             { id: 'delete', label: this.t('categoryMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
         ];
 

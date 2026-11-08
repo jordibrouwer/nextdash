@@ -774,22 +774,22 @@
         entries(c) {
             const actions = this.view.actions;
             const allowed = actions ? actions.allowed(c) : [];
-            const keys = { start: 's', stop: 's', restart: 'r', pause: 'p', unpause: 'p', update: 'u', remove: '⌫' };
+            const keys = { start: 's', stop: 's', restart: 'r', pause: 'p', unpause: 'p', update: 'u', remove: 'D' };
             const icons = { start: '▶', stop: '■', restart: '↻', pause: '⏸', unpause: '▶', update: '⇡', remove: '✕' };
             const list = [{ id: 'open', label: this.t('dockerMenuDetails', 'Details'), icon: 'ⓘ', key: 'Enter' }];
             allowed.filter((a) => a !== 'remove').forEach((a) => {
                 list.push({ id: a, label: actions.label(a), icon: icons[a], key: keys[a] });
             });
-            list.push({ id: 'logs', label: this.t('dockerMenuLogs', 'Show logs'), icon: '≡', divider: true });
+            list.push({ id: 'logs', label: this.t('dockerMenuLogs', 'Show logs'), icon: '≡', divider: true, key: 'L' });
             const webui = this.webuiFor(c);
-            if (webui) list.push({ id: 'webui', label: this.t('dockerLinkWebUI', 'Web UI'), icon: '↗' });
+            if (webui) list.push({ id: 'webui', label: this.t('dockerLinkWebUI', 'Web UI'), icon: '↗', key: 'W' });
             if (!c.self) {
                 list.push(actions?.isMuted(c)
-                    ? { id: 'mute', label: this.t('dockerMenuUnmute', 'Unmute notifications'), icon: '🔔' }
-                    : { id: 'mute', label: this.t('dockerMenuMute', 'Mute notifications'), icon: '🔕' });
+                    ? { id: 'mute', label: this.t('dockerMenuUnmute', 'Unmute notifications'), icon: '🔔', key: 'M' }
+                    : { id: 'mute', label: this.t('dockerMenuMute', 'Mute notifications'), icon: '🔕', key: 'M' });
             }
-            list.push({ id: 'copy-name', label: this.t('dockerMenuCopyName', 'Copy name'), icon: '⧉' });
-            list.push({ id: 'copy-id', label: this.t('dockerMenuCopyId', 'Copy ID'), icon: '⧉' });
+            list.push({ id: 'copy-name', label: this.t('dockerMenuCopyName', 'Copy name'), icon: '⧉', key: `${window.ShortcutFormat?.modifierLabel?.() || 'Ctrl'}+C` });
+            list.push({ id: 'copy-id', label: this.t('dockerMenuCopyId', 'Copy ID'), icon: '⧉', key: 'Y' });
             // A running one too: removing it stops it first, after asking.
             if (actions?.canRemove(c)) {
                 list.push({ id: 'remove', label: actions.label('remove'), icon: icons.remove, key: keys.remove, danger: true });

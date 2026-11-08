@@ -110,6 +110,8 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 		return themeBackdropOrchidBloom(k)
 	case "sonar":
 		return themeBackdropSonar(k)
+	case "gingerbread":
+		return themeBackdropGingerbread(k)
 	case "lookember":
 		return themeBackdropLookEmber(k)
 	case "looksupernova":

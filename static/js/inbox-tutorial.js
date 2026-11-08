@@ -316,7 +316,7 @@
                 body: `<p>${esc(t('inboxTour4LeaveBody1',
                     'Promote (p) opens the bookmark form with the address, title, note and tags filled in. Delete (d) throws the link away, with Undo.'))}</p>
                     <p>${esc(t('inboxTour4LeaveBody2',
-                    'Keep (Shift+K) files it under Bookmarks › Unsorted, for later. Shift+U opens that list.'))}</p>`,
+                    'Keep (m) files it under Bookmarks › Unsorted, for later. Shift+U opens that list.'))}</p>`,
             },
             {
                 title: t('inboxTour4TriageTitle', 'Triage, and the keys'),
@@ -338,14 +338,14 @@
                             ${label(30, 54, 'deno.com')}
                             ${pillRow(30, 74, [[keep, 'plain'], [promote, 'plain'], [del, 'danger']], 5)}
                         </g>
-                        ${keycap(16, 122, 't', anim('press'))}
+                        ${keycap(16, 122, 'f', anim('press'))}
                         ${label(42, 136, t('inboxKeyTriage', 'triage'))}
                         ${keys}
                         ${pill(398, 118, t('inboxTour', 'Tour'), { kind: 'active', w: 66 })}
                     `, t('inboxTour3S6Alt', 'Triage shows one link at a time; the keys that work on it'));
                 })(),
                 body: `<p>${esc(t('inboxTour4TriageBody1',
-                    't shows one link at a time: j and k move, r marks it read, Shift+K keeps, p promotes, z snoozes and d deletes. Escape goes back to the list.'))}</p>
+                    'f shows one link at a time: j and k move, r marks it read, m keeps, p promotes, z snoozes and d deletes. Escape goes back to the list.'))}</p>
                     <p class="inbox-tutorial-closing">${esc(t('inboxTour4Closing',
                     'The legend under the list has every key, and the Tour button above it brings this tour back.'))}</p>`,
             },

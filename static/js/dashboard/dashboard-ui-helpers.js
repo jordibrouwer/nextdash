@@ -150,7 +150,7 @@ class DashboardUiHelpers {
         return registry.activeContextId(registry.buildContext(this.dash));
     }
 
-    showKeyboardCheatSheet() {
+    async showKeyboardCheatSheet(options = {}) {
         const d = this.dash;
         if (!window.AppModal) {
             return;
@@ -169,6 +169,31 @@ class DashboardUiHelpers {
         }
         this._cleanupCheatSheetKeyHandler();
 
+        // The sheet quotes the Help, and the Help prose is a locale scope of its
+        // own that loads when Config opens. Fetched here when it is not in yet,
+        // for a moment at most: the sheet opens without it rather than wait.
+        const lang = d.language;
+        if (typeof lang?.translations?.config?.helpStartBody !== 'string' && typeof lang?.ensureHelpTranslations === 'function') {
+            // One opening at a time; Escape while it waits cancels it, and so does
+            // another window taking the screen in the meantime.
+            if (this._cheatSheetPending) return;
+            this._cheatSheetPending = true;
+            let cancelled = false;
+            const onKey = (e) => { if (e.key === 'Escape') cancelled = true; };
+            document.addEventListener('keydown', onKey, true);
+            try {
+                await Promise.race([
+                    Promise.resolve(lang.ensureHelpTranslations(lang.currentLanguage)).catch(() => {}),
+                    new Promise((resolve) => setTimeout(resolve, 1500)),
+                ]);
+            } finally {
+                document.removeEventListener('keydown', onKey, true);
+                this._cheatSheetPending = false;
+            }
+            const other = document.querySelector('#app-modal.show');
+            if (cancelled || (other && !other.querySelector('.keyboard-cheat-sheet'))) return;
+        }
+
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
         const allSections = this.getKeyboardCheatSheetItems();
@@ -184,19 +209,26 @@ class DashboardUiHelpers {
         // Opening from Health should not mean scrolling past eight sections to
         // reach the rows for the view you are looking at. The matching section
         // opens and leads; nothing is hidden, so the filter still sees everything.
-        const context = this.getKeyboardCheatSheetContext();
+        // Opened from a Help panel it can name the page whose keys it should lead with.
+        const actualContext = this.getKeyboardCheatSheetContext();
+        const context = options?.context || actualContext;
+        // Asked for another page's keys (from a Help panel): the keys cannot be tried here.
+        // The bell is not a page: its keys work wherever you are, so nothing is foreign about it.
+        const foreign = context !== actualContext && context !== 'bell';
+        // A Config page's own help (config:structure) reads the Config sections of the registry.
+        const sectionContext = context.startsWith('config:') ? 'config' : context;
         // Bookmarks is the default the sheet has always opened on, so it gets no
         // lead line and no marked section: there is nothing to orient someone to.
         const foundContext = context === 'bookmarks'
             ? -1
-            : allSections.findIndex((section) => section.contextId === context);
+            : allSections.findIndex((section) => section.contextId === sectionContext);
         // The view's own section leads, across the full width, so it is the
         // first thing under the filter instead of somewhere down the grid.
         const sections = foundContext > 0
             ? [allSections[foundContext], ...allSections.filter((_s, i) => i !== foundContext)]
             : allSections;
         const contextIndex = foundContext >= 0 ? 0 : -1;
-        const leadKey = `cheatsheetContext${context.replace(/(^|-)([a-z])/g, (_m, _d, c) => c.toUpperCase())}Lead`;
+        const leadKey = `cheatsheetContext${sectionContext.replace(/(^|-)([a-z])/g, (_m, _d, c) => c.toUpperCase())}Lead`;
         const leadText = context === 'bookmarks'
             ? ''
             : (d.language?.t(`dashboard.${leadKey}`) || '');
@@ -232,15 +264,164 @@ class DashboardUiHelpers {
                         </div>
                     </section>`;
         });
+        /*
+         * Keys and help: the sheet opens on the page you are on. "This page"
+         * says where you are, what to do first and what else is here; "All
+         * keys" is the whole list (the sheet as it was); the modes and the
+         * learning material have a tab each. All four are in the page at once
+         * and one shows, so the filter can search across them.
+         */
+        const pageHelp = window.KeyboardPageHelp?.forContext?.(context, d) || null;
+        const chips = (keys) => {
+            const text = String(keys ?? '');
+            if (text === 'Type') return `<span class="cs-typed">${esc(tr('cheatsheetTyped', 'type'))}</span>`;
+            const parts = text.includes(' / ') ? text.split(' / ')
+                : (/^(\S\s)+\S$/.test(text) && !text.includes('+') ? text.split(' ') : [text]);
+            return parts.map((p) => `<kbd class="cs-kbd">${esc(p)}</kbd>`).join('<span class="cs-sep">/</span>');
+        };
+        const itemsById = new Map();
+        const itemButton = (id, item, keysHtml) => {
+            itemsById.set(id, { ...item, keysHtml });
+            return `<button type="button" class="cs-item" data-item-id="${id}" data-search="${esc(squash(`${item.description}${item.explain || ''}${item.keys}`))}"><span class="cs-keys">${keysHtml}</span><span class="cs-text">${esc(item.description)}</span></button>`;
+        };
+        const tryButton = (kind, index, label) => `<button type="button" class="cs-try" data-try-kind="${kind}" data-try-index="${index}">${esc(label)}</button>`;
+        const tryLabel = tr('cheatsheetTry', 'Try it');
+        // The page's own keys lead; the keys that open other views (Navigation) come after them.
+        const hereSections = sections.filter((section) => section.contextId === sectionContext)
+            .sort((a, b) => Number(a.id === 'sectionNavigation') - Number(b.id === 'sectionNavigation'));
+        const hereItems = hereSections.flatMap((section) => section.items);
+        // Keys you have not met yet come first: the strip's own count of what you used.
+        const uses = window.ModeStripSuggest?.uses?.() || {};
+        const learned = (item) => /^[a-z]$/i.test(String(item.keys)) && (uses[String(item.keys)] || 0) >= (window.ModeStripSuggest?.LEARN_AFTER || 3);
+        const hereOrdered = [...hereItems.filter((item) => !learned(item)), ...hereItems.filter(learned)];
+        const HERE_SHOWN = 8;
+        const modeLine = pageHelp?.mode === 'bell'
+            ? tr('cheatsheetModeBell', 'These keys work from anywhere on the dashboard.')
+            : foreign
+            ? tr('cheatsheetModeForeign', 'These are the keys of that page. Open the page to use them.')
+            : pageHelp?.mode === 'search'
+            ? tr('cheatsheetModeSearch', 'Your keys now: Search. Type to find a bookmark.')
+            : tr('cheatsheetModeBrowse', 'Your keys now: Browse. Press ↓ or j to put a cursor on a row.');
+        const learnItems = [];
+        // Every tour the app has, the one for this page first.
+        const tours = (window.KeyboardPageHelp?.TOURS || []).slice();
+        tours.sort((x, y) => Number(y.id === pageHelp?.tour) - Number(x.id === pageHelp?.tour));
+        tours.forEach((tour) => {
+            const name = d.language?.t?.(tour.labelKey);
+            const label = name && name !== tour.labelKey ? name : tour.label;
+            const here = tour.id === pageHelp?.tour;
+            learnItems.push({
+                id: `tour-${tour.id}`,
+                group: 'tours',
+                label: `${tr('cheatsheetLearnTour', 'Tour')}: ${label}${here ? ` · ${tr('cheatsheetLearnThisPage', 'this page')}` : ''}`,
+                run: { tour: tour.id },
+            });
+        });
+        learnItems.push({ id: 'help', group: 'more', label: tr('cheatsheetLearnHelp', 'Read the help'), run: { config: 'help' } });
+        if (pageHelp?.settings && pageHelp.settings !== 'help') learnItems.push({ id: 'settings', group: 'more', label: tr('cheatsheetLearnSettings', 'Settings for this page'), run: { config: pageHelp.settings } });
+        const learnById = new Map(learnItems.map((item) => [item.id, item]));
+        const cards = window.KeyboardPageHelp?.helpCards?.(context, d) || [];
+        const moreButton = (n, label) => `<button type="button" class="cs-more-link" data-help-hash="${esc(cards[n]?.hash || '')}" title="${esc(cards[n]?.title || '')}">${esc(label)}</button>`;
+        const stepsHtml = (pageHelp?.steps || []).map((step, i) => `
+                        <div class="cs-step">${itemButton(`s-${i}`, step, chips(step.keys))}${step.moreHash ? `<button type="button" class="cs-more-link" data-help-hash="${esc(step.moreHash)}">${esc(tr('cheatsheetMore', 'More'))}</button>` : ''}${step.try && !foreign ? tryButton('step', i, tryLabel) : ''}</div>`).join('');
+        const cardsHtml = cards.length ? `<p class="cs-lbl">${esc(tr('cheatsheetInHelp', 'In the help'))}</p>${cards.slice(0, 2).map((card) => `
+                        <div class="cs-card">
+                            <div class="cs-card-title">${esc(card.title)}</div>
+                            <div class="cs-card-body">${card.excerpt}</div>
+                            <button type="button" class="cs-card-more" data-help-hash="${esc(card.hash)}">${esc(tr('cheatsheetReadMore', 'Read more'))} →</button>
+                        </div>`).join('')}` : '';
+        const tip = window.KeyboardPageHelp?.tipFor?.(context, d) || null;
+        const tipHtml = tip ? `<p class="cs-tip"><span class="cs-tip-label">${esc(tr('cheatsheetTip', 'Tip'))}</span> ${tip.html}</p>` : '';
+        const hereHtml = hereOrdered.map((item, j) => `
+                        <div class="cs-step${j >= HERE_SHOWN ? ' cs-step--extra' : ''}"${j >= HERE_SHOWN ? ' hidden' : ''}>${itemButton(`h-${j}`, item, formatKeys(item.keys))}</div>`).join('');
+        const modesHtml = (window.KeyboardPageHelp?.modes?.(d) || []).map((m, i) => `
+                        <div class="cs-step">${itemButton(`m-${i}`, m, chips(m.keys))}${m.try ? tryButton('mode', i, tryLabel) : ''}</div>`).join('');
+        const learnRow = (item) => `
+                        <div class="cs-step"><button type="button" class="cs-item cs-item--plain" data-item-id="l-${item.id}"><span class="cs-text">${esc(item.label)}</span></button>${tryButton('learn', item.id, tr('cheatsheetOpen', 'Open'))}</div>`;
+        learnItems.forEach((item) => itemsById.set(`l-${item.id}`, { description: item.label, explain: '', keys: '', keysHtml: '' }));
+        const learnHtml = `<p class="cs-lbl">${esc(tr('cheatsheetLearnTours', 'Guided tours'))}</p><div class="cs-list">${learnItems.filter((i) => i.group === 'tours').map(learnRow).join('')}</div>
+                        <p class="cs-lbl">${esc(tr('cheatsheetLearnMore', 'More help'))}</p><div class="cs-list">${learnItems.filter((i) => i.group === 'more').map(learnRow).join('')}</div>`;
+        // What the filter can find besides keys: every page's help, the modes and the tours.
+        const helpRuns = new Map();
+        const helpRows = [];
+        const KPH = window.KeyboardPageHelp;
+        if (KPH) {
+            Object.keys(KPH.HELP).forEach((hid) => {
+                const page = KPH.byId(hid, d);
+                helpRows.push({ description: page.title, explain: page.intro, keys: '', page: tr('cheatsheetHelpPage', 'page') });
+                page.steps.forEach((step) => helpRows.push({ description: step.description, explain: step.explain, keys: step.keys, page: page.title }));
+            });
+            const seenPanels = new Set();
+            Object.keys(KPH.LINKS || {}).forEach((cid) => {
+                (KPH.helpCards?.(cid, d) || []).forEach((card) => {
+                    if (seenPanels.has(card.hash)) return;
+                    seenPanels.add(card.hash);
+                    helpRows.push({ description: card.title, explain: card.excerptPlain, keys: '', page: tr('cheatsheetHelpHelp', 'Help'), body: card.plain, hash: card.hash });
+                });
+            });
+            (KPH.modes?.(d) || []).forEach((m) => helpRows.push({ description: m.description, explain: m.explain, keys: m.keys, page: tr('cheatsheetTabModes', 'Search modes'), run: m.try }));
+            (KPH.TOURS || []).forEach((tour) => {
+                const name = d.language?.t?.(tour.labelKey);
+                helpRows.push({ description: `${tr('cheatsheetLearnTour', 'Tour')}: ${name && name !== tour.labelKey ? name : tour.label}`, explain: '', keys: '', page: tr('cheatsheetTabLearn', 'Learn'), run: { tour: tour.id } });
+            });
+        }
+        const helpGroupHtml = helpRows.length ? `
+                        <section class="cs-help-group" hidden aria-label="${esc(tr('cheatsheetHelpGroup', 'Help and tours'))}">
+                            <h3 class="cheat-sheet-group-title"><span class="cheat-sheet-group-label">${esc(tr('cheatsheetHelpGroup', 'Help and tours'))}</span></h3>
+                            <div class="cs-list">${helpRows.map((row, n) => {
+                                const id = `q-${n}`;
+                                const keysHtml = row.keys ? chips(row.keys) : '';
+                                itemsById.set(id, { description: row.description, explain: row.explain, keys: row.keys, keysHtml });
+                                if (row.run) helpRuns.set(String(n), row.run);
+                                const search = squash(`${row.description}${row.explain}${row.keys}${row.page}${row.body || ''}`);
+                                return `<div class="cs-step" hidden><button type="button" class="cs-item" data-item-id="${id}" data-search="${esc(search)}"><span class="cs-keys">${keysHtml}</span><span class="cs-text">${esc(row.description)} <span class="cs-ctx">· ${esc(row.page)}</span></span></button>${row.hash ? `<button type="button" class="cs-more-link" data-help-hash="${esc(row.hash)}">${esc(tr('cheatsheetReadMore', 'Read more'))}</button>` : ''}${row.run ? tryButton('q', n, tryLabel) : ''}</div>`;
+                            }).join('')}</div>
+                        </section>` : '';
+        const tabs = [
+            ['this', tr('cheatsheetTabThis', 'This page')],
+            ['all', tr('cheatsheetTabAll', 'All keys')],
+            ['modes', tr('cheatsheetTabModes', 'Search modes')],
+            ['learn', tr('cheatsheetTabLearn', 'Learn')],
+        ];
         const html = `
-            <div class="keyboard-cheat-sheet" data-context="${esc(context)}">
+            <div class="keyboard-cheat-sheet" data-context="${esc(context)}" data-tab="this">
                 ${showLead ? `<p class="cheat-sheet-context-lead">${esc(leadText)}</p>` : ''}
                 <input type="text" id="cheat-sheet-filter" class="cheat-sheet-filter"
                        placeholder="${esc(filterPlaceholder)}" autocomplete="off" spellcheck="false"
                        aria-label="${esc(filterPlaceholder)}">
+                <div class="cs-tabs" role="tablist" aria-label="${esc(tr('cheatsheetTabsLabel', 'Keys and help'))}">
+                    ${tabs.map(([id, label], i) => `<button type="button" role="tab" class="cs-tab${i === 0 ? ' is-active' : ''}" id="cs-tab-${id}" data-cs-tab="${id}" aria-selected="${i === 0 ? 'true' : 'false'}" aria-controls="cs-panel-${id}" tabindex="${i === 0 ? '0' : '-1'}">${esc(label)}</button>`).join('')}
+                </div>
                 <p id="cheat-sheet-no-results" class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
+                <div class="cheat-sheet-scroll-wrap">
                 <div class="cheat-sheet-scroller">
-                    <div class="cheat-sheet-groups">${groupHtml.join('')}</div>
+                    <div class="cs-panel cs-panel--this" id="cs-panel-this" role="tabpanel" aria-labelledby="cs-tab-this" data-panel="this">
+                        ${pageHelp ? `<div class="cs-now">
+                            <div class="cs-now-title">${esc(tr('cheatsheetYouAreIn', 'You are in'))} ${esc(pageHelp.title)}</div>
+                            <div class="cs-now-intro">${esc(pageHelp.intro)}</div>
+                            <div class="cs-now-mode">${esc(modeLine)}</div>
+                        </div>
+                        <p class="cs-lbl">${esc(tr('cheatsheetFirstSteps', 'First steps'))}</p>
+                        <div class="cs-list">${stepsHtml}</div>
+                        ${cardsHtml}` : ''}
+                        ${hereOrdered.length ? `<p class="cs-lbl">${esc(tr('cheatsheetOnThisPage', 'On this page'))}</p>
+                        <div class="cs-list">${hereHtml}</div>
+                        ${hereOrdered.length > HERE_SHOWN ? `<button type="button" class="cs-more" data-cs-more>${esc(d.formatDashboardLabel('cheatsheetShowAll', { n: hereOrdered.length - HERE_SHOWN }, '+ {n} more · show all'))}</button>` : ''}` : ''}
+                        ${tipHtml}
+                    </div>
+                    <div class="cs-panel cs-panel--all" id="cs-panel-all" role="tabpanel" aria-labelledby="cs-tab-all" data-panel="all" hidden>
+                        ${helpGroupHtml}
+                        <div class="cheat-sheet-groups">${groupHtml.join('')}</div>
+                    </div>
+                    <div class="cs-panel cs-panel--modes" id="cs-panel-modes" role="tabpanel" aria-labelledby="cs-tab-modes" data-panel="modes" hidden>
+                        <p class="cs-lbl">${esc(tr('cheatsheetModesLead', 'One key opens each way of searching, from the dashboard or inside the palette.'))}</p>
+                        <div class="cs-list">${modesHtml}</div>
+                    </div>
+                    <div class="cs-panel cs-panel--learn" id="cs-panel-learn" role="tabpanel" aria-labelledby="cs-tab-learn" data-panel="learn" hidden>
+                        ${learnHtml}
+                    </div>
+                </div>
+                <button type="button" class="cheat-sheet-more" hidden tabindex="-1" aria-label="${esc(d.language?.t('bell.more') || 'More below')}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>
                 </div>
                 <div id="cheat-sheet-dock" class="cheat-sheet-dock" aria-live="polite" aria-atomic="true">
                     <span class="cheat-sheet-dock-hint">${esc(dockHint)}</span>
@@ -263,8 +444,11 @@ class DashboardUiHelpers {
             initialFocusSelector: '#cheat-sheet-filter',
             onHide: () => {
                 this._cleanupCheatSheetKeyHandler();
+                this._cheatSheetMoreObserver?.disconnect();
+                this._cheatSheetMoreObserver = null;
             },
         });
+        this._setupCheatSheetMoreArrow();
 
         const cheatHeader = document.querySelector('.keyboard-cheat-sheet-modal .modal-header');
         if (cheatHeader && !cheatHeader.querySelector('.cheat-sheet-modal-key')) {
@@ -272,7 +456,7 @@ class DashboardUiHelpers {
             chip.className = 'cheat-sheet-modal-key';
             chip.dataset.modalHeaderExtra = 'true';
             chip.setAttribute('aria-hidden', 'true');
-            chip.textContent = '!';
+            chip.textContent = '?';
             document.getElementById('modal-title')?.after(chip);
 
             const close = document.createElement('button');
@@ -289,13 +473,18 @@ class DashboardUiHelpers {
         if (!filterInput) return;
 
         const dock = document.getElementById('cheat-sheet-dock');
-        const allRows = () => Array.from(document.querySelectorAll('.keyboard-cheat-sheet .cheat-sheet-row'));
+        const allRows = () => Array.from(document.querySelectorAll('.keyboard-cheat-sheet .cheat-sheet-row, .keyboard-cheat-sheet .cs-item'));
         // The dock shows one shortcut: the focused row, else the selected one.
         let selectedRow = null;
         const renderDock = (row) => {
             if (!dock) return;
             const shortcut = row ? shortcutById.get(row.dataset.shortcutId) : null;
-            dock.classList.toggle('has-selection', Boolean(shortcut));
+            const item = row && !shortcut ? itemsById.get(row.dataset.itemId) : null;
+            dock.classList.toggle('has-selection', Boolean(shortcut || item));
+            if (item) {
+                dock.innerHTML = `<span class="cheat-sheet-dock-keys keyboard-cheat-sheet-keys">${item.keysHtml || ''}</span><span class="cheat-sheet-dock-text">${esc(item.description)}${item.explain ? ` <span class="cs-dock-explain">${esc(item.explain)}</span>` : ''}</span>`;
+                return;
+            }
             dock.innerHTML = shortcut
                 ? `<span class="cheat-sheet-dock-keys keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</span><span class="cheat-sheet-dock-text">${esc(shortcut.description)}</span>`
                 : `<span class="cheat-sheet-dock-hint">${esc(dockHint)}</span>`;
@@ -310,13 +499,68 @@ class DashboardUiHelpers {
             });
             renderDock(row);
         };
-        document.querySelector('.keyboard-cheat-sheet .cheat-sheet-groups')?.addEventListener('click', (event) => {
-            const row = event.target instanceof Element ? event.target.closest('.cheat-sheet-row') : null;
+        const sheet = document.querySelector('.keyboard-cheat-sheet');
+        // The tabs: one panel shows. Searching goes to All keys and back when cleared.
+        let tabBeforeFilter = null;
+        const showTab = (id, { focus = false } = {}) => {
+            if (!sheet) return;
+            sheet.dataset.tab = id;
+            sheet.querySelectorAll('[data-cs-tab]').forEach((tab) => {
+                const on = tab.dataset.csTab === id;
+                tab.classList.toggle('is-active', on);
+                tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                tab.tabIndex = on ? 0 : -1;
+                if (on && focus) tab.focus({ preventScroll: true });
+            });
+            sheet.querySelectorAll('.cs-panel').forEach((panel) => { panel.hidden = panel.dataset.panel !== id; });
+            const noResults = document.getElementById('cheat-sheet-no-results');
+            if (noResults && id !== 'all') noResults.hidden = true;
+            if (selectedRow && selectedRow.closest('[hidden]')) selectRow(null);
+            sheet.querySelector('.cheat-sheet-scroller')?.scrollTo?.({ top: 0 });
+        };
+        // What a "Try it" does: close the sheet, then act on the page behind it.
+        const runTry = (kind, index) => {
+            const help = window.KeyboardPageHelp;
+            let spec = null;
+            if (kind === 'step') spec = pageHelp?.steps?.[Number(index)]?.try;
+            else if (kind === 'mode') spec = help?.modes?.(d)?.[Number(index)]?.try;
+            else if (kind === 'learn') spec = learnById.get(index)?.run;
+            else if (kind === 'q') spec = helpRuns.get(String(index));
+            if (!spec) return;
+            window.AppModal.hide();
+            setTimeout(() => help?.run?.(d, spec), 160);
+        };
+        sheet?.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            if (!target) return;
+            const tab = target.closest('[data-cs-tab]');
+            if (tab) { tabBeforeFilter = null; showTab(tab.dataset.csTab); return; }
+            const helpBtn = target.closest('[data-help-hash]');
+            if (helpBtn) { window.KeyboardPageHelp?.openHelp?.(d, helpBtn.dataset.helpHash); return; }
+            const tryBtn = target.closest('.cs-try');
+            if (tryBtn) { runTry(tryBtn.dataset.tryKind, tryBtn.dataset.tryIndex); return; }
+            if (target.closest('[data-cs-more]')) {
+                sheet.querySelectorAll('.cs-step--extra').forEach((row) => { row.hidden = false; });
+                target.closest('[data-cs-more]').remove();
+                return;
+            }
+            const row = target.closest('.cheat-sheet-row, .cs-item');
             if (row) selectRow(row);
         });
+        sheet?.addEventListener('keydown', (event) => {
+            const tab = event.target instanceof Element ? event.target.closest('[data-cs-tab]') : null;
+            if (!tab || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+            const order = Array.from(sheet.querySelectorAll('[data-cs-tab]'));
+            const at = order.indexOf(tab);
+            const next = order[(at + (event.key === 'ArrowRight' ? 1 : -1) + order.length) % order.length];
+            event.preventDefault();
+            event.stopPropagation();
+            tabBeforeFilter = null;
+            showTab(next.dataset.csTab, { focus: true });
+        });
         // The dock follows focus without selecting; off the rows it shows the selection.
-        document.querySelector('.keyboard-cheat-sheet')?.addEventListener('focusin', (event) => {
-            const row = event.target instanceof Element ? event.target.closest('.cheat-sheet-row') : null;
+        sheet?.addEventListener('focusin', (event) => {
+            const row = event.target instanceof Element ? event.target.closest('.cheat-sheet-row, .cs-item') : null;
             renderDock(row || selectedRow);
         });
         // One pass over every column at once; a column with nothing left hides.
@@ -337,16 +581,69 @@ class DashboardUiHelpers {
                 group.hidden = visible === 0;
                 if (visible > 0) anyVisible = true;
             });
-            const selected = document.querySelector('.cheat-sheet-row.is-selected');
-            if (selected?.hidden) selectRow(null);
+            // The help group: what matches by its text, besides the keys.
+            const helpGroup = document.querySelector('.keyboard-cheat-sheet .cs-help-group');
+            if (helpGroup) {
+                let found = 0;
+                helpGroup.querySelectorAll('.cs-step').forEach((row) => {
+                    const hit = Boolean(q) && (row.querySelector('.cs-item')?.dataset.search || '').includes(q);
+                    row.hidden = !hit;
+                    if (hit) found += 1;
+                });
+                helpGroup.hidden = found === 0;
+                if (found > 0) anyVisible = true;
+            }
+            const selected = document.querySelector('.keyboard-cheat-sheet .is-selected');
+            if (selected && (selected.hidden || selected.closest('[hidden]'))) selectRow(null);
             if (noResults) {
                 noResults.hidden = anyVisible;
             }
         };
-        filterInput.addEventListener('input', applyView);
+        filterInput.addEventListener('input', () => {
+            // A search is over everything: it shows All keys, and the tab you were on comes back when it is cleared.
+            if (filterInput.value.trim()) {
+                if (tabBeforeFilter === null) tabBeforeFilter = sheet?.dataset.tab || 'this';
+                if (sheet?.dataset.tab !== 'all') showTab('all');
+            } else if (tabBeforeFilter !== null) {
+                showTab(tabBeforeFilter);
+                tabBeforeFilter = null;
+            }
+            applyView();
+        });
         this._setupCheatSheetKeyboardNav();
     }
 
+
+    /**
+     * The arrow in the sheet's lower right corner: shown while the list runs on
+     * below the fold, as in the bell. A click scrolls one screen down. It
+     * follows the scroll, and a ResizeObserver on the scroller and its panels
+     * catches a tab switch, a filter or "show all" changing what there is to
+     * scroll. Not focusable: the arrow keys and Page Down already scroll.
+     */
+    _setupCheatSheetMoreArrow() {
+        this._cheatSheetMoreObserver?.disconnect();
+        this._cheatSheetMoreObserver = null;
+        const scroller = document.querySelector('.keyboard-cheat-sheet .cheat-sheet-scroller');
+        const more = document.querySelector('.keyboard-cheat-sheet .cheat-sheet-more');
+        if (!scroller || !more) return;
+        const update = () => {
+            more.hidden = !(scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 2);
+        };
+        // A click leaves focus where it was, so typing still goes to the filter.
+        more.addEventListener('mousedown', (e) => e.preventDefault());
+        more.addEventListener('click', () => {
+            const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            scroller.scrollBy({ top: Math.floor(scroller.clientHeight * 0.85), behavior: reduced ? 'auto' : 'smooth' });
+        });
+        scroller.addEventListener('scroll', update, { passive: true });
+        if (typeof ResizeObserver === 'function') {
+            this._cheatSheetMoreObserver = new ResizeObserver(update);
+            this._cheatSheetMoreObserver.observe(scroller);
+            scroller.querySelectorAll('.cs-panel').forEach((panel) => this._cheatSheetMoreObserver.observe(panel));
+        }
+        update();
+    }
 
     _cleanupCheatSheetKeyHandler() {
         if (!this._cheatSheetKeyHandler) {
@@ -386,8 +683,9 @@ class DashboardUiHelpers {
 
             // Rows are buttons: Enter and Space already press them. The arrows
             // walk them, down a column and across to the next one.
-            const rowOf = (el) => (el instanceof Element ? el.closest('.cheat-sheet-row') : null);
-            const visibleRows = (scope) => Array.from(scope.querySelectorAll('.cheat-sheet-row')).filter((r) => !r.hidden);
+            const rowOf = (el) => (el instanceof Element ? el.closest('.cheat-sheet-row, .cs-item') : null);
+            const visibleRows = (scope) => Array.from(scope.querySelectorAll('.cheat-sheet-row, .cs-item'))
+                .filter((r) => !r.hidden && !r.closest('[hidden]'));
             const focusRow = (row) => {
                 if (!row) return;
                 row.focus({ preventScroll: true });
@@ -405,7 +703,7 @@ class DashboardUiHelpers {
                 return;
             }
             if (current && ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                const group = current.closest('.cheat-sheet-group');
+                const group = current.closest('.cheat-sheet-group, .cs-panel');
                 const rows = visibleRows(group);
                 const at = rows.indexOf(current);
                 let target = null;
@@ -1007,6 +1305,16 @@ class DashboardUiHelpers {
              * Escape -- stay with the panel.
              */
             const typing = document.activeElement?.id === 'page-overview-filter';
+            // Shift+P opened the panel and closes it again, with the filter in
+            // focus too: a capital P is only a letter once there is a word to
+            // put it in.
+            if (e.shiftKey && e.code === 'KeyP' && !e.ctrlKey && !e.altKey && !e.metaKey
+                && !(typing && filterInput?.value)) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.AppModal?.hide?.();
+                return;
+            }
             // A digit is a page's key wherever it is pressed: "3" means the
             // third page, filtered or not, typed into or not. Every other
             // character belongs to whatever is being typed.
@@ -1031,7 +1339,7 @@ class DashboardUiHelpers {
                 filterInput.dispatchEvent(new Event('input', { bubbles: true }));
                 return;
             }
-            if (e.key === ',') {
+            if (e.key === ',' || (e.shiftKey && e.code === 'KeyP')) {
                 e.preventDefault();
                 e.stopPropagation();
                 window.AppModal?.hide?.();
@@ -1200,7 +1508,7 @@ class DashboardUiHelpers {
             chip.className = 'page-overview-modal-key';
             chip.dataset.modalHeaderExtra = 'true';
             chip.setAttribute('aria-hidden', 'true');
-            chip.textContent = ',';
+            chip.textContent = 'Shift+P';
             document.getElementById('modal-title')?.after(chip);
 
             const close = document.createElement('button');

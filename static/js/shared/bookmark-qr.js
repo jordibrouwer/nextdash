@@ -1,7 +1,7 @@
 /**
  * A bookmark as a QR code, to open it on a phone.
  *
- * Every entry -- the right-click menu, Shift+J on a row, the Bookmarks view's
+ * Every entry -- the right-click menu, Q on a row, the Bookmarks view's
  * side panel and Health's row menu -- calls BookmarkQR.show(), so the window is
  * the same wherever it was asked for.
  *
@@ -156,7 +156,7 @@
             chip.className = 'bookmark-qr-modal-key';
             chip.dataset.modalHeaderExtra = 'true';
             chip.setAttribute('aria-hidden', 'true');
-            chip.textContent = 'Shift + J';
+            chip.textContent = 'Q';
             document.getElementById('modal-title')?.after(chip);
 
             const close = document.createElement('button');

@@ -186,6 +186,31 @@ var themeArchetypeOrder = []string{
 	"paper", "terminal", "ink",
 }
 
+/*
+themeGroupOrder lists the groups the browser shows beside the archetypes, in
+the Character row and as a card's badge.
+
+A group is not a material. A holiday theme still wears lacquer, aurora or
+enamel underneath, so the page draws a surface it knows; the group only
+changes the word the browser files it under.
+*/
+var themeGroupOrder = []string{"holidays"}
+
+// themeGroupPrefixes maps a theme id prefix to the group it files under.
+var themeGroupPrefixes = map[string]string{
+	"holiday-": "holidays",
+}
+
+// themeGroupFor answers the group a theme files under, or "" for none.
+func themeGroupFor(themeID string) string {
+	for prefix, group := range themeGroupPrefixes {
+		if strings.HasPrefix(themeID, prefix) {
+			return group
+		}
+	}
+	return ""
+}
+
 // archetypeFor returns the profile a theme names, and whether it named one.
 // An unknown word is the same as no word: a theme file from somewhere else
 // cannot invent an archetype by misspelling one.
@@ -437,6 +462,10 @@ type themeMeta struct {
 	New bool `json:"new,omitempty"`
 	// Collection is the set the theme belongs to, or empty for none.
 	Collection string `json:"collection,omitempty"`
+	// Group is shown in place of the archetype in the browser's badge and its
+	// Character row: a set of themes that belong together for a reason other
+	// than their material, such as the season. Empty for almost every theme.
+	Group string `json:"group,omitempty"`
 	// Backdrop is the recipe the theme is drawn with when nothing overrides it,
 	// and SurfaceAlpha and SurfaceBlur are its card glass: what "follow the
 	// theme" means in Appearance, said in numbers.
@@ -467,6 +496,7 @@ func themeMetaFor(themeID string, tc ThemeColors) themeMeta {
 		CatSurface:   themeIdealCatSurface(tc, ""),
 		New:          themeIsNew(themeID),
 		Collection:   strings.ToLower(strings.TrimSpace(tc.Collection)),
+		Group:        themeGroupFor(themeID),
 		Backdrop:     themeBackdropRecipes[themeBackdropRecipeFor(themeBackdropHashID(themeID), tc)],
 		SurfaceAlpha: themeSurfaceAlpha(tc),
 		SurfaceBlur:  themeSurfaceBlur(tc),

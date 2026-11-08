@@ -205,45 +205,46 @@ class DashboardContextMenu {
         // A divider opens a group: the first entry of each carries it.
         const group = (items) => items.map((item, i) => (i === 0 ? { ...item, divider: true } : item));
         const inboxActions = [
-            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
-            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
-            { id: 'share', label: this.shareActionLabel(), icon: '↪' },
-            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦' },
+            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${window.ShortcutFormat?.modifierLabel?.() || 'Ctrl'}+Enter` },
+            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${window.ShortcutFormat?.modifierLabel?.() || 'Ctrl'}+C` },
+            { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'S' },
+            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Q' },
             ...group([
-            { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★' },
+            { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★', key: 'P' },
             // Keep's own entry: the same silent promote-to-Unsorted the triage
             // "r" key runs, reachable now without starting a triage run first.
             {
                 id: 'inbox-keep',
                 label: this.t('dashboard.inboxKeepToKept', 'Keep (to Unsorted)'),
                 icon: '▣',
+                key: 'M',
             },
             // Whichever way the row can still go: read, or back to unread. The
             // second was missing entirely — the server accepted it and nothing
             // ever sent it — so a link marked read by mistake could only be
             // deleted.
             ...(inboxItem && !inboxItem.readAt
-                ? [{ id: 'inbox-read', label: this.t('dashboard.inboxMarkRead', 'Mark read'), icon: '✓' }]
+                ? [{ id: 'inbox-read', label: this.t('dashboard.inboxMarkRead', 'Mark read'), icon: '✓', key: 'R' }]
                 : []),
             ...(inboxItem && inboxItem.readAt
-                ? [{ id: 'inbox-unread', label: this.t('dashboard.inboxMarkUnread', 'Mark unread'), icon: '○' }]
+                ? [{ id: 'inbox-unread', label: this.t('dashboard.inboxMarkUnread', 'Mark unread'), icon: '○', key: 'U' }]
                 : []),
-            { id: 'inbox-snooze', label: this.t('dashboard.inboxSnooze', 'Snooze'), icon: '⏰' },
+            { id: 'inbox-snooze', label: this.t('dashboard.inboxSnooze', 'Snooze'), icon: '⏰', key: 'Z' },
             ]),
             ...group([
-            { id: 'inbox-note', label: this.t('dashboard.inboxNoteAction', 'Note'), icon: '✎' },
-            { id: 'inbox-tags', label: this.t('dashboard.inboxTagsAction', 'Tags'), icon: '#' },
+            { id: 'inbox-note', label: this.t('dashboard.inboxNoteAction', 'Note'), icon: '✎', key: 'N' },
+            { id: 'inbox-tags', label: this.t('dashboard.inboxTagsAction', 'Tags'), icon: '#', key: 'T' },
             // buildItemShareUrl preserves the filter, sort, query and domain
             // alongside the item id, so the link reopens the view as the sender
             // had it. That work existed with no entry point offering it.
-            { id: 'inbox-copy-link', label: this.t('dashboard.inboxCopyItemLink', 'Copy link to this item'), icon: '🔗' },
+            { id: 'inbox-copy-link', label: this.t('dashboard.inboxCopyItemLink', 'Copy link to this item'), icon: '🔗', key: 'Y' },
             ]),
-            { id: 'inbox-delete', label: this.t('dashboard.inboxDelete', 'Delete'), icon: '✕', danger: true },
+            { id: 'inbox-delete', label: this.t('dashboard.inboxDelete', 'Delete'), icon: '✕', danger: true, key: 'D' },
         ];
         // Right-clicking a row that is part of a selection means "act on the
         // selection" — acting on the one row under the cursor would silently
         // ignore what the user had already ticked. The entries call the same
-        // multiSelect methods Shift+Z and the toolbar use, so all three routes
+        // multiSelect methods Shift+H and the toolbar use, so all three routes
         // share one implementation of what a bulk move or delete means.
         // Not on a tag view row: that view ticks its rows itself, and the grid's
         // selection would act on rows that are not on screen.
@@ -253,11 +254,11 @@ class DashboardContextMenu {
         const rowIsSelected = !!multi && multi.has(multi.keyForRow(row));
         const selectionActions = (multi && rowIsSelected && multi.count() > 1)
             ? [
-                { id: 'multi-move', label: this.t('dashboard.contextMenuMoveSelected', 'Move {count} selected…', { count: multi.count() }), icon: '→' },
-                { id: 'multi-open', label: this.t('dashboard.contextMenuOpenSelected', 'Open {count} selected', { count: multi.count() }), icon: '↗' },
-                { id: 'multi-copy', label: this.t('dashboard.contextMenuCopySelected', 'Copy {count} links', { count: multi.count() }), icon: '⧉' },
+                { id: 'multi-move', label: this.t('dashboard.contextMenuMoveSelected', 'Move {count} selected…', { count: multi.count() }), icon: '→', key: 'M' },
+                { id: 'multi-open', label: this.t('dashboard.contextMenuOpenSelected', 'Open {count} selected', { count: multi.count() }), icon: '↗', key: 'Ctrl+Enter' },
+                { id: 'multi-copy', label: this.t('dashboard.contextMenuCopySelected', 'Copy {count} links', { count: multi.count() }), icon: '⧉', key: 'Ctrl+C' },
                 { id: 'multi-clear', divider: true, label: this.t('dashboard.contextMenuClearSelection', 'Clear selection'), icon: '✕', key: 'Esc' },
-                { id: 'multi-delete', label: this.t('dashboard.contextMenuDeleteSelected', 'Delete {count} selected', { count: multi.count() }), icon: '✕', danger: true, key: 'Delete' },
+                { id: 'multi-delete', label: this.t('dashboard.contextMenuDeleteSelected', 'Delete {count} selected', { count: multi.count() }), icon: '✕', danger: true, key: 'D' },
             ]
             : [];
 
@@ -281,9 +282,9 @@ class DashboardContextMenu {
         const singleActions = (bookmarkRef.scope === 'inbox' ? inboxActions : [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${mod}+Enter` },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
-            { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'Shift+L' },
-            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Shift+J' },
-            { id: 'edit', divider: true, label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎', key: 'Shift+E' },
+            { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'S' },
+            { id: 'qr', label: this.t('dashboard.contextMenuQrCode', 'QR code'), icon: '▦', key: 'Q' },
+            { id: 'edit', divider: true, label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎', key: 'E' },
             // Pin had no pointer route at all from the grid — not a row button,
             // not an entry here — while every other one-bit row action did.
             {
@@ -292,19 +293,19 @@ class DashboardContextMenu {
                     ? this.t('dashboard.contextMenuUnpin', 'Unpin')
                     : this.t('dashboard.contextMenuPin', 'Pin'),
                 icon: 'pin',
-                key: 'Shift+P',
+                key: 'P',
             },
             {
                 id: 'tags',
                 label: this.t('dashboard.contextMenuTags', 'Tags…'),
                 icon: '#',
-                key: 'Shift+T',
+                key: 'T',
             },
             {
                 id: 'move',
                 label: this.t('dashboard.contextMenuMove', 'Move to…'),
                 icon: '→',
-                key: 'Shift+M',
+                key: 'M',
             },
             {
                 id: 'feed-watch',
@@ -312,7 +313,7 @@ class DashboardContextMenu {
                     ? this.t('dashboard.feedWatchManage', 'Watching feed…')
                     : this.t('dashboard.feedWatchStart', 'Watch this feed…'),
                 icon: '◎',
-                key: '#',
+                key: 'W',
             },
             ...(currentMode
                 ? [{
@@ -321,7 +322,7 @@ class DashboardContextMenu {
                     label: this.t('dashboard.contextMenuCheckMode', 'Checking ({mode})…', { mode: currentMode.badge }),
                     icon: '◉',
                     submenu: true,
-                    key: 'Shift+C',
+                    key: 'C',
                 }]
                 : []),
             // Offered for every bookmark, not only checked ones. The health
@@ -330,8 +331,8 @@ class DashboardContextMenu {
             // that), and that row is where its checking gets turned on. Hiding
             // the entry made the destination unreachable from the one place
             // someone would look for it.
-            { id: 'health', divider: !currentMode, label: this.t('dashboard.healthOpenInHealth', 'Show in list'), icon: '▤', key: 'Shift+R' },
-            { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
+            { id: 'health', divider: !currentMode, label: this.t('dashboard.healthOpenInHealth', 'Show in list'), icon: '▤', key: 'R' },
+            { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'D' },
         ]);
 
         // A selection replaces the single-row actions entirely rather than being

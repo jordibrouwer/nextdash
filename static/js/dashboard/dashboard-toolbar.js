@@ -20,19 +20,19 @@ class DashboardToolbar {
             { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['+'] },
             { id: 'search-button', labelKey: 'dashboard.tooltipSearch', keys: ['>'] },
             { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
-            { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
+            { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['!'] },
             { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
             { id: 'tag-cloud-toggle-btn', labelKey: 'dashboard.tagCloudToggleAria', keys: ['/'] },
             { id: 'collapse-all-button', labelKey: 'dashboard.collapseAllLabel', keys: ['.'] },
-            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] },
+            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['?', 'F1'] },
             // No key: the star is a button you click, and a chip reading "★"
             // told people to press a key that does not exist.
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] },
             // An action button like the rest, not a header destination.
             // Desktop only: the mode does not exist on a phone layout.
-            { id: 'edit-mode-button', labelKey: 'dashboard.editModeAria', keys: ['Shift+M'], when: () => d.editMode && !d.editMode.isMobileLayout?.() },
+            { id: 'edit-mode-button', labelKey: 'dashboard.editModeAria', keys: ['Shift+E'], when: () => d.editMode && !d.editMode.isMobileLayout?.() },
             { id: 'theme-studio-button', labelKey: 'dashboard.themeStudioAria', keys: ['Shift+A'] },
-            { id: 'page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
+            { id: 'page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: ['Shift+P'] },
             {
                 selector: '#page-nav-inbox-btn',
                 labelKey: 'dashboard.inboxPageTitle',
@@ -49,7 +49,7 @@ class DashboardToolbar {
             {
                 selector: '.config-link-anchor',
                 labelKey: 'dashboard.config',
-                keys: ['Shift+S'],
+                keys: [','],
                 header: true,
                 when: () => d.config?.isEnabled?.(),
             },
@@ -183,7 +183,7 @@ class DashboardToolbar {
                 d.toggleRecentBookmarksModal();
             }
 
-            if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '!') {
+            if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '?') {
                 if (d.isModalOpen()) {
                     return;
                 }

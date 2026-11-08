@@ -128,6 +128,9 @@ class KeyboardNavigation {
                 return;
             }
 
+            // Any key keeps the row cursor alive (see _touchCursor).
+            this._touchCursor();
+
             /*
              * A key pressed inside the preview card belongs to the card.
              *
@@ -215,133 +218,51 @@ class KeyboardNavigation {
                 return;
             }
 
+            // Ctrl/Cmd+Z — undo the last pin or move while its Undo notice is up.
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.code === 'KeyZ') {
+                const d = this.dashboard;
+                const host = document.querySelector('#app-notification.show.has-action');
+                const text = host?.querySelector('.app-notification-text')?.textContent;
+                if (host && d._keyUndoMessage && text === d._keyUndoMessage) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    d._keyUndoMessage = null;
+                    this._undoHint = false;
+                    host.querySelector('.app-notification-action')?.click();
+                    return;
+                }
+            }
+
             // Ctrl/Cmd+C — copy URL of selected bookmark
             if ((e.ctrlKey || e.metaKey) && !e.altKey && e.code === 'KeyC' && this.currentIndex >= 0) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                // Several rows ticked and the cursor on one of them: all their links.
+                if (this._bulkSelection()) {
+                    this.dashboard.multiSelect.copySelectedLinks();
+                    return;
+                }
                 this.copyUrlForCurrent();
                 return;
             }
 
-            // Shift+M / Shift+D / Shift+T / Shift+C — quick action popovers (use e.code for layout reliability)
-            //
-            // Every key in this block acts on the row under the cursor, so with
-            // no row there is nothing to act on and the key belongs to whoever
-            // else wants it. Each handler below already swallows the event
-            // before calling a method that then returns early — harmless while
-            // these keys meant nothing else, but Shift+S also opens config, and
-            // adding share to this block took that shortcut away whenever no
-            // bookmark was selected. Fall through instead of swallowing.
-            // Both, in this order: _resolveActionPopoverRow adopts the focused
-            // row and sets currentIndex, which getSelectedBookmark then reads —
-            // so asking for the bookmark first would answer null on a row that
-            // is about to become the current one. Gating on the bookmark as
-            // well is what these actions actually need; a row whose bookmark
-            // cannot be resolved would otherwise swallow the key for a method
-            // that returns early. Reachable only by stripping a row's data
-            // attributes by hand, so this closes a gap rather than a reported
-            // fault.
-            // A widget stop never resolves to a bookmark, so this family falls
-            // through on one without a check of its own.
-            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-                && this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
-                // M itself, or a letter on the key at the US M (Cyrillic and
-                // the like) -- not whatever else that key types: on AZERTY it
-                // is "?", which opened Move instead of finders.
-                if (/^m$/i.test(e.key) || (e.code === 'KeyM' && /^\p{L}$/u.test(e.key))) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    window.nextdashRecordKey?.('Shift + M');
-                    this.openMovePopoverForCurrent();
-                    return;
-                }
-                if (e.code === 'KeyD') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    window.nextdashRecordKey?.('Shift + D');
-                    this.openDeletePopoverForCurrent();
-                    return;
-                }
-                if (e.code === 'KeyT') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    window.nextdashRecordKey?.('Shift + T');
-                    this.openTagPopoverForCurrent();
-                    return;
-                }
-                if (e.code === 'KeyC') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    window.nextdashRecordKey?.('Shift + C');
-                    this.openCheckModePopoverForCurrent();
-                    return;
-                }
-                // Pin was the odd one out in this family: it existed as :pin and
-                // in the inline editor, but had no key and no control on the row
-                // at all — for a one-bit, daily action.
-                if (e.code === 'KeyP') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    window.nextdashRecordKey?.('Shift + P');
-                    this.togglePinForCurrent();
-                    return;
-                }
-                // Shift+H opens Health but loses the row; only the context menu
-                // could reveal this particular bookmark there.
-                if (e.code === 'KeyR') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    this.revealCurrentInHealth();
-                    return;
-                }
-                // Inline edit and the preview card used to be ';' and '[' — the
-                // two row actions outside this family, on keys that say nothing
-                // about what they do. Both still work (see below), undocumented,
-                // the way 0 still opens the inbox.
-                if (e.code === 'KeyE') {
-                    if (this.dashboard?.tryOpenInlineBookmarkEdit?.()) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        e.stopPropagation();
-                        window.nextdashRecordKey?.('Shift + E');
-                    }
-                    return;
-                }
-                if (e.code === 'KeyV') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    this.togglePreviewCardForCurrent();
-                    return;
-                }
-                // Shift+L — share, or copy "name — URL" where no share sheet
-                // exists. It was Shift+S, which also opens config when no row is
-                // selected: the only key in the app whose meaning depended on
-                // whether something was selected, and two lines of cheat sheet
-                // to explain. Shift+S is config now, always.
-                if (e.code === 'KeyL') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    this.shareCurrent();
-                    return;
-                }
-                // Shift+J — the selected bookmark as a QR code, to open it on a
-                // phone. J because it was the one Shift letter left that says
-                // nothing else: G is "to the end" in every list.
-                if (e.code === 'KeyJ') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    this.qrCurrent();
-                    return;
-                }
+            // Ctrl/Cmd+Enter with several rows ticked: open every one of them.
+            // The browser would open only the link under the cursor.
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key === 'Enter'
+                && this._bulkSelection()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (!e.repeat) this.dashboard.multiSelect.openSelected();
+                return;
+            }
+
+            // The row's own actions are plain letters (e m t p c r v s q d), as in
+            // the Inbox: with the cursor on a bookmark they act on it, with none
+            // they belong to the search line, and in a text field they are
+            // characters (text fields are filtered out at the top of this handler).
+            // Shift never runs a row action; see _runRowLetter for the rest.
+            if (this._runRowLetter(e)) {
+                return;
             }
 
             // Shift+T with no row in hand: the tag view of every bookmark,
@@ -361,25 +282,23 @@ class KeyboardNavigation {
             // widget. Outside the Shift block above because that one acts on a
             // bookmark row, and a block needs no row selected.
             if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyW') {
-                if (this.toggleFocusedBlockWidth()) {
+                // The width of a block is the plain W on its title now. Shift+W
+                // is only W for Watch, the news of the feeds you watch (it was
+                // Shift+N). Nothing watched leaves the key alone.
+                if (window.FeedWatchNews && this._anyFeedWatched()) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    if (!e.repeat) {
+                        void window.FeedWatchNews.open({ source: 'button' });
+                    }
                     return;
                 }
-            }
-
-            // # (Shift+3 on most keyboards) — watch the feed of the bookmark in hand.
-            // Every plain Shift+letter is taken, and a Shift+Alt chord got in the way
-            // of Safari's own shortcuts. Matched on the character typed, so it is the
-            // same key on any layout; AltGr, which types # on some of them, is allowed.
-            if (e.key === '#' && !e.metaKey && !e.repeat
-                && ((!e.ctrlKey && !e.altKey) || e.getModifierState?.('AltGraph'))) {
-                if (this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
+                // Nothing watched yet: say what the key is for, and where to read more.
+                if (window.FeedWatchNews && !this._anyFeedWatched()) {
                     e.preventDefault();
-                    e.stopImmediatePropagation();
                     e.stopPropagation();
-                    void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() });
+                    if (!e.repeat) this._noFeedsWatchedNotice();
                     return;
                 }
             }
@@ -459,33 +378,6 @@ class KeyboardNavigation {
                 e.stopImmediatePropagation();
                 e.stopPropagation();
                 this.dashboard?.gridFilter?.toggle?.();
-                return;
-            }
-
-            // Filter to the tag on the focused row. The row already carries its
-            // tags as a data attribute, but acting on the tag you can see meant
-            // opening the tag cloud and finding it among all the others.
-            // Text fields are already filtered out at the top of this handler.
-            if (e.key === 't' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-                if (this.filterByCurrentTag()) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    return;
-                }
-            }
-
-            // Shift+N — the news of the feeds you watch. Nothing watched leaves the
-            // key alone. It was "add a category" once; that is still in the
-            // category menu, the edit panel and the button under the last category.
-            if (e.code === 'KeyN' && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-                && window.FeedWatchNews && this._anyFeedWatched()) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                e.stopPropagation();
-                if (!e.repeat) {
-                    void window.FeedWatchNews.open({ source: 'button' });
-                }
                 return;
             }
 
@@ -688,6 +580,326 @@ class KeyboardNavigation {
      * each key learning the difference separately, and the key falls through to
      * whoever else wants it instead of acting on a row that is not there.
      */
+    /**
+     * The row's own actions, one plain letter each. The Inbox works this way
+     * already: with the cursor on a row the letters act on it. Shift is never a
+     * row action, so every Shift letter can be a global key.
+     */
+    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w']);
+
+    /** Without any key or click for this long, the row cursor leaves the grid (what Esc does). */
+    static ROW_CURSOR_IDLE_MS = 10000;
+
+    /** The letters of a focused block title; each is the id of the menu entry it runs. */
+    static TITLE_LETTERS = {
+        category: { a: 'add-bookmark', t: 'find-tags', v: 'view', i: 'icon', w: 'spread' },
+        widget: { r: 'refresh', d: 'duplicate', s: 'settings', w: 'width' },
+    };
+    static TITLE_LETTER_SET = new Set(['a', 't', 'v', 'i', 'w', 'r', 'd', 's']);
+
+    /** What a Shift letter does now, for the one-time line that names the plain letter. */
+    static SHIFT_ON_ROW_NOTES = {
+        E: 'Shift+E turns edit mode on or off',
+        T: 'Shift+T opens the tags of every bookmark',
+        P: 'Shift+P opens the Pages panel',
+        C: 'Shift+C opens Containers',
+        R: 'Shift+R does nothing now',
+        V: 'Shift+V does nothing now',
+        Q: 'Shift+Q does nothing now',
+        D: 'Shift+D does nothing now',
+    };
+
+    /**
+     * Which row letter this key is, or null. Matched on the character typed, so
+     * it is the printed letter on any layout; a letter outside Latin (Cyrillic
+     * and the like) is read off the physical key, the way Shift+M always was.
+     */
+    _rowLetterFor(e, letters = KeyboardNavigation.ROW_LETTERS) {
+        const key = e.key;
+        if (typeof key !== 'string' || key.length !== 1 || !/^\p{L}$/u.test(key)) {
+            return null;
+        }
+        const lower = key.toLowerCase();
+        if (letters.has(lower)) {
+            return lower;
+        }
+        if (!/^[a-z]$/i.test(key) && typeof e.code === 'string' && e.code.startsWith('Key')) {
+            const physical = e.code.slice(3).toLowerCase();
+            return letters.has(physical) ? physical : null;
+        }
+        return null;
+    }
+
+    /**
+     * Plain letters on a focused block title (category or widget): the same
+     * letters the title's menu shows. Only while DOM focus is on the title
+     * itself, never in its rename field; the row cursor stays where it is, so
+     * the row letters resume as soon as focus returns to the row.
+     */
+    _runTitleLetter(e) {
+        // Focus on the title or on anything inside it (the // handle, a sort button).
+        const title = document.activeElement?.closest?.('.category-title');
+        if (!title || title.classList.contains('category-title--renaming')) {
+            return false;
+        }
+        if (e.target?.closest?.('input, textarea, [contenteditable="true"]')) {
+            return false;
+        }
+        const letter = this._rowLetterFor(e, KeyboardNavigation.TITLE_LETTER_SET);
+        if (!letter) return false;
+        const block = this.blockOfRow(title);
+        if (!block || !this.dashboard.categoryMenu?.runTitleLetter) return false;
+        // The title owns these letters while it has focus, offered or not: a
+        // smart collection has no tags to find, and its t must not fall through
+        // to the tag popover of the row the cursor is parked on.
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        if (e.repeat) return true;
+        if (this.dashboard.categoryMenu.runTitleLetter(letter, title, block)) {
+            window.nextdashRecordKey?.(letter.toUpperCase());
+        }
+        return true;
+    }
+
+    /**
+     * Restart the idle clock of the row cursor. Called on every key the grid
+     * sees and on every cursor move; a plain setTimeout, no polling.
+     */
+    _touchCursor() {
+        clearTimeout(this._cursorIdleTimer);
+        this._cursorIdleTimer = null;
+        if (this.currentIndex < 0) return;
+        this._cursorIdleTimer = setTimeout(() => this._lapseCursor(), KeyboardNavigation.ROW_CURSOR_IDLE_MS);
+    }
+
+    /** True while a popover, modal, menu or inline edit is open: the cursor is in use. */
+    _cursorBusy() {
+        return Boolean(
+            this.dashboard?.isModalOpen?.()
+            || this.dashboard?.isInlineEditActive?.()
+            || document.querySelector('.modal-overlay.show, #tag-popover, #move-popover, #delete-popover, #date-popover, '
+                + '#multi-select-tags-popover, #multi-select-check-popover, #bookmark-context-menu, '
+                + '#bookmark-check-mode-menu, .bookmark-context-menu, .feed-news-pop')
+            || document.body.classList.contains('bookmark-inline-edit-active')
+            || document.querySelector('.category-title--renaming')
+            || document.activeElement?.closest?.('input, textarea, select, [contenteditable="true"]')
+        );
+    }
+
+    /** The idle clock ran out: leave the grid as Esc does, unless the cursor is in use. */
+    _lapseCursor() {
+        this._cursorIdleTimer = null;
+        if (this.currentIndex < 0) return;
+        if (this._cursorBusy()) {
+            this._touchCursor();
+            return;
+        }
+        // The same two steps Escape takes: the cursor goes, and the row's link
+        // lets go of DOM focus, or the row would stay the cursor by focus alone.
+        this.clearSelection({ restoreFocus: false });
+        this._releaseGridFocus();
+    }
+
+    /** What the strip suggests for the bookmark under the cursor (see ModeStripSuggest). */
+    _rowSuggestions() {
+        const row = this.navigableElements[this.currentIndex];
+        const bookmark = this.getSelectedBookmark?.();
+        if (!row || !bookmark || !window.ModeStripSuggest) return null;
+        // A new row is a new combination to look at; the same row stays as it is.
+        if (row !== this._stripRow) {
+            this._stripRow = row;
+            this._stripSeed = (this._stripSeed || 0) + 1;
+        }
+        const tags = String(row.getAttribute('data-bookmark-tags') || '').split(',').map((s) => s.trim()).filter(Boolean);
+        return window.ModeStripSuggest.suggest({
+            tags,
+            pinned: Boolean(bookmark.pinned),
+            offline: row.classList.contains('status-offline'),
+            video: Boolean(window.VideoLinks?.isVideoLink?.(bookmark.url)),
+            unfiled: !String(bookmark.category || '').trim(),
+            undo: this._undoHint === true,
+        }, this._stripSeed || 0);
+    }
+
+    /** A pin or move just happened: say Ctrl/Cmd+Z undoes it, for as long as its notice shows. */
+    _noteUndoable() {
+        this._undoHint = true;
+        clearTimeout(this._undoHintTimer);
+        this._undoHintTimer = setTimeout(() => {
+            this._undoHint = false;
+            this._syncModeStrip();
+        }, 8000);
+        this._syncModeStrip();
+    }
+
+    /**
+     * Tell the mode strip and the row label what the keys do right now.
+     * Edit mode wins over ticked rows, which win over a bare cursor; with the
+     * cursor off a bookmark row neither shows.
+     */
+    _syncModeStrip() {
+        // The Bookmarks view has its own cursor and tells the strip itself
+        // (DashboardConfig.syncBookmarkModeStrip); the grid must not clear it.
+        if (['library', 'inbox', 'docker', 'tags', 'config', 'glances'].includes(this.dashboard?.activeView)) return;
+        const edit = document.body?.getAttribute('data-edit-mode') === 'on';
+        const count = this.dashboard?.multiSelect?.count?.() || 0;
+        const onRow = this._cursorOnBookmarkRow();
+        let state = null;
+        let detail = null;
+        if (edit) state = 'edit';
+        else if (count > 0) { state = 'multi'; detail = { count }; }
+        else if (onRow) {
+            state = 'cursor';
+            detail = { suggestions: this._rowSuggestions() };
+        }
+        window.ModeStrip?.set?.(state, detail);
+    }
+
+    /**
+     * True when more than one row is ticked and the cursor is on the grid:
+     * then the keys mean "the selection", not "this row". With one row ticked
+     * they stay row keys.
+     */
+    _bulkSelection() {
+        const multi = this.dashboard?.multiSelect;
+        // Any two or more ticked rows, wherever the cursor stands: after x x x it
+        // is on the next, unticked row, and the strip says "3 selected".
+        return Boolean(multi) && multi.count() >= 2 && this._gridNavActive();
+    }
+
+    /**
+     * Run a row action from its letter. True when the key was handled.
+     *
+     * Only with a bookmark under the cursor: with none the letter belongs to the
+     * search line, and a widget stop never resolves to a bookmark, so it falls
+     * through too. A held key is swallowed without acting, so a repeat cannot
+     * pin and unpin in a burst.
+     */
+    _runRowLetter(e) {
+        if (e.ctrlKey || e.altKey || e.metaKey) {
+            return false;
+        }
+        const inHand = () => Boolean(this._resolveActionPopoverRow() && this.getSelectedBookmark());
+        if (!e.shiftKey && this._runTitleLetter(e)) {
+            return true;
+        }
+        if (e.shiftKey) {
+            this._noteShiftOnRow(e, inHand);
+            return false;
+        }
+        const letter = this._rowLetterFor(e);
+        // On a widget's row the row letters belong to no one: the cursor is on
+        // the grid, so they are not a search either. Swallowed, the cursor stays.
+        if (letter && this.currentIndex >= 0 && this._isWidgetElement(this.navigableElements[this.currentIndex])) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            return true;
+        }
+        if (!letter || !inHand()) {
+            return false;
+        }
+        const swallow = () => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+        };
+        if (e.repeat) {
+            swallow();
+            return true;
+        }
+        // Several rows ticked and the cursor on one of them: m and d are the
+        // bulk move and delete, the other letters have no bulk form.
+        if (this._bulkSelection()) {
+            swallow();
+            const multi = this.dashboard.multiSelect;
+            if (letter === 'm') {
+                multi.openMovePopover(this.navigableElements[this.currentIndex]);
+            } else if (letter === 'd') {
+                void multi.deleteSelected();
+            } else {
+                const tr = this.dashboard?.language?.t?.bind(this.dashboard.language);
+                this.dashboard.showNotification?.(
+                    (tr?.('dashboard.noBulkAction') || 'No bulk action for {key}. m moves and d deletes the {count} selected; Esc clears.')
+                        .replace('{key}', letter.toUpperCase()).replace('{count}', String(multi.count())),
+                    'info',
+                );
+            }
+            return true;
+        }
+        // Inline edit declines when the row cannot be edited in place: then the
+        // key is not ours.
+        if (letter === 'e' && !this.dashboard?.tryOpenInlineBookmarkEdit?.()) {
+            return false;
+        }
+        swallow();
+        window.nextdashRecordKey?.(letter.toUpperCase());
+        window.ModeStripSuggest?.recordUse?.(letter);
+        switch (letter) {
+            case 'm': this.openMovePopoverForCurrent(); break;
+            case 'd': this.openDeletePopoverForCurrent(); break;
+            case 't': this.openTagPopoverForCurrent(); break;
+            // The row's tag as a filter: what plain t used to do. t is the tags
+            // popover now, like the Inbox; the popover also offers each tag as a
+            // filter.
+            case 'f': this.filterByCurrentTag(); break;
+            case 'c': this.openCheckModePopoverForCurrent(); break;
+            case 'p': this.togglePinForCurrent(); break;
+            case 'r': this.revealCurrentInHealth(); break;
+            case 'v': this.togglePreviewCardForCurrent(); break;
+            case 's': this.shareCurrent(); break;
+            case 'q': this.qrCurrent(); break;
+            // Watch the feed of this bookmark .
+            case 'w': void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() }); break;
+            default: break;
+        }
+        return true;
+    }
+
+    /**
+     * A Shift letter pressed with a row under the cursor: the old row key. It
+     * does its global job (or nothing), and says once which plain letter acts on
+     * the bookmark. Shift+L and Shift+J, the old share and QR keys, still work.
+     */
+    _noteShiftOnRow(e, inHand) {
+        if (typeof e.code !== 'string' || !e.code.startsWith('Key')) {
+            return;
+        }
+        const L = e.code.slice(3);
+        if (L !== 'L' && L !== 'J' && L !== 'M' && !KeyboardNavigation.SHIFT_ON_ROW_NOTES[L]) {
+            return;
+        }
+        if (!inHand()) {
+            return;
+        }
+        if (L === 'M') {
+            // The old move key. Edit mode's Shift+M alias is for no row; with a
+            // bookmark in hand it must not switch the mode on: say what to press.
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            if (!e.repeat) {
+                window.ShiftKeyAliases?.rowNotice('Shift+M', 'Shift+M does nothing now. For this bookmark press M.');
+            }
+            return;
+        }
+        if (L === 'L' || L === 'J') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            if (e.repeat) {
+                return;
+            }
+            window.ShiftKeyAliases?.rowNotice(`Shift+${L}`, `Shift+${L} is now ${L === 'L' ? 'S' : 'Q'}`);
+            if (L === 'L') this.shareCurrent(); else this.qrCurrent();
+            return;
+        }
+        window.ShiftKeyAliases?.rowNotice(
+            `Shift+${L}`,
+            `${KeyboardNavigation.SHIFT_ON_ROW_NOTES[L]}. For this bookmark press ${L}.`);
+    }
+
     _cursorOnBookmarkRow() {
         if (!this._gridNavActive()) {
             return false;
@@ -1341,6 +1553,9 @@ class KeyboardNavigation {
         if (this.currentIndex >= this.navigableElements.length) {
             this.currentIndex = -1;
         }
+        // The row under the cursor may be gone (deleted, moved away): the strip
+        // and the row label follow, or they would keep saying the letters act.
+        this._syncModeStrip();
         if (this.dashboard && typeof this.dashboard.syncBookmarkGridA11y === 'function') {
             this.dashboard.syncBookmarkGridA11y();
         }
@@ -1348,76 +1563,12 @@ class KeyboardNavigation {
         this.syncGridActiveDescendant();
     }
 
-    /**
-     * Letters the grid keeps for itself.
-     *
-     * j/k are the cursor, x ticks a row, g arms the jump chord. A bookmark
-     * whose shortcut is one of these is still reachable the way it always was
-     * -- open search and type it -- but on the grid the key does its own job,
-     * because a reader who is walking rows with j cannot have j mean "open the
-     * bookmark called jellyfin" halfway down the page.
-     */
-    static GRID_RESERVED_LETTERS = new Set(['j', 'k', 'x', 'g']);
-
-    /**
-     * A bookmark's own key, pressed while the cursor is on the grid.
-     *
-     * Shortcuts have always been search's: you open the panel, type the letter
-     * and it opens. On the grid the same letter opened the panel with the
-     * letter typed into it instead -- one more key and a panel in the way, for
-     * a bookmark the reader had already named. With the cursor on a row the
-     * letter opens the bookmark; with no cursor it still starts a search, which
-     * is what Escape leaves you with.
-     *
-     * @returns {boolean} whether the key was spent on a bookmark
-     */
-    _openShortcutFromGrid(key) {
-        if (typeof key !== 'string' || key.length !== 1 || !/[a-z]/i.test(key)) {
-            return false;
-        }
-        const letter = key.toLowerCase();
-        if (KeyboardNavigation.GRID_RESERVED_LETTERS.has(letter)) {
-            return false;
-        }
-        const search = this.dashboard?.searchComponent;
-        const bookmark = search?.shortcuts?.get?.(letter);
-        if (!bookmark || !bookmark.url) {
-            return false;
-        }
-        // The guards search's own match makes. A longer shortcut sharing the
-        // letter ("nc" beside "n") or a finder starting with it means the
-        // typing may not be finished, and "Enter opens" or "delay" mean the
-        // letter does not open on its own: the letter starts a search instead.
-        const longer = [...(search.shortcuts?.keys?.() || [])].some((k) => k !== letter && k.startsWith(letter));
-        const finderShares = Boolean(search.settings?.includeFindersInSearch)
-            && [...(search.findersComponent?.shortcuts?.keys?.() || [])].some((f) => String(f).startsWith(letter));
-        const mode = typeof search.shortcutOpenMode === 'function' ? search.shortcutOpenMode() : 'instant';
-        if (longer || finderShares || mode !== 'instant') {
-            return false;
-        }
-        // Through search's own opener: it records the open, honours Hypr mode
-        // and closes anything search has on screen, which is what a shortcut
-        // typed into the panel does.
-        search.openBookmark(bookmark);
-        return true;
-    }
-
-
     handleKeyPress(e) {
         const key = e.key;
 
-        // A bookmark's own key wins while the cursor is on the grid -- except
-        // the handful of letters the grid itself uses, which are checked inside.
-        if (
-            this._gridNavActive()
-            && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-            && !this._gPressed
-            && this._openShortcutFromGrid(key)
-        ) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return;
-        }
+        // With the cursor on the grid a bookmark's own shortcut does not open
+        // it: the letters belong to the cursor, and any other letter starts a
+        // search in which the shortcut is only a result (search.js holds it).
 
         // G + P: jump to first pinned bookmark on the page
         if (this._gPressed && (key === 'p' || key === 'P')) {
@@ -2290,6 +2441,8 @@ class KeyboardNavigation {
             this.syncRovingTabStops({ focus: false });
         }
         this.syncGridActiveDescendant();
+        this._touchCursor();
+        this._syncModeStrip();
     }
 
     togglePreviewCardForCurrent() {
@@ -2532,6 +2685,7 @@ class KeyboardNavigation {
     _releaseGridFocus() {
         const active = document.activeElement;
         if (active && active !== document.body && typeof active.blur === 'function'
+            && !active.closest?.('input, textarea, select, [contenteditable="true"]')
             && active.closest?.('.bookmark-link, .category-title, [data-bookmark-index]')) {
             active.blur();
         }
@@ -2554,6 +2708,7 @@ class KeyboardNavigation {
         this._selectionFromKeyboard = false;
         this.syncRovingTabStops({ focus: false });
         this.syncGridActiveDescendant();
+        this._syncModeStrip();
 
         if (hadSelection && restoreFocus) {
             const firstLink = this.navigableElements[0]?.querySelector?.('a.bookmark-open');
@@ -2589,6 +2744,25 @@ class KeyboardNavigation {
             keyboardNav: false,
         });
         return true;
+    }
+
+    /** Shift+W with no feed watched: one toast that says what the key opens, and a way into Help. */
+    _noFeedsWatchedNotice() {
+        const d = this.dashboard;
+        const t = (key, fallback) => {
+            const v = d?.language?.t?.(`dashboard.${key}`);
+            return v && v !== `dashboard.${key}` ? v : fallback;
+        };
+        d?.showNotification?.(
+            t('watchNewsNone', 'Shift+W opens the news of the feeds you watch, and none are watched yet. Press w on a bookmark to watch its feed.'),
+            'info',
+            {
+                duration: 9000,
+                replace: true,
+                actionLabel: t('watchNewsNoneMore', 'More info'),
+                onAction: () => window.KeyboardPageHelp?.openHelp?.(d, '#config/help/monitoring/fresh'),
+            },
+        );
     }
 
     /** True once at least one bookmark has a feed watched. */
@@ -2787,11 +2961,29 @@ class KeyboardNavigation {
         // Same write the palette's :pin performs, so there is one persistence
         // path rather than a second one that could drift. It applies the flip
         // itself, optimistically, and reverts it if the write fails.
-        commands._persistBookmarkField(bookmark, { pinned: !bookmark.pinned });
+        const wasPinned = Boolean(bookmark.pinned);
+        const done = commands._persistBookmarkField(bookmark, { pinned: !wasPinned });
+        // A stray p must be easy to take back: a notice with Undo, and Ctrl/Cmd+Z
+        // while it is up.
+        void Promise.resolve(done).then((ok) => {
+            if (ok === false) return;
+            const d = this.dashboard;
+            const tr = d?.language?.t?.bind(d.language);
+            const name = bookmark.name || bookmark.url || '';
+            const template = (wasPinned ? tr?.('dashboard.unpinnedUndo') : tr?.('dashboard.pinnedUndo'))
+                || (wasPinned ? 'Unpinned “{name}”' : 'Pinned “{name}”');
+            const message = template.replace('{name}', name);
+            d._keyUndoMessage = message;
+            this._noteUndoable();
+            d.showNotification?.(message, 'success', {
+                duration: 8000,
+                undoCallback: () => { d._keyUndoMessage = null; void commands._persistBookmarkField(bookmark, { pinned: wasPinned }); },
+            });
+        });
     }
 
     /**
-     * Shift+L — share, or copy "name — URL" where no share sheet exists.
+     * The row letter s (Shift+S is the mode strip's switch now) — share, or copy "name — URL" where no share sheet exists.
      *
      * Was right-click only: no command, no key, and absent from the cheat sheet,
      * even though it is the only path that copies the name with the address.

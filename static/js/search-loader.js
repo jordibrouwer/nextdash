@@ -26,7 +26,7 @@
     /** The keys that open some part of the search stack. */
     // Not '*': the toolbar opens Recent bookmarks on it without the search
     // bundle, and taking the key here opened the search panel instead.
-    const OPENING_KEYS = ['>', ':', '?', '/'];
+    const OPENING_KEYS = ['>', ':', '!', '/', '#'];
 
     function bundleHref() {
         const marker = document.querySelector('[data-nextdash-search-js]');
@@ -128,8 +128,10 @@
             initialiseComponent();
             const search = global.dashboardInstance?.searchComponent;
             if (!search) return;
-            if (key === ':' || key === '?') {
+            if (key === ':' || key === '!') {
                 search._openInMode?.(key);
+            } else if (key === '#') {
+                search.openInTagMode?.();
             } else if (key === '*') {
                 // Recent bookmarks has its own entry point; fall back to the
                 // plain overlay if this build does not have it.
@@ -193,7 +195,7 @@
         // > : ? * open the overlay from any view, as they do once the bundle
         // is in. `/` is the one key a view keeps: config, the containers view
         // and the tag cloud use it for their own search or filter.
-        if (event.key === '/' && global.dashboardInstance && !global.dashboardInstance.isBookmarksView?.()) return;
+        if ((event.key === '/' || event.key === '#') && global.dashboardInstance && !global.dashboardInstance.isBookmarksView?.()) return;
         // On the grid with tags to browse, / opens the tag cloud -- a handler
         // that needs no search bundle, which this one was pre-empting.
         if (event.key === '/' && global.DashboardTagCloud?.isEligible?.()) return;

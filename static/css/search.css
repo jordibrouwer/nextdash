@@ -1560,3 +1560,22 @@ body[data-mobile-layout="true"] .search-web-entry { min-height: 48px; font-size:
     border-color: var(--accent-primary);
     background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
 }
+
+/* Recent and most used commands: two labelled lists on one line. */
+.search-history-chip-row.search-chip-row--split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-3, 0.75rem) var(--space-4, 1.25rem);
+    align-items: start;
+}
+.search-chip-col { display: flex; flex-direction: column; gap: var(--space-1, 0.3rem); min-width: 0; }
+.search-chip-col-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted, var(--text-secondary));
+}
+.search-chip-col-chips { display: flex; flex-wrap: wrap; gap: var(--space-1-5, 0.35rem); }
+@media (max-width: 640px) {
+    .search-history-chip-row.search-chip-row--split { grid-template-columns: 1fr; }
+}

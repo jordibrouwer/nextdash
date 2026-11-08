@@ -54,7 +54,7 @@ func normalizeDockerSettings(s *Settings) {
 	switch s.DockerViewKeyLegend {
 	case "above", "below", "off":
 	default:
-		s.DockerViewKeyLegend = "above"
+		s.DockerViewKeyLegend = "below"
 	}
 	s.DockerHiddenContainers = normalizeDockerNameList(s.DockerHiddenContainers)
 	s.DockerNotifyMuted = normalizeDockerNameList(s.DockerNotifyMuted)

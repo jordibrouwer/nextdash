@@ -32,6 +32,8 @@
                 'tipEverydayGridFilter',
                 'tipEverydayScrollBack',
                 'tipEverydayCheatsheet',
+                'tipEverydayLegend',
+                'tipEverydayStrip',
                 'tipWatchNews',
                 'tipWatchFeedKey',
                 'tipWatchPreviewPager',
@@ -85,6 +87,7 @@
             titleFallback: 'Finding things',
             tips: [
                 'tipFindFilters',
+                'tipFindHashTags',
                 'tipFindSums',
                 'tipFindShortcutMode',
                 'tipFindGridShortcut',
@@ -208,7 +211,7 @@
         {
             titleKey: 'tipsGroupConfig',
             titleFallback: 'Config',
-            tips: ['tipConfigKeyboard', 'tipConfigFindValue', 'tipConfigWhatChanged', 'tipConfigLayoutHistory', 'tipConfigHub', 'tipConfigTours'],
+            tips: ['tipConfigKeyboard', 'tipConfigRowLetters', 'tipConfigFindValue', 'tipConfigWhatChanged', 'tipConfigLayoutHistory', 'tipConfigHub', 'tipConfigTours'],
         },
         {
             // Where bookmarks come from, where what happens here goes, and

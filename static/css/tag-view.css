@@ -574,6 +574,17 @@
     margin-top: var(--space-3, 0.75rem);
     font-size: var(--text-2xs, 0.7rem);
     color: var(--text-tertiary);
+    /* In view at the foot of the window while the list is longer than the screen. */
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding: var(--space-2, 0.5rem) 0;
+    background: var(--surface-1, var(--bg-primary, transparent));
+}
+
+.tag-view .tag-view-legend.is-above {
+    position: static;
+    padding: 0;
 }
 
 .tag-view .tag-view-legend-item {

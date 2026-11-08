@@ -833,6 +833,12 @@
     margin: var(--space-3, 0.75rem) 0 0;
     padding-top: var(--space-2, 0.5rem);
     border-top: 1px solid var(--border-secondary, var(--border-primary));
+    /* In view at the foot of the window while the list is longer than the screen. */
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding-bottom: var(--space-2, 0.5rem);
+    background: var(--surface-1, var(--bg-primary, transparent));
 }
 
 .docker-legend-item {

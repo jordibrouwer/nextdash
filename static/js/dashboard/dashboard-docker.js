@@ -384,36 +384,66 @@ class DashboardDocker {
                 return;
             }
 
+            // j and k are the arrows' twins, as in every other list; never from the
+            // search box, where they are letters.
+            const jk = !typing && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'j' || e.key === 'k');
             if (!menuOrModalOpen && !inDrawer && !onRowControl && !onHeading && (typing ? isSearch : true)
-                && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) {
+                && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || jk)) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (isSearch) active.blur();
                 if (e.key === 'Enter') {
                     if (this.selected) this.selectContainer(this.selected, { openDrawer: true });
                 } else {
-                    this.moveRowSelection(e.key === 'ArrowDown' ? 1 : -1);
+                    this.moveRowSelection(e.key === 'ArrowDown' || e.key === 'j' ? 1 : -1);
                 }
                 return;
             }
 
-            // The view's own letters: d flips Containers and Disk; l opens the
-            // logs window and m mutes or unmutes the selected container. Never
-            // while typing or with a modifier held.
-            if (!typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey
-                && (e.key === 'd' || e.key === 'l' || e.key === 'm')) {
-                if (e.key === 'd') {
+            // Shift+H switches the key legend, here as on the dashboard.
+            if (!typing && e.shiftKey && e.code === 'KeyH' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (!e.repeat) void this.toggleKeyLegend();
+                return;
+            }
+
+            // Ctrl/Cmd+C copies the selected container's name, as it copies the
+            // address of a bookmark: only with the cursor on a row and no text selected.
+            if (!typing && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.code === 'KeyC'
+                && this.selected && !String(window.getSelection?.() || '').length) {
+                const c = this.containers.find((x) => x.name === this.selected);
+                if (c) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    this.showTab(this.tab === 'disk' ? 'containers' : 'disk');
+                    void this.menu?.run('copy-name', c);
                     return;
                 }
+            }
+
+            // The view's own letters: [ and ] flip Containers and Disk (d is remove,
+            // as everywhere); l opens the logs window, m mutes or unmutes, w opens
+            // the web UI and y copies the ID of the selected container. Never while
+            // typing or with a modifier held.
+            if (!typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey
+                && (e.key === '[' || e.key === ']')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.showTab(e.key === ']' ? 'disk' : 'containers');
+                return;
+            }
+            if (!typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey
+                && (e.key === 'l' || e.key === 'm' || e.key === 'w' || e.key === 'y')) {
                 const c = this.selected ? this.containers.find((x) => x.name === this.selected) : null;
                 if (!c || this.tab !== 'containers') return;
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (e.key === 'l') {
                     this.openLogs(c);
+                } else if (e.key === 'w') {
+                    if (this.menu?.webuiFor(c)) void this.menu.run('webui', c);
+                } else if (e.key === 'y') {
+                    void this.menu?.run('copy-id', c);
                 } else if (!c.self) {
                     void this.actions?.toggleMute(c, { via: 'key' }).then(() => this.drawerRefresh?.());
                 }
@@ -424,7 +454,7 @@ class DashboardDocker {
             // with a modifier held, so Cmd+R still reloads the page.
             // Backspace is the key a Mac calls delete, and many keyboards have
             // no Delete at all; both remove.
-            const actionKey = { s: 'toggle-run', r: 'restart', p: 'toggle-pause', u: 'update', Delete: 'remove', Backspace: 'remove' }[e.key];
+            const actionKey = { s: 'toggle-run', r: 'restart', p: 'toggle-pause', u: 'update', d: 'remove', Delete: 'remove', Backspace: 'remove' }[e.key];
             const plainKey = actionKey && !typing && !menuOrModalOpen && !e.metaKey && !e.ctrlKey && !e.altKey;
             // With containers ticked, remove means the ticked ones, as Delete
             // does for a selection in the Bookmarks view.
@@ -1129,6 +1159,7 @@ class DashboardDocker {
         });
         this.syncToolbar();
         this.syncBulkBar();
+        this.syncModeStrip();
 
         const body = this.shell.body;
         // Any other redraw closes an open ports list first, so its listeners
@@ -1161,7 +1192,7 @@ class DashboardDocker {
         }
         // Config → Containers: the key legend above the list (where it always
         // stood), below it, or off -- the choices Bookmarks and Inbox offer.
-        const legendAt = this.dash.settings?.dockerViewKeyLegend || 'above';
+        const legendAt = this.dash.settings?.dockerViewKeyLegend || 'below';
         const legend = legendAt === 'off' ? null : this.buildLegend({ control: this.status.control !== false });
         // One bar when both notes apply: two stacked cost the list a row and a
         // half before it said anything about a container.
@@ -1177,13 +1208,58 @@ class DashboardDocker {
         body.replaceChildren(...parts);
     }
 
+    /** Shift+H: the key legend off and on; what it was set to comes back. */
+    async toggleKeyLegend() {
+        const d = this.dash;
+        d.settings = d.settings || {};
+        const current = d.settings.dockerViewKeyLegend || 'below';
+        const next = current === 'off' ? (this._legendWas && this._legendWas !== 'off' ? this._legendWas : 'below') : 'off';
+        if (current !== 'off') this._legendWas = current;
+        d.settings.dockerViewKeyLegend = next;
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch (_err) {
+            d.settings.dockerViewKeyLegend = current;
+            d.showNotification?.(d.t?.('dashboard.gridKeyLegendToggleFailed', 'Could not save the key legend setting') || 'Could not save the key legend setting', 'error');
+            return;
+        }
+        this.render();
+        d.showNotification?.(next === 'off'
+            ? (d.t?.('dashboard.gridKeyLegendOff', 'Key legend off') || 'Key legend off')
+            : (d.t?.('dashboard.gridKeyLegendOn', 'Key legend on') || 'Key legend on'), 'success', { duration: 2000 });
+    }
+
+    /** What the mode strip says here: the selected container's letters, or the ticked count. */
+    syncModeStrip() {
+        const strip = window.ModeStrip;
+        if (!strip || this.dash?.activeView !== DashboardDocker.VIEW) return;
+        const count = this.multi?.size || 0;
+        if (count > 0 && this.tab === 'containers') { strip.set('multi', { count }); return; }
+        const c = this.selected && this.tab === 'containers' ? this.containers.find((x) => x.name === this.selected) : null;
+        if (!c || !window.ModeStripSuggest) { strip.set(null); return; }
+        if (c.name !== this._stripName) {
+            this._stripName = c.name;
+            this._stripSeed = (this._stripSeed || 0) + 1;
+        }
+        const allowed = this.actions?.allowed?.(c) || [];
+        strip.set('cursor', {
+            suggestions: window.ModeStripSuggest.suggestContainer({
+                running: String(c.state || '').toLowerCase() === 'running',
+                canControl: this.status?.control === true,
+                update: allowed.includes('update'),
+                webui: Boolean(this.menu?.webuiFor?.(c)),
+                self: Boolean(c.self),
+            }, this._stripSeed || 0),
+        });
+    }
+
     /** The row keys, as <kbd> chips; the keys stay untranslated, the labels do not. */
     /** Every key of the view; read-only leaves out the ones that act on Docker. */
     buildLegend({ control = true } = {}) {
         const wrap = document.createElement('div');
         wrap.className = 'docker-legend';
         [
-            ['↑ / ↓', this.t('dashboard.dockerLegendMove', 'move')],
+            ['j / k', this.t('dashboard.dockerLegendMove', 'move')],
             ['Enter', this.t('dashboard.dockerLegendOpen', 'details')],
             ['/', this.t('dashboard.dockerLegendSearch', 'search')],
             ['x', this.t('dashboard.dockerLegendSelect', 'select')],
@@ -1192,11 +1268,16 @@ class DashboardDocker {
                 ['r', this.t('dashboard.dockerLegendRestart', 'restart')],
                 ['p', this.t('dashboard.dockerLegendPause', 'pause')],
                 ['u', this.t('dashboard.dockerLegendUpdate', 'update')],
-                ['⌫', this.t('dashboard.dockerLegendRemove', 'remove')],
+                ['d', this.t('dashboard.dockerLegendRemove', 'remove')],
             ] : []),
             ['l', this.t('dashboard.dockerLegendLogs', 'logs')],
             ['m', this.t('dashboard.dockerLegendMute', 'mute')],
-            ['d', this.t('dashboard.dockerLegendDisk', 'disk')],
+            ['w', this.t('dashboard.dockerLegendWebUi', 'web UI')],
+            ['y', this.t('dashboard.dockerLegendCopyId', 'copy ID')],
+            ['Ctrl/Cmd+C', this.t('dashboard.dockerLegendCopyName', 'copy name')],
+            ['[ / ]', this.t('dashboard.dockerLegendTabs', 'containers / disk')],
+            ['Shift+H', this.t('dashboard.dashboardKeyHideLegend', 'hide legend')],
+            ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'mode strip')],
         ].forEach(([key, label]) => {
             const item = document.createElement('span');
             item.className = 'docker-legend-item';

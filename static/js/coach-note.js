@@ -206,7 +206,20 @@
             const ok = el('button', 'coach-note-ok', text(def, 'okLabel', 'Got it'));
             ok.type = 'button';
             ok.addEventListener('click', () => dismiss(def.id, 'ok'));
-            node.append(title, body, ok);
+            if (typeof def.secondaryLabel === 'function') {
+                // A note with a second way out ("Turn it off"): the two sit side by side.
+                const second = el('button', 'coach-note-skip', text(def, 'secondaryLabel', ''));
+                second.type = 'button';
+                second.addEventListener('click', () => {
+                    try { def.onSecondary?.(); } catch { /* a note's own action never breaks it */ }
+                    dismiss(def.id, 'secondary');
+                });
+                const row = el('div', 'coach-note-actions');
+                row.append(second, ok);
+                node.append(title, body, row);
+            } else {
+                node.append(title, body, ok);
+            }
         }
         document.body.appendChild(node);
         active = { id: def.id, def, node, anchor: null };

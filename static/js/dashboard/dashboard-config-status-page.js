@@ -992,6 +992,35 @@
                 if (moved) changed();
                 return;
             }
+            // Plain letters act on the row or group under the cursor: e names it,
+            // d removes it, u / n move it. Held down, a letter acts once.
+            if ((el.matches('[data-sp-service]') || el.matches('[data-sp-grip]'))
+                && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
+                && ['e', 'd', 'u', 'n'].includes(e.key)) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.repeat) return;
+                const svcEl = el.closest('[data-sp-service]');
+                const isService = Boolean(svcEl);
+                const serviceId = isService ? svcEl.getAttribute('data-sp-service') : '';
+                const groupEl = el.closest('[data-sp-group]');
+                if (e.key === 'e') {
+                    if (isService) {
+                        const input = svcEl.querySelector('[data-sp-service-name]');
+                        input?.focus();
+                        input?.select();
+                    } else {
+                        groupEl?.querySelector('[data-sp-group-rename]')?.click();
+                    }
+                } else if (e.key === 'd') {
+                    (isService ? svcEl.querySelector('[data-sp-service-remove]') : groupEl?.querySelector('[data-sp-group-delete]'))?.click();
+                } else {
+                    const delta = e.key === 'n' ? 1 : -1;
+                    const moved = isService ? moveService(serviceId, delta) : moveGroup(groupEl?.getAttribute('data-sp-group'), delta);
+                    if (moved) changed();
+                }
+                return;
+            }
             if (el.matches('[data-sp-service]') && !e.altKey && !e.ctrlKey && !e.metaKey) {
                 if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                     e.preventDefault();

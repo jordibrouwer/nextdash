@@ -1,0 +1,110 @@
+{
+  "tag": "v1.27.0",
+  "date": "8 November 2026",
+  "releasedAt": "2026-11-08",
+  "modalLead": "One set of keys for every view, a strip that says what your keys do, tags and your own commands in the search panel, and three holiday themes.",
+  "sections": [
+    {
+      "title": "Keyboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>One set of keys for every view.</strong> With the cursor on a bookmark, plain letters act on it: <kbd>e</kbd> edits, <kbd>m</kbd> moves, <kbd>t</kbd> tags, <kbd>p</kbd> pins, <kbd>q</kbd> shows a QR code. Shift plus a letter opens a view, and <kbd>?</kbd> opens keys and help for the page you are on, with first steps you can try.",
+          "highlight": true,
+          "title": "One set of keys for every view",
+          "link": "#config/help/search/keyboard",
+          "linkLabel": "See the keys",
+          "media": {
+            "image": "media/v1.27.0-keys.jpg",
+            "video": "media/v1.27.0-keys.webm",
+            "alt": "An arrow key puts the cursor on a bookmark, then ? opens Keys and help on This page, with the first steps and their Try it buttons"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A strip says what your keys do.</strong> Beside the page name it says Search, Cursor or Edit mode, suggests keys for the row you are on, and fades after two seconds. Every view also has a key legend. <kbd>Shift</kbd>+<kbd>S</kbd> switches the strip, <kbd>Shift</kbd>+<kbd>H</kbd> the legend.",
+          "highlight": true,
+          "title": "A strip says what your keys do",
+          "link": "#config/behavior/search",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.27.0-mode-strip.jpg",
+            "video": "media/v1.27.0-mode-strip.webm",
+            "alt": "The mode strip beside the page name changes from Search to Cursor and suggests other letters as the cursor moves down a category"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Many keys moved.</strong> The Bookmarks view is <kbd>Shift</kbd>+<kbd>B</kbd>, Containers <kbd>Shift</kbd>+<kbd>C</kbd>, edit mode <kbd>Shift</kbd>+<kbd>E</kbd>, Config <kbd>,</kbd>, finders <kbd>!</kbd> and the news <kbd>Shift</kbd>+<kbd>W</kbd>. For a while an old key still works and tells you which key replaced it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Menus read the right key aloud.</strong> A screen reader names the plain letter of a row action, not Shift plus that letter."
+        }
+      ]
+    },
+    {
+      "title": "Search panel",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Search by tag, and your commands first.</strong> <kbd>#</kbd> opens the panel on your tags, and <code>docker AND linux OR network</code> joins them. <kbd>:</kbd> opens on the commands, with the ones you ran lately and the ones you use most at the top.",
+          "highlight": true,
+          "title": "Search by tag, and your commands first",
+          "link": "#config/help/search/search",
+          "linkLabel": "Read how",
+          "media": {
+            "image": "media/v1.27.0-palette.jpg",
+            "video": "media/v1.27.0-palette.webm",
+            "alt": "The search panel opened with #: typing linux AND security narrows the bookmarks to those with both tags, then : lists the commands with Recent and Most used on top"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The mode is a badge.</strong> The <kbd>:</kbd>, <kbd>!</kbd> or <kbd>#</kbd> you typed sits in front of the field instead of in your words, and Backspace on an empty field goes back to plain search."
+        }
+      ]
+    },
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Three holiday themes.</strong> Christmas Classic, Northern Lights and Gingerbread Village, in light and dark, with a tree, a forest or a village behind your cards and snow or sprinkles falling in front. They stand still when you turn motion down. Find them under Holidays in the theme studio.",
+          "link": "#config/appearance/theme",
+          "linkLabel": "Open Theme"
+        }
+      ]
+    },
+    {
+      "title": "Notifications",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Reading one item no longer rings as news.</strong> Opening a single news item made the bell think new news had come in."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A row that comes back rings again.</strong> When something the bell had put away returned, it now rings, even with a smaller count than before."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Two tips about the key help.</strong> The bell explains the mode strip a minute into your visit, and the key legend three days later."
+        }
+      ]
+    },
+    {
+      "title": "Config and Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Add Bookmark in the Bookmarks view.</strong> The button sits in the view's band, left of Work through."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A Support card on Config → Overview.</strong> A coffee on Ko-fi, if nextDash earns its place on your screen."
+        }
+      ]
+    }
+  ]
+}

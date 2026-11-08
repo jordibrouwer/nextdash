@@ -3048,6 +3048,43 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     margin-bottom: 0;
 }
 
+/* The Ko-fi ask: a loud card at the head of the right column. Accent border,
+   tinted wash and a soft glow so it is the first thing the eye lands on. */
+.config-overview-support {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-5, 1.25rem);
+    text-align: center;
+    border: 2px solid var(--accent-primary);
+    border-radius: var(--radius-5, 9px);
+    background: linear-gradient(160deg,
+        color-mix(in srgb, var(--accent-primary) 22%, transparent),
+        color-mix(in srgb, var(--accent-primary) 6%, transparent));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 14%, transparent),
+        0 10px 28px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+.config-overview-support-text {
+    margin: 0;
+    color: var(--text-primary);
+    line-height: 1.45;
+}
+.config-overview-support-cta { display: flex; justify-content: center; }
+.config-overview-support .wn-kofi-btn {
+    width: 100%;
+    justify-content: center;
+    padding: var(--space-3, 0.8rem) var(--space-4, 1.1rem);
+    font-size: calc(var(--font-size-text) * 1.1);
+    font-weight: 700;
+    background: var(--accent-primary);
+    color: var(--bg-primary, #fff);
+    border-color: var(--accent-primary);
+}
+.config-overview-support .wn-kofi-btn:hover {
+    background: color-mix(in srgb, var(--accent-primary) 85%, #fff);
+}
+
 @media (max-width: 1100px) {
     .config-overview-grid {
         grid-template-columns: minmax(0, 1fr);
@@ -5628,6 +5665,21 @@ body.no-animations .config-new-features-panel-star {
     gap: 10px;
 }
 
+.config-help-keys-link {
+    appearance: none;
+    margin-left: auto;
+    margin-right: 0.4rem;
+    padding: 0.2rem 0.65rem;
+    border: 1px solid var(--accent-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+.config-help-keys-link:hover { background: color-mix(in srgb, var(--accent-primary) 14%, transparent); }
+.config-help-keys-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .config-help-panel-link {
     border: none;
     background: none;
@@ -5791,7 +5843,8 @@ body.no-animations .config-new-features-panel-star {
     border-color: var(--accent-primary);
 }
 
-.config-crud-row.keyboard-selected {
+.config-crud-row.keyboard-selected,
+.config-backup-row.keyboard-selected {
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
 }

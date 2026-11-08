@@ -89,6 +89,7 @@ class Dashboard {
             feedStatsEnabled: true,
             feedStatsKeepDays: 90,
             showGridKeyLegend: true,
+            showModeStrip: true,
             columnsPerRow: 3,
             fontSize: 'm',
             showTitle: true,
@@ -1404,7 +1405,7 @@ class Dashboard {
      * Off — the default — letters look for a bookmark shortcut and `/` looks
      * for a name. On, the reverse. Which one you want depends on what you are
      * doing rather than on how you like your dashboard set up, so it is worth
-     * a key as well as a setting: Shift+Q here, the checkbox in
+     * a key as well as a setting: Shift+X here, the checkbox in
      * Behavior → Search, and both write the same stored value.
      *
      * The search component reads `settings.interleaveMode` when it opens, so
@@ -1442,7 +1443,7 @@ class Dashboard {
         this.showNotification(label, 'success', { duration: 2000 });
     }
     /**
-     * Shift+Z: switch the key legend under the grid off or on.
+     * Shift+H: switch the key legend under the grid off or on.
      *
      * The same stored value as Behavior -> General -> Show grid key legend, so
      * the key and the checkbox cannot disagree. Switching it off is the point

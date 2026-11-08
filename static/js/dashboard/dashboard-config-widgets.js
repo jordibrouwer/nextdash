@@ -238,6 +238,7 @@
         document.querySelectorAll('#config-widgets-body details[data-widget-section], #config-widget-overlay details[data-widget-section]')
             .forEach((el) => this.rememberWidgetSection(el));
         body.innerHTML = this.renderWidgetsTab();
+        this.bindListKeyboard?.(document);
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindWidgetsEditor(container);
         // An open card's disk chips are asked for again after a repaint.
@@ -311,7 +312,7 @@
                     const settingsState = `aria-haspopup="dialog" aria-expanded="${open ? 'true' : 'false'}"`;
                     return `
                 <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
-                    data-widget-row="${index}">
+                    data-widget-row="${index}" data-widget-id="${esc(widget.id || '')}">
                     <div class="config-widget-row-line config-widget-card-head">
                         <label class="config-widget-row-pick"
                             title="${esc(this.t('config.widgetsSelectRow', 'Select this widget'))}">

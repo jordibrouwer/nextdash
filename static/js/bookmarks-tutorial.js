@@ -246,7 +246,7 @@
                     </g>
                 `, f('bmTourS1Alt', 'The rail, the list and the side panel of the Bookmarks view')),
                 body: `<p>${esc(f('bmTour2ListBody1',
-                    'Shift+H on the dashboard opens every bookmark from every page in one list. The rail on the left narrows it: broken, stale, duplicates, never opened, a tag or a page.'))}</p>
+                    'Shift+B on the dashboard opens every bookmark from every page in one list. The rail on the left narrows it: broken, stale, duplicates, never opened, a tag or a page.'))}</p>
                     <p>${esc(f('bmTour2ListBody2',
                     'The side panel edits the bookmark you focus, tags included, with suggestions. A filtered list keeps its filter in the address, so you can bookmark it.'))}</p>`,
             },
