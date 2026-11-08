@@ -1092,7 +1092,7 @@ The page's picture stands on the left of the card, beside the text.
 
 <img src="screenshots/manual.md/04-preview-card.jpg" alt="The link preview card of a bookmark: picture, description, a tag, when it was last opened, its shortcut and where it lives" width="408" align="left">
 
-A row with nothing to say is left out. **Config → Appearance → Previews** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
+A row with nothing to say is left out. **Config → Appearance → Previews** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `v` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
 
 **Playing a video.** Nothing reaches YouTube or Vimeo while you hover: the poster is the picture your own server already fetched, and the player is built when you press it. From the keyboard, `v` puts the cursor on the play button and `Enter` starts it. `Esc` closes the card and ends the video, and so do the **✕** over the player and a click anywhere else — a click inside the player hands the keyboard to the provider, so `Esc` only works again once your pointer leaves the card.
 
@@ -1259,7 +1259,7 @@ The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
 > **A link on your phone.** Select the bookmark and press **`q`**, or pick **QR code** in this menu, then scan the code with the phone's camera. On an inbox row the code holds the item's own link, as Share does. The code is drawn in the browser, so the address is not sent anywhere.
 
 <p align="center"><img src="screenshots/manual.md/06-qr-code.jpg" alt="The QR code window for the Encyclopedia bookmark: the code, the address under it and a Copy URL button" width="392"></p>
-<p align="center"><sub>A bookmark as a QR code (<kbd>Shift</kbd> + <kbd>Q</kbd>), ready for the phone's camera.</sub></p>
+<p align="center"><sub>A bookmark as a QR code (<kbd>q</kbd>), ready for the phone's camera.</sub></p>
 
 <a id="editing-in-place"></a>
 
@@ -2002,7 +2002,7 @@ The panel's head carries two menus:
 - **✎ on the icon** — **Choose app icon…**, **Use letter** and **Automatic**, the same three a container has, with the one in force ticked. **Automatic** is no icon of the bookmark's own: the app's icon where the icon sets know the address, else the favicon. **Use letter** keeps the letter tile on the dashboard and stops nextDash fetching an icon for it — the background fill and **Refresh all favicons** pass it by. Choosing or uploading an icon later ends it ([§20.4](#204-icons--previews)).
 - **⋯ beside the score** — the rest, under headings: **Checks** (detect redirect, reporting, snooze 30 days, merge a duplicate group — while the bookmark has a finding), **Refresh** (title, favicon), **Copies** (open the archived copy, save a local one), **Elsewhere** (share link, show on dashboard), and **Delete** at the foot.
 
-Closed with the mouse — **×** or a click beside it — the row lets go as well, so the arrow keys and `Space` scroll the page again; closed with `Esc` or `i`, the row stays the cursor for the keys. **Details → Address** also offers **Open in new tab**, **Copy URL**, **Share** and **QR code** (`Shift + J` on the dashboard opens the same). A bookmark that is a container's web UI says so under **Details → Address → Runs in**, with a link to that container ([§15.2](#152-the-list)).
+Closed with the mouse — **×** or a click beside it — the row lets go as well, so the arrow keys and `Space` scroll the page again; closed with `Esc` or `i`, the row stays the cursor for the keys. **Details → Address** also offers **Open in new tab**, **Copy URL**, **Share** and **QR code** (`q` on the dashboard opens the same). A bookmark that is a container's web UI says so under **Details → Address → Runs in**, with a link to that container ([§15.2](#152-the-list)).
 
 On a narrow window the rail becomes a drawer and the side panel a sheet. What you filtered to is kept in the address, so a filtered list is a link.
 
@@ -5548,21 +5548,22 @@ See [§16A.12](#16a12-troubleshooting): the page needs a Glances 4 server, its a
 |---|---|
 | Just type | Search |
 | <kbd>Enter</kbd> | Open the top result |
-| <kbd>&gt;</kbd> · <kbd>:</kbd> · <kbd>?</kbd> | Search · commands · finders |
+| <kbd>&gt;</kbd> · <kbd>:</kbd> · <kbd>!</kbd> · <kbd>#</kbd> | Search · commands · finders · tags |
 | <kbd>@</kbd> | Search all pages |
 | <kbd>+</kbd> · <kbd>&amp;</kbd> | Add · quick add |
 | <kbd>Ctrl</kbd> + <kbd>V</kbd> | Paste a URL |
 | <kbd>1</kbd>–<kbd>9</kbd> · <kbd>Shift</kbd> + <kbd>P</kbd> | Pages · pages panel |
-| <kbd>&#42;</kbd> · <kbd>/</kbd> · <kbd>!</kbd> | Recent · tags · cheat sheet |
+| <kbd>&#42;</kbd> · <kbd>/</kbd> · <kbd>?</kbd> | Recent · tag cloud · keys and help |
 | <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> · <kbd>j</kbd> <kbd>k</kbd> | Move |
 | <kbd>Esc</kbd> | Back, or home |
-| <kbd>Shift</kbd> + <kbd>E</kbd> | Edit |
-| <kbd>Shift</kbd> + <kbd>M</kbd> | Move |
-| <kbd>Shift</kbd> + <kbd>T</kbd> | Tags |
-| <kbd>Shift</kbd> + <kbd>D</kbd> | Delete |
-| <kbd>Shift</kbd> + <kbd>C</kbd> | Availability checking |
+| <kbd>e</kbd> · <kbd>m</kbd> · <kbd>t</kbd> · <kbd>p</kbd> | Edit · move · tags · pin the bookmark under the cursor |
+| <kbd>d</kbd> · <kbd>c</kbd> · <kbd>q</kbd> · <kbd>s</kbd> | Delete · checking · QR code · share |
+| <kbd>Shift</kbd> + <kbd>E</kbd> | Edit mode |
+| <kbd>Shift</kbd> + <kbd>H</kbd> · <kbd>Shift</kbd> + <kbd>S</kbd> | Key legend · mode strip |
+| <kbd>Shift</kbd> + <kbd>N</kbd> · <kbd>Shift</kbd> + <kbd>W</kbd> | Notifications bell · news of watched feeds |
 | <kbd>Shift</kbd> + <kbd>B</kbd> | Bookmarks view |
 | <kbd>Shift</kbd> + <kbd>U</kbd> | Bookmarks view (Unsorted) |
+| <kbd>Shift</kbd> + <kbd>T</kbd> | Tag view of every bookmark |
 | <kbd>Shift</kbd> + <kbd>I</kbd> | Inbox |
 | <kbd>Shift</kbd> + <kbd>C</kbd> | Containers |
 | <kbd>Shift</kbd> + <kbd>G</kbd> | Glances |
