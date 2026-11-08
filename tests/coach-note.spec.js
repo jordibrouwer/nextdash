@@ -213,5 +213,6 @@ test('seen survives a reload', async ({ page }) => {
     await page.evaluate(() => { window.CoachNote.schedule('bell-intro'); window.CoachNote.schedule('action-bar-intro'); });
     // Checks that nothing shows: give the notes time to wrongly appear.
     await page.waitForTimeout(5000);
-    await expect(page.locator('.coach-note')).toHaveCount(0);
+    // Those two only: the strip's note has its own mark, held back above too.
+    await expect(page.locator('.coach-note[data-coach-note="bell-intro"], .coach-note[data-coach-note="action-bar-intro"]')).toHaveCount(0);
 });

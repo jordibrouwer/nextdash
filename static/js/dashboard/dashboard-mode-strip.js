@@ -15,7 +15,19 @@
  * crowd the page name; below 900px it is not shown.
  */
 (function () {
-    const STATES = ['cursor', 'multi', 'edit', 'chord'];
+    const STATES = ['cursor', 'multi', 'edit', 'chord', 'idle'];
+
+    /**
+     * With no cursor, no ticked rows, no edit mode and no chord, the strip still
+     * says which mode the keys are in: the grid searches as you type, the other
+     * views are browsed. No letters: those belong to the cursor.
+     */
+    function idleMode() {
+        const d = window.dashboardInstance;
+        if (!d) return null;
+        if (['library', 'inbox', 'docker', 'tags', 'config'].includes(d.activeView)) return 'browse';
+        return d.isBookmarksView?.() ? 'search' : null;
+    }
 
     const word = (key, fallback, vars) => {
         const lang = window.dashboardInstance?.language;
@@ -78,6 +90,13 @@
             sep(host);
             keys(host, ['Shift+E']);
             if (!short) add(host, 'em', word('modeStripToFinish', 'to finish'));
+        } else if (state === 'idle') {
+            if (detail?.mode === 'browse') {
+                add(host, 'b', word('modeStripBrowse', 'Browse'));
+            } else {
+                add(host, 'b', word('modeStripSearch', 'Search'));
+                if (!short) add(host, 'em', word('modeStripSearchHint', 'type to find'));
+            }
         } else if (state === 'chord') {
             add(host, 'b', 'g…');
             sep(host);
@@ -85,6 +104,16 @@
             add(host, 'em', '–');
             keys(host, ['9']);
         }
+    }
+
+    /** The strip coming back from hidden rises in, rather than appearing. */
+    function enter(host, wasHidden) {
+        if (!wasHidden) return;
+        host.classList.remove('is-entering');
+        // Restarts the animation when it is entered again straight away.
+        void host.offsetWidth;
+        host.classList.add('is-entering');
+        host.addEventListener('animationend', () => host.classList.remove('is-entering'), { once: true });
     }
 
     /** Full line if it fits beside the page name, else short, else nothing. */
@@ -100,25 +129,48 @@
         }
         const room = wrap ? wrap.clientWidth - (2 * name) - 32 : 0;
         host.style.maxWidth = 'none';
+        const wasHidden = host.hidden;
         host.hidden = false;
         fill(host, state, detail, false);
-        if (host.scrollWidth <= room) return true;
+        if (host.scrollWidth <= room) { enter(host, wasHidden); return true; }
         fill(host, state, detail, false, true);
-        if (host.scrollWidth <= room) return true;
+        if (host.scrollWidth <= room) { enter(host, wasHidden); return true; }
         fill(host, state, detail, true);
-        if (host.scrollWidth <= room) return true;
+        if (host.scrollWidth <= room) { enter(host, wasHidden); return true; }
         host.hidden = true;
         return false;
     }
 
     let current = { state: null, detail: null };
+    // The strip is for the keyboard. A mouse press hides it, and it comes back with
+    // the next key: a state set meanwhile is kept, only not shown.
+    let mouseMode = false;
 
+
+    /** Whether the strip may show at all: one setting for every view. */
+    const enabled = () => window.dashboardInstance?.settings?.showModeStrip !== false;
 
     function set(state, detail) {
         const host = el();
-        const next = { state: STATES.includes(state) ? state : null, detail: detail || null };
+        let next = { state: STATES.includes(state) ? state : null, detail: detail || null };
+        // Nothing to say about the cursor: say which mode the keys are in.
+        if (!next.state || next.state === 'idle') {
+            const mode = idleMode();
+            next = mode ? { state: 'idle', detail: { mode } } : { state: null, detail: null };
+        }
+        // Switched off: the state is kept so it comes straight back, but nothing shows.
+        if (!enabled()) {
+            current = next;
+            if (host) { host.hidden = true; host.removeAttribute('data-state'); host.textContent = ''; delete host.dataset.fitW; }
+            return;
+        }
         // Unchanged: leave the line alone. Rewriting it on every arrow key made
         // the live region announce it again each time.
+        if (mouseMode) {
+            current = next;
+            if (host) { host.hidden = true; delete host.dataset.fitW; }
+            return;
+        }
         const same = next.state === current.state
             && JSON.stringify(next.detail) === JSON.stringify(current.detail)
             && host && host.dataset.fitW === String(host.parentElement?.clientWidth || 0);
@@ -142,5 +194,111 @@
         resizeTimer = setTimeout(() => set(current.state, current.detail), 120);
     });
 
-    window.ModeStrip = { set, current: () => ({ ...current }) };
+    // Held while the coach note that explains the strip is up: a click on the
+    // note's own buttons must not take away the thing it points at.
+    let held = false;
+
+    /** Show the strip again after a mouse press, for the note that points at it. */
+    function reveal() {
+        if (!mouseMode) return;
+        mouseMode = false;
+        const host = el();
+        if (host) delete host.dataset.fitW;
+        set(current.state, current.detail);
+    }
+
+    function hold(on) {
+        held = Boolean(on);
+        if (held) reveal();
+    }
+
+    document.addEventListener('pointerdown', (e) => {
+        if (held) return;
+        if (e.pointerType && e.pointerType !== 'mouse') return;
+        mouseMode = true;
+        const host = el();
+        if (host) { host.hidden = true; delete host.dataset.fitW; }
+    }, true);
+    document.addEventListener('keydown', (e) => {
+        if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+        if (!mouseMode) return;
+        mouseMode = false;
+        // The key handlers run after this one and set the state they mean; if
+        // none does, the last state comes back.
+        queueMicrotask(() => { if (!mouseMode) set(current.state, current.detail); });
+    }, true);
+
+    /**
+     * Shift+S: the strip off and on, in every view at once. The same stored
+     * value as Behavior -> Keyboard -> Show the mode strip.
+     */
+    async function toggle() {
+        const d = window.dashboardInstance;
+        if (!d) return;
+        d.settings = d.settings || {};
+        const was = enabled();
+        d.settings.showModeStrip = !was;
+        try {
+            if ((await d.saveSettings()) === false) throw new Error('not saved');
+        } catch (_err) {
+            d.settings.showModeStrip = was;
+            d.showNotification?.(word('modeStripToggleFailed', 'Could not save the mode strip setting'), 'error');
+            return;
+        }
+        // Shown again where it was: the keys' own state is kept in `current`.
+        mouseMode = false;
+        delete (el() || {}).dataset?.fitW;
+        set(current.state, current.detail);
+        d.showNotification?.(word(was ? 'modeStripOff' : 'modeStripOn', was ? 'Mode strip off' : 'Mode strip on'), 'success', { duration: 2000 });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (!e.shiftKey || e.ctrlKey || e.altKey || e.metaKey || e.code !== 'KeyS' || e.isComposing) return;
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+        const d = window.dashboardInstance;
+        if (!d || d.searchComponent?.isActive?.() || d.isModalOpen?.() || d.isInlineEditActive?.()) return;
+        if (document.querySelector('[data-look-studio]') || document.body?.classList.contains('bookmark-inline-edit-active')) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (!e.repeat) { window.nextdashRecordKey?.('Shift + S'); void toggle(); }
+    }, true);
+
+    /*
+     * After five seconds with nothing touched, the strip fades away; any key,
+     * mouse move, click, scroll or touch brings it back. It is a line for
+     * someone who is using the page, not a sign that stays on.
+     */
+    const IDLE_MS = 5000;
+    let idleTimer = 0;
+    let idleNow = false;
+    let lastPoke = 0;
+
+    function armIdle() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            // Held for the note that points at it: not while someone is reading that.
+            if (held) { armIdle(); return; }
+            idleNow = true;
+            el()?.classList.add('is-idle');
+        }, IDLE_MS);
+    }
+
+    function poke() {
+        const now = Date.now();
+        if (!idleNow && now - lastPoke < 200) return;
+        lastPoke = now;
+        if (idleNow) {
+            idleNow = false;
+            el()?.classList.remove('is-idle');
+        }
+        armIdle();
+    }
+
+    ['keydown', 'pointerdown', 'pointermove', 'wheel', 'touchstart', 'scroll', 'focusin'].forEach((name) => {
+        document.addEventListener(name, poke, { capture: true, passive: true });
+    });
+    armIdle();
+
+    window.ModeStrip = { set, toggle, reveal, hold, isEnabled: enabled, current: () => ({ ...current }) };
 })();
