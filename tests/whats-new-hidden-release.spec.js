@@ -171,18 +171,18 @@ test.describe('a release flagged hideFromModal', () => {
     // v1.19.9 led, with v1.19.8 under it. v1.19.10 was held back, so v1.19.9 kept leading, and so was v1.19.11.
     // v1.20.0 led, with v1.19.9 under it, and brought v1.19.10 and v1.19.11 back in;
     // v1.20.1 led, with v1.20.0 under it. v1.20.2 and v1.20.3 were held back, so v1.20.1 kept leading;
-    // v1.25.0 led, with v1.24.0 under it (v1.24.1 and v1.24.2 stay held back); v1.26.0 leads now, with v1.25.0 under it.
+    // v1.25.0 led, with v1.24.0 under it (v1.24.1 and v1.24.2 stay held back); v1.26.0 led, with v1.25.0 under it; v1.27.0 leads now, with v1.26.0 under it (v1.26.1 stays held back).
     // v1.22.4 led and brought every held-back release into the modal; nothing is flagged hideFromModal any more. v1.22.5 led, with v1.22.4 under it; v1.23.0 led, with v1.22.5 under it; v1.24.0 leads now, with v1.23.0 under it. v1.24.1 and v1.24.2 were held back, so v1.24.0 keeps leading.
     // v1.21.0 led, with v1.20.1 under it; v1.21.1 led, with v1.21.0 under it. v1.21.2 and v1.21.3 were held back, so v1.21.1 kept leading; v1.22.0 leads now, with v1.21.1 under it. v1.22.1, v1.22.2 and v1.22.3 were held back, so v1.22.0 keeps leading.
-    test('v1.26.0 leads the modal, v1.26.1, v1.25.1, v1.24.1 and v1.24.2 are held back, and every release before it shows under it', async ({ page }) => {
+    test('v1.27.0 leads the modal, v1.26.1, v1.25.1, v1.24.1 and v1.24.2 are held back, and every release before it shows under it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        // v1.26.1 is the newest release (the index leads with it) but is held back, so v1.26.0 leads the modal.
-        expect(index[0].tag).toBe('v1.26.1');
-        expect(index.find((e) => !e.hideFromModal).tag).toBe('v1.26.0');
+        // v1.27.0 is the newest release and leads the modal; v1.26.1 under it stays held back.
+        expect(index[0].tag).toBe('v1.27.0');
+        expect(index.find((e) => !e.hideFromModal).tag).toBe('v1.27.0');
         expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.26.1', 'v1.25.1', 'v1.24.2', 'v1.24.1']);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
@@ -196,7 +196,8 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        await expect.poll(shownTags).toContain('v1.26.0');
+        await expect.poll(shownTags).toContain('v1.27.0');
+        expect(await shownTags()).toContain('v1.26.0');
         expect(await shownTags()).toContain('v1.25.0');
         expect(await shownTags()).toContain('v1.24.0');
         // Held back: recorded in the index, not shown.
@@ -266,7 +267,7 @@ test.describe('a release flagged hideFromModal', () => {
         }
     });
 
-    test('the release constants name v1.26.0, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.27.0, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         /*
@@ -276,11 +277,11 @@ test.describe('a release flagged hideFromModal', () => {
          * and were never named here (v1.19.10, v1.19.11 and now every other held-back release are shown); v1.22.4 led, so it was named; v1.22.5 led too and left the token alone; v1.23.0 leads and moves it again.
          *
          * Leaving it behind is the quiet failure this pins: every install that
-         * had already read v1.21.1's notes would simply never be shown v1.26.0.
+         * had already read v1.21.1's notes would simply never be shown v1.27.0.
          */
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.11-dashboard-release-v1.26.0'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.11-dashboard-release-v1.27.0'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.26.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v366'");
+        // holding its old copy would never learn v1.27.0 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v367'");
     });
 });
