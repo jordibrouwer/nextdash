@@ -1,0 +1,35 @@
+{
+  "tag": "v1.27.2",
+  "date": "9 November 2026",
+  "releasedAt": "2026-11-09",
+  "modalLead": "Config looks like the theme everywhere, and a phone no longer gets key hints.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Selects, checkboxes and radios wear the theme.</strong> They no longer show the system's own arrows and white boxes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The preview beside the Appearance tabs is lighter.</strong> It is no longer a black block on dark themes."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Watch feeds is a table like Structure.</strong> A column head and flat rows, one per feed.",
+          "link": "#config/feed-watch"
+        }
+      ]
+    },
+    {
+      "title": "Phones",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>No key hints on a phone.</strong> The key legends and the two key tips in the bell stay away on a touch device without a mouse."
+        }
+      ]
+    }
+  ]
+}
