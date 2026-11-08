@@ -47,6 +47,7 @@ test('an existing install gets it, and it cannot be closed without the tick', as
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe('1');
     // Asked again, it stays away.
     await page.evaluate(() => window.ShortcutsChangedModal.ask());
+    // Guards a check that the window stays away: longer than its own start delay.
     await page.waitForTimeout(1500);
     await expect(panel(page)).toHaveCount(0);
 });
@@ -54,6 +55,7 @@ test('an existing install gets it, and it cannot be closed without the tick', as
 test('a fresh install never sees it, and counts as answered', async ({ page }) => {
     await load(page, { fresh: true });
     await page.evaluate(() => window.ShortcutsChangedModal.ask());
+    // Guards a check that the window never opens: longer than its own start delay.
     await page.waitForTimeout(1500);
     await expect(panel(page)).toHaveCount(0);
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe('1');

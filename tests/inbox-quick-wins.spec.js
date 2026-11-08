@@ -152,6 +152,7 @@ test.describe('inbox quick wins', () => {
 
         // Refreshing is not a key of the view any more (Shift is only for views).
         await page.keyboard.press('Shift+R');
+        // Guards a check that nothing happens: without the pause the check passes at once.
         await page.waitForTimeout(500);
         expect(await page.evaluate(() => (window.__refreshCalls || []).some(Boolean))).toBe(false);
     });

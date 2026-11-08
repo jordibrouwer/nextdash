@@ -50,6 +50,7 @@ test('m keeps the row (it was Shift+K), and Shift+K does nothing now', async ({ 
     await openInbox(page);
     await page.evaluate(() => { window.dashboardInstance.inbox.keptEnabled = () => true; });
     await page.keyboard.press('Shift+K');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(300);
     expect(await calls(page)).toEqual([]);
     await page.keyboard.press('m');
@@ -76,6 +77,7 @@ test('Shift+R is not a key of the view', async ({ page }) => {
         window.dashboardInstance.inbox.refreshFromKeyboard = async () => { window.__calls.push('refresh'); };
     });
     await page.keyboard.press('Shift+R');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(500);
     expect(await calls(page)).not.toContain('refresh');
 });
@@ -111,6 +113,7 @@ test('the mode strip follows the cursor in the Inbox and goes with it', async ({
     for (let i = 0; i < 4; i += 1) {
         if (!/Cursor|selected/.test(await strip.innerText().catch(() => ''))) break;
         await page.keyboard.press('Escape');
+        // An Escape that only drops a tick leaves nothing new to wait on; give it a frame before the strip is read again.
         await page.waitForTimeout(200);
     }
     // Esc leaves the Inbox from a cursor-less list, so the strip names whichever mode the keys are in now.

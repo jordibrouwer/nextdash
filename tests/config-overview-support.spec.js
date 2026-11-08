@@ -16,7 +16,8 @@ test('Overview has a Support card with the Ko-fi button above From nextDash', as
     await expect(card.locator('a.wn-kofi-btn')).toHaveAttribute('href', 'https://ko-fi.com/jordibrw');
     const zones = page.locator('.config-overview-aside .config-overview-zone');
     await expect(zones.first()).toHaveText('Support nextDash');
-    await page.waitForTimeout(600); // the panels redraw as their data arrives
+    // The panels redraw as their data arrives, which moves the card; measure once they are still.
+    await page.waitForTimeout(600);
     const cardBox = await card.boundingBox();
     const headBox = await zones.first().boundingBox();
     const mainBox = await page.locator('.config-overview-main .config-overview-zone').boundingBox();

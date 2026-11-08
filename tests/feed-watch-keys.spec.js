@@ -46,6 +46,7 @@ test('w with no bookmark in hand does not open the picker, and # is no longer a 
     await page.keyboard.press('Escape');
     await page.keyboard.press('ArrowDown');
     await page.keyboard.type('#');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(400);
     await expect(page.locator('[data-feed-watch-picker]')).toHaveCount(0);
 });

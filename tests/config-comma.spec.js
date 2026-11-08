@@ -41,6 +41,7 @@ test('a comma typed in a text field stays a comma', async ({ page }) => {
 test('Shift+S with nothing selected no longer opens Config', async ({ page }) => {
     await loadDashboard(page);
     await page.keyboard.press('Shift+S');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(300);
     expect(await view(page)).not.toBe('config');
 });

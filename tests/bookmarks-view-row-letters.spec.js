@@ -30,6 +30,7 @@ test('e opens the full dialog', async ({ page }) => {
 test('Shift+E does not open the dialog any more', async ({ page }) => {
     await cursorOnFirstRow(page);
     await page.keyboard.press('Shift+E');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(400);
     await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
 });
@@ -98,6 +99,7 @@ test('the mode strip shows the cursor and the ticked rows, and goes with Esc', a
     for (let i = 0; i < 5; i += 1) {
         if (!/Cursor|selected/.test(await strip.innerText().catch(() => ''))) break;
         await page.keyboard.press('Escape');
+        // An Escape that only drops a tick leaves nothing new to wait on; give it a frame before the strip is read again.
         await page.waitForTimeout(200);
     }
     await expect(strip).toContainText('Browse');

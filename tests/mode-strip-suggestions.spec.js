@@ -112,6 +112,7 @@ test('each new row shows another combination of keys', async ({ page }) => {
     for (let i = 0; i < 6; i += 1) {
         seen.add((await chips(page)).join(' '));
         await page.keyboard.press('ArrowDown');
+        // A row whose suggestions match the last ones gives no change to wait on; the strip redraws within a frame.
         await page.waitForTimeout(150);
     }
     expect(seen.size).toBeGreaterThan(2);

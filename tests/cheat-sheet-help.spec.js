@@ -161,6 +161,7 @@ test('every legend key is on the sheet, and each view lists Shift+H and Shift+S'
     const ctxNow = () => page.evaluate(() => window.KeyboardCheatSheetRegistry.activeContextId(window.KeyboardCheatSheetRegistry.buildContext(window.dashboardInstance)));
     const problems = [];
     async function check(name, sel) {
+        // The view just switched by key; its legend is drawn after its data, with no event to wait on.
         await page.waitForTimeout(800);
         const ctx = await ctxNow();
         const whole = new Set(tokens(await sheetFor(ctx, true)));

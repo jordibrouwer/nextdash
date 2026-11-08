@@ -445,7 +445,8 @@ test('a refresh that finds more unread shakes, pulses and rings; the same or few
 test('a row that went away rings again when it returns, even with a lower count', async ({ page }) => {
     await loadDashboard(page);
     await refresh(page);
-    await page.waitForTimeout(1200); // let the load animation finish
+    // About time: the load animation must end, or the next shake is not counted as one.
+    await page.waitForTimeout(1200);
     await watchAttention(page);
 
     await setState(page, 'probe-state', { count: 5, text: 'five' });
@@ -461,6 +462,7 @@ test('a row that went away rings again when it returns, even with a lower count'
     // Gone, then back with fewer: that is new trouble, so it rings.
     await setState(page, 'probe-state', null);
     await refresh(page);
+    // About time: the shake from the last refresh must end before the next one can be counted.
     await page.waitForTimeout(1200);
     await setState(page, 'probe-state', { count: 3, text: 'three' });
     await refresh(page);

@@ -47,6 +47,7 @@ test('the note points at the strip and stays until it is put away', async ({ pag
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe('1');
     // Asked again, it does not come back.
     await page.evaluate(() => window.CoachNote.schedule('mode-strip-intro'));
+    // Guards a check that the note does not come back: longer than the coach note's own delay.
     await page.waitForTimeout(2500);
     await expect(note(page)).toHaveCount(0);
 });
@@ -68,6 +69,7 @@ test('with the strip switched off the note is not asked', async ({ page }) => {
     await load(page);
     await page.evaluate(() => { window.dashboardInstance.settings.showModeStrip = false; });
     await ask(page);
+    // Guards a check that the note is not shown: longer than the coach note's own delay.
     await page.waitForTimeout(4500);
     await expect(note(page)).toHaveCount(0);
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBeNull();

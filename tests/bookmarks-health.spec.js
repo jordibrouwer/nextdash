@@ -243,6 +243,7 @@ test.describe('bookmarks: score column and Health\'s keys', () => {
     let refreshed = false;
     page.on('request', (r) => { if (/\/api\/bookmark-health\?refresh=1/.test(r.url())) refreshed = true; });
     await page.keyboard.press('Shift+R');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(600);
     expect(refreshed).toBe(false);
   });

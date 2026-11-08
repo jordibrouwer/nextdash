@@ -220,6 +220,7 @@ test.describe('review fixes', () => {
             window.dashboardInstance.showNotification = (m) => { window.__toasts.push(String(m)); };
         });
         await page.keyboard.press('Shift+M');
+        // Guards a check that nothing happens: without the pause the check passes at once.
         await page.waitForTimeout(400);
         expect(await page.evaluate(() => document.body.getAttribute('data-edit-mode'))).not.toBe('on');
         expect(await page.evaluate(() => window.__toasts.some((m) => /press M/i.test(m)))).toBe(true);
@@ -259,6 +260,7 @@ test.describe('review fixes', () => {
         await page.keyboard.press('Tab');
         await expect(page.locator('.category-reorder-handle:focus')).toHaveCount(1);
         await page.keyboard.press('d');
+        // Guards a check that nothing happens: without the pause the check passes at once.
         await page.waitForTimeout(400);
         await expect(page.locator('#delete-popover')).toHaveCount(0);
     });

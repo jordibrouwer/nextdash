@@ -110,6 +110,7 @@ test.describe('category title letters', () => {
         }, id);
         const before = await spread();
         await page.keyboard.press('Shift+W');
+        // Guards a check that nothing happens: without the pause the check passes at once.
         await page.waitForTimeout(500);
         expect(await spread()).toBe(before);
     });
@@ -120,6 +121,7 @@ test.describe('category title letters', () => {
         await page.keyboard.press('Shift+Home');
         await expect(page.locator('.category-title:focus')).toHaveCount(1);
         await page.keyboard.press('t');
+        // Guards a check that nothing happens: without the pause the check passes at once.
         await page.waitForTimeout(400);
         // Whether this title offers t (a stored category) or not (a smart
         // collection), the row's tag popover stays shut.

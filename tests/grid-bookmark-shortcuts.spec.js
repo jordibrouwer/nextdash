@@ -75,6 +75,7 @@ test('with the cursor on a row, a shortcut letter starts a search and does not o
     await page.keyboard.press('z');
 
     await expect.poll(() => searchOpen(page), { timeout: 10_000 }).toBe(true);
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(600);
     expect(await opened(page), 'the shortcut opened the bookmark').toEqual([]);
     expect(await searchOpen(page)).toBe(true);
@@ -105,6 +106,7 @@ test('after >, a shortcut shows up in the results and does not open', async ({ p
     await page.keyboard.press('>');
     await expect.poll(() => searchOpen(page), { timeout: 10_000 }).toBe(true);
     await page.keyboard.press('z');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(600);
     expect(await opened(page), 'the shortcut opened the bookmark').toEqual([]);
     expect(await searchOpen(page)).toBe(true);

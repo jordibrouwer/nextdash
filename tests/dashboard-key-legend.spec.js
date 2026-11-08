@@ -115,6 +115,7 @@ test.describe('the dashboard key legend', () => {
         await expect(page.locator('body')).toHaveAttribute('data-active-view', 'library', { timeout: 10_000 });
         const before = await stored(page);
         await page.keyboard.press('Shift+H');
+        // Guards a check that nothing happens: without the pause the check passes at once.
         await page.waitForTimeout(400);
         expect(await stored(page)).toBe(before);
     });

@@ -1195,12 +1195,14 @@ test.describe('Glances in the navigation and the page overview', () => {
         const first = await inGlances();
         // Walk to the shortest range, then press once more.
         for (let i = 0; i < 12; i += 1) await page.keyboard.press(',');
+        // Guards a check that nothing happens: without the pause the check passes at once.
         await page.waitForTimeout(300);
         expect(await inGlances()).toBe(first);
         expect(await inGlances()).not.toBe('config');
         // A section with no graph: the keys belong to the view all the same.
         await page.keyboard.press('p');
         await page.keyboard.press(',');
+        // Guards a check that nothing happens: without the pause the check passes at once.
         await page.waitForTimeout(300);
         expect(await inGlances()).toBe(first);
     });

@@ -50,6 +50,7 @@ test('Shift+H no longer opens the Bookmarks view: it is the key legend', async (
     await loadDashboard(page);
     await page.evaluate(() => { window.dashboardInstance.saveSettings = async () => true; });
     await page.keyboard.press('Shift+H');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(300);
     expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
 });
@@ -83,9 +84,10 @@ test('Shift+B inside the Bookmarks view keeps the filter the reader has', async 
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('library');
     await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
     await page.evaluate(() => { window.location.hash = '#bookmarks?health=stale'; });
-    await page.waitForTimeout(500);
+    await expect.poll(() => page.evaluate(() => window.location.hash)).toContain('health=stale');
     const before = await page.evaluate(() => window.location.hash);
     await page.keyboard.press('Shift+B');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(500);
     expect(await page.evaluate(() => window.location.hash)).toBe(before);
 });

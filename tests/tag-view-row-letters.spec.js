@@ -33,6 +33,7 @@ test('letters run the row actions, and Shift+letter runs none', async ({ page })
         ['pin', 'tags', 'move', 'check-mode', 'share', 'qr', 'health', 'feed-watch', 'delete']);
     await page.evaluate(() => { window.__acts = []; });
     for (const k of ['Shift+P', 'Shift+M', 'Shift+D', 'Shift+S', 'Shift+Q']) await page.keyboard.press(k);
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(400);
     expect(await page.evaluate(() => window.__acts)).toEqual([]);
 });

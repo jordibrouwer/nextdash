@@ -41,6 +41,7 @@ module.exports = {
                 await page.waitForTimeout(1_400);
                 // Back to an empty field, then the commands.
                 for (let i = 0; i < 'linux AND security'.length + 1; i += 1) await page.keyboard.press('Backspace');
+                // Pacing for the capture, not a condition: the reader gets time to see the change.
                 await page.waitForTimeout(400);
                 await page.keyboard.press(':');
                 // Pacing for the capture, not a condition: the two lists draw.
@@ -59,8 +60,10 @@ module.exports = {
                 // Pacing for the capture, not a condition: the strip says Cursor.
                 await page.waitForTimeout(1_000);
                 await page.keyboard.press('j');
+                // Pacing for the capture, not a condition: the reader gets time to see the change.
                 await page.waitForTimeout(900);
                 await page.keyboard.press('Escape');
+                // Pacing for the capture, not a condition: the reader gets time to see the change.
                 await page.waitForTimeout(500);
                 await page.keyboard.press('?');
                 await page.locator('#app-modal.show .keyboard-cheat-sheet').waitFor();
@@ -80,9 +83,11 @@ module.exports = {
                 // Pacing for the capture, not a condition: the strip says Search first.
                 await page.waitForTimeout(900);
                 await page.keyboard.press('ArrowDown');
+                // Pacing for the capture, not a condition: the reader gets time to see the change.
                 await page.waitForTimeout(1_000);
                 for (let i = 0; i < 3; i += 1) {
                     await page.keyboard.press('j');
+                    // Pacing for the capture, not a condition: the reader gets time to see the change.
                     await page.waitForTimeout(900);
                 }
             },

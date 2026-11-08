@@ -112,6 +112,7 @@ test('Shift+X in the Containers view leaves the search mode alone', async ({ pag
     });
     const before = await mode(page);
     await page.keyboard.press('Shift+X');
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(300);
     expect(await mode(page)).toBe(before);
 });

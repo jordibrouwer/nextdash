@@ -84,6 +84,7 @@ test('Shift+S, Shift+M, Shift+D and Shift+R with a row selected open none of the
     for (const key of ['Shift+S', 'Shift+D', 'Shift+R']) {
         await page.keyboard.press(key);
     }
+    // Guards a check that nothing happens: without the pause the check passes at once.
     await page.waitForTimeout(400);
     await expect(page.locator('#delete-popover, #move-popover, #tag-popover')).toHaveCount(0);
     expect(await view(page)).toBe('bookmarks');
