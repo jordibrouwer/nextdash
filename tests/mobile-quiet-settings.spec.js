@@ -123,7 +123,7 @@ test.describe('on a computer', () => {
         const popup = context.waitForEvent('page');
         await row(page, 'Stub Blog').click();
         expect((await popup).url()).toContain(site.url.replace(/\/$/, ''));
-        const free = await page.evaluate(() => window.NoticeCard.cornerIsFree('install-count-notice-card', {}));
+        const free = await page.evaluate(() => window.NoticeCard.cornerIsFree('probe-card', {}));
         expect(free).toBe(true);
     });
 });

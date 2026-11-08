@@ -216,7 +216,7 @@ function tidyDemoData(dir, patch) {
     settings.discoverabilityState = {
         ...(settings.discoverabilityState || {}),
         seenSettingPromos: [...new Set([...((settings.discoverabilityState || {}).seenSettingPromos || []),
-            'install-count-v1', 'kept-pile-v1', 'theme-studio-hint-v1'])],
+            'kept-pile-v1', 'theme-studio-hint-v1'])],
         seenTips: [...new Set([...((settings.discoverabilityState || {}).seenTips || []),
             'dashboardTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'inboxTutorialV3', 'blockMoveIntro', 'blockMoveCoach'])],
     };

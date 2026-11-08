@@ -82,7 +82,7 @@ async function install(request, { fresh }) {
         // ... and its corner cards.
         ...(fresh ? {} : { discoverabilityState: {
             seenTips: ['dashboardTutorialV3', 'blockMoveIntro'],
-            seenSettingPromos: ['install-count-v1', 'kept-pile-v1', 'confetti-theme-try-v1', 'berry-theme-try-v1'],
+            seenSettingPromos: ['kept-pile-v1', 'confetti-theme-try-v1', 'berry-theme-try-v1'],
         } }),
     };
     expect((await request.post('/api/settings', { data: settings, headers })).ok()).toBe(true);

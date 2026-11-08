@@ -35,7 +35,7 @@ test.describe('notice cards on the config panel', () => {
     test('the cards that moved to the bell are no longer listed', async ({ page }) => {
         await openPanel(page);
         await expect(page.locator('[data-notice-cards]')).toBeVisible();
-        for (const id of ['kept-pile', 'theme-studio', 'tag-suggestions', 'install-count', 'analytics',
+        for (const id of ['kept-pile', 'theme-studio', 'tag-suggestions', 'analytics',
             'health-review', 'health-recheck-offer', 'docker-update', 'inbox-extension']) {
             await expect(page.locator(`[data-notice-card="${id}"]`)).toHaveCount(0);
         }
@@ -58,13 +58,14 @@ test.describe('notice cards on the config panel', () => {
     });
 
     test('Bring back dismissed notifications puts a bell "No" back in the bell', async ({ page }) => {
-        const ROW = '.notification-bell-row[data-bell-id="install-count-notice"]';
+        const ROW = '.notification-bell-row[data-bell-id="probe-forever"]';
         await openPanel(page);
+        // A quiet row whose "No" is for good, standing in for the real ones.
         await page.evaluate(() => {
-            const d = window.dashboardInstance;
-            window.DiscoverabilityState.resetSettingPromoSeen('install-count-v1', { persist: false });
-            d.settings.installPingEnabled = true;
-            d.telemetryLockedOff = false;
+            window.NotificationBell.register({
+                id: 'probe-forever', group: 'privacy', kind: 'quiet', no: 'forever',
+                state: async () => ({ count: 1, text: 'Probe row' }),
+            });
         });
         await page.evaluate(() => window.NotificationBell.refreshAll());
         await page.evaluate(() => window.NotificationBell.open());
