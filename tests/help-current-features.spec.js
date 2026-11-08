@@ -82,6 +82,7 @@ test('the cheat sheet lists the keys added since the last release', async ({ pag
     await page.keyboard.press('?');
     const sheet = page.locator('#app-modal.show .keyboard-cheat-sheet-modal');
     await expect(sheet).toBeVisible({ timeout: 10_000 });
+    await sheet.locator('[data-cs-tab="all"]').click();
     // The groups are <details>; a collapsed one hides its rows from innerText.
     await sheet.evaluate((el) => el.querySelectorAll('details').forEach((d) => { d.open = true; }));
     const text = await sheet.innerText();

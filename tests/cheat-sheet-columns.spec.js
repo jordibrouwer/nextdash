@@ -22,7 +22,9 @@ async function openSheet(page, view = '') {
     }
     // Through the key someone presses, not through the renderer.
     await page.keyboard.press('Shift+Slash');
-    await page.waitForSelector('.keyboard-cheat-sheet .cheat-sheet-group', { timeout: 20_000 });
+    await page.waitForSelector('.keyboard-cheat-sheet .cheat-sheet-group', { state: 'attached', timeout: 20_000 });
+    // The sheet opens on the page you are on; the columns are the All keys tab.
+    await page.locator('[data-cs-tab="all"]').click();
 }
 
 test.describe('cheat sheet columns', () => {

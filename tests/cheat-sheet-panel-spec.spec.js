@@ -28,6 +28,7 @@ async function openCheatSheet(page, depth) {
     // Through the key someone presses, not through the renderer.
     await page.keyboard.press('Shift+Slash');
     await page.waitForSelector('.keyboard-cheat-sheet', { timeout: 20_000 });
+    await page.locator('[data-cs-tab="all"]').click();
 }
 
 test.describe('the cheat sheet panel', () => {

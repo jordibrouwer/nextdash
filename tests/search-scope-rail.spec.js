@@ -148,7 +148,7 @@ test('the commands scope opens with its commands listed', async ({ page }) => {
 test('! opens the cheat sheet from inside the panel', async ({ page }) => {
     await openSearch(page);
     await page.keyboard.press('?');
-    await expect(page.locator('.cheat-sheet-group').first()).toBeVisible();
+    await expect(page.locator('.keyboard-cheat-sheet')).toBeVisible();
 
     const sheet = await page.evaluate(() => ({
         open: !!document.querySelector('.cheat-sheet-group'),

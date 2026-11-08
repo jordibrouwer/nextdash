@@ -3325,3 +3325,181 @@ body.no-animations .sc-more-btn { animation: none; }
     opacity: 0.45;
     cursor: not-allowed;
 }
+
+/* Keys and help: the cheat sheet's tabs and the page-aware panels. */
+/* On a phone the four tabs scroll sideways rather than push the sheet wider. */
+.keyboard-cheat-sheet .cs-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    display: flex;
+    gap: 0.25rem;
+    margin: 0.6rem 0 0.5rem;
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+}
+.keyboard-cheat-sheet .cs-tab {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 0.45rem 0.85rem;
+    font: inherit;
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.keyboard-cheat-sheet .cs-tab:hover { color: var(--text-primary); }
+.keyboard-cheat-sheet .cs-tab.is-active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-primary);
+    font-weight: 600;
+}
+.keyboard-cheat-sheet .cs-tab:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+@media (max-width: 520px) {
+    .keyboard-cheat-sheet .cs-tab { padding: 0.45rem 0.55rem; white-space: nowrap; }
+    .keyboard-cheat-sheet .cs-keys { min-width: 5.5rem; }
+}
+.keyboard-cheat-sheet .cs-panel[hidden] { display: none; }
+.keyboard-cheat-sheet .cs-panel { display: block; }
+
+.keyboard-cheat-sheet .cs-now {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.8rem 0.95rem;
+    margin-bottom: 0.9rem;
+    border-radius: var(--radius-6, 10px);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+.keyboard-cheat-sheet .cs-now-title { font-weight: 650; font-size: 1.0625rem; }
+.keyboard-cheat-sheet .cs-now-intro { color: var(--text-primary); line-height: 1.5; }
+.keyboard-cheat-sheet .cs-now-mode { color: var(--text-secondary); font-size: 0.9rem; }
+.keyboard-cheat-sheet .cs-lbl {
+    margin: 0.9rem 0 0.35rem;
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+}
+.keyboard-cheat-sheet .cs-list { display: grid; gap: 0.15rem; }
+.keyboard-cheat-sheet .cs-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.keyboard-cheat-sheet .cs-step[hidden] { display: none; }
+.keyboard-cheat-sheet .cs-item {
+    appearance: none;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+.keyboard-cheat-sheet .cs-item:hover,
+.keyboard-cheat-sheet .cs-item.is-selected { background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+.keyboard-cheat-sheet .cs-item.is-selected { border-color: var(--accent-primary); }
+.keyboard-cheat-sheet .cs-item:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+.keyboard-cheat-sheet .cs-keys {
+    flex: none;
+    min-width: 9.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+.keyboard-cheat-sheet .cs-item--plain .cs-text { padding-left: 0.1rem; }
+.keyboard-cheat-sheet .cs-text { min-width: 0; line-height: 1.4; }
+.keyboard-cheat-sheet .cs-kbd {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.8125rem;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--border-strong, rgba(128, 128, 128, 0.45));
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+.keyboard-cheat-sheet .cs-sep { color: var(--text-secondary); font-size: 0.8rem; }
+.keyboard-cheat-sheet .cs-typed { color: var(--text-secondary); font-style: italic; font-size: 0.875rem; }
+.keyboard-cheat-sheet .cs-try {
+    appearance: none;
+    flex: none;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--accent-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+.keyboard-cheat-sheet .cs-try:hover { background: color-mix(in srgb, var(--accent-primary) 16%, transparent); }
+.keyboard-cheat-sheet .cs-try:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.keyboard-cheat-sheet .cs-more {
+    appearance: none;
+    margin-top: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    border: 0;
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+.keyboard-cheat-sheet .cs-help-group { margin-bottom: 0.9rem; }
+.keyboard-cheat-sheet .cs-help-group[hidden] { display: none; }
+.keyboard-cheat-sheet .cs-ctx { color: var(--text-secondary); font-size: 0.85em; }
+.keyboard-cheat-sheet .cs-card {
+    margin: 0 0 0.6rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    border-radius: var(--radius-6, 10px);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+.keyboard-cheat-sheet .cs-card-title { font-weight: 650; margin-bottom: 0.25rem; }
+.keyboard-cheat-sheet .cs-card-body { line-height: 1.55; color: var(--text-primary); }
+.keyboard-cheat-sheet .cs-card-body code,
+.keyboard-cheat-sheet .cs-card-body kbd,
+.keyboard-cheat-sheet .cs-tip code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.85em;
+    padding: 0.03rem 0.3rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+.keyboard-cheat-sheet .cs-card-more,
+.keyboard-cheat-sheet .cs-more-link {
+    appearance: none;
+    flex: none;
+    border: 0;
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+}
+.keyboard-cheat-sheet .cs-card-more { margin-top: 0.35rem; padding-left: 0; }
+.keyboard-cheat-sheet .cs-card-more:hover,
+.keyboard-cheat-sheet .cs-more-link:hover { text-decoration: underline; }
+.keyboard-cheat-sheet .cs-card-more:focus-visible,
+.keyboard-cheat-sheet .cs-more-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 4px; }
+.keyboard-cheat-sheet .cs-tip {
+    margin: 1rem 0 0.2rem;
+    padding: 0.55rem 0.8rem;
+    border-left: 3px solid var(--accent-primary);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+.keyboard-cheat-sheet .cs-tip-label { color: var(--accent-primary); font-weight: 650; margin-right: 0.3rem; }
+.keyboard-cheat-sheet .cs-dock-explain { display: block; margin-top: 0.15rem; color: var(--text-secondary); font-size: 0.875rem; }

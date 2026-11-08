@@ -76,6 +76,7 @@ test.describe('dashboard overlay focus', () => {
         await closeDashboardOverlays(page);
         await page.keyboard.press('?');
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
+        await page.locator('[data-cs-tab="all"]').click();
         await page.evaluate(() => {
             window.DashboardFeaturePromos?.dismissOpen?.();
             const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
@@ -139,6 +140,7 @@ test.describe('dashboard overlay focus', () => {
         await closeDashboardOverlays(page);
         await page.keyboard.press('?');
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
+        await page.locator('[data-cs-tab="all"]').click();
         await page.evaluate(() => {
             window.DashboardFeaturePromos?.dismissOpen?.();
         });

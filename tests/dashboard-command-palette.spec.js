@@ -196,12 +196,13 @@ test.describe('dashboard command palette', () => {
         await page.keyboard.press('Enter');
         const sheet = page.locator('#app-modal.show .keyboard-cheat-sheet-modal');
         await expect(sheet).toBeVisible({ timeout: 3000 });
+        await sheet.locator('[data-cs-tab="all"]').click();
         // The sheet lists its topics in columns, each with a title; nothing is
         // folded, so a topic's rows are there without opening it.
         const title = (name) => sheet.locator('.cheat-sheet-group-title', { hasText: name });
         await expect(title(/Bookmarks view/i)).toBeVisible();
         await expect(title(/Inbox view/i)).toBeVisible();
-        await expect(sheet.getByText(/Refresh the health report/i).first()).toBeVisible();
+        await expect(sheet.getByText(/key legend under the list/i).first()).toBeVisible();
     });
 
     test(':overview closes palette and opens page overview', async ({ page }) => {

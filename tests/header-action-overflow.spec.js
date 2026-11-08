@@ -233,7 +233,7 @@ test('the menu presses the button it names', async ({ page }) => {
     // Pressing a row does what the button does: the cheat sheet row opens the sheet.
     const cheat = page.locator('.header-action-item', { hasText: 'cheat' });
     await cheat.click();
-    await expect(page.locator('.cheat-sheet-group').first(), 'the row did not press the button').toBeVisible();
+    await expect(page.locator('.keyboard-cheat-sheet'), 'the row did not press the button').toBeVisible();
     expect(await page.locator('.header-action-menu').count(), 'the menu stayed open').toBe(0);
 });
 
@@ -266,7 +266,7 @@ test('a switched-off action is in neither place, and its key still works', async
 
     // The keys never cared where the button was, or whether there is one.
     await page.keyboard.press('?');
-    await expect(page.locator('.cheat-sheet-group').first(), 'the key stopped working').toBeVisible();
+    await expect(page.locator('.keyboard-cheat-sheet'), 'the key stopped working').toBeVisible();
 });
 
 test('the arrows walk the menu and escape hands the focus back', async ({ page }) => {

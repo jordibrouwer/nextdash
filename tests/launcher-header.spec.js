@@ -64,7 +64,7 @@ test('the panel names the modes that used to be buttons', async ({ page }) => {
         })));
 
     expect(pills.map((p) => p.mode)).toEqual(['search', 'command', 'finder', 'tag', 'recent', 'assistant', 'keys']);
-    expect(pills.map((p) => p.key)).toEqual(['>', ':', '?', '/', '*', '=', '!']);
+    expect(pills.map((p) => p.key)).toEqual(['>', ':', '!', '#', '*', '=', '?']);
 });
 
 /*

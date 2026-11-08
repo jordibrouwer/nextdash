@@ -868,6 +868,7 @@ test.describe('the comma opens config', () => {
         // the combo into separate <kbd> elements, so match the row by its
         // description and assert the keys cell shows the comma.
         await page.keyboard.press('?');
+        await page.locator('[data-cs-tab="all"]').click();
         // Rows show only what they do; the keys appear in the dock once chosen.
         const row = page.locator('.cheat-sheet-row')
             .filter({ hasText: found[0] }).first();
