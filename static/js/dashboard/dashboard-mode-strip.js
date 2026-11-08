@@ -25,7 +25,7 @@
     function idleMode() {
         const d = window.dashboardInstance;
         if (!d) return null;
-        if (['library', 'inbox', 'docker', 'tags', 'config'].includes(d.activeView)) return 'browse';
+        if (['library', 'inbox', 'docker', 'tags', 'config', 'glances'].includes(d.activeView)) return 'browse';
         return d.isBookmarksView?.() ? 'search' : null;
     }
 
@@ -150,7 +150,24 @@
     /** Whether the strip may show at all: one setting for every view. */
     const enabled = () => window.dashboardInstance?.settings?.showModeStrip !== false;
 
+    /*
+     * Sticky: when the page name has scrolled out of the window the strip
+     * stays at the top of it (CSS, body.mode-strip-stuck). Watched with one
+     * observer on the line it normally sits on.
+     */
+    let watched = null;
+    function watchStuck() {
+        const host = el();
+        const line = host?.parentElement;
+        if (!line || watched === line || typeof IntersectionObserver !== 'function') return;
+        watched = line;
+        new IntersectionObserver(([entry]) => {
+            document.body.classList.toggle('mode-strip-stuck', !entry.isIntersecting && entry.boundingClientRect.bottom < 0);
+        }).observe(line);
+    }
+
     function set(state, detail) {
+        watchStuck();
         const host = el();
         let next = { state: STATES.includes(state) ? state : null, detail: detail || null };
         // Nothing to say about the cursor: say which mode the keys are in.
@@ -265,11 +282,11 @@
     }, true);
 
     /*
-     * After five seconds with nothing touched, the strip fades away; any key,
+     * After two seconds with nothing touched, the strip fades away; any key,
      * mouse move, click, scroll or touch brings it back. It is a line for
      * someone who is using the page, not a sign that stays on.
      */
-    const IDLE_MS = 5000;
+    const IDLE_MS = 2000;
     let idleTimer = 0;
     let idleNow = false;
     let lastPoke = 0;

@@ -124,3 +124,21 @@ test('the same row keeps its combination', async ({ page }) => {
     await page.evaluate(() => window.dashboardInstance.keyboardNavigation._syncModeStrip());
     expect(await chips(page)).toEqual(a);
 });
+
+test('Shift+S turns up among the rotating suggestions of every list', async ({ page }) => {
+    await load(page);
+    const seen = await page.evaluate(() => {
+        const S = window.ModeStripSuggest;
+        const keysOf = (fn) => { const out = new Set(); for (let n = 0; n < 40; n += 1) fn(n).forEach((s) => out.add(s.key)); return out.has('Shift+S'); };
+        return {
+            dashboard: keysOf((n) => S.suggest({ tags: ['a'] }, n)),
+            library: keysOf((n) => S.suggestLibrary({ tags: ['a'] }, n)),
+            inbox: keysOf((n) => S.suggestInbox({ unread: true }, n)),
+            container: keysOf((n) => S.suggestContainer({ canControl: true, running: true }, n)),
+            config: keysOf((n) => S.suggestConfigRow([{ key: 'e', verb: 'edit' }, { key: 'd', verb: 'delete' }, { key: 'y', verb: 'duplicate' }], n)),
+            // Never a fixed one: a single row's strip is not all Shift+S.
+            notAlways: [0, 1, 2, 3, 4, 5].some((n) => !S.suggest({ tags: ['a'] }, n).some((s) => s.key === 'Shift+S')),
+        };
+    });
+    expect(seen).toEqual({ dashboard: true, library: true, inbox: true, container: true, config: true, notAlways: true });
+});

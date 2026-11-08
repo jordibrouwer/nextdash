@@ -28,7 +28,7 @@
         { key: 'p', verb: 'pin' }, { key: 'f', verb: 'filter by tag' }, { key: 'c', verb: 'checking' },
         { key: 'r', verb: 'show in list' }, { key: 'v', verb: 'preview' }, { key: 's', verb: 'share' },
         { key: 'q', verb: 'QR code' }, { key: 'w', verb: 'watch feed' }, { key: 'd', verb: 'delete' },
-        { key: 'x', verb: 'select' },
+        { key: 'x', verb: 'select' }, { key: 'Shift+S', verb: 'mode strip' },
     ];
 
     function uses() {
@@ -77,6 +77,7 @@
         { key: 's', verb: 'share' }, { key: 'q', verb: 'QR code' }, { key: 'd', verb: 'delete' },
         { key: 'i', verb: 'panel' }, { key: 'x', verb: 'select' }, { key: 'u', verb: 'work through' },
         { key: 'y', verb: 'find tags' }, { key: 'b', verb: 'only this category' }, { key: 'w', verb: 'only this page' },
+        { key: 'Shift+S', verb: 'mode strip' },
     ];
     const LEARN_LIBRARY = [
         { key: 's', verb: 'share' }, { key: 'q', verb: 'QR code' }, { key: 'c', verb: 'checking' },
@@ -109,6 +110,7 @@
         { key: 'n', verb: 'note' }, { key: 'z', verb: 'snooze' }, { key: 't', verb: 'tags' },
         { key: 's', verb: 'share' }, { key: 'q', verb: 'QR code' }, { key: 'y', verb: 'copy link' },
         { key: 'd', verb: 'delete' }, { key: 'x', verb: 'select' }, { key: 'f', verb: 'triage' },
+        { key: 'Shift+S', verb: 'mode strip' },
     ];
     const LEARN_INBOX = [
         { key: 's', verb: 'share' }, { key: 'q', verb: 'QR code' }, { key: 'y', verb: 'copy link' },
@@ -139,7 +141,7 @@
         { key: 'l', verb: 'logs' }, { key: 's', verb: 'start / stop' }, { key: 'r', verb: 'restart' },
         { key: 'p', verb: 'pause' }, { key: 'u', verb: 'update' }, { key: 'm', verb: 'mute' },
         { key: 'w', verb: 'web UI' }, { key: 'y', verb: 'copy ID' }, { key: 'd', verb: 'remove' },
-        { key: 'x', verb: 'select' },
+        { key: 'x', verb: 'select' }, { key: 'Shift+S', verb: 'mode strip' },
     ];
     const LEARN_CONTAINER = [
         { key: 'l', verb: 'logs' }, { key: 'm', verb: 'mute' }, { key: 'y', verb: 'copy ID' }, { key: 'w', verb: 'web UI' },
@@ -173,9 +175,10 @@
      */
     function suggestConfigRow(actions = [], seed = 0) {
         const out = actions.slice(0, 2).map((a) => ({ ...a }));
-        const rest = actions.slice(2);
+        // The strip's own switch turns up among the rest, like any other letter.
+        const rest = [...actions.slice(2), { key: 'Shift+S', verb: 'mode strip' }];
         const n = Math.max(0, seed | 0);
-        if (rest.length) out.push({ ...rest[n % rest.length] });
+        out.push({ ...rest[n % rest.length] });
         const used = uses();
         const unlearned = rest.filter((a) => (used[a.key] || 0) < LEARN_AFTER && !out.some((o) => o.key === a.key));
         if (unlearned.length) out.push({ ...unlearned[n % unlearned.length], learn: true });

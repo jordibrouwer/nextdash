@@ -10680,22 +10680,46 @@ body.no-animations .mode-strip.is-entering { animation: none; }
         font-size: 1rem;
         line-height: 1;
         white-space: nowrap;
-        text-shadow: none;
+        /*
+         * Readable on every theme, the way the header is: a plate in the
+         * theme's own background colour (so it is dark on a dark theme and
+         * light on a light one), the same halo around the letters, and the
+         * header's plate edge. The blur keeps a bright photo or a pattern from
+         * showing through the text.
+         */
+        --strip-plate: color-mix(in srgb, var(--background-primary, #111) 84%, transparent);
+        text-shadow: var(--header-halo-text, none);
         border: 1px solid var(--border-strong, var(--border-color, rgba(128, 128, 128, 0.4)));
-        background: var(--surface-2, var(--bg-secondary, rgba(128, 128, 128, 0.12)));
+        background: var(--strip-plate);
+        -webkit-backdrop-filter: blur(10px) saturate(1.15);
+        backdrop-filter: blur(10px) saturate(1.15);
+        box-shadow:
+            inset 0 1px 0 color-mix(in srgb, var(--text-primary) calc(12% * var(--theme-depth, 1)), transparent),
+            inset 0 -1px 0 color-mix(in srgb, #000 calc(22% * var(--theme-depth, 1)), transparent),
+            0 1px 5px color-mix(in srgb, #000 calc(25% * var(--theme-depth, 1)), transparent);
         color: var(--text-primary);
+    }
+    /* Sticky: once the page name has scrolled away the strip stays at the top of the window. */
+    body.mode-strip-stuck[data-header-clock="classic"] .mode-strip:not([hidden]) {
+        position: fixed;
+        top: 0.6rem;
+        left: 50%;
+        translate: -50% 0;
+        margin-block: 0;
+        z-index: var(--layer-floating-chrome, 40);
     }
 }
 .mode-strip b { font-weight: 600; }
-.mode-strip em { font-style: normal; color: var(--text-secondary); }
+.mode-strip em { font-style: normal; color: color-mix(in srgb, var(--text-primary) 72%, transparent); }
 .mode-strip kbd {
     font-family: var(--font-mono, monospace);
     font-size: 0.85rem;
     padding: 0.05rem 0.35rem;
     border: 1px solid var(--border-strong, var(--border-color, rgba(128, 128, 128, 0.4)));
     border-radius: 5px;
-    background: var(--surface-1, transparent);
+    background: color-mix(in srgb, var(--text-primary) 9%, transparent);
     color: var(--text-primary);
+    text-shadow: none;
 }
 .mode-strip kbd.is-tip { border-style: dashed; }
 .mode-strip .mode-strip-dot {

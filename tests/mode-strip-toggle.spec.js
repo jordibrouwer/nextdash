@@ -15,7 +15,8 @@ async function load(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await ensureBookmarksDashboardView(page);
-    await page.evaluate(() => { window.dashboardInstance.settings.showModeStrip = true; });
+    // Held awake: the strip fades after two quiet seconds, which a slow run can reach between two steps.
+    await page.evaluate(() => { window.dashboardInstance.settings.showModeStrip = true; window.ModeStrip.hold(true); });
 }
 
 const enabled = (page) => page.evaluate(() => window.dashboardInstance.settings.showModeStrip);
@@ -92,10 +93,11 @@ test('the legends of the views that carry the strip list Shift+S', async ({ page
     await expect(page.locator('.config-bm-keyboard-legend kbd', { hasText: 'Shift+S' })).toHaveCount(1);
 });
 
-test('after five quiet seconds the strip fades away; any key brings it back', async ({ page }) => {
+test('after two quiet seconds the strip fades away; any key brings it back', async ({ page }) => {
     await load(page);
+    await page.evaluate(() => window.ModeStrip.hold(false));
     await expect(strip(page)).toBeVisible();
-    await expect(strip(page)).toHaveClass(/is-idle/, { timeout: 9_000 });
+    await expect(strip(page)).toHaveClass(/is-idle/, { timeout: 6_000 });
     await expect.poll(() => strip(page).evaluate((el) => getComputedStyle(el).visibility), { timeout: 3_000 }).toBe('hidden');
     await page.keyboard.press('ArrowDown');
     await expect(strip(page)).not.toHaveClass(/is-idle/);
@@ -122,4 +124,19 @@ test('it fades with a transition, and rises in when it comes back from hidden', 
     await page.keyboard.press('Shift+S');
     await expect.poll(() => enabled(page)).toBe(true);
     await expect.poll(() => strip(page).evaluate((el) => el.getAnimations().map((a) => a.animationName)), { timeout: 3_000 }).toContain('mode-strip-in');
+});
+
+test('the strip stays at the top of the window once the page name has scrolled away', async ({ page }) => {
+    await load(page);
+    await page.keyboard.press('ArrowDown');
+    await expect(strip(page)).toContainText('Cursor');
+    const pos = () => strip(page).evaluate((el) => getComputedStyle(el).position);
+    expect(await pos()).not.toBe('fixed');
+    // A page long enough to scroll past the header.
+    await page.evaluate(() => { const pad = document.createElement('div'); pad.id = 'probe-pad'; pad.style.height = '3000px'; document.body.appendChild(pad); window.scrollTo(0, 1500); });
+    await expect.poll(pos, { timeout: 5_000 }).toBe('fixed');
+    const box = await strip(page).boundingBox();
+    expect(box && box.y >= 0 && box.y < 60).toBe(true);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(pos, { timeout: 5_000 }).not.toBe('fixed');
 });
