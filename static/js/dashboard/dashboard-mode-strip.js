@@ -217,6 +217,9 @@
 
     /** Show the strip again after a mouse press, for the note that points at it. */
     function reveal() {
+        // Faded after two quiet seconds, the strip is not there to point at:
+        // the note that explains it would wait for it for ever.
+        wake();
         if (!mouseMode) return;
         mouseMode = false;
         const host = el();
@@ -299,6 +302,15 @@
             idleNow = true;
             el()?.classList.add('is-idle');
         }, IDLE_MS);
+    }
+
+    /** Back from the fade at once, the way any key or move brings it back. */
+    function wake() {
+        if (idleNow) {
+            idleNow = false;
+            el()?.classList.remove('is-idle');
+        }
+        armIdle();
     }
 
     function poke() {

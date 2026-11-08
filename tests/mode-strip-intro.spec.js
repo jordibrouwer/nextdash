@@ -52,6 +52,15 @@ test('the note points at the strip and stays until it is put away', async ({ pag
     await expect(note(page)).toHaveCount(0);
 });
 
+test('the note still shows when the strip has already faded', async ({ page }) => {
+    await load(page);
+    // Two quiet seconds fade the strip (is-idle); a note asked for after that must bring it back.
+    await expect(page.locator('#mode-strip')).toHaveClass(/is-idle/, { timeout: 10_000 });
+    await ask(page);
+    await expect(note(page)).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('#mode-strip')).not.toHaveClass(/is-idle/);
+});
+
 test('Turn it off switches the strip off and counts as answered', async ({ page }) => {
     await load(page);
     await ask(page);
