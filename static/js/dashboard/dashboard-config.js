@@ -26230,9 +26230,15 @@ class DashboardConfig {
                 ],
             },
         ],
+        'config.helpBellTitle': [
+            {
+                kind: 'keys', value: ['Shift + N', 'Enter', '?'],
+                captionKey: 'config.helpArtBellKeys', caption: 'Open, act, keys and help',
+            },
+        ],
         'config.helpStartDailyTitle': [
             {
-                kind: 'keys', value: ['>', 'Ctrl + V', '?', 'Shift + E'],
+                kind: 'keys', value: ['>', 'Ctrl + V', '!', 'e'],
                 captionKey: 'config.helpArtDailyKeys', caption: 'A day in four keys',
             },
         ],
@@ -26509,7 +26515,7 @@ class DashboardConfig {
 
         // ── Search & keyboard ──────────────────────────────────────────────
         'config.helpSearchTitle': [
-            { kind: 'keys', value: ['>', ':', '?'], captionKey: 'config.helpArtThreeModes', caption: 'Three modes, one overlay' },
+            { kind: 'keys', value: ['>', ':', '!'], captionKey: 'config.helpArtThreeModes', caption: 'Three modes, one overlay' },
             {
                 kind: 'query',
                 value: [['prefix', '>'], ['text', { k: 'config.helpArtSearchQuery', d: 'status page' }]],
@@ -26517,7 +26523,7 @@ class DashboardConfig {
         ],
         'config.helpFindersTitle': [
             {
-                kind: 'query', value: [['prefix', '?'], ['token', 'g'], ['text', 'nextdash']],
+                kind: 'query', value: [['prefix', '!'], ['token', 'g'], ['text', 'nextdash']],
                 captionKey: 'config.helpArtFinderExample', caption: 'Google, without opening Google first',
             },
         ],
@@ -26543,7 +26549,7 @@ class DashboardConfig {
         ],
         'config.helpConfigKeyboardTitle': [
             { kind: 'panelMap', value: 'body', captionKey: 'config.helpArtConfigLayer', caption: 'Its own keyboard layer' },
-            { kind: 'keys', value: ['j', 'k', 'g', 'End', '!'] },
+            { kind: 'keys', value: ['j', 'k', 'g', 'End', '?'] },
         ],
 
         // ── Health ─────────────────────────────────────────────────────────
@@ -26716,7 +26722,7 @@ class DashboardConfig {
          */
         'config.helpInboxUnsortedTitle': [
             {
-                kind: 'keys', value: ['Shift', 'K'],
+                kind: 'keys', value: ['m'],
                 captionKey: 'config.helpArtKeptKey', caption: 'Out of the queue, not off the list',
             },
             {
