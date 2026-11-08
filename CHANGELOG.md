@@ -206,8 +206,9 @@ One set of keyboard rules for every view. With the cursor on a row, plain letter
 ### Docs
 
 - **docs — Manual and README.** Every key in the manual and README follows the new scheme; §4 describes the four-line legend and `Shift + E` for edit mode, §7 the plain row letters, §8.6 finders on `!`, the tag view, Inbox, Containers and Bookmarks view the `Shift + H` legend.
-- **docs — Config → Help and tips.** Help and the tips name the new keys; the bell has its own Help topic and a `?` for keys and help.
-- **docs — Translations pending.** The new strings (mode strip, Keys and help sheet, tips, Support card) are in English only; Dutch, German, French, Spanish and Chinese show the English until a docs round. Only key names were changed in those files.
+- **docs — Config → Help and tips.** Help and the tips name the new keys; the bell has its own Help topic and a `?` for keys and help. Nine texts that still named old keys now follow the scheme: *Daily use* (`e`, `m`, `t`), Appearance (`v` for the preview card), Tags (`Shift + T` whatever is selected), Health charts (`l`), the Inbox, Triage and Unsorted (`m` keeps a link), a Health tip (`l`) and the Structure tip (**Manage** in the rail, since `Shift + P` and `Shift + C` open the Pages panel and Containers). Finders on their own read `! w`, not `?w`, in Help and the manual.
+- **docs — Cheat sheet.** `nextDash-cheatsheet.html` and the PDF (root and `static/`) are generated again: `W`, not `Shift + W`, spreads a widget.
+- **docs — Translations.** The 334 new strings (mode strip, Keys and help sheet with its page help, key legends, tips, notes, Support card, palette tags) and the 98 changed ones in Dutch, German, French, Spanish and Chinese. The locale files are in parity again. `dashboard.cheatsheetTabsLabel` was in `en.json` twice, and the later *Shortcut topics* hid *Keys and help*. `commands.paletteMostUsed` and `config.bmNoTagToFilter` were asked for in the code but missing; they are added in all six.
 - **docs — Unraid template.** `nextdash.xml` carries the v1.26.1 date and changes.
 
 ---

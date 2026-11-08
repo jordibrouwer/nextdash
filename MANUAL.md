@@ -1648,7 +1648,7 @@ The palette is drawn like the dashboard: its fill follows how solid the categori
 
 ### 8.6 Finders (`!`)
 
-`! shortcut query` sends the query to another site: `! g nextdash` searches Google. A fresh install has DuckDuckGo on `du` and Brave Search on `b` (an install that already existed was given Brave Search once; delete it and it stays deleted). `?w` without a query opens the site's own search page.
+`! shortcut query` sends the query to another site: `! g nextdash` searches Google. A fresh install has DuckDuckGo on `du` and Brave Search on `b` (an install that already existed was given Brave Search once; delete it and it stays deleted). `! w` without a query opens the site's own search page.
 
 <p align="center"><img src="screenshots/manual.md/08-finders.jpg" alt="The search panel on its finders tab: a question mark typed, and the two finders Brave Search and DuckDuckGo with their shortcuts" width="840"></p>
 <p align="center"><sub><kbd>?</kbd> lists the finders with their shortcuts.</sub></p>
