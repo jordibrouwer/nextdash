@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.27.1 — 8 November 2026](#v1271--8-november-2026)
 - [v1.27.0 — 8 November 2026](#v1270--8-november-2026)
 - [v1.26.1 — 5 November 2026](#v1261--5-november-2026)
 - [v1.26.0 — 5 November 2026](#v1260--5-november-2026)
@@ -134,6 +135,18 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.27.1 — 8 November 2026
+
+New screenshots in the README and on Unraid's Community Applications, taken on v1.27.0, so both show the mode strip, the key legends and Keys and help. No change to the app itself — held back from the What's new window (`hideFromModal`) like v1.26.1, so v1.27.0 keeps leading it.
+
+### Docs
+
+- **docs — README pictures retaken.** The 24 pictures in `screenshots/` that the README and the Unraid template show are taken again on v1.27.0 over the demo seed, with the same themes and scenes as on 5 November (`readme-shots-1/2/3.spec.js`, and the dashboard from `manual-screenshots-v1-26.spec.js`).
+- **docs — Unraid template.** `nextdash.xml` carries the v1.27.0 date and its changes, and the release of these pictures; its screenshots point at the new files on main.
+- **docs — `static/data/whats-new/v1.27.1.json` and its index entry, held back;** `NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v368`, `DASHBOARD_RELEASE` stays on v1.27.0, and `whats-new-hidden-release.spec.js` follows.
 
 ---
 
