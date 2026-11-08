@@ -206,6 +206,8 @@ class Modal {
 
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal && this._mouseDownTarget === this.modal) {
+                // A window that has to be answered is not closed by a click beside it.
+                if (this._mandatory) return;
                 this.hide();
             }
         });
@@ -218,6 +220,8 @@ class Modal {
                     if (e.isComposing || e.keyCode === 229) return;
                     e.preventDefault();
                     e.stopPropagation();
+                    // A window that has to be answered stays until its own button.
+                    if (this._mandatory) return;
                     this.hide();
                     return;
                 }
@@ -269,8 +273,11 @@ class Modal {
             modalMaxWidth = '',
             modalWidth = '',
             initialFocusSelector = null,
-            onHide = null
+            onHide = null,
+            mandatory = false
         } = options;
+        // Escape and the backdrop do not close it; only its own button does.
+        this._mandatory = mandatory === true;
 
         this.ensureModalStructure();
 
@@ -348,7 +355,7 @@ class Modal {
         const escHintEl = document.getElementById('modal-esc-hint');
         if (escHintEl) {
             const hintText = this._t('dashboard.escToClose', 'to close');
-            escHintEl.innerHTML = `<kbd>ESC</kbd> ${hintText}`;
+            escHintEl.innerHTML = this._mandatory ? '' : `<kbd>ESC</kbd> ${hintText}`;
         }
 
         // Show modal
@@ -518,6 +525,7 @@ class Modal {
     // reason reaches onHide: 'dismiss' here (Escape, the backdrop, a caller's
     // own hide), 'confirm' or 'cancel' from a button, 'replaced' from show().
     hide() {
+        this._mandatory = false;
         if (typeof this._onHideCallback === 'function') {
             const callback = this._onHideCallback;
             this._onHideCallback = null;
