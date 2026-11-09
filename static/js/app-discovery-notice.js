@@ -3,10 +3,12 @@
  * container on the dashboard by itself.
  *
  * The server keeps every direct add until a browser acknowledges it, so the
- * notice comes wherever the dashboard is opened next. Undo takes the bookmark
- * back (to the trash) and ignores the container from then on; Move opens the
- * bookmark form to put it elsewhere. Closing the card, or either answer,
- * acknowledges it.
+ * notice comes wherever the dashboard is opened next. It is a row in the
+ * notifications bell, not a card in the corner: the new tile is already on the
+ * page, and the row waits there with its answers. Undo takes the bookmark back
+ * (to the trash) and ignores the container from then on; Move opens the
+ * bookmark form to put it elsewhere; Done puts the row away. Any of the three
+ * acknowledges the adds.
  */
 (function initAppDiscoveryNotice(global) {
     'use strict';
@@ -97,6 +99,16 @@
         if (!list.length) return null;
         // The row's buttons act on the adds the card knows about.
         adds = list;
+        const key = list.map((a) => a.key).join('|');
+        if (key !== shownKey) {
+            // The new tiles are on the server already; bring them on screen
+            // before the row names them. A failed refresh is tried again on
+            // the next check.
+            try {
+                await refreshDashboard();
+                shownKey = key;
+            } catch { /* the row still comes */ }
+        }
         return { count: list.length, ids: list.map((a) => a.key), text: title() };
     }
 
@@ -138,7 +150,10 @@
             if (failed) {
                 // A second Undo only tries what is still on a page.
                 adds = adds.filter((a) => !done.includes(a));
-                card.showError(t('notice.undoFailed', 'Could not take it back'));
+                // No card to put it on: a bell row has none, so it is a toast.
+                const message = t('notice.undoFailed', 'Could not take it back');
+                if (card.element) card.showError(message);
+                else dash()?.showNotification?.(message, 'error');
                 return;
             }
             global.nextdashTrack?.('discovery:undo', { count: list.length });
@@ -171,53 +186,51 @@
         d.openBookmarkFormModal?.({ mode: 'edit', bookmark, pageId: bookmark.pageId, source: 'discovery' });
     }
 
+    const undoLabel = () => (adds.length > 1 ? t('notice.undoAll', 'Undo all') : t('notice.undo', 'Undo'));
+
+    function done(c) {
+        const list = adds.slice();
+        adds = [];
+        c.close();
+        void acknowledge(list);
+    }
+
     const card = global.NoticeCard.define({
         id: 'app-discovery-notice',
-        showDelayMs: 1500,
-        // The Undo for something already done: shown during the quick start
-        // and on a phone too.
-        essential: true,
-        // Urgent: the corner card stays as it is, and the bell lists the same
-        // adds (red) for as long as they are unacknowledged.
-        bell: { kind: 'urgent', group: 'system', icon: '\u2795', no: 'state', state: bellState },
+        // Quiet: no card in the corner and no toast. The bell lists the adds
+        // for as long as they are unacknowledged, and its row carries Undo,
+        // Move and Done, so it works during the quick start and on a phone too.
+        bell: {
+            kind: 'quiet',
+            group: 'system',
+            icon: '\u2795',
+            no: 'state',
+            state: bellState,
+            // Written out here, not taken from the card's: the label of the
+            // first one depends on how many adds there are now, so the bell asks
+            // for it each time it draws the row.
+            actions: [
+                // Not primary: a coloured answer puts the row aside once pressed,
+                // and a failed Undo has to leave it there to try again.
+                { label: undoLabel, onClick: () => void undo(card) },
+                { label: () => t('notice.move', 'Move'), onClick: () => void move(card) },
+                { label: () => t('notice.done', 'Done'), onClick: () => done(card) },
+            ],
+        },
         title,
         body,
         dismissLabel: () => t('notice.close', 'Close'),
         actionAttr: 'data-app-discovery-action',
-        canShow: async () => {
-            const list = await pendingAdds();
-            if (!list.length) return false;
-            adds = list;
-            const key = list.map((a) => a.key).join('|');
-            if (key !== shownKey) {
-                // The new tiles are on the server already; bring them on
-                // screen before the notice names them. A failed refresh is
-                // tried again on the next check.
-                try {
-                    await refreshDashboard();
-                    shownKey = key;
-                } catch { /* the notice still comes */ }
-            }
-            return true;
-        },
+        canShow: async () => (await pendingAdds()).length > 0,
         onDismiss: () => {
             const list = adds.slice();
             adds = [];
             void acknowledge(list);
         },
         actions: [
-            { name: 'undo', label: () => (adds.length > 1 ? t('notice.undoAll', 'Undo all') : t('notice.undo', 'Undo')), primary: true, onClick: (c) => void undo(c) },
+            { name: 'undo', label: undoLabel, primary: true, onClick: (c) => void undo(c) },
             { name: 'move', label: () => t('notice.move', 'Move'), onClick: (c) => void move(c) },
-            {
-                name: 'done',
-                label: () => t('notice.done', 'Done'),
-                onClick: (c) => {
-                    const list = adds.slice();
-                    adds = [];
-                    c.close();
-                    void acknowledge(list);
-                },
-            },
+            { name: 'done', label: () => t('notice.done', 'Done'), onClick: (c) => done(c) },
         ],
     });
 
@@ -253,7 +266,7 @@
 
     function check() {
         if (document.visibilityState === 'hidden') return;
-        if (!card.element) void card.render();
+        refreshBell();
         void checkPending();
     }
 

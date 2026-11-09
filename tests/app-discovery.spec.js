@@ -257,7 +257,15 @@ async function afterFirstRun(request, workerServer, { newApps = '' } = {}) {
     return { radarr, sonarr };
 }
 
-const notice = (page) => page.locator('.app-discovery-notice-card');
+// The notice is a row in the notifications bell, not a card in the corner.
+const notice = (page) => page.locator('.notification-bell-row[data-bell-id="app-discovery-notice"]');
+async function showNotice(page) {
+    await expect.poll(async () => {
+        await page.evaluate(() => window.NotificationBell.refreshAll());
+        await page.evaluate(() => window.NotificationBell.open());
+        return notice(page).count();
+    }, { timeout: 15_000 }).toBe(1);
+}
 
 test('a new container is added to the dashboard with a notice, and Undo takes it back', async ({ page, request, workerServer }) => {
     const { sonarr } = await afterFirstRun(request, workerServer, { newApps: 'add' });
@@ -265,7 +273,10 @@ test('a new container is added to the dashboard with a notice, and Undo takes it
     await open(page);
 
     await expect(placedLink(page, 'sonarr')).toBeVisible();
-    await expect(notice(page)).toContainText('sonarr added to Media management', { timeout: 15_000 });
+    await showNotice(page);
+    await expect(notice(page)).toContainText('sonarr added to Media management');
+    // Nothing in the corner and no toast: the row in the bell is all there is.
+    await expect(page.locator('.app-discovery-notice-card')).toHaveCount(0);
     const added = (await bookmarks(request)).find((b) => b.name === 'sonarr');
     expect(added?.url).toContain(`127.0.0.1:${sonarr}`);
 
@@ -295,7 +306,8 @@ test('Undo all on the notice tries again only what a failed Undo left', async ({
     ]);
     expect((await runDiscovery(request)).added).toHaveLength(2);
     await open(page);
-    await expect(notice(page)).toContainText('2 apps added', { timeout: 15_000 });
+    await showNotice(page);
+    await expect(notice(page)).toContainText('2 apps added');
 
     // The first undo goes through, the second fails.
     let calls = 0;
@@ -304,9 +316,10 @@ test('Undo all on the notice tries again only what a failed Undo left', async ({
         return calls === 2 ? route.fulfill({ status: 500, body: 'down' }) : route.continue();
     });
     await notice(page).getByRole('button', { name: 'Undo all' }).click();
-    await expect(notice(page)).toContainText('Could not take it back');
+    await expect(page.locator('.app-notification', { hasText: 'Could not take it back' })).toBeVisible();
 
     await page.unroute('**/api/discovery/undo');
+    await showNotice(page);
     await notice(page).getByRole('button', { name: /^Undo/ }).click();
     await expect(notice(page)).toHaveCount(0);
     const left = (await bookmarks(request)).filter((b) => b.name === 'sonarr' || b.name === 'lidarr');
@@ -319,8 +332,9 @@ test('Move on the notice opens the bookmark form for the new app', async ({ page
     await open(page);
 
     // Done is there next to Undo and Move.
-    await expect(notice(page).getByRole('button', { name: 'Done' })).toBeVisible({ timeout: 15_000 });
-    await notice(page).getByRole('button', { name: 'Move' }).click({ timeout: 15_000 });
+    await showNotice(page);
+    await expect(notice(page).getByRole('button', { name: 'Done' })).toBeVisible();
+    await notice(page).getByRole('button', { name: 'Move' }).click();
     await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     await expect(page.locator('#bookmark-form-modal [data-field="url"]')).toHaveValue(new RegExp(`127\\.0\\.0\\.1:${sonarr}`));
     await expect(page.locator('#bookmark-form-modal-title')).toHaveText(/Edit bookmark/i);
@@ -486,7 +500,8 @@ test('a direct add during the quick start still shows its notice with Undo', asy
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
 
     await expect(page.locator('[data-start-guide-bar]')).toHaveCount(1);
-    await expect(notice(page)).toContainText('sonarr added to', { timeout: 15_000 });
+    await showNotice(page);
+    await expect(notice(page)).toContainText('sonarr added to');
     await expect(notice(page).getByRole('button', { name: 'Undo' })).toBeVisible();
     await expect(card(page)).toHaveCount(0);
 });
