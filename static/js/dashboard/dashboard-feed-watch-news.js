@@ -429,6 +429,20 @@
         state.mode = 'article';
         markItem(listed()[index], true);
         render();
+        scrollArticleIntoView();
+    }
+
+    /**
+     * An article is shown at the top of the window, and the row or the arrow
+     * that opened it sits below it: on a phone the two columns fold into one,
+     * so the window was left scrolled down and the new article opened out of
+     * sight. Back to the top, where the article starts.
+     */
+    function scrollArticleIntoView() {
+        const scroller = document.querySelector('[data-feed-news]')?.closest('.modal-body');
+        if (!scroller || scroller.scrollTop <= 0) return;
+        const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+        scroller.scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' });
     }
 
     function step(delta) {

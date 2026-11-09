@@ -66,3 +66,21 @@ test('the newspaper shows the pictures of the items, like the other layouts', as
     await modal.locator('[data-feed-news-view="wide"]').click();
     await expect(modal).not.toHaveClass(/is-paper/);
 });
+
+test('opening a news item from far down the list brings the article back into view on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 600 });
+    await stubLongNews(page);
+    await openDashboard(page);
+    await page.evaluate(() => window.FeedWatchNews.open({ source: 'button' }));
+    const modal = page.locator('#app-modal .modal.feed-news-modal');
+    await expect(modal).toBeVisible();
+    const body = modal.locator('.modal-body');
+    const pick = modal.locator('[data-feed-news-pick]').last();
+    await pick.scrollIntoViewIfNeeded();
+    expect(await body.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
+    await pick.click();
+    await expect(modal.locator('.feed-news-article').first()).toBeVisible();
+    // The article starts at the top of the window; the window must not stay where the tap was.
+    await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeLessThanOrEqual(1);
+    await expect(modal.locator('.feed-news-article').first()).toBeInViewport();
+});

@@ -152,6 +152,10 @@ The install count counts installs, not test servers: it waits until a server has
 
 - **fix — The Version panel in Config → Overview links the changelog on nextdash.cc.** The *here* after "full changelog" opened `CHANGELOG.md` on GitHub; it now opens `https://nextdash.cc/changelog/`, next to the manual on nextdash.cc/docs. The Changelog button under About still points at GitHub.
 
+### Watch feeds
+
+- **fix — Opening a news item from far down the list shows it.** In the news window on a phone the two columns fold into one, with the article on top and the other items below it. Tapping an item (or the arrows under the article) opened the new article above the window's scroll position, out of sight. The window now scrolls back to the top when an article opens, and holds still for someone who asked for reduced motion (`scrollArticleIntoView` in `dashboard-feed-watch-news.js`). Covered by `tests/feed-watch-scroll.spec.js`.
+
 ### Docs
 
 - **docs — Manual §23.8.** The install count says it starts on the second day, that a restart sends nothing more within the day, and names the `install-ping` file.
