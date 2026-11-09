@@ -50,7 +50,13 @@ test('every scene reads in every built-in theme, light and dark', async ({ page 
             for (const th of themes) {
                 document.documentElement.setAttribute('data-theme', th);
                 const scene = document.querySelector('.containers-tutorial-scene');
-                const sceneBg = parse(getComputedStyle(scene).backgroundColor);
+                // A surface can be see-through (a Signature material): what the
+                // reader sees is it laid over what is behind it, up to the page.
+                const over = (t, b) => ({ r: t.r * t.a + b.r * (1 - t.a), g: t.g * t.a + b.g * (1 - t.a), b: t.b * t.a + b.b * (1 - t.a), a: 1 });
+                const flat = (el) => { const ls = []; for (let n = el; n; n = n.parentElement) { const c = parse(getComputedStyle(n).backgroundColor); if (c && c.a > 0) { ls.push(c); if (c.a >= 1) break; } }
+                    let base = ls.length && ls[ls.length - 1].a >= 1 ? ls.pop() : { r: 255, g: 255, b: 255, a: 1 };
+                    while (ls.length) base = over(ls.pop(), base); return base; };
+                const sceneBg = flat(scene);
                 const boxBg = parse(getComputedStyle(document.querySelector('.ctv-box') || scene).fill || '') || sceneBg;
                 let min = 99; let which = '';
                 document.querySelectorAll('.containers-tutorial-scene text').forEach((t) => {
@@ -61,8 +67,8 @@ test('every scene reads in every built-in theme, light and dark', async ({ page 
                     const group = t.closest('.ctv-row, .ctv-pill, .ctv-key');
                     const rect = group?.querySelector('rect');
                     const rectFill = rect ? parse(getComputedStyle(rect).fill) : null;
-                    const bg = rectFill && rectFill.a > 0.5 ? rectFill : sceneBg;
-                    const r = ratio(fill, bg && bg.a > 0.5 ? bg : sceneBg);
+                    const bg = rectFill ? over(rectFill, sceneBg) : sceneBg;
+                    const r = ratio(fill, bg);
                     if (r < min) { min = r; which = t.getAttribute('class') + ' "' + t.textContent.slice(0, 20) + '"'; }
                 });
                 // Lines too: an arrow nobody can see is a picture with a hole in it.
