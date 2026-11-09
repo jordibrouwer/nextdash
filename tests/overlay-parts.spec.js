@@ -388,7 +388,8 @@ test.describe('overlay parts', () => {
                 const out = { material: document.body.getAttribute('data-material'), present: { summary: !!summary, search: !!search, select: !!select, colhead: !!colhead } };
                 if (summary) { const cs = getComputedStyle(summary); out.summary = { shadow: cs.boxShadow, border: cs.borderTopWidth }; }
                 if (search) { const cs = getComputedStyle(search); out.search = { shadow: cs.boxShadow, border: cs.borderTopWidth }; }
-                if (select) out.selectAlpha = alpha(getComputedStyle(select).backgroundColor);
+                // The select is a field; its options carry the closed fill the list is drawn on.
+                if (select) out.selectAlpha = alpha(getComputedStyle(select.options[0] || select).backgroundColor);
                 if (colhead) out.colheadAlpha = alpha(getComputedStyle(colhead).backgroundColor);
                 return out;
             }, ALPHA_FN);
@@ -406,7 +407,7 @@ test.describe('overlay parts', () => {
                 expect.soft(parseFloat(m.search.border), material + ': the search has a border').toBe(0);
                 expect.soft(m.search.shadow, material + ': the search has no inset ring').toContain('inset');
             }
-            if (m.selectAlpha !== undefined) expect.soft(m.selectAlpha, material + ': the select is see-through').toBe(1);
+            if (m.selectAlpha !== undefined) expect.soft(m.selectAlpha, material + ': the select lists its options on a see-through fill').toBe(1);
             if (m.colheadAlpha !== undefined) expect.soft(m.colheadAlpha, material + ': the column head is see-through').toBe(1);
         }
     });

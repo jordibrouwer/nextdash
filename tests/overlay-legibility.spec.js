@@ -62,10 +62,12 @@ test.describe('legibility on the layers', () => {
             await open(page, 'config');
             await page.locator('.config-nav-item', { hasText: 'Appearance' }).first().click();
             await page.waitForSelector('#dashboard-layout.config-layout select', { state: 'attached', timeout: 10_000 });
+            // The select itself is a field, see-through like the text fields; what the list
+            // is drawn on is its options, and those must be closed.
             const selects = await page.evaluate(() => [...document.querySelectorAll('#dashboard-layout.config-layout select')]
-                .map((el) => getComputedStyle(el).backgroundColor));
+                .map((el) => getComputedStyle(el.options[0] || el).backgroundColor));
             expect.soft(selects.length, material + ': the config view has no select to look at').toBeGreaterThan(0);
-            for (const color of selects) expect.soft(alphaOf(color), material + ': a select is see-through: ' + color).toBe(1);
+            for (const color of selects) expect.soft(alphaOf(color), material + ': an option is see-through: ' + color).toBe(1);
         }
     });
 
