@@ -105,6 +105,7 @@ html[data-theme] body:is([data-material-style="classic"], :not([data-material]),
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .move-popover,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .field-popover,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .custom-select-options,
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .config-theme-picker-list,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .glances-tip,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .glances-info-pop,
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .inbox-snooze-menu,
@@ -172,6 +173,7 @@ html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :no
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .move-popover,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .field-popover,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .custom-select-options,
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .config-theme-picker-list,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .glances-tip,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .glances-info-pop,
 html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .inbox-snooze-menu,
@@ -525,6 +527,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .move-popover,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .field-popover,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .custom-select-options,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-theme-picker-list,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .glances-tip,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .glances-info-pop,
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .inbox-snooze-menu,
@@ -661,8 +664,8 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     transition-duration: calc(var(--ov-ease-out) * var(--enter-scale, 0.5) / 0.5);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-animations :is(.date-popover, .page-tab-popover, .notification-bell-panel, .mode-strip, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box),
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-view-animations :is(.date-popover, .page-tab-popover, .notification-bell-panel, .mode-strip, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-animations :is(.date-popover, .page-tab-popover, .notification-bell-panel, .mode-strip, .config-theme-picker-list, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box),
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-view-animations :is(.date-popover, .page-tab-popover, .notification-bell-panel, .mode-strip, .config-theme-picker-list, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .assistant-panel, .config-widget-sheet, .omnibox-box) {
     animation: none;
 }
 
@@ -836,9 +839,10 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 /* Controls take the corner and the rule of the material. */
-/* A native select lists its options on its own background: a see-through one shows the page through the list. */
+/* A select is a field like the others: the material's fill, not the page's darkest colour. Its
+   options carry an opaque fill of their own (below), so a native list never shows the page. */
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(select, .config-select) {
-    background-color: var(--background-secondary);
+    background-color: var(--ov-field-fill);
     border-color: transparent;
     border-radius: var(--ov-r-control);
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
@@ -1191,11 +1195,11 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
-/* A native select lists its options on its own background, so that stays closed. */
+/* A select is a field like the others; its options carry their own opaque fill (below). */
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs, .config-view--library) select {
     border: 0;
     border-radius: var(--ov-r-control);
-    background-color: var(--background-secondary);
+    background-color: var(--ov-field-fill);
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
 }
 
@@ -1454,7 +1458,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 /* ── Effects off: the layers are flat. No blur, no grain, no crop marks, no fade; the fill, the rim and the level stay. ── */
 html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .assistant-panel, .config-widget-sheet, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification),
-html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .notification-bell-panel, .mode-strip, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .notification-bell-panel, .mode-strip, .config-theme-picker-list, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
     --paper-grain: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -1464,7 +1468,7 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([
     background-image: linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
 }
 
-html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .notification-bell-panel, .mode-strip, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material][data-material] :is(.date-popover, .page-tab-popover, .notification-bell-panel, .mode-strip, .config-theme-picker-list, .move-popover, .field-popover, .custom-select-options, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .quickstart-card, .first-start-card, .lvs-drawer-frame, .block-move-coach, .tag-ac-dropdown, .smart-collection-why-popover, .action-key-hint, .inbox-menu, .health-view-menu, .health-check-menu, .notes-slash-menu) {
     background-image: linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
 }
 
@@ -1640,7 +1644,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .look-studio-pane :is(select, .config-select) {
-    background-color: var(--background-secondary);
+    background-color: var(--ov-field-fill);
     border-color: transparent;
     border-radius: var(--ov-r-control);
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
@@ -1685,4 +1689,31 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     border-radius: var(--ov-r-control);
     background-color: var(--ov-field-fill);
     box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+
+/* ── Dropdowns everywhere ──────────────────────────────────────────────────
+ * A closed dropdown is a field like the text fields beside it: on a Signature
+ * material it takes the material's field fill and rule, so it sits in the
+ * theme instead of reading as a hole in the darkest colour of the page. The
+ * rules above for Config, the list views and the theme studio say the same
+ * with more weight; this one reaches the modals, the inbox, Watch feeds, the
+ * tag view and the widget sheets.
+ */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(select, .custom-select-trigger, .modal-select) {
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    background-color: var(--ov-field-fill);
+    box-shadow: inset 0 0 0 1px var(--ov-rule-soft);
+}
+
+/*
+ * A native select draws its list from its options. With the select itself
+ * see-through, each option carries the theme's raised surface, opaque, so the
+ * list never shows the page through it -- on every material and in Classic.
+ */
+select option,
+select optgroup {
+    background-color: var(--surface-2, var(--background-secondary));
+    color: var(--text-primary);
 }

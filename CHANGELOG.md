@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.27.3 — 9 November 2026](#v1273--9-november-2026)
 - [v1.27.2 — 9 November 2026](#v1272--9-november-2026)
 - [v1.27.1 — 8 November 2026](#v1271--8-november-2026)
 - [v1.27.0 — 8 November 2026](#v1270--8-november-2026)
@@ -136,6 +137,36 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.27.3 — 9 November 2026
+
+The install count counts installs, not test servers: it waits until a server has run for a day and sends at most one request a day. Dropdowns take the theme's material instead of the page's darkest colour. Held back from the What's new window (`hideFromModal`) like v1.27.1 and v1.27.2, so v1.27.0 keeps leading it.
+
+### Privacy
+
+- **fix — The install count waits a day and then sends once a day at most.** A server started on an empty data folder (a test run, a CI job, a smoke test, a `go run`) counted as a new install the moment it started, and a container that restarted in a loop sent a request on every start. `installPingDue` in `install_ping.go` now holds the request back until the `install-id` file is 23 hours old, and the new `install-ping` file in the data folder keeps the time of the last request so that no second one goes out within 23 hours. An install that predates the file sends at its next start as before. `NEXTDASH_DISABLE_INSTALL_PING=1` still switches the count off for a run that lasts longer.
+
+### Config
+
+- **fix — The Version panel in Config → Overview links the changelog on nextdash.cc.** The *here* after "full changelog" opened `CHANGELOG.md` on GitHub; it now opens `https://nextdash.cc/changelog/`, next to the manual on nextdash.cc/docs. The Changelog button under About still points at GitHub.
+
+### Watch feeds
+
+- **fix — Opening a news item from far down the list shows it.** In the news window on a phone the two columns fold into one, with the article on top and the other items below it. Tapping an item (or the arrows under the article) opened the new article above the window's scroll position, out of sight. The window now scrolls back to the top when an article opens, and holds still for someone who asked for reduced motion (`scrollArticleIntoView` in `dashboard-feed-watch-news.js`). Covered by `tests/feed-watch-scroll.spec.js`.
+
+### Appearance
+
+- **fix — Dropdowns follow the theme.** A closed dropdown was filled with the page's darkest colour (`--background-secondary`, opaque) and read as a hole beside the see-through text fields. On a Signature material it now takes the material's field fill and rule, like the text fields, everywhere: Config, the list views, the theme studio, the bookmark form, the modals, the Inbox, Watch feeds, the tag view and the widget sheets. The options of a native dropdown carry the theme's raised surface (`--surface-2`, opaque) instead, so its list never shows the page through it, in Classic too. The theme picker's open list is drawn as the other small layers are (`theme-overlays.css`, `bookmark-form-modal.css`; `overlay-legibility.spec.js` and `overlay-parts.spec.js` now ask for closed options rather than a closed select). Classic keeps its closed dropdowns as they were.
+
+### Docs
+
+- **docs — Manual §23.8.** The install count says it starts on the second day, that a restart sends nothing more within the day, and names the `install-ping` file.
+- **docs — `static/data/whats-new/v1.27.3.json` and its index entry, held back from the modal;** `NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v370`, `DASHBOARD_RELEASE` stays on v1.27.0, and `whats-new-hidden-release.spec.js` follows.
+- **docs — Manual pictures retaken.** 159 pictures in `screenshots/manual.md/` are taken again on a fresh seed, so they show the dropdowns in the theme's fill and the key legend under each Config page. Eight shot specs still pressed the old keys and stopped (Disk on `d`, the QR code on `Shift+Q`, edit in place on `Shift+E`, the news on `Shift+N`, Work through on `f`, health in large on `Shift+B`); they use `]`, `q`, `e`, `Shift+W`, `u` and `l` now.
+- **docs — Manual §18.8.** The Version panel's links point at the changelog on nextdash.cc/changelog and the manual on nextdash.cc/docs; it still said both were on GitHub.
+- **docs — Unraid template.** `nextdash.xml` carries the v1.27.2 date and changes, in this repository and in `unraid_templates`.
 
 ---
 

@@ -57,6 +57,12 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.27.2 (2026-11-09)
+- Config: selects, checkboxes and radios wear the theme, and the preview beside the Appearance tabs is no longer black
+- Watch feeds: the list is a table with a column head, like Structure
+- Phones: no key legends and no key tips on a touch device without a mouse
+- Docs: the cheat sheet names ? for keys and help
+
 ### v1.27.1 (2026-11-08)
 - Screenshots: new pictures for this page and the README, taken on v1.27.0
 - No change to the app itself
@@ -80,11 +86,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Widgets: a Clock with a face, the moon and the sun, a Countdown with a large figure, and AdGuard Home and Pi-hole widgets
 - Start-up: the theme stylesheet shrinks from 9.4 MB to 379 KB, and Tarnished Brass is the theme a new install starts on
 - Fixes: eight from a code review, among them a decimal comma in the calculator and a Tabs widget off its schedule
-
-### v1.25.1 (2026-11-04)
-- Manual: a heading for the times and days a widget shows, the Watch feeds news widget, and the settings of each widget kind
-- Manual: the phone settings and every search command and key that was missing
-- No change to the app itself
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -92,7 +93,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-11-08</Date>
+  <Date>2026-11-09</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

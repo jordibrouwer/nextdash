@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -44,7 +45,43 @@ const (
 	installPingInterval = 24 * time.Hour
 	installPingTimeout  = 10 * time.Second
 	installIDFile       = "install-id"
+	// installPingStateFile holds the unix time of the last ping that went out.
+	installPingStateFile = "install-ping"
+	// A server counts as an install once its id is a day old, and then at most
+	// once a day. A test run, a CI job or a smoke test lives for minutes on a
+	// fresh data folder and never gets that far; a container that restarts in a
+	// loop pings once, not on every start. The margin keeps the 24h tick from
+	// missing by the few milliseconds between the id file and the ticker.
+	installPingMinAge = 23 * time.Hour
+	installPingMinGap = 23 * time.Hour
 )
+
+// installPingDue reports whether this install may ping at now: its id file
+// must be at least installPingMinAge old, and the last ping at least
+// installPingMinGap ago. An install that predates the state file, or whose
+// state file cannot be read, has no last ping and is due as soon as its id is
+// old enough.
+func installPingDue(dataDir string, now time.Time) bool {
+	info, err := os.Stat(filepath.Join(dataDir, installIDFile))
+	if err != nil || now.Sub(info.ModTime()) < installPingMinAge {
+		return false
+	}
+	raw, err := os.ReadFile(filepath.Join(dataDir, installPingStateFile))
+	if err != nil {
+		return true
+	}
+	var secs int64
+	if _, err := fmt.Sscanf(strings.TrimSpace(string(raw)), "%d", &secs); err != nil {
+		return true
+	}
+	return now.Sub(time.Unix(secs, 0)) >= installPingMinGap
+}
+
+// markInstallPinged records the time of a ping that went out. A failed write
+// only costs an extra ping later, so it is not reported.
+func markInstallPinged(dataDir string, now time.Time) {
+	_ = os.WriteFile(filepath.Join(dataDir, installPingStateFile), []byte(fmt.Sprintf("%d\n", now.Unix())), 0o600)
+}
 
 // installPingEnabled reports whether the daily ping may be sent: the user's
 // switch, unless the operator disabled telemetry outright.
@@ -124,20 +161,27 @@ func sendInstallPing(ctx context.Context, id, version, platform string) error {
 	return nil
 }
 
-// StartInstallPingScheduler sends the ping at start and then every 24h while
-// the switch is on. Inside the goroutine, like the other schedulers, so a
+// StartInstallPingScheduler checks at start and then every 24h whether the
+// ping is due (installPingDue) and sends it while the switch is on. Inside the goroutine, like the other schedulers, so a
 // blocked network cannot delay start-up.
 func (h *Handlers) StartInstallPingScheduler(stop <-chan struct{}) {
 	run := func() {
 		if !installPingEnabled(h.store.GetSettings()) {
 			return
 		}
-		id, err := loadOrCreateInstallID(ResolveDataDir())
+		dataDir := ResolveDataDir()
+		id, err := loadOrCreateInstallID(dataDir)
 		if err != nil {
 			logWarn(logComponentServer, "install id could not be stored (%v); no ping this time", err)
 			return
 		}
-		_ = sendInstallPing(context.Background(), id, releaseTag(), installPlatform())
+		now := time.Now()
+		if !installPingDue(dataDir, now) {
+			return
+		}
+		if sendInstallPing(context.Background(), id, releaseTag(), installPlatform()) == nil {
+			markInstallPinged(dataDir, now)
+		}
 	}
 
 	ticker := time.NewTicker(installPingInterval)

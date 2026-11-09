@@ -1006,11 +1006,11 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     box-shadow: inset 0 0 0 1px var(--bf-rule);
     transition: box-shadow 0.15s ease;
 }
-/* A native select lists its options on its own background: it keeps an opaque one. */
+/* A select is a field like the others; its options carry their own opaque fill (theme-overlays.css). */
 #bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-select {
     border: 1px solid transparent;
     border-radius: var(--bf-r-control);
-    background-color: var(--background-secondary);
+    background-color: var(--bf-field);
     box-shadow: inset 0 0 0 1px var(--bf-rule);
 }
 #bookmark-form-modal .bookmark-form-modal-body :is(.bookmark-inline-input, .bookmark-inline-textarea, .bookmark-inline-select):focus {
