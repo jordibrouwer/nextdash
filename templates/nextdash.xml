@@ -57,6 +57,11 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.27.4 (2026-11-09)
+- Appearance: rows, chips, option cards and fields in Config, the list views and the windows follow the theme instead of showing as dark holes
+- Bookmarks: the / in the search box sits inside the field
+- Config: Monitoring, Unraid, Status page, Containers and AI Assistant open with a clearer first paragraph
+
 ### v1.27.3 (2026-11-09)
 - Appearance: dropdowns take the theme's look instead of the page's darkest colour
 - Watch feeds: a news item opened far down the list shows at once
@@ -79,12 +84,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Search: # searches by tag, with AND and OR, and : opens on your recent and most-used commands
 - Themes: Christmas Classic, Northern Lights and Gingerbread Village, with snow and lights
 - Many keys moved: an existing install is told once, and old keys say what replaced them for a while
-
-### v1.26.1 (2026-11-05)
-- Watch feeds: news nobody opened stops counting after a day (4 hours to 30 days in Config), the hover card pages through ten items and names the total, and the count reads 9+ from ten
-- Notifications: new watched news is one bell row with its own chime and a nodding bell, and every row shows how old it is
-- Notifications: the bell shakes and pulses every hour while something is unread, and rings only for more, not for less
-- Fixes: the bell panel draws over the Inbox, Containers and Glances headers; no hover card in the phone layout; no dot on page tabs
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
