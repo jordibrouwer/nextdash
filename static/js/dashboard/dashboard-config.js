@@ -14087,7 +14087,7 @@ class DashboardConfig {
         return `
             <div class="config-panel config-mode-legend">
                 <h3 class="config-panel-title">${esc(this.t('config.checkModeExplainTitle', 'How availability checking works'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.statusModesLead', 'Each bookmark is set to one of three modes, in its own editor or with a right-click on the dashboard. The settings on this tab decide how those checks are carried out.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.statusModesLead', 'nextDash checks whether your bookmarks still open, so a broken one shows up before you click it. How often, and what it keeps, depends on the mode each bookmark has; the settings on this tab decide how those checks run.'))}</p>
                 <ul class="config-mode-list">${modes}</ul>
                 <p class="config-panel-note">${esc(this.t('config.statusModesWhere', 'Set a bookmark’s mode under Bookmarks → Edit, or right-click it on the dashboard.'))}</p>
             </div>`;
@@ -14736,7 +14736,7 @@ class DashboardConfig {
             'feeds': ['config.statsNoteFeeds', 'What your watched feeds publish, what you read of it, and how their checks go.'],
         },
         containers: {
-            'connection': ['config.containersNoteConnection', 'How nextDash reaches Docker, and whether that connection works right now.'],
+            'connection': ['config.containersNoteConnection', 'The Containers view lists the Docker containers on this machine, with their state, updates and web addresses. This tab sets how nextDash reaches Docker, and shows whether that connection works right now.'],
             'view': ['config.containersNoteView', 'How the Containers view looks and refreshes, and which containers it leaves out.'],
             'updates': ['config.containersNoteUpdates', 'When nextDash checks for newer images, and the token it uses for GitHub.'],
             'alerts': ['config.containersNoteAlerts', 'What you are told when a container stops or fails, and which ones stay quiet.'],

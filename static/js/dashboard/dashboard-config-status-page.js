@@ -39,7 +39,7 @@
                     <p class="config-note config-note--warn" data-sp-load-error role="status" hidden></p>
                     <div class="config-panel status-page-about" data-sp-about>
                         <p>${t('statusPageAbout1',
-                            'The status page answers “does it work?” for the people who use your services, at home and over the internet, without access to this dashboard. They see your groups, each service’s state, since when one is down, planned maintenance and 30 days of history, in their own language and in light or dark. It refreshes itself every minute.')}</p>
+                            'A page of its own, with its own link, for the people who use your services: is it working? They see each service\'s state, since when one is down, planned maintenance and 30 days of history, without access to this dashboard. It refreshes every minute.')}</p>
                         <p>${t('statusPageAbout2',
                             'They never see error details, container images or internal addresses, unless you switch on Link for a service. Set it up from top to bottom: turn it on and share the link, give it a title, make groups of services, and link your maintenance windows. Everything saves as you go.')}
                             <a class="config-link-btn" href="#config/help/monitoring">${t('statusPageAboutHelp', 'More in Help')}</a></p>

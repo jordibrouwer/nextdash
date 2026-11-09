@@ -201,7 +201,7 @@
             <div class="config-panel" data-unraid-section data-unraid-panel="connection"${this.unraidPanelHidden('connection')}>
                 <h3 class="config-panel-title">${t('unraidTitle', 'Unraid')}</h3>
                 <p class="config-panel-note">${t('unraidIntro',
-                    'Make an API key in Unraid with the role Viewer (Settings → Management Access → API Keys). nextDash only reads.')}</p>
+                    'The Unraid widgets show your server\'s array, parity, shares, VMs, UPS and alerts. nextDash asks the server about once a minute and only reads: it never starts, stops or changes anything. To connect, make an API key in Unraid with the role Viewer (Settings → Management Access → API Keys) and fill it in below.')}</p>
                 <div class="config-field">
                     <label class="config-field-label" for="config-unraid-base-url">${t('unraidAddress', 'Address')}</label>
                     <input type="url" id="config-unraid-base-url" class="config-text" data-unraid-field="baseUrl"
