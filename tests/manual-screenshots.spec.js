@@ -372,7 +372,7 @@ test('14 side panel', async ({ page }) => {
 test('14 disk', async ({ page }) => {
     await prepare(page);
     await openContainers(page);
-    await page.keyboard.press('d');
+    await page.keyboard.press(']');
     await page.getByText('Bind mounts').first().waitFor();
     await page.waitForTimeout(1_000);
     // Down past the header, so the first bind mounts are in the frame.
@@ -674,7 +674,7 @@ test('06 qr code', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
     await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Shift+Q');
+    await page.keyboard.press('q');
     await page.locator('#app-modal.show .bookmark-qr-modal').waitFor();
     await page.waitForTimeout(800);
     await snap(page, modal(page), '06-qr-code.jpg', { pad: 4 });
@@ -699,7 +699,7 @@ test('06 edit in place', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
     await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Shift+E');
+    await page.keyboard.press('e');
     const form = page.getByRole('dialog', { name: 'Edit Bookmark' });
     await form.waitFor();
     await page.waitForTimeout(1_200);
@@ -884,7 +884,7 @@ test.describe('drift', () => {
         await openBookmarksView(page);
         await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
         // Work through, on the pile of pages that changed.
-        await page.keyboard.press('f');
+        await page.keyboard.press('u');
         await page.locator('.health-focus-pile', { hasText: 'Changed or wrong content' }).click();
         const card = page.locator('.health-focus-overlay .health-focus-card').first();
         await card.locator('.health-drift-badge').waitFor();
@@ -1323,7 +1323,7 @@ test('full 11 health in large', async ({ page }) => {
     await page.locator('#config-bm-list .config-bm-row', { hasText: 'go.dev' }).first().click();
     await page.waitForTimeout(400);
     await page.keyboard.press('Escape');
-    await page.keyboard.press('Shift+B');
+    await page.keyboard.press('l');
     await page.locator('#app-modal.show .modal.bm-health-large').waitFor();
     await page.waitForTimeout(2_000);
     await shot(page, '11-health-large.jpg');

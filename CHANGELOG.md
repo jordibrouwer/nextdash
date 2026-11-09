@@ -163,6 +163,8 @@ The install count counts installs, not test servers: it waits until a server has
 ### Docs
 
 - **docs — Manual §23.8.** The install count says it starts on the second day, that a restart sends nothing more within the day, and names the `install-ping` file.
+- **docs — Manual pictures retaken.** 159 pictures in `screenshots/manual.md/` are taken again on a fresh seed, so they show the dropdowns in the theme's fill and the key legend under each Config page. Eight shot specs still pressed the old keys and stopped (Disk on `d`, the QR code on `Shift+Q`, edit in place on `Shift+E`, the news on `Shift+N`, Work through on `f`, health in large on `Shift+B`); they use `]`, `q`, `e`, `Shift+W`, `u` and `l` now.
+- **docs — Manual §18.8.** The Version panel's links point at the changelog on nextdash.cc/changelog and the manual on nextdash.cc/docs; it still said both were on GitHub.
 - **docs — Unraid template.** `nextdash.xml` carries the v1.27.2 date and changes, in this repository and in `unraid_templates`.
 
 ---

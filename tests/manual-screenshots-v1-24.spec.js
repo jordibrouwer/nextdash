@@ -46,7 +46,7 @@ const row = (page, name) => page.locator('#dashboard-layout .category:not([data-
 /** The news window, opened with its key and shown in one of its looks. */
 async function openNews(page, view) {
     await openDashboard(page);
-    await page.keyboard.press('Shift+N');
+    await page.keyboard.press('Shift+W');
     const root = page.locator('[data-feed-news]');
     await root.waitFor({ state: 'visible' });
     await page.locator(`.feed-news-view[data-feed-news-view="${view}"]`).click();
