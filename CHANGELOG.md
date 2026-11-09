@@ -148,6 +148,10 @@ The install count counts installs, not test servers: it waits until a server has
 
 - **fix — The install count waits a day and then sends once a day at most.** A server started on an empty data folder (a test run, a CI job, a smoke test, a `go run`) counted as a new install the moment it started, and a container that restarted in a loop sent a request on every start. `installPingDue` in `install_ping.go` now holds the request back until the `install-id` file is 23 hours old, and the new `install-ping` file in the data folder keeps the time of the last request so that no second one goes out within 23 hours. An install that predates the file sends at its next start as before. `NEXTDASH_DISABLE_INSTALL_PING=1` still switches the count off for a run that lasts longer.
 
+### Config
+
+- **fix — The Version panel in Config → Overview links the changelog on nextdash.cc.** The *here* after "full changelog" opened `CHANGELOG.md` on GitHub; it now opens `https://nextdash.cc/changelog/`, next to the manual on nextdash.cc/docs. The Changelog button under About still points at GitHub.
+
 ### Docs
 
 - **docs — Manual §23.8.** The install count says it starts on the second day, that a restart sends nothing more within the day, and names the `install-ping` file.
