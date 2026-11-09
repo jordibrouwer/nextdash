@@ -92,7 +92,7 @@
                 <div class="config-panel" data-ai-section="enable">
                     <h3 class="config-panel-title">${t('assistantPanelEnable', 'Turn it on')}</h3>
                     <p class="config-panel-note">${t('assistantNote',
-                        'The assistant answers questions about your bookmarks, and about Health, the Inbox and your containers when you allow it, with a model you choose. It is off until you turn it on, and nothing is sent to the provider until you ask a question or press Test connection.')}</p>
+                        'Ask questions about your bookmarks in plain words, answered by an AI model you choose. When you allow it, it also looks at Health, the Inbox and your containers. It is off until you turn it on, and nothing goes to the provider until you ask a question or press Test connection.')}</p>
                     <div class="config-field-row">
                         <label class="config-toggle">
                             <input type="checkbox" data-ai-setting="aiEnabled" ${s.aiEnabled === true ? 'checked' : ''}${dis}>
