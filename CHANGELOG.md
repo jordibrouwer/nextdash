@@ -163,6 +163,7 @@ The install count counts installs, not test servers: it waits until a server has
 ### Docs
 
 - **docs — Manual §23.8.** The install count says it starts on the second day, that a restart sends nothing more within the day, and names the `install-ping` file.
+- **docs — Unraid template.** `nextdash.xml` carries the v1.27.2 date and changes, in this repository and in `unraid_templates`.
 
 ---
 
