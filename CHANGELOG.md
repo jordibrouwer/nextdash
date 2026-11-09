@@ -142,7 +142,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.27.3 — 9 November 2026
 
-The install count counts installs, not test servers: it waits until a server has run for a day and sends at most one request a day.
+The install count counts installs, not test servers: it waits until a server has run for a day and sends at most one request a day. Dropdowns take the theme's material instead of the page's darkest colour.
 
 ### Privacy
 
@@ -155,6 +155,10 @@ The install count counts installs, not test servers: it waits until a server has
 ### Watch feeds
 
 - **fix — Opening a news item from far down the list shows it.** In the news window on a phone the two columns fold into one, with the article on top and the other items below it. Tapping an item (or the arrows under the article) opened the new article above the window's scroll position, out of sight. The window now scrolls back to the top when an article opens, and holds still for someone who asked for reduced motion (`scrollArticleIntoView` in `dashboard-feed-watch-news.js`). Covered by `tests/feed-watch-scroll.spec.js`.
+
+### Appearance
+
+- **fix — Dropdowns follow the theme.** A closed dropdown was filled with the page's darkest colour (`--background-secondary`, opaque) and read as a hole beside the see-through text fields. On a Signature material it now takes the material's field fill and rule, like the text fields, everywhere: Config, the list views, the theme studio, the bookmark form, the modals, the Inbox, Watch feeds, the tag view and the widget sheets. The options of a native dropdown carry the theme's raised surface (`--surface-2`, opaque) instead, so its list never shows the page through it, in Classic too. The theme picker's open list is drawn as the other small layers are (`theme-overlays.css`, `bookmark-form-modal.css`; `overlay-legibility.spec.js` and `overlay-parts.spec.js` now ask for closed options rather than a closed select). Classic keeps its closed dropdowns as they were.
 
 ### Docs
 
