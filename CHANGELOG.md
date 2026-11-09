@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.27.4 — 9 November 2026](#v1274--9-november-2026)
 - [v1.27.3 — 9 November 2026](#v1273--9-november-2026)
 - [v1.27.2 — 9 November 2026](#v1272--9-november-2026)
 - [v1.27.1 — 8 November 2026](#v1271--8-november-2026)
@@ -137,6 +138,25 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.27.4 — 9 November 2026
+
+The rest of Config and the list views follow the theme: chips, option cards, rows, fields and drawings no longer show as dark holes on a Signature material. Five Config sections open with a clearer first paragraph.
+
+### Appearance
+
+- **fix — Dark fills inside the views and windows follow the material.** Rows, chips, option cards, segmented tabs, fields and the drawings beside a setting were painted in the page's two darkest colours (`--background-primary`, `--background-secondary`), opaque, and read as dark holes on a see-through Signature panel: the Unraid widget chips and the How it works boxes, the Turn on checking cards, Pages and categories, Your rules and Local copies under Config → Bookmarks, the Watch feeds fields, the import cards under Data & backups, Add a widget, and the group rows in Containers. Inside a Config view, a list view (`.lvs`: Containers, Tags, Inbox, Health) and a window (`.modal`) the two colours now become the material's field fill and a light lift of the text colour. What must stay solid keeps the page colour, kept as `--solid-background-primary` and `--solid-background-secondary`: the options of a dropdown, the sticky column heads, the list views' sticky head and the bulk-select bar. The Collection menu in the Bookmarks view and the ⋯ menu of Pages and categories are drawn as solid small layers, like the other menus, so the list no longer shows through them (`theme-overlays.css`). Classic is unchanged.
+- **fix — The `/` in the Bookmarks search box sits inside the field.** The chip was as tall as the field but 8px from its end, and looked stuck on. It now sits 3px from the field's top, bottom and right edge, with corners that follow the field's (`config-bookmarks-workbench.css`).
+
+### Config
+
+- **fix — A clearer first paragraph in five sections.** Monitoring says what the checks are for before the three modes; Unraid says what the widgets show and that nextDash only reads, before asking for the key; Status page says it is a page of its own for the people who use your services; Containers says what the view lists before the connection settings; AI Assistant says what you can ask in plain words. English only for now; the other languages follow in the next docs round.
+
+### Docs
+
+- **docs — Unraid template.** `nextdash.xml` carries the v1.27.3 date and changes.
 
 ---
 
