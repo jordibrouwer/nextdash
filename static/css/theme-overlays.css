@@ -1224,7 +1224,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 /* The head of a table is solid, because rows pass under it, and sits on the plate like a rail row. */
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs .lvs-colhead, .lvs .tag-view-colhead, .lvs .docker-table thead th, .config-view--library .config-bm-colhead) {
-    background-color: color-mix(in srgb, var(--text-primary) 9%, var(--surface-2, var(--background-secondary)));
+    background-color: color-mix(in srgb, var(--text-primary) 9%, var(--surface-2, var(--solid-background-secondary)));
     border-bottom: 1px solid var(--ov-rule);
     border-radius: var(--ov-r-item) var(--ov-r-item) 0 0;
 }
@@ -1717,3 +1717,61 @@ select optgroup {
     background-color: var(--surface-2, var(--background-secondary));
     color: var(--text-primary);
 }
+
+/* ── Dark fills inside a view or a window ─────────────────────────────────
+ * Rows, chips, option cards, segmented tabs, drawings and fields across the
+ * views and windows paint themselves in the page's two darkest colours,
+ * --background-primary and --background-secondary. Both are opaque, and on a
+ * see-through Signature panel every one of them read as a dark hole: the
+ * Unraid chips, the Turn on checking cards, Pages and categories, the rules
+ * form, local copies, the Watch feeds fields, the group rows of Containers.
+ * Inside a view (.config-view, the list views' .lvs) and a window (.modal)
+ * the two tokens become the material's own: the field
+ * fill, and a lift of the ink. The panels themselves keep their colour: the
+ * view and the window paint with their own material fill, and the window
+ * with --background-modal.
+ *
+ * Menus that open over the list need to stay solid, so they join the small
+ * layers below; the sticky bulk-select bar is put back on an opaque surface.
+ */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] {
+    /* The page's own two colours, kept for what must stay solid inside. */
+    --solid-background-primary: var(--background-primary);
+    --solid-background-secondary: var(--background-secondary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-view, .modal, .lvs) {
+    --background-primary: var(--ov-field-fill);
+    --background-secondary: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-bm-more-menu, .config-structure-menu) {
+    background-color: var(--ov-fill-small);
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image, none), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-view, .modal, .lvs) :is(select option, select optgroup) {
+    background-color: var(--surface-2, var(--solid-background-secondary));
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-view, .lvs) .multi-select-toolbar {
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--solid-background-secondary)));
+}
+
+/* The plate's own sticky head keeps the page colour it was drawn in. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .lvs-header {
+    background: color-mix(in srgb, var(--solid-background-secondary) 55%, transparent);
+}
+
+/* The drawings beside a setting (setting-art.js): the frame takes the field
+ * fill, and what stands on it (chips, rows, tabs) a lift of the ink. Every
+ * fill inside a drawing is written in those two tokens, so they all follow,
+ * also where a drawing is shown outside a view. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .setting-art-frame {
+    --background-primary: var(--ov-field-fill);
+    --background-secondary: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+
