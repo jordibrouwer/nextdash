@@ -143,7 +143,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.27.4 — 9 November 2026
 
-The rest of Config and the list views follow the theme: chips, option cards, rows, fields and drawings no longer show as dark holes on a Signature material. Five Config sections open with a clearer first paragraph.
+The rest of Config and the list views follow the theme: chips, option cards, rows, fields and drawings no longer show as dark holes on a Signature material. Five Config sections open with a clearer first paragraph. Held back from the What's new window (`hideFromModal`) like v1.27.1 to v1.27.3, so v1.27.0 keeps leading it.
 
 ### Appearance
 
@@ -152,7 +152,7 @@ The rest of Config and the list views follow the theme: chips, option cards, row
 
 ### Config
 
-- **fix — A clearer first paragraph in five sections.** Monitoring says what the checks are for before the three modes; Unraid says what the widgets show and that nextDash only reads, before asking for the key; Status page says it is a page of its own for the people who use your services; Containers says what the view lists before the connection settings; AI Assistant says what you can ask in plain words. English only for now; the other languages follow in the next docs round.
+- **fix — A clearer first paragraph in five sections.** Monitoring says what the checks are for before the three modes; Unraid says what the widgets show and that nextDash only reads, before asking for the key; Status page says it is a page of its own for the people who use your services; Containers says what the view lists before the connection settings; AI Assistant says what you can ask in plain words. The five texts are in Dutch, German, French, Spanish and Chinese too.
 
 ### Docs
 

@@ -1,0 +1,30 @@
+{
+  "tag": "v1.27.4",
+  "date": "9 November 2026",
+  "releasedAt": "2026-11-09",
+  "modalLead": "Rows, chips and fields in Config, the list views and the windows follow the theme, and five Config sections open with a clearer first paragraph.",
+  "sections": [
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Dark fills inside the views and windows follow the material.</strong> Rows, chips, option cards, fields and the drawings beside a setting no longer show as dark holes on a see-through Signature panel."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The <code>/</code> in the Bookmarks search box sits inside the field.</strong>"
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A clearer first paragraph in five sections.</strong> Monitoring, Unraid, Status page, Containers and AI Assistant now say what they are for before the settings."
+        }
+      ]
+    }
+  ]
+}
