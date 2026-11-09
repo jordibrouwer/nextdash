@@ -1775,3 +1775,8 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     --background-secondary: color-mix(in srgb, var(--text-primary) 9%, transparent);
 }
 
+/* The / in the Bookmarks search box follows the field's corners, which a
+ * Signature material sets with --ov-r-control. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-bm-search kbd {
+    border-radius: max(2px, calc(var(--ov-r-control) - var(--bm-search-kbd-inset, 3px)));
+}

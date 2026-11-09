@@ -60,11 +60,22 @@
     font-size: calc(var(--font-size-text) * 0.914);
 }
 
+/* The / sits inside the field's end, the same 3px from its top, bottom and
+   right edge, with corners that follow the field's: a chip as tall as the
+   field but 8px from its end read as stuck on, not part of the box. */
 .config-bm-search kbd {
+    --bm-search-kbd-inset: 3px;
     position: absolute;
-    right: var(--space-2, 0.5rem);
-    top: 50%;
-    transform: translateY(-50%);
+    top: var(--bm-search-kbd-inset);
+    bottom: var(--bm-search-kbd-inset);
+    right: var(--bm-search-kbd-inset);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.6rem;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: max(2px, calc(var(--layout-radius-sm) - var(--bm-search-kbd-inset)));
     pointer-events: none;
 }
 
