@@ -57,6 +57,12 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.27.3 (2026-11-09)
+- Appearance: dropdowns take the theme's look instead of the page's darkest colour
+- Watch feeds: a news item opened far down the list shows at once
+- Privacy: the install count waits a day and sends at most once a day
+- Config: the Version panel links the changelog on nextdash.cc
+
 ### v1.27.2 (2026-11-09)
 - Config: selects, checkboxes and radios wear the theme, and the preview beside the Appearance tabs is no longer black
 - Watch feeds: the list is a table with a column head, like Structure
@@ -79,13 +85,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Notifications: new watched news is one bell row with its own chime and a nodding bell, and every row shows how old it is
 - Notifications: the bell shakes and pulses every hour while something is unread, and rings only for more, not for less
 - Fixes: the bell panel draws over the Inbox, Containers and Glances headers; no hover card in the phone layout; no dot on page tabs
-
-### v1.26.0 (2026-11-05)
-- Notifications: a bell in the navigation bar holds questions, notices and two tips a day instead of popping up
-- Header: a large clock with a greeting by name
-- Widgets: a Clock with a face, the moon and the sun, a Countdown with a large figure, and AdGuard Home and Pi-hole widgets
-- Start-up: the theme stylesheet shrinks from 9.4 MB to 379 KB, and Tarnished Brass is the theme a new install starts on
-- Fixes: eight from a code review, among them a decimal comma in the calculator and a Tabs widget off its schedule
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
