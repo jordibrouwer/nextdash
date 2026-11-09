@@ -406,7 +406,7 @@ body[data-scrolled="true"] .lvs-header {
        band, and at 90% they stay a faint shape instead of competing with the
        title, the filter and the search box. Any lower and the words in the
        band get hard to read over busy rows. */
-    background: color-mix(in srgb, color-mix(in srgb, var(--background-secondary) 70%, var(--background-primary)) 90%, transparent);
+    background: color-mix(in srgb, color-mix(in srgb, var(--solid-background-secondary, var(--background-secondary)) 70%, var(--solid-background-primary, var(--background-primary))) 90%, transparent);
     border-bottom: 1px solid var(--hairline, var(--border-primary));
     transition: background 0.18s ease, border-color 0.18s ease;
 }
