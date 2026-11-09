@@ -142,7 +142,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.27.3 — 9 November 2026
 
-The install count counts installs, not test servers: it waits until a server has run for a day and sends at most one request a day. Dropdowns take the theme's material instead of the page's darkest colour.
+The install count counts installs, not test servers: it waits until a server has run for a day and sends at most one request a day. Dropdowns take the theme's material instead of the page's darkest colour. Held back from the What's new window (`hideFromModal`) like v1.27.1 and v1.27.2, so v1.27.0 keeps leading it.
 
 ### Privacy
 
@@ -163,6 +163,7 @@ The install count counts installs, not test servers: it waits until a server has
 ### Docs
 
 - **docs — Manual §23.8.** The install count says it starts on the second day, that a restart sends nothing more within the day, and names the `install-ping` file.
+- **docs — `static/data/whats-new/v1.27.3.json` and its index entry, held back from the modal;** `NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v370`, `DASHBOARD_RELEASE` stays on v1.27.0, and `whats-new-hidden-release.spec.js` follows.
 - **docs — Manual pictures retaken.** 159 pictures in `screenshots/manual.md/` are taken again on a fresh seed, so they show the dropdowns in the theme's fill and the key legend under each Config page. Eight shot specs still pressed the old keys and stopped (Disk on `d`, the QR code on `Shift+Q`, edit in place on `Shift+E`, the news on `Shift+N`, Work through on `f`, health in large on `Shift+B`); they use `]`, `q`, `e`, `Shift+W`, `u` and `l` now.
 - **docs — Manual §18.8.** The Version panel's links point at the changelog on nextdash.cc/changelog and the manual on nextdash.cc/docs; it still said both were on GitHub.
 - **docs — Unraid template.** `nextdash.xml` carries the v1.27.2 date and changes, in this repository and in `unraid_templates`.

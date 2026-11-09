@@ -1,0 +1,44 @@
+{
+  "tag": "v1.27.3",
+  "date": "9 November 2026",
+  "releasedAt": "2026-11-09",
+  "modalLead": "Dropdowns follow the theme, the install count waits a day, and a news item opened far down the list shows at once.",
+  "sections": [
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Dropdowns follow the theme.</strong> They were filled with the page's darkest colour; now they look like the text fields beside them, and their lists take the theme's surface."
+        }
+      ]
+    },
+    {
+      "title": "Watch feeds",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Opening a news item from far down the list shows it.</strong> On a phone the news window now scrolls to the top when an article opens."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The Version panel links the changelog on nextdash.cc.</strong>"
+        }
+      ]
+    },
+    {
+      "title": "Privacy",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The install count waits a day.</strong> A server only counts once it has run for a day, and sends at most one request a day."
+        }
+      ]
+    }
+  ]
+}
