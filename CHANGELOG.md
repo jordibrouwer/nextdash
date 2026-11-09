@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.27.3 — 9 November 2026](#v1273--9-november-2026)
 - [v1.27.2 — 9 November 2026](#v1272--9-november-2026)
 - [v1.27.1 — 8 November 2026](#v1271--8-november-2026)
 - [v1.27.0 — 8 November 2026](#v1270--8-november-2026)
@@ -136,6 +137,20 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.27.3 — 9 November 2026
+
+The install count counts installs, not test servers: it waits until a server has run for a day and sends at most one request a day.
+
+### Privacy
+
+- **fix — The install count waits a day and then sends once a day at most.** A server started on an empty data folder (a test run, a CI job, a smoke test, a `go run`) counted as a new install the moment it started, and a container that restarted in a loop sent a request on every start. `installPingDue` in `install_ping.go` now holds the request back until the `install-id` file is 23 hours old, and the new `install-ping` file in the data folder keeps the time of the last request so that no second one goes out within 23 hours. An install that predates the file sends at its next start as before. `NEXTDASH_DISABLE_INSTALL_PING=1` still switches the count off for a run that lasts longer.
+
+### Docs
+
+- **docs — Manual §23.8.** The install count says it starts on the second day, that a restart sends nothing more within the day, and names the `install-ping` file.
 
 ---
 
