@@ -25,7 +25,8 @@ func TestNetResultSampleTruncatesDetail(t *testing.T) {
 
 func TestRunNetCheckUnbuiltTypeAnswersOther(t *testing.T) {
 	h, _ := patchTestHandlers(t)
-	res := h.runNetCheck(context.Background(), Bookmark{URL: "https://a.example/"}, NetCheck{ID: "x", Type: netTypeTLS})
+	// Every kind is built now, so the type that nothing runs is one that does not exist.
+	res := h.runNetCheck(context.Background(), Bookmark{URL: "https://a.example/"}, NetCheck{ID: "x", Type: "nothing"})
 	if res.OK || res.Class != "other" || res.Error == "" || res.Host != "a.example" || res.CheckID != "x" {
 		t.Fatalf("%+v", res)
 	}

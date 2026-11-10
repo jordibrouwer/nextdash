@@ -26,14 +26,25 @@ type miekgDNS struct {
 
 func (f *miekgDNS) serve(t *testing.T) func(string) []string {
 	t.Helper()
-	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	f.addr = pc.LocalAddr().String()
-	ln, err := net.Listen("tcp", f.addr)
-	if err != nil {
-		t.Fatal(err)
+	// A free UDP port is not always a free TCP port, since another process may hold
+	// that one: take another UDP port and try again.
+	var pc net.PacketConn
+	var ln net.Listener
+	for attempt := 0; ; attempt++ {
+		var err error
+		pc, err = net.ListenPacket("udp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatal(err)
+		}
+		f.addr = pc.LocalAddr().String()
+		ln, err = net.Listen("tcp", f.addr)
+		if err == nil {
+			break
+		}
+		_ = pc.Close()
+		if attempt >= 20 {
+			t.Fatal(err)
+		}
 	}
 	handler := dns.HandlerFunc(func(w dns.ResponseWriter, req *dns.Msg) {
 		f.queries.Add(1)
