@@ -90,7 +90,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/view-explainers.css":                                "c1d20f79ab8b",
 	"css/widgets-tutorial.css":                               "49988d82d937",
 	"js/action-bar-intro.js":                                 "d5e3ebe0de8c",
-	"js/analytics-notice.js":                                 "08a9865712b5",
+	"js/analytics-notice.js":                                 "9ad6ee9aeef5",
 	"js/analytics.js":                                        "edd124afdb1c",
 	"js/app-discovery-card.js":                               "66fe42c852cd",
 	"js/app-discovery-notice.js":                             "d64070651ca2",
