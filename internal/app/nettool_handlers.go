@@ -89,6 +89,11 @@ func netCheckStateFor(c NetCheck, samples []HealthSample) *netStateView {
 	if st != nil && c.Type == netTypeTLS && st.OK && st.Secondary <= netTLSMinDays(c) {
 		st.Warn = true
 	}
+	// The detail of a JSON check is the value it found: a value that says
+	// "slow" or "via TCP" is not a state.
+	if st != nil && c.Type == netTypeJSON {
+		st.Slow, st.ViaTCP = false, false
+	}
 	return st
 }
 

@@ -115,6 +115,7 @@
                 timeoutSec: check.timeoutSec || 5,
                 type: check.type, record: check.record, expect: check.expect, detail: check.state?.detail,
                 expectStatus: check.expectStatus, expectHeader: check.expectHeader,
+                path: check.path, op: check.op,
             }, t);
             if (!block) return '';
             return this.renderNetBlockHtml(block, { retest: `data-net-action="retest" data-net-id="${this.dash.escapeHtml(check.id)}"` });
@@ -158,6 +159,7 @@
                 muted: check.muted === true,
                 record: check.record || 'A', expect: check.expect || '', watchDrift: check.watchDrift === true,
                 endpoint: check.endpoint || '', expectStatus: check.expectStatus || '', expectHeader: check.expectHeader || '',
+                path: check.path || '', op: check.op || 'eq', credentialId: check.credentialId || '',
             };
         },
 
@@ -174,6 +176,7 @@
                 muted: draft.muted === true,
                 record: draft.record || 'A', expect: String(draft.expect || '').trim(), watchDrift: draft.watchDrift === true,
                 endpoint: String(draft.endpoint || '').trim(), expectStatus: String(draft.expectStatus || '').trim(), expectHeader: String(draft.expectHeader || '').trim(),
+                path: String(draft.path || '').trim(), op: String(draft.op || 'eq'), credentialId: String(draft.credentialId || '').trim(),
             };
         },
 
@@ -222,6 +225,23 @@
                     ${field('expectHeader', t('nettools.fieldExpectHeader', 'Expected header'), input('expectHeader', d.expectHeader, 'text', `spellcheck="false" maxlength="200" placeholder="${esc(t('nettools.fieldExpectHeaderPlaceholder', 'Optional, like server: nginx'))}"`),
                         t('nettools.fieldExpectHeaderHint', 'The answer must have this header, and contain the text after the colon when there is one.'))}
                     ${field('maxMs', t('nettools.fieldSlowFirstByte', 'Slow from (ms to first byte)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}`;
+            }
+            if (d.type === 'json') {
+                const opLabels = { eq: t('nettools.opEqOption', 'is equal to'), ne: t('nettools.opNeOption', 'is not equal to'), gt: t('nettools.opGtOption', 'is more than'), lt: t('nettools.opLtOption', 'is less than'), contains: t('nettools.opContainsOption', 'contains'), exists: t('nettools.opExistsOption', 'exists') };
+                const opOptions = M.JSON_OPS.map((op) => `<option value="${op}"${d.op === op ? ' selected' : ''}>${esc(opLabels[op])}</option>`).join('');
+                const creds = this._bmNetCreds || null;
+                const credOptions = [['', b.credentialId ? t('nettools.credBookmark', "The bookmark's own credential") : t('nettools.credNone', 'None')]]
+                    .concat(Object.entries(creds || {}).sort((x, y) => String(x[1]).localeCompare(String(y[1]))))
+                    .map(([id, label]) => `<option value="${esc(id)}"${d.credentialId === id ? ' selected' : ''}>${esc(label)}</option>`).join('');
+                params = `${field('endpoint', t('nettools.fieldPath', 'Path'), input('endpoint', d.endpoint, 'text', `spellcheck="false" maxlength="200" placeholder="${esc(t('nettools.fieldPathPlaceholder', "The bookmark's own address"))}"`),
+                    t('nettools.fieldJsonUrlHint', 'A path on the same host that answers with JSON, such as /api/health. Empty requests the bookmark address.'))}
+                    ${field('path', t('nettools.fieldJsonPath', 'Value to look at'), input('path', d.path, 'text', `spellcheck="false" maxlength="200" placeholder="${esc(t('nettools.fieldJsonPathPlaceholder', 'db.state'))}"`),
+                        t('nettools.fieldJsonPathHint', 'Dots for objects, [0] for a list position, [name=api] to pick an entry, a trailing # to count. A path that names a token, key, secret or password never shows its value.'))}
+                    ${field('op', t('nettools.fieldJsonOp', 'Up when it'), `<select class="config-select" data-net-field="op">${opOptions}</select>`)}
+                    ${d.op === 'exists' ? '' : field('expect', t('nettools.fieldJsonExpect', 'Expected value'), input('expect', d.expect, 'text', `spellcheck="false" maxlength="200" placeholder="${esc(t('nettools.fieldJsonExpectPlaceholder', 'ok'))}"`))}
+                    ${field('credentialId', t('nettools.fieldCredential', 'Credential'), `<select class="config-select" data-net-field="credentialId">${credOptions}</select>`,
+                        t('nettools.fieldCredentialHint', "Sent only to this bookmark's own host. Credentials are made in the bookmark's Health settings."))}`;
+                if (!creds) void this.loadBmNetCredentials(b);
             }
             if (d.type === 'dns') {
                 const recordOptions = M.DNS_RECORDS.map((r) => `<option value="${r}"${d.record === r ? ' selected' : ''}>${esc(r)}</option>`).join('');
@@ -336,7 +356,9 @@
             return `
                 <div class="net-test-row">
                     <button type="button" class="config-btn config-btn--small" data-net-action="form-test"${running ? ' disabled' : ''}>${esc(t('nettools.testFirst', 'Test first'))}</button>
-                    <span class="config-bm-panel-muted">${esc(stored ? t('nettools.testSavedHint', 'Tests the saved check.') : t('nettools.testOneOffHint', 'Tests the bookmark address once. Nothing is saved.'))}</span>
+                    <span class="config-bm-panel-muted">${esc(ed.draft.type === 'json'
+                        ? t('nettools.testJsonHint', 'Tests what the form says, once. Nothing is saved.')
+                        : (stored ? t('nettools.testSavedHint', 'Tests the saved check.') : t('nettools.testOneOffHint', 'Tests the bookmark address once. Nothing is saved.')))}</span>
                 </div>
                 ${result}`;
         },
@@ -352,12 +374,20 @@
          * bookmark's own address. Resolves to { ok, res } or { ok: false,
          * error } with a sentence for the reader; it never throws.
          */
-        async runBmNetTest(b, { type = '', checkId = '', record = '' } = {}) {
+        async runBmNetTest(b, { type = '', checkId = '', record = '', json = null } = {}) {
             const body = { pageId: b.pageId, url: b.url };
             if (checkId) body.checkId = checkId;
             else {
                 body.type = type;
                 if (type === 'dns') body.record = record || 'A';
+                // A JSON test says what to look at; it still names no host or port.
+                if (type === 'json' && json) {
+                    body.path = json.path;
+                    body.op = json.op;
+                    if (json.expect) body.expect = json.expect;
+                    if (json.endpoint) body.endpoint = json.endpoint;
+                    if (json.credentialId) body.credentialId = json.credentialId;
+                }
             }
             const t = (k, f) => this.bmNetT(k, f);
             try {
@@ -507,6 +537,30 @@
             if (st.editing) st.editing.serverError = message;
             else st.error = message;
             return false;
+        },
+
+        /**
+         * The names of the stored credentials, for a JSON check's picker: ids
+         * and labels only, never a value. Read once; the form is drawn again
+         * when they arrive.
+         */
+        async loadBmNetCredentials(b) {
+            if (this._bmNetCredsLoading) return;
+            const shared = this.dash.healthCredentials;
+            if (shared && Object.keys(shared).length) {
+                this._bmNetCreds = shared;
+                return;
+            }
+            this._bmNetCredsLoading = true;
+            try {
+                const res = await global.fetch('/api/health/credentials', { cache: 'no-store' });
+                const body = res.ok ? await res.json() : null;
+                this._bmNetCreds = body?.credentials && typeof body.credentials === 'object' ? body.credentials : {};
+            } catch {
+                this._bmNetCreds = {};
+            }
+            this._bmNetCredsLoading = false;
+            if (this.bmNetState(b).editing?.draft?.type === 'json') this.paintBmNet(b);
         },
 
         async refreshBmNetCaps() {
@@ -724,6 +778,10 @@
                     if (event.type === 'change') this.paintBmNet(b);
                 } else if (name === 'timeoutSec') {
                     ed.draft.timeoutSec = Number(el.value) || 0;
+                } else if (name === 'op') {
+                    ed.draft.op = el.value;
+                    // "exists" has no value to compare with: the field goes.
+                    if (event.type === 'change') this.paintBmNet(b);
                 } else {
                     ed.draft[name] = el.value;
                 }
@@ -807,13 +865,29 @@
                 const ed = st.editing;
                 if (!ed || ed.test?.status === 'running') return;
                 const stored = ed.id ? st.checks.find((c) => c.id === ed.id) : null;
+                // A JSON test runs what the form says, saved or not: the path and
+                // the value are exactly what is being tried out.
+                const asDraft = ed.draft.type === 'json';
+                const draftCheck = asDraft ? this.bmNetCheckFromDraft(ed.draft, ed.id, b) : null;
+                if (asDraft) {
+                    const verdict = model().validate(draftCheck, this._bmNetCaps, (k, f) => this.bmNetT(k, f));
+                    const first = Object.values(verdict.errors)[0];
+                    if (first) {
+                        ed.errors = verdict.errors;
+                        ed.test = { status: 'error', error: first };
+                        this.paintBmNet(b);
+                        return;
+                    }
+                }
                 ed.test = { status: 'running' };
                 this.paintBmNetTest(b);
-                const out = await this.runBmNetTest(b, stored ? { checkId: ed.id } : { type: ed.draft.type, record: ed.draft.record });
+                let request = stored ? { checkId: ed.id } : { type: ed.draft.type, record: ed.draft.record };
+                if (asDraft) request = { type: 'json', json: draftCheck };
+                const out = await this.runBmNetTest(b, request);
                 if (st.editing !== ed) return;
                 ed.test = out.ok ? { status: 'done', res: out.res } : { status: 'error', error: out.error };
                 this.paintBmNetTest(b);
-                if (stored && out.ok) void this.refreshBmNetChecks(b);
+                if (stored && !asDraft && out.ok) void this.refreshBmNetChecks(b);
             } else if (action === 'accept-drift') {
                 if (st.saving || !id) return;
                 await this.acceptBmNetDrift(b, id);
@@ -890,7 +964,7 @@
 
         /** Fields a stored check may carry that the form owns: cleared so a removed value really goes. */
         bmNetClear(c) {
-            return { label: '', host: '', port: 0, minDaysLeft: 0, count: 0, maxLossPct: 0, maxMs: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, enabled: c.enabled, record: '', expect: '', watchDrift: false, endpoint: '', expectStatus: '', expectHeader: '' };
+            return { label: '', host: '', port: 0, minDaysLeft: 0, count: 0, maxLossPct: 0, maxMs: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, enabled: c.enabled, record: '', expect: '', watchDrift: false, endpoint: '', expectStatus: '', expectHeader: '', path: '', op: '', credentialId: '' };
         },
 
         focusBmNetForm(b, selector = 'input, select, button') {

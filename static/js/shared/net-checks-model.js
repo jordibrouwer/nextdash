@@ -30,6 +30,11 @@
     const HTTP_DEFAULT_STATUS = '200-299';
     const HTTP_ENDPOINT_MAX = 200;
     const HTTP_EXPECT_HEADER_MAX = 200;
+    // JSON check: the value to look at, how to judge it, and what to compare with.
+    const JSON_OPS = ['eq', 'ne', 'gt', 'lt', 'contains', 'exists'];
+    const JSON_PATH_MAX = 200;
+    const JSON_EXPECT_MAX = 200;
+    const JSON_SECRET_PATH = /token|key|secret|password/i;
     // Drift is on for the records that change rarely and mean something when
     // they do; off for A and AAAA, which rotate behind a CDN.
     const DRIFT_DEFAULT_ON = ['MX', 'TXT', 'NS', 'CNAME'];
@@ -112,6 +117,10 @@
         if (own) return own;
         const name = typeName(check && check.type);
         if (check.type === 'dns' && check.record) return `${name} \u00b7 ${check.record}`;
+        if (check.type === 'json' && String(check.path || '').trim()) {
+            const p = Array.from(String(check.path).trim());
+            return `${name} \u00b7 ${p.length > 28 ? `${p.slice(0, 28).join('')}\u2026` : p.join('')}`;
+        }
         if ((check.type === 'tcp' || check.type === 'tls')) {
             const port = targetOf(check, bm).port;
             if (port > 0) return `${name} ${port}`;
@@ -163,6 +172,32 @@
             return h === 1 ? t('nettools.oneHour', '1 hour') : fmt(t('nettools.nHours', '{n} hours'), { n: h });
         }
         return fmt(t('nettools.nMinutes', '{n} minutes'), { n: m });
+    }
+
+    /** "Up when the value at db.state is ok": the rule of a JSON check in words. */
+    function jsonRule(c, t) {
+        const path = String(c.path || '').trim() || '?';
+        const value = String(c.expect || '').trim() || '?';
+        switch (c.op) {
+        case 'exists': return fmt(t('nettools.ruleJsonExists', 'Up when there is a value at {path}'), { path });
+        case 'ne': return fmt(t('nettools.ruleJsonNe', 'Up when the value at {path} is not {value}'), { path, value });
+        case 'gt': return fmt(t('nettools.ruleJsonGt', 'Up when the value at {path} is more than {value}'), { path, value });
+        case 'lt': return fmt(t('nettools.ruleJsonLt', 'Up when the value at {path} is less than {value}'), { path, value });
+        case 'contains': return fmt(t('nettools.ruleJsonContains', 'Up when the value at {path} contains {value}'), { path, value });
+        default: return fmt(t('nettools.ruleJsonEq', 'Up when the value at {path} is {value}'), { path, value });
+        }
+    }
+
+    /** The operator in words, for a result: "is", "is not", "is more than", ... */
+    function jsonOpText(op, t) {
+        switch (op) {
+        case 'ne': return t('nettools.opNe', 'is not');
+        case 'gt': return t('nettools.opGt', 'is more than');
+        case 'lt': return t('nettools.opLt', 'is less than');
+        case 'contains': return t('nettools.opContains', 'contains');
+        case 'exists': return t('nettools.opExists', 'exists');
+        default: return t('nettools.opEq', 'is');
+        }
     }
 
     /**
@@ -222,6 +257,14 @@
             lines.push(t('nettools.ruleHttpRedirects', 'Follows up to 10 redirects; one to a private address is shown, not followed'));
             if (Number(c.maxMs) > 0) lines.push(fmt(t('nettools.ruleHttpSlow', 'Slow when the first byte takes longer than {ms} ms (still counts as up)'), { ms: c.maxMs }));
             lines.push(t('nettools.ruleHttpSeparate', "Separate from the bookmark's own HTTP check: it keeps its own history"));
+        } else if (c.type === 'json') {
+            const endpoint = String(c.endpoint || '').trim();
+            const where = endpoint ? `${hostText}${endpoint}` : hostText;
+            summary = fmt(t('nettools.explainJson', 'Requests {where}, reads the answer as JSON and looks at the value at {path}.'), { where, path: String(c.path || '').trim() || '?' });
+            lines.push(jsonRule(c, t));
+            lines.push(t('nettools.ruleJsonDown', 'Down when the answer is not 2xx, not JSON (or over 1 MB), has nothing at the path, or the value does not fit'));
+            if (JSON_SECRET_PATH.test(String(c.path || ''))) lines.push(t('nettools.ruleJsonHidden', 'The path names a secret, so the value is never shown or kept'));
+            lines.push(t('nettools.ruleJsonCredential', "A stored credential goes only to this bookmark's own host, never after a redirect elsewhere, and never into a result"));
         } else {
             summary = fmt(t('nettools.explainOther', 'Runs a {type} check on {host}.'), { type: name, host: hostText });
         }
@@ -312,6 +355,14 @@
                 actions: [],
             };
         case 'http':
+            if (r.type === 'json') {
+                return {
+                    cls: 'http', tone: 'err',
+                    title: t('nettools.errJsonStatusTitle', 'The answer is not a success'),
+                    body: r.error || t('nettools.errJsonStatusBody', 'The server did not answer with a 2xx status, so there is nothing to look into.'),
+                    actions: [],
+                };
+            }
             return {
                 cls: 'http', tone: 'err',
                 title: t('nettools.errHttpStatusTitle', 'Not the expected status'),
@@ -348,6 +399,25 @@
                 actions: [],
             };
         case 'content':
+            if (r.type === 'json') {
+                const path = r.path || '?';
+                let title = t('nettools.errJsonValueTitle', 'Not the expected value');
+                let body = JSON_SECRET_PATH.test(String(r.path || ''))
+                    ? fmt(t('nettools.errJsonValueSecretBody', 'The value at {path} is not what the check expects.'), { path })
+                    : fmt(t('nettools.errJsonValueBody', 'The value at {path} is {found}, but the check expects it {op} {expect}.'),
+                        { path, found: r.detail || '?', op: jsonOpText(r.op, t), expect: r.expect || '' }).replace(/\s+\./, '.');
+                if (r.detail === 'not JSON') {
+                    title = t('nettools.errJsonNotJsonTitle', 'The answer is not JSON');
+                    body = t('nettools.errJsonNotJsonBody', 'The address did not answer with JSON. Check the path of the address.');
+                } else if (r.detail === 'not found') {
+                    title = t('nettools.errJsonMissingTitle', 'Nothing at that path');
+                    body = fmt(t('nettools.errJsonMissingBody', 'The answer has nothing at {path}. Check the path.'), { path });
+                } else if (r.detail === 'answer too large') {
+                    title = t('nettools.errJsonLargeTitle', 'The answer is too large');
+                    body = t('nettools.errJsonLargeBody', 'The answer is larger than 1 MB; this check reads at most 1 MB.');
+                }
+                return { cls: 'content', tone: 'err', title, body: r.error || body, actions: [] };
+            }
             if (r.type === 'http') {
                 return {
                     cls: 'content', tone: 'err',
@@ -445,6 +515,29 @@
             }
         }
 
+        if (c.type === 'json') {
+            const endpoint = String(c.endpoint || '').trim();
+            if (endpoint) {
+                if (endpoint.length > HTTP_ENDPOINT_MAX) errors.endpoint = fmt(t('nettools.errPathLong', 'The path can be at most {max} characters.'), { max: HTTP_ENDPOINT_MAX });
+                else if (endpoint[0] !== '/' || endpoint.startsWith('//') || /[\\\s#]/.test(endpoint)) errors.endpoint = t('nettools.errPath', 'Start the path with a single / and leave out spaces, backslashes and #.');
+            }
+            const path = String(c.path || '').trim();
+            if (!path) errors.path = t('nettools.errJsonPath', 'Enter the path of the value, such as status or db.state.');
+            else if (Array.from(path).length > JSON_PATH_MAX) errors.path = fmt(t('nettools.errJsonPathLong', 'The path can be at most {max} characters.'), { max: JSON_PATH_MAX });
+            // eslint-disable-next-line no-control-regex
+            else if (/[\u0000-\u001f\u007f]/.test(path)) errors.path = t('nettools.errJsonPathControl', 'The path cannot contain control characters.');
+            const op = String(c.op || '').toLowerCase();
+            if (!JSON_OPS.includes(op)) errors.op = t('nettools.errJsonOp', 'Pick how the value is judged.');
+            const expect = String(c.expect || '').trim();
+            if (JSON_OPS.includes(op) && op !== 'exists') {
+                if (!expect) errors.expect = t('nettools.errJsonExpect', 'Enter the value the answer should have.');
+                else if (Array.from(expect).length > JSON_EXPECT_MAX) errors.expect = fmt(t('nettools.errJsonExpectLong', 'The expected value can be at most {max} characters.'), { max: JSON_EXPECT_MAX });
+                // eslint-disable-next-line no-control-regex
+                else if (/[\u0000-\u001f\u007f]/.test(expect)) errors.expect = t('nettools.errExpectControl', 'The expected value cannot contain control characters.');
+                else if ((op === 'gt' || op === 'lt') && !Number.isFinite(Number(expect))) errors.expect = t('nettools.errJsonNumber', 'More than and less than compare numbers: enter a number.');
+            }
+        }
+
         if (c.type === 'dns') {
             if (!DNS_RECORDS.includes(String(c.record || '').toUpperCase())) errors.record = t('nettools.errRecord', 'Pick a record type.');
             const expect = String(c.expect || '').trim();
@@ -509,6 +602,7 @@
         if (type === 'dns') Object.assign(check, { record: 'A', expect: '', watchDrift: driftDefault('A') });
         if (type === 'tls') check.minDaysLeft = 0;
         if (type === 'http') Object.assign(check, { endpoint: '', expectStatus: '', expectHeader: '' });
+        if (type === 'json') Object.assign(check, { endpoint: '', path: '', op: 'eq', expect: '', credentialId: '' });
         return check;
     }
 
@@ -536,6 +630,12 @@
             if (String(check.expectStatus || '').trim()) base.expectStatus = String(check.expectStatus).trim();
             if (String(check.expectHeader || '').trim()) base.expectHeader = String(check.expectHeader).trim();
             if (Number(check.maxMs) > 0) base.maxMs = Number(check.maxMs);
+        } else if (check.type === 'json') {
+            if (String(check.endpoint || '').trim()) base.endpoint = String(check.endpoint).trim();
+            base.path = String(check.path || '').trim();
+            base.op = String(check.op || 'eq').toLowerCase();
+            if (base.op !== 'exists' && String(check.expect || '').trim()) base.expect = String(check.expect).trim();
+            if (String(check.credentialId || '').trim()) base.credentialId = String(check.credentialId).trim();
         } else if (check.type === 'dns') {
             base.record = String(check.record || 'A').toUpperCase();
             if (String(check.expect || '').trim()) base.expect = String(check.expect).trim();
@@ -564,7 +664,8 @@
     function testErrorBlock(res, t) {
         const r = res || {};
         const own = errorBlock({ class: r.class, host: r.host, port: r.port, ip: r.ip, timeoutSec: 10, type: r.type, record: r.dns && r.dns.record, error: r.error, detail: r.detail,
-            redirectBlocked: Boolean(r.http && (r.http.redirects || []).some((h) => h.blocked)), expectStatus: r.http && r.http.expectStatus, expectHeader: r.http && r.http.expectHeader }, t);
+            redirectBlocked: Boolean(r.http && (r.http.redirects || []).some((h) => h.blocked)), expectStatus: r.http && r.http.expectStatus, expectHeader: r.http && r.http.expectHeader,
+            path: r.json && r.json.path, op: r.json && r.json.op, expect: r.json && r.json.expect }, t);
         if (own) return own;
         return {
             cls: r.class || 'other', tone: 'err',
@@ -607,6 +708,11 @@
             if (n) parts.push(n === 1 ? t('nettools.httpOneRedirect', '1 redirect') : fmt(t('nettools.httpRedirects', '{n} redirects'), { n }));
             if (ms) parts.push(`${ms} ms`);
             return parts.filter(Boolean).join(' \u00b7 ');
+        }
+        if (res.type === 'json') {
+            const j = res.json || {};
+            const what = j.path ? `${j.path} ${jsonOpText(j.op, t)}${j.op === 'exists' ? '' : ` ${j.expect || ''}`}`.trim() : '';
+            return [what, ms ? `${ms} ms` : ''].filter(Boolean).join(' · ');
         }
         return ms ? `${ms} ms` : t('nettools.stateOk', 'Up');
     }
@@ -681,6 +787,7 @@
 
     const api = {
         HTTP_DEFAULT_STATUS, validStatusRule, sizeText, httpSegments, httpHeaderSplit,
+        JSON_OPS, JSON_SECRET_PATH, jsonOpText, jsonRule,
         DNS_RECORDS, TLS_DEFAULT_MIN_DAYS, tlsPort, tlsDaysText, driftDefault, toolTypes, testState, testErrorBlock, testSummary, checkFromTest,
         TYPES, TYPE_NAMES, MAX_CHECKS_PER_BOOKMARK,
         typeName, typeHint, hostOf, defaultPort, targetOf, labelFor, badgeState, stateLabel,

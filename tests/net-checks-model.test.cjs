@@ -214,4 +214,39 @@ const httpExplain = M.explain({ type: 'http', endpoint: '/health', expectStatus:
 assert.ok(/\/health/.test(httpExplain.summary) && httpExplain.lines.some((l) => /final status is 200/.test(l)) && httpExplain.lines.some((l) => /500 ms/.test(l)));
 assert.ok(M.explain({ type: 'http', enabled: true }, bm, httpCaps, t).lines.some((l) => /final status is 200-299/.test(l)), 'the default rule is 200-299');
 
+// JSON check: the label, the form's rules, what is stored, how a failure and a result read
+const jsonCaps = { ...caps, typesBuilt: ['tcp', 'json'] };
+assert.strictEqual(M.labelFor({ type: 'json' }, bm), 'JSON');
+assert.strictEqual(M.labelFor({ type: 'json', path: 'db.state' }, bm), 'JSON · db.state');
+assert.strictEqual(M.labelFor({ type: 'json', path: 'a'.repeat(40) }, bm), `JSON · ${'a'.repeat(28)}…`, 'a long path is cut like the server cuts it');
+const okJson = { type: 'json', path: 'db.state', op: 'eq', expect: 'ok' };
+assert.deepStrictEqual(M.validate(okJson, jsonCaps, t).errors, {});
+assert.ok(M.validate({ ...okJson, path: '' }, jsonCaps, t).errors.path, 'a path is required');
+assert.ok(M.validate({ ...okJson, path: 'a'.repeat(201) }, jsonCaps, t).errors.path, 'a path is at most 200 characters');
+assert.ok(!M.validate({ ...okJson, path: 'a'.repeat(200) }, jsonCaps, t).errors.path);
+assert.ok(M.validate({ ...okJson, op: 'regex' }, jsonCaps, t).errors.op);
+assert.ok(M.validate({ ...okJson, expect: '' }, jsonCaps, t).errors.expect, 'eq needs a value');
+assert.ok(!M.validate({ ...okJson, op: 'exists', expect: '' }, jsonCaps, t).errors.expect, 'exists needs none');
+assert.ok(M.validate({ ...okJson, op: 'gt', expect: 'many' }, jsonCaps, t).errors.expect, 'gt compares numbers');
+assert.ok(!M.validate({ ...okJson, op: 'lt', expect: '3.5' }, jsonCaps, t).errors.expect);
+assert.ok(M.validate({ ...okJson, endpoint: 'https://evil.example/x' }, jsonCaps, t).errors.endpoint, 'a path on the same host, never a url');
+assert.deepStrictEqual(M.pickForType({ type: 'json', path: ' db.state ', op: 'EXISTS', expect: 'left over', endpoint: ' /h ', credentialId: 'svc', port: 22, maxMs: 5 }),
+    { id: '', type: 'json', enabled: true, label: '', intervalMinutes: 0, timeoutSec: 0, muted: false, endpoint: '/h', path: 'db.state', op: 'exists', credentialId: 'svc' });
+assert.strictEqual(M.blankCheck('json').op, 'eq');
+assert.ok(M.JSON_SECRET_PATH.test('auth.API_Token') && M.JSON_SECRET_PATH.test('keys[0]') && !M.JSON_SECRET_PATH.test('db.state'));
+const jsonExplain = M.explain({ ...okJson, enabled: true }, bm, jsonCaps, t);
+assert.ok(/db\.state/.test(jsonExplain.summary) && jsonExplain.lines.some((l) => /value at db\.state is ok/.test(l)));
+assert.ok(M.explain({ type: 'json', path: 'auth.token', op: 'exists', enabled: true }, bm, jsonCaps, t).lines.some((l) => /never shown or kept/.test(l)), 'a secret path says so');
+assert.strictEqual(M.errorBlock({ class: 'content', type: 'json', path: 'db.state', op: 'eq', expect: 'ok', detail: 'degraded' }, t).body,
+    'The value at db.state is degraded, but the check expects it is ok.');
+assert.strictEqual(M.errorBlock({ class: 'content', type: 'json', path: 'db.state', op: 'ne', expect: 'ok', detail: 'ok' }, t).body.includes('is not ok'), true);
+assert.strictEqual(M.errorBlock({ class: 'content', type: 'json', path: 'auth.token', op: 'eq', expect: 'x', detail: '[hidden]' }, t).body,
+    'The value at auth.token is not what the check expects.', 'a secret path never quotes a value');
+assert.strictEqual(M.errorBlock({ class: 'content', type: 'json', path: 'a.b', detail: 'not found' }, t).title, 'Nothing at that path');
+assert.strictEqual(M.errorBlock({ class: 'content', type: 'json', detail: 'not JSON' }, t).title, 'The answer is not JSON');
+assert.strictEqual(M.errorBlock({ class: 'content', type: 'json', detail: 'answer too large' }, t).title, 'The answer is too large');
+assert.strictEqual(M.errorBlock({ class: 'http', type: 'json', detail: '401' }, t).title, 'The answer is not a success');
+assert.strictEqual(M.testSummary({ ok: true, type: 'json', ms: 84, json: { path: 'db.state', op: 'eq', expect: 'ok' } }, t), 'db.state is ok · 84 ms');
+assert.strictEqual(M.testSummary({ ok: true, type: 'json', ms: 84, json: { path: 'db', op: 'exists' } }, t), 'db exists · 84 ms');
+
 console.log('net-checks-model: ok');

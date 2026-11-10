@@ -144,6 +144,28 @@ func normalizeNetChecks(in, stored []NetCheck, bm Bookmark, s Settings,
 			next.ExpectHeader = strings.TrimSpace(c.ExpectHeader)
 		}
 
+		if c.Type == netTypeJSON {
+			endpoint := strings.TrimSpace(c.Endpoint)
+			if err := validNetHTTPEndpoint(endpoint); err != nil {
+				return nil, err
+			}
+			next.Endpoint = endpoint
+			path, op, expect, err := normalizeNetJSON(c.Path, c.Op, c.Expect)
+			if err != nil {
+				return nil, err
+			}
+			next.Path, next.Op, next.Expect = path, op, expect
+			if id := strings.TrimSpace(c.CredentialID); id != "" {
+				if normalizeCredentialID(id) == "" {
+					return nil, errors.New("that credential does not exist")
+				}
+				if _, ok := lookupHealthCredential(id); !ok {
+					return nil, errors.New("that credential does not exist")
+				}
+				next.CredentialID = normalizeCredentialID(id)
+			}
+		}
+
 		if next.Enabled {
 			enabled++
 		}

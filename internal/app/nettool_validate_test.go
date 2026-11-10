@@ -20,7 +20,8 @@ func netTestSettings() Settings { return Settings{NetToolsMaxChecks: 200} }
 
 func TestNormalizeNetChecksTypeMustBeBuilt(t *testing.T) {
 	bm := Bookmark{URL: "https://a.example/"}
-	// Nothing is built yet: every type fails.
+	// Nothing is built: every type fails.
+	withNetTypes(t)
 	if _, err := normalizeNetChecks([]NetCheck{{Type: netTypeTCP}}, nil, bm, netTestSettings(), nil, 0); err == nil {
 		t.Fatal("a type that is not built was accepted")
 	}

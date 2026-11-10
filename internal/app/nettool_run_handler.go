@@ -27,6 +27,21 @@ type netRunRequest struct {
 	// Record is only for a one-off DNS test (no checkId): which record type to
 	// ask for, one of a fixed list. It names no host.
 	Record string `json:"record"`
+	// The rest is only for a one-off JSON test (no checkId): what to look at
+	// and what to expect, the same fields a stored JSON check has. Endpoint is a
+	// path on the bookmark's own host, never a URL; CredentialID names a stored
+	// credential (the bookmark's own is used when it is empty).
+	Endpoint     string `json:"endpoint"`
+	Path         string `json:"path"`
+	Op           string `json:"op"`
+	Expect       string `json:"expect"`
+	CredentialID string `json:"credentialId"`
+}
+
+// netOneOffJSON are the fields of a one-off JSON test, as the route and the
+// MCP tool pass them on.
+type netOneOffJSON struct {
+	Endpoint, Path, Op, Expect, CredentialID string
 }
 
 // RunNetTest runs one network test now. The host and port are always the
@@ -42,10 +57,11 @@ func (h *Handlers) RunNetTest(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {
-		netWriteError(w, http.StatusBadRequest, "Invalid request: only pageId, url, type, checkId and record are accepted")
+		netWriteError(w, http.StatusBadRequest, "Invalid request: only pageId, url, type, checkId, record, endpoint, path, op, expect and credentialId are accepted")
 		return
 	}
-	res, status, err := h.runNetTestForRecord(r.Context(), clientIP(r), req.PageID, req.URL, req.Type, req.CheckID, req.Record)
+	res, status, err := h.runNetTestForSpec(r.Context(), clientIP(r), req.PageID, req.URL, req.Type, req.CheckID, req.Record,
+		netOneOffJSON{Endpoint: req.Endpoint, Path: req.Path, Op: req.Op, Expect: req.Expect, CredentialID: req.CredentialID})
 	if err != nil {
 		if status == http.StatusTooManyRequests {
 			w.Header().Set("Retry-After", "60")
@@ -77,6 +93,12 @@ func (h *Handlers) runNetTestFor(ctx context.Context, clientKey string, pageID i
 // runNetTestForRecord is runNetTestFor with the record type of a one-off DNS
 // test (A when empty). The record is ignored for a stored check, which has its own.
 func (h *Handlers) runNetTestForRecord(ctx context.Context, clientKey string, pageID int, url, typ, checkID, record string) (NetResult, int, error) {
+	return h.runNetTestForSpec(ctx, clientKey, pageID, url, typ, checkID, record, netOneOffJSON{})
+}
+
+// runNetTestForSpec is runNetTestForRecord with the fields of a one-off JSON
+// test. They are ignored for a stored check and for any other type.
+func (h *Handlers) runNetTestForSpec(ctx context.Context, clientKey string, pageID int, url, typ, checkID, record string, oneOff netOneOffJSON) (NetResult, int, error) {
 	settings := h.store.GetSettings()
 	if !settings.NetToolsEnabled {
 		return NetResult{}, http.StatusForbidden, netRunError{http.StatusForbidden, "Network tests are turned off in the settings."}
@@ -120,6 +142,24 @@ func (h *Handlers) runNetTestForRecord(ctx context.Context, clientKey string, pa
 				return NetResult{}, http.StatusBadRequest, netRunError{http.StatusBadRequest, "unknown record type"}
 			}
 			chk.Record = rec
+		}
+		if typ == netTypeJSON {
+			path, op, expect, err := normalizeNetJSON(oneOff.Path, oneOff.Op, oneOff.Expect)
+			if err != nil {
+				msg := "A JSON test needs a path and an operator: " + err.Error() + "."
+				return NetResult{}, http.StatusBadRequest, netRunError{http.StatusBadRequest, msg}
+			}
+			endpoint := strings.TrimSpace(oneOff.Endpoint)
+			if err := validNetHTTPEndpoint(endpoint); err != nil {
+				return NetResult{}, http.StatusBadRequest, netRunError{http.StatusBadRequest, "The path of the address: " + err.Error() + "."}
+			}
+			cred := strings.TrimSpace(oneOff.CredentialID)
+			if cred != "" {
+				if _, ok := lookupHealthCredential(cred); !ok {
+					return NetResult{}, http.StatusBadRequest, netRunError{http.StatusBadRequest, "That credential does not exist."}
+				}
+			}
+			chk.Path, chk.Op, chk.Expect, chk.Endpoint, chk.CredentialID = path, op, expect, endpoint, cred
 		}
 	}
 	if !netTypesBuilt[chk.Type] {

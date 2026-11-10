@@ -62,7 +62,7 @@ func TestNetRunRequiresBookmark(t *testing.T) {
 		{"no url", `{"pageId":1,"type":"tcp"}`, http.StatusBadRequest},
 		{"unknown check", `{"pageId":1,"url":"https://a.example","checkId":"` + netTestCheckID(99) + `"}`, http.StatusNotFound},
 		{"neither type nor check", `{"pageId":1,"url":"https://a.example"}`, http.StatusBadRequest},
-		{"type of a check that is not built", `{"pageId":1,"url":"https://a.example","type":"json"}`, http.StatusBadRequest},
+		{"type of a check that is not built", `{"pageId":1,"url":"https://a.example","type":"smtp"}`, http.StatusBadRequest},
 		{"type that does not match the check", `{"pageId":1,"url":"https://a.example","checkId":"` + netTestCheckID(1) + `","type":"ping"}`, http.StatusBadRequest},
 	}
 	for _, c := range cases {
@@ -325,5 +325,48 @@ func TestNetRunAnnouncesRecovery(t *testing.T) {
 	}
 	if none := h.netRecoveryTransitions(map[string][]HealthSample{key: {{T: 1, Up: false}}}); len(none) != 0 {
 		t.Fatalf("a failure announced a recovery: %#v", none)
+	}
+}
+
+// A one-off JSON test carries its own path, operator and expected value; it
+// names no host, and a field outside the list is still a 400.
+func TestNetRunJSONOneOff(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{"netToolsEnabled":true}`)
+	netTestPage(t, dir, `{"name":"A","url":"https://a.example/home","checks":[]}`)
+	rec := &netRunRecorder{res: NetResult{OK: true, Ms: 4}}
+	h.netRunner = rec.run
+	h.netToolLimiter = newSlidingWindowLimiter(100, time.Minute)
+	h.ssrfAPILimiter = newSlidingWindowLimiter(100, time.Minute)
+
+	ok := netRunPost(h, `{"pageId":1,"url":"https://a.example/home","type":"json","endpoint":"/health","path":"db.state","op":"EQ","expect":"ok"}`, "")
+	if ok.Code != http.StatusOK || rec.count() != 1 {
+		t.Fatalf("%d %s", ok.Code, ok.Body.String())
+	}
+	got := rec.calls[0]
+	if got.Type != netTypeJSON || got.Path != "db.state" || got.Op != "eq" || got.Expect != "ok" || got.Endpoint != "/health" || got.ID != "" {
+		t.Fatalf("%+v", got)
+	}
+	for name, body := range map[string]string{
+		"no path":            `{"pageId":1,"url":"https://a.example/home","type":"json","op":"exists"}`,
+		"no operator":        `{"pageId":1,"url":"https://a.example/home","type":"json","path":"a"}`,
+		"a number for gt":    `{"pageId":1,"url":"https://a.example/home","type":"json","path":"a","op":"gt","expect":"x"}`,
+		"a full url":         `{"pageId":1,"url":"https://a.example/home","type":"json","path":"a","op":"exists","endpoint":"https://evil.example/"}`,
+		"unknown credential": `{"pageId":1,"url":"https://a.example/home","type":"json","path":"a","op":"exists","credentialId":"missing-one"}`,
+		"a host":             `{"pageId":1,"url":"https://a.example/home","type":"json","path":"a","op":"exists","host":"evil.example"}`,
+		"a port":             `{"pageId":1,"url":"https://a.example/home","type":"json","path":"a","op":"exists","port":22}`,
+	} {
+		if code := netRunPost(h, body, "").Code; code != http.StatusBadRequest {
+			t.Errorf("%s: %d", name, code)
+		}
+	}
+	if rec.count() != 1 {
+		t.Fatalf("a refused request still ran: %d runs", rec.count())
+	}
+	// The fields of a one-off JSON test mean nothing for another type.
+	if code := netRunPost(h, `{"pageId":1,"url":"https://a.example/home","type":"tcp","path":"a","op":"exists"}`, "").Code; code != http.StatusOK {
+		t.Fatalf("%d", code)
+	}
+	if c := rec.calls[1]; c.Path != "" || c.Op != "" {
+		t.Fatalf("%+v", c)
 	}
 }

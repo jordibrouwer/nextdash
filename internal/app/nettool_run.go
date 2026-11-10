@@ -112,13 +112,22 @@ type HTTPDetailResult struct {
 	ExpectHeader string       `json:"expectHeader,omitempty"`
 }
 
+// JSONResult is what a JSON check found. Value is the value under Path as a
+// short text (at most 200 characters; an object or list is only described, and
+// a value under a path that names a token, key, secret or password is
+// "[hidden]"). Expect is the check's expected value, hidden under the same rule.
+// Nothing here carries the credential or the rest of the answer.
 type JSONResult struct {
+	Path   string `json:"path"`
+	Op     string `json:"op"`
+	Expect string `json:"expect,omitempty"`
 	Found  bool   `json:"found"`
 	Value  string `json:"value,omitempty"`
-	Type   string `json:"type,omitempty"`
+	Type   string `json:"type,omitempty"` // string, number, boolean, null, object or list
 	OK     bool   `json:"ok"`
 	Status int    `json:"status,omitempty"`
 	Ms     int    `json:"ms"`
+	Size   int64  `json:"size,omitempty"` // bytes read, at most netHTTPMaxBody
 }
 
 // NetResult is one run of one check, from the scheduler, /api/net/run or MCP.
@@ -173,6 +182,8 @@ func (h *Handlers) runNetCheck(ctx context.Context, bm Bookmark, c NetCheck) Net
 		return h.runTLS(ctx, h.netGuard(), target, c)
 	case netTypeHTTP:
 		return h.runHTTPDetail(ctx, h.netGuard(), target, bm, c)
+	case netTypeJSON:
+		return h.runJSON(ctx, h.netGuard(), target, bm, c)
 	default:
 		res.Class, res.Error = "other", "type not available yet"
 	}

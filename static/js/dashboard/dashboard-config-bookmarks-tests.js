@@ -167,7 +167,9 @@
             let testLine = '';
             if (test) {
                 testLine = test.ok
-                    ? kv(t('nettools.testNow', 'Test now'), M.testSummary(test.res, t)) + (check.type === 'http' && test.res?.http?.status ? this.renderBmTestsHttpRows(test.res, M.testState(test.res)) : '')
+                    ? kv(t('nettools.testNow', 'Test now'), M.testSummary(test.res, t))
+                        + (check.type === 'http' && test.res?.http?.status ? this.renderBmTestsHttpRows(test.res, M.testState(test.res)) : '')
+                        + (check.type === 'json' && test.res?.json ? this.renderBmTestsJsonRows(test.res, M.testState(test.res)) : '')
                     : `<p class="net-inline-error" role="status" data-net-error>${esc(test.error)}</p>`;
             }
             const busy = st.testingId === check.id;
@@ -189,7 +191,9 @@
             const esc = (v) => this.dash.escapeHtml(v);
             const M = model();
             const t = (k, f) => this.bmNetT(k, f);
-            const types = M.toolTypes(this._bmNetCaps);
+            // A JSON test needs a path and a value to look at: it is tried from its
+            // own form ("Test first") or as a saved check, not from a button.
+            const types = M.toolTypes(this._bmNetCaps).filter((type) => type !== 'json');
             if (!types.length) return '';
             const run = this.bmTestsRun(b);
             const buttons = types.map((type) =>
@@ -221,6 +225,9 @@
                 // A certificate that is not accepted is still shown: what is wrong is on it.
                 if (type === 'tls' && res.tls?.chain?.length) rows += this.renderBmTestsTlsRows(res, state);
                 if (type === 'http' && res.http?.status) rows += this.renderBmTestsHttpRows(res, state);
+                if (type === 'json' && res.json) rows += this.renderBmTestsJsonRows(res, state);
+            } else if (type === 'json') {
+                rows = this.renderBmTestsJsonRows(res, state);
             } else if (type === 'http') {
                 rows = this.renderBmTestsHttpRows(res, state);
             } else if (type === 'tls') {
@@ -334,6 +341,43 @@
                 : '';
             return `${chips ? `<div class="net-chips" data-net-http-chips>${chips}</div>` : ''}${wf}
                 ${redirects ? `<div class="net-http-sub"><b>${esc(t('nettools.httpRedirectsTitle', 'Redirects'))}</b>${redirects}</div>` : ''}${headers}`;
+        },
+
+        /**
+         * The answer of a JSON check (mockup a4): the path, the value found there
+         * and its type, what was expected, and the outcome with the status, the
+         * time and the size read. Only the one value: never the rest of the answer
+         * (the server sends no more), and a value under a secret path arrives as
+         * [hidden].
+         */
+        renderBmTestsJsonRows(res, state) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const M = model();
+            const t = (k, f) => this.bmNetT(k, f);
+            const j = res.json || {};
+            const chipState = res.ok ? state : 'down';
+            const ms = Number(res.ms) > 0 ? t('nettools.jsonMs', '{ms} ms').replace('{ms}', String(Math.round(res.ms))) : '';
+            const chips = [
+                `<span class="net-badge" data-state="${chipState}" data-net-json-outcome>${esc(res.ok ? t('nettools.jsonMeets', 'Meets the check') : t('nettools.jsonFails', 'Does not meet it'))}</span>`,
+                j.status ? `<span class="net-chip" data-net-json-status>${esc(String(j.status))}</span>` : '',
+                ms ? `<span class="net-chip">${esc(ms)}</span>` : '',
+                j.size ? `<span class="net-chip">${esc(M.sizeText(j.size))}</span>` : '',
+            ].join('');
+            const found = j.found
+                ? `${j.value || ''}${j.type ? ` (${j.type})` : ''}`
+                : t('nettools.jsonNothing', 'nothing at this path');
+            const expected = j.op === 'exists'
+                ? t('nettools.jsonExpectExists', 'a value exists')
+                : `${M.jsonOpText(j.op, t)} ${j.expect || ''}`.trim();
+            const row = (key, label, value) => `<tr data-net-json-${key}><td class="net-http-name">${esc(label)}</td><td class="net-http-url">${esc(value)}</td></tr>`;
+            return `<div class="net-chips" data-net-json-chips>${chips}</div>
+                <table class="net-http-table" data-net-json-rows>
+                    <tbody>
+                        ${row('path', t('nettools.jsonPath', 'Path'), j.path || '')}
+                        ${j.status && j.status >= 200 && j.status <= 299 ? row('found', t('nettools.jsonFound', 'Found'), found) : ''}
+                        ${row('expected', t('nettools.jsonExpected', 'Expected'), expected)}
+                    </tbody>
+                </table>`;
         },
 
         /**

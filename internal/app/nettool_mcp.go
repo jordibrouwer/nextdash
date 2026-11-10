@@ -58,19 +58,23 @@ func mcpNetToolsDefinitions() []map[string]any {
 		{
 			"name":        "run_network_test",
 			"annotations": mcpAnnotationsOpenWorld(true, false),
-			"description": "Run one network test now against a bookmark's own host: tcp (is the port open), ping (is it reachable, with loss and round-trip time), dns (the records of its host name), tls (the certificate chain its port presents, its TLS version and the days left) or http (one GET of the bookmark's address with the timeline, the redirect chain, the status and the response headers). " +
-				"Give type for the bookmark's own address, or check_id for one of its stored checks (which then tests that check's own port). " +
+			"description": "Run one network test now against a bookmark's own host: tcp (is the port open), ping (is it reachable, with loss and round-trip time), dns (the records of its host name), tls (the certificate chain its port presents, its TLS version and the days left), http (one GET of the bookmark's address with the timeline, the redirect chain, the status and the response headers) or json (one GET whose JSON answer is looked into: the value under json_path compared with an operator and an expected value). " +
+				"Give type for the bookmark's own address, or check_id for one of its stored checks (which then tests that check's own port). A json test without check_id needs json_path and op (and expect, except for exists); path may name a path on the bookmark's own host. " +
 				"There is no way to name another host or port. Sends real traffic from the nextDash server, rate limited, one test per host at a time. " +
-				"Returns {ok, ms, class, error, detail, host, ip, port, tcp, ping}; dns carries the records; tls carries the version, cipher, chain (at most 5 certificates) and days left, and warn is true when a valid certificate has too few days left; http carries the status, protocol, size (read up to 1 MB), timings (dns, connect, tls, wait, transfer, ttfb, total in ms), the redirect chain (at most 10 hops; a hop the address guard refuses is listed as blocked and not followed) and the response headers (at most 40, values cut, cookies and authorization hidden); class says why it failed (dns, timeout, refused, guard, icmp, tls, http for an unexpected status, content for a missing header, demo). " +
+				"Returns {ok, ms, class, error, detail, host, ip, port, tcp, ping}; dns carries the records; tls carries the version, cipher, chain (at most 5 certificates) and days left, and warn is true when a valid certificate has too few days left; http carries the status, protocol, size (read up to 1 MB), timings (dns, connect, tls, wait, transfer, ttfb, total in ms), the redirect chain (at most 10 hops; a hop the address guard refuses is listed as blocked and not followed) and the response headers (at most 40, values cut, cookies and authorization hidden); json carries path, op, the value found at the path (cut to 200 characters; an object or list is only described; hidden when the path names a token, key, secret or password), its type, whether it met the check, the status and the size read (up to 1 MB), never the rest of the answer and never a credential; class says why it failed (dns, timeout, refused, guard, icmp, tls, http for an unexpected status, content for a missing header or a JSON value that is missing, not JSON or not as expected, demo). " +
 				"A test of a scheduled check also counts as one more sample of it.",
 			"inputSchema": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
-					"url":      urlProp,
-					"page":     pageProp,
-					"type":     map[string]any{"type": "string", "description": "tcp, ping, dns, tls or http. Leave out when check_id is given."},
-					"record":   map[string]any{"type": "string", "description": "dns only, without check_id: A (default), AAAA, CNAME, MX, TXT or NS."},
-					"check_id": checkProp,
+					"url":       urlProp,
+					"page":      pageProp,
+					"type":      map[string]any{"type": "string", "description": "tcp, ping, dns, tls, http or json. Leave out when check_id is given."},
+					"record":    map[string]any{"type": "string", "description": "dns only, without check_id: A (default), AAAA, CNAME, MX, TXT or NS."},
+					"path":      map[string]any{"type": "string", "description": "json only, without check_id: a path on the bookmark's own host, starting with a single /. Empty uses the bookmark's own address. Never a full URL."},
+					"json_path": map[string]any{"type": "string", "description": "json only, without check_id: the value to look at in the answer, such as status, db.state, items[0].name or services[name=api].up (at most 200 characters)."},
+					"op":        map[string]any{"type": "string", "description": "json only, without check_id: eq, ne, gt, lt, contains or exists."},
+					"expect":    map[string]any{"type": "string", "description": "json only, without check_id: the value to compare with. Not used by exists; a number for gt and lt."},
+					"check_id":  checkProp,
 				},
 				"required": []string{"url"},
 			},
@@ -78,7 +82,7 @@ func mcpNetToolsDefinitions() []map[string]any {
 		{
 			"name":        "list_net_checks",
 			"annotations": mcpAnnotations(true, false),
-			"description": "The network checks (tcp, ping, dns, tls, http) stored on bookmarks, with the state each was last in. " +
+			"description": "The network checks (tcp, ping, dns, tls, http, json) stored on bookmarks, with the state each was last in. " +
 				"Give url to list one bookmark's checks, or leave it out for every check in the install. " +
 				"Reads stored results only and sends nothing. Each has an id for get_net_check, set_net_check, delete_net_check and run_network_test.",
 			"inputSchema": map[string]any{
@@ -105,8 +109,8 @@ func mcpNetToolsDefinitions() []map[string]any {
 			"name":        "set_net_check",
 			"annotations": mcpAnnotations(false, false),
 			"description": "Add a network check to a bookmark, or change one of its checks (give check_id). " +
-				"Types: tcp (a port), ping, dns (a record type of the bookmark's host name, optionally with an expected value and a watch for changes), tls (the certificate on a port, 443 unless the bookmark's https address or port says otherwise; up with a warning when fewer than min_days_left days remain, down when the certificate is expired or not trusted) and http (a GET of the bookmark's address, or of path on the same host, with an expected status and optionally an expected header; down on another status or a missing header, slow when the first byte takes longer than max_ms; redirects are followed up to 10 hops and each hop must pass the address guard). A new check is not scheduled until enabled is true; a scheduled check then sends traffic every interval_minutes. " +
-				"Fields left out stay as they are. There is no host argument: a check aims at the bookmark's own host; port is only for tcp and tls; path only for http, on that same host. " +
+				"Types: tcp (a port), ping, dns (a record type of the bookmark's host name, optionally with an expected value and a watch for changes), tls (the certificate on a port, 443 unless the bookmark's https address or port says otherwise; up with a warning when fewer than min_days_left days remain, down when the certificate is expired or not trusted) http (a GET of the bookmark's address, or of path on the same host, with an expected status and optionally an expected header; down on another status or a missing header, slow when the first byte takes longer than max_ms; redirects are followed up to 10 hops and each hop must pass the address guard) and json (a GET like http, then the value under json_path in the JSON answer compared with op and expect; down on a non-2xx status, an answer that is not JSON or larger than 1 MB, a missing value, or a value that does not meet the check; the credential of the bookmark is sent only to the bookmark's own host and never comes back in a result). A new check is not scheduled until enabled is true; a scheduled check then sends traffic every interval_minutes. " +
+				"Fields left out stay as they are. There is no host argument: a check aims at the bookmark's own host; port is only for tcp and tls; path only for http and json, on that same host. A check made here uses the bookmark's own credential if it has one; credentials cannot be chosen through this tool. " +
 				"Refused with the reason when a limit is hit (six checks per bookmark, the install-wide cap).",
 			"inputSchema": map[string]any{
 				"type": "object",
@@ -114,7 +118,7 @@ func mcpNetToolsDefinitions() []map[string]any {
 					"url":              urlProp,
 					"page":             pageProp,
 					"check_id":         map[string]any{"type": "string", "description": "The check to change. Leave out to add a new one."},
-					"type":             map[string]any{"type": "string", "description": "tcp, ping, dns, tls or http. Required for a new check; cannot change an existing one."},
+					"type":             map[string]any{"type": "string", "description": "tcp, ping, dns, tls, http or json. Required for a new check; cannot change an existing one."},
 					"enabled":          map[string]any{"type": "boolean", "description": "Run it on a schedule."},
 					"label":            map[string]any{"type": "string", "description": "A name for it, at most 60 characters. An empty string clears it."},
 					"interval_minutes": map[string]any{"type": "integer", "description": "Minutes between runs, 5 to 1440. 0 follows the bookmark's own interval."},
@@ -126,9 +130,11 @@ func mcpNetToolsDefinitions() []map[string]any {
 					"max_loss_pct":     map[string]any{"type": "integer", "description": "Ping only: loss in percent above which it counts as down, 0 to 100."},
 					"max_ms":           map[string]any{"type": "integer", "description": "A slower answer is reported as slow (it still counts as up). 0 turns that off."},
 					"record":           map[string]any{"type": "string", "description": "DNS only, required for a new dns check: A, AAAA, CNAME, MX, TXT or NS."},
-					"expect":           map[string]any{"type": "string", "description": "DNS only: a value one of the records must have (a TXT record may contain it). An empty string clears it."},
+					"expect":           map[string]any{"type": "string", "description": "DNS: a value one of the records must have (a TXT record may contain it). An empty string clears it. JSON: the value op compares with (a number for gt and lt)."},
 					"watch_drift":      map[string]any{"type": "boolean", "description": "DNS only: report in the bell when the set of records changes. Useful for MX, TXT, NS and CNAME; noisy for A and AAAA behind a CDN."},
-					"path":             map[string]any{"type": "string", "description": "HTTP only: a path and optional query on the bookmark's own host, starting with a single /, such as /health. Empty uses the bookmark's own address. Never a full URL."},
+					"path":             map[string]any{"type": "string", "description": "HTTP and JSON: a path and optional query on the bookmark's own host, starting with a single /, such as /health. Empty uses the bookmark's own address. Never a full URL."},
+					"json_path":        map[string]any{"type": "string", "description": "JSON only, required for a new json check: the value to look at, such as status, db.state, items[0].name or services[name=api].up. At most 200 characters."},
+					"op":               map[string]any{"type": "string", "description": "JSON only, required for a new json check: eq, ne, gt, lt, contains or exists."},
 					"expect_status":    map[string]any{"type": "string", "description": "HTTP only: the status that counts as up, such as 200, 200-299 or 200,301. Empty means 200-299, judged after the redirects."},
 					"expect_header":    map[string]any{"type": "string", "description": "HTTP only: a header that must be in the answer, as name or name: text it must contain (case-insensitive). Empty clears it."},
 				},
@@ -226,6 +232,23 @@ func (h *Handlers) mcpNetCheckSummary(bm Bookmark, pageID int, c NetCheck, sampl
 			out["expect_header"] = c.ExpectHeader
 		}
 	}
+	if c.Type == netTypeJSON {
+		if c.Endpoint != "" {
+			out["path"] = c.Endpoint
+		}
+		out["json_path"] = c.Path
+		out["op"] = c.Op
+		// A value under a secret-looking path is not echoed: the expected value
+		// may be the secret itself.
+		if c.Op != "exists" && c.Expect != "" {
+			if netJSONPathIsSecret(c.Path) {
+				out["expect"] = netJSONHidden
+			} else {
+				out["expect"] = c.Expect
+			}
+		}
+		out["uses_credential"] = strings.TrimSpace(c.CredentialID) != "" || strings.TrimSpace(bm.CredentialID) != ""
+	}
 	if c.Type == netTypeDNS {
 		out["record"] = c.Record
 		if c.Expect != "" {
@@ -252,12 +275,17 @@ func (h *Handlers) mcpRunNetworkTest(r *http.Request, args json.RawMessage) map[
 		Type    string `json:"type"`
 		Record  string `json:"record"`
 		CheckID string `json:"check_id"`
+		// A one-off json test.
+		Path     string `json:"path"`
+		JSONPath string `json:"json_path"`
+		Op       string `json:"op"`
+		Expect   string `json:"expect"`
 	}
 	if e := mcpNetDecode(args, &body); e != nil {
 		return e
 	}
 	if strings.TrimSpace(body.Type) == "" && strings.TrimSpace(body.CheckID) == "" {
-		return map[string]any{"error": "Give type (tcp, ping, dns, tls or http) or check_id."}
+		return map[string]any{"error": "Give type (tcp, ping, dns, tls, http or json) or check_id."}
 	}
 	bm, page, refused := h.mcpResolveBookmark(body.URL, body.Page)
 	if refused != nil {
@@ -269,7 +297,8 @@ func (h *Handlers) mcpRunNetworkTest(r *http.Request, args json.RawMessage) map[
 	if h.ssrfAPILimiter != nil && !h.ssrfAPILimiter.allow(client) {
 		return map[string]any{"error": "Too many requests; wait a minute.", "retry_after_seconds": 60}
 	}
-	res, status, err := h.runNetTestForRecord(r.Context(), client, page, bm.URL, strings.TrimSpace(body.Type), strings.TrimSpace(body.CheckID), strings.TrimSpace(body.Record))
+	res, status, err := h.runNetTestForSpec(r.Context(), client, page, bm.URL, strings.TrimSpace(body.Type), strings.TrimSpace(body.CheckID), strings.TrimSpace(body.Record),
+		netOneOffJSON{Endpoint: body.Path, Path: body.JSONPath, Op: body.Op, Expect: body.Expect})
 	if err != nil {
 		out := map[string]any{"error": err.Error()}
 		if status == http.StatusTooManyRequests {
@@ -438,6 +467,8 @@ func (h *Handlers) mcpSetNetCheck(r *http.Request, args json.RawMessage) map[str
 		Path            *string `json:"path"`
 		ExpectStatus    *string `json:"expect_status"`
 		ExpectHeader    *string `json:"expect_header"`
+		JSONPath        *string `json:"json_path"`
+		Op              *string `json:"op"`
 	}
 	if e := mcpNetDecode(args, &body); e != nil {
 		return e
@@ -466,7 +497,7 @@ func (h *Handlers) mcpSetNetCheck(r *http.Request, args json.RawMessage) map[str
 		}
 	} else {
 		if body.Type == "" {
-			return map[string]any{"error": "Give type (tcp, ping, dns, tls or http) to add a check, or check_id to change one."}
+			return map[string]any{"error": "Give type (tcp, ping, dns, tls, http or json) to add a check, or check_id to change one."}
 		}
 		next = append(next, NetCheck{Type: body.Type})
 		idx = len(next) - 1
@@ -524,6 +555,12 @@ func (h *Handlers) mcpSetNetCheck(r *http.Request, args json.RawMessage) map[str
 	}
 	if body.ExpectHeader != nil {
 		c.ExpectHeader = strings.TrimSpace(*body.ExpectHeader)
+	}
+	if body.JSONPath != nil {
+		c.Path = strings.TrimSpace(*body.JSONPath)
+	}
+	if body.Op != nil {
+		c.Op = strings.ToLower(strings.TrimSpace(*body.Op))
 	}
 	if refusal := h.mcpPutNetChecks(r, page, bm.URL, next); refusal != nil {
 		return refusal

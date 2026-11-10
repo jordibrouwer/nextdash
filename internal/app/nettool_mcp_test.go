@@ -176,7 +176,7 @@ func TestMCPSetNetCheckIsWrite(t *testing.T) {
 		"type change":        `{"url":"https://b.example","check_id":"` + netTestCheckID(3) + `","type":"ping"}`,
 		"unknown check":      `{"url":"https://b.example","check_id":"` + netTestCheckID(1) + `"}`,
 		"no type":            `{"url":"https://b.example"}`,
-		"unbuilt type":       `{"url":"https://b.example","type":"json"}`,
+		"unbuilt type":       `{"url":"https://b.example","type":"smtp"}`,
 		"host":               `{"url":"https://b.example","type":"tcp","host":"victim.example"}`,
 		"port out of range":  `{"url":"https://b.example","type":"tcp","port":70000}`,
 		"tls threshold":      `{"url":"https://b.example","type":"tls","min_days_left":500}`,
@@ -275,7 +275,7 @@ func TestMCPRunNetworkTestNoFreeHost(t *testing.T) {
 		"another's check":  `{"url":"https://a.example:8443","check_id":"` + netTestCheckID(3) + `"}`,
 		"neither":          `{"url":"https://a.example:8443"}`,
 		"unknown bookmark": `{"url":"https://nope.example","type":"tcp"}`,
-		"unbuilt type":     `{"url":"https://a.example:8443","type":"json"}`,
+		"unbuilt type":     `{"url":"https://a.example:8443","type":"smtp"}`,
 	} {
 		if out := mcpNetCall(t, h, "run_network_test", args); out["error"] == nil {
 			t.Errorf("%s: ran (%v)", name, out)
@@ -467,5 +467,70 @@ func TestAIOffersRunNetworkTestAsRead(t *testing.T) {
 	}
 	if msgs := toolMessages(fake.seen[1]); len(msgs) != 1 || !strings.Contains(msgs[0].Text, `"ok":true`) {
 		t.Errorf("tool result: %+v", msgs)
+	}
+}
+
+func TestMCPNetJSONChecks(t *testing.T) {
+	h, rec := netMCPHandlers(t, "")
+	// A new json check, and an expected value that hides when the path looks secret.
+	out := mcpNetCall(t, h, "set_net_check", `{"url":"https://b.example","type":"json","path":"/health","json_path":"db.state","op":"eq","expect":"ok","enabled":true}`)
+	if out["saved"] != true {
+		t.Fatalf("%v", out)
+	}
+	chk := out["check"].(map[string]any)
+	if chk["type"] != "json" || chk["json_path"] != "db.state" || chk["op"] != "eq" || chk["expect"] != "ok" || chk["path"] != "/health" || chk["label"] != "JSON · db.state" {
+		t.Fatalf("%v", chk)
+	}
+	id, _ := chk["check_id"].(string)
+	sec := mcpNetCall(t, h, "set_net_check", `{"url":"https://b.example","type":"json","json_path":"auth.token","op":"eq","expect":"abc-secret-expected"}`)
+	if sec["saved"] != true || sec["check"].(map[string]any)["expect"] != "[hidden]" {
+		t.Fatalf("%v", sec)
+	}
+	for _, c := range storedNetChecks(h, "https://b.example") {
+		if c.Path == "auth.token" && c.Expect != "abc-secret-expected" {
+			t.Fatalf("the stored expected value was changed: %+v", c)
+		}
+	}
+	// A change keeps what is not mentioned.
+	_ = mcpNetCall(t, h, "set_net_check", `{"url":"https://b.example","check_id":"`+id+`","op":"ne","expect":"down"}`)
+	for _, c := range storedNetChecks(h, "https://b.example") {
+		if c.ID == id && (c.Path != "db.state" || c.Op != "ne" || c.Expect != "down" || c.Endpoint != "/health") {
+			t.Fatalf("%+v", c)
+		}
+	}
+	// Refused: no path, a stray credential or host argument, a full URL, a long path.
+	for name, args := range map[string]string{
+		"no json path": `{"url":"https://b.example","type":"json","op":"exists"}`,
+		"no operator":  `{"url":"https://b.example","type":"json","json_path":"a"}`,
+		"credential":   `{"url":"https://b.example","type":"json","json_path":"a","op":"exists","credential_id":"x"}`,
+		"a full url":   `{"url":"https://b.example","type":"json","json_path":"a","op":"exists","path":"https://evil.example/"}`,
+		"a long path":  `{"url":"https://b.example","type":"json","json_path":"` + strings.Repeat("a", 201) + `","op":"exists"}`,
+		"host":         `{"url":"https://b.example","type":"json","json_path":"a","op":"exists","host":"evil.example"}`,
+	} {
+		if out := mcpNetCall(t, h, "set_net_check", args); out["error"] == nil {
+			t.Errorf("%s: accepted (%v)", name, out)
+		}
+	}
+	// A one-off json test and a stored one.
+	res := mcpNetCall(t, h, "run_network_test", `{"url":"https://b.example","type":"json","path":"/x","json_path":"db.state","op":"exists"}`)
+	if res["error"] != nil || rec.count() != 1 {
+		t.Fatalf("%v", res)
+	}
+	if c := rec.calls[0]; c.Type != "json" || c.Path != "db.state" || c.Endpoint != "/x" {
+		t.Fatalf("%+v", c)
+	}
+	if out := mcpNetCall(t, h, "run_network_test", `{"url":"https://b.example","type":"json","op":"exists"}`); out["error"] == nil {
+		t.Fatalf("a json test without a path ran: %v", out)
+	}
+	stored := mcpNetCall(t, h, "run_network_test", `{"url":"https://b.example","check_id":"`+id+`"}`)
+	if stored["error"] != nil || rec.count() != 2 {
+		t.Fatalf("%v", stored)
+	}
+	// The descriptions mention json.
+	for _, def := range mcpNetToolsDefinitions() {
+		name := def["name"].(string)
+		if (name == "run_network_test" || name == "set_net_check" || name == "list_net_checks") && !strings.Contains(def["description"].(string), "json") {
+			t.Errorf("%s does not mention json", name)
+		}
 	}
 }
