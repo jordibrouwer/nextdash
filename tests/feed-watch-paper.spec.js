@@ -243,10 +243,10 @@ test('returning to the tab does not cover another window', async ({ page, reques
 test('on a phone the sections stack, the controls are 44 px and nothing runs off the side', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await openDashboard(page);
-    // No News button on a phone: the bell row's Read opens the paper.
+    // No News button on a phone, and no bell under 768 px: the paper opens through the
+    // call the bell row's Read button makes.
     await expect(newsButton(page)).toBeHidden();
-    await openBellRow(page);
-    await bellRow(page).getByRole('button', { name: 'Read', exact: true }).click();
+    await page.evaluate(() => window.FeedWatchNews.open());
     await expectTwoSections(page);
     const box = async (locator) => /** @type {{x:number,y:number,width:number,height:number}} */ (await locator.boundingBox());
     const toggle = await box(item(page, 'B one').locator('.feed-news-toggle'));

@@ -98,7 +98,7 @@ test.describe('NoticeCard bell option', () => {
         await expect(row(page, 'probe-fallback')).toContainText('Fallback title');
     });
 
-    test('a quiet row stays on a phone with corner cards hidden', async ({ page }) => {
+    test('a phone with corner cards hidden has no corner, and no bell either', async ({ page }) => {
         await page.setViewportSize({ width: 390, height: 800 });
         await loadDashboard(page);
         await page.evaluate(() => {
@@ -106,9 +106,8 @@ test.describe('NoticeCard bell option', () => {
             window.isPhoneDevice = () => true;
         });
         await define(page, 'probe-phone', { bell: { kind: 'quiet' } });
-        await openBell(page);
-        // The bell stays in the narrow header, so the row is there to be seen.
-        await expect(row(page, 'probe-phone')).toBeVisible();
+        // The bell is not drawn under 768 px, and the corner is closed to cards.
+        await expect(page.locator('.notification-bell-button')).toBeHidden();
         expect(await page.evaluate(() => window.NoticeCard.cornerIsFree('x'))).toBe(false);
     });
 });

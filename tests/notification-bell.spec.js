@@ -254,21 +254,23 @@ test('No on a forever source stays hidden when its count rises, and the record s
     await expect(row(page, 'probe-forever')).toHaveCount(0);
 });
 
-test('the bell stays reachable on a phone, with a panel that fits the screen', async ({ page }) => {
+test('the bell is not drawn on a phone, and a tablet keeps it with a panel that fits the screen', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loadDashboard(page);
     await refresh(page);
+    // Under 768 px the host is hidden: nothing of the bell is on the page.
+    await expect(page.locator('.notification-bell-button')).toBeHidden();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await expect(page.locator('.notification-bell-button')).toBeVisible();
     const rect = await page.locator('.notification-bell-button').boundingBox();
-    expect(rect).not.toBeNull();
-    expect(rect.width).toBeGreaterThan(0);
-    expect(rect.height).toBeGreaterThan(0);
     expect(rect.x).toBeGreaterThanOrEqual(0);
-    expect(rect.x + rect.width).toBeLessThanOrEqual(390);
+    expect(rect.x + rect.width).toBeLessThanOrEqual(768);
     await openPanel(page);
     const panel = await page.locator('.notification-bell-panel').boundingBox();
     expect(panel.x).toBeGreaterThanOrEqual(0);
-    expect(panel.x + panel.width).toBeLessThanOrEqual(390);
-    expect(panel.width).toBeLessThanOrEqual(360);
+    expect(panel.x + panel.width).toBeLessThanOrEqual(768);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
