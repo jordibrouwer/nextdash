@@ -183,6 +183,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Unsorted and Promote](#1111-unsorted-and-promote)
 - [Pages & categories modal](#1112-pages-categories-modal)
 - [Addresses](#1113-addresses)
+- [The Tests tab: network checks](#1114-the-tests-tab-network-checks)
 
 </details>
 
@@ -606,6 +607,7 @@ Give your services their own page — *Homelab*, *Server* — and put the bookma
 | **Container list** | Every container on its own row, problems first; a click opens it in the Containers view or goes straight to its web UI |
 | **Uptime** | The monitored bookmarks on this page, worst first, with a heartbeat |
 | **Certificates** | The ones that run out soon |
+| **Network tests** | The TCP, Ping, DNS, TLS and JSON checks you put on your services, with their state and a heartbeat |
 | **Domains** | The domain names that run out soon, by registered domain |
 | **Health** | Broken, down and changed bookmarks on this page; each figure opens its filter |
 | **Processor**, **Memory**, **Disks** | The machine itself — name `/mnt/user` and `/mnt/cache` on Unraid |
@@ -1961,6 +1963,7 @@ A summary at the top shows the score, the trend, the broken count and uptime ove
 |---|---|
 | **Views** | **All**, and questions about the filed library: never opened, not checked, opened once, untagged, not on HTTPS, no icon, duplicates, changed recently — plus **Unsorted** (✻), always shown, which swaps the pool for links kept from the inbox with no page yet |
 | **Health** | Broken, Content, Duplicates, Stale, Unused, Unchecked, Monitored, Certificates, Healthy |
+| **Check type** | **Has checks**, one entry for each kind of network check this install can run (TCP, Ping, DNS, TLS, HTTP detail, JSON) and **Check down**, each with a count ([§11.14](#1114-the-tests-tab-network-checks)). It sits between Health and Pages, and stays away until a check exists |
 | **Pages** | Every page, with a **Manage** link to the pages & categories modal |
 | **Categories** | Every category, narrowed to the selected page once one is picked |
 | **Tags** | Every tag in use, with an **all** link once there are more than a dozen |
@@ -1979,7 +1982,7 @@ The toolbar sits above the list: a **search** field (`/`) that matches name, URL
 <p align="center"><img src="screenshots/manual.md/11-toolbar.jpg" alt="The Bookmarks view toolbar: the search field with its / key, the count of 29 bookmarks, a button to check the unchecked ones, Group, Sort, the density toggle and Add Bookmark" width="860"></p>
 <p align="center"><sub>The toolbar above the list.</sub></p>
 
-Rows show icon, name, host, tags, open count and last opened, plus a score column and status glow once Health has joined in. Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
+Rows show icon, name, host, tags, open count and last opened, plus a score column and status glow once Health has joined in. A bookmark with scheduled network checks shows them as small **chips** in the Tags column, problems first, then the other checks, then the tags; what does not fit becomes **`+n`**, which opens a popover listing everything that is hidden (a click on a check there opens the bookmark's Tests tab; `Esc` closes it). A click on a chip opens the Tests tab too, and neither click selects the row ([§11.14](#1114-the-tests-tab-network-checks)). Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
 
 A bookmark that is a container's web UI carries a small **cube** after its title, in the container's state: green running, amber paused or restarting, grey stopped. A click opens that container in the Containers view ([§15.2](#152-the-list)). The match is the Containers view's own, and the cubes stay away when the Docker socket is not set up or the Containers view is switched off.
 
@@ -1991,11 +1994,12 @@ A bookmark that is a container's web UI carries a small **cube** after its title
 
 <img src="screenshots/manual.md/11-side-panel.jpg" alt="A bookmark's side panel on Details: its head with score, Open, Edit and Re-check, the Details, Health and Usage tabs, the preview card and the edit section open" width="384" align="right">
 
-Focusing a row opens the side panel: **Details**, **Health** and **Usage**, switched with **`1`/`2`/`3`** or **`[`/`]`**, or **`i`** to open or close the panel itself.
+Focusing a row opens the side panel: **Details**, **Health**, **Usage** and **Tests**, switched with **`1`/`2`/`3`/`4`** or **`[`/`]`**, or **`i`** to open or close the panel itself.
 
 - **Details** edits the bookmark in place — name, URL, page, category, tags (with autocomplete and suggestions), shortcut, note, pin, availability checking and interval. Lists and checkboxes save on change, text fields when you leave them; `Escape` puts the old value back. It also offers **Open** and **Edit in dialog** (`Shift + E`). An **Unsorted** bookmark shows a primary **Promote** button here instead of a page and category ([§11.11](#1111-unsorted-and-promote)).
 - **Health** shows the availability mode and interval, **Expected response** ([§12.2](#122-expected-response)), and the reasons a bookmark is flagged, each with the score it costs.
 - **Usage** shows opens, last opened and the same activity the dashboard counts.
+- **Tests** holds the bookmark's network checks and the one-off tests ([§11.14](#1114-the-tests-tab-network-checks)). The tab carries a dot while a scheduled check is down, and the Health tab says *n checks · m down* with a link to it.
 
 The panel's head carries two menus:
 
@@ -2016,7 +2020,7 @@ Tick rows (`x` ticks the row under the cursor, `Shift + X` a range from the last
 
 ### 11.5 The row menu
 
-The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, **Promote…** (only on an Unsorted bookmark), edit, checking, health details, **Health charts…** (the bookmark's health in large, [§11.9](#119-a-bookmarks-health-in-large)), **Merge…** on a duplicate, filters (only this category, page or tag), and delete.
+The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, **Promote…** (only on an Unsorted bookmark), edit, checking, health details, **Network checks** (the Tests tab, [§11.14](#1114-the-tests-tab-network-checks)), **Health charts…** (the bookmark's health in large, [§11.9](#119-a-bookmarks-health-in-large)), **Merge…** on a duplicate, filters (only this category, page or tag), and delete.
 
 <p align="center"><img src="screenshots/manual.md/11-row-menu.jpg" alt="The row menu on the Maps bookmark: open in new tab, copy URL, copy name and URL, QR code, edit, checking, health details, health charts, three filters and delete" width="256"></p>
 <p align="center"><sub>The row menu (right-click, <kbd>m</kbd> or <kbd>Shift</kbd> + <kbd>F10</kbd>).</sub></p>
@@ -2031,7 +2035,7 @@ The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, 
 | `g` / `End` | First / last row |
 | `Enter` / `o` | Open the bookmark under the cursor |
 | `i` | Open or close the side panel |
-| `1` / `2` / `3`, `[` / `]` | Details, Health or Usage in the side panel |
+| `1` / `2` / `3` / `4`, `[` / `]` | Details, Health, Usage or Tests in the side panel |
 | `e` | Edit in the full dialog |
 | `t` | Edit the bookmark's tags in the side panel |
 | `m` / `p` / `f` | Move (the side panel, on its Page field) / pin or unpin / show only its tag |
@@ -2200,6 +2204,121 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 
 `health=` takes one of the Health filter keys (`broken`, `content`, `duplicate`, `stale`, `unused`, `unchecked`, `monitored`, `certificates`, `healthy`, and a few more reachable only from Collection health, such as `drift`); `q=` is a search term; `rev=1` turns the sort round. `Shift + U` and the address `#unsorted` open the view on Unsorted directly.
 
+<a id="1114-the-tests-tab-network-checks"></a>
+
+### 11.14 The Tests tab: network checks
+
+> [!NOTE]
+> **In short:** the **Tests** tab (`4`) of a bookmark's side panel tests the bookmark's own host: is the port open, does it answer a ping, what do its DNS records say, how long is its certificate good for, what does it answer to an HTTP request or a JSON value. Add a **check** and it runs on a schedule with a history and alerts; use **Run once** to look right now and save nothing.
+
+A **check** watches one thing about one bookmark. A bookmark can carry up to **six**. Six kinds exist:
+
+| Kind | Asks | Up when |
+|---|---|---|
+| **TCP** | Does the port accept a connection? | It connects. Slower than **Slow from** counts as *slow*, still up |
+| **Ping** | Is the host reachable, and how fast? 1 to 10 echoes | The loss stays under **Down from loss** (50 % by default) |
+| **DNS** | One record type of the host: A, AAAA, CNAME, MX, TXT, NS or CAA | A record exists, and one matches **Expected value** when you set it (a TXT record may contain it) |
+| **TLS** | The certificate a port presents: chain, version, days left | The chain verifies against the system's trusted roots |
+| **HTTP detail** | One GET with the timeline (DNS, connect, TLS, first byte, download), the redirect chain and the headers | The final status is **Expected status** (200–299 by default; `200`, `200-299` and `200,301` work) and an **Expected header** is present, when set |
+| **JSON** | One value in a JSON answer | The value at the path meets the operator: *is equal to*, *is not equal to*, *is more than*, *is less than*, *contains* or *exists* |
+
+**What it looks at.** Always the bookmark's own host: its address, or the port and path you give on the check. There is no free host or port field, and no traceroute or port scan, by design ([Safety](#safety-of-network-tests) below). **HTTP detail** and **JSON** may name a **path** on the same host (`/health`, `/api/health`), never another address.
+
+#### What the tab shows
+
+At the top, three tiles under **Overview** give the picture: **checks** (how many are scheduled), **down** (how many fail now) and **up 24 h** (the average of their last 24 hours; checks that are off or not measured are left out). Under **Checks** each check is an accordion row with its name, state, cadence and last result; opened, it shows the uptime strip and sparkline (the same ones Health draws), how long it has been down, and for a failure a block that says what to do about it. A small **ℹ** beside the headings, the Run once accordion and the form's Type, Planning, Time-out, Slow from and Alerts fields opens a short card; `Esc` or a click outside closes it.
+
+| State | Means |
+|---|---|
+| **Up** | The check passed |
+| **Down** | The check failed and the retries ran out; the row names the cause (no such name, time-out, refused, certificate, content, status) |
+| **Warning** | Up, with something to do: a certificate with few days left |
+| **Slow** | Up, but slower than **Slow from**. Never sent as down |
+| **via TCP** | A Ping that could not use ICMP and connected over TCP instead; it says the host answers, not how fast ICMP is |
+| **Not measured** | The check says nothing about the network right now: Ping is off or ICMP is not allowed, the address guard refused the host, or the install is the demo. It is no outage: no alert, no effect on uptime |
+| **No result yet** / **Not scheduled** | It has not run yet / its planning is **Off** |
+
+#### Adding a check
+
+**Add check** opens a form in three steps: **1 · Type**, **2 · What to check** (port, record, path, expected value … depending on the kind) and **3 · Planning and alerts**. A **What this does** text under the form spells out the rule in plain words, and **Test first** runs the form once before you save it. `Esc` closes it.
+
+- **Planning**: *Like the bookmark* uses the bookmark's own interval; pick an interval of your own (5 minutes to 24 hours) to give the check one; **Off** keeps the check without running it.
+- **Time-out** (1 to 10 seconds) and **Slow from** (milliseconds; empty turns the flag off).
+- **Alerts on** uses the bookmark's retries, quiet hours and maintenance windows, and sends a recovery; **Muted** keeps the history but sends nothing. A check has its own alert, so its recovery never closes the bookmark's HTTP outage, and a webhook or push message names the check.
+- A check on another host than its bookmark is refused until **Config → Monitoring → Checks** allows it ([below](#network-checks-config)).
+
+Checks run in the server's monitor loop together with the bookmarks' own checks: at most 25 per round (the one waiting longest first), one request in flight per host, a failure confirmed once before it counts, held back while the server itself looks offline, and marked inside maintenance windows. A check keeps its last 800 raw samples and the daily summaries behind them, so the 30-day figures stay whole.
+
+#### Run once
+
+**Run once** (an accordion in the tab) sends one test from the nextDash server right now. Nothing is saved and nothing alerts, but it uses the same safety guard as a scheduled check. Pick the kind: TCP, Ping, DNS (with the record and the resolver), TLS, HTTP detail or JSON (path, value, operator, expected value, credential). **Save as scheduled check…** turns what you just tested into a check. A host that is already being tested says so, and more than six tests a minute from one client are refused (*Too many tests. Wait a minute and try again*).
+
+#### DNS in detail
+
+- **Resolver.** *System* (the server's own resolver), **1.1.1.1** or **8.8.8.8**: these two and no free address, which would turn the server into an open DNS proxy. A fixed resolver is asked over UDP with a TCP retry, and the result carries a chip, **DNSSEC validated** or **DNSSEC not validated** (information only: a check is never down for it); the system resolver says *DNSSEC unknown*. CAA is asked from the nameservers in `/etc/resolv.conf` when you use the system resolver.
+- **TTL.** Every record shows its TTL in a column; the TTL is not part of the change test.
+- **When the records change** (drift). The first run stores the record set as a baseline. A later, different set (order and TTL ignored) shows as **DNS changed** on the check, with the difference (`MX +mail2.example.org`), and as a quiet row in the bell with **Tests** and **Accept**. The check stays up until you accept. **Accept** makes the stored set the new baseline without touching the network. It starts on for MX, TXT, NS, CAA and CNAME and off for A and AAAA, which often rotate behind a CDN. A name with more than 30 records still drifts correctly: the fingerprint covers up to 500, only 30 are shown.
+
+#### TLS in detail
+
+The handshake runs against the check's port: its own, else the port of an https bookmark address, else 443; the bookmark's host is the server name. A chain that does not verify is down (class *certificate*), and the unverified certificates are still shown (up to 5, with subject, issuer, validity and names). **Warn at or below (days)** (1 to 120, 14 by default; exactly 14 days left already warns) turns a valid certificate into a **Warning** and sends one expiry notice at each mark of a ladder derived from it (14, 3 and 1 days by default), apart from the host certificate warnings of [§12.4](#124-alerts). A STARTTLS port does not speak TLS first and shows the handshake error.
+
+#### HTTP detail and JSON
+
+HTTP detail shows the timeline as a bar, the redirect chain (up to 10 hops; a hop to a private address is shown as *blocked* and not followed unless local addresses are allowed) and the first headers. It keeps its own history, apart from the bookmark's own HTTP check. **JSON** reads at most 1 MB and looks up the **path** with dots for objects, `[0]` for a list position, `[name=api]` to pick an entry and a trailing `#` to count (`services[name=api].up`, `items#`). It is down on a non-2xx status, on an answer that is not JSON or is too large, on nothing at the path, and on a value that does not fit.
+
+**Credentials.** A check may use a sign-in stored on the bookmark (Health → Expectations). It goes only to the scheme and host:port of the bookmark itself, never to another host, never after a redirect elsewhere, and never into a result, a sample, the activity log or an MCP answer. **Redaction.** A value under a path that names a token, key, secret or password (or pass, auth, session, cookie, hash and the like) shows as `[hidden]`, and with a credential on the request a text value shows only as *string (n chars)*. Failure sentences do not carry the address that was asked for.
+
+<a id="ping-in-docker"></a>
+
+#### Ping in Docker
+
+Ping needs ICMP. In a Docker bridge network it normally works. When it does not, **Ping** falls back to a TCP connection and shows **via TCP**; the Tests tab and **Config → Monitoring → Checks** say so and show the snippet to copy. To allow ICMP:
+
+```yaml
+services:
+  nextdash:
+    sysctls:
+      net.ipv4.ping_group_range: "0 2147483647"
+```
+
+Restart the container afterwards. With `network_mode: host` the setting belongs to the host: run `sysctl -w net.ipv4.ping_group_range="0 2147483647"` there (on Unraid, add `--sysctl net.ipv4.ping_group_range="0 2147483647"` to *Extra Parameters*, or set it on the Unraid host when the network is *host*). The `NET_RAW` capability does not help the default unprivileged user; it helps only with `NEXTDASH_RUN_AS_ROOT=1`, where the container's default `NET_RAW` lets nextDash send raw ICMP itself. Both compose files in the repository carry the snippet, commented out.
+
+#### On the dashboard, in the bell and on the status page
+
+- **Rows.** A bookmark row can show its checks as chips (type and a status dot) in the tag cluster: problems first, then the tags, the rest as **`+n`** with a popover. A click on a chip opens the Tests tab; the row's context menu offers **Network checks** for the keyboard. **Config → Monitoring → Checks → Check status on dashboard rows** chooses **Only problems** (the default), **Always** or **Never**, and works without a reload. With **Never**, or with network checks off, nothing is fetched.
+- **Widget.** The **Network tests** widget ([§16.1](#161-the-kinds)) shows chosen checks.
+- **Bell.** A scheduled check that is down, and one that came back within 24 hours, sit in the bell with **Health** (opens the bookmark) and **Mute**; a DNS change is a quiet row with **Tests** and **Accept**. A check that is not measured never gets a row.
+- **Status page.** A service can list the network checks of its bookmark: tick them per service under **Config → Status page** ([§12.7](#127-the-status-page)).
+
+<a id="network-checks-config"></a>
+
+#### Config → Monitoring → Checks
+
+The **Network checks** panel holds:
+
+| Setting | Does |
+|---|---|
+| **Network checks on bookmarks** | The master switch (on). Off pauses scheduling and keeps the history |
+| **Ping** | *Auto: ICMP, with TCP as the fallback* (default), *TCP only* or *Off* |
+| **Let a check name another host than its bookmark** | Off by default. With it off, a check that already has such a host stays, does not run and can still be switched off, muted or deleted |
+| **Most scheduled checks** | The ceiling for the whole install (200 by default, up to 1000); nothing is turned on past it |
+| **Check status on dashboard rows** | *Only problems*, *Always* or *Never* |
+
+Under them a status block says whether **Ping (ICMP)** *works*, is *blocked* (with the `ping_group_range` snippet to copy), has *not been tried yet* (nextDash finds out the first time a Ping check runs) or is switched off, and how many checks are scheduled (*n of max*). Below it a table lists **every check** in the install: type, bookmark, host, interval, last result, status, on and muted, problems first. Tick rows to **Turn on** or **Turn off** several at once; a click on a row opens the bookmark on its Tests tab. The MCP tools for network checks have their own switch, **Network tests**, under Data & backups → Webhooks → MCP access ([§24.6](#246-the-mcp-endpoint)).
+
+<a id="safety-of-network-tests"></a>
+
+#### Safety
+
+Network checks send real traffic from the server, so they stay on a short leash:
+
+- **The address guard.** Every connection, ping and lookup goes through the same guard as previews and favicons, with the resolved address pinned. With **Allow localhost & private-network bookmarks** off ([§24.3](#243-local-addresses-and-outgoing-requests)) a host that points at a private address is refused, and that includes the carrier-grade NAT range (so Tailscale addresses), `0.0.0.0/8`, `198.18.0.0/15`, `240.0.0.0/4` and IPv6 forms that embed a non-public IPv4 address. A refusal reads *Host blocked by the address guard*; your own Tests tab adds where the host points (*Resolves to 192.168.1.20*), a notice, webhook or MCP answer never does, and the check shows **Not measured**, not Down.
+- **Host and port come from the bookmark** or from a check stored on it, never from a free field. No traceroute, no port scan, and no way to name another host through the API or the MCP tools.
+- **Rate limits.** At most six one-off tests a minute per client, one test per host at a time, 25 scheduled checks per round, six checks per bookmark and the install-wide ceiling. The server's other outgoing limits are in [§24.3](#243-local-addresses-and-outgoing-requests).
+- **The demo** runs no test at all: the checks you see there are seeded.
+- **The server owns the checks.** A page save, import, template or restore never takes checks from what a browser sends.
+
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
@@ -2218,6 +2337,8 @@ flowchart LR
     Up["✅ Up<br>the page answers"] -->|"no answer, a few checks in a row"| Down["❌ Down<br>you get an alert"]
     Down -->|"answers again"| Back["✅ Up again<br>you get a recovery alert"]
 ```
+
+Besides a bookmark's own check, a bookmark can carry **network checks** (TCP, Ping, DNS, TLS, HTTP detail, JSON) with their own history and alerts: see the Tests tab, [§11.14](#1114-the-tests-tab-network-checks).
 
 During a maintenance window ([§12.5](#125-maintenance-windows)) nothing is sent. A page that still answers but changed what it says is flagged as drift ([§12.3](#123-drift)).
 
@@ -2420,7 +2541,7 @@ On a bookmark's Health tab, **Find in Web Archive** reads the archive's index fo
 
 The status page is one page behind a secret link, for your household and friends. It answers "does it work?" before anyone asks: which services work, since when one is down, planned maintenance, and 30 days of history. No accounts and nothing to change: visitors only read. You choose the groups and the names they see. Light or dark and the language follow the visitor's device. Set it up under **Config → Status page**.
 
-**What a visitor sees.** Your title and notice, one line for the whole page (*All services are working*, or how many have a problem), then your groups. Per service: its public name, its state (Operational, Degraded, Down, Maintenance or Unknown), *Down since 14:03* while it is down, a bar for each of the last 30 days with the uptime percentage, and planned maintenance for the groups you linked. A link to the service and its response time show only when you switch them on. A service with no check for a while reads *Unknown* with the time of its last check. The page refreshes itself every minute.
+**What a visitor sees.** Your title and notice, one line for the whole page (*All services are working*, or how many have a problem), then your groups. Per service: its public name, its state (Operational, Degraded, Down, Maintenance or Unknown), *Down since 14:03* while it is down, a bar for each of the last 30 days with the uptime percentage, and planned maintenance for the groups you linked. A link to the service and its response time show only when you switch them on. A service can also list network checks of its bookmark ([§11.14](#1114-the-tests-tab-network-checks)): they are ticked per service and count like monitors (the worst one decides, a certificate close to expiry reads as degraded), and visitors see only the service name, a state and the bars, never the host, port, path or error text. A check that is off or deleted, and every check while Network checks are off, drops off the page. A service with no check for a while reads *Unknown* with the time of its last check. The page refreshes itself every minute.
 
 **What a visitor never sees.** Error details, container images, bookmark ids, internal addresses (unless **Link** is on for that service), or anything else of your dashboard. The page loads none of the dashboard's files.
 
@@ -3016,6 +3137,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **Certificates** | Certificates close to expiry, per host. **Also list domains** adds the domains that run out in the same window |
 | **Domains** | Domain registrations close to expiry, per registered domain, and the domains no registry gives a date for |
 | **Health trend** | How the collection's health has moved, drawn like the summary in Collection health |
+| **Network tests** | The network checks you pick ([§11.14](#1114-the-tests-tab-network-checks)), from what is already measured: the widget runs nothing. Three looks: **Rows** (name, state and last result), **Tiles** and **Heartbeat** (a strip of the last day per check); one or two columns follow the tile's width. A check that was removed says *check removed* |
 
 <p align="center"><img src="screenshots/manual.md/15-uptime.jpg" alt="The Uptime tile: five monitored addresses, worst first, each with its uptime and a heartbeat bar, and 2 more" width="380"></p>
 <p align="center"><sub>The Uptime tile.</sub></p>
@@ -3157,6 +3279,7 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 | **Certificates** | **Expiring within (days)** (1 to 730, 30 by default), **Rows to show** |
 | **Domains** | **Expiring within (days)** (1 to 730, 60 by default), **Rows to show** |
 | **Health trend** | **Days to plot** (7 to 90, 30 by default) |
+| **Network tests** | **What to show** (a table of the scheduled checks you already have, 40 at most; there is no free host), **Look** (Rows, Tiles, Heartbeat), **Order** (Problems first, Name), **Rows to show** (1 to 20), **Refresh every (seconds)** (30 to 3600, 60 by default). An exported page template keeps no check ids |
 | **Inbox** | **Rows to show**, **Show where each link came from** (on) |
 | **Sources** | **Only sources that failed**, **Rows to show** |
 | **Neglected** | **Not opened for (days)** (7 to 730, 180 by default), **Count bookmarks never opened** (on), **Only bookmarks with these tags**, **Rows to show** |
@@ -4470,7 +4593,7 @@ Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config →
 
 | Tab | Settings |
 |---|---|
-| **Checks** | Checks in this browser, checks on the server, how monitored bookmarks stand out ([§12.1](#121-availability-modes)) |
+| **Checks** | Checks in this browser, checks on the server, how monitored bookmarks stand out ([§12.1](#121-availability-modes)), and the **Network checks** panel: the switches, ICMP status and the table of every network check ([§11.14](#network-checks-config)) |
 | **Notifications** | Downtime alerts, browser notifications, reminders, the weekly digest, and browser notifications for Glances incidents (which kinds is chosen per host in Config → Glances → Notices, [§16A.8](#16a8-notices)) ([§12.4](#124-alerts)) |
 | **Schedules** | Maintenance windows and quiet hours ([§12.5](#125-maintenance-windows)) |
 
@@ -5136,7 +5259,7 @@ NEXTDASH_SSRF_API_RATE_PER_MIN=60        # /api/bookmark-preview, icon uploads, 
 NEXTDASH_STATUS_PING_RATE_PER_MIN=300    # /api/ping, the browser's own status checks
 ```
 
-Above the limit the API answers **429**, and the `security` channel records it.
+Above the limit the API answers **429**, and the `security` channel records it. Network checks and one-off tests ([§11.14](#1114-the-tests-tab-network-checks)) go through the same address rule and add their own limit: six one-off tests a minute per client.
 
 **Who a request is counted against.** By default, the address the connection comes from. Behind a reverse proxy that is the proxy for everyone, so the limits are shared by every reader — which is deliberate: `X-Forwarded-For` can be set by anyone, and believing it would let a client hand itself a fresh allowance simply by inventing a new value. Name your proxy to have the header believed:
 
@@ -5168,10 +5291,10 @@ HTML pages send a strict Content-Security-Policy. `NEXTDASH_CSP=off` switches it
 
 ### 24.6 The MCP endpoint
 
-nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks → MCP access**, which then shows the address. Under it are five group switches, all off until you tick them:
+nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks → MCP access**, which then shows the address. Under it are six group switches, all off until you tick them:
 
 <p align="center"><img src="screenshots/manual.md/23-mcp-access.jpg" alt="The MCP access panel under Data & backups, Webhooks: the switch Answer MCP clients at this address ticked with its address, and four group switches: Bookmarks edit and delete and Containers control off, Health and Inbox read and Containers read on" width="640"></p>
-<p align="center"><sub>MCP access: the endpoint switch, its address and the four tool groups.</sub></p>
+<p align="center"><sub>MCP access: the endpoint switch, its address and the tool groups.</sub></p>
 
 | Tool | What it does | Group |
 |---|---|---|
@@ -5196,15 +5319,22 @@ nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for exam
 | `get_container_logs` | The last lines of a log; 100 by default, at most 200 | *Containers: read* |
 | `container_action` | Start, stop, restart, pause, unpause, remove, update or rollback one container | *Containers: control* |
 | `get_settings_overview` | How this install is configured, as a safe read-only subset (see below) | *Settings overview: read* |
+| `run_network_test` | Run one network test now against a bookmark's own host: `tcp`, `ping`, `dns` (with `record` and `resolver`), `tls`, `http` or `json` (`json_path`, `op`, `expect`), or one of its stored checks by `check_id`. Real traffic from the server, rate limited, one test per host at a time, through the address guard. There is no argument for another host or port | *Network tests* |
+| `list_net_checks` | The network checks stored on bookmarks with the state each was last in; one bookmark by URL, or every check (50 by default, at most 200). Sends nothing | *Network tests* |
+| `get_net_check` | One check with its settings, state, uptime over 24 hours, 7 and 30 days, recent incidents and its newest samples (at most 30). Sends nothing | *Network tests* |
+| `set_net_check` | Add a check to a bookmark, or change one by `check_id` (fields left out stay as they are). No host argument: a check aims at the bookmark's own host; `port` only for tcp and tls, `path` only for http and json on that host. Refused at six checks per bookmark and at the install-wide ceiling | *Network tests* |
+| `delete_net_check` | Delete one check | *Network tests* |
 | `get_app_status` | The install itself: version and whether the last update check found a newer one (no check is made for the question), the size of the data folder, how many pages, categories and bookmarks, whether the status page is on and how many monitors it shows, how many bookmark feeds are followed, failing or given up on, and how long the server has been running. Counts, yes/no and versions only | *Settings overview: read* |
 
 Searching, looking up, listing tags and pages, and adding bookmarks are always on while the endpoint is. The container link is the one the Containers view shows: the same steps in the same order, with a link set by hand first, and a bookmark filed on two pages linked on both. For the address your browser has open, which the view also counts as this server, nextDash uses the address the dashboard was last opened on. Without Docker, or with the Containers view off, the tools say so in `notes` instead of failing, and a count they cannot know is marked as unknown rather than given as zero. A failed check is reported only as its kind (*Unreachable*, *Timed out*, an HTTP status or a failed content check), never with its error text, which can repeat the address or quote the expectation; expectations and credentials are never included. Bookmarks in Unsorted are not part of the health report, so they have no health status or score. *Bookmarks: edit and delete* and *Containers: control* are marked **needs write token** in Config.
 
-**Write token.** With `NEXTDASH_WRITE_TOKEN` set, adding, editing, moving and deleting bookmarks and categories, and every container action, need it. Container logs need it too, because logs can contain secrets. Container environment variables are never returned. Without a token, the switches are the only gate.
+**Write token.** With `NEXTDASH_WRITE_TOKEN` set, adding, editing, moving and deleting bookmarks and categories, every container action, and running, adding, changing or deleting a network test or check, need it. Container logs need it too, because logs can contain secrets. Container environment variables are never returned. Without a token, the switches are the only gate.
 
 **Settings overview: read** is off by default. With it on, `get_settings_overview` describes your configuration from a fixed list: the health checking and monitoring settings (automatic recheck and its interval, timeouts and retries, monitor emphasis, uptime badges, how many bookmarks ignore which condition, and only *whether* down alerts are configured), the Containers settings (the view, refresh, hidden containers, alerts and their thresholds, automatic updates and their window, resource history, which container is linked to which bookmark by the bookmark's name and page, whether a container has a custom web UI address and its host, and the host address as a host), your pages and their categories with bookmark counts, which features are on (Containers view, Inbox, status page, uptime badges, automatic recheck, analytics), language and theme, and the MCP and assistant switches with the provider, the model, the conversation limits and the server address as a host. It never contains keys, tokens, passwords, webhook or notify addresses, chat ids or user keys, anything from the secrets files, push subscriptions or the write token. The same switch adds `get_app_status`, which holds no addresses or paths either.
 
 The container read tools need the Containers view switched on; **Containers: control** also needs Docker control switched on for the server (`NEXTDASH_DOCKER_CONTROL`); the switch stays greyed out until it is. It acts exactly like the Containers view: nextDash cannot stop, restart, pause, remove or update itself, only a stopped container can be removed, and only one action runs on a container at a time.
+
+**Network tests** is off by default. Switched on, it adds the five network tools: `run_network_test` sends real traffic from the nextDash server, and `set_net_check` and `delete_net_check` change what the server sends on a schedule, which is why they have a switch of their own. A bookmark is named by its URL (and its page when the same URL is filed on several), as in every other tool. No tool takes a host or a port: a test aims at the bookmark's own address or at a check stored on it, so a client cannot turn it into a scanner, and a call that names a host is refused. A test uses the same budget, one-test-per-host rule, address guard and demo block as the Tests tab ([§11.14](#safety-of-network-tests)), and a check made this way uses the bookmark's own credential, never a chosen one. Answers never carry a credential or the address the guard refused.
 
 **Activity log.** Changes made this way show up in the activity log with the source `mcp` and the client's User-Agent. Container actions appear as the usual `docker.<action>` events, also with source `mcp`.
 
@@ -5212,7 +5342,7 @@ The container read tools need the Containers view switched on; **Containers: con
 
 It starts closed because it answers questions about every bookmark. The `Origin` of every request is checked against the host it arrived on.
 
-The in-app assistant ([§24.11](#2411-the-assistant)) reads through the same group switches, whether or not this endpoint is switched on.
+The in-app assistant ([§24.11](#2411-the-assistant)) reads through the same group switches, whether or not this endpoint is switched on. With *Network tests* ticked it can run a test or list and read checks; adding, changing or deleting a check is a change it proposes, and nothing happens until you apply it with a click.
 
 <a id="247-what-nextdash-contacts"></a>
 
@@ -5221,6 +5351,7 @@ The in-app assistant ([§24.11](#2411-the-assistant)) reads through the same gro
 | What | When | Switch |
 |---|---|---|
 | Your bookmarks' sites | Checks, previews, icons, watched feeds, archives | Per feature |
+| Your bookmarks' hosts, and 1.1.1.1 or 8.8.8.8 | Network checks and one-off tests (TCP, Ping, DNS, TLS, HTTP detail, JSON); the two resolvers only for a DNS check set to ask them | Config → Monitoring → Checks → *Network checks on bookmarks*; per check, Planning → Off |
 | GitHub Releases API | Once a day, to see whether a newer release exists; with the Containers GitHub token when you set one; a failure is explained in [§25](#the-update-check-fails) | Behavior → Privacy & sync → *Check GitHub for new releases*; `DISABLE_UPDATE_CHECK=true` for the whole server |
 | nextdash.cc feed | Every 90 minutes, by the server, for News & features | Behavior → Privacy & sync → *Show posts from nextdash.cc*; `DISABLE_NEWS_FEED=true` |
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
@@ -5363,7 +5494,7 @@ The panel is laid out like the command palette: you type your question in the li
 
 Nothing else is sent: not your whole collection, not your settings (unless *Settings overview: read* is on and it looks them up, and then only the safe subset in [§24.6](#246-the-mcp-endpoint)), and not your key to anyone but the provider.
 
-**What it can read.** The same read tools as the MCP endpoint ([§24.6](#246-the-mcp-endpoint)), following the same group switches under **Data & backups → Webhooks → MCP access**. Searching and looking up bookmarks, tags and pages are always available; *Health and Inbox: read*, *Containers: read* and *Settings overview: read* add those lookups when ticked. With them on it can answer counts and rankings (*how many bookmarks are linked to a container*, *which bookmarks have the lowest health score*), health and usage statistics for one bookmark or the whole collection, which container belongs to which bookmark, check how one bookmark has fared day by day, read the Inbox and Trash figures, say which version is running and whether the status page is on, and describe how nextDash is configured; when a switch it needs is off, it says which one. The group checkboxes can be ticked when either the MCP endpoint or the assistant is on, and the assistant does not need the `/mcp` address to be switched on. Container logs still need the write token when one is set, and environment variables are never returned. The assistant does not run container actions itself, whatever *Containers: control* says. The last panel of the settings page shows the five switches as On or Off, read-only, with an **Open MCP access** button that takes you to them.
+**What it can read.** The same read tools as the MCP endpoint ([§24.6](#246-the-mcp-endpoint)), following the same group switches under **Data & backups → Webhooks → MCP access**. Searching and looking up bookmarks, tags and pages are always available; *Health and Inbox: read*, *Containers: read* and *Settings overview: read* add those lookups when ticked. With them on it can answer counts and rankings (*how many bookmarks are linked to a container*, *which bookmarks have the lowest health score*), health and usage statistics for one bookmark or the whole collection, which container belongs to which bookmark, check how one bookmark has fared day by day, read the Inbox and Trash figures, say which version is running and whether the status page is on, and describe how nextDash is configured; when a switch it needs is off, it says which one. The group checkboxes can be ticked when either the MCP endpoint or the assistant is on, and the assistant does not need the `/mcp` address to be switched on. Container logs still need the write token when one is set, and environment variables are never returned. The assistant does not run container actions itself, whatever *Containers: control* says. The last panel of the settings page shows the six switches as On or Off, read-only, with an **Open MCP access** button that takes you to them.
 
 **What it knows about nextDash.** Ask it how something works, what nextDash can do or where a setting lives and it looks the answer up in the manual and the README that ship with your install; the lookup happens inside nextDash and sends nothing to the web, and the passages it finds travel with the question like the other lookups above. Its answers can contain links that open a page, such as *Config → Containers*, and they open without leaving the dashboard. Where the manual does not say, it tells you so rather than guessing.
 
@@ -5742,7 +5873,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Maintenance window | A recurring period when downtime is expected: failures in it send no alert and do not count against uptime. | [§12.5](#125-maintenance-windows) |
-| MCP endpoint | An address at `/mcp` where MCP clients can search, add and (with switches) edit bookmarks, read Health, the Inbox and containers, and act on containers; off until you switch it on. | [§24.6](#246-the-mcp-endpoint) |
+| MCP endpoint | An address at `/mcp` where MCP clients can search, add and (with switches) edit bookmarks, read Health, the Inbox and containers, act on containers, and run or manage network tests; off until you switch it on. | [§24.6](#246-the-mcp-endpoint) |
 | Assistant | Ask about your bookmarks in plain words with Claude, OpenAI or a server of your own; it looks things up and proposes changes you apply one by one; off until you switch it on. | [§24.11](#2411-the-assistant) |
 | Monitor | The availability mode where the server checks a bookmark on its own interval and keeps 30 days of history, uptime, outages and alerts. | [§12.1](#121-availability-modes) |
 | Mute | Holds back the alerts for one bookmark, which is still checked and shows as down with a Muted badge; a container's notices can be muted too. | [§12.4](#muting-one-bookmark), [§15.9](#159-notices) |
@@ -5753,6 +5884,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Network check | A TCP, Ping, DNS, TLS, HTTP detail or JSON test of a bookmark's own host, run on a schedule with a history and alerts, or once with Run once. Up to six per bookmark; found in the side panel's Tests tab. | [§11.14](#1114-the-tests-tab-network-checks) |
 | Note | Plain text on a bookmark; search matches it and the preview card shows it. | [§10.5](#105-notes) |
 | Notice | A message sent when a container stops unexpectedly, keeps restarting or turns unhealthy, and again when it recovers. | [§15.9](#159-notices) |
 

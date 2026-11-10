@@ -27,7 +27,7 @@ Key features:
 • Extensive theme and layout customization, with a theme studio beside the dashboard, a theme editor and 266 backdrops drawn in the themes' colours
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
-• Network checks on a bookmark: TCP and Ping on a schedule, with the result in the Health tab and the bell. Ping needs ICMP; if it is blocked nextDash falls back to TCP and says so. To allow it, add --sysctl net.ipv4.ping_group_range="0 2147483647" to Extra Parameters (with Host networking set the sysctl on the Unraid host instead)
+• Network checks on a bookmark: TCP, Ping, DNS, TLS, HTTP and JSON on a schedule or once, with the result in the Tests tab, in the bell and on the dashboard. Ping needs ICMP; if it is blocked nextDash falls back to TCP and says so. To allow it, add --sysctl net.ipv4.ping_group_range="0 2147483647" to Extra Parameters (with Host networking set the sysctl on the Unraid host instead)
 • Edit mode: change categories, widgets and pages right on the dashboard
 • A notifications bell: questions, notices and tips wait there, with their age, instead of popping up over your work
 • A checkup and a weekly digest that tell you what needs attention
