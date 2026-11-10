@@ -49,6 +49,8 @@ class DashboardRenderCore {
         // A DNS blocker counts live, but its day-strip changes by the hour.
         adguard: { configKey: 'ttl', floor: 30, fallback: 60 },
         pihole: { configKey: 'ttl', floor: 30, fallback: 60 },
+        // Reads the monitor loop's history, which only moves as fast as the checks run.
+        nettests: { configKey: 'ttl', floor: 30, fallback: 60 },
         // nextDash's own record: a beat is as old as its pace, so a half minute is fresh enough.
         glances: { configKey: 'refreshSeconds', floor: 15, fallback: 30 },
         'jellyfin-playing': { configKey: 'ttl', floor: 5, fallback: 10 },
@@ -1223,6 +1225,7 @@ class DashboardRenderCore {
         'beszel-storage': 'Beszel storage',
         adguard: 'AdGuard Home',
         pihole: 'Pi-hole',
+        nettests: 'Network tests',
         glances: 'Glances',
         'jellyfin-playing': 'Jellyfin — now playing',
         'emby-playing': 'Emby — now playing',

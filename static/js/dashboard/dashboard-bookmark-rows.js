@@ -854,6 +854,7 @@ class DashboardBookmarkRows {
         // new column would shift every row on the page. Off by default — a row
         // with several tags is noticeably busier, and the whole point of the
         // grid is that it stays scannable.
+        d.netBadges?.decorate(row, bookmark);
         this.renderRowTags(row, openLink, bookmark);
 
         if (allowInlineEdit && bookmarkRef) {
@@ -968,29 +969,50 @@ class DashboardBookmarkRows {
     renderRowTags(row, openLink, bookmark) {
         const d = this.dash;
         openLink.querySelector('.bookmark-tag-strip')?.remove();
-        if (d.settings?.showRowTags !== true) return;
+        // What the row's network checks show, drawn into the same cluster as
+        // the tags: problems first, then the tags, the rest as "+n".
+        const nets = d.netBadges?.chipItems?.(row, bookmark) || [];
+        row._netFp = d.netBadges?.fingerprint?.(row, bookmark);
+        const tags = d.settings?.showRowTags === true
+            ? (bookmark?.tags || []).map((t) => String(t || '').trim()).filter(Boolean)
+            : [];
+        if (!tags.length && !nets.length) return;
 
-        const tags = (bookmark?.tags || [])
-            .map((t) => String(t || '').trim())
-            .filter(Boolean);
-        if (!tags.length) return;
-
+        // Tags alone keep their own limit. With checks in the cluster a
+        // problem takes a place of its own, and without tags three checks fit.
         const max = Number(d.settings?.rowTagsMax) || 2;
+        const cap = nets.length ? (tags.length ? max + 1 : 3) : max;
+        const entries = [
+            ...nets.map((item) => ({ kind: 'net', item })),
+            ...tags.map((tag) => ({ kind: 'tag', tag })),
+        ];
         const strip = document.createElement('span');
         strip.className = 'bookmark-tag-strip';
-        strip.setAttribute('aria-hidden', 'true');   // the row's aria-label already names them
-        tags.slice(0, max).forEach((tag) => {
+        // The row's aria-label already names the tags; the checks name themselves.
+        if (nets.length) strip.dataset.net = 'true';
+        else strip.setAttribute('aria-hidden', 'true');
+        entries.slice(0, cap).forEach((entry) => {
+            if (entry.kind === 'net') {
+                strip.appendChild(d.netBadges.chip(entry.item));
+                return;
+            }
             const chip = document.createElement('span');
             chip.className = 'bookmark-tag-chip';
-            chip.textContent = tag;
-            window.TagColors?.paint(chip, tag);
+            chip.textContent = entry.tag;
+            if (nets.length) chip.setAttribute('aria-hidden', 'true');
+            window.TagColors?.paint(chip, entry.tag);
             strip.appendChild(chip);
         });
-        if (tags.length > max) {
-            const more = document.createElement('span');
-            more.className = 'bookmark-tag-chip bookmark-tag-chip--more';
-            more.textContent = `+${tags.length - max}`;
-            strip.appendChild(more);
+        if (entries.length > cap) {
+            const hidden = entries.slice(cap);
+            if (nets.length) {
+                strip.appendChild(d.netBadges.moreChip(hidden));
+            } else {
+                const more = document.createElement('span');
+                more.className = 'bookmark-tag-chip bookmark-tag-chip--more';
+                more.textContent = `+${hidden.length}`;
+                strip.appendChild(more);
+            }
         }
         openLink.appendChild(strip);
     }

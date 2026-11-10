@@ -66,16 +66,42 @@ func (h *Handlers) SaveStatusPage(w http.ResponseWriter, r *http.Request) {
 	// A service named after its URL is the normalise fallback; use the
 	// bookmark's own name instead.
 	names := map[string]string{}
+	// Where each check lives, so a service keeps only checks that still exist
+	// on its own bookmark. A switched-off check stays listed (it comes back
+	// when switched on); a deleted one, or one of another bookmark, goes.
+	checkAt := map[string]string{}
 	for _, p := range h.store.GetPages() {
 		for _, bm := range h.store.GetBookmarksByPage(p.ID) {
-			if bm.Monitor {
-				names[canonicalBookmarkURLKey(bm.URL)] = bm.Name
+			key := canonicalBookmarkURLKey(bm.URL)
+			if bm.Monitor || len(bm.Checks) > 0 {
+				names[key] = bm.Name
+			}
+			for _, c := range bm.Checks {
+				if c.ID != "" {
+					checkAt[c.ID] = key
+				}
 			}
 		}
 	}
 	for gi := range cfg.Groups {
 		for si := range cfg.Groups[gi].Services {
 			s := &cfg.Groups[gi].Services[si]
+			if len(s.NetChecks) > 0 {
+				anchor := ""
+				if s.MonitorURL != "" {
+					anchor = canonicalBookmarkURLKey(s.MonitorURL)
+				}
+				kept := []string{}
+				for _, id := range s.NetChecks {
+					if at, ok := checkAt[id]; ok && (anchor == "" || at == anchor) {
+						kept = append(kept, id)
+					}
+				}
+				s.NetChecks = kept
+				if len(kept) == 0 {
+					s.NetChecks = nil
+				}
+			}
 			if s.MonitorURL != "" && s.Name == s.MonitorURL {
 				if name := names[canonicalBookmarkURLKey(s.MonitorURL)]; name != "" {
 					s.Name = clipRunes(name, statusNameMax)
@@ -155,6 +181,17 @@ type statusMonitorSource struct {
 	URL  string `json:"url"`
 	Name string `json:"name"`
 	Page string `json:"page"`
+	// Monitor is false for a bookmark listed only for its network checks.
+	Monitor bool `json:"monitor"`
+	// Checks are what the owner can opt in for this bookmark (owner API only).
+	Checks []statusCheckSource `json:"checks,omitempty"`
+}
+
+type statusCheckSource struct {
+	ID      string `json:"id"`
+	Label   string `json:"label"`
+	Type    string `json:"type"`
+	Enabled bool   `json:"enabled"`
 }
 
 func (h *Handlers) StatusPageSources(w http.ResponseWriter, r *http.Request) {
@@ -162,15 +199,29 @@ func (h *Handlers) StatusPageSources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := []statusMonitorSource{}
-	seen := map[string]bool{}
+	at := map[string]int{}
 	for _, p := range h.store.GetPages() {
 		for _, bm := range h.store.GetBookmarksByPage(p.ID) {
 			key := canonicalBookmarkURLKey(bm.URL)
-			if !bm.Monitor || seen[key] {
+			if !bm.Monitor && len(bm.Checks) == 0 {
 				continue
 			}
-			seen[key] = true
-			out = append(out, statusMonitorSource{URL: bm.URL, Name: bm.Name, Page: p.Name})
+			i, seen := at[key]
+			if !seen {
+				i = len(out)
+				at[key] = i
+				out = append(out, statusMonitorSource{URL: bm.URL, Name: bm.Name, Page: p.Name})
+			}
+			out[i].Monitor = out[i].Monitor || bm.Monitor
+			have := map[string]bool{}
+			for _, c := range out[i].Checks {
+				have[c.ID] = true
+			}
+			for _, c := range bm.Checks {
+				if c.ID != "" && !have[c.ID] {
+					out[i].Checks = append(out[i].Checks, statusCheckSource{ID: c.ID, Label: netCheckLabel(c, bm), Type: c.Type, Enabled: c.Enabled})
+				}
+			}
 		}
 	}
 	writeStatusJSON(w, map[string]interface{}{"monitors": out})

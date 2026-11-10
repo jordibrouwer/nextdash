@@ -206,6 +206,19 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "latency", Kind: "bool"},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
+	WidgetTypeNetTests: {
+		// Which checks to show, by id: an id is global to the install, so the
+		// list survives a bookmark moving page or changing address. Only
+		// ids of existing checks are chosen in the UI; one that has gone
+		// since is told so on the tile rather than dropped here.
+		{Key: "checks", Kind: "checkIds", Max: netWidgetMaxChecks},
+		{Key: "look", Kind: "string", Allowed: []string{"rows", "tiles", "heartbeat"}},
+		{Key: "sort", Kind: "string", Allowed: []string{"problems", "name"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// The server only reads history for this, so asking more often than
+		// the checks run would redraw the same answer.
+		{Key: "ttl", Kind: "int", Min: 30, Max: 3600},
+	},
 	WidgetTypeCerts: {
 		// No bookmark filter: expiry belongs to the host, and ten bookmarks on
 		// one domain are one line. The threshold is the whole question.
@@ -590,6 +603,10 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 			if at := widgetClockTime(raw); at != "" {
 				clean[field.Key] = at
 			}
+		case "checkIds":
+			if list := widgetConfigCheckIDs(raw, field.Max); len(list) > 0 {
+				clean[field.Key] = list
+			}
 		case "urlList":
 			// Its own kind rather than a list of strings: a list entry is
 			// capped at widgetMaxIDLen, which is an identifier's length and
@@ -667,6 +684,49 @@ func widgetConfigList(raw any, allowed []string) []string {
 		}
 		text = trimToLength(strings.TrimSpace(text), widgetMaxIDLen)
 		if text == "" || !widgetValueAllowed(text, allowed) {
+			continue
+		}
+		if _, duplicate := seen[text]; duplicate {
+			continue
+		}
+		seen[text] = struct{}{}
+		list = append(list, text)
+	}
+	return list
+}
+
+// widgetConfigCheckIDs reads a bounded list of network check ids: twelve hex
+// characters each, as newNetCheckID makes them. Anything else is dropped, so a
+// stored widget never carries a string that names no check by construction.
+func widgetConfigCheckIDs(raw any, maxCount int) []string {
+	// Both shapes, for the reason widgetConfigList gives.
+	var items []any
+	switch value := raw.(type) {
+	case []any:
+		items = value
+	case []string:
+		items = make([]any, 0, len(value))
+		for _, entry := range value {
+			items = append(items, entry)
+		}
+	default:
+		return nil
+	}
+	if maxCount <= 0 {
+		maxCount = netWidgetMaxChecks
+	}
+	seen := map[string]struct{}{}
+	list := make([]string, 0, len(items))
+	for _, item := range items {
+		if len(list) >= maxCount {
+			break
+		}
+		text, isString := item.(string)
+		if !isString {
+			continue
+		}
+		text = strings.ToLower(strings.TrimSpace(text))
+		if !validNetCheckID(text) {
 			continue
 		}
 		if _, duplicate := seen[text]; duplicate {
@@ -763,7 +823,7 @@ func widgetTypeNames() []string {
 		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
 		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage,
 		WidgetTypeAdguard, WidgetTypePihole,
-		WidgetTypeGlances,
+		WidgetTypeGlances, WidgetTypeNetTests,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

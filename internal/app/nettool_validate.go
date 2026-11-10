@@ -99,8 +99,13 @@ func normalizeNetChecks(in, stored []NetCheck, bm Bookmark, s Settings,
 		if c.Type == netTypeDNS {
 			record := strings.ToUpper(strings.TrimSpace(c.Record))
 			if !netDNSRecords[record] {
-				return nil, errors.New("pick a record type: A, AAAA, CNAME, MX, TXT or NS")
+				return nil, errors.New("pick a record type: A, AAAA, CNAME, MX, TXT, NS or CAA")
 			}
+			resolver := strings.TrimSpace(c.Resolver)
+			if !netDNSResolvers[resolver] {
+				return nil, errors.New("the resolver can be the system one, 1.1.1.1 or 8.8.8.8")
+			}
+			next.Resolver = resolver
 			expect := strings.TrimSpace(c.Expect)
 			if len([]rune(expect)) > 255 {
 				return nil, errors.New("the expected value can be at most 255 characters")

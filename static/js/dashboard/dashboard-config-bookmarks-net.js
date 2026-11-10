@@ -157,7 +157,7 @@
                 port: text(check.port), minDaysLeft: text(check.minDaysLeft), count: text(check.count), maxLossPct: text(check.maxLossPct), maxMs: text(check.maxMs),
                 planning, intervalMinutes: Number(check.intervalMinutes) || 0, timeoutSec: Number(check.timeoutSec) || 0,
                 muted: check.muted === true,
-                record: check.record || 'A', expect: check.expect || '', watchDrift: check.watchDrift === true,
+                record: check.record || 'A', resolver: check.resolver || '', expect: check.expect || '', watchDrift: check.watchDrift === true,
                 endpoint: check.endpoint || '', expectStatus: check.expectStatus || '', expectHeader: check.expectHeader || '',
                 path: check.path || '', op: check.op || 'eq', credentialId: check.credentialId || '',
             };
@@ -174,7 +174,7 @@
                 port: num(draft.port), minDaysLeft: num(draft.minDaysLeft), count: num(draft.count), maxLossPct: num(draft.maxLossPct), maxMs: num(draft.maxMs),
                 enabled: draft.planning !== 'off', intervalMinutes: interval, timeoutSec: Number(draft.timeoutSec) || 0,
                 muted: draft.muted === true,
-                record: draft.record || 'A', expect: String(draft.expect || '').trim(), watchDrift: draft.watchDrift === true,
+                record: draft.record || 'A', resolver: model().DNS_RESOLVERS.includes(draft.resolver) ? draft.resolver : '', expect: String(draft.expect || '').trim(), watchDrift: draft.watchDrift === true,
                 endpoint: String(draft.endpoint || '').trim(), expectStatus: String(draft.expectStatus || '').trim(), expectHeader: String(draft.expectHeader || '').trim(),
                 path: String(draft.path || '').trim(), op: String(draft.op || 'eq'), credentialId: String(draft.credentialId || '').trim(),
             };
@@ -247,7 +247,10 @@
                 const recordOptions = M.DNS_RECORDS.map((r) => `<option value="${r}"${d.record === r ? ' selected' : ''}>${esc(r)}</option>`).join('');
                 const watchOptions = [['on', t('nettools.driftOn', 'Tell me in the bell')], ['off', t('nettools.driftOff', 'Do not watch')]]
                     .map(([v, text]) => `<option value="${v}"${(d.watchDrift ? 'on' : 'off') === v ? ' selected' : ''}>${esc(text)}</option>`).join('');
+                const resolverOptions = M.DNS_RESOLVERS.map((r) => `<option value="${r}"${(d.resolver || '') === r ? ' selected' : ''}>${esc(r || t('nettools.resolverOptSystem', 'System'))}</option>`).join('');
                 params = `${field('record', t('nettools.fieldRecord', 'Record'), `<select class="config-select" data-net-field="record">${recordOptions}</select>`)}
+                    ${field('resolver', t('nettools.fieldResolver', 'Resolver'), `<select class="config-select" data-net-field="resolver">${resolverOptions}</select>`,
+                        M.resolverHint(d.resolver || '', t))}
                     ${field('expect', t('nettools.fieldExpect', 'Expected value'), input('expect', d.expect, 'text', `spellcheck="false" maxlength="255" placeholder="${esc(t('nettools.fieldExpectPlaceholder', 'Optional'))}"`),
                         t('nettools.fieldExpectHint', 'Down when none of the records is this value. A TXT record may contain it.'))}
                     ${field('watchDrift', t('nettools.fieldDrift', 'When the records change'), `<select class="config-select" data-net-field="watchDrift">${watchOptions}</select>`,
@@ -374,12 +377,15 @@
          * bookmark's own address. Resolves to { ok, res } or { ok: false,
          * error } with a sentence for the reader; it never throws.
          */
-        async runBmNetTest(b, { type = '', checkId = '', record = '', json = null } = {}) {
+        async runBmNetTest(b, { type = '', checkId = '', record = '', resolver = '', json = null } = {}) {
             const body = { pageId: b.pageId, url: b.url };
             if (checkId) body.checkId = checkId;
             else {
                 body.type = type;
-                if (type === 'dns') body.record = record || 'A';
+                if (type === 'dns') {
+                    body.record = record || 'A';
+                    if (resolver) body.resolver = resolver;
+                }
                 // A JSON test says what to look at; it still names no host or port.
                 if (type === 'json' && json) {
                     body.path = json.path;
@@ -594,6 +600,7 @@
 
         /** Kicked when the list is bound: one bulk request, never one per row. */
         startBmNet() {
+            this.bindBmNetClicks();
             void this.loadBmNetIndex({ maxAgeMs: 30000 });
         },
 
@@ -626,7 +633,9 @@
                         byKey.get(key).push(item);
                     });
                     this._bmNetIndex = { byKey, total: (body.items || []).length, at: Date.now() };
+                    this.dash.netBadges?.adopt(body.items);
                     this._bmNetGen = (this._bmNetGen || 0) + 1;
+                    document.getElementById('config-bm-workbench')?.classList.toggle('has-net-checks', this.bmNetHasScheduled());
                     this.invalidateVisibleBookmarks?.();
                     this.repaintBmNetDependents();
                     this.syncBmNetPanelOpen?.();
@@ -654,51 +663,276 @@
             else this.syncWorkbenchRowsNet();
         },
 
-        /** The badges behind a row's name: scheduled checks, three at most, then "+n". */
-        workbenchNetBadges(b) {
-            if (!this._bmNetIndex || !this.bmNetEnabled()) return '';
-            const items = this.bmNetItems(b);
-            if (!items.length) return '';
-            const M = model();
-            const esc = (v) => this.dash.escapeHtml(v);
-            const t = (k, f) => this.bmNetT(k, f);
-            const { shown, more } = M.badgeSlice(items, 3);
-            if (!shown.length) return '';
-            const describe = (c) => {
-                const state = M.badgeState(c);
-                const parts = [`${c.label || M.typeName(c.type)}: ${M.stateLabel(state, t)}`];
-                if (c.state?.detail) parts.push(c.state.detail);
-                return parts.join(' · ');
-            };
-            const badges = shown.map((c) => {
-                const text = describe(c);
-                return `<span class="net-tb" data-state="${M.badgeState(c)}" data-net-badge="${esc(c.checkId)}" role="img" title="${esc(text)}" aria-label="${esc(text)}"><i aria-hidden="true"></i>${esc(M.typeName(c.type))}</span>`;
-            }).join('');
-            const rest = more.length
-                ? `<span class="net-tb net-tb--more" data-state="off" role="img" title="${esc(more.map(describe).join('\n'))}" aria-label="${esc(more.map(describe).join(', '))}">+${more.length}</span>`
-                : '';
-            return `<span class="config-bm-nets" data-bm-nets>${badges}${rest}</span>`;
+        /** Whether any bookmark has a scheduled check: the tags column then takes a little more room. */
+        bmNetHasScheduled() {
+            if (!this._bmNetIndex || !this.bmNetEnabled()) return false;
+            for (const items of this._bmNetIndex.byKey.values()) {
+                if (items.some((c) => c && c.enabled === true)) return true;
+            }
+            return false;
         },
 
-        /** Set the badges on the rows already drawn (the index landed or changed). */
+        /** What a check says in words: "TLS 12 days: Warning · 9 days left". */
+        bmNetDescribe(c) {
+            const M = model();
+            const t = (k, f) => this.bmNetT(k, f);
+            const parts = [`${c.label || M.typeName(c.type)}: ${M.stateLabel(M.badgeState(c), t)}`];
+            if (c.state?.detail) parts.push(c.state.detail);
+            return parts.join(' · ');
+        },
+
+        /**
+         * A row's scheduled checks as the chips of its tag cluster: problems
+         * first (down, then warning, then slow), the rest in the checks' own
+         * order. Two checks of one type would read the same ("TLS", "TLS"),
+         * so those show their own label ("TLS 12 days"); a label shared as
+         * well is numbered.
+         */
+        workbenchNetParts(b) {
+            if (!this._bmNetIndex || !this.bmNetEnabled()) return null;
+            const items = this.bmNetItems(b).filter((c) => c && c.enabled === true);
+            if (!items.length) return null;
+            const M = model();
+            const esc = (v) => this.dash.escapeHtml(v);
+            const sev = { down: 4, warn: 3, slow: 2, unknown: 1, ok: 0 };
+            const sorted = items
+                .map((c, i) => ({ c, i, state: M.badgeState(c) }))
+                .sort((x, y) => ((sev[y.state] ?? 0) - (sev[x.state] ?? 0)) || (x.i - y.i));
+            const typeCount = new Map();
+            sorted.forEach(({ c }) => typeCount.set(c.type, (typeCount.get(c.type) || 0) + 1));
+            const seen = new Map();
+            const texts = sorted.map(({ c }) => {
+                const text = typeCount.get(c.type) > 1 ? (c.label || M.typeName(c.type)) : M.typeName(c.type);
+                const n = (seen.get(text) || 0) + 1;
+                seen.set(text, n);
+                return n > 1 ? `${text} ${n}` : text;
+            });
+            const chips = sorted.map(({ c, state }, i) => {
+                const text = this.bmNetDescribe(c);
+                return `<button type="button" class="config-bm-tag config-bm-tag--net" data-net-chip="${esc(c.checkId)}" data-state="${state}" tabindex="-1"`
+                    + ` aria-label="${esc(text)}" title="${esc(text)}"><i aria-hidden="true"></i><span>${esc(texts[i])}</span></button>`;
+            }).join('');
+            const sig = sorted.map(({ c, state }) => `${c.checkId}:${state}:${c.state?.detail || ''}`).join(',');
+            // A failing check is not shared a cell with a suggestion: the problem comes first.
+            const problem = sorted.some(({ state }) => state === 'down' || state === 'warn' || state === 'slow');
+            return { chips, sig, problem };
+        },
+
+        /** The "+n" chip of a cluster that holds checks: a button, since it opens everything it stands for. */
+        workbenchNetMoreHtml() {
+            return '<button type="button" class="config-bm-tag config-bm-tag--more" tabindex="-1" aria-haspopup="dialog" aria-expanded="false" hidden></button>';
+        },
+
+        /**
+         * The checks beside the name, for a row whose tags column does not
+         * carry them (column off, a Health reason in its place, a narrow
+         * window). `narrow` marks the copy a row keeps next to its tags column:
+         * shown only where that column is gone.
+         */
+        workbenchNetName(parts, narrow) {
+            if (!parts) return '';
+            return `<span class="config-bm-nets${narrow ? ' config-bm-nets--narrow' : ''}" data-bm-nets>${parts.chips}${this.workbenchNetMoreHtml()}</span>`;
+        },
+
+        /** Set the chips on the rows already drawn (the index landed or changed). */
         syncWorkbenchRowsNet() {
             const byKey = new Map();
             [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])].forEach((b) => {
                 const key = this.bookmarkKey(b);
                 if (!byKey.has(key)) byKey.set(key, b);
             });
-            document.querySelectorAll('#config-bm-list .config-bm-row').forEach((row) => {
+            const list = document.getElementById('config-bm-list');
+            if (!list) return;
+            list.querySelectorAll('.config-bm-row').forEach((row) => {
                 const b = byKey.get(this.bookmarkRowKey(row)) || null;
                 const name = row.querySelector('.config-bm-name');
                 if (!b || !name) return;
-                const html = this.workbenchNetBadges(b);
-                const current = name.querySelector('[data-bm-nets]');
-                if ((current?.outerHTML || '') === html) return;
-                if (current) current.remove();
-                if (!html) return;
-                const anchor = name.querySelector('.config-bm-ctr') || name.querySelector('.config-bm-title');
-                anchor?.insertAdjacentHTML('afterend', html);
+                const parts = this.workbenchNetParts(b);
+                const sig = parts ? parts.sig : '';
+                if ((row.getAttribute('data-bm-net-sig') || '') === sig) return;
+                if (sig) row.setAttribute('data-bm-net-sig', sig);
+                else row.removeAttribute('data-bm-net-sig');
+                const cell = row.querySelector('.config-bm-tags');
+                const merged = Boolean(cell) && !cell.querySelector('.config-bm-reason');
+                name.querySelector('[data-bm-nets]')?.remove();
+                if (cell) {
+                    cell.querySelectorAll('.config-bm-tag--net').forEach((el) => el.remove());
+                    if (merged && parts) {
+                        cell.insertAdjacentHTML('afterbegin', parts.chips);
+                        // The tags' own "+n" is a span; with checks in the cell it is a button.
+                        const oldMore = cell.querySelector('.config-bm-tag--more');
+                        if (oldMore && oldMore.tagName !== 'BUTTON') oldMore.remove();
+                        if (!cell.querySelector('.config-bm-tag--more')) {
+                            const offer = cell.querySelector('.tag-offer');
+                            const more = this.workbenchNetMoreHtml();
+                            if (offer) offer.insertAdjacentHTML('beforebegin', more);
+                            else cell.insertAdjacentHTML('beforeend', more);
+                        }
+                    }
+                }
+                if (parts) {
+                    const anchor = name.querySelector('.config-bm-ctr') || name.querySelector('.config-bm-title');
+                    anchor?.insertAdjacentHTML('afterend', this.workbenchNetName(parts, merged));
+                }
             });
+            // The suggestions come and go with a problem on the row; this also fits the clusters again.
+            if (this.refreshWorkbenchOfferChips) this.refreshWorkbenchOfferChips();
+            else this.fitWorkbenchTags?.(list);
+        },
+
+        /**
+         * Once the tag cluster is fitted: a "+n" that stands for checks says so
+         * (label and tooltip list every hidden chip, checks and tags), and is
+         * ours to open rather than the tags-only list of TagOfferRow.
+         */
+        syncBmNetMore(root) {
+            (root || document).querySelectorAll('.config-bm-tags, .config-bm-nets').forEach((cell) => {
+                const more = cell.querySelector('.config-bm-tag--more');
+                if (!more || !cell.querySelector('.config-bm-tag--net')) return;
+                more.classList.remove('tag-offer-own-more');
+                delete more.dataset.tags;
+                const hidden = [...cell.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more):not(.config-bm-tag--offer)')]
+                    .filter((chip) => chip.hidden);
+                if (!hidden.length) {
+                    more.removeAttribute('data-net-more');
+                    more.removeAttribute('data-state');
+                    more.removeAttribute('aria-label');
+                    return;
+                }
+                const lines = hidden.map((chip) => chip.getAttribute('aria-label') || chip.textContent);
+                // A problem among them tints the "+n": it is never hidden without a sign.
+                const rank = { down: 3, warn: 2, slow: 1 };
+                const worst = hidden.map((chip) => chip.getAttribute('data-state'))
+                    .filter((state) => rank[state]).sort((a, b) => rank[b] - rank[a])[0];
+                if (worst) more.setAttribute('data-state', worst);
+                else more.removeAttribute('data-state');
+                more.setAttribute('data-net-more', '');
+                more.setAttribute('aria-label', lines.join(', '));
+                more.title = lines.join('\n');
+            });
+        },
+
+        /**
+         * A click on a check chip opens that bookmark's Tests tab; a click on
+         * "+n" opens everything hidden. Both are caught ahead of the row, so
+         * neither selects the row nor opens its panel by itself.
+         */
+        bindBmNetClicks() {
+            if (this._bmNetClicksBound) return;
+            this._bmNetClicksBound = true;
+            const bookmarkOf = (el) => {
+                const row = el.closest('#config-bm-list .config-bm-row');
+                return row ? this.findBookmarkByKey(row.getAttribute('data-bm-key')) : null;
+            };
+            const hit = (event) => event.target?.closest?.('#config-bm-list .config-bm-tag--net, #config-bm-list .config-bm-tag--more[data-net-more]');
+            const onPress = (event) => {
+                const el = hit(event);
+                if (!el) return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.type !== 'click') return;
+                if (el.matches('.config-bm-tag--more')) {
+                    this.toggleBmNetMore(el);
+                    return;
+                }
+                const b = bookmarkOf(el);
+                if (b) void this.openLibraryOnBookmark?.(b.pageId, b.url, { tab: 'tests', focusRow: true });
+            };
+            document.addEventListener('click', onPress, true);
+            document.addEventListener('auxclick', onPress, true);
+            document.addEventListener('dblclick', (event) => {
+                if (!hit(event)) return;
+                event.preventDefault();
+                event.stopPropagation();
+            }, true);
+            // A chip that holds focus (after a click) answers Enter and Space
+            // itself; the list's own keys (j/k, Enter on the row) must not follow.
+            document.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                const el = hit(event);
+                if (!el) return;
+                event.preventDefault();
+                event.stopPropagation();
+                el.click();
+            }, true);
+        },
+
+        closeBmNetMore() {
+            this._bmNetPopClose?.();
+        },
+
+        /** Everything the "+n" stands for, in one popover; a check in it opens the Tests tab. */
+        toggleBmNetMore(anchor) {
+            if (this._bmNetPop && anchor.getAttribute('aria-expanded') === 'true') {
+                this.closeBmNetMore();
+                return;
+            }
+            this.closeBmNetMore();
+            const cell = anchor.closest('.config-bm-tags, .config-bm-nets');
+            const row = anchor.closest('.config-bm-row');
+            const b = row ? this.findBookmarkByKey(row.getAttribute('data-bm-key')) : null;
+            if (!cell || !b) return;
+            const hidden = [...cell.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more):not(.config-bm-tag--offer)')]
+                .filter((chip) => chip.hidden);
+            if (!hidden.length) return;
+            const pop = document.createElement('div');
+            pop.className = 'net-list-pop';
+            pop.setAttribute('role', 'dialog');
+            pop.setAttribute('aria-label', this.bmNetT('nettools.dashMore', 'More on this bookmark'));
+            pop.tabIndex = -1;
+            hidden.forEach((chip) => {
+                const copy = chip.cloneNode(true);
+                copy.hidden = false;
+                copy.removeAttribute('tabindex');
+                if (copy.matches('.config-bm-tag--net')) {
+                    copy.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.closeBmNetMore();
+                        void this.openLibraryOnBookmark?.(b.pageId, b.url, { tab: 'tests', focusRow: true });
+                    });
+                }
+                pop.appendChild(copy);
+            });
+            document.body.appendChild(pop);
+            const a = anchor.getBoundingClientRect();
+            const box = pop.getBoundingClientRect();
+            let top = a.bottom + 6;
+            if (top + box.height > window.innerHeight - 4) top = Math.max(4, a.top - box.height - 6);
+            pop.style.top = `${Math.round(top)}px`;
+            pop.style.left = `${Math.round(Math.max(4, Math.min(a.left, window.innerWidth - box.width - 4)))}px`;
+            anchor.setAttribute('aria-expanded', 'true');
+            this._bmNetPop = pop;
+            const onDown = (e) => {
+                if (!pop.contains(e.target) && e.target !== anchor) this.closeBmNetMore();
+            };
+            const onKey = (e) => {
+                if (e.key !== 'Escape') return;
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.closeBmNetMore();
+                anchor.focus?.({ preventScroll: true });
+            };
+            const at = a.top;
+            const onScroll = (e) => {
+                if (pop.contains(e.target)) return;
+                if (!anchor.isConnected || Math.abs(anchor.getBoundingClientRect().top - at) > 2) this.closeBmNetMore();
+            };
+            document.addEventListener('pointerdown', onDown, true);
+            // On window: the list's and the page's own Escape handling listen on document and would take the key first.
+            window.addEventListener('keydown', onKey, true);
+            window.addEventListener('scroll', onScroll, true);
+            window.addEventListener('resize', onScroll);
+            this._bmNetPopClose = () => {
+                document.removeEventListener('pointerdown', onDown, true);
+                window.removeEventListener('keydown', onKey, true);
+                window.removeEventListener('scroll', onScroll, true);
+                window.removeEventListener('resize', onScroll);
+                anchor.setAttribute('aria-expanded', 'false');
+                pop.remove();
+                this._bmNetPop = null;
+                this._bmNetPopClose = null;
+            };
+            (pop.querySelector('button') || pop).focus({ preventScroll: true });
         },
 
         bmCheckFilterLabel(key) {
@@ -770,6 +1004,10 @@
                     ed.draft.muted = el.value === 'muted';
                 } else if (name === 'watchDrift') {
                     ed.draft.watchDrift = el.value === 'on';
+                } else if (name === 'resolver') {
+                    ed.draft.resolver = el.value;
+                    // The explanation under the select follows the choice.
+                    if (event.type === 'change') this.paintBmNet(b);
                 } else if (name === 'record') {
                     ed.draft.record = el.value;
                     // Watching starts on or off as the record type suggests; the
@@ -881,7 +1119,7 @@
                 }
                 ed.test = { status: 'running' };
                 this.paintBmNetTest(b);
-                let request = stored ? { checkId: ed.id } : { type: ed.draft.type, record: ed.draft.record };
+                let request = stored ? { checkId: ed.id } : { type: ed.draft.type, record: ed.draft.record, resolver: ed.draft.resolver };
                 if (asDraft) request = { type: 'json', json: draftCheck };
                 const out = await this.runBmNetTest(b, request);
                 if (st.editing !== ed) return;
@@ -964,7 +1202,7 @@
 
         /** Fields a stored check may carry that the form owns: cleared so a removed value really goes. */
         bmNetClear(c) {
-            return { label: '', host: '', port: 0, minDaysLeft: 0, count: 0, maxLossPct: 0, maxMs: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, enabled: c.enabled, record: '', expect: '', watchDrift: false, endpoint: '', expectStatus: '', expectHeader: '', path: '', op: '', credentialId: '' };
+            return { label: '', host: '', port: 0, minDaysLeft: 0, count: 0, maxLossPct: 0, maxMs: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, enabled: c.enabled, record: '', resolver: '', expect: '', watchDrift: false, endpoint: '', expectStatus: '', expectHeader: '', path: '', op: '', credentialId: '' };
         },
 
         focusBmNetForm(b, selector = 'input, select, button') {

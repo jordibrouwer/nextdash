@@ -244,6 +244,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/net/checks", handlers.GetNetChecks).Methods("GET")
 	r.HandleFunc("/api/net/checks", handlers.PutNetChecks).Methods("PUT")
 	r.HandleFunc("/api/net/history", handlers.GetNetHistory).Methods("GET")
+	r.HandleFunc("/api/net/dashboard", handlers.GetNetDashboard).Methods("GET")
 	r.HandleFunc("/api/net/run", handlers.RunNetTest).Methods("POST")
 	r.HandleFunc("/api/net/accept-baseline", handlers.AcceptNetBaseline).Methods("POST")
 	// The daily points alone, without building a report for them.

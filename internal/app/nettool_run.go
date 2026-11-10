@@ -36,6 +36,7 @@ type DNSRecord struct {
 type DNSResult struct {
 	Record   string      `json:"record"`
 	Resolver string      `json:"resolver,omitempty"`
+	DNSSEC   string      `json:"dnssec,omitempty"` // validated | not-validated | unknown: the AD flag of the answer
 	Records  []DNSRecord `json:"records,omitempty"`
 	QueryMs  int         `json:"queryMs"`
 	Changed  bool        `json:"changed,omitempty"`

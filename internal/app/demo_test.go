@@ -132,10 +132,19 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 		t.Errorf("%d kept links, want 3", len(kept))
 	}
 	history := readHealthHistoryFile()
-	if len(history.Samples) != len(demoMonitors) {
-		t.Errorf("history for %d monitors, want %d", len(history.Samples), len(demoMonitors))
+	monitorKeys := 0
+	for key := range history.Samples {
+		if !isNetHistoryKey(key) {
+			monitorKeys++
+		}
+	}
+	if monitorKeys != len(demoMonitors) {
+		t.Errorf("history for %d monitors, want %d", monitorKeys, len(demoMonitors))
 	}
 	for key, samples := range history.Samples {
+		if isNetHistoryKey(key) {
+			continue // the network checks have a week, not a month: see TestDemoSeedNetChecks
+		}
 		down := 0
 		for _, sample := range samples {
 			if !sample.Up {
@@ -303,5 +312,50 @@ func TestDemoPollsNoSite(t *testing.T) {
 	}
 	if hits != 0 {
 		t.Errorf("the site was asked %d times", hits)
+	}
+}
+
+// The demo carries four network checks with a week of measurements each: one
+// of them down, one with a certificate close to expiry, one with a changed DNS
+// answer. The measurements are history; nothing in the demo dials.
+func TestDemoSeedNetChecks(t *testing.T) {
+	h := newDemoHandlers(t)
+	history := readHealthHistoryFile()
+	found := map[string]NetCheck{}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			for _, c := range bm.Checks {
+				found[c.ID] = c
+			}
+		}
+	}
+	if len(found) != len(demoNetChecks) {
+		t.Fatalf("%d checks on the demo bookmarks, want %d", len(found), len(demoNetChecks))
+	}
+	var down, warn int
+	for _, d := range demoNetChecks {
+		c, ok := found[d.check.ID]
+		if !ok || !c.Enabled {
+			t.Errorf("%s: not on a scheduled bookmark check: %+v", d.check.ID, c)
+			continue
+		}
+		samples := history.Samples[netHistoryKey(c.ID)]
+		if len(samples) < 7*48-1 {
+			t.Errorf("%s: %d samples", c.ID, len(samples))
+			continue
+		}
+		state := netCheckStateFor(c, samples)
+		switch {
+		case !state.OK:
+			down++
+		case state.Warn:
+			warn++
+		}
+		if c.Type == netTypeDNS && (c.DriftDiff == "" || c.DriftAt <= 0) {
+			t.Errorf("the DNS check lost its change: %+v", c)
+		}
+	}
+	if down != 1 || warn != 1 {
+		t.Errorf("states: %d down, %d warning; want one of each", down, warn)
 	}
 }

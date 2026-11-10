@@ -188,59 +188,133 @@
     color: var(--accent-error);
 }
 
-/* ── Badges behind a bookmark's name in the Bookmarks view list ─────────── */
+/* ── Checks in the Bookmarks view list ─────────────────────────────────────
+   A row's scheduled checks are chips in its tag cluster: in the tags cell,
+   problems first, then the tags; where that cell is not there (column off,
+   a Health reason in its place, a narrow window) the same chips stand beside
+   the name. Either way the cluster is fitted to the room it has and the rest
+   is "+n" (fitWorkbenchTags); the name never gives way to it. */
 
 .config-bm-nets {
     display: inline-flex;
     align-items: center;
     flex: none;
+    min-width: 0;
+    overflow: hidden;
     gap: var(--space-1, 0.25rem);
 }
 
-.net-tb {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 0 var(--space-1-5, 0.4rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-4, 6px);
-    font-size: var(--font-size-small);
-    font-weight: 600;
-    line-height: 1.35;
-    color: var(--text-secondary);
-    background: var(--background-secondary);
-    white-space: nowrap;
+.config-bm-nets.is-squeezed {
+    display: none;
 }
 
-.net-tb i {
+/* The copy a row keeps beside its tags column: only where that column is gone. */
+.config-bm-nets--narrow {
+    display: none;
+}
+
+@media (max-width: 799px) {
+    .config-bm-nets--narrow {
+        display: inline-flex;
+    }
+
+    .config-bm-nets--narrow.is-squeezed {
+        display: none;
+    }
+}
+
+button.config-bm-tag {
+    appearance: none;
+    border: 0;
+    margin: 0;
+    font: inherit;
+    font-size: var(--font-size-small);
+    color: inherit;
+    cursor: pointer;
+}
+
+.config-bm-tag--net {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 10rem;
+    color: var(--text-secondary);
+}
+
+button.config-bm-tag--net > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.config-bm-tag--net > i {
+    flex: none;
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: var(--accent-success);
-    flex: none;
 }
 
-.net-tb[data-state="slow"] i,
-.net-tb[data-state="warn"] i {
+.config-bm-tag--net[data-state="slow"] > i,
+.config-bm-tag--net[data-state="warn"] > i {
     background: var(--accent-warning);
 }
 
-.net-tb[data-state="down"] {
+.config-bm-tag--net[data-state="down"] {
     color: var(--accent-error);
-    border-color: color-mix(in srgb, var(--accent-error) 50%, var(--border-primary));
+    /* A ring, not a border: the chip keeps the size a tag has. */
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-error) 50%, var(--border-primary));
 }
 
-.net-tb[data-state="down"] i {
+.config-bm-tag--net[data-state="down"] > i {
     background: var(--accent-error);
 }
 
-.net-tb[data-state="unknown"] i {
+.config-bm-tag--net[data-state="unknown"] > i {
     background: var(--text-secondary);
     opacity: 0.6;
 }
 
-.net-tb--more i {
-    display: none;
+/* A "+n" that hides a failing check says so. */
+button.config-bm-tag--more[data-state="down"] {
+    color: var(--accent-error);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-error) 50%, var(--border-primary));
+}
+
+button.config-bm-tag--more[data-state="warn"],
+button.config-bm-tag--more[data-state="slow"] {
+    color: var(--accent-warning);
+}
+
+.config-bm-tag--net:focus-visible,
+button.config-bm-tag--more:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
+/* The tags column takes a little more room once there are checks to share it. */
+.config-bm-workbench.has-net-checks {
+    --bm-tags-max: 13rem;
+    --bm-tags-max-mid: 10rem;
+}
+
+/* The popover behind "+n": every chip the cluster could not show. */
+.net-list-pop {
+    position: fixed;
+    z-index: 10050;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    max-width: min(22rem, calc(100vw - 8px));
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 8px);
+    background: var(--background-secondary);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+}
+
+.net-list-pop .config-bm-tag {
+    max-width: none;
 }
 
 .net-test {
@@ -449,6 +523,80 @@
 
 .net-http-more > summary {
     cursor: pointer;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+/* ── Config → Monitoring → Checks: every check in one table ───────────── */
+
+.net-ov-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-block: var(--space-3, 0.75rem) var(--space-2, 0.5rem);
+}
+
+.net-ov-bulk {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-ov-scroll {
+    overflow-x: auto;
+}
+
+.net-ov-head,
+.net-ov-row {
+    display: grid;
+    grid-template-columns: 1.5rem 3.5rem minmax(8rem, 1.2fr) minmax(9rem, 1.6fr) 6.5rem minmax(7rem, 1fr) 6.5rem 2.5rem 4rem;
+    align-items: center;
+    min-width: 52rem;
+}
+
+.net-ov-head {
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--font-size-small, 0.85rem);
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.net-ov-row {
+    cursor: pointer;
+}
+
+.net-ov-row > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.net-ov-row[data-state="off"] > span:not(.net-badge) {
+    color: var(--text-secondary);
+}
+
+.net-ov-type,
+.net-ov-bookmark {
+    font-weight: 600;
+}
+
+.net-ov-row .net-badge {
+    justify-self: start;
+}
+
+/* Status page editor: the ticks for a service's checks sit on a line of their own. */
+.status-page-netchecks {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.net-ov-muted {
     color: var(--text-secondary);
     font-size: var(--font-size-small, 0.85rem);
 }

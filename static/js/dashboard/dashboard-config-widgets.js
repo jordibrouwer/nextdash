@@ -2679,6 +2679,7 @@
                     ${suggestions}
                 </div>`;
         }
+        if (field.kind === 'netChecks') return this.renderNetChecksField(field, widget, index, label);
         // checkset: an absent list means all, which is the default for the
         // health widget's figures and reads better than every box ticked.
         // A field may name its own starting selection (`defaults`) when
@@ -2721,6 +2722,66 @@
                 <div class="config-widget-checkset">${boxes}</div>
                 ${field.hint && !siblings ? `<p class="config-widget-field-hint">${esc(this.t(field.hint[0], field.hint[1]))}</p>` : ''}
             </div>`;
+    },
+
+    /**
+     * The Network tests widget's list of checks: a table of the install's
+     * scheduled checks (never a free host), one switch each. The boxes are the
+     * generic checkset's, so the draft logic reads them unchanged. Ids the
+     * widget still names that no longer exist are listed as removed so they can
+     * be switched off.
+     */
+    renderNetChecksField(field, widget, index, label) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const chosen = Array.isArray(widget.config?.[field.key]) ? widget.config[field.key] : [];
+        const items = this._netWidgetChecks;
+        if (!items) {
+            this.loadNetWidgetChecks();
+            return `<div class="config-widget-field" data-net-widget-checks>
+                <span class="config-widget-field-label">${label}</span>
+                <p class="config-widget-field-hint">${esc(this.t('config.widgetNetLoading', 'Loading checks…'))}</p></div>`;
+        }
+        const M = window.NetChecksModel;
+        const rows = items.filter((c) => c.enabled || chosen.includes(c.checkId));
+        const known = new Set(items.map((c) => c.checkId));
+        const full = chosen.length >= Number(field.max);
+        const box = (id, text, badge, on, disabled) => `
+            <tr><td><label class="config-toggle config-toggle--inline">
+                <input type="checkbox" data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                    data-widget-kind="checkset" data-widget-max="${Number(field.max)}"
+                    value="${esc(id)}" ${on ? 'checked' : (disabled ? 'disabled' : '')}>
+                <span>${text}</span></label></td><td>${badge}</td></tr>`;
+        const body = rows.map((c) => box(c.checkId,
+            `<b>${esc(c.name || c.url)}</b>`,
+            `<span class="netw-badge" data-state="${M ? M.badgeState(c) : 'ok'}"><i aria-hidden="true"></i>${esc(M ? M.typeName(c.type) : c.type)}</span> ${esc(c.label || '')}`,
+            chosen.includes(c.checkId), full && !chosen.includes(c.checkId))).join('')
+            + chosen.filter((id) => !known.has(id)).map((id) => box(id,
+                esc(this.t('dashboard.widgetNetGone', 'check removed')), '', true, false)).join('');
+        return `
+            <div class="config-widget-field" data-net-widget-checks>
+                <span class="config-widget-field-label">${label}</span>
+                ${rows.length ? `<table class="net-widget-checks"><tbody>${body}</tbody></table>`
+        : `<p class="config-widget-field-hint">${esc(this.t('config.widgetNetNoChecks',
+            'No scheduled checks yet. Add some on a bookmark under Bookmarks, Tests.'))}</p>`}
+                <p class="config-widget-field-hint">${esc(this.t('config.widgetNetTtlHint',
+        'This widget runs no tests. It shows what the monitor loop already measures, so a check is as fresh as its own interval.'))}</p>
+            </div>`;
+    },
+
+    /** The scheduled checks of the install, once per open of the widgets list. */
+    loadNetWidgetChecks() {
+        if (this._netWidgetChecksLoading) return;
+        this._netWidgetChecksLoading = true;
+        const load = window.LazyScript?.loadScriptOnce;
+        const model = window.NetChecksModel ? Promise.resolve()
+            : (load ? load('js/shared/net-checks-model.js', 'netChecksModel', () => Boolean(window.NetChecksModel)) : Promise.resolve());
+        Promise.all([model, fetch('/api/net/checks', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : { items: [] }))])
+            .then(([, body]) => { this._netWidgetChecks = Array.isArray(body.items) ? body.items : []; })
+            .catch(() => { this._netWidgetChecks = []; })
+            .finally(() => {
+                this._netWidgetChecksLoading = false;
+                if (document.getElementById('config-widgets-body')) this.repaintWidgetsBody();
+            });
     },
 
     /**
@@ -3229,6 +3290,7 @@
             disks: 'How full each disk is, and how much room is actually left on it.',
             cpu: 'How hard the processor is working, and whether work is queueing up behind it.',
             health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
+            nettests: 'A few of the network checks on your bookmarks — rows, tiles or a strip of the last day — from what is already measured.',
             uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
             domains: 'Domain names about to expire, by registered domain rather than by host.',
@@ -4415,7 +4477,8 @@
                 : (chosen.length === boxes.length ? undefined : chosen);
             // A stack's tabs: what is ticked, and nothing ticked is no tabs --
             // all ticked is six tabs, not "the default".
-            if (DashboardConfig.WIDGET_SETTINGS.stack?.some((f) => f.key === key && f.optionsFrom)) {
+            if (DashboardConfig.WIDGET_SETTINGS.stack?.some((f) => f.key === key && f.optionsFrom)
+                || DashboardConfig.WIDGET_SETTINGS.nettests?.some((f) => f.key === key && f.kind === 'netChecks')) {
                 value = chosen.length ? chosen : undefined;
             }
             const max = Number(input.getAttribute('data-widget-max'));

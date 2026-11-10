@@ -27,6 +27,9 @@ type netRunRequest struct {
 	// Record is only for a one-off DNS test (no checkId): which record type to
 	// ask for, one of a fixed list. It names no host.
 	Record string `json:"record"`
+	// Resolver is also only for a one-off DNS test: "", "1.1.1.1" or "8.8.8.8",
+	// nothing else (a free resolver address would make this an open DNS proxy).
+	Resolver string `json:"resolver"`
 	// The rest is only for a one-off JSON test (no checkId): what to look at
 	// and what to expect, the same fields a stored JSON check has. Endpoint is a
 	// path on the bookmark's own host, never a URL; CredentialID names a stored
@@ -41,6 +44,8 @@ type netRunRequest struct {
 // netOneOffJSON are the fields of a one-off JSON test, as the route and the
 // MCP tool pass them on.
 type netOneOffJSON struct {
+	// Resolver is the DNS resolver of a one-off DNS test (checked against the allowlist).
+	Resolver                                 string
 	Endpoint, Path, Op, Expect, CredentialID string
 }
 
@@ -57,11 +62,11 @@ func (h *Handlers) RunNetTest(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {
-		netWriteError(w, http.StatusBadRequest, "Invalid request: only pageId, url, type, checkId, record, endpoint, path, op, expect and credentialId are accepted")
+		netWriteError(w, http.StatusBadRequest, "Invalid request: only pageId, url, type, checkId, record, resolver, endpoint, path, op, expect and credentialId are accepted")
 		return
 	}
 	res, status, err := h.runNetTestForSpec(r.Context(), clientIP(r), req.PageID, req.URL, req.Type, req.CheckID, req.Record,
-		netOneOffJSON{Endpoint: req.Endpoint, Path: req.Path, Op: req.Op, Expect: req.Expect, CredentialID: req.CredentialID})
+		netOneOffJSON{Resolver: req.Resolver, Endpoint: req.Endpoint, Path: req.Path, Op: req.Op, Expect: req.Expect, CredentialID: req.CredentialID})
 	if err != nil {
 		if status == http.StatusTooManyRequests {
 			w.Header().Set("Retry-After", "60")
@@ -142,6 +147,11 @@ func (h *Handlers) runNetTestForSpec(ctx context.Context, clientKey string, page
 				return NetResult{}, http.StatusBadRequest, netRunError{http.StatusBadRequest, "unknown record type"}
 			}
 			chk.Record = rec
+			resolver := strings.TrimSpace(oneOff.Resolver)
+			if !netDNSResolvers[resolver] {
+				return NetResult{}, http.StatusBadRequest, netRunError{http.StatusBadRequest, "The resolver can be the system one, 1.1.1.1 or 8.8.8.8."}
+			}
+			chk.Resolver = resolver
 		}
 		if typ == netTypeJSON {
 			path, op, expect, err := normalizeNetJSON(oneOff.Path, oneOff.Op, oneOff.Expect)

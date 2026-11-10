@@ -332,6 +332,9 @@ class DashboardContextMenu {
             // the entry made the destination unreachable from the one place
             // someone would look for it.
             { id: 'health', divider: !currentMode, label: this.t('dashboard.healthOpenInHealth', 'Show in list'), icon: '▤', key: 'R' },
+            ...(d.netBadges?.hasChecks?.(bookmarkRef.bookmark)
+                ? [{ id: 'net-checks', label: this.t('nettools.menuChecks', 'Network checks'), icon: '◉', key: 'N' }]
+                : []),
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'D' },
         ]);
 
@@ -1008,6 +1011,9 @@ class DashboardContextMenu {
             }
             case 'health':
                 void this.revealInHealth(bookmarkRef);
+                break;
+            case 'net-checks':
+                d.netBadges?.openTests(Number(bookmarkRef.pageId) || Number(d.currentPageId), bookmark.url);
                 break;
             case 'delete':
                 // Confirm popover rather than deleteBookmarkInline() — a menu click is

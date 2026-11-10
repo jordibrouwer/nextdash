@@ -126,6 +126,59 @@ test.describe('DNS checks in the Tests tab', () => {
     await expect(result.locator('[data-net-dns-changed]')).toContainText('MX +20 mail2.example.org.');
   });
 
+  test('the form offers the system resolver and the two fixed ones, and CAA starts watched', async ({ page }) => {
+    const puts = [];
+    await page.route((url) => url.pathname === '/api/net/checks', (route) => {
+      const req = route.request();
+      if (req.method() !== 'PUT') return route.fallback();
+      const body = JSON.parse(req.postData() || '{}');
+      puts.push(body);
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ checks: body.checks.map((c) => ({ ...c, id: 'aaaaaaaaaaaa' })) }) });
+    });
+    await openTests(page);
+    await net(page).getByRole('button', { name: 'Add check' }).click();
+    const form = net(page).locator('[data-net-form]');
+    await form.locator('[data-net-field="type"]').selectOption('dns');
+    const resolver = form.locator('[data-net-field="resolver"]');
+    await expect(resolver.locator('option')).toHaveText(['System', '1.1.1.1', '8.8.8.8']);
+    await expect(resolver).toHaveValue('');
+    await form.locator('[data-net-field="record"]').selectOption('CAA');
+    await expect(form.locator('[data-net-field="watchDrift"]')).toHaveValue('on');
+    await resolver.selectOption('1.1.1.1');
+    await expect(form).toContainText('Cloudflare');
+    await expect(form.locator('[data-net-explain]')).toContainText('1.1.1.1');
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect.poll(() => puts.length).toBe(1);
+    expect(puts[0].checks[0]).toMatchObject({ type: 'dns', record: 'CAA', resolver: '1.1.1.1', watchDrift: true });
+  });
+
+  test('a one-off lookup through a fixed resolver shows the TTL column and the DNSSEC chip', async ({ page }) => {
+    const runs = [];
+    await page.route((url) => url.pathname === '/api/net/run', (route) => {
+      runs.push(JSON.parse(route.request().postData() || '{}'));
+      return route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({
+          type: 'dns', ok: true, ms: 8, host: 'example.org', detail: 'CAA 0 issue letsencrypt.org',
+          dns: { record: 'CAA', resolver: '8.8.8.8', dnssec: 'validated', queryMs: 8, records: [{ value: '0 issue letsencrypt.org', ttl: 300 }] },
+        }),
+      });
+    });
+    await openTests(page);
+    await net(page).locator('[data-net-run-record]').selectOption('CAA');
+    await net(page).locator('[data-net-run-resolver]').selectOption('8.8.8.8');
+    await net(page).locator('[data-net-run-types]').getByRole('button', { name: 'DNS' }).click();
+    await expect.poll(() => runs.length).toBe(1);
+    expect(runs[0]).toEqual({ pageId: expect.any(Number), url: expect.any(String), type: 'dns', record: 'CAA', resolver: '8.8.8.8' });
+    const result = net(page).locator('[data-tests-result="dns"]');
+    await expect(result).toContainText('8.8.8.8');
+    await expect(result.locator('[data-net-dnssec="validated"]')).toContainText('DNSSEC validated');
+    const row = result.locator('[data-net-dns-table] tbody tr').first();
+    await expect(row).toContainText('0 issue letsencrypt.org');
+    await expect(row).toContainText('300');
+    await expect(result.locator('[data-net-dns-table] th').last()).toHaveText('TTL');
+  });
+
   test('a lookup that finds nothing says which record was missing', async ({ page }) => {
     await page.route((url) => url.pathname === '/api/net/run', (route) => route.fulfill({
       status: 200, contentType: 'application/json',

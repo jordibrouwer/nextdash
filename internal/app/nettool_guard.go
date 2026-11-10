@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/miekg/dns"
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
@@ -51,6 +52,10 @@ type netGuard struct {
 	// resolver replaces the system resolver in tests only (a fake DNS server
 	// on a local UDP port); nil means net.DefaultResolver.
 	resolver *net.Resolver
+	// dnsServers replaces the resolver addresses ("host:port" list) of the
+	// miekg path in tests only (a fake DNS server on a local port); nil means
+	// port 53 of the chosen resolver, or the nameservers of resolv.conf.
+	dnsServers func(resolver string) []string
 	// tlsRoots replaces the system roots in tests only (a CA made in the test);
 	// nil means the system roots.
 	tlsRoots *x509.CertPool
@@ -327,7 +332,19 @@ const (
 )
 
 // netDNSRecords are the record types a DNS check can ask for in phase 2a.
-var netDNSRecords = map[string]bool{"A": true, "AAAA": true, "CNAME": true, "MX": true, "TXT": true, "NS": true}
+var netDNSRecords = map[string]bool{"A": true, "AAAA": true, "CNAME": true, "MX": true, "TXT": true, "NS": true, "CAA": true}
+
+// netDNSResolvers is the whole list of resolvers a DNS check may ask: the
+// system one ("") and two fixed public ones. There is no free resolver field:
+// an address typed by the user would turn this server into a DNS proxy.
+var netDNSResolvers = map[string]bool{"": true, "1.1.1.1": true, "8.8.8.8": true}
+
+// DNSSEC values of a DNSResult: what the AD flag of the answer said.
+const (
+	dnssecValidated = "validated" // the resolver set the AD flag
+	dnssecNot       = "not-validated"
+	dnssecUnknown   = "unknown" // the system resolver: no way to ask
+)
 
 var errNetDNSNeedsName = errors.New("a DNS check needs a host name, not an IP address")
 
@@ -345,8 +362,11 @@ func (g netGuard) sysResolver() *net.Resolver {
 // and errNetGuardBlocked, never as a plain success. Nothing here dials, and
 // the answers are used for nothing but showing. At most netDNSMaxRecords
 // records, a TXT value at most netDNSMaxTXT characters.
-func (g netGuard) lookup(ctx context.Context, host, record string) (DNSResult, error) {
-	out := DNSResult{Record: record, Resolver: "system"}
+func (g netGuard) lookup(ctx context.Context, host, record, resolver string) (DNSResult, error) {
+	out := DNSResult{Record: record, Resolver: "system", DNSSEC: dnssecUnknown}
+	if resolver != "" {
+		out.Resolver = resolver
+	}
 	if demoDialRefused(ctx) {
 		return out, errDemoOutbound
 	}
@@ -356,6 +376,14 @@ func (g netGuard) lookup(ctx context.Context, host, record string) (DNSResult, e
 	}
 	if !netDNSRecords[record] {
 		return out, errors.New("unsupported record type")
+	}
+	if !netDNSResolvers[resolver] {
+		return out, errors.New("unsupported resolver")
+	}
+	// A fixed resolver is asked through miekg/dns. So is CAA with the system
+	// resolver, which the standard library cannot ask for.
+	if resolver != "" || record == "CAA" {
+		return g.lookupMiekg(ctx, out, host, record, resolver)
 	}
 	r := g.sysResolver()
 	var err error
@@ -618,4 +646,145 @@ func (g netGuard) httpClient(timeout time.Duration, insecureTLS bool) *http.Clie
 		Transport:     tr,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
+}
+
+// dnsServerAddrs are the "host:port" addresses the miekg path asks, in order.
+// A fixed resolver is port 53 of that address (the caller has checked it
+// against netDNSResolvers). The system resolver is whatever resolv.conf lists,
+// at most three, as the standard library would use them.
+func (g netGuard) dnsServerAddrs(resolver string) []string {
+	if g.dnsServers != nil {
+		return g.dnsServers(resolver)
+	}
+	if resolver != "" {
+		return []string{net.JoinHostPort(resolver, "53")}
+	}
+	cfg, err := dns.ClientConfigFromFile("/etc/resolv.conf")
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, s := range cfg.Servers {
+		if len(out) == 3 {
+			break
+		}
+		out = append(out, net.JoinHostPort(s, cfg.Port))
+	}
+	return out
+}
+
+// dnsExchange sends one query to one server over UDP and asks again over TCP
+// when the answer was cut off.
+func dnsExchange(ctx context.Context, m *dns.Msg, addr string) (*dns.Msg, error) {
+	c := &dns.Client{Net: "udp", Timeout: 10 * time.Second}
+	r, _, err := c.ExchangeContext(ctx, m, addr)
+	if err == nil && r.Truncated {
+		c = &dns.Client{Net: "tcp", Timeout: 10 * time.Second}
+		r, _, err = c.ExchangeContext(ctx, m, addr)
+	}
+	return r, err
+}
+
+// lookupMiekg asks a resolver for one record type with miekg/dns. The query
+// goes to a fixed public resolver or to the system's own nameservers, never to
+// an address anybody typed. The answer is shown with its TTLs and, for a fixed
+// resolver, the AD flag (DNSSEC validated). An address answer is judged by
+// isAllowedDialIP like in the standard-library path: a private one without
+// allowLocal comes back with its records and errNetGuardBlocked.
+func (g netGuard) lookupMiekg(ctx context.Context, out DNSResult, host, record, resolver string) (DNSResult, error) {
+	qtypes := map[string]uint16{"A": dns.TypeA, "AAAA": dns.TypeAAAA, "CNAME": dns.TypeCNAME,
+		"MX": dns.TypeMX, "TXT": dns.TypeTXT, "NS": dns.TypeNS, "CAA": dns.TypeCAA}
+	m := new(dns.Msg)
+	m.SetQuestion(dns.Fqdn(host), qtypes[record])
+	m.RecursionDesired = true
+	m.SetEdns0(1232, true) // the DO bit makes a validating resolver set AD
+	addrs := g.dnsServerAddrs(resolver)
+	if len(addrs) == 0 {
+		return out, &net.DNSError{Err: "no resolver is configured", Name: host}
+	}
+	var resp *dns.Msg
+	var err error
+	for _, addr := range addrs {
+		resp, err = dnsExchange(ctx, m, addr)
+		if err == nil || ctx.Err() != nil {
+			break
+		}
+	}
+	if err != nil {
+		var netErr net.Error
+		if (errors.As(err, &netErr) && netErr.Timeout()) || ctx.Err() != nil {
+			return out, err
+		}
+		return out, &net.DNSError{Err: err.Error(), Name: host}
+	}
+	if resolver != "" {
+		out.DNSSEC = dnssecNot
+		if resp.AuthenticatedData {
+			out.DNSSEC = dnssecValidated
+		}
+	}
+	switch resp.Rcode {
+	case dns.RcodeSuccess:
+	case dns.RcodeNameError:
+		return out, &net.DNSError{Err: "no such host", Name: host, IsNotFound: true}
+	default:
+		return out, &net.DNSError{Err: "the resolver answered " + dns.RcodeToString[resp.Rcode], Name: host}
+	}
+	blocked := false
+	addAddr := func(ip net.IP, ttl int) {
+		a, _ := netip.AddrFromSlice(ip)
+		a = a.Unmap()
+		if !isAllowedDialIP(a, g.allowLocal && !demoMode()) {
+			blocked = true
+		}
+		out.Records = append(out.Records, DNSRecord{Value: a.String(), TTL: ttl})
+	}
+	for _, rr := range resp.Answer {
+		ttl := int(rr.Header().Ttl)
+		switch v := rr.(type) {
+		case *dns.A:
+			if record == "A" {
+				addAddr(v.A, ttl)
+			}
+		case *dns.AAAA:
+			if record == "AAAA" {
+				addAddr(v.AAAA, ttl)
+			}
+		case *dns.CNAME:
+			if record == "CNAME" {
+				out.Records = append(out.Records, DNSRecord{Value: v.Target, TTL: ttl})
+			}
+		case *dns.MX:
+			if record == "MX" {
+				out.Records = append(out.Records, DNSRecord{Value: v.Mx, Prio: int(v.Preference), TTL: ttl})
+			}
+		case *dns.TXT:
+			if record == "TXT" {
+				text := strings.Join(v.Txt, "")
+				if rs := []rune(text); len(rs) > netDNSMaxTXT {
+					text = string(rs[:netDNSMaxTXT]) + "…"
+				}
+				out.Records = append(out.Records, DNSRecord{Value: text, TTL: ttl})
+			}
+		case *dns.NS:
+			if record == "NS" {
+				out.Records = append(out.Records, DNSRecord{Value: v.Ns, TTL: ttl})
+			}
+		case *dns.CAA:
+			if record == "CAA" {
+				value := v.Tag + " " + v.Value
+				if rs := []rune(value); len(rs) > netDNSMaxTXT {
+					value = string(rs[:netDNSMaxTXT]) + "…"
+				}
+				out.Records = append(out.Records, DNSRecord{Value: strconv.Itoa(int(v.Flag)) + " " + value, TTL: ttl})
+			}
+		}
+	}
+	if len(out.Records) > netDNSMaxRecords {
+		out.Records = out.Records[:netDNSMaxRecords]
+	}
+	if blocked {
+		return out, errNetGuardBlocked
+	}
+	return out, nil
 }

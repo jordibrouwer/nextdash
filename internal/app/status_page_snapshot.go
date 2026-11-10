@@ -119,6 +119,7 @@ func (h *Handlers) buildStatusSnapshot(ctx context.Context, cfg StatusPageConfig
 	}
 	allSamples := h.readAllHealthHistory()
 	allDays := h.readAllHealthDays()
+	netIndex := h.statusNetIndex()
 
 	var containers map[string]dockerContainerSummary
 	dockerOK := false
@@ -134,8 +135,19 @@ func (h *Handlers) buildStatusSnapshot(ctx context.Context, cfg StatusPageConfig
 	windowCovers := h.statusWindowCovers(cfg)
 
 	for _, g := range cfg.Groups {
-		gv := statusGroupView{Name: g.Name, Total: len(g.Services), Services: []statusServiceView{}}
+		gv := statusGroupView{Name: g.Name, Services: []statusServiceView{}}
 		for _, s := range g.Services {
+			netRefs := statusServiceNetRefs(s, netIndex)
+			// A service whose only sources are network checks is not on the
+			// page while none of them may be shown (switched off, deleted).
+			_, monitorFound := monitored[canonicalBookmarkURLKey(s.MonitorURL)]
+			netOnly := len(s.NetChecks) > 0 && s.Container == "" && (s.MonitorURL == "" || !monitorFound)
+			if netOnly && len(netRefs) == 0 {
+				continue
+			}
+			if s.MonitorURL == "" && s.Container == "" && len(s.NetChecks) == 0 {
+				continue
+			}
 			sv := statusServiceView{Name: s.Name}
 			// A name that is only the monitor's address (no bookmark to name it
 			// after) would put an internal host on the page: the page shows a
@@ -156,12 +168,24 @@ func (h *Handlers) buildStatusSnapshot(ctx context.Context, cfg StatusPageConfig
 					samples, healthDays = allSamples[key], allDays[key]
 					parts = append(parts, monitorPart(samples, monitorIntervalMinutesFor(bm), now))
 					monitorDays = monitorDayStates(samples, healthDays, windowCovers[g.ID])
-				} else {
+				} else if !netOnly {
 					parts = append(parts, statusPart{State: statusUnknown})
 				}
 				if s.ShowLink {
 					sv.URL = s.MonitorURL
 				}
+			}
+			// Network checks the owner opted in: each is a part (the worst
+			// counts) and a source of day bars. Only states leave this block.
+			var netDays []map[int64]statusState
+			var netSamples []HealthSample
+			var netHealthDays []HealthDay
+			for _, ref := range netRefs {
+				key := netHistoryKey(ref.chk.ID)
+				cs := allSamples[key]
+				parts = append(parts, statusNetPart(ref, cs, now))
+				netDays = append(netDays, monitorDayStates(cs, allDays[key], windowCovers[g.ID]))
+				netSamples, netHealthDays = cs, allDays[key]
 			}
 			if s.Container != "" {
 				var c *dockerContainerSummary
@@ -182,11 +206,21 @@ func (h *Handlers) buildStatusSnapshot(ctx context.Context, cfg StatusPageConfig
 				sv.Ms = samples[len(samples)-1].PingMs
 				sv.Spark = statusSpark(samples)
 			}
-			sv.Days = statusDayBars(now, p.State, monitorDays, containerDays)
-			sv.Uptime = statusUptime(samples, healthDays, sv.Days, hasMonitor, now)
-			// The monitor's ratio cannot see a container that was down while the
-			// page kept answering: the lower of the two counts, as the bars do.
-			if hasMonitor && s.Container != "" {
+			sources := append([]map[int64]statusState{monitorDays, containerDays}, netDays...)
+			sv.Days = statusDayBars(now, p.State, sources...)
+			// A single network check with nothing else beside it keeps its own
+			// ratio, as a monitor does.
+			soleNet := !hasMonitor && s.Container == "" && len(netRefs) == 1
+			ratioSamples, ratioDays := samples, healthDays
+			if soleNet {
+				ratioSamples, ratioDays = netSamples, netHealthDays
+			}
+			sv.Uptime = statusUptime(ratioSamples, ratioDays, sv.Days, hasMonitor || soleNet, now)
+			// The monitor's ratio cannot see a container (or another check) that
+			// was down while the page kept answering: the lower of the two
+			// counts, as the bars do.
+			mixed := len(netRefs) + btoi(hasMonitor) + btoi(s.Container != "")
+			if (hasMonitor || soleNet) && mixed > 1 {
 				if byDays := statusUptime(nil, nil, sv.Days, false, now); byDays != nil && (sv.Uptime == nil || *byDays < *sv.Uptime) {
 					sv.Uptime = byDays
 				}
@@ -202,6 +236,7 @@ func (h *Handlers) buildStatusSnapshot(ctx context.Context, cfg StatusPageConfig
 				gv.Working++
 			}
 			gv.Services = append(gv.Services, sv)
+			gv.Total = len(gv.Services)
 		}
 		snap.Groups = append(snap.Groups, gv)
 	}

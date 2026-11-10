@@ -30,7 +30,7 @@ func (h *Handlers) runDNS(ctx context.Context, g netGuard, t netTarget, c NetChe
 	lookupCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	start := time.Now()
-	out, err := g.lookup(lookupCtx, t.Host, record)
+	out, err := g.lookup(lookupCtx, t.Host, record, strings.TrimSpace(c.Resolver))
 	res.Ms = ceilMs(time.Since(start))
 	out.QueryMs = res.Ms
 	res.DNS = &out
@@ -97,6 +97,12 @@ func dnsExpectMatches(record, want string, recs []DNSRecord) bool {
 		switch record {
 		case "TXT":
 			if strings.Contains(v, w) {
+				return true
+			}
+		case "CAA":
+			// "0 issue letsencrypt.org", or without the flags: "issue letsencrypt.org".
+			_, noFlags, _ := strings.Cut(v, " ")
+			if v == w || noFlags == w {
 				return true
 			}
 		case "MX":

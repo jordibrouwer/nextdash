@@ -22,7 +22,10 @@
     const DEFAULT_MAX_LOSS_PCT = 50;
     const INTERVAL_MIN = 5;
     const INTERVAL_MAX = 1440;
-    const DNS_RECORDS = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS'];
+    const DNS_RECORDS = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'CAA'];
+    // The only resolvers a DNS check may ask: the system one ('') and two fixed
+    // public ones. The server refuses anything else.
+    const DNS_RESOLVERS = ['', '1.1.1.1', '8.8.8.8'];
     // A valid certificate with fewer days left than this is a warning (up, not down).
     const TLS_DEFAULT_MIN_DAYS = 14;
     const TLS_MAX_MIN_DAYS = 120;
@@ -37,7 +40,7 @@
     const JSON_SECRET_PATH = /token|key|secret|password/i;
     // Drift is on for the records that change rarely and mean something when
     // they do; off for A and AAAA, which rotate behind a CDN.
-    const DRIFT_DEFAULT_ON = ['MX', 'TXT', 'NS', 'CNAME'];
+    const DRIFT_DEFAULT_ON = ['MX', 'TXT', 'NS', 'CNAME', 'CAA'];
 
     function fmt(text, vars) {
         return String(text).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] != null ? String(vars[k]) : m));
@@ -236,7 +239,9 @@
             }
         } else if (c.type === 'dns') {
             const record = c.record || 'A';
-            summary = fmt(t('nettools.explainDns', 'Looks up the {record} records of {host} with the system resolver.'), { record, host: hostText });
+            summary = c.resolver
+                ? fmt(t('nettools.explainDnsVia', 'Looks up the {record} records of {host} by asking {resolver} directly.'), { record, host: hostText, resolver: c.resolver })
+                : fmt(t('nettools.explainDns', 'Looks up the {record} records of {host} with the system resolver.'), { record, host: hostText });
             lines.push(t('nettools.ruleDnsDown', 'Down when no record is found'));
             if (String(c.expect || '').trim()) lines.push(fmt(t('nettools.ruleDnsExpect', 'Down when none of the records is {value}'), { value: String(c.expect).trim() }));
             if (c.watchDrift) lines.push(t('nettools.ruleDnsDrift', 'A change in the set of records shows in the bell; the check stays up until you accept it'));
@@ -599,11 +604,25 @@
     /** A fresh check for a type, as the form starts it. */
     function blankCheck(type) {
         const check = { id: '', type, enabled: true, label: '', host: '', port: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, count: 0, maxLossPct: 0, maxMs: 0 };
-        if (type === 'dns') Object.assign(check, { record: 'A', expect: '', watchDrift: driftDefault('A') });
+        if (type === 'dns') Object.assign(check, { record: 'A', resolver: '', expect: '', watchDrift: driftDefault('A') });
         if (type === 'tls') check.minDaysLeft = 0;
         if (type === 'http') Object.assign(check, { endpoint: '', expectStatus: '', expectHeader: '' });
         if (type === 'json') Object.assign(check, { endpoint: '', path: '', op: 'eq', expect: '', credentialId: '' });
         return check;
+    }
+
+    /** The live explanation under the resolver choice. */
+    function resolverHint(resolver, t) {
+        if (resolver === '1.1.1.1') return t('nettools.resolverHintCloudflare', 'Asks Cloudflare (1.1.1.1) directly and shows whether it validated DNSSEC.');
+        if (resolver === '8.8.8.8') return t('nettools.resolverHintGoogle', 'Asks Google Public DNS (8.8.8.8) directly and shows whether it validated DNSSEC.');
+        return t('nettools.resolverHintSystem', 'The resolver this server is set up with. It cannot say whether DNSSEC was checked.');
+    }
+
+    /** The chip text for the DNSSEC flag of an answer: information only, never a failure. */
+    function dnssecChip(dnssec, t) {
+        if (dnssec === 'validated') return t('nettools.dnssecValidated', 'DNSSEC validated');
+        if (dnssec === 'not-validated') return t('nettools.dnssecNotValidated', 'DNSSEC not validated');
+        return t('nettools.dnssecUnknown', 'DNSSEC unknown');
     }
 
     /** Whether watching for changes starts on for a record type. */
@@ -638,6 +657,7 @@
             if (String(check.credentialId || '').trim()) base.credentialId = String(check.credentialId).trim();
         } else if (check.type === 'dns') {
             base.record = String(check.record || 'A').toUpperCase();
+            if (DNS_RESOLVERS.includes(String(check.resolver || '')) && check.resolver) base.resolver = check.resolver;
             if (String(check.expect || '').trim()) base.expect = String(check.expect).trim();
             if (check.watchDrift === true) base.watchDrift = true;
             if (Number(check.maxMs) > 0) base.maxMs = Number(check.maxMs);
@@ -780,6 +800,7 @@
         if (type === 'tls' && Number(res.port) > 0 && Number(res.port) !== tlsPort(bm)) check.port = Number(res.port);
         if (type === 'dns' && res.dns && res.dns.record) {
             check.record = res.dns.record;
+            check.resolver = res.dns.resolver && res.dns.resolver !== 'system' ? res.dns.resolver : '';
             check.watchDrift = driftDefault(check.record);
         }
         return check;
@@ -788,7 +809,7 @@
     const api = {
         HTTP_DEFAULT_STATUS, validStatusRule, sizeText, httpSegments, httpHeaderSplit,
         JSON_OPS, JSON_SECRET_PATH, jsonOpText, jsonRule,
-        DNS_RECORDS, TLS_DEFAULT_MIN_DAYS, tlsPort, tlsDaysText, driftDefault, toolTypes, testState, testErrorBlock, testSummary, checkFromTest,
+        DNS_RECORDS, DNS_RESOLVERS, resolverHint, dnssecChip, TLS_DEFAULT_MIN_DAYS, tlsPort, tlsDaysText, driftDefault, toolTypes, testState, testErrorBlock, testSummary, checkFromTest,
         TYPES, TYPE_NAMES, MAX_CHECKS_PER_BOOKMARK,
         typeName, typeHint, hostOf, defaultPort, targetOf, labelFor, badgeState, stateLabel,
         intervalMinutes, intervalWords, explain, errorBlock, validate, blankCheck, pickForType,

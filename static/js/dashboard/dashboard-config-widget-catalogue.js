@@ -74,6 +74,7 @@
         adguard: { big: '31%', rows: [['blocked today', ''], ['doubleclick.net', '812']] },
         pihole: { big: '24%', rows: [['blocked today', ''], ['doubleclick.net', '812']] },
         glances: { rows: [['Home', 'healthy']], bars: [['cpu', 0.22], ['mem', 0.61], ['disk', 0.83, 'warn']] },
+        nettests: { rows: [['Nextcloud · TLS', '12 d', 'warn'], ['Plex · Ping', '14 ms', 'good'], ['Gitea · JSON', 'down', 'bad']] },
         custom: { rows: [['queued', '7'], ['paused', '2']] },
     };
 

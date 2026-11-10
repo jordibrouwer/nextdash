@@ -203,6 +203,10 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 		Enabled bool          `json:"enabled"`
 		Muted   bool          `json:"muted"`
 		State   *netStateView `json:"state,omitempty"`
+		// Host is what the check talks to and Interval how often it runs, in
+		// minutes: the Config overview table shows both.
+		Host     string `json:"host,omitempty"`
+		Interval int    `json:"intervalMinutes,omitempty"`
 		// RecoveredAt (ms) is when the newest outage ended, set only while the
 		// check is up again and that end lies within the last 24 hours. The bell
 		// reads it for its "recovered" row.
@@ -213,13 +217,19 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 		DriftAt   int64  `json:"driftAt,omitempty"`
 	}
 	items := []item{}
+	settings := h.store.GetSettings()
 	counts := map[string]int{"scheduled": 0, "down": 0}
 	for _, page := range h.store.GetPages() {
 		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
 			for _, c := range bm.Checks {
 				samples := history[netHistoryKey(c.ID)]
 				state := netCheckStateFor(c, samples)
+				host := ""
+				if target, err := netCheckTarget(bm, c, settings); err == nil {
+					host = target.Host
+				}
 				items = append(items, item{
+					Host: host, Interval: int(netCheckInterval(c, bm) / time.Minute),
 					PageID: page.ID, URL: bm.URL, Name: bm.Name, CheckID: c.ID, Type: c.Type,
 					Label: netCheckLabel(c, bm), Enabled: c.Enabled, Muted: c.Muted || bm.NotifyMuted, State: state,
 					RecoveredAt: netRecoveredAt(samples, state, now),

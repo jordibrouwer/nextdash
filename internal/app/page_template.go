@@ -367,6 +367,9 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			if !options.IncludeNotes {
 				delete(config, "text")
 			}
+		case WidgetTypeNetTests:
+			// A check id names a check on this install and nothing elsewhere.
+			delete(config, "checks")
 		case WidgetTypeCustom:
 			if raw, ok := config["url"].(string); ok {
 				config["url"] = templatizeURL(raw, variables)

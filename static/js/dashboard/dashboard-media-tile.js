@@ -101,6 +101,9 @@
      * refresh than the minute a library needs.
      *
      * A service whose answer is not a list of titles (Beszel's meters) adds
+     * endpoint(widget, pageId) names the address to read instead of
+     * /api/widgets/<id>, for a tile fed from nextDash's own data.
+     *
      * draw(wrap, dash, widget, items, result): it draws the answer itself,
      * empty answers included, and the layouts above are not used.
      */
@@ -217,7 +220,11 @@
             // "Refresh now" asks the service again instead of the server's
             // held answer. Once: the flag is spent by the request it caused.
             const forced = dash._widgetForce?.delete(widget.id) === true;
-            const base = `/api/widgets/${service.id}?pageId=${encodeURIComponent(pageId)}`
+            // A service that reads from nextDash's own record rather than a
+            // service of its own names its address (Network tests).
+            const base = typeof service.endpoint === 'function'
+                ? service.endpoint(widget, pageId)
+                : `/api/widgets/${service.id}?pageId=${encodeURIComponent(pageId)}`
                 + `&id=${encodeURIComponent(widget.id)}`;
             let res = await send(forced ? `${base}&refresh=1` : base);
             // A forced read needs the write token; a reader without one still

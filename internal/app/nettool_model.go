@@ -45,7 +45,8 @@ type NetCheck struct {
 	MaxLossPct int `json:"maxLossPct,omitempty"` // default 50
 	MaxMs      int `json:"maxMs,omitempty"`      // ping/tcp/http: trager = "slow" (blijft up)
 	// dns (fase 2a)
-	Record     string `json:"record,omitempty"`     // A, AAAA, CNAME, MX, TXT, NS
+	Record     string `json:"record,omitempty"`     // A, AAAA, CNAME, MX, TXT, NS, CAA
+	Resolver   string `json:"resolver,omitempty"`   // "" = system, "1.1.1.1" or "8.8.8.8" (fase 2b); nothing else
 	Expect     string `json:"expect,omitempty"`     // dns: optional expected value; json: what Op compares with
 	WatchDrift bool   `json:"watchDrift,omitempty"` // report when the record set changes
 	// Server-eigendom (alleen DNS-drift, fase 2a); de client kan ze niet zetten.
@@ -76,6 +77,24 @@ func netHistoryKey(checkID string) string { return netHistoryPrefix + checkID }
 
 // isNetHistoryKey tells a network check's history key from a URL key.
 func isNetHistoryKey(key string) bool { return strings.HasPrefix(key, netHistoryPrefix) }
+
+// netWidgetMaxChecks is how many checks one Network tests widget may name, and
+// how many ids GET /api/net/dashboard answers for.
+const netWidgetMaxChecks = 40
+
+// validNetCheckID reports whether text has the shape of an id newNetCheckID makes:
+// twelve lower-case hex characters.
+func validNetCheckID(text string) bool {
+	if len(text) != 12 {
+		return false
+	}
+	for _, r := range text {
+		if (r < '0' || r > '9') && (r < 'a' || r > 'f') {
+			return false
+		}
+	}
+	return true
+}
 
 // newNetCheckID returns a fresh 12-hex ID that is not in taken, and records it.
 func newNetCheckID(taken map[string]bool) string {

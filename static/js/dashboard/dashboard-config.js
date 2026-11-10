@@ -1948,6 +1948,8 @@ class DashboardConfig {
         if (d.isModalOpen?.()) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
+        // The "+n" popover of a row's checks and tags binds its own keys (Escape closes it).
+        if (document.querySelector('.net-list-pop')) return false;
 
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
             e.preventDefault();
@@ -4547,6 +4549,7 @@ class DashboardConfig {
         netToolsPing: ['network', 'ping', 'icmp', 'tcp', 'fallback', 'docker', 'sysctl'],
         netToolsAllowCustomHost: ['network', 'check', 'host', 'custom', 'other'],
         netToolsMaxChecks: ['network', 'check', 'limit', 'maximum', 'ceiling', 'scheduled'],
+        netToolsDashboardBadges: ['network', 'check', 'badge', 'dot', 'dashboard', 'row', 'status'],
         feedWatchWindowMinutes: ['feed', 'watch', 'news', 'modal', 'minutes', 'window'],
         feedWatchExpireHours: ['feed', 'watch', 'news', 'expire', 'old', 'unread', 'count', 'badge', 'hours', 'days'],
         feedWatchNewsView: ['feed', 'watch', 'news', 'newspaper', 'columns', 'layout', 'modal'],
@@ -9938,6 +9941,7 @@ class DashboardConfig {
         netToolsPing: { def: 'auto' },
         netToolsAllowCustomHost: { def: false },
         netToolsMaxChecks: { def: 200 },
+        netToolsDashboardBadges: { def: 'problems' },
         feedWatchWindowMinutes: { def: 30 },
         feedWatchExpireHours: { def: 24 },
         feedWatchNewsView: { def: 'paper' },
@@ -11843,7 +11847,14 @@ class DashboardConfig {
                     ] },
                     bool('netToolsAllowCustomHost', 'config.netToolsAllowCustomHostLabel', 'Let a check name another host than its bookmark'),
                     { field: 'netToolsMaxChecks', type: 'number', label: t('config.netToolsMaxChecksLabel', 'Most scheduled checks'), min: 1, max: 1000 },
+                    // A body attribute, so `chrome`: without it the dots only change after a reload.
+                    { field: 'netToolsDashboardBadges', type: 'select', special: 'chrome', label: t('config.netToolsDashboardBadgesLabel', 'Check status on dashboard rows'), options: [
+                        opt('problems', t('config.netToolsDashboardBadgesProblems', 'Only when a check has a problem')),
+                        opt('always', t('config.netToolsDashboardBadgesAlways', 'Always')),
+                        opt('never', t('config.netToolsDashboardBadgesNever', 'Never')),
+                    ] },
                     { type: 'netToolsStatus' },
+                    { type: 'netToolsOverview' },
                 ],
             },
             {
@@ -12160,6 +12171,10 @@ class DashboardConfig {
             // panel is drawn, by dashboard-config-net-tools.js.
             if (c.type === 'netToolsStatus') {
                 return '<div class="net-settings-status" data-net-tools-status></div>';
+            }
+            // Every check of the install in one table, filled in with the status block.
+            if (c.type === 'netToolsOverview') {
+                return '<div class="net-overview" data-net-overview></div>';
             }
             // A live card built from a real bookmark, redrawn as the checklist
             // beside it is flipped. Appearance previews its settings; this was
@@ -15442,7 +15457,7 @@ class DashboardConfig {
      * is the way to build a tile nobody has written.
      */
     static WIDGET_TYPE_GROUPS = [
-        ['links', ['health', 'uptime', 'certs', 'domains', 'trend']],
+        ['links', ['health', 'uptime', 'certs', 'domains', 'trend', 'nettests']],
         ['incoming', ['inbox', 'unsorted', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole']],
@@ -17782,7 +17797,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'glances', 'nettests', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -18175,6 +18190,22 @@ class DashboardConfig {
                   ['content', ['config.widgetShowContent', 'Content changed']],
                   ['healthy', ['config.widgetShowHealthy', 'Healthy']],
               ] },
+        ],
+        nettests: [
+            { key: 'checks', kind: 'netChecks', max: 40, label: ['config.widgetNetChecks', 'What to show (existing scheduled checks only)'] },
+            { key: 'look', kind: 'choice', label: ['config.widgetNetLook', 'Look'],
+              options: [
+                  ['rows', ['config.widgetNetLookRows', 'Rows']],
+                  ['tiles', ['config.widgetNetLookTiles', 'Tiles']],
+                  ['heartbeat', ['config.widgetNetLookHeartbeat', 'Heartbeat']],
+              ] },
+            { key: 'sort', kind: 'choice', label: ['config.widgetNetSort', 'Order'],
+              options: [
+                  ['problems', ['config.widgetNetSortProblems', 'Problems first']],
+                  ['name', ['config.widgetNetSortName', 'Name']],
+              ] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
         ],
         uptime: [
             { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },

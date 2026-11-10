@@ -51,6 +51,10 @@ type StatusService struct {
 	Container  string `json:"container,omitempty"`
 	ShowLink   bool   `json:"showLink"`
 	ShowSpeed  bool   `json:"showSpeed"`
+	// NetChecks are ids of network checks on the service's bookmark that the
+	// owner chose to show. Opt-in: a check that is not listed here is never on
+	// the page, whatever else is switched on.
+	NetChecks []string `json:"netChecks,omitempty"`
 }
 
 // statusPageMu serialises read-modify-write of both status page files.
@@ -106,7 +110,8 @@ func normalizeStatusPage(c StatusPageConfig) StatusPageConfig {
 			}
 			s.MonitorURL = strings.TrimSpace(s.MonitorURL)
 			s.Container = strings.TrimSpace(s.Container)
-			if s.MonitorURL == "" && s.Container == "" {
+			s.NetChecks = normalizeStatusNetChecks(s.NetChecks)
+			if s.MonitorURL == "" && s.Container == "" && len(s.NetChecks) == 0 {
 				continue
 			}
 			s.ID = uniqueID(s.ID)
@@ -121,6 +126,25 @@ func normalizeStatusPage(c StatusPageConfig) StatusPageConfig {
 			group.Services = append(group.Services, s)
 		}
 		out.Groups = append(out.Groups, group)
+	}
+	return out
+}
+
+// normalizeStatusNetChecks keeps well-formed check ids, once each, at most as
+// many as one bookmark can hold.
+func normalizeStatusNetChecks(ids []string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, id := range ids {
+		id = strings.ToLower(strings.TrimSpace(id))
+		if !validNetCheckID(id) || seen[id] {
+			continue
+		}
+		seen[id] = true
+		out = append(out, id)
+		if len(out) == netMaxChecksPerBookmark {
+			break
+		}
 	}
 	return out
 }

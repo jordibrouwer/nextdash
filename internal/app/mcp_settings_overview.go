@@ -223,6 +223,7 @@ var mcpSettingsOverviewAllowlist = []mcpOverviewEntry{
 	{"health.netToolsPing", func(in *mcpOverviewInput) any { return in.s.NetToolsPing }},
 	{"health.netToolsAllowCustomHost", func(in *mcpOverviewInput) any { return in.s.NetToolsAllowCustomHost }},
 	{"health.netToolsMaxChecks", func(in *mcpOverviewInput) any { return in.s.NetToolsMaxChecks }},
+	{"health.netToolsDashboardBadges", func(in *mcpOverviewInput) any { return in.s.NetToolsDashboardBadges }},
 
 	// Containers.
 	{"containers.dockerViewEnabled", func(in *mcpOverviewInput) any { return in.s.DockerViewEnabled }},

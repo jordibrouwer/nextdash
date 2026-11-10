@@ -295,3 +295,101 @@ body.no-animations .bookmark-link.is-opening .bookmark-icon-slot::after {
         animation: none;
     }
 }
+
+/*
+ * Dashboard rows: network checks are chips in the row's tag cluster
+ * (.bookmark-tag-strip, dashboard.css), problems first, then the tags.
+ *
+ * The name has priority. Normally the name is flex: 1 with no basis, so a wide
+ * cluster takes its natural width first and the name gets what is left. With
+ * checks in the cluster the name keeps its own width as the basis and the
+ * cluster shrinks about a thousand times faster, so it is the cluster that runs
+ * out (clipped), never the name.
+ */
+a.bookmark-open:has(> .bookmark-tag-strip[data-net]) > .bookmark-text {
+    flex: 1 1 auto;
+    /* A hair of room: flex can take a hundredth of a pixel off a name that
+       exactly fits, and text-overflow then draws an ellipsis for nothing. */
+    padding-inline-end: 2px;
+}
+
+.bookmark-tag-strip[data-net] {
+    flex-shrink: 1000;
+    /* Above the link's own transparent ::before hit area (dashboard.css), so a
+       chip can be clicked; the strip itself still lets a click through to the link. */
+    position: relative;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.bookmark-net-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.bookmark-net-chip > i {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-success);
+}
+
+.bookmark-net-chip[data-state="warn"] > i,
+.bookmark-net-chip[data-state="slow"] > i {
+    background: var(--accent-warning);
+}
+
+.bookmark-net-chip[data-state="down"] {
+    color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 50%, var(--border-primary));
+}
+
+.bookmark-net-chip[data-state="down"] > i {
+    background: var(--accent-error);
+}
+
+.bookmark-net-chip[data-state="unknown"] > i {
+    background: var(--text-tertiary);
+}
+
+.bookmark-tag-chip--more[data-net-more] {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* The popover behind "+n": everything that did not fit. */
+.net-more-pop {
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    max-width: min(22rem, calc(100vw - 16px));
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 8px);
+    background: var(--background-secondary);
+    box-shadow: 0 8px 24px color-mix(in srgb, black 30%, transparent);
+}
+
+.net-more-pop .bookmark-tag-chip {
+    max-width: none;
+    font: inherit;
+    font-size: var(--text-2xs, 0.68rem);
+    color: var(--text-secondary);
+}
+
+.net-more-pop button.bookmark-net-chip:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
+/* Narrow screens: the tags go (as before), the checks stay, as dots with their type. */
+@media (max-width: 720px) {
+    .bookmark-tag-strip[data-net] { display: inline-flex; }
+    .bookmark-tag-strip[data-net] > .bookmark-tag-chip:not(.bookmark-net-chip):not(.bookmark-tag-chip--more) { display: none; }
+}

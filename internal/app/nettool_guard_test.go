@@ -17,7 +17,7 @@ import (
 // Fase 0b: the guard is the only place network checks touch a socket.
 
 func TestNetToolsNeverDialDirectly(t *testing.T) {
-	re := regexp.MustCompile(`net\.Dial|DialTimeout|net\.Dialer\{|icmp\.ListenPacket|tls\.Dial|tls\.Client\(|net\.Resolver\{|DefaultResolver|LookupHost|LookupIP|http\.Client\{|http\.Transport\{`)
+	re := regexp.MustCompile(`net\.Dial|DialTimeout|net\.Dialer\{|icmp\.ListenPacket|tls\.Dial|tls\.Client\(|net\.Resolver\{|DefaultResolver|LookupHost|LookupIP|http\.Client\{|http\.Transport\{|dns\.Client\{|dns\.Exchange`)
 	files, _ := filepath.Glob("nettool_*.go")
 	checked := 0
 	for _, file := range files {

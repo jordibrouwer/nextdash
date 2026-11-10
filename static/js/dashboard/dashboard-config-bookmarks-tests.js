@@ -198,13 +198,18 @@
             const run = this.bmTestsRun(b);
             const buttons = types.map((type) =>
                 `<button type="button" class="config-btn config-btn--small" data-net-action="run" data-net-type="${esc(type)}"${run.running ? ' disabled' : ''}>${esc(M.typeName(type))}</button>`).join('');
+            const resolverSelect = types.includes('dns')
+                ? `<label class="net-run-record"><span class="config-bm-panel-muted">${esc(t('nettools.runResolver', 'Resolver'))}</span>
+                        <select class="config-select" data-net-run-resolver aria-label="${esc(t('nettools.runResolver', 'Resolver'))}">${M.DNS_RESOLVERS.map((r) => `<option value="${r}"${(run.resolver || '') === r ? ' selected' : ''}>${esc(r || t('nettools.resolverOptSystem', 'System'))}</option>`).join('')}</select></label>
+                    <span class="config-bm-panel-muted" data-net-run-resolver-hint>${esc(M.resolverHint(run.resolver || '', t))}</span>`
+                : '';
             const records = types.includes('dns')
                 ? `<label class="net-run-record"><span class="config-bm-panel-muted">${esc(t('nettools.runRecord', 'DNS record'))}</span>
                         <select class="config-select" data-net-run-record aria-label="${esc(t('nettools.runRecord', 'DNS record'))}">${M.DNS_RECORDS.map((r) => `<option value="${r}"${(run.record || 'A') === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select></label>`
                 : '';
             const status = run.running ? `<p class="config-bm-panel-muted" role="status">${esc(t('nettools.testing', 'Testing...'))}</p>` : '';
             const error = run.error ? `<p class="net-inline-error" role="status" data-tests-error>${esc(run.error)}</p>` : '';
-            const body = `<div class="net-card-actions" data-net-run-types>${buttons}${records}</div>
+            const body = `<div class="net-card-actions" data-net-run-types>${buttons}${records}${resolverSelect}</div>
                 ${status}${error}${run.last && !run.running ? this.renderBmTestsResult(b, run.last) : ''}`;
             const answer = types.map((type) => M.typeName(type).toLowerCase()).join(' · ');
             return `<div class="config-bm-acc-list">${this.workbenchAcc('tests', 'run', t('nettools.runOnce', 'Run once'), answer, body, open, { forceOpen: open })}</div>`;
@@ -265,9 +270,8 @@
 
         /**
          * The answer of a DNS lookup (mockup a4): the record type, the resolver
-         * and the time, then the records as a table (value, and priority for MX),
-         * and one line on how they compare with the baseline. The TTL column
-         * comes with the resolver choice in a later phase.
+         * and the time, the DNSSEC chip, then the records as a table (value,
+         * priority for MX, TTL) and one line on how they compare with the baseline.
          */
         renderBmTestsDnsRows(res, state, ms) {
             const esc = (v) => this.dash.escapeHtml(v);
@@ -279,17 +283,19 @@
             const kv = (k, v) => `<div class="config-bm-usage-kv"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
             const resolver = d.resolver === 'system' || !d.resolver ? t('nettools.resolverSystem', 'system resolver') : d.resolver;
             const head = kv(t('nettools.resRecord', 'Record'), [d.record, resolver, ms].filter(Boolean).join(' \u00b7 '));
+            const hasTtl = recs.some((r) => Number(r.ttl) > 0);
+            const dnssec = `<div class="net-chips" data-net-dnssec="${esc(d.dnssec || 'unknown')}"><span class="net-chip">${esc(M.dnssecChip(d.dnssec, t))}</span></div>`;
             const table = recs.length
                 ? `<table class="net-dns-table" data-net-dns-table>
-                        <thead><tr><th scope="col">${esc(t('nettools.dnsValue', 'Value'))}</th>${isMx ? `<th scope="col">${esc(t('nettools.dnsPrio', 'Prio'))}</th>` : ''}</tr></thead>
-                        <tbody>${recs.map((r) => `<tr><td>${esc(r.value)}</td>${isMx ? `<td>${esc(r.prio)}</td>` : ''}</tr>`).join('')}</tbody>
+                        <thead><tr><th scope="col">${esc(t('nettools.dnsValue', 'Value'))}</th>${isMx ? `<th scope="col">${esc(t('nettools.dnsPrio', 'Prio'))}</th>` : ''}${hasTtl ? `<th scope="col">${esc(t('nettools.dnsTtl', 'TTL'))}</th>` : ''}</tr></thead>
+                        <tbody>${recs.map((r) => `<tr><td>${esc(r.value)}</td>${isMx ? `<td>${esc(r.prio)}</td>` : ''}${hasTtl ? `<td>${esc(r.ttl || '')}</td>` : ''}</tr>`).join('')}</tbody>
                     </table>`
                 : '';
             const compare = d.changed
                 ? `<p class="net-error-note" data-net-dns-changed>${esc(t('nettools.dnsChanged', 'Changed since the baseline:'))} ${esc(d.diff || '')}</p>`
                 : '';
             const status = state === 'slow' ? kv(t('nettools.resResult', 'Result'), M.stateLabel(state, t)) : '';
-            return `${head}${status}${table}${compare}`;
+            return `${head}${dnssec}${status}${table}${compare}`;
         },
 
         /**
@@ -430,7 +436,7 @@
             run.running = type;
             run.error = '';
             this.paintBmNet(b);
-            const out = await this.runBmNetTest(b, { type, record: run.record || 'A' });
+            const out = await this.runBmNetTest(b, { type, record: run.record || 'A', resolver: run.resolver || '' });
             run.running = '';
             if (out.ok) run.last = { type, res: out.res };
             else run.error = out.error;
@@ -455,6 +461,11 @@
             root.addEventListener('change', (event) => {
                 const pick = event.target.closest('[data-net-run-record]');
                 if (pick) this.bmTestsRun(b).record = pick.value;
+                const rpick = event.target.closest('[data-net-run-resolver]');
+                if (rpick) {
+                    this.bmTestsRun(b).resolver = rpick.value;
+                    this.paintBmNet(b);
+                }
             });
         },
     });

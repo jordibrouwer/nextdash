@@ -1137,6 +1137,7 @@ type Settings struct {
 	NetToolsPing            string `json:"netToolsPing"`            // auto | tcp-only | off
 	NetToolsAllowCustomHost bool   `json:"netToolsAllowCustomHost"` // A check may name a host other than the bookmark's own
 	NetToolsMaxChecks       int    `json:"netToolsMaxChecks"`       // Ceiling on enabled checks in the install, 1..1000
+	NetToolsDashboardBadges string `json:"netToolsDashboardBadges"` // Check badges on dashboard rows: problems | always | never
 
 	// Config → Bookmarks. The list view had no settings of its own; these are
 	// the choices it used to make on the user's behalf.
@@ -1916,6 +1917,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			NetToolsEnabled:                 true,
 			NetToolsPing:                    "auto",
 			NetToolsMaxChecks:               netDefaultMaxChecks,
+			NetToolsDashboardBadges:         "problems",
 			ShowPing:                        false,
 			ShowStatusLoading:               false,
 			SkipFastPing:                    false,
@@ -4674,6 +4676,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			NetToolsEnabled:                 true,
 			NetToolsPing:                    "auto",
 			NetToolsMaxChecks:               netDefaultMaxChecks,
+			NetToolsDashboardBadges:         "problems",
 			ShowPing:                        false,
 			ShowStatusLoading:               false,
 			SkipFastPing:                    false,
@@ -4905,6 +4908,9 @@ func (fs *FileStore) getSettingsShared() Settings {
 		}
 		if settings.NetToolsPing != "auto" && settings.NetToolsPing != "tcp-only" && settings.NetToolsPing != "off" {
 			settings.NetToolsPing = "auto"
+		}
+		if _, ok := rawSettings["netToolsDashboardBadges"]; !ok || (settings.NetToolsDashboardBadges != "problems" && settings.NetToolsDashboardBadges != "always" && settings.NetToolsDashboardBadges != "never") {
+			settings.NetToolsDashboardBadges = "problems"
 		}
 		if _, ok := rawSettings["netToolsMaxChecks"]; !ok || settings.NetToolsMaxChecks < 1 {
 			settings.NetToolsMaxChecks = netDefaultMaxChecks

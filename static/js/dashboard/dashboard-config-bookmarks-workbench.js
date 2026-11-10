@@ -63,10 +63,10 @@
             .map((c) => (c === 'name' ? name : c === 'tags' ? tags : track[c]))
             .join(' ');
         const wide = build(['tick', 'icon', 'name', 'tags', 'pinned', 'shortcut', 'usage', 'opens', 'last', 'added', 'news', 'score'],
-            'minmax(10rem, 1fr)', 'minmax(5rem, 9rem)');
+            'minmax(10rem, 1fr)', 'minmax(5rem, var(--bm-tags-max, 9rem))');
         const large = build(['tick', 'icon', 'name', 'tags', 'usage', 'opens', 'last', 'added', 'news', 'score'],
-            'minmax(10rem, 1fr)', 'minmax(5rem, 9rem)');
-        const mid = build(['tick', 'icon', 'name', 'tags', 'opens', 'last', 'score'], 'minmax(8rem, 1fr)', 'minmax(5rem, 6rem)');
+            'minmax(10rem, 1fr)', 'minmax(5rem, var(--bm-tags-max, 9rem))');
+        const mid = build(['tick', 'icon', 'name', 'tags', 'opens', 'last', 'score'], 'minmax(8rem, 1fr)', 'minmax(5rem, var(--bm-tags-max-mid, 6rem))');
         const narrow = build(['tick', 'icon', 'name', 'score'], 'minmax(0, 1fr)', '');
         return `--bm-cols-wide: ${wide}; --bm-cols-large: ${large}; --bm-cols-mid: ${mid}; --bm-cols-narrow: ${narrow};`;
     },
@@ -74,6 +74,8 @@
     /** The workbench's classes: what View sets on the list as a whole. */
     workbenchViewClasses() {
         const classes = ['config-bm-workbench', 'is-panel-collapsed', 'is-library'];
+        // Checks share the tags column; it gets a little more room once there are any.
+        if (this.bmNetHasScheduled?.()) classes.push('has-net-checks');
         if (this.bmViewSetting('bmViewRail', 'open') === 'folded') classes.push('is-rail-folded');
         // Row height is View's own setting, not the app-wide densityMode:
         // compact is the Containers and Inbox row, comfortable the old one.
@@ -2042,9 +2044,6 @@
         const tags = (b.tags || []).map((t) => String(t).trim()).filter(Boolean);
         // Every tag, and a count for the ones that do not fit; fitWorkbenchTags
         // decides which, once the row has a width.
-        const tagChips = tags.map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
-            + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '')
-            + this.workbenchOfferChip(b, esc);
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
         // Under a Health filter the reason earns the tags cell more than a
@@ -2055,6 +2054,17 @@
         const healthReason = healthIssue ? (this._bmHealthModule?.reasonEntries(healthIssue)[0]?.label || '') : '';
         const scoreTone = (score) => (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
         const score = issue && Number.isFinite(Number(issue.score)) ? Number(issue.score) : null;
+        // The row's scheduled checks join the tags in one cluster, problems
+        // first. Where the tags cell is not there for them (the column is off,
+        // a Health reason has its place, the window is narrow) the checks
+        // stand beside the name instead; the name always keeps its room.
+        const nets = this.workbenchNetParts?.(b) || null;
+        const merged = Boolean(nets) && !healthIssue && this.bmViewColumn('tags');
+        const tagChips = (merged ? nets.chips : '')
+            + tags.map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
+            + (merged ? this.workbenchNetMoreHtml()
+                : tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '')
+            + (merged && nets.problem ? '' : this.workbenchOfferChip(b, esc));
         const crumbLabel = ctx.showCrumb ? this.workbenchCrumbLabel(b) : '';
         const crumb = ctx.showCrumb ? `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>` : '';
         const classes = ['config-bm-row'];
@@ -2064,7 +2074,7 @@
         const feed = global.BookmarkFeedRow;
         const col = (name) => this.bmViewColumn(name);
         return `
-            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}"${status ? ` data-lvs-status="${status}"` : ''} role="row" tabindex="-1"
+            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}"${nets ? ` data-bm-net-sig="${esc(nets.sig)}"` : ''}${status ? ` data-lvs-status="${status}"` : ''} role="row" tabindex="-1"
                  aria-selected="${ticked ? 'true' : 'false'}" aria-posinset="${item.index + 1}" aria-setsize="${ctx.setSize}">
                 <label class="config-bm-tick-cell" role="gridcell">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
@@ -2073,7 +2083,7 @@
                 <span class="config-bm-icon-cell" role="gridcell">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                 <span class="config-bm-name" role="gridcell">
                     <span class="config-bm-title">${esc(title)}</span>
-                    ${this.workbenchNetBadges?.(b) || ''}
+                    ${this.workbenchNetName?.(nets, merged) || ''}
                     ${domain ? `<span class="config-bm-domain">${esc(domain)}</span>` : ''}
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
                     ${crumb}
@@ -2284,6 +2294,8 @@
             // A Health filter puts the reason in this cell instead of tags.
             if (!cell || cell.querySelector('.config-bm-reason')) return;
             cell.querySelectorAll('.tag-offer, .tag-offer-more').forEach((el) => el.remove());
+            // A failing check has the cell to itself: the suggestion waits.
+            if (cell.querySelector('.config-bm-tag--net:is([data-state="down"], [data-state="warn"], [data-state="slow"])')) return;
             const html = this.workbenchOfferChip(this.findBookmarkByKey(row.getAttribute('data-bm-key')), esc);
             if (html) cell.insertAdjacentHTML('beforeend', html);
         });
@@ -2377,8 +2389,31 @@
      * a tag on offer is fitted first (TagOfferRow.fit, shared with the inbox).
      */
     fitWorkbenchTags(root) {
-        const cells = [...(root || document).querySelectorAll('.config-bm-row .config-bm-tags')];
-        global.TagOfferRow?.fit(cells, { tag: '.config-bm-tag', more: '.config-bm-tag--more' });
+        const scope = root || document;
+        const cells = [...scope.querySelectorAll('.config-bm-row .config-bm-tags')];
+        // The checks beside a name get the room the title leaves, measured
+        // here and fitted like the tags cell: the name never gives way to them.
+        const all = [...scope.querySelectorAll('.config-bm-row .config-bm-nets')];
+        all.forEach((el) => el.classList.remove('is-squeezed'));
+        const beside = all.filter((el) => el.getClientRects().length);
+        beside.forEach((cluster) => {
+            const name = cluster.parentElement;
+            const title = name.querySelector('.config-bm-title');
+            const gap = parseFloat(getComputedStyle(name).columnGap) || 0;
+            const kids = [...name.children].filter((el) => el.getClientRects().length || el === cluster);
+            const others = kids.filter((el) => el !== title && el !== cluster && !el.matches('.config-bm-domain'))
+                .reduce((sum, el) => sum + el.getBoundingClientRect().width, 0);
+            const room = name.clientWidth - (title?.scrollWidth || 0) - others - gap * Math.max(0, kids.length - 1);
+            cluster.style.width = `${Math.max(0, Math.floor(room))}px`;
+        });
+        global.TagOfferRow?.fit([...cells, ...beside], { tag: '.config-bm-tag', more: '.config-bm-tag--more' });
+        beside.forEach((cluster) => {
+            // A cluster with no room for even its "+n" gives way altogether.
+            const tight = cluster.clientWidth < 28;
+            cluster.style.removeProperty('width');
+            cluster.classList.toggle('is-squeezed', tight);
+        });
+        this.syncBmNetMore?.(scope);
         // Refit whenever the list changes width: a window resize, the panel
         // folding, or the first layout after the rows were put in.
         const host = document.getElementById('config-bm-list');
