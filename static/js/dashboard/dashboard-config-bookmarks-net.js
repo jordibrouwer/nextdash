@@ -190,9 +190,9 @@
             const d = ed.draft;
             const caps = this._bmNetCaps || {};
             const errors = ed.errors || {};
-            const field = (name, label, control, hint = '') => `
+            const field = (name, label, control, hint = '', help = '') => `
                 <label class="config-bm-field${errors[name] ? ' is-error' : ''}" data-net-field-wrap="${name}">
-                    <span class="config-bm-field-label">${esc(label)}</span>
+                    <span class="config-bm-field-label">${esc(label)}${help ? this.bmHelpBtn(help) : ''}</span>
                     ${control}
                     <span class="config-bm-field-status" role="status">${esc(errors[name] || '')}</span>
                     ${hint ? `<span class="config-bm-panel-muted">${esc(hint)}</span>` : ''}
@@ -206,11 +206,11 @@
             if (d.type === 'tcp') {
                 params = `${field('port', t('nettools.fieldPort', 'Port'), input('port', d.port, 'number', `min="1" max="65535" placeholder="${esc(String(target.port || ''))}"`),
                     t('nettools.fieldPortHint', 'Empty uses the port of the bookmark address.'))}
-                    ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}`;
+                    ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'), '', 'Slow')}`;
             } else if (d.type === 'ping') {
                 params = `${field('count', t('nettools.fieldPackets', 'Packets'), input('count', d.count, 'number', 'min="1" max="10" placeholder="4"'))}
                     ${field('maxLossPct', t('nettools.fieldLoss', 'Down from loss (%)'), input('maxLossPct', d.maxLossPct, 'number', 'min="1" max="100" placeholder="50"'))}
-                    ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}`;
+                    ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'), '', 'Slow')}`;
             }
             if (d.type === 'tls') {
                 params = `${field('port', t('nettools.fieldPort', 'Port'), input('port', d.port, 'number', `min="1" max="65535" placeholder="${esc(String(target.port || ''))}"`),
@@ -225,7 +225,7 @@
                         t('nettools.fieldExpectStatusHint', 'Judged after the redirects. A list works: 200,301.'))}
                     ${field('expectHeader', t('nettools.fieldExpectHeader', 'Expected header'), input('expectHeader', d.expectHeader, 'text', `spellcheck="false" maxlength="200" placeholder="${esc(t('nettools.fieldExpectHeaderPlaceholder', 'Optional, like server: nginx'))}"`),
                         t('nettools.fieldExpectHeaderHint', 'The answer must have this header, and contain the text after the colon when there is one.'))}
-                    ${field('maxMs', t('nettools.fieldSlowFirstByte', 'Slow from (ms to first byte)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}`;
+                    ${field('maxMs', t('nettools.fieldSlowFirstByte', 'Slow from (ms to first byte)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'), '', 'Slow')}`;
             }
             if (d.type === 'json') {
                 const opLabels = { eq: t('nettools.opEqOption', 'is equal to'), ne: t('nettools.opNeOption', 'is not equal to'), gt: t('nettools.opGtOption', 'is more than'), lt: t('nettools.opLtOption', 'is less than'), contains: t('nettools.opContainsOption', 'contains'), exists: t('nettools.opExistsOption', 'exists') };
@@ -286,11 +286,11 @@
             return `
                 <form class="net-form" data-net-form novalidate aria-label="${esc(ed.id ? t('nettools.formEdit', 'Change check') : t('nettools.formAdd', 'Add check'))}">
                     <div class="config-bm-panel-fields">
-                        ${field('type', t('nettools.fieldType', 'Type'), `<select class="config-select" data-net-field="type">${typeOptions}</select>`)}
+                        ${field('type', t('nettools.fieldType', 'Type'), `<select class="config-select" data-net-field="type">${typeOptions}</select>`, '', 'type')}
                         ${params}${custom}${label}
-                        ${field('planning', t('nettools.fieldPlanning', 'Planning'), `<select class="config-select" data-net-field="planning">${planOptions}</select>`)}
-                        ${field('timeoutSec', t('nettools.fieldTimeout', 'Time-out'), `<select class="config-select" data-net-field="timeoutSec">${timeoutOptions}</select>`)}
-                        ${field('muted', t('nettools.fieldAlerts', 'Alerts'), `<select class="config-select" data-net-field="muted">${alertOptions}</select>`)}
+                        ${field('planning', t('nettools.fieldPlanning', 'Planning'), `<select class="config-select" data-net-field="planning">${planOptions}</select>`, '', 'Planning')}
+                        ${field('timeoutSec', t('nettools.fieldTimeout', 'Time-out'), `<select class="config-select" data-net-field="timeoutSec">${timeoutOptions}</select>`, '', 'Timeout')}
+                        ${field('muted', t('nettools.fieldAlerts', 'Alerts'), `<select class="config-select" data-net-field="muted">${alertOptions}</select>`, '', 'Alerts')}
                         <div class="net-explain" data-net-explain aria-live="polite">${exp}</div>
                         <div class="net-test" data-net-test>${this.renderBmNetFormTest(b)}</div>
                         ${ed.serverError ? `<p class="net-inline-error" role="status" data-net-error>${esc(ed.serverError)}</p>` : ''}

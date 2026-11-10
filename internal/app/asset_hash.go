@@ -191,6 +191,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-config-bookmarks-health.js",
 	"js/shared/net-checks-model.js",
 	"js/dashboard/dashboard-config-bookmarks-net.js",
+	"js/dashboard/dashboard-config-bookmarks-help.js",
 	"js/dashboard/dashboard-config-bookmarks-tests.js",
 	// Config -> Monitoring -> Checks: the network checks status block.
 	"js/dashboard/dashboard-config-net-tools.js",

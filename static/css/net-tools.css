@@ -601,3 +601,99 @@ button.config-bm-tag--more:focus-visible {
     color: var(--text-secondary);
     font-size: var(--font-size-small, 0.85rem);
 }
+
+/* Help in the Tests tab: a ℹ beside a heading or a field, and its card. */
+.net-sec-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    margin: var(--space-2, 0.5rem) 0 var(--space-1, 0.25rem);
+}
+
+.net-sec-head:first-child {
+    margin-top: 0;
+}
+
+.net-sec-label {
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.net-help-btn {
+    margin-left: var(--space-1, 0.25rem);
+    vertical-align: middle;
+    flex: none;
+}
+
+.net-help-btn[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+}
+
+.net-help-pop {
+    --net-help-ax: 28px;
+    position: fixed;
+    z-index: 10050;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--background-primary);
+    box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.65);
+    font-size: var(--font-size-controls);
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.net-help-pop::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: var(--net-help-ax);
+    width: 10px;
+    height: 10px;
+    transform: rotate(45deg);
+    background: var(--background-primary);
+    border-left: 1px solid var(--border-primary);
+    border-top: 1px solid var(--border-primary);
+}
+
+.net-help-pop.is-up::before {
+    top: auto;
+    bottom: -6px;
+    transform: rotate(225deg);
+}
+
+.net-help-pop:focus-visible {
+    outline: 2px solid var(--accent-primary);
+}
+
+.net-help-title {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.net-help-pop p {
+    margin: 0 0 6px;
+    color: var(--text-secondary);
+}
+
+.net-help-pop p:last-child {
+    margin-bottom: 0;
+}
+
+.net-help-pop b {
+    color: var(--text-primary);
+}
+
+.net-help-pop code,
+.net-help-pop kbd {
+    font: 600 0.85em var(--font-family-mono, ui-monospace, monospace);
+    padding: 0 5px;
+    border: 1px solid var(--border-primary);
+    border-radius: 5px;
+}

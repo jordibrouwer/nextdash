@@ -35,6 +35,7 @@
         /** The side panel was closed: what the tests found goes with it. */
         clearBmTestsResults() {
             this._bmTestsMap = new Map();
+            this.bmHelpClose?.();
         },
 
         /** The tab's pane: a root the net part swaps in place when something changes. */
@@ -67,9 +68,12 @@
             const add = !editing && canAdd
                 ? `<div class="net-card-actions"><button type="button" class="config-btn config-btn--small config-btn--primary" data-net-action="add">${esc(t('nettools.addCheck', 'Add check'))}</button></div>`
                 : '';
+            const head = (label, key) => `<div class="net-sec-head"><span class="net-sec-label">${esc(label)}</span>${this.bmHelpBtn(key)}</div>`;
             return `
+                ${head(t('nettools.secTests', 'Tests'), 'Tests')}
+                ${head(t('nettools.secOverview', 'Overview'), 'Tiles')}
                 ${this.renderBmTestsTiles(checks)}
-                ${note}${empty}${list}
+                ${note}${empty}${list ? head(t('nettools.secChecks', 'Checks'), 'Status') : ''}${list}
                 ${this.renderBmTestsRunOnce(b, !checks.length && !editing)}
                 ${add}`;
         },
@@ -212,7 +216,7 @@
             const body = `<div class="net-card-actions" data-net-run-types>${buttons}${records}${resolverSelect}</div>
                 ${status}${error}${run.last && !run.running ? this.renderBmTestsResult(b, run.last) : ''}`;
             const answer = types.map((type) => M.typeName(type).toLowerCase()).join(' · ');
-            return `<div class="config-bm-acc-list">${this.workbenchAcc('tests', 'run', t('nettools.runOnce', 'Run once'), answer, body, open, { forceOpen: open })}</div>`;
+            return `<div class="config-bm-acc-list">${this.workbenchAcc('tests', 'run', `${esc(t('nettools.runOnce', 'Run once'))}${this.bmHelpBtn('Run')}`, answer, body, open, { forceOpen: open, labelHtml: true })}</div>`;
         },
 
         /** What one run found, in the accordion's own rows; for a failure, the block that says what to do. */
@@ -458,6 +462,7 @@
             const b = root && panel.dataset.bmPanelKey ? this.findBookmarkByKey(panel.dataset.bmPanelKey) : null;
             if (!root || !b) return;
             this.bindBmNetChecks(panel, b);
+            this.bindBmHelp(root, b);
             root.addEventListener('change', (event) => {
                 const pick = event.target.closest('[data-net-run-record]');
                 if (pick) this.bmTestsRun(b).record = pick.value;

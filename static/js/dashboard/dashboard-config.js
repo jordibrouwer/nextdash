@@ -1949,7 +1949,7 @@ class DashboardConfig {
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
         // The "+n" popover of a row's checks and tags binds its own keys (Escape closes it).
-        if (document.querySelector('.net-list-pop')) return false;
+        if (document.querySelector('.net-list-pop, .net-help-pop')) return false;
 
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
             e.preventDefault();
@@ -20736,6 +20736,7 @@ class DashboardConfig {
             && window.DashboardConfigWorkbenchReady === true
             && window.DashboardConfigBookmarksHealthReady === true
             && window.DashboardConfigBookmarksNetReady === true
+            && window.DashboardConfigBookmarksHelpReady === true
             && window.DashboardConfigBookmarksTestsReady === true
             && window.DashboardBookmarksHealthModalReady === true
             && window.DashboardConfigBookmarksUsageReady === true
@@ -20763,6 +20764,9 @@ class DashboardConfig {
                 'netChecksModel', () => Boolean(window.NetChecksModel)))
             .then(() => load('js/dashboard/dashboard-config-bookmarks-net.js',
                 'dashboardConfigBookmarksNet', () => window.DashboardConfigBookmarksNetReady === true))
+            // The info buttons and cards of the Tests tab.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-help.js',
+                'dashboardConfigBookmarksHelp', () => window.DashboardConfigBookmarksHelpReady === true))
             // The panel's Tests tab: the checks and one-off tests, on top of the checks' request and form.
             .then(() => load('js/dashboard/dashboard-config-bookmarks-tests.js',
                 'dashboardConfigBookmarksTests', () => window.DashboardConfigBookmarksTestsReady === true))
