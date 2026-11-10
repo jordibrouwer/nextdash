@@ -8029,6 +8029,72 @@ body[data-header-clock="classic"] .dashboard-section.section-controls .date-weat
 }
 
 /*
+ * Variant F: the weather beside the rule, large. The greeting stands over a
+ * row of icon and temperature, and the day and "place · condition" in two
+ * small lines beside them. It adds no column: the row sits in the same side
+ * block the three lines used, so the pages keep the width they had.
+ */
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-weather-line--big {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    opacity: 1;
+    min-width: 0;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-weather-line--big .weather-icon {
+    margin: 0;
+    vertical-align: baseline;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-weather-line--big .weather-icon-svg {
+    width: calc(var(--font-size-text) * 2.4);
+    height: calc(var(--font-size-text) * 2.4);
+    stroke: var(--accent-primary, currentColor);
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .weather-temp {
+    font-size: calc(var(--font-size-text) * 2.1);
+    font-weight: var(--font-weight-black, 800);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .weather-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-left: var(--space-1, 0.25rem);
+    font-size: var(--font-size-text);
+    line-height: 1.25;
+    opacity: 0.85;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .weather-meta-detail {
+    font-size: calc(var(--font-size-text) * 0.9);
+    opacity: 0.8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Narrow header: the pages come first. Place and condition go, then the
+   greeting and the day; the icon and the temperature stay. */
+@media (max-width: 1300px) {
+    body[data-header-clock="classic"] .dashboard-section.section-controls .weather-meta-detail {
+        display: none;
+    }
+}
+
+@media (max-width: 1050px) {
+    body[data-header-clock="classic"] .dashboard-section.section-controls .date-side .date-greeting,
+    body[data-header-clock="classic"] .dashboard-section.section-controls .weather-meta {
+        display: none;
+    }
+}
+
+/*
  * The halo: a shadow in the theme's background colour, so light text gets a
  * dark edge and dark text a light one. Barely visible on a plain backdrop; on
  * a pattern or a bright photo it lifts the letters off it. Icons are SVG and

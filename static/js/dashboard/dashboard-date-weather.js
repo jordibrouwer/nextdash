@@ -279,7 +279,10 @@ class DashboardDateWeather {
                 greeting.textContent = this.formatGreeting(now, t);
                 side.appendChild(greeting);
             }
-            if (datePart) {
+            // With weather the day moves into the weather row, beside the big
+            // temperature; the side column is then greeting + that row.
+            const weatherParts = bigClock ? this.getWeatherParts(d.weatherData) : null;
+            if (datePart && !weatherParts) {
                 const day = timePart
                     ? document.createElement('div')
                     // Without a time there is no clock to click, so the date
@@ -294,7 +297,33 @@ class DashboardDateWeather {
         } else if (dateTimeText) {
             dateElement.appendChild(makeClockButton(dateTimeText, 'date-time-line'));
         }
-        if (weatherPart) {
+        if (weatherPart && bigClock && this.getWeatherParts(d.weatherData)) {
+            const parts = this.getWeatherParts(d.weatherData);
+            const weatherLine = document.createElement('div');
+            weatherLine.className = 'date-weather-line date-weather-line--big';
+            weatherLine.setAttribute('aria-label', weatherPart);
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'weather-icon';
+            iconSpan.setAttribute('aria-hidden', 'true');
+            iconSpan.innerHTML = this.getWeatherIconMarkup(d.weatherData?.weatherCode);
+            const temp = document.createElement('span');
+            temp.className = 'weather-temp';
+            temp.textContent = parts.temperature;
+            const meta = document.createElement('span');
+            meta.className = 'weather-meta';
+            if (datePart) {
+                const dayEl = document.createElement('span');
+                dayEl.className = 'weather-meta-day date-day';
+                dayEl.textContent = datePart;
+                meta.appendChild(dayEl);
+            }
+            const detail = document.createElement('span');
+            detail.className = 'weather-meta-detail';
+            detail.textContent = parts.detail;
+            meta.appendChild(detail);
+            weatherLine.append(iconSpan, temp, meta);
+            weatherHost.appendChild(weatherLine);
+        } else if (weatherPart) {
             const weatherLine = document.createElement('div');
             weatherLine.className = 'date-weather-line';
             const iconSpan = document.createElement('span');
@@ -446,6 +475,22 @@ class DashboardDateWeather {
         }, 0);
     }
 
+
+    // The same data as formatWeatherText, in two pieces: the temperature for
+    // the large figure and "location, condition" for the small line beside it.
+    getWeatherParts(weatherData) {
+        const d = this.dash;
+        if (!weatherData || !d.weatherService) return null;
+        const temperature = Number(weatherData.temperature);
+        if (!Number.isFinite(temperature)) return null;
+        const weatherLabelKey = d.weatherService?.getWeatherLabelKey(weatherData.weatherCode) || '';
+        const conditionText = weatherLabelKey === 'dashboard.weatherCode.unknown' ? '' : this.getWeatherConditionLabel(weatherData.weatherCode);
+        const locationName = weatherData.locationName || (d.language?.t ? d.language.t('dashboard.weatherCurrentLocation') : 'Current location');
+        return {
+            temperature: `${Math.round(temperature)}°${weatherData.unitSymbol || 'C'}`,
+            detail: conditionText ? `${locationName} · ${conditionText}` : locationName
+        };
+    }
 
     formatWeatherText(weatherData) {
         const d = this.dash;
