@@ -923,11 +923,11 @@ This manual calls the page of categories and widgets the **dashboard grid**, to 
 
 The header has three zones.
 
-- **Left — clock, weather and name.** The time and date, the weather line, and the name of the page or view (*main*, *config*). Click the date for a week overview; a **Calendar URL** (Appearance → Date & weather) adds an *Open calendar* link. **Clock and weather** chooses where they stand: beside the view name (the default), in a column of their own, or on their own line with the name underneath. A fourth placement, **Large clock, greeting beside it**, draws the time large with a greeting that follows the hour (*Good evening, Jordi*); **Your name**, in the *Greeting* group under Appearance → Date & time, is the name in it, and empty means a greeting without one. The quick start asks for the name once.
+- **Left — clock, weather and name.** The time and date, the weather line, and the name of the page or view (*main*, *config*). Click the date for a week overview; a **Calendar URL** (Appearance → Date & weather) adds an *Open calendar* link. **Clock and weather** chooses where they stand: beside the view name (the default), in a column of their own, or on their own line with the name underneath. A fourth placement, **Large clock, greeting beside it**, draws the time large with a greeting that follows the hour (*Good evening, Jordi*); **Your name**, in the *Greeting* group under Appearance → Date & time, is the name in it, and empty means a greeting without one. The quick start asks for the name once. In that placement the weather is large too: beside the rule stand the weather icon and the temperature in big type, with the day and *place · condition* in two small lines next to them. In a narrower header the place and condition go first (under 1300 px), then the greeting and the day (under 1050 px); the icon and the temperature stay.
 - **Middle — the page switcher.** See [below](#the-page-switcher).
 - **Right — the destinations.** **Dashboard** (⌂), **Bookmarks** (a badge for a broken link or another problem), **Inbox** (an unread count), **Containers** (a badge for updates waiting) and **config** (the gear). Each destination can be switched off; its key keeps working. There is no Health icon — its badge and its list live on the Bookmarks icon now. At the far right stands the **notifications bell** ([below](#the-notifications-bell)).
 
-**Button style** draws the header controls plain (underlined when current) or each in its own box. As the window narrows, the header folds its parts away in a fixed order, so the switcher and the destinations stay reachable.
+**Button style** draws the header controls plain (underlined when current) or each in its own box. As the window narrows, the header folds its parts away in a fixed order, so the switcher and the destinations stay reachable. On a phone (under 768 px) the notifications bell is not drawn; a tablet and a desktop keep it.
 
 <p align="center"><img src="screenshots/manual.md/04-header-clock.jpg" alt="The header with a large clock reading 21:46, the greeting Good evening, Jordi, the date and weather, the page tabs, and the notifications bell with a count at the right" width="860"></p>
 <p align="center"><sub>The large clock with its greeting; the bell is the last button on the right.</sub></p>
@@ -3076,7 +3076,7 @@ Nothing outside nextDash is asked: only the Docker socket and its own checks, ne
 | New apps | What happens |
 |---|---|
 | **Ask first** (default) | The same card, for the new ones only, with **Add**, **Ignore** and **Not now**. Untick one and choose Add: the unticked ones are ignored. |
-| **Add straight away** | It goes on the dashboard at once, with a notice that offers **Undo**, **Move** and **Done**. |
+| **Add straight away** | It goes on the dashboard at once, and a row in the notifications bell offers **Undo**, **Move** and **Done** for as long as you have not answered. The row waits there, with no card in the corner. |
 | **Propose in the Inbox** | It waits in the inbox, where **Promote** fills in the bookmark form and **Ignore** keeps it away ([§13.1](#131-getting-links-in)). |
 
 <p align="center"><img src="screenshots/manual.md/14-discovery-ask.jpg" alt="The card for one new container: New on this server, Plex is running here, at 192.168.1.10:32400, Goes to Home in Media, with the buttons Add, Ignore and Not now" width="460"></p>
