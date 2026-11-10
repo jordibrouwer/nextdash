@@ -58,12 +58,12 @@ test.describe('help cards in the Tests tab', () => {
   test('a second card replaces the first, and a click outside closes it', async ({ page }) => {
     await open(page);
     // A card lies over what is below its button, so the second button is the one above.
-    await btn(page, 'Tiles').click();
-    await expect(card(page)).toContainText('Overview numbers');
+    await btn(page, 'Run').click();
+    await expect(card(page)).toContainText('Never a free host or a port scan');
     await btn(page, 'Tests').click();
     await expect(card(page)).toHaveCount(1);
     await expect(card(page)).toContainText('What Tests does');
-    await expect(btn(page, 'Tiles')).toHaveAttribute('aria-expanded', 'false');
+    await expect(btn(page, 'Run')).toHaveAttribute('aria-expanded', 'false');
     await panel(page).locator('.config-bm-panel-title').click();
     await expect(card(page)).toHaveCount(0);
   });
@@ -84,10 +84,8 @@ test.describe('help cards in the Tests tab', () => {
     await expect(card(page)).toContainText('What Tests does');
     await page.keyboard.press('Enter');
     await expect(card(page)).toHaveCount(0);
-    await page.keyboard.press('Tab');
-    await expect(btn(page, 'Tiles')).toBeFocused();
     await page.keyboard.press('Space');
-    await expect(card(page)).toContainText('Overview numbers');
+    await expect(card(page)).toContainText('Up 24 h');
     // Tabbing on leaves the card behind.
     await page.keyboard.press('Tab');
     await expect(card(page)).toHaveCount(0);

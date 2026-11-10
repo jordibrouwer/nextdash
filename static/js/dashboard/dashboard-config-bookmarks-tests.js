@@ -70,8 +70,7 @@
                 : '';
             const head = (label, key) => `<div class="net-sec-head"><span class="net-sec-label">${esc(label)}</span>${this.bmHelpBtn(key)}</div>`;
             return `
-                ${head(t('nettools.secTests', 'Tests'), 'Tests')}
-                ${head(t('nettools.secOverview', 'Overview'), 'Tiles')}
+                ${head(t('nettools.secOverview', 'Overview'), 'Tests')}
                 ${this.renderBmTestsTiles(checks)}
                 ${note}${empty}${list ? head(t('nettools.secChecks', 'Checks'), 'Status') : ''}${list}
                 ${this.renderBmTestsRunOnce(b, !checks.length && !editing)}
