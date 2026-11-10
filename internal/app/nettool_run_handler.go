@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -23,6 +24,9 @@ type netRunRequest struct {
 	URL     string `json:"url"`
 	Type    string `json:"type"`
 	CheckID string `json:"checkId"`
+	// Record is only for a one-off DNS test (no checkId): which record type to
+	// ask for, one of a fixed list. It names no host.
+	Record string `json:"record"`
 }
 
 // RunNetTest runs one network test now. The host and port are always the
@@ -38,10 +42,10 @@ func (h *Handlers) RunNetTest(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {
-		netWriteError(w, http.StatusBadRequest, "Invalid request: only pageId, url, type and checkId are accepted")
+		netWriteError(w, http.StatusBadRequest, "Invalid request: only pageId, url, type, checkId and record are accepted")
 		return
 	}
-	res, status, err := h.runNetTestFor(r.Context(), clientIP(r), req.PageID, req.URL, req.Type, req.CheckID)
+	res, status, err := h.runNetTestForRecord(r.Context(), clientIP(r), req.PageID, req.URL, req.Type, req.CheckID, req.Record)
 	if err != nil {
 		if status == http.StatusTooManyRequests {
 			w.Header().Set("Retry-After", "60")
@@ -67,6 +71,12 @@ func (h *Handlers) netRunOne(ctx context.Context, bm Bookmark, c NetCheck) NetRe
 // or a temporary one that carries only a type, which makes its target the
 // bookmark's host and the port of its address.
 func (h *Handlers) runNetTestFor(ctx context.Context, clientKey string, pageID int, url, typ, checkID string) (NetResult, int, error) {
+	return h.runNetTestForRecord(ctx, clientKey, pageID, url, typ, checkID, "")
+}
+
+// runNetTestForRecord is runNetTestFor with the record type of a one-off DNS
+// test (A when empty). The record is ignored for a stored check, which has its own.
+func (h *Handlers) runNetTestForRecord(ctx context.Context, clientKey string, pageID int, url, typ, checkID, record string) (NetResult, int, error) {
 	settings := h.store.GetSettings()
 	if !settings.NetToolsEnabled {
 		return NetResult{}, http.StatusForbidden, netRunError{http.StatusForbidden, "Network tests are turned off in the settings."}
@@ -101,6 +111,16 @@ func (h *Handlers) runNetTestFor(ctx context.Context, clientKey string, pageID i
 		}
 	} else {
 		chk = NetCheck{Type: typ}
+		if typ == netTypeDNS {
+			rec := strings.ToUpper(strings.TrimSpace(record))
+			if rec == "" {
+				rec = "A"
+			}
+			if !netDNSRecords[rec] {
+				return NetResult{}, http.StatusBadRequest, netRunError{http.StatusBadRequest, "unknown record type"}
+			}
+			chk.Record = rec
+		}
 	}
 	if !netTypesBuilt[chk.Type] {
 		return NetResult{}, http.StatusBadRequest, netRunError{http.StatusBadRequest, "this test type is not available"}
@@ -119,6 +139,14 @@ func (h *Handlers) runNetTestFor(ctx context.Context, clientKey string, pageID i
 	}
 
 	res := h.netRunOne(ctx, bm, chk)
+	// A test of a stored DNS check says whether the records still match its
+	// baseline; it writes nothing (only the monitor round moves the drift).
+	if stored && chk.Type == netTypeDNS && chk.Baseline != "" && res.DNS != nil && len(res.DNS.Records) > 0 {
+		vals := dnsValueSet(strings.ToUpper(chk.Record), res.DNS.Records)
+		if fp, old := dnsDecodeSet(chk.Baseline); fp != dnsFingerprint(strings.ToUpper(chk.Record), vals) {
+			res.DNS.Changed, res.DNS.Diff = true, dnsDiff(strings.ToUpper(chk.Record), old, vals)
+		}
+	}
 	logActivity(activityCategoryHealth, "net_run", map[string]any{
 		"url": activityURL(bm.URL), "type": chk.Type, "host": res.Host,
 	}, "")

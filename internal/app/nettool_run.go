@@ -49,22 +49,67 @@ type TLSCert struct {
 	NotAfter  int64    `json:"notAfter"`
 	SigAlg    string   `json:"sigAlg,omitempty"`
 	SAN       []string `json:"san,omitempty"`
+	SANMore   int      `json:"sanMore,omitempty"` // names cut off after the first 20
 }
 
 type TLSResult struct {
 	Version  string    `json:"version"`
 	Cipher   string    `json:"cipher,omitempty"`
 	ALPN     string    `json:"alpn,omitempty"`
-	Chain    []TLSCert `json:"chain,omitempty"`
-	DaysLeft int       `json:"daysLeft"`
-	Valid    bool      `json:"valid"`
+	Chain    []TLSCert `json:"chain,omitempty"` // at most 5 certificates, the server's own first
+	DaysLeft int       `json:"daysLeft"`        // of the first certificate; negative once expired
+	Valid    bool      `json:"valid"`           // the chain verifies for the host name, against the system roots
+	// ChainTotal is how many certificates the server sent; Chain holds the first few.
+	ChainTotal int `json:"chainTotal,omitempty"`
+	// ServerName is the name the certificate was checked against (also the SNI).
+	ServerName string `json:"serverName,omitempty"`
+	MinDays    int    `json:"minDays,omitempty"` // the warning threshold used
+}
+
+// HTTPTimings is the timeline of an HTTP-detail run, in milliseconds. The
+// first five describe the request that got the final answer (a redirect that
+// came before it is RedirectMs). TTFBMs and TotalMs count from the start of
+// the whole run, so TTFBMs is also the sample's response time.
+type HTTPTimings struct {
+	DNSMs      int `json:"dnsMs"`
+	ConnectMs  int `json:"connectMs"`
+	TLSMs      int `json:"tlsMs"`
+	WaitMs     int `json:"waitMs"`     // request sent until the first byte of the answer
+	TransferMs int `json:"transferMs"` // first byte until the (limited) body was read
+	RedirectMs int `json:"redirectMs"` // the redirects before the final request
+	TTFBMs     int `json:"ttfbMs"`
+	TotalMs    int `json:"totalMs"`
+}
+
+// HTTPHop is one step of a redirect chain. A hop that the address guard
+// refused is shown (Blocked) but was never requested.
+type HTTPHop struct {
+	URL     string `json:"url"` // scheme, host and path; the query is left out
+	Status  int    `json:"status,omitempty"`
+	Ms      int    `json:"ms,omitempty"`
+	Blocked bool   `json:"blocked,omitempty"`
+}
+
+// HTTPHeader is one response header, name in lower case. Secret-carrying
+// headers keep their name and lose their value.
+type HTTPHeader struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type HTTPDetailResult struct {
-	Status int    `json:"status"`
-	Proto  string `json:"proto,omitempty"`
-	IP     string `json:"ip,omitempty"`
-	Size   int64  `json:"size,omitempty"`
+	Status       int          `json:"status"`
+	Proto        string       `json:"proto,omitempty"`
+	IP           string       `json:"ip,omitempty"`
+	Size         int64        `json:"size,omitempty"` // bytes read, at most netHTTPMaxBody
+	SizeCapped   bool         `json:"sizeCapped,omitempty"`
+	URL          string       `json:"url,omitempty"` // where the run ended (no query)
+	Timings      *HTTPTimings `json:"timings,omitempty"`
+	Redirects    []HTTPHop    `json:"redirects,omitempty"`
+	Headers      []HTTPHeader `json:"headers,omitempty"`
+	HeadersTotal int          `json:"headersTotal,omitempty"` // how many the answer had
+	ExpectStatus string       `json:"expectStatus,omitempty"` // the rule applied
+	ExpectHeader string       `json:"expectHeader,omitempty"`
 }
 
 type JSONResult struct {
@@ -122,6 +167,12 @@ func (h *Handlers) runNetCheck(ctx context.Context, bm Bookmark, c NetCheck) Net
 		return h.runTCP(ctx, h.netGuard(), target, c)
 	case netTypePing:
 		return h.runPing(ctx, h.netGuard(), target, c, h.store.GetSettings().NetToolsPing)
+	case netTypeDNS:
+		return h.runDNS(ctx, h.netGuard(), target, c)
+	case netTypeTLS:
+		return h.runTLS(ctx, h.netGuard(), target, c)
+	case netTypeHTTP:
+		return h.runHTTPDetail(ctx, h.netGuard(), target, bm, c)
 	default:
 		res.Class, res.Error = "other", "type not available yet"
 	}

@@ -108,6 +108,8 @@
                     ? t('nettools.answerDown', 'down {duration}').replace('{duration}', health.formatDuration(Date.now() - since))
                     : M.stateLabel(state, t);
             }
+            // A certificate is read in days, not milliseconds.
+            if (check.type === 'tls') return M.tlsDaysText(last.secondary, t);
             const ms = last.ok && Number(last.ms) > 0 ? `${Math.round(last.ms)} ms` : '';
             return [M.stateLabel(state, t), ms].filter(Boolean).join(' · ');
         },
@@ -154,6 +156,13 @@
                 ? kv(t('nettools.downSince', 'Down since'), new Date(since).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
                 : (uptime ? kv(t('nettools.uptime', 'Uptime'), `${uptime} ${t('nettools.last24h', 'in 24 h')}`) : '');
             const block = last && !last.ok ? this.renderBmNetErrorBlock(b, check) : '';
+            // A DNS check whose records changed: what changed, and the button that makes it the new normal.
+            const drift = check.type === 'dns' && check.driftDiff
+                ? `<div class="net-drift" data-net-drift role="status">
+                        <span><b>${esc(t('nettools.driftTitle', 'DNS changed'))}</b> ${esc(check.driftDiff)}</span>
+                        <button type="button" class="config-btn config-btn--small" data-net-action="accept-drift" data-net-id="${esc(check.id)}"${st.saving ? ' disabled' : ''}>${esc(t('nettools.driftAccept', 'Accept'))}</button>
+                    </div>`
+                : '';
             const test = (st.lastTest || {})[check.id];
             let testLine = '';
             if (test) {
@@ -166,7 +175,7 @@
             return `${strip}
                 ${lastText ? kv(t('nettools.lastResult', 'Last result'), lastText) : ''}
                 ${kv(t('nettools.everyLabel', 'Every'), every)}
-                ${fact}${testLine}${block}
+                ${fact}${drift}${testLine}${block}
                 <div class="net-card-actions">
                     <button type="button" class="config-btn config-btn--small" data-net-action="retest" data-net-id="${esc(check.id)}"${busy ? ' disabled' : ''}>${esc(t('nettools.testNow', 'Test now'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-net-action="edit" data-net-id="${esc(check.id)}">${esc(t('nettools.edit', 'Edit'))}</button>
@@ -185,9 +194,13 @@
             const run = this.bmTestsRun(b);
             const buttons = types.map((type) =>
                 `<button type="button" class="config-btn config-btn--small" data-net-action="run" data-net-type="${esc(type)}"${run.running ? ' disabled' : ''}>${esc(M.typeName(type))}</button>`).join('');
+            const records = types.includes('dns')
+                ? `<label class="net-run-record"><span class="config-bm-panel-muted">${esc(t('nettools.runRecord', 'DNS record'))}</span>
+                        <select class="config-select" data-net-run-record aria-label="${esc(t('nettools.runRecord', 'DNS record'))}">${M.DNS_RECORDS.map((r) => `<option value="${r}"${(run.record || 'A') === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select></label>`
+                : '';
             const status = run.running ? `<p class="config-bm-panel-muted" role="status">${esc(t('nettools.testing', 'Testing...'))}</p>` : '';
             const error = run.error ? `<p class="net-inline-error" role="status" data-tests-error>${esc(run.error)}</p>` : '';
-            const body = `<div class="net-card-actions" data-net-run-types>${buttons}</div>
+            const body = `<div class="net-card-actions" data-net-run-types>${buttons}${records}</div>
                 ${status}${error}${run.last && !run.running ? this.renderBmTestsResult(b, run.last) : ''}`;
             const answer = types.map((type) => M.typeName(type).toLowerCase()).join(' · ');
             return `<div class="config-bm-acc-list">${this.workbenchAcc('tests', 'run', t('nettools.runOnce', 'Run once'), answer, body, open, { forceOpen: open })}</div>`;
@@ -205,6 +218,12 @@
             let rows;
             if (!res.ok) {
                 rows = this.renderNetBlockHtml(M.testErrorBlock(res, t), { retest: `data-net-action="run" data-net-type="${esc(type)}"` });
+                // A certificate that is not accepted is still shown: what is wrong is on it.
+                if (type === 'tls' && res.tls?.chain?.length) rows += this.renderBmTestsTlsRows(res, state);
+            } else if (type === 'tls') {
+                rows = this.renderBmTestsTlsRows(res, state);
+            } else if (type === 'dns') {
+                rows = this.renderBmTestsDnsRows(res, state, ms);
             } else if (type === 'ping' && !(res.viaTcp || res.ping?.viaTcp)) {
                 const p = res.ping || {};
                 rows = [
@@ -234,6 +253,76 @@
                 </div>`;
         },
 
+        /**
+         * The answer of a DNS lookup (mockup a4): the record type, the resolver
+         * and the time, then the records as a table (value, and priority for MX),
+         * and one line on how they compare with the baseline. The TTL column
+         * comes with the resolver choice in a later phase.
+         */
+        renderBmTestsDnsRows(res, state, ms) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const M = model();
+            const t = (k, f) => this.bmNetT(k, f);
+            const d = res.dns || {};
+            const recs = Array.isArray(d.records) ? d.records : [];
+            const isMx = d.record === 'MX';
+            const kv = (k, v) => `<div class="config-bm-usage-kv"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
+            const resolver = d.resolver === 'system' || !d.resolver ? t('nettools.resolverSystem', 'system resolver') : d.resolver;
+            const head = kv(t('nettools.resRecord', 'Record'), [d.record, resolver, ms].filter(Boolean).join(' \u00b7 '));
+            const table = recs.length
+                ? `<table class="net-dns-table" data-net-dns-table>
+                        <thead><tr><th scope="col">${esc(t('nettools.dnsValue', 'Value'))}</th>${isMx ? `<th scope="col">${esc(t('nettools.dnsPrio', 'Prio'))}</th>` : ''}</tr></thead>
+                        <tbody>${recs.map((r) => `<tr><td>${esc(r.value)}</td>${isMx ? `<td>${esc(r.prio)}</td>` : ''}</tr>`).join('')}</tbody>
+                    </table>`
+                : '';
+            const compare = d.changed
+                ? `<p class="net-error-note" data-net-dns-changed>${esc(t('nettools.dnsChanged', 'Changed since the baseline:'))} ${esc(d.diff || '')}</p>`
+                : '';
+            const status = state === 'slow' ? kv(t('nettools.resResult', 'Result'), M.stateLabel(state, t)) : '';
+            return `${head}${status}${table}${compare}`;
+        },
+
+        /**
+         * The answer of a TLS read (mockup a4): chips for the days left, the
+         * version, the protocol and the cipher, then the chain as one entry per
+         * certificate (subject, issuer, valid until, names). Only what the
+         * server sent: at most 5 certificates and 20 names each.
+         */
+        renderBmTestsTlsRows(res, state) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const M = model();
+            const t = (k, f) => this.bmNetT(k, f);
+            const tl = res.tls || {};
+            const date = (ms) => (Number(ms) > 0 ? new Date(Number(ms)).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+            const days = tl.chain?.length ? M.tlsDaysText(tl.daysLeft, t) : '';
+            const chips = [
+                days ? `<span class="net-badge" data-state="${res.ok ? state : 'down'}" data-net-tls-days>${esc(days)}</span>` : '',
+                tl.version ? `<span class="net-chip">${esc(tl.version)}</span>` : '',
+                tl.alpn ? `<span class="net-chip">${esc(tl.alpn)}</span>` : '',
+                tl.cipher ? `<span class="net-chip">${esc(tl.cipher)}</span>` : '',
+            ].join('');
+            const chain = (tl.chain || []).map((c, i) => {
+                const names = Array.isArray(c.san) ? c.san : [];
+                const more = Number(c.sanMore) > 0 ? ` +${c.sanMore}` : '';
+                const meta = [
+                    c.issuer ? `${t('nettools.tlsIssuer', 'Issuer')}: ${c.issuer}` : '',
+                    c.notAfter ? `${t('nettools.tlsValidUntil', 'valid until')} ${date(c.notAfter)}` : '',
+                    c.sigAlg || '',
+                ].filter(Boolean).join(' · ');
+                return `<li class="net-cert" data-net-cert="${i}">
+                        <b>${esc(c.subject || '')}</b>
+                        <span class="net-cert-meta">${esc(meta)}</span>
+                        ${names.length ? `<span class="net-cert-meta">${esc(t('nettools.tlsNames', 'Names'))}: ${esc(names.join(', '))}${esc(more)}</span>` : ''}
+                    </li>`;
+            }).join('');
+            const total = Number(tl.chainTotal) || 0;
+            const cut = total > (tl.chain || []).length
+                ? `<p class="config-bm-panel-muted">${esc(t('nettools.tlsChainCut', '{n} more certificates are not shown.').replace('{n}', String(total - tl.chain.length)))}</p>`
+                : '';
+            return `${chips ? `<div class="net-chips" data-net-tls-chips>${chips}</div>` : ''}
+                ${chain ? `<ol class="net-chain" data-net-tls-chain>${chain}</ol>${cut}` : ''}`;
+        },
+
         /** Run one type once against the bookmark's own address; the answer is kept for this panel. */
         async runBmTestsOnce(b, type) {
             const run = this.bmTestsRun(b);
@@ -243,7 +332,7 @@
             run.running = type;
             run.error = '';
             this.paintBmNet(b);
-            const out = await this.runBmNetTest(b, { type });
+            const out = await this.runBmNetTest(b, { type, record: run.record || 'A' });
             run.running = '';
             if (out.ok) run.last = { type, res: out.res };
             else run.error = out.error;
@@ -265,6 +354,10 @@
             const b = root && panel.dataset.bmPanelKey ? this.findBookmarkByKey(panel.dataset.bmPanelKey) : null;
             if (!root || !b) return;
             this.bindBmNetChecks(panel, b);
+            root.addEventListener('change', (event) => {
+                const pick = event.target.closest('[data-net-run-record]');
+                if (pick) this.bmTestsRun(b).record = pick.value;
+            });
         },
     });
 

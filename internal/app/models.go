@@ -7283,6 +7283,10 @@ type HealthScanCacheFile struct {
 	// its own file because it is written by the same pass that writes the cache
 	// and is worthless without it.
 	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
+	// NetCertificates holds the expiry marks of TLS network checks, keyed by the
+	// check's history key ("net:<id>"). Kept apart from Certificates so a check
+	// is never listed as a host and never shares marks with the HTTP monitor.
+	NetCertificates map[string]HostCertificate `json:"netCertificates,omitempty"`
 	// Domains looked up through RDAP, keyed by registrable domain. Same file and
 	// same reason as the certificates: one pass writes both.
 	Domains map[string]HostDomain `json:"domains,omitempty"`

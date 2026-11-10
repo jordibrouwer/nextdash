@@ -7,6 +7,8 @@ import (
 	"errors"
 	"math/rand"
 	"net"
+	"net/http"
+	"net/http/httptrace"
 	"net/netip"
 	"strconv"
 	"strings"
@@ -46,6 +48,12 @@ type netGuard struct {
 	// dialHook replaces the dialer in tests only (a deterministic timeout);
 	// resolve still runs first. Production code never sets it.
 	dialHook func(ctx context.Context, network, address string) (net.Conn, error)
+	// resolver replaces the system resolver in tests only (a fake DNS server
+	// on a local UDP port); nil means net.DefaultResolver.
+	resolver *net.Resolver
+	// tlsRoots replaces the system roots in tests only (a CA made in the test);
+	// nil means the system roots.
+	tlsRoots *x509.CertPool
 }
 
 // netGuard reads AllowLocalBookmarks now (not cached) and never opens the
@@ -142,6 +150,7 @@ func netErrorClass(err error) string {
 	var certInvalid x509.CertificateInvalidError
 	var certVerify *tls.CertificateVerificationError
 	var recordHeader tls.RecordHeaderError
+	var tlsErr netTLSError
 	var netErr net.Error
 	switch {
 	case errors.Is(err, errDemoOutbound):
@@ -159,7 +168,7 @@ func netErrorClass(err error) string {
 	case errors.As(err, &netErr) && netErr.Timeout():
 		return "timeout"
 	case errors.As(err, &unknownAuth), errors.As(err, &hostErr), errors.As(err, &certInvalid),
-		errors.As(err, &certVerify), errors.As(err, &recordHeader):
+		errors.As(err, &certVerify), errors.As(err, &recordHeader), errors.As(err, &tlsErr):
 		return "tls"
 	}
 	return failureClass(err.Error())
@@ -309,4 +318,304 @@ func peerIP(a net.Addr) netip.Addr {
 		return ip.Unmap()
 	}
 	return netip.Addr{}
+}
+
+// Limits on what a DNS answer may put on screen and in the history.
+const (
+	netDNSMaxRecords = 30
+	netDNSMaxTXT     = 512
+)
+
+// netDNSRecords are the record types a DNS check can ask for in phase 2a.
+var netDNSRecords = map[string]bool{"A": true, "AAAA": true, "CNAME": true, "MX": true, "TXT": true, "NS": true}
+
+var errNetDNSNeedsName = errors.New("a DNS check needs a host name, not an IP address")
+
+func (g netGuard) sysResolver() *net.Resolver {
+	if g.resolver != nil {
+		return g.resolver
+	}
+	return net.DefaultResolver
+}
+
+// lookup asks the system resolver for one record type of a host name. The
+// demo refuses first. Answers that are addresses (A, AAAA) are shown but each
+// one is tested with isAllowedDialIP: a name that resolves to a private or
+// reserved address while local bookmarks are off comes back with the records
+// and errNetGuardBlocked, never as a plain success. Nothing here dials, and
+// the answers are used for nothing but showing. At most netDNSMaxRecords
+// records, a TXT value at most netDNSMaxTXT characters.
+func (g netGuard) lookup(ctx context.Context, host, record string) (DNSResult, error) {
+	out := DNSResult{Record: record, Resolver: "system"}
+	if demoDialRefused(ctx) {
+		return out, errDemoOutbound
+	}
+	host = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(host)), ".")
+	if _, err := netip.ParseAddr(host); err == nil {
+		return out, errNetDNSNeedsName
+	}
+	if !netDNSRecords[record] {
+		return out, errors.New("unsupported record type")
+	}
+	r := g.sysResolver()
+	var err error
+	blocked := false
+	switch record {
+	case "A", "AAAA":
+		network := "ip4"
+		if record == "AAAA" {
+			network = "ip6"
+		}
+		var addrs []netip.Addr
+		addrs, err = r.LookupNetIP(ctx, network, host)
+		for _, a := range addrs {
+			a = a.Unmap()
+			if !isAllowedDialIP(a, g.allowLocal && !demoMode()) {
+				blocked = true
+			}
+			out.Records = append(out.Records, DNSRecord{Value: a.String()})
+		}
+	case "CNAME":
+		var cname string
+		cname, err = r.LookupCNAME(ctx, host)
+		if err == nil {
+			// The resolver answers with the name itself when there is no alias.
+			if c := strings.TrimSuffix(strings.ToLower(cname), "."); c == host || c == "" {
+				err = &net.DNSError{Err: "no such host", Name: host, IsNotFound: true}
+			} else {
+				out.Records = append(out.Records, DNSRecord{Value: cname})
+			}
+		}
+	case "MX":
+		var mx []*net.MX
+		mx, err = r.LookupMX(ctx, host)
+		for _, m := range mx {
+			out.Records = append(out.Records, DNSRecord{Value: m.Host, Prio: int(m.Pref)})
+		}
+	case "TXT":
+		var txt []string
+		txt, err = r.LookupTXT(ctx, host)
+		for _, v := range txt {
+			if rs := []rune(v); len(rs) > netDNSMaxTXT {
+				v = string(rs[:netDNSMaxTXT]) + "…"
+			}
+			out.Records = append(out.Records, DNSRecord{Value: v})
+		}
+	case "NS":
+		var ns []*net.NS
+		ns, err = r.LookupNS(ctx, host)
+		for _, n := range ns {
+			out.Records = append(out.Records, DNSRecord{Value: n.Host})
+		}
+	}
+	if len(out.Records) > netDNSMaxRecords {
+		out.Records = out.Records[:netDNSMaxRecords]
+	}
+	if blocked {
+		return out, errNetGuardBlocked
+	}
+	// The resolver reports a partly unreadable answer together with the
+	// records it could read; what was read is shown.
+	if err != nil && len(out.Records) == 0 {
+		return out, err
+	}
+	return out, nil
+}
+
+// Limits on what a certificate chain may put on screen and in the history.
+const (
+	netTLSMaxChain = 5
+	netTLSMaxSAN   = 20
+	netTLSMaxName  = 200
+)
+
+// netTLSError marks a failure of the TLS handshake itself (the port does not
+// speak TLS, no common version, the server hung up), so it is classed "tls"
+// unless something more specific (a time-out, a refusal) is wrapped inside.
+type netTLSError struct{ err error }
+
+func (e netTLSError) Error() string { return e.err.Error() }
+func (e netTLSError) Unwrap() error { return e.err }
+
+// tlsInspect connects to host:port through dialTCP (so the address guard, the
+// pin and the demo refusal all apply), starts a TLS handshake over that
+// connection and reads what the server presents. Nothing is sent after the
+// handshake and the connection is closed straight away.
+//
+// The handshake verifies: system roots (g.tlsRoots in tests), the intermediates
+// the server sends, the host name serverName and the current time. There is no
+// InsecureSkipVerify. TLSResult.Valid is true only when the handshake itself
+// accepted the chain. A chain that does not verify (expired, self-signed, wrong
+// name, unknown issuer) aborts the handshake with a
+// *tls.CertificateVerificationError, which carries the certificates the server
+// sent; those are still shown (and the error is returned, class "tls"). The
+// version, cipher and ALPN are only known for a handshake that completed.
+func (g netGuard) tlsInspect(ctx context.Context, host string, port int, serverName string, timeout time.Duration) (TLSResult, error) {
+	var out TLSResult
+	conn, _, err := g.dialTCP(ctx, host, port, timeout)
+	if err != nil {
+		return out, err
+	}
+	defer conn.Close() // the raw connection: no close_notify is written
+	_ = conn.SetDeadline(time.Now().Add(timeout))
+
+	tc := tls.Client(conn, &tls.Config{
+		ServerName: serverName,
+		RootCAs:    g.tlsRoots,
+		NextProtos: []string{"h2", "http/1.1"},
+	})
+	hsErr := tc.HandshakeContext(ctx)
+	now := time.Now()
+	var peers []*x509.Certificate
+	var verifyErr *tls.CertificateVerificationError
+	if hsErr == nil {
+		state := tc.ConnectionState()
+		out.Version = tls.VersionName(state.Version)
+		out.Cipher = tls.CipherSuiteName(state.CipherSuite)
+		out.ALPN = state.NegotiatedProtocol
+		peers = state.PeerCertificates
+		if len(peers) == 0 {
+			return out, netTLSError{errors.New("the server presented no certificate")}
+		}
+		out.Valid = true
+	} else if errors.As(hsErr, &verifyErr) {
+		peers = verifyErr.UnverifiedCertificates
+	} else {
+		return out, netTLSError{hsErr}
+	}
+	if len(peers) > 0 {
+		out.ChainTotal = len(peers)
+		for i, c := range peers {
+			if i >= netTLSMaxChain {
+				break
+			}
+			out.Chain = append(out.Chain, tlsCertSummary(c))
+		}
+		out.DaysLeft = certDaysLeft(peers[0].NotAfter.UnixMilli(), now)
+	}
+	if hsErr != nil {
+		return out, hsErr
+	}
+	return out, nil
+}
+
+func netCutName(s string) string {
+	if r := []rune(s); len(r) > netTLSMaxName {
+		return string(r[:netTLSMaxName]) + "…"
+	}
+	return s
+}
+
+// tlsCertSummary is what a certificate shows: subject, issuer, validity, the
+// signature algorithm and at most netTLSMaxSAN names.
+func tlsCertSummary(c *x509.Certificate) TLSCert {
+	out := TLSCert{
+		Subject:   netCutName(tlsDistinguishedName(c.Subject.CommonName, c.Subject.String())),
+		Issuer:    netCutName(tlsDistinguishedName(c.Issuer.CommonName, c.Issuer.String())),
+		NotBefore: c.NotBefore.UnixMilli(),
+		NotAfter:  c.NotAfter.UnixMilli(),
+		SigAlg:    c.SignatureAlgorithm.String(),
+	}
+	var names []string
+	names = append(names, c.DNSNames...)
+	for _, ip := range c.IPAddresses {
+		names = append(names, ip.String())
+	}
+	if len(names) > netTLSMaxSAN {
+		out.SANMore = len(names) - netTLSMaxSAN
+		names = names[:netTLSMaxSAN]
+	}
+	for _, n := range names {
+		out.SAN = append(out.SAN, netCutName(n))
+	}
+	return out
+}
+
+func tlsDistinguishedName(cn, full string) string {
+	if cn != "" {
+		return cn
+	}
+	return full
+}
+
+// Limits of an HTTP-detail run.
+const (
+	netHTTPMaxBody      = 1 << 20 // the body is read up to here and no further
+	netHTTPMaxRedirects = 10
+	netHTTPMaxHeaderRaw = 64 << 10 // what the client accepts of a response's headers
+)
+
+// httpDial is the dialer of the HTTP-detail client. It resolves through the
+// guard (so every address passes isAllowedDialIP again, the demo refuses, the
+// pin applies) and then dials one literal address at a time, the same way
+// dialTCP does. The resolution is reported to the request's httptrace by hand:
+// net/http only sees a name to dial, and the timeline would have no DNS step
+// otherwise.
+func (g netGuard) httpDial(timeout time.Duration) func(ctx context.Context, network, address string) (net.Conn, error) {
+	dial := ssrfSafeDialContext(g.allowLocal, timeout)
+	if g.dialHook != nil {
+		dial = g.dialHook
+	}
+	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		host, port, err := net.SplitHostPort(address)
+		if err != nil {
+			return nil, err
+		}
+		trace := httptrace.ContextClientTrace(ctx)
+		if trace != nil && trace.DNSStart != nil {
+			trace.DNSStart(httptrace.DNSStartInfo{Host: host})
+		}
+		addrs, err := g.resolve(ctx, host)
+		if trace != nil && trace.DNSDone != nil {
+			info := httptrace.DNSDoneInfo{Err: err}
+			for _, a := range addrs {
+				info.Addrs = append(info.Addrs, net.IPAddr{IP: a.AsSlice()})
+			}
+			trace.DNSDone(info)
+		}
+		if err != nil {
+			return nil, err
+		}
+		var lastErr error
+		for _, addr := range addrs {
+			conn, err := dial(ctx, network, net.JoinHostPort(addr.String(), port))
+			if err == nil {
+				return conn, nil
+			}
+			lastErr = err
+			if ctx.Err() != nil {
+				break
+			}
+		}
+		return nil, lastErr
+	}
+}
+
+// httpClient is the client of HTTP-detail: every connection goes through
+// httpDial, nothing is reused (a redirect to another host never rides on the
+// first connection), no proxy from the environment, no cookies, no automatic
+// redirects (the caller follows them one by one and asks the guard about every
+// hop first), and no transparent decompression (the body is read as sent, so a
+// compressed bomb cannot outgrow the read limit). The certificate is verified
+// against the system roots (tlsRoots in tests) unless insecureTLS is true,
+// which is the bookmark's own, existing "allow an untrusted certificate" choice.
+func (g netGuard) httpClient(timeout time.Duration, insecureTLS bool) *http.Client {
+	tr := &http.Transport{
+		Proxy:                  nil,
+		DialContext:            g.httpDial(timeout),
+		ForceAttemptHTTP2:      true,
+		DisableKeepAlives:      true,
+		DisableCompression:     true,
+		TLSHandshakeTimeout:    timeout,
+		ResponseHeaderTimeout:  timeout,
+		MaxResponseHeaderBytes: netHTTPMaxHeaderRaw,
+		TLSClientConfig: &tls.Config{
+			RootCAs:            g.tlsRoots,
+			InsecureSkipVerify: insecureTLS,
+		},
+	}
+	return &http.Client{
+		Transport:     tr,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
 }

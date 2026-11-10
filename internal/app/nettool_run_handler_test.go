@@ -62,7 +62,7 @@ func TestNetRunRequiresBookmark(t *testing.T) {
 		{"no url", `{"pageId":1,"type":"tcp"}`, http.StatusBadRequest},
 		{"unknown check", `{"pageId":1,"url":"https://a.example","checkId":"` + netTestCheckID(99) + `"}`, http.StatusNotFound},
 		{"neither type nor check", `{"pageId":1,"url":"https://a.example"}`, http.StatusBadRequest},
-		{"type of a check that is not built", `{"pageId":1,"url":"https://a.example","type":"dns"}`, http.StatusBadRequest},
+		{"type of a check that is not built", `{"pageId":1,"url":"https://a.example","type":"json"}`, http.StatusBadRequest},
 		{"type that does not match the check", `{"pageId":1,"url":"https://a.example","checkId":"` + netTestCheckID(1) + `","type":"ping"}`, http.StatusBadRequest},
 	}
 	for _, c := range cases {

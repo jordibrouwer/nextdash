@@ -51,11 +51,13 @@ func netCheckTarget(bm Bookmark, c NetCheck, s Settings) (netTarget, error) {
 	}
 	t := netTarget{Host: host}
 	switch c.Type {
-	case netTypeTCP, netTypeTLS:
+	case netTypeTCP:
 		t.Port = netDefaultPort(bm, c)
 		if t.Port == 0 {
 			return netTarget{}, errNetNoPort
 		}
+	case netTypeTLS:
+		t.Port = netTLSPort(bm, c)
 	case netTypePing:
 		t.FallbackPort = netDefaultPort(bm, c)
 	case netTypeHTTP, netTypeJSON:
@@ -99,6 +101,21 @@ func netDefaultPort(bm Bookmark, c NetCheck) int {
 		return c.Port
 	}
 	return bookmarkURLPort(bm)
+}
+
+// netTLSPort is the port a TLS check inspects: its own, else the port of an
+// https address, else 443. The port of a plain http address is not a TLS port
+// (an http bookmark on :8080 has nothing to inspect there), so it is not used.
+func netTLSPort(bm Bookmark, c NetCheck) int {
+	if c.Port > 0 {
+		return c.Port
+	}
+	if u, err := url.Parse(strings.TrimSpace(bm.URL)); err == nil && strings.EqualFold(u.Scheme, "https") {
+		if p := bookmarkURLPort(bm); p > 0 {
+			return p
+		}
+	}
+	return 443
 }
 
 func bookmarkURLPort(bm Bookmark) int {

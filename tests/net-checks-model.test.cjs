@@ -124,4 +124,55 @@ assert.deepStrictEqual(M.railKeys([]), []);
 assert.deepStrictEqual(M.railKeys([mk('tcp', false, { ok: false })]), ['any', 'tcp'], 'a failure of an unscheduled check is not "down"');
 assert.deepStrictEqual(M.railKeys([mk('tcp', true, { ok: true }), mk('tcp', true, { ok: false }), mk('ping', true, null)]), ['any', 'tcp', 'ping', 'down']);
 
+// DNS: record in the name, drift default per record, validation, the blocks
+assert.strictEqual(M.labelFor({ type: 'dns', record: 'MX' }, bm), 'DNS \u00b7 MX');
+assert.strictEqual(M.driftDefault('MX'), true);
+assert.strictEqual(M.driftDefault('txt'), true);
+assert.strictEqual(M.driftDefault('A'), false, 'A and AAAA rotate behind a CDN');
+assert.strictEqual(M.driftDefault('AAAA'), false);
+const dnsCaps = { ...caps, typesBuilt: ['tcp', 'ping', 'dns'] };
+assert.strictEqual(M.validate({ type: 'dns', record: 'SRV' }, dnsCaps, t).errors.record !== undefined, true);
+assert.strictEqual(M.validate({ type: 'dns', record: 'mx', expect: 'mail.example.org' }, dnsCaps, t).ok, true);
+assert.ok(M.validate({ type: 'dns', record: 'A', expect: 'x'.repeat(256) }, dnsCaps, t).errors.expect);
+assert.deepStrictEqual(M.pickForType({ type: 'dns', record: 'mx', watchDrift: true, port: 25, count: 3 }), { id: '', type: 'dns', enabled: true, label: '', intervalMinutes: 0, timeoutSec: 0, muted: false, record: 'MX', watchDrift: true });
+assert.strictEqual(M.blankCheck('dns').watchDrift, false);
+assert.strictEqual(M.errorBlock({ class: 'dns', type: 'dns', record: 'MX', host: 'x.example' }, t).title, 'No MX records');
+assert.strictEqual(M.errorBlock({ class: 'dns', host: 'x.example' }, t).title, 'Name does not exist');
+assert.strictEqual(M.errorBlock({ class: 'content', expect: 'a.b', host: 'x.example' }, t).cls, 'content');
+assert.strictEqual(M.testSummary({ ok: true, type: 'dns', ms: 12, dns: { record: 'MX', records: [{}, {}] } }, t), 'MX \u00b7 2 records \u00b7 12 ms');
+assert.strictEqual(M.checkFromTest({ type: 'dns', dns: { record: 'TXT' } }, bm).watchDrift, true);
+assert.ok(M.explain({ type: 'dns', record: 'MX', watchDrift: true, enabled: true }, bm, dnsCaps, t).lines.some((l) => /bell/.test(l)));
+
+// TLS: the port rule (https address or 443, never the port of an http address), days, validation, blocks
+assert.strictEqual(M.tlsPort({ url: 'https://nas.example:8443/x' }), 8443);
+assert.strictEqual(M.tlsPort({ url: 'https://nas.example' }), 443);
+assert.strictEqual(M.tlsPort({ url: 'http://nas.example:8080' }), 443, 'the port of an http address is not a TLS port');
+assert.strictEqual(M.targetOf({ type: 'tls' }, { url: 'http://nas.example:8080' }).port, 443);
+assert.strictEqual(M.targetOf({ type: 'tls', port: 993 }, { url: 'https://nas.example' }).port, 993);
+assert.strictEqual(M.targetOf({ type: 'tcp' }, { url: 'http://nas.example:8080' }).port, 8080, 'tcp still follows the address');
+assert.strictEqual(M.labelFor({ type: 'tls', port: 8443 }, bm), 'TLS 8443');
+assert.strictEqual(M.labelFor({ type: 'tls' }, bm), 'TLS 443');
+assert.strictEqual(M.tlsDaysText(12, t), '12 days left');
+assert.strictEqual(M.tlsDaysText(1, t), '1 day left');
+assert.strictEqual(M.tlsDaysText(0, t), 'expires today');
+assert.strictEqual(M.tlsDaysText(-3, t), 'expired 3 days ago');
+const tlsCaps = { ...caps, typesBuilt: ['tcp', 'ping', 'tls'] };
+assert.strictEqual(M.validate({ type: 'tls', port: 8443, minDaysLeft: 21 }, tlsCaps, t).ok, true);
+assert.ok(M.validate({ type: 'tls', minDaysLeft: 121 }, tlsCaps, t).errors.minDaysLeft);
+assert.ok(M.validate({ type: 'tls', minDaysLeft: -1 }, tlsCaps, t).errors.minDaysLeft);
+assert.deepStrictEqual(M.pickForType({ type: 'tls', port: 8443, minDaysLeft: 21, count: 3, maxMs: 5 }), { id: '', type: 'tls', enabled: true, label: '', intervalMinutes: 0, timeoutSec: 0, muted: false, port: 8443, minDaysLeft: 21 });
+assert.strictEqual(M.blankCheck('tls').minDaysLeft, 0);
+assert.strictEqual(M.badgeState({ enabled: true, state: { ok: true, warn: true } }), 'warn', 'a nearly expired certificate is a warning, not down');
+assert.strictEqual(M.errorBlock({ class: 'tls', type: 'tls', host: 'x.example', port: 8443, detail: 'expired 3 days ago' }, t).title, 'Certificate expired');
+assert.strictEqual(M.errorBlock({ class: 'tls', type: 'tls', host: 'x.example', port: 8443, detail: 'not trusted' }, t).title, 'Certificate not accepted');
+assert.strictEqual(M.errorBlock({ class: 'tls', type: 'tls', host: 'x.example', port: 25 }, t).title, 'No TLS handshake');
+assert.strictEqual(M.errorBlock({ class: 'tls', type: 'tls', host: 'x.example', port: 25, error: 'The server only offers TLS 1.0.' }, t).body, 'The server only offers TLS 1.0.');
+assert.strictEqual(M.testSummary({ ok: true, type: 'tls', ms: 40, tls: { daysLeft: 71, version: 'TLS 1.3' } }, t), '71 days left \u00b7 TLS 1.3');
+assert.strictEqual(M.testState({ ok: true, warn: true }), 'warn');
+assert.strictEqual(M.checkFromTest({ type: 'tls', port: 8443 }, { url: 'https://nas.example' }).port, 8443);
+assert.strictEqual(M.checkFromTest({ type: 'tls', port: 443 }, { url: 'https://nas.example' }).port, 0, 'the address\'s own port is left empty');
+const tlsExplain = M.explain({ type: 'tls', minDaysLeft: 30, enabled: true }, bm, tlsCaps, t);
+assert.ok(/port 443/.test(tlsExplain.summary) && tlsExplain.lines.some((l) => /30 days or fewer/.test(l)));
+assert.ok(M.explain({ type: 'tls', enabled: true }, bm, tlsCaps, t).lines.some((l) => /14 days or fewer/.test(l)), 'the default threshold is 14 days');
+
 console.log('net-checks-model: ok');

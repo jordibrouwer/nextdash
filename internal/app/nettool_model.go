@@ -26,7 +26,7 @@ const (
 
 // netTypesBuilt is what PUT /api/net/checks and /api/net/run accept.
 // Elke fase zet zijn type hier aan; niets anders gate't op type-beschikbaarheid.
-var netTypesBuilt = map[string]bool{netTypeTCP: true, netTypePing: true} // fase 1a: tcp, ping; 2a: dns; 3a: tls; 3b: http; 4: json
+var netTypesBuilt = map[string]bool{netTypeTCP: true, netTypePing: true, netTypeDNS: true, netTypeTLS: true, netTypeHTTP: true} // fase 1a: tcp, ping; 2a: dns; 3a: tls; 3b: http; 4: json
 
 // NetCheck is one network check on a bookmark. The ID is unique across the
 // whole install (a bookmark has no ID of its own) and is set by the server.
@@ -44,10 +44,24 @@ type NetCheck struct {
 	Count      int `json:"count,omitempty"`      // 1..10, default 4
 	MaxLossPct int `json:"maxLossPct,omitempty"` // default 50
 	MaxMs      int `json:"maxMs,omitempty"`      // ping/tcp/http: trager = "slow" (blijft up)
+	// dns (fase 2a)
+	Record     string `json:"record,omitempty"`     // A, AAAA, CNAME, MX, TXT, NS
+	Expect     string `json:"expect,omitempty"`     // optional expected value
+	WatchDrift bool   `json:"watchDrift,omitempty"` // report when the record set changes
 	// Server-eigendom (alleen DNS-drift, fase 2a); de client kan ze niet zetten.
+	// Baseline is the accepted record set (fingerprint line, then the sorted
+	// values); DriftSet is the set seen since, waiting to be accepted.
 	Baseline  string `json:"baseline,omitempty"`
+	DriftSet  string `json:"driftSet,omitempty"`
 	DriftDiff string `json:"driftDiff,omitempty"` // ≤120
 	DriftAt   int64  `json:"driftAt,omitempty"`
+	// tls (fase 3a)
+	MinDaysLeft int `json:"minDaysLeft,omitempty"` // 0 = netTLSDefaultMinDays; a valid certificate with fewer days left is a warning
+	// http (fase 3b): a GET of the bookmark's own address, or of Endpoint on the
+	// same host. Never a full URL: the host is always the bookmark's.
+	Endpoint     string `json:"endpoint,omitempty"`     // path and query, starts with "/"; empty = the bookmark's own address
+	ExpectStatus string `json:"expectStatus,omitempty"` // "200", "200-299", "200,301"; empty = 200-299
+	ExpectHeader string `json:"expectHeader,omitempty"` // "name" (must be present) or "name: part" (must contain part)
 }
 
 // netHistoryKey is the history key of a check: "net:" + id. Not the bookmark's
@@ -85,6 +99,9 @@ func netCheckLabel(c NetCheck, bm Bookmark) string {
 	case netTypePing:
 		return "Ping"
 	case netTypeDNS:
+		if c.Record != "" {
+			return "DNS · " + c.Record
+		}
 		return "DNS"
 	case netTypeTLS:
 		if c.Port > 0 {

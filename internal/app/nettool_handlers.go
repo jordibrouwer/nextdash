@@ -79,6 +79,19 @@ func netCheckState(samples []HealthSample) *netStateView {
 	}
 }
 
+// netCheckStateFor is netCheckState with what only the check knows: a TLS check
+// is "warn" (up, but nearly expired) when its newest sample is up and the days
+// left it recorded (sample.L) are under the check's own threshold. The warning
+// is not stored as a flag, so a changed MinDaysLeft applies to the last sample
+// at once.
+func netCheckStateFor(c NetCheck, samples []HealthSample) *netStateView {
+	st := netCheckState(samples)
+	if st != nil && c.Type == netTypeTLS && st.OK && st.Secondary <= netTLSMinDays(c) {
+		st.Warn = true
+	}
+	return st
+}
+
 // netCheckStats is the uptime, heartbeat and incidents of a check, through the
 // same computation as a monitored bookmark. nil without samples.
 func netCheckStats(samples []HealthSample, days []HealthDay, interval time.Duration, now time.Time) *MonitorStats {
@@ -102,7 +115,7 @@ func (h *Handlers) netCheckViews(bm Bookmark, history map[string][]HealthSample,
 		out = append(out, netCheckView{
 			NetCheck: c,
 			Display:  netCheckLabel(c, bm),
-			State:    netCheckState(samples),
+			State:    netCheckStateFor(c, samples),
 			Stats:    netCheckStats(samples, days[key], netCheckInterval(c, bm), now),
 		})
 	}
@@ -189,6 +202,10 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 		// check is up again and that end lies within the last 24 hours. The bell
 		// reads it for its "recovered" row.
 		RecoveredAt int64 `json:"recoveredAt,omitempty"`
+		// DriftDiff and DriftAt are a DNS check's unaccepted change; the bell
+		// reads them for its "DNS changed" row.
+		DriftDiff string `json:"driftDiff,omitempty"`
+		DriftAt   int64  `json:"driftAt,omitempty"`
 	}
 	items := []item{}
 	counts := map[string]int{"scheduled": 0, "down": 0}
@@ -196,11 +213,12 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
 			for _, c := range bm.Checks {
 				samples := history[netHistoryKey(c.ID)]
-				state := netCheckState(samples)
+				state := netCheckStateFor(c, samples)
 				items = append(items, item{
 					PageID: page.ID, URL: bm.URL, Name: bm.Name, CheckID: c.ID, Type: c.Type,
 					Label: netCheckLabel(c, bm), Enabled: c.Enabled, Muted: c.Muted || bm.NotifyMuted, State: state,
 					RecoveredAt: netRecoveredAt(samples, state, now),
+					DriftDiff:   c.DriftDiff, DriftAt: c.DriftAt,
 				})
 				counts[c.Type]++
 				if c.Enabled {

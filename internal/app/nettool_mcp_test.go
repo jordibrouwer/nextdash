@@ -117,7 +117,9 @@ func TestMCPNetToolAnnotations(t *testing.T) {
 		if _, free := defs[name]["inputSchema"].(map[string]any)["properties"].(map[string]any)["host"]; free {
 			t.Errorf("%s takes a host", name)
 		}
-		if _, free := defs[name]["inputSchema"].(map[string]any)["properties"].(map[string]any)["port"]; free {
+		// Only the tool that stores a check may carry a port (tcp and tls); a
+		// test that runs now never names one.
+		if _, free := defs[name]["inputSchema"].(map[string]any)["properties"].(map[string]any)["port"]; free && name != "set_net_check" {
 			t.Errorf("%s takes a port", name)
 		}
 	}
@@ -174,9 +176,10 @@ func TestMCPSetNetCheckIsWrite(t *testing.T) {
 		"type change":        `{"url":"https://b.example","check_id":"` + netTestCheckID(3) + `","type":"ping"}`,
 		"unknown check":      `{"url":"https://b.example","check_id":"` + netTestCheckID(1) + `"}`,
 		"no type":            `{"url":"https://b.example"}`,
-		"unbuilt type":       `{"url":"https://b.example","type":"dns"}`,
+		"unbuilt type":       `{"url":"https://b.example","type":"json"}`,
 		"host":               `{"url":"https://b.example","type":"tcp","host":"victim.example"}`,
-		"port":               `{"url":"https://b.example","type":"tcp","port":22}`,
+		"port out of range":  `{"url":"https://b.example","type":"tcp","port":70000}`,
+		"tls threshold":      `{"url":"https://b.example","type":"tls","min_days_left":500}`,
 	} {
 		if out := mcpNetCall(t, h, "set_net_check", args); out["error"] == nil {
 			t.Errorf("%s: accepted (%v)", name, out)
@@ -184,6 +187,14 @@ func TestMCPSetNetCheckIsWrite(t *testing.T) {
 	}
 	if got := storedNetChecks(h, "https://b.example"); len(got) != 2 {
 		t.Errorf("a refused call changed the list: %+v", got)
+	}
+
+	// A TLS check: the port and the warning threshold are stored config, and the
+	// answer reads them back.
+	out = mcpNetCall(t, h, "set_net_check", `{"url":"https://b.example","type":"tls","port":8443,"min_days_left":21}`)
+	chk, _ = out["check"].(map[string]any)
+	if out["saved"] != true || chk["type"] != "tls" || chk["port"] != float64(8443) || chk["min_days_left"] != float64(21) {
+		t.Fatalf("tls check: %v", out)
 	}
 
 	// The cap is the install's, through the same normaliser.
@@ -264,7 +275,7 @@ func TestMCPRunNetworkTestNoFreeHost(t *testing.T) {
 		"another's check":  `{"url":"https://a.example:8443","check_id":"` + netTestCheckID(3) + `"}`,
 		"neither":          `{"url":"https://a.example:8443"}`,
 		"unknown bookmark": `{"url":"https://nope.example","type":"tcp"}`,
-		"unbuilt type":     `{"url":"https://a.example:8443","type":"dns"}`,
+		"unbuilt type":     `{"url":"https://a.example:8443","type":"json"}`,
 	} {
 		if out := mcpNetCall(t, h, "run_network_test", args); out["error"] == nil {
 			t.Errorf("%s: ran (%v)", name, out)

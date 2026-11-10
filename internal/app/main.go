@@ -245,6 +245,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/net/checks", handlers.PutNetChecks).Methods("PUT")
 	r.HandleFunc("/api/net/history", handlers.GetNetHistory).Methods("GET")
 	r.HandleFunc("/api/net/run", handlers.RunNetTest).Methods("POST")
+	r.HandleFunc("/api/net/accept-baseline", handlers.AcceptNetBaseline).Methods("POST")
 	// The daily points alone, without building a report for them.
 	r.HandleFunc("/api/health/trend", handlers.GetHealthTrend).Methods("GET")
 	// The five most recent posts from nextdash.cc, fetched by the server so the

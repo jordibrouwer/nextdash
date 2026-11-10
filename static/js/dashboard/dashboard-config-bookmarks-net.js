@@ -113,6 +113,7 @@
             const block = M.errorBlock({
                 class: check.state?.class, host: target.host, port: target.port,
                 timeoutSec: check.timeoutSec || 5,
+                type: check.type, record: check.record, expect: check.expect, detail: check.state?.detail,
             }, t);
             if (!block) return '';
             return this.renderNetBlockHtml(block, { retest: `data-net-action="retest" data-net-id="${this.dash.escapeHtml(check.id)}"` });
@@ -151,9 +152,10 @@
             const text = (n) => (Number(n) > 0 ? String(n) : '');
             return {
                 type: check.type, label: check.label || '', host: check.host || '',
-                port: text(check.port), count: text(check.count), maxLossPct: text(check.maxLossPct), maxMs: text(check.maxMs),
+                port: text(check.port), minDaysLeft: text(check.minDaysLeft), count: text(check.count), maxLossPct: text(check.maxLossPct), maxMs: text(check.maxMs),
                 planning, intervalMinutes: Number(check.intervalMinutes) || 0, timeoutSec: Number(check.timeoutSec) || 0,
                 muted: check.muted === true,
+                record: check.record || 'A', expect: check.expect || '', watchDrift: check.watchDrift === true,
             };
         },
 
@@ -165,9 +167,10 @@
                 : 0;
             return {
                 id: id || '', type: draft.type, label: String(draft.label || '').trim(), host: String(draft.host || '').trim(),
-                port: num(draft.port), count: num(draft.count), maxLossPct: num(draft.maxLossPct), maxMs: num(draft.maxMs),
+                port: num(draft.port), minDaysLeft: num(draft.minDaysLeft), count: num(draft.count), maxLossPct: num(draft.maxLossPct), maxMs: num(draft.maxMs),
                 enabled: draft.planning !== 'off', intervalMinutes: interval, timeoutSec: Number(draft.timeoutSec) || 0,
                 muted: draft.muted === true,
+                record: draft.record || 'A', expect: String(draft.expect || '').trim(), watchDrift: draft.watchDrift === true,
             };
         },
 
@@ -189,7 +192,7 @@
                 </label>`;
             const input = (name, value, type = 'text', extra = '') =>
                 `<input class="config-text" type="${type}" data-net-field="${name}" value="${esc(value ?? '')}" ${extra}>`;
-            const typeOptions = (caps.typesBuilt || []).map((type) =>
+            const typeOptions = M.toolTypes(caps).map((type) =>
                 `<option value="${type}"${d.type === type ? ' selected' : ''}>${esc(M.typeName(type))}</option>`).join('');
             const target = M.targetOf({ type: d.type, host: d.host, port: Number(d.port) || 0 }, b);
             let params = '';
@@ -201,6 +204,22 @@
                 params = `${field('count', t('nettools.fieldPackets', 'Packets'), input('count', d.count, 'number', 'min="1" max="10" placeholder="4"'))}
                     ${field('maxLossPct', t('nettools.fieldLoss', 'Down from loss (%)'), input('maxLossPct', d.maxLossPct, 'number', 'min="1" max="100" placeholder="50"'))}
                     ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}`;
+            }
+            if (d.type === 'tls') {
+                params = `${field('port', t('nettools.fieldPort', 'Port'), input('port', d.port, 'number', `min="1" max="65535" placeholder="${esc(String(target.port || ''))}"`),
+                    t('nettools.fieldTlsPortHint', 'Empty uses 443, or the port of an https bookmark address.'))}
+                    ${field('minDaysLeft', t('nettools.fieldMinDays', 'Warn at or below (days)'), input('minDaysLeft', d.minDaysLeft, 'number', `min="1" max="120" placeholder="${esc(String(M.TLS_DEFAULT_MIN_DAYS))}"`),
+                        t('nettools.fieldMinDaysHint', 'A valid certificate with fewer days left shows a warning and sends one expiry notice.'))}`;
+            }
+            if (d.type === 'dns') {
+                const recordOptions = M.DNS_RECORDS.map((r) => `<option value="${r}"${d.record === r ? ' selected' : ''}>${esc(r)}</option>`).join('');
+                const watchOptions = [['on', t('nettools.driftOn', 'Tell me in the bell')], ['off', t('nettools.driftOff', 'Do not watch')]]
+                    .map(([v, text]) => `<option value="${v}"${(d.watchDrift ? 'on' : 'off') === v ? ' selected' : ''}>${esc(text)}</option>`).join('');
+                params = `${field('record', t('nettools.fieldRecord', 'Record'), `<select class="config-select" data-net-field="record">${recordOptions}</select>`)}
+                    ${field('expect', t('nettools.fieldExpect', 'Expected value'), input('expect', d.expect, 'text', `spellcheck="false" maxlength="255" placeholder="${esc(t('nettools.fieldExpectPlaceholder', 'Optional'))}"`),
+                        t('nettools.fieldExpectHint', 'Down when none of the records is this value. A TXT record may contain it.'))}
+                    ${field('watchDrift', t('nettools.fieldDrift', 'When the records change'), `<select class="config-select" data-net-field="watchDrift">${watchOptions}</select>`,
+                        d.record === 'A' || d.record === 'AAAA' ? t('nettools.fieldDriftHintA', 'Off to begin with: A and AAAA often rotate behind a CDN.') : '')}`;
             }
             const custom = caps.allowCustomHost
                 ? field('host', t('nettools.fieldHost', 'Host'), input('host', d.host, 'text', `spellcheck="false" placeholder="${esc(M.hostOf(b))}"`),
@@ -321,10 +340,13 @@
          * bookmark's own address. Resolves to { ok, res } or { ok: false,
          * error } with a sentence for the reader; it never throws.
          */
-        async runBmNetTest(b, { type = '', checkId = '' } = {}) {
+        async runBmNetTest(b, { type = '', checkId = '', record = '' } = {}) {
             const body = { pageId: b.pageId, url: b.url };
             if (checkId) body.checkId = checkId;
-            else body.type = type;
+            else {
+                body.type = type;
+                if (type === 'dns') body.record = record || 'A';
+            }
             const t = (k, f) => this.bmNetT(k, f);
             try {
                 const res = await global.nextDashFetch('/api/net/run', {
@@ -680,6 +702,14 @@
                     ed.draft.intervalMinutes = mode === 'own' ? Number(minutes) || 0 : 0;
                 } else if (name === 'muted') {
                     ed.draft.muted = el.value === 'muted';
+                } else if (name === 'watchDrift') {
+                    ed.draft.watchDrift = el.value === 'on';
+                } else if (name === 'record') {
+                    ed.draft.record = el.value;
+                    // Watching starts on or off as the record type suggests; the
+                    // choice can be changed after.
+                    ed.draft.watchDrift = model().driftDefault(el.value);
+                    if (event.type === 'change') this.paintBmNet(b);
                 } else if (name === 'timeoutSec') {
                     ed.draft.timeoutSec = Number(el.value) || 0;
                 } else {
@@ -712,7 +742,7 @@
             const M = model();
             const id = btn?.getAttribute('data-net-id') || '';
             if (action === 'add') {
-                const type = this._bmNetCaps?.typesBuilt?.[0] || 'tcp';
+                const type = M.toolTypes(this._bmNetCaps)[0] || 'tcp';
                 st.error = '';
                 st.editing = { id: '', draft: this.bmNetDraftFrom(M.blankCheck(type)), errors: {}, serverError: '', confirmDelete: false };
                 this.paintBmNet(b);
@@ -767,11 +797,14 @@
                 const stored = ed.id ? st.checks.find((c) => c.id === ed.id) : null;
                 ed.test = { status: 'running' };
                 this.paintBmNetTest(b);
-                const out = await this.runBmNetTest(b, stored ? { checkId: ed.id } : { type: ed.draft.type });
+                const out = await this.runBmNetTest(b, stored ? { checkId: ed.id } : { type: ed.draft.type, record: ed.draft.record });
                 if (st.editing !== ed) return;
                 ed.test = out.ok ? { status: 'done', res: out.res } : { status: 'error', error: out.error };
                 this.paintBmNetTest(b);
                 if (stored && out.ok) void this.refreshBmNetChecks(b);
+            } else if (action === 'accept-drift') {
+                if (st.saving || !id) return;
+                await this.acceptBmNetDrift(b, id);
             } else if (action === 'copy') {
                 try {
                     await global.navigator.clipboard.writeText(btn.getAttribute('data-net-snippet') || '');
@@ -793,7 +826,7 @@
             const check = this.bmNetCheckFromDraft(ed.draft, ed.id, b);
             const verdict = model().validate(check, this._bmNetCaps, t);
             // The text boxes hold what was typed: a non-number is caught here.
-            ['port', 'count', 'maxLossPct', 'maxMs'].forEach((name) => {
+            ['port', 'minDaysLeft', 'count', 'maxLossPct', 'maxMs'].forEach((name) => {
                 if (Number.isNaN(check[name])) verdict.errors[name] = t('nettools.errNumber', 'Use a whole number.');
             });
             ed.errors = verdict.errors;
@@ -812,6 +845,25 @@
             this.paintBmNet(b);
         },
 
+        /** Accept the changed DNS records of a check as its new baseline (POST /api/net/accept-baseline). */
+        async acceptBmNetDrift(b, checkId) {
+            const st = this.bmNetState(b);
+            try {
+                const res = await global.nextDashFetch('/api/net/accept-baseline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ checkId }),
+                });
+                if (!res.ok) throw new Error('accept');
+                st.error = '';
+            } catch {
+                st.error = this.bmNetT('nettools.acceptFailed', 'Could not accept the new records.');
+            }
+            await this.refreshBmNetChecks(b);
+            this.paintBmNet(b);
+            global.NetBellSource?.refresh?.();
+        },
+
         /** Change the type of the check being written; what the old type asked for does not carry over. */
         switchBmNetType(b, type) {
             const st = this.bmNetState(b);
@@ -826,7 +878,7 @@
 
         /** Fields a stored check may carry that the form owns: cleared so a removed value really goes. */
         bmNetClear(c) {
-            return { label: '', host: '', port: 0, count: 0, maxLossPct: 0, maxMs: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, enabled: c.enabled };
+            return { label: '', host: '', port: 0, minDaysLeft: 0, count: 0, maxLossPct: 0, maxMs: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, enabled: c.enabled, record: '', expect: '', watchDrift: false };
         },
 
         focusBmNetForm(b, selector = 'input, select, button') {

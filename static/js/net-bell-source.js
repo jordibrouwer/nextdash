@@ -8,6 +8,12 @@
  * check. Disabled and muted checks are left out: muting a check is how a row is
  * answered for good, and the history is kept regardless.
  *
+ * A third row says a DNS check saw its records change (`driftDiff` in the bulk
+ * answer, set by the monitor round and cleared when the change is accepted or
+ * the records go back). It is a quiet row, not a health one: it is a state of
+ * the person's data that stays until they act, so it counts (grey) like a pile
+ * of kept links. Its second button accepts the new records as the baseline.
+ *
  * Like the outage row, these are `health` rows: they list what is going on and
  * never count on the bell. "ICMP blocked" is not a row at all; it is a status
  * in Config -> Monitoring -> Checks and in a ping check's own result.
@@ -91,6 +97,38 @@
             (list) => Math.max(...list.map((i) => i.recoveredAt)));
     }
 
+    async function driftState() {
+        if (!enabled()) return null;
+        const items = (await load()).filter((i) => i.enabled && !i.muted && i.driftDiff);
+        const state = rowState(items,
+            { key: 'bell.netDriftOne', fallback: '{name} · DNS changed: {diff}' },
+            { key: 'bell.netDriftMany', fallback: 'DNS records changed on {count} checks' },
+            (list) => Math.max(...list.map((i) => i.driftAt || 0)) || undefined);
+        if (state && items.length === 1) {
+            state.text = t('bell.netDriftOne', '{name} · DNS changed: {diff}', { name: name(items[0]), diff: items[0].driftDiff });
+        }
+        return state;
+    }
+
+    /** Accept the new records of the checks of a row as their baselines, one POST each. */
+    async function accept(row) {
+        const targets = row?.entry?.targets || [];
+        const api = typeof global.nextDashFetch === 'function' ? global.nextDashFetch : global.fetch;
+        for (const tg of targets) {
+            try {
+                await api('/api/net/accept-baseline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ checkId: tg.checkId }),
+                });
+            } catch (err) {
+                console.warn('accepting DNS records failed', err);
+            }
+        }
+        inflight = null;
+        refresh();
+    }
+
     /** The bookmark's Tests tab, where its checks are. */
     function openTests(row) {
         const first = row?.entry?.targets?.[0];
@@ -142,6 +180,13 @@
         }));
         handles.push(global.NotificationBell.register({
             id: 'net-up', group: 'health', kind: 'health', icon: '\u{1F7E2}', no: 'state', state: recoveredState, actions: actions(),
+        }));
+        handles.push(global.NotificationBell.register({
+            id: 'net-dns', group: 'health', kind: 'quiet', icon: '\u{1F504}', no: 'state', state: driftState,
+            actions: [
+                { label: () => t('bell.netTests', 'Tests'), primary: true, onClick: openTests },
+                { label: () => t('bell.netAccept', 'Accept'), onClick: (row) => { void accept(row); } },
+            ],
         }));
         refresh();
     }

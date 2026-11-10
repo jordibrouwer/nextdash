@@ -108,6 +108,7 @@ var demoAllowedWrites = []string{
 	"/api/auto-backups", "/api/auto-backups/run",
 	// Network checks are saved in the demo's own data; running them is refused.
 	"/api/net/checks",
+	"/api/net/accept-baseline",
 	"/api/bookmarks", "/api/bookmarks/add", "/api/bookmarks/delete", "/api/bookmarks/move",
 	"/api/bookmarks/import-browser", "/api/bookmarks/import-html",
 	"/api/categories", "/api/colors", "/api/colors/reset", "/api/finders",

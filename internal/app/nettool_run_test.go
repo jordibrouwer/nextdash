@@ -25,7 +25,7 @@ func TestNetResultSampleTruncatesDetail(t *testing.T) {
 
 func TestRunNetCheckUnbuiltTypeAnswersOther(t *testing.T) {
 	h, _ := patchTestHandlers(t)
-	res := h.runNetCheck(context.Background(), Bookmark{URL: "https://a.example/"}, NetCheck{ID: "x", Type: netTypeDNS})
+	res := h.runNetCheck(context.Background(), Bookmark{URL: "https://a.example/"}, NetCheck{ID: "x", Type: netTypeTLS})
 	if res.OK || res.Class != "other" || res.Error == "" || res.Host != "a.example" || res.CheckID != "x" {
 		t.Fatalf("%+v", res)
 	}
@@ -59,8 +59,8 @@ func TestNetCapabilitiesRoute(t *testing.T) {
 		t.Fatalf("capabilities: %v", got)
 	}
 	types, ok := got["typesBuilt"].([]any)
-	if !ok || len(types) != 2 || types[0] != "ping" || types[1] != "tcp" {
-		t.Fatalf("typesBuilt should be [ping tcp], got %#v", got["typesBuilt"])
+	if !ok || len(types) != 4 || types[0] != "dns" || types[1] != "ping" || types[2] != "tcp" || types[3] != "tls" {
+		t.Fatalf("typesBuilt should be [dns ping tcp tls], got %#v", got["typesBuilt"])
 	}
 	icmpState.Store(icmpBlocked)
 	t.Cleanup(func() { icmpState.Store(icmpUnknown) })

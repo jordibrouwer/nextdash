@@ -22,6 +22,13 @@
     const DEFAULT_MAX_LOSS_PCT = 50;
     const INTERVAL_MIN = 5;
     const INTERVAL_MAX = 1440;
+    const DNS_RECORDS = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS'];
+    // A valid certificate with fewer days left than this is a warning (up, not down).
+    const TLS_DEFAULT_MIN_DAYS = 14;
+    const TLS_MAX_MIN_DAYS = 120;
+    // Drift is on for the records that change rarely and mean something when
+    // they do; off for A and AAAA, which rotate behind a CDN.
+    const DRIFT_DEFAULT_ON = ['MX', 'TXT', 'NS', 'CNAME'];
 
     function fmt(text, vars) {
         return String(text).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] != null ? String(vars[k]) : m));
@@ -69,10 +76,30 @@
         return 0;
     }
 
+    /**
+     * The port a TLS check inspects when it names none: the port of an https
+     * address, else 443. The port of a plain http address is not a TLS port.
+     */
+    function tlsPort(bm) {
+        const u = parseUrl(bm && bm.url);
+        if (u && u.protocol === 'https:' && u.port) return Number(u.port);
+        return 443;
+    }
+
     function targetOf(check, bm) {
         const host = String((check && check.host) || '').trim().toLowerCase() || hostOf(bm);
-        const port = Number(check && check.port) > 0 ? Number(check.port) : defaultPort(bm);
+        const fallback = check && check.type === 'tls' ? tlsPort(bm) : defaultPort(bm);
+        const port = Number(check && check.port) > 0 ? Number(check.port) : fallback;
         return { host, port };
+    }
+
+    /** "12 days left", "1 day left", "expires today", "expired 3 days ago": days from the certificate's end. */
+    function tlsDaysText(days, t) {
+        const n = Math.trunc(Number(days) || 0);
+        if (n < 0) return fmt(t('nettools.tlsExpiredAgo', 'expired {n} days ago'), { n: -n });
+        if (n === 0) return t('nettools.tlsExpiresToday', 'expires today');
+        if (n === 1) return t('nettools.tlsOneDayLeft', '1 day left');
+        return fmt(t('nettools.tlsDaysLeft', '{n} days left'), { n });
     }
 
     /** The name a check goes by: its own label, else its type (and port). */
@@ -80,6 +107,7 @@
         const own = String((check && check.label) || '').trim();
         if (own) return own;
         const name = typeName(check && check.type);
+        if (check.type === 'dns' && check.record) return `${name} \u00b7 ${check.record}`;
         if ((check.type === 'tcp' || check.type === 'tls')) {
             const port = targetOf(check, bm).port;
             if (port > 0) return `${name} ${port}`;
@@ -167,6 +195,19 @@
                     body: fmt(t('nettools.icmpWarnBody', 'This check falls back to a TCP connection on port {port} and says so.'), { port: port || 443 }),
                 });
             }
+        } else if (c.type === 'dns') {
+            const record = c.record || 'A';
+            summary = fmt(t('nettools.explainDns', 'Looks up the {record} records of {host} with the system resolver.'), { record, host: hostText });
+            lines.push(t('nettools.ruleDnsDown', 'Down when no record is found'));
+            if (String(c.expect || '').trim()) lines.push(fmt(t('nettools.ruleDnsExpect', 'Down when none of the records is {value}'), { value: String(c.expect).trim() }));
+            if (c.watchDrift) lines.push(t('nettools.ruleDnsDrift', 'A change in the set of records shows in the bell; the check stays up until you accept it'));
+            if (Number(c.maxMs) > 0) lines.push(fmt(t('nettools.ruleSlow', 'Slow above {ms} ms (still counts as up)'), { ms: c.maxMs }));
+        } else if (c.type === 'tls') {
+            const days = Number(c.minDaysLeft) > 0 ? Number(c.minDaysLeft) : TLS_DEFAULT_MIN_DAYS;
+            summary = fmt(t('nettools.explainTls', 'Reads the certificate that {host} presents on port {port}, and checks it against the trusted authorities.'), { host: hostText, port: port || '?' });
+            lines.push(t('nettools.ruleTlsDown', 'Down when the certificate is expired, not trusted or for another name'));
+            lines.push(fmt(t('nettools.ruleTlsWarn', 'Warning when {n} days or fewer are left (still counts as up)'), { n: days }));
+            lines.push(t('nettools.ruleTlsNotify', 'One expiry notice each time the days left cross a mark'));
         } else {
             summary = fmt(t('nettools.explainOther', 'Runs a {type} check on {host}.'), { type: name, host: hostText });
         }
@@ -226,10 +267,47 @@
                 actions: [],
             };
         case 'dns':
+            if (r.type === 'dns') {
+                return {
+                    cls: 'dns', tone: 'err',
+                    title: fmt(t('nettools.errDnsRecordTitle', 'No {record} records'), { record: r.record || 'A' }),
+                    body: fmt(t('nettools.errDnsRecordBody', 'Nothing was found for {host}. Check the name, or ask for another record type.'), { host }),
+                    actions: [],
+                };
+            }
             return {
                 cls: 'dns', tone: 'err',
                 title: t('nettools.errDnsTitle', 'Name does not exist'),
                 body: fmt(t('nettools.errDnsBody', 'No address found for {host}. A typo in the bookmark address?'), { host }),
+                actions: [],
+            };
+        case 'tls':
+            if (r.detail) {
+                // The details the server writes for a failed certificate; any other is shown as it is.
+                let body = fmt(t('nettools.errTlsBody', 'The certificate on {host} port {port} is not acceptable: {detail}.'), { host, port: r.port || '?', detail: r.detail });
+                if (r.detail === 'not trusted') body = fmt(t('nettools.errTlsUntrusted', 'The certificate on {host} is not trusted: self-signed, or an intermediate certificate is missing.'), { host });
+                else if (r.detail === 'wrong host name') body = fmt(t('nettools.errTlsWrongHost', 'The certificate on port {port} is not valid for {host}.'), { host, port: r.port || '?' });
+                else if (/^expired/.test(r.detail)) body = fmt(t('nettools.errTlsExpiredBody', 'The certificate on {host} port {port} {detail}. Renew it.'), { host, port: r.port || '?', detail: r.detail });
+                return {
+                    cls: 'tls', tone: 'err',
+                    title: /^expired/.test(r.detail) ? t('nettools.errTlsExpiredTitle', 'Certificate expired') : t('nettools.errTlsTitle', 'Certificate not accepted'),
+                    body: r.error || body,
+                    actions: [],
+                };
+            }
+            return {
+                cls: 'tls', tone: 'err',
+                title: t('nettools.errTlsHandshakeTitle', 'No TLS handshake'),
+                body: r.error || fmt(t('nettools.errTlsHandshakeBody', '{host} port {port} did not complete a TLS handshake. The port may not speak TLS; STARTTLS ports are not supported.'), { host, port: r.port || '?' }),
+                actions: [],
+            };
+        case 'content':
+            return {
+                cls: 'content', tone: 'err',
+                title: t('nettools.errContentTitle', 'Not the expected value'),
+                body: r.expect
+                    ? fmt(t('nettools.errContentBody', 'The records of {host} do not include {value}.'), { host, value: r.expect })
+                    : fmt(t('nettools.errContentBodyAny', 'None of the records of {host} is the value this check expects.'), { host }),
                 actions: [],
             };
         default:
@@ -291,6 +369,21 @@
         const maxMs = intOr(c.maxMs, 0);
         if (!Number.isInteger(maxMs) || maxMs < 0 || maxMs > 60000) errors.maxMs = t('nettools.errSlow', 'The slow threshold must be between 0 and 60000 ms.');
 
+        if (c.type === 'tls') {
+            const days = intOr(c.minDaysLeft, 0);
+            if (!Number.isInteger(days) || days < 0 || days > TLS_MAX_MIN_DAYS) {
+                errors.minDaysLeft = fmt(t('nettools.errMinDays', 'The warning threshold must be between 1 and {max} days.'), { max: TLS_MAX_MIN_DAYS });
+            }
+        }
+
+        if (c.type === 'dns') {
+            if (!DNS_RECORDS.includes(String(c.record || '').toUpperCase())) errors.record = t('nettools.errRecord', 'Pick a record type.');
+            const expect = String(c.expect || '').trim();
+            if (Array.from(expect).length > 255) errors.expect = t('nettools.errExpectLong', 'The expected value can be at most 255 characters.');
+            // eslint-disable-next-line no-control-regex
+            else if (/[\u0000-\u001f\u007f]/.test(expect)) errors.expect = t('nettools.errExpectControl', 'The expected value cannot contain control characters.');
+        }
+
         return { ok: Object.keys(errors).length === 0, errors };
     }
 
@@ -330,7 +423,15 @@
 
     /** A fresh check for a type, as the form starts it. */
     function blankCheck(type) {
-        return { id: '', type, enabled: true, label: '', host: '', port: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, count: 0, maxLossPct: 0, maxMs: 0 };
+        const check = { id: '', type, enabled: true, label: '', host: '', port: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, count: 0, maxLossPct: 0, maxMs: 0 };
+        if (type === 'dns') Object.assign(check, { record: 'A', expect: '', watchDrift: driftDefault('A') });
+        if (type === 'tls') check.minDaysLeft = 0;
+        return check;
+    }
+
+    /** Whether watching for changes starts on for a record type. */
+    function driftDefault(record) {
+        return DRIFT_DEFAULT_ON.includes(String(record || '').toUpperCase());
     }
 
     /** The fields the server keeps for one type; the rest are dropped on a type change. */
@@ -343,6 +444,14 @@
         } else if (check.type === 'ping') {
             if (Number(check.count) > 0) base.count = Number(check.count);
             if (Number(check.maxLossPct) > 0) base.maxLossPct = Number(check.maxLossPct);
+            if (Number(check.maxMs) > 0) base.maxMs = Number(check.maxMs);
+        } else if (check.type === 'tls') {
+            if (Number(check.port) > 0) base.port = Number(check.port);
+            if (Number(check.minDaysLeft) > 0) base.minDaysLeft = Number(check.minDaysLeft);
+        } else if (check.type === 'dns') {
+            base.record = String(check.record || 'A').toUpperCase();
+            if (String(check.expect || '').trim()) base.expect = String(check.expect).trim();
+            if (check.watchDrift === true) base.watchDrift = true;
             if (Number(check.maxMs) > 0) base.maxMs = Number(check.maxMs);
         }
         return base;
@@ -366,7 +475,7 @@
     /** A failed result as a block: the class's own, else the server's sentence. */
     function testErrorBlock(res, t) {
         const r = res || {};
-        const own = errorBlock({ class: r.class, host: r.host, port: r.port, ip: r.ip, timeoutSec: 10 }, t);
+        const own = errorBlock({ class: r.class, host: r.host, port: r.port, ip: r.ip, timeoutSec: 10, type: r.type, record: r.dns && r.dns.record, error: r.error, detail: r.detail }, t);
         if (own) return own;
         return {
             cls: r.class || 'other', tone: 'err',
@@ -392,6 +501,16 @@
             return [fmt(t('nettools.toolLoss', '{pct}% loss'), { pct: Number(p.lossPct) || 0 }),
                 fmt(t('nettools.toolAvg', 'avg {ms} ms'), { ms: Number(p.avgMs) || ms })].join(' · ');
         }
+        if (res.type === 'dns') {
+            const n = (res.dns && res.dns.records ? res.dns.records.length : 0);
+            const parts = [`${(res.dns && res.dns.record) || ''}`, n === 1 ? t('nettools.dnsOneRecord', '1 record') : fmt(t('nettools.dnsRecords', '{n} records'), { n })];
+            if (ms) parts.push(`${ms} ms`);
+            return parts.filter(Boolean).join(' \u00b7 ');
+        }
+        if (res.type === 'tls') {
+            const tl = res.tls || {};
+            return [tlsDaysText(tl.daysLeft, t), tl.version || ''].filter(Boolean).join(' \u00b7 ');
+        }
         return ms ? `${ms} ms` : t('nettools.stateOk', 'Up');
     }
 
@@ -404,11 +523,16 @@
         const type = res && res.type;
         const check = blankCheck(type);
         if (type === 'tcp' && Number(res.port) > 0 && Number(res.port) !== defaultPort(bm)) check.port = Number(res.port);
+        if (type === 'tls' && Number(res.port) > 0 && Number(res.port) !== tlsPort(bm)) check.port = Number(res.port);
+        if (type === 'dns' && res.dns && res.dns.record) {
+            check.record = res.dns.record;
+            check.watchDrift = driftDefault(check.record);
+        }
         return check;
     }
 
     const api = {
-        toolTypes, testState, testErrorBlock, testSummary, checkFromTest,
+        DNS_RECORDS, TLS_DEFAULT_MIN_DAYS, tlsPort, tlsDaysText, driftDefault, toolTypes, testState, testErrorBlock, testSummary, checkFromTest,
         TYPES, TYPE_NAMES, MAX_CHECKS_PER_BOOKMARK,
         typeName, typeHint, hostOf, defaultPort, targetOf, labelFor, badgeState, stateLabel,
         intervalMinutes, intervalWords, explain, errorBlock, validate, blankCheck, pickForType,

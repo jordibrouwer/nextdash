@@ -45,7 +45,7 @@ func normalizeNetChecks(in, stored []NetCheck, bm Bookmark, s Settings,
 		next := NetCheck{Type: c.Type, Enabled: c.Enabled, Muted: c.Muted}
 		if own && !used[c.ID] && !taken[c.ID] {
 			next.ID = c.ID
-			next.Baseline, next.DriftDiff, next.DriftAt = prev.Baseline, prev.DriftDiff, prev.DriftAt
+			next.Baseline, next.DriftSet, next.DriftDiff, next.DriftAt = prev.Baseline, prev.DriftSet, prev.DriftDiff, prev.DriftAt
 		} else {
 			next.ID = newNetCheckID(allTaken)
 		}
@@ -95,6 +95,54 @@ func normalizeNetChecks(in, stored []NetCheck, bm Bookmark, s Settings,
 			return nil, errors.New("the slow threshold must be between 0 and 60000 ms")
 		}
 		next.Count, next.MaxLossPct, next.MaxMs = c.Count, c.MaxLossPct, c.MaxMs
+
+		if c.Type == netTypeDNS {
+			record := strings.ToUpper(strings.TrimSpace(c.Record))
+			if !netDNSRecords[record] {
+				return nil, errors.New("pick a record type: A, AAAA, CNAME, MX, TXT or NS")
+			}
+			expect := strings.TrimSpace(c.Expect)
+			if len([]rune(expect)) > 255 {
+				return nil, errors.New("the expected value can be at most 255 characters")
+			}
+			for _, r := range expect {
+				if unicode.IsControl(r) {
+					return nil, errors.New("the expected value cannot contain control characters")
+				}
+			}
+			next.Record, next.Expect, next.WatchDrift = record, expect, c.WatchDrift
+			// A baseline belongs to one record type and to a check that watches:
+			// a change of either starts over.
+			if own && (prev.Record != record || !c.WatchDrift) {
+				next.Baseline, next.DriftSet, next.DriftDiff, next.DriftAt = "", "", "", 0
+			}
+		}
+
+		if c.Type == netTypeTLS {
+			if c.MinDaysLeft < 0 || c.MinDaysLeft > netTLSMaxMinDays {
+				return nil, errors.New("the warning threshold must be between 1 and 120 days")
+			}
+			next.MinDaysLeft = c.MinDaysLeft
+		}
+
+		if c.Type == netTypeHTTP {
+			endpoint := strings.TrimSpace(c.Endpoint)
+			if err := validNetHTTPEndpoint(endpoint); err != nil {
+				return nil, err
+			}
+			next.Endpoint = endpoint
+			if spec := strings.TrimSpace(c.ExpectStatus); spec != "" {
+				norm := normalizeExpectStatus(spec)
+				if norm == "" || len(norm) > 60 {
+					return nil, errors.New("the expected status must look like 200, 200-299 or 200,301")
+				}
+				next.ExpectStatus = norm
+			}
+			if _, _, err := parseNetHTTPExpectHeader(c.ExpectHeader); err != nil {
+				return nil, err
+			}
+			next.ExpectHeader = strings.TrimSpace(c.ExpectHeader)
+		}
 
 		if next.Enabled {
 			enabled++

@@ -91,8 +91,10 @@ test.describe('network check badges and the Check type rail group', () => {
     await expect(railCount(page, 'Ping')).toHaveText('2');
     await expect(railCount(page, 'Check down')).toHaveText('0');
 
-    // Only the built types are offered.
-    await expect(railItem(page, 'DNS')).toHaveCount(0);
+    // Only the built types are offered: DNS and TLS are, with no check of them here; HTTP is not yet.
+    await expect(railCount(page, 'DNS')).toHaveText('0');
+    await expect(railCount(page, 'TLS')).toHaveText('0');
+    await expect(railItem(page, 'HTTP')).toHaveCount(0);
 
     await railItem(page, 'TCP').click();
     await expect(tokens(page)).toHaveText(/Check type: TCP/);

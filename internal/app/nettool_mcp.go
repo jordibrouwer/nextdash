@@ -58,17 +58,18 @@ func mcpNetToolsDefinitions() []map[string]any {
 		{
 			"name":        "run_network_test",
 			"annotations": mcpAnnotationsOpenWorld(true, false),
-			"description": "Run one network test now against a bookmark's own host: tcp (is the port open) or ping (is it reachable, with loss and round-trip time). " +
+			"description": "Run one network test now against a bookmark's own host: tcp (is the port open), ping (is it reachable, with loss and round-trip time), dns (the records of its host name), tls (the certificate chain its port presents, its TLS version and the days left) or http (one GET of the bookmark's address with the timeline, the redirect chain, the status and the response headers). " +
 				"Give type for the bookmark's own address, or check_id for one of its stored checks (which then tests that check's own port). " +
 				"There is no way to name another host or port. Sends real traffic from the nextDash server, rate limited, one test per host at a time. " +
-				"Returns {ok, ms, class, error, detail, host, ip, port, tcp, ping}; class says why it failed (dns, timeout, refused, guard, icmp, demo). " +
+				"Returns {ok, ms, class, error, detail, host, ip, port, tcp, ping}; dns carries the records; tls carries the version, cipher, chain (at most 5 certificates) and days left, and warn is true when a valid certificate has too few days left; http carries the status, protocol, size (read up to 1 MB), timings (dns, connect, tls, wait, transfer, ttfb, total in ms), the redirect chain (at most 10 hops; a hop the address guard refuses is listed as blocked and not followed) and the response headers (at most 40, values cut, cookies and authorization hidden); class says why it failed (dns, timeout, refused, guard, icmp, tls, http for an unexpected status, content for a missing header, demo). " +
 				"A test of a scheduled check also counts as one more sample of it.",
 			"inputSchema": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
 					"url":      urlProp,
 					"page":     pageProp,
-					"type":     map[string]any{"type": "string", "description": "tcp or ping. Leave out when check_id is given."},
+					"type":     map[string]any{"type": "string", "description": "tcp, ping, dns, tls or http. Leave out when check_id is given."},
+					"record":   map[string]any{"type": "string", "description": "dns only, without check_id: A (default), AAAA, CNAME, MX, TXT or NS."},
 					"check_id": checkProp,
 				},
 				"required": []string{"url"},
@@ -77,7 +78,7 @@ func mcpNetToolsDefinitions() []map[string]any {
 		{
 			"name":        "list_net_checks",
 			"annotations": mcpAnnotations(true, false),
-			"description": "The network checks (tcp, ping) stored on bookmarks, with the state each was last in. " +
+			"description": "The network checks (tcp, ping, dns, tls, http) stored on bookmarks, with the state each was last in. " +
 				"Give url to list one bookmark's checks, or leave it out for every check in the install. " +
 				"Reads stored results only and sends nothing. Each has an id for get_net_check, set_net_check, delete_net_check and run_network_test.",
 			"inputSchema": map[string]any{
@@ -104,8 +105,8 @@ func mcpNetToolsDefinitions() []map[string]any {
 			"name":        "set_net_check",
 			"annotations": mcpAnnotations(false, false),
 			"description": "Add a network check to a bookmark, or change one of its checks (give check_id). " +
-				"Types: tcp (the bookmark's port) and ping. A new check is not scheduled until enabled is true; a scheduled check then sends traffic every interval_minutes. " +
-				"Fields left out stay as they are. There is no host or port argument: a check aims at the bookmark's own address. " +
+				"Types: tcp (a port), ping, dns (a record type of the bookmark's host name, optionally with an expected value and a watch for changes), tls (the certificate on a port, 443 unless the bookmark's https address or port says otherwise; up with a warning when fewer than min_days_left days remain, down when the certificate is expired or not trusted) and http (a GET of the bookmark's address, or of path on the same host, with an expected status and optionally an expected header; down on another status or a missing header, slow when the first byte takes longer than max_ms; redirects are followed up to 10 hops and each hop must pass the address guard). A new check is not scheduled until enabled is true; a scheduled check then sends traffic every interval_minutes. " +
+				"Fields left out stay as they are. There is no host argument: a check aims at the bookmark's own host; port is only for tcp and tls; path only for http, on that same host. " +
 				"Refused with the reason when a limit is hit (six checks per bookmark, the install-wide cap).",
 			"inputSchema": map[string]any{
 				"type": "object",
@@ -113,15 +114,23 @@ func mcpNetToolsDefinitions() []map[string]any {
 					"url":              urlProp,
 					"page":             pageProp,
 					"check_id":         map[string]any{"type": "string", "description": "The check to change. Leave out to add a new one."},
-					"type":             map[string]any{"type": "string", "description": "tcp or ping. Required for a new check; cannot change an existing one."},
+					"type":             map[string]any{"type": "string", "description": "tcp, ping, dns, tls or http. Required for a new check; cannot change an existing one."},
 					"enabled":          map[string]any{"type": "boolean", "description": "Run it on a schedule."},
 					"label":            map[string]any{"type": "string", "description": "A name for it, at most 60 characters. An empty string clears it."},
 					"interval_minutes": map[string]any{"type": "integer", "description": "Minutes between runs, 5 to 1440. 0 follows the bookmark's own interval."},
 					"timeout_sec":      map[string]any{"type": "integer", "description": "Seconds to wait, 1 to 10. 0 is the default."},
 					"muted":            map[string]any{"type": "boolean", "description": "Keep its alerts quiet."},
+					"port":             map[string]any{"type": "integer", "description": "tcp and tls only: the port, 1 to 65535. 0 follows the bookmark's address (tls: 443 for https)."},
+					"min_days_left":    map[string]any{"type": "integer", "description": "tls only: a valid certificate with fewer days left than this is a warning (and sends one expiry notice per mark). 1 to 120; 0 is the default of 14."},
 					"count":            map[string]any{"type": "integer", "description": "Ping only: packets per run, 1 to 10."},
 					"max_loss_pct":     map[string]any{"type": "integer", "description": "Ping only: loss in percent above which it counts as down, 0 to 100."},
 					"max_ms":           map[string]any{"type": "integer", "description": "A slower answer is reported as slow (it still counts as up). 0 turns that off."},
+					"record":           map[string]any{"type": "string", "description": "DNS only, required for a new dns check: A, AAAA, CNAME, MX, TXT or NS."},
+					"expect":           map[string]any{"type": "string", "description": "DNS only: a value one of the records must have (a TXT record may contain it). An empty string clears it."},
+					"watch_drift":      map[string]any{"type": "boolean", "description": "DNS only: report in the bell when the set of records changes. Useful for MX, TXT, NS and CNAME; noisy for A and AAAA behind a CDN."},
+					"path":             map[string]any{"type": "string", "description": "HTTP only: a path and optional query on the bookmark's own host, starting with a single /, such as /health. Empty uses the bookmark's own address. Never a full URL."},
+					"expect_status":    map[string]any{"type": "string", "description": "HTTP only: the status that counts as up, such as 200, 200-299 or 200,301. Empty means 200-299, judged after the redirects."},
+					"expect_header":    map[string]any{"type": "string", "description": "HTTP only: a header that must be in the answer, as name or name: text it must contain (case-insensitive). Empty clears it."},
 				},
 				"required": []string{"url"},
 			},
@@ -196,6 +205,9 @@ func (h *Handlers) mcpNetCheckSummary(bm Bookmark, pageID int, c NetCheck, sampl
 	if c.Host != "" {
 		out["host"] = c.Host
 	}
+	if c.Type == netTypeTLS {
+		out["min_days_left"] = netTLSMinDays(c)
+	}
 	if c.Count > 0 {
 		out["count"] = c.Count
 	}
@@ -205,7 +217,26 @@ func (h *Handlers) mcpNetCheckSummary(bm Bookmark, pageID int, c NetCheck, sampl
 	if c.MaxMs > 0 {
 		out["max_ms"] = c.MaxMs
 	}
-	if state := netCheckState(samples); state != nil {
+	if c.Type == netTypeHTTP {
+		if c.Endpoint != "" {
+			out["path"] = c.Endpoint
+		}
+		out["expect_status"] = netHTTPExpectedStatus(c)
+		if c.ExpectHeader != "" {
+			out["expect_header"] = c.ExpectHeader
+		}
+	}
+	if c.Type == netTypeDNS {
+		out["record"] = c.Record
+		if c.Expect != "" {
+			out["expect"] = c.Expect
+		}
+		out["watch_drift"] = c.WatchDrift
+		if c.DriftDiff != "" {
+			out["dns_changed"] = c.DriftDiff
+		}
+	}
+	if state := netCheckStateFor(c, samples); state != nil {
 		out["state"] = state
 	}
 	return out
@@ -219,13 +250,14 @@ func (h *Handlers) mcpRunNetworkTest(r *http.Request, args json.RawMessage) map[
 		URL     string `json:"url"`
 		Page    int    `json:"page"`
 		Type    string `json:"type"`
+		Record  string `json:"record"`
 		CheckID string `json:"check_id"`
 	}
 	if e := mcpNetDecode(args, &body); e != nil {
 		return e
 	}
 	if strings.TrimSpace(body.Type) == "" && strings.TrimSpace(body.CheckID) == "" {
-		return map[string]any{"error": "Give type (tcp or ping) or check_id."}
+		return map[string]any{"error": "Give type (tcp, ping, dns, tls or http) or check_id."}
 	}
 	bm, page, refused := h.mcpResolveBookmark(body.URL, body.Page)
 	if refused != nil {
@@ -237,7 +269,7 @@ func (h *Handlers) mcpRunNetworkTest(r *http.Request, args json.RawMessage) map[
 	if h.ssrfAPILimiter != nil && !h.ssrfAPILimiter.allow(client) {
 		return map[string]any{"error": "Too many requests; wait a minute.", "retry_after_seconds": 60}
 	}
-	res, status, err := h.runNetTestFor(r.Context(), client, page, bm.URL, strings.TrimSpace(body.Type), strings.TrimSpace(body.CheckID))
+	res, status, err := h.runNetTestForRecord(r.Context(), client, page, bm.URL, strings.TrimSpace(body.Type), strings.TrimSpace(body.CheckID), strings.TrimSpace(body.Record))
 	if err != nil {
 		out := map[string]any{"error": err.Error()}
 		if status == http.StatusTooManyRequests {
@@ -395,9 +427,17 @@ func (h *Handlers) mcpSetNetCheck(r *http.Request, args json.RawMessage) map[str
 		IntervalMinutes *int    `json:"interval_minutes"`
 		TimeoutSec      *int    `json:"timeout_sec"`
 		Muted           *bool   `json:"muted"`
+		Port            *int    `json:"port"`
+		MinDaysLeft     *int    `json:"min_days_left"`
 		Count           *int    `json:"count"`
 		MaxLossPct      *int    `json:"max_loss_pct"`
 		MaxMs           *int    `json:"max_ms"`
+		Record          *string `json:"record"`
+		Expect          *string `json:"expect"`
+		WatchDrift      *bool   `json:"watch_drift"`
+		Path            *string `json:"path"`
+		ExpectStatus    *string `json:"expect_status"`
+		ExpectHeader    *string `json:"expect_header"`
 	}
 	if e := mcpNetDecode(args, &body); e != nil {
 		return e
@@ -426,7 +466,7 @@ func (h *Handlers) mcpSetNetCheck(r *http.Request, args json.RawMessage) map[str
 		}
 	} else {
 		if body.Type == "" {
-			return map[string]any{"error": "Give type (tcp or ping) to add a check, or check_id to change one."}
+			return map[string]any{"error": "Give type (tcp, ping, dns, tls or http) to add a check, or check_id to change one."}
 		}
 		next = append(next, NetCheck{Type: body.Type})
 		idx = len(next) - 1
@@ -452,6 +492,12 @@ func (h *Handlers) mcpSetNetCheck(r *http.Request, args json.RawMessage) map[str
 	if body.Muted != nil {
 		c.Muted = *body.Muted
 	}
+	if body.Port != nil {
+		c.Port = *body.Port
+	}
+	if body.MinDaysLeft != nil {
+		c.MinDaysLeft = *body.MinDaysLeft
+	}
 	if body.Count != nil {
 		c.Count = *body.Count
 	}
@@ -460,6 +506,24 @@ func (h *Handlers) mcpSetNetCheck(r *http.Request, args json.RawMessage) map[str
 	}
 	if body.MaxMs != nil {
 		c.MaxMs = *body.MaxMs
+	}
+	if body.Record != nil {
+		c.Record = strings.ToUpper(strings.TrimSpace(*body.Record))
+	}
+	if body.Expect != nil {
+		c.Expect = strings.TrimSpace(*body.Expect)
+	}
+	if body.WatchDrift != nil {
+		c.WatchDrift = *body.WatchDrift
+	}
+	if body.Path != nil {
+		c.Endpoint = strings.TrimSpace(*body.Path)
+	}
+	if body.ExpectStatus != nil {
+		c.ExpectStatus = strings.TrimSpace(*body.ExpectStatus)
+	}
+	if body.ExpectHeader != nil {
+		c.ExpectHeader = strings.TrimSpace(*body.ExpectHeader)
 	}
 	if refusal := h.mcpPutNetChecks(r, page, bm.URL, next); refusal != nil {
 		return refusal

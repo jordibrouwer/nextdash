@@ -307,6 +307,7 @@ func (h *Handlers) runDueMonitors() {
 			logWarn(logComponentHealth, "old history could not be cleared away (%v); it will be tried again next round", err)
 		}
 		h.pruneCertificates(liveHosts)
+		h.pruneNetCertificates(known)
 		return
 	}
 
@@ -544,6 +545,7 @@ func (h *Handlers) runDueMonitors() {
 
 	// Network checks write their sample and transition only: no health cache,
 	// certificate, drift or mirror pass.
+	h.applyDNSDrift(netOutcomes)
 	for _, out := range netOutcomes {
 		key := netHistoryKey(out.due.check.ID)
 		historyUpdates[key] = []HealthSample{out.res.sample(inMaintenance)}
@@ -599,6 +601,9 @@ func (h *Handlers) runDueMonitors() {
 	// for downtime is where they want to hear that a certificate is about to
 	// cause some.
 	pending = append(pending, certExpiryNotifications(h.recordMonitorCertificates(certResults), time.Now())...)
+	// A TLS check's own warning, once per mark of its ladder.
+	pending = append(pending, h.netCertNotifications(netOutcomes, time.Now())...)
+	h.pruneNetCertificates(known)
 	// This round's own CertHost observations belong in the live set too, so a
 	// bookmark whose first-ever check just discovered a redirect does not have
 	// its brand new certificate entry pruned again immediately below.

@@ -259,3 +259,100 @@
     flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
 }
+
+/* A DNS check whose records changed: what changed, and the button to accept it. */
+.net-drift {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    border: 1px solid color-mix(in srgb, var(--accent-warning) 45%, var(--border-primary));
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in srgb, var(--accent-warning) 10%, transparent);
+    font-size: var(--font-size-small, 0.85rem);
+    overflow-wrap: anywhere;
+}
+
+/* The records of a DNS answer (value, and priority for MX). */
+.net-dns-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+.net-dns-table th,
+.net-dns-table td {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border-primary);
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.net-dns-table th {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.net-dns-table td:last-child:not(:only-child),
+.net-dns-table th:last-child:not(:only-child) {
+    width: 4rem;
+}
+
+.net-run-record {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-drift > span {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.net-drift > .config-btn {
+    flex: none;
+    white-space: nowrap;
+}
+
+/* A TLS read: chips (days left, version, protocol, cipher) and the chain. */
+.net-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2, 0.5rem);
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.net-chain {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.net-cert {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm, 6px);
+    font-size: var(--font-size-small, 0.85rem);
+    overflow-wrap: anywhere;
+}
+
+.net-cert-meta {
+    color: var(--text-secondary);
+}
