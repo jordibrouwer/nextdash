@@ -241,7 +241,8 @@ func TestNetJSONCredentialNeverInResult(t *testing.T) {
 	check(NetCheck{Path: "echo", Op: "eq", Expect: "something else"})
 	check(NetCheck{Path: "echo", Op: "contains", Expect: "nope"})
 	res = runJSONTest(t, localGuard, bm, NetCheck{Path: "echo", Op: "exists"})
-	if res.JSON.Value != "[hidden]" || res.Detail != "[hidden]" {
+	// An authenticated string is described, not shown (netJSONRedactor).
+	if res.JSON.Value != fmt.Sprintf("string (%d chars)", len(secret)) || res.Detail != res.JSON.Value {
 		t.Fatalf("an echoed credential was shown: %q %q", res.JSON.Value, res.Detail)
 	}
 	// A credential of its own, living in the query: the address never shows it.
@@ -276,7 +277,7 @@ func TestNetJSONCredentialNeverInResult(t *testing.T) {
 	defer dropper.Close()
 	dropped := runJSONTest(t, localGuard, Bookmark{URL: dropper.URL}, NetCheck{Path: "a", Op: "exists", Endpoint: "/x?token=" + typed})
 	raw, _ = json.Marshal(dropped)
-	if dropped.OK || dropped.Class == "" || strings.Contains(string(raw), typed) || !strings.Contains(dropped.Error, "/x?…") {
+	if dropped.OK || dropped.Class == "" || strings.Contains(string(raw), typed) || strings.Contains(dropped.Error, "/x") {
 		t.Fatalf("%s", raw)
 	}
 }
@@ -327,6 +328,131 @@ func TestNetJSONCredentialOnlyToTheSameHost(t *testing.T) {
 	}
 	if got, _ := otherQuery.Load().(string); strings.Contains(got, secret) {
 		t.Fatalf("the credential query followed a redirect to another host: %q", got)
+	}
+}
+
+// The path blocklist is only the first rule: it knows more names now, and what
+// it does not know is covered by the authenticated-answer rule below.
+func TestNetJSONSecretPathNames(t *testing.T) {
+	for _, p := range []string{
+		"api_token", "client_secret", "apiKey", "smtp.pass", "settings.smtp.password", "db.pwd",
+		"auth.jwt", "headers.Authorization", "bearer", "cookies[0]", "session.id", "credentials.x",
+		"private_key", "signature", "otp", "users[0].hash", "salt",
+	} {
+		if !netJSONPathIsSecret(p) {
+			t.Errorf("%q must count as a secret path", p)
+		}
+	}
+	for _, p := range []string{"status", "db.state", "items[0].name", "services[name=api].up", "count#"} {
+		if netJSONPathIsSecret(p) {
+			t.Errorf("%q must not count as a secret path", p)
+		}
+	}
+}
+
+// With a credential on the request, a string the path does not name as secret
+// is still described by its length and never shown, and so is the expected
+// value; numbers and plain status words stay readable. Without a credential
+// the answer is shown as before.
+func TestNetJSONAuthenticatedAnswerIsDescribed(t *testing.T) {
+	const pw = "hunter2-hunter2"
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	body := `{"status":"ok","count":7,"config":[{"value":"` + pw + `"}],"name":"` + pw + `","ready":true}`
+	srv := jsonServer(body)
+	defer srv.Close()
+	if err := saveHealthCredential("svc", HealthCredential{Label: "svc", Headers: map[string]string{"X-Api-Key": "an-unrelated-key"}}); err != nil {
+		t.Fatal(err)
+	}
+	authed := Bookmark{URL: srv.URL, CredentialID: "svc"}
+	want := fmt.Sprintf("string (%d chars)", len(pw))
+	for _, c := range []NetCheck{
+		{Path: "config[0].value", Op: "eq", Expect: pw},
+		{Path: "config[0].value", Op: "eq", Expect: "nope-nope"},
+		{Path: "config[0].value", Op: "contains", Expect: "hunter2"},
+		{Path: "config[0].value", Op: "ne", Expect: pw},
+		{Path: "name", Op: "eq", Expect: "wrong-value"},
+		{Path: "name", Op: "exists"},
+	} {
+		res := runJSONTest(t, localGuard, authed, c)
+		raw, _ := json.Marshal(res)
+		if strings.Contains(string(raw), pw) || strings.Contains(string(raw), "hunter2") || strings.Contains(string(raw), "nope-nope") || strings.Contains(string(raw), "wrong-value") {
+			t.Errorf("%+v: the value or the expectation is in the result: %s", c, raw)
+		}
+		if res.JSON == nil || res.JSON.Value != want || res.Detail != want {
+			t.Errorf("%+v: value %q detail %q", c, res.JSON.Value, res.Detail)
+		}
+		if c.Op != "exists" && res.JSON.Expect != "[hidden]" {
+			t.Errorf("%+v: expect %q", c, res.JSON.Expect)
+		}
+		if d := res.sample(false).D; strings.Contains(d, pw) {
+			t.Errorf("%+v: the sample carries the value: %q", c, d)
+		}
+	}
+	// What is safe to read stays readable, expected value included.
+	if res := runJSONTest(t, localGuard, authed, NetCheck{Path: "status", Op: "eq", Expect: "ok"}); !res.OK || res.JSON.Value != "ok" || res.JSON.Expect != "ok" {
+		t.Fatalf("status word: %+v", res.JSON)
+	}
+	if res := runJSONTest(t, localGuard, authed, NetCheck{Path: "count", Op: "gt", Expect: "10"}); res.OK || res.JSON.Value != "7" || res.JSON.Expect != "10" {
+		t.Fatalf("number: %+v", res.JSON)
+	}
+	if res := runJSONTest(t, localGuard, authed, NetCheck{Path: "ready", Op: "eq", Expect: "true"}); !res.OK || res.JSON.Value != "true" {
+		t.Fatalf("boolean: %+v", res.JSON)
+	}
+	// No credential: shown as always.
+	res := runJSONTest(t, localGuard, Bookmark{URL: srv.URL}, NetCheck{Path: "name", Op: "eq", Expect: pw})
+	if !res.OK || res.JSON.Value != pw || res.JSON.Expect != pw {
+		t.Fatalf("without a credential: %+v", res.JSON)
+	}
+}
+
+// A check that aims at a host of its own never gets the bookmark's credential,
+// whichever credential it names: it goes only to the bookmark's own
+// scheme and host:port.
+func TestNetJSONCredentialNotSentToCustomHost(t *testing.T) {
+	const secret = "json-custom-host-secret"
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	var saw atomic.Value
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		saw.Store(r.Header.Get("X-Api-Key") + "|" + r.URL.RawQuery)
+		w.Write([]byte(`{"name":"visible-value"}`))
+	}))
+	defer srv.Close()
+	if err := saveHealthCredential("svc", HealthCredential{Label: "svc", Headers: map[string]string{"X-Api-Key": secret}, Query: map[string]string{"apikey": secret}}); err != nil {
+		t.Fatal(err)
+	}
+	port := srv.Listener.Addr().(*net.TCPAddr).Port
+	bm := Bookmark{URL: fmt.Sprintf("http://127.0.0.1:%d", port), CredentialID: "svc"}
+	h := &Handlers{}
+	run := func(c NetCheck) NetResult {
+		c.Type = netTypeJSON
+		target, err := netCheckTarget(bm, c, Settings{NetToolsAllowCustomHost: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return h.runJSON(context.Background(), localGuard, target, bm, c)
+	}
+	// The bookmark's own host: the credential goes.
+	if res := run(NetCheck{Path: "name", Op: "exists"}); !res.OK || !strings.Contains(saw.Load().(string), secret) {
+		t.Fatalf("own host: %+v saw %v", res, saw.Load())
+	}
+	// A host of its own (the same machine under another name): it does not,
+	// neither the bookmark's credential nor one the check names itself.
+	for _, c := range []NetCheck{
+		{Host: "localhost", Path: "name", Op: "exists"},
+		{Host: "localhost", Path: "name", Op: "exists", CredentialID: "svc"},
+	} {
+		saw.Store("")
+		res := run(c)
+		if !res.OK {
+			t.Fatalf("%+v: %+v", c, res)
+		}
+		if got := saw.Load().(string); strings.Contains(got, secret) {
+			t.Fatalf("%+v: the credential went to the check's own host: %q", c, got)
+		}
+		// Nothing was authenticated, so the value is the plain answer.
+		if res.JSON.Value != "visible-value" {
+			t.Fatalf("%+v: %q", c, res.JSON.Value)
+		}
 	}
 }
 

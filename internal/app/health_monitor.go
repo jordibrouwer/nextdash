@@ -548,7 +548,16 @@ func (h *Handlers) runDueMonitors() {
 	h.applyDNSDrift(netOutcomes)
 	for _, out := range netOutcomes {
 		key := netHistoryKey(out.due.check.ID)
-		historyUpdates[key] = []HealthSample{out.res.sample(inMaintenance)}
+		// A guard refusal, the demo and a switched-off or forbidden ping say
+		// something about this install's settings, not about an outage: the
+		// sample is kept (so the check is not re-run every tick, and the UI can
+		// say why) but marked like a maintenance sample, so uptime skips it, and
+		// it is never a transition, so nothing alerts.
+		notMeasured := !out.res.OK && netClassNotAnOutage(out.res.Class)
+		historyUpdates[key] = []HealthSample{out.res.sample(inMaintenance || notMeasured)}
+		if notMeasured {
+			continue
+		}
 		reason := out.res.Error
 		if out.res.OK {
 			reason = ""

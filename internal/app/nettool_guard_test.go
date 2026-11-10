@@ -17,8 +17,15 @@ import (
 // Fase 0b: the guard is the only place network checks touch a socket.
 
 func TestNetToolsNeverDialDirectly(t *testing.T) {
-	re := regexp.MustCompile(`net\.Dial|DialTimeout|net\.Dialer\{|icmp\.ListenPacket|tls\.Dial|tls\.Client\(|net\.Resolver\{|DefaultResolver|LookupHost|LookupIP|http\.Client\{|http\.Transport\{|dns\.Client\{|dns\.Exchange`)
+	re := regexp.MustCompile(`net\.Dial|DialTimeout|net\.Dialer\{|icmp\.ListenPacket|tls\.Dial|tls\.Client\(|net\.Resolver\{|DefaultResolver|LookupHost|LookupIP|LookupAddr|LookupTXT|LookupMX|LookupCNAME|LookupNS|LookupSRV|http\.Client\{|http\.Transport\{|http\.Get\(|http\.Post\(|http\.PostForm\(|http\.Head\(|http\.DefaultClient|http\.DefaultTransport|new\((http|dns)\.(Client|Transport)\)|&(http|dns)\.(Client|Transport)\b|dns\.Client\{|dns\.Exchange|exec\.Command`)
+	// Every file of the network tools, not only nettool_*: the status page
+	// reads their results, and a helper there must not reach out either.
 	files, _ := filepath.Glob("nettool_*.go")
+	extra, _ := filepath.Glob("*_net.go")
+	files = append(files, extra...)
+	if _, err := os.Stat("status_page_net.go"); err != nil {
+		t.Fatalf("status_page_net.go is part of the network tools and is scanned: %v", err)
+	}
 	checked := 0
 	for _, file := range files {
 		if file == "nettool_guard.go" || strings.HasSuffix(file, "_test.go") {

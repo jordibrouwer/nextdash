@@ -46,10 +46,62 @@ const (
 
 var netJSONOps = map[string]bool{"eq": true, "ne": true, "gt": true, "lt": true, "contains": true, "exists": true}
 
-// netJSONSecretPath: a path that names one of these says the value under it is a secret.
-var netJSONSecretPath = regexp.MustCompile(`(?i)token|key|secret|password`)
+// netJSONSecretPath: a path that names one of these says the value under it is
+// a secret. It is a blocklist, so it is only the first of two rules; the second
+// (netJSONRedactor) covers every answer to a request that carried a credential.
+var netJSONSecretPath = regexp.MustCompile(`(?i)token|key|secret|pass|pwd|auth|jwt|bearer|cookie|session|credential|private|signature|otp|hash|salt`)
 
 func netJSONPathIsSecret(path string) bool { return netJSONSecretPath.MatchString(path) }
+
+// netJSONSafeWords are the plain status words a value or an expected value may
+// show even in an authenticated answer: they carry no secret, and "status eq ok"
+// is what most checks say.
+var netJSONSafeWords = map[string]bool{
+	"ok": true, "up": true, "down": true, "healthy": true, "unhealthy": true, "running": true,
+	"stopped": true, "active": true, "inactive": true, "online": true, "offline": true,
+	"enabled": true, "disabled": true, "ready": true, "error": true, "warning": true,
+	"fail": true, "failed": true, "success": true, "degraded": true, "idle": true,
+	"true": true, "false": true, "null": true,
+}
+
+// netJSONRedactor is the single rule for what of a JSON answer a result may
+// show. A value is shown as it is only when
+//
+//   - the path does not look like a secret (netJSONSecretPath), AND
+//   - the request carried no credential (authed false), or the text is a number,
+//     a boolean/null or a plain status word (netJSONSafeWords).
+//
+// Anything else (a string from an authenticated answer, a value under a secret
+// path) is described instead: "string (12 chars)" or "[hidden]". The point of
+// the second half is that a blocklist on names cannot know that users[0].hash
+// or config[0].value is a password: once a credential opened the door, the
+// result says what kind of value it found and how long it is, never the text.
+// The expected value follows the same rule, since it may be the secret itself.
+type netJSONRedactor struct {
+	secretPath bool
+	authed     bool
+}
+
+func (r netJSONRedactor) text(s string) bool {
+	if r.secretPath {
+		return false
+	}
+	if !r.authed {
+		return true
+	}
+	if _, ok := toFloat(s); ok {
+		return true
+	}
+	return netJSONSafeWords[strings.ToLower(strings.TrimSpace(s))]
+}
+
+// expect is the expected value as a result may show it.
+func (r netJSONRedactor) expect(s string) string {
+	if s == "" || r.text(s) {
+		return s
+	}
+	return netJSONHidden
+}
 
 // normalizeNetJSON cleans and judges the three fields a JSON check owns. exists
 // has no expected value; gt and lt need a number to compare with.
@@ -168,12 +220,17 @@ func jsonCompare(op string, found any, expect string) bool {
 }
 
 // netJSONDisplay is what a result may show of a found value: nothing for a
-// secret path, a size for an object or list, else the text, cut.
-func netJSONDisplay(v any, secret bool) string {
-	if secret {
+// secret path, a size for an object or list, the kind and length of a string
+// that may not be shown (netJSONRedactor), else the text, cut.
+func netJSONDisplay(v any, r netJSONRedactor) string {
+	if r.secretPath {
 		return netJSONHidden
 	}
 	switch value := v.(type) {
+	case string:
+		if !r.text(value) {
+			return fmt.Sprintf("string (%d chars)", len([]rune(value)))
+		}
 	case map[string]any:
 		if len(value) == 1 {
 			return "object (1 key)"
@@ -196,16 +253,6 @@ func netJSONDisplay(v any, secret bool) string {
 	}
 	return text
 }
-
-// netJSONSafeError is an error whose text has been cleaned but whose cause is
-// kept, so the class of the failure is still read from the real error.
-type netJSONSafeError struct {
-	msg string
-	err error
-}
-
-func (e netJSONSafeError) Error() string { return e.msg }
-func (e netJSONSafeError) Unwrap() error { return e.err }
 
 // netScrubCredential takes every secret value of a credential out of a text:
 // the header values, the query values and the password. Values shorter than
@@ -258,23 +305,6 @@ func (h *Handlers) runJSON(ctx context.Context, g netGuard, t netTarget, bm Book
 		res.Class, res.Error = "other", "The check cannot be run: "+err.Error()+"."
 		return res
 	}
-	secret := netJSONPathIsSecret(path)
-	jr := &JSONResult{Path: path, Op: op, Expect: expect}
-	if secret && expect != "" {
-		jr.Expect = netJSONHidden
-	}
-	res.JSON = jr
-	start, err := netHTTPRequestURL(bm, c, t)
-	if err != nil {
-		res.Class, res.Error = "other", "The check cannot be run: "+err.Error()+"."
-		return res
-	}
-	res.Port = bookmarkURLPort(Bookmark{URL: start.String()})
-	runCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	client := g.httpClient(timeout, bm.AllowInsecureTLS)
-	defer client.CloseIdleConnections()
-
 	var credential HealthCredential
 	haveCredential := false
 	if id := strings.TrimSpace(c.CredentialID); id != "" {
@@ -282,6 +312,27 @@ func (h *Handlers) runJSON(ctx context.Context, g netGuard, t netTarget, bm Book
 	} else if id := strings.TrimSpace(bm.CredentialID); id != "" {
 		credential, haveCredential = lookupHealthCredential(id)
 	}
+	start, err := netHTTPRequestURL(bm, c, t)
+	if err != nil {
+		res.Class, res.Error = "other", "The check cannot be run: "+err.Error()+"."
+		return res
+	}
+	// Whether a credential opens the first request decides how much of the
+	// answer a result may show (netJSONRedactor): a credential that is not
+	// sent (a check with a host of its own) opens nothing.
+	redact := netJSONRedactor{
+		secretPath: netJSONPathIsSecret(path),
+		authed:     haveCredential && netCredentialMayGo(bm, start),
+	}
+	jr := &JSONResult{Path: path, Op: op, Expect: redact.expect(expect)}
+	shownExpect := jr.Expect
+	res.JSON = jr
+	res.Port = bookmarkURLPort(Bookmark{URL: start.String()})
+	runCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	client := g.httpClient(timeout, bm.AllowInsecureTLS)
+	defer client.CloseIdleConnections()
+
 	scrub := func(s string) string {
 		if haveCredential {
 			s = netScrubCredential(s, credential)
@@ -303,18 +354,11 @@ func (h *Handlers) runJSON(ctx context.Context, g netGuard, t netTarget, bm Book
 		return res
 	}
 	fail := func(err error, at *url.URL) NetResult {
-		// A transport error names the address it asked for, query and all.
-		// The sentence is built from the error with that address shown the way
-		// a result may show it, before anything cuts it to length.
-		var ue *url.Error
-		if errors.As(err, &ue) && ue.URL != "" {
-			err = netJSONSafeError{msg: strings.ReplaceAll(err.Error(), ue.URL, netDisplayURL(at)), err: err}
-		}
-		out := g.netFail(ctx, res, err, timeout)
-		if out.Class == "tls" {
-			out.Error = "The secure connection failed: " + truncateNetDetail(err.Error())
-		}
-		res = out
+		// A transport error names the address it asked for, query and all;
+		// netFail reads the error without it (netErrText), and finish takes
+		// the credential's values out of what is left.
+		res = g.netFail(ctx, res, err, timeout)
+		out := res
 		return finish(out.Class, out.Error, "")
 	}
 
@@ -325,11 +369,10 @@ func (h *Handlers) runJSON(ctx context.Context, g netGuard, t netTarget, bm Book
 		if hops > 0 {
 			if _, err := g.resolve(runCtx, cur.Hostname()); err != nil {
 				if errors.Is(err, errNetGuardBlocked) {
-					msg := "The server redirects to " + netDisplayURL(cur) + ", which the address guard blocks: it points at a private or reserved network."
 					if addrs := g.explainBlocked(ctx, cur.Hostname()); len(addrs) > 0 {
-						msg = "The server redirects to " + netDisplayURL(cur) + ", which the address guard blocks: it resolves to " + addrs[0].String() + ", a private or reserved address."
+						res.GuardAddr = addrs[0].String()
 					}
-					return finish("guard", msg, "redirect blocked")
+					return finish("guard", netGuardRedirectSentence, "redirect blocked")
 				}
 				return fail(err, cur)
 			}
@@ -340,7 +383,7 @@ func (h *Handlers) runJSON(ctx context.Context, g netGuard, t netTarget, bm Book
 		}
 		req.Header.Set("User-Agent", "nextDash-NetCheck/1.0")
 		req.Header.Set("Accept", "application/json")
-		if haveCredential && sameOriginURL(start, cur) {
+		if haveCredential && netCredentialMayGo(bm, cur) {
 			applyHealthCredential(req, credential)
 		}
 		resp, err = client.Do(req)
@@ -393,7 +436,7 @@ func (h *Handlers) runJSON(ctx context.Context, g netGuard, t netTarget, bm Book
 		return finish("content", "Nothing at "+path+" in the answer.", "not found")
 	}
 	jr.Type = netJSONType(value)
-	jr.Value = netJSONDisplay(value, secret)
+	jr.Value = netJSONDisplay(value, redact)
 	res.Detail = jr.Value
 	if op == "gt" || op == "lt" {
 		if _, ok := toFloat(value); !ok {
@@ -403,20 +446,20 @@ func (h *Handlers) runJSON(ctx context.Context, g netGuard, t netTarget, bm Book
 	if !jsonCompare(op, value, expect) {
 		var msg string
 		switch {
-		case secret:
+		case redact.secretPath:
 			msg = "The value at " + path + " is not what the check expects."
 		case op == "exists":
 			msg = "Nothing at " + path + " in the answer."
 		case op == "eq":
-			msg = fmt.Sprintf("The value at %s is %s, but the check expects %s.", path, jr.Value, expect)
+			msg = fmt.Sprintf("The value at %s is %s, but the check expects %s.", path, jr.Value, shownExpect)
 		case op == "ne":
 			msg = fmt.Sprintf("The value at %s is %s, which the check expects it not to be.", path, jr.Value)
 		case op == "gt":
-			msg = fmt.Sprintf("The value at %s is %s, but the check expects more than %s.", path, jr.Value, expect)
+			msg = fmt.Sprintf("The value at %s is %s, but the check expects more than %s.", path, jr.Value, shownExpect)
 		case op == "lt":
-			msg = fmt.Sprintf("The value at %s is %s, but the check expects less than %s.", path, jr.Value, expect)
+			msg = fmt.Sprintf("The value at %s is %s, but the check expects less than %s.", path, jr.Value, shownExpect)
 		default:
-			msg = fmt.Sprintf("The value at %s (%s) does not contain %s.", path, jr.Value, expect)
+			msg = fmt.Sprintf("The value at %s (%s) does not contain %s.", path, jr.Value, shownExpect)
 		}
 		return finish("content", msg, jr.Value)
 	}

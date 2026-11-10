@@ -123,9 +123,6 @@ func TestNetRunRejectsFreeHostAndPort(t *testing.T) {
 	if rec.calls[1].Port != 2222 {
 		t.Fatalf("the stored check's port was not used: %+v", rec.calls[1])
 	}
-	if ports := netOneOffPorts(Bookmark{URL: "https://a.example:8443", Checks: []NetCheck{{Type: netTypeTCP, Port: 2222}}}); !ports[8443] || !ports[2222] || ports[22] {
-		t.Fatalf("one-off ports = %v", ports)
-	}
 }
 
 func TestNetRunRateLimit(t *testing.T) {
@@ -369,4 +366,14 @@ func TestNetRunJSONOneOff(t *testing.T) {
 	if c := rec.calls[1]; c.Path != "" || c.Op != "" {
 		t.Fatalf("%+v", c)
 	}
+}
+
+// runNetTestFor and runNetTestForRecord are test shorthands for the one real path,
+// runNetTestForSpec.
+func (h *Handlers) runNetTestFor(ctx context.Context, clientKey string, pageID int, url, typ, checkID string) (NetResult, int, error) {
+	return h.runNetTestForSpec(ctx, clientKey, pageID, url, typ, checkID, "", netOneOffJSON{})
+}
+
+func (h *Handlers) runNetTestForRecord(ctx context.Context, clientKey string, pageID int, url, typ, checkID, record string) (NetResult, int, error) {
+	return h.runNetTestForSpec(ctx, clientKey, pageID, url, typ, checkID, record, netOneOffJSON{})
 }

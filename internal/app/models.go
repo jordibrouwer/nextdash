@@ -7352,6 +7352,11 @@ type HealthSample struct {
 	// at most netDetailMax runes; L its second number (loss percent, days left).
 	D string `json:"d,omitempty"`
 	L int    `json:"l,omitempty"`
+	// Slow and ViaTCP are flags of a network check sample (the answer came in
+	// over its slow threshold; a ping was answered through a TCP connect), so
+	// no state is read out of the free text of D.
+	Slow   bool `json:"s,omitempty"`
+	ViaTCP bool `json:"v,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept

@@ -3,12 +3,16 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -329,6 +333,135 @@ func TestNetHTTPUsesBookmarkCredential(t *testing.T) {
 	raw, _ := json.Marshal(res)
 	if strings.Contains(string(raw), secret) {
 		t.Fatalf("the credential is in the result: %s", raw)
+	}
+}
+
+// A transport error names the address it asked for, query and all. The
+// credential of a bookmark may live in that query, so no failure sentence of any
+// kind (plain, tls) carries it, nor the address with its query.
+func TestNetHTTPFailureNeverShowsTheQuery(t *testing.T) {
+	const secret = "query-credential-value-9"
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	if err := saveHealthCredential("qry", HealthCredential{Label: "qry", Query: map[string]string{"apikey": secret}}); err != nil {
+		t.Fatal(err)
+	}
+	dropper := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if conn, _, err := w.(http.Hijacker).Hijack(); err == nil {
+			conn.Close()
+		}
+	}))
+	defer dropper.Close()
+	// A certificate the client does not trust: the tls class.
+	untrusted := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer untrusted.Close()
+	for name, base := range map[string]string{
+		"dropped connection": dropper.URL,
+		"untrusted tls":      untrusted.URL,
+	} {
+		for _, typed := range []string{"", "?token=" + secret} {
+			bm := Bookmark{URL: base + "/api" + typed, CredentialID: "qry"}
+			res := runHTTPTest(t, localGuard, bm, NetCheck{})
+			raw, _ := json.Marshal(res)
+			if res.OK || res.Error == "" || strings.Contains(string(raw), secret) || strings.Contains(res.Error, "/api") || strings.Contains(res.Error, "apikey") {
+				t.Errorf("%s %q: %s", name, typed, raw)
+			}
+			if d := res.sample(false).D; strings.Contains(d, secret) {
+				t.Errorf("%s: sample %q", name, d)
+			}
+		}
+	}
+	// The tls branch keeps its own sentence.
+	res := runHTTPTest(t, localGuard, Bookmark{URL: untrusted.URL + "/api?apikey=" + secret}, NetCheck{})
+	if res.Class != "tls" || strings.Contains(res.Error, secret) || !strings.HasPrefix(res.Error, "The secure connection failed:") {
+		t.Fatalf("%+v", res)
+	}
+}
+
+// netErrText takes the address out of a transport error, so a host that is
+// called dns.example or tls.example cannot decide the class of a failure.
+func TestNetFailureClassIgnoresTheHostName(t *testing.T) {
+	for _, host := range []string{"dns.example", "tls.example", "timeout.example", "refused.example", "certificate.example", "redirect.example"} {
+		err := &url.Error{Op: "Get", URL: "https://" + host + "/path?apikey=SECRET1234", Err: io.EOF}
+		if got := netErrorClass(err); got != "other" {
+			t.Errorf("%s: class %q, want other", host, got)
+		}
+		text := netErrText(err)
+		if strings.Contains(text, host) || strings.Contains(text, "SECRET1234") {
+			t.Errorf("%s: text %q carries the address", host, text)
+		}
+		out := (netGuard{}).netFail(context.Background(), NetResult{Host: host}, err, time.Second)
+		if out.Class != "other" || strings.Contains(out.Error, "SECRET1234") || strings.Contains(out.Error, host) {
+			t.Errorf("%s: %+v", host, out)
+		}
+	}
+	// An address that is left in a sentence loses its query.
+	if got := netErrText(errors.New("redirected to https://x.example/a?token=SECRET1234&b=1#frag next")); strings.Contains(got, "SECRET1234") || !strings.Contains(got, "https://x.example/a?…") {
+		t.Fatalf("%q", got)
+	}
+	// A real failure is still classified by its cause.
+	err := &url.Error{Op: "Get", URL: "https://dns.example/", Err: syscall.ECONNREFUSED}
+	if got := netErrorClass(err); got != "refused" {
+		t.Fatalf("refused: %q", got)
+	}
+	err = &url.Error{Op: "Get", URL: "https://dns.example/", Err: errors.New("net/http: TLS handshake timeout")}
+	if got := netErrorClass(err); got != "timeout" {
+		t.Fatalf("timeout text: %q", got)
+	}
+}
+
+// A guard refusal says only what to change. The address it points at is its own
+// field, for the owner's screen: the sentence reaches alerts and webhooks.
+func TestNetGuardRefusalSentenceNamesNoAddress(t *testing.T) {
+	out := (netGuard{allowLocal: false}).netFail(context.Background(), NetResult{Host: "192.168.1.20"}, errNetGuardBlocked, time.Second)
+	if out.Class != "guard" || out.Error != netGuardSentence {
+		t.Fatalf("%+v", out)
+	}
+	if strings.Contains(out.Error, "192.168") {
+		t.Fatalf("the sentence names the address: %q", out.Error)
+	}
+	if out.GuardAddr != "192.168.1.20" {
+		t.Fatalf("the owner's field: %q", out.GuardAddr)
+	}
+	if !strings.Contains(netGuardSentence, "allow local bookmarks to test it") {
+		t.Fatal(netGuardSentence)
+	}
+}
+
+// A check that aims at a host of its own never gets the bookmark's credential
+// (it goes only to the bookmark's own scheme and host:port).
+func TestNetHTTPCredentialNotSentToCustomHost(t *testing.T) {
+	const secret = "http-custom-host-secret"
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	var saw atomic.Value
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		saw.Store(r.Header.Get("X-Api-Key") + "|" + r.URL.RawQuery)
+		w.Write([]byte("ok"))
+	}))
+	defer srv.Close()
+	if err := saveHealthCredential("svc", HealthCredential{Label: "svc", Headers: map[string]string{"X-Api-Key": secret}, Query: map[string]string{"apikey": secret}}); err != nil {
+		t.Fatal(err)
+	}
+	port := srv.Listener.Addr().(*net.TCPAddr).Port
+	bm := Bookmark{URL: fmt.Sprintf("http://127.0.0.1:%d", port), CredentialID: "svc"}
+	h := &Handlers{}
+	run := func(c NetCheck) NetResult {
+		c.Type = netTypeHTTP
+		target, err := netCheckTarget(bm, c, Settings{NetToolsAllowCustomHost: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return h.runHTTPDetail(context.Background(), localGuard, target, bm, c)
+	}
+	if res := run(NetCheck{}); !res.OK || !strings.Contains(saw.Load().(string), secret) {
+		t.Fatalf("own host: %+v saw %v", res, saw.Load())
+	}
+	saw.Store("")
+	res := run(NetCheck{Host: "localhost"})
+	if !res.OK {
+		t.Fatalf("custom host: %+v", res)
+	}
+	if got := saw.Load().(string); strings.Contains(got, secret) {
+		t.Fatalf("the credential went to the check's own host: %q", got)
 	}
 }
 

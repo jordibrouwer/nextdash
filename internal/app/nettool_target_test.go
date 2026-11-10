@@ -35,12 +35,6 @@ func TestNetCheckTargetPorts(t *testing.T) {
 	if _, err := netCheckTarget(Bookmark{URL: "not a url"}, NetCheck{Type: netTypePing}, Settings{}); err == nil {
 		t.Fatal("a bookmark without a host resolved")
 	}
-	ports := netOneOffPorts(Bookmark{URL: "https://a.example:8443/", Checks: []NetCheck{
-		{Type: netTypeTCP, Port: 22}, {Type: netTypePing, Port: 99}, {Type: netTypeTLS, Port: 993},
-	}})
-	if len(ports) != 3 || !ports[8443] || !ports[22] || !ports[993] {
-		t.Fatalf("one-off ports: %v", ports)
-	}
 }
 
 func TestNetCheckTargetHostValidation(t *testing.T) {

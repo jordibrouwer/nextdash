@@ -120,6 +120,7 @@ func (h *Handlers) GetNetDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 		if f.check.Enabled && state != nil {
 			switch {
+			case state.Paused:
 			case !state.OK:
 				counts["down"]++
 			case state.Warn:

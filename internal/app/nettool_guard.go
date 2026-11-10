@@ -176,7 +176,10 @@ func netErrorClass(err error) string {
 		errors.As(err, &certVerify), errors.As(err, &recordHeader), errors.As(err, &tlsErr):
 		return "tls"
 	}
-	return failureClass(err.Error())
+	// Only the sentence of the failure is read, never the address the request
+	// asked for: a host called dns.example or tls.example must not decide the
+	// class (the typed cases above never look at a name).
+	return failureClass(netErrText(err))
 }
 
 // icmpPacketConn is the slice of *icmp.PacketConn an echo needs; tests swap
@@ -206,7 +209,8 @@ func icmpNotPermitted(err error) bool {
 // Unprivileged datagram ICMP first, then raw; when neither may be opened the
 // error is errICMPNotPermitted. The payload is 32 bytes and no TTL, fragment
 // or control-message option is set. Replies are matched on sequence number and
-// source address, not on the echo ID: unprivileged Linux sockets rewrite it.
+// source address; on a raw socket also on the echo ID (unprivileged datagram
+// sockets rewrite the ID, so there it cannot be asked).
 func (g netGuard) icmpEcho(ctx context.Context, addr netip.Addr, count int, per time.Duration) ([]time.Duration, error) {
 	if demoDialRefused(ctx) {
 		return nil, errDemoOutbound
@@ -238,6 +242,10 @@ func (g netGuard) icmpEcho(ctx context.Context, addr netip.Addr, count int, per 
 	}
 	var conn icmpPacketConn
 	var dst net.Addr
+	// A raw socket hears every echo reply on the machine and keeps our own ID,
+	// so there a reply must carry it; a datagram socket has its ID rewritten by
+	// the kernel and only filters for us.
+	rawSocket := false
 	for _, m := range modes {
 		c, err := listenICMP(m.network, m.listen)
 		if err != nil {
@@ -247,6 +255,7 @@ func (g netGuard) icmpEcho(ctx context.Context, addr netip.Addr, count int, per 
 			return nil, err
 		}
 		conn = c
+		rawSocket = m.network[:3] != "udp"
 		if m.network[:3] == "udp" {
 			dst = &net.UDPAddr{IP: addr.AsSlice()}
 		} else {
@@ -303,7 +312,7 @@ func (g netGuard) icmpEcho(ctx context.Context, addr netip.Addr, count int, per 
 				continue
 			}
 			echo, ok := reply.Body.(*icmp.Echo)
-			if !ok || echo.Seq != seq {
+			if !ok || echo.Seq != seq || (rawSocket && echo.ID != id) {
 				continue
 			}
 			rtts = append(rtts, time.Since(start))
@@ -437,6 +446,11 @@ func (g netGuard) lookup(ctx context.Context, host, record, resolver string) (DN
 		}
 	}
 	if len(out.Records) > netDNSMaxRecords {
+		// Only the shown list is cut; the drift check compares the whole set.
+		out.full = out.Records
+		if len(out.full) > netDNSMaxDrift {
+			out.full = out.full[:netDNSMaxDrift]
+		}
 		out.Records = out.Records[:netDNSMaxRecords]
 	}
 	if blocked {
@@ -781,6 +795,11 @@ func (g netGuard) lookupMiekg(ctx context.Context, out DNSResult, host, record, 
 		}
 	}
 	if len(out.Records) > netDNSMaxRecords {
+		// Only the shown list is cut; the drift check compares the whole set.
+		out.full = out.Records
+		if len(out.full) > netDNSMaxDrift {
+			out.full = out.full[:netDNSMaxDrift]
+		}
 		out.Records = out.Records[:netDNSMaxRecords]
 	}
 	if blocked {

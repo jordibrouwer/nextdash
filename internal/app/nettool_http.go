@@ -307,13 +307,31 @@ func sameOriginURL(a, b *url.URL) bool {
 	return strings.EqualFold(a.Scheme, b.Scheme) && strings.EqualFold(a.Host, b.Host)
 }
 
+// netGuardRedirectSentence is the message when a redirect leads to a host the
+// guard refuses. It names neither the target nor its address: the sentence
+// reaches alerts and webhooks (the address goes in NetResult.GuardAddr).
+const netGuardRedirectSentence = "The server redirects to a host the address guard blocks: it resolves to a local address; allow local bookmarks to test it."
+
+// netCredentialMayGo is the one rule for a stored credential: it goes only to
+// the scheme and host:port of the bookmark's own address. A check that aims at
+// a custom host of its own (and a redirect to anywhere else) never gets it,
+// whichever credential the check or the bookmark names.
+func netCredentialMayGo(bm Bookmark, cur *url.URL) bool {
+	bu, err := url.Parse(strings.TrimSpace(bm.URL))
+	if err != nil || bu.Host == "" || cur == nil {
+		return false
+	}
+	return sameOriginURL(bu, cur)
+}
+
 // runHTTPDetail makes one GET and reports its timeline, redirect chain and
 // headers. Redirects are followed here, one request at a time, at most
 // netHTTPMaxRedirects: the guard is asked about every hop before it is
 // requested, and a hop it refuses is shown in the chain but never requested.
 // The body is read to at most netHTTPMaxBody and thrown away. The bookmark's
-// stored credential goes only to the host the run started at (never after a
-// redirect to another host or scheme), and no result carries it.
+// stored credential goes only to the scheme and host:port of the bookmark's
+// own address (netCredentialMayGo: never to a check's own host, never after a
+// redirect elsewhere), and no result carries it.
 //
 // Up means: the final status is the expected one (200-299 when the check names
 // none) and the expected header, if any, is there. A run slower to its first
@@ -349,9 +367,11 @@ func (h *Handlers) runHTTPDetail(ctx context.Context, g netGuard, t netTarget, b
 
 	fail := func(err error) NetResult {
 		res.Ms = ceilMs(time.Since(runStart))
+		// netFail reads the error without the address it asked for; the
+		// credential's values are taken out of what is left as well.
 		out := g.netFail(ctx, res, err, timeout)
-		if out.Class == "tls" {
-			out.Error = "The secure connection failed: " + truncateNetDetail(err.Error())
+		if haveCredential {
+			out.Error = netScrubCredential(out.Error, credential)
 		}
 		return out
 	}
@@ -364,9 +384,9 @@ func (h *Handlers) runHTTPDetail(ctx context.Context, g netGuard, t netTarget, b
 					detail.URL = netDisplayURL(cur)
 					res.Ms = ceilMs(time.Since(runStart))
 					res.Class = "guard"
-					res.Error = "The server redirects to " + netDisplayURL(cur) + ", which the address guard blocks: it points at a private or reserved network."
+					res.Error = netGuardRedirectSentence
 					if addrs := g.explainBlocked(ctx, cur.Hostname()); len(addrs) > 0 {
-						res.Error = "The server redirects to " + netDisplayURL(cur) + ", which the address guard blocks: it resolves to " + addrs[0].String() + ", a private or reserved address."
+						res.GuardAddr = addrs[0].String()
 					}
 					res.Detail = netHTTPDetailLine(detail.Status, len(detail.Redirects)-1, false) + " · redirect blocked"
 					return res
@@ -382,7 +402,7 @@ func (h *Handlers) runHTTPDetail(ctx context.Context, g netGuard, t netTarget, b
 		}
 		req.Header.Set("User-Agent", "nextDash-NetCheck/1.0")
 		req.Header.Set("Accept", "*/*")
-		if haveCredential && sameOriginURL(start, cur) {
+		if haveCredential && netCredentialMayGo(bm, cur) {
 			applyHealthCredential(req, credential)
 		}
 		finalHopStart = tr.start

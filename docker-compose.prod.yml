@@ -92,7 +92,9 @@ services:
     # check that finds it blocked falls back to TCP and says so); a container
     # on network_mode: host, or an older Docker, may need this. Off by default:
     # it changes the container's network namespace, which is your choice.
-    # The NET_RAW capability does not help, nextDash runs as a normal user.
+    # The NET_RAW capability does not help the default normal user; with
+    # NEXTDASH_RUN_AS_ROOT=1 the container's default NET_RAW lets nextDash send
+    # raw ICMP itself, and this setting is not needed.
     # sysctls:
     #   net.ipv4.ping_group_range: "0 2147483647"
     restart: unless-stopped

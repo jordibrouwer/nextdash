@@ -71,6 +71,10 @@ func btoi(b bool) int {
 // to expiry reads as degraded.
 func statusNetPart(ref statusNetRef, samples []HealthSample, now time.Time) statusPart {
 	p := monitorPart(samples, int(netCheckInterval(ref.chk, ref.bm)/time.Minute), now)
+	// A check that is switched off or blocked by a setting is not down.
+	if st := netCheckState(samples); st != nil && st.Paused {
+		return statusPart{State: statusUnknown, Reason: "paused", LastCheck: st.At}
+	}
 	if p.State == statusOperational {
 		if st := netCheckStateFor(ref.chk, samples); st != nil && st.Warn {
 			p.State = statusDegraded

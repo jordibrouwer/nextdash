@@ -23,7 +23,7 @@ the bookmark's own address or at a check stored on it, so a model cannot turn
 this into a scanner. The decoder refuses a stray field, which is what makes
 "host" in a call a refusal instead of a silently ignored word.
 
-run_network_test goes through runNetTestFor, the function the Tools tab's route
+run_network_test goes through runNetTestForSpec, the function the Tools tab's route
 uses, so the budget per client, the one-run-per-host rule, the address guard,
 the demo block and the activity log are the same ones. It is read-only in the
 MCP sense (it changes nothing stored) and open-world (it reaches out), and the
@@ -242,14 +242,11 @@ func (h *Handlers) mcpNetCheckSummary(bm Bookmark, pageID int, c NetCheck, sampl
 		out["op"] = c.Op
 		// A value under a secret-looking path is not echoed: the expected value
 		// may be the secret itself.
+		usesCredential := strings.TrimSpace(c.CredentialID) != "" || strings.TrimSpace(bm.CredentialID) != ""
 		if c.Op != "exists" && c.Expect != "" {
-			if netJSONPathIsSecret(c.Path) {
-				out["expect"] = netJSONHidden
-			} else {
-				out["expect"] = c.Expect
-			}
+			out["expect"] = netJSONRedactor{secretPath: netJSONPathIsSecret(c.Path), authed: usesCredential}.expect(c.Expect)
 		}
-		out["uses_credential"] = strings.TrimSpace(c.CredentialID) != "" || strings.TrimSpace(bm.CredentialID) != ""
+		out["uses_credential"] = usesCredential
 	}
 	if c.Type == netTypeDNS {
 		out["record"] = c.Record
@@ -298,7 +295,7 @@ func (h *Handlers) mcpRunNetworkTest(r *http.Request, args json.RawMessage) map[
 		return refused
 	}
 	// The route's own SSRF budget first, then the network-test budget inside
-	// runNetTestFor: both count against the caller's address, as for the UI.
+	// runNetTestForSpec: both count against the caller's address, as for the UI.
 	client := clientIP(r)
 	if h.ssrfAPILimiter != nil && !h.ssrfAPILimiter.allow(client) {
 		return map[string]any{"error": "Too many requests; wait a minute.", "retry_after_seconds": 60}
@@ -315,6 +312,8 @@ func (h *Handlers) mcpRunNetworkTest(r *http.Request, args json.RawMessage) map[
 	encoded, _ := json.Marshal(res)
 	out := map[string]any{}
 	_ = json.Unmarshal(encoded, &out)
+	// Where a blocked host points is for the owner's screen, not the assistant.
+	delete(out, "guardAddr")
 	out["url"] = strings.TrimSpace(bm.URL)
 	return out
 }

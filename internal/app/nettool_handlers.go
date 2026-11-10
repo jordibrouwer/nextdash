@@ -21,9 +21,13 @@ func (h *Handlers) GetNetCapabilities(w http.ResponseWriter, r *http.Request) {
 		icmp = "blocked"
 	}
 	scheduled := 0
-	for id := range allNetCheckIDs(h.store) {
-		if _, _, c, ok := findNetCheck(h.store, id); ok && c.Enabled {
-			scheduled++
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			for _, c := range bm.Checks {
+				if c.ID != "" && c.Enabled {
+					scheduled++
+				}
+			}
 		}
 	}
 	types := make([]string, 0, len(netTypesBuilt))
@@ -46,12 +50,18 @@ func (h *Handlers) GetNetCapabilities(w http.ResponseWriter, r *http.Request) {
 }
 
 // netStateView is the newest sample of a check, as the UI reads it. Slow and
-// via-TCP are not stored as flags: the detail of the sample says them.
+// via-TCP come from flags on the sample; a sample from before the flags existed
+// of a ping or TCP check (whose detail is text of our own) is read from that
+// text.
 type netStateView struct {
-	At        int64  `json:"at"`
-	OK        bool   `json:"ok"`
-	Slow      bool   `json:"slow,omitempty"`
-	Warn      bool   `json:"warn,omitempty"`
+	At   int64 `json:"at"`
+	OK   bool  `json:"ok"`
+	Slow bool  `json:"slow,omitempty"`
+	Warn bool  `json:"warn,omitempty"`
+	// Paused: the newest answer says nothing about the network (ping switched
+	// off or forbidden, the address guard, the demo). It is not down, and it
+	// does not alert.
+	Paused    bool   `json:"paused,omitempty"`
 	Ms        int    `json:"ms"`
 	Class     string `json:"class,omitempty"`
 	Detail    string `json:"detail,omitempty"`
@@ -70,12 +80,13 @@ func netCheckState(samples []HealthSample) *netStateView {
 	return &netStateView{
 		At:        last.T,
 		OK:        last.Up,
-		Slow:      strings.Contains(last.D, "slow"),
+		Slow:      last.Slow,
+		Paused:    !last.Up && netClassNotAnOutage(last.Fail),
 		Ms:        last.PingMs,
 		Class:     last.Fail,
 		Detail:    last.D,
 		Secondary: last.L,
-		ViaTCP:    strings.Contains(last.D, "via TCP"),
+		ViaTCP:    last.ViaTCP,
 	}
 }
 
@@ -86,13 +97,18 @@ func netCheckState(samples []HealthSample) *netStateView {
 // at once.
 func netCheckStateFor(c NetCheck, samples []HealthSample) *netStateView {
 	st := netCheckState(samples)
-	if st != nil && c.Type == netTypeTLS && st.OK && st.Secondary <= netTLSMinDays(c) {
+	if st == nil {
+		return nil
+	}
+	if c.Type == netTypeTLS && st.OK && st.Secondary <= netTLSMinDays(c) {
 		st.Warn = true
 	}
-	// The detail of a JSON check is the value it found: a value that says
-	// "slow" or "via TCP" is not a state.
-	if st != nil && c.Type == netTypeJSON {
-		st.Slow, st.ViaTCP = false, false
+	// Samples from before the flags: only a ping or TCP check has a detail that
+	// is text of our own. The detail of the other types (a DNS record, a JSON
+	// value) can say "slow" without meaning it.
+	if last := samples[len(samples)-1]; !last.Slow && !last.ViaTCP && (c.Type == netTypePing || c.Type == netTypeTCP) {
+		st.Slow = strings.Contains(last.D, "slow")
+		st.ViaTCP = strings.Contains(last.D, "via TCP")
 	}
 	return st
 }
@@ -128,6 +144,24 @@ func (h *Handlers) netCheckViews(bm Bookmark, history map[string][]HealthSample,
 }
 
 var errNetBookmarkGone = errors.New("bookmark not found")
+
+// errNetPageMoved: the page changed between reading what the other bookmarks
+// hold and the write, so the row that was read is not the row that is there.
+var errNetPageMoved = errors.New("the page changed while saving")
+
+// netPutChecksHook is a test seam: it runs after PUT /api/net/checks has found
+// its row and before it reads what the rest of the install holds.
+var netPutChecksHook func()
+
+// netCheckIDList is the IDs of a row's checks as one string, to tell whether a
+// row is still the one that was read.
+func netCheckIDList(checks []NetCheck) string {
+	ids := make([]string, len(checks))
+	for i, c := range checks {
+		ids[i] = c.ID
+	}
+	return strings.Join(ids, ",")
+}
 
 // netInputError is a refusal of what the client sent (a 400), told apart from a
 // failed write.
@@ -194,15 +228,18 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type item struct {
-		PageID  int           `json:"pageId"`
-		URL     string        `json:"url"`
-		Name    string        `json:"name"`
-		CheckID string        `json:"checkId"`
-		Type    string        `json:"type"`
-		Label   string        `json:"label"`
-		Enabled bool          `json:"enabled"`
-		Muted   bool          `json:"muted"`
-		State   *netStateView `json:"state,omitempty"`
+		PageID int    `json:"pageId"`
+		URL    string `json:"url"`
+		// Occurrence: which of the rows with this address on the page it is (0 is
+		// the first), so a write after this list reaches the right row.
+		Occurrence int           `json:"occurrence,omitempty"`
+		Name       string        `json:"name"`
+		CheckID    string        `json:"checkId"`
+		Type       string        `json:"type"`
+		Label      string        `json:"label"`
+		Enabled    bool          `json:"enabled"`
+		Muted      bool          `json:"muted"`
+		State      *netStateView `json:"state,omitempty"`
 		// Host is what the check talks to and Interval how often it runs, in
 		// minutes: the Config overview table shows both.
 		Host     string `json:"host,omitempty"`
@@ -220,7 +257,11 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 	settings := h.store.GetSettings()
 	counts := map[string]int{"scheduled": 0, "down": 0}
 	for _, page := range h.store.GetPages() {
+		seenURL := map[string]int{}
 		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			urlKey := canonicalBookmarkURLKey(bm.URL)
+			occurrence := seenURL[urlKey]
+			seenURL[urlKey]++
 			for _, c := range bm.Checks {
 				samples := history[netHistoryKey(c.ID)]
 				state := netCheckStateFor(c, samples)
@@ -230,7 +271,7 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 				}
 				items = append(items, item{
 					Host: host, Interval: int(netCheckInterval(c, bm) / time.Minute),
-					PageID: page.ID, URL: bm.URL, Name: bm.Name, CheckID: c.ID, Type: c.Type,
+					PageID: page.ID, URL: bm.URL, Occurrence: occurrence, Name: bm.Name, CheckID: c.ID, Type: c.Type,
 					Label: netCheckLabel(c, bm), Enabled: c.Enabled, Muted: c.Muted || bm.NotifyMuted, State: state,
 					RecoveredAt: netRecoveredAt(samples, state, now),
 					DriftDiff:   c.DriftDiff, DriftAt: c.DriftAt,
@@ -238,7 +279,7 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 				counts[c.Type]++
 				if c.Enabled {
 					counts["scheduled"]++
-					if state != nil && !state.OK {
+					if state != nil && !state.OK && !state.Paused {
 						counts["down"]++
 					}
 				}
@@ -290,50 +331,57 @@ func (h *Handlers) PutNetChecks(w http.ResponseWriter, r *http.Request) {
 	}
 	settings := h.store.GetSettings()
 
-	// What the other bookmarks hold, read before the store lock is taken (the
-	// readers take it too).
-	list := h.store.GetBookmarksByPage(req.PageID)
-	target := netRowIndex(list, key, req.Occurrence)
-	if target < 0 {
-		netWriteError(w, http.StatusNotFound, "bookmark not found")
-		return
-	}
-	taken := map[string]bool{}
-	enabledElsewhere := 0
-	for _, page := range h.store.GetPages() {
-		for i, bm := range h.store.GetBookmarksByPage(page.ID) {
-			if page.ID == req.PageID && i == target {
-				continue
-			}
-			for _, c := range bm.Checks {
-				taken[c.ID] = true
-				if c.Enabled {
-					enabledElsewhere++
-				}
-			}
-		}
-	}
+	// One writer at a time decides the ceiling and the IDs. What the other
+	// bookmarks hold is read before the page lock is taken (the readers take it
+	// too), so inside the mutation the target row is checked to be the one that
+	// was read; a page that changed in between starts the round again.
+	h.netChecksMu.Lock()
+	defer h.netChecksMu.Unlock()
 
 	var saved []NetCheck
 	var savedBM Bookmark
-	err := h.store.MutateBookmarksOnPage(req.PageID, func(current []Bookmark) ([]Bookmark, error) {
-		idx := netRowIndex(current, key, req.Occurrence)
-		if idx < 0 {
-			return nil, netInputError{errNetBookmarkGone}
+	var err error
+	for attempt := 0; attempt < 3; attempt++ {
+		list := h.store.GetBookmarksByPage(req.PageID)
+		target := netRowIndex(list, key, req.Occurrence)
+		if target < 0 {
+			netWriteError(w, http.StatusNotFound, "bookmark not found")
+			return
 		}
-		out, err := normalizeNetChecks(req.Checks, current[idx].Checks, current[idx], settings, taken, enabledElsewhere)
-		if err != nil {
-			return nil, netInputError{err}
+		readIDs := netCheckIDList(list[target].Checks)
+		if netPutChecksHook != nil {
+			netPutChecksHook()
 		}
-		next := make([]Bookmark, len(current))
-		copy(next, current)
-		if len(out) == 0 {
-			out = nil
+		taken, enabledElsewhere := netCheckLedger(h.store, req.PageID, target)
+		err = h.store.MutateBookmarksOnPage(req.PageID, func(current []Bookmark) ([]Bookmark, error) {
+			idx := netRowIndex(current, key, req.Occurrence)
+			if idx < 0 {
+				return nil, netInputError{errNetBookmarkGone}
+			}
+			if idx != target || netCheckIDList(current[idx].Checks) != readIDs {
+				return nil, errNetPageMoved
+			}
+			out, err := normalizeNetChecks(req.Checks, current[idx].Checks, current[idx], settings, taken, enabledElsewhere)
+			if err != nil {
+				return nil, netInputError{err}
+			}
+			next := make([]Bookmark, len(current))
+			copy(next, current)
+			if len(out) == 0 {
+				out = nil
+			}
+			next[idx].Checks = out
+			saved, savedBM = out, next[idx]
+			return next, nil
+		})
+		if !errors.Is(err, errNetPageMoved) {
+			break
 		}
-		next[idx].Checks = out
-		saved, savedBM = out, next[idx]
-		return next, nil
-	})
+	}
+	if errors.Is(err, errNetPageMoved) {
+		netWriteError(w, http.StatusConflict, "the page changed while saving; try again")
+		return
+	}
 	var bad netInputError
 	switch {
 	case errors.Is(err, errNetCheckCap):

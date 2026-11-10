@@ -63,7 +63,10 @@ func normalizeNetChecks(in, stored []NetCheck, bm Bookmark, s Settings,
 		next.Label = label
 
 		if host := strings.ToLower(strings.TrimSpace(c.Host)); host != "" {
-			if !s.NetToolsAllowCustomHost {
+			// With custom hosts off, a host that was already stored stays as it
+			// is (the check does not run, it can still be switched off, muted or
+			// removed); only a new or changed host is refused.
+			if !s.NetToolsAllowCustomHost && !(own && strings.EqualFold(strings.TrimSpace(prev.Host), host)) {
 				return nil, errNetCustomHostOff
 			}
 			if !validNetCheckHost(host) {

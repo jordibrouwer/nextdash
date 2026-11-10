@@ -204,7 +204,11 @@ func dnsDriftApply(c NetCheck, res NetResult) dnsDriftResult {
 		return out
 	}
 	record := strings.ToUpper(c.Record)
-	vals := dnsValueSet(record, res.DNS.Records)
+	records := res.DNS.Records
+	if len(res.DNS.full) > 0 {
+		records = res.DNS.full
+	}
+	vals := dnsValueSet(record, records)
 	enc := dnsEncodeSet(record, vals)
 	if c.Baseline == "" {
 		out.check.Baseline = enc
@@ -238,7 +242,8 @@ func dnsDriftApply(c NetCheck, res NetResult) dnsDriftResult {
 // meantime is neither lost nor given an old baseline: the write is skipped for
 // a check that no longer exists or changed its record or its watching.
 func (h *Handlers) applyDNSDrift(outcomes []netOutcome) {
-	byPage := map[int][]NetCheck{}
+	type driftUpdate struct{ seen, next NetCheck }
+	byPage := map[int][]driftUpdate{}
 	for i := range outcomes {
 		out := &outcomes[i]
 		if out.due.check.Type != netTypeDNS || out.res.DNS == nil {
@@ -253,19 +258,27 @@ func (h *Handlers) applyDNSDrift(outcomes []netOutcome) {
 			out.res.Detail = d.check.DriftDiff
 		}
 		if d.touched {
-			byPage[out.due.pageID] = append(byPage[out.due.pageID], d.check)
+			byPage[out.due.pageID] = append(byPage[out.due.pageID], driftUpdate{seen: out.due.check, next: d.check})
 		}
 	}
 	for pageID, updates := range byPage {
 		err := h.store.MutateBookmarksOnPage(pageID, func(current []Bookmark) ([]Bookmark, error) {
 			next := make([]Bookmark, len(current))
 			copy(next, current)
-			for _, u := range updates {
+			for _, upd := range updates {
+				u := upd.next
 				for i := range next {
 					checks := append([]NetCheck(nil), next[i].Checks...)
 					for j := range checks {
 						st := checks[j]
 						if st.ID != u.ID || st.Type != netTypeDNS || st.Record != u.Record || !st.WatchDrift {
+							continue
+						}
+						// Compare and set: only if the stored drift state is still
+						// the one this round started from. An Accept (or a form
+						// save) that landed while the round ran has moved it on,
+						// and the round's older view must not put it back.
+						if st.Baseline != upd.seen.Baseline || st.DriftSet != upd.seen.DriftSet || st.DriftAt != upd.seen.DriftAt {
 							continue
 						}
 						checks[j].Baseline, checks[j].DriftSet = u.Baseline, u.DriftSet
@@ -288,6 +301,19 @@ func (h *Handlers) applyDNSDrift(outcomes []netOutcome) {
 func (h *Handlers) acceptNetBaselines(checkID string, all bool) (int, error) {
 	accepted := 0
 	for _, page := range h.store.GetPages() {
+		// Only a page that holds something to accept is written: a write bumps
+		// the page's revision and makes every other tab reload it.
+		pending := false
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			for _, c := range bm.Checks {
+				if c.DriftSet != "" && (all || c.ID == checkID) {
+					pending = true
+				}
+			}
+		}
+		if !pending {
+			continue
+		}
 		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
 			next := make([]Bookmark, len(current))
 			copy(next, current)

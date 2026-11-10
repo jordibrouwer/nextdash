@@ -137,18 +137,3 @@ func bookmarkURLPort(bm Bookmark) int {
 	}
 	return 0
 }
-
-// netOneOffPorts are the ports a one-off test of this bookmark may use: the
-// URL's own port and the ports of its stored checks. The request never names one.
-func netOneOffPorts(bm Bookmark) map[int]bool {
-	ports := map[int]bool{}
-	if p := bookmarkURLPort(bm); p > 0 {
-		ports[p] = true
-	}
-	for _, c := range bm.Checks {
-		if (c.Type == netTypeTCP || c.Type == netTypeTLS) && c.Port > 0 {
-			ports[c.Port] = true
-		}
-	}
-	return ports
-}

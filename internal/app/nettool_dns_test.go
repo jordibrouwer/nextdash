@@ -199,6 +199,9 @@ func TestNetDNSOutputLimits(t *testing.T) {
 	if !res.OK || len(res.DNS.Records) != netDNSMaxRecords {
 		t.Fatalf("want exactly %d of 36 records, got %d: %+v", netDNSMaxRecords, len(res.DNS.Records), res)
 	}
+	if len(res.DNS.full) != 36 {
+		t.Fatalf("the drift check must keep the whole answer, got %d of 36", len(res.DNS.full))
+	}
 	res = runFakeDNS(t, f, netGuard{allowLocal: true}, "long.test", NetCheck{Record: "TXT"})
 	if !res.OK || len(res.DNS.Records) != 1 {
 		t.Fatalf("%+v", res)

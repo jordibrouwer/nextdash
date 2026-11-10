@@ -2,7 +2,10 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/url"
+	"regexp"
 	"time"
 )
 
@@ -41,7 +44,14 @@ type DNSResult struct {
 	QueryMs  int         `json:"queryMs"`
 	Changed  bool        `json:"changed,omitempty"`
 	Diff     string      `json:"diff,omitempty"`
+	// full is the whole answer (up to netDNSMaxDrift) when Records was cut to
+	// netDNSMaxRecords for showing: the drift check fingerprints this, so a name
+	// with more records than are shown does not drift on every round.
+	full []DNSRecord
 }
+
+// netDNSMaxDrift bounds the answer the drift check keeps (and so the baseline).
+const netDNSMaxDrift = 500
 
 type TLSCert struct {
 	Subject   string   `json:"subject"`
@@ -148,6 +158,10 @@ type NetResult struct {
 	IP        string `json:"ip,omitempty"`
 	Port      int    `json:"port,omitempty"`
 	ViaTCP    bool   `json:"viaTcp,omitempty"`
+	// GuardAddr is where a blocked host points. Only the owner's own screen
+	// may show it: it is never part of Error, which reaches alerts, webhooks
+	// and the assistant.
+	GuardAddr string `json:"guardAddr,omitempty"`
 
 	TCP  *TCPResult        `json:"tcp,omitempty"`
 	Ping *PingStats        `json:"ping,omitempty"`
@@ -169,6 +183,10 @@ func (h *Handlers) runNetCheck(ctx context.Context, bm Bookmark, c NetCheck) Net
 	target, err := netCheckTarget(bm, c, h.store.GetSettings())
 	if err != nil {
 		res.Class, res.Error = netErrorClassOrOther(err), err.Error()
+		if errors.Is(err, errNetCustomHostOff) {
+			// A setting, not an outage: paused, never an alert.
+			res.Class = "guard"
+		}
 		return res
 	}
 	res.Host, res.Port = target.Host, target.Port
@@ -210,6 +228,8 @@ func (r NetResult) sample(maint bool) HealthSample {
 		Fail:   r.Class,
 		D:      truncateNetDetail(r.Detail),
 		L:      r.Secondary,
+		Slow:   r.Slow,
+		ViaTCP: r.ViaTCP,
 		Maint:  maint,
 	}
 }
@@ -227,9 +247,12 @@ func (g netGuard) netFail(ctx context.Context, res NetResult, err error, timeout
 	res.Class = netErrorClassOrOther(err)
 	switch res.Class {
 	case "guard":
-		res.Error = "The address guard blocks this host: it points at a private or reserved network."
+		// The sentence names no address: it reaches alerts and webhooks, and a
+		// guard refusal is a setting, not an outage. The address goes in its
+		// own field for the owner's screen.
+		res.Error = netGuardSentence
 		if addrs := g.explainBlocked(ctx, res.Host); len(addrs) > 0 {
-			res.Error = "The address guard blocks this host: it resolves to " + addrs[0].String() + ", a private or reserved address."
+			res.GuardAddr = addrs[0].String()
 		}
 	case "demo":
 		res.Error = "Network checks do not reach out in the demo."
@@ -241,8 +264,36 @@ func (g netGuard) netFail(ctx context.Context, res NetResult, err error, timeout
 		res.Error = "The connection was refused: nothing is listening there."
 	case "timeout":
 		res.Error = fmt.Sprintf("No answer within %d s.", int(timeout.Seconds()))
+	case "tls":
+		res.Error = "The secure connection failed: " + truncateNetDetail(netErrText(err))
 	default:
-		res.Error = "The check failed: " + truncateNetDetail(err.Error())
+		res.Error = "The check failed: " + truncateNetDetail(netErrText(err))
 	}
 	return res
+}
+
+// netGuardSentence is the whole message of a guard refusal.
+const netGuardSentence = "The address guard blocks this host: it resolves to a local address; allow local bookmarks to test it."
+
+// netURLQuery finds the query or fragment of an address inside a sentence.
+var netURLQuery = regexp.MustCompile(`(https?://[^\s"'?#]*)[?#][^\s"']*`)
+
+// netErrText is the text of an error as a result may carry it. A transport
+// error from net/http names the address it asked for, query and all, and a
+// credential may live in that query, so the *url.Error wrapper is taken off
+// (its cause says what went wrong) and any address left in the text loses its
+// query. Every failure sentence and every class decision reads this, never
+// err.Error().
+func netErrText(err error) string {
+	if err == nil {
+		return ""
+	}
+	for {
+		var ue *url.Error
+		if !errors.As(err, &ue) || ue.Err == nil {
+			break
+		}
+		err = ue.Err
+	}
+	return netURLQuery.ReplaceAllString(err.Error(), "$1?…")
 }

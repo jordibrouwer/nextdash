@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strings"
 	"time"
@@ -147,4 +148,75 @@ func mergeNetChecksInto(keeper *Bookmark, src Bookmark) {
 		have[c.ID] = true
 		keeper.Checks = append(keeper.Checks, c)
 	}
+}
+
+// checksOfMovedRow is the checks of the stored row a move comes from: the row
+// with this address on a page other than the one it moves to. A move is an add
+// followed by a delete, and the checks (and so their history) go with it. nil
+// when there is no such row.
+func checksOfMovedRow(store Store, movedFrom string, toPage int) []NetCheck {
+	key := canonicalBookmarkURLKey(movedFrom)
+	if key == "" {
+		return nil
+	}
+	for _, page := range store.GetPages() {
+		if page.ID == toPage {
+			continue
+		}
+		for _, bm := range store.GetBookmarksByPage(page.ID) {
+			if canonicalBookmarkURLKey(bm.URL) == key && len(bm.Checks) > 0 {
+				return append([]NetCheck(nil), bm.Checks...)
+			}
+		}
+	}
+	return nil
+}
+
+// netCheckLedger counts what the rest of the install holds: every check ID, and
+// how many of the checks are enabled, leaving out the row at (skipPage, skipIdx)
+// (skipIdx < 0 leaves out none). It reads the store, so it is never called from
+// inside a page mutation.
+func netCheckLedger(store Store, skipPage, skipIdx int) (taken map[string]bool, enabled int) {
+	taken = map[string]bool{}
+	for _, page := range store.GetPages() {
+		for i, bm := range store.GetBookmarksByPage(page.ID) {
+			if page.ID == skipPage && i == skipIdx {
+				continue
+			}
+			for _, c := range bm.Checks {
+				taken[c.ID] = true
+				if c.Enabled {
+					enabled++
+				}
+			}
+		}
+	}
+	return taken, enabled
+}
+
+// restoredNetChecks is what a bookmark that comes back from the trash may keep
+// of the checks it carries. The trash entry was reported by a tab, so the list
+// goes through the same rules as a saved one (a fresh ID each, the limits, the
+// ceiling, the credential and the custom host), with no stored row to inherit
+// from: the baseline and the drift are the server's and are not taken from it.
+// A list that over the ceiling comes back switched off rather than lost; one that
+// does not hold up at all is dropped. The caller holds h.netChecksMu.
+func (h *Handlers) restoredNetChecks(bm Bookmark) []NetCheck {
+	if len(bm.Checks) == 0 {
+		return nil
+	}
+	settings := h.store.GetSettings()
+	taken, enabled := netCheckLedger(h.store, 0, -1)
+	out, err := normalizeNetChecks(bm.Checks, nil, bm, settings, taken, enabled)
+	if errors.Is(err, errNetCheckCap) {
+		off := append([]NetCheck(nil), bm.Checks...)
+		for i := range off {
+			off[i].Enabled = false
+		}
+		out, err = normalizeNetChecks(off, nil, bm, settings, taken, enabled)
+	}
+	if err != nil || len(out) == 0 {
+		return nil
+	}
+	return out
 }

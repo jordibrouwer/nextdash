@@ -100,6 +100,30 @@ func TestIsAllowedDialIP(t *testing.T) {
 	}
 }
 
+// Non-public ranges the standard predicates miss (tailnet, "this network",
+// reserved, translators) need allowLocal, like a private address.
+func TestIsAllowedDialIPNonPublicRanges(t *testing.T) {
+	t.Parallel()
+	for _, s := range []string{
+		"100.64.1.1", "100.127.255.254", "0.0.0.1", "240.0.0.1", "255.255.255.255",
+		"198.18.0.1", "198.19.255.255", "64:ff9b::a00:1", "2002:a00:1::1",
+		"::127.0.0.1", "::a00:1", "::ffff:100.64.1.1",
+	} {
+		a := netip.MustParseAddr(s)
+		if isAllowedDialIP(a, false) {
+			t.Errorf("%s must be refused without allowLocal", s)
+		}
+		if !isAllowedDialIP(a, true) {
+			t.Errorf("%s must be allowed with allowLocal", s)
+		}
+	}
+	for _, s := range []string{"100.63.255.255", "100.128.0.1", "198.17.0.1", "198.20.0.1", "8.8.8.8", "64:ff9b::808:808", "2002:808:808::1", "2606:4700::1111"} {
+		if !isAllowedDialIP(netip.MustParseAddr(s), false) {
+			t.Errorf("%s is public and must stay allowed", s)
+		}
+	}
+}
+
 func TestValidateBookmarkURLAllowsLocalWhenEnabled(t *testing.T) {
 	t.Parallel()
 

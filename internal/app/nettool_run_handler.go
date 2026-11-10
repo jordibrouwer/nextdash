@@ -86,23 +86,12 @@ func (h *Handlers) netRunOne(ctx context.Context, bm Bookmark, c NetCheck) NetRe
 	return h.runNetCheck(ctx, bm, c)
 }
 
-// runNetTestFor is the one way a one-off test runs, for the route and for MCP,
-// so the budget per client and the one-run-per-host rule hold for both. The
+// runNetTestForSpec is the one way a one-off test runs, for the route and for
+// MCP, so the budget per client and the one-run-per-host rule hold for both. The
 // bookmark is found by page and URL; the check is one of that bookmark's own,
-// or a temporary one that carries only a type, which makes its target the
-// bookmark's host and the port of its address.
-func (h *Handlers) runNetTestFor(ctx context.Context, clientKey string, pageID int, url, typ, checkID string) (NetResult, int, error) {
-	return h.runNetTestForRecord(ctx, clientKey, pageID, url, typ, checkID, "")
-}
-
-// runNetTestForRecord is runNetTestFor with the record type of a one-off DNS
-// test (A when empty). The record is ignored for a stored check, which has its own.
-func (h *Handlers) runNetTestForRecord(ctx context.Context, clientKey string, pageID int, url, typ, checkID, record string) (NetResult, int, error) {
-	return h.runNetTestForSpec(ctx, clientKey, pageID, url, typ, checkID, record, netOneOffJSON{})
-}
-
-// runNetTestForSpec is runNetTestForRecord with the fields of a one-off JSON
-// test. They are ignored for a stored check and for any other type.
+// or a temporary one that carries only a type (and, for DNS, the record, for JSON
+// its fields), which makes its target the bookmark's host and the port of its
+// address. The record and the JSON fields are ignored for a stored check.
 func (h *Handlers) runNetTestForSpec(ctx context.Context, clientKey string, pageID int, url, typ, checkID, record string, oneOff netOneOffJSON) (NetResult, int, error) {
 	settings := h.store.GetSettings()
 	if !settings.NetToolsEnabled {

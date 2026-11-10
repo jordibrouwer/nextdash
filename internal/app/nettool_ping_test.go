@@ -25,6 +25,7 @@ type fakeICMP struct {
 	deadline time.Time
 	drop     func(seq int) bool
 	from     net.Addr
+	keepID   bool // reply with the request's own echo ID (a raw socket)
 }
 
 type fakeReply struct {
@@ -44,7 +45,11 @@ func (f *fakeICMP) WriteTo(b []byte, dst net.Addr) (int, error) {
 	if f.drop != nil && f.drop(echo.Seq) {
 		return len(b), nil
 	}
-	reply := icmp.Message{Type: ipv4.ICMPTypeEchoReply, Body: &icmp.Echo{ID: echo.ID + 1, Seq: echo.Seq, Data: echo.Data}}
+	replyID := echo.ID + 1
+	if f.keepID {
+		replyID = echo.ID
+	}
+	reply := icmp.Message{Type: ipv4.ICMPTypeEchoReply, Body: &icmp.Echo{ID: replyID, Seq: echo.Seq, Data: echo.Data}}
 	wire, _ := reply.Marshal(nil)
 	peer := f.from
 	if peer == nil {
@@ -232,5 +237,42 @@ func TestNetPingIgnoresForeignReplies(t *testing.T) {
 	rtts, err := (netGuard{}).icmpEcho(context.Background(), netip.MustParseAddr("93.184.216.34"), 2, 40*time.Millisecond)
 	if err != nil || len(rtts) != 0 {
 		t.Fatalf("rtts %v err %v", rtts, err)
+	}
+}
+
+// A raw socket hears every echo reply on the machine, so a reply must carry
+// our echo ID there; a datagram socket has its ID rewritten and only the
+// sequence number and the source can be matched.
+func TestNetICMPRawMatchesEchoID(t *testing.T) {
+	addr := netip.MustParseAddr("93.184.216.34")
+	rawOnly := func(fake *fakeICMP) func(string, string) (icmpPacketConn, error) {
+		return func(network, _ string) (icmpPacketConn, error) {
+			if network == "udp4" {
+				return nil, &net.OpError{Op: "listen", Err: syscall.EPERM}
+			}
+			return fake, nil
+		}
+	}
+	// Raw, the reply has another ID (someone else's ping): not ours.
+	foreign := newFakeICMP(nil)
+	useFakeICMP(t, rawOnly(foreign))
+	rtts, _ := netGuard{}.icmpEcho(context.Background(), addr, 2, 40*time.Millisecond)
+	if len(rtts) != 0 {
+		t.Fatalf("a raw reply with a foreign echo ID was counted: %v", rtts)
+	}
+	// Raw, the reply keeps our ID: counted.
+	own := newFakeICMP(nil)
+	own.keepID = true
+	useFakeICMP(t, rawOnly(own))
+	rtts, _ = netGuard{}.icmpEcho(context.Background(), addr, 2, 40*time.Millisecond)
+	if len(rtts) != 2 {
+		t.Fatalf("a raw reply with our echo ID was not counted: %v", rtts)
+	}
+	// Datagram: the kernel rewrote the ID, the reply still counts.
+	dgram := newFakeICMP(nil)
+	useFakeICMP(t, func(string, string) (icmpPacketConn, error) { return dgram, nil })
+	rtts, _ = netGuard{}.icmpEcho(context.Background(), addr, 2, 40*time.Millisecond)
+	if len(rtts) != 2 {
+		t.Fatalf("a datagram reply with a rewritten ID was not counted: %v", rtts)
 	}
 }
