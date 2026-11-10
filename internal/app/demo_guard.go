@@ -93,6 +93,8 @@ var demoDeniedWrites = []string{
 	"/api/health/retest-all", "/api/health/auto-heal-apply", "/api/health/check-url",
 	"/api/health/archive-save", "/api/health/archive-settings", "/api/archives/capture", "/api/archives/",
 	"/api/tags/lookup",
+	// A one-off network test reaches out from the server.
+	"/api/net/run",
 	"/mcp",
 	// Secrets.
 	"/api/health/credentials", "/api/web-search/brave-key", "/api/ai/key",

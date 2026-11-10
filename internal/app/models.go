@@ -1159,7 +1159,7 @@ type Settings struct {
 	BmViewUsageDays    int      `json:"bmViewUsageDays"`    // Days the Usage column covers: 7/14/30
 	BmViewRail         string   `json:"bmViewRail"`         // The rail on the left: open/folded
 	BmViewRailBlocks   []string `json:"bmViewRailBlocks"`   // Rail blocks shown (null = all, [] = none)
-	BmViewPanelTab     string   `json:"bmViewPanelTab"`     // Side panel opens on: last/details/health/usage
+	BmViewPanelTab     string   `json:"bmViewPanelTab"`     // Side panel opens on: last/details/health/usage/tests
 	BmViewCloseOutside bool     `json:"bmViewCloseOutside"` // A click beside the side panel closes it (default on)
 	BmViewPanelWidth   string   `json:"bmViewPanelWidth"`   // Side panel width: normal/wide
 	BmViewClick        string   `json:"bmViewClick"`        // A click on a row: panel/select
@@ -3864,7 +3864,7 @@ var bmViewChoices = map[string][]string{
 	"address":     {"full", "domain", "hidden"},
 	"rowHeight":   {"compact", "comfortable"},
 	"rail":        {"open", "folded"},
-	"panelTab":    {"last", "details", "health", "usage"},
+	"panelTab":    {"last", "details", "health", "usage", "tests"},
 	"panelWidth":  {"normal", "wide"},
 	"click":       {"panel", "select"},
 	"dblClick":    {"open", "edit"},
