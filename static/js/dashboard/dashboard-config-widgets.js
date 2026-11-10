@@ -3329,6 +3329,7 @@
             'beszel-storage': 'The disks of every Beszel system, fullest first.',
             adguard: 'AdGuard Home at a glance — queries, how much is blocked, and the top domains and clients.',
             pihole: 'Pi-hole at a glance — queries, how much is blocked, the top domains and clients, query types and upstreams.',
+            jellystat: 'Jellystat at a glance — recent plays, the most viewed and the most active, with totals — each part optional.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',

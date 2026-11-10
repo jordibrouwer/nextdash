@@ -49,6 +49,8 @@ class DashboardRenderCore {
         // A DNS blocker counts live, but its day-strip changes by the hour.
         adguard: { configKey: 'ttl', floor: 30, fallback: 60 },
         pihole: { configKey: 'ttl', floor: 30, fallback: 60 },
+        // Jellystat's figures move with plays, not by the second.
+        jellystat: { configKey: 'ttl', floor: 60, fallback: 300 },
         // Reads the monitor loop's history, which only moves as fast as the checks run.
         nettests: { configKey: 'ttl', floor: 30, fallback: 60 },
         // nextDash's own record: a beat is as old as its pace, so a half minute is fresh enough.
@@ -955,7 +957,7 @@ class DashboardRenderCore {
      */
     widgetCanRefreshNow(widget) {
         if (!widget?.id || !this.widgetPollSpec(widget)) return false;
-        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole)/
+        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole|jellystat)/
             .test(String(widget.type));
     }
 
@@ -1225,6 +1227,7 @@ class DashboardRenderCore {
         'beszel-storage': 'Beszel storage',
         adguard: 'AdGuard Home',
         pihole: 'Pi-hole',
+        jellystat: 'Jellystat',
         nettests: 'Network tests',
         glances: 'Glances',
         'jellyfin-playing': 'Jellyfin — now playing',

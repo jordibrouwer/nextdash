@@ -15463,7 +15463,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown']],
-        ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
+        ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'jellystat', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
     renderPagesTags() {
@@ -17797,7 +17797,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'glances', 'nettests', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'jellystat', 'glances', 'nettests', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -18012,6 +18012,32 @@ class DashboardConfig {
 
     static ADGUARD_SETTINGS = [DashboardConfig.DNS_LOOK, DashboardConfig.dnsParts(false), ...DashboardConfig.DNS_TAIL];
     static PIHOLE_SETTINGS = [DashboardConfig.DNS_LOOK, DashboardConfig.dnsParts(true), ...DashboardConfig.DNS_TAIL];
+
+    /*
+     * Jellystat, mirroring jellystatFields in widgets_jellystat.go. Each topic
+     * is its own switch; the libraries come from Connect (MEDIA_SERVICES).
+     */
+    static JELLYSTAT_SETTINGS = [
+        {
+            key: 'topics', kind: 'checkset', label: ['config.widgetJellystatTopics', 'Topics to show'],
+            defaults: ['activity', 'items', 'users', 'totals'],
+            options: [
+                ['activity', ['config.widgetJellystatTopicActivity', 'Recent plays']],
+                ['items', ['config.widgetJellystatTopicItems', 'Most viewed']],
+                ['users', ['config.widgetJellystatTopicUsers', 'Most active people']],
+                ['totals', ['config.widgetJellystatTopicTotals', 'Totals line']],
+            ],
+        },
+        { key: 'days', kind: 'int', min: 1, max: 365, label: ['config.widgetJellystatDays', 'Period (days)'] },
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['open', ['config.widgetMediaClickOpen', 'Opens it in the service']],
+              ['detail', ['config.widgetMediaClickDetail', 'Shows details here first']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
+        { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -18355,6 +18381,7 @@ class DashboardConfig {
         'beszel-storage': DashboardConfig.BESZEL_STORAGE_SETTINGS,
         adguard: DashboardConfig.ADGUARD_SETTINGS,
         pihole: DashboardConfig.PIHOLE_SETTINGS,
+        jellystat: DashboardConfig.JELLYSTAT_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

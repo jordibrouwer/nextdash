@@ -215,6 +215,8 @@ type MediaResult struct {
 	Counts map[string]int `json:"counts,omitempty"`
 	// Dns is the figures of a DNS blocker tile (AdGuard Home, Pi-hole).
 	Dns *MediaDns `json:"dns,omitempty"`
+	// Stats is what a Jellystat tile draws.
+	Stats *MediaStats `json:"stats,omitempty"`
 	// Controls says this reader may switch things. Set per request, after
 	// the shared cache: never stored with the answer.
 	Controls bool `json:"controls,omitempty"`
