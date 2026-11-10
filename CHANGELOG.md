@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.28.0 — 10 November 2026](#v1280--10-november-2026)
 - [v1.27.4 — 9 November 2026](#v1274--9-november-2026)
 - [v1.27.3 — 9 November 2026](#v1273--9-november-2026)
 - [v1.27.2 — 9 November 2026](#v1272--9-november-2026)
@@ -138,6 +139,47 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.28.0 — 10 November 2026
+
+Network checks on a bookmark. A new **Tests** tab in the Bookmarks view's side panel watches the bookmark's own host with six kinds of check (TCP, Ping, DNS, TLS, HTTP detail and JSON), each with its own schedule, history and alerts, or runs one test right now and saves nothing. The checks show as chips on the dashboard rows, in the bell, in a new Network tests widget, on the status page and through five MCP tools. Three smaller changes ride along: the weather beside the clock rule is larger, the bell is off on a phone, and a new container's notice is a row in the bell.
+
+### Network checks
+
+- **new — A Tests tab on every bookmark.** The side panel of the Bookmarks view has a fourth tab, **Tests** (`4`; `1`/`2`/`3`/`4` and `[`/`]` switch tabs). A bookmark can carry up to six checks. Three tiles (checks, down, up 24 h) give the picture; each check is an accordion row with its state, cadence, last result, uptime strip and sparkline, and for a failure a block that says what to do about it. The tab carries a dot while a scheduled check is down, and the Health tab says *n checks · m down* with a link to it (`dashboard-config-bookmarks-tests.js`, `dashboard-config-bookmarks-net.js`, `net-checks-model.js`, `net-tools.css`).
+- **new — Six kinds of check.** **TCP** (does the port connect, and how fast), **Ping** (1 to 10 echoes; down from a set loss), **DNS** (A, AAAA, CNAME, MX, TXT, NS or CAA, with an optional expected value), **TLS** (chain, version, days left; a **Warning** at or below a number of days, with expiry notices on a ladder derived from it), **HTTP detail** (one GET with the timeline of DNS, connect, TLS, first byte and download as a bar, the redirect chain and the headers) and **JSON** (one value in an answer, read by a path such as `services[name=api].up`, with *is equal to*, *is not equal to*, *is more than*, *is less than*, *contains* or *exists*). A check reads *Up*, *Down*, *Warning*, *Slow*, *via TCP* or *Not measured*; *Not measured* is no outage and sends nothing (`nettool_*.go`).
+- **new — Add check, in three steps.** **1 · Type**, **2 · What to check**, **3 · Planning and alerts**, with a **What this does** text in plain words and **Test first** to run the form once before saving. Planning is *Like the bookmark*, an interval of your own (5 minutes to 24 hours) or **Off**; time-out 1 to 10 seconds; **Slow from** in milliseconds. A check has its own alert, uses the bookmark's retries, quiet hours and maintenance windows, and a webhook or push message names the check. **Muted** keeps the history and sends nothing.
+- **new — Run once.** Sends one test from the server right now: nothing is saved and nothing alerts, but the same safety guard applies. **Save as scheduled check…** turns what you just tested into a check. More than six tests a minute from one client are refused (`nettool_run_handler.go`).
+- **new — DNS says when the records change.** The first run stores the record set as a baseline; a later, different set (order and TTL ignored) shows as **DNS changed** with the difference (`MX +mail2.example.org`) and as a quiet row in the bell with **Tests** and **Accept**. The check stays up until you accept. It starts on for MX, TXT, NS, CAA and CNAME and off for A and AAAA, which often rotate behind a CDN. The resolver is *System*, **1.1.1.1** or **8.8.8.8** (no free address, which would turn the server into an open DNS proxy); a fixed resolver shows **DNSSEC validated** or **DNSSEC not validated** for information only.
+- **new — Checks on dashboard rows.** A bookmark row shows its checks as chips (type and a status dot) in the tag cluster: problems first, then the tags, the rest as **`+n`** with a popover. A click on a chip opens the Tests tab; the row menu has **Network checks** for the keyboard. **Config → Monitoring → Checks → Check status on dashboard rows** chooses *Only problems* (the default), *Always* or *Never*. The Bookmarks view gains a **Network tests** column filter and a **Check type** filter with counts, between Health and Pages (`dashboard-config-net-tools.js`).
+- **new — Checks in the bell and on the status page.** A scheduled check that is down, and one that came back within 24 hours, sit in the bell with **Health** and **Mute** (`net-bell-source.js`). A service on the status page can list the network checks of its bookmark, ticked per service under **Config → Status page**; the worst one decides, and a certificate close to expiry counts as degraded.
+- **new — A Network tests widget.** Shows checks you already have, from what is measured; the widget runs nothing. Three looks (**Rows**, **Tiles**, **Heartbeat**), order *Problems first* or *Name*, 1 to 20 rows, refresh every 30 to 3600 seconds (60 by default), up to 40 checks picked from a table. There is no free host field. A removed check reads *check removed* (`dashboard-widget-net.js`, `nettool_dashboard.go`).
+- **new — Config → Monitoring → Checks.** A **Network checks** panel with the master switch, **Ping** (*Auto: ICMP, with TCP as the fallback*, *TCP only* or *Off*), **Let a check name another host than its bookmark** (off), **Most scheduled checks** (200 by default, up to 1000) and the dashboard-row setting. A status block says whether ICMP works, is blocked (with the snippet to copy), has not been tried yet or is off, and a table lists every check in the install; tick rows to turn several on or off at once.
+- **new — Five MCP tools.** `run_network_test`, `list_net_checks`, `get_net_check`, `set_net_check` and `delete_net_check`, behind their own switch **Network tests** under Data & backups → Webhooks → MCP access, off by default. No tool takes a host or a port, so a client cannot turn them into a scanner; running, adding, changing and deleting need `NEXTDASH_WRITE_TOKEN` when it is set (`nettool_mcp.go`).
+- **new — Help cards in the tab.** A small **ℹ** beside the headings, the Run once accordion and the form's Type, Planning, Time-out, Slow from and Alerts fields opens a short card; `Esc` or a click outside closes it (`dashboard-config-bookmarks-help.js`).
+- **new — A blocked host says where it points, to you.** With the address guard refusing a host, your own Tests tab adds *Resolves to 192.168.1.20*; a notice, webhook or MCP answer never carries the address. The check shows **Not measured**, not Down.
+- **new — Ping in Docker.** Ping needs ICMP. When the container cannot send it, **Ping** falls back to TCP and shows **via TCP**; the Tests tab and Config say so and show `net.ipv4.ping_group_range: "0 2147483647"` to copy. Both compose files and `templates/nextdash.xml` carry the snippet, commented out.
+- **fix — Findings from the review of the network tools.** The checks sit behind the same address guard as previews and favicons, with the resolved address pinned, and refuse carrier-grade NAT (so Tailscale addresses), `0.0.0.0/8`, `198.18.0.0/15`, `240.0.0.0/4` and IPv6 forms that embed a non-public IPv4 address while local addresses are off. A credential stored on the bookmark goes only to that bookmark's scheme and host:port, never after a redirect elsewhere, and never into a result, sample, the activity log or an MCP answer; a value under a path that names a token, key, secret or password shows as `[hidden]`. A page save, import, template or restore never takes checks from what a browser sends. The demo runs no test; its checks are seeded.
+
+### Bell
+
+- **new — A new container's notice is a row in the bell.** *Undo*, *Move* and *Done* sit on the row, which lists the adds for as long as they are unacknowledged. It no longer puts a card in the corner, so it works during the quick start and on a phone too. The new tiles are brought on screen before the row names them, and a failed *Undo* shows a toast (`app-discovery-notice.js`).
+- **fix — The analytics question is a corner card again.** It was a quiet row in the bell. It shows a few seconds after the What's new window closes, and not while the quick-start card is on screen. Closing it with × or reading the detail without deciding snoozes it (3, 14, then 45 days), and being shown starts a one-day cooldown, so a reload past an untouched card does not put it back. Nothing shows when analytics is on, the question is answered or `DISABLE_TELEMETRY` is set (`analytics-notice.js`).
+- **fix — No bell on a phone.** Under 768 px the bell is off; tablet and desktop keep it (`notification-bell.css`).
+
+### Appearance
+
+- **new — The weather is larger beside the clock rule in the classic header.** The greeting stands over a row of icon and large temperature, with the day and *place · condition* in two small lines beside them, in the side block the three lines already used, so the pages keep their width. In a narrower header the place and condition go first (under 1300 px), then the greeting and the day (under 1050 px); the icon and temperature stay (`dashboard-date-weather.js`, `dashboard.css`).
+
+### Keyboard
+
+- **fix — The key legends say *show/hide mode strip*.** The legend key for the mode strip read *mode strip*, which did not say that it switches it (`keyboard-view-legends.js`; the same words in the form legend).
+
+### Docs
+
+- **docs — The manual has a chapter on the network checks.** MANUAL §11.14 covers the kinds, states, planning, DNS, TLS, HTTP detail, JSON, credentials, Ping in Docker, the Config panel and the safety rules; the Bookmarks view, widget, status page and MCP chapters point to it. The network texts are in Dutch, German, French, Spanish and Chinese too. `nextdash.xml` carries the new text.
 
 ---
 
