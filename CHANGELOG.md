@@ -168,8 +168,11 @@ Network checks on a bookmark. A new **Tests** tab in the Bookmarks view's side p
 - **new — A new container's notice is a row in the bell.** *Undo*, *Move* and *Done* sit on the row, which lists the adds for as long as they are unacknowledged. It no longer puts a card in the corner, so it works during the quick start and on a phone too. The new tiles are brought on screen before the row names them, and a failed *Undo* shows a toast (`app-discovery-notice.js`).
 - **fix — The analytics question is a corner card again.** It was a quiet row in the bell. It shows a few seconds after the What's new window closes, and not while the quick-start card is on screen. Closing it with × or reading the detail without deciding snoozes it (3, 14, then 45 days), and being shown starts a one-day cooldown, so a reload past an untouched card does not put it back. Nothing shows when analytics is on, the question is answered or `DISABLE_TELEMETRY` is set (`analytics-notice.js`).
 - **fix — No bell on a phone.** Under 768 px the bell is off; tablet and desktop keep it (`notification-bell.css`).
+- **new — A tip in the bell about the network tests.** Every install, new or old, gets one row in the Tips group: *Test your services from nextDash*, saying what the Tests tab checks (a port, a ping, DNS records, a certificate, an HTTP answer, a value in a JSON answer) and that a test can run once or on a schedule. **Open Tests** opens the Tests tab of a bookmark that has a check, or the Bookmarks view when none has, and reads the row; it stays until read and is left out while the network checks are off (`net-tests-notice.js`, `tests/net-tests-notice.spec.js`).
 
 ### Appearance
+
+- **fix — The side panel of the Bookmarks view follows the theme on every tab.** Its accordions, tabs, tiles, chips and fields were painted in the page's darkest colour, opaque, and read as black holes on a Signature material, most on the new Tests tab but also on Details, Health and Usage. The panel stands in a frame beside the view, outside `.lvs`, so the rule of v1.27.4 that turns the two dark colours into the material's field fill never reached it; `.lvs-drawer` is now named there too (`theme-overlays.css`). Classic is unchanged.
 
 - **new — The weather is larger beside the clock rule in the classic header.** The greeting stands over a row of icon and large temperature, with the day and *place · condition* in two small lines beside them, in the side block the three lines already used, so the pages keep their width. In a narrower header the place and condition go first (under 1300 px), then the greeting and the day (under 1050 px); the icon and temperature stay (`dashboard-date-weather.js`, `dashboard.css`).
 
@@ -179,7 +182,7 @@ Network checks on a bookmark. A new **Tests** tab in the Bookmarks view's side p
 
 ### Docs
 
-- **docs — The manual has a chapter on the network checks.** MANUAL §11.14 covers the kinds, states, planning, DNS, TLS, HTTP detail, JSON, credentials, Ping in Docker, the Config panel and the safety rules; the Bookmarks view, widget, status page and MCP chapters point to it. The network texts are in Dutch, German, French, Spanish and Chinese too. `nextdash.xml` carries the new text.
+- **docs — The manual has a chapter on the network checks.** MANUAL §11.14 covers the kinds, states, planning, DNS, TLS, HTTP detail, JSON, credentials, Ping in Docker, the Config panel and the safety rules; the Bookmarks view, widget, status page and MCP chapters point to it. The network texts are in Dutch, German, French, Spanish and Chinese too. `nextdash.xml` carries the new text. Five new pictures show the Tests tab (a check, a certificate close to expiry, Add check and one Run once with HTTP detail) and the Network checks panel under Config → Monitoring → Checks; every other picture of the manual and the README was retaken for the new header and the side panel.
 
 ---
 
