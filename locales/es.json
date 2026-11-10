@@ -11642,7 +11642,10 @@
     "netMute": "Silenciar",
     "netDriftOne": "{name} · DNS cambiado: {diff}",
     "netDriftMany": "Los registros DNS han cambiado en {count} comprobaciones",
-    "netAccept": "Aceptar"
+    "netAccept": "Aceptar",
+    "netTipTitle": "Prueba tus servicios desde nextDash",
+    "netTipText": "Novedad: pruebas de red. La pestaña Pruebas de un marcador comprueba un puerto, un ping, registros DNS, un certificado, una respuesta HTTP o un valor en una respuesta JSON. Ejecuta una prueba ahora o prográmala con historial y alertas.",
+    "netTipOpen": "Abrir Pruebas"
   },
   "pageHelp": {
     "bookmarks": {

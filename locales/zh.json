@@ -11642,7 +11642,10 @@
     "netAccept": "接受",
     "feedWatchOne": "来自已关注订阅源的 {count} 条新内容",
     "feedWatchMany": "来自 {sites} 个已关注订阅源的 {count} 条新内容",
-    "feedWatchRead": "阅读"
+    "feedWatchRead": "阅读",
+    "netTipTitle": "在 nextDash 中测试你的服务",
+    "netTipText": "新功能：网络测试。书签的测试标签页可以检查端口、Ping、DNS 记录、证书、HTTP 响应，或 JSON 响应中的某个值。可以立即运行一次，也可以安排计划，并保留历史记录和提醒。",
+    "netTipOpen": "打开测试"
   },
   "pageHelp": {
     "bookmarks": {

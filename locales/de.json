@@ -11642,7 +11642,10 @@
     "netAccept": "Übernehmen",
     "feedWatchOne": "{count} neu aus einem beobachteten Feed",
     "feedWatchMany": "{count} neu aus {sites} beobachteten Feeds",
-    "feedWatchRead": "Lesen"
+    "feedWatchRead": "Lesen",
+    "netTipTitle": "Teste deine Dienste von nextDash aus",
+    "netTipText": "Neu: Netzwerktests. Der Tab Tests eines Lesezeichens prüft einen Port, einen Ping, DNS-Einträge, ein Zertifikat, eine HTTP-Antwort oder einen Wert in einer JSON-Antwort. Führe jetzt einen Test aus oder plane ihn mit Verlauf und Benachrichtigungen.",
+    "netTipOpen": "Tests öffnen"
   },
   "pageHelp": {
     "bookmarks": {

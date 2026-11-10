@@ -11642,7 +11642,10 @@
     "netAccept": "Accept",
     "feedWatchOne": "{count} new from a watched feed",
     "feedWatchMany": "{count} new from {sites} watched feeds",
-    "feedWatchRead": "Read"
+    "feedWatchRead": "Read",
+    "netTipTitle": "Test your services from nextDash",
+    "netTipText": "New: network tests. A bookmark’s Tests tab checks a port, a ping, DNS records, a certificate, an HTTP answer or a value in a JSON answer. Run one test now, or schedule it with a history and alerts.",
+    "netTipOpen": "Open Tests"
   },
   "pageHelp": {
     "bookmarks": {

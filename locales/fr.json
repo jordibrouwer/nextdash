@@ -11642,7 +11642,10 @@
     "netAccept": "Accepter",
     "feedWatchOne": "{count} nouveau d’un flux suivi",
     "feedWatchMany": "{count} nouveaux de {sites} flux suivis",
-    "feedWatchRead": "Lire"
+    "feedWatchRead": "Lire",
+    "netTipTitle": "Testez vos services depuis nextDash",
+    "netTipText": "Nouveau : les tests réseau. L’onglet Tests d’un favori vérifie un port, un ping, des enregistrements DNS, un certificat, une réponse HTTP ou une valeur dans une réponse JSON. Lancez un test tout de suite ou planifiez-le avec historique et alertes.",
+    "netTipOpen": "Ouvrir Tests"
   },
   "pageHelp": {
     "bookmarks": {

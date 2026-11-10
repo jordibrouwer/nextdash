@@ -11642,7 +11642,10 @@
     "healthView": "Bekijken",
     "feedWatchOne": "{count} nieuw van een gevolgde feed",
     "feedWatchMany": "{count} nieuw van {sites} gevolgde feeds",
-    "feedWatchRead": "Lezen"
+    "feedWatchRead": "Lezen",
+    "netTipTitle": "Test je diensten vanuit nextDash",
+    "netTipText": "Nieuw: netwerktests. Het tabblad Tests van een bookmark controleert een poort, een ping, DNS-records, een certificaat, een HTTP-antwoord of een waarde in een JSON-antwoord. Voer nu één test uit, of plan hem in met geschiedenis en meldingen.",
+    "netTipOpen": "Tests openen"
   },
   "pageHelp": {
     "bookmarks": {
