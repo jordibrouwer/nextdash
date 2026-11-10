@@ -231,6 +231,7 @@
         healthInbox: ['statusHealth', 'Looking at Health and the Inbox…'],
         containersRead: ['statusContainers', 'Looking at your containers…'],
         settingsOverview: ['statusSettings', 'Looking at your settings…'],
+        netTools: ['statusNet', 'Looking at your network checks…'],
         docs: ['statusDocs', 'Looking in the manual…'],
     };
 
@@ -241,6 +242,8 @@
         add_bookmark: ['toolAdd', 'Add a bookmark'],
         create_category: ['toolCreateCategory', 'Create a category'],
         rename_category: ['toolRenameCategory', 'Rename a category'],
+        set_net_check: ['toolSetNetCheck', 'Add or change a network check'],
+        delete_net_check: ['toolDeleteNetCheck', 'Delete a network check'],
     };
 
     function toolWords(proposal) {

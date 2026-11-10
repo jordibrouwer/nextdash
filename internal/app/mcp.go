@@ -115,6 +115,7 @@ const (
 	mcpGroupContainersRead    = "containersRead"
 	mcpGroupContainersControl = "containersControl"
 	mcpGroupSettingsOverview  = "settingsOverview"
+	mcpGroupNetTools          = "netTools"
 )
 
 // mcpToolGroup says which switch a tool belongs to; "" means always on.
@@ -130,6 +131,8 @@ func mcpToolGroup(name string) string {
 		return mcpGroupSettingsOverview
 	case "container_action":
 		return mcpGroupContainersControl
+	case "run_network_test", "list_net_checks", "get_net_check", "set_net_check", "delete_net_check":
+		return mcpGroupNetTools
 	}
 	return ""
 }
@@ -148,6 +151,8 @@ func mcpGroupEnabled(s Settings, group string) bool {
 		return s.MCPContainersControl
 	case mcpGroupSettingsOverview:
 		return s.MCPSettingsOverview
+	case mcpGroupNetTools:
+		return s.MCPNetTools
 	}
 	return false
 }
@@ -316,6 +321,7 @@ func mcpAllToolDefinitions() []map[string]any {
 	all = append(all, mcpQueryContainersDefinitions()...)
 	all = append(all, mcpSettingsOverviewDefinitions()...)
 	all = append(all, mcpAppStatusDefinitions()...)
+	all = append(all, mcpNetToolsDefinitions()...)
 	return append(all, mcpContainersControlDefinitions()...)
 }
 
@@ -582,6 +588,16 @@ func (h *Handlers) mcpCallTool(r *http.Request, params json.RawMessage) (map[str
 		return mcpToolResult(h.mcpContainerLogs(r, body.Arguments)), nil
 	case "container_action":
 		return mcpToolResult(h.mcpContainerAction(r, body.Arguments)), nil
+	case "run_network_test":
+		return mcpToolResult(h.mcpRunNetworkTest(r, body.Arguments)), nil
+	case "list_net_checks":
+		return mcpToolResult(h.mcpListNetChecks(r, body.Arguments)), nil
+	case "get_net_check":
+		return mcpToolResult(h.mcpGetNetCheck(r, body.Arguments)), nil
+	case "set_net_check":
+		return mcpToolResult(h.mcpSetNetCheck(r, body.Arguments)), nil
+	case "delete_net_check":
+		return mcpToolResult(h.mcpDeleteNetCheck(r, body.Arguments)), nil
 	}
 	return nil, &jsonRPCError{Code: jsonRPCInvalidParams, Message: "Unknown tool: " + body.Name}
 }

@@ -24,6 +24,7 @@
         ['mcpContainersRead', 'mcpGroupContainersRead', 'Containers: read'],
         ['mcpContainersControl', 'mcpGroupContainersControl', 'Containers: control'],
         ['mcpSettingsOverview', 'mcpGroupSettingsOverview', 'Settings overview: read'],
+        ['mcpNetTools', 'mcpGroupNetTools', 'Network tests'],
     ];
 
     Object.assign(global.DashboardConfig.prototype, {

@@ -2273,6 +2273,8 @@
                 note: 'See the containers and their state. Their logs need the write token when one is set.', noteKey: 'mcpGroupContainersReadNote' },
             { key: 'mcpSettingsOverview', label: 'Settings overview: read', labelKey: 'mcpGroupSettingsOverview',
                 note: 'See how nextDash is configured and how it is doing (a safe subset, never keys or addresses).', noteKey: 'mcpGroupSettingsOverviewNote' },
+            { key: 'mcpNetTools', label: 'Network tests', labelKey: 'mcpGroupNetTools',
+                note: 'Run a TCP or ping test against a bookmark\'s own host and manage its checks. Sends traffic from this server; adding, changing and deleting checks needs the write token when one is set.', noteKey: 'mcpGroupNetToolsNote' },
         ];
         const control = {
             key: 'mcpContainersControl', label: 'Containers: control', labelKey: 'mcpGroupContainersControl',
@@ -2948,7 +2950,7 @@
             return;
         }
         // The MCP tool groups: plain booleans, saved as they are ticked.
-        if (['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpSettingsOverview', 'mcpContainersControl'].includes(name)) {
+        if (['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpSettingsOverview', 'mcpNetTools', 'mcpContainersControl'].includes(name)) {
             d.settings[name] = value;
             void this.saveSettingsWithFeedback();
             return;

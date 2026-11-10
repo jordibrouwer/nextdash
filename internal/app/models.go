@@ -884,6 +884,10 @@ type Settings struct {
 	// MCPSettingsOverview lets get_settings_overview describe this install's
 	// configuration: an allowlisted subset, never keys or addresses.
 	MCPSettingsOverview bool `json:"mcpSettingsOverview"`
+	// MCPNetTools turns on the network test tools: a one-off test of a
+	// bookmark's host and the management of its checks. Off by default, like
+	// every group, since the first of them sends traffic from this server.
+	MCPNetTools bool `json:"mcpNetTools"`
 	// The in-app assistant. The key lives in ai-secrets.json, never here.
 	AIEnabled         bool   `json:"aiEnabled"`
 	AIProvider        string `json:"aiProvider"`

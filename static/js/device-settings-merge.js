@@ -42,6 +42,7 @@
         'mcpContainersRead',
         'mcpContainersControl',
         'mcpSettingsOverview',
+        'mcpNetTools',
         'aiEnabled',
         'aiProvider',
         'aiBaseURL',

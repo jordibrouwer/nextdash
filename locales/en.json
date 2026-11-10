@@ -10818,6 +10818,8 @@
     "mcpGroupHealthInboxNote": "See which links are broken and what is waiting in the Inbox.",
     "mcpGroupContainersRead": "Containers: read",
     "mcpGroupContainersReadNote": "See the containers and their state. Their logs need the write token when one is set.",
+    "mcpGroupNetTools": "Network tests",
+    "mcpGroupNetToolsNote": "Run a TCP or ping test against a bookmark's own host and manage its checks. Sends traffic from this server; adding, changing and deleting checks needs the write token when one is set.",
     "mcpGroupContainersControl": "Containers: control",
     "mcpGroupContainersControlNote": "Can start, stop, update and remove containers.",
     "mcpControlOff": "Docker control is off on this server (NEXTDASH_DOCKER_CONTROL).",
@@ -11721,13 +11723,16 @@
     "statusBookmarks": "Looking at your bookmarks…",
     "statusHealth": "Looking at Health and the Inbox…",
     "statusContainers": "Looking at your containers…",
+    "statusNet": "Looking at your network checks…",
     "statusDocs": "Looking in the manual…",
     "toolUpdate": "Change a bookmark",
     "toolMove": "Move a bookmark",
     "toolDelete": "Delete a bookmark",
     "toolAdd": "Add a bookmark",
     "toolCreateCategory": "Create a category",
-    "toolRenameCategory": "Rename a category"
+    "toolRenameCategory": "Rename a category",
+    "toolSetNetCheck": "Add or change a network check",
+    "toolDeleteNetCheck": "Delete a network check"
   },
   "coachNote": {
     "actionBarTitle": "Your action bar",

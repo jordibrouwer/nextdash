@@ -24,7 +24,7 @@ async function openMcpPanel(page) {
     await expect(panel).toHaveAttribute('open', '');
 }
 
-const GROUPS = ['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpSettingsOverview', 'mcpContainersControl'];
+const GROUPS = ['mcpBookmarksWrite', 'mcpHealthInbox', 'mcpContainersRead', 'mcpSettingsOverview', 'mcpNetTools', 'mcpContainersControl'];
 
 async function toolNames(page) {
     const res = await page.request.post('/mcp', { data: { jsonrpc: '2.0', id: 1, method: 'tools/list' } });
@@ -82,6 +82,29 @@ test.describe('MCP access tool groups', () => {
         // Leave nothing open for the next test.
         await page.locator('[data-backup-toggle="mcpSettingsOverview"]').uncheck();
         await expect.poll(() => toolNames(page)).not.toContain('get_settings_overview');
+        await page.locator('[data-backup-toggle="mcpEnabled"]').uncheck();
+    });
+
+    test('Network tests is off by default, adds its five tools and survives a reload', async ({ page }) => {
+        const NET_TOOLS = ['run_network_test', 'list_net_checks', 'get_net_check', 'set_net_check', 'delete_net_check'];
+        await openMcpPanel(page);
+        const net = page.locator('[data-backup-toggle="mcpNetTools"]');
+        await expect(net).not.toBeChecked();
+        await page.locator('[data-backup-toggle="mcpEnabled"]').check();
+        await expect(net).toBeEnabled();
+        const before = await toolNames(page);
+        for (const name of NET_TOOLS) expect(before).not.toContain(name);
+
+        await net.check();
+        await expect.poll(() => toolNames(page)).toEqual(expect.arrayContaining(NET_TOOLS));
+        await expect.poll(async () => (await (await page.request.get('/api/settings')).json()).mcpNetTools).toBe(true);
+
+        await openMcpPanel(page);
+        await expect(page.locator('[data-backup-toggle="mcpNetTools"]')).toBeChecked();
+
+        // Leave nothing open for the next test.
+        await page.locator('[data-backup-toggle="mcpNetTools"]').uncheck();
+        await expect.poll(() => toolNames(page)).not.toContain('run_network_test');
         await page.locator('[data-backup-toggle="mcpEnabled"]').uncheck();
     });
 

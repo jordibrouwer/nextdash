@@ -264,6 +264,7 @@ var mcpSettingsOverviewAllowlist = []mcpOverviewEntry{
 	{"assistant.mcpContainersRead", func(in *mcpOverviewInput) any { return in.s.MCPContainersRead }},
 	{"assistant.mcpContainersControl", func(in *mcpOverviewInput) any { return in.s.MCPContainersControl }},
 	{"assistant.mcpSettingsOverview", func(in *mcpOverviewInput) any { return in.s.MCPSettingsOverview }},
+	{"assistant.mcpNetTools", func(in *mcpOverviewInput) any { return in.s.MCPNetTools }},
 	{"assistant.aiEnabled", func(in *mcpOverviewInput) any { return in.s.AIEnabled }},
 	{"assistant.aiProvider", func(in *mcpOverviewInput) any { return in.s.AIProvider }},
 	{"assistant.aiModel", func(in *mcpOverviewInput) any { return in.s.AIModel }},

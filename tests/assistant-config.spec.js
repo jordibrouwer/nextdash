@@ -249,7 +249,8 @@ test.describe('Assistant settings', () => {
         });
         const fold = await openFold(page);
         const state = (key) => fold.locator(`[data-ai-group="${key}"]`);
-        await expect(fold.locator('[data-ai-group]')).toHaveCount(5);
+        await expect(fold.locator('[data-ai-group]')).toHaveCount(6);
+        await expect(state('mcpNetTools')).toHaveAttribute('data-ai-group-on', 'false');
         await expect(state('mcpBookmarksWrite')).toHaveAttribute('data-ai-group-on', 'true');
         await expect(state('mcpBookmarksWrite')).toContainText('On');
         await expect(state('mcpHealthInbox')).toHaveAttribute('data-ai-group-on', 'false');
