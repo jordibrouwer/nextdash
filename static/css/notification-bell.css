@@ -158,11 +158,10 @@
 .notification-bell-action:hover { color: var(--text-primary); border-color: var(--accent-primary); }
 .notification-bell-action.is-primary { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--background-primary); }
 
-/* A phone: the bell is the right edge of the row, so the panel hangs from it
-   and is never wider than the screen with a margin either side. */
+/* A phone: the bell is off. Tablet and desktop (768px and up) keep it. */
 @media (max-width: 767px) {
-    .notification-bell-panel {
-        width: min(360px, calc(100vw - 16px));
+    .page-nav-bell-host {
+        display: none;
     }
 }
 
