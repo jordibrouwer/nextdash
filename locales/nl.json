@@ -695,7 +695,7 @@
       "lvMove": "Door de lijst bewegen",
       "lvOpen": "De bookmark onder de cursor openen",
       "lvPanel": "Het zijpaneel openen of sluiten",
-      "lvPanelTabs": "Details, Health of Gebruik in het zijpaneel",
+      "lvPanelTabs": "Details, Health, Gebruik of Tests in het zijpaneel",
       "lvRecheck": "De bookmark nu opnieuw controleren",
       "lvSearch": "De lijst doorzoeken",
       "lvSelect": "Een rij / een reeks rijen selecteren",
@@ -11027,7 +11027,12 @@
     "bmNoTagToFilter": "Deze bookmark heeft geen tags om op te filteren.",
     "tipMaintNetChecks": "Selecteer een bookmark in de Bookmarks-weergave en druk op <code>4</code> voor het tabblad <em>Tests</em>: maximaal zes netwerkchecks — TCP, Ping, DNS, TLS, HTTP-detail en JSON — elk met een eigen schema, geschiedenis en meldingen.",
     "tipMaintNetRunOnce": "<em>Eenmalig uitvoeren</em> in het tabblad Tests stuurt nu één test vanaf de server en slaat niets op; <em>Opslaan als geplande check…</em> maakt van wat je net testte een check.",
-    "tipMaintNetPing": "Een pingcheck die <em>via TCP</em> meldt, kon geen ICMP gebruiken. Config → Monitoring → Controles toont de ene regel instelling die dat in Docker toestaat."
+    "tipMaintNetPing": "Een pingcheck die <em>via TCP</em> meldt, kon geen ICMP gebruiken. Config → Monitoring → Controles toont de ene regel instelling die dat in Docker toestaat.",
+    "overviewNewFeatureNetTestsTitle": "Netwerktests op elke bookmark",
+    "overviewNewFeatureNetTestsWhat": "Staat de poort open, antwoordt de host op een ping, wat zeggen de DNS-records, hoe lang is het certificaat nog goed, wat antwoordt hij op een HTTP-verzoek? Tot nu toe kon nextDash alleen vragen of een pagina laadt.",
+    "overviewNewFeatureNetTestsHow": "Het tabblad Tests van een bookmark (toets 4 in het zijpaneel van de Bookmarks-weergave) bevat maximaal zes checks: TCP, Ping, DNS, TLS, HTTP-detail en JSON. Voer er één eenmalig uit om nu te kijken, of plan hem in met geschiedenis en meldingen. De checks staan als chips op de rijen, in de bel, in een Netwerktests-widget en op de statuspagina.",
+    "overviewNewFeatureNetTestsEnable": "Standaard aan. Config → Monitoring → Checks bevat de hoofdschakelaar, de pingmodus en een tabel met alle checks.",
+    "overviewNewFeatureNetTestsCta": "Checks openen →"
   },
   "colors": {
     "title": "thema-aanpassing",

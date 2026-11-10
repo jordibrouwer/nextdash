@@ -679,7 +679,7 @@
       "lvMove": "在列表中移动",
       "lvOpen": "打开光标所在的书签",
       "lvPanel": "打开或关闭侧边面板",
-      "lvPanelTabs": "侧边面板中的详情、健康或使用情况",
+      "lvPanelTabs": "侧边面板中的详情、健康、使用情况或测试",
       "lvRecheck": "立即重新检查书签",
       "lvSearch": "搜索列表",
       "lvSelect": "选择一行 / 一组行",
@@ -11027,7 +11027,12 @@
     "bmNoTagToFilter": "此书签没有可用于筛选的标签。",
     "tipMaintNetChecks": "在书签视图中选中一个书签，按 <code>4</code> 打开它的<em>测试</em>标签页：最多六项网络检查——TCP、Ping、DNS、TLS、HTTP 详情和 JSON——各有自己的计划、历史记录和提醒。",
     "tipMaintNetRunOnce": "测试标签页里的<em>运行一次</em>立即从服务器发送一次测试，不保存任何内容；<em>另存为计划检查…</em>把刚测试的内容变成一项检查。",
-    "tipMaintNetPing": "显示<em>经 TCP</em>的 Ping 检查无法使用 ICMP。配置 → 监控 → 检查 会给出在 Docker 中允许它的那一行设置。"
+    "tipMaintNetPing": "显示<em>经 TCP</em>的 Ping 检查无法使用 ICMP。配置 → 监控 → 检查 会给出在 Docker 中允许它的那一行设置。",
+    "overviewNewFeatureNetTestsTitle": "每个书签都能做网络测试",
+    "overviewNewFeatureNetTestsWhat": "端口开着吗？主机会回应 Ping 吗？它的 DNS 记录是什么？证书还能用多久？它对 HTTP 请求怎么回应？此前 nextDash 只能问页面能不能加载。",
+    "overviewNewFeatureNetTestsHow": "书签的测试标签页（书签视图侧边栏中的 4 键）最多可放六项检查：TCP、Ping、DNS、TLS、HTTP 详情和 JSON。可以运行一次立即查看，也可以安排计划并保留历史记录和提醒。检查以小标签显示在行上、铃铛里、网络测试小组件里和状态页上。",
+    "overviewNewFeatureNetTestsEnable": "默认开启。配置 → 监控 → 检查 里有总开关、Ping 模式和所有检查的表格。",
+    "overviewNewFeatureNetTestsCta": "打开检查 →"
   },
   "colors": {
     "title": "主题自定义",

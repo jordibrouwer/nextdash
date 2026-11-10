@@ -679,7 +679,7 @@
       "lvMove": "Moverse por la lista",
       "lvOpen": "Abrir el marcador bajo el cursor",
       "lvPanel": "Abrir o cerrar el panel lateral",
-      "lvPanelTabs": "Detalles, Salud o Uso en el panel lateral",
+      "lvPanelTabs": "Detalles, Salud, Uso o Pruebas en el panel lateral",
       "lvRecheck": "Volver a comprobar el marcador ahora",
       "lvSearch": "Buscar en la lista",
       "lvSelect": "Seleccionar una fila / un rango de filas",
@@ -11027,7 +11027,12 @@
     "mcpGroupNetToolsNote": "Ejecuta una prueba TCP o ping contra el propio host de un marcador y gestiona sus comprobaciones. Envía tráfico desde este servidor; añadir, cambiar y eliminar comprobaciones requiere el token de escritura cuando hay uno configurado.",
     "tipMaintNetChecks": "Selecciona un marcador en la vista Marcadores y pulsa <code>4</code> para su pestaña <em>Pruebas</em>: hasta seis comprobaciones de red — TCP, Ping, DNS, TLS, detalle HTTP y JSON — cada una con su propio calendario, historial y alertas.",
     "tipMaintNetRunOnce": "<em>Ejecutar una vez</em> en la pestaña Pruebas envía ahora una prueba desde el servidor y no guarda nada; <em>Guardar como comprobación programada…</em> convierte lo que acabas de probar en una comprobación.",
-    "tipMaintNetPing": "Una comprobación Ping que dice <em>vía TCP</em> no pudo usar ICMP. Config → Vigilancia → Comprobaciones muestra el ajuste de una línea que lo permite en Docker."
+    "tipMaintNetPing": "Una comprobación Ping que dice <em>vía TCP</em> no pudo usar ICMP. Config → Vigilancia → Comprobaciones muestra el ajuste de una línea que lo permite en Docker.",
+    "overviewNewFeatureNetTestsTitle": "Pruebas de red en cada marcador",
+    "overviewNewFeatureNetTestsWhat": "¿Está abierto el puerto, responde el host a un ping, qué dicen sus registros DNS, cuánto tiempo vale su certificado, qué responde a una petición HTTP? Hasta ahora nextDash solo podía preguntar si una página carga.",
+    "overviewNewFeatureNetTestsHow": "La pestaña Pruebas de un marcador (tecla 4 en el panel lateral de la vista Marcadores) guarda hasta seis comprobaciones: TCP, Ping, DNS, TLS, detalle HTTP y JSON. Ejecuta una una vez para mirar ahora, o prográmala con historial y alertas. Las comprobaciones aparecen como etiquetas en las filas, en la campana, en un widget Pruebas de red y en la página de estado.",
+    "overviewNewFeatureNetTestsEnable": "Activado por defecto. Config → Monitoring → Comprobaciones contiene el interruptor general, el modo Ping y una tabla con todas las comprobaciones.",
+    "overviewNewFeatureNetTestsCta": "Abrir comprobaciones →"
   },
   "colors": {
     "title": "personalización del tema",

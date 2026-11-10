@@ -690,7 +690,7 @@
       "lvMove": "Move through the list",
       "lvOpen": "Open the bookmark under the cursor",
       "lvPanel": "Open or close the side panel",
-      "lvPanelTabs": "Details, Health or Usage in the side panel",
+      "lvPanelTabs": "Details, Health, Usage or Tests in the side panel",
       "lvEdit": "Edit in the full dialog, as on the dashboard",
       "lvRowLetters": "Move (the side panel, on its Page field) / pin or unpin / filter the list by the bookmark's tag",
       "lvShareQr": "Share the bookmark / show it as a QR code",
@@ -11027,7 +11027,12 @@
     "statsNoteFeeds": "What your watched feeds publish, what you read of it, and how their checks go.",
     "tipMaintNetChecks": "Select a bookmark in the Bookmarks view and press <code>4</code> for its <em>Tests</em> tab: up to six network checks — TCP, Ping, DNS, TLS, HTTP detail and JSON — each with its own schedule, history and alerts.",
     "tipMaintNetRunOnce": "<em>Run once</em> in the Tests tab sends one test from the server right now and saves nothing; <em>Save as scheduled check…</em> turns what you just tested into a check.",
-    "tipMaintNetPing": "A Ping check that says <em>via TCP</em> could not use ICMP. Config → Monitoring → Checks shows the one-line setting that allows it in Docker."
+    "tipMaintNetPing": "A Ping check that says <em>via TCP</em> could not use ICMP. Config → Monitoring → Checks shows the one-line setting that allows it in Docker.",
+    "overviewNewFeatureNetTestsTitle": "Network tests on every bookmark",
+    "overviewNewFeatureNetTestsWhat": "Is the port open, does the host answer a ping, what do its DNS records say, how long is its certificate good for, what does it answer to an HTTP request? Until now nextDash could only ask whether a page loads.",
+    "overviewNewFeatureNetTestsHow": "A bookmark’s Tests tab (key 4 in the side panel of the Bookmarks view) holds up to six checks: TCP, Ping, DNS, TLS, HTTP detail and JSON. Run one once to look right now, or schedule it with a history and alerts. The checks show as chips on the rows, in the bell, in a Network tests widget and on the status page.",
+    "overviewNewFeatureNetTestsEnable": "On by default. Config → Monitoring → Checks holds the master switch, the Ping mode and a table of every check.",
+    "overviewNewFeatureNetTestsCta": "Open Checks →"
   },
   "colors": {
     "title": "theme customization",

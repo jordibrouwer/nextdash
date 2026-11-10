@@ -679,7 +679,7 @@
       "lvMove": "Parcourir la liste",
       "lvOpen": "Ouvrir le favori sous le curseur",
       "lvPanel": "Ouvrir ou fermer le panneau latéral",
-      "lvPanelTabs": "Détails, Health ou Utilisation dans le panneau latéral",
+      "lvPanelTabs": "Détails, Health, Utilisation ou Tests dans le panneau latéral",
       "lvRecheck": "Revérifier le favori maintenant",
       "lvSearch": "Rechercher dans la liste",
       "lvSelect": "Sélectionner une ligne / une plage de lignes",
@@ -11027,7 +11027,12 @@
     "bmNoTagToFilter": "Ce favori n’a pas d’étiquettes pour filtrer.",
     "tipMaintNetChecks": "Sélectionnez un favori dans la vue Favoris et appuyez sur <code>4</code> pour son onglet <em>Tests</em> : jusqu’à six vérifications réseau — TCP, Ping, DNS, TLS, détail HTTP et JSON — chacune avec son calendrier, son historique et ses alertes.",
     "tipMaintNetRunOnce": "<em>Exécuter une fois</em> dans l’onglet Tests envoie un test depuis le serveur, tout de suite, sans rien enregistrer ; <em>Enregistrer comme vérification planifiée…</em> transforme ce que vous venez de tester en vérification.",
-    "tipMaintNetPing": "Une vérification Ping qui indique <em>via TCP</em> n’a pas pu utiliser l’ICMP. Config → Surveillance → Vérifications montre le réglage d’une ligne qui l’autorise dans Docker."
+    "tipMaintNetPing": "Une vérification Ping qui indique <em>via TCP</em> n’a pas pu utiliser l’ICMP. Config → Surveillance → Vérifications montre le réglage d’une ligne qui l’autorise dans Docker.",
+    "overviewNewFeatureNetTestsTitle": "Des tests réseau sur chaque favori",
+    "overviewNewFeatureNetTestsWhat": "Le port est-il ouvert, l’hôte répond-il à un ping, que disent ses enregistrements DNS, combien de temps son certificat reste-t-il valable, que répond-il à une requête HTTP ? Jusqu’ici nextDash ne pouvait que demander si une page se charge.",
+    "overviewNewFeatureNetTestsHow": "L’onglet Tests d’un favori (touche 4 dans le panneau latéral de la vue Favoris) contient jusqu’à six vérifications : TCP, Ping, DNS, TLS, détail HTTP et JSON. Lancez-en une fois pour regarder tout de suite, ou planifiez-la avec historique et alertes. Les vérifications apparaissent en pastilles sur les lignes, dans la cloche, dans un widget Tests réseau et sur la page de statut.",
+    "overviewNewFeatureNetTestsEnable": "Activé par défaut. Config → Monitoring → Vérifications contient l’interrupteur général, le mode Ping et un tableau de toutes les vérifications.",
+    "overviewNewFeatureNetTestsCta": "Ouvrir les vérifications →"
   },
   "colors": {
     "title": "personnalisation du thème",

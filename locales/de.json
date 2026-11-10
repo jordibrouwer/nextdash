@@ -679,7 +679,7 @@
       "lvMove": "Durch die Liste bewegen",
       "lvOpen": "Das Lesezeichen unter dem Cursor öffnen",
       "lvPanel": "Das Seitenpanel öffnen oder schließen",
-      "lvPanelTabs": "Details, Health oder Nutzung im Seitenpanel",
+      "lvPanelTabs": "Details, Health, Nutzung oder Tests im Seitenpanel",
       "lvRecheck": "Das Lesezeichen jetzt neu prüfen",
       "lvSearch": "Die Liste durchsuchen",
       "lvSelect": "Eine Zeile / einen Zeilenbereich auswählen",
@@ -11027,7 +11027,12 @@
     "bmNoTagToFilter": "Dieses Lesezeichen hat keine Tags zum Filtern.",
     "tipMaintNetChecks": "Wähle ein Lesezeichen in der Lesezeichen-Ansicht und drücke <code>4</code> für den Tab <em>Tests</em>: bis zu sechs Netzwerkprüfungen — TCP, Ping, DNS, TLS, HTTP-Details und JSON — jede mit eigenem Zeitplan, Verlauf und Benachrichtigungen.",
     "tipMaintNetRunOnce": "<em>Einmal ausführen</em> im Tab Tests schickt jetzt einen Test vom Server und speichert nichts; <em>Als geplante Prüfung speichern…</em> macht aus dem gerade Getesteten eine Prüfung.",
-    "tipMaintNetPing": "Eine Ping-Prüfung, die <em>über TCP</em> meldet, konnte kein ICMP nutzen. Config → Überwachung → Prüfungen zeigt die eine Zeile Einstellung, die es in Docker erlaubt."
+    "tipMaintNetPing": "Eine Ping-Prüfung, die <em>über TCP</em> meldet, konnte kein ICMP nutzen. Config → Überwachung → Prüfungen zeigt die eine Zeile Einstellung, die es in Docker erlaubt.",
+    "overviewNewFeatureNetTestsTitle": "Netzwerktests für jedes Lesezeichen",
+    "overviewNewFeatureNetTestsWhat": "Ist der Port offen, antwortet der Host auf einen Ping, was sagen seine DNS-Einträge, wie lange ist sein Zertifikat noch gültig, was antwortet er auf eine HTTP-Anfrage? Bisher konnte nextDash nur fragen, ob eine Seite lädt.",
+    "overviewNewFeatureNetTestsHow": "Der Tab Tests eines Lesezeichens (Taste 4 im Seitenpanel der Lesezeichen-Ansicht) enthält bis zu sechs Prüfungen: TCP, Ping, DNS, TLS, HTTP-Details und JSON. Führe eine einmal aus, um sofort nachzusehen, oder plane sie mit Verlauf und Benachrichtigungen. Die Prüfungen erscheinen als Chips in den Zeilen, in der Glocke, in einem Netzwerktests-Widget und auf der Statusseite.",
+    "overviewNewFeatureNetTestsEnable": "Standardmäßig an. Config → Monitoring → Prüfungen enthält den Hauptschalter, den Ping-Modus und eine Tabelle aller Prüfungen.",
+    "overviewNewFeatureNetTestsCta": "Prüfungen öffnen →"
   },
   "colors": {
     "title": "themenanpassung",
