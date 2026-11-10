@@ -138,7 +138,7 @@
     bookmarkFacetCounts() {
         const all = this.configBookmarkPool();
         const token = JSON.stringify([this._bmVisibleToken, all.length,
-            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0, this._bmHealthGen || 0,
+            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0, this._bmHealthGen || 0, this._bmNetGen || 0,
             global.TagSuggestLive?.stamp?.(this.dash) || '']);
         if (this._bmFacetSource === all && this._bmFacetToken === token && this._bmFacets) return this._bmFacets;
         const tests = this.bookmarkFilterTests();
@@ -158,6 +158,7 @@
             },
             tag: { keys: (b) => (b.tags || []).map((t) => String(t).trim().toLowerCase()), test: tests.tag },
             health: { keys: (b) => this.bmHealthKeys?.(b) || [], test: tests.health },
+            check: { keys: (b) => this.bmNetKeys?.(b) || [], test: tests.check },
         });
         this._bmFacetSource = all;
         this._bmFacetToken = token;
@@ -231,6 +232,7 @@
         }
         tags.forEach((t) => token(`tag:${t}`, `#${t}`));
         if (this.bmHealthFilter) token('health', this.bmHealthFilterLabel?.(this.bmHealthFilter) || this.bmHealthFilter);
+        if (this.bmCheckFilter) token('check', this.bmCheckFilterLabel?.(this.bmCheckFilter) || this.bmCheckFilter);
         const tokenRow = tokens.length ? `
             <div class="config-bm-rail-tokens">${tokens.join('')}
                 <button type="button" class="config-bm-rail-clear-all" data-bm-rail-clear="all">${esc(this.t('config.clearBookmarkFilters', 'Clear filters'))}</button>
@@ -308,6 +310,9 @@
                 .join('')
             : '';
 
+        // Check type: the network checks of the install, once its index is in.
+        const checkEntries = this.renderBmNetRailEntries?.(entry, counts) || '';
+
         // View can leave blocks out; Pages takes its categories with it.
         const show = (name) => this.bmViewRailBlock(name);
         return `
@@ -315,6 +320,7 @@
             ${tokenRow}
             ${show('views') ? group(this.t('config.bmViews', 'Views'), views, viewsMore) : ''}
             ${show('health') ? group(this.t('config.bmHealth', 'Health'), health) : ''}
+            ${show('checks') ? group(this.t('nettools.railTitle', 'Check type'), checkEntries) : ''}
             ${show('pages') ? group(this.t('config.bmPages', 'Pages'), pages, manage('pages')) : ''}
             ${show('pages') ? group(this.t('config.bmCategories', 'Categories'), categories, manage('categories')) : ''}
             ${show('tags') ? group(this.t('config.bmTags', 'Tags'), tagList, tagsMore) : ''}`;
@@ -344,6 +350,7 @@
         if (kind === 'category') this.bmCategoryFilter = this.bmCategoryFilter === value ? '' : value;
         if (kind === 'cleanup') this.bmCleanupFilter = this.bmCleanupFilter === value ? '' : value;
         if (kind === 'health') this.bmHealthFilter = this.bmHealthFilter === value ? '' : value;
+        if (kind === 'check') this.bmCheckFilter = this.bmCheckFilter === value ? '' : value;
         if (kind === 'tag') {
             const current = this.bookmarkTagFilters();
             this.bmTagFilter = current.includes(value)
@@ -1786,7 +1793,7 @@
 
     renderWorkbenchNarrowButtons() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const active = [this.bmQuery, this.bmPageFilter, this.bmCategoryFilter, this.bmCleanupFilter, this.bmHealthFilter]
+        const active = [this.bmQuery, this.bmPageFilter, this.bmCategoryFilter, this.bmCleanupFilter, this.bmHealthFilter, this.bmCheckFilter]
             .filter((v) => String(v || '').trim()).length + this.bookmarkTagFilters().length;
         return `
             <button type="button" class="config-btn config-btn--small config-bm-narrow-only config-bm-phone-only" data-bm-open-sheet>${esc(
@@ -1881,6 +1888,7 @@
         }
         this.trackWorkbenchHeaderHeight(container.querySelector('#config-bm-workbench'));
         this.startBmHealth?.();
+        this.startBmNet?.();
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
         this.adoptLibraryPanel(panel);
@@ -2049,6 +2057,7 @@
                 <span class="config-bm-icon-cell" role="gridcell">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                 <span class="config-bm-name" role="gridcell">
                     <span class="config-bm-title">${esc(title)}</span>
+                    ${this.workbenchNetBadges?.(b) || ''}
                     ${domain ? `<span class="config-bm-domain">${esc(domain)}</span>` : ''}
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
                     ${crumb}

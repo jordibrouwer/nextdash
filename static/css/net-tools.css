@@ -1,0 +1,352 @@
+/*
+ * Network checks in the bookmark panel's Health tab: the cards, the form and
+ * the blocks that say what a failure means. Tokens only (colours, spacing,
+ * radii come from the app's own variables), so every theme carries it.
+ */
+
+.net-checks {
+    margin-top: var(--space-3, 0.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-checks-title {
+    margin: 0;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.net-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-card-list:empty {
+    display: none;
+}
+
+.net-card {
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-primary);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-card[data-state="down"] {
+    border-color: color-mix(in srgb, var(--accent-error) 55%, var(--border-primary));
+}
+
+.net-card-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2, 0.5rem);
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--background-secondary);
+}
+
+.net-badge[data-state="ok"] {
+    border-color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 14%, transparent);
+}
+
+.net-badge[data-state="slow"],
+.net-badge[data-state="warn"] {
+    border-color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 16%, transparent);
+}
+
+.net-badge[data-state="down"] {
+    border-color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 16%, transparent);
+}
+
+.net-badge[data-state="off"],
+.net-badge[data-state="unknown"] {
+    color: var(--text-secondary);
+    border-style: dashed;
+}
+
+.net-card-state,
+.net-via,
+.net-card-meta {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.net-via {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    padding: 0 var(--space-1-5, 0.4rem);
+}
+
+.net-card-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.net-card-uptime {
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-success);
+}
+
+.net-card-uptime[data-state="down"] {
+    color: var(--accent-error);
+}
+
+.net-card-uptime[data-state="slow"],
+.net-card-uptime[data-state="warn"] {
+    color: var(--accent-warning);
+}
+
+.net-card-strip {
+    margin-top: 0;
+}
+
+.net-card-line {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.net-card-line.is-bad {
+    color: var(--accent-error);
+}
+
+.net-card-actions,
+.net-checks-foot,
+.net-error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+/* ── Blocks that say what a failure means ─────────────────────────────── */
+
+.net-error {
+    border-left: 3px solid var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+    border-radius: var(--radius-4, 6px);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.net-error.is-warn {
+    border-left-color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 12%, transparent);
+}
+
+.net-error p {
+    margin: 0;
+    font-size: var(--font-size-small);
+}
+
+.net-error-note {
+    color: var(--text-secondary);
+}
+
+.net-error-code {
+    margin: 0;
+    padding: var(--space-2, 0.5rem);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-small);
+    overflow-x: auto;
+    user-select: all;
+}
+
+.net-inline-error {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--accent-error);
+}
+
+/* ── The form ─────────────────────────────────────────────────────────── */
+
+.net-form {
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, var(--border-primary));
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-primary);
+    padding: var(--space-3, 0.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.net-step {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-step > legend {
+    padding: 0;
+    margin-bottom: var(--space-1-5, 0.4rem);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.net-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.net-tile > span {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.net-tile:hover {
+    border-color: var(--accent-primary);
+}
+
+.net-tile.is-selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.net-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-planning {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-mute {
+    margin-top: var(--space-1, 0.25rem);
+}
+
+.net-explain {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-secondary);
+}
+
+.net-explain-summary {
+    margin: 0;
+}
+
+.net-explain-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.net-form-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-form-sp {
+    flex: 1;
+}
+
+/* ── Badges behind a bookmark's name in the Bookmarks view list ─────────── */
+
+.config-bm-nets {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: var(--space-1, 0.25rem);
+}
+
+.net-tb {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+    white-space: nowrap;
+}
+
+.net-tb i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-success);
+    flex: none;
+}
+
+.net-tb[data-state="slow"] i,
+.net-tb[data-state="warn"] i {
+    background: var(--accent-warning);
+}
+
+.net-tb[data-state="down"] {
+    color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 50%, var(--border-primary));
+}
+
+.net-tb[data-state="down"] i {
+    background: var(--accent-error);
+}
+
+.net-tb[data-state="unknown"] i {
+    background: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.net-tb--more i {
+    display: none;
+}

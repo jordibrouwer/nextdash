@@ -278,7 +278,8 @@
                         this.renderBmBadgeBody(b)) : ''}
                     ${item('expectations', t('bmHealthExpectations', 'Expectations'), expectSet ? t('bmHealthExpectSet', 'set') : t('bmHealthExpectNone', 'none'),
                         `<div class="health-view-expect-panel">${health.renderExpectPanel(issue)}</div>`)}
-                </div>`;
+                </div>
+                ${this.renderBmNetChecks?.(b) || ''}`;
         },
 
         /** The window the badge reports, in days: 7 or 30, remembered while the page is open. */
@@ -524,6 +525,7 @@
                 });
             });
             this.bindBmBadge(panel, b);
+            this.bindBmNetChecks?.(panel, b);
             panel.querySelector('[data-bm-health-enable]')?.addEventListener('click', () => {
                 this.openBmHealthAcc('checking')?.querySelector('[data-check-mode]')?.focus();
             });
@@ -580,6 +582,8 @@
          */
         repaintBmHealthDependents() {
             if (this.section !== 'bookmarks' || !this.isActiveView?.()) return;
+            // The checks' state is read again with the report (one bulk request).
+            void this.loadBmNetIndex?.({ maxAgeMs: 5000 });
             this.repaintWorkbenchRail?.();
             if (this.bmHealthFilter) this.repaintBookmarksList?.();
             else this.syncWorkbenchRowsHealth();

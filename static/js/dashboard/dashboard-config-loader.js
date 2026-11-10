@@ -55,6 +55,8 @@ class DashboardConfigLoader {
         'js/dashboard/dashboard-config-bookmarks.js',
         'js/dashboard/dashboard-config-bookmarks-workbench.js',
         'js/dashboard/dashboard-config-bookmarks-health.js',
+        'js/shared/net-checks-model.js',
+        'js/dashboard/dashboard-config-bookmarks-net.js',
         'js/dashboard/dashboard-bookmarks-health-modal.js',
         'js/dashboard/dashboard-config-bookmarks-usage.js',
         'js/dashboard/dashboard-bookmarks-structure-modal.js',
