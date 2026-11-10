@@ -2228,6 +2228,12 @@ A **check** watches one thing about one bookmark. A bookmark can carry up to **s
 
 At the top, three tiles under **Overview** give the picture: **checks** (how many are scheduled), **down** (how many fail now) and **up 24 h** (the average of their last 24 hours; checks that are off or not measured are left out). Under **Checks** each check is an accordion row with its name, state, cadence and last result; opened, it shows the uptime strip and sparkline (the same ones Health draws), how long it has been down, and for a failure a block that says what to do about it. A small **ℹ** beside the headings, the Run once accordion and the form's Type, Planning, Time-out, Slow from and Alerts fields opens a short card; `Esc` or a click outside closes it.
 
+<p align="center"><img src="screenshots/manual.md/11-tests-tab.jpg" alt="The Tests tab of the GitLab bookmark: three tiles reading 1 check, 0 down and 87.8 % up in 24 hours, a Ping check opened with its uptime strip, last result, interval and the Test now, Edit and Mute buttons, and the folded Run once accordion" width="340"></p>
+<p align="center"><sub>The Tests tab: the tiles, a check with its uptime strip, and Run once below.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/11-tests-tls.jpg" alt="The Tests tab of the Home Assistant bookmark: a TLS 443 check in the Warning state, with a yellow dot and the note that the certificate expires today" width="340"></p>
+<p align="center"><sub>A certificate close to expiry reads Warning, with a yellow dot.</sub></p>
+
 | State | Means |
 |---|---|
 | **Up** | The check passed |
@@ -2242,6 +2248,9 @@ At the top, three tiles under **Overview** give the picture: **checks** (how man
 
 **Add check** opens a form in three steps: **1 · Type**, **2 · What to check** (port, record, path, expected value … depending on the kind) and **3 · Planning and alerts**. A **What this does** text under the form spells out the rule in plain words, and **Test first** runs the form once before you save it. `Esc` closes it.
 
+<p align="center"><img src="screenshots/manual.md/11-tests-add-check.jpg" alt="The Add check form for a DNS check: Type, Record, Resolver, Expected value, When the records change, Name, Planning, Time-out and Alerts" width="340"></p>
+<p align="center"><sub>Add check, here for a DNS check: what to check, then planning and alerts.</sub></p>
+
 - **Planning**: *Like the bookmark* uses the bookmark's own interval; pick an interval of your own (5 minutes to 24 hours) to give the check one; **Off** keeps the check without running it.
 - **Time-out** (1 to 10 seconds) and **Slow from** (milliseconds; empty turns the flag off).
 - **Alerts on** uses the bookmark's retries, quiet hours and maintenance windows, and sends a recovery; **Muted** keeps the history but sends nothing. A check has its own alert, so its recovery never closes the bookmark's HTTP outage, and a webhook or push message names the check.
@@ -2252,6 +2261,9 @@ Checks run in the server's monitor loop together with the bookmarks' own checks:
 #### Run once
 
 **Run once** (an accordion in the tab) sends one test from the nextDash server right now. Nothing is saved and nothing alerts, but it uses the same safety guard as a scheduled check. Pick the kind: TCP, Ping, DNS (with the record and the resolver), TLS, HTTP detail or JSON (path, value, operator, expected value, credential). **Save as scheduled check…** turns what you just tested into a check. A host that is already being tested says so, and more than six tests a minute from one client are refused (*Too many tests. Wait a minute and try again*).
+
+<p align="center"><img src="screenshots/manual.md/11-tests-run-once.jpg" alt="The Run once accordion after an HTTP detail test: the status 200, HTTP/2, 213 ms total and 34.2 KB chips, the timeline as bars for redirects, DNS, connect, TLS, first byte and download, the redirect chain, the first three headers, and the buttons Save as scheduled check and Run again" width="340"></p>
+<p align="center"><sub>One HTTP detail test: the timeline, the redirect chain and the headers.</sub></p>
 
 #### DNS in detail
 
@@ -2296,6 +2308,9 @@ Restart the container afterwards. With `network_mode: host` the setting belongs 
 #### Config → Monitoring → Checks
 
 The **Network checks** panel holds:
+
+<p align="center"><img src="screenshots/manual.md/17-net-checks-config.jpg" alt="Config, Monitoring, Checks: the Network checks panel with the master switch, Ping set to Auto, the ceiling of 200 checks, the dashboard-row setting, the ICMP status and a table of the four checks in the install with their type, bookmark, host, interval, last result and state" width="860"></p>
+<p align="center"><sub>Config → Monitoring → Checks: the switches and the table of every check.</sub></p>
 
 | Setting | Does |
 |---|---|
