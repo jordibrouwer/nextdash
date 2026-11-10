@@ -3055,7 +3055,7 @@ class DashboardConfig {
         pairs.push(['Ctrl/Cmd+Shift+K', t('config.formKeyFindSetting', 'find setting')]);
         pairs.push(['?', t('config.formKeyCheatSheet', 'cheat sheet')]);
         pairs.push(['Shift+H', t('config.formKeyLegend', 'hide / show this')]);
-        pairs.push(['Shift+S', t('config.formKeyModeStrip', 'mode strip')]);
+        pairs.push(['Shift+S', t('config.formKeyModeStrip', 'show/hide mode strip')]);
         return pairs;
     }
 
@@ -22264,7 +22264,7 @@ class DashboardConfig {
                 ['h', this.t('config.bmKeyHealthModal', 'collection health')],
             ] : []),
             ['Shift+H', this.t('dashboard.dashboardKeyHideLegend', 'hide legend')],
-            ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'mode strip')],
+            ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'show/hide mode strip')],
         ];
         return this.renderKeyboardLegendPairs(keys);
     }

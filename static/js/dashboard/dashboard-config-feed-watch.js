@@ -225,7 +225,7 @@
                 ['Alt+↑/↓', t('config.formKeySections', 'sections')],
                 ['?', t('config.formKeyCheatSheet', 'cheat sheet')],
                 ['Shift+H', t('config.formKeyLegend', 'hide / show this')],
-                ['Shift+S', t('config.formKeyModeStrip', 'mode strip')],
+                ['Shift+S', t('config.formKeyModeStrip', 'show/hide mode strip')],
             ])}</p>`;
         };
 

@@ -1277,7 +1277,7 @@ class DashboardDocker {
             ['Ctrl/Cmd+C', this.t('dashboard.dockerLegendCopyName', 'copy name')],
             ['[ / ]', this.t('dashboard.dockerLegendTabs', 'containers / disk')],
             ['Shift+H', this.t('dashboard.dashboardKeyHideLegend', 'hide legend')],
-            ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'mode strip')],
+            ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'show/hide mode strip')],
         ].forEach(([key, label]) => {
             const item = document.createElement('span');
             item.className = 'docker-legend-item';

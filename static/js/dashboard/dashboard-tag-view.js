@@ -1312,7 +1312,7 @@
             ['/', 'dashboard.tagViewKeySearch', 'search'],
             ['Esc', 'dashboard.tagViewKeyBack', 'back'],
             ['Shift+H', 'dashboard.dashboardKeyHideLegend', 'hide legend'],
-            ['Shift+S', 'dashboard.dashboardKeyModeStrip', 'mode strip'],
+            ['Shift+S', 'dashboard.dashboardKeyModeStrip', 'show/hide mode strip'],
         ];
 
         /** Shift+H: the key legend off and on; what it was set to comes back. */
