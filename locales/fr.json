@@ -11032,7 +11032,17 @@
     "overviewNewFeatureNetTestsWhat": "Le port est-il ouvert, l’hôte répond-il à un ping, que disent ses enregistrements DNS, combien de temps son certificat reste-t-il valable, que répond-il à une requête HTTP ? Jusqu’ici nextDash ne pouvait que demander si une page se charge.",
     "overviewNewFeatureNetTestsHow": "L’onglet Tests d’un favori (touche 4 dans le panneau latéral de la vue Favoris) contient jusqu’à six vérifications : TCP, Ping, DNS, TLS, détail HTTP et JSON. Lancez-en une fois pour regarder tout de suite, ou planifiez-la avec historique et alertes. Les vérifications apparaissent en pastilles sur les lignes, dans la cloche, dans un widget Tests réseau et sur la page de statut.",
     "overviewNewFeatureNetTestsEnable": "Activé par défaut. Config → Monitoring → Vérifications contient l’interrupteur général, le mode Ping et un tableau de toutes les vérifications.",
-    "overviewNewFeatureNetTestsCta": "Ouvrir les vérifications →"
+    "overviewNewFeatureNetTestsCta": "Ouvrir les vérifications →",
+    "netToolsEnabledInfoTitle": "Vérifications réseau sur les favoris",
+    "netToolsEnabledInfoMessage": "Active ou désactive les vérifications TCP, Ping, DNS, TLS, détail HTTP et JSON de chaque favori. Désactivé met le calendrier en pause et garde l’historique.",
+    "netToolsPingInfoTitle": "Ping",
+    "netToolsPingInfoMessage": "Auto envoie un vrai ping et se rabat sur une connexion TCP quand le conteneur ne peut pas en envoyer (affiché comme via TCP). TCP seulement n’envoie jamais d’ICMP. Désactivé ignore les vérifications Ping.",
+    "netToolsAllowCustomHostInfoTitle": "Un autre hôte que le favori",
+    "netToolsAllowCustomHostInfoMessage": "Une vérification teste l’hôte de son propre favori. Activé, une vérification peut nommer un autre hôte ; le garde d’adresses s’applique toujours. Désactivé laisse ces vérifications à l’arrêt.",
+    "netToolsMaxChecksInfoTitle": "Maximum de vérifications planifiées",
+    "netToolsMaxChecksInfoMessage": "Le plafond pour toute l’installation, de 1 à 1000. Rien n’est activé au-delà.",
+    "netToolsDashboardBadgesInfoTitle": "État des vérifications sur les lignes du tableau de bord",
+    "netToolsDashboardBadgesInfoMessage": "Seulement les problèmes affiche une pastille quand une vérification tombe ou avertit. Toujours affiche chaque vérification. Jamais n’en affiche aucune et ne charge rien."
   },
   "colors": {
     "title": "personnalisation du thème",

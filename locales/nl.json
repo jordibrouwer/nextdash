@@ -11032,7 +11032,17 @@
     "overviewNewFeatureNetTestsWhat": "Staat de poort open, antwoordt de host op een ping, wat zeggen de DNS-records, hoe lang is het certificaat nog goed, wat antwoordt hij op een HTTP-verzoek? Tot nu toe kon nextDash alleen vragen of een pagina laadt.",
     "overviewNewFeatureNetTestsHow": "Het tabblad Tests van een bookmark (toets 4 in het zijpaneel van de Bookmarks-weergave) bevat maximaal zes checks: TCP, Ping, DNS, TLS, HTTP-detail en JSON. Voer er één eenmalig uit om nu te kijken, of plan hem in met geschiedenis en meldingen. De checks staan als chips op de rijen, in de bel, in een Netwerktests-widget en op de statuspagina.",
     "overviewNewFeatureNetTestsEnable": "Standaard aan. Config → Monitoring → Checks bevat de hoofdschakelaar, de pingmodus en een tabel met alle checks.",
-    "overviewNewFeatureNetTestsCta": "Checks openen →"
+    "overviewNewFeatureNetTestsCta": "Checks openen →",
+    "netToolsEnabledInfoTitle": "Netwerkchecks op bookmarks",
+    "netToolsEnabledInfoMessage": "Zet de TCP-, Ping-, DNS-, TLS-, HTTP-detail- en JSON-checks van elke bookmark aan of uit. Uit pauzeert het schema en bewaart de geschiedenis.",
+    "netToolsPingInfoTitle": "Ping",
+    "netToolsPingInfoMessage": "Auto stuurt een echte ping en valt terug op een TCP-verbinding waar de container dat niet mag (zichtbaar als via TCP). Alleen TCP stuurt nooit ICMP. Uit slaat pingchecks over.",
+    "netToolsAllowCustomHostInfoTitle": "Een andere host dan de bookmark",
+    "netToolsAllowCustomHostInfoMessage": "Een check test de host van zijn eigen bookmark. Staat dit aan, dan mag een check een andere host noemen; de adresbewaking blijft gelden. Uit laat zulke checks stilstaan.",
+    "netToolsMaxChecksInfoTitle": "Meeste geplande checks",
+    "netToolsMaxChecksInfoMessage": "Het maximum voor de hele installatie, van 1 tot 1000. Daarboven gaat er niets aan.",
+    "netToolsDashboardBadgesInfoTitle": "Checkstatus op dashboardrijen",
+    "netToolsDashboardBadgesInfoMessage": "Alleen problemen toont een chip als een check uitvalt of waarschuwt. Altijd toont elke check. Nooit toont niets en haalt niets op."
   },
   "colors": {
     "title": "thema-aanpassing",

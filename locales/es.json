@@ -11032,7 +11032,17 @@
     "overviewNewFeatureNetTestsWhat": "¿Está abierto el puerto, responde el host a un ping, qué dicen sus registros DNS, cuánto tiempo vale su certificado, qué responde a una petición HTTP? Hasta ahora nextDash solo podía preguntar si una página carga.",
     "overviewNewFeatureNetTestsHow": "La pestaña Pruebas de un marcador (tecla 4 en el panel lateral de la vista Marcadores) guarda hasta seis comprobaciones: TCP, Ping, DNS, TLS, detalle HTTP y JSON. Ejecuta una una vez para mirar ahora, o prográmala con historial y alertas. Las comprobaciones aparecen como etiquetas en las filas, en la campana, en un widget Pruebas de red y en la página de estado.",
     "overviewNewFeatureNetTestsEnable": "Activado por defecto. Config → Monitoring → Comprobaciones contiene el interruptor general, el modo Ping y una tabla con todas las comprobaciones.",
-    "overviewNewFeatureNetTestsCta": "Abrir comprobaciones →"
+    "overviewNewFeatureNetTestsCta": "Abrir comprobaciones →",
+    "netToolsEnabledInfoTitle": "Comprobaciones de red en marcadores",
+    "netToolsEnabledInfoMessage": "Activa o desactiva las comprobaciones TCP, Ping, DNS, TLS, detalle HTTP y JSON de cada marcador. Desactivado pausa el calendario y conserva el historial.",
+    "netToolsPingInfoTitle": "Ping",
+    "netToolsPingInfoMessage": "Auto envía un ping real y recurre a una conexión TCP donde el contenedor no puede enviarlo (se ve como vía TCP). Solo TCP nunca envía ICMP. Desactivado omite las comprobaciones Ping.",
+    "netToolsAllowCustomHostInfoTitle": "Otro host distinto del marcador",
+    "netToolsAllowCustomHostInfoMessage": "Una comprobación prueba el host de su propio marcador. Activado, una comprobación puede nombrar otro host; la protección de direcciones sigue vigente. Desactivado deja esas comprobaciones paradas.",
+    "netToolsMaxChecksInfoTitle": "Máximo de comprobaciones programadas",
+    "netToolsMaxChecksInfoMessage": "El tope de toda la instalación, de 1 a 1000. No se activa nada por encima.",
+    "netToolsDashboardBadgesInfoTitle": "Estado de las comprobaciones en las filas del panel",
+    "netToolsDashboardBadgesInfoMessage": "Solo problemas muestra una etiqueta cuando una comprobación cae o avisa. Siempre muestra cada comprobación. Nunca no muestra ninguna y no descarga nada."
   },
   "colors": {
     "title": "personalización del tema",

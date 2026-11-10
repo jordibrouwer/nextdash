@@ -11032,7 +11032,17 @@
     "overviewNewFeatureNetTestsWhat": "Is the port open, does the host answer a ping, what do its DNS records say, how long is its certificate good for, what does it answer to an HTTP request? Until now nextDash could only ask whether a page loads.",
     "overviewNewFeatureNetTestsHow": "A bookmark’s Tests tab (key 4 in the side panel of the Bookmarks view) holds up to six checks: TCP, Ping, DNS, TLS, HTTP detail and JSON. Run one once to look right now, or schedule it with a history and alerts. The checks show as chips on the rows, in the bell, in a Network tests widget and on the status page.",
     "overviewNewFeatureNetTestsEnable": "On by default. Config → Monitoring → Checks holds the master switch, the Ping mode and a table of every check.",
-    "overviewNewFeatureNetTestsCta": "Open Checks →"
+    "overviewNewFeatureNetTestsCta": "Open Checks →",
+    "netToolsEnabledInfoTitle": "Network checks on bookmarks",
+    "netToolsEnabledInfoMessage": "Turns the TCP, Ping, DNS, TLS, HTTP detail and JSON checks of every bookmark on or off. Off pauses the schedule and keeps the history.",
+    "netToolsPingInfoTitle": "Ping",
+    "netToolsPingInfoMessage": "Auto sends a real ping and falls back to a TCP connection where the container may not send one (shown as via TCP). TCP only never sends ICMP. Off skips Ping checks.",
+    "netToolsAllowCustomHostInfoTitle": "Another host than the bookmark",
+    "netToolsAllowCustomHostInfoMessage": "A check tests its own bookmark’s host. With this on, a check may name another host; the address guard still applies. Off keeps such checks stopped.",
+    "netToolsMaxChecksInfoTitle": "Most scheduled checks",
+    "netToolsMaxChecksInfoMessage": "The ceiling for the whole install, from 1 to 1000. Nothing is turned on past it.",
+    "netToolsDashboardBadgesInfoTitle": "Check status on dashboard rows",
+    "netToolsDashboardBadgesInfoMessage": "Only problems shows a chip when a check is down or warns. Always shows every check. Never shows none and fetches nothing."
   },
   "colors": {
     "title": "theme customization",

@@ -11032,7 +11032,17 @@
     "overviewNewFeatureNetTestsWhat": "Ist der Port offen, antwortet der Host auf einen Ping, was sagen seine DNS-Einträge, wie lange ist sein Zertifikat noch gültig, was antwortet er auf eine HTTP-Anfrage? Bisher konnte nextDash nur fragen, ob eine Seite lädt.",
     "overviewNewFeatureNetTestsHow": "Der Tab Tests eines Lesezeichens (Taste 4 im Seitenpanel der Lesezeichen-Ansicht) enthält bis zu sechs Prüfungen: TCP, Ping, DNS, TLS, HTTP-Details und JSON. Führe eine einmal aus, um sofort nachzusehen, oder plane sie mit Verlauf und Benachrichtigungen. Die Prüfungen erscheinen als Chips in den Zeilen, in der Glocke, in einem Netzwerktests-Widget und auf der Statusseite.",
     "overviewNewFeatureNetTestsEnable": "Standardmäßig an. Config → Monitoring → Prüfungen enthält den Hauptschalter, den Ping-Modus und eine Tabelle aller Prüfungen.",
-    "overviewNewFeatureNetTestsCta": "Prüfungen öffnen →"
+    "overviewNewFeatureNetTestsCta": "Prüfungen öffnen →",
+    "netToolsEnabledInfoTitle": "Netzwerkprüfungen an Lesezeichen",
+    "netToolsEnabledInfoMessage": "Schaltet die TCP-, Ping-, DNS-, TLS-, HTTP-Details- und JSON-Prüfungen jedes Lesezeichens ein oder aus. Aus pausiert den Zeitplan und behält den Verlauf.",
+    "netToolsPingInfoTitle": "Ping",
+    "netToolsPingInfoMessage": "Auto sendet einen echten Ping und fällt auf eine TCP-Verbindung zurück, wo der Container keinen senden darf (zu sehen als über TCP). Nur TCP sendet nie ICMP. Aus überspringt Ping-Prüfungen.",
+    "netToolsAllowCustomHostInfoTitle": "Ein anderer Host als das Lesezeichen",
+    "netToolsAllowCustomHostInfoMessage": "Eine Prüfung testet den Host ihres eigenen Lesezeichens. Ist das an, darf eine Prüfung einen anderen Host nennen; die Adresswache gilt weiter. Aus lässt solche Prüfungen stehen.",
+    "netToolsMaxChecksInfoTitle": "Meiste geplante Prüfungen",
+    "netToolsMaxChecksInfoMessage": "Die Obergrenze für die ganze Installation, von 1 bis 1000. Darüber wird nichts eingeschaltet.",
+    "netToolsDashboardBadgesInfoTitle": "Prüfungsstatus in Dashboard-Zeilen",
+    "netToolsDashboardBadgesInfoMessage": "Nur Probleme zeigt einen Chip, wenn eine Prüfung ausfällt oder warnt. Immer zeigt jede Prüfung. Nie zeigt keine und lädt nichts."
   },
   "colors": {
     "title": "themenanpassung",

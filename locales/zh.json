@@ -11032,7 +11032,17 @@
     "overviewNewFeatureNetTestsWhat": "端口开着吗？主机会回应 Ping 吗？它的 DNS 记录是什么？证书还能用多久？它对 HTTP 请求怎么回应？此前 nextDash 只能问页面能不能加载。",
     "overviewNewFeatureNetTestsHow": "书签的测试标签页（书签视图侧边栏中的 4 键）最多可放六项检查：TCP、Ping、DNS、TLS、HTTP 详情和 JSON。可以运行一次立即查看，也可以安排计划并保留历史记录和提醒。检查以小标签显示在行上、铃铛里、网络测试小组件里和状态页上。",
     "overviewNewFeatureNetTestsEnable": "默认开启。配置 → 监控 → 检查 里有总开关、Ping 模式和所有检查的表格。",
-    "overviewNewFeatureNetTestsCta": "打开检查 →"
+    "overviewNewFeatureNetTestsCta": "打开检查 →",
+    "netToolsEnabledInfoTitle": "书签上的网络检查",
+    "netToolsEnabledInfoMessage": "开启或关闭每个书签的 TCP、Ping、DNS、TLS、HTTP 详情和 JSON 检查。关闭会暂停计划，并保留历史记录。",
+    "netToolsPingInfoTitle": "Ping",
+    "netToolsPingInfoMessage": "自动会发送真正的 Ping，在容器不能发送时改用 TCP 连接（显示为经 TCP）。仅 TCP 从不发送 ICMP。关闭则跳过 Ping 检查。",
+    "netToolsAllowCustomHostInfoTitle": "书签以外的主机",
+    "netToolsAllowCustomHostInfoMessage": "检查测试的是它自己书签的主机。开启后，检查可以指定另一台主机，地址防护仍然有效。关闭则这类检查保持停止。",
+    "netToolsMaxChecksInfoTitle": "最多计划检查数",
+    "netToolsMaxChecksInfoMessage": "整个安装的上限，1 到 1000。超过的不会被开启。",
+    "netToolsDashboardBadgesInfoTitle": "仪表盘行上的检查状态",
+    "netToolsDashboardBadgesInfoMessage": "仅问题：检查失败或有警告时显示一个小标签。总是：显示每项检查。从不：什么都不显示，也不获取。"
   },
   "colors": {
     "title": "主题自定义",
