@@ -12272,7 +12272,7 @@
     "nMinutes": "{n} minutes",
     "oneDay": "1 day",
     "oneHour": "1 hour",
-    "openAllowLocal": "Open the \"Allow local bookmarks\" setting",
+    "openAllowLocal": "Open the \"Allow localhost & private-network bookmarks\" setting",
     "planBookmark": "Like the bookmark",
     "planOff": "Off",
     "planOwn": "Own",

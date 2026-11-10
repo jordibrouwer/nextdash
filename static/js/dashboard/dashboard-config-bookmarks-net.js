@@ -131,7 +131,7 @@
             const t = (k, f) => this.bmNetT(k, f);
             const buttons = {
                 copy: () => `<button type="button" class="config-btn config-btn--small" data-net-action="copy" data-net-snippet="${esc(block.snippet || '')}">${esc(t('nettools.copy', 'Copy'))}</button>`,
-                allowLocal: () => `<button type="button" class="config-btn config-btn--small" data-net-action="allow-local">${esc(t('nettools.openAllowLocal', 'Open the "Allow local bookmarks" setting'))}</button>`,
+                allowLocal: () => `<button type="button" class="config-btn config-btn--small" data-net-action="allow-local">${esc(t('nettools.openAllowLocal', 'Open the "Allow localhost & private-network bookmarks" setting'))}</button>`,
                 retest: () => (retest ? `<button type="button" class="config-btn config-btn--small" ${retest}>${esc(t('nettools.testAgain', 'Test again'))}</button>` : ''),
             };
             const actions = block.actions.map((a) => buttons[a]?.() || '').join('');
