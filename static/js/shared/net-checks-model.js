@@ -139,6 +139,7 @@
         if (!check || check.enabled !== true) return 'off';
         const s = check.state;
         if (!s) return 'unknown';
+        if (s.paused) return 'paused';
         if (!s.ok) return 'down';
         if (s.warn) return 'warn';
         if (s.slow) return 'slow';
@@ -153,6 +154,7 @@
         case 'warn': return t('nettools.stateWarn', 'Warning');
         case 'down': return t('nettools.stateDown', 'Down');
         case 'off': return t('nettools.stateOff', 'Not scheduled');
+        case 'paused': return t('nettools.statePaused', 'Not measured');
         default: return t('nettools.stateUnknown', 'No result yet');
         }
     }
@@ -292,6 +294,15 @@
      * `actions` are ids the panel knows how to draw.
      */
     function errorBlock(result, t) {
+        const b = errorBlockBase(result, t);
+        // The owner's own screen only: where the blocked host points (never in notices or webhooks).
+        if (b && b.cls === 'guard' && result && result.guardAddr) {
+            b.addr = fmt(t('nettools.guardResolvesTo', 'Resolves to {addr}'), { addr: result.guardAddr });
+        }
+        return b;
+    }
+
+    function errorBlockBase(result, t) {
         const r = result || {};
         const host = r.host || t('nettools.thisBookmark', 'this bookmark');
         switch (r.class) {
@@ -301,7 +312,7 @@
                 title: t('nettools.errIcmpTitle', 'ICMP is not allowed here'),
                 body: t('nettools.errIcmpBody', 'Ping cannot open a raw socket in this container. nextDash falls back to TCP and says so.'),
                 snippet: 'services:\n  nextdash:\n    sysctls:\n      net.ipv4.ping_group_range: "0 2147483647"',
-                note: t('nettools.errIcmpNote', 'Restart the container afterwards. With network_mode: host the setting belongs to the host: run sysctl -w net.ipv4.ping_group_range="0 2147483647" there. The NET_RAW capability does not help, nextDash runs as an unprivileged user.'),
+                note: t('nettools.errIcmpNote', 'Restart the container afterwards. With network_mode: host the setting belongs to the host: run sysctl -w net.ipv4.ping_group_range="0 2147483647" there. The NET_RAW capability does not help the default unprivileged user; with NEXTDASH_RUN_AS_ROOT=1 the default NET_RAW of the container is enough and the setting is not needed.'),
                 actions: ['copy'],
             };
         case 'guard':
@@ -683,7 +694,7 @@
     /** A failed result as a block: the class's own, else the server's sentence. */
     function testErrorBlock(res, t) {
         const r = res || {};
-        const own = errorBlock({ class: r.class, host: r.host, port: r.port, ip: r.ip, timeoutSec: 10, type: r.type, record: r.dns && r.dns.record, error: r.error, detail: r.detail,
+        const own = errorBlock({ class: r.class, host: r.host, port: r.port, ip: r.ip, guardAddr: r.guardAddr, timeoutSec: 10, type: r.type, record: r.dns && r.dns.record, error: r.error, detail: r.detail,
             redirectBlocked: Boolean(r.http && (r.http.redirects || []).some((h) => h.blocked)), expectStatus: r.http && r.http.expectStatus, expectHeader: r.http && r.http.expectHeader,
             path: r.json && r.json.path, op: r.json && r.json.op, expect: r.json && r.json.expect }, t);
         if (own) return own;

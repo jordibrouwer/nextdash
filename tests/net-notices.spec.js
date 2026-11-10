@@ -103,12 +103,14 @@ test('several down checks are one row with a count', async ({ page }) => {
 });
 
 test('Mute sends the whole list with only that check muted, and the row goes', async ({ page }) => {
-  const bulk = { items: [item('aaaaaaaaaaaa', 'Plex', 'TCP 32400', down())] };
+  // The second row with this address on the page: the calls must say so.
+  const bulk = { items: [item('aaaaaaaaaaaa', 'Plex', 'TCP 32400', down({ occurrence: 1 }))] };
+  const gets = [];
   const stored = [
     { id: 'aaaaaaaaaaaa', type: 'tcp', port: 32400, enabled: true, display: 'TCP 32400', state: { ok: false }, stats: {} },
     { id: 'ffffffffffff', type: 'ping', enabled: true, display: 'Ping' },
   ];
-  const puts = await stubNet(page, bulk, { listFor: () => stored });
+  const puts = await stubNet(page, bulk, { listFor: (u) => { gets.push(u.searchParams.get('occurrence')); return stored; } });
   await load(page);
   await refresh(page);
   await openPanel(page);
@@ -116,6 +118,8 @@ test('Mute sends the whole list with only that check muted, and the row goes', a
 
   await row(page, 'net-down').getByRole('button', { name: 'Mute' }).click();
   await expect.poll(() => puts.length).toBe(1);
+  expect(gets).toEqual(['1']);
+  expect(puts[0].occurrence).toBe(1);
   expect(puts[0].pageId).toBe(1);
   expect(puts[0].url).toBe('https://aaaaaaaaaaaa.example/');
   expect(puts[0].checks).toEqual([

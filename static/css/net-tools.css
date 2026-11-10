@@ -140,6 +140,7 @@
 }
 
 .net-badge[data-state="off"],
+.net-badge[data-state="paused"],
 .net-badge[data-state="unknown"] {
     color: var(--text-secondary);
     border-style: dashed;

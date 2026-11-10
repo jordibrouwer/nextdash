@@ -63,7 +63,7 @@
     }
 
     function target(item) {
-        return { pageId: item.pageId, url: item.url, checkId: item.checkId };
+        return { pageId: item.pageId, url: item.url, occurrence: item.occurrence || 0, checkId: item.checkId };
     }
 
     function rowState(items, one, many, at) {
@@ -81,7 +81,7 @@
 
     async function downState() {
         if (!enabled()) return null;
-        const items = (await load()).filter((i) => i.enabled && !i.muted && i.state && i.state.ok === false);
+        const items = (await load()).filter((i) => i.enabled && !i.muted && i.state && i.state.ok === false && !i.state.paused);
         return rowState(items,
             { key: 'bell.netDownOne', fallback: '{name} is down' },
             { key: 'bell.netDownMany', fallback: '{count} network checks are down' },
@@ -142,14 +142,14 @@
         const targets = row?.entry?.targets || [];
         const byBookmark = new Map();
         targets.forEach((tg) => {
-            const key = `${tg.pageId}\u0000${tg.url}`;
+            const key = `${tg.pageId}\u0000${tg.url}\u0000${tg.occurrence || 0}`;
             if (!byBookmark.has(key)) byBookmark.set(key, { tg, ids: new Set() });
             byBookmark.get(key).ids.add(tg.checkId);
         });
         const api = typeof global.nextDashFetch === 'function' ? global.nextDashFetch : global.fetch;
         for (const { tg, ids } of byBookmark.values()) {
             try {
-                const res = await global.fetch(`/api/net/checks?pageId=${encodeURIComponent(tg.pageId)}&url=${encodeURIComponent(tg.url)}`, { cache: 'no-store' });
+                const res = await global.fetch(`/api/net/checks?pageId=${encodeURIComponent(tg.pageId)}&url=${encodeURIComponent(tg.url)}&occurrence=${tg.occurrence || 0}`, { cache: 'no-store' });
                 if (!res.ok) continue;
                 const body = await res.json();
                 const checks = (body.checks || []).map((c) => {
@@ -159,7 +159,7 @@
                 await api('/api/net/checks', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pageId: tg.pageId, url: tg.url, checks }),
+                    body: JSON.stringify({ pageId: tg.pageId, url: tg.url, occurrence: tg.occurrence || 0, checks }),
                 });
             } catch (err) {
                 console.warn('muting a network check failed', err);

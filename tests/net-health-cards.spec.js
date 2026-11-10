@@ -91,6 +91,20 @@ test.describe('network check cards', () => {
     await expect(block.getByRole('button', { name: /Allow local bookmarks/ })).toBeVisible();
   });
 
+  test('a one-off test blocked by the guard shows where the host points, only when the server says', async ({ page }) => {
+    let body = { type: 'tcp', ok: false, ms: 0, host: 'nas.lan', class: 'guard', error: 'nas.lan is blocked by the address guard', guardAddr: '192.168.1.20' };
+    await page.route((url) => url.pathname === '/api/net/run', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) }));
+    await open(page);
+    await net(page).locator('[data-net-run-types]').getByRole('button', { name: 'TCP' }).click();
+    const block = net(page).locator('[data-tests-result] [data-net-error-class="guard"]');
+    await expect(block.locator('[data-net-guard-addr]')).toHaveText('Resolves to 192.168.1.20');
+    await expect(block.getByRole('button', { name: /Allow local bookmarks/ })).toBeVisible();
+    delete body.guardAddr;
+    await net(page).locator('[data-net-run-types]').getByRole('button', { name: 'TCP' }).click();
+    await expect(block).toBeVisible();
+    await expect(block.locator('[data-net-guard-addr]')).toHaveCount(0);
+  });
+
   test('a time-out names the port and the wait', async ({ page }) => {
     await open(page, [{
       id: 'cccccccccccc', type: 'tcp', port: 8443, timeoutSec: 10, enabled: true,

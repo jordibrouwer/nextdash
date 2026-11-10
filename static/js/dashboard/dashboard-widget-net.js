@@ -88,6 +88,7 @@
         if (state === 'gone') return '';
         if (state === 'off') return Tile.say(dash, widget, 'notScheduled');
         if (state === 'unknown') return Tile.say(dash, widget, 'noResult');
+        if (state === 'paused') return t(dash, 'nettools.statePaused', 'Not measured');
         const s = row.state || {};
         if (state === 'down') return Tile.say(dash, widget, 'down');
         if (row.type === 'tls' && Number.isFinite(s.secondary)) return Tile.say(dash, widget, 'days', { n: s.secondary });

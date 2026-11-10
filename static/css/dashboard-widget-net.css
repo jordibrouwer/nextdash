@@ -70,6 +70,7 @@ button.netw-beat:hover { background: color-mix(in srgb, var(--accent-primary) 10
 .netw-dot[data-state="slow"] { background: var(--accent-warning); }
 .netw-dot[data-state="down"] { background: var(--accent-error); }
 .netw-dot[data-state="unknown"],
+.netw-dot[data-state="paused"],
 .netw-dot[data-state="off"],
 .netw-dot[data-state="gone"] { background: var(--text-tertiary); }
 
@@ -146,7 +147,8 @@ button.netw-beat:hover { background: color-mix(in srgb, var(--accent-primary) 10
 .netw-badge[data-state="warn"] > i { background: var(--accent-warning); }
 .netw-badge[data-state="down"] { color: var(--accent-error); border-color: color-mix(in srgb, var(--accent-error) 50%, var(--border-primary)); }
 .netw-badge[data-state="down"] > i { background: var(--accent-error); }
-.netw-badge[data-state="unknown"] > i { background: var(--text-tertiary); }
+.netw-badge[data-state="unknown"] > i,
+.netw-badge[data-state="paused"] > i { background: var(--text-tertiary); }
 
 .net-widget-checks { width: 100%; border-collapse: collapse; }
 .net-widget-checks td { padding: 0.15rem 0.4rem 0.15rem 0; vertical-align: middle; }

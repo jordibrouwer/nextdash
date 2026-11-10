@@ -139,6 +139,7 @@
                 <div class="net-error is-${block.tone}" role="status" data-net-error-class="${esc(block.cls)}">
                     <b class="net-error-title">${esc(block.title)}</b>
                     <p>${esc(block.body)}</p>
+                    ${block.addr ? `<p class="net-error-note" data-net-guard-addr>${esc(block.addr)}</p>` : ''}
                     ${block.snippet ? `<pre class="net-error-code">${esc(block.snippet)}</pre>` : ''}
                     ${block.note ? `<p class="net-error-note">${esc(block.note)}</p>` : ''}
                     ${actions ? `<div class="net-error-actions">${actions}</div>` : ''}

@@ -172,7 +172,7 @@
             }
             const byBookmark = new Map();
             items.filter((i) => want.has(i.checkId)).forEach((i) => {
-                const key = `${i.pageId}|${i.url}`;
+                const key = `${i.pageId}|${i.url}|${i.occurrence || 0}`;
                 if (!byBookmark.has(key)) byBookmark.set(key, { item: i, ids: new Set() });
                 byBookmark.get(key).ids.add(i.checkId);
             });
@@ -180,7 +180,7 @@
             let failed = false;
             for (const { item, ids } of byBookmark.values()) {
                 try {
-                    const res = await global.fetch(`/api/net/checks?pageId=${encodeURIComponent(item.pageId)}&url=${encodeURIComponent(item.url)}`, { cache: 'no-store' });
+                    const res = await global.fetch(`/api/net/checks?pageId=${encodeURIComponent(item.pageId)}&url=${encodeURIComponent(item.url)}&occurrence=${item.occurrence || 0}`, { cache: 'no-store' });
                     if (!res.ok) throw new Error(String(res.status));
                     const body = await res.json();
                     const checks = (body.checks || []).map((c) => {
@@ -190,7 +190,7 @@
                     const put = await api('/api/net/checks', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ pageId: item.pageId, url: item.url, checks }),
+                        body: JSON.stringify({ pageId: item.pageId, url: item.url, occurrence: item.occurrence || 0, checks }),
                     });
                     if (!put.ok) throw new Error(String(put.status));
                 } catch {
