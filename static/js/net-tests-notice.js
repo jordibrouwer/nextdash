@@ -7,7 +7,8 @@
  * tip, so it sits in the Tips group and stays until it is read. "Open Tests"
  * opens the Tests tab of a bookmark that already has a check, or the Bookmarks
  * view when none has, and reads the row. It is left out while the network
- * checks are switched off in Config → Monitoring → Checks.
+ * checks are switched off in Config → Monitoring → Checks, when tips are off
+ * and in the demo.
  */
 (function initNetTestsNotice(global) {
     'use strict';
@@ -26,6 +27,9 @@
     function eligible() {
         const d = dash();
         if (!d) return false;
+        // Switching the tips off in Config takes the row away, like every other tip; the
+        // demo runs no test, so it has nothing to point at.
+        if (d.settings?.enableSessionTips === false || global.DemoLock?.on) return false;
         return d.settings?.netToolsEnabled !== false;
     }
 
