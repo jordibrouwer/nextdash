@@ -135,7 +135,7 @@ test.describe('HTTP-detail in the Tests tab', () => {
     const block = result.locator('[data-net-error-class="guard"]');
     await expect(block).toContainText('Redirect blocked by the address guard');
     await expect(block).toContainText('resolves to 192.168.1.20');
-    await expect(block.getByRole('button', { name: /Allow local bookmarks/ })).toBeVisible();
+    await expect(block.getByRole('button', { name: /Allow localhost & private-network bookmarks/ })).toBeVisible();
     const rows = result.locator('[data-net-redirects] tr');
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(1)).toHaveClass(/is-blocked/);

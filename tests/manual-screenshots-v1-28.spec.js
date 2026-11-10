@@ -27,9 +27,11 @@ async function openTests(page, name) {
     await page.locator('.library-link-anchor').click();
     await page.locator('#config-bm-list .config-bm-row').first().waitFor();
     await settle(page);
+    // Pacing for the capture, not a condition: a transition or a redraw gets time to finish before the frame is taken.
     await page.waitForTimeout(800);
     // The list draws only the rows near the screen: find the bookmark by its name first.
     await page.locator('#config-bm-search').fill(name);
+    // Pacing for the capture, not a condition: a transition or a redraw gets time to finish before the frame is taken.
     await page.waitForTimeout(600);
     await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: new RegExp(`^${name}$`) }) }).first().click();
     const panel = page.locator('#config-bm-panel');
@@ -55,6 +57,7 @@ test('11 the Tests tab: a certificate close to expiry', async ({ page }) => {
     await prepare(page);
     const { panel } = await openTests(page, 'Home Assistant');
     await page.evaluate(() => document.querySelectorAll('[data-net-card]').forEach((d) => { d.open = true; }));
+    // Pacing for the capture, not a condition: a transition or a redraw gets time to finish before the frame is taken.
     await page.waitForTimeout(800);
     await snap(page, panel, '11-tests-tls.jpg', { pad: 0 });
 });
@@ -88,6 +91,7 @@ test('11 Run once with HTTP detail', async ({ page }) => {
     await tests.locator('[data-net-run-types]').getByRole('button', { name: 'HTTP' }).click();
     await tests.locator('[data-tests-result="http"]').waitFor({ state: 'visible' });
     await tests.locator('[data-tests-result="http"]').scrollIntoViewIfNeeded();
+    // Pacing for the capture, not a condition: a transition or a redraw gets time to finish before the frame is taken.
     await page.waitForTimeout(600);
     await snap(page, panel, '11-tests-run-once.jpg', { pad: 0 });
 });
@@ -100,6 +104,7 @@ test('11 Add check, step two', async ({ page }) => {
     await form.waitFor({ state: 'visible' });
     await form.locator('[data-net-field="type"]').selectOption('dns');
     await form.scrollIntoViewIfNeeded();
+    // Pacing for the capture, not a condition: a transition or a redraw gets time to finish before the frame is taken.
     await page.waitForTimeout(600);
     await snap(page, form, '11-tests-add-check.jpg', { pad: 12, keepFocus: true });
 });
@@ -120,6 +125,7 @@ test('17 Config, Monitoring, Checks: the network checks panel', async ({ page })
         el.style.scrollMarginTop = '150px';
         el.scrollIntoView({ block: 'start' });
     });
+    // Pacing for the capture, not a condition: a transition or a redraw gets time to finish before the frame is taken.
     await page.waitForTimeout(800);
     await shot(page, '17-net-checks-config.jpg');
 });
