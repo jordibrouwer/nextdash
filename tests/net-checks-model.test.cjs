@@ -175,4 +175,43 @@ const tlsExplain = M.explain({ type: 'tls', minDaysLeft: 30, enabled: true }, bm
 assert.ok(/port 443/.test(tlsExplain.summary) && tlsExplain.lines.some((l) => /30 days or fewer/.test(l)));
 assert.ok(M.explain({ type: 'tls', enabled: true }, bm, tlsCaps, t).lines.some((l) => /14 days or fewer/.test(l)), 'the default threshold is 14 days');
 
+// HTTP-detail
+const httpCaps = { ...caps, typesBuilt: ['tcp', 'ping', 'http'] };
+assert.strictEqual(M.validate({ type: 'http', endpoint: '/health?full=1', expectStatus: '200,301', expectHeader: 'Server: nginx' }, httpCaps, t).ok, true);
+assert.strictEqual(M.validate({ type: 'http' }, httpCaps, t).ok, true, 'every http field is optional');
+['health', '//evil.example/x', '/a b', '/a\\b', '/a#x'].forEach((endpoint) => {
+    assert.ok(M.validate({ type: 'http', endpoint }, httpCaps, t).errors.endpoint, `path ${endpoint} is refused`);
+});
+['ok', '99', '600', '300-200', '200,x'].forEach((expectStatus) => {
+    assert.ok(M.validate({ type: 'http', expectStatus }, httpCaps, t).errors.expectStatus, `status ${expectStatus} is refused`);
+});
+['200', '200-299', '200, 301-302'].forEach((expectStatus) => {
+    assert.ok(!M.validate({ type: 'http', expectStatus }, httpCaps, t).errors.expectStatus, `status ${expectStatus} is accepted`);
+});
+assert.ok(M.validate({ type: 'http', expectHeader: ': nginx' }, httpCaps, t).errors.expectHeader);
+assert.ok(M.validate({ type: 'http', expectHeader: 'bad name: x' }, httpCaps, t).errors.expectHeader);
+assert.deepStrictEqual(M.pickForType({ type: 'http', endpoint: ' /h ', expectStatus: '204', expectHeader: 'server', maxMs: 300, port: 8080, count: 3 }),
+    { id: '', type: 'http', enabled: true, label: '', intervalMinutes: 0, timeoutSec: 0, muted: false, endpoint: '/h', expectStatus: '204', expectHeader: 'server', maxMs: 300 });
+assert.strictEqual(M.errorBlock({ class: 'http', type: 'http', host: 'x.example', detail: '404 · 1 redirect' }, t).body, 'The final answer was 404. This check expects 200-299.');
+assert.strictEqual(M.errorBlock({ class: 'content', type: 'http', host: 'x.example', expectHeader: 'server: nginx' }, t).title, 'Header not as expected');
+assert.strictEqual(M.errorBlock({ class: 'guard', type: 'http', host: 'x.example', detail: '302 · redirect blocked' }, t).title, 'Redirect blocked by the address guard');
+assert.strictEqual(M.errorBlock({ class: 'guard', type: 'tcp', host: 'x.example' }, t).title, 'Host blocked by the address guard');
+assert.strictEqual(M.testSummary({ ok: true, type: 'http', ms: 90, http: { status: 200, redirects: [{}, {}] } }, t), '200 · 2 redirects · 90 ms');
+assert.strictEqual(M.testSummary({ ok: true, type: 'http', ms: 90, http: { status: 200, redirects: [{}] } }, t), '200 · 1 redirect · 90 ms');
+assert.strictEqual(M.sizeText(850), '850 B');
+assert.strictEqual(M.sizeText(34200), '34.2 KB');
+assert.strictEqual(M.sizeText(1048576), '1 MB');
+const segs = M.httpSegments({ redirectMs: 40, dnsMs: 10, connectMs: 20, tlsMs: 0, waitMs: 20, transferMs: 10 }, t);
+assert.deepStrictEqual(segs.map((s) => s.key), ['redirects', 'dns', 'connect', 'wait', 'transfer'], 'a step without time is left out, except the first byte and the download');
+assert.strictEqual(segs[0].left, 0);
+assert.strictEqual(segs[1].left, 40, 'a bar starts where the one before ended');
+assert.strictEqual(segs.reduce((n, s) => n + s.width, 0) > 99, true);
+assert.deepStrictEqual(M.httpSegments({ waitMs: 5, transferMs: 0 }, t).map((s) => s.key), ['wait', 'transfer']);
+const split = M.httpHeaderSplit([{ name: 'a-x' }, { name: 'content-type' }, { name: 'server' }, { name: 'z' }], 3);
+assert.deepStrictEqual(split.first.map((h) => h.name), ['server', 'content-type', 'a-x'], 'the telling headers come first');
+assert.deepStrictEqual(split.rest.map((h) => h.name), ['z']);
+const httpExplain = M.explain({ type: 'http', endpoint: '/health', expectStatus: '200', maxMs: 500, enabled: true }, bm, httpCaps, t);
+assert.ok(/\/health/.test(httpExplain.summary) && httpExplain.lines.some((l) => /final status is 200/.test(l)) && httpExplain.lines.some((l) => /500 ms/.test(l)));
+assert.ok(M.explain({ type: 'http', enabled: true }, bm, httpCaps, t).lines.some((l) => /final status is 200-299/.test(l)), 'the default rule is 200-299');
+
 console.log('net-checks-model: ok');

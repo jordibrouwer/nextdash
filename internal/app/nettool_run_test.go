@@ -59,8 +59,8 @@ func TestNetCapabilitiesRoute(t *testing.T) {
 		t.Fatalf("capabilities: %v", got)
 	}
 	types, ok := got["typesBuilt"].([]any)
-	if !ok || len(types) != 4 || types[0] != "dns" || types[1] != "ping" || types[2] != "tcp" || types[3] != "tls" {
-		t.Fatalf("typesBuilt should be [dns ping tcp tls], got %#v", got["typesBuilt"])
+	if !ok || len(types) != 5 || types[0] != "dns" || types[1] != "http" || types[2] != "ping" || types[3] != "tcp" || types[4] != "tls" {
+		t.Fatalf("typesBuilt should be [dns http ping tcp tls], got %#v", got["typesBuilt"])
 	}
 	icmpState.Store(icmpBlocked)
 	t.Cleanup(func() { icmpState.Store(icmpUnknown) })

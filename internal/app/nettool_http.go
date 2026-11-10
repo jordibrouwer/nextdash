@@ -201,8 +201,13 @@ func traceMs(from, to time.Time) int {
 	return ceilMs(to.Sub(from))
 }
 
+// netHTTPProto writes HTTP/2.0 and HTTP/3.0 the way they are named (HTTP/2,
+// HTTP/3); HTTP/1.0 and HTTP/1.1 keep their minor version.
 func netHTTPProto(p string) string {
-	return strings.TrimSuffix(p, ".0")
+	if p == "HTTP/2.0" || p == "HTTP/3.0" {
+		return strings.TrimSuffix(p, ".0")
+	}
+	return p
 }
 
 func netIsRedirect(status int) bool {
@@ -322,6 +327,7 @@ func (h *Handlers) runHTTPDetail(ctx context.Context, g netGuard, t netTarget, b
 		res.Class, res.Error = "other", "The check cannot be run: "+err.Error()+"."
 		return res
 	}
+	res.Port = bookmarkURLPort(Bookmark{URL: start.String()})
 	runCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	client := g.httpClient(timeout, bm.AllowInsecureTLS)
@@ -439,6 +445,9 @@ func (h *Handlers) runHTTPDetail(ctx context.Context, g netGuard, t netTarget, b
 		RedirectMs: traceMs(runStart, finalHopStart),
 		TTFBMs:     traceMs(runStart, final.firstByte),
 		TotalMs:    traceMs(runStart, bodyDone),
+	}
+	if redirects == 0 {
+		tl.RedirectMs = 0 // no lead time: the first request is the run
 	}
 	detail.Timings = tl
 	res.IP = detail.IP

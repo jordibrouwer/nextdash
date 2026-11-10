@@ -114,6 +114,7 @@
                 class: check.state?.class, host: target.host, port: target.port,
                 timeoutSec: check.timeoutSec || 5,
                 type: check.type, record: check.record, expect: check.expect, detail: check.state?.detail,
+                expectStatus: check.expectStatus, expectHeader: check.expectHeader,
             }, t);
             if (!block) return '';
             return this.renderNetBlockHtml(block, { retest: `data-net-action="retest" data-net-id="${this.dash.escapeHtml(check.id)}"` });
@@ -156,6 +157,7 @@
                 planning, intervalMinutes: Number(check.intervalMinutes) || 0, timeoutSec: Number(check.timeoutSec) || 0,
                 muted: check.muted === true,
                 record: check.record || 'A', expect: check.expect || '', watchDrift: check.watchDrift === true,
+                endpoint: check.endpoint || '', expectStatus: check.expectStatus || '', expectHeader: check.expectHeader || '',
             };
         },
 
@@ -171,6 +173,7 @@
                 enabled: draft.planning !== 'off', intervalMinutes: interval, timeoutSec: Number(draft.timeoutSec) || 0,
                 muted: draft.muted === true,
                 record: draft.record || 'A', expect: String(draft.expect || '').trim(), watchDrift: draft.watchDrift === true,
+                endpoint: String(draft.endpoint || '').trim(), expectStatus: String(draft.expectStatus || '').trim(), expectHeader: String(draft.expectHeader || '').trim(),
             };
         },
 
@@ -210,6 +213,15 @@
                     t('nettools.fieldTlsPortHint', 'Empty uses 443, or the port of an https bookmark address.'))}
                     ${field('minDaysLeft', t('nettools.fieldMinDays', 'Warn at or below (days)'), input('minDaysLeft', d.minDaysLeft, 'number', `min="1" max="120" placeholder="${esc(String(M.TLS_DEFAULT_MIN_DAYS))}"`),
                         t('nettools.fieldMinDaysHint', 'A valid certificate with fewer days left shows a warning and sends one expiry notice.'))}`;
+            }
+            if (d.type === 'http') {
+                params = `${field('endpoint', t('nettools.fieldPath', 'Path'), input('endpoint', d.endpoint, 'text', `spellcheck="false" maxlength="200" placeholder="${esc(t('nettools.fieldPathPlaceholder', "The bookmark's own address"))}"`),
+                    t('nettools.fieldPathHint', 'A path on the same host, such as /health. Empty requests the bookmark address.'))}
+                    ${field('expectStatus', t('nettools.fieldExpectStatus', 'Expected status'), input('expectStatus', d.expectStatus, 'text', `spellcheck="false" maxlength="60" placeholder="${esc(M.HTTP_DEFAULT_STATUS)}"`),
+                        t('nettools.fieldExpectStatusHint', 'Judged after the redirects. A list works: 200,301.'))}
+                    ${field('expectHeader', t('nettools.fieldExpectHeader', 'Expected header'), input('expectHeader', d.expectHeader, 'text', `spellcheck="false" maxlength="200" placeholder="${esc(t('nettools.fieldExpectHeaderPlaceholder', 'Optional, like server: nginx'))}"`),
+                        t('nettools.fieldExpectHeaderHint', 'The answer must have this header, and contain the text after the colon when there is one.'))}
+                    ${field('maxMs', t('nettools.fieldSlowFirstByte', 'Slow from (ms to first byte)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}`;
             }
             if (d.type === 'dns') {
                 const recordOptions = M.DNS_RECORDS.map((r) => `<option value="${r}"${d.record === r ? ' selected' : ''}>${esc(r)}</option>`).join('');
@@ -878,7 +890,7 @@
 
         /** Fields a stored check may carry that the form owns: cleared so a removed value really goes. */
         bmNetClear(c) {
-            return { label: '', host: '', port: 0, minDaysLeft: 0, count: 0, maxLossPct: 0, maxMs: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, enabled: c.enabled, record: '', expect: '', watchDrift: false };
+            return { label: '', host: '', port: 0, minDaysLeft: 0, count: 0, maxLossPct: 0, maxMs: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, enabled: c.enabled, record: '', expect: '', watchDrift: false, endpoint: '', expectStatus: '', expectHeader: '' };
         },
 
         focusBmNetForm(b, selector = 'input, select, button') {

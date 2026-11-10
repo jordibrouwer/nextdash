@@ -356,3 +356,99 @@
 .net-cert-meta {
     color: var(--text-secondary);
 }
+
+/* An HTTP-detail run: the timeline as bars, the redirect chain and the headers. */
+.net-wf {
+    display: grid;
+    grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+.net-wf-label {
+    color: var(--text-secondary);
+}
+
+.net-wf-ms {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.net-wf-bar {
+    position: relative;
+    height: 0.85rem;
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in srgb, var(--text-tertiary) 22%, transparent);
+}
+
+.net-wf-seg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--accent-primary);
+}
+
+.net-wf-seg.is-redirects {
+    background: var(--text-tertiary);
+}
+
+.net-wf-seg.is-connect {
+    background: var(--accent-success);
+}
+
+.net-wf-seg.is-tls {
+    background: var(--accent-warning);
+}
+
+.net-wf-seg.is-wait {
+    background: color-mix(in srgb, var(--accent-primary) 55%, var(--text-primary));
+}
+
+.net-wf-seg.is-transfer {
+    background: var(--text-secondary);
+}
+
+.net-http-sub {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.net-http-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+.net-http-table td {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border-primary);
+    vertical-align: top;
+}
+
+.net-http-url {
+    overflow-wrap: anywhere;
+}
+
+.net-http-name {
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.net-http-num {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.net-http-table tr.is-blocked td {
+    color: var(--accent-error);
+}
+
+.net-http-more > summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.85rem);
+}

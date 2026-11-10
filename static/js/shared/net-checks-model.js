@@ -26,6 +26,10 @@
     // A valid certificate with fewer days left than this is a warning (up, not down).
     const TLS_DEFAULT_MIN_DAYS = 14;
     const TLS_MAX_MIN_DAYS = 120;
+    // HTTP-detail: what the status rule says when a check names none.
+    const HTTP_DEFAULT_STATUS = '200-299';
+    const HTTP_ENDPOINT_MAX = 200;
+    const HTTP_EXPECT_HEADER_MAX = 200;
     // Drift is on for the records that change rarely and mean something when
     // they do; off for A and AAAA, which rotate behind a CDN.
     const DRIFT_DEFAULT_ON = ['MX', 'TXT', 'NS', 'CNAME'];
@@ -208,6 +212,16 @@
             lines.push(t('nettools.ruleTlsDown', 'Down when the certificate is expired, not trusted or for another name'));
             lines.push(fmt(t('nettools.ruleTlsWarn', 'Warning when {n} days or fewer are left (still counts as up)'), { n: days }));
             lines.push(t('nettools.ruleTlsNotify', 'One expiry notice each time the days left cross a mark'));
+        } else if (c.type === 'http') {
+            const path = String(c.endpoint || '').trim();
+            summary = path
+                ? fmt(t('nettools.explainHttpPath', 'Requests {path} on {host} and follows the redirects, step by step.'), { path, host: hostText })
+                : fmt(t('nettools.explainHttp', 'Requests the address of this bookmark ({host}) and follows the redirects, step by step.'), { host: hostText });
+            lines.push(fmt(t('nettools.ruleHttpStatus', 'Down unless the final status is {status}'), { status: String(c.expectStatus || '').trim() || HTTP_DEFAULT_STATUS }));
+            if (String(c.expectHeader || '').trim()) lines.push(fmt(t('nettools.ruleHttpHeader', 'Down when the answer lacks the header: {header}'), { header: String(c.expectHeader).trim() }));
+            lines.push(t('nettools.ruleHttpRedirects', 'Follows up to 10 redirects; one to a private address is shown, not followed'));
+            if (Number(c.maxMs) > 0) lines.push(fmt(t('nettools.ruleHttpSlow', 'Slow when the first byte takes longer than {ms} ms (still counts as up)'), { ms: c.maxMs }));
+            lines.push(t('nettools.ruleHttpSeparate', "Separate from the bookmark's own HTTP check: it keeps its own history"));
         } else {
             summary = fmt(t('nettools.explainOther', 'Runs a {type} check on {host}.'), { type: name, host: hostText });
         }
@@ -243,6 +257,14 @@
                 actions: ['copy'],
             };
         case 'guard':
+            if (r.type === 'http' && (r.redirectBlocked === true || /redirect blocked/.test(String(r.detail || '')))) {
+                return {
+                    cls: 'guard', tone: 'err',
+                    title: t('nettools.errRedirectGuardTitle', 'Redirect blocked by the address guard'),
+                    body: r.error || t('nettools.errRedirectGuardBody', 'The server redirects to a private address. nextDash shows the hop but does not follow it unless you allow local addresses.'),
+                    actions: ['allowLocal'],
+                };
+            }
             return {
                 cls: 'guard', tone: 'err',
                 title: t('nettools.errGuardTitle', 'Host blocked by the address guard'),
@@ -252,6 +274,14 @@
                 actions: ['allowLocal'],
             };
         case 'timeout':
+            if (r.type === 'http') {
+                return {
+                    cls: 'timeout', tone: 'err',
+                    title: fmt(t('nettools.errTimeoutTitle', 'Time-out after {s} s'), { s: r.timeoutSec || 10 }),
+                    body: fmt(t('nettools.errHttpTimeoutBody', '{host} did not finish answering in time. It may be slow, or something is dropping the request.'), { host }),
+                    actions: [],
+                };
+            }
             return {
                 cls: 'timeout', tone: 'err',
                 title: fmt(t('nettools.errTimeoutTitle', 'Time-out after {s} s'), { s: r.timeoutSec || 5 }),
@@ -281,7 +311,23 @@
                 body: fmt(t('nettools.errDnsBody', 'No address found for {host}. A typo in the bookmark address?'), { host }),
                 actions: [],
             };
+        case 'http':
+            return {
+                cls: 'http', tone: 'err',
+                title: t('nettools.errHttpStatusTitle', 'Not the expected status'),
+                body: r.error || fmt(t('nettools.errHttpStatusBody', 'The final answer was {status}. This check expects {expect}.'),
+                    { status: (String(r.detail || '').match(/^\d{3}/) || ['?'])[0], expect: r.expectStatus || HTTP_DEFAULT_STATUS }),
+                actions: [],
+            };
         case 'tls':
+            if (r.type === 'http') {
+                return {
+                    cls: 'tls', tone: 'err',
+                    title: t('nettools.errHttpTlsTitle', 'Secure connection failed'),
+                    body: r.error || fmt(t('nettools.errHttpTlsBody', "The certificate of {host} was not accepted. If you trust it, allow an untrusted certificate in the bookmark's health settings."), { host }),
+                    actions: [],
+                };
+            }
             if (r.detail) {
                 // The details the server writes for a failed certificate; any other is shown as it is.
                 let body = fmt(t('nettools.errTlsBody', 'The certificate on {host} port {port} is not acceptable: {detail}.'), { host, port: r.port || '?', detail: r.detail });
@@ -302,6 +348,14 @@
                 actions: [],
             };
         case 'content':
+            if (r.type === 'http') {
+                return {
+                    cls: 'content', tone: 'err',
+                    title: t('nettools.errHttpHeaderTitle', 'Header not as expected'),
+                    body: r.error || fmt(t('nettools.errHttpHeaderBody', 'The answer does not have the header this check expects: {header}.'), { header: r.expectHeader || '?' }),
+                    actions: [],
+                };
+            }
             return {
                 cls: 'content', tone: 'err',
                 title: t('nettools.errContentTitle', 'Not the expected value'),
@@ -376,6 +430,21 @@
             }
         }
 
+        if (c.type === 'http') {
+            const endpoint = String(c.endpoint || '').trim();
+            if (endpoint) {
+                if (endpoint.length > HTTP_ENDPOINT_MAX) errors.endpoint = fmt(t('nettools.errPathLong', 'The path can be at most {max} characters.'), { max: HTTP_ENDPOINT_MAX });
+                else if (endpoint[0] !== '/' || endpoint.startsWith('//') || /[\\\s#]/.test(endpoint)) errors.endpoint = t('nettools.errPath', 'Start the path with a single / and leave out spaces, backslashes and #.');
+            }
+            const status = String(c.expectStatus || '').trim();
+            if (status && !validStatusRule(status)) errors.expectStatus = t('nettools.errExpectStatus', 'Use a status like 200, 200-299 or 200,301.');
+            const header = String(c.expectHeader || '').trim();
+            if (header) {
+                if (Array.from(header).length > HTTP_EXPECT_HEADER_MAX) errors.expectHeader = fmt(t('nettools.errExpectHeaderLong', 'The expected header can be at most {max} characters.'), { max: HTTP_EXPECT_HEADER_MAX });
+                else if (!/^[A-Za-z0-9_-]+\s*(:.*)?$/.test(header)) errors.expectHeader = t('nettools.errExpectHeader', 'Write a header name, or a name: text it must contain.');
+            }
+        }
+
         if (c.type === 'dns') {
             if (!DNS_RECORDS.includes(String(c.record || '').toUpperCase())) errors.record = t('nettools.errRecord', 'Pick a record type.');
             const expect = String(c.expect || '').trim();
@@ -385,6 +454,19 @@
         }
 
         return { ok: Object.keys(errors).length === 0, errors };
+    }
+
+    /** "200", "200-299", "200,301": the status rule of an HTTP check (parts 100-599). */
+    function validStatusRule(spec) {
+        const parts = String(spec).split(',').map((p) => p.trim()).filter(Boolean);
+        if (!parts.length) return false;
+        return parts.every((p) => {
+            const m = /^(\d{3})(?:\s*-\s*(\d{3}))?$/.exec(p);
+            if (!m) return false;
+            const lo = Number(m[1]);
+            const hi = m[2] ? Number(m[2]) : lo;
+            return lo >= 100 && hi <= 599 && lo <= hi;
+        });
     }
 
     const SEVERITY = { down: 4, warn: 3, slow: 2, unknown: 1, ok: 0, off: -1 };
@@ -426,6 +508,7 @@
         const check = { id: '', type, enabled: true, label: '', host: '', port: 0, intervalMinutes: 0, timeoutSec: 0, muted: false, count: 0, maxLossPct: 0, maxMs: 0 };
         if (type === 'dns') Object.assign(check, { record: 'A', expect: '', watchDrift: driftDefault('A') });
         if (type === 'tls') check.minDaysLeft = 0;
+        if (type === 'http') Object.assign(check, { endpoint: '', expectStatus: '', expectHeader: '' });
         return check;
     }
 
@@ -448,6 +531,11 @@
         } else if (check.type === 'tls') {
             if (Number(check.port) > 0) base.port = Number(check.port);
             if (Number(check.minDaysLeft) > 0) base.minDaysLeft = Number(check.minDaysLeft);
+        } else if (check.type === 'http') {
+            if (String(check.endpoint || '').trim()) base.endpoint = String(check.endpoint).trim();
+            if (String(check.expectStatus || '').trim()) base.expectStatus = String(check.expectStatus).trim();
+            if (String(check.expectHeader || '').trim()) base.expectHeader = String(check.expectHeader).trim();
+            if (Number(check.maxMs) > 0) base.maxMs = Number(check.maxMs);
         } else if (check.type === 'dns') {
             base.record = String(check.record || 'A').toUpperCase();
             if (String(check.expect || '').trim()) base.expect = String(check.expect).trim();
@@ -475,7 +563,8 @@
     /** A failed result as a block: the class's own, else the server's sentence. */
     function testErrorBlock(res, t) {
         const r = res || {};
-        const own = errorBlock({ class: r.class, host: r.host, port: r.port, ip: r.ip, timeoutSec: 10, type: r.type, record: r.dns && r.dns.record, error: r.error, detail: r.detail }, t);
+        const own = errorBlock({ class: r.class, host: r.host, port: r.port, ip: r.ip, timeoutSec: 10, type: r.type, record: r.dns && r.dns.record, error: r.error, detail: r.detail,
+            redirectBlocked: Boolean(r.http && (r.http.redirects || []).some((h) => h.blocked)), expectStatus: r.http && r.http.expectStatus, expectHeader: r.http && r.http.expectHeader }, t);
         if (own) return own;
         return {
             cls: r.class || 'other', tone: 'err',
@@ -511,7 +600,66 @@
             const tl = res.tls || {};
             return [tlsDaysText(tl.daysLeft, t), tl.version || ''].filter(Boolean).join(' \u00b7 ');
         }
+        if (res.type === 'http') {
+            const h = res.http || {};
+            const n = (h.redirects || []).length;
+            const parts = [String(h.status || '')];
+            if (n) parts.push(n === 1 ? t('nettools.httpOneRedirect', '1 redirect') : fmt(t('nettools.httpRedirects', '{n} redirects'), { n }));
+            if (ms) parts.push(`${ms} ms`);
+            return parts.filter(Boolean).join(' \u00b7 ');
+        }
         return ms ? `${ms} ms` : t('nettools.stateOk', 'Up');
+    }
+
+    /** "850 B", "34 KB", "1.2 MB": a size for a chip. */
+    function sizeText(bytes) {
+        const n = Number(bytes) || 0;
+        if (n < 1000) return `${n} B`;
+        if (n < 100 * 1000) return `${Math.round(n / 100) / 10} KB`;
+        if (n < 1000 * 1000) return `${Math.round(n / 1000)} KB`;
+        return `${Math.round(n / 100000) / 10} MB`;
+    }
+
+    /**
+     * The timeline of an HTTP-detail result as bars (mockup a4): one row per
+     * step that took time, with where it starts and how wide it is, as percents
+     * of the whole timeline. Redirects (the lead time before the final request)
+     * come first; DNS, connect and TLS only when they took time; the first byte
+     * and the download are always there.
+     */
+    function httpSegments(timings, t) {
+        const tl = timings || {};
+        const rows = [
+            ['redirects', t('nettools.wfRedirects', 'Redirects'), Number(tl.redirectMs) || 0, false],
+            ['dns', t('nettools.wfDns', 'DNS'), Number(tl.dnsMs) || 0, false],
+            ['connect', t('nettools.wfConnect', 'Connect'), Number(tl.connectMs) || 0, false],
+            ['tls', t('nettools.wfTls', 'TLS'), Number(tl.tlsMs) || 0, false],
+            ['wait', t('nettools.wfWait', 'First byte'), Number(tl.waitMs) || 0, true],
+            ['transfer', t('nettools.wfDownload', 'Download'), Number(tl.transferMs) || 0, true],
+        ].filter((r) => r[3] || r[2] > 0);
+        const sum = Math.max(1, rows.reduce((total, r) => total + r[2], 0));
+        let at = 0;
+        return rows.map(([key, label, ms]) => {
+            const seg = { key, label, ms, left: Math.round((at / sum) * 1000) / 10, width: Math.max(1.5, Math.round((ms / sum) * 1000) / 10) };
+            at += ms;
+            return seg;
+        });
+    }
+
+    /** The headers a result shows first: the ones that say the most, then the rest in order. */
+    const HEADER_FIRST = ['server', 'content-type', 'strict-transport-security', 'cache-control', 'location'];
+    function httpHeaderSplit(headers, count) {
+        const list = Array.isArray(headers) ? headers : [];
+        const first = [];
+        HEADER_FIRST.forEach((name) => {
+            const found = list.find((h) => h.name === name);
+            if (found && first.length < count) first.push(found);
+        });
+        for (const h of list) {
+            if (first.length >= count) break;
+            if (!first.includes(h)) first.push(h);
+        }
+        return { first, rest: list.filter((h) => !first.includes(h)) };
     }
 
     /**
@@ -532,6 +680,7 @@
     }
 
     const api = {
+        HTTP_DEFAULT_STATUS, validStatusRule, sizeText, httpSegments, httpHeaderSplit,
         DNS_RECORDS, TLS_DEFAULT_MIN_DAYS, tlsPort, tlsDaysText, driftDefault, toolTypes, testState, testErrorBlock, testSummary, checkFromTest,
         TYPES, TYPE_NAMES, MAX_CHECKS_PER_BOOKMARK,
         typeName, typeHint, hostOf, defaultPort, targetOf, labelFor, badgeState, stateLabel,

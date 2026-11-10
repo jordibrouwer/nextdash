@@ -167,7 +167,7 @@
             let testLine = '';
             if (test) {
                 testLine = test.ok
-                    ? kv(t('nettools.testNow', 'Test now'), M.testSummary(test.res, t))
+                    ? kv(t('nettools.testNow', 'Test now'), M.testSummary(test.res, t)) + (check.type === 'http' && test.res?.http?.status ? this.renderBmTestsHttpRows(test.res, M.testState(test.res)) : '')
                     : `<p class="net-inline-error" role="status" data-net-error>${esc(test.error)}</p>`;
             }
             const busy = st.testingId === check.id;
@@ -220,6 +220,9 @@
                 rows = this.renderNetBlockHtml(M.testErrorBlock(res, t), { retest: `data-net-action="run" data-net-type="${esc(type)}"` });
                 // A certificate that is not accepted is still shown: what is wrong is on it.
                 if (type === 'tls' && res.tls?.chain?.length) rows += this.renderBmTestsTlsRows(res, state);
+                if (type === 'http' && res.http?.status) rows += this.renderBmTestsHttpRows(res, state);
+            } else if (type === 'http') {
+                rows = this.renderBmTestsHttpRows(res, state);
             } else if (type === 'tls') {
                 rows = this.renderBmTestsTlsRows(res, state);
             } else if (type === 'dns') {
@@ -280,6 +283,57 @@
                 : '';
             const status = state === 'slow' ? kv(t('nettools.resResult', 'Result'), M.stateLabel(state, t)) : '';
             return `${head}${status}${table}${compare}`;
+        },
+
+        /**
+         * The answer of an HTTP-detail run (mockup a4): chips (status, protocol,
+         * total time, size), the timeline as bars, the redirect chain (the hops,
+         * then where it ended) and the response headers, the first few with the
+         * rest folded away. A hop the address guard refused is in the chain,
+         * marked, and was never requested.
+         */
+        renderBmTestsHttpRows(res, state) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const M = model();
+            const t = (k, f) => this.bmNetT(k, f);
+            const h = res.http || {};
+            const tl = h.timings || {};
+            const chipState = res.ok ? state : 'down';
+            const chips = [
+                h.status ? `<span class="net-badge" data-state="${chipState}" data-net-http-status>${esc(String(h.status))}</span>` : '',
+                h.proto ? `<span class="net-chip">${esc(h.proto)}</span>` : '',
+                tl.totalMs ? `<span class="net-chip">${esc(t('nettools.httpTotal', '{ms} ms total').replace('{ms}', String(tl.totalMs)))}</span>` : '',
+                h.size ? `<span class="net-chip">${esc(M.sizeText(h.size))}${h.sizeCapped ? ` ${esc(t('nettools.httpSizeCapped', '(read up to here)'))}` : ''}</span>` : '',
+            ].join('');
+            const segs = h.timings ? M.httpSegments(tl, t) : [];
+            const wf = segs.length
+                ? `<div class="net-wf" data-net-wf role="img" aria-label="${esc(t('nettools.wfLabel', 'Timeline of the request'))}">${segs.map((g) =>
+                    `<span class="net-wf-label">${esc(g.label)}</span><span class="net-wf-bar"><b class="net-wf-seg is-${g.key}" style="left:${g.left}%;width:${g.width}%"></b></span><span class="net-wf-ms">${esc(String(g.ms))} ms</span>`).join('')}</div>`
+                : '';
+            const hops = Array.isArray(h.redirects) ? h.redirects : [];
+            const last = hops.some((x) => x.blocked) ? null : { url: h.url, status: h.status, ms: Math.max(0, (Number(tl.ttfbMs) || 0) - (Number(tl.redirectMs) || 0)) };
+            const rows = [...hops, ...(last && last.url ? [last] : [])];
+            const redirects = hops.length
+                ? `<table class="net-http-table" data-net-redirects aria-label="${esc(t('nettools.httpRedirectsTitle', 'Redirects'))}">
+                        <tbody>${rows.map((x) => `<tr${x.blocked ? ' class="is-blocked"' : ''}><td class="net-http-url">${esc(x.url)}</td><td>${x.blocked ? esc(t('nettools.httpBlocked', 'blocked')) : esc(String(x.status || ''))}</td><td class="net-http-num">${x.ms ? `${esc(String(x.ms))} ms` : ''}</td></tr>`).join('')}</tbody>
+                    </table>`
+                : '';
+            const split = M.httpHeaderSplit(h.headers, 3);
+            const hdrRow = (x) => `<tr><td class="net-http-name">${esc(x.name)}</td><td class="net-http-url">${esc(x.value)}</td></tr>`;
+            const total = Number(h.headersTotal) || (h.headers || []).length;
+            const shown = (h.headers || []).length;
+            const more = split.rest.length
+                ? `<details class="net-http-more"><summary>${esc(t('nettools.httpAllHeaders', 'Show all {n} headers').replace('{n}', String(shown)))}</summary>
+                        <table class="net-http-table"><tbody>${split.rest.map(hdrRow).join('')}</tbody></table>
+                        ${total > shown ? `<p class="config-bm-panel-muted">${esc(t('nettools.httpHeadersCut', '{n} more headers are not shown.').replace('{n}', String(total - shown)))}</p>` : ''}
+                    </details>`
+                : '';
+            const headers = split.first.length
+                ? `<div class="net-http-sub" data-net-headers><b>${esc(t('nettools.httpHeadersTitle', 'Headers ({shown} of {total})').replace('{shown}', String(split.first.length)).replace('{total}', String(total)))}</b>
+                        <table class="net-http-table"><tbody>${split.first.map(hdrRow).join('')}</tbody></table>${more}</div>`
+                : '';
+            return `${chips ? `<div class="net-chips" data-net-http-chips>${chips}</div>` : ''}${wf}
+                ${redirects ? `<div class="net-http-sub"><b>${esc(t('nettools.httpRedirectsTitle', 'Redirects'))}</b>${redirects}</div>` : ''}${headers}`;
         },
 
         /**

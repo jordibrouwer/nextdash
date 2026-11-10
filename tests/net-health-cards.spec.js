@@ -145,7 +145,7 @@ test.describe('network check cards', () => {
   test('a bookmark without checks offers Run once, open, and says nothing on Health', async ({ page }) => {
     await open(page, []);
     await expect(net(page).locator('[data-bm-acc="run"]')).toHaveAttribute('open', '');
-    await expect(net(page).locator('[data-net-run-types] button')).toHaveText(['TCP', 'Ping', 'DNS', 'TLS']);
+    await expect(net(page).locator('[data-net-run-types] button')).toHaveText(['TCP', 'Ping', 'DNS', 'TLS', 'HTTP']);
     await page.keyboard.press('2');
     await expect(panel(page).locator('[data-bm-pane="health"] [data-bm-net-line]')).toBeHidden();
   });
