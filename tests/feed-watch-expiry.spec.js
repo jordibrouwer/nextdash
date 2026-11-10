@@ -154,7 +154,9 @@ test('reading one of more than ten unread items does not ring, nor bring a read 
     await page.evaluate(() => window.NotificationBell.refreshAll());
     await page.evaluate(() => {
         window.__sound = 0;
-        window.NotificationBell.playSound = () => { window.__sound++; };
+        // Only the news chime counts: a tip or a notice that arrives late on a slow runner
+        // rings in its own tone and is not what this test is about.
+        window.NotificationBell.playSound = (tone) => { if (tone === 'chime') window.__sound++; };
         window.DiscoverabilityState.schedulePersist = () => {};
     });
     await openBell(page);

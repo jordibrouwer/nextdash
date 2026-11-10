@@ -98,6 +98,9 @@ test.describe('a long list draws a screenful', () => {
     });
 
     test('the keyboard carries on past the edge of the window', async ({ page }) => {
+        // Two thousand rows and sixty presses: five seconds here, and several times that on a
+        // two-core runner with the other shards running beside it.
+        test.setTimeout(120_000);
         await openBookmarks(page);
         await withManyBookmarks(page, 2000);
 

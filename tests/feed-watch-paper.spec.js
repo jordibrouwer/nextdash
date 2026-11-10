@@ -228,6 +228,9 @@ test('returning to the tab leaves the paper closed when only muted feeds have ne
 
 test('returning to the tab does not cover another window', async ({ page, request }) => {
     await allowOpenOnReturn(request);
+    // The docked bar slides away two seconds after loading, and a slow runner is later than
+    // that: the Help button would then be off the screen. Keep the bar in view.
+    expect((await request.post('/api/settings', { headers, data: { actionBarAutoHideSeconds: 0 } })).ok()).toBe(true);
     await openDashboard(page);
     await expect.poll(() => page.title()).toMatch(/^\(5\) /);
     await fakeVisibility(page);
@@ -238,6 +241,7 @@ test('returning to the tab does not cover another window', async ({ page, reques
     // Nothing should open over the other window: a fixed wait, so a late open would show up before the check.
     await page.waitForTimeout(500);
     await expect(modal(page)).toHaveCount(0);
+    await request.post('/api/settings', { headers, data: { actionBarAutoHideSeconds: 2 } });
 });
 
 test('on a phone the sections stack, the controls are 44 px and nothing runs off the side', async ({ page }) => {

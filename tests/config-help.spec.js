@@ -158,6 +158,16 @@ test.describe('the tabs carry a readable amount each', () => {
 test.describe('one topic can be linked to', () => {
     test('a panel link opens that panel, on its tab', async ({ page }) => {
         await markWhatsNewSeen(page);
+        // The highlight stays for two seconds and is then taken off again; a slow runner
+        // can be later than that, so note that it was ever put on rather than look for it.
+        await page.addInitScript(() => {
+            window.__linkedSeen = false;
+            new MutationObserver((records) => {
+                for (const r of records) {
+                    if (r.target.id === 'help-panel-health-cert' && r.target.classList.contains('is-linked')) window.__linkedSeen = true;
+                }
+            }).observe(document, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        });
         await page.goto('/#config/help/monitoring/health-cert');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -169,7 +179,7 @@ test.describe('one topic can be linked to', () => {
         await expect(panel).toBeVisible();
         // Arriving at a wall of prose with no idea which part was linked is
         // barely better than arriving at the top.
-        await expect(panel).toHaveClass(/is-linked/);
+        await expect.poll(() => page.evaluate(() => window.__linkedSeen)).toBe(true);
         // The address keeps the panel rather than being rewritten to the tab.
         expect(await page.evaluate(() => location.hash)).toBe('#config/help/monitoring/health-cert');
     });
