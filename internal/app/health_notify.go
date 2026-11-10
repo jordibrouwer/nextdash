@@ -46,6 +46,9 @@ type monitorTransition struct {
 	// the sample is still recorded and the row still reads as down, only the
 	// outbound message is held back.
 	muted bool
+	// check and checkID are set by a network check: its label and its ID. The
+	// ID keeps its alerts apart from the bookmark's HTTP alerts.
+	check, checkID string
 }
 
 // monitorNotification is a transition that cleared the alerting rules and should
@@ -60,6 +63,10 @@ type monitorNotification struct {
 	// Failures is how many consecutive failed checks preceded a "down" event,
 	// including the current one.
 	Failures int `json:"failures,omitempty"`
+	// Check and CheckID are set when a network check raised this notification
+	// ("TCP 443", and the check's ID); empty for the bookmark's own monitor.
+	Check   string `json:"check,omitempty"`
+	CheckID string `json:"checkId,omitempty"`
 	// DaysLeft is set on "cert-expiring" only: whole days until the certificate
 	// for this host stops being valid.
 	DaysLeft int `json:"daysLeft,omitempty"`
@@ -239,6 +246,8 @@ func (h *Handlers) pendingMonitorNotificationsAlerted(transitions []monitorTrans
 					Error:    t.reason,
 					At:       t.at,
 					Failures: failures,
+					Check:    t.check,
+					CheckID:  t.checkID,
 				})
 				alerted[t.key] = true
 			}
@@ -270,6 +279,8 @@ func (h *Handlers) pendingMonitorNotificationsAlerted(transitions []monitorTrans
 				DownSince:  downSince,
 				DurationMs: duration,
 				DownChecks: priorFailures,
+				Check:      t.check,
+				CheckID:    t.checkID,
 			})
 		}
 	}

@@ -395,6 +395,10 @@ func buildDigestWeek(in digestInput) *digestWeek {
 		inputs := make([]fleetMonitorInput, 0, len(in.Samples))
 		var dayUp, dayTotal [7]int
 		for url, samples := range in.Samples {
+			// Network checks keep their own history; they are not a bookmark's uptime.
+			if isNetHistoryKey(url) {
+				continue
+			}
 			inputs = append(inputs, fleetMonitorInput{url: url, samples: samples, days: in.Days[url]})
 			for _, s := range samples {
 				if s.T >= weekAgo.UnixMilli() && s.T <= now && !s.Maint {

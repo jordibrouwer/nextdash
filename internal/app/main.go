@@ -240,6 +240,10 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/duplicates", handlers.CheckDuplicates).Methods("GET")
 	r.HandleFunc("/api/health", handlers.Health).Methods("GET")
 	r.HandleFunc("/api/bookmark-health", handlers.GetBookmarkHealth).Methods("GET")
+	r.HandleFunc("/api/net/capabilities", handlers.GetNetCapabilities).Methods("GET")
+	r.HandleFunc("/api/net/checks", handlers.GetNetChecks).Methods("GET")
+	r.HandleFunc("/api/net/checks", handlers.PutNetChecks).Methods("PUT")
+	r.HandleFunc("/api/net/history", handlers.GetNetHistory).Methods("GET")
 	// The daily points alone, without building a report for them.
 	r.HandleFunc("/api/health/trend", handlers.GetHealthTrend).Methods("GET")
 	// The five most recent posts from nextdash.cc, fetched by the server so the

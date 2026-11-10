@@ -161,7 +161,23 @@ func (h *Handlers) StartHealthMonitorScheduler(stop <-chan struct{}) {
 // its own. Used to prune certificates for hosts nothing monitored points at
 // any more, without dropping one still in use just because of a redirect.
 func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, known map[string]bool, liveHosts map[string]struct{}) {
+	return h.dueMonitorTargetsWithHistory(now, h.readAllHealthHistory())
+}
+
+// dueMonitorTargetsAll is dueMonitorTargets plus the network checks that are
+// due, reading the history once for both. known also holds a "net:<id>" key for
+// every check, enabled or not, so the sweep keeps its history.
+func (h *Handlers) dueMonitorTargetsAll(now time.Time) (targets []monitorTarget, netDue []netDue, known map[string]bool, liveHosts map[string]struct{}) {
 	history := h.readAllHealthHistory()
+	targets, known, liveHosts = h.dueMonitorTargetsWithHistory(now, history)
+	netDue, netKnown := h.dueNetChecks(now, history, h.store.GetSettings())
+	for _, key := range netKnown {
+		known[key] = true
+	}
+	return targets, netDue, known, liveHosts
+}
+
+func (h *Handlers) dueMonitorTargetsWithHistory(now time.Time, history map[string][]HealthSample) (targets []monitorTarget, known map[string]bool, liveHosts map[string]struct{}) {
 	softNotFound := softNotFoundEnabled(h.store.GetSettings())
 	known = map[string]bool{}
 	liveHosts = map[string]struct{}{}
@@ -191,6 +207,13 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 			key := canonicalBookmarkURLKey(bm.URL)
 			if key != "" {
 				known[key] = true
+			}
+			// A check keeps its history while it exists, enabled or not, on a
+			// monitored bookmark or not (no scheduling here yet).
+			for _, chk := range bm.Checks {
+				if chk.ID != "" {
+					known[netHistoryKey(chk.ID)] = true
+				}
 			}
 			if !bm.Monitor || key == "" {
 				continue
@@ -275,11 +298,11 @@ func lastSampleAt(samples []HealthSample) int64 {
 func (h *Handlers) runDueMonitors() {
 	now := time.Now()
 	graceStart := h.graceNow()
-	targets, known, liveHosts := h.dueMonitorTargets(now)
+	targets, netDueList, known, liveHosts := h.dueMonitorTargetsAll(now)
 
 	// Sweep even when nothing is due, so un-monitoring or deleting a bookmark
 	// reclaims its history without needing a due check to trigger it.
-	if len(targets) == 0 {
+	if len(targets) == 0 && len(netDueList) == 0 {
 		if err := h.sweepHealthHistory(known); err != nil {
 			logWarn(logComponentHealth, "old history could not be cleared away (%v); it will be tried again next round", err)
 		}
@@ -300,7 +323,10 @@ func (h *Handlers) runDueMonitors() {
 		wg       sync.WaitGroup
 		mu       sync.Mutex
 		outcomes = make([]outcome, 0, len(targets))
-		sem      = make(chan struct{}, monitorMaxConcurrentPings)
+		// The network checks of this round. Same wait group, slots and host
+		// gates as the HTTP checks, their own result list.
+		netOutcomes = make([]netOutcome, 0, len(netDueList))
+		sem         = make(chan struct{}, monitorMaxConcurrentPings)
 		// One in-flight check per host. Twenty bookmarks on one domain used to
 		// arrive as twenty simultaneous requests from the same address, which is
 		// how a well-behaved dashboard looks like a small flood to the server it
@@ -311,8 +337,7 @@ func (h *Handlers) runDueMonitors() {
 		hostSemMu sync.Mutex
 	)
 
-	hostGate := func(rawURL string) chan struct{} {
-		host := monitorHostKey(rawURL)
+	hostGate := func(host string) chan struct{} {
 		if host == "" {
 			return nil
 		}
@@ -333,7 +358,7 @@ func (h *Handlers) runDueMonitors() {
 			// The host first, then a slot: a check queued behind its own host
 			// must not sit on one of the eight while it waits, or one busy host
 			// (every service on one IP) starves the checks of every other.
-			if gate := hostGate(t.url); gate != nil {
+			if gate := hostGate(monitorHostKey(t.url)); gate != nil {
 				gate <- struct{}{}
 				defer func() { <-gate }()
 			}
@@ -362,6 +387,29 @@ func (h *Handlers) runDueMonitors() {
 			mu.Unlock()
 		}(target)
 	}
+	for _, due := range netDueList {
+		wg.Add(1)
+		go func(d netDue) {
+			defer wg.Done()
+			// The same host gate as an HTTP check on that host: a TCP probe and
+			// a page check of one machine never arrive together.
+			if gate := hostGate(d.host); gate != nil {
+				gate <- struct{}{}
+				defer func() { <-gate }()
+			}
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			res := h.runNetDue(ctx, d)
+			if ctx.Err() != nil {
+				return
+			}
+			mu.Lock()
+			logDebug(logComponentHealth, "network check %s on %s is %v (%dms)", d.check.Type, d.host, res.OK, res.Ms)
+			netOutcomes = append(netOutcomes, netOutcome{due: d, res: res})
+			mu.Unlock()
+		}(due)
+	}
 	wg.Wait()
 
 	// A round in which nearly every host failed to resolve or answer says more
@@ -369,10 +417,15 @@ func (h *Handlers) runDueMonitors() {
 	// not recorded -- no status, no failing sample, no alert, no incident --
 	// and the targets, having no new sample, are due again on the next tick.
 	// Answers in the same round are real and are kept.
-	if len(outcomes) > 0 {
-		sweep := make([]sweepHostResult, 0, len(outcomes))
+	if len(outcomes) > 0 || len(netOutcomes) > 0 {
+		sweep := make([]sweepHostResult, 0, len(outcomes)+len(netOutcomes))
 		for _, out := range outcomes {
 			if r, ok := sweepHostResultFor(out.target.url, out.result); ok {
+				sweep = append(sweep, r)
+			}
+		}
+		for _, out := range netOutcomes {
+			if r, ok := netSweepHostResult(out); ok {
 				sweep = append(sweep, r)
 			}
 		}
@@ -384,6 +437,13 @@ func (h *Handlers) runDueMonitors() {
 				}
 			}
 			outcomes = kept
+			keptNet := netOutcomes[:0]
+			for _, out := range netOutcomes {
+				if !netHoldableFailure(out) {
+					keptNet = append(keptNet, out)
+				}
+			}
+			netOutcomes = keptNet
 		}
 	}
 
@@ -413,6 +473,17 @@ func (h *Handlers) runDueMonitors() {
 			kept = append(kept, out)
 		}
 		outcomes = kept
+	}
+
+	// The same grace for the network checks, per check key.
+	if len(netOutcomes) > 0 {
+		kept := netOutcomes[:0]
+		for _, out := range netOutcomes {
+			if !h.graceHold(netHistoryKey(out.due.check.ID), !out.res.OK, graceStart) {
+				kept = append(kept, out)
+			}
+		}
+		netOutcomes = kept
 	}
 
 	// One decision for the whole round: a window that opens mid-sweep should not
@@ -468,6 +539,30 @@ func (h *Handlers) runDueMonitors() {
 			reason: errMsg,
 			at:     out.at,
 			muted:  out.target.muted,
+		})
+	}
+
+	// Network checks write their sample and transition only: no health cache,
+	// certificate, drift or mirror pass.
+	for _, out := range netOutcomes {
+		key := netHistoryKey(out.due.check.ID)
+		historyUpdates[key] = []HealthSample{out.res.sample(inMaintenance)}
+		reason := out.res.Error
+		if out.res.OK {
+			reason = ""
+		} else if reason == "" {
+			reason = "Unreachable"
+		}
+		transitions = append(transitions, monitorTransition{
+			key:     key,
+			name:    out.due.bm.Name,
+			url:     out.due.bm.URL,
+			up:      out.res.OK,
+			reason:  reason,
+			at:      out.res.At,
+			muted:   out.due.muted,
+			check:   netCheckLabel(out.due.check, out.due.bm),
+			checkID: out.due.check.ID,
 		})
 	}
 
@@ -530,7 +625,12 @@ func (h *Handlers) runDueMonitors() {
 			failed++
 		}
 	}
-	logCheckRound(len(outcomes), failed, time.Since(now))
+	for _, out := range netOutcomes {
+		if !out.res.OK {
+			failed++
+		}
+	}
+	logCheckRound(len(outcomes)+len(netOutcomes), failed, time.Since(now))
 
 	// Delivery on a context of its own: a round that ran to its limit stamped
 	// its outages alerted and then sent them on the expired one, so they were

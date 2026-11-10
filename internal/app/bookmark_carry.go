@@ -14,7 +14,17 @@ package app
 // the same URL. A field the payload does carry wins, which is what makes an
 // edit an edit — and what keeps an import, which deliberately brings its own
 // counts, from being overwritten by whatever was there before.
+//
+// Checks (network checks) are the exception to "the payload wins": they are
+// server-owned outright. Whatever the payload carries is dropped, even an empty
+// list, and the stored row's checks are put back; a row with no stored twin
+// starts with none. Only PUT /api/net/checks and the DNS baseline writer change
+// them. Without this a tab loaded before a check was saved would wipe it on the
+// next edit of any bookmark on the page.
 func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
+	for i := range next {
+		next[i].Checks = nil
+	}
 	if len(next) == 0 || len(stored) == 0 {
 		return
 	}
@@ -40,6 +50,7 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 		if i < len(stored) && key != "" && canonicalBookmarkURLKey(stored[i].URL) == key {
 			previous = stored[i]
 		}
+		next[i].Checks = previous.Checks
 		// A tab loaded before an open elsewhere sends the counts it loaded:
 		// non-zero, so they used to win, and the newer opens were lost. The
 		// three fields move together, and the newer last open decides.

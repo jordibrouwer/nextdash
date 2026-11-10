@@ -91,8 +91,9 @@ func TestDemoKnowsEveryOutboundClient(t *testing.T) {
 		"install_ping.go":    "refuses at its source",
 		"push_send.go":       "refuses at its source",
 		"system_docker.go":   "the local Docker socket, not another host",
+		"nettool_guard.go":   "the one place network checks reach a socket; refuses in the demo itself (resolve, dialTCP)",
 	}
-	clientRE := regexp.MustCompile(`http\.Client\{|http\.Transport\{|http\.DefaultClient|http\.DefaultTransport|net\.Dial\(|net\.Dialer\{|http\.Get\(|http\.Post\(`)
+	clientRE := regexp.MustCompile(`http\.Client\{|http\.Transport\{|http\.DefaultClient|http\.DefaultTransport|net\.Dial\(|net\.Dialer\{|icmp\.ListenPacket|net\.Resolver\{|tls\.Dial|tls\.Client|http\.Get\(|http\.Post\(`)
 	files, _ := filepath.Glob("*.go")
 	for _, file := range files {
 		if strings.HasSuffix(file, "_test.go") {

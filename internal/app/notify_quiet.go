@@ -271,6 +271,11 @@ func writeOpenFile(f openFile) {
 // summary: a monitor by its canonical address, anything else by its name.
 func noticeKey(source string, n monitorNotification) string {
 	if source == noticeSourceMonitor {
+		// A network check is its own alert: its "up" must not close the HTTP
+		// outage of the same bookmark.
+		if n.CheckID != "" {
+			return source + ":net:" + n.CheckID
+		}
 		if key := canonicalBookmarkURLKey(n.URL); key != "" {
 			return source + ":" + key
 		}
@@ -658,7 +663,18 @@ func (h *Handlers) pushNoticeDirect(ctx context.Context, source string, n monito
 func (h *Handlers) openAlertWanted() func(openAlert) bool {
 	monitored := map[string]bool{}
 	muted := map[string]bool{}
+	netOn := h.store.GetSettings().NetToolsEnabled
 	for _, bm := range h.store.GetAllBookmarks() {
+		for _, chk := range bm.Checks {
+			if !netOn || !chk.Enabled || chk.ID == "" {
+				continue
+			}
+			id := noticeSourceMonitor + ":net:" + chk.ID
+			monitored[id] = true
+			if bm.NotifyMuted || chk.Muted {
+				muted[id] = true
+			}
+		}
 		if !bm.Monitor {
 			continue
 		}

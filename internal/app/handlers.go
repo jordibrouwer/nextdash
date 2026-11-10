@@ -103,8 +103,14 @@ type Handlers struct {
 	autoBackupMu         sync.Mutex
 	ssrfAPILimiter       *slidingWindowLimiter
 	statusPingLimiter    *slidingWindowLimiter
-	updateCheckMu        sync.RWMutex
-	updateCheckCache     updateCheckCacheEntry
+	// Network checks: one-off runs per client, and the hosts being tested now.
+	netToolLimiter *slidingWindowLimiter
+	netRunInflight sync.Map // host -> struct{}
+	// netRunner runs one network check for the monitor loop; nil means
+	// runNetCheck. A seam for tests that must not touch the network.
+	netRunner        func(ctx context.Context, bm Bookmark, c NetCheck) NetResult
+	updateCheckMu    sync.RWMutex
+	updateCheckCache updateCheckCacheEntry
 }
 
 const healthReportCacheTTL = 3 * time.Minute
@@ -395,6 +401,7 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		files:             files,
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
+		netToolLimiter:    newSlidingWindowLimiter(6, time.Minute),
 	}
 	// The startup grace for bookmark health; "0" in the environment turns it off.
 	if window := graceWindowFromEnv(os.Getenv("NEXTDASH_HEALTH_STARTUP_GRACE")); window > 0 {

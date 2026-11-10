@@ -86,6 +86,7 @@ func mergeOneBookmarkIntoKeeper(keeper *Bookmark, src Bookmark) {
 		keeper.ExpectTextAbsent = src.ExpectTextAbsent
 	}
 	keeper.HealthIgnored = mergeHealthIgnored(keeper.HealthIgnored, src.HealthIgnored)
+	mergeNetChecksInto(keeper, src)
 
 	appendBookmarkNote(keeper, src.Note)
 

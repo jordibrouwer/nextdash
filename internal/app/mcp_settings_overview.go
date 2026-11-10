@@ -219,6 +219,10 @@ var mcpSettingsOverviewAllowlist = []mcpOverviewEntry{
 	{"health.healthIgnored", mcpIgnoredConditions},
 	{"health.monitorNotify", mcpOverviewMonitorNotify},
 	{"health.uptimeBadges", func(in *mcpOverviewInput) any { return in.s.UptimeBadges }},
+	{"health.netToolsEnabled", func(in *mcpOverviewInput) any { return in.s.NetToolsEnabled }},
+	{"health.netToolsPing", func(in *mcpOverviewInput) any { return in.s.NetToolsPing }},
+	{"health.netToolsAllowCustomHost", func(in *mcpOverviewInput) any { return in.s.NetToolsAllowCustomHost }},
+	{"health.netToolsMaxChecks", func(in *mcpOverviewInput) any { return in.s.NetToolsMaxChecks }},
 
 	// Containers.
 	{"containers.dockerViewEnabled", func(in *mcpOverviewInput) any { return in.s.DockerViewEnabled }},

@@ -64,6 +64,10 @@ type Bookmark struct {
 	// it for everything would bloat the history file for no benefit.
 	Monitor                bool `json:"monitor,omitempty"`
 	MonitorIntervalMinutes int  `json:"monitorIntervalMinutes,omitempty"` // 5..1440, 0 = use default
+	// Checks are the network checks (TCP, ping, ...) on this bookmark. Written by
+	// the server alone: a page save carries them over from the stored row and a
+	// PATCH never sets them (see carryServerOwnedBookmarkFields).
+	Checks []NetCheck `json:"checks,omitempty"`
 	// ExpectText is a string the page must contain to count as healthy. A page
 	// that answers 200 while showing "database connection failed" is up by every
 	// other measure, and this is the only way to say otherwise.
@@ -1124,6 +1128,12 @@ type Settings struct {
 	SavedSearches        []SavedSearch         `json:"savedSearches,omitempty"`        // Named queries from the search bar
 	SearchPicks          []SearchPick          `json:"searchPicks,omitempty"`          // Which result a query led to, so ranking learns
 
+	// Network tests (nettool_*.go). No omitempty on NetToolsEnabled: false has to be storable.
+	NetToolsEnabled         bool   `json:"netToolsEnabled"`         // Network checks on bookmarks; on unless turned off
+	NetToolsPing            string `json:"netToolsPing"`            // auto | tcp-only | off
+	NetToolsAllowCustomHost bool   `json:"netToolsAllowCustomHost"` // A check may name a host other than the bookmark's own
+	NetToolsMaxChecks       int    `json:"netToolsMaxChecks"`       // Ceiling on enabled checks in the install, 1..1000
+
 	// Config → Bookmarks. The list view had no settings of its own; these are
 	// the choices it used to make on the user's behalf.
 	ConfigBookmarksSort         string `json:"configBookmarksSort"`                   // Sort the list opens on: page/name/recent/lastOpened/opens/pinned
@@ -1899,6 +1909,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
 			MonitorEmphasis:                 "problems",
+			NetToolsEnabled:                 true,
+			NetToolsPing:                    "auto",
+			NetToolsMaxChecks:               netDefaultMaxChecks,
 			ShowPing:                        false,
 			ShowStatusLoading:               false,
 			SkipFastPing:                    false,
@@ -3861,7 +3874,7 @@ var bmViewChoices = map[string][]string{
 }
 
 var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "news", "score"}
-var bmViewRailBlocks = []string{"views", "health", "pages", "tags"}
+var bmViewRailBlocks = []string{"views", "health", "checks", "pages", "tags"}
 
 // bmViewChoice keeps a value the view knows, or its default.
 func bmViewChoice(kind, value string) string {
@@ -4654,6 +4667,9 @@ func (fs *FileStore) getSettingsShared() Settings {
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
 			MonitorEmphasis:                 "problems",
+			NetToolsEnabled:                 true,
+			NetToolsPing:                    "auto",
+			NetToolsMaxChecks:               netDefaultMaxChecks,
 			ShowPing:                        false,
 			ShowStatusLoading:               false,
 			SkipFastPing:                    false,
@@ -4878,6 +4894,18 @@ func (fs *FileStore) getSettingsShared() Settings {
 		// On unless turned off: it only fires when push is on and a feed is watched.
 		if _, ok := rawSettings["pushNotifyNews"]; !ok {
 			settings.PushNotifyNews = true
+		}
+		// On unless turned off: a file written before network tests existed never answered.
+		if _, ok := rawSettings["netToolsEnabled"]; !ok {
+			settings.NetToolsEnabled = true
+		}
+		if settings.NetToolsPing != "auto" && settings.NetToolsPing != "tcp-only" && settings.NetToolsPing != "off" {
+			settings.NetToolsPing = "auto"
+		}
+		if _, ok := rawSettings["netToolsMaxChecks"]; !ok || settings.NetToolsMaxChecks < 1 {
+			settings.NetToolsMaxChecks = netDefaultMaxChecks
+		} else if settings.NetToolsMaxChecks > 1000 {
+			settings.NetToolsMaxChecks = 1000
 		}
 		// On unless turned off: a phone is quiet by default, errors still show.
 		if _, ok := rawSettings["hideToastsMobile"]; !ok {
@@ -7306,6 +7334,10 @@ type HealthSample struct {
 	// A class rather than the sentence: the sentence is for a human reading one
 	// row, the class is what a list can group and a column can hold.
 	Fail string `json:"e,omitempty"`
+	// D is a short detail for a network check sample ("loss 25%", "443 open"),
+	// at most netDetailMax runes; L its second number (loss percent, days left).
+	D string `json:"d,omitempty"`
+	L int    `json:"l,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept
