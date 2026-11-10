@@ -88,7 +88,7 @@ test.describe('network check cards', () => {
     await open(page, [ping({ at: Date.now(), ok: false, ms: 0, class: 'guard' })]);
     const block = net(page).locator('[data-net-error-class="guard"]');
     await expect(block).toBeVisible();
-    await expect(block.getByRole('button', { name: /Allow local bookmarks/ })).toBeVisible();
+    await expect(block.getByRole('button', { name: /Allow localhost & private-network bookmarks/ })).toBeVisible();
   });
 
   test('a one-off test blocked by the guard shows where the host points, only when the server says', async ({ page }) => {
@@ -98,7 +98,7 @@ test.describe('network check cards', () => {
     await net(page).locator('[data-net-run-types]').getByRole('button', { name: 'TCP' }).click();
     const block = net(page).locator('[data-tests-result] [data-net-error-class="guard"]');
     await expect(block.locator('[data-net-guard-addr]')).toHaveText('Resolves to 192.168.1.20');
-    await expect(block.getByRole('button', { name: /Allow local bookmarks/ })).toBeVisible();
+    await expect(block.getByRole('button', { name: /Allow localhost & private-network bookmarks/ })).toBeVisible();
     delete body.guardAddr;
     await net(page).locator('[data-net-run-types]').getByRole('button', { name: 'TCP' }).click();
     await expect(block).toBeVisible();
