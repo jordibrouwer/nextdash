@@ -64,6 +64,10 @@ type Bookmark struct {
 	// it for everything would bloat the history file for no benefit.
 	Monitor                bool `json:"monitor,omitempty"`
 	MonitorIntervalMinutes int  `json:"monitorIntervalMinutes,omitempty"` // 5..1440, 0 = use default
+	// Checks are the network checks (TCP, ping, ...) on this bookmark. Written by
+	// the server alone: a page save carries them over from the stored row and a
+	// PATCH never sets them (see carryServerOwnedBookmarkFields).
+	Checks []NetCheck `json:"checks,omitempty"`
 	// ExpectText is a string the page must contain to count as healthy. A page
 	// that answers 200 while showing "database connection failed" is up by every
 	// other measure, and this is the only way to say otherwise.
@@ -880,6 +884,10 @@ type Settings struct {
 	// MCPSettingsOverview lets get_settings_overview describe this install's
 	// configuration: an allowlisted subset, never keys or addresses.
 	MCPSettingsOverview bool `json:"mcpSettingsOverview"`
+	// MCPNetTools turns on the network test tools: a one-off test of a
+	// bookmark's host and the management of its checks. Off by default, like
+	// every group, since the first of them sends traffic from this server.
+	MCPNetTools bool `json:"mcpNetTools"`
 	// The in-app assistant. The key lives in ai-secrets.json, never here.
 	AIEnabled         bool   `json:"aiEnabled"`
 	AIProvider        string `json:"aiProvider"`
@@ -1124,6 +1132,13 @@ type Settings struct {
 	SavedSearches        []SavedSearch         `json:"savedSearches,omitempty"`        // Named queries from the search bar
 	SearchPicks          []SearchPick          `json:"searchPicks,omitempty"`          // Which result a query led to, so ranking learns
 
+	// Network tests (nettool_*.go). No omitempty on NetToolsEnabled: false has to be storable.
+	NetToolsEnabled         bool   `json:"netToolsEnabled"`         // Network checks on bookmarks; on unless turned off
+	NetToolsPing            string `json:"netToolsPing"`            // auto | tcp-only | off
+	NetToolsAllowCustomHost bool   `json:"netToolsAllowCustomHost"` // A check may name a host other than the bookmark's own
+	NetToolsMaxChecks       int    `json:"netToolsMaxChecks"`       // Ceiling on enabled checks in the install, 1..1000
+	NetToolsDashboardBadges string `json:"netToolsDashboardBadges"` // Check badges on dashboard rows: problems | always | never
+
 	// Config → Bookmarks. The list view had no settings of its own; these are
 	// the choices it used to make on the user's behalf.
 	ConfigBookmarksSort         string `json:"configBookmarksSort"`                   // Sort the list opens on: page/name/recent/lastOpened/opens/pinned
@@ -1149,7 +1164,7 @@ type Settings struct {
 	BmViewUsageDays    int      `json:"bmViewUsageDays"`    // Days the Usage column covers: 7/14/30
 	BmViewRail         string   `json:"bmViewRail"`         // The rail on the left: open/folded
 	BmViewRailBlocks   []string `json:"bmViewRailBlocks"`   // Rail blocks shown (null = all, [] = none)
-	BmViewPanelTab     string   `json:"bmViewPanelTab"`     // Side panel opens on: last/details/health/usage
+	BmViewPanelTab     string   `json:"bmViewPanelTab"`     // Side panel opens on: last/details/health/usage/tests
 	BmViewCloseOutside bool     `json:"bmViewCloseOutside"` // A click beside the side panel closes it (default on)
 	BmViewPanelWidth   string   `json:"bmViewPanelWidth"`   // Side panel width: normal/wide
 	BmViewClick        string   `json:"bmViewClick"`        // A click on a row: panel/select
@@ -1899,6 +1914,10 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
 			MonitorEmphasis:                 "problems",
+			NetToolsEnabled:                 true,
+			NetToolsPing:                    "auto",
+			NetToolsMaxChecks:               netDefaultMaxChecks,
+			NetToolsDashboardBadges:         "problems",
 			ShowPing:                        false,
 			ShowStatusLoading:               false,
 			SkipFastPing:                    false,
@@ -3851,7 +3870,7 @@ var bmViewChoices = map[string][]string{
 	"address":     {"full", "domain", "hidden"},
 	"rowHeight":   {"compact", "comfortable"},
 	"rail":        {"open", "folded"},
-	"panelTab":    {"last", "details", "health", "usage"},
+	"panelTab":    {"last", "details", "health", "usage", "tests"},
 	"panelWidth":  {"normal", "wide"},
 	"click":       {"panel", "select"},
 	"dblClick":    {"open", "edit"},
@@ -3861,7 +3880,7 @@ var bmViewChoices = map[string][]string{
 }
 
 var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "news", "score"}
-var bmViewRailBlocks = []string{"views", "health", "pages", "tags"}
+var bmViewRailBlocks = []string{"views", "health", "checks", "pages", "tags"}
 
 // bmViewChoice keeps a value the view knows, or its default.
 func bmViewChoice(kind, value string) string {
@@ -4654,6 +4673,10 @@ func (fs *FileStore) getSettingsShared() Settings {
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
 			MonitorEmphasis:                 "problems",
+			NetToolsEnabled:                 true,
+			NetToolsPing:                    "auto",
+			NetToolsMaxChecks:               netDefaultMaxChecks,
+			NetToolsDashboardBadges:         "problems",
 			ShowPing:                        false,
 			ShowStatusLoading:               false,
 			SkipFastPing:                    false,
@@ -4878,6 +4901,21 @@ func (fs *FileStore) getSettingsShared() Settings {
 		// On unless turned off: it only fires when push is on and a feed is watched.
 		if _, ok := rawSettings["pushNotifyNews"]; !ok {
 			settings.PushNotifyNews = true
+		}
+		// On unless turned off: a file written before network tests existed never answered.
+		if _, ok := rawSettings["netToolsEnabled"]; !ok {
+			settings.NetToolsEnabled = true
+		}
+		if settings.NetToolsPing != "auto" && settings.NetToolsPing != "tcp-only" && settings.NetToolsPing != "off" {
+			settings.NetToolsPing = "auto"
+		}
+		if _, ok := rawSettings["netToolsDashboardBadges"]; !ok || (settings.NetToolsDashboardBadges != "problems" && settings.NetToolsDashboardBadges != "always" && settings.NetToolsDashboardBadges != "never") {
+			settings.NetToolsDashboardBadges = "problems"
+		}
+		if _, ok := rawSettings["netToolsMaxChecks"]; !ok || settings.NetToolsMaxChecks < 1 {
+			settings.NetToolsMaxChecks = netDefaultMaxChecks
+		} else if settings.NetToolsMaxChecks > 1000 {
+			settings.NetToolsMaxChecks = 1000
 		}
 		// On unless turned off: a phone is quiet by default, errors still show.
 		if _, ok := rawSettings["hideToastsMobile"]; !ok {
@@ -7251,6 +7289,10 @@ type HealthScanCacheFile struct {
 	// its own file because it is written by the same pass that writes the cache
 	// and is worthless without it.
 	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
+	// NetCertificates holds the expiry marks of TLS network checks, keyed by the
+	// check's history key ("net:<id>"). Kept apart from Certificates so a check
+	// is never listed as a host and never shares marks with the HTTP monitor.
+	NetCertificates map[string]HostCertificate `json:"netCertificates,omitempty"`
 	// Domains looked up through RDAP, keyed by registrable domain. Same file and
 	// same reason as the certificates: one pass writes both.
 	Domains map[string]HostDomain `json:"domains,omitempty"`
@@ -7306,6 +7348,15 @@ type HealthSample struct {
 	// A class rather than the sentence: the sentence is for a human reading one
 	// row, the class is what a list can group and a column can hold.
 	Fail string `json:"e,omitempty"`
+	// D is a short detail for a network check sample ("loss 25%", "443 open"),
+	// at most netDetailMax runes; L its second number (loss percent, days left).
+	D string `json:"d,omitempty"`
+	L int    `json:"l,omitempty"`
+	// Slow and ViaTCP are flags of a network check sample (the answer came in
+	// over its slow threshold; a ping was answered through a TCP connect), so
+	// no state is read out of the free text of D.
+	Slow   bool `json:"s,omitempty"`
+	ViaTCP bool `json:"v,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept

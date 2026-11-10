@@ -1217,7 +1217,7 @@
                 ['Esc', this.t('dashboard.glancesLegendLeave', 'leave')],
                 ['?', this.t('dashboard.glancesLegendCheat', 'keys and help')],
                 ['Shift+H', this.t('dashboard.dashboardKeyHideLegend', 'hide legend')],
-                ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'mode strip')],
+                ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'show/hide mode strip')],
             ].forEach(([key, label]) => {
                 const item = document.createElement('span');
                 item.className = 'glances-legend-key';

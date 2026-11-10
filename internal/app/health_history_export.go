@@ -83,6 +83,10 @@ func (h *Handlers) ExportHealthHistory(w http.ResponseWriter, r *http.Request) {
 		if filterKey != "" && key != filterKey {
 			continue
 		}
+		// Network check history has no name or URL to put in a row.
+		if isNetHistoryKey(key) {
+			continue
+		}
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)

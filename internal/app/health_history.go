@@ -15,6 +15,14 @@ const (
 	// on a short interval cannot grow the file without bound. At the 5-minute floor
 	// this is roughly a week; slower intervals reach the 30-day cutoff first.
 	maxHealthSamplesPerURL = 2000
+	// maxNetSamplesPerCheck is the same cap for a network check ("net:<id>").
+	// Up to 200 checks (the default ceiling) at 2000 samples each came to about
+	// 22 MB in one file that is rewritten every round and read whole by the bell,
+	// the widget and the dashboard route; 800 keeps it near 9 MB. What the cap
+	// drops is folded into the daily summaries like any other, so the 30-day
+	// figures stay whole; only the raw heartbeat reaches back ~2.8 days at the
+	// 5-minute floor.
+	maxNetSamplesPerCheck = 800
 )
 
 // writeCompactJSONFile mirrors writeIndentJSONFile but without indentation.
@@ -63,6 +71,11 @@ func writeHealthHistoryFile(history HealthHistoryFile) error {
 // Samples are assumed ascending by time; out-of-order input is sorted first so a
 // clock jump cannot silently truncate good data.
 func trimSamples(samples []HealthSample, cutoff int64) []HealthSample {
+	return trimSamplesTo(samples, cutoff, maxHealthSamplesPerURL)
+}
+
+// trimSamplesTo is trimSamples with its own cap on how many samples are kept.
+func trimSamplesTo(samples []HealthSample, cutoff int64, maxKept int) []HealthSample {
 	if len(samples) == 0 {
 		return nil
 	}
@@ -74,8 +87,8 @@ func trimSamples(samples []HealthSample, cutoff int64) []HealthSample {
 	// kept range.
 	start := sort.Search(len(samples), func(i int) bool { return samples[i].T >= cutoff })
 	kept := samples[start:]
-	if len(kept) > maxHealthSamplesPerURL {
-		kept = kept[len(kept)-maxHealthSamplesPerURL:]
+	if len(kept) > maxKept {
+		kept = kept[len(kept)-maxKept:]
 	}
 	if len(kept) == 0 {
 		return nil
@@ -104,7 +117,11 @@ func pruneHealthHistory(history HealthHistoryFile, known map[string]bool, now ti
 			delete(days, url)
 			continue
 		}
-		trimmed := trimSamples(samples, cutoff)
+		maxKept := maxHealthSamplesPerURL
+		if isNetHistoryKey(url) {
+			maxKept = maxNetSamplesPerCheck
+		}
+		trimmed := trimSamplesTo(samples, cutoff, maxKept)
 		// Whatever the trim dropped is summarised before it goes, so the long
 		// windows keep counting it. Without this the 30-day figure was computed
 		// over whatever the per-URL cap had left — about a week on a five-minute

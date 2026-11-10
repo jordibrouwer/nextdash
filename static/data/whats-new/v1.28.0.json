@@ -1,0 +1,80 @@
+{
+  "tag": "v1.28.0",
+  "date": "10 November 2026",
+  "releasedAt": "2026-11-10",
+  "modalLead": "Network tests on every bookmark — TCP, Ping, DNS, TLS, HTTP detail and JSON, once or on a schedule — with the checks on your rows, in the bell and on the status page, and a larger weather in the header.",
+  "sections": [
+    {
+      "title": "Network tests",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Test your services from nextDash.</strong> The new Tests tab of a bookmark checks a port, a ping, DNS records, a certificate, an HTTP answer or a value in a JSON answer. Run one test right now, or schedule it with a history and alerts.",
+          "highlight": true,
+          "title": "Test your services from nextDash",
+          "link": "#bookmarks",
+          "linkLabel": "Open Bookmarks",
+          "media": {
+            "image": "media/v1.28.0-network-tests.jpg",
+            "alt": "The Tests tab of a bookmark: three tiles for its checks, and a Ping check opened with its uptime strip and last result"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Checks show up where you work.</strong> A check is a chip beside the tags of its row, a row in the bell when it fails, a new Network tests widget and a line on the status page. A filter in the Bookmarks view lists the bookmarks that have one.",
+          "highlight": true,
+          "title": "Checks show up where you work",
+          "link": "#config/monitoring/checks",
+          "linkLabel": "Open Checks",
+          "media": {
+            "image": "media/v1.28.0-check-chips.jpg",
+            "alt": "The Bookmarks view filtered on Has checks: four rows, each with its check as a chip beside the tags, and the Check type filter in the rail"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A change in DNS tells you.</strong> When the records of a name change, the bell says so, and Accept makes the new answer the one to compare with.",
+          "link": "#bookmarks"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Ping in Docker.</strong> Where the container cannot send a ping, the check connects over TCP and says so; the Checks panel shows the one line that allows a real ping.",
+          "link": "#config/monitoring/checks"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Five tools for MCP clients.</strong> Run a test, list, read, add or delete checks from an MCP client. Off until you switch on Network tests."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The weather, bigger in the header.</strong> Beside the clock rule the weather shows an icon and the temperature in large type, with the day and place in two small lines.",
+          "highlight": true,
+          "title": "A bigger weather in the header",
+          "link": "#config/appearance",
+          "linkLabel": "Open Appearance",
+          "media": {
+            "image": "media/v1.28.0-weather-header.jpg",
+            "alt": "The header with the clock, the greeting, and the weather in large type beside the rule, with the day and place in two small lines"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A new container’s notice is a row in the bell.</strong> Undo, Move and Done wait there instead of a card in the corner."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No bell on a phone.</strong> The notification bell is hidden on a small screen."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The side panel follows the theme.</strong> The tabs of a bookmark’s side panel no longer show black blocks on a see-through look."
+        }
+      ]
+    }
+  ]
+}

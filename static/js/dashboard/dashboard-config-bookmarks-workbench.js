@@ -15,7 +15,7 @@
     if (typeof global.DashboardConfig !== 'function') return;
 
     // The panel's tabs, in bar order; the reader's choice is kept across rows.
-    const PANEL_TABS = ['details', 'health', 'usage'];
+    const PANEL_TABS = ['details', 'health', 'usage', 'tests'];
     const PANEL_TAB_KEY = 'nextdash.bm.panelTab';
 
     // The way each sort runs before a second click on its heading turns it:
@@ -63,10 +63,10 @@
             .map((c) => (c === 'name' ? name : c === 'tags' ? tags : track[c]))
             .join(' ');
         const wide = build(['tick', 'icon', 'name', 'tags', 'pinned', 'shortcut', 'usage', 'opens', 'last', 'added', 'news', 'score'],
-            'minmax(10rem, 1fr)', 'minmax(5rem, 9rem)');
+            'minmax(10rem, 1fr)', 'minmax(5rem, var(--bm-tags-max, 9rem))');
         const large = build(['tick', 'icon', 'name', 'tags', 'usage', 'opens', 'last', 'added', 'news', 'score'],
-            'minmax(10rem, 1fr)', 'minmax(5rem, 9rem)');
-        const mid = build(['tick', 'icon', 'name', 'tags', 'opens', 'last', 'score'], 'minmax(8rem, 1fr)', 'minmax(5rem, 6rem)');
+            'minmax(10rem, 1fr)', 'minmax(5rem, var(--bm-tags-max, 9rem))');
+        const mid = build(['tick', 'icon', 'name', 'tags', 'opens', 'last', 'score'], 'minmax(8rem, 1fr)', 'minmax(5rem, var(--bm-tags-max-mid, 6rem))');
         const narrow = build(['tick', 'icon', 'name', 'score'], 'minmax(0, 1fr)', '');
         return `--bm-cols-wide: ${wide}; --bm-cols-large: ${large}; --bm-cols-mid: ${mid}; --bm-cols-narrow: ${narrow};`;
     },
@@ -74,6 +74,8 @@
     /** The workbench's classes: what View sets on the list as a whole. */
     workbenchViewClasses() {
         const classes = ['config-bm-workbench', 'is-panel-collapsed', 'is-library'];
+        // Checks share the tags column; it gets a little more room once there are any.
+        if (this.bmNetHasScheduled?.()) classes.push('has-net-checks');
         if (this.bmViewSetting('bmViewRail', 'open') === 'folded') classes.push('is-rail-folded');
         // Row height is View's own setting, not the app-wide densityMode:
         // compact is the Containers and Inbox row, comfortable the old one.
@@ -138,7 +140,7 @@
     bookmarkFacetCounts() {
         const all = this.configBookmarkPool();
         const token = JSON.stringify([this._bmVisibleToken, all.length,
-            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0, this._bmHealthGen || 0,
+            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0, this._bmHealthGen || 0, this._bmNetGen || 0,
             global.TagSuggestLive?.stamp?.(this.dash) || '']);
         if (this._bmFacetSource === all && this._bmFacetToken === token && this._bmFacets) return this._bmFacets;
         const tests = this.bookmarkFilterTests();
@@ -158,6 +160,7 @@
             },
             tag: { keys: (b) => (b.tags || []).map((t) => String(t).trim().toLowerCase()), test: tests.tag },
             health: { keys: (b) => this.bmHealthKeys?.(b) || [], test: tests.health },
+            check: { keys: (b) => this.bmNetKeys?.(b) || [], test: tests.check },
         });
         this._bmFacetSource = all;
         this._bmFacetToken = token;
@@ -231,6 +234,7 @@
         }
         tags.forEach((t) => token(`tag:${t}`, `#${t}`));
         if (this.bmHealthFilter) token('health', this.bmHealthFilterLabel?.(this.bmHealthFilter) || this.bmHealthFilter);
+        if (this.bmCheckFilter) token('check', this.bmCheckFilterLabel?.(this.bmCheckFilter) || this.bmCheckFilter);
         const tokenRow = tokens.length ? `
             <div class="config-bm-rail-tokens">${tokens.join('')}
                 <button type="button" class="config-bm-rail-clear-all" data-bm-rail-clear="all">${esc(this.t('config.clearBookmarkFilters', 'Clear filters'))}</button>
@@ -308,6 +312,9 @@
                 .join('')
             : '';
 
+        // Check type: the network checks of the install, once its index is in.
+        const checkEntries = this.renderBmNetRailEntries?.(entry, counts) || '';
+
         // View can leave blocks out; Pages takes its categories with it.
         const show = (name) => this.bmViewRailBlock(name);
         return `
@@ -315,6 +322,7 @@
             ${tokenRow}
             ${show('views') ? group(this.t('config.bmViews', 'Views'), views, viewsMore) : ''}
             ${show('health') ? group(this.t('config.bmHealth', 'Health'), health) : ''}
+            ${show('checks') ? group(this.t('nettools.railTitle', 'Check type'), checkEntries) : ''}
             ${show('pages') ? group(this.t('config.bmPages', 'Pages'), pages, manage('pages')) : ''}
             ${show('pages') ? group(this.t('config.bmCategories', 'Categories'), categories, manage('categories')) : ''}
             ${show('tags') ? group(this.t('config.bmTags', 'Tags'), tagList, tagsMore) : ''}`;
@@ -344,6 +352,7 @@
         if (kind === 'category') this.bmCategoryFilter = this.bmCategoryFilter === value ? '' : value;
         if (kind === 'cleanup') this.bmCleanupFilter = this.bmCleanupFilter === value ? '' : value;
         if (kind === 'health') this.bmHealthFilter = this.bmHealthFilter === value ? '' : value;
+        if (kind === 'check') this.bmCheckFilter = this.bmCheckFilter === value ? '' : value;
         if (kind === 'tag') {
             const current = this.bookmarkTagFilters();
             this.bmTagFilter = current.includes(value)
@@ -501,6 +510,7 @@
             : this.pageLabel(b.pageId);
         // A problem worth a look: the dot on the Health tab says so without opening it.
         const troubled = state === 'broken' || state === 'down' || (issue && issue.status === 'broken');
+        const tabs = this.workbenchPanelTabs();
         const tab = this.workbenchPanelTab();
         // The digits reach the tabs only in the Bookmarks view (see
         // handleWorkbenchPanelTabKey), so only there do the tabs name them,
@@ -510,7 +520,8 @@
             return `<button type="button" class="config-bm-tab${on ? ' is-active' : ''}" role="tab"
                         aria-selected="${on ? 'true' : 'false'}" tabindex="${on ? 0 : -1}" data-bm-tab-panel="${name}"${
                 ` title="${esc(`${label} (${n})`)}"`}>${esc(label)}${
-                name === 'health' && troubled ? `<span class="config-bm-tab-dot" aria-label="${esc(this.t('config.bmTabProblem', 'has a problem'))}"></span>` : ''
+                (name === 'health' && troubled) || (name === 'tests' && this.bmTestsTroubled?.(b))
+                    ? `<span class="config-bm-tab-dot" aria-label="${esc(this.t('config.bmTabProblem', 'has a problem'))}"></span>` : ''
             }</button>`;
         };
         const pane = (name, body) => `<section class="config-bm-pane" role="tabpanel" data-bm-pane="${name}"${name === tab ? '' : ' hidden'}>${body}</section>`;
@@ -573,6 +584,7 @@
                 ${tabButton('details', this.t('config.bmTabDetails', 'Details'), 1)}
                 ${tabButton('health', this.t('config.bmHealth', 'Health'), 2)}
                 ${tabButton('usage', this.t('config.bmUsage', 'Usage'), 3)}
+                ${tabs.includes('tests') ? tabButton('tests', this.t('config.bmTests', 'Tests'), 4) : ''}
             </div>
             ${pane('details', `
                 ${this.renderBmDetailsSummary?.(b) || ''}
@@ -597,14 +609,15 @@
                     ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
                     ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}</div></div>`)}
             ${pane('usage', this.renderBmUsagePane?.(b) || `
-                <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>`)}`;
+                <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>`)}
+            ${tabs.includes('tests') ? pane('tests', this.renderBmTestsPane?.(b) || '') : ''}`;
     },
 
     /**
      * One section of a tab's accordion, in the Health tab's markup: its head
      * says its answer, and which sections are open is remembered per tab.
      */
-    workbenchAcc(group, name, label, answer, body, openByDefault = false) {
+    workbenchAcc(group, name, label, answer, body, openByDefault = false, { labelHtml = false, forceOpen = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         let stored = null;
         try {
@@ -612,32 +625,39 @@
         } catch {
             stored = null;
         }
-        const open = Array.isArray(stored) ? stored.includes(name) : openByDefault;
+        const open = forceOpen || (Array.isArray(stored) ? stored.includes(name) : openByDefault);
+        // labelHtml: the label is markup the caller escaped itself (a status dot in the head).
         return `<details class="config-bm-acc" data-bm-acc="${name}" data-bm-acc-group="${group}"${open ? ' open' : ''}>
-                <summary><span>${esc(label)}</span><span class="config-bm-acc-answer">${esc(answer)}</span></summary>
+                <summary><span>${labelHtml ? label : esc(label)}</span><span class="config-bm-acc-answer">${esc(answer)}</span></summary>
                 <div class="lvs-drawer-section-body">${body}</div>
             </details>`;
     },
 
     /* ── The panel's tabs ──────────────────────────────────────────────── */
 
+    /** The tabs the panel has: Tests only while network tests are switched on. */
+    workbenchPanelTabs() {
+        return PANEL_TABS.filter((tab) => tab !== 'tests' || Boolean(this.bmNetEnabled?.()));
+    },
+
     /** Which tab the panel shows; the reader's last choice, kept across rows. */
     workbenchPanelTab() {
+        const tabs = this.workbenchPanelTabs();
         // View can fix the tab the panel opens on; once open, the reader's
         // clicks decide.
         const fixed = this.bmViewSetting('bmViewPanelTab', 'last');
-        if (fixed !== 'last' && PANEL_TABS.includes(fixed) && !this._libDrawer?.isOpen()) return fixed;
+        if (fixed !== 'last' && tabs.includes(fixed) && !this._libDrawer?.isOpen()) return fixed;
         try {
             const tab = global.localStorage?.getItem(PANEL_TAB_KEY);
-            return PANEL_TABS.includes(tab) ? tab : PANEL_TABS[0];
+            return tabs.includes(tab) ? tab : tabs[0];
         } catch {
-            return PANEL_TABS[0];
+            return tabs[0];
         }
     },
 
     /** Show one tab, in place: the panel is not redrawn, so nothing typed is lost. */
     setWorkbenchPanelTab(tab) {
-        if (!PANEL_TABS.includes(tab)) return false;
+        if (!this.workbenchPanelTabs().includes(tab)) return false;
         try {
             global.localStorage?.setItem(PANEL_TAB_KEY, tab);
         } catch {
@@ -659,8 +679,9 @@
 
     /** `[` / `]`: the next or previous tab. */
     stepWorkbenchPanelTab(delta) {
-        const at = PANEL_TABS.indexOf(this.workbenchPanelTab());
-        const next = PANEL_TABS[(at + delta + PANEL_TABS.length) % PANEL_TABS.length];
+        const tabs = this.workbenchPanelTabs();
+        const at = tabs.indexOf(this.workbenchPanelTab());
+        const next = tabs[(at + delta + tabs.length) % tabs.length];
         return this.setWorkbenchPanelTab(next);
     },
 
@@ -675,7 +696,8 @@
         const tag = e.target?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return false;
         let done = false;
-        if (e.key >= '1' && e.key <= String(PANEL_TABS.length)) done = this.setWorkbenchPanelTab(PANEL_TABS[Number(e.key) - 1]);
+        const tabs = this.workbenchPanelTabs();
+        if (e.key >= '1' && e.key <= String(tabs.length)) done = this.setWorkbenchPanelTab(tabs[Number(e.key) - 1]);
         else if (e.key === '[' || e.key === ']') done = this.stepWorkbenchPanelTab(e.key === ']' ? 1 : -1);
         if (!done) return false;
         e.preventDefault();
@@ -792,6 +814,7 @@
         panel.dataset.bmPanelKey = key || '';
         // After the key: the Health parts find their bookmark by it.
         this.bindBmHealthPanel?.(panel);
+        this.bindBmTestsPane?.(panel);
         void this.fillWorkbenchSuggestions(panel);
         if (mode === 'single') {
             const b = this.findBookmarkByKey(key);
@@ -942,6 +965,8 @@
     onLibraryDrawerClosed(via) {
         this._libDrawerWanted = false;
         this._bmBulkPanelWanted = false;
+        // What the Tests tab's one-off runs found stays only while the panel is open.
+        this.clearBmTestsResults?.();
         if (this.bmSelected.size > 1) {
             this.bmSelected.clear();
             this.afterSelectionChange();
@@ -1786,7 +1811,7 @@
 
     renderWorkbenchNarrowButtons() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const active = [this.bmQuery, this.bmPageFilter, this.bmCategoryFilter, this.bmCleanupFilter, this.bmHealthFilter]
+        const active = [this.bmQuery, this.bmPageFilter, this.bmCategoryFilter, this.bmCleanupFilter, this.bmHealthFilter, this.bmCheckFilter]
             .filter((v) => String(v || '').trim()).length + this.bookmarkTagFilters().length;
         return `
             <button type="button" class="config-btn config-btn--small config-bm-narrow-only config-bm-phone-only" data-bm-open-sheet>${esc(
@@ -1881,6 +1906,7 @@
         }
         this.trackWorkbenchHeaderHeight(container.querySelector('#config-bm-workbench'));
         this.startBmHealth?.();
+        this.startBmNet?.();
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
         this.adoptLibraryPanel(panel);
@@ -2018,9 +2044,6 @@
         const tags = (b.tags || []).map((t) => String(t).trim()).filter(Boolean);
         // Every tag, and a count for the ones that do not fit; fitWorkbenchTags
         // decides which, once the row has a width.
-        const tagChips = tags.map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
-            + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '')
-            + this.workbenchOfferChip(b, esc);
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
         // Under a Health filter the reason earns the tags cell more than a
@@ -2031,6 +2054,17 @@
         const healthReason = healthIssue ? (this._bmHealthModule?.reasonEntries(healthIssue)[0]?.label || '') : '';
         const scoreTone = (score) => (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
         const score = issue && Number.isFinite(Number(issue.score)) ? Number(issue.score) : null;
+        // The row's scheduled checks join the tags in one cluster, problems
+        // first. Where the tags cell is not there for them (the column is off,
+        // a Health reason has its place, the window is narrow) the checks
+        // stand beside the name instead; the name always keeps its room.
+        const nets = this.workbenchNetParts?.(b) || null;
+        const merged = Boolean(nets) && !healthIssue && this.bmViewColumn('tags');
+        const tagChips = (merged ? nets.chips : '')
+            + tags.map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
+            + (merged ? this.workbenchNetMoreHtml()
+                : tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '')
+            + (merged && nets.problem ? '' : this.workbenchOfferChip(b, esc));
         const crumbLabel = ctx.showCrumb ? this.workbenchCrumbLabel(b) : '';
         const crumb = ctx.showCrumb ? `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>` : '';
         const classes = ['config-bm-row'];
@@ -2040,7 +2074,7 @@
         const feed = global.BookmarkFeedRow;
         const col = (name) => this.bmViewColumn(name);
         return `
-            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}"${status ? ` data-lvs-status="${status}"` : ''} role="row" tabindex="-1"
+            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}"${nets ? ` data-bm-net-sig="${esc(nets.sig)}"` : ''}${status ? ` data-lvs-status="${status}"` : ''} role="row" tabindex="-1"
                  aria-selected="${ticked ? 'true' : 'false'}" aria-posinset="${item.index + 1}" aria-setsize="${ctx.setSize}">
                 <label class="config-bm-tick-cell" role="gridcell">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
@@ -2049,6 +2083,7 @@
                 <span class="config-bm-icon-cell" role="gridcell">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                 <span class="config-bm-name" role="gridcell">
                     <span class="config-bm-title">${esc(title)}</span>
+                    ${this.workbenchNetName?.(nets, merged) || ''}
                     ${domain ? `<span class="config-bm-domain">${esc(domain)}</span>` : ''}
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
                     ${crumb}
@@ -2259,6 +2294,8 @@
             // A Health filter puts the reason in this cell instead of tags.
             if (!cell || cell.querySelector('.config-bm-reason')) return;
             cell.querySelectorAll('.tag-offer, .tag-offer-more').forEach((el) => el.remove());
+            // A failing check has the cell to itself: the suggestion waits.
+            if (cell.querySelector('.config-bm-tag--net:is([data-state="down"], [data-state="warn"], [data-state="slow"])')) return;
             const html = this.workbenchOfferChip(this.findBookmarkByKey(row.getAttribute('data-bm-key')), esc);
             if (html) cell.insertAdjacentHTML('beforeend', html);
         });
@@ -2352,8 +2389,31 @@
      * a tag on offer is fitted first (TagOfferRow.fit, shared with the inbox).
      */
     fitWorkbenchTags(root) {
-        const cells = [...(root || document).querySelectorAll('.config-bm-row .config-bm-tags')];
-        global.TagOfferRow?.fit(cells, { tag: '.config-bm-tag', more: '.config-bm-tag--more' });
+        const scope = root || document;
+        const cells = [...scope.querySelectorAll('.config-bm-row .config-bm-tags')];
+        // The checks beside a name get the room the title leaves, measured
+        // here and fitted like the tags cell: the name never gives way to them.
+        const all = [...scope.querySelectorAll('.config-bm-row .config-bm-nets')];
+        all.forEach((el) => el.classList.remove('is-squeezed'));
+        const beside = all.filter((el) => el.getClientRects().length);
+        beside.forEach((cluster) => {
+            const name = cluster.parentElement;
+            const title = name.querySelector('.config-bm-title');
+            const gap = parseFloat(getComputedStyle(name).columnGap) || 0;
+            const kids = [...name.children].filter((el) => el.getClientRects().length || el === cluster);
+            const others = kids.filter((el) => el !== title && el !== cluster && !el.matches('.config-bm-domain'))
+                .reduce((sum, el) => sum + el.getBoundingClientRect().width, 0);
+            const room = name.clientWidth - (title?.scrollWidth || 0) - others - gap * Math.max(0, kids.length - 1);
+            cluster.style.width = `${Math.max(0, Math.floor(room))}px`;
+        });
+        global.TagOfferRow?.fit([...cells, ...beside], { tag: '.config-bm-tag', more: '.config-bm-tag--more' });
+        beside.forEach((cluster) => {
+            // A cluster with no room for even its "+n" gives way altogether.
+            const tight = cluster.clientWidth < 28;
+            cluster.style.removeProperty('width');
+            cluster.classList.toggle('is-squeezed', tight);
+        });
+        this.syncBmNetMore?.(scope);
         // Refit whenever the list changes width: a window resize, the panel
         // folding, or the first layout after the rows were put in.
         const host = document.getElementById('config-bm-list');

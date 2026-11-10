@@ -1740,7 +1740,10 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     --solid-background-secondary: var(--background-secondary);
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-view, .modal, .lvs) {
+/* The side panel of a list view (.lvs-drawer) is drawn in the frame beside the
+   view, not inside it, so it is named here too: its accordions, tabs, tiles and
+   fields were left in the page's darkest colour, opaque, on every tab. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-view, .modal, .lvs, .lvs-drawer) {
     --background-primary: var(--ov-field-fill);
     --background-secondary: color-mix(in srgb, var(--text-primary) 9%, transparent);
 }
@@ -1748,7 +1751,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 /* The tour windows' drawings keep the page's own colours: their words are
    measured against those (the *-tutorial-contrast specs), and a see-through
    fill under them took a light theme's quieter words below 4.5:1. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-view, .modal, .lvs) [class*="-tutorial-scene"] {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.config-view, .modal, .lvs, .lvs-drawer) [class*="-tutorial-scene"] {
     --background-primary: var(--solid-background-primary);
     --background-secondary: var(--solid-background-secondary);
 }

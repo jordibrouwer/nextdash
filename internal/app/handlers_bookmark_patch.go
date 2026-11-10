@@ -44,6 +44,7 @@ var serverOwnedBookmarkFields = map[string]bool{
 	"archiveDiedAt": true, "archiveSnapshotUrl": true, "archiveCheckedAt": true,
 	"archiveJobId": true, "archiveJobAt": true, "driftUrl": true, "driftTitle": true,
 	"driftFingerprint": true, "driftNoticed": true, "driftSince": true, "driftReason": true,
+	"checks": true,
 }
 
 // serverOwnedBookmarkFieldsFolded is the same set lowercased. json.Unmarshal

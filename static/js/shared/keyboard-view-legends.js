@@ -34,7 +34,7 @@
         { keys: 'f', legendKey: 'inboxKeyTriage', cheatKey: 'ivTriage', fallback: 'triage' },
         { keys: 'Esc', legendKey: 'inboxKeyEsc', cheatKey: 'ivEsc', fallback: 'clear selection · back to bookmarks' },
         { keys: 'Shift+H', legendKey: 'dashboardKeyHideLegend', cheatKey: 'ivLegend', fallback: 'hide legend' },
-        { keys: 'Shift+S', legendKey: 'dashboardKeyModeStrip', cheatKey: 'navToggleModeStrip', fallback: 'mode strip' },
+        { keys: 'Shift+S', legendKey: 'dashboardKeyModeStrip', cheatKey: 'navToggleModeStrip', fallback: 'show/hide mode strip' },
     ];
 
     /**
@@ -88,7 +88,7 @@
         { line: 1, keys: 'Shift+A', legendKey: 'dashboardKeyThemeStudio', cheatKey: 'dvThemeStudio', fallback: 'theme studio' },
         { line: 1, keys: 'Shift+E', legendKey: 'dashboardKeyEditMode', cheatKey: 'dvEditMode', fallback: 'edit mode' },
         { line: 1, keys: 'Shift+H', legendKey: 'dashboardKeyHideLegend', cheatKey: 'dvHideLegend', fallback: 'hide legend' },
-        { line: 1, keys: 'Shift+S', legendKey: 'dashboardKeyModeStrip', cheatKey: 'navToggleModeStrip', fallback: 'mode strip' },
+        { line: 1, keys: 'Shift+S', legendKey: 'dashboardKeyModeStrip', cheatKey: 'navToggleModeStrip', fallback: 'show/hide mode strip' },
         // The cursor is on a bookmark: its letters, then the views that are not on show.
         { line: 1, more: true, keys: 'e', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
         { line: 1, more: true, keys: 'm', legendKey: 'dashboardKeyMoveBookmark', cheatKey: 'dvMoveBookmark', fallback: 'move to' },

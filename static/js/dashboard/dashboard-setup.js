@@ -187,6 +187,10 @@ class DashboardSetup {
         // so the rows carry their monitor state either way and only the styling
         // changes — see status.css.
         document.body.setAttribute('data-monitor-emphasis', d.settings.monitorEmphasis || 'problems');
+        // Network check marks on rows: shown or not by CSS from this, so Config
+        // changes it without a reload; the data loads when it is first wanted.
+        document.body.setAttribute('data-net-badges', d.settings.netToolsDashboardBadges || 'problems');
+        d.netBadges?.sync();
 
         // Apply font size
         d.applyFontSize();

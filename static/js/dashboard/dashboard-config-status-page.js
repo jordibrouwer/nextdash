@@ -450,6 +450,22 @@
                 </span>`;
         };
 
+        /*
+         * The service's bookmark's network checks, each a tick: only the ticked
+         * ones are on the page. The labels are for the owner; the page itself
+         * shows the service's name and a state.
+         */
+        const netChecksBlock = (svc) => {
+            const checks = svc.monitorUrl ? (monitorFor(svc.monitorUrl)?.checks || []) : [];
+            if (!checks.length) return '';
+            const on = new Set(Array.isArray(svc.netChecks) ? svc.netChecks : []);
+            const off = ` <span class="status-page-chip-meta">${esc(this.t('nettools.statusChecksOff', 'off'))}</span>`;
+            const boxes = checks.map((c) => `<label class="status-page-check"><input type="checkbox" data-sp-net-check="${esc(c.id)}"${on.has(c.id) ? ' checked' : ''}> ${esc(c.label)}${c.enabled ? '' : off}</label>`).join('');
+            const title = esc(this.t('nettools.statusChecks', 'Network checks on the status page'));
+            return `<div class="status-page-netchecks" role="group" aria-label="${title}" title="${esc(this.t('nettools.statusChecksHint', 'Only the checks you tick show up.'))}">
+                <span class="status-page-chip-meta">${title}</span>${boxes}</div>`;
+        };
+
         const serviceRow = (svc) => {
             const sources = (svc.monitorUrl ? 1 : 0) + (svc.container ? 1 : 0);
             return `
@@ -464,6 +480,7 @@
                     <label class="status-page-check"><input type="checkbox" data-sp-show-speed${svc.showSpeed ? ' checked' : ''}> ${esc(t('statusPageShowSpeed', 'Speed'))}</label>
                     <button type="button" class="config-btn config-btn--small status-page-remove" data-sp-service-remove
                             aria-label="${esc(t('statusPageRemoveService', 'Remove service'))}" title="${esc(t('statusPageRemoveService', 'Remove service'))}">✕</button>
+                    ${netChecksBlock(svc)}
                 </div>`;
         };
 
@@ -520,7 +537,7 @@
                 meta = t('statusPageLinked', 'linked');
             } else if (item.type === 'monitor') {
                 label = `◉ ${item.monitor.name || hostOf(item.monitor.url)}`;
-                meta = `${t('statusPageMonitor', 'monitor')} · ${item.monitor.page || hostOf(item.monitor.url)}`;
+                meta = `${item.monitor.monitor === false ? this.t('nettools.statusChecksOnly', 'network checks only') : t('statusPageMonitor', 'monitor')} · ${item.monitor.page || hostOf(item.monitor.url)}`;
             } else {
                 label = `▣ ${item.container.name}`;
                 meta = `${t('statusPageContainer', 'container')} · ${item.container.state || ''}`;
@@ -949,7 +966,11 @@
             const el = e.target;
             const found = serviceOf(el.closest('[data-sp-service]')?.getAttribute('data-sp-service'));
             if (!found) return;
-            if (el.matches('[data-sp-show-link]')) found.service.showLink = el.checked;
+            if (el.matches('[data-sp-net-check]')) {
+                const id = el.getAttribute('data-sp-net-check');
+                const rest = (Array.isArray(found.service.netChecks) ? found.service.netChecks : []).filter((x) => x !== id);
+                found.service.netChecks = el.checked ? [...rest, id] : rest;
+            } else if (el.matches('[data-sp-show-link]')) found.service.showLink = el.checked;
             else if (el.matches('[data-sp-show-speed]')) found.service.showSpeed = el.checked;
             else return;
             this.saveStatusPageSoon();

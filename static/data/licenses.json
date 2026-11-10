@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T23:11:16.788Z",
+  "generatedAt": "2026-11-10T20:55:10.153Z",
   "groups": [
     {
       "name": "Go modules",
@@ -17,10 +17,22 @@
           "url": "https://pkg.go.dev/github.com/gorilla/mux@v1.8.0"
         },
         {
+          "name": "github.com/miekg/dns",
+          "version": "v1.1.73",
+          "license": "BSD-3-Clause",
+          "url": "https://pkg.go.dev/github.com/miekg/dns@v1.1.73"
+        },
+        {
           "name": "golang.org/x/net",
           "version": "v0.62.0",
           "license": "BSD-3-Clause",
           "url": "https://pkg.go.dev/golang.org/x/net@v0.62.0"
+        },
+        {
+          "name": "golang.org/x/sys",
+          "version": "v0.49.0",
+          "license": "BSD-3-Clause",
+          "url": "https://pkg.go.dev/golang.org/x/sys@v0.49.0"
         },
         {
           "name": "gopkg.in/yaml.v3",

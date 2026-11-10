@@ -168,6 +168,9 @@ const (
 	// WidgetTypeGlances is one Glances host from nextDash's own record of it:
 	// meters or the processor's last hour, opening the Glances page.
 	WidgetTypeGlances WidgetType = "glances"
+	// WidgetTypeNetTests shows what the monitor loop already measures for a
+	// few network checks on bookmarks. It runs nothing itself.
+	WidgetTypeNetTests WidgetType = "nettests"
 	// WidgetTypeHomeAssistant shows chosen entities per room and switches a
 	// safe few of them.
 	WidgetTypeHomeAssistant WidgetType = "homeassistant"
@@ -249,6 +252,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeAdguard:         {},
 	WidgetTypePihole:          {},
 	WidgetTypeGlances:         {},
+	WidgetTypeNetTests:        {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

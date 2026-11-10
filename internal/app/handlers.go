@@ -103,8 +103,18 @@ type Handlers struct {
 	autoBackupMu         sync.Mutex
 	ssrfAPILimiter       *slidingWindowLimiter
 	statusPingLimiter    *slidingWindowLimiter
-	updateCheckMu        sync.RWMutex
-	updateCheckCache     updateCheckCacheEntry
+	// Network checks: one-off runs per client, and the hosts being tested now.
+	netToolLimiter *slidingWindowLimiter
+	netRunInflight sync.Map // host -> struct{}
+	// netChecksMu serialises everything that decides how many checks the
+	// install holds (PUT /api/net/checks, a bookmark's return from the trash), so
+	// the ceiling and the check IDs are settled one writer at a time.
+	netChecksMu sync.Mutex
+	// netRunner runs one network check for the monitor loop; nil means
+	// runNetCheck. A seam for tests that must not touch the network.
+	netRunner        func(ctx context.Context, bm Bookmark, c NetCheck) NetResult
+	updateCheckMu    sync.RWMutex
+	updateCheckCache updateCheckCacheEntry
 }
 
 const healthReportCacheTTL = 3 * time.Minute
@@ -395,6 +405,7 @@ func NewHandlers(store Store, files assetFS) *Handlers {
 		files:             files,
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
+		netToolLimiter:    newSlidingWindowLimiter(6, time.Minute),
 	}
 	// The startup grace for bookmark health; "0" in the environment turns it off.
 	if window := graceWindowFromEnv(os.Getenv("NEXTDASH_HEALTH_STARTUP_GRACE")); window > 0 {
@@ -1780,6 +1791,12 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	request.Bookmark.Tags = normalizeTags(request.Bookmark.Tags)
 	request.Bookmark.Icon = sanitizeBookmarkIcon(request.Bookmark.Icon)
 	trimBookmarkTextFields(&request.Bookmark)
+	// Network checks are the server's: a new row has none, and a row that moves
+	// brings the ones its stored source holds, never what the client sent.
+	request.Bookmark.Checks = nil
+	if request.AllowDuplicate {
+		request.Bookmark.Checks = checksOfMovedRow(h.store, request.MovedFrom, request.Page)
+	}
 
 	addErr := h.store.AddBookmarkToPage(request.Page, request.Bookmark)
 	if errors.Is(addErr, ErrBookmarkDuplicateURL) {

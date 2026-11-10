@@ -616,6 +616,9 @@ func monitorNotificationFields(n monitorNotification) map[string]any {
 	if n.Failures > 0 {
 		fields["failures"] = n.Failures
 	}
+	if n.Check != "" {
+		fields["check"] = n.Check
+	}
 	if n.DurationMs > 0 {
 		fields["durationMs"] = n.DurationMs
 	}

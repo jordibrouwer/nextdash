@@ -176,6 +176,11 @@ func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 			elsewhere[strings.ToUpper(strings.TrimSpace(b.Shortcut))] = true
 		}
 	}
+	// The checks of a trashed row were reported by a tab: they are normalised
+	// like a saved list, under the lock that settles the ceiling and the IDs.
+	h.netChecksMu.Lock()
+	defer h.netChecksMu.Unlock()
+	item.Bookmark.Checks = h.restoredNetChecks(item.Bookmark)
 	restoreErr := h.store.MutateBookmarksOnPage(item.PageID, func(bookmarks []Bookmark) ([]Bookmark, error) {
 		// A page holds each address once, as a save insists; the address may
 		// have been added again since the delete. A shortcut taken since is

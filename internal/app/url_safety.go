@@ -92,9 +92,53 @@ func isAllowedDialIP(addr netip.Addr, allowLocal bool) bool {
 	if allowLocal {
 		return true
 	}
-	return !(addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() ||
-		addr.IsLinkLocalMulticast() || addr.IsMulticast() || addr.IsUnspecified())
+	if addr.Is4In6() {
+		addr = addr.Unmap()
+	}
+	if addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() ||
+		addr.IsLinkLocalMulticast() || addr.IsMulticast() || addr.IsUnspecified() {
+		return false
+	}
+	// Ranges that are not the public internet either: they reach a tailnet,
+	// the host's own "this network", or a translator in front of a private v4.
+	for _, p := range nonPublicPrefixes {
+		if p.Contains(addr) {
+			return false
+		}
+	}
+	// A v6 form that embeds a v4 address is judged by that v4 address.
+	if addr.Is6() {
+		b := addr.As16()
+		var embedded netip.Addr
+		switch {
+		case nat64Prefix.Contains(addr):
+			embedded = netip.AddrFrom4([4]byte{b[12], b[13], b[14], b[15]})
+		case sixToFourPrefix.Contains(addr):
+			embedded = netip.AddrFrom4([4]byte{b[2], b[3], b[4], b[5]})
+		}
+		if embedded.IsValid() {
+			return isAllowedDialIP(embedded, false)
+		}
+	}
+	return true
 }
+
+var (
+	nat64Prefix     = netip.MustParsePrefix("64:ff9b::/96")
+	sixToFourPrefix = netip.MustParsePrefix("2002::/16")
+	// nonPublicPrefixes are blocks the standard-library predicates do not
+	// cover: 0.0.0.0/8, CGNAT 100.64.0.0/10 (Tailscale), the benchmark block
+	// 198.18.0.0/15, reserved 240.0.0.0/4 (with the broadcast address) and ::/96
+	// (IPv4-compatible IPv6, deprecated). They need allowLocal, like a private
+	// address.
+	nonPublicPrefixes = []netip.Prefix{
+		netip.MustParsePrefix("0.0.0.0/8"),
+		netip.MustParsePrefix("100.64.0.0/10"),
+		netip.MustParsePrefix("198.18.0.0/15"),
+		netip.MustParsePrefix("240.0.0.0/4"),
+		netip.MustParsePrefix("::/96"),
+	}
+)
 
 // ssrfSafeDialContext validates resolved IPs at dial time to mitigate DNS rebinding.
 func ssrfSafeDialContext(allowLocal bool, dialTimeout time.Duration) func(context.Context, string, string) (net.Conn, error) {

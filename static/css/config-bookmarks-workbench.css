@@ -1601,7 +1601,9 @@ html body .config-bm-more-menu .config-btn {
    other on every switch. */
 .config-bm-tabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* One equal column per tab: three, or four with Tests. */
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     gap: 3px;
     padding: 3px;
     border-radius: var(--radius-5, 8px);

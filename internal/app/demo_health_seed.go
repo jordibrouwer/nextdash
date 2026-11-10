@@ -47,6 +47,46 @@ var demoMonitors = []demoMonitor{
 	{url: "https://www.torproject.org/", page: 3, pingLow: 210, spread: 120, outages: []demoOutage{{daysAgo: 3.3, minutes: 240, code: 0}}},
 }
 
+// demoNetCheck is a network check the demo gives a bookmark, and what it has
+// been measuring: a sample every half hour for a week, in one steady state.
+type demoNetCheck struct {
+	url   string
+	page  int
+	check NetCheck
+	// sample is the n-th half hour back from now (0 is the newest).
+	sample func(n int, at time.Time, now time.Time) HealthSample
+}
+
+func demoNetUp(ms int, detail string, secondary int) func(n int, at, now time.Time) HealthSample {
+	return func(n int, at, now time.Time) HealthSample {
+		return HealthSample{T: at.UnixMilli(), Up: true, PingMs: ms + demoNoise(n, ms)%6, D: detail, L: secondary}
+	}
+}
+
+// demoNetChecks are four checks, one on each of the states the Network tests
+// widget draws: up, a certificate close to expiry, a changed DNS answer, and a
+// ping that has been failing for a while.
+var demoNetChecks = []demoNetCheck{
+	{url: "https://github.com/", page: 1,
+		check:  NetCheck{ID: "de0000000001", Type: netTypeTCP, Enabled: true},
+		sample: demoNetUp(24, "443 open", 0)},
+	{url: "https://www.home-assistant.io/", page: 2,
+		check:  NetCheck{ID: "de0000000002", Type: netTypeTLS, Enabled: true},
+		sample: demoNetUp(61, "TLS 1.3, 9 days left", 9)},
+	{url: "https://jellyfin.org/", page: 3,
+		check: NetCheck{ID: "de0000000003", Type: netTypeDNS, Enabled: true, Record: "MX", WatchDrift: true,
+			Baseline: "mail.example.org.", DriftDiff: "MX +mail2.example.org -mail.example.org", DriftAt: 1},
+		sample: demoNetUp(19, "MX mail2.example.org.", 0)},
+	{url: "https://gitlab.com/", page: 1,
+		check: NetCheck{ID: "de0000000004", Type: netTypePing, Enabled: true},
+		sample: func(n int, at, now time.Time) HealthSample {
+			if n < 6 {
+				return HealthSample{T: at.UnixMilli(), Up: false, Fail: "timeout", D: "loss 100%", L: 100}
+			}
+			return HealthSample{T: at.UnixMilli(), Up: true, PingMs: 33 + demoNoise(n, 5)%7, D: "via TCP"}
+		}},
+}
+
 // demoNoise is a small deterministic jitter, so the charts are not rulers and
 // every reset draws the same picture.
 func demoNoise(i, seed int) int {
@@ -101,6 +141,15 @@ func (h *Handlers) seedDemoHealth(now time.Time) error {
 				// The last half-hourly check, as the history below ends.
 				page.Bookmarks[i].LastChecked = now.Truncate(30 * time.Minute).UnixMilli()
 			}
+			for _, d := range demoNetChecks {
+				if d.page == pageID && canonicalBookmarkURLKey(d.url) == canonicalBookmarkURLKey(page.Bookmarks[i].URL) {
+					check := d.check
+					if check.DriftAt != 0 {
+						check.DriftAt = now.Add(-3 * time.Hour).UnixMilli()
+					}
+					page.Bookmarks[i].Checks = append(page.Bookmarks[i].Checks, check)
+				}
+			}
 		}
 		if err := writeIndentJSONFile(path, page); err != nil {
 			return err
@@ -132,6 +181,14 @@ func (h *Handlers) seedDemoHealth(now time.Time) error {
 			status = "offline"
 		}
 		cache.Cache[key] = HealthScanCache{URL: key, Status: status, PingMs: last.PingMs, LastScanned: last.T}
+	}
+	// A week of what the network checks measured, under net:<id> like the real ones.
+	for _, d := range demoNetChecks {
+		samples := make([]HealthSample, 0, 7*48)
+		for n := 7*48 - 1; n >= 0; n-- {
+			samples = append(samples, d.sample(n, now.Add(-time.Duration(n)*step), now))
+		}
+		history.Samples[netHistoryKey(d.check.ID)] = samples
 	}
 	// The two links that broke, as the last check found them.
 	cache.Cache[canonicalBookmarkURLKey("https://wiki.example.org/homelab")] = HealthScanCache{

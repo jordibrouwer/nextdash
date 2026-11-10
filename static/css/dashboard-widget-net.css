@@ -1,0 +1,154 @@
+/*
+ * The Network tests widget (dashboard-widget-net.js). Three looks on one tile;
+ * the columns come from the tile's own width (auto-fill), not from the
+ * dashboard, so a two-column widget on a narrow dashboard reads as one column.
+ * Tokens only. The badge has the lists' .net-tb look (net-tools.css is not in the dashboard bundle).
+ */
+.netw-rows,
+.netw-tiles,
+.netw-beats {
+    display: grid;
+    gap: 0.25rem 1rem;
+}
+
+.netw-rows { grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+.netw-tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr)); gap: 0.5rem; }
+.netw-beats { grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); gap: 0.4rem 1rem; }
+
+.netw-row,
+.netw-tile,
+.netw-beat {
+    min-width: 0;
+    padding: 0.3rem 0.5rem;
+    border: 0;
+    border-radius: var(--radius-md, 8px);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+button.netw-row,
+button.netw-tile,
+button.netw-beat { cursor: pointer; }
+
+button.netw-row:hover,
+button.netw-tile:hover,
+button.netw-beat:hover { background: color-mix(in srgb, var(--accent-primary) 10%, transparent); }
+
+.netw-row:focus-visible,
+.netw-tile:focus-visible,
+.netw-beat:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+
+.netw-row { display: flex; align-items: center; gap: 0.5rem; }
+.netw-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.netw-row .netw-badge { flex: none; }
+
+.netw-value {
+    flex: none;
+    min-width: 3.2rem;
+    text-align: right;
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary, inherit);
+}
+
+.netw-value[data-state="down"] { color: var(--accent-error); }
+.netw-value[data-state="warn"],
+.netw-value[data-state="slow"] { color: var(--accent-warning); }
+
+.netw-dot {
+    display: inline-block;
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--accent-success);
+}
+
+.netw-dot[data-state="warn"],
+.netw-dot[data-state="slow"] { background: var(--accent-warning); }
+.netw-dot[data-state="down"] { background: var(--accent-error); }
+.netw-dot[data-state="unknown"],
+.netw-dot[data-state="paused"],
+.netw-dot[data-state="off"],
+.netw-dot[data-state="gone"] { background: var(--text-tertiary); }
+
+.netw-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.6rem;
+    background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.netw-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.netw-tile-type { font-size: var(--font-size-small); color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.netw-tile-value { font-size: 1.3rem; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.netw-tile[data-state="down"] .netw-tile-value { color: var(--accent-error); }
+.netw-tile[data-state="warn"] .netw-tile-value,
+.netw-tile[data-state="slow"] .netw-tile-value { color: var(--accent-warning); }
+.netw-tile-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.netw-tile-detail { font-size: var(--font-size-small); color: var(--text-secondary, inherit); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.netw-beat { display: flex; flex-direction: column; gap: 0.3rem; }
+.netw-beat-head { display: flex; align-items: baseline; gap: 0.5rem; }
+.netw-beat-type { flex: none; font-size: var(--font-size-small); color: var(--text-tertiary); }
+
+.netw-strip { display: flex; gap: 2px; height: 1.2rem; }
+.netw-strip > i {
+    flex: 1 1 0;
+    min-width: 2px;
+    border-radius: 2px;
+    background: color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.netw-strip > i[data-beat="up"] { background: var(--accent-success); opacity: 0.85; }
+.netw-strip > i[data-beat="degraded"] { background: var(--accent-warning); }
+.netw-strip > i[data-beat="down"] { background: var(--accent-error); }
+
+.netw-more { margin: 0.25rem 0 0; font-size: var(--font-size-small); color: var(--text-tertiary); }
+
+.netw-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+}
+
+.netw-foot-time { margin-left: auto; }
+
+.netw-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0 var(--space-1-5, 0.4rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+    white-space: nowrap;
+}
+
+.netw-badge > i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-success);
+    flex: none;
+}
+
+.netw-badge[data-state="slow"] > i,
+.netw-badge[data-state="warn"] > i { background: var(--accent-warning); }
+.netw-badge[data-state="down"] { color: var(--accent-error); border-color: color-mix(in srgb, var(--accent-error) 50%, var(--border-primary)); }
+.netw-badge[data-state="down"] > i { background: var(--accent-error); }
+.netw-badge[data-state="unknown"] > i,
+.netw-badge[data-state="paused"] > i { background: var(--text-tertiary); }
+
+.net-widget-checks { width: 100%; border-collapse: collapse; }
+.net-widget-checks td { padding: 0.15rem 0.4rem 0.15rem 0; vertical-align: middle; }

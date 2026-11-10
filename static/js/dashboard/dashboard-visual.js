@@ -514,6 +514,8 @@ class DashboardVisual {
             // And the per-row uptime the same store now keeps, which is what
             // fills the uptime tile without a trip through the health view.
             d.renderCore?.refreshWidgets?.('uptime');
+            // Network check marks on the rows ride the same beat.
+            void d.netBadges?.refresh({ maxAgeMs: 5000 });
             this.applyLibraryBadge(library, summary, utils);
             this.maybePulseHealthAlert(utils.summarizeHealthCounts(summary).monitorDown || 0);
             d.updateMiniStatusLine();

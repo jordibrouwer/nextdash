@@ -253,6 +253,7 @@ class Dashboard {
         this.toolbar = new DashboardToolbar(this);
         this.smartCollections = new DashboardSmartCollections(this);
         this.feedWatch = typeof DashboardFeedWatch === 'function' ? new DashboardFeedWatch(this) : null;
+        this.netBadges = typeof DashboardNetBadges === 'function' ? new DashboardNetBadges(this) : null;
         this.bookmarkRows = new DashboardBookmarkRows(this);
         this.renderCore = new DashboardRenderCore(this);
         this.renderIncremental = new DashboardRenderIncremental(this);

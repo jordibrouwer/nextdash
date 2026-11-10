@@ -1,0 +1,699 @@
+/*
+ * Network checks in the bookmark panel's Tests tab: the status dots, the form's
+ * helpers and the blocks that say what a failure means. The tab itself is built
+ * from the panel's own classes (config-bm-acc, config-bm-usage-*, config-bm-field),
+ * so this file only carries what they do not. Tokens only, so every theme carries it.
+ */
+
+.net-tests {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.net-tests > .config-bm-panel-muted,
+.net-tests > .net-inline-error {
+    margin: 0;
+}
+
+/* The state dot in an accordion's head. */
+.net-dot {
+    display: inline-block;
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin-right: var(--space-1, 0.25rem);
+    border-radius: 50%;
+    background: var(--text-tertiary);
+}
+
+.net-dot[data-state="ok"] {
+    background: var(--accent-success);
+}
+
+.net-dot[data-state="slow"],
+.net-dot[data-state="warn"] {
+    background: var(--accent-warning);
+}
+
+.net-dot[data-state="down"] {
+    background: var(--accent-error);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-error) 55%, transparent);
+}
+
+.net-strip {
+    margin-top: 0;
+}
+
+.net-bad {
+    color: var(--accent-error);
+}
+
+.config-bm-acc > summary > span:first-child .net-dot {
+    vertical-align: baseline;
+}
+
+/* What a one-off run found, under the buttons of "Run once". */
+.net-run-result {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-run-result > p {
+    margin: 0;
+}
+
+.net-card-actions,
+.net-error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-health-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin: 0;
+}
+
+.net-health-line[hidden] {
+    display: none;
+}
+
+/* The check form lives in an accordion body: no frame of its own. */
+.net-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-explain {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.net-explain-summary {
+    margin: 0;
+}
+
+.net-explain-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.net-explain-list:empty {
+    display: none;
+}
+
+.net-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2, 0.5rem);
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--background-secondary);
+}
+
+.net-badge[data-state="ok"] {
+    border-color: var(--accent-success);
+    background: color-mix(in srgb, var(--accent-success) 14%, transparent);
+}
+
+.net-badge[data-state="slow"],
+.net-badge[data-state="warn"] {
+    border-color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 16%, transparent);
+}
+
+.net-badge[data-state="down"] {
+    border-color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 16%, transparent);
+}
+
+.net-badge[data-state="off"],
+.net-badge[data-state="paused"],
+.net-badge[data-state="unknown"] {
+    color: var(--text-secondary);
+    border-style: dashed;
+}
+
+/* ── Blocks that say what a failure means ─────────────────────────────── */
+
+.net-error {
+    border-left: 3px solid var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+    border-radius: var(--radius-4, 6px);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.net-error.is-warn {
+    border-left-color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 12%, transparent);
+}
+
+.net-error p {
+    margin: 0;
+    font-size: var(--font-size-small);
+}
+
+.net-error-note {
+    color: var(--text-secondary);
+}
+
+.net-error-code {
+    margin: 0;
+    padding: var(--space-2, 0.5rem);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-small);
+    overflow-x: auto;
+    user-select: all;
+}
+
+.net-inline-error {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--accent-error);
+}
+
+/* ── Checks in the Bookmarks view list ─────────────────────────────────────
+   A row's scheduled checks are chips in its tag cluster: in the tags cell,
+   problems first, then the tags; where that cell is not there (column off,
+   a Health reason in its place, a narrow window) the same chips stand beside
+   the name. Either way the cluster is fitted to the room it has and the rest
+   is "+n" (fitWorkbenchTags); the name never gives way to it. */
+
+.config-bm-nets {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    min-width: 0;
+    overflow: hidden;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-bm-nets.is-squeezed {
+    display: none;
+}
+
+/* The copy a row keeps beside its tags column: only where that column is gone. */
+.config-bm-nets--narrow {
+    display: none;
+}
+
+@media (max-width: 799px) {
+    .config-bm-nets--narrow {
+        display: inline-flex;
+    }
+
+    .config-bm-nets--narrow.is-squeezed {
+        display: none;
+    }
+}
+
+button.config-bm-tag {
+    appearance: none;
+    border: 0;
+    margin: 0;
+    font: inherit;
+    font-size: var(--font-size-small);
+    color: inherit;
+    cursor: pointer;
+}
+
+.config-bm-tag--net {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 10rem;
+    color: var(--text-secondary);
+}
+
+button.config-bm-tag--net > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.config-bm-tag--net > i {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-success);
+}
+
+.config-bm-tag--net[data-state="slow"] > i,
+.config-bm-tag--net[data-state="warn"] > i {
+    background: var(--accent-warning);
+}
+
+.config-bm-tag--net[data-state="down"] {
+    color: var(--accent-error);
+    /* A ring, not a border: the chip keeps the size a tag has. */
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-error) 50%, var(--border-primary));
+}
+
+.config-bm-tag--net[data-state="down"] > i {
+    background: var(--accent-error);
+}
+
+.config-bm-tag--net[data-state="unknown"] > i {
+    background: var(--text-secondary);
+    opacity: 0.6;
+}
+
+/* A "+n" that hides a failing check says so. */
+button.config-bm-tag--more[data-state="down"] {
+    color: var(--accent-error);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-error) 50%, var(--border-primary));
+}
+
+button.config-bm-tag--more[data-state="warn"],
+button.config-bm-tag--more[data-state="slow"] {
+    color: var(--accent-warning);
+}
+
+.config-bm-tag--net:focus-visible,
+button.config-bm-tag--more:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
+/* The tags column takes a little more room once there are checks to share it. */
+.config-bm-workbench.has-net-checks {
+    --bm-tags-max: 13rem;
+    --bm-tags-max-mid: 10rem;
+}
+
+/* The popover behind "+n": every chip the cluster could not show. */
+.net-list-pop {
+    position: fixed;
+    z-index: 10050;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    max-width: min(22rem, calc(100vw - 8px));
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 8px);
+    background: var(--background-secondary);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+}
+
+.net-list-pop .config-bm-tag {
+    max-width: none;
+}
+
+.net-test {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-test:empty {
+    display: none;
+}
+
+.net-test-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* A DNS check whose records changed: what changed, and the button to accept it. */
+.net-drift {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    border: 1px solid color-mix(in srgb, var(--accent-warning) 45%, var(--border-primary));
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in srgb, var(--accent-warning) 10%, transparent);
+    font-size: var(--font-size-small, 0.85rem);
+    overflow-wrap: anywhere;
+}
+
+/* The records of a DNS answer (value, and priority for MX). */
+.net-dns-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+.net-dns-table th,
+.net-dns-table td {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border-primary);
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.net-dns-table th {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.net-dns-table td:last-child:not(:only-child),
+.net-dns-table th:last-child:not(:only-child) {
+    width: 4rem;
+}
+
+.net-run-record {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-drift > span {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.net-drift > .config-btn {
+    flex: none;
+    white-space: nowrap;
+}
+
+/* A TLS read: chips (days left, version, protocol, cipher) and the chain. */
+.net-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2, 0.5rem);
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.net-chain {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.net-cert {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm, 6px);
+    font-size: var(--font-size-small, 0.85rem);
+    overflow-wrap: anywhere;
+}
+
+.net-cert-meta {
+    color: var(--text-secondary);
+}
+
+/* An HTTP-detail run: the timeline as bars, the redirect chain and the headers. */
+.net-wf {
+    display: grid;
+    grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+.net-wf-label {
+    color: var(--text-secondary);
+}
+
+.net-wf-ms {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.net-wf-bar {
+    position: relative;
+    height: 0.85rem;
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in srgb, var(--text-tertiary) 22%, transparent);
+}
+
+.net-wf-seg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--accent-primary);
+}
+
+.net-wf-seg.is-redirects {
+    background: var(--text-tertiary);
+}
+
+.net-wf-seg.is-connect {
+    background: var(--accent-success);
+}
+
+.net-wf-seg.is-tls {
+    background: var(--accent-warning);
+}
+
+.net-wf-seg.is-wait {
+    background: color-mix(in srgb, var(--accent-primary) 55%, var(--text-primary));
+}
+
+.net-wf-seg.is-transfer {
+    background: var(--text-secondary);
+}
+
+.net-http-sub {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.net-http-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+.net-http-table td {
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border-primary);
+    vertical-align: top;
+}
+
+.net-http-url {
+    overflow-wrap: anywhere;
+}
+
+.net-http-name {
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.net-http-num {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.net-http-table tr.is-blocked td {
+    color: var(--accent-error);
+}
+
+.net-http-more > summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+/* ── Config → Monitoring → Checks: every check in one table ───────────── */
+
+.net-ov-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-block: var(--space-3, 0.75rem) var(--space-2, 0.5rem);
+}
+
+.net-ov-bulk {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-ov-scroll {
+    overflow-x: auto;
+}
+
+.net-ov-head,
+.net-ov-row {
+    display: grid;
+    grid-template-columns: 1.5rem 3.5rem minmax(8rem, 1.2fr) minmax(9rem, 1.6fr) 6.5rem minmax(7rem, 1fr) 6.5rem 2.5rem 4rem;
+    align-items: center;
+    min-width: 52rem;
+}
+
+.net-ov-head {
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--font-size-small, 0.85rem);
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.net-ov-row {
+    cursor: pointer;
+}
+
+.net-ov-row > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.net-ov-row[data-state="off"] > span:not(.net-badge) {
+    color: var(--text-secondary);
+}
+
+.net-ov-type,
+.net-ov-bookmark {
+    font-weight: 600;
+}
+
+.net-ov-row .net-badge {
+    justify-self: start;
+}
+
+/* Status page editor: the ticks for a service's checks sit on a line of their own. */
+.status-page-netchecks {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.net-ov-muted {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.85rem);
+}
+
+/* Help in the Tests tab: a ℹ beside a heading or a field, and its card. */
+.net-sec-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    margin: var(--space-2, 0.5rem) 0 var(--space-1, 0.25rem);
+}
+
+.net-sec-head:first-child {
+    margin-top: 0;
+}
+
+.net-sec-label {
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.net-help-btn {
+    margin-left: var(--space-1, 0.25rem);
+    vertical-align: middle;
+    flex: none;
+}
+
+.net-help-btn[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+}
+
+.net-help-pop {
+    --net-help-ax: 28px;
+    position: fixed;
+    z-index: 10050;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--background-primary);
+    box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.65);
+    font-size: var(--font-size-controls);
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.net-help-pop::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: var(--net-help-ax);
+    width: 10px;
+    height: 10px;
+    transform: rotate(45deg);
+    background: var(--background-primary);
+    border-left: 1px solid var(--border-primary);
+    border-top: 1px solid var(--border-primary);
+}
+
+.net-help-pop.is-up::before {
+    top: auto;
+    bottom: -6px;
+    transform: rotate(225deg);
+}
+
+.net-help-pop:focus-visible {
+    outline: 2px solid var(--accent-primary);
+}
+
+.net-help-title {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.net-help-pop p {
+    margin: 0 0 6px;
+    color: var(--text-secondary);
+}
+
+.net-help-pop p:last-child {
+    margin-bottom: 0;
+}
+
+.net-help-pop b {
+    color: var(--text-primary);
+}
+
+.net-help-pop code,
+.net-help-pop kbd {
+    font: 600 0.85em var(--font-family-mono, ui-monospace, monospace);
+    padding: 0 5px;
+    border: 1px solid var(--border-primary);
+    border-radius: 5px;
+}

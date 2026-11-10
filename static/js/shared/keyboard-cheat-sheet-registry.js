@@ -249,7 +249,7 @@
                 { keys: 'j / k', cheatKey: 'lvMove', fallback: 'Move through the list', print: true },
                 { keys: 'Enter / o', cheatKey: 'lvOpen', fallback: 'Open the bookmark under the cursor', print: true },
                 { keys: 'i', cheatKey: 'lvPanel', fallback: 'Open or close the side panel', print: true },
-                { keys: '1 / 2 / 3  ·  [ / ]', cheatKey: 'lvPanelTabs', fallback: 'Details, Health or Usage in the side panel' },
+                { keys: '1 / 2 / 3 / 4  ·  [ / ]', cheatKey: 'lvPanelTabs', fallback: 'Details, Health, Usage or Tests in the side panel' },
                 { keys: 'e', cheatKey: 'lvEdit', fallback: 'Edit in the full dialog, as on the dashboard', print: true },
                 { keys: 'x / Shift + X', cheatKey: 'lvSelect', fallback: 'Select a row / a range of rows' },
                 { keys: 'Ctrl/Cmd + A', cheatKey: 'lvSelectAll', fallback: 'Select every bookmark shown' },

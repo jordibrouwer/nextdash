@@ -349,6 +349,8 @@ class DashboardConfig {
         this.bmCleanupFilter = '';
         this.bmTagFilter = [];
         this.bmHealthFilter = '';
+        // The rail's Check type: 'any', a check type or 'down'. Memory only, like the tag filter's token row.
+        this.bmCheckFilter = '';
         // null until the list is first rendered, when it takes the stored
         // preference. Health and Inbox both remember their sort; this list was
         // the only one that reset to page order on every visit.
@@ -1946,6 +1948,8 @@ class DashboardConfig {
         if (d.isModalOpen?.()) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
+        // The "+n" popover of a row's checks and tags binds its own keys (Escape closes it).
+        if (document.querySelector('.net-list-pop, .net-help-pop')) return false;
 
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
             e.preventDefault();
@@ -3055,7 +3059,7 @@ class DashboardConfig {
         pairs.push(['Ctrl/Cmd+Shift+K', t('config.formKeyFindSetting', 'find setting')]);
         pairs.push(['?', t('config.formKeyCheatSheet', 'cheat sheet')]);
         pairs.push(['Shift+H', t('config.formKeyLegend', 'hide / show this')]);
-        pairs.push(['Shift+S', t('config.formKeyModeStrip', 'mode strip')]);
+        pairs.push(['Shift+S', t('config.formKeyModeStrip', 'show/hide mode strip')]);
         return pairs;
     }
 
@@ -4541,6 +4545,11 @@ class DashboardConfig {
         pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
+        netToolsEnabled: ['network', 'check', 'tcp', 'ping', 'icmp', 'port', 'monitor'],
+        netToolsPing: ['network', 'ping', 'icmp', 'tcp', 'fallback', 'docker', 'sysctl'],
+        netToolsAllowCustomHost: ['network', 'check', 'host', 'custom', 'other'],
+        netToolsMaxChecks: ['network', 'check', 'limit', 'maximum', 'ceiling', 'scheduled'],
+        netToolsDashboardBadges: ['network', 'check', 'badge', 'dot', 'dashboard', 'row', 'status'],
         feedWatchWindowMinutes: ['feed', 'watch', 'news', 'modal', 'minutes', 'window'],
         feedWatchExpireHours: ['feed', 'watch', 'news', 'expire', 'old', 'unread', 'count', 'badge', 'hours', 'days'],
         feedWatchNewsView: ['feed', 'watch', 'news', 'newspaper', 'columns', 'layout', 'modal'],
@@ -9928,6 +9937,11 @@ class DashboardConfig {
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: true },
+        netToolsEnabled: { info: ['netToolsEnabledInfoTitle', 'netToolsEnabledInfoMessage'], def: true },
+        netToolsPing: { info: ['netToolsPingInfoTitle', 'netToolsPingInfoMessage'], def: 'auto' },
+        netToolsAllowCustomHost: { info: ['netToolsAllowCustomHostInfoTitle', 'netToolsAllowCustomHostInfoMessage'], def: false },
+        netToolsMaxChecks: { info: ['netToolsMaxChecksInfoTitle', 'netToolsMaxChecksInfoMessage'], def: 200 },
+        netToolsDashboardBadges: { info: ['netToolsDashboardBadgesInfoTitle', 'netToolsDashboardBadgesInfoMessage'], def: 'problems' },
         feedWatchWindowMinutes: { def: 30 },
         feedWatchExpireHours: { def: 24 },
         feedWatchNewsView: { def: 'paper' },
@@ -10790,6 +10804,7 @@ class DashboardConfig {
                     { field: 'bmViewRailBlocks', type: 'checkset', label: t('config.bmViewRailBlocksLabel', 'Blocks shown'), options: [
                         opt('views', t('config.bmViewRailViews', 'Views')),
                         opt('health', t('config.bmViewRailHealth', 'Health')),
+                        opt('checks', t('config.bmViewRailChecks', 'Check type')),
                         opt('pages', t('config.bmViewRailPages', 'Pages')),
                         opt('tags', t('config.bmViewRailTags', 'Tags')),
                     ] },
@@ -10805,6 +10820,7 @@ class DashboardConfig {
                         opt('details', t('config.bmTabDetails', 'Details')),
                         opt('health', t('config.bmHealth', 'Health')),
                         opt('usage', t('config.bmUsage', 'Usage')),
+                        opt('tests', t('config.bmTests', 'Tests')),
                     ] },
                     { field: 'bmViewCloseOutside', type: 'checkbox', label: t('config.bmViewCloseOutsideLabel', 'Close on a click beside it') },
                     { field: 'bmViewPanelWidth', type: 'select', label: t('config.bmViewPanelWidthLabel', 'Width'), options: [
@@ -11818,6 +11834,32 @@ class DashboardConfig {
             {
                 section: 'monitoring',
                 tab: 'checks',
+                title: t('config.netToolsTitle', 'Network checks'),
+                demoLocked: true,
+                note: t('config.netToolsNote', 'TCP and Ping checks you add to a bookmark under Bookmarks, Health. They run on the server and make outbound connections, so switch them off here if you would rather they did not.'),
+                appliesTo: t('config.appliesToNetChecks', 'Network checks'),
+                controls: [
+                    bool('netToolsEnabled', 'config.netToolsEnabledLabel', 'Network checks on bookmarks'),
+                    { field: 'netToolsPing', type: 'select', label: t('config.netToolsPingLabel', 'Ping'), options: [
+                        opt('auto', t('config.netToolsPingAuto', 'Auto: ICMP, with TCP as the fallback')),
+                        opt('tcp-only', t('config.netToolsPingTcpOnly', 'TCP only')),
+                        opt('off', t('config.netToolsPingOff', 'Off')),
+                    ] },
+                    bool('netToolsAllowCustomHost', 'config.netToolsAllowCustomHostLabel', 'Let a check name another host than its bookmark'),
+                    { field: 'netToolsMaxChecks', type: 'number', label: t('config.netToolsMaxChecksLabel', 'Most scheduled checks'), min: 1, max: 1000 },
+                    // A body attribute, so `chrome`: without it the dots only change after a reload.
+                    { field: 'netToolsDashboardBadges', type: 'select', special: 'chrome', label: t('config.netToolsDashboardBadgesLabel', 'Check status on dashboard rows'), options: [
+                        opt('problems', t('config.netToolsDashboardBadgesProblems', 'Only when a check has a problem')),
+                        opt('always', t('config.netToolsDashboardBadgesAlways', 'Always')),
+                        opt('never', t('config.netToolsDashboardBadgesNever', 'Never')),
+                    ] },
+                    { type: 'netToolsStatus' },
+                    { type: 'netToolsOverview' },
+                ],
+            },
+            {
+                section: 'monitoring',
+                tab: 'checks',
                 title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
                 note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
                 appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
@@ -12124,6 +12166,15 @@ class DashboardConfig {
             if (typeof c.shown === 'function' && !c.shown(s)) return '';
             if (c.type === 'note') {
                 return `<p class="config-field-hint">${esc(c.text)}</p>`;
+            }
+            // Network checks' status (ICMP, scheduled count): filled in after the
+            // panel is drawn, by dashboard-config-net-tools.js.
+            if (c.type === 'netToolsStatus') {
+                return '<div class="net-settings-status" data-net-tools-status></div>';
+            }
+            // Every check of the install in one table, filled in with the status block.
+            if (c.type === 'netToolsOverview') {
+                return '<div class="net-overview" data-net-overview></div>';
             }
             // A live card built from a real bookmark, redrawn as the checklist
             // beside it is flipped. Appearance previews its settings; this was
@@ -12577,8 +12628,20 @@ class DashboardConfig {
             + (Number(bookmark.openCount || 0) > 0 ? 1 : 0);
     }
 
+    /** Load the network checks' status block on demand and fill it in; a no-op where the panel has none. */
+    hydrateNetToolsStatus(container) {
+        if (!container?.querySelector?.('[data-net-tools-status]')) return;
+        const load = window.LazyScript.loadScriptOnce;
+        void load('js/shared/net-checks-model.js', 'netChecksModel', () => Boolean(window.NetChecksModel))
+            .then(() => load('js/dashboard/dashboard-config-net-tools.js', 'dashboardConfigNetTools',
+                () => window.DashboardConfigNetToolsReady === true))
+            .then(() => this.fillNetToolsStatus(container))
+            .catch(() => { /* the placeholder stays empty */ });
+    }
+
     bindControlPanels(container, prefix) {
         this.bindFineFolds(container);
+        this.hydrateNetToolsStatus(container);
         container.querySelectorAll(`[data-${prefix}-field]`).forEach((el) => {
             const field = el.getAttribute(`data-${prefix}-field`);
             const type = el.getAttribute(`data-${prefix}-type`);
@@ -15394,7 +15457,7 @@ class DashboardConfig {
      * is the way to build a tile nobody has written.
      */
     static WIDGET_TYPE_GROUPS = [
-        ['links', ['health', 'uptime', 'certs', 'domains', 'trend']],
+        ['links', ['health', 'uptime', 'certs', 'domains', 'trend', 'nettests']],
         ['incoming', ['inbox', 'unsorted', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole']],
@@ -17734,7 +17797,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'glances', 'nettests', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -18127,6 +18190,22 @@ class DashboardConfig {
                   ['content', ['config.widgetShowContent', 'Content changed']],
                   ['healthy', ['config.widgetShowHealthy', 'Healthy']],
               ] },
+        ],
+        nettests: [
+            { key: 'checks', kind: 'netChecks', max: 40, label: ['config.widgetNetChecks', 'What to show (existing scheduled checks only)'] },
+            { key: 'look', kind: 'choice', label: ['config.widgetNetLook', 'Look'],
+              options: [
+                  ['rows', ['config.widgetNetLookRows', 'Rows']],
+                  ['tiles', ['config.widgetNetLookTiles', 'Tiles']],
+                  ['heartbeat', ['config.widgetNetLookHeartbeat', 'Heartbeat']],
+              ] },
+            { key: 'sort', kind: 'choice', label: ['config.widgetNetSort', 'Order'],
+              options: [
+                  ['problems', ['config.widgetNetSortProblems', 'Problems first']],
+                  ['name', ['config.widgetNetSortName', 'Name']],
+              ] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
         ],
         uptime: [
             { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },
@@ -19296,7 +19375,7 @@ class DashboardConfig {
         // bmTagFilter is a list, and an empty array is truthy — ask for its
         // length or an unfiltered view would claim to be filtered.
         return !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
-            || this.bmCleanupFilter || this.bookmarkTagFilters().length || this.bmHealthFilter);
+            || this.bmCleanupFilter || this.bookmarkTagFilters().length || this.bmHealthFilter || this.bmCheckFilter);
     }
 
     computeBookmarkSubsetStats(bookmarks) {
@@ -19432,6 +19511,7 @@ class DashboardConfig {
         }
         if (key === 'all' || key === 'cleanup') this.bmCleanupFilter = '';
         if (key === 'all' || key === 'health') this.bmHealthFilter = '';
+        if (key === 'all' || key === 'check') this.bmCheckFilter = '';
         if (key === 'all') {
             this.clearBookmarkFilters();
             return;
@@ -19584,7 +19664,8 @@ class DashboardConfig {
         const first = rows[0];
         const fixedTab = this.dash.settings?.bmViewPanelTab;
         const tab = fixedTab && fixedTab !== 'last' ? fixedTab : 'details';
-        const tabs = [['details', this.t('config.bmTabDetails', 'Details')], ['health', this.t('config.bmHealth', 'Health')], ['usage', this.t('config.bmUsage', 'Usage')]]
+        const tabs = [['details', this.t('config.bmTabDetails', 'Details')], ['health', this.t('config.bmHealth', 'Health')], ['usage', this.t('config.bmUsage', 'Usage')],
+            ...(this.bmNetEnabled?.() ? [['tests', this.t('config.bmTests', 'Tests')]] : [])]
             .map(([name, label]) => `<span class="config-bm-tab${name === tab ? ' is-active' : ''}">${esc(label)}</span>`).join('');
         const wide = this.dash.settings?.bmViewPanelWidth === 'wide';
         const workbenchClass = typeof this.workbenchViewClasses === 'function' ? this.workbenchViewClasses() : 'config-bm-workbench is-library';
@@ -20654,12 +20735,16 @@ class DashboardConfig {
         const ready = () => window.DashboardConfigBookmarksReady === true
             && window.DashboardConfigWorkbenchReady === true
             && window.DashboardConfigBookmarksHealthReady === true
+            && window.DashboardConfigBookmarksNetReady === true
+            && window.DashboardConfigBookmarksHelpReady === true
+            && window.DashboardConfigBookmarksTestsReady === true
             && window.DashboardBookmarksHealthModalReady === true
             && window.DashboardConfigBookmarksUsageReady === true
             && window.DashboardBookmarksStructureModalReady === true
             && window.DashboardBookmarksCheckingModalReady === true
             && window.DashboardConfigBookmarksDetailsReady === true
             && window.DashboardBookmarksHeaderReady === true
+            && Boolean(window.NetChecksModel)
             && Boolean(window.BookmarkWorkbenchModel);
         if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
@@ -20674,6 +20759,17 @@ class DashboardConfig {
             // Health's part of the list, on top of the workbench.
             .then(() => load('js/dashboard/dashboard-config-bookmarks-health.js',
                 'dashboardConfigBookmarksHealth', () => window.DashboardConfigBookmarksHealthReady === true))
+            // Network checks in the Health tab: their model, then their cards and form.
+            .then(() => load('js/shared/net-checks-model.js',
+                'netChecksModel', () => Boolean(window.NetChecksModel)))
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-net.js',
+                'dashboardConfigBookmarksNet', () => window.DashboardConfigBookmarksNetReady === true))
+            // The info buttons and cards of the Tests tab.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-help.js',
+                'dashboardConfigBookmarksHelp', () => window.DashboardConfigBookmarksHelpReady === true))
+            // The panel's Tests tab: the checks and one-off tests, on top of the checks' request and form.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-tests.js',
+                'dashboardConfigBookmarksTests', () => window.DashboardConfigBookmarksTestsReady === true))
             // The collection health modal, on top of Health's join.
             .then(() => load('js/dashboard/dashboard-bookmarks-health-modal.js',
                 'dashboardBookmarksHealthModal', () => window.DashboardBookmarksHealthModalReady === true))
@@ -21368,6 +21464,7 @@ class DashboardConfig {
         const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
         const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(this.bmCategoryFilter || '');
         const health = this.bmHealthFilter;
+        const check = this.bmCheckFilter;
         return {
             query: (b) => !q || [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
                 .filter(Boolean).some((v) => String(v).toLowerCase().includes(q)),
@@ -21390,6 +21487,7 @@ class DashboardConfig {
                     : cleanup(b, null, null, this);
             },
             health: (b) => !health || Boolean(this.bmHealthMatches?.(b, health)),
+            check: (b) => !check || Boolean(this.bmNetMatches?.(b, check)),
         };
     }
 
@@ -21429,6 +21527,7 @@ class DashboardConfig {
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
             this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
+            this.bmCheckFilter, this.bmCheckFilter ? this._bmNetGen || 0 : 0,
             this.bmSort ?? this.defaultBookmarksSort(), this.bmSortReverse, this.bmActiveGroup(),
             // The offers come and go without the pool changing.
             this.bmCleanupFilter === 'offered' ? window.TagSuggestLive?.stamp?.(this.dash) : '',
@@ -22264,7 +22363,7 @@ class DashboardConfig {
                 ['h', this.t('config.bmKeyHealthModal', 'collection health')],
             ] : []),
             ['Shift+H', this.t('dashboard.dashboardKeyHideLegend', 'hide legend')],
-            ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'mode strip')],
+            ['Shift+S', this.t('dashboard.dashboardKeyModeStrip', 'show/hide mode strip')],
         ];
         return this.renderKeyboardLegendPairs(keys);
     }
@@ -22443,6 +22542,7 @@ class DashboardConfig {
         this.bmCleanupFilter = '';
         this.bmTagFilter = [];
         this.bmHealthFilter = '';
+        this.bmCheckFilter = '';
         this.bmSelected.clear();
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;

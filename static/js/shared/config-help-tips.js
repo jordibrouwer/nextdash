@@ -125,6 +125,9 @@
                 'tipMaintWorkThrough',
                 'tipMaintCollectionHealth',
                 'tipMaintBulkMute',
+                'tipMaintNetChecks',
+                'tipMaintNetRunOnce',
+                'tipMaintNetPing',
             ],
         },
         {
