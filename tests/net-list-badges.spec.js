@@ -163,11 +163,11 @@ test.describe('network check badges and the Check type rail group', () => {
     const target = bookmarks[3];
     await rowOf(page, target.name).first().click();
     await page.evaluate(() => document.activeElement?.blur?.());
-    await page.keyboard.press('2');
-    const net = page.locator('#config-bm-panel [data-bm-net]');
+    await page.keyboard.press('4');
+    const net = page.locator('#config-bm-panel [data-bm-tests]');
     await net.getByRole('button', { name: 'Add check' }).click();
     const form = net.locator('[data-net-form]');
-    await form.locator('[data-net-type="tcp"]').click();
+    await form.locator('[data-net-field="type"]').selectOption('tcp');
     await form.locator('[data-net-field="port"]').fill('9000');
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(rowOf(page, target.name).first().locator('.net-tb')).toHaveText(['TCP']);

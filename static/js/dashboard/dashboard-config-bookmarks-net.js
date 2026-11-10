@@ -1,10 +1,11 @@
 /**
- * Network checks, inside the bookmark panel's Health tab.
+ * Network checks: the data, the form and the events behind the bookmark
+ * panel's Tests tab (the tab itself is drawn by dashboard-config-bookmarks-tests.js).
  *
- * One card per check -- its name and state, the uptime strip, the last
- * result, and for a failure the block that says what to do -- and a form to
- * add or change one in three short parts (type, what to check, planning), with
- * what the check will do written beside it as the reader types.
+ * A check is an accordion in that tab; its form (type, what to check,
+ * planning) opens in the same accordion style, with what the check will do
+ * written under it as the reader types. The Health tab keeps one line that
+ * says how many checks there are and opens the Tests tab.
  *
  * Checks are the server's: they travel only through PUT /api/net/checks, and
  * always as the bookmark's whole list (a check left out is deleted). The
@@ -44,87 +45,68 @@
             return this._bmNet;
         },
 
-        /** The section: its body is drawn by renderBmNetBody and swapped in place when something changes. */
-        renderBmNetChecks(b) {
+        /** The panel's dot and line for the bookmark it shows, after the index changed. */
+        syncBmNetPanelOpen() {
+            const panel = this._libPanel || document.getElementById('config-bm-panel');
+            const b = panel?.dataset.bmPanelKey ? this.findBookmarkByKey(panel.dataset.bmPanelKey) : null;
+            if (b) this.syncBmNetPanel(b);
+        },
+
+        /** The checks of the bookmark the panel shows: its own list once read, else the install-wide index. */
+        bmNetList(b) {
+            const st = this._bmNet;
+            if (st && st.key === this.bmNetIndexKey(b) && st.status === 'ready') return st.checks;
+            return this.bmNetItems(b);
+        },
+
+        /** A scheduled check of the bookmark is down: the dot on the Tests tab. */
+        bmTestsTroubled(b) {
+            if (!this.bmNetEnabled()) return false;
+            return this.bmNetList(b).some((c) => model().badgeState(c) === 'down');
+        },
+
+        /** The Health tab's one line: how many checks, how many down, and the way to the Tests tab. */
+        renderBmNetHealthLine(b) {
             if (!this.bmNetEnabled()) return '';
-            const esc = (v) => this.dash.escapeHtml(v);
-            return `<section class="net-checks" data-bm-net aria-label="${esc(this.bmNetT('nettools.sectionTitle', 'Checks'))}">${this.renderBmNetBody(b)}</section>`;
+            const html = this.bmNetHealthLineHtml(b);
+            return `<p class="config-bm-panel-muted net-health-line" data-bm-net-line${html ? '' : ' hidden'}>${html}</p>`;
         },
 
-        renderBmNetBody(b) {
+        bmNetHealthLineHtml(b) {
+            const list = this.bmNetList(b);
+            if (!list.length) return '';
             const esc = (v) => this.dash.escapeHtml(v);
-            const st = this.bmNetState(b);
-            const caps = this._bmNetCaps;
-            const canAdd = Boolean(caps?.typesBuilt?.length) && st.checks.length < model().MAX_CHECKS_PER_BOOKMARK;
-            const cards = st.checks.map((c) => this.renderBmNetCard(b, c)).join('');
-            const empty = st.status === 'ready' && !st.checks.length && !st.editing
-                ? `<p class="config-bm-panel-muted net-empty">${esc(this.bmNetT('nettools.empty', 'No checks yet. A check tests one thing about this bookmark, on a schedule.'))}</p>`
-                : '';
-            const loading = st.status === 'loading' && !st.checks.length
-                ? `<p class="config-bm-panel-muted" role="status">${esc(this.bmNetT('nettools.loading', 'Loading checks...'))}</p>`
-                : '';
-            const failed = st.status === 'error'
-                ? `<p class="net-inline-error" role="status">${esc(this.bmNetT('nettools.loadFailed', 'Could not read the checks.'))}</p>`
-                : '';
-            const note = st.error && !st.editing ? `<p class="net-inline-error" role="status" data-net-error>${esc(st.error)}</p>` : '';
-            const form = st.editing ? this.renderBmNetCheckForm(b) : '';
-            const add = !st.editing && canAdd
-                ? `<button type="button" class="config-btn config-btn--small" data-net-action="add">${esc(this.bmNetT('nettools.addCheck', 'Add check'))}</button>`
-                : '';
-            return `
-                <h3 class="net-checks-title">${esc(this.bmNetT('nettools.sectionTitle', 'Checks'))}</h3>
-                ${loading}${failed}${empty}${note}
-                <div class="net-card-list">${cards}</div>
-                ${form}
-                ${add ? `<div class="net-checks-foot">${add}</div>` : ''}`;
-        },
-
-        /** One check as a card (mockup c1). */
-        renderBmNetCard(b, check) {
-            const esc = (v) => this.dash.escapeHtml(v);
-            const M = model();
-            const health = this._bmHealthModule;
             const t = (k, f) => this.bmNetT(k, f);
-            const state = M.badgeState(check);
-            const name = M.labelFor(check, b);
-            const stats = check.stats || null;
-            const last = check.state || null;
-            const uptime = health?.formatUptime?.(stats?.uptime24h) || '';
-            const ms = last && last.ok && Number(last.ms) > 0 ? `${Math.round(last.ms)} ms` : '';
-            const cadence = check.enabled === true
-                ? t('nettools.every', 'Every {interval}').replace('{interval}', M.intervalWords(M.intervalMinutes(check, b), t))
-                : t('nettools.stateOff', 'Not scheduled');
-            const meta = [cadence, ms].filter(Boolean).join(' · ');
-            const viaTcp = last?.viaTcp ? `<span class="net-via">${esc(t('nettools.viaTcp', 'via TCP'))}</span>` : '';
-            const strip = check.enabled === true && health && stats?.heartbeat?.length
-                ? `<div class="health-monitor-strip net-card-strip">${health.renderHeartbeat(stats)}${health.renderSparkline(stats, { w: 120, h: 22 })}</div>`
-                : '';
-            const downFor = Number(stats?.downSince) > 0 && health
-                ? `<p class="net-card-line is-bad">${esc(t('nettools.downFor', 'Down for {duration}').replace('{duration}', health.formatDuration(Date.now() - Number(stats.downSince))))}</p>`
-                : '';
-            const detail = last?.detail ? `<p class="net-card-line">${esc(last.detail)}</p>` : '';
-            const block = last && !last.ok ? this.renderBmNetErrorBlock(b, check) : '';
-            const muteLabel = check.muted ? t('nettools.unmute', 'Unmute') : t('nettools.mute', 'Mute');
-            return `
-                <article class="net-card" data-net-card="${esc(check.id)}" data-state="${state}" aria-label="${esc(`${name}: ${M.stateLabel(state, t)}`)}">
-                    <div class="net-card-head">
-                        <span class="net-badge" data-state="${state}">${esc(name)}</span>
-                        <span class="net-card-state">${esc(M.stateLabel(state, t))}</span>${viaTcp}
-                        <span class="net-card-meta">${esc(meta)}</span>
-                        ${uptime ? `<b class="net-card-uptime" data-state="${state}">${esc(uptime)}</b>` : ''}
-                    </div>
-                    ${strip}${downFor}${detail}${block}
-                    <div class="net-card-actions">
-                        <button type="button" class="config-btn config-btn--small" data-net-action="edit" data-net-id="${esc(check.id)}">${esc(t('nettools.edit', 'Edit'))}</button>
-                        <button type="button" class="config-btn config-btn--small${check.muted ? ' is-active' : ''}" data-net-action="mute" data-net-id="${esc(check.id)}"
-                                aria-pressed="${check.muted === true}" title="${esc(t('nettools.muteTitle', 'Silence the alerts of this check. Its history is still kept.'))}">${esc(muteLabel)}</button>
-                    </div>
-                </article>`;
+            const down = list.filter((c) => model().badgeState(c) === 'down').length;
+            const text = (list.length === 1 ? t('nettools.healthLineOne', '1 check · {m} down') : t('nettools.healthLine', '{n} checks · {m} down'))
+                .replace('{n}', String(list.length)).replace('{m}', String(down));
+            return `<span>${esc(text)}</span> <button type="button" class="config-btn config-btn--small" data-net-action="open-tests">${esc(t('nettools.openTests', 'Open Tests'))}</button>`;
+        },
+
+        /** What follows the checks outside the Tests pane: the tab's dot and the Health line. */
+        syncBmNetPanel(b) {
+            const panel = this._libPanel || document.getElementById('config-bm-panel');
+            if (!panel || !b) return;
+            const shown = panel.dataset.bmPanelKey ? this.findBookmarkByKey(panel.dataset.bmPanelKey) : null;
+            if (!shown || shown.pageId !== b.pageId || shown.url !== b.url) return;
+            const tab = panel.querySelector('[data-bm-tab-panel="tests"]');
+            if (tab) {
+                const dot = tab.querySelector('.config-bm-tab-dot');
+                const troubled = this.bmTestsTroubled(b);
+                if (troubled && !dot) {
+                    tab.insertAdjacentHTML('beforeend', `<span class="config-bm-tab-dot" aria-label="${this.dash.escapeHtml(this.t('config.bmTabProblem', 'has a problem'))}"></span>`);
+                } else if (!troubled && dot) dot.remove();
+            }
+            const line = panel.querySelector('[data-bm-net-line]');
+            if (line) {
+                const html = this.bmNetHealthLineHtml(b);
+                line.innerHTML = html;
+                line.hidden = !html;
+            }
         },
 
         /** The block under a failed check: what happened and the one thing to do (mockup g1). */
         renderBmNetErrorBlock(b, check) {
-            const esc = (v) => this.dash.escapeHtml(v);
             const M = model();
             const t = (k, f) => this.bmNetT(k, f);
             const target = M.targetOf(check, b);
@@ -133,17 +115,30 @@
                 timeoutSec: check.timeoutSec || 5,
             }, t);
             if (!block) return '';
+            return this.renderNetBlockHtml(block, { retest: `data-net-action="retest" data-net-id="${this.dash.escapeHtml(check.id)}"` });
+        },
+
+        /**
+         * A failure block (mockup g1) as HTML, for the cards and for the Tools
+         * tab. `retest` is the attributes of the "Test again" button the block
+         * offers, or empty where there is nothing to run again.
+         */
+        renderNetBlockHtml(block, { retest = '' } = {}) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const t = (k, f) => this.bmNetT(k, f);
             const buttons = {
                 copy: () => `<button type="button" class="config-btn config-btn--small" data-net-action="copy" data-net-snippet="${esc(block.snippet || '')}">${esc(t('nettools.copy', 'Copy'))}</button>`,
                 allowLocal: () => `<button type="button" class="config-btn config-btn--small" data-net-action="allow-local">${esc(t('nettools.openAllowLocal', 'Open the "Allow local bookmarks" setting'))}</button>`,
+                retest: () => (retest ? `<button type="button" class="config-btn config-btn--small" ${retest}>${esc(t('nettools.testAgain', 'Test again'))}</button>` : ''),
             };
+            const actions = block.actions.map((a) => buttons[a]?.() || '').join('');
             return `
                 <div class="net-error is-${block.tone}" role="status" data-net-error-class="${esc(block.cls)}">
                     <b class="net-error-title">${esc(block.title)}</b>
                     <p>${esc(block.body)}</p>
                     ${block.snippet ? `<pre class="net-error-code">${esc(block.snippet)}</pre>` : ''}
                     ${block.note ? `<p class="net-error-note">${esc(block.note)}</p>` : ''}
-                    ${block.actions.length ? `<div class="net-error-actions">${block.actions.map((a) => buttons[a]?.() || '').join('')}</div>` : ''}
+                    ${actions ? `<div class="net-error-actions">${actions}</div>` : ''}
                 </div>`;
         },
 
@@ -194,36 +189,39 @@
                 </label>`;
             const input = (name, value, type = 'text', extra = '') =>
                 `<input class="config-text" type="${type}" data-net-field="${name}" value="${esc(value ?? '')}" ${extra}>`;
-            const tiles = (caps.typesBuilt || []).map((type) => `
-                <button type="button" class="net-tile${d.type === type ? ' is-selected' : ''}" data-net-action="type" data-net-type="${type}" aria-pressed="${d.type === type}">
-                    <b>${esc(M.typeName(type))}</b><span>${esc(M.typeHint(type, t))}</span>
-                </button>`).join('');
+            const typeOptions = (caps.typesBuilt || []).map((type) =>
+                `<option value="${type}"${d.type === type ? ' selected' : ''}>${esc(M.typeName(type))}</option>`).join('');
             const target = M.targetOf({ type: d.type, host: d.host, port: Number(d.port) || 0 }, b);
             let params = '';
             if (d.type === 'tcp') {
-                params = `<div class="net-fields">
-                    ${field('port', t('nettools.fieldPort', 'Port'), input('port', d.port, 'number', `min="1" max="65535" placeholder="${esc(String(target.port || ''))}"`),
-                        t('nettools.fieldPortHint', 'Empty uses the port of the bookmark address.'))}
-                    ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}
-                </div>`;
+                params = `${field('port', t('nettools.fieldPort', 'Port'), input('port', d.port, 'number', `min="1" max="65535" placeholder="${esc(String(target.port || ''))}"`),
+                    t('nettools.fieldPortHint', 'Empty uses the port of the bookmark address.'))}
+                    ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}`;
             } else if (d.type === 'ping') {
-                params = `<div class="net-fields">
-                    ${field('count', t('nettools.fieldPackets', 'Packets'), input('count', d.count, 'number', 'min="1" max="10" placeholder="4"'))}
+                params = `${field('count', t('nettools.fieldPackets', 'Packets'), input('count', d.count, 'number', 'min="1" max="10" placeholder="4"'))}
                     ${field('maxLossPct', t('nettools.fieldLoss', 'Down from loss (%)'), input('maxLossPct', d.maxLossPct, 'number', 'min="1" max="100" placeholder="50"'))}
-                    ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}
-                </div>`;
+                    ${field('maxMs', t('nettools.fieldSlow', 'Slow from (ms)'), input('maxMs', d.maxMs, 'number', 'min="0" max="60000" placeholder="-"'))}`;
             }
             const custom = caps.allowCustomHost
                 ? field('host', t('nettools.fieldHost', 'Host'), input('host', d.host, 'text', `spellcheck="false" placeholder="${esc(M.hostOf(b))}"`),
                     t('nettools.fieldHostHint', 'Empty checks the host of the bookmark address.'))
                 : '';
             const label = field('label', t('nettools.fieldLabel', 'Name'), input('label', d.label, 'text', `maxlength="60" placeholder="${esc(M.labelFor({ type: d.type, port: Number(d.port) || 0, host: d.host }, b))}"`));
-            const plan = (value, text) => `<button type="button" class="config-btn config-btn--small${d.planning === value ? ' is-active' : ''}" data-net-action="planning"
-                    data-net-planning="${value}" aria-pressed="${d.planning === value}">${esc(text)}</button>`;
-            const intervals = (global.CheckMode?.INTERVAL_CHOICES || [5, 15, 30, 60, 360, 1440]);
-            const intervalOptions = intervals.map((m) => `<option value="${m}"${Number(d.intervalMinutes || global.CheckMode?.intervalOf?.(b)) === m ? ' selected' : ''}>${esc(M.intervalWords(m, t))}</option>`).join('');
+            // Planning is one choice: the bookmark's own schedule, an interval of its own, or none.
+            const bookmarkMinutes = global.CheckMode?.intervalOf?.(b) || 15;
+            const own = Number(d.intervalMinutes) || bookmarkMinutes;
+            const every = (m) => t('nettools.every', 'Every {interval}').replace('{interval}', M.intervalWords(m, t));
+            const intervals = [...new Set([...(global.CheckMode?.INTERVAL_CHOICES || [5, 15, 30, 60, 360, 1440]), own])].sort((x, y) => x - y);
+            const planValue = d.planning === 'own' ? `own:${own}` : d.planning;
+            const planOptions = [
+                ['bookmark', `${t('nettools.planBookmark', 'Like the bookmark')} (${M.intervalWords(bookmarkMinutes, t)})`],
+                ...intervals.map((m) => [`own:${m}`, every(m)]),
+                ['off', t('nettools.planOff', 'Off')],
+            ].map(([v, text]) => `<option value="${v}"${v === planValue ? ' selected' : ''}>${esc(text)}</option>`).join('');
             const timeoutOptions = [[0, t('nettools.timeoutDefault', 'Default')], [5, '5 s'], [10, '10 s']]
                 .map(([v, text]) => `<option value="${v}"${Number(d.timeoutSec) === v ? ' selected' : ''}>${esc(text)}</option>`).join('');
+            const alertOptions = [['on', t('nettools.alertsOn', 'Alerts on')], ['muted', t('nettools.alertsMuted', 'Muted')]]
+                .map(([v, text]) => `<option value="${v}"${(d.muted ? 'muted' : 'on') === v ? ' selected' : ''}>${esc(text)}</option>`).join('');
             const exp = this.renderBmNetExplain(b);
             const deleting = ed.id
                 ? (ed.confirmDelete
@@ -232,30 +230,19 @@
                 : '';
             return `
                 <form class="net-form" data-net-form novalidate aria-label="${esc(ed.id ? t('nettools.formEdit', 'Change check') : t('nettools.formAdd', 'Add check'))}">
-                    <div class="net-form-head"><b>${esc(ed.id ? t('nettools.formEdit', 'Change check') : t('nettools.formAdd', 'Add check'))}</b></div>
-                    <fieldset class="net-step"><legend>${esc(t('nettools.step1', '1 · Type'))}</legend>
-                        <div class="net-tiles">${tiles}</div>
-                    </fieldset>
-                    <fieldset class="net-step"><legend>${esc(t('nettools.step2', '2 · What to check'))}</legend>
+                    <div class="config-bm-panel-fields">
+                        ${field('type', t('nettools.fieldType', 'Type'), `<select class="config-select" data-net-field="type">${typeOptions}</select>`)}
                         ${params}${custom}${label}
-                    </fieldset>
-                    <fieldset class="net-step"><legend>${esc(t('nettools.step3', '3 · Planning and alerts'))}</legend>
-                        <div class="net-planning" role="group" aria-label="${esc(t('nettools.planning', 'Planning'))}">
-                            ${plan('bookmark', t('nettools.planBookmark', 'Like the bookmark'))}${plan('own', t('nettools.planOwn', 'Own'))}${plan('off', t('nettools.planOff', 'Off'))}
-                        </div>
-                        <div class="net-fields">
-                            ${d.planning === 'own' ? field('intervalMinutes', t('nettools.fieldInterval', 'Interval'),
-                                `<select class="config-select" data-net-field="intervalMinutes">${intervalOptions}</select>`) : ''}
-                            ${field('timeoutSec', t('nettools.fieldTimeout', 'Time-out'), `<select class="config-select" data-net-field="timeoutSec">${timeoutOptions}</select>`)}
-                        </div>
-                        <label class="config-toggle net-mute"><input type="checkbox" data-net-field="muted"${d.muted ? ' checked' : ''}> ${esc(t('nettools.muteSwitch', 'Mute alerts for this check'))}</label>
-                    </fieldset>
-                    <div class="net-explain" data-net-explain aria-live="polite">${exp}</div>
-                    ${ed.serverError ? `<p class="net-inline-error" role="status" data-net-error>${esc(ed.serverError)}</p>` : ''}
-                    <div class="net-form-foot">
+                        ${field('planning', t('nettools.fieldPlanning', 'Planning'), `<select class="config-select" data-net-field="planning">${planOptions}</select>`)}
+                        ${field('timeoutSec', t('nettools.fieldTimeout', 'Time-out'), `<select class="config-select" data-net-field="timeoutSec">${timeoutOptions}</select>`)}
+                        ${field('muted', t('nettools.fieldAlerts', 'Alerts'), `<select class="config-select" data-net-field="muted">${alertOptions}</select>`)}
+                        <div class="net-explain" data-net-explain aria-live="polite">${exp}</div>
+                        <div class="net-test" data-net-test>${this.renderBmNetFormTest(b)}</div>
+                        ${ed.serverError ? `<p class="net-inline-error" role="status" data-net-error>${esc(ed.serverError)}</p>` : ''}
+                    </div>
+                    <div class="net-card-actions net-form-foot">
                         <button type="submit" class="config-btn config-btn--primary config-btn--small" data-net-action="save"${st.saving ? ' disabled' : ''}>${esc(t('nettools.save', 'Save'))}</button>
                         <button type="button" class="config-btn config-btn--small" data-net-action="cancel">${esc(t('nettools.cancel', 'Cancel'))}</button>
-                        <span class="net-form-sp"></span>
                         ${deleting}
                     </div>
                 </form>`;
@@ -273,22 +260,152 @@
             const warn = ex.warnings.map((w) => `
                 <div class="net-error is-warn" role="status"><b class="net-error-title">${esc(w.title)}</b><p>${esc(w.body)}</p></div>`).join('');
             return `
-                <span class="config-bm-field-label">${esc(t('nettools.explainTitle', 'What this does'))}</span>
-                <p class="net-explain-summary">${esc(ex.summary)}</p>
+                <p class="config-bm-panel-muted net-explain-summary">${esc(ex.summary)}</p>
                 <ul class="net-explain-list">${ex.lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>
                 ${warn}`;
         },
 
+        /**
+         * "Test first", inside the form. A test never names a host or a port:
+         * it runs the saved check, or the type against the bookmark's own
+         * address. So it is offered only where that is what the form stands for;
+         * a form with a target of its own says to save first.
+         */
+        renderBmNetFormTest(b) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const M = model();
+            const t = (k, f) => this.bmNetT(k, f);
+            const st = this.bmNetState(b);
+            const ed = st.editing;
+            const caps = this._bmNetCaps || {};
+            if (!ed || !(caps.typesBuilt || []).includes(ed.draft.type)) return '';
+            const stored = ed.id ? st.checks.find((c) => c.id === ed.id) : null;
+            const draftHost = String(ed.draft.host || '').trim();
+            const draftPort = Number(ed.draft.port) || 0;
+            const canTest = stored
+                ? draftHost === String(stored.host || '') && draftPort === (Number(stored.port) || 0)
+                : !draftHost && !String(ed.draft.port || '').trim();
+            if (!canTest) {
+                return `<p class="config-bm-panel-muted" data-net-test-hint>${esc(t('nettools.testSaveFirst', 'Save first to test this host or port.'))}</p>`;
+            }
+            const test = ed.test || null;
+            const running = test?.status === 'running';
+            let result = '';
+            if (running) {
+                result = `<span class="config-bm-panel-muted" role="status">${esc(t('nettools.testing', 'Testing...'))}</span>`;
+            } else if (test?.status === 'error') {
+                result = `<p class="net-inline-error" role="status">${esc(test.error)}</p>`;
+            } else if (test?.status === 'done') {
+                const state = M.testState(test.res);
+                const body = test.res.ok
+                    ? `<span class="net-badge" data-state="${state}">${esc(M.stateLabel(state, t))}</span> <span data-net-test-summary>${esc(M.testSummary(test.res, t))}</span>`
+                    : this.renderNetBlockHtml(M.testErrorBlock(test.res, t));
+                result = `<div data-net-test-result>${body}</div>`;
+            }
+            return `
+                <div class="net-test-row">
+                    <button type="button" class="config-btn config-btn--small" data-net-action="form-test"${running ? ' disabled' : ''}>${esc(t('nettools.testFirst', 'Test first'))}</button>
+                    <span class="config-bm-panel-muted">${esc(stored ? t('nettools.testSavedHint', 'Tests the saved check.') : t('nettools.testOneOffHint', 'Tests the bookmark address once. Nothing is saved.'))}</span>
+                </div>
+                ${result}`;
+        },
+
+        paintBmNetTest(b) {
+            const panel = this._libPanel || document.getElementById('config-bm-panel');
+            const root = panel?.querySelector('[data-net-test]');
+            if (root && this._bmNet?.key === `${b?.pageId}\u0000${b?.url}`) root.innerHTML = this.renderBmNetFormTest(b);
+        },
+
+        /**
+         * Run one test now: a stored check by its ID, or a type against the
+         * bookmark's own address. Resolves to { ok, res } or { ok: false,
+         * error } with a sentence for the reader; it never throws.
+         */
+        async runBmNetTest(b, { type = '', checkId = '' } = {}) {
+            const body = { pageId: b.pageId, url: b.url };
+            if (checkId) body.checkId = checkId;
+            else body.type = type;
+            const t = (k, f) => this.bmNetT(k, f);
+            try {
+                const res = await global.nextDashFetch('/api/net/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                if (res.ok) return { ok: true, res: await res.json() };
+                const raw = (await res.text().catch(() => '')).trim();
+                let said = raw;
+                try {
+                    said = JSON.parse(raw).error || raw;
+                } catch {
+                    // Plain text from a gate in front of the handler.
+                }
+                if (res.status === 429) return { ok: false, error: t('nettools.testTooMany', 'Too many tests. Wait a minute and try again.') };
+                if (res.status === 409) return { ok: false, error: t('nettools.testBusy', 'A test of this host is already running.') };
+                return { ok: false, error: said || t('nettools.testFailed', 'The test could not be run.') };
+            } catch {
+                return { ok: false, error: t('nettools.testFailed', 'The test could not be run.') };
+            }
+        },
+
+        /** Read the bookmark's checks again; the section is redrawn unless a form is open. */
+        async refreshBmNetChecks(b) {
+            const st = this.bmNetState(b);
+            try {
+                const res = await global.fetch(`/api/net/checks?pageId=${encodeURIComponent(b.pageId)}&url=${encodeURIComponent(b.url)}`, { cache: 'no-store' });
+                if (!res.ok) return;
+                const body = await res.json();
+                if (this._bmNet !== st) return;
+                st.checks = Array.isArray(body.checks) ? body.checks : [];
+                st.status = 'ready';
+                if (!st.editing) this.paintBmNet(b);
+            } catch {
+                // The next open reads them again.
+            }
+            void this.loadBmNetIndex({ force: true });
+        },
+
+        /**
+         * Open the form on a new check that starts from a one-off test: the
+         * Tests tab's "Save as scheduled check". Resolves to false, with the
+         * reason told, when the bookmark cannot take another check.
+         */
+        async startBmNetFromTest(b, result) {
+            const st = this.bmNetState(b);
+            if (st.status !== 'ready') {
+                st.status = 'idle';
+                await this.loadBmNetChecks(b);
+            }
+            if (st.status !== 'ready') return false;
+            if (st.checks.length >= model().MAX_CHECKS_PER_BOOKMARK) {
+                this.notify(this.bmNetT('nettools.maxChecks', 'This bookmark has the most checks it can hold.'), 'error');
+                return false;
+            }
+            st.error = '';
+            st.editing = { id: '', draft: this.bmNetDraftFrom(model().checkFromTest(result, b)), errors: {}, serverError: '', confirmDelete: false, test: null };
+            return true;
+        },
+
         /* ── Loading and saving ──────────────────────────────────────────── */
 
-        /** Swap the section's body in place; the rest of the panel is left alone. */
+        /** Swap the Tests tab's body in place; the rest of the panel is left alone. */
         paintBmNet(b) {
             const panel = this._libPanel || document.getElementById('config-bm-panel');
-            const root = panel?.querySelector('[data-bm-net]');
+            const root = panel?.querySelector('[data-bm-tests]');
             if (!root) return;
-            const key = `${b?.pageId}\u0000${b?.url}`;
-            if (this._bmNet?.key !== key) return;
-            root.innerHTML = this.renderBmNetBody(b);
+            if (this._bmNet?.key !== this.bmNetIndexKey(b)) return;
+            // A repaint under a focused button or field must not lose the focus.
+            const active = document.activeElement;
+            let kept = '';
+            if (active && root.contains(active)) {
+                const attr = (n) => active.getAttribute(n);
+                const part = (n) => (attr(n) ? `[${n}="${attr(n)}"]` : '');
+                const own = ['data-net-action', 'data-net-field'].find((n) => attr(n));
+                if (own) kept = `[${own}="${attr(own)}"]${part('data-net-id')}${part('data-net-type')}`;
+            }
+            root.innerHTML = this.renderBmTestsBody(b);
+            if (kept) root.querySelector(`${kept}:not([disabled])`)?.focus?.({ preventScroll: true });
+            this.syncBmNetPanel(b);
         },
 
         /** Read the bookmark's checks and what network checks can do here, then draw. */
@@ -424,6 +541,7 @@
                     this._bmNetGen = (this._bmNetGen || 0) + 1;
                     this.invalidateVisibleBookmarks?.();
                     this.repaintBmNetDependents();
+                    this.syncBmNetPanelOpen?.();
                 } catch {
                     // The badges stay as they were; the next open asks again.
                 }
@@ -522,8 +640,15 @@
 
         /* ── Events ──────────────────────────────────────────────────────── */
 
+        /** The Health tab's line: one button to the Tests tab. */
+        bindBmNetLine(panel) {
+            panel?.querySelector('[data-bm-net-line]')?.addEventListener('click', (event) => {
+                if (event.target.closest('[data-net-action="open-tests"]')) this.setWorkbenchPanelTab?.('tests');
+            });
+        },
+
         bindBmNetChecks(panel, b) {
-            const root = panel?.querySelector('[data-bm-net]');
+            const root = panel?.querySelector('[data-bm-tests]');
             if (!root || !b) return;
             const st = this.bmNetState(b);
             if (st.status === 'idle' || st.status === 'error') void this.loadBmNetChecks(b);
@@ -544,8 +669,22 @@
                 const ed = this.bmNetState(b).editing;
                 if (!el || !ed) return;
                 const name = el.getAttribute('data-net-field');
-                ed.draft[name] = el.type === 'checkbox' ? el.checked : el.value;
-                if (name === 'intervalMinutes' || name === 'timeoutSec') ed.draft[name] = Number(el.value) || 0;
+                if (name === 'type') {
+                    // A change of type redraws the fields it asks for.
+                    if (event.type === 'change') this.switchBmNetType(b, el.value);
+                    return;
+                }
+                if (name === 'planning') {
+                    const [mode, minutes] = el.value.split(':');
+                    ed.draft.planning = mode;
+                    ed.draft.intervalMinutes = mode === 'own' ? Number(minutes) || 0 : 0;
+                } else if (name === 'muted') {
+                    ed.draft.muted = el.value === 'muted';
+                } else if (name === 'timeoutSec') {
+                    ed.draft.timeoutSec = Number(el.value) || 0;
+                } else {
+                    ed.draft[name] = el.value;
+                }
                 const wrap = el.closest('[data-net-field-wrap]');
                 if (wrap && ed.errors?.[name]) {
                     delete ed.errors[name];
@@ -555,6 +694,7 @@
                 }
                 const explain = root.querySelector('[data-net-explain]');
                 if (explain) explain.innerHTML = this.renderBmNetExplain(b);
+                if (name === 'host' || name === 'port') this.paintBmNetTest(b);
             };
             root.addEventListener('input', onField);
             root.addEventListener('change', onField);
@@ -587,21 +727,12 @@
             } else if (action === 'cancel') {
                 st.editing = null;
                 this.paintBmNet(b);
-            } else if (action === 'type') {
-                const type = btn.getAttribute('data-net-type');
-                const ed = st.editing;
-                if (!ed || ed.draft.type === type) return;
-                // What the old type asked for does not carry over to the new one.
-                const keep = { label: ed.draft.label, host: ed.draft.host, planning: ed.draft.planning, intervalMinutes: ed.draft.intervalMinutes, timeoutSec: ed.draft.timeoutSec, muted: ed.draft.muted };
-                ed.draft = { ...this.bmNetDraftFrom(M.blankCheck(type)), ...keep };
-                ed.errors = {};
-                this.paintBmNet(b);
-            } else if (action === 'planning') {
-                const ed = st.editing;
-                if (!ed) return;
-                ed.draft.planning = btn.getAttribute('data-net-planning');
-                if (ed.draft.planning === 'own' && !ed.draft.intervalMinutes) ed.draft.intervalMinutes = global.CheckMode?.intervalOf?.(b) || 15;
-                this.paintBmNet(b);
+            } else if (action === 'open-tests') {
+                this.setWorkbenchPanelTab?.('tests');
+            } else if (action === 'run') {
+                await this.runBmTestsOnce(b, btn.getAttribute('data-net-type') || '');
+            } else if (action === 'save-as-check') {
+                await this.saveBmTestAsCheck(b);
             } else if (action === 'save') {
                 await this.submitBmNetForm(b);
             } else if (action === 'delete') {
@@ -619,6 +750,28 @@
                 const list = st.checks.map((c) => (c.id === id ? { ...c, muted: c.muted !== true } : c));
                 await this.saveBmNetChecks(b, list);
                 this.paintBmNet(b);
+            } else if (action === 'retest') {
+                if (st.testingId || !id) return;
+                st.testingId = id;
+                if (btn) btn.disabled = true;
+                const out = await this.runBmNetTest(b, { checkId: id });
+                st.testingId = '';
+                st.error = '';
+                // What the test found is shown under the check, whether or not it is scheduled.
+                st.lastTest = { ...(st.lastTest || {}), [id]: out };
+                await this.refreshBmNetChecks(b);
+                this.paintBmNet(b);
+            } else if (action === 'form-test') {
+                const ed = st.editing;
+                if (!ed || ed.test?.status === 'running') return;
+                const stored = ed.id ? st.checks.find((c) => c.id === ed.id) : null;
+                ed.test = { status: 'running' };
+                this.paintBmNetTest(b);
+                const out = await this.runBmNetTest(b, stored ? { checkId: ed.id } : { type: ed.draft.type });
+                if (st.editing !== ed) return;
+                ed.test = out.ok ? { status: 'done', res: out.res } : { status: 'error', error: out.error };
+                this.paintBmNetTest(b);
+                if (stored && out.ok) void this.refreshBmNetChecks(b);
             } else if (action === 'copy') {
                 try {
                     await global.navigator.clipboard.writeText(btn.getAttribute('data-net-snippet') || '');
@@ -656,6 +809,18 @@
                 : [...st.checks, stored];
             const saved = await this.saveBmNetChecks(b, list);
             if (saved) st.editing = null;
+            this.paintBmNet(b);
+        },
+
+        /** Change the type of the check being written; what the old type asked for does not carry over. */
+        switchBmNetType(b, type) {
+            const st = this.bmNetState(b);
+            const ed = st.editing;
+            if (!ed || ed.draft.type === type) return;
+            const keep = { label: ed.draft.label, host: ed.draft.host, planning: ed.draft.planning, intervalMinutes: ed.draft.intervalMinutes, timeoutSec: ed.draft.timeoutSec, muted: ed.draft.muted };
+            ed.draft = { ...this.bmNetDraftFrom(model().blankCheck(type)), ...keep };
+            ed.errors = {};
+            ed.test = null;
             this.paintBmNet(b);
         },
 

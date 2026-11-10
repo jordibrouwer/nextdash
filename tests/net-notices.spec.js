@@ -125,7 +125,7 @@ test('Mute sends the whole list with only that check muted, and the row goes', a
   await expect(row(page, 'net-down')).toHaveCount(0);
 });
 
-test('Health opens the bookmark on its Health tab', async ({ page }) => {
+test('Tests opens the bookmark on its Tests tab', async ({ page }) => {
   const bulk = { items: [item('aaaaaaaaaaaa', 'Plex', 'TCP 32400', down())] };
   await stubNet(page, bulk);
   await load(page);
@@ -135,8 +135,8 @@ test('Health opens the bookmark on its Health tab', async ({ page }) => {
   });
   await refresh(page);
   await openPanel(page);
-  await row(page, 'net-down').getByRole('button', { name: 'Health' }).click();
-  await expect.poll(() => page.evaluate(() => window.__opened)).toEqual([1, 'https://aaaaaaaaaaaa.example/', { tab: 'health', focusRow: true }]);
+  await row(page, 'net-down').getByRole('button', { name: 'Tests' }).click();
+  await expect.poll(() => page.evaluate(() => window.__opened)).toEqual([1, 'https://aaaaaaaaaaaa.example/', { tab: 'tests', focusRow: true }]);
 });
 
 test('a check that works over TCP because ICMP is blocked makes no row', async ({ page }) => {

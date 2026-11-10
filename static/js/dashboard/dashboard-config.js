@@ -10816,6 +10816,7 @@ class DashboardConfig {
                         opt('details', t('config.bmTabDetails', 'Details')),
                         opt('health', t('config.bmHealth', 'Health')),
                         opt('usage', t('config.bmUsage', 'Usage')),
+                        opt('tests', t('config.bmTests', 'Tests')),
                     ] },
                     { field: 'bmViewCloseOutside', type: 'checkbox', label: t('config.bmViewCloseOutsideLabel', 'Close on a click beside it') },
                     { field: 'bmViewPanelWidth', type: 'select', label: t('config.bmViewPanelWidthLabel', 'Width'), options: [
@@ -19632,7 +19633,8 @@ class DashboardConfig {
         const first = rows[0];
         const fixedTab = this.dash.settings?.bmViewPanelTab;
         const tab = fixedTab && fixedTab !== 'last' ? fixedTab : 'details';
-        const tabs = [['details', this.t('config.bmTabDetails', 'Details')], ['health', this.t('config.bmHealth', 'Health')], ['usage', this.t('config.bmUsage', 'Usage')]]
+        const tabs = [['details', this.t('config.bmTabDetails', 'Details')], ['health', this.t('config.bmHealth', 'Health')], ['usage', this.t('config.bmUsage', 'Usage')],
+            ...(this.bmNetEnabled?.() ? [['tests', this.t('config.bmTests', 'Tests')]] : [])]
             .map(([name, label]) => `<span class="config-bm-tab${name === tab ? ' is-active' : ''}">${esc(label)}</span>`).join('');
         const wide = this.dash.settings?.bmViewPanelWidth === 'wide';
         const workbenchClass = typeof this.workbenchViewClasses === 'function' ? this.workbenchViewClasses() : 'config-bm-workbench is-library';
@@ -20703,6 +20705,7 @@ class DashboardConfig {
             && window.DashboardConfigWorkbenchReady === true
             && window.DashboardConfigBookmarksHealthReady === true
             && window.DashboardConfigBookmarksNetReady === true
+            && window.DashboardConfigBookmarksTestsReady === true
             && window.DashboardBookmarksHealthModalReady === true
             && window.DashboardConfigBookmarksUsageReady === true
             && window.DashboardBookmarksStructureModalReady === true
@@ -20729,6 +20732,9 @@ class DashboardConfig {
                 'netChecksModel', () => Boolean(window.NetChecksModel)))
             .then(() => load('js/dashboard/dashboard-config-bookmarks-net.js',
                 'dashboardConfigBookmarksNet', () => window.DashboardConfigBookmarksNetReady === true))
+            // The panel's Tests tab: the checks and one-off tests, on top of the checks' request and form.
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-tests.js',
+                'dashboardConfigBookmarksTests', () => window.DashboardConfigBookmarksTestsReady === true))
             // The collection health modal, on top of Health's join.
             .then(() => load('js/dashboard/dashboard-bookmarks-health-modal.js',
                 'dashboardBookmarksHealthModal', () => window.DashboardBookmarksHealthModalReady === true))

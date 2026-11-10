@@ -91,12 +91,12 @@
             (list) => Math.max(...list.map((i) => i.recoveredAt)));
     }
 
-    /** The bookmark's Health tab, where its checks are. */
-    function openHealth(row) {
+    /** The bookmark's Tests tab, where its checks are. */
+    function openTests(row) {
         const first = row?.entry?.targets?.[0];
         const d = dash();
         if (!first || !d?.config) return;
-        void d.config.openLibraryOnBookmark(first.pageId, first.url, { tab: 'health', focusRow: true });
+        void d.config.openLibraryOnBookmark(first.pageId, first.url, { tab: 'tests', focusRow: true });
     }
 
     /** Mute the checks of a row: one GET and one PUT per bookmark, since a PUT replaces the whole list. */
@@ -134,7 +134,7 @@
     function register() {
         if (handles.length || !global.NotificationBell) return;
         const actions = () => [
-            { label: () => t('bell.netHealth', 'Health'), primary: true, onClick: openHealth },
+            { label: () => t('bell.netTests', 'Tests'), primary: true, onClick: openTests },
             { label: () => t('bell.netMute', 'Mute'), onClick: (row) => { void mute(row); } },
         ];
         handles.push(global.NotificationBell.register({

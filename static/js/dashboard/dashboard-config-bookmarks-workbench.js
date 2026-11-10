@@ -15,7 +15,7 @@
     if (typeof global.DashboardConfig !== 'function') return;
 
     // The panel's tabs, in bar order; the reader's choice is kept across rows.
-    const PANEL_TABS = ['details', 'health', 'usage'];
+    const PANEL_TABS = ['details', 'health', 'usage', 'tests'];
     const PANEL_TAB_KEY = 'nextdash.bm.panelTab';
 
     // The way each sort runs before a second click on its heading turns it:
@@ -508,6 +508,7 @@
             : this.pageLabel(b.pageId);
         // A problem worth a look: the dot on the Health tab says so without opening it.
         const troubled = state === 'broken' || state === 'down' || (issue && issue.status === 'broken');
+        const tabs = this.workbenchPanelTabs();
         const tab = this.workbenchPanelTab();
         // The digits reach the tabs only in the Bookmarks view (see
         // handleWorkbenchPanelTabKey), so only there do the tabs name them,
@@ -517,7 +518,8 @@
             return `<button type="button" class="config-bm-tab${on ? ' is-active' : ''}" role="tab"
                         aria-selected="${on ? 'true' : 'false'}" tabindex="${on ? 0 : -1}" data-bm-tab-panel="${name}"${
                 ` title="${esc(`${label} (${n})`)}"`}>${esc(label)}${
-                name === 'health' && troubled ? `<span class="config-bm-tab-dot" aria-label="${esc(this.t('config.bmTabProblem', 'has a problem'))}"></span>` : ''
+                (name === 'health' && troubled) || (name === 'tests' && this.bmTestsTroubled?.(b))
+                    ? `<span class="config-bm-tab-dot" aria-label="${esc(this.t('config.bmTabProblem', 'has a problem'))}"></span>` : ''
             }</button>`;
         };
         const pane = (name, body) => `<section class="config-bm-pane" role="tabpanel" data-bm-pane="${name}"${name === tab ? '' : ' hidden'}>${body}</section>`;
@@ -580,6 +582,7 @@
                 ${tabButton('details', this.t('config.bmTabDetails', 'Details'), 1)}
                 ${tabButton('health', this.t('config.bmHealth', 'Health'), 2)}
                 ${tabButton('usage', this.t('config.bmUsage', 'Usage'), 3)}
+                ${tabs.includes('tests') ? tabButton('tests', this.t('config.bmTests', 'Tests'), 4) : ''}
             </div>
             ${pane('details', `
                 ${this.renderBmDetailsSummary?.(b) || ''}
@@ -604,14 +607,15 @@
                     ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
                     ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}</div></div>`)}
             ${pane('usage', this.renderBmUsagePane?.(b) || `
-                <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>`)}`;
+                <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>`)}
+            ${tabs.includes('tests') ? pane('tests', this.renderBmTestsPane?.(b) || '') : ''}`;
     },
 
     /**
      * One section of a tab's accordion, in the Health tab's markup: its head
      * says its answer, and which sections are open is remembered per tab.
      */
-    workbenchAcc(group, name, label, answer, body, openByDefault = false) {
+    workbenchAcc(group, name, label, answer, body, openByDefault = false, { labelHtml = false, forceOpen = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         let stored = null;
         try {
@@ -619,32 +623,39 @@
         } catch {
             stored = null;
         }
-        const open = Array.isArray(stored) ? stored.includes(name) : openByDefault;
+        const open = forceOpen || (Array.isArray(stored) ? stored.includes(name) : openByDefault);
+        // labelHtml: the label is markup the caller escaped itself (a status dot in the head).
         return `<details class="config-bm-acc" data-bm-acc="${name}" data-bm-acc-group="${group}"${open ? ' open' : ''}>
-                <summary><span>${esc(label)}</span><span class="config-bm-acc-answer">${esc(answer)}</span></summary>
+                <summary><span>${labelHtml ? label : esc(label)}</span><span class="config-bm-acc-answer">${esc(answer)}</span></summary>
                 <div class="lvs-drawer-section-body">${body}</div>
             </details>`;
     },
 
     /* ── The panel's tabs ──────────────────────────────────────────────── */
 
+    /** The tabs the panel has: Tests only while network tests are switched on. */
+    workbenchPanelTabs() {
+        return PANEL_TABS.filter((tab) => tab !== 'tests' || Boolean(this.bmNetEnabled?.()));
+    },
+
     /** Which tab the panel shows; the reader's last choice, kept across rows. */
     workbenchPanelTab() {
+        const tabs = this.workbenchPanelTabs();
         // View can fix the tab the panel opens on; once open, the reader's
         // clicks decide.
         const fixed = this.bmViewSetting('bmViewPanelTab', 'last');
-        if (fixed !== 'last' && PANEL_TABS.includes(fixed) && !this._libDrawer?.isOpen()) return fixed;
+        if (fixed !== 'last' && tabs.includes(fixed) && !this._libDrawer?.isOpen()) return fixed;
         try {
             const tab = global.localStorage?.getItem(PANEL_TAB_KEY);
-            return PANEL_TABS.includes(tab) ? tab : PANEL_TABS[0];
+            return tabs.includes(tab) ? tab : tabs[0];
         } catch {
-            return PANEL_TABS[0];
+            return tabs[0];
         }
     },
 
     /** Show one tab, in place: the panel is not redrawn, so nothing typed is lost. */
     setWorkbenchPanelTab(tab) {
-        if (!PANEL_TABS.includes(tab)) return false;
+        if (!this.workbenchPanelTabs().includes(tab)) return false;
         try {
             global.localStorage?.setItem(PANEL_TAB_KEY, tab);
         } catch {
@@ -666,8 +677,9 @@
 
     /** `[` / `]`: the next or previous tab. */
     stepWorkbenchPanelTab(delta) {
-        const at = PANEL_TABS.indexOf(this.workbenchPanelTab());
-        const next = PANEL_TABS[(at + delta + PANEL_TABS.length) % PANEL_TABS.length];
+        const tabs = this.workbenchPanelTabs();
+        const at = tabs.indexOf(this.workbenchPanelTab());
+        const next = tabs[(at + delta + tabs.length) % tabs.length];
         return this.setWorkbenchPanelTab(next);
     },
 
@@ -682,7 +694,8 @@
         const tag = e.target?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return false;
         let done = false;
-        if (e.key >= '1' && e.key <= String(PANEL_TABS.length)) done = this.setWorkbenchPanelTab(PANEL_TABS[Number(e.key) - 1]);
+        const tabs = this.workbenchPanelTabs();
+        if (e.key >= '1' && e.key <= String(tabs.length)) done = this.setWorkbenchPanelTab(tabs[Number(e.key) - 1]);
         else if (e.key === '[' || e.key === ']') done = this.stepWorkbenchPanelTab(e.key === ']' ? 1 : -1);
         if (!done) return false;
         e.preventDefault();
@@ -799,6 +812,7 @@
         panel.dataset.bmPanelKey = key || '';
         // After the key: the Health parts find their bookmark by it.
         this.bindBmHealthPanel?.(panel);
+        this.bindBmTestsPane?.(panel);
         void this.fillWorkbenchSuggestions(panel);
         if (mode === 'single') {
             const b = this.findBookmarkByKey(key);
@@ -949,6 +963,8 @@
     onLibraryDrawerClosed(via) {
         this._libDrawerWanted = false;
         this._bmBulkPanelWanted = false;
+        // What the Tests tab's one-off runs found stays only while the panel is open.
+        this.clearBmTestsResults?.();
         if (this.bmSelected.size > 1) {
             this.bmSelected.clear();
             this.afterSelectionChange();

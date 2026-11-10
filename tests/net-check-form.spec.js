@@ -4,19 +4,19 @@ const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
  * Network checks on a bookmark: added, changed, muted and deleted from the
- * Health tab of the side panel, through the keys and buttons a reader uses.
+ * Tests tab of the side panel, through the keys and buttons a reader uses.
  */
 
 const panel = (page) => page.locator('#config-bm-panel');
-const net = (page) => panel(page).locator('[data-bm-net]');
+const net = (page) => panel(page).locator('[data-bm-tests]');
 const cards = (page) => net(page).locator('[data-net-card]');
 
 async function pick(page, name) {
   await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: name }) }).first().click();
   await expect(panel(page).locator('.config-bm-panel-title')).toHaveText(name);
   await page.evaluate(() => document.activeElement?.blur?.());
-  await page.keyboard.press('2');
-  await expect(panel(page).locator('[data-bm-pane="health"]')).toBeVisible();
+  await page.keyboard.press('4');
+  await expect(panel(page).locator('[data-bm-pane="tests"]')).toBeVisible();
 }
 
 /** What the server holds for one bookmark. */
@@ -25,11 +25,16 @@ async function storedChecks(page, bookmark) {
   return (await res.json()).checks;
 }
 
+/** A check's accordion is closed until it is opened; its buttons live inside. */
+async function openCard(card) {
+  if (!(await card.evaluate((el) => el.open))) await card.locator('summary').click();
+}
+
 async function addTcpCheck(page, port) {
   await net(page).getByRole('button', { name: 'Add check' }).click();
   const form = net(page).locator('[data-net-form]');
   await expect(form).toBeVisible();
-  await form.locator('[data-net-type="tcp"]').click();
+  await form.locator('[data-net-field="type"]').selectOption('tcp');
   await form.locator('[data-net-field="port"]').fill(String(port));
   await form.getByRole('button', { name: 'Save' }).click();
 }
@@ -51,15 +56,16 @@ test.describe('network check form', () => {
 
     await addTcpCheck(page, 8443);
     await expect(cards(page)).toHaveCount(1);
-    await expect(cards(page).first().locator('.net-badge')).toHaveText('TCP 8443');
+    await expect(cards(page).first().locator('summary')).toContainText('TCP 8443');
     expect((await storedChecks(page, target)).map((c) => c.type)).toEqual(['tcp']);
 
     // The server's copy, not the page's memory: reload and open it again.
     await openBookmarksWithHealth(page);
     await pick(page, target.name);
     await expect(cards(page)).toHaveCount(1);
-    await expect(cards(page).first().locator('.net-badge')).toHaveText('TCP 8443');
+    await expect(cards(page).first().locator('summary')).toContainText('TCP 8443');
 
+    await openCard(cards(page).first());
     await cards(page).first().getByRole('button', { name: 'Edit' }).click();
     await net(page).getByRole('button', { name: 'Delete check' }).click();
     // Deleting asks twice: the first click only arms the button.
@@ -82,6 +88,7 @@ test.describe('network check form', () => {
     await addTcpCheck(page, 443);
     await expect(cards(page)).toHaveCount(2);
     // Deleting the second leaves the first.
+    await openCard(cards(page).nth(1));
     await cards(page).nth(1).getByRole('button', { name: 'Edit' }).click();
     await net(page).getByRole('button', { name: 'Delete check' }).click();
     await net(page).getByRole('button', { name: 'Delete it for good' }).click();
@@ -95,7 +102,9 @@ test.describe('network check form', () => {
     await pick(page, target.name);
     await addTcpCheck(page, 8443);
     const card = cards(page).first();
+    await openCard(card);
     await card.getByRole('button', { name: 'Mute', exact: true }).click();
+    await openCard(card);
     await expect(card.getByRole('button', { name: 'Unmute' })).toHaveAttribute('aria-pressed', 'true');
     const [stored] = await storedChecks(page, target);
     expect(stored.muted).toBe(true);
@@ -108,10 +117,10 @@ test.describe('network check form', () => {
     await net(page).getByRole('button', { name: 'Add check' }).click();
     const form = net(page).locator('[data-net-form]');
     const explain = form.locator('[data-net-explain]');
-    await form.locator('[data-net-type="tcp"]').click();
+    await form.locator('[data-net-field="type"]').selectOption('tcp');
     await form.locator('[data-net-field="port"]').fill('8443');
     await expect(explain).toContainText('port 8443');
-    await form.getByRole('button', { name: 'Off', exact: true }).click();
+    await form.locator('[data-net-field="planning"]').selectOption('off');
     await expect(explain).toContainText('Not scheduled');
     // Escape closes the form and leaves the panel where it was.
     await form.locator('[data-net-field="port"]').press('Escape');
@@ -174,7 +183,7 @@ test.describe('network check form', () => {
     await expect(net(page).locator('[data-net-error]')).toContainText('too many scheduled network checks');
     await expect(cards(page)).toHaveCount(1);
     // The form is still there, so the reader can switch planning off and save again.
-    await net(page).locator('[data-net-form]').getByRole('button', { name: 'Off', exact: true }).click();
+    await net(page).locator('[data-net-form]').locator('[data-net-field="planning"]').selectOption('off');
     await net(page).getByRole('button', { name: 'Save' }).click();
     await expect(cards(page)).toHaveCount(2);
     expect((await storedChecks(page, target)).map((c) => c.enabled === true)).toEqual([true, false]);

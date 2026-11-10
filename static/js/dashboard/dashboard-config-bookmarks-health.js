@@ -279,7 +279,7 @@
                     ${item('expectations', t('bmHealthExpectations', 'Expectations'), expectSet ? t('bmHealthExpectSet', 'set') : t('bmHealthExpectNone', 'none'),
                         `<div class="health-view-expect-panel">${health.renderExpectPanel(issue)}</div>`)}
                 </div>
-                ${this.renderBmNetChecks?.(b) || ''}`;
+                ${this.renderBmNetHealthLine?.(b) || ''}`;
         },
 
         /** The window the badge reports, in days: 7 or 30, remembered while the page is open. */
@@ -525,7 +525,7 @@
                 });
             });
             this.bindBmBadge(panel, b);
-            this.bindBmNetChecks?.(panel, b);
+            this.bindBmNetLine?.(panel);
             panel.querySelector('[data-bm-health-enable]')?.addEventListener('click', () => {
                 this.openBmHealthAcc('checking')?.querySelector('[data-check-mode]')?.focus();
             });

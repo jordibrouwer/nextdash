@@ -1,54 +1,114 @@
 /*
- * Network checks in the bookmark panel's Health tab: the cards, the form and
- * the blocks that say what a failure means. Tokens only (colours, spacing,
- * radii come from the app's own variables), so every theme carries it.
+ * Network checks in the bookmark panel's Tests tab: the status dots, the form's
+ * helpers and the blocks that say what a failure means. The tab itself is built
+ * from the panel's own classes (config-bm-acc, config-bm-usage-*, config-bm-field),
+ * so this file only carries what they do not. Tokens only, so every theme carries it.
  */
 
-.net-checks {
-    margin-top: var(--space-3, 0.75rem);
+.net-tests {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 0.5rem);
+    gap: var(--space-3, 0.75rem);
 }
 
-.net-checks-title {
+.net-tests > .config-bm-panel-muted,
+.net-tests > .net-inline-error {
     margin: 0;
-    font-size: var(--font-size-small);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
 }
 
-.net-card-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.5rem);
+/* The state dot in an accordion's head. */
+.net-dot {
+    display: inline-block;
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin-right: var(--space-1, 0.25rem);
+    border-radius: 50%;
+    background: var(--text-tertiary);
 }
 
-.net-card-list:empty {
-    display: none;
+.net-dot[data-state="ok"] {
+    background: var(--accent-success);
 }
 
-.net-card {
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-primary);
-    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+.net-dot[data-state="slow"],
+.net-dot[data-state="warn"] {
+    background: var(--accent-warning);
+}
+
+.net-dot[data-state="down"] {
+    background: var(--accent-error);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-error) 55%, transparent);
+}
+
+.net-strip {
+    margin-top: 0;
+}
+
+.net-bad {
+    color: var(--accent-error);
+}
+
+.config-bm-acc > summary > span:first-child .net-dot {
+    vertical-align: baseline;
+}
+
+/* What a one-off run found, under the buttons of "Run once". */
+.net-run-result {
     display: flex;
     flex-direction: column;
     gap: var(--space-1-5, 0.4rem);
 }
 
-.net-card[data-state="down"] {
-    border-color: color-mix(in srgb, var(--accent-error) 55%, var(--border-primary));
+.net-run-result > p {
+    margin: 0;
 }
 
-.net-card-head {
+.net-card-actions,
+.net-error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.net-health-line {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
+    margin: 0;
+}
+
+.net-health-line[hidden] {
+    display: none;
+}
+
+/* The check form lives in an accordion body: no frame of its own. */
+.net-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-explain {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.net-explain-summary {
+    margin: 0;
+}
+
+.net-explain-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.net-explain-list:empty {
+    display: none;
 }
 
 .net-badge {
@@ -83,60 +143,6 @@
 .net-badge[data-state="unknown"] {
     color: var(--text-secondary);
     border-style: dashed;
-}
-
-.net-card-state,
-.net-via,
-.net-card-meta {
-    font-size: var(--font-size-small);
-    color: var(--text-secondary);
-}
-
-.net-via {
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-4, 6px);
-    padding: 0 var(--space-1-5, 0.4rem);
-}
-
-.net-card-meta {
-    flex: 1;
-    min-width: 0;
-}
-
-.net-card-uptime {
-    font-variant-numeric: tabular-nums;
-    color: var(--accent-success);
-}
-
-.net-card-uptime[data-state="down"] {
-    color: var(--accent-error);
-}
-
-.net-card-uptime[data-state="slow"],
-.net-card-uptime[data-state="warn"] {
-    color: var(--accent-warning);
-}
-
-.net-card-strip {
-    margin-top: 0;
-}
-
-.net-card-line {
-    margin: 0;
-    font-size: var(--font-size-small);
-    color: var(--text-secondary);
-}
-
-.net-card-line.is-bad {
-    color: var(--accent-error);
-}
-
-.net-card-actions,
-.net-checks-foot,
-.net-error-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.4rem);
 }
 
 /* ── Blocks that say what a failure means ─────────────────────────────── */
@@ -180,120 +186,6 @@
     margin: 0;
     font-size: var(--font-size-small);
     color: var(--accent-error);
-}
-
-/* ── The form ─────────────────────────────────────────────────────────── */
-
-.net-form {
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, var(--border-primary));
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-primary);
-    padding: var(--space-3, 0.75rem);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.75rem);
-}
-
-.net-step {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-}
-
-.net-step > legend {
-    padding: 0;
-    margin-bottom: var(--space-1-5, 0.4rem);
-    font-size: var(--font-size-small);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-}
-
-.net-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
-    gap: var(--space-2, 0.5rem);
-}
-
-.net-tile {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-secondary);
-    color: var(--text-primary);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.net-tile > span {
-    font-size: var(--font-size-small);
-    color: var(--text-secondary);
-}
-
-.net-tile:hover {
-    border-color: var(--accent-primary);
-}
-
-.net-tile.is-selected {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
-}
-
-.net-fields {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-    gap: var(--space-2, 0.5rem);
-}
-
-.net-planning {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.4rem);
-}
-
-.net-mute {
-    margin-top: var(--space-1, 0.25rem);
-}
-
-.net-explain {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1-5, 0.4rem);
-    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    border-radius: var(--radius-4, 6px);
-    background: var(--background-secondary);
-}
-
-.net-explain-summary {
-    margin: 0;
-}
-
-.net-explain-list {
-    margin: 0;
-    padding-left: 1.1rem;
-    font-size: var(--font-size-small);
-    color: var(--text-secondary);
-}
-
-.net-form-foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-}
-
-.net-form-sp {
-    flex: 1;
 }
 
 /* ── Badges behind a bookmark's name in the Bookmarks view list ─────────── */
@@ -349,4 +241,21 @@
 
 .net-tb--more i {
     display: none;
+}
+
+.net-test {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.net-test:empty {
+    display: none;
+}
+
+.net-test-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
 }

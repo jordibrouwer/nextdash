@@ -348,7 +348,67 @@
         return base;
     }
 
+    /** The types the Tools tab has a card for: the ones this install can run, in the usual order. */
+    function toolTypes(caps) {
+        const built = Array.isArray(caps && caps.typesBuilt) ? caps.typesBuilt : [];
+        return TYPES.filter((type) => built.includes(type));
+    }
+
+    /** What a one-off result shows as its state: ok, slow, warn or down (the badge's words). */
+    function testState(res) {
+        if (!res) return 'unknown';
+        if (!res.ok) return 'down';
+        if (res.warn) return 'warn';
+        if (res.slow) return 'slow';
+        return 'ok';
+    }
+
+    /** A failed result as a block: the class's own, else the server's sentence. */
+    function testErrorBlock(res, t) {
+        const r = res || {};
+        const own = errorBlock({ class: r.class, host: r.host, port: r.port, ip: r.ip, timeoutSec: 10 }, t);
+        if (own) return own;
+        return {
+            cls: r.class || 'other', tone: 'err',
+            title: t('nettools.errOtherTitle', 'The test did not work'),
+            body: r.error || t('nettools.errOtherBody', 'The test failed without saying why.'),
+            actions: [],
+        };
+    }
+
+    /** One line under a card: the answer in a few words. */
+    function testSummary(res, t) {
+        if (!res) return t('nettools.toolNotRun', 'Not run yet');
+        const ms = Number(res.ms) > 0 ? Math.round(res.ms) : 0;
+        if (!res.ok) return testErrorBlock(res, t).title;
+        if (res.type === 'tcp') {
+            const parts = [fmt(t('nettools.toolPortOpen', '{port} open'), { port: res.port || '?' })];
+            if (ms) parts.push(`${ms} ms`);
+            return parts.join(' · ');
+        }
+        if (res.type === 'ping') {
+            const p = res.ping || {};
+            if (res.viaTcp || p.viaTcp) return [t('nettools.viaTcp', 'via TCP'), ms ? `${ms} ms` : ''].filter(Boolean).join(' · ');
+            return [fmt(t('nettools.toolLoss', '{pct}% loss'), { pct: Number(p.lossPct) || 0 }),
+                fmt(t('nettools.toolAvg', 'avg {ms} ms'), { ms: Number(p.avgMs) || ms })].join(' · ');
+        }
+        return ms ? `${ms} ms` : t('nettools.stateOk', 'Up');
+    }
+
+    /**
+     * What the form starts with when a one-off result is saved as a scheduled
+     * check: its type, and the port only when the test used one other than the
+     * bookmark address's own (the form says "empty uses the address").
+     */
+    function checkFromTest(res, bm) {
+        const type = res && res.type;
+        const check = blankCheck(type);
+        if (type === 'tcp' && Number(res.port) > 0 && Number(res.port) !== defaultPort(bm)) check.port = Number(res.port);
+        return check;
+    }
+
     const api = {
+        toolTypes, testState, testErrorBlock, testSummary, checkFromTest,
         TYPES, TYPE_NAMES, MAX_CHECKS_PER_BOOKMARK,
         typeName, typeHint, hostOf, defaultPort, targetOf, labelFor, badgeState, stateLabel,
         intervalMinutes, intervalWords, explain, errorBlock, validate, blankCheck, pickForType,

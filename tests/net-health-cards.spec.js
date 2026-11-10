@@ -3,13 +3,13 @@ const { useClassicType } = require('./e2e-helpers');
 const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
 
 /**
- * What the Health tab shows of a bookmark's network checks: a card per check
- * with its state, and for a failure the block that says what to do. The
+ * What the Tests tab shows of a bookmark's network checks: an accordion per
+ * check with its state, and for a failure the block that says what to do. The
  * server's answer is stubbed: what is under test is how it is drawn.
  */
 
 const panel = (page) => page.locator('#config-bm-panel');
-const net = (page) => panel(page).locator('[data-bm-net]');
+const net = (page) => panel(page).locator('[data-bm-tests]');
 
 function heartbeat(states) {
   return states.map((state, i) => ({ from: Date.now() - (states.length - i) * 60_000, state, avgMs: state === 'up' ? 20 : 0 }));
@@ -29,8 +29,13 @@ async function open(page, checks) {
   await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: target.name }) }).first().click();
   await expect(panel(page).locator('.config-bm-panel-title')).toHaveText(target.name);
   await page.evaluate(() => document.activeElement?.blur?.());
-  await page.keyboard.press('2');
-  await expect(panel(page).locator('[data-bm-pane="health"]')).toBeVisible();
+  await page.keyboard.press('4');
+  await expect(panel(page).locator('[data-bm-pane="tests"]')).toBeVisible();
+  // Each check is an accordion, closed until opened: open them for what is read inside.
+  if (checks && checks.length) {
+    await net(page).locator('[data-net-card]').first().waitFor();
+    await page.evaluate(() => document.querySelectorAll('[data-net-card]').forEach((d) => { d.open = true; }));
+  }
   return target;
 }
 
@@ -60,10 +65,9 @@ test.describe('network check cards', () => {
     }]);
     const card = net(page).locator('[data-net-card]');
     await expect(card).toHaveAttribute('data-state', 'ok');
-    await expect(card.locator('.net-badge')).toHaveText('TCP 8443');
-    await expect(card).toContainText('Up');
-    await expect(card).toContainText('12 ms');
-    await expect(card.locator('.net-card-uptime')).toHaveText('100%');
+    await expect(card.locator('summary')).toContainText('TCP 8443');
+    await expect(card.locator('summary .config-bm-acc-answer')).toHaveText('Up · 12 ms');
+    await expect(card).toContainText('100% in 24 h');
     await expect(card.locator('.health-heartbeat-bar')).toHaveCount(3);
     await expect(card.locator('[data-net-error-class]')).toHaveCount(0);
   });
@@ -77,7 +81,7 @@ test.describe('network check cards', () => {
     await expect(block).toHaveAttribute('role', 'status');
     await expect(block.locator('pre')).toContainText('net.ipv4.ping_group_range');
     await expect(block.getByRole('button', { name: 'Copy' })).toBeVisible();
-    await expect(card).toContainText('Down for');
+    await expect(card.locator('summary .config-bm-acc-answer')).toContainText('down');
   });
 
   test('a blocked address points at the Allow local bookmarks setting', async ({ page }) => {
@@ -115,9 +119,53 @@ test.describe('network check cards', () => {
     await net(page).getByRole('button', { name: 'Add check' }).click();
     const form = net(page).locator('[data-net-form]');
     const explain = form.locator('[data-net-explain]');
-    await form.locator('[data-net-type="tcp"]').click();
+    await form.locator('[data-net-field="type"]').selectOption('tcp');
     await expect(explain).not.toContainText('ICMP is not used here');
-    await form.locator('[data-net-type="ping"]').click();
+    await form.locator('[data-net-field="type"]').selectOption('ping');
     await expect(explain).toContainText('ICMP is not used here');
+  });
+  test('the tab shows a red dot and the overview counts when a check is down; Health points to it', async ({ page }) => {
+    await open(page, [
+      { id: 'eeeeeeeeeeee', type: 'tcp', port: 22, enabled: true, state: { at: Date.now(), ok: true, ms: 5 }, stats: { uptime24h: { samples: 10, ratio: 1 }, heartbeat: heartbeat(['up']) } },
+      ping({ at: Date.now(), ok: false, ms: 0, class: 'timeout' }),
+    ]);
+    await expect(panel(page).locator('[data-bm-tab-panel="tests"] .config-bm-tab-dot')).toBeVisible();
+    const tiles = net(page).locator('[data-net-tiles] > div');
+    await expect(tiles.nth(0)).toContainText('2');
+    await expect(tiles.nth(1)).toContainText('1');
+    // Health has no checks of its own, only a line that opens this tab.
+    await page.keyboard.press('2');
+    const line = panel(page).locator('[data-bm-pane="health"] [data-bm-net-line]');
+    await expect(line).toContainText('2 checks · 1 down');
+    await expect(panel(page).locator('[data-bm-pane="health"] [data-net-card], [data-bm-pane="health"] [data-net-form]')).toHaveCount(0);
+    await line.getByRole('button', { name: 'Open Tests' }).click();
+    await expect(panel(page).locator('[data-bm-pane="tests"]')).toBeVisible();
+  });
+
+  test('a bookmark without checks offers Run once, open, and says nothing on Health', async ({ page }) => {
+    await open(page, []);
+    await expect(net(page).locator('[data-bm-acc="run"]')).toHaveAttribute('open', '');
+    await expect(net(page).locator('[data-net-run-types] button')).toHaveText(['TCP', 'Ping']);
+    await page.keyboard.press('2');
+    await expect(panel(page).locator('[data-bm-pane="health"] [data-bm-net-line]')).toBeHidden();
+  });
+
+  test('Run once shows the answer and Save as scheduled check opens the form on that type', async ({ page }) => {
+    let body = null;
+    await page.route('**/api/net/run', (route) => {
+      body = route.request().postDataJSON();
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'tcp', ok: true, ms: 21, host: 'x.example', ip: '203.0.113.9', port: 443 }) });
+    });
+    await open(page, []);
+    await net(page).locator('[data-net-run-types]').getByRole('button', { name: 'TCP' }).click();
+    const result = net(page).locator('[data-tests-result="tcp"]');
+    await expect(result).toContainText('Port open');
+    await expect(result).toContainText('21 ms');
+    // Only the bookmark and the type travel: never a host or a port.
+    expect(Object.keys(body).sort()).toEqual(['pageId', 'type', 'url']);
+    await result.getByRole('button', { name: 'Save as scheduled check...' }).click();
+    const form = net(page).locator('[data-net-form]');
+    await expect(form).toBeVisible();
+    await expect(form.locator('[data-net-field="type"]')).toHaveValue('tcp');
   });
 });
