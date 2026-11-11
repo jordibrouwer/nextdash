@@ -440,6 +440,21 @@
         },
     };
 
+    /*
+     * Bazarr: the API key (Settings → General → Security) in the X-API-KEY
+     * header. Nothing to choose after Connect, which names the version.
+     */
+    Config.MEDIA_SERVICES.bazarr = {
+        id: 'bazarr',
+        name: 'Bazarr',
+        // Written the way the server files it (it canonicalises header names).
+        header: 'X-Api-Key',
+        placeholder: 'http://bazarr.local:6767',
+        words: {
+            keyWhere: ['config.widgetBazarrKeyWhere', 'Settings → General → Security in Bazarr'],
+        },
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],

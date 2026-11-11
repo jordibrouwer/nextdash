@@ -217,6 +217,8 @@ type MediaResult struct {
 	Dns *MediaDns `json:"dns,omitempty"`
 	// Stats is what a Jellystat tile draws.
 	Stats *MediaStats `json:"stats,omitempty"`
+	// Subs is what a Bazarr tile draws.
+	Subs *MediaSubs `json:"subs,omitempty"`
 	// Controls says this reader may switch things. Set per request, after
 	// the shared cache: never stored with the answer.
 	Controls bool `json:"controls,omitempty"`
