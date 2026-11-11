@@ -1,0 +1,234 @@
+/*
+ * The riso theme group; see internal/app/theme_groups.go.
+ * Keyed on html[data-theme^="riso-"].
+ *
+ * A risograph prints one ink per pass on a stock of paper. So a category is a
+ * flat block of ink (the head), a hard outline, and a second pass that landed
+ * a few pixels off (the offset block shadow and the offset duplicate of every
+ * title). Nothing is soft, translucent or glowing; the only gradients are
+ * halftone dots, because that is how a riso prints a tone.
+ *
+ * Each family differs in structure, not just in hue:
+ *   pink-blue     offset block shadow + halftone corners
+ *   green-orange  stencil / stamp: double outline, stamped (tilted) heads
+ *   mimeograph    one faded ink, speckled and uneven, soft ink-bleed
+ *
+ * Scoped to the dashboard's categories and rows. Menus, modals and the
+ * settings pages draw none of it and keep the theme's plain palette.
+ *
+ * !important on the category block: category-surface.css and the signature
+ * materials state their own radius, shadow and fill at a much higher
+ * specificity, and the whole point of the group is that it replaces them.
+ */
+
+/* ── Inks ─────────────────────────────────────────────────────────── */
+
+html[data-theme^="riso-"] {
+    --ri-blend: multiply;
+    --ri-pad: 0.75rem;
+    --ri-shadow: 7px;
+    --ri-dot: 12px;
+    --ri-dot-alpha: 0.55;
+    --ri-grain-alpha: 0.07;
+    --ri-speck-alpha: 0;
+    --ri-title-dx: 3px;
+    --ri-title-dy: 2.5px;
+    --ri-row-dx: 2px;
+    --ri-row-dy: 2px;
+    --ri-title-font: Impact, "Haettenschweiler", "Arial Narrow Bold", "Helvetica Neue", Arial, sans-serif;
+}
+/* ri-1 outlines and fills the head, ri-2 is the second pass. */
+html[data-theme="riso-pink-blue-light"] {
+    --ri-1: #2b4bb8; --ri-2: #ff5aa5; --ri-card: #fbf8ef;
+    --ri-head-bg: #2b4bb8; --ri-head-fg: #f4efe3; --ri-head-sh: #ff5aa5; --ri-grain: #2b4bb8;
+}
+html[data-theme="riso-pink-blue-dark"] {
+    --ri-1: #7d92f0; --ri-2: #ff5aa5; --ri-card: #1a1f45; --ri-blend: normal; --ri-dot-alpha: 0.55;
+    --ri-head-bg: #ff5aa5; --ri-head-fg: #11142e; --ri-head-sh: #7d92f0; --ri-grain: #7d92f0;
+}
+html[data-theme="riso-green-orange-light"] {
+    --ri-1: #0b7a50; --ri-2: #ff7a1a; --ri-card: #fbf8ec; --ri-shadow: 0px;
+    --ri-head-bg: #0b7a50; --ri-head-fg: #f3efdf; --ri-head-sh: #ff7a1a; --ri-grain: #0b7a50;
+}
+html[data-theme="riso-green-orange-dark"] {
+    --ri-1: #3fb882; --ri-2: #ff8a2a; --ri-card: #162b22; --ri-blend: normal; --ri-shadow: 0px; --ri-dot-alpha: 0.5;
+    --ri-head-bg: #ff8a2a; --ri-head-fg: #0e1f18; --ri-head-sh: #3fb882; --ri-grain: #3fb882;
+}
+html[data-theme="riso-mimeograph-light"] {
+    --ri-1: #5b2a9a; --ri-2: rgba(91, 42, 154, 0.38); --ri-card: #faf7fd; --ri-shadow: 0px;
+    --ri-speck-alpha: 0.4; --ri-grain-alpha: 0.1; --ri-dot-alpha: 0.22;
+    --ri-head-bg: #5b2a9a; --ri-head-fg: #f1ecf6; --ri-head-sh: rgba(91, 42, 154, 0.38); --ri-grain: #5b2a9a;
+}
+html[data-theme="riso-mimeograph-dark"] {
+    --ri-1: #a487e8; --ri-2: rgba(164, 135, 232, 0.42); --ri-card: #211842; --ri-blend: normal; --ri-shadow: 0px;
+    --ri-speck-alpha: 0.35; --ri-grain-alpha: 0.1; --ri-dot-alpha: 0.28;
+    --ri-head-bg: #a487e8; --ri-head-fg: #17102b; --ri-head-sh: rgba(164, 135, 232, 0.42); --ri-grain: #a487e8;
+}
+
+/* ── The category block ───────────────────────────────────────────── */
+
+html[data-theme^="riso-"] body .dashboard-grid .category {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--ri-card) !important;
+    background-image: none !important;
+    border: 3px solid var(--ri-1) !important;
+    border-radius: 0 !important;
+    /* The second pass, hard and a few pixels off. */
+    box-shadow: var(--ri-shadow) var(--ri-shadow) 0 var(--ri-2) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding-block: var(--ri-pad) !important;
+    --category-block-pad: var(--ri-pad);
+}
+
+/* Halftone dots, ink coloured, strongest in the lower-right corner. Behind the
+   content (z-index -1 in an isolated category), so they never print over text. */
+html[data-theme^="riso-"] body .dashboard-grid .category::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(var(--ri-2) 2.2px, transparent 2.7px);
+    background-size: var(--ri-dot) var(--ri-dot);
+    opacity: var(--ri-dot-alpha);
+    -webkit-mask-image: radial-gradient(ellipse at 100% 100%, #000 0%, transparent 62%);
+    mask-image: radial-gradient(ellipse at 100% 100%, #000 0%, transparent 62%);
+}
+
+/* Paper grain, and for the mimeograph the uneven ink: noise used as a mask over
+   a flat ink colour, so the speckle takes whatever colour the theme prints in. */
+html[data-theme^="riso-"] body .dashboard-grid .category::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--ri-grain);
+    opacity: calc(var(--ri-grain-alpha) + var(--ri-speck-alpha));
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.5' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 -8'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.5' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 -8'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* The page itself: a halftone fading in from two corners, in the second ink.
+   Fixed and behind everything, so it is paper, not a layer over the content. */
+/* Pink-Blue only: the other two families bring a backdrop of their own. */
+html[data-theme^="riso-pink-blue"]::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(var(--ri-2) 2.6px, transparent 3.1px);
+    background-size: 14px 14px;
+    opacity: 0.35;
+    -webkit-mask-image: radial-gradient(ellipse at 0% 100%, #000, transparent 45%), radial-gradient(ellipse at 100% 0%, #000, transparent 40%);
+    mask-image: radial-gradient(ellipse at 0% 100%, #000, transparent 45%), radial-gradient(ellipse at 100% 0%, #000, transparent 40%);
+}
+
+/* Stencil / stamp: a second outline inside the first, like a die cut. */
+html[data-theme^="riso-green-orange"] body .dashboard-grid .category {
+    outline: 2px solid var(--ri-2);
+    outline-offset: -9px;
+}
+
+/* ── Category heads: a flat block of ink ──────────────────────────── */
+
+html[data-theme^="riso-"] body .dashboard-grid .category > .category-title,
+html[data-theme^="riso-"] body .dashboard-grid .category > .category-title:hover {
+    background: var(--ri-head-bg) !important;
+    color: var(--ri-head-fg) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    margin: calc(-1 * var(--ri-pad)) calc(-1 * var(--category-inline-pad, 0.5rem)) 0.6rem !important;
+    padding: 0.45rem 0.7rem !important;
+    box-shadow: none !important;
+}
+html[data-theme^="riso-"] body .dashboard-grid .category > .category-title * { color: inherit !important; }
+
+html[data-theme^="riso-"] body .dashboard-grid .category .category-title-name {
+    font-family: var(--ri-title-font);
+    font-weight: 400;
+    font-stretch: condensed;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    /* The title is set in the ink and printed again, off register, in the other. */
+    text-shadow: var(--ri-title-dx) var(--ri-title-dy) 0 var(--ri-head-sh);
+    /* overflow is hidden on the name; leave room so the shadow is not cut. */
+    padding: 0 5px 4px 0;
+    margin: 0 -5px -4px 0;
+}
+
+/* Stamped: the head sits a degree off the block, like a stamp pressed by hand. */
+html[data-theme^="riso-green-orange"] body .dashboard-grid .category > .category-title {
+    transform: rotate(-1deg);
+    transform-origin: 0 50%;
+    outline: 3px solid var(--ri-2);
+    outline-offset: -6px;
+    margin-inline: -0.2rem calc(-1 * var(--category-inline-pad, 0.5rem)) !important;
+}
+
+/* ── Rows ─────────────────────────────────────────────────────────── */
+
+html[data-theme^="riso-"] body .dashboard-grid .category .bookmark-link {
+    /* An ink line under each row, drawn as a background image so it takes no
+       space and leaves the row's own hover and selection colours alone. */
+    background-image: linear-gradient(var(--ri-1), var(--ri-1));
+    background-size: 100% 2px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+}
+html[data-theme^="riso-"] body .dashboard-grid .category .bookmarks-list > .bookmark-link:last-child {
+    background-image: none;
+}
+html[data-theme^="riso-"] body .dashboard-grid .category .bookmark-link .bookmark-text {
+    font-weight: 600;
+    text-shadow: var(--ri-row-dx) var(--ri-row-dy) 0 var(--ri-2);
+    mix-blend-mode: var(--ri-blend);
+    /* Room for the shadow inside the ellipsis box. */
+    padding-right: 3px;
+}
+
+/* Icon discs: the second ink as a disc, the first misregistered behind it. */
+html[data-theme^="riso-"] body .dashboard-grid .category .bookmark-link .bookmark-icon-slot {
+    /* The signature materials set their own slot fill at a higher specificity. */
+    background-color: var(--ri-2) !important;
+    border-radius: 50% !important;
+    box-shadow: -2px -2px 0 var(--ri-1);
+    mix-blend-mode: var(--ri-blend);
+    overflow: hidden;
+}
+html[data-theme^="riso-"] body .dashboard-grid .category .bookmark-link .bookmark-icon-letter { color: var(--ri-1); }
+html[data-theme$="-dark"][data-theme^="riso-"] body .dashboard-grid .category .bookmark-link .bookmark-icon-letter { color: var(--text-primary); }
+html[data-theme^="riso-"] body .dashboard-grid .category .bookmark-link .bookmark-shortcut { color: var(--ri-1); }
+
+/* ── Mimeograph: one faded ink that bleeds ────────────────────────── */
+
+html[data-theme^="riso-mimeograph"] {
+    --ri-title-dx: 2.5px; --ri-title-dy: 2px; --ri-row-dx: 1.5px; --ri-row-dy: 1.5px;
+}
+html[data-theme^="riso-mimeograph"] body .dashboard-grid .category {
+    border-width: 2px !important;
+    border-style: solid !important;
+    border-color: color-mix(in srgb, var(--ri-1) 78%, transparent) !important;
+}
+html[data-theme^="riso-mimeograph"] body .dashboard-grid .category .bookmark-link .bookmark-text {
+    /* Ink bleed: a thin soft halo around the strokes, under the faint second pass. */
+    text-shadow: 0 0 1.5px color-mix(in srgb, var(--ri-1) 60%, transparent), var(--ri-row-dx) var(--ri-row-dy) 0 var(--ri-2);
+}
+html[data-theme^="riso-mimeograph"] body .dashboard-grid .category .category-title-name {
+    text-shadow: 0 0 2px color-mix(in srgb, var(--ri-head-fg) 55%, transparent), var(--ri-title-dx) var(--ri-title-dy) 0 var(--ri-head-sh);
+}
+html[data-theme^="riso-mimeograph"] body .dashboard-grid .category > .category-title {
+    /* Uneven coverage: the head is the ink with the paper showing through. */
+    background-image: radial-gradient(color-mix(in srgb, var(--ri-head-fg) 28%, transparent) 1px, transparent 1.5px) !important;
+    background-size: 5px 5px !important;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme^="riso-"] body .dashboard-grid .category::after { display: none; }
+}
