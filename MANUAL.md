@@ -1630,7 +1630,7 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:theme <name>` · `:dark` | Theme · flip light and dark |
 | `:studio` | The theme studio, like `Shift + A` (`:themes` does the same) |
 | `:depth` · `:surface` · `:effects` · `:widgetbg` · `:widgetopacity` · `:glow` · `:contrast` · `:backdrop` · `:pattern` · `:harmonize` | Surfaces ([§17](#17-appearance)) |
-| `:layout <preset>` · `:density` · `:columns <1-6>` · `:spacing` · `:columngap` · `:margins` · `:width on\|off\|all` · `:rows` · `:packed` · `:fontsize` | Grid |
+| `:layout <preset>` · `:density` · `:columns <1-8>` · `:spacing` · `:columngap` · `:margins` · `:width on\|off\|all` · `:rows` · `:packed` · `:fontsize` | Grid |
 | `:switcher` · `:buttonstyle` · `:maxtabs` · `:maxactions` · `:buttons` · `:header` | Header and action buttons |
 | `:action` / `:actionbar` · `:action on\|off` · `:action keys [on\|off]` · `:action hide [seconds]` | Where the action bar stands (`right`, `left`, `bottom`, `header` or `menu`, one menu behind a button), switch it on or off, show the key on each button, and how long a docked bar waits before it slides away (0, 2, 5, 10 or 30 seconds) |
 | `:clock` · `:time` · `:unit` | Where the header clock stands (on its own line, beside the view name, or in a column of its own) · 24-hour or 12-hour time · weather in °C or °F |
@@ -4286,12 +4286,12 @@ Type is in the **Type** panel on the **Theme** tab; everything behind the bookma
 
 | Setting | What it does |
 |---|---|
-| **Columns per row** | 1–6 — the most the grid uses. A narrower window takes as many as fit, and one only when two no longer fit; a phone held upright always shows one |
+| **Columns per row** | A dropdown, 1–8 — the most the grid uses. A narrower window takes as many as fit, and one only when two no longer fit; a phone held upright always shows one. The page grows with the setting, so five and six columns work on a window wide enough for them (**v1.28.2**) |
 | **Layout preset** | Default, Compact, Cards, Terminal-ish, Masonry (default on a fresh install), List, Widgets and Launcher (large icon tiles) |
 | **Density** | Comfortable, Compact, Dense or Auto (default on a fresh install) — one setting for the dashboard, the inbox and the Containers view; the Bookmarks view has its own row height ([§18.4](#184-config--bookmarks)) |
 | **Space between categories** | Follow the theme (default; balanced, and Airy on Confetti) · Snug · Balanced · Airy — the gap down the page, between rows of categories |
 | **Space between columns** | Follow the theme (default; balanced, and Airy on Confetti) · Snug (12 px) · Balanced (24 px) · Airy (40 px) — the gap across the page, between one column and the next. `:columngap` sets it from the palette, and the theme studio has it on its Layout tab |
-| **Page margins** | Snug · Balanced (default) · Airy — the empty band left and right; Snug lets the columns grow wider into it, Airy pulls them together |
+| **Page margins** | Full width · Tight · Snug · **Balanced** (default, in the middle) · Roomy · Airy · Spacious — the empty band left and right, in the theme studio's Layout tab too. Three steps are narrower than Balanced and three are wider. The narrow ones let the columns grow wider into the room they give back; **Full width** leaves almost no edge and takes the ceiling off the page, so on a big monitor the columns use the whole window (**v1.28.2**). The wide ones pull the columns together, Spacious the most. `:margins` sets it from the palette |
 | **Pack columns tightly** | Categories fill the columns without waiting for a full row |
 | **Hide empty categories** | |
 | **Launcher icon size** | Small, Normal or Large, for the Launcher preset |
