@@ -414,6 +414,9 @@ function tidyDemoData(dir, patch) {
         const pages = readJSON(path.join(dir, 'pages.json'));
         pages.order = [...(pages.order || []), 4];
         writeJSON(path.join(dir, 'pages.json'), pages);
+        // No smart collections: Today would stand beside the tiles and fill the page with links.
+        const settingsFile = path.join(dir, 'settings.json');
+        writeJSON(settingsFile, { ...readJSON(settingsFile), smartTodayPageIds: [1] });
         const widgets = [
             { id: 'w_j00000000001', type: 'jellystat', config: { server: 'http://jellystat.local:3000', columns: 2, rows: 4 } },
             { id: 'w_z00000000001', type: 'bazarr', config: { server: 'http://bazarr.local:6767', columns: 2, rows: 4 } },
