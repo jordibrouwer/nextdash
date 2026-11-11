@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.28.2 — 11 November 2026](#v1282--11-november-2026)
+- [v1.28.2 — 12 November 2026](#v1282--12-november-2026)
 - [v1.28.1 — 11 November 2026](#v1281--11-november-2026)
 - [v1.28.0 — 10 November 2026](#v1280--10-november-2026)
 - [v1.27.4 — 9 November 2026](#v1274--9-november-2026)
@@ -144,7 +144,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.28.2 — 11 November 2026
+## v1.28.2 — 12 November 2026
 
 Eight new theme groups, 25 families in light and dark, each built around an idea that goes beyond colour: one bookmark per line with room between them, a page that follows the health of your services, a row drawn as a label strip, a page drawn as a map. In the theme studio each group has its own chip in the Character row and on the card badge, and each family has a backdrop of its own.
 
@@ -181,7 +181,7 @@ Eight new theme groups, 25 families in light and dark, each built around an idea
 ### Docs
 
 - **docs — Translations, Help and tips.** 41 keys in all six languages: the eight group labels, the 25 family descriptions (the theme browser now reads `config.themeDesc.<family>` and falls back to the English line), five words the new themes draw in CSS (*online*, *checking*, *offline*, *out of service*, *delayed*, set as custom properties by `theme-group-words.js`, with `nextdash:translations-applied` now fired on every language change), and a tip about the theme groups (`tipTuneThemeGroups`). Help says 220 families, 440 themes and 285 backdrops and names the groups; the backdrop and theme browser tips carry the new numbers.
-- **docs — Manual and README.** 440 themes, 220 families and 285 backdrops everywhere; a Theme groups bullet in §17.1 with the eight groups, a paragraph in §17.2 that groups are not materials, the 18 new backdrops in §17A.4, and the **new** badge line. The README names Tarnished Brass as the starting theme, as the manual does, and its two theme montages say they show 192 of the 220 until they are retaken.
+- **docs — Manual and README.** 440 themes, 220 families and 285 backdrops everywhere; a Theme groups bullet in §17.1 with the eight groups, a paragraph in §17.2 that groups are not materials, the 18 new backdrops in §17A.4, and the **new** badge line. The README names Tarnished Brass as the starting theme, as the manual does, and its two theme montages are retaken with all 220 families. The Layout picture in the manual, the cheat sheet's `:columns` row (1–8) and two entries in Config → Overview (the theme groups, page margins and columns) are brought up to date.
 - **docs — nextdash.cc.** The front page, the features index, the compare page and the gallery slider say 440 themes, 220 families, 285 backdrops and 58 widget kinds; the gallery has the 50 new themes with new pictures and eight new group chips; `feature-pages/v1.28.2-pages.php` updates the themes page text.
 
 ---
