@@ -194,11 +194,19 @@ A group is not a material. A holiday theme still wears lacquer, aurora or
 enamel underneath, so the page draws a surface it knows; the group only
 changes the word the browser files it under.
 */
-var themeGroupOrder = []string{"holidays"}
+var themeGroupOrder = []string{"holidays", "stationery", "living", "instrument", "tactile", "spatial", "cartographic", "riso", "legible"}
 
 // themeGroupPrefixes maps a theme id prefix to the group it files under.
 var themeGroupPrefixes = map[string]string{
-	"holiday-": "holidays",
+	"holiday-":      "holidays",
+	"stationery-":   "stationery",
+	"living-":       "living",
+	"instrument-":   "instrument",
+	"tactile-":      "tactile",
+	"spatial-":      "spatial",
+	"cartographic-": "cartographic",
+	"riso-":         "riso",
+	"legible-":      "legible",
 }
 
 // themeGroupFor answers the group a theme files under, or "" for none.

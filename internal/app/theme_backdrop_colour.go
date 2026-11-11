@@ -112,6 +112,42 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 		return themeBackdropSonar(k)
 	case "gingerbread":
 		return themeBackdropGingerbread(k)
+	case "gallerywall":
+		return themeBackdropGalleryWall(k)
+	case "typesheet":
+		return themeBackdropTypeSheet(k)
+	case "zenwash":
+		return themeBackdropZenWash(k)
+	case "cloudstrata":
+		return themeBackdropCloudStrata(k)
+	case "sundial":
+		return themeBackdropSundial(k)
+	case "hudhorizon":
+		return themeBackdropHudHorizon(k)
+	case "decocurve":
+		return themeBackdropDecoCurve(k)
+	case "labeltape":
+		return themeBackdropLabelTape(k)
+	case "keycapfield":
+		return themeBackdropKeycapField(k)
+	case "rackcables":
+		return themeBackdropRackCables(k)
+	case "papercuts":
+		return themeBackdropPaperCuts(k)
+	case "filmstrip":
+		return themeBackdropFilmstrip(k)
+	case "metrolines":
+		return themeBackdropMetroLines(k)
+	case "stampfield":
+		return themeBackdropStampField(k)
+	case "inkspeckle":
+		return themeBackdropInkSpeckle(k)
+	case "softsquares":
+		return themeBackdropSoftSquares(k)
+	case "amberhorizon":
+		return themeBackdropAmberHorizon(k)
+	case "shapetiles":
+		return themeBackdropShapeTiles(k)
 	case "lookember":
 		return themeBackdropLookEmber(k)
 	case "looksupernova":

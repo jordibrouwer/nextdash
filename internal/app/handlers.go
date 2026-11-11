@@ -3997,6 +3997,7 @@ var themeBackdropRecipes = []string{
 	"lookember", "looksupernova", "looksolarflare", "lookcandyburst", "lookmagma", "looklagoon", "lookconfetti", "lookkoi", "looktropic", "looktwilight", "lookorchid", "lookminthaze", "lookcobalt", "looknorthern", "lookpolar", "lookverdant", "lookberry", "lookgoldenhour", "lookneonalley", "lookfilm", "lookdusk", "lookopal", "lookholo",
 	"solarember", "solarflats", "solarwind", "squidink", "staticnoise", "steeldawn", "stone", "stormpetrel", "sumiink", "sunflowerink", "synthsunset", "tarnishedbrass", "terminalamber", "terracottastudio", "thunderhead", "tidalslate", "tidepoollens", "tomorrowdusk", "tyrian", "ultraviolet", "unraidazure", "unraidblack", "unraidblaze", "unraidember", "vampirecastle", "velocityink", "vermilionseal", "violetshades", "vividhyper", "volcanicash", "wheatfield", "winterember", "zenember", "zinc", "chalk", "concrete", "black",
 	"gingerbread",
+	"gallerywall", "typesheet", "zenwash", "cloudstrata", "sundial", "hudhorizon", "decocurve", "labeltape", "keycapfield", "rackcables", "papercuts", "filmstrip", "metrolines", "stampfield", "inkspeckle", "softsquares", "amberhorizon", "shapetiles",
 }
 
 // themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the

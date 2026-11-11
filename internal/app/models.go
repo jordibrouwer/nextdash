@@ -6102,7 +6102,7 @@ func normalizeFavoriteThemes(ids []string) []string {
 }
 
 func getDefaultBuiltInThemes() map[string]ThemeColors {
-	return map[string]ThemeColors{
+	themes := map[string]ThemeColors{
 		/*
 		 * The four that use the character fields.
 		 *
@@ -6744,6 +6744,8 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"look-holo-dark":  {Name: "Holo [dark]", TextPrimary: "#F3FEFF", TextSecondary: "#BEC8CD", TextTertiary: "#9AA4AB", BackgroundPrimary: "#07081A", BackgroundSecondary: "#151C2D", BackgroundDots: "#15293A", BackgroundModal: "rgba(7, 8, 26, 0.9)", BorderPrimary: "#2F5D6C", BorderSecondary: "#172E3F", AccentPrimary: "#6BF5FF", AccentSuccess: "#8BFF6B", AccentWarning: "#FFF06B", AccentError: "#FF6BD6", SurfaceAlpha: 0.2, SurfaceBlur: 24, SurfaceGlow: 0.8, RadiusScale: 0.9, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Sheen: 0.65, Character: "glass", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "lookholo", Surface: "glass"},
 		"look-holo-light": {Name: "Holo [light]", TextPrimary: "#060717", TextSecondary: "#41434F", TextTertiary: "#686A74", BackgroundPrimary: "#F3FEFF", BackgroundSecondary: "#FBFFFF", BackgroundDots: "#E7FDFF", BackgroundModal: "rgba(243, 254, 255, 0.92)", BorderPrimary: "#BCDFE2", BorderSecondary: "#E1FDFF", AccentPrimary: "#00808A", AccentSuccess: "#1D8400", AccentWarning: "#7F7200", AccentError: "#DB009E", SurfaceAlpha: 0.2, SurfaceBlur: 24, SurfaceGlow: 0.8, RadiusScale: 0.9, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Sheen: 0.65, Character: "glass", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "lookholo", Surface: "glass"},
 	}
+	mergeThemeGroups(themes)
+	return themes
 }
 
 func isValidThemeID(themeID string) bool {
