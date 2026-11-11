@@ -180,6 +180,7 @@
                 'tipTuneInfo',
                 'tipTuneTheme',
                 'tipTuneThemeBrowser',
+                'tipTuneThemeGroups',
                 'tipTuneThemeBrowserWidth',
                 'tipTuneGloss',
                 'tipTuneLooks',

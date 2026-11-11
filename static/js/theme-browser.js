@@ -134,6 +134,17 @@
     }
 
     /**
+     * The line under a theme's name, in the reader's language when a locale
+     * file has one (`config.themeDesc.<family>`), otherwise the English line
+     * the server sends.
+     */
+    function descriptionOf(id, t) {
+        const written = metaFor(id).description || '';
+        if (!written) return '';
+        return t(`config.themeDesc.${familyOf(id)}`, written);
+    }
+
+    /**
      * The word a theme is filed under: its group when it has one (Holidays),
      * otherwise its archetype, or '' for one that names neither.
      */
@@ -234,7 +245,7 @@
         const hasBoth = Boolean(family.variants.dark && family.variants.light);
         const variant = variantOf(id) || 'dark';
         const character = characterOf(id);
-        const description = metaFor(id).description || '';
+        const description = descriptionOf(id, t);
         const isNew = metaFor(id).new === true;
         const meta = metaFor(id);
         const own = meta.own === true;
@@ -307,7 +318,7 @@
         const isNew = metaFor(shown.id).new === true;
         const haystack = [family.label, family.key, deriveTraits(shown.palette, t).join(' '),
             character, character ? archetypeLabel(character, t) : '',
-            metaFor(shown.id).description || '',
+            metaFor(shown.id).description || '', descriptionOf(shown.id, t),
             isNew ? `new ${t('config.themeNew', 'new')}` : '',
             isOwnFamily(family) ? `yours ${t('config.themeYours', 'yours')}` : '']
             .join(' ')

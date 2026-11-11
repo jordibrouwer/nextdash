@@ -139,27 +139,27 @@ html[data-theme^="legible-"] .category:not([data-view="tiles"]) .bookmark-link:i
     order: 9;
 }
 html[data-theme^="legible-"] .category:not([data-view="tiles"]) .bookmark-link.status-online::after {
-    content: "● online";
+    content: "● " var(--nd-word-online, "online");
     color: var(--accent-success);
 }
 html[data-theme^="legible-"] .category:not([data-view="tiles"]) .bookmark-link.status-offline::after {
-    content: "■ offline";
+    content: "■ " var(--nd-word-offline, "offline");
     color: var(--accent-error);
 }
 html[data-theme^="legible-"] .category:not([data-view="tiles"]) .bookmark-link.status-checking::after {
-    content: "▲ checking";
+    content: "▲ " var(--nd-word-checking, "checking");
     color: var(--accent-warning);
 }
 /* Colour-blind Safe: its own shapes, so the three are told apart by outline
  * as well as by word. */
 html[data-theme^="legible-colour-blind-safe-"] .category:not([data-view="tiles"]) .bookmark-link.status-online::after {
-    content: "○ online";
+    content: "○ " var(--nd-word-online, "online");
 }
 html[data-theme^="legible-colour-blind-safe-"] .category:not([data-view="tiles"]) .bookmark-link.status-offline::after {
-    content: "◆ offline";
+    content: "◆ " var(--nd-word-offline, "offline");
 }
 html[data-theme^="legible-colour-blind-safe-"] .category:not([data-view="tiles"]) .bookmark-link.status-checking::after {
-    content: "◐ checking";
+    content: "◐ " var(--nd-word-checking, "checking");
 }
 /* The base rules paint an offline row red on red; here the border and word
  * carry it instead. */

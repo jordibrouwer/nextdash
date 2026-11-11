@@ -268,13 +268,15 @@ class ConfigLanguage {
             // Tips are injected, not data-i18n markup, so applyTranslations does not
             // reach them; re-render so a language switch updates them too.
             window.ConfigHelpTips?.render?.({ t: (key) => this.t(key) });
-            document.dispatchEvent(new CustomEvent('nextdash:translations-applied'));
             this.scheduleSearchIndexRefresh();
             const tab = window.configManager?.ui?._currentTab;
             if (tab) {
                 window.configManager.ui.updateTabSaveMode(tab);
             }
         }
+        // Everything that draws words of its own (theme-group-words.js) reads
+        // the new language from here, on the dashboard as well as in config.
+        document.dispatchEvent(new CustomEvent('nextdash:translations-applied', { detail: { language: this } }));
     }
 
     /**

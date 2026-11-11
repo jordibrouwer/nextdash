@@ -329,12 +329,12 @@ html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-vi
     transform: translateY(-45%);
 }
 html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link.status-offline::after {
-    content: "out of service";
+    content: var(--nd-word-out-of-service, "out of service");
     background: var(--accent-error);
     color: var(--background-primary);
 }
 html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link.status-checking::after {
-    content: "delayed";
+    content: var(--nd-word-delayed, "delayed");
     background: var(--accent-warning);
     color: var(--background-primary);
 }
