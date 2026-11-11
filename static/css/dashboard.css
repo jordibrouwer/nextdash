@@ -77,7 +77,7 @@ body {
        dashboard that never touches the setting looks exactly as it always has;
        the fallback here repeats it for the case where no body attribute is set
        at all (a view rendered before setupDOM runs). */
-    max-width: 1600px;
+    max-width: var(--dashboard-container-max, 1600px);
     width: 100%;
     margin: 0 auto;
     padding: 0 var(--dashboard-side-margin, clamp(2rem, 6vw, 8rem));

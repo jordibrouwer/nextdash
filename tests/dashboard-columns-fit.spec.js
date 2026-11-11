@@ -40,6 +40,40 @@ async function columns(page) {
     });
 }
 
+test.describe('the columns you ask for', () => {
+    test('a wide window really gets five and six, and a narrow one still keeps what fits', async ({ page }) => {
+        await page.setViewportSize({ width: 2400, height: 900 });
+        await openDashboard(page);
+        for (const wanted of [5, 6]) {
+            await page.evaluate(async (n) => {
+                const d = window.dashboardInstance;
+                d.settings.columnsPerRow = n;
+                await d.renderDashboard({ animate: false });
+            }, wanted);
+            await expect.poll(() => columns(page), { message: `${wanted} columns on a 2400px window` })
+                .toEqual({ count: wanted, drawn: wanted, stacked: 'false' });
+        }
+
+        // The ceiling grows only as far as the setting asks: four columns keep the page at 1600px.
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.settings.columnsPerRow = 4;
+            await d.renderDashboard({ animate: false });
+        });
+        await expect.poll(() => page.evaluate(() => document.querySelector('.dashboard-section.section-content .container').getBoundingClientRect().width)).toBeLessThanOrEqual(1600);
+
+        // Six wanted on a window that cannot hold six: the ones that fit, never more than the window.
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.settings.columnsPerRow = 6;
+            await d.renderDashboard({ animate: false });
+        });
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await expect.poll(async () => (await columns(page)).count).toBeLessThan(6);
+        await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    });
+});
+
 test.describe('desktop window', () => {
     test('narrows to the columns that fit, and to one only when two do not', async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 900 });
