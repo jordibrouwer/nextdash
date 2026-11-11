@@ -28,15 +28,15 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
 <summary><b>See every theme</b> — the dark and light halves of every family, each on the same dashboard</summary>
 
 <p align="center">
-  <img src="screenshots/nextdash-themes-dark.jpg" alt="192 of the 220 dark themes, each shown on the same dashboard" width="100%" />
+  <img src="screenshots/nextdash-themes-dark.jpg" alt="All 220 dark themes, each shown on the same dashboard" width="100%" />
   <br />
-  <sub><b>192 of the 220 dark themes</b> — the same dashboard in every theme, each with its own material and backdrop. The eight newer theme groups are not in this picture.</sub>
+  <sub><b>All 220 dark themes</b> — the same dashboard in every theme, each with its own material and backdrop.</sub>
 </p>
 
 <p align="center">
-  <img src="screenshots/nextdash-themes-light.jpg" alt="192 of the 220 light themes, each shown on the same dashboard" width="100%" />
+  <img src="screenshots/nextdash-themes-light.jpg" alt="All 220 light themes, each shown on the same dashboard" width="100%" />
   <br />
-  <sub><b>192 of the 220 light themes</b> — the light half of each family. The eight newer theme groups are not in this picture.</sub>
+  <sub><b>All 220 light themes</b> — the light half of each family.</sub>
 </p>
 
 </details>

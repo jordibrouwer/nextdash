@@ -4302,7 +4302,7 @@ Type is in the **Type** panel on the **Theme** tab; everything behind the bookma
 
 Small drawings beside the shape settings show what a value looks like.
 
-<p align="center"><img src="screenshots/manual.md/16-layout-spacing.jpg" alt="Appearance, Layout: the Bookmarks layout panel with a card for every choice of Category spacing, Space between columns and Page margins, each with a small drawing" width="520"></p>
+<p align="center"><img src="screenshots/manual.md/16-layout-spacing.jpg" alt="Appearance, Layout: the Bookmarks layout panel with Columns per row, Category spacing, Space between columns and Page margins as dropdowns, each with a small drawing of the choice in force" width="520"></p>
 <p align="center"><sub>Appearance → Layout: the room down the page, the room across it and the band at the edges are three settings. *Follow the theme* is the first choice of the first two.</sub></p>
 
 **Rows** tab — panels **Favicons**, **Category header** and **Bookmark display**. The first two lines are the Favicons panel; **Favicon harmonization** (Muted, Tinted or Overlay, with an intensity, stored per theme) is in it too.
