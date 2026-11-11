@@ -155,6 +155,8 @@ Three more services on the media tile: **Jellystat**, **Bazarr** and **Prowlarr*
 
 ### Docs
 
+- **docs — `static/data/whats-new/v1.28.1.json` and its index entry**, led by one highlight for the three widgets with a picture (`media/v1.28.1-media-widgets.jpg`, taken by `tests/fixtures/whats-new-media/v1.28.1.js` over the manual-shot seed with mocked answers, `tests/helpers/arr-tile-mocks.js`). `whats-new-stub.js` names the release (`DASHBOARD_RELEASE`) and `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v373`; `tests/whats-new-hidden-release.spec.js` follows. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — Config → Overview and About → News & features** carry one entry each for Jellystat, Bazarr and Prowlarr (`since: "v1.28.1"`), Config → Help and its tip name the three, and `MANUAL.md` and `README.md` describe them, with four new pictures (`15-jellystat`, `15-bazarr`, `15-prowlarr`, `16-widget-picker`, by `tests/manual-screenshots-v1-28-1.spec.js`). The 79 strings of the three widgets and the Overview entries are in all six languages.
 - **new — Four flaky specs wait for state, not for time**, and a spec records the pictures for the network tests page on the site (`tests/feed-watch-paper.spec.js`, `tests/site-shots-net-tests.spec.js`).
 
 ---

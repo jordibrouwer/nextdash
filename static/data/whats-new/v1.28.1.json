@@ -1,0 +1,29 @@
+{
+  "tag": "v1.28.1",
+  "date": "11 November 2026",
+  "releasedAt": "2026-11-11",
+  "modalLead": "Three more media widgets: Jellystat for who watched what, Bazarr for the subtitles that are missing, and Prowlarr for how your indexers are doing.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Three more media widgets.</strong> Jellystat shows what was played, the most viewed and the most active people. Bazarr shows which subtitles are missing and which came in lately. Prowlarr shows how the indexers are doing and what needs attention. Each part is optional, and a figure a service could not give shows as a dash, never a zero.",
+          "highlight": true,
+          "title": "Three more media widgets",
+          "link": "#config/widgets",
+          "linkLabel": "Open Widgets",
+          "media": {
+            "image": "media/v1.28.1-media-widgets.jpg",
+            "alt": "Three media tiles on one page: Jellystat with its totals, recent plays, most viewed and most active people, Bazarr with the subtitles that are missing and those fetched lately, and Prowlarr with its indexers and what needs attention"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Add them from the widget picker.</strong> A new group, New in this release, lists the three at the top of Add widget, and each one has a Connect step that checks the address and the key."
+        }
+      ]
+    }
+  ]
+}
