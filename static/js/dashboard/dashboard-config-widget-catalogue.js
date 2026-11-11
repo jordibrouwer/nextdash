@@ -108,9 +108,9 @@
         'beszel-storage': '1.20',
         adguard: '1.26',
         pihole: '1.26',
-        jellystat: '1.29',
-        bazarr: '1.29',
-        prowlarr: '1.29',
+        jellystat: '1.28',
+        bazarr: '1.28',
+        prowlarr: '1.28',
     };
 
     /** "v1.19.4" -> [1, 19]; anything else, an old date tag included, -> null. */
