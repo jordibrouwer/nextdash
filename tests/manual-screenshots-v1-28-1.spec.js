@@ -29,6 +29,7 @@ test.describe('the Jellystat, Bazarr and Prowlarr tiles', () => {
         await openDashboard(page, '#4');
         const tile = (type) => page.locator(`[data-widget-type="${type}"]`).first();
         for (const type of ['jellystat', 'bazarr', 'prowlarr']) await tile(type).waitFor();
+        // Pacing for the capture, not a condition: the tiles finish drawing.
         await page.waitForTimeout(800);
         // One tile at a time.
         for (const [type, name] of [['jellystat', '15-jellystat.jpg'], ['bazarr', '15-bazarr.jpg'], ['prowlarr', '15-prowlarr.jpg']]) {

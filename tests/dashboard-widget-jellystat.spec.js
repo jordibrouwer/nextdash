@@ -81,6 +81,7 @@ async function draw(page, { result, config = {}, width = 320 }) {
 async function addInConfig(page, type) {
     await open(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+    // Quickstart sweeps favicons on a fresh store and reopens Overview when it finishes: waited out rather than raced.
     await page.waitForTimeout(6000);
     await page.evaluate(async () => {
         const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
