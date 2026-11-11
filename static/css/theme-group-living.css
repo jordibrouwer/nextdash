@@ -1,0 +1,445 @@
+/*
+ * The living theme group; see internal/app/theme_groups.go.
+ * Keyed on html[data-theme^="living-"] and body[data-living].
+ *
+ * theme-group-living.js sets what the page is following as attributes on the
+ * body (data-living-health, data-living-phase, data-living-sky) and the rules
+ * here draw it. One fixed layer behind the cards, ignoring the pointer. Sized
+ * in vw/vh rather than inset:0 so a scrollbar gutter does not leave a strip.
+ *
+ * Motion stops with prefers-reduced-motion and with Effects off; the state is
+ * still drawn, as a still picture.
+ */
+
+.living-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    contain: strict;
+}
+.living-layer > *,
+.lv-sky > *,
+.lv-strip > *,
+.lv-horizon > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+/* Tidewatch draws its own water, so its recipe is turned down to a hint. Daydrift
+   (sundial) and Skywatch (cloudstrata) have backdrops drawn for them and show them. */
+html[data-theme] body[data-living="tidewatch"] > .theme-backdrop-layer { opacity: 0.28; }
+
+/* ── Tidewatch ─────────────────────────────────────────────────────── */
+
+body[data-living="tidewatch"] {
+    --lv-c: #5fd0c4;
+    --lv-wash: rgba(95, 208, 196, 0.07);
+    --lv-glow: rgba(95, 208, 196, 0.16);
+    --lv-ring: rgba(95, 208, 196, 0.22);
+    --lv-beat: 4s;
+}
+html[data-theme$="-light"] body[data-living="tidewatch"] {
+    --lv-c: #0b8a80;
+    --lv-wash: rgba(11, 138, 128, 0.06);
+    --lv-glow: rgba(11, 138, 128, 0.12);
+    --lv-ring: rgba(11, 138, 128, 0.2);
+}
+body[data-living-health="warn"] {
+    --lv-c: #f2c46a;
+    --lv-wash: rgba(242, 196, 106, 0.10);
+    --lv-glow: rgba(242, 196, 106, 0.22);
+    --lv-ring: rgba(242, 196, 106, 0.38);
+    --lv-beat: 2.6s;
+}
+html[data-theme$="-light"] body[data-living-health="warn"] {
+    --lv-c: #c98a10;
+    --lv-wash: rgba(201, 138, 16, 0.09);
+    --lv-glow: rgba(201, 138, 16, 0.18);
+    --lv-ring: rgba(201, 138, 16, 0.4);
+}
+body[data-living-health="down"] {
+    --lv-c: #ff9a6b;
+    --lv-wash: rgba(255, 130, 90, 0.22);
+    --lv-glow: rgba(255, 130, 90, 0.34);
+    --lv-ring: rgba(255, 154, 107, 0.55);
+    --lv-beat: 1.4s;
+}
+html[data-theme$="-light"] body[data-living-health="down"] {
+    --lv-c: #d9502a;
+    --lv-wash: rgba(217, 80, 42, 0.16);
+    --lv-glow: rgba(217, 80, 42, 0.22);
+    --lv-ring: rgba(217, 80, 42, 0.5);
+}
+
+.lv-tint {
+    background: linear-gradient(180deg, var(--lv-wash), transparent 80%);
+    transition: background 1s ease;
+}
+.lv-edge {
+    box-shadow: inset 0 0 0 2px var(--lv-ring), inset 0 0 90px var(--lv-glow);
+    animation: lv-breathe var(--lv-beat) ease-in-out infinite;
+    transition: box-shadow 1s ease;
+}
+.lv-pulse {
+    height: 3px;
+    background: linear-gradient(90deg, var(--lv-c), transparent 70%);
+    animation: lv-breathe var(--lv-beat) ease-in-out infinite;
+}
+
+/*
+ * The waterline. The water stands at the bottom of the page and its level IS
+ * the health: low tide when everything is up, a rising surge when something is
+ * down. Dark water behind light text and light water behind dark text, so the
+ * panels sitting in it keep their contrast at every level.
+ */
+body[data-living="tidewatch"] {
+    --lv-level: 18vh;
+    --lv-water: rgba(8, 78, 88, 0.62);
+    --lv-water-top: rgba(95, 208, 196, 0.55);
+    --lv-line: rgba(95, 208, 196, 0.35);
+}
+html[data-theme$="-light"] body[data-living="tidewatch"] {
+    --lv-water: rgba(110, 200, 192, 0.42);
+    --lv-water-top: rgba(11, 138, 128, 0.5);
+    --lv-line: rgba(11, 107, 102, 0.4);
+}
+body[data-living-health="warn"] {
+    --lv-level: 30vh;
+    --lv-water: rgba(112, 78, 10, 0.6);
+    --lv-water-top: rgba(242, 196, 106, 0.6);
+    --lv-line: rgba(242, 196, 106, 0.4);
+}
+html[data-theme$="-light"] body[data-living-health="warn"] {
+    --lv-water: rgba(245, 205, 120, 0.5);
+    --lv-water-top: rgba(201, 138, 16, 0.55);
+    --lv-line: rgba(138, 90, 0, 0.45);
+}
+body[data-living-health="down"] {
+    --lv-level: 48vh;
+    --lv-water: rgba(128, 36, 24, 0.66);
+    --lv-water-top: rgba(255, 130, 90, 0.7);
+    --lv-line: rgba(255, 154, 107, 0.5);
+}
+html[data-theme$="-light"] body[data-living-health="down"] {
+    --lv-water: rgba(255, 168, 138, 0.55);
+    --lv-water-top: rgba(217, 80, 42, 0.6);
+    --lv-line: rgba(179, 64, 26, 0.5);
+}
+
+.lv-water {
+    top: auto;
+    bottom: 0;
+    height: var(--lv-level);
+    background: linear-gradient(180deg, var(--lv-water), color-mix(in srgb, var(--lv-water) 70%, transparent));
+    transition: height 1.8s cubic-bezier(.3, .7, .3, 1), background 1.2s ease;
+}
+.lv-crest {
+    top: -17px;
+    height: 34px;
+    background: var(--lv-water-top);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 34' preserveAspectRatio='none'%3E%3Cpath d='M0 17 Q20 3 40 17 T80 17 T120 17 T160 17 V34 H0Z'/%3E%3C/svg%3E") 0 0 / 160px 34px repeat-x;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 34' preserveAspectRatio='none'%3E%3Cpath d='M0 17 Q20 3 40 17 T80 17 T120 17 T160 17 V34 H0Z'/%3E%3C/svg%3E") 0 0 / 160px 34px repeat-x;
+    animation: lv-wave 14s linear infinite;
+    transition: background 1.2s ease;
+}
+.lv-crest--2 {
+    top: -10px;
+    opacity: 0.5;
+    -webkit-mask-size: 110px 34px;
+    mask-size: 110px 34px;
+    animation-duration: 22s;
+    animation-direction: reverse;
+}
+@keyframes lv-wave { to { -webkit-mask-position: 160px 0; mask-position: 160px 0; } }
+
+/* A tide gauge down the left edge, a mark at the water level. */
+.lv-gauge { width: 16px; }
+.lv-gauge i {
+    position: absolute;
+    left: 0;
+    width: 10px;
+    height: 2px;
+    background: var(--lv-line);
+}
+.lv-gauge i:nth-child(3n + 1) { width: 16px; }
+.lv-mark {
+    position: absolute;
+    left: 0;
+    bottom: var(--lv-level);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 7px 0 7px 14px;
+    border-color: transparent transparent transparent var(--lv-water-top);
+    margin-bottom: -7px;
+    transition: bottom 1.8s cubic-bezier(.3, .7, .3, 1);
+}
+
+/* Panels sit in the water: etched, square, a rule on the waterline side. */
+:root[data-theme^="living-tidewatch"] body[data-living="tidewatch"][data-living][data-living][data-living] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: 0;
+    background-color: color-mix(in srgb, var(--background-primary) 58%, transparent);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 3px 0 var(--lv-c), inset 0 -1px 0 var(--lv-line), inset 1px 0 0 var(--lv-line);
+}
+
+@keyframes lv-breathe {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
+/* ── Skywatch ──────────────────────────────────────────────────────── */
+
+/*
+ * Light is the half where dark text sits straight on the page, so its scenes
+ * stay light: weather shows as hue and texture, never as a darker page.
+ */
+body[data-living="skywatch"] {
+    --sk-wash: rgba(125, 196, 255, 0.10);
+    --sk-fog: rgba(150, 165, 185, 0.34);
+    --sk-rain: rgba(190, 215, 255, 0.34);
+    --sk-star: #fff;
+}
+html[data-theme$="-light"] body[data-living="skywatch"] {
+    --sk-wash: rgba(80, 160, 240, 0.12);
+    --sk-fog: rgba(170, 180, 195, 0.42);
+    --sk-rain: rgba(60, 100, 160, 0.30);
+    --sk-star: #5a6bc0;
+}
+
+.lv-sky > * { opacity: 0; transition: opacity 1.2s ease; }
+.lv-sky > .lv-strip { opacity: 1; }
+.lv-sky { background: linear-gradient(180deg, var(--sk-wash), transparent 60%); transition: background 1s ease; }
+
+body[data-living-sky="sun"] .lv-sun { opacity: 1; }
+.lv-sun {
+    background: radial-gradient(circle at 82% 8%, rgba(255, 214, 120, 0.34) 0, rgba(255, 214, 120, 0.10) 22%, transparent 45%);
+}
+body[data-living-sky="cloud"] .lv-clouds,
+body[data-living-sky="rain"] .lv-clouds,
+body[data-living-sky="storm"] .lv-clouds { opacity: 1; }
+.lv-clouds {
+    background:
+        radial-gradient(60% 18% at 20% 8%, var(--sk-fog) 0, transparent 70%),
+        radial-gradient(50% 16% at 75% 14%, var(--sk-fog) 0, transparent 70%);
+    animation: lv-drift 90s linear infinite alternate;
+}
+body[data-living-sky="night"] .lv-stars { opacity: 1; }
+.lv-stars {
+    background:
+        radial-gradient(1.5px 1.5px at 12% 14%, var(--sk-star), transparent),
+        radial-gradient(1.5px 1.5px at 28% 32%, var(--sk-star), transparent),
+        radial-gradient(1px 1px at 41% 9%, var(--sk-star), transparent),
+        radial-gradient(1.5px 1.5px at 58% 21%, var(--sk-star), transparent),
+        radial-gradient(1px 1px at 69% 40%, var(--sk-star), transparent),
+        radial-gradient(1.5px 1.5px at 83% 12%, var(--sk-star), transparent),
+        radial-gradient(1px 1px at 92% 34%, var(--sk-star), transparent),
+        radial-gradient(1px 1px at 18% 52%, var(--sk-star), transparent),
+        radial-gradient(1px 1px at 49% 58%, var(--sk-star), transparent),
+        radial-gradient(1.5px 1.5px at 76% 66%, var(--sk-star), transparent);
+    animation: lv-twinkle 6s ease-in-out infinite;
+}
+body[data-living-sky="fog"] .lv-fog { opacity: 1; }
+.lv-fog {
+    background:
+        linear-gradient(180deg, var(--sk-fog), transparent 40%, var(--sk-fog) 100%);
+    animation: lv-drift 60s linear infinite alternate;
+}
+body[data-living-sky="rain"] .lv-rain,
+body[data-living-sky="storm"] .lv-rain { opacity: 1; }
+.lv-rain {
+    background: repeating-linear-gradient(105deg, transparent 0 11px, var(--sk-rain) 11px 12px);
+    background-size: 48px 70px;
+    animation: lv-rain 0.55s linear infinite;
+}
+.lv-rain--far {
+    background-size: 30px 44px;
+    opacity: 0;
+    animation-duration: 0.8s;
+    filter: blur(0.5px);
+}
+body[data-living-sky="rain"] .lv-rain--far,
+body[data-living-sky="storm"] .lv-rain--far { opacity: 0.6; }
+body[data-living-sky="storm"] .lv-rain { animation-duration: 0.38s; }
+body[data-living-sky="snow"] .lv-snow { opacity: 1; }
+.lv-snow {
+    background:
+        radial-gradient(2.5px 2.5px at 20px 30px, #fff, transparent),
+        radial-gradient(2px 2px at 90px 80px, #fff, transparent),
+        radial-gradient(3px 3px at 150px 20px, #fff, transparent),
+        radial-gradient(2px 2px at 60px 130px, #fff, transparent);
+    background-size: 180px 160px;
+    animation: lv-snow 9s linear infinite;
+}
+html[data-theme$="-light"] .lv-snow {
+    filter: drop-shadow(0 0 1px rgba(60, 90, 130, 0.55));
+}
+
+@keyframes lv-rain { to { background-position: -14px 70px; } }
+@keyframes lv-snow { to { background-position: 30px 160px; } }
+@keyframes lv-drift { to { transform: translateX(-4%); } }
+@keyframes lv-twinkle {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(0.55); }
+}
+
+
+/* The sky strip: the weather as a glyph, over a band of sky with a sill line. */
+body[data-living="skywatch"] {
+    --sk-frame: #36527c;
+    --sk-frame-hi: rgba(180, 210, 255, 0.35);
+    --sk-band: rgba(125, 196, 255, 0.28);
+    --sk-glyph: #cfe6ff;
+    --sk-sun: #ffcf5a;
+}
+html[data-theme$="-light"] body[data-living="skywatch"] {
+    --sk-frame: #5b7ea8;
+    --sk-frame-hi: rgba(255, 255, 255, 0.7);
+    --sk-band: rgba(80, 160, 240, 0.26);
+    --sk-glyph: #3c6fa8;
+    --sk-sun: #e8a21a;
+}
+.lv-sky > .lv-strip { height: 120px; bottom: auto; }
+.lv-strip-sky { background: linear-gradient(180deg, var(--sk-band), transparent); }
+.lv-glyphs { left: 38%; width: 90px; }
+.lv-glyph {
+    display: none;
+    position: absolute;
+    top: 8px;
+    left: 0;
+    width: 74px;
+    height: 74px;
+    fill: var(--sk-glyph);
+    stroke: var(--sk-glyph);
+    opacity: 0.92;
+}
+body[data-living-sky="sun"] .lv-glyph--sun,
+body[data-living-sky="cloud"] .lv-glyph--cloud,
+body[data-living-sky="rain"] .lv-glyph--rain,
+body[data-living-sky="storm"] .lv-glyph--storm,
+body[data-living-sky="snow"] .lv-glyph--snow,
+body[data-living-sky="fog"] .lv-glyph--fog,
+body[data-living-sky="night"] .lv-glyph--night { display: block; }
+.lv-glyph--sun { fill: var(--sk-sun); stroke: var(--sk-sun); animation: lv-spin 60s linear infinite; }
+.lv-glyph--storm .lv-bolt { fill: var(--sk-sun); stroke: none; }
+.lv-glyph--snow .lv-flakes, .lv-glyph--night .lv-flakes { stroke: none; }
+.lv-glyph--fog { fill: none; }
+.lv-glyph--rain, .lv-glyph--storm, .lv-glyph--snow, .lv-glyph--cloud { stroke-width: 1; }
+@keyframes lv-spin { to { transform: rotate(360deg); } }
+
+/* Categories are window panes: a frame, a sill, and the
+   weather on the glass. The frame is an inset shadow, not a border, so the
+   columns inside keep their place in the grid. */
+:root[data-theme^="living-skywatch"] body[data-living="skywatch"][data-living][data-living][data-living] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    position: relative;
+    isolation: isolate;
+    border-radius: 3px;
+    background-color: color-mix(in srgb, var(--background-secondary) 80%, transparent);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 0 0 6px var(--sk-frame),
+        inset 0 0 0 7px var(--sk-frame-hi),
+        0 7px 0 -1px var(--sk-frame);
+}
+/* Condensation in fog, drops running down the pane in rain. */
+body[data-living-sky="fog"] .category { background-image: linear-gradient(180deg, transparent 50%, rgba(255, 255, 255, 0.16)) !important; }
+body[data-living-sky="rain"] .category,
+body[data-living-sky="storm"] .category {
+    background-image:
+        radial-gradient(2.5px 5px at 12% 18%, var(--sk-frame-hi), transparent),
+        radial-gradient(2px 4px at 31% 44%, var(--sk-frame-hi), transparent),
+        radial-gradient(2.5px 5px at 58% 12%, var(--sk-frame-hi), transparent),
+        radial-gradient(2px 4px at 74% 62%, var(--sk-frame-hi), transparent),
+        radial-gradient(2.5px 5px at 90% 30%, var(--sk-frame-hi), transparent),
+        radial-gradient(2px 4px at 44% 82%, var(--sk-frame-hi), transparent) !important;
+}
+
+/* ── Daydrift ──────────────────────────────────────────────────────── */
+
+/*
+ * A horizon band across the top with the sun or the moon on its arc, placed
+ * by the clock (--dd-x, --dd-rise). The band's own overflow is the horizon:
+ * the orb sets behind the ground line. Cards are warm paper, lit from the
+ * side the orb is on.
+ */
+body[data-living="daydrift"] {
+    --dd-orb: radial-gradient(circle at 40% 38%, #fff4c2 0, #ffc766 45%, #ff9a4a 100%);
+    --dd-orb-glow: rgba(255, 190, 100, 0.55);
+    --dd-orb-opacity: 0.8;
+    --dd-lit: rgba(255, 214, 150, 0.2);
+    --dd-ink: rgba(0, 0, 0, 0.28);
+    --dd-ground: rgba(0, 0, 0, 0.22);
+}
+html[data-theme$="-light"] body[data-living="daydrift"] {
+    --dd-orb-opacity: 0.85;
+    --dd-lit: rgba(255, 255, 255, 0.55);
+    --dd-ink: rgba(80, 50, 30, 0.22);
+    --dd-ground: rgba(120, 80, 50, 0.16);
+}
+body[data-living-body="moon"] {
+    --dd-orb: transparent;
+    --dd-orb-glow: rgba(190, 200, 255, 0.35);
+    --dd-lit: rgba(170, 185, 255, 0.16);
+}
+html[data-theme$="-light"] body[data-living-body="moon"] { --dd-lit: rgba(255, 255, 255, 0.5); }
+
+.lv-horizon {
+    height: 150px;
+    bottom: auto;
+    overflow: hidden;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent-primary) 16%, transparent) 100%);
+}
+.lv-orb {
+    top: auto;
+    left: var(--dd-x, 50%);
+    width: 96px;
+    height: 96px;
+    margin-left: -48px;
+    bottom: calc(var(--dd-rise, 0.5) * 92px - 44px + 0px);
+    border-radius: 50%;
+    background: var(--dd-orb);
+    box-shadow: 0 0 60px 18px var(--dd-orb-glow);
+    opacity: var(--dd-orb-opacity);
+    transition: left 2s ease, bottom 2s ease;
+}
+body[data-living-body="moon"] .lv-orb {
+    box-shadow: inset 20px -6px 0 0 #dfe3ff, 0 0 50px 10px var(--dd-orb-glow);
+}
+.lv-ground {
+    top: auto;
+    bottom: 0;
+    height: 26px;
+    background: var(--dd-ground);
+    border-top: 2px solid var(--accent-primary);
+    -webkit-mask: linear-gradient(180deg, #000, transparent);
+    mask: linear-gradient(180deg, #000, transparent);
+}
+
+:root[data-theme^="living-daydrift"] body[data-living="daydrift"][data-living][data-living][data-living] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: 2px;
+    background-color: var(--background-secondary);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-image: linear-gradient(90deg, var(--dd-lit), transparent 42%);
+    box-shadow:
+        inset 0 0 0 1px var(--border-primary),
+        3px 4px 0 var(--dd-ink);
+}
+body[data-living-lit="right"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    background-image: linear-gradient(270deg, var(--dd-lit), transparent 42%) !important;
+    box-shadow: inset 0 0 0 1px var(--border-primary), -3px 4px 0 var(--dd-ink) !important;
+}
+
+/* ── Motion ────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .living-layer * { animation: none !important; transition: none !important; }
+}
+html[data-effects="off"] .living-layer *,
+body[data-effects="off"] .living-layer * { animation: none !important; }
