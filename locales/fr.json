@@ -11185,7 +11185,17 @@
     "overviewNewFeatureProwlarrWhat": "Un indexeur qui échoue ou devient lent ne se remarque que lorsqu’une recherche revient vide.",
     "overviewNewFeatureProwlarrHow": "Le widget Prowlarr montre les indexeurs actifs avec leurs requêtes, leurs récupérations et leurs temps de réponse, ce qui demande de l’attention (les messages de santé de Prowlarr et les indexeurs qu’il a mis en pause) et une ligne de totaux.",
     "overviewNewFeatureProwlarrEnable": "Config → Widgets → Ajouter un widget → Prowlarr. La clé se trouve sous Settings → General → Security dans Prowlarr.",
-    "overviewNewFeatureProwlarrCta": "Ouvrir les widgets →"
+    "overviewNewFeatureProwlarrCta": "Ouvrir les widgets →",
+    "overviewNewFeatureThemeGroupsTitle": "Huit nouveaux groupes de thèmes",
+    "overviewNewFeatureThemeGroupsWhat": "Stationery, Living, Instrument, Tactile, Spatial, Cartographic, Riso et Legible : 25 familles en clair et en sombre, chacune avec son propre arrière-plan. Une page avec un signet par ligne, une ligne d'eau qui suit l'état de vos services, une ligne dessinée comme une étiquette, une page dessinée comme une carte.",
+    "overviewNewFeatureThemeGroupsHow": "Ouvrez Apparence → Thème et choisissez un groupe dans la rangée Caractère, ou cherchez dans le navigateur de thèmes. Les nouvelles familles portent le badge Nouveau.",
+    "overviewNewFeatureThemeGroupsEnable": "Disponible par défaut. Choisissez l'un des 50 nouveaux thèmes ; les autres thèmes restent inchangés.",
+    "overviewNewFeatureThemeGroupsCta": "Ouvrir les thèmes →",
+    "overviewNewFeaturePageMarginsTitle": "Marges de page en sept niveaux, jusqu'à huit colonnes",
+    "overviewNewFeaturePageMarginsWhat": "Le bord à côté des colonnes a maintenant sept niveaux, de Pleine largeur à Spacieux, et Colonnes par rangée va jusqu'à huit. La page grandit avec le réglage, donc cinq à huit colonnes s'affichent vraiment sur un grand écran. Les espacements et les marges sont des listes déroulantes avec leur description dans chaque option.",
+    "overviewNewFeaturePageMarginsHow": "Ouvrez Apparence → Disposition, ou l'onglet Disposition du studio de thèmes. La palette accepte :margins et :columns 1–8.",
+    "overviewNewFeaturePageMarginsEnable": "Disponible par défaut. Équilibré reste la marge par défaut.",
+    "overviewNewFeaturePageMarginsCta": "Ouvrir la disposition →"
   },
   "colors": {
     "title": "personnalisation du thème",

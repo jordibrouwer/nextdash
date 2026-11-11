@@ -11185,7 +11185,17 @@
     "overviewNewFeatureProwlarrWhat": "Ein Indexer, der ausfällt oder langsam wird, fällt erst auf, wenn eine Suche leer zurückkommt.",
     "overviewNewFeatureProwlarrHow": "Das Prowlarr-Widget zeigt die eingeschalteten Indexer mit ihren Anfragen, Grabs und Antwortzeiten, was Aufmerksamkeit braucht (die Gesundheitsmeldungen von Prowlarr und die Indexer, die es pausiert hat) und eine Summenzeile.",
     "overviewNewFeatureProwlarrEnable": "Config → Widgets → Widget hinzufügen → Prowlarr. Den Schlüssel findest du unter Settings → General → Security in Prowlarr.",
-    "overviewNewFeatureProwlarrCta": "Widgets öffnen →"
+    "overviewNewFeatureProwlarrCta": "Widgets öffnen →",
+    "overviewNewFeatureThemeGroupsTitle": "Acht neue Themengruppen",
+    "overviewNewFeatureThemeGroupsWhat": "Stationery, Living, Instrument, Tactile, Spatial, Cartographic, Riso und Legible: 25 Familien in Hell und Dunkel, jede mit eigenem Hintergrund. Eine Seite mit einem Lesezeichen pro Zeile, eine Wasserlinie, die dem Zustand deiner Dienste folgt, eine Zeile als Etikettenstreifen, eine Seite als Landkarte.",
+    "overviewNewFeatureThemeGroupsHow": "Öffne Darstellung → Theme und wähle eine Gruppe in der Charakter-Reihe oder suche im Theme-Browser. Die neuen Familien tragen das Neu-Abzeichen.",
+    "overviewNewFeatureThemeGroupsEnable": "Standardmäßig verfügbar. Wähle eines der 50 neuen Themes; die übrigen Themes bleiben unverändert.",
+    "overviewNewFeatureThemeGroupsCta": "Themes öffnen →",
+    "overviewNewFeaturePageMarginsTitle": "Seitenränder in sieben Stufen, bis zu acht Spalten",
+    "overviewNewFeaturePageMarginsWhat": "Der Rand neben den Spalten hat jetzt sieben Stufen, von Volle Breite bis Großzügig, und Spalten pro Zeile geht bis acht. Die Seite wächst mit der Einstellung, sodass fünf bis acht Spalten auf einem breiten Bildschirm wirklich erscheinen. Abstände und Ränder sind Dropdowns mit ihrer Beschreibung in jeder Option.",
+    "overviewNewFeaturePageMarginsHow": "Öffne Darstellung → Layout oder den Layout-Tab im Theme-Studio. Die Palette kennt :margins und :columns 1–8.",
+    "overviewNewFeaturePageMarginsEnable": "Standardmäßig verfügbar. Ausgewogen bleibt der Standardrand.",
+    "overviewNewFeaturePageMarginsCta": "Layout öffnen →"
   },
   "colors": {
     "title": "themenanpassung",

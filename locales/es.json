@@ -11185,7 +11185,17 @@
     "overviewNewFeatureProwlarrWhat": "Un indexador que falla o se vuelve lento solo se nota cuando una búsqueda vuelve vacía.",
     "overviewNewFeatureProwlarrHow": "El widget de Prowlarr muestra los indexadores activos con sus consultas, capturas y tiempos de respuesta, lo que requiere atención (los avisos de salud de Prowlarr y los indexadores que ha puesto en pausa) y una línea de totales.",
     "overviewNewFeatureProwlarrEnable": "Config → Widgets → Añadir widget → Prowlarr. La clave está en Settings → General → Security de Prowlarr.",
-    "overviewNewFeatureProwlarrCta": "Abrir widgets →"
+    "overviewNewFeatureProwlarrCta": "Abrir widgets →",
+    "overviewNewFeatureThemeGroupsTitle": "Ocho nuevos grupos de temas",
+    "overviewNewFeatureThemeGroupsWhat": "Stationery, Living, Instrument, Tactile, Spatial, Cartographic, Riso y Legible: 25 familias en claro y oscuro, cada una con su propio fondo. Una página con un marcador por línea, una línea de agua que sigue la salud de tus servicios, una fila dibujada como una cinta de etiquetas, una página dibujada como un mapa.",
+    "overviewNewFeatureThemeGroupsHow": "Abre Apariencia → Tema y elige un grupo en la fila Carácter, o busca en el explorador de temas. Las nuevas familias llevan la insignia Nuevo.",
+    "overviewNewFeatureThemeGroupsEnable": "Disponible por defecto. Elige uno de los 50 temas nuevos; los demás temas no cambian.",
+    "overviewNewFeatureThemeGroupsCta": "Abrir temas →",
+    "overviewNewFeaturePageMarginsTitle": "Márgenes de página en siete pasos, hasta ocho columnas",
+    "overviewNewFeaturePageMarginsWhat": "El borde junto a las columnas tiene ahora siete pasos, de Ancho completo a Espacioso, y Columnas por fila llega hasta ocho. La página crece con el ajuste, así que de cinco a ocho columnas se ven de verdad en una pantalla ancha. Los espacios y los márgenes son desplegables con su descripción en cada opción.",
+    "overviewNewFeaturePageMarginsHow": "Abre Apariencia → Diseño, o la pestaña Diseño del estudio de temas. La paleta acepta :margins y :columns 1–8.",
+    "overviewNewFeaturePageMarginsEnable": "Disponible por defecto. Equilibrado sigue siendo el margen por defecto.",
+    "overviewNewFeaturePageMarginsCta": "Abrir diseño →"
   },
   "colors": {
     "title": "personalización del tema",

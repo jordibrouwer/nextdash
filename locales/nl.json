@@ -11185,7 +11185,17 @@
     "overviewNewFeatureProwlarrWhat": "Een indexer die faalt of traag wordt, merk je pas als een zoekopdracht leeg terugkomt.",
     "overviewNewFeatureProwlarrHow": "De Prowlarr-widget toont de indexers die aan staan met hun zoekopdrachten, grabs en antwoordtijden, wat aandacht vraagt (de gezondheidsmeldingen van Prowlarr en de indexers die het heeft gepauzeerd) en een regel met totalen.",
     "overviewNewFeatureProwlarrEnable": "Config → Widgets → Widget toevoegen → Prowlarr. De sleutel staat onder Settings → General → Security in Prowlarr.",
-    "overviewNewFeatureProwlarrCta": "Widgets openen →"
+    "overviewNewFeatureProwlarrCta": "Widgets openen →",
+    "overviewNewFeatureThemeGroupsTitle": "Acht nieuwe themagroepen",
+    "overviewNewFeatureThemeGroupsWhat": "Stationery, Living, Instrument, Tactile, Spatial, Cartographic, Riso en Legible: 25 families in licht en donker, elk met een eigen achtergrond. Een pagina met één bookmark per regel, een waterlijn die de gezondheid van je diensten volgt, een rij als labelstrip, een pagina als kaart.",
+    "overviewNewFeatureThemeGroupsHow": "Open Uiterlijk → Thema en kies een groep in de Karakter-rij, of zoek in de themabrowser. De nieuwe families hebben het Nieuw-label.",
+    "overviewNewFeatureThemeGroupsEnable": "Standaard beschikbaar. Kies een van de 50 nieuwe thema's; de andere thema's blijven zoals ze zijn.",
+    "overviewNewFeatureThemeGroupsCta": "Open Thema's →",
+    "overviewNewFeaturePageMarginsTitle": "Paginamarges in zeven stappen, tot acht kolommen",
+    "overviewNewFeaturePageMarginsWhat": "De rand naast de kolommen heeft nu zeven stappen, van Volledige breedte tot Ruim, en Kolommen per rij gaat tot acht. De pagina groeit mee met de instelling, dus vijf tot acht kolommen zijn echt te zien op een breed scherm. Ruimte en marges zijn dropdowns met hun omschrijving in elke optie.",
+    "overviewNewFeaturePageMarginsHow": "Open Uiterlijk → Indeling, of het tabblad Indeling in de themastudio. Het palet kent :margins en :columns 1–8.",
+    "overviewNewFeaturePageMarginsEnable": "Standaard beschikbaar. Evenwichtig blijft de standaardmarge.",
+    "overviewNewFeaturePageMarginsCta": "Open Indeling →"
   },
   "colors": {
     "title": "thema-aanpassing",

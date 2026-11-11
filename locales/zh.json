@@ -11185,7 +11185,17 @@
     "overviewNewFeatureProwlarrWhat": "索引器出错或变慢，只有在搜索返回空结果时才会发现。",
     "overviewNewFeatureProwlarrHow": "Prowlarr 小组件显示已启用的索引器及其查询、抓取和响应时间、需要关注的事项（Prowlarr 的健康提示和它已暂停的索引器），以及一行合计。",
     "overviewNewFeatureProwlarrEnable": "配置 → 小组件 → 添加小组件 → Prowlarr。密钥在 Prowlarr 的 Settings → General → Security 中。",
-    "overviewNewFeatureProwlarrCta": "打开小组件 →"
+    "overviewNewFeatureProwlarrCta": "打开小组件 →",
+    "overviewNewFeatureThemeGroupsTitle": "八个新的主题组",
+    "overviewNewFeatureThemeGroupsWhat": "Stationery、Living、Instrument、Tactile、Spatial、Cartographic、Riso 和 Legible：25 个系列，各有浅色和深色，每个都有自己的背景。一行一个书签的页面、跟随服务健康状况的水位线、画成标签条的行、画成地图的页面。",
+    "overviewNewFeatureThemeGroupsHow": "打开“外观 → 主题”，在“特性”行选择一个主题组，或在主题浏览器中搜索。新系列带有“新”标记。",
+    "overviewNewFeatureThemeGroupsEnable": "默认可用。选择 50 个新主题中的任意一个；其他主题保持不变。",
+    "overviewNewFeatureThemeGroupsCta": "打开主题 →",
+    "overviewNewFeaturePageMarginsTitle": "七档页面边距，最多八列",
+    "overviewNewFeaturePageMarginsWhat": "列旁边的边距现在有七档，从“全宽”到“宽敞”，“每行列数”最多可到八。页面会随设置变宽，所以在宽屏上真的能看到五到八列。间距和边距改为下拉菜单，每个选项都带有说明。",
+    "overviewNewFeaturePageMarginsHow": "打开“外观 → 布局”，或主题工作室的“布局”标签。命令面板支持 :margins 和 :columns 1–8。",
+    "overviewNewFeaturePageMarginsEnable": "默认可用。“均衡”仍是默认边距。",
+    "overviewNewFeaturePageMarginsCta": "打开布局 →"
   },
   "colors": {
     "title": "主题自定义",
