@@ -1,0 +1,240 @@
+/*
+ * The spatial theme group; see internal/app/theme_groups.go.
+ * Keyed on html[data-theme^="spatial-"].
+ *
+ * Each family has a STATIC structural signature, drawn here, that reads in a
+ * still screenshot: Diorama is stacked cut paper, Lightbox is slide mounts on
+ * a light table, Orbit is dark panels ringed by orbits. The pointer only
+ * enhances them: theme-group-spatial.js writes --sp-x and --sp-y (-1..1) on
+ * <html>, and every rule reads them with a fallback of 0, so with no pointer,
+ * on touch, under reduced motion or with Effects off nothing moves.
+ *
+ * The material underneath (the Character) is deliberately overridden for
+ * categories and widgets (hence the !important): a rounded translucent card is
+ * exactly what these themes are not.
+ *
+ * Nothing below puts transform, translate, rotate, scale, filter or clip-path
+ * on an element that holds page content: those would make it the containing
+ * block of (or clip) the position:fixed menus, tooltips and modals inside it.
+ * Only the pseudo-elements that draw the layers, and the fixed backdrop (which
+ * has no children), move or are clipped. All of them ignore the pointer.
+ */
+
+/* ── Shared: the far backdrop drifts a little against the pointer ── */
+html[data-theme^="spatial-"] body > .theme-backdrop-layer {
+    scale: 1.05;
+    translate: calc(var(--sp-x, 0) * -10px) calc(var(--sp-y, 0) * -8px);
+    transition: translate 160ms ease-out;
+    will-change: translate;
+}
+
+/* ══════════════ Diorama: cut paper, pinned at different heights ══════════════ */
+
+html[data-theme="spatial-diorama-dark"] {
+    --dio-1: #3A2E21; --dio-2: #2C3A31; --dio-3: #3D2C37;
+    --dio-sheet: #2A2017; --dio-frame: #8A6D45; --dio-hard: #080503; --dio-pin: #E0634A;
+}
+html[data-theme="spatial-diorama-light"] {
+    --dio-1: #FBF6EA; --dio-2: #EBD5AE; --dio-3: #D9E1C5;
+    --dio-sheet: #BFA479; --dio-frame: #8A6A3E; --dio-hard: rgba(52, 34, 16, 0.6); --dio-pin: #B8402A;
+}
+
+html[data-theme^="spatial-diorama-"] .dashboard-grid .category {
+    --sp-d: 1;
+    --dio-tone: var(--dio-1);
+}
+html[data-theme^="spatial-diorama-"] .dashboard-grid .category:nth-child(3n + 2) { --sp-d: 2; --dio-tone: var(--dio-2); }
+html[data-theme^="spatial-diorama-"] .dashboard-grid .category:nth-child(3n + 3) { --sp-d: 3; --dio-tone: var(--dio-3); }
+
+/* The category itself is only a place for the content; the paper is drawn behind it. */
+html[data-theme^="spatial-diorama-"] body .dashboard-grid .category {
+    background: none !important;
+    border-color: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding-top: calc(var(--space-3, 0.75rem) + 6px);
+}
+
+/* The face: the sheet you read, with a torn top edge, a cardboard frame and a pin. */
+html[data-theme^="spatial-diorama-"] body .dashboard-grid .category::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+    border-radius: 0 !important;
+    border: 3px solid var(--dio-frame) !important;
+    background:
+        radial-gradient(circle at 50% 12px, var(--dio-pin) 0 3.5px, transparent 4.5px),
+        radial-gradient(circle at 50% 14px, rgba(0, 0, 0, 0.35) 0 5px, transparent 6px),
+        linear-gradient(var(--dio-tone), var(--dio-tone)) !important;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--dio-tone) 60%, white) !important;
+    mask: none !important;
+    -webkit-mask: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: polygon(
+        0 5px, 5% 0, 10% 5px, 16% 1px, 23% 6px, 30% 2px, 37% 6px, 45% 0, 52% 5px,
+        60% 1px, 68% 6px, 76% 1px, 84% 5px, 91% 0, 100% 4px,
+        100% 100%, 0 100%);
+}
+
+/* The sheet under it: another tone, offset, with a hard shadow. The pointer slides it. */
+html[data-theme^="spatial-diorama-"] .dashboard-grid .category::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background: var(--dio-sheet);
+    border: 2px solid var(--dio-frame);
+    box-shadow: calc(3px * var(--sp-d)) calc(4px * var(--sp-d)) 0 var(--dio-hard);
+    translate:
+        calc(9px + var(--sp-x, 0) * var(--sp-d) * -7px)
+        calc(11px + var(--sp-y, 0) * var(--sp-d) * -7px);
+    rotate: calc(var(--sp-x, 0) * var(--sp-d) * -0.35deg);
+    transition: translate 140ms ease-out, rotate 140ms ease-out;
+}
+
+/* ══════════════ Lightbox: slides on a light table ══════════════ */
+
+html[data-theme="spatial-lightbox-dark"] {
+    --lb-mount: #08080A; --lb-hole: #F3EEDC; --lb-film: #15151C; --lb-edge: #E8A64A;
+    --lb-tint-a: rgba(255, 150, 70, 0.20); --lb-tint-b: rgba(80, 140, 255, 0.18); --lb-tint-c: rgba(110, 255, 190, 0.10);
+    --lb-lamp: rgba(255, 233, 196, 0.22);
+}
+html[data-theme="spatial-lightbox-light"] {
+    --lb-mount: #0A0A0C; --lb-hole: #FFFFFF; --lb-film: #FBF8EE; --lb-edge: #F0B24E;
+    --lb-tint-a: rgba(255, 170, 90, 0.26); --lb-tint-b: rgba(110, 160, 255, 0.22); --lb-tint-c: rgba(120, 230, 180, 0.16);
+    --lb-lamp: rgba(255, 255, 255, 0.9);
+}
+
+/* The mount: a black frame with sprocket holes down both sides, film inside. */
+html[data-theme^="spatial-lightbox-"] body .dashboard-grid .category {
+    position: relative;
+    border: 14px solid transparent !important;
+    border-radius: 2px !important;
+    padding: var(--space-2, 0.5rem) 6px !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-image:
+        repeating-linear-gradient(180deg, transparent 0 5px, var(--lb-hole) 5px 15px, transparent 15px 22px),
+        repeating-linear-gradient(180deg, transparent 0 5px, var(--lb-hole) 5px 15px, transparent 15px 22px),
+        linear-gradient(135deg, var(--lb-tint-a), var(--lb-tint-b) 60%, var(--lb-tint-c)),
+        linear-gradient(var(--lb-film), var(--lb-film)),
+        linear-gradient(var(--lb-mount), var(--lb-mount)) !important;
+    background-repeat: no-repeat !important;
+    background-size: 7px 100%, 7px 100%, auto, auto, auto !important;
+    background-position: 3.5px 0, calc(100% - 3.5px) 0, 0 0, 0 0, 0 0 !important;
+    background-origin: border-box, border-box, padding-box, padding-box, border-box !important;
+    background-clip: border-box, border-box, padding-box, padding-box, border-box !important;
+    background-color: transparent !important;
+    box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.5) !important;
+}
+/* Film edge print along the top of the mount. */
+html[data-theme^="spatial-lightbox-"] .dashboard-grid .category::after {
+    content: "\25B8 24   24A   \25B8 25";
+    position: absolute;
+    top: -12px;
+    left: 14px;
+    font: 700 8px/10px ui-monospace, Menlo, monospace;
+    letter-spacing: 0.22em;
+    color: var(--lb-edge);
+    opacity: 0.85;
+    pointer-events: none;
+    white-space: nowrap;
+}
+/* The lamp under the cursor; it brightens the table, shadows fall away from it. */
+html[data-theme^="spatial-lightbox-"]::before {
+    content: "";
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: 90vmax;
+    height: 90vmax;
+    margin: -45vmax 0 0 -45vmax;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(circle, var(--lb-lamp), transparent 55%);
+    translate: calc(var(--sp-x, 0) * 50vw) calc(var(--sp-y, 0) * 50vh);
+    transition: translate 120ms ease-out;
+    will-change: translate;
+}
+html[data-theme^="spatial-lightbox-"][data-theme] body[data-depth] {
+    --surface-cast:
+        calc(var(--sp-x, 0) * -14px) calc(2px + var(--sp-y, 0) * -14px) 26px
+        color-mix(in srgb, black 40%, transparent);
+}
+
+/* ══════════════ Orbit: dark panels ringed by orbits ══════════════ */
+
+html[data-theme="spatial-orbit-dark"] {
+    --orb-panel: #0C0720; --orb-line: #5B3FA0; --orb-ring: rgba(199, 155, 255, 0.45); --orb-ring2: rgba(123, 224, 176, 0.28);
+    --orb-planet: #FFD27A; --orb-star: rgba(255, 255, 255, 0.75); --orb-glow: rgba(199, 155, 255, 0.16);
+}
+html[data-theme="spatial-orbit-light"] {
+    --orb-panel: #FAF7FF; --orb-line: #8F70D0; --orb-ring: rgba(106, 53, 194, 0.5); --orb-ring2: rgba(23, 112, 79, 0.35);
+    --orb-planet: #B3285C; --orb-star: rgba(60, 40, 120, 0.55); --orb-glow: rgba(106, 53, 194, 0.10);
+}
+
+html[data-theme^="spatial-orbit-"] .dashboard-grid .category {
+    --sp-z: 14px;
+    --orb-tilt: -4deg;
+}
+html[data-theme^="spatial-orbit-"] .dashboard-grid .category:nth-child(3n + 2) { --sp-z: 30px; --orb-tilt: 3deg; }
+html[data-theme^="spatial-orbit-"] .dashboard-grid .category:nth-child(3n + 3) { --sp-z: 46px; --orb-tilt: -1.5deg; }
+
+/* A flat, square, starry panel instead of a glass card. */
+html[data-theme^="spatial-orbit-"] body .dashboard-grid .category {
+    border: 1px solid var(--orb-line) !important;
+    border-radius: 3px !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--orb-panel) !important;
+    background-image:
+        radial-gradient(1px 1px at 55% 9%, var(--orb-star) 98%, transparent),
+        radial-gradient(1px 1px at 83% 12%, var(--orb-star) 98%, transparent),
+        radial-gradient(1.5px 1.5px at 66% 71%, var(--orb-star) 98%, transparent),
+        radial-gradient(1px 1px at 28% 86%, var(--orb-star) 98%, transparent),
+        radial-gradient(1px 1px at 92% 52%, var(--orb-star) 98%, transparent),
+        radial-gradient(ellipse 90% 60% at 12% 0%, var(--orb-glow), transparent 70%) !important;
+    box-shadow: inset 0 0 0 3px var(--orb-panel), inset 0 0 0 4px color-mix(in srgb, var(--orb-line) 45%, transparent) !important;
+}
+/* Rows are small bodies: a planet with a halo, on a faint ring line. */
+html[data-theme^="spatial-orbit-"] .dashboard-grid .category .bookmark-link {
+    background-image:
+        radial-gradient(circle at 5px 50%, var(--orb-planet) 0 2px, transparent 2.5px),
+        radial-gradient(circle at 5px 50%, color-mix(in srgb, var(--orb-planet) 35%, transparent) 0 5px, transparent 6px);
+    background-repeat: no-repeat;
+    border-bottom: 1px dotted color-mix(in srgb, var(--orb-ring) 55%, transparent);
+    padding-left: 12px;
+}
+/* The orbits: tilted ellipses around and through the panel, a planet on the outer one.
+   Rings are borders, outlines and gradient lines: a box-shadow spread would fill, not draw a ring. */
+html[data-theme^="spatial-orbit-"] .dashboard-grid .category::after {
+    content: "";
+    position: absolute;
+    inset: -3% -5%;
+    z-index: 1;
+    border-radius: 50%;
+    pointer-events: none;
+    border: 1px solid var(--orb-ring);
+    outline: 1px solid var(--orb-ring2);
+    outline-offset: 9px;
+    background:
+        radial-gradient(circle at 14.6% 14.6%, #fff 0 1.5px, var(--orb-planet) 1.5px 4px, transparent 9px),
+        radial-gradient(ellipse closest-side, transparent 0 78%, var(--orb-ring2) 78% 79%, transparent 79%);
+    transform:
+        perspective(900px)
+        translateZ(var(--sp-z))
+        rotateZ(var(--orb-tilt))
+        rotateY(calc(var(--sp-x, 0) * 7deg))
+        rotateX(calc(var(--sp-y, 0) * -7deg));
+    transition: transform 140ms ease-out;
+}
