@@ -64,6 +64,7 @@
 .pw-text { display: flex; flex-direction: column; gap: 0.1rem; }
 .pw-title, .pw-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pw-sub { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+.pw-sub { white-space: normal; }
 
 .pw-title--wrap { white-space: normal; }
 .pw-side { display: flex; gap: 0.25rem; justify-self: end; }

@@ -63,6 +63,7 @@
 .bz-text { display: flex; flex-direction: column; gap: 0.1rem; }
 .bz-title, .bz-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bz-sub { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+.bz-sub { white-space: normal; }
 
 .bz-langs { display: flex; gap: 0.25rem; justify-self: end; }
 .bz-lang {
