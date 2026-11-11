@@ -408,6 +408,26 @@ function tidyDemoData(dir, patch) {
         });
     }
 
+    // One shot only: a page with the Jellystat, Bazarr and Prowlarr tiles, two
+    // columns wide (their answers are mocked).
+    if (patch === 'arrtiles') {
+        const pages = readJSON(path.join(dir, 'pages.json'));
+        pages.order = [...(pages.order || []), 4];
+        writeJSON(path.join(dir, 'pages.json'), pages);
+        const widgets = [
+            { id: 'w_j00000000001', type: 'jellystat', config: { server: 'http://jellystat.local:3000', columns: 2, rows: 4 } },
+            { id: 'w_z00000000001', type: 'bazarr', config: { server: 'http://bazarr.local:6767', columns: 2, rows: 4 } },
+            { id: 'w_p00000000001', type: 'prowlarr', config: { server: 'http://prowlarr.local:9696', columns: 2, rows: 4 } },
+        ];
+        writeJSON(path.join(dir, 'bookmarks-4.json'), {
+            page: { id: 4, name: 'Media' },
+            categories: [],
+            widgets,
+            blockOrder: widgets.map((w) => w.id),
+            bookmarks: [],
+        });
+    }
+
     // One shot only: a page of its own with the Glances widget in both looks
     // beside the system tiles, and no bookmarks (their answers are mocked).
     if (patches.includes('glances')) {
