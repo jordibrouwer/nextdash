@@ -176,6 +176,7 @@ Eight new theme groups, 25 families in light and dark, each built around an idea
 - **new — One file per theme group.** `theme_groups.go` merges the palettes of every group into the built-in themes and never replaces an id that is already there; a group's id prefix files it under its chip (`theme_archetype.go`). Each group brings its own stylesheet, its own script when it needs one, and its own spec (`tests/theme-group-*.spec.js`).
 - **fix — Daydrift keeps the phone's browser bar with the page.** The bar colour (`theme-color`) was only set when the theme changed, so it stayed on the colour of that moment while the page moved through the day; every tick now sets it as well (`theme-group-living.js`).
 - **fix — Tidewatch counts each outage once.** The count took the down badge and the offline rows together, so one outage counted at least twice; it is now the offline rows, with the badge only deciding the state (`theme-group-living.js`).
+- **fix — Asking for the column count no longer forces a layout pass.** The lookup the keyboard and the block mover call all the time wrote the page ceiling every time, even unchanged, which made the next measure lay the page out again; it now writes only when the value changes (`dashboard-render-core.js`).
 
 ### Docs
 

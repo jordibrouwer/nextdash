@@ -170,7 +170,14 @@ class DashboardRenderCore {
         const min = parseFloat(gridStyle.getPropertyValue('--dashboard-column-min')) || 250;
         const gap = parseFloat(gridStyle.columnGap) || 16;
         const need = Math.ceil(wanted * min + Math.max(0, wanted - 1) * gap + padding);
-        document.documentElement.style.setProperty('--dashboard-container-max', `${Math.max(1600, need)}px`);
+        // Written only when it changes: the keyboard and the block mover ask
+        // for the column count all the time, and an unchanged write would
+        // still dirty the style and force a layout pass on the next measure.
+        const value = `${Math.max(1600, need)}px`;
+        const rootStyle = document.documentElement.style;
+        if (rootStyle.getPropertyValue('--dashboard-container-max') !== value) {
+            rootStyle.setProperty('--dashboard-container-max', value);
+        }
     }
 
 
