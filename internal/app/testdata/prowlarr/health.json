@@ -1,0 +1,8 @@
+[
+ {
+  "source": "ApplicationLongTermStatusCheck",
+  "type": "warning",
+  "message": "Indexers are unavailable due to failures for more than 6 hours: Example App",
+  "wikiUrl": "https://wiki.servarr.com/prowlarr/system#applications-are-unavailable-due-to-failures"
+ }
+]

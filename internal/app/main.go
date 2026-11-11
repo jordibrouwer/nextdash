@@ -375,6 +375,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/widgets/jellystat/setup", handlers.jellystatSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/widgets/bazarr", handlers.bazarrWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/bazarr/setup", handlers.bazarrSetupHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/prowlarr", handlers.prowlarrWidgetHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/widgets/prowlarr/setup", handlers.prowlarrSetupHandler).Methods("POST", "OPTIONS")
 	registerGlancesViewRoutes(r, handlers)
 	r.HandleFunc("/api/widgets/homeassistant", handlers.homeAssistantWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/homeassistant/setup", handlers.homeAssistantSetupHandler).Methods("POST", "OPTIONS")

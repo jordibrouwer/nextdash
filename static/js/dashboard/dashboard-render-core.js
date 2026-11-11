@@ -53,6 +53,8 @@ class DashboardRenderCore {
         jellystat: { configKey: 'ttl', floor: 60, fallback: 300 },
         // Subtitles arrive when Bazarr's own search runs, a few times an hour.
         bazarr: { configKey: 'ttl', floor: 60, fallback: 300 },
+        // Indexer counts and pauses move over minutes.
+        prowlarr: { configKey: 'ttl', floor: 60, fallback: 300 },
         // Reads the monitor loop's history, which only moves as fast as the checks run.
         nettests: { configKey: 'ttl', floor: 30, fallback: 60 },
         // nextDash's own record: a beat is as old as its pace, so a half minute is fresh enough.
@@ -959,7 +961,7 @@ class DashboardRenderCore {
      */
     widgetCanRefreshNow(widget) {
         if (!widget?.id || !this.widgetPollSpec(widget)) return false;
-        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole|jellystat|bazarr)/
+        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole|jellystat|bazarr|prowlarr)/
             .test(String(widget.type));
     }
 
@@ -1231,6 +1233,7 @@ class DashboardRenderCore {
         pihole: 'Pi-hole',
         jellystat: 'Jellystat',
         bazarr: 'Bazarr',
+        prowlarr: 'Prowlarr',
         nettests: 'Network tests',
         glances: 'Glances',
         'jellyfin-playing': 'Jellyfin — now playing',

@@ -455,6 +455,20 @@
         },
     };
 
+    /*
+     * Prowlarr: the API key (Settings → General → Security) in the X-Api-Key
+     * header. Nothing to choose after Connect, which names the version.
+     */
+    Config.MEDIA_SERVICES.prowlarr = {
+        id: 'prowlarr',
+        name: 'Prowlarr',
+        header: 'X-Api-Key',
+        placeholder: 'http://prowlarr.local:9696',
+        words: {
+            keyWhere: ['config.widgetProwlarrKeyWhere', 'Settings → General → Security in Prowlarr'],
+        },
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],

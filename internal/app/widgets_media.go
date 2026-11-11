@@ -219,6 +219,8 @@ type MediaResult struct {
 	Stats *MediaStats `json:"stats,omitempty"`
 	// Subs is what a Bazarr tile draws.
 	Subs *MediaSubs `json:"subs,omitempty"`
+	// Indexers is what a Prowlarr tile draws.
+	Indexers *MediaIndexers `json:"indexers,omitempty"`
 	// Controls says this reader may switch things. Set per request, after
 	// the shared cache: never stored with the answer.
 	Controls bool `json:"controls,omitempty"`

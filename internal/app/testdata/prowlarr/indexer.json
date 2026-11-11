@@ -1,0 +1,44 @@
+[
+ {
+  "id": 10,
+  "name": "Example Indexer 5",
+  "enable": false,
+  "protocol": "torrent",
+  "privacy": "public"
+ },
+ {
+  "id": 4,
+  "name": "Example Indexer 3",
+  "enable": true,
+  "protocol": "torrent",
+  "privacy": "private"
+ },
+ {
+  "id": 1,
+  "name": "Example Indexer 1",
+  "enable": true,
+  "protocol": "usenet",
+  "privacy": "private"
+ },
+ {
+  "id": 2,
+  "name": "Example Indexer 2",
+  "enable": true,
+  "protocol": "usenet",
+  "privacy": "private"
+ },
+ {
+  "id": 11,
+  "name": "Example Indexer 6",
+  "enable": true,
+  "protocol": "usenet",
+  "privacy": "private"
+ },
+ {
+  "id": 9,
+  "name": "Example Indexer 4",
+  "enable": false,
+  "protocol": "usenet",
+  "privacy": "private"
+ }
+]
