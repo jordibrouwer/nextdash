@@ -11121,7 +11121,22 @@
     "widgetProwlarrTopicIndexers": "索引器",
     "widgetProwlarrTopicIssues": "需要关注",
     "widgetProwlarrTopicTotals": "合计行",
-    "widgetProwlarrTopics": "要显示的部分"
+    "widgetProwlarrTopics": "要显示的部分",
+    "overviewNewFeatureJellystatTitle": "Jellystat 小组件：谁看了什么",
+    "overviewNewFeatureJellystatWhat": "Jellyfin 只告诉你新增了什么，不告诉你谁在看、什么播放最多、花了多少时间。Jellystat 保存了这些历史。",
+    "overviewNewFeatureJellystatHow": "Jellystat 小组件显示最近播放、观看最多、最活跃的人和一行合计，每一部分都可选。连接后会列出你的媒体库；只有合计和最近播放遵循这个选择。",
+    "overviewNewFeatureJellystatEnable": "配置 → 小组件 → 添加小组件 → Jellystat。密钥在 Jellystat 的 Settings → API Keys 中。",
+    "overviewNewFeatureJellystatCta": "打开小组件 →",
+    "overviewNewFeatureBazarrTitle": "Bazarr 小组件：缺少哪些字幕",
+    "overviewNewFeatureBazarrWhat": "Bazarr 会自己获取字幕，但想知道它是否都有了、是哪种语言，以前得打开 Bazarr。",
+    "overviewNewFeatureBazarrHow": "Bazarr 小组件列出仍缺字幕的电影和剧集及所需语言、最近获取的字幕及其提供商和评分，以及一行合计（含出问题的提供商）。",
+    "overviewNewFeatureBazarrEnable": "配置 → 小组件 → 添加小组件 → Bazarr。密钥在 Bazarr 的 Settings → General → Security 中。",
+    "overviewNewFeatureBazarrCta": "打开小组件 →",
+    "overviewNewFeatureProwlarrTitle": "Prowlarr 小组件：索引器状况如何",
+    "overviewNewFeatureProwlarrWhat": "索引器出错或变慢，只有在搜索返回空结果时才会发现。",
+    "overviewNewFeatureProwlarrHow": "Prowlarr 小组件显示已启用的索引器及其查询、抓取和响应时间、需要关注的事项（Prowlarr 的健康提示和它已暂停的索引器），以及一行合计。",
+    "overviewNewFeatureProwlarrEnable": "配置 → 小组件 → 添加小组件 → Prowlarr。密钥在 Prowlarr 的 Settings → General → Security 中。",
+    "overviewNewFeatureProwlarrCta": "打开小组件 →"
   },
   "colors": {
     "title": "主题自定义",

@@ -11121,7 +11121,22 @@
     "widgetProwlarrTopicIndexers": "Indexer",
     "widgetProwlarrTopicIssues": "Braucht Aufmerksamkeit",
     "widgetProwlarrTopicTotals": "Summenzeile",
-    "widgetProwlarrTopics": "Anzuzeigende Teile"
+    "widgetProwlarrTopics": "Anzuzeigende Teile",
+    "overviewNewFeatureJellystatTitle": "Ein Jellystat-Widget: wer hat was gesehen",
+    "overviewNewFeatureJellystatWhat": "Jellyfin sagt dir, was hinzugekommen ist, nicht wer schaut, was am häufigsten lief oder wie viel Zeit darin steckt. Jellystat bewahrt diese Geschichte auf.",
+    "overviewNewFeatureJellystatHow": "Das Jellystat-Widget zeigt die letzten Wiedergaben, das Meistgesehene, die aktivsten Personen und eine Summenzeile, jeder Teil wahlweise. Nach dem Verbinden bietet es deine Bibliotheken an; nur die Summen und die letzten Wiedergaben folgen dieser Auswahl.",
+    "overviewNewFeatureJellystatEnable": "Config → Widgets → Widget hinzufügen → Jellystat. Den Schlüssel findest du unter Settings → API Keys in Jellystat.",
+    "overviewNewFeatureJellystatCta": "Widgets öffnen →",
+    "overviewNewFeatureBazarrTitle": "Ein Bazarr-Widget: welche Untertitel fehlen",
+    "overviewNewFeatureBazarrWhat": "Bazarr holt Untertitel von selbst, aber ob er alle hat und in welcher Sprache, hieß bisher Bazarr öffnen.",
+    "overviewNewFeatureBazarrHow": "Das Bazarr-Widget listet die Filme und Folgen auf, denen noch ein Untertitel fehlt, mit den gewünschten Sprachen, die zuletzt geholten mit Anbieter und Wertung und eine Summenzeile mit den Anbietern, die Probleme haben.",
+    "overviewNewFeatureBazarrEnable": "Config → Widgets → Widget hinzufügen → Bazarr. Den Schlüssel findest du unter Settings → General → Security in Bazarr.",
+    "overviewNewFeatureBazarrCta": "Widgets öffnen →",
+    "overviewNewFeatureProwlarrTitle": "Ein Prowlarr-Widget: wie es den Indexern geht",
+    "overviewNewFeatureProwlarrWhat": "Ein Indexer, der ausfällt oder langsam wird, fällt erst auf, wenn eine Suche leer zurückkommt.",
+    "overviewNewFeatureProwlarrHow": "Das Prowlarr-Widget zeigt die eingeschalteten Indexer mit ihren Anfragen, Grabs und Antwortzeiten, was Aufmerksamkeit braucht (die Gesundheitsmeldungen von Prowlarr und die Indexer, die es pausiert hat) und eine Summenzeile.",
+    "overviewNewFeatureProwlarrEnable": "Config → Widgets → Widget hinzufügen → Prowlarr. Den Schlüssel findest du unter Settings → General → Security in Prowlarr.",
+    "overviewNewFeatureProwlarrCta": "Widgets öffnen →"
   },
   "colors": {
     "title": "themenanpassung",

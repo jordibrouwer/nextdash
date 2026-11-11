@@ -11121,7 +11121,22 @@
     "widgetProwlarrTopicIndexers": "Indexers",
     "widgetProwlarrTopicIssues": "Needs attention",
     "widgetProwlarrTopicTotals": "Totals line",
-    "widgetProwlarrTopics": "Topics to show"
+    "widgetProwlarrTopics": "Topics to show",
+    "overviewNewFeatureJellystatTitle": "A Jellystat widget: who watched what",
+    "overviewNewFeatureJellystatWhat": "Jellyfin tells you what was added, not who is watching, what was played most or how much time went by. Jellystat keeps that history.",
+    "overviewNewFeatureJellystatHow": "The Jellystat widget shows the recent plays, the most viewed, the most active people and a line of totals, each part optional. After Connect it offers your libraries; only the totals and the recent plays follow that choice.",
+    "overviewNewFeatureJellystatEnable": "Config → Widgets → Add widget → Jellystat. The key comes from Settings → API Keys in Jellystat.",
+    "overviewNewFeatureJellystatCta": "Open Widgets →",
+    "overviewNewFeatureBazarrTitle": "A Bazarr widget: which subtitles are missing",
+    "overviewNewFeatureBazarrWhat": "Bazarr fetches subtitles by itself, but knowing whether it has them all, and in which language, meant opening Bazarr.",
+    "overviewNewFeatureBazarrHow": "The Bazarr widget lists the movies and episodes that still miss a subtitle with the languages wanted, the ones fetched lately with provider and score, and a line of totals with the providers in trouble.",
+    "overviewNewFeatureBazarrEnable": "Config → Widgets → Add widget → Bazarr. The key is under Settings → General → Security in Bazarr.",
+    "overviewNewFeatureBazarrCta": "Open Widgets →",
+    "overviewNewFeatureProwlarrTitle": "A Prowlarr widget: how the indexers are doing",
+    "overviewNewFeatureProwlarrWhat": "An indexer that fails or slows down only shows when a search comes back empty.",
+    "overviewNewFeatureProwlarrHow": "The Prowlarr widget shows the indexers that are on with their queries, grabs and answer times, what needs attention (Prowlarr’s health messages and the indexers it paused) and a line of totals.",
+    "overviewNewFeatureProwlarrEnable": "Config → Widgets → Add widget → Prowlarr. The key is under Settings → General → Security in Prowlarr.",
+    "overviewNewFeatureProwlarrCta": "Open Widgets →"
   },
   "colors": {
     "title": "theme customization",

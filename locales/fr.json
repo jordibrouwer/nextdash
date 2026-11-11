@@ -11121,7 +11121,22 @@
     "widgetProwlarrTopicIndexers": "Indexeurs",
     "widgetProwlarrTopicIssues": "Demande de l’attention",
     "widgetProwlarrTopicTotals": "Ligne de totaux",
-    "widgetProwlarrTopics": "Parties à afficher"
+    "widgetProwlarrTopics": "Parties à afficher",
+    "overviewNewFeatureJellystatTitle": "Un widget Jellystat : qui a regardé quoi",
+    "overviewNewFeatureJellystatWhat": "Jellyfin dit ce qui a été ajouté, pas qui regarde, ce qui a été le plus lu ni combien de temps cela représente. Jellystat garde cet historique.",
+    "overviewNewFeatureJellystatHow": "Le widget Jellystat montre les lectures récentes, les plus regardés, les personnes les plus actives et une ligne de totaux, chaque partie au choix. Après la connexion, il propose vos bibliothèques ; seuls les totaux et les lectures récentes suivent ce choix.",
+    "overviewNewFeatureJellystatEnable": "Config → Widgets → Ajouter un widget → Jellystat. La clé se trouve sous Settings → API Keys dans Jellystat.",
+    "overviewNewFeatureJellystatCta": "Ouvrir les widgets →",
+    "overviewNewFeatureBazarrTitle": "Un widget Bazarr : quels sous-titres manquent",
+    "overviewNewFeatureBazarrWhat": "Bazarr récupère les sous-titres tout seul, mais savoir s’il les a tous, et dans quelle langue, voulait dire ouvrir Bazarr.",
+    "overviewNewFeatureBazarrHow": "Le widget Bazarr liste les films et épisodes auxquels il manque encore un sous-titre avec les langues voulues, ceux récupérés récemment avec le fournisseur et la note, et une ligne de totaux avec les fournisseurs en difficulté.",
+    "overviewNewFeatureBazarrEnable": "Config → Widgets → Ajouter un widget → Bazarr. La clé se trouve sous Settings → General → Security dans Bazarr.",
+    "overviewNewFeatureBazarrCta": "Ouvrir les widgets →",
+    "overviewNewFeatureProwlarrTitle": "Un widget Prowlarr : comment vont les indexeurs",
+    "overviewNewFeatureProwlarrWhat": "Un indexeur qui échoue ou devient lent ne se remarque que lorsqu’une recherche revient vide.",
+    "overviewNewFeatureProwlarrHow": "Le widget Prowlarr montre les indexeurs actifs avec leurs requêtes, leurs récupérations et leurs temps de réponse, ce qui demande de l’attention (les messages de santé de Prowlarr et les indexeurs qu’il a mis en pause) et une ligne de totaux.",
+    "overviewNewFeatureProwlarrEnable": "Config → Widgets → Ajouter un widget → Prowlarr. La clé se trouve sous Settings → General → Security dans Prowlarr.",
+    "overviewNewFeatureProwlarrCta": "Ouvrir les widgets →"
   },
   "colors": {
     "title": "personnalisation du thème",

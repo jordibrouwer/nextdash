@@ -2,6 +2,54 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureJellystatTitle",
+      "titleFallback": "A Jellystat widget: who watched what",
+      "whatKey": "config.overviewNewFeatureJellystatWhat",
+      "whatFallback": "Jellyfin tells you what was added, not who is watching, what was played most or how much time went by. Jellystat keeps that history.",
+      "howKey": "config.overviewNewFeatureJellystatHow",
+      "howFallback": "The Jellystat widget shows the recent plays, the most viewed, the most active people and a line of totals, each part optional. After Connect it offers your libraries; only the totals and the recent plays follow that choice.",
+      "enableKey": "config.overviewNewFeatureJellystatEnable",
+      "enableFallback": "Config → Widgets → Add widget → Jellystat. The key comes from Settings → API Keys in Jellystat.",
+      "ctaKey": "config.overviewNewFeatureJellystatCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.28.1"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBazarrTitle",
+      "titleFallback": "A Bazarr widget: which subtitles are missing",
+      "whatKey": "config.overviewNewFeatureBazarrWhat",
+      "whatFallback": "Bazarr fetches subtitles by itself, but knowing whether it has them all, and in which language, meant opening Bazarr.",
+      "howKey": "config.overviewNewFeatureBazarrHow",
+      "howFallback": "The Bazarr widget lists the movies and episodes that still miss a subtitle with the languages wanted, the ones fetched lately with provider and score, and a line of totals with the providers in trouble.",
+      "enableKey": "config.overviewNewFeatureBazarrEnable",
+      "enableFallback": "Config → Widgets → Add widget → Bazarr. The key is under Settings → General → Security in Bazarr.",
+      "ctaKey": "config.overviewNewFeatureBazarrCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.28.1"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureProwlarrTitle",
+      "titleFallback": "A Prowlarr widget: how the indexers are doing",
+      "whatKey": "config.overviewNewFeatureProwlarrWhat",
+      "whatFallback": "An indexer that fails or slows down only shows when a search comes back empty.",
+      "howKey": "config.overviewNewFeatureProwlarrHow",
+      "howFallback": "The Prowlarr widget shows the indexers that are on with their queries, grabs and answer times, what needs attention (Prowlarr’s health messages and the indexers it paused) and a line of totals.",
+      "enableKey": "config.overviewNewFeatureProwlarrEnable",
+      "enableFallback": "Config → Widgets → Add widget → Prowlarr. The key is under Settings → General → Security in Prowlarr.",
+      "ctaKey": "config.overviewNewFeatureProwlarrCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.28.1"
+    },
+    {
       "titleKey": "config.overviewNewFeatureKeySchemeTitle",
       "titleFallback": "One set of keys for every view",
       "whatKey": "config.overviewNewFeatureKeySchemeWhat",

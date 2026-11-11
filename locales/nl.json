@@ -11121,7 +11121,22 @@
     "widgetProwlarrTopicIndexers": "Indexers",
     "widgetProwlarrTopicIssues": "Vraagt aandacht",
     "widgetProwlarrTopicTotals": "Totalenregel",
-    "widgetProwlarrTopics": "Onderdelen om te tonen"
+    "widgetProwlarrTopics": "Onderdelen om te tonen",
+    "overviewNewFeatureJellystatTitle": "Een Jellystat-widget: wie keek wat",
+    "overviewNewFeatureJellystatWhat": "Jellyfin vertelt wat er is toegevoegd, niet wie er kijkt, wat het vaakst is afgespeeld of hoeveel tijd erin zit. Jellystat bewaart die geschiedenis.",
+    "overviewNewFeatureJellystatHow": "De Jellystat-widget toont wat er recent is afgespeeld, de meest bekeken titels, de meest actieve mensen en een regel met totalen, elk onderdeel naar keuze. Na Verbinden biedt hij je bibliotheken aan; alleen de totalen en het recent afgespeelde volgen die keuze.",
+    "overviewNewFeatureJellystatEnable": "Config → Widgets → Widget toevoegen → Jellystat. De sleutel haal je uit Settings → API Keys in Jellystat.",
+    "overviewNewFeatureJellystatCta": "Widgets openen →",
+    "overviewNewFeatureBazarrTitle": "Een Bazarr-widget: welke ondertitels ontbreken",
+    "overviewNewFeatureBazarrWhat": "Bazarr haalt ondertitels zelf op, maar weten of hij ze allemaal heeft, en in welke taal, betekende Bazarr openen.",
+    "overviewNewFeatureBazarrHow": "De Bazarr-widget toont de films en afleveringen waar nog een ondertitel aan ontbreekt met de gewenste talen, de laatst opgehaalde met provider en score, en een regel met totalen met de providers die problemen hebben.",
+    "overviewNewFeatureBazarrEnable": "Config → Widgets → Widget toevoegen → Bazarr. De sleutel staat onder Settings → General → Security in Bazarr.",
+    "overviewNewFeatureBazarrCta": "Widgets openen →",
+    "overviewNewFeatureProwlarrTitle": "Een Prowlarr-widget: hoe het met de indexers gaat",
+    "overviewNewFeatureProwlarrWhat": "Een indexer die faalt of traag wordt, merk je pas als een zoekopdracht leeg terugkomt.",
+    "overviewNewFeatureProwlarrHow": "De Prowlarr-widget toont de indexers die aan staan met hun zoekopdrachten, grabs en antwoordtijden, wat aandacht vraagt (de gezondheidsmeldingen van Prowlarr en de indexers die het heeft gepauzeerd) en een regel met totalen.",
+    "overviewNewFeatureProwlarrEnable": "Config → Widgets → Widget toevoegen → Prowlarr. De sleutel staat onder Settings → General → Security in Prowlarr.",
+    "overviewNewFeatureProwlarrCta": "Widgets openen →"
   },
   "colors": {
     "title": "thema-aanpassing",
