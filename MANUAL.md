@@ -3254,6 +3254,18 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **Sonarr**, **Radarr** | The episodes and films coming up in the next days (a week unless you choose up to 30), a film released today staying on the list until the day is over, and what is downloading, with posters. The same four layouts; in the strip, *Upcoming* and *Queue* are the tabs |
 | **Seerr** | Requests in Overseerr or Jellyseerr, under *Pending*, *Approved* and *Available*, with who asked and the poster. Show every request or one state, films, series or both, from everyone or one person |
 | **qBittorrent**, **SABnzbd** | What is downloading, paused and finished, with progress, speed and time left, and the client's speeds and counts on top. As one list or a tab per part (*Downloading*, *Paused*, *Done*). Without posters, and in the order you choose |
+| **Jellystat** | Who watched what, from Jellystat: the **recent plays** (title, who, how long ago), the **most viewed** and the **most active people** over a period you choose, and a line of **totals** (plays and time watched). Each part is optional. Narrow, one part at a time behind small tabs; two columns wide, side by side |
+| **Bazarr** | The subtitles that are missing, with the languages still wanted (`nl`, `en+hi`, `en+forced`), movies and episodes taking turns; the subtitles **fetched lately**, with the language, the provider, Bazarr's score and *upgraded* where one replaced an older one; and a line of **totals**: movies missing, episodes missing and providers in trouble. Each part is optional |
+| **Prowlarr** | The **indexers** that are on, with their queries, grabs, failures and average answer time, a paused one first; **what needs attention**, which is Prowlarr's own health messages and the indexers it has paused, with when they are tried again; and a line of **totals**. Each part is optional |
+
+<p align="center"><img src="screenshots/manual.md/15-jellystat.jpg" alt="The Jellystat tile, two columns wide: a line of totals with 214 plays and 61 hours watched, and beside each other the recent plays, the most viewed and the most active people" width="560"></p>
+<p align="center"><sub>Jellystat, two columns wide: totals on top, then the recent plays, the most viewed and the most active people.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/15-bazarr.jpg" alt="The Bazarr tile, two columns wide: totals of 18 movies and 3 episodes missing and no provider in trouble, with the missing subtitles and the recently fetched ones beside each other, each with its language chips" width="560"></p>
+<p align="center"><sub>Bazarr: what is still missing, in which language, and what came in lately, with the provider and the score.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/15-prowlarr.jpg" alt="The Prowlarr tile, two columns wide: five of seven indexers on, queries, grabs and failures in the totals, the indexers with a paused one first, and what needs attention beside them" width="560"></p>
+<p align="center"><sub>Prowlarr: the indexers with their queries and answer times, a paused one first, and what needs attention.</sub></p>
 
 *What is the network blocking?*
 
@@ -3295,6 +3307,9 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 | **Domains** | **Expiring within (days)** (1 to 730, 60 by default), **Rows to show** |
 | **Health trend** | **Days to plot** (7 to 90, 30 by default) |
 | **Network tests** | **What to show** (a table of the scheduled checks you already have, 40 at most; there is no free host), **Look** (Rows, Tiles, Heartbeat), **Order** (Problems first, Name), **Rows to show** (1 to 20), **Refresh every (seconds)** (30 to 3600, 60 by default). An exported page template keeps no check ids |
+| **Jellystat** | **Topics to show** (recent plays, most viewed, most active people, totals line), **Period (days)** (1 to 365, 30 by default), **Libraries** (offered after Connect; only the totals and the recent plays follow them), **A click**, where it opens, **Items to show** (1 to 20, 5 by default), **Refresh every (seconds)** (60 to 3600, 300 by default) |
+| **Bazarr** | **Topics to show** (missing subtitles, recently fetched, totals line), **A click**, where it opens, **Items to show** (1 to 20, 5 by default), **Refresh every (seconds)** (60 to 3600, 300 by default) |
+| **Prowlarr** | **Topics to show** (indexers, needs attention, totals line), **Period (days)** (1 to 365, 7 by default), **A click**, where it opens, **Items to show** (1 to 20, 5 by default), **Refresh every (seconds)** (60 to 3600, 300 by default) |
 | **Inbox** | **Rows to show**, **Show where each link came from** (on) |
 | **Sources** | **Only sources that failed**, **Rows to show** |
 | **Neglected** | **Not opened for (days)** (7 to 730, 180 by default), **Count bookmarks never opened** (on), **Only bookmarks with these tags**, **Rows to show** |
@@ -3313,8 +3328,11 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 
 **Add widget** opens the picker. Type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the kinds are grouped, and the pane beside the list shows the kind you are on, with a small drawing of what it shows. With more than one page, a **page select** in the picker says where the widget goes. The first `Escape` empties the search, the next closes the picker.
 
+<p align="center"><img src="screenshots/manual.md/16-widget-picker.jpg" alt="The Add widget picker: a search box and the kinds grouped by the question they answer, the Media group with Jellystat, Bazarr and Prowlarr among them, and beside the list a small drawing of Bazarr's tile" width="720"></p>
+<p align="center"><sub>The picker: the kinds grouped by the question they answer, and what the chosen one shows.</sub></p>
+
 - A kind that needs nothing, such as Notes, is added at once, on the page you picked.
-- A kind that talks to a service (the media kinds: Jellyfin, Emby, Plex, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd) opens a **Connect** screen: the address and, where it has one, the key. **Test** tries them and says what it found, or what to fix. A failed test never blocks you: **Add anyway** (or **Add without testing**) adds the widget as it is, and you can correct it in its settings.
+- A kind that talks to a service (the media kinds: Jellyfin, Emby, Plex, Sonarr, Radarr, Seerr, Jellystat, Bazarr, Prowlarr, qBittorrent and SABnzbd) opens a **Connect** screen: the address and, where it has one, the key. **Test** tries them and says what it found, or what to fix. A failed test never blocks you: **Add anyway** (or **Add without testing**) adds the widget as it is, and you can correct it in its settings.
 - **Custom** is one of the kinds in the picker, under *And anything else*: any address that answers with JSON. Test the address on the Connect screen, add the widget, and choose its figures afterwards in the widget's settings ([§16.5](#165-the-custom-widget)).
 - Beszel, Home Assistant, Unraid and Glances keep their connection in the widget's settings for now; they are added straight away and filled in there.
 
@@ -3365,16 +3383,19 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 
 **Emby** — set up exactly like Jellyfin, with the Emby server's address and an API key (Emby: Dashboard → API Keys). **Plex** — the address is **Tautulli's**, not Plex's, and the key is Tautulli's API key (Settings → Web Interface → API key): it only reads, where Plex's own token opens the whole account. After Connect it offers the libraries; Tautulli has no user to read as. Pictures come through the nextDash server, so a key never sits in a page. Each *now playing* tile is set up the same way as the widget it belongs to.
 
-**Sonarr**, **Radarr**, **Seerr**, **qBittorrent**, **SABnzbd** — set up the way Jellyfin is: the address, the key and **Connect**, which says *Connected to* with the version. Where to find the key:
+**Sonarr**, **Radarr**, **Seerr**, **Jellystat**, **Bazarr**, **Prowlarr**, **qBittorrent**, **SABnzbd** — set up the way Jellyfin is: the address, the key and **Connect**, which says *Connected to* with the version. Where to find the key:
 
 | Service | Key | Chosen after Connect |
 |---|---|---|
 | Sonarr, Radarr | Settings → General → API Key | — |
 | Seerr | Settings → General → API Key, with the `==` at the end. A key copied without it is mended | **Requested by**: everyone, or one person |
+| Jellystat | Settings → API Keys | **Libraries**: all, or some. Only the totals and the recent plays follow the choice; the most viewed and the most active count every library |
+| Bazarr | Settings → General → Security | — |
+| Prowlarr | Settings → General → Security | — |
 | qBittorrent | **Sign in with** **Username and password** (every version), or **API key** (Options → WebUI, 5.2 and later) | **Category**: all, or one |
 | SABnzbd | Config → General → API Key | — |
 
-Then the settings of the kind. Sonarr and Radarr: **Show** (what is coming, what is downloading, or both) and **Look ahead** (1–30 days). Seerr: **Show** (every request, waiting for approval, approved and on its way, or arrived) and **Films or series**. qBittorrent and SABnzbd: **Show** (everything, downloading, paused or finished), **Order** (newest, furthest along or fastest first), **Leave out what has finished**, **Leave out the speeds on top**, and a layout of **One list** or **A tab per part**. All of them: **A click** (open the item in the service, or show its details here first), where it opens, **Items to show** and **Refresh every** — a minute at least for the first three, 15 seconds for the download clients, which change while you look. The keys stay on the server, as with Jellyfin. Seerr's posters come from TMDB, which your server fetches without any key. A failure keeps the last answer and says how old it is; a refused key or sign-in says so on the tile.
+Then the settings of the kind. Sonarr and Radarr: **Show** (what is coming, what is downloading, or both) and **Look ahead** (1–30 days). Seerr: **Show** (every request, waiting for approval, approved and on its way, or arrived) and **Films or series**. Jellystat, Bazarr and Prowlarr: **Topics to show**, one switch per part, and for Jellystat and Prowlarr a **Period** of 1 to 365 days (30 and 7 by default). A figure a service could not give shows as a dash, never as a zero, and the tile says that part of it could not be read; Bazarr's times are read in the time zone Bazarr reports, and Prowlarr's search history is never read, because it carries the key of every search. qBittorrent and SABnzbd: **Show** (everything, downloading, paused or finished), **Order** (newest, furthest along or fastest first), **Leave out what has finished**, **Leave out the speeds on top**, and a layout of **One list** or **A tab per part**. All of them: **A click** (open the item in the service, or show its details here first), where it opens, **Items to show** and **Refresh every** — a minute at least for the first three, 15 seconds for the download clients, which change while you look. The keys stay on the server, as with Jellyfin. Seerr's posters come from TMDB, which your server fetches without any key. A failure keeps the last answer and says how old it is; a refused key or sign-in says so on the tile.
 
 **Home Assistant** — fill in the address of your Home Assistant (`http://homeassistant.local:8123`) and a **long-lived access token** (Home Assistant: your profile, under Security) and press **Connect**. The server lists your entities in a searchable list you can narrow by kind (lights, switches, sensors, scenes and so on); pick up to 60 and set their order with ↑ and ↓. Then the **Layout** (a **list** of loose items, or a **strip** with a tab per room), **Group by** (room, kind or nothing), **Show since when**, what **A click** does, where it opens, **Items to show** and **Refresh every** (15 seconds at least, 30 by default). Lights, switches, fans and `input_boolean` entities switch with one click and a scene or a script has a **Start** button; switching needs the write token, like the other actions. A lock, a cover or a door is shown and never operated. The token stays on the server.
 
