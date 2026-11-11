@@ -42,8 +42,11 @@
      * the page calm. Down beats warn beats ok.
      */
     function healthNow() {
-        const down = document.querySelectorAll('.health-badge-down, .bookmark-link.status-offline').length;
-        if (down > 0) return { state: 'down', count: down };
+        // The badge decides the state; the count is the rows, so one outage is
+        // one and not the badge plus its row.
+        const rows = document.querySelectorAll('.bookmark-link.status-offline').length;
+        const badge = document.querySelector('.health-badge-down');
+        if (rows > 0 || badge) return { state: 'down', count: Math.max(rows, badge ? 1 : 0) };
         const warn = document.querySelectorAll('.health-badge:not(.health-badge-warn):not(.health-badge-down)').length;
         if (warn > 0) return { state: 'warn', count: warn };
         return { state: 'ok', count: 0 };
@@ -184,6 +187,9 @@
             root.style.setProperty('--dd-rise', String(o.rise));
             document.body.setAttribute('data-living-body', o.body);
             document.body.setAttribute('data-living-lit', o.lit);
+            // The mobile/PWA chrome follows the page; theme-loader only syncs
+            // it on a theme switch, and the page moves on its own here.
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', p.page);
         }
         tick();
         // Three minutes is far finer than the eye follows a sky, and a
