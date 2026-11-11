@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.28.2 — 11 November 2026](#v1282--11-november-2026)
 - [v1.28.1 — 11 November 2026](#v1281--11-november-2026)
 - [v1.28.0 — 10 November 2026](#v1280--10-november-2026)
 - [v1.27.4 — 9 November 2026](#v1274--9-november-2026)
@@ -140,6 +141,42 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.28.2 — 11 November 2026
+
+Eight new theme groups, 25 families in light and dark, each built around an idea that goes beyond colour: one bookmark per line with room between them, a page that follows the health of your services, a row drawn as a label strip, a page drawn as a map. In the theme studio each group has its own chip in the Character row and on the card badge, and each family has a backdrop of its own.
+
+### Theme groups
+
+- **new — Stationery.** One bookmark per line, with room between the lines as the only separator. **Ledger** (cream, serif, a dotted leader from the name to the shortcut letters, numbered lines), **Swiss Poster** (grotesque type with one cobalt accent, a huge numeral and a heavy rule above every category and widget, the numerals running on from one category to the next, a keyboard row inverted to a solid block), **Typewriter** (an index card with a punched edge, a red ribbon heading and typed leaders, the same card for widgets) and **Zen** (a hanging scroll between two rollers, the title as a red stamp, widgets on the same paper). The Rows settings still apply (`theme_group_stationery.go`, `theme-group-stationery.css`, `theme-group-stationery.js`).
+- **new — Living.** The theme answers to your data. **Tidewatch** draws a waterline whose level follows the health of your services: low teal water when everything is up, amber for a dead link, a high coral surge when something is down. **Daydrift** moves its palette through the day by the local clock, with a sun or moon crossing an arc. **Skywatch** shows the weather from the weather widget's own cache (the clock when there is none) as a glyph, with rain, fog, snow, sun and stars drawn in CSS and the categories as window panes. It makes no request of its own, stops when you leave the theme, and stands still under reduced motion and with Effects off (`theme_group_living.go`, `theme-group-living.css`, `theme-group-living.js`).
+- **new — Instrument.** The history is in the row. **Cockpit** (a wireframe HUD with corner brackets and no fill), **Oscilloscope** (a CRT screen per category with bezel, screws, graticule and phosphor glow) and **Dive Computer** (a metal pill with a depth ruler and a ring gauge for up and total). A row that has a heartbeat history or a measured ping gets a trace and a bar; a row without either gets nothing, never invented data. A category head shows *up/total* and a segmented meter (`theme_group_instrument.go`, `theme-group-instrument.css`, `theme-group-instrument.js`).
+- **new — Tactile.** The row is a physical thing. **Label Maker** (laminated tape strips in white, yellow, blue, red and green with black print and cut ends, a cassette head with a spool), **Keycap** (keys that sink when pressed) and **Rack Unit** (plates with two screws each and a status lamp). Widget lines and the Notes text take the same objects as the category rows, and a widget has the same pane as a category. With reduced motion or Effects off a press changes colour and nothing moves. Status keeps a shape of its own, not only a colour (`theme_group_tactile.go`, `theme-group-tactile.css`).
+- **new — Spatial.** Depth, drawn so that it shows without moving the mouse. **Diorama** (cut-paper sheets with torn and stepped edges, a pin and a hard shadow), **Lightbox** (black slide mounts with sprocket holes and backlit film, a lamp under the cursor) and **Orbit** (square star-field panels with planets on ring lines). The pointer only writes two CSS variables, once per frame; nothing that holds content is ever transformed, so drag and drop, menus and popovers keep working. It stays still on touch screens, with reduced motion and with Effects off (`theme_group_spatial.go`, `theme-group-spatial.css`, `theme-group-spatial.js`).
+- **new — Cartographic.** The page is a map. **Atlas** (pins with a dashed leader to a grid coordinate such as `B3`, a frame with latitude and longitude ticks, contour lines), **Nautical** (a sea chart with double-line cut-outs, soundings, a degrees and minutes ruler and a compass rose) and **Subway Map** (a line colour per category, a station dot per bookmark, an interchange on the last row, *delayed* and *out of service* tags from the status the row already has). The coordinates are decoration; shortcuts and search are unchanged (`theme_group_cartographic.go`, `theme-group-cartographic.css`).
+- **new — Riso.** A two-ink print. **Riso Pink-Blue** (blue ink with a hard pink block shadow, solid heads, halftone corners), **Riso Green-Orange** (a stamp look with a double outline and heads tilted a degree) and **Mimeograph** (one faded purple ink, speckled and bleeding). Light halves overprint with multiply; menus and the side panel stay plain (`theme_group_riso.go`, `theme-group-riso.css`).
+- **new — Legible.** Accessibility as a style. **High Contrast Calm** is airport signage: square panels with a banded title, ruled strips with a pictogram, black bands on light grey by day and yellow on black by night. **Low Vision Amber** is amber on black and dark amber on warm white. **Colour-blind Safe** uses a blue and orange pair and different shapes for different states. Rows are at least 44 px, the keyboard row has a 4 px ring, status is a shape and a word, nothing animates, and text keeps at least 7:1 against its background, measured on the real page over the backdrop (`theme_group_legible.go`, `theme-group-legible.css`).
+- **new — The 25 new families wear the **new** badge.** The list in `theme_new.go` is replaced, as the file says the next collection does, so the earlier 62 families stop being new and the **New** segment and searching `new` show only this release's families (`theme_new.go`, `tests/config-theme-browser-new.spec.js`).
+
+### Backdrops
+
+- **new — Eighteen backdrops, drawn for one family each:** `gallerywall` and `typesheet` and `zenwash` (Stationery: a gallery with arched doorways, now a Swiss modular grid; a pile of typing paper; a raked gravel garden), `sundial` and `cloudstrata` (Living: hour lines and sun paths, stacked cloud banks), `hudhorizon` and `decocurve` (Instrument: an artificial horizon with a pitch ladder, a dive profile with bubbles), `labeltape`, `keycapfield` and `rackcables` (Tactile), `papercuts` and `filmstrip` (Spatial), `metrolines` (Cartographic: a transit network), `stampfield` and `inkspeckle` (Riso) and `softsquares`, `amberhorizon` and `shapetiles` (Legible: quiet enough to keep the contrast). That makes 285 backdrops. The other seven families keep an existing one (`swells`, `cellgrid`, `stars`, `topo`, `oceanblue`, `halftone`, `ruled`) (`theme_backdrop_g_*.go`, `theme_backdrop_catalog.go`).
+
+### Layout
+
+- **fix — Five and six columns now work on a wide window.** The page was a container with a ceiling of 1600px, and the side margin comes out of it, so five columns barely fit and six never did, on any screen: the setting offered 6 and drew 4, or 5 on a window of about 1900px. The ceiling now follows the setting: it stays 1600px for up to four columns and grows to what the asked-for columns need at their minimum width, set on the root so the header and every view line up with the grid. A narrower window still keeps only the columns that fit (`dashboard-render-core.js`, `dashboard.css`, `tests/dashboard-columns-fit.spec.js`).
+
+### Under the hood
+
+- **new — One file per theme group.** `theme_groups.go` merges the palettes of every group into the built-in themes and never replaces an id that is already there; a group's id prefix files it under its chip (`theme_archetype.go`). Each group brings its own stylesheet, its own script when it needs one, and its own spec (`tests/theme-group-*.spec.js`).
+
+### Docs
+
+- **docs — Translations, Help and tips.** 41 keys in all six languages: the eight group labels, the 25 family descriptions (the theme browser now reads `config.themeDesc.<family>` and falls back to the English line), five words the new themes draw in CSS (*online*, *checking*, *offline*, *out of service*, *delayed*, set as custom properties by `theme-group-words.js`, with `nextdash:translations-applied` now fired on every language change), and a tip about the theme groups (`tipTuneThemeGroups`). Help says 220 families, 440 themes and 285 backdrops and names the groups; the backdrop and theme browser tips carry the new numbers.
+- **docs — Manual and README.** 440 themes, 220 families and 285 backdrops everywhere; a Theme groups bullet in §17.1 with the eight groups, a paragraph in §17.2 that groups are not materials, the 18 new backdrops in §17A.4, and the **new** badge line. The README names Tarnished Brass as the starting theme, as the manual does, and its two theme montages say they show 192 of the 220 until they are retaken.
+- **docs — nextdash.cc.** The front page, the features index, the compare page and the gallery slider say 440 themes, 220 families, 285 backdrops and 58 widget kinds; the gallery has the 50 new themes with new pictures and eight new group chips; `feature-pages/v1.28.2-pages.php` updates the themes page text.
 
 ---
 
