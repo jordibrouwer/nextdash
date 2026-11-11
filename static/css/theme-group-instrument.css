@@ -1,0 +1,488 @@
+/*
+ * The instrument theme group; see internal/app/theme_groups.go.
+ * Keyed on html[data-theme^="instrument-"].
+ *
+ * The group is not a palette on the usual card. Each family replaces what a
+ * category IS with an instrument, and the data the script adds
+ * (static/js/theme-group-instrument.js) is what the instrument shows:
+ *
+ *   cockpit      no surface at all: a wireframe HUD of corner brackets and
+ *                hairlines, a histogram of each row's history
+ *   oscilloscope a CRT per category: bezel, screws, a graticule inside the
+ *                screen, the history drawn large as a glowing trace
+ *   dive         a pill-shaped metal bezel, an arc gauge for up/total and a
+ *                depth scale down the row edge
+ *
+ * The material underneath (terminal, neon, carbon) still draws a card with
+ * its own ::before. The rules below therefore state what they replace with
+ * !important -- those rules are written for every material at once and
+ * outrank a plain family selector -- and the pseudo-elements are reset with
+ * `all: initial` before they are redrawn.
+ *
+ * The gauges are absolutely positioned inside the row, so they never take a
+ * cell of its subgrid and never catch a click.
+ */
+
+html[data-theme^="instrument-"] {
+    --ig-ok: var(--accent-success);
+    --ig-bad: var(--accent-error);
+    --ig-warn: var(--accent-warning);
+    --ig-trace: var(--accent-primary);
+    --ig-track: color-mix(in srgb, var(--text-primary) 16%, transparent);
+    --ig-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Readouts are numbers: tabular mono wherever the group puts one. */
+html[data-theme^="instrument-"] :is(.ig-ms, .ig-count, .category-title, .category-title-count, .status-text) {
+    font-family: var(--ig-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* What every family drops: the card's fill, edge, light and blur. */
+html[data-theme^="instrument-"] .category {
+    background-image: none !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    position: relative;
+}
+
+html[data-theme^="instrument-"] .category::before,
+html[data-theme^="instrument-"] .category::after {
+    all: initial !important;
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    pointer-events: none !important;
+}
+
+html[data-theme^="instrument-"] .category-title {
+    position: relative;
+}
+
+/* ---- shared gauge parts ---- */
+
+html[data-theme^="instrument-"] .bookmark-link[data-ig] :is(.bookmark-lead, .bookmark-open, .bookmark-shortcut) {
+    position: relative;
+    z-index: 1;
+}
+
+.ig-gauge {
+    position: absolute;
+    z-index: 0;
+    inset-block: 0;
+    inset-inline-end: 2.4rem;
+    pointer-events: none;
+    color: var(--text-secondary);
+    font-family: var(--ig-mono);
+    font-size: 0.72rem;
+}
+
+.ig-spark,
+.ig-hist {
+    position: absolute;
+    display: none;
+    overflow: visible;
+}
+
+.ig-trace {
+    fill: none;
+    stroke: var(--ig-trace);
+    stroke-width: 2.2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.ig-hist rect { fill: var(--ig-trace); }
+.ig-hist rect[data-s="degraded"] { fill: var(--ig-warn); }
+.ig-hist rect[data-s="down"] { fill: var(--ig-bad); }
+
+.ig-gauge[data-ig-state="down"] .ig-trace { stroke: var(--ig-bad); }
+
+.ig-ms {
+    position: absolute;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.ig-bar {
+    position: absolute;
+    overflow: hidden;
+    background: var(--ig-track);
+}
+
+.ig-bar > i {
+    display: block;
+    height: 100%;
+    background: var(--ig-ok);
+    transition: width 0.5s ease;
+}
+
+.ig-gauge[data-ig-slow] .ig-bar > i { background: var(--ig-warn); }
+.ig-gauge[data-ig-state="down"] .ig-bar > i { background: var(--ig-bad); }
+
+.ig-count {
+    margin-inline-end: 0.7em;
+    font-size: 0.74em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--ig-ok);
+}
+
+.ig-meter { display: none; pointer-events: none; }
+.ig-meter > i { flex: 1 1 0; min-width: 1px; background: var(--ig-track); }
+.ig-meter > i[data-s="up"] { background: var(--ig-ok); }
+.ig-meter > i[data-s="down"] { background: var(--ig-bad); }
+
+.ig-ring, .ig-edge { display: none; pointer-events: none; }
+
+/* =================================================================
+   COCKPIT: a wireframe HUD
+   ================================================================= */
+
+html[data-theme^="instrument-cockpit-"] {
+    --ig-line: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    --ig-hair: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    --ig-warn: #FFB020;
+}
+html[data-theme="instrument-cockpit-light"] { --ig-warn: #8A5A00; }
+
+html[data-theme^="instrument-cockpit-"] .category {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 16px 14px 14px !important;
+}
+
+/* Eight short strokes: the four brackets of a head-up display. */
+html[data-theme^="instrument-cockpit-"] .category::before {
+    inset: 0 !important;
+    background:
+        linear-gradient(var(--accent-primary), var(--accent-primary)) top left / 20px 2px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) top left / 2px 20px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) top right / 20px 2px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) top right / 2px 20px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) bottom left / 20px 2px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) bottom left / 2px 20px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) bottom right / 20px 2px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) bottom right / 2px 20px no-repeat !important;
+}
+
+/* The frame between them is a hairline, and a tick every so often. */
+html[data-theme^="instrument-cockpit-"] .category::after {
+    inset: 0 !important;
+    border: 1px solid var(--ig-hair) !important;
+    background:
+        repeating-linear-gradient(90deg, var(--ig-line) 0 1px, transparent 1px 24px) top / 100% 4px no-repeat,
+        repeating-linear-gradient(90deg, var(--ig-line) 0 1px, transparent 1px 24px) bottom / 100% 4px no-repeat !important;
+}
+
+html[data-theme^="instrument-cockpit-"] .category-title {
+    justify-content: center !important;
+    text-align: center;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--ig-line);
+    letter-spacing: 0.22em;
+}
+
+html[data-theme^="instrument-cockpit-"] .category-title-trailing {
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-start: 0;
+}
+
+html[data-theme^="instrument-cockpit-"] .category-title-name::before,
+html[data-theme^="instrument-cockpit-"] .category-title::before { content: none !important; }
+
+html[data-theme^="instrument-cockpit-"] .bookmark-link[data-ig] .bookmark-open {
+    padding-inline-end: 9.4rem;
+}
+
+html[data-theme^="instrument-cockpit-"] .ig-gauge { width: 8.8rem; }
+
+html[data-theme^="instrument-cockpit-"] .ig-hist {
+    display: block;
+    inset-inline-start: 0;
+    width: 5.6rem;
+    inset-block: 7px 11px;
+    height: auto;
+}
+
+html[data-theme^="instrument-cockpit-"] .ig-ms {
+    inset-inline-end: 0;
+    inset-block-start: 50%;
+    width: 3.1rem;
+    transform: translateY(-62%);
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* A segmented bar under the readouts: HUD cells, not a rule. */
+html[data-theme^="instrument-cockpit-"] .ig-bar {
+    inset-inline: 0;
+    inset-block-end: 4px;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, var(--ig-hair) 0 5px, transparent 5px 7px);
+    -webkit-mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 7px);
+    mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 7px);
+}
+
+html[data-theme^="instrument-cockpit-"] .ig-bar > i { background: var(--ig-ok); }
+
+html[data-theme^="instrument-cockpit-"] .ig-meter {
+    display: flex;
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: -1px;
+    gap: 3px;
+    height: 3px;
+}
+
+/* =================================================================
+   OSCILLOSCOPE: every category a CRT screen
+   ================================================================= */
+
+html[data-theme^="instrument-oscilloscope-"] {
+    --ig-screen: #050a05;
+    --ig-screen-lit: #0e1a0d;
+    --ig-grat: rgba(156, 255, 87, 0.13);
+    --ig-grat-axis: rgba(156, 255, 87, 0.3);
+    --ig-bezel: #2b2f2a;
+    --ig-bezel-edge: #11130f;
+    --ig-screw: #8d968a;
+}
+html[data-theme="instrument-oscilloscope-light"] {
+    --ig-screen: #d9e6c8;
+    --ig-screen-lit: #eaf3dc;
+    --ig-grat: rgba(40, 80, 10, 0.16);
+    --ig-grat-axis: rgba(40, 80, 10, 0.34);
+    --ig-bezel: #b9bfb0;
+    --ig-bezel-edge: #8b9283;
+    --ig-screw: #5f665a;
+}
+
+html[data-theme^="instrument-oscilloscope-"] .category {
+    border: 10px solid var(--ig-bezel) !important;
+    border-radius: 30px !important;
+    padding: 12px 10px 14px !important;
+    /* The graticule lives inside the screen: eight divisions of fine lines,
+       a brighter centre axis, and a phosphor-lit middle fading to the edge. */
+    background:
+        linear-gradient(var(--ig-grat-axis), var(--ig-grat-axis)) center / 100% 1px no-repeat,
+        linear-gradient(var(--ig-grat-axis), var(--ig-grat-axis)) center / 1px 100% no-repeat,
+        repeating-linear-gradient(0deg, var(--ig-grat) 0 1px, transparent 1px 32px),
+        repeating-linear-gradient(90deg, var(--ig-grat) 0 1px, transparent 1px 32px),
+        radial-gradient(ellipse at 50% 45%, var(--ig-screen-lit), var(--ig-screen) 85%) !important;
+    box-shadow:
+        inset 0 0 0 3px var(--ig-bezel-edge),
+        inset 0 0 38px rgba(0, 0, 0, 0.55),
+        0 0 0 1px var(--ig-bezel-edge),
+        0 6px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Four screws in the bezel. */
+html[data-theme^="instrument-oscilloscope-"] .category::before {
+    inset: -10px !important;
+    background:
+        radial-gradient(circle, var(--ig-screw) 0 38%, var(--ig-bezel-edge) 40% 72%, transparent 74%) top 5px left 5px / 9px 9px no-repeat,
+        radial-gradient(circle, var(--ig-screw) 0 38%, var(--ig-bezel-edge) 40% 72%, transparent 74%) top 5px right 5px / 9px 9px no-repeat,
+        radial-gradient(circle, var(--ig-screw) 0 38%, var(--ig-bezel-edge) 40% 72%, transparent 74%) bottom 5px left 5px / 9px 9px no-repeat,
+        radial-gradient(circle, var(--ig-screw) 0 38%, var(--ig-bezel-edge) 40% 72%, transparent 74%) bottom 5px right 5px / 9px 9px no-repeat !important;
+}
+
+/* The dim persistence glow of the tube, above the graticule. */
+html[data-theme^="instrument-oscilloscope-"] .category::after {
+    inset: 0 !important;
+    border-radius: 20px !important;
+    background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--accent-primary) 9%, transparent), transparent 70%) !important;
+}
+
+html[data-theme^="instrument-oscilloscope-"] .category > * { position: relative; z-index: 1; }
+
+html[data-theme^="instrument-oscilloscope-"] .category-title {
+    letter-spacing: 0.18em;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--ig-grat-axis);
+}
+
+html[data-theme^="instrument-oscilloscope-"] .bookmark-link[data-ig] .bookmark-open {
+    padding-inline-end: 4.2rem;
+}
+
+/* The history, large: it fills the right half of the row, behind the text. */
+html[data-theme^="instrument-oscilloscope-"] .ig-gauge {
+    inset-inline-start: 40%;
+    inset-inline-end: 2.5rem;
+}
+
+html[data-theme^="instrument-oscilloscope-"] .ig-spark {
+    display: block;
+    inset-inline: 0 2.6rem;
+    inset-block: 3px;
+    width: calc(100% - 2.8rem);
+    height: calc(100% - 6px);
+    opacity: 0.85;
+}
+
+html[data-theme^="instrument-oscilloscope-"] .ig-trace {
+    stroke-width: 2.6;
+    filter: drop-shadow(0 0 4px var(--ig-trace)) drop-shadow(0 0 9px color-mix(in srgb, var(--ig-trace) 60%, transparent));
+}
+html[data-theme="instrument-oscilloscope-light"] .ig-trace { filter: none; stroke-width: 2.4; }
+
+html[data-theme^="instrument-oscilloscope-"] .ig-ms {
+    inset-inline-end: 0;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    padding-inline: 0.2rem;
+    background: color-mix(in srgb, var(--ig-screen) 70%, transparent);
+}
+
+html[data-theme^="instrument-oscilloscope-"] .ig-bar { display: none; }
+
+html[data-theme^="instrument-oscilloscope-"] .ig-meter {
+    display: flex;
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: -1px;
+    gap: 2px;
+    height: 4px;
+}
+html[data-theme^="instrument-oscilloscope-"] .ig-meter > i[data-s="up"] { box-shadow: 0 0 5px var(--ig-ok); }
+
+/* =================================================================
+   DIVE COMPUTER: a pill of metal, an arc gauge, a depth scale
+   ================================================================= */
+
+html[data-theme^="instrument-dive-computer-"] {
+    --ig-metal: linear-gradient(135deg, #e4e8ed, #7c8691 22%, #f1f4f7 45%, #5b6570 68%, #cdd3da);
+    --ig-face: radial-gradient(ellipse at 50% -10%, #11507f, #07203a 75%);
+    --ig-scale: #FFB62E;
+}
+html[data-theme="instrument-dive-computer-light"] {
+    --ig-face: radial-gradient(ellipse at 50% -10%, #f4f9fd, #d3e3ef 80%);
+    --ig-scale: #8A5200;
+}
+
+html[data-theme^="instrument-dive-computer-"] .category {
+    border: 8px solid transparent !important;
+    border-radius: 38px !important;
+    padding: 14px 10px 16px 28px !important;
+    background: var(--ig-face) padding-box, var(--ig-metal) border-box !important;
+    box-shadow:
+        inset 0 0 0 2px color-mix(in srgb, var(--ig-scale) 60%, transparent),
+        inset 0 0 28px rgba(0, 0, 0, 0.35),
+        0 5px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme^="instrument-dive-computer-"] .category::before {
+    /* The depth scale: a ruler down the inside left edge, a long tick every
+       fifth short one. The rows put their markers on it. */
+    inset-block: 24px 24px !important;
+    inset-inline-start: 10px !important;
+    width: 12px !important;
+    background:
+        repeating-linear-gradient(to bottom, var(--ig-scale) 0 2px, transparent 2px 40px) left / 12px 100% no-repeat,
+        repeating-linear-gradient(to bottom, var(--ig-scale) 0 1px, transparent 1px 8px) left / 6px 100% no-repeat !important;
+    opacity: 0.8 !important;
+}
+
+html[data-theme^="instrument-dive-computer-"] .category::after { display: none !important; }
+
+html[data-theme^="instrument-dive-computer-"] .category-title {
+    padding-bottom: 8px;
+    letter-spacing: 0.1em;
+    min-height: 40px;
+    align-items: center;
+}
+
+html[data-theme^="instrument-dive-computer-"] .category-title-trailing { align-items: center; }
+
+html[data-theme^="instrument-dive-computer-"] .ig-ring {
+    display: block;
+    width: 38px;
+    height: 38px;
+    margin-inline-end: 0.5rem;
+}
+
+html[data-theme^="instrument-dive-computer-"] .ig-ring path {
+    fill: none;
+    stroke-width: 5;
+    stroke: var(--ig-track);
+}
+html[data-theme^="instrument-dive-computer-"] .ig-ring path[data-s="up"] { stroke: var(--ig-scale); }
+html[data-theme^="instrument-dive-computer-"] .ig-ring path[data-s="down"] { stroke: var(--ig-bad); }
+
+html[data-theme^="instrument-dive-computer-"] .bookmark-link[data-ig] .bookmark-open {
+    padding-inline-end: 7.6rem;
+}
+
+html[data-theme^="instrument-dive-computer-"] .ig-gauge { width: 7.6rem; }
+
+html[data-theme^="instrument-dive-computer-"] .ig-spark {
+    display: block;
+    inset-inline-start: 0;
+    inset-block: 9px;
+    width: 4.6rem;
+    height: calc(100% - 18px);
+}
+
+html[data-theme^="instrument-dive-computer-"] .ig-trace { stroke-width: 2.4; }
+
+html[data-theme^="instrument-dive-computer-"] .ig-ms {
+    inset-inline-end: 0;
+    inset-block-start: 50%;
+    transform: translateY(-62%);
+    width: 2.6rem;
+    text-align: end;
+    color: var(--ig-scale);
+    font-weight: 700;
+}
+
+html[data-theme^="instrument-dive-computer-"] .ig-bar {
+    inset-inline: 0;
+    inset-block-end: 5px;
+    height: 4px;
+    border-radius: 2px;
+}
+html[data-theme^="instrument-dive-computer-"] .ig-bar > i { background: var(--ig-scale); }
+html[data-theme^="instrument-dive-computer-"] .ig-gauge[data-ig-state="down"] .ig-bar > i { background: var(--ig-bad); }
+
+/* One marker per measured row, riding the depth scale. */
+html[data-theme^="instrument-dive-computer-"] .ig-edge {
+    display: block;
+    position: absolute;
+    inset-inline-start: -22px;
+    inset-block-start: 50%;
+    width: 14px;
+    height: 10px;
+    margin-block-start: -5px;
+    background: var(--ig-scale);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+html[data-theme^="instrument-dive-computer-"] .bookmark-link[data-ig-state="down"] .ig-edge { background: var(--ig-bad); }
+
+/* ---- motion: a new trace sweeps in; none of it with reduced motion or Effects off ---- */
+
+@media (prefers-reduced-motion: no-preference) {
+    html[data-theme^="instrument-"]:not([data-effects="off"]) .ig-trace {
+        stroke-dasharray: 400;
+        stroke-dashoffset: 400;
+        animation: ig-sweep 0.9s ease-out forwards;
+    }
+}
+
+@keyframes ig-sweep {
+    to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ig-bar > i { transition: none; }
+}
+
+html[data-effects="off"] .ig-bar > i,
+body[data-effects="off"] .ig-bar > i { transition: none; }
