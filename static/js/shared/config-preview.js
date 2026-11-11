@@ -57,7 +57,7 @@
         const esc = (v) => config.dash.escapeHtml(String(v));
         const focus = FOCUS[tab] || 'all';
 
-        const cols = Math.min(6, Math.max(1, Number(s.columnsPerRow) || 4));
+        const cols = Math.min(8, Math.max(1, Number(s.columnsPerRow) || 4));
         const place = ['bottom', 'left', 'right', 'menu'].includes(s.actionBarPosition) ? s.actionBarPosition : 'header';
         const switcher = ['text', 'segmented', 'compact'].includes(s.pageSwitcherStyle) ? s.pageSwitcherStyle : 'classic';
         const density = s.densityMode || 'comfortable';

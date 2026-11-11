@@ -126,9 +126,9 @@ test.describe('category spacing', () => {
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 
-        const card = page.locator('[data-behavior-field="categorySpacing"][data-behavior-value="snug"]');
-        await expect(card).toBeVisible();
-        await card.click();
+        const select = page.locator('select[data-behavior-field="categorySpacing"]').first();
+        await expect(select).toBeVisible();
+        await select.selectOption('snug');
 
         // The value is mirrored onto <body>, which is why the control is
         // chromeRender rather than render: without the chrome pass the CSS keeps
@@ -221,7 +221,7 @@ test.describe('page margins', () => {
         expect(await containerPad(page)).toBe('144px');
     });
 
-    test('both controls are buttons, not a dropdown', async ({ page }) => {
+    test('both controls are dropdowns, with the sentence in each option', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
@@ -230,15 +230,17 @@ test.describe('page margins', () => {
         await page.locator('[data-appearance-tab="layout"]').click();
 
         for (const field of ['categorySpacing', 'sideMargin']) {
-            await expect(page.locator(`[data-behavior-field="${field}"][data-behavior-type="cards"]`)).toHaveCount(field === 'sideMargin' ? 3 : 4);
-            // A <select> would hide two of three spatial choices behind a click.
-            await expect(page.locator(`select[data-behavior-field="${field}"]`)).toHaveCount(0);
-            // The stored value is pre-selected, so the group shows where you are.
-            await expect(page.locator(`[data-behavior-field="${field}"].is-active`)).toHaveCount(1);
+            const select = page.locator(`select[data-behavior-field="${field}"]`);
+            await expect(select).toHaveCount(1);
+            await expect(select.locator('option')).toHaveCount(field === 'sideMargin' ? 7 : 4);
+            // The stored value is pre-selected, so the dropdown shows where you are.
+            await expect(select).toHaveValue(field === 'sideMargin' ? 'balanced' : await select.inputValue());
+            // The sentence is part of every option.
+            for (const text of await select.locator('option').allTextContents()) expect(text).toContain(' — ');
         }
     });
 
-    test('clicking a margin card applies it without a reload', async ({ page }) => {
+    test('choosing a margin applies it without a reload', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
@@ -246,7 +248,7 @@ test.describe('page margins', () => {
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 
-        await page.locator('[data-behavior-field="sideMargin"][data-behavior-value="snug"]').click();
+        await page.locator('select[data-behavior-field="sideMargin"]').first().selectOption('snug');
         await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-side-margin'))).toBe('snug');
 
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
@@ -291,9 +293,9 @@ test.describe('Appearance → Layout panel order', () => {
 
         // Panels are bound by attribute across the whole container, so moving
         // the markup must not cost the bindings — but that is worth pinning.
-        const card = page.locator('[data-behavior-field="sideMargin"][data-behavior-value="snug"]');
-        await expect(card).toBeVisible();
-        await card.click();
+        const select = page.locator('select[data-behavior-field="sideMargin"]').first();
+        await expect(select).toBeVisible();
+        await select.selectOption('snug');
         await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-side-margin'))).toBe('snug');
     });
 });

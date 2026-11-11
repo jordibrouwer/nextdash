@@ -34,8 +34,8 @@
      * says so with a trailing ellipsis column rather than drawing twelve hairs.
      */
     function grid(cols, rows = 3) {
-        const n = Math.max(1, Math.min(6, Number(cols) || 1));
-        const more = Number(cols) > 6;
+        const n = Math.max(1, Math.min(8, Number(cols) || 1));
+        const more = Number(cols) > 8;
         return frame(
             Array.from({ length: n }, () => col(rows)).join('')
             + (more ? '<span class="setting-art-more">…</span>' : ''),

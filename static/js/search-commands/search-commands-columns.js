@@ -6,14 +6,16 @@
 class SearchCommandColumns {
     constructor(language = null) {
         this.language = language;
-        this.columnMap = ['1', '2', '3', '4', '5', '6'];
+        this.columnMap = ['1', '2', '3', '4', '5', '6', '7', '8'];
         this.columnDisplayNames = {
             '1': this.language ? this.language.t('dashboard.oneColumn') : '1 Column',
             '2': this.language ? this.language.t('dashboard.twoColumns') : '2 Columns',
             '3': this.language ? this.language.t('dashboard.threeColumns') : '3 Columns',
             '4': this.language ? this.language.t('dashboard.fourColumns') : '4 Columns',
             '5': this.language ? this.language.t('dashboard.fiveColumns') : '5 Columns',
-            '6': this.language ? this.language.t('dashboard.sixColumns') : '6 Columns'
+            '6': this.language ? this.language.t('dashboard.sixColumns') : '6 Columns',
+            '7': this.language ? this.language.t('dashboard.sevenColumns') : '7 Columns',
+            '8': this.language ? this.language.t('dashboard.eightColumns') : '8 Columns'
         };
     }
 
@@ -26,7 +28,9 @@ class SearchCommandColumns {
             '3': this.language ? this.language.t('dashboard.threeColumns') : '3 Columns',
             '4': this.language ? this.language.t('dashboard.fourColumns') : '4 Columns',
             '5': this.language ? this.language.t('dashboard.fiveColumns') : '5 Columns',
-            '6': this.language ? this.language.t('dashboard.sixColumns') : '6 Columns'
+            '6': this.language ? this.language.t('dashboard.sixColumns') : '6 Columns',
+            '7': this.language ? this.language.t('dashboard.sevenColumns') : '7 Columns',
+            '8': this.language ? this.language.t('dashboard.eightColumns') : '8 Columns'
         };
     }
 
@@ -82,7 +86,7 @@ class SearchCommandColumns {
      */
     async applyColumns(columns) {
         // Remove all column classes
-        document.body.classList.remove('columns-1', 'columns-2', 'columns-3', 'columns-4', 'columns-5', 'columns-6');
+        document.body.classList.remove('columns-1', 'columns-2', 'columns-3', 'columns-4', 'columns-5', 'columns-6', 'columns-7', 'columns-8');
 
         // Add the new column class
         document.body.classList.add(`columns-${columns}`);

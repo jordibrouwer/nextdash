@@ -3267,9 +3267,13 @@ class SearchCommandsComponent {
             shortcut: ':MARGINS',
             apply: 'chromeRender',
             options: [
+                { value: 'full', label: t('config.sideMarginFull', 'Full width') },
+                { value: 'tight', label: t('config.sideMarginTight', 'Tight') },
                 { value: 'snug', label: t('config.spacingSnug', 'Snug') },
                 { value: 'balanced', label: t('config.spacingBalanced', 'Balanced') },
+                { value: 'roomy', label: t('config.sideMarginRoomy', 'Roomy') },
                 { value: 'airy', label: t('config.spacingAiry', 'Airy') },
+                { value: 'spacious', label: t('config.sideMarginSpacious', 'Spacious') },
             ],
         }, args);
     }

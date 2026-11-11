@@ -111,9 +111,13 @@
     border-radius: var(--radius-1, 0.12rem);
 }
 
+.setting-art-page.is-full .setting-art-gutter { width: 0.04rem; }
+.setting-art-page.is-tight .setting-art-gutter { width: 0.1rem; }
 .setting-art-page.is-snug .setting-art-gutter { width: 0.18rem; }
 .setting-art-page.is-balanced .setting-art-gutter { width: 0.42rem; }
+.setting-art-page.is-roomy .setting-art-gutter { width: 0.58rem; }
 .setting-art-page.is-airy .setting-art-gutter { width: 0.75rem; }
+.setting-art-page.is-spacious .setting-art-gutter { width: 1rem; }
 
 .setting-art-content {
     display: flex;

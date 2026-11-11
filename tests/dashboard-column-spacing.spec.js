@@ -111,11 +111,11 @@ test.describe('space between columns', () => {
             await (cfg.appearanceTab = cfg.appearanceTab || 'general', cfg).openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="layout"]').click();
-        const card = page.locator('[data-behavior-field="columnSpacing"][data-behavior-value="snug"]');
-        await expect(card).toBeVisible();
+        const select = page.locator('select[data-behavior-field="columnSpacing"]').first();
+        await expect(select).toBeVisible();
         // Next to the rows one, in the same tab.
-        await expect(page.locator('[data-behavior-field="categorySpacing"][data-behavior-value="snug"]')).toBeVisible();
-        await card.click();
+        await expect(page.locator('select[data-behavior-field="categorySpacing"]').first()).toBeVisible();
+        await select.selectOption('snug');
         await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-column-spacing'))).toBe('snug');
         expect(await setting(page, 'columnSpacing')).toBe('snug');
     });

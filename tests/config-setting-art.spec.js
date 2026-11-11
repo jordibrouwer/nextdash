@@ -29,42 +29,47 @@ async function openAppearance(page, tab) {
 }
 
 test.describe('a choice you can see before you make it', () => {
-    test('each spacing and margin card draws its own option', async ({ page }) => {
+    test('each spacing and margin dropdown lists its options with their sentence, and draws the one in force', async ({ page }) => {
         await openAppearance(page, 'layout');
 
-        for (const field of ['categorySpacing', 'sideMargin']) {
-            const cards = page.locator(`.config-choice-card[data-behavior-field="${field}"]`);
-            // Follow the theme is a fourth choice for the spacing, drawn like Balanced.
-            const n = field === 'sideMargin' ? 3 : 4;
-            await expect(cards).toHaveCount(n);
-            // A card for every choice, each with a drawing: a card with only a
-            // title and a sentence is the thing this replaces.
-            await expect(cards.locator('.setting-art')).toHaveCount(n);
+        for (const [field, n] of [['categorySpacing', 4], ['columnSpacing', 4], ['sideMargin', 7]]) {
+            const select = page.locator(`select[data-behavior-field="${field}"]`).first();
+            await expect(select).toHaveCount(1);
+            const texts = await select.locator('option').allTextContents();
+            expect(texts).toHaveLength(n);
+            // The sentence that used to sit under each card is in the option.
+            for (const text of texts) expect(text, `${field}: ${text}`).toContain(' — ');
+            // A drawing for the choice in force, beside the field.
+            await expect(page.locator(`[data-behavior-art="${field}"] .setting-art`)).toHaveCount(1);
         }
 
-        // The drawings differ per option, or they are decoration rather than an
-        // answer — the gap between the bands is the whole point.
-        const classes = await page.locator('.config-choice-card[data-behavior-field="categorySpacing"] .setting-art-stack')
-            .evaluateAll((els) => els.map((e) => e.className));
-        expect(new Set(classes).size).toBe(3);
+        // The drawing follows the choice.
+        const art = page.locator('[data-behavior-art="categorySpacing"] .setting-art-stack');
+        await page.locator('select[data-behavior-field="categorySpacing"]').first().selectOption('airy');
+        await expect.poll(() => art.evaluate((e) => e.className), { timeout: 5_000 }).toContain('is-airy');
+        await page.locator('select[data-behavior-field="categorySpacing"]').first().selectOption('snug');
+        await expect.poll(() => art.evaluate((e) => e.className), { timeout: 5_000 }).toContain('is-snug');
     });
 
-    test('the column drawing follows the number as it is typed', async ({ page }) => {
+    test('columns per row is a dropdown from 1 to 8, and the drawing follows the choice', async ({ page }) => {
         await openAppearance(page, 'layout');
         const art = page.locator('[data-behavior-art="columnsPerRow"]');
         await expect(art).toHaveCount(1);
 
-        await page.locator('[data-behavior-field="columnsPerRow"]').first().fill('2');
+        const field = page.locator('select[data-behavior-field="columnsPerRow"]').first();
+        await expect(field).toHaveCount(1);
+        expect(await field.locator('option').allTextContents()).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
+
+        await field.selectOption('2');
         await expect.poll(() => art.locator('.setting-art-col').count(), { timeout: 5_000 }).toBe(2);
 
-        await page.locator('[data-behavior-field="columnsPerRow"]').first().fill('5');
+        await field.selectOption('5');
         await expect.poll(() => art.locator('.setting-art-col').count(), { timeout: 5_000 }).toBe(5);
 
-        // Above six the columns would be thinner than their own rows, so it
-        // caps and says there are more rather than drawing twelve hairs.
-        await page.locator('[data-behavior-field="columnsPerRow"]').first().fill('12');
-        await expect.poll(() => art.locator('.setting-art-col').count(), { timeout: 5_000 }).toBe(6);
-        await expect(art.locator('.setting-art-more')).toHaveCount(1);
+        // Eight is the most: all eight are drawn, and the stored value stays a number.
+        await field.selectOption('8');
+        await expect.poll(() => art.locator('.setting-art-col').count(), { timeout: 5_000 }).toBe(8);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.columnsPerRow), { timeout: 5_000 }).toBe(8);
     });
 
     test('density draws the row spacing it sets', async ({ page }) => {

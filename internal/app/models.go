@@ -764,7 +764,7 @@ type Settings struct {
 	DensityMode                 string                     `json:"densityMode"`                       // Dashboard density mode: comfortable, compact, dense
 	CategorySpacing             string                     `json:"categorySpacing"`                   // Vertical space between category rows: theme (follow the theme), snug, balanced, airy
 	ColumnSpacing               string                     `json:"columnSpacing"`                     // Horizontal space between columns on the dashboard: theme (follow the theme), snug, balanced, airy
-	SideMargin                  string                     `json:"sideMargin"`                        // Left/right page margin on the dashboard: snug, balanced, airy
+	SideMargin                  string                     `json:"sideMargin"`                        // Left/right page margin on the dashboard: full, tight, snug, balanced (the middle), roomy, airy, spacious
 	PackedColumns               bool                       `json:"packedColumns"`                     // Stack categories in vertical columns (round-robin) to reduce empty space
 	DefaultCategorySpread       bool                       `json:"defaultCategorySpread"`             // New categories may run across columns
 	CategorySpreadResetScope    string                     `json:"categorySpreadResetScope"`          // What "turn spreading off everywhere" covers: page, all
@@ -5634,7 +5634,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 		}
 		// The left/right band beside the grid. "balanced" is the margin the
 		// dashboard has always had, so an existing install sees no change.
-		if _, ok := rawSettings["sideMargin"]; !ok || (settings.SideMargin != "snug" && settings.SideMargin != "balanced" && settings.SideMargin != "airy") {
+		if _, ok := rawSettings["sideMargin"]; !ok || (settings.SideMargin != "full" && settings.SideMargin != "tight" && settings.SideMargin != "snug" && settings.SideMargin != "balanced" && settings.SideMargin != "roomy" && settings.SideMargin != "airy" && settings.SideMargin != "spacious") {
 			settings.SideMargin = "balanced"
 		}
 		if _, ok := rawSettings["monitorEmphasis"]; !ok || (settings.MonitorEmphasis != "problems" && settings.MonitorEmphasis != "always" && settings.MonitorEmphasis != "never") {

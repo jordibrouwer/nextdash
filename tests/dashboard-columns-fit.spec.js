@@ -1,6 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const WRITE_TOKEN = process.env.NEXTDASH_WRITE_TOKEN || 'playwright-e2e-write-token';
 
 /**
  * As many columns as fit, and one only when nothing else does.
@@ -41,16 +42,16 @@ async function columns(page) {
 }
 
 test.describe('the columns you ask for', () => {
-    test('a wide window really gets five and six, and a narrow one still keeps what fits', async ({ page }) => {
-        await page.setViewportSize({ width: 2400, height: 900 });
+    test('a wide window really gets five to eight columns, and a narrow one still keeps what fits', async ({ page }) => {
+        await page.setViewportSize({ width: 2600, height: 900 });
         await openDashboard(page);
-        for (const wanted of [5, 6]) {
+        for (const wanted of [5, 6, 7, 8]) {
             await page.evaluate(async (n) => {
                 const d = window.dashboardInstance;
                 d.settings.columnsPerRow = n;
                 await d.renderDashboard({ animate: false });
             }, wanted);
-            await expect.poll(() => columns(page), { message: `${wanted} columns on a 2400px window` })
+            await expect.poll(() => columns(page), { message: `${wanted} columns on a 2600px window` })
                 .toEqual({ count: wanted, drawn: wanted, stacked: 'false' });
         }
 
@@ -71,6 +72,61 @@ test.describe('the columns you ask for', () => {
         await page.setViewportSize({ width: 1400, height: 900 });
         await expect.poll(async () => (await columns(page)).count).toBeLessThan(6);
         await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    });
+});
+
+test.describe('page margins that give the columns the window', () => {
+    async function leftEdge(page, margin, columnsWanted) {
+        await page.evaluate(async ({ margin, columnsWanted }) => {
+            const d = window.dashboardInstance;
+            d.settings.sideMargin = margin;
+            d.settings.columnsPerRow = columnsWanted;
+            document.body.setAttribute('data-side-margin', margin);
+            await d.renderDashboard({ animate: false });
+        }, { margin, columnsWanted });
+        await expect.poll(async () => (await columns(page)).count).toBeGreaterThan(0);
+        return page.evaluate(() => {
+            const cats = [...document.querySelectorAll('#dashboard-layout .category')].filter((el) => el.getClientRects().length);
+            const lefts = cats.map((el) => el.getBoundingClientRect().left);
+            const rights = cats.map((el) => el.getBoundingClientRect().right);
+            return { left: Math.round(Math.min(...lefts)), right: Math.round(window.innerWidth - Math.max(...rights)) };
+        });
+    }
+
+    test('seven page margins with Balanced in the middle, and Full lets six columns fill a 1700px window', async ({ page }) => {
+        await page.setViewportSize({ width: 1700, height: 900 });
+        await openDashboard(page);
+        const seen = {};
+        for (const margin of ['full', 'tight', 'snug', 'balanced', 'roomy', 'airy', 'spacious']) {
+            seen[margin] = await leftEdge(page, margin, 6);
+        }
+        // Three narrower steps on the left of Balanced, three wider on the right.
+        expect(seen.full.left).toBeLessThan(seen.tight.left);
+        expect(seen.tight.left).toBeLessThan(seen.snug.left);
+        expect(seen.snug.left).toBeLessThan(seen.balanced.left);
+        expect(seen.balanced.left).toBeLessThan(seen.roomy.left);
+        expect(seen.roomy.left).toBeLessThan(seen.airy.left);
+        expect(seen.airy.left).toBeLessThan(seen.spacious.left);
+        // Full uses nearly the whole window on both sides, and gets its six columns.
+        expect(seen.full.left).toBeLessThanOrEqual(20);
+        expect(seen.full.right).toBeLessThanOrEqual(24);
+        await leftEdge(page, 'full', 6);
+        await expect.poll(() => columns(page)).toEqual({ count: 6, drawn: 6, stacked: 'false' });
+    });
+
+    test('the server keeps the new words and falls back for an unknown one', async ({ page }) => {
+        await page.goto('/');
+        const answers = {};
+        for (const word of ['full', 'tight', 'snug', 'roomy', 'spacious', 'minimal', 'nonsense']) {
+            const saved = await page.request.post('/api/settings', {
+                data: { sideMargin: word },
+                headers: { 'X-NextDash-Token': WRITE_TOKEN },
+            });
+            expect(saved.ok()).toBe(true);
+            answers[word] = (await (await page.request.get('/api/settings')).json()).sideMargin;
+        }
+        // Minimal and Slim were tried in this release and are gone: they read as unknown.
+        expect(answers).toEqual({ full: 'full', tight: 'tight', snug: 'snug', roomy: 'roomy', spacious: 'spacious', minimal: 'balanced', nonsense: 'balanced' });
     });
 });
 

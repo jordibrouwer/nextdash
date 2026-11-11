@@ -186,7 +186,7 @@ class DashboardRenderCore {
     getNormalizedColumnsPerRow() {
         const d = this.dash;
         const parsed = parseInt(String(d.settings.columnsPerRow), 10);
-        return Math.max(1, Math.min(12, Number.isFinite(parsed) ? parsed : 3));
+        return Math.max(1, Math.min(8, Number.isFinite(parsed) ? parsed : 3));
     }
 
 
