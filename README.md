@@ -14,7 +14,7 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
 - **Health and monitoring.** Dead links, uptime with 30 days of history, certificate and domain expiry, page drift and a public status page, with alerts to ntfy, Slack, Discord, Telegram and more, or a push notification on your phone.
 - **Containers and homelab.** A Containers view for the Docker host: logs, start, stop, update with a rollback, and each container linked to its bookmark. Widgets for Unraid, Jellyfin, Jellystat, Sonarr, Bazarr, Prowlarr, Home Assistant, Beszel and Glances.
 - **Widgets** for what is going on: weather, calendar, feeds, inbox, your machine, and any service that answers with JSON.
-- **Looks.** 390 themes, 267 backdrops and a theme studio, in six languages.
+- **Looks.** 440 themes, 285 backdrops and a theme studio, in six languages.
 - **An assistant, if you want one.** Ask in plain words with Claude, OpenAI or a model of your own, and decide what happens to what it suggests. Off until you turn it on.
 - **Yours to keep.** One Go binary and plain JSON files, automatic backups, a 30-day trash, and imports from every browser, Pocket, Raindrop, linkding and more.
 
@@ -22,21 +22,21 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
   <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Tarnished Brass: a large clock with a greeting and the weather in big type beside it, the notifications bell in the header, categories in columns, and widgets for health, uptime, the inbox, notes and the weather" width="100%" />
 </p>
 
-🎨 **390 themes and a theme studio.** 195 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic, plus three holiday themes with snow and lights. **Tarnished Brass** is the default on a new install (an install that already chose a theme keeps it), and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 267 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#17a-the-new-look)* · *[Manual: Appearance](MANUAL.md#17-appearance)*
+🎨 **440 themes and a theme studio.** 220 theme families, each with a light and a dark half, drawn from twelve materials — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed metal, carbon, paper, terminal and ink — and from three collections: eight neutrals, the Looks and ThinkDashboard Classic, plus three holiday themes with snow and lights. Eight theme groups (**v1.28.2**) go beyond colour: one bookmark per line, a page that follows the health of your services, a row drawn as a label strip, a page drawn as a map, and a high-contrast set that keeps text at 7:1. **Tarnished Brass** is the default on a new install (an install that already chose a theme keeps it), and every material draws its own surface, category header and widget header, as a **signature** or in the flat **Classic** way. **`Shift + A`** opens the theme studio beside your dashboard and changes the real page as you go: the theme, 285 backdrops with a quiet centre behind the bookmarks, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or material, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: The new look](MANUAL.md#17a-the-new-look)* · *[Manual: Appearance](MANUAL.md#17-appearance)*
 
 <details>
-<summary><b>See every theme</b> — all 192 dark and all 192 light, each on the same dashboard</summary>
+<summary><b>See every theme</b> — the dark and light halves of every family, each on the same dashboard</summary>
 
 <p align="center">
-  <img src="screenshots/nextdash-themes-dark.jpg" alt="All 192 dark themes, each shown on the same dashboard" width="100%" />
+  <img src="screenshots/nextdash-themes-dark.jpg" alt="192 of the 220 dark themes, each shown on the same dashboard" width="100%" />
   <br />
-  <sub><b>All 192 dark themes</b> — the same dashboard in every theme, each with its own material and backdrop.</sub>
+  <sub><b>192 of the 220 dark themes</b> — the same dashboard in every theme, each with its own material and backdrop. The eight newer theme groups are not in this picture.</sub>
 </p>
 
 <p align="center">
-  <img src="screenshots/nextdash-themes-light.jpg" alt="All 192 light themes, each shown on the same dashboard" width="100%" />
+  <img src="screenshots/nextdash-themes-light.jpg" alt="192 of the 220 light themes, each shown on the same dashboard" width="100%" />
   <br />
-  <sub><b>All 192 light themes</b> — the light half of every family.</sub>
+  <sub><b>192 of the 220 light themes</b> — the light half of each family. The eight newer theme groups are not in this picture.</sub>
 </p>
 
 </details>
@@ -184,7 +184,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Theme studio" width="100%" />
       <br />
-      <sub><b>The theme studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 195 theme families with a light and a dark half, filtered by material or collection, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
+      <sub><b>The theme studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 220 theme families with a light and a dark half, filtered by material, collection or theme group, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
     </td>
   </tr>
   <tr>
@@ -519,9 +519,9 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Appearance**
 
-- 192 theme families in light and dark, each on a material that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — with a signature or Classic way to draw it, eight neutrals with one accent, ThinkDashboard Classic and an editor for your own. A new install starts on Aurora Glass (dark, with its light half for your system's light mode); an install that already chose a theme keeps it. *[Manual §17](MANUAL.md#17-appearance)*
+- 220 theme families in light and dark, each on a material that decides how its surfaces are drawn — lacquer, glass, velvet, terminal and more — with a signature or Classic way to draw it, eight neutrals with one accent, ThinkDashboard Classic and an editor for your own. A new install starts on Tarnished Brass (dark, with its light half for your system's light mode); an install that already chose a theme keeps it. *[Manual §17](MANUAL.md#17-appearance)*
 - **A theme studio beside the dashboard.** It opens beside the dashboard and changes the page live: the theme, its backdrop, depth and card glass, the category headers and the type. Twelve ready-made looks set them in one go; Compare shows what you had, and nothing is saved until Apply. *[Theme studio](MANUAL.md#the-theme-studio)*
-- More than 260 backdrops, from aurora and dunes to stars and hexagons, with a recipe of its own for each theme, Look and Ocean drawn in that theme's colours — or choose your own from a picker with groups, search and thumbnails, and tune it with intensity, scale, blur, tint and a quiet centre. *[Manual §17.4](MANUAL.md#174-type-and-background)*
+- More than 280 backdrops, from aurora and dunes to stars and hexagons, with a recipe of its own for each theme, Look and Ocean drawn in that theme's colours — or choose your own from a picker with groups, search and thumbnails, and tune it with intensity, scale, blur, tint and a quiet centre. *[Manual §17.4](MANUAL.md#174-type-and-background)*
 - Character, depth, glow, effects, card glass and contrast for any theme; category header styles, layout presets, columns, density and fonts. *[Manual §17.3](MANUAL.md#173-surfaces)*
 - A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu, in five sizes. *[Manual §4](MANUAL.md#4-the-dashboard)*
 - **Appearance in nine tabs, three groups.** Panels fold to a line of their values, runs of switches are chips, and a list of panels sits above the preview on long tabs. *[Manual §17](MANUAL.md#17-appearance)*
