@@ -250,4 +250,16 @@ test.describe('the Prowlarr widget', () => {
         expect(saved.topics).toEqual(['indexers', 'issues']);
         expect(JSON.stringify(saved)).not.toContain('pr-key-0123456789');
     });
+
+    test('counts the server could not read are dashes and the rows leave them out', async ({ page }) => {
+        await open(page);
+        const result = answer({
+            totals: { enabled: 4, total: 6 },
+            indexers: [{ id: 1, name: 'Example Indexer 1', protocol: 'usenet', queries: 0, grabs: 0, failed: 0, avgMs: 0, noStats: true, openUrl: 'http://pr.example/indexers' }],
+        });
+        const tile = await draw(page, { result, width: 680 });
+        await expect(tile.locator('.pw-figure:visible').first()).toContainText('4/6');
+        await expect(tile.locator('.pw-figure:visible').nth(1)).toContainText('–');
+        await expect(tile.locator('.pw-block[data-topic="indexers"] .pw-row').first()).not.toContainText('queries');
+    });
 });

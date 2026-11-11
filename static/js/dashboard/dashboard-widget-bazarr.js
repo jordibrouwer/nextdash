@@ -147,9 +147,11 @@
             box.append(el('span', 'bz-figure-value', value), el('span', 'bz-figure-label', label));
             return box;
         };
-        bar.appendChild(figure(compact(totals.missingMovies) || '0', say(dash, widget, 'figMovies')));
-        bar.appendChild(figure(compact(totals.missingEpisodes) || '0', say(dash, widget, 'figEpisodes')));
-        bar.appendChild(figure(compact(totals.providerIssues) || '0', say(dash, widget, 'figProviders'), totals.providerIssues > 0));
+        // A figure the server could not read is a dash, never a zero.
+        const shown = (value) => (num(value) === null ? '–' : (compact(value) || '0'));
+        bar.appendChild(figure(shown(totals.missingMovies), say(dash, widget, 'figMovies')));
+        bar.appendChild(figure(shown(totals.missingEpisodes), say(dash, widget, 'figEpisodes')));
+        bar.appendChild(figure(shown(totals.providerIssues), say(dash, widget, 'figProviders'), totals.providerIssues > 0));
         return bar;
     }
 

@@ -8,8 +8,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 /*
@@ -22,32 +24,60 @@ const bazarrTestKey = "bz-test-key-0001"
 
 type fakeBazarr struct {
 	*httptest.Server
-	calls       atomic.Int32
-	noKey       atomic.Int32
-	failHistory bool
-	paths       []string
+	calls atomic.Int32
+	noKey atomic.Int32
+	// fail names request paths that answer 500.
+	fail map[string]bool
+	// providers overrides the badge count of providers in trouble.
+	providers int
+	// timezone overrides the zone the status names.
+	timezone string
+	mu       sync.Mutex
+	paths    []string
+}
+
+func (f *fakeBazarr) asked() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.paths...)
 }
 
 func newFakeBazarr(t *testing.T) *fakeBazarr {
 	t.Helper()
-	fake := &fakeBazarr{}
+	fake := &fakeBazarr{fail: map[string]bool{}}
 	serve := func(name string) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			fake.calls.Add(1)
-			fake.paths = append(fake.paths, r.URL.Path)
 			if r.Header.Get("X-API-KEY") != bazarrTestKey {
 				fake.noKey.Add(1)
 				w.WriteHeader(http.StatusUnauthorized)
 				_, _ = w.Write([]byte(`{"message":"Unauthorized"}`))
 				return
 			}
-			if fake.failHistory && strings.HasSuffix(r.URL.Path, "/history") {
+			fake.mu.Lock()
+			failing := fake.fail[r.URL.Path]
+			fake.mu.Unlock()
+			if failing {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			raw, err := os.ReadFile(filepath.Join("testdata", "bazarr", name+".json"))
 			if err != nil {
 				t.Errorf("fixture %s: %v", name, err)
+			}
+			switch name {
+			case "badges":
+				var badges map[string]any
+				_ = json.Unmarshal(raw, &badges)
+				badges["providers"] = fake.providers
+				raw, _ = json.Marshal(badges)
+			case "system_status":
+				if fake.timezone != "" {
+					var status map[string]map[string]any
+					_ = json.Unmarshal(raw, &status)
+					status["data"]["timezone"] = fake.timezone
+					raw, _ = json.Marshal(status)
+				}
 			}
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(raw)
@@ -60,10 +90,19 @@ func newFakeBazarr(t *testing.T) *fakeBazarr {
 	mux.HandleFunc("/api/episodes/wanted", serve("episodes_wanted"))
 	mux.HandleFunc("/api/movies/history", serve("movies_history"))
 	mux.HandleFunc("/api/episodes/history", serve("episodes_history"))
-	fake.Server = httptest.NewServer(mux)
+	// Every request is noted, also one no route answers, so a test can say
+	// what was never asked.
+	fake.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fake.mu.Lock()
+		fake.paths = append(fake.paths, r.URL.Path)
+		fake.mu.Unlock()
+		mux.ServeHTTP(w, r)
+	}))
 	t.Cleanup(fake.Close)
 	return fake
 }
+
+func intIs(got *int, want int) bool { return got != nil && *got == want }
 
 func bazarrSetUp(t *testing.T, h *Handlers, fake *fakeBazarr, config map[string]any) Widget {
 	t.Helper()
@@ -125,10 +164,11 @@ func TestBazarrReadsEveryTopic(t *testing.T) {
 	}
 	subs := result.Subs
 	// The recording said 18 movies and 1 episode without a subtitle.
-	if subs.Totals == nil || subs.Totals.MissingMovies != 18 || subs.Totals.MissingEpisodes != 1 || subs.Totals.ProviderIssues != 0 {
+	if subs.Totals == nil || !intIs(subs.Totals.MissingMovies, 18) || !intIs(subs.Totals.MissingEpisodes, 1) || !intIs(subs.Totals.ProviderIssues, 0) {
 		t.Errorf("totals: %+v", subs.Totals)
 	}
-	if len(subs.Missing) != 5 || subs.Missing[0].Kind != "movie" {
+	// The one episode is not pushed out by the movie backlog: the kinds take turns.
+	if len(subs.Missing) != 5 || subs.Missing[0].Kind != "movie" || subs.Missing[1].Kind != "episode" {
 		t.Fatalf("missing (cut to rows): %+v", subs.Missing)
 	}
 	if got := strings.Join(subs.Missing[0].Languages, ","); got != "nl" {
@@ -198,8 +238,8 @@ func TestBazarrSkipsTopicsThatAreOff(t *testing.T) {
 	if subs == nil || len(subs.Recent) == 0 || subs.Totals != nil || len(subs.Missing) != 0 {
 		t.Fatalf("answer: %+v", subs)
 	}
-	for _, path := range fake.paths {
-		if !strings.HasSuffix(path, "/history") {
+	for _, path := range fake.asked() {
+		if !strings.HasSuffix(path, "/history") && path != "/api/system/status" {
 			t.Errorf("an off topic asked %s", path)
 		}
 	}
@@ -209,7 +249,7 @@ func TestBazarrSkipsTopicsThatAreOff(t *testing.T) {
 func TestBazarrPartialAnswer(t *testing.T) {
 	h := newTestHandlers(t)
 	fake := newFakeBazarr(t)
-	fake.failHistory = true
+	fake.fail["/api/movies/history"], fake.fail["/api/episodes/history"] = true, true
 	widget := bazarrSetUp(t, h, fake, nil)
 	result := askBazarr(t, h, widget)
 	if result.Error != "" || !result.Partial || result.Subs == nil || result.Subs.Totals == nil || len(result.Subs.Missing) == 0 || len(result.Subs.Recent) != 0 {
@@ -262,5 +302,84 @@ func TestBazarrSetupNamesTheVersion(t *testing.T) {
 	}
 	if _, answer := post("wrong"); answer.Error != "key refused" {
 		t.Errorf("a wrong key: %+v", answer)
+	}
+}
+
+// The count of providers in trouble survives whichever answer comes first.
+func TestBazarrProviderIssuesAreNotOverwritten(t *testing.T) {
+	h := newTestHandlers(t)
+	fake := newFakeBazarr(t)
+	fake.providers = 2
+	for i := 0; i < 25; i++ {
+		widget := bazarrSetUp(t, h, fake, map[string]any{"topics": []any{"totals"}})
+		subs := askBazarr(t, h, widget).Subs
+		if subs == nil || subs.Totals == nil || !intIs(subs.Totals.ProviderIssues, 2) || !intIs(subs.Totals.MissingMovies, 18) {
+			t.Fatalf("round %d: %+v", i, subs)
+		}
+	}
+}
+
+// One of the two lists failing leaves the other, makes the answer partial and
+// leaves the count it could not read out, rather than saying zero.
+func TestBazarrHalfAnswersAreNotZeros(t *testing.T) {
+	h := newTestHandlers(t)
+	fake := newFakeBazarr(t)
+	fake.fail["/api/episodes/wanted"] = true
+	fake.fail["/api/episodes/history"] = true
+	widget := bazarrSetUp(t, h, fake, nil)
+	result := askBazarr(t, h, widget)
+	if result.Error != "" || !result.Partial || result.Subs == nil || result.Subs.Totals == nil {
+		t.Fatalf("answer: error %q partial %v %+v", result.Error, result.Partial, result.Subs)
+	}
+	totals := result.Subs.Totals
+	if !intIs(totals.MissingMovies, 18) || totals.MissingEpisodes != nil {
+		t.Errorf("movies are known, episodes are not: %+v", totals)
+	}
+	for _, row := range result.Subs.Missing {
+		if row.Kind != "movie" {
+			t.Errorf("an episode came from a list that failed: %+v", row)
+		}
+	}
+	if len(result.Subs.Recent) == 0 {
+		t.Error("the movie history was dropped with the episode history")
+	}
+	raw, _ := json.Marshal(result.Subs.Totals)
+	if strings.Contains(string(raw), "missingEpisodes") {
+		t.Errorf("an unknown count was sent: %s", raw)
+	}
+}
+
+// Without the wanted lists the providers still show, and the counts stay unknown.
+func TestBazarrTotalsKeepProvidersWhenWantedFails(t *testing.T) {
+	h := newTestHandlers(t)
+	fake := newFakeBazarr(t)
+	fake.providers = 3
+	fake.fail["/api/movies/wanted"], fake.fail["/api/episodes/wanted"] = true, true
+	widget := bazarrSetUp(t, h, fake, map[string]any{"topics": []any{"totals", "recent"}})
+	result := askBazarr(t, h, widget)
+	if result.Subs == nil || result.Subs.Totals == nil || !intIs(result.Subs.Totals.ProviderIssues, 3) ||
+		result.Subs.Totals.MissingMovies != nil || result.Subs.Totals.MissingEpisodes != nil || !result.Partial {
+		t.Fatalf("answer: %+v partial %v", result.Subs, result.Partial)
+	}
+}
+
+// Bazarr's dates have no zone; they are Bazarr's own, not this server's.
+func TestBazarrTimesFollowBazarrsZone(t *testing.T) {
+	h := newTestHandlers(t)
+	fake := newFakeBazarr(t)
+	fake.timezone = "Pacific/Auckland"
+	widget := bazarrSetUp(t, h, fake, map[string]any{"topics": []any{"recent"}, "rows": float64(1)})
+	subs := askBazarr(t, h, widget).Subs
+	if subs == nil || len(subs.Recent) != 1 {
+		t.Fatalf("answer: %+v", subs)
+	}
+	zone, err := time.LoadLocation("Pacific/Auckland")
+	if err != nil {
+		t.Skip("no time zone data:", err)
+	}
+	// The newest recorded fetch, as written in movies_history.json.
+	want, _ := time.ParseInLocation("01/02/06 15:04:05", "11/08/26 10:41:19", zone)
+	if subs.Recent[0].At != want.UnixMilli() {
+		t.Errorf("read as %v, want %v", time.UnixMilli(subs.Recent[0].At), want)
 	}
 }

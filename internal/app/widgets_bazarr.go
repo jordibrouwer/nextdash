@@ -66,11 +66,13 @@ type MediaSubs struct {
 	Partial bool `json:"-"`
 }
 
+// MediaSubsTotals holds counts that may be unknown: a figure Bazarr could not
+// be asked for is left out, never sent as zero.
 type MediaSubsTotals struct {
-	MissingMovies   int `json:"missingMovies"`
-	MissingEpisodes int `json:"missingEpisodes"`
+	MissingMovies   *int `json:"missingMovies,omitempty"`
+	MissingEpisodes *int `json:"missingEpisodes,omitempty"`
 	// ProviderIssues is how many subtitle providers Bazarr says are in trouble.
-	ProviderIssues int `json:"providerIssues"`
+	ProviderIssues *int `json:"providerIssues,omitempty"`
 }
 
 type MediaSubsMissing struct {
@@ -190,9 +192,19 @@ func bazarrLabels(list []bazarrLanguage) []string {
 	return out
 }
 
+// bazarrWantedAnswer is what the two wanted lists gave. A count is nil when
+// its list could not be read.
+type bazarrWantedAnswer struct {
+	Missing         []MediaSubsMissing
+	MissingMovies   *int
+	MissingEpisodes *int
+	// Half says one of the two lists failed.
+	Half bool
+}
+
 // bazarrWanted reads both wanted lists. It is used by the missing topic and by
 // the totals, which need only the totals of the same answers.
-func (h *Handlers) bazarrWanted(ctx context.Context, spec bazarrSpec, credential HealthCredential) ([]MediaSubsMissing, *MediaSubsTotals, error) {
+func (h *Handlers) bazarrWanted(ctx context.Context, spec bazarrSpec, credential HealthCredential) (bazarrWantedAnswer, error) {
 	var movies struct {
 		Data  []bazarrWantedMovie `json:"data"`
 		Total int                 `json:"total"`
@@ -215,29 +227,43 @@ func (h *Handlers) bazarrWanted(ctx context.Context, spec bazarrSpec, credential
 	}()
 	wg.Wait()
 	if movieErr != nil && episodeErr != nil {
-		return nil, nil, movieErr
+		return bazarrWantedAnswer{}, movieErr
 	}
-	totals := &MediaSubsTotals{MissingMovies: movies.Total, MissingEpisodes: episodes.Total}
-	out := make([]MediaSubsMissing, 0, len(movies.Data)+len(episodes.Data))
+	answer := bazarrWantedAnswer{Half: movieErr != nil || episodeErr != nil}
+	if movieErr == nil {
+		answer.MissingMovies = &movies.Total
+	}
+	if episodeErr == nil {
+		answer.MissingEpisodes = &episodes.Total
+	}
+	movieRows := make([]MediaSubsMissing, 0, len(movies.Data))
 	for _, movie := range movies.Data {
-		out = append(out, MediaSubsMissing{
+		movieRows = append(movieRows, MediaSubsMissing{
 			ID: "m" + strconv.FormatInt(movie.RadarrID, 10), Kind: "movie", Title: movie.Title,
 			Languages: bazarrLabels(movie.Missing),
 			OpenURL:   spec.Server + "/movies/" + strconv.FormatInt(movie.RadarrID, 10),
 		})
 	}
+	episodeRows := make([]MediaSubsMissing, 0, len(episodes.Data))
 	for _, ep := range episodes.Data {
-		out = append(out, MediaSubsMissing{
+		episodeRows = append(episodeRows, MediaSubsMissing{
 			ID: "e" + strconv.FormatInt(ep.EpisodeID, 10), Kind: "episode", Title: ep.Series,
 			Subtitle:  strings.TrimSpace(ep.Number + " " + ep.Title),
 			Languages: bazarrLabels(ep.Missing),
 			OpenURL:   spec.Server + "/series/" + strconv.FormatInt(ep.SeriesID, 10),
 		})
 	}
-	if len(out) > spec.Rows {
-		out = out[:spec.Rows]
+	// Take turns, so a long backlog of one kind does not push the other out.
+	answer.Missing = make([]MediaSubsMissing, 0, spec.Rows)
+	for i := 0; len(answer.Missing) < spec.Rows && (i < len(movieRows) || i < len(episodeRows)); i++ {
+		if i < len(movieRows) {
+			answer.Missing = append(answer.Missing, movieRows[i])
+		}
+		if i < len(episodeRows) && len(answer.Missing) < spec.Rows {
+			answer.Missing = append(answer.Missing, episodeRows[i])
+		}
 	}
-	return out, totals, nil
+	return answer, nil
 }
 
 type bazarrHistoryRow struct {
@@ -257,22 +283,45 @@ type bazarrHistoryRow struct {
 	Black     bool           `json:"blacklisted"`
 }
 
-// bazarrMs reads Bazarr's own date text (month/day/year) in the server's zone.
-func bazarrMs(raw string) int64 {
-	if at, err := time.ParseInLocation("01/02/06 15:04:05", raw, time.Local); err == nil {
+// bazarrMs reads Bazarr's own date text (month/day/year), which carries no
+// zone, in the zone Bazarr says it runs in.
+func bazarrMs(raw string, zone *time.Location) int64 {
+	if at, err := time.ParseInLocation("01/02/06 15:04:05", raw, zone); err == nil {
 		return at.UnixMilli()
 	}
 	return 0
 }
 
-func (h *Handlers) bazarrRecent(ctx context.Context, spec bazarrSpec, credential HealthCredential) ([]MediaSubsFetched, error) {
+// bazarrZone is the zone Bazarr reports in its status; this server's own when
+// it says none or the name is unknown.
+func (h *Handlers) bazarrZone(ctx context.Context, spec bazarrSpec, credential HealthCredential) *time.Location {
+	var status struct {
+		Data struct {
+			Timezone string `json:"timezone"`
+		} `json:"data"`
+	}
+	if err := h.bazarrGet(ctx, spec.Server, credential, "/api/system/status", &status); err == nil && status.Data.Timezone != "" {
+		if zone, err := time.LoadLocation(status.Data.Timezone); err == nil {
+			return zone
+		}
+	}
+	return time.Local
+}
+
+// bazarrRecent says with half that one of the two histories failed.
+func (h *Handlers) bazarrRecent(ctx context.Context, spec bazarrSpec, credential HealthCredential) (list []MediaSubsFetched, half bool, err error) {
 	var movies, episodes struct {
 		Data []bazarrHistoryRow `json:"data"`
 	}
 	length := strconv.Itoa(spec.Rows * 2)
 	var wg sync.WaitGroup
 	var movieErr, episodeErr error
-	wg.Add(2)
+	var zone *time.Location
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		zone = h.bazarrZone(ctx, spec, credential)
+	}()
 	go func() {
 		defer wg.Done()
 		movieErr = h.bazarrGet(ctx, spec.Server, credential, "/api/movies/history?start=0&length="+length, &movies)
@@ -283,8 +332,9 @@ func (h *Handlers) bazarrRecent(ctx context.Context, spec bazarrSpec, credential
 	}()
 	wg.Wait()
 	if movieErr != nil && episodeErr != nil {
-		return nil, movieErr
+		return nil, false, movieErr
 	}
+	half = movieErr != nil || episodeErr != nil
 	out := []MediaSubsFetched{}
 	add := func(row bazarrHistoryRow, kind string) {
 		if !bazarrFetchedActions[row.Action] || row.Black {
@@ -292,7 +342,7 @@ func (h *Handlers) bazarrRecent(ctx context.Context, spec bazarrSpec, credential
 		}
 		entry := MediaSubsFetched{
 			Kind: kind, Language: row.Language.label(), Provider: row.Provider, Score: row.Score,
-			Upgrade: row.Action == 3, At: bazarrMs(row.Stamp),
+			Upgrade: row.Action == 3, At: bazarrMs(row.Stamp, zone),
 		}
 		if kind == "movie" {
 			entry.ID = "m" + strconv.FormatInt(row.RadarrID, 10)
@@ -316,18 +366,18 @@ func (h *Handlers) bazarrRecent(ctx context.Context, spec bazarrSpec, credential
 	if len(out) > spec.Rows {
 		out = out[:spec.Rows]
 	}
-	return out, nil
+	return out, half, nil
 }
 
 // bazarrProviderIssues is how many providers Bazarr's badges count as in trouble.
-func (h *Handlers) bazarrProviderIssues(ctx context.Context, spec bazarrSpec, credential HealthCredential) (int, error) {
+func (h *Handlers) bazarrProviderIssues(ctx context.Context, spec bazarrSpec, credential HealthCredential) (*int, error) {
 	var badges struct {
 		Providers int `json:"providers"`
 	}
 	if err := h.bazarrGet(ctx, spec.Server, credential, "/api/badges", &badges); err != nil {
-		return 0, err
+		return nil, err
 	}
-	return badges.Providers, nil
+	return &badges.Providers, nil
 }
 
 // fetchBazarr reads every topic the tile asked for.
@@ -341,85 +391,87 @@ func (h *Handlers) fetchBazarr(ctx context.Context, spec bazarrSpec) (MediaResul
 		return result, nil, errMediaNotSetUp
 	}
 	subs := &MediaSubs{Topics: spec.Topics, OpenURL: spec.Server}
-	var firstErr error
-	failed := 0
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	fail := func(err error) {
-		mu.Lock()
-		defer mu.Unlock()
-		failed++
-		subs.Partial = true
-		if firstErr == nil {
-			firstErr = err
-		}
-	}
-	if spec.has("missing") || spec.has("totals") {
+	var (
+		wanted     bazarrWantedAnswer
+		wantedErr  error
+		providers  *int
+		recent     []MediaSubsFetched
+		recentHalf bool
+		recentErr  error
+		wg         sync.WaitGroup
+	)
+	needWanted := spec.has("missing") || spec.has("totals")
+	if needWanted {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			missing, totals, err := h.bazarrWanted(ctx, spec, credential)
-			if err != nil {
-				// Both topics that lean on this answer fail with it.
-				mu.Lock()
-				if spec.has("missing") {
-					failed++
-				}
-				if spec.has("totals") {
-					failed++
-				}
-				subs.Partial = true
-				if firstErr == nil {
-					firstErr = err
-				}
-				mu.Unlock()
-				return
-			}
-			mu.Lock()
-			if spec.has("missing") {
-				subs.Missing = missing
-			}
-			if spec.has("totals") {
-				subs.Totals = totals
-			}
-			mu.Unlock()
+			wanted, wantedErr = h.bazarrWanted(ctx, spec, credential)
 		}()
 	}
 	if spec.has("totals") {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			issues, err := h.bazarrProviderIssues(ctx, spec, credential)
-			if err != nil {
-				// The totals still show the missing counts; only the providers go.
-				mu.Lock()
-				subs.Partial = true
-				mu.Unlock()
-				return
-			}
-			mu.Lock()
-			if subs.Totals == nil {
-				subs.Totals = &MediaSubsTotals{}
-			}
-			subs.Totals.ProviderIssues = issues
-			mu.Unlock()
+			// A failed badges call leaves the figure unknown; the rest stays.
+			providers, _ = h.bazarrProviderIssues(ctx, spec, credential)
 		}()
 	}
 	if spec.has("recent") {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			recent, err := h.bazarrRecent(ctx, spec, credential)
-			if err != nil {
-				fail(err)
-				return
-			}
-			mu.Lock()
-			subs.Recent = recent
-			mu.Unlock()
+			recent, recentHalf, recentErr = h.bazarrRecent(ctx, spec, credential)
 		}()
 	}
 	wg.Wait()
+
+	// A topic that failed outright counts against the answer; one that came
+	// back half, or without its providers, only makes it partial.
+	failed := 0
+	var firstErr error
+	note := func(err error) {
+		failed++
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+	if needWanted && wantedErr != nil {
+		if spec.has("missing") {
+			note(wantedErr)
+		}
+		if spec.has("totals") {
+			note(wantedErr)
+		}
+		subs.Partial = true
+	} else if needWanted {
+		if spec.has("missing") {
+			subs.Missing = wanted.Missing
+		}
+		if spec.has("totals") {
+			subs.Totals = &MediaSubsTotals{MissingMovies: wanted.MissingMovies, MissingEpisodes: wanted.MissingEpisodes, ProviderIssues: providers}
+		}
+		if wanted.Half {
+			subs.Partial = true
+		}
+	}
+	if spec.has("totals") && wantedErr != nil && providers != nil {
+		// The wanted lists failed but the providers are known: show what is known.
+		subs.Totals = &MediaSubsTotals{ProviderIssues: providers}
+	}
+	if spec.has("totals") && providers == nil {
+		subs.Partial = true
+	}
+	if spec.has("recent") {
+		if recentErr != nil {
+			note(recentErr)
+			subs.Partial = true
+		} else {
+			subs.Recent = recent
+			if recentHalf {
+				subs.Partial = true
+			}
+		}
+	}
 	// Every topic failing is an error the tile words; some failing is a half
 	// answer it shows.
 	if failed > 0 && failed >= len(spec.Topics) {

@@ -259,4 +259,13 @@ test.describe('the Bazarr widget', () => {
         });
         expect(filed).toBeGreaterThanOrEqual(1);
     });
+
+    test('a count the server could not read is a dash, not a zero', async ({ page }) => {
+        await open(page);
+        const tile = await draw(page, { result: answer({ totals: { missingMovies: 18 } }), width: 680 });
+        await expect(tile.locator('.bz-figure:visible')).toHaveCount(3);
+        await expect(tile.locator('.bz-figure:visible').first()).toContainText('18');
+        await expect(tile.locator('.bz-figure:visible').nth(1)).toContainText('–');
+        await expect(tile.locator('.bz-figure:visible').nth(2)).toContainText('–');
+    });
 });

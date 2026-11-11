@@ -71,11 +71,13 @@ type MediaIndexers struct {
 }
 
 type MediaIndexersTotals struct {
-	Enabled int   `json:"enabled"`
-	Total   int   `json:"total"`
-	Queries int64 `json:"queries"`
-	Grabs   int64 `json:"grabs"`
-	Failed  int64 `json:"failed"`
+	Enabled int `json:"enabled"`
+	Total   int `json:"total"`
+	// The counts come from the stats; they are left out when those could not
+	// be read, never sent as zero.
+	Queries *int64 `json:"queries,omitempty"`
+	Grabs   *int64 `json:"grabs,omitempty"`
+	Failed  *int64 `json:"failed,omitempty"`
 }
 
 type MediaIndexerRow struct {
@@ -88,7 +90,9 @@ type MediaIndexerRow struct {
 	// AvgMs is the average answer time in milliseconds; 0 when it was not asked.
 	AvgMs int64 `json:"avgMs"`
 	// Paused says Prowlarr has switched the indexer off for now.
-	Paused  bool   `json:"paused,omitempty"`
+	Paused bool `json:"paused,omitempty"`
+	// NoStats says the counts above are unknown, not zero.
+	NoStats bool   `json:"noStats,omitempty"`
 	OpenURL string `json:"openUrl"`
 }
 
@@ -142,7 +146,15 @@ func (spec prowlarrSpec) fingerprint() string {
 
 func (spec prowlarrSpec) has(topic string) bool { return containsString(spec.Topics, topic) }
 
+// prowlarrListLimit bounds the indexer list. Prowlarr sends every indexer with
+// its fields and categories, which is tens of kilobytes each.
+const prowlarrListLimit = 32 << 20
+
 func (h *Handlers) prowlarrGet(ctx context.Context, server string, credential HealthCredential, path string, out any) error {
+	return h.prowlarrGetLimited(ctx, server, credential, path, out, jellyfinMaxBody)
+}
+
+func (h *Handlers) prowlarrGetLimited(ctx context.Context, server string, credential HealthCredential, path string, out any, limit int64) error {
 	ctx, cancel := context.WithTimeout(ctx, mediaRequestTimeout)
 	defer cancel()
 	resp, err := h.mediaRequest(ctx, server, credential, path, nil, "application/json", nil)
@@ -150,7 +162,7 @@ func (h *Handlers) prowlarrGet(ctx context.Context, server string, credential He
 		return err
 	}
 	defer resp.Body.Close()
-	if err := json.NewDecoder(io.LimitReader(resp.Body, jellyfinMaxBody)).Decode(out); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, limit)).Decode(out); err != nil {
 		return fmt.Errorf("%w: %v", errMediaUnreachable, err)
 	}
 	return nil
@@ -232,7 +244,9 @@ func (h *Handlers) fetchProwlarr(ctx context.Context, spec prowlarrSpec) (MediaR
 			read()
 		}()
 	}
-	run(needList, func() { errList = h.prowlarrGet(ctx, spec.Server, credential, "/api/v1/indexer", &list) })
+	run(needList, func() {
+		errList = h.prowlarrGetLimited(ctx, spec.Server, credential, "/api/v1/indexer", &list, prowlarrListLimit)
+	})
 	run(needStats, func() {
 		since := time.Now().AddDate(0, 0, -spec.Days).UTC().Format("2006-01-02")
 		errStats = h.prowlarrGet(ctx, spec.Server, credential, "/api/v1/indexerstats?startDate="+url.QueryEscape(since), &stats)
@@ -268,7 +282,7 @@ func (h *Handlers) fetchProwlarr(ctx context.Context, spec prowlarrSpec) (MediaR
 	}
 
 	if spec.has("indexers") {
-		if errStats != nil {
+		if errStats != nil || errPause != nil {
 			out.Partial = true
 		}
 		rows := []MediaIndexerRow{}
@@ -278,7 +292,7 @@ func (h *Handlers) fetchProwlarr(ctx context.Context, spec prowlarrSpec) (MediaR
 			}
 			s := statByID[ix.ID]
 			row := MediaIndexerRow{ID: ix.ID, Name: ix.Name, Protocol: ix.Protocol, Queries: s.Queries + s.RSS, Grabs: s.Grabs,
-				Failed: s.failed(), AvgMs: s.AvgMs, OpenURL: spec.Server + "/indexers"}
+				Failed: s.failed(), AvgMs: s.AvgMs, NoStats: errStats != nil, OpenURL: spec.Server + "/indexers"}
 			_, row.Paused = paused[ix.ID]
 			rows = append(rows, row)
 		}
@@ -336,11 +350,13 @@ func (h *Handlers) fetchProwlarr(ctx context.Context, spec prowlarrSpec) (MediaR
 		if errStats != nil {
 			out.Partial = true
 		} else {
+			var queries, grabs, failed int64
 			for _, s := range stats.Indexers {
-				totals.Queries += s.Queries + s.RSS
-				totals.Grabs += s.Grabs
-				totals.Failed += s.failed()
+				queries += s.Queries + s.RSS
+				grabs += s.Grabs
+				failed += s.failed()
 			}
+			totals.Queries, totals.Grabs, totals.Failed = &queries, &grabs, &failed
 		}
 		out.Totals = totals
 	}

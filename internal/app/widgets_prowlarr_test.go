@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 )
@@ -23,27 +24,38 @@ const prowlarrTestKey = "pr-test-key-0001"
 
 type fakeProwlarr struct {
 	*httptest.Server
-	calls      atomic.Int32
-	noKey      atomic.Int32
-	failStats  bool
-	failHealth bool
-	paths      []string
+	calls atomic.Int32
+	noKey atomic.Int32
+	// fail names request paths that answer 500.
+	fail map[string]bool
+	// listPad makes the indexer list this many bytes bigger.
+	listPad int
+	mu      sync.Mutex
+	paths   []string
+}
+
+func (f *fakeProwlarr) asked() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.paths...)
 }
 
 func newFakeProwlarr(t *testing.T) *fakeProwlarr {
 	t.Helper()
-	fake := &fakeProwlarr{}
-	serve := func(name string, fails func() bool) http.HandlerFunc {
+	fake := &fakeProwlarr{fail: map[string]bool{}}
+	serve := func(name string) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			fake.calls.Add(1)
-			fake.paths = append(fake.paths, r.URL.Path)
 			if r.Header.Get("X-Api-Key") != prowlarrTestKey {
 				fake.noKey.Add(1)
 				w.WriteHeader(http.StatusUnauthorized)
 				_, _ = w.Write([]byte(`{"error":"Unauthorized"}`))
 				return
 			}
-			if fails != nil && fails() {
+			fake.mu.Lock()
+			failing := fake.fail[r.URL.Path]
+			fake.mu.Unlock()
+			if failing {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -51,17 +63,31 @@ func newFakeProwlarr(t *testing.T) *fakeProwlarr {
 			if err != nil {
 				t.Errorf("fixture %s: %v", name, err)
 			}
+			if name == "indexer" && fake.listPad > 0 {
+				// Prowlarr sends each indexer with its fields and categories.
+				var list []map[string]any
+				_ = json.Unmarshal(raw, &list)
+				list[0]["fields"] = strings.Repeat("x", fake.listPad)
+				raw, _ = json.Marshal(list)
+			}
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(raw)
 		}
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/system/status", serve("system_status", nil))
-	mux.HandleFunc("/api/v1/indexer", serve("indexer", nil))
-	mux.HandleFunc("/api/v1/indexerstats", serve("indexerstats", func() bool { return fake.failStats }))
-	mux.HandleFunc("/api/v1/indexerstatus", serve("indexerstatus", nil))
-	mux.HandleFunc("/api/v1/health", serve("health", func() bool { return fake.failHealth }))
-	fake.Server = httptest.NewServer(mux)
+	mux.HandleFunc("/api/v1/system/status", serve("system_status"))
+	mux.HandleFunc("/api/v1/indexer", serve("indexer"))
+	mux.HandleFunc("/api/v1/indexerstats", serve("indexerstats"))
+	mux.HandleFunc("/api/v1/indexerstatus", serve("indexerstatus"))
+	mux.HandleFunc("/api/v1/health", serve("health"))
+	// Every request is noted, also one no route answers: the history carries
+	// search addresses with keys, and a test must be able to see it is never read.
+	fake.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fake.mu.Lock()
+		fake.paths = append(fake.paths, r.URL.Path)
+		fake.mu.Unlock()
+		mux.ServeHTTP(w, r)
+	}))
 	t.Cleanup(fake.Close)
 	return fake
 }
@@ -140,7 +166,8 @@ func TestProwlarrReadsEveryTopic(t *testing.T) {
 		failed += s.failed()
 	}
 	if got.Totals == nil || got.Totals.Enabled != 4 || got.Totals.Total != 6 ||
-		got.Totals.Queries != queries || got.Totals.Grabs != grabs || got.Totals.Failed != failed || queries == 0 {
+		got.Totals.Queries == nil || *got.Totals.Queries != queries || got.Totals.Grabs == nil || *got.Totals.Grabs != grabs ||
+		got.Totals.Failed == nil || *got.Totals.Failed != failed || queries == 0 {
 		t.Errorf("totals: %+v, want %d queries, %d grabs, %d failed", got.Totals, queries, grabs, failed)
 	}
 	// A paused indexer comes first, then the busiest.
@@ -170,7 +197,7 @@ func TestProwlarrReadsEveryTopic(t *testing.T) {
 			t.Errorf("%q reached the response", secret)
 		}
 	}
-	for _, path := range fake.paths {
+	for _, path := range fake.asked() {
 		if strings.Contains(path, "history") {
 			t.Errorf("the history was read (it carries search addresses with keys): %s", path)
 		}
@@ -186,7 +213,7 @@ func TestProwlarrSkipsTopicsThatAreOff(t *testing.T) {
 	if got == nil || got.Totals == nil || len(got.Indexers) != 0 || len(got.Issues) != 0 {
 		t.Fatalf("answer: %+v", got)
 	}
-	for _, path := range fake.paths {
+	for _, path := range fake.asked() {
 		if strings.HasSuffix(path, "/health") || strings.HasSuffix(path, "/indexerstatus") {
 			t.Errorf("an off topic asked %s", path)
 		}
@@ -197,7 +224,7 @@ func TestProwlarrSkipsTopicsThatAreOff(t *testing.T) {
 func TestProwlarrPartialAnswer(t *testing.T) {
 	h := newTestHandlers(t)
 	fake := newFakeProwlarr(t)
-	fake.failHealth = true
+	fake.fail["/api/v1/health"] = true
 	widget := prowlarrSetUp(t, h, fake, nil)
 	result := askProwlarr(t, h, widget)
 	if result.Error != "" || !result.Partial || result.Indexers == nil || len(result.Indexers.Indexers) == 0 {
@@ -254,5 +281,55 @@ func TestProwlarrSetupNamesTheVersion(t *testing.T) {
 	}
 	if _, answer := post("wrong"); answer.Error != "key refused" {
 		t.Errorf("a wrong key: %+v", answer)
+	}
+}
+
+// With the paused list unread the rows are still there, and the answer says it is half.
+func TestProwlarrPauseListFailingMakesItPartial(t *testing.T) {
+	h := newTestHandlers(t)
+	fake := newFakeProwlarr(t)
+	fake.fail["/api/v1/indexerstatus"] = true
+	widget := prowlarrSetUp(t, h, fake, map[string]any{"topics": []any{"indexers"}})
+	result := askProwlarr(t, h, widget)
+	if result.Indexers == nil || len(result.Indexers.Indexers) == 0 || !result.Partial {
+		t.Fatalf("answer: partial %v %+v", result.Partial, result.Indexers)
+	}
+}
+
+// Without the stats the counts are unknown, not zero.
+func TestProwlarrStatsFailingLeavesCountsUnknown(t *testing.T) {
+	h := newTestHandlers(t)
+	fake := newFakeProwlarr(t)
+	fake.fail["/api/v1/indexerstats"] = true
+	widget := prowlarrSetUp(t, h, fake, nil)
+	result := askProwlarr(t, h, widget)
+	if result.Indexers == nil || !result.Partial || result.Indexers.Totals == nil {
+		t.Fatalf("answer: partial %v %+v", result.Partial, result.Indexers)
+	}
+	totals := result.Indexers.Totals
+	if totals.Queries != nil || totals.Grabs != nil || totals.Failed != nil || totals.Enabled != 4 {
+		t.Errorf("totals: %+v", totals)
+	}
+	for _, row := range result.Indexers.Indexers {
+		if !row.NoStats {
+			t.Errorf("a row claims counts it does not have: %+v", row)
+		}
+	}
+	raw, _ := json.Marshal(totals)
+	if strings.Contains(string(raw), "queries") {
+		t.Errorf("an unknown count was sent: %s", raw)
+	}
+}
+
+// A list bigger than the ordinary body limit, as Prowlarr sends with real
+// indexers, still reads.
+func TestProwlarrBigIndexerListStillReads(t *testing.T) {
+	h := newTestHandlers(t)
+	fake := newFakeProwlarr(t)
+	fake.listPad = 6 << 20
+	widget := prowlarrSetUp(t, h, fake, nil)
+	result := askProwlarr(t, h, widget)
+	if result.Error != "" || result.Indexers == nil || result.Indexers.Totals == nil || result.Indexers.Totals.Total != 6 {
+		t.Fatalf("answer: error %q %+v", result.Error, result.Indexers)
 	}
 }

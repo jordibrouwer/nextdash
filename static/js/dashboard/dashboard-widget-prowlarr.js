@@ -128,8 +128,8 @@
     function indexerRow(dash, widget, entry) {
         const facts = [
             say(dash, widget, entry.protocol === 'usenet' ? 'usenet' : 'torrent'),
-            say(dash, widget, 'queries', { n: compact(entry.queries) || '0' }),
-            say(dash, widget, 'grabs', { n: compact(entry.grabs) || '0' }),
+            entry.noStats ? '' : say(dash, widget, 'queries', { n: compact(entry.queries) || '0' }),
+            entry.noStats ? '' : say(dash, widget, 'grabs', { n: compact(entry.grabs) || '0' }),
             entry.avgMs > 0 ? say(dash, widget, 'avg', { n: count(entry.avgMs) }) : '',
         ].filter(Boolean);
         return rowButton(dash, widget, { title: entry.name, openUrl: entry.openUrl }, (row) => {
@@ -138,7 +138,7 @@
             text.appendChild(el('span', 'pw-sub', facts.join(' · ')));
             const side = el('span', 'pw-side');
             if (entry.paused) side.appendChild(chip(say(dash, widget, 'paused'), true));
-            else if (entry.failed > 0) side.appendChild(chip(say(dash, widget, 'failed', { n: count(entry.failed) }), true));
+            else if (!entry.noStats && entry.failed > 0) side.appendChild(chip(say(dash, widget, 'failed', { n: count(entry.failed) }), true));
             row.append(text, side);
         }, facts);
     }
@@ -181,9 +181,11 @@
             return box;
         };
         bar.appendChild(figure(`${count(totals.enabled)}/${count(totals.total)}`, say(dash, widget, 'figIndexers')));
-        bar.appendChild(figure(compact(totals.queries) || '0', say(dash, widget, 'figQueries')));
-        bar.appendChild(figure(compact(totals.grabs) || '0', say(dash, widget, 'figGrabs')));
-        bar.appendChild(figure(compact(totals.failed) || '0', say(dash, widget, 'figFailed'), totals.failed > 0));
+        // A count the server could not read is a dash, never a zero.
+        const shown = (value) => (num(value) === null ? '–' : (compact(value) || '0'));
+        bar.appendChild(figure(shown(totals.queries), say(dash, widget, 'figQueries')));
+        bar.appendChild(figure(shown(totals.grabs), say(dash, widget, 'figGrabs')));
+        bar.appendChild(figure(shown(totals.failed), say(dash, widget, 'figFailed'), totals.failed > 0));
         return bar;
     }
 
