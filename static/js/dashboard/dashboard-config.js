@@ -10782,7 +10782,6 @@ class DashboardConfig {
                         opt('last', t('config.bmViewColLast', 'Last opened')),
                         opt('added', t('config.bmViewColAdded', 'Added')),
                         opt('usage', t('config.bmViewColUsage', 'Usage')),
-                        opt('news', t('config.bmViewColNews', 'Latest news')),
                         opt('score', t('config.bmViewColScore', 'Score')),
                     ] },
                     { field: 'bmViewUsageDays', type: 'select', label: t('config.bmViewUsageDaysLabel', 'Usage covers'), options: [
@@ -20898,7 +20897,6 @@ class DashboardConfig {
             ['tags', this.t('config.bmViewColTags', 'Tags')],
             ['shortcut', this.t('config.bmViewColShortcut', 'Shortcut')],
             ['usage', this.t('config.bmViewColUsage', 'Usage')],
-            ['news', this.t('config.bmViewColNews', 'Latest news')],
             ['score', this.t('config.sortByScore', 'Health score')],
         ];
         return options.map(([v, label]) =>
@@ -21678,13 +21676,6 @@ class DashboardConfig {
             },
             // The busiest of the sparkline's window first.
             usage: (a, b) => usageSum(b) - usageSum(a),
-            // Newest publish first; bookmarks without a watched feed last.
-            news: (a, b) => {
-                const la = this.dash.feedWatch?.latestFor?.(a)?.at || 0;
-                const lb = this.dash.feedWatch?.latestFor?.(b)?.at || 0;
-                if (!la || !lb) return (la ? 0 : 1) - (lb ? 0 : 1);
-                return lb - la;
-            },
             // Worst first. Rows without an issue score as healthy.
             score: (a, b) => Number(this.bmHealthIssue?.(a)?.score ?? 100) - Number(this.bmHealthIssue?.(b)?.score ?? 100),
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;

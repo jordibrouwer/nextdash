@@ -10941,8 +10941,6 @@
     "feedWatchEmptyStep3": "New posts are announced once; read them on the dashboard or in News.",
     "feedWatchEmptyHint": "Good first picks: a blog you read, a project’s releases, a changelog. You can also right-click any bookmark and choose Watch this feed…",
     "feedWatchEmptyStart": "Choose a bookmark to watch…",
-    "bmNewsUntitled": "New item",
-    "bmViewColNews": "Latest news",
     "webhookEventFeedNews": "A watched feed has news",
     "feedWatchNeverChecked": "not checked yet",
     "feedWatchErr404": "Not found (404)",

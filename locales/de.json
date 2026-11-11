@@ -10940,8 +10940,6 @@
     "feedWatchEmptyStep3": "Neue Beiträge werden einmal gemeldet; lies sie auf dem Dashboard oder unter Neuigkeiten.",
     "feedWatchEmptyHint": "Gute erste Kandidaten: ein Blog, den du liest, die Releases eines Projekts, ein Changelog. Du kannst auch ein beliebiges Lesezeichen mit rechts anklicken und Diesen Feed beobachten… wählen.",
     "feedWatchEmptyStart": "Ein Lesezeichen zum Beobachten wählen…",
-    "bmNewsUntitled": "Neuer Eintrag",
-    "bmViewColNews": "Neueste Nachrichten",
     "webhookEventFeedNews": "Ein beobachteter Feed hat Neuigkeiten",
     "feedWatchNeverChecked": "noch nicht geprüft",
     "feedWatchErr404": "Nicht gefunden (404)",

@@ -10940,8 +10940,6 @@
     "feedWatchEmptyStep3": "Les nouveaux articles sont annoncés une seule fois ; lisez-les sur le tableau de bord ou dans Actualités.",
     "feedWatchEmptyHint": "Bons premiers choix : un blog que vous lisez, les versions d’un projet, un changelog. Vous pouvez aussi faire un clic droit sur un favori et choisir Suivre ce flux…",
     "feedWatchEmptyStart": "Choisir un favori à suivre…",
-    "bmNewsUntitled": "Nouvel élément",
-    "bmViewColNews": "Dernières nouvelles",
     "webhookEventFeedNews": "Un flux suivi a des nouveautés",
     "feedWatchNeverChecked": "pas encore vérifié",
     "feedWatchErr404": "Introuvable (404)",

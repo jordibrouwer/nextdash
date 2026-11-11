@@ -171,6 +171,10 @@ Eight new theme groups, 25 families in light and dark, each built around an idea
 - **new — Columns per row is a dropdown from 1 to 8.** It was a number box that took 1 to 12 and drew 6 at most. Eight is the most now, in **Appearance → Layout** and in the theme studio's **Layout** tab, the drawing beside it shows all eight, the palette's `:columns` offers 7 and 8, and the cheat sheet and the info text say *1–8* in six languages. A stored 9 to 12 reads as 8 (`dashboard-config.js`, `dashboard-render-core.js`, `dashboard.css`, `search-commands-columns.js`, `setting-art.js`, `config-preview.js`).
 - **new — Space between categories, Space between columns and Page margins are dropdowns.** They were rows of cards; each option is now a line in a dropdown with its sentence in it (*Snug — Rows sit close together.*), and the drawing of the choice in force stays beside the field. The same in **Appearance → Layout** and the theme studio (`dashboard-config.js`, `tests/dashboard-category-spacing.spec.js`, `tests/dashboard-column-spacing.spec.js`, `tests/config-setting-art.spec.js`).
 
+### Bookmarks view
+
+- **new — The Latest news column is gone from the Bookmarks view.** The newest headline of a watched site stays where it is read best: on the row in the dashboard, in the preview card and in the news window (`Shift + W`). The column, its heading, its place in **Sort** and **Columns shown** and its two locale words are removed; a saved choice that names it is ignored (`dashboard-config-bookmarks-workbench.js`, `dashboard-config.js`, `models.go`, `config-bookmarks-workbench.css`, `tests/bookmarks-view-feed-news.spec.js`).
+
 ### Under the hood
 
 - **new — One file per theme group.** `theme_groups.go` merges the palettes of every group into the built-in themes and never replaces an id that is already there; a group's id prefix files it under its chip (`theme_archetype.go`). Each group brings its own stylesheet, its own script when it needs one, and its own spec (`tests/theme-group-*.spec.js`).

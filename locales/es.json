@@ -10910,8 +10910,6 @@
     "feedWatchEmptyStep3": "Las entradas nuevas se avisan una sola vez; léelas en el panel o en Noticias.",
     "feedWatchEmptyHint": "Buenas primeras opciones: un blog que leas, las versiones de un proyecto, un registro de cambios. También puedes hacer clic derecho en cualquier marcador y elegir Vigilar este feed…",
     "feedWatchEmptyStart": "Elegir un marcador para vigilar…",
-    "bmNewsUntitled": "Artículo",
-    "bmViewColNews": "Últimas noticias",
     "webhookEventFeedNews": "Un feed vigilado tiene noticias",
     "feedWatchNeverChecked": "aún sin comprobar",
     "feedWatchErr404": "No encontrado (404)",

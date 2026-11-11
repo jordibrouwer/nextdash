@@ -10940,8 +10940,6 @@
     "feedWatchEmptyStep3": "Nieuwe berichten worden één keer gemeld; lees ze op het dashboard of in Nieuws.",
     "feedWatchEmptyHint": "Goede eerste keuzes: een blog die je leest, de releases van een project, een changelog. Je kunt ook met rechts op een bookmark klikken en Deze feed volgen… kiezen.",
     "feedWatchEmptyStart": "Kies een bookmark om te volgen…",
-    "bmNewsUntitled": "Nieuw item",
-    "bmViewColNews": "Laatste nieuws",
     "webhookEventFeedNews": "Een gevolgde feed heeft nieuws",
     "feedWatchNeverChecked": "nog niet gecontroleerd",
     "feedWatchErr404": "Niet gevonden (404)",

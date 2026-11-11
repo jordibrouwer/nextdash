@@ -10940,8 +10940,6 @@
     "feedWatchEmptyStep3": "新文章只会提醒一次；可在仪表板或新闻中阅读。",
     "feedWatchEmptyHint": "适合先试的：你常读的博客、某个项目的发布页、更新日志。你也可以右键点击任意书签并选择“关注此订阅源…”",
     "feedWatchEmptyStart": "选择要关注的书签…",
-    "bmNewsUntitled": "新条目",
-    "bmViewColNews": "最新消息",
     "webhookEventFeedNews": "关注的订阅源有新消息",
     "feedWatchNeverChecked": "尚未检查",
     "feedWatchErr404": "未找到（404）",
