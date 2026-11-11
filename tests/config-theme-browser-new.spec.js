@@ -29,8 +29,10 @@ const NEW_FAMILIES = [...fs.readFileSync(path.join(__dirname, '..', 'internal', 
 test.describe('new themes in the browser', () => {
     test('a new family wears the badge, an older one does not', async ({ page }) => {
         await openBrowser(page);
-        await expect(page.locator('[data-theme-card="tidepool-lens"] [data-theme-new]')).toBeVisible();
+        await expect(page.locator('[data-theme-card="stationery-zen"] [data-theme-new]')).toBeVisible();
         await expect(page.locator('[data-theme-card="sea-glass"] [data-theme-new]')).toHaveCount(0);
+        // The collection before this one stopped being new when this one arrived.
+        await expect(page.locator('[data-theme-card="tidepool-lens"] [data-theme-new]')).toHaveCount(0);
     });
 
     test('searching "new" leaves exactly the new families', async ({ page }) => {

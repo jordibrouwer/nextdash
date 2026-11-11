@@ -6,12 +6,12 @@ import "testing"
 // older does -- the browser searches on it.
 func TestNewThemesAreMarkedNew(t *testing.T) {
 	colors := getDefaultBuiltInThemes()
-	for _, id := range []string{"tidepool-lens-dark", "tidepool-lens-light", "matrix-rain-dark", "vermilion-seal-light"} {
+	for _, id := range []string{"stationery-zen-dark", "stationery-zen-light", "tactile-keycap-dark", "legible-colour-blind-safe-light"} {
 		if !themeMetaFor(id, colors[id]).New {
 			t.Errorf("%s is not marked new", id)
 		}
 	}
-	for _, id := range []string{"sea-glass-dark", "tarnished-brass-light", "gloss-obsidian-mirror-dark"} {
+	for _, id := range []string{"sea-glass-dark", "tarnished-brass-light", "gloss-obsidian-mirror-dark", "tidepool-lens-dark", "look-holo-light"} {
 		if themeMetaFor(id, colors[id]).New {
 			t.Errorf("%s is marked new", id)
 		}
