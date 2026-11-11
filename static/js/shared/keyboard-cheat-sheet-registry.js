@@ -547,7 +547,7 @@
                 { keys: ':layoutversion <mode>', printOmit: true, cheatKey: 'caLayoutversion', fallback: 'Switch layout version — classic / modern / toggle (not the same as :layout presets)' },
                 { keys: ':theme <name>', cheatKey: 'caTheme', fallback: 'Switch colour theme' },
                 { keys: ':density <mode>', printOmit: true, cheatKey: 'caDensity', fallback: 'Change density — comfortable / compact / dense' },
-                { keys: ':columns <n>', cheatKey: 'caColumns', fallback: 'Set number of columns (1–6)' },
+                { keys: ':columns <n>', cheatKey: 'caColumns', fallback: 'Set number of columns (1–8)' },
                 { keys: ':fontsize <size>', printOmit: true, cheatKey: 'caFontsize', fallback: 'Change font size' },
                 { keys: ':favicons on/off', cheatKey: 'caFavicons', fallback: 'Toggle favicons on/off' },
                 { keys: ':favicons fetch', printOmit: true, cheatKey: 'caFaviconsFetch', fallback: 'Re-download every bookmark icon across all pages (replaces existing icons)' },
