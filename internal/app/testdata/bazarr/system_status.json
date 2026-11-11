@@ -1,0 +1,17 @@
+{
+ "data": {
+  "bazarr_version": "1.6.2",
+  "package_version": "x",
+  "sonarr_version": "4.0.20.3014",
+  "radarr_version": "6.4.4.10685",
+  "operating_system": "x",
+  "python_version": "3.12.16",
+  "database_engine": "Sqlite 3.53.4",
+  "database_migration": "537e9b4d10e3",
+  "bazarr_directory": "x",
+  "bazarr_config_directory": "x",
+  "start_time": 1794362641.654624,
+  "timezone": "Europe/Amsterdam",
+  "cpu_cores": 4
+ }
+}

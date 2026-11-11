@@ -1,0 +1,31 @@
+{
+ "data": [
+  {
+   "seriesTitle": "Example Show 1",
+   "episode_number": "3x5",
+   "episodeTitle": "Example Episode",
+   "missing_subtitles": [
+    {
+     "name": "Dutch",
+     "code2": "nl",
+     "code3": "nld",
+     "forced": false,
+     "hi": false
+    },
+    {
+     "name": "English",
+     "code2": "en",
+     "code3": "eng",
+     "forced": false,
+     "hi": false
+    }
+   ],
+   "sonarrSeriesId": 418,
+   "sonarrEpisodeId": 74402,
+   "sceneName": null,
+   "tags": [],
+   "seriesType": "standard"
+  }
+ ],
+ "total": 1
+}

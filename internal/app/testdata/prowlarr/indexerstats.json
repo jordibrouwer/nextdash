@@ -1,0 +1,88 @@
+{
+ "indexers": [
+  {
+   "indexerId": 4,
+   "indexerName": "Example Indexer 3",
+   "averageResponseTime": 209,
+   "averageGrabResponseTime": 34,
+   "numberOfQueries": 709,
+   "numberOfGrabs": 77,
+   "numberOfRssQueries": 5144,
+   "numberOfAuthQueries": 0,
+   "numberOfFailedQueries": 0,
+   "numberOfFailedGrabs": 0,
+   "numberOfFailedRssQueries": 0,
+   "numberOfFailedAuthQueries": 0
+  },
+  {
+   "indexerId": 1,
+   "indexerName": "Example Indexer 1",
+   "averageResponseTime": 424,
+   "averageGrabResponseTime": 0,
+   "numberOfQueries": 704,
+   "numberOfGrabs": 195,
+   "numberOfRssQueries": 5156,
+   "numberOfAuthQueries": 0,
+   "numberOfFailedQueries": 0,
+   "numberOfFailedGrabs": 0,
+   "numberOfFailedRssQueries": 0,
+   "numberOfFailedAuthQueries": 0
+  },
+  {
+   "indexerId": 9,
+   "indexerName": "Example Indexer 4",
+   "averageResponseTime": 126,
+   "averageGrabResponseTime": 0,
+   "numberOfQueries": 375,
+   "numberOfGrabs": 203,
+   "numberOfRssQueries": 2838,
+   "numberOfAuthQueries": 0,
+   "numberOfFailedQueries": 0,
+   "numberOfFailedGrabs": 0,
+   "numberOfFailedRssQueries": 0,
+   "numberOfFailedAuthQueries": 0
+  },
+  {
+   "indexerId": 2,
+   "indexerName": "Example Indexer 2",
+   "averageResponseTime": 440,
+   "averageGrabResponseTime": 0,
+   "numberOfQueries": 723,
+   "numberOfGrabs": 79,
+   "numberOfRssQueries": 5121,
+   "numberOfAuthQueries": 0,
+   "numberOfFailedQueries": 0,
+   "numberOfFailedGrabs": 0,
+   "numberOfFailedRssQueries": 8,
+   "numberOfFailedAuthQueries": 0
+  },
+  {
+   "indexerId": 11,
+   "indexerName": "Example Indexer 6",
+   "averageResponseTime": 4604,
+   "averageGrabResponseTime": 0,
+   "numberOfQueries": 756,
+   "numberOfGrabs": 4,
+   "numberOfRssQueries": 5055,
+   "numberOfAuthQueries": 0,
+   "numberOfFailedQueries": 0,
+   "numberOfFailedGrabs": 0,
+   "numberOfFailedRssQueries": 0,
+   "numberOfFailedAuthQueries": 0
+  },
+  {
+   "indexerId": 10,
+   "indexerName": "Example Indexer 5",
+   "averageResponseTime": 188,
+   "averageGrabResponseTime": 0,
+   "numberOfQueries": 1,
+   "numberOfGrabs": 0,
+   "numberOfRssQueries": 17,
+   "numberOfAuthQueries": 0,
+   "numberOfFailedQueries": 1,
+   "numberOfFailedGrabs": 0,
+   "numberOfFailedRssQueries": 17,
+   "numberOfFailedAuthQueries": 0
+  }
+ ]
+}

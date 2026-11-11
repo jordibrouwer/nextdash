@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.28.1 — 11 November 2026](#v1281--11-november-2026)
 - [v1.28.0 — 10 November 2026](#v1280--10-november-2026)
 - [v1.27.4 — 9 November 2026](#v1274--9-november-2026)
 - [v1.27.3 — 9 November 2026](#v1273--9-november-2026)
@@ -139,6 +140,28 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.28.1 — 11 November 2026
+
+Three more services on the media tile: **Jellystat**, **Bazarr** and **Prowlarr**. Each one is a widget with its own address and API key, a Connect step that checks them, and parts you switch on or off. Under **Media** in the widget catalogue.
+
+### Media widgets
+
+- **new — A Jellystat widget.** Recent plays, the most viewed, the most active people and a line of totals, each optional. The narrow tile shows one part at a time behind tabs, the wide tile puts them side by side. The key is made under **Settings → API Keys** in Jellystat. After Connect the libraries are offered; only the totals and the recent plays follow that choice, because Jellystat cannot split its top lists. Period 1 to 365 days (30 by default), refresh every 60 to 3600 seconds (300 by default), and a click opens the item in Jellystat or a small card first (`widgets_jellystat.go`, `dashboard-widget-jellystat.js`).
+- **new — A Bazarr widget.** Three parts, each optional: **Missing subtitles** (movies and episodes with the languages still missing, such as `nl`, `en+hi` or `en+forced`, the two kinds taking turns so a long movie backlog does not hide the episodes), **Recently fetched** (language, provider, score and *upgraded*, newest first, in Bazarr's own time zone) and a line of **totals** (movies missing, episodes missing, providers in trouble). The key is under **Settings → General → Security** in Bazarr, and Connect names the version it found. A figure Bazarr could not be asked for shows as a dash, not a zero, and the tile says that part of it could not be read (`widgets_bazarr.go`, `dashboard-widget-bazarr.js`).
+- **new — A Prowlarr widget.** Three parts, each optional: the **indexers** that are on (queries, grabs, failures and the average answer time, a paused one first), **what needs attention** (Prowlarr's own health messages and the indexers it has paused, with when they are tried again) and a line of **totals**. Period 1 to 365 days (7 by default). The key is under **Settings → General → Security** in Prowlarr. A count Prowlarr could not give shows as a dash, not a zero. The widget never reads Prowlarr's history, which carries the address of every search with the key in it (`widgets_prowlarr.go`, `dashboard-widget-prowlarr.js`).
+
+### Security
+
+- **fix — Go 1.26.11.** `govulncheck` reported GO-2026-6859 in `net/http` of Go 1.26.10, which nextDash's server code reaches. The `toolchain` line in `go.mod` now names 1.26.11, where it is fixed. `scripts/release-preflight.sh` passes with it.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.28.1.json` and its index entry**, led by one highlight for the three widgets with a picture (`media/v1.28.1-media-widgets.jpg`, taken by `tests/fixtures/whats-new-media/v1.28.1.js` over the manual-shot seed with mocked answers, `tests/helpers/arr-tile-mocks.js`). `whats-new-stub.js` names the release (`DASHBOARD_RELEASE`) and `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v373`; `tests/whats-new-hidden-release.spec.js` follows. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — Config → Overview and About → News & features** carry one entry each for Jellystat, Bazarr and Prowlarr (`since: "v1.28.1"`), Config → Help and its tip name the three, and `MANUAL.md` and `README.md` describe them, with four new pictures (`15-jellystat`, `15-bazarr`, `15-prowlarr`, `16-widget-picker`, by `tests/manual-screenshots-v1-28-1.spec.js`). The 79 strings of the three widgets and the Overview entries are in all six languages.
+- **new — Four flaky specs wait for state, not for time**, and a spec records the pictures for the network tests page on the site (`tests/feed-watch-paper.spec.js`, `tests/site-shots-net-tests.spec.js`).
 
 ---
 

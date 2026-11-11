@@ -165,6 +165,13 @@ const (
 	// The DNS blocker types show queries, what is blocked and who asks.
 	WidgetTypeAdguard WidgetType = "adguard"
 	WidgetTypePihole  WidgetType = "pihole"
+	// WidgetTypeJellystat shows plays, the most viewed and the most active
+	// people from a Jellystat server.
+	WidgetTypeJellystat WidgetType = "jellystat"
+	// WidgetTypeBazarr shows missing and fetched subtitles from a Bazarr server.
+	WidgetTypeBazarr WidgetType = "bazarr"
+	// WidgetTypeProwlarr shows how the indexers of a Prowlarr server are doing.
+	WidgetTypeProwlarr WidgetType = "prowlarr"
 	// WidgetTypeGlances is one Glances host from nextDash's own record of it:
 	// meters or the processor's last hour, opening the Glances page.
 	WidgetTypeGlances WidgetType = "glances"
@@ -251,6 +258,9 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeBeszelStorage:   {},
 	WidgetTypeAdguard:         {},
 	WidgetTypePihole:          {},
+	WidgetTypeJellystat:       {},
+	WidgetTypeBazarr:          {},
+	WidgetTypeProwlarr:        {},
 	WidgetTypeGlances:         {},
 	WidgetTypeNetTests:        {},
 

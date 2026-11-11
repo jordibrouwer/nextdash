@@ -32,6 +32,7 @@ var discoveryKindMap = map[string]string{
 	"immich-server":       "Documents & photos",
 	"jellyfin":            "Media",
 	"jellyseerr":          "Media management",
+	"jellystat":           "Media",
 	"jenkins":             "Development",
 	"lidarr":              "Media management",
 	"netdata":             "Monitoring",

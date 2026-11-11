@@ -1,0 +1,78 @@
+/*
+ * The Prowlarr tile. A header, an optional line of totals, then the topics:
+ * one at a time behind tabs when narrow (.dashboard-widget-narrow-only), side
+ * by side when wide (.dashboard-widget-wide-only). The panel's container query
+ * shows the one that fits (dashboard.css).
+ */
+.pw-tile { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; }
+.pw-tile span { min-width: 0; }
+
+.pw-head { display: flex; align-items: baseline; gap: 0.5rem; font-weight: 500; }
+.pw-period { margin-left: auto; font-size: var(--font-size-small); font-weight: 400; color: var(--text-secondary, inherit); }
+
+.pw-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr)); gap: 0.4rem; }
+.pw-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--radius-md, 8px);
+    background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.pw-figure--bad { background: color-mix(in srgb, var(--status-warning, #d9a21b) 22%, transparent); }
+.pw-figure-value { font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.pw-figure-label { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+
+.pw-body { display: flex; flex-direction: column; gap: 0.5rem; }
+.pw-body--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1.25rem; align-items: start; }
+.pw-body--grid[data-topics="1"] { grid-template-columns: minmax(0, 1fr); }
+
+.pw-tabs { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.pw-tab {
+    padding: 0.15rem 0.6rem;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    color: inherit;
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+.pw-tab[aria-selected="true"] { background: var(--accent-primary); color: var(--bg-primary, #fff); }
+.pw-tab:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
+.pw-block { display: flex; flex-direction: column; gap: 0.15rem; }
+.pw-block-title { font-size: var(--font-size-small); color: var(--text-tertiary); }
+.pw-empty, .pw-foot { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+
+.pw-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.6rem;
+    width: 100%;
+    padding: 0.25rem 0;
+    border: 0;
+    border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.pw-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.pw-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.pw-title, .pw-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pw-sub { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+.pw-sub { white-space: normal; }
+
+.pw-title--wrap { white-space: normal; }
+.pw-side { display: flex; gap: 0.25rem; justify-self: end; }
+.pw-chip--bad { background: color-mix(in srgb, var(--status-warning, #d9a21b) 30%, transparent); }
+.pw-chip {
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}

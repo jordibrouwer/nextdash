@@ -366,6 +366,9 @@ var widgetFields = map[WidgetType][]widgetField{
 	WidgetTypeBeszelStorage:   beszelFieldsFor(WidgetTypeBeszelStorage),
 	WidgetTypeAdguard:         dnsFields(false),
 	WidgetTypePihole:          dnsFields(true),
+	WidgetTypeJellystat:       jellystatFields(),
+	WidgetTypeBazarr:          bazarrFields(),
+	WidgetTypeProwlarr:        prowlarrFields(),
 	WidgetTypeHomeAssistant: {
 		{Key: "server", Kind: "url"},
 		{Key: "credentialId", Kind: "string"},
@@ -822,7 +825,7 @@ func widgetTypeNames() []string {
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
 		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
 		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage,
-		WidgetTypeAdguard, WidgetTypePihole,
+		WidgetTypeAdguard, WidgetTypePihole, WidgetTypeJellystat, WidgetTypeBazarr, WidgetTypeProwlarr,
 		WidgetTypeGlances, WidgetTypeNetTests,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone

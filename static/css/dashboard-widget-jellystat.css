@@ -1,0 +1,85 @@
+/*
+ * The Jellystat tile. A header, an optional line of totals, then the topics:
+ * one at a time behind tabs when narrow (.dashboard-widget-narrow-only), side
+ * by side when wide (.dashboard-widget-wide-only). The panel's container query
+ * shows the one that fits (dashboard.css).
+ */
+.js-tile { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; }
+.js-tile span { min-width: 0; }
+
+.js-head { display: flex; align-items: baseline; gap: 0.5rem; font-weight: 500; }
+.js-period { margin-left: auto; font-size: var(--font-size-small); font-weight: 400; color: var(--text-secondary, inherit); }
+
+.js-totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; }
+.js-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--radius-md, 8px);
+    background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.js-figure-value { font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.js-figure-label { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+
+.js-body { display: flex; flex-direction: column; gap: 0.5rem; }
+.js-body--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1.25rem; align-items: start; }
+/* Three topics: the third takes the row below rather than a third thin column. */
+.js-body--grid[data-topics="1"] { grid-template-columns: minmax(0, 1fr); }
+
+.js-tabs { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.js-tab {
+    padding: 0.15rem 0.6rem;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    color: inherit;
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+.js-tab[aria-selected="true"] { background: var(--accent-primary); color: var(--bg-primary, #fff); }
+.js-tab:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
+.js-block { display: flex; flex-direction: column; gap: 0.15rem; }
+.js-block-title { font-size: var(--font-size-small); color: var(--text-tertiary); }
+.js-empty, .js-foot { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+
+.js-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.6rem;
+    width: 100%;
+    padding: 0.25rem 0;
+    border: 0;
+    border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.js-row:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.js-row:not(:has(.js-thumb)) { grid-template-columns: minmax(0, 1fr) auto; }
+.js-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.js-title, .js-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.js-sub { font-size: var(--font-size-small); color: var(--text-secondary, inherit); }
+.js-count { justify-self: end; font-size: var(--font-size-small); color: var(--text-secondary, inherit); font-variant-numeric: tabular-nums; }
+.js-bar {
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(to right, var(--accent-primary) calc(var(--p, 0) * 100%),
+        color-mix(in srgb, currentColor 15%, transparent) 0);
+}
+
+.js-thumb {
+    display: block;
+    width: 1.9rem;
+    aspect-ratio: 2 / 3;
+    border-radius: 3px;
+    overflow: hidden;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.js-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }

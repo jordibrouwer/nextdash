@@ -73,6 +73,9 @@
         'beszel-storage': { bars: [['nas /', 0.88, 'warn'], ['htpc /', 0.41]] },
         adguard: { big: '31%', rows: [['blocked today', ''], ['doubleclick.net', '812']] },
         pihole: { big: '24%', rows: [['blocked today', ''], ['doubleclick.net', '812']] },
+        prowlarr: { big: '5/7', rows: [['Northgate', '2.1k queries'], ['Meridian NZB', 'paused']] },
+        bazarr: { big: '18', rows: [['Copper Fields', 'nl'], ['Night Ferry 2x4', 'nl, en']] },
+        jellystat: { big: '214', rows: [['Harbour Lights', '19 plays'], ['Copper Fields', '8 plays']] },
         glances: { rows: [['Home', 'healthy']], bars: [['cpu', 0.22], ['mem', 0.61], ['disk', 0.83, 'warn']] },
         nettests: { rows: [['Nextcloud · TLS', '12 d', 'warn'], ['Plex · Ping', '14 ms', 'good'], ['Gitea · JSON', 'down', 'bad']] },
         custom: { rows: [['queued', '7'], ['paused', '2']] },
@@ -105,6 +108,9 @@
         'beszel-storage': '1.20',
         adguard: '1.26',
         pihole: '1.26',
+        jellystat: '1.28',
+        bazarr: '1.28',
+        prowlarr: '1.28',
     };
 
     /** "v1.19.4" -> [1, 19]; anything else, an old date tag included, -> null. */

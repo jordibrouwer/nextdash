@@ -122,6 +122,10 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	WidgetTypeBeszelStorage:   {"server": true, "credentialId": true, "systems": true, "system": true},
 	WidgetTypeAdguard:         {"server": true, "credentialId": true},
 	WidgetTypePihole:          {"server": true, "credentialId": true},
+	// Library ids name what a server holds.
+	WidgetTypeJellystat: {"server": true, "credentialId": true, "libraries": true},
+	WidgetTypeBazarr:    {"server": true, "credentialId": true},
+	WidgetTypeProwlarr:  {"server": true, "credentialId": true},
 }
 
 /*

@@ -406,6 +406,69 @@
         },
     };
 
+    /*
+     * Jellystat: an API key (Settings → API Keys) in the x-api-token header.
+     * After Connect the libraries are offered; only the totals and the recent
+     * plays follow the choice, because Jellystat cannot split its top lists.
+     */
+    Config.MEDIA_SERVICES.jellystat = {
+        id: 'jellystat',
+        name: 'Jellystat',
+        // Written the way the server files it (it canonicalises header names);
+        // the panel compares the stored name with this one exactly.
+        header: 'X-Api-Token',
+        placeholder: 'http://jellystat.local:3000',
+        words: {
+            keyWhere: ['config.widgetJellystatKeyWhere', 'Settings → API Keys in Jellystat'],
+        },
+        choices(panel, widget, index, setup, config, esc) {
+            const chosen = Array.isArray(config.libraries) ? config.libraries : null;
+            const libraries = (setup.libraries || []).map((lib) => `
+                <label class="config-toggle config-toggle--inline">
+                    <input type="checkbox" data-widget-setting="libraries" data-widget-index="${index}"
+                        data-widget-kind="checkset" value="${esc(lib.id)}"
+                        ${!chosen || chosen.includes(lib.id) ? 'checked' : ''}>
+                    <span>${esc(lib.name)}</span>
+                </label>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <span class="config-widget-field-label">${esc(panel.t('config.widgetJellystatLibraries', 'Libraries'))}</span>
+                    <div class="config-widget-checkset">${libraries}</div>
+                    <span class="config-widget-note">${esc(panel.t('config.widgetJellystatLibrariesNote',
+                        'The totals and the recent plays follow this choice. The most viewed and the most active count every library.'))}</span>
+                </div>`;
+        },
+    };
+
+    /*
+     * Bazarr: the API key (Settings → General → Security) in the X-API-KEY
+     * header. Nothing to choose after Connect, which names the version.
+     */
+    Config.MEDIA_SERVICES.bazarr = {
+        id: 'bazarr',
+        name: 'Bazarr',
+        // Written the way the server files it (it canonicalises header names).
+        header: 'X-Api-Key',
+        placeholder: 'http://bazarr.local:6767',
+        words: {
+            keyWhere: ['config.widgetBazarrKeyWhere', 'Settings → General → Security in Bazarr'],
+        },
+    };
+
+    /*
+     * Prowlarr: the API key (Settings → General → Security) in the X-Api-Key
+     * header. Nothing to choose after Connect, which names the version.
+     */
+    Config.MEDIA_SERVICES.prowlarr = {
+        id: 'prowlarr',
+        name: 'Prowlarr',
+        header: 'X-Api-Key',
+        placeholder: 'http://prowlarr.local:9696',
+        words: {
+            keyWhere: ['config.widgetProwlarrKeyWhere', 'Settings → General → Security in Prowlarr'],
+        },
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],
