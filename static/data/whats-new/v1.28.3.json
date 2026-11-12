@@ -1,0 +1,17 @@
+{
+  "tag": "v1.28.3",
+  "date": "12 November 2026",
+  "releasedAt": "2026-11-12",
+  "modalLead": "The new themes dress Bookmarks, Inbox, Containers, Glances, Tags and Config, not only the dashboard.",
+  "sections": [
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The new themes also dress the other views.</strong> Instrument, Spatial, Riso, Legible, Living, Cartographic and Stationery now frame the panel of Bookmarks, Inbox, Containers, Glances, Tags and Config the way they frame a category on the dashboard."
+        }
+      ]
+    }
+  ]
+}
