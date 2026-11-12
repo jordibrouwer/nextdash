@@ -635,7 +635,7 @@
         const currentTheme = () => (typeof opts.current === 'function' ? opts.current() : opts.current) || 'dark';
 
         const state = {
-            query: '',
+            query: typeof opts.query === 'string' ? opts.query : '',
             // A caller may open on a segment (the New themes popover opens on New).
             segment: SEGMENTS.includes(opts.segment) ? opts.segment : 'all',
             // Empty means every archetype. Separate from `segment` because the

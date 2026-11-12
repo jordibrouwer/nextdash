@@ -22,6 +22,7 @@
         seenSettingPromos: [],
         bell: {},
         tipCardShownAt: 0,
+        themeTipsFrom: 0,
     };
     let persistTimer = null;
     let migrateScheduled = false;
@@ -72,6 +73,7 @@
                 seenSettingPromos: [],
                 bell: {},
                 tipCardShownAt: 0,
+                themeTipsFrom: 0,
             };
         }
         return {
@@ -89,6 +91,7 @@
                 : [],
             bell: cleanBell(raw.bell),
             tipCardShownAt: Number(raw.tipCardShownAt) > 0 ? Number(raw.tipCardShownAt) : 0,
+            themeTipsFrom: Number(raw.themeTipsFrom) > 0 ? Number(raw.themeTipsFrom) : 0,
         };
     }
 
@@ -402,6 +405,18 @@
         }
     }
 
+    function getThemeTipsFrom() {
+        return Number(state.themeTipsFrom) > 0 ? Number(state.themeTipsFrom) : 0;
+    }
+
+    function noteThemeTipsFrom(ms, options = {}) {
+        state.themeTipsFrom = Number(ms) > 0 ? Number(ms) : 0;
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+    }
+
     function exportState() {
         const bellIds = Object.keys(state.bell || {});
         return {
@@ -413,6 +428,7 @@
             seenSettingPromos: state.seenSettingPromos?.length ? state.seenSettingPromos.slice() : undefined,
             bell: bellIds.length ? JSON.parse(JSON.stringify(state.bell)) : undefined,
             tipCardShownAt: state.tipCardShownAt > 0 ? state.tipCardShownAt : undefined,
+            themeTipsFrom: state.themeTipsFrom > 0 ? state.themeTipsFrom : undefined,
         };
     }
 
@@ -547,6 +563,8 @@
         resetBellNo,
         getTipCardShownAt,
         noteTipCardShown,
+        getThemeTipsFrom,
+        noteThemeTipsFrom,
         schedulePersist,
         persistNow,
     };

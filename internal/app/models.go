@@ -1246,6 +1246,9 @@ type DiscoverabilityState struct {
 	Bell map[string]BellRecord `json:"bell,omitempty"`
 	// TipCardShownAt is when the tip card last showed (Unix ms).
 	TipCardShownAt int64 `json:"tipCardShownAt,omitempty"`
+	// ThemeTipsFrom is the day (Unix ms) an upgraded install first ran the release that brought the
+	// theme groups: the three tips about Skywatch, Tidewatch and Daydrift count their days from it.
+	ThemeTipsFrom int64 `json:"themeTipsFrom,omitempty"`
 }
 
 // BellRecord is the pair of marks kept for one bell row.
