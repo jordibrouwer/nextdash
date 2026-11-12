@@ -2994,6 +2994,40 @@
         "section": "monitoring"
       },
       "since": "v1.28.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureThemeGroupsTitle",
+      "titleFallback": "Eight new theme groups",
+      "whatKey": "config.overviewNewFeatureThemeGroupsWhat",
+      "whatFallback": "Stationery, Living, Instrument, Tactile, Spatial, Cartographic, Riso and Legible: 25 families in light and dark, each with a backdrop of its own. A page that lists one bookmark per line, a waterline that follows the health of your services, a row drawn as a label strip, a page drawn as a map.",
+      "howKey": "config.overviewNewFeatureThemeGroupsHow",
+      "howFallback": "Open Appearance → Theme and pick a group in the Character row, or search the theme browser. The new families carry the New badge.",
+      "enableKey": "config.overviewNewFeatureThemeGroupsEnable",
+      "enableFallback": "On by default. Pick any of the 50 new themes; the other themes stay as they are.",
+      "ctaKey": "config.overviewNewFeatureThemeGroupsCta",
+      "ctaFallback": "Open Themes →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "theme"
+      },
+      "since": "v1.28.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeaturePageMarginsTitle",
+      "titleFallback": "Page margins in seven steps, up to eight columns",
+      "whatKey": "config.overviewNewFeaturePageMarginsWhat",
+      "whatFallback": "The edge beside the columns now has seven steps, from Full width to Spacious, and Columns per row goes up to eight. The page grows with the setting, so five to eight columns really show on a wide screen. Spacing and margins are dropdowns with their description in each option.",
+      "howKey": "config.overviewNewFeaturePageMarginsHow",
+      "howFallback": "Open Appearance → Layout, or the Layout tab in the theme studio. The palette takes :margins and :columns 1–8.",
+      "enableKey": "config.overviewNewFeaturePageMarginsEnable",
+      "enableFallback": "On by default. Balanced stays the default margin.",
+      "ctaKey": "config.overviewNewFeaturePageMarginsCta",
+      "ctaFallback": "Open Layout →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "layout"
+      },
+      "since": "v1.28.2"
     }
   ]
 }

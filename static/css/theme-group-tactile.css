@@ -1,0 +1,489 @@
+/*
+ * The tactile theme group; see internal/app/theme_groups.go.
+ * Keyed on html[data-theme^="tactile-"].
+ *
+ * A row is a physical object: a strip of label tape, a keycap, a rack unit.
+ * Everything is drawn on the row itself and its pseudo-elements so the row
+ * stays the full-width link it always was; the one lamp is the row's status
+ * (.status-online / -offline / -checking, set by status.js).
+ *
+ * Status never rides on colour alone: the lamp is a filled circle when online,
+ * a diamond when offline and a hollow ring while checking.
+ *
+ * The paint properties are !important on purpose. status.css and
+ * dashboard-bookmark-row.css state idle, hover and selected looks through a
+ * dozen :not() chains each; matching their specificity would mean copying
+ * every chain, and this group wants the same object in every state.
+ *
+ * Launcher and tile layouts keep their own rows; the object only makes sense
+ * as a line in a list.
+ */
+
+/* ── Shared row object ─────────────────────────────────────────────── */
+
+html[data-theme^="tactile-"] {
+    --tx-pad-end: 1.9rem;        /* room for the lamp at the row's end */
+    --tx-lamp: 0.62rem;
+}
+html[data-theme^="tactile-"] body:not(.status-color-lock) {
+    --tx-tint-offline: 16%;
+    --tx-tint-checking: 8%;
+}
+
+html[data-theme^="tactile-"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link:not(.bookmark-inline-editing) {
+    position: relative;
+    cursor: pointer;
+    padding-inline-end: var(--tx-pad-end);
+    background: var(--tx-bg) !important;
+    color: var(--tx-fg, var(--text-primary)) !important;
+    box-shadow: var(--tx-shadow) !important;
+    border-radius: var(--tx-radius, 4px) !important;
+    transition: transform 80ms ease-out, background-color 120ms ease, box-shadow 80ms ease-out;
+}
+
+/* Rows keep the colour of the object; the lamp, the bar and the ping chip carry status. */
+html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link:is(.status-offline, .status-checking):not(.bookmark-inline-editing) :is(.bookmark-open, .bookmark-text) {
+    color: inherit;
+}
+
+/* The lamp: a child of the lead cell so it never becomes a grid item. The lead
+   is static here so the lamp positions against the row, not the icon column. */
+html[data-theme^="tactile-"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link .bookmark-lead {
+    position: static;
+}
+html[data-theme^="tactile-"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link .bookmark-lead::after {
+    content: "";
+    position: absolute;
+    inset-inline-end: var(--tx-lamp-x, 0.7rem);
+    top: 50%;
+    width: var(--tx-lamp);
+    height: var(--tx-lamp);
+    margin-top: calc(var(--tx-lamp) / -2);
+    box-sizing: border-box;
+    pointer-events: none;
+    display: none;
+}
+html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link:is(.status-online, .status-offline, .status-checking) .bookmark-lead::after {
+    display: block !important;
+}
+html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link.status-online .bookmark-lead::after {
+    border-radius: 50%;
+    background: var(--accent-success);
+    box-shadow: 0 0 0.45rem var(--accent-success), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+}
+html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link.status-offline .bookmark-lead::after {
+    border-radius: 1px;
+    transform: rotate(45deg) scale(0.9);
+    background: var(--accent-error);
+    box-shadow: 0 0 0.45rem var(--accent-error);
+}
+html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link.status-checking .bookmark-lead::after {
+    border-radius: 50%;
+    border: 2px solid var(--accent-warning);
+    background: transparent;
+    animation: tactile-lamp-wait 1.1s ease-in-out infinite;
+}
+@keyframes tactile-lamp-wait {
+    50% { opacity: 0.3; }
+}
+
+/* Selected by the keyboard: an outline the object cannot hide, in the accent. */
+html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    outline: 2px solid var(--accent-primary) !important;
+    outline-offset: 2px;
+    z-index: 1;
+}
+
+/* The ping chip sits on the object, not on a page behind it. */
+html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link .status-text,
+html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link .bookmark-shortcut {
+    background: transparent;
+}
+
+/* ══ Label Maker: laminated tape off a label printer ═════════════════
+ *
+ * Each row is its own strip, cut from a different cartridge (white, yellow,
+ * blue, red, green) and printed in black. The cut ends are chamfered at the
+ * start and bitten at the end. A clip-path makes that shape, so an outline
+ * would be cut off with it: the selected row carries its frame inside the
+ * strip as an inset ring instead.
+ */
+
+html[data-theme^="tactile-label-maker"] {
+    --tx-radius: 0;
+    --tx-lamp-x: 1.15rem;
+    --tx-pad-end: 2.4rem;
+    --lm-ink: #0a0a0c;
+}
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link { --lm-tape: #f7f6f1; }
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link:nth-child(5n+2) { --lm-tape: #ffd21f; }
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link:nth-child(5n+3) { --lm-tape: #7fb2ff; }
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link:nth-child(5n+4) { --lm-tape: #ff7b6e; }
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link:nth-child(5n+5) { --lm-tape: #6fdc8c; }
+
+/* Variables on a short selector so the state rules below can override them. */
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link {
+    --lm-gloss: rgba(255, 255, 255, 0.38);
+    --tx-fg: var(--lm-ink);
+    --tx-bg: linear-gradient(var(--lm-gloss), rgba(255, 255, 255, 0) 48%, rgba(0, 0, 0, 0.1)), var(--lm-tape);
+    --tx-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.16);
+}
+html[data-theme^="tactile-label-maker"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link:not(.bookmark-inline-editing) {
+    margin-block-end: 0.28rem;
+    font-family: var(--font-family-mono, ui-monospace, Menlo, monospace);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    text-shadow: none;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 9px) 50%, 100% 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+}
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link:is(:hover, :focus-within):not(.bookmark-inline-editing) {
+    --lm-gloss: rgba(255, 255, 255, 0.62);
+}
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link.keyboard-selected:not(.bookmark-inline-editing) {
+    --lm-gloss: rgba(255, 255, 255, 0.62);
+    --tx-shadow: inset 0 0 0 3px var(--lm-ink);
+    outline: none !important;
+}
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link:focus-within:not(.keyboard-selected):not(.bookmark-inline-editing) {
+    --tx-shadow: inset 0 0 0 3px var(--lm-ink);
+    outline: none !important;
+}
+/* Offline keeps the strip's colour (an error-coloured print would vanish on it) and takes a black bar. */
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link.status-offline:not(.keyboard-selected):not(.bookmark-inline-editing) {
+    --tx-shadow: inset 6px 0 0 var(--lm-ink), inset 0 -2px 0 rgba(0, 0, 0, 0.16);
+}
+/* The lamp is a stamp: the status colour inside a black ring, so it reads on any strip. */
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link .bookmark-lead::after {
+    box-shadow: 0 0 0 2px var(--lm-ink) !important;
+}
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link.status-checking .bookmark-lead::after {
+    border-color: var(--lm-ink);
+}
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link :is(.bookmark-icon-slot) {
+    filter: grayscale(1) contrast(1.1);
+}
+html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link :is(.bookmark-shortcut, .status-text) {
+    color: var(--lm-ink);
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.35);
+    text-shadow: none;
+    border-radius: 2px;
+}
+
+/* The category head is the printer's cassette: dark plastic, a spool of tape wound on at one end. */
+html[data-theme^="tactile-label-maker"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) > .category-title {
+    position: relative;
+    padding-inline-start: 2.6rem !important;
+    border-radius: 10px;
+    background: linear-gradient(#34353b, #1b1c20) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 2px 3px rgba(0, 0, 0, 0.35) !important;
+    color: #f3f2ee;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+html[data-theme^="tactile-label-maker"] .category > .category-title :is(.category-title-name, .category-reorder-glyph, .category-title-trailing, .category-title-label) {
+    color: #f3f2ee;
+}
+html[data-theme^="tactile-label-maker"] .category > .category-title::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0.55rem;
+    top: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: -0.75rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, #101113 0 16%, #ffd21f 17% 30%, #101113 31% 36%, #7fb2ff 37% 58%, #ff7b6e 59% 72%, rgba(255, 255, 255, 0.3) 73% 77%, transparent 78%);
+    pointer-events: none;
+}
+/* The counter window, when Count is switched on in the header settings. */
+html[data-theme^="tactile-label-maker"] .category > .category-title .category-title-count {
+    font-family: var(--font-family-mono, ui-monospace, Menlo, monospace);
+    color: #7dffa6;
+    background: #07110b;
+    border-radius: 3px;
+    padding: 0.05em 0.4em;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* ══ Keycap: a key that sinks ═════════════════════════════════════════ */
+
+html[data-theme^="tactile-keycap"] {
+    --tx-radius: 9px;
+    --tx-lamp: 0.5rem;
+    --tx-lamp-x: 0.65rem;
+    --kc-depth: 4px;
+}
+html[data-theme="tactile-keycap-dark"] {
+    --kc-top: #41444c;
+    --kc-bot: #31343b;
+    --kc-top-hover: #4a4e57;
+    --kc-bot-hover: #393d45;
+    --kc-pressed: #282a30;
+    --kc-edge: #121316;
+    --kc-lit: rgba(255, 255, 255, 0.16);
+    --kc-drop: rgba(0, 0, 0, 0.5);
+}
+html[data-theme="tactile-keycap-light"] {
+    --kc-top: #f6f4ee;
+    --kc-bot: #e3e0d8;
+    --kc-top-hover: #fffdf8;
+    --kc-bot-hover: #ebe8e0;
+    --kc-pressed: #cfcbc2;
+    --kc-edge: #a19d92;
+    --kc-lit: rgba(255, 255, 255, 0.9);
+    --kc-drop: rgba(40, 36, 28, 0.35);
+}
+html[data-theme^="tactile-keycap"] .bookmarks-list > .bookmark-link {
+    --tx-bg: linear-gradient(var(--kc-top), var(--kc-bot));
+    /* The thick lower edge is a shadow, not a border, so a pressed key does not move the rows below it. */
+    --tx-shadow: inset 0 1px 0 var(--kc-lit), 0 var(--kc-depth) 0 var(--kc-edge), 0 calc(var(--kc-depth) + 2px) 4px var(--kc-drop);
+}
+html[data-theme^="tactile-keycap"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link:not(.bookmark-inline-editing) {
+    margin-block-end: calc(var(--kc-depth) + 4px);
+    font-weight: 600;
+}
+html[data-theme^="tactile-keycap"] .bookmarks-list > .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    --tx-bg: linear-gradient(var(--kc-top-hover), var(--kc-bot-hover));
+}
+/* Pressed: the key sinks onto its edge. The row's links stay under the pointer, so the click still lands. */
+html[data-theme^="tactile-keycap"] .bookmarks-list > .bookmark-link:active:not(.bookmark-inline-editing) {
+    --tx-bg: linear-gradient(var(--kc-pressed), var(--kc-pressed));
+    --tx-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), 0 0 0 var(--kc-edge), 0 1px 1px var(--kc-drop);
+    transform: translateY(var(--kc-depth));
+}
+html[data-theme^="tactile-keycap"] body:not(.status-color-lock) .bookmarks-list > .bookmark-link.status-offline:not(:hover):not(:active):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
+    --tx-bg: linear-gradient(color-mix(in srgb, var(--accent-error) var(--tx-tint-offline), var(--kc-top)), color-mix(in srgb, var(--accent-error) var(--tx-tint-offline), var(--kc-bot)));
+}
+/* The icon is the key's legend. */
+html[data-theme^="tactile-keycap"] .bookmarks-list > .bookmark-link .bookmark-icon-slot {
+    border-radius: 5px;
+}
+
+/* A widget is the same pane as a category, down to the colour. Widget background
+   (data-widget-bg) mixes the surface with transparency and tints the title
+   strip; on these keys that made a widget a shade darker than its neighbours. */
+/* The enamel material whitens a light category (theme-signature.css) but its light rule leaves out .dashboard-widget. */
+html:is([data-theme="tactile-keycap-light"], [data-theme="tactile-label-maker-light"]) body .dashboard-grid .category.dashboard-widget {
+    background-color: color-mix(in srgb, #fff 62%, color-mix(in srgb, var(--accent-primary) 7%, var(--surface-2, var(--background-secondary)))) !important;
+}
+html:is([data-theme^="tactile-keycap"], [data-theme^="tactile-label-maker"]) body .dashboard-grid .category.dashboard-widget > .category-title {
+    background-color: transparent;
+    border-bottom: 0;
+}
+
+/* ══ Rack Unit: a 19-inch plate with a screw at each end ══════════════ */
+
+html[data-theme^="tactile-rack-unit"] {
+    --tx-radius: 3px;
+    --tx-pad-end: 3rem;
+    --tx-lamp-x: 1.75rem;
+}
+html[data-theme="tactile-rack-unit-dark"] {
+    --ru-top: #2c2e36;
+    --ru-bot: #1b1c21;
+    --ru-top-hover: #353842;
+    --ru-bot-hover: #22242a;
+    --ru-line: #43464f;
+    --ru-screw-hi: #b3b6bf;
+    --ru-screw-lo: #3a3c44;
+    --ru-slot: #0c0c0e;
+}
+html[data-theme="tactile-rack-unit-light"] {
+    --ru-top: #f4f5f8;
+    --ru-bot: #dcdfe5;
+    --ru-top-hover: #ffffff;
+    --ru-bot-hover: #e6e8ed;
+    --ru-line: #9ea3af;
+    --ru-screw-hi: #ffffff;
+    --ru-screw-lo: #8a8f9b;
+    --ru-slot: #4a4e58;
+}
+html[data-theme^="tactile-rack-unit"] .bookmarks-list > .bookmark-link {
+    --tx-bg: linear-gradient(var(--ru-top), var(--ru-bot));
+    --tx-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px var(--ru-line), 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+html[data-theme^="tactile-rack-unit"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link:not(.bookmark-inline-editing) {
+    padding-inline-start: 2rem;
+    margin-block-end: 0.25rem;
+    font-family: var(--font-family-mono, ui-monospace, Menlo, monospace);
+    letter-spacing: 0.02em;
+}
+html[data-theme^="tactile-rack-unit"] .bookmarks-list > .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    --tx-bg: linear-gradient(var(--ru-top-hover), var(--ru-bot-hover));
+}
+html[data-theme^="tactile-rack-unit"] body:not(.status-color-lock) .bookmarks-list > .bookmark-link.status-offline:not(:hover):not(:active):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
+    --tx-bg: linear-gradient(color-mix(in srgb, var(--accent-error) var(--tx-tint-offline), var(--ru-top)), color-mix(in srgb, var(--accent-error) var(--tx-tint-offline), var(--ru-bot)));
+}
+/* The two rack screws, with the slot cut across them. */
+html[data-theme^="tactile-rack-unit"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link:not(.bookmark-inline-editing)::before,
+html[data-theme^="tactile-rack-unit"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link:not(.bookmark-inline-editing)::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 0.62rem;
+    height: 0.62rem;
+    margin-top: -0.31rem;
+    border-radius: 50%;
+    background:
+        linear-gradient(135deg, transparent 44%, var(--ru-slot) 44% 56%, transparent 56%),
+        radial-gradient(circle at 35% 30%, var(--ru-screw-hi), var(--ru-screw-lo));
+    box-shadow: 0 0 0 1px var(--ru-line);
+    pointer-events: none;
+    z-index: 1;
+}
+html[data-theme^="tactile-rack-unit"] .bookmarks-list > .bookmark-link:not(.bookmark-inline-editing)::before { inset-inline-start: 0.7rem; }
+html[data-theme^="tactile-rack-unit"] .bookmarks-list > .bookmark-link:not(.bookmark-inline-editing)::after { inset-inline-end: 0.7rem; }
+
+/* Categories stack like units in a cabinet: a slim rail each side of the group. */
+html[data-theme^="tactile-rack-unit"] .dashboard-grid:not(.layout-launcher) .category:not([data-view="tiles"]) .bookmarks-list {
+    row-gap: 0;
+}
+
+/* ══ Widgets: the same objects as the rows of a category ══════════════
+ *
+ * A widget already shares the category's pane and head. What it lacked was the
+ * rows: its lines (a checklist item, a health or trend line, a forecast day)
+ * are drawn here as the same strip, key or plate, and its free text sits in an
+ * inset panel with the same depth. The widget classes are the ones the widgets
+ * render (dashboard-widget-*); a widget with none of them keeps its own cells.
+ */
+
+html[data-theme^="tactile-"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task) {
+    border-radius: var(--tx-radius, 4px) !important;
+    margin-block-end: 0.25rem;
+}
+html[data-theme^="tactile-"] .dashboard-widget :is(.dashboard-widget-note-task) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+}
+html[data-theme^="tactile-"] .dashboard-widget .dashboard-widget-note-lines {
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--tx-radius, 4px) !important;
+}
+
+/* Label Maker: each line a strip from the next cartridge; the text area is one wide white label. */
+html[data-theme^="tactile-label-maker"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task) {
+    --lm-gloss: rgba(255, 255, 255, 0.38);
+    background: linear-gradient(var(--lm-gloss), rgba(255, 255, 255, 0) 48%, rgba(0, 0, 0, 0.1)), var(--lm-tape) !important;
+    color: var(--lm-ink) !important;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.16) !important;
+    font-family: var(--font-family-mono, ui-monospace, Menlo, monospace);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 9px) 50%, 100% 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+    padding-inline-end: 1.4rem;
+}
+html[data-theme^="tactile-label-maker"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):nth-child(5n+1) { --lm-tape: #f7f6f1; }
+html[data-theme^="tactile-label-maker"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):nth-child(5n+2) { --lm-tape: #ffd21f; }
+html[data-theme^="tactile-label-maker"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):nth-child(5n+3) { --lm-tape: #7fb2ff; }
+html[data-theme^="tactile-label-maker"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):nth-child(5n+4) { --lm-tape: #ff7b6e; }
+html[data-theme^="tactile-label-maker"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):nth-child(5n+5) { --lm-tape: #6fdc8c; }
+html[data-theme^="tactile-label-maker"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task) :is(span, p, strong, em, code, a, label) { color: inherit; }
+html[data-theme^="tactile-label-maker"] .dashboard-widget .dashboard-widget-note-lines {
+    background: linear-gradient(rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 30%), #f7f6f1 !important;
+    color: var(--lm-ink) !important;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.16), inset 0 0 0 1px rgba(0, 0, 0, 0.12) !important;
+    clip-path: polygon(10px 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+    padding-inline-end: 1.4rem;
+}
+html[data-theme^="tactile-label-maker"] .dashboard-widget .dashboard-widget-note-lines :is(p, span, strong, em, label, li) { color: var(--lm-ink); }
+html[data-theme^="tactile-label-maker"] .dashboard-widget .dashboard-widget-note-lines a { color: #1c3f9e; }
+
+/* Keycap: each line a key that sinks; the text area is the dished well the keys sit around. */
+html[data-theme^="tactile-keycap"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task) {
+    background: linear-gradient(var(--kc-top), var(--kc-bot)) !important;
+    color: var(--text-primary) !important;
+    box-shadow: inset 0 1px 0 var(--kc-lit), 0 var(--kc-depth) 0 var(--kc-edge), 0 calc(var(--kc-depth) + 2px) 4px var(--kc-drop) !important;
+    margin-block-end: calc(var(--kc-depth) + 4px);
+    font-weight: 600;
+    transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+}
+html[data-theme^="tactile-keycap"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):hover {
+    background: linear-gradient(var(--kc-top-hover), var(--kc-bot-hover)) !important;
+}
+html[data-theme^="tactile-keycap"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):active {
+    background: var(--kc-pressed) !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), 0 0 0 var(--kc-edge), 0 1px 1px var(--kc-drop) !important;
+    transform: translateY(var(--kc-depth));
+}
+html[data-theme^="tactile-keycap"] .dashboard-widget .dashboard-widget-note-lines {
+    background: var(--kc-well) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), inset 0 -1px 0 var(--kc-lit) !important;
+}
+html[data-theme="tactile-keycap-dark"] { --kc-well: #25272c; }
+html[data-theme="tactile-keycap-light"] { --kc-well: #cdc9c0; }
+
+/* Rack Unit: each line a plate with its two screws; the text area a recessed panel. */
+html[data-theme^="tactile-rack-unit"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task) {
+    position: relative;
+    background: linear-gradient(var(--ru-top), var(--ru-bot)) !important;
+    color: var(--text-primary) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px var(--ru-line), 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+    font-family: var(--font-family-mono, ui-monospace, Menlo, monospace);
+    padding-inline: 1.7rem;
+}
+html[data-theme^="tactile-rack-unit"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):hover {
+    background: linear-gradient(var(--ru-top-hover), var(--ru-bot-hover)) !important;
+}
+html[data-theme^="tactile-rack-unit"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task)::before,
+html[data-theme^="tactile-rack-unit"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task)::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-top: -0.25rem;
+    border-radius: 50%;
+    background:
+        linear-gradient(135deg, transparent 44%, var(--ru-slot) 44% 56%, transparent 56%),
+        radial-gradient(circle at 35% 30%, var(--ru-screw-hi), var(--ru-screw-lo));
+    box-shadow: 0 0 0 1px var(--ru-line);
+    pointer-events: none;
+}
+html[data-theme^="tactile-rack-unit"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task)::before { inset-inline-start: 0.5rem; }
+html[data-theme^="tactile-rack-unit"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task)::after { inset-inline-end: 0.5rem; }
+/* The text area stays on the pane like the content of a category: no well, no dark fill. */
+html[data-theme^="tactile-rack-unit"] .dashboard-widget .dashboard-widget-note-lines {
+    background: none !important;
+    box-shadow: none !important;
+    color: inherit !important;
+}
+
+/* No motion: a pressed key changes colour only. */
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme^="tactile-keycap"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):active { transform: none !important; }
+}
+html[data-theme^="tactile-"] body.no-animations .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):active { transform: none !important; }
+html[data-theme^="tactile-"][data-effects="off"] .dashboard-widget :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row, .dashboard-widget-note-task):active { transform: none !important; }
+
+/* ── Narrow screens: the object gets thinner, never wider than its card ── */
+@media (max-width: 640px) {
+    html[data-theme^="tactile-"] { --tx-pad-end: 1.5rem; }
+    html[data-theme^="tactile-rack-unit"] { --tx-pad-end: 2.9rem; --tx-lamp-x: 1.6rem; }
+    html[data-theme^="tactile-label-maker"] .bookmarks-list > .bookmark-link { letter-spacing: 0.06em; }
+}
+
+/* ── No motion: a press is a colour change, the lamp holds still ─────── */
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link:active:not(.bookmark-inline-editing) { transform: none !important; }
+    html[data-theme^="tactile-"] .bookmarks-list > .bookmark-link.status-checking .bookmark-lead::after { animation: none; }
+}
+body.no-animations[data-theme^="tactile-"] .bookmarks-list > .bookmark-link,
+html[data-theme^="tactile-"] body.no-animations .bookmarks-list > .bookmark-link,
+html[data-theme^="tactile-"][data-effects="off"] .bookmarks-list > .bookmark-link {
+    transition: none !important;
+}
+html[data-theme^="tactile-"] body.no-animations .bookmarks-list > .bookmark-link:active:not(.bookmark-inline-editing),
+html[data-theme^="tactile-"][data-effects="off"] .bookmarks-list > .bookmark-link:active:not(.bookmark-inline-editing) {
+    transform: none !important;
+}
+html[data-theme^="tactile-"] body.no-animations .bookmarks-list > .bookmark-link.status-checking .bookmark-lead::after,
+html[data-theme^="tactile-"][data-effects="off"] .bookmarks-list > .bookmark-link.status-checking .bookmark-lead::after {
+    animation: none;
+}

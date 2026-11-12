@@ -1,0 +1,346 @@
+/*
+ * The cartographic theme group; see internal/app/theme_groups.go.
+ * Keyed on html[data-theme^="cartographic-"].
+ *
+ * The page is a map, and everything here is decoration drawn from position:
+ * a column letter and a row number that CSS counters hand out. None of it is
+ * addressable -- no shortcut, search or sort reads it -- so the rows keep
+ * every behaviour they have; only gutters and pseudo-elements are added.
+ *
+ * Rows are subgrid items, so a pseudo-element must not take part in the
+ * grid: both are absolutely positioned into a gutter the category makes
+ * room for. Tiles keep their own look and are left alone.
+ */
+
+/* ── Counters: column letter, row number ───────────────────────────── */
+
+html[data-theme^="cartographic-"] #dashboard-layout { counter-reset: cgcol; }
+html[data-theme^="cartographic-"] #dashboard-layout > .dashboard-column { counter-increment: cgcol; }
+html[data-theme^="cartographic-"] #dashboard-layout .bookmarks-list { counter-reset: cgrow; }
+html[data-theme^="cartographic-"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link {
+    counter-increment: cgrow;
+}
+
+/* A row's pseudo-elements are only the gutter's; keep them off the pointer
+   so a click on the pin still opens the row. */
+html[data-theme^="cartographic-"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link::before,
+html[data-theme^="cartographic-"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link::after {
+    position: absolute;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+/* ── Washes ────────────────────────────────────────────────────────── */
+
+/* The depth wash (theme-depth.css) tints the corners of the page with the
+   accent, warning and success colours. On a map that reads as a stain; a chart
+   is printed flat, so Atlas and Nautical turn it off. The extra attribute
+   selectors only exist to out-rank the two rules that set it on <body>. */
+html:is([data-theme^="cartographic-atlas"], [data-theme^="cartographic-nautical"]) body[data-depth][data-depth] {
+    --depth-wash: none;
+}
+
+/* Every cartographic category is a cut-out of the sheet: square corners and a
+   neatline instead of a floating card. */
+html:is([data-theme^="cartographic-atlas"], [data-theme^="cartographic-nautical"]) #dashboard-layout .category:not([data-view="tiles"]) {
+    border-radius: 0;
+}
+html:is([data-theme^="cartographic-atlas"], [data-theme^="cartographic-nautical"]) #dashboard-layout .category:not([data-view="tiles"])::before {
+    display: none;
+}
+
+/* The backdrop recipes paint blobs and bands of the accent colour, which on a
+   printed sheet read as a stain (the pink cloud, the brown bands). Both themes
+   keep the layer but draw their own sheet on it instead: graticule, frame,
+   terrain, rose. */
+html:is([data-theme^="cartographic-atlas"], [data-theme^="cartographic-nautical"]) body > .theme-backdrop-layer {
+    background-image: none !important;
+}
+
+/* ── Atlas ─────────────────────────────────────────────────────────── */
+
+html[data-theme="cartographic-atlas-light"] { --cg-iso: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='210' viewBox='0 0 260 210'%3E%3Cg fill='none' stroke='%237A6538' stroke-opacity='.40' stroke-width='.9'%3E%3Cpath transform='translate(130 105) scale(1) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.8) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.6) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.4) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.22) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3C/g%3E%3Cg fill='none' stroke='%237A6538' stroke-opacity='.40' stroke-width='.9' transform='translate(-60 -40)'%3E%3Cpath transform='translate(190 185) scale(1) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3Cpath transform='translate(190 185) scale(0.6) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3Cpath transform='translate(190 185) scale(0.3) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3C/g%3E%3Cg fill='%237A6538' fill-opacity='0.6000000000000001' font-family='Georgia,serif' font-style='italic' font-size='9'%3E%3Ctext x='52' y='70'%3E14%3C/text%3E%3Ctext x='200' y='60'%3E9%3C/text%3E%3Ctext x='110' y='150'%3E22%3C/text%3E%3Ctext x='230' y='130'%3E31%3C/text%3E%3Ctext x='150' y='95'%3E18%3C/text%3E%3Ctext x='40' y='175'%3E6%3C/text%3E%3Ctext x='98' y='28'%3E11%3C/text%3E%3C/g%3E%3C/svg%3E"); --cg-ink: #5b4a2a; }
+html[data-theme="cartographic-atlas-dark"]  { --cg-iso: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='210' viewBox='0 0 260 210'%3E%3Cg fill='none' stroke='%23C9B27C' stroke-opacity='.30' stroke-width='.9'%3E%3Cpath transform='translate(130 105) scale(1) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.8) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.6) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.4) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.22) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3C/g%3E%3Cg fill='none' stroke='%23C9B27C' stroke-opacity='.30' stroke-width='.9' transform='translate(-60 -40)'%3E%3Cpath transform='translate(190 185) scale(1) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3Cpath transform='translate(190 185) scale(0.6) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3Cpath transform='translate(190 185) scale(0.3) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3C/g%3E%3Cg fill='%23C9B27C' fill-opacity='0.5' font-family='Georgia,serif' font-style='italic' font-size='9'%3E%3Ctext x='52' y='70'%3E14%3C/text%3E%3Ctext x='200' y='60'%3E9%3C/text%3E%3Ctext x='110' y='150'%3E22%3C/text%3E%3Ctext x='230' y='130'%3E31%3C/text%3E%3Ctext x='150' y='95'%3E18%3C/text%3E%3Ctext x='40' y='175'%3E6%3C/text%3E%3Ctext x='98' y='28'%3E11%3C/text%3E%3C/g%3E%3C/svg%3E"); --cg-ink: #cdbb8f; }
+
+/* The sheet's frame: a double border at the edge of the window with latitude
+   and longitude ticks every 40px, and a faint graticule across the page. It is
+   painted on the backdrop layer so it sits under the panes. */
+html[data-theme^="cartographic-atlas"] body > .theme-backdrop-layer::after {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border: 3px double var(--cg-ink);
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(90deg, var(--cg-ink) 0 1px, transparent 1px 40px) 0 0 / 100% 9px no-repeat,
+        repeating-linear-gradient(90deg, var(--cg-ink) 0 1px, transparent 1px 40px) 0 100% / 100% 9px no-repeat,
+        repeating-linear-gradient(0deg, var(--cg-ink) 0 1px, transparent 1px 40px) 0 0 / 9px 100% no-repeat,
+        repeating-linear-gradient(0deg, var(--cg-ink) 0 1px, transparent 1px 40px) 100% 0 / 9px 100% no-repeat,
+        repeating-linear-gradient(90deg, color-mix(in srgb, var(--cg-ink) 22%, transparent) 0 1px, transparent 1px 160px),
+        repeating-linear-gradient(0deg, color-mix(in srgb, var(--cg-ink) 22%, transparent) 0 1px, transparent 1px 160px);
+}
+
+/* Large contour lines across the whole sheet, the lie of the land under the
+   category cut-outs. */
+html[data-theme^="cartographic-atlas"] body > .theme-backdrop-layer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: var(--cg-iso);
+    background-size: 640px 517px;
+    opacity: 0.55;
+}
+
+/* Column letters run along the top of each column, the way a map's index
+   strip does: a ruler with a tick every 8px. */
+html[data-theme^="cartographic-atlas"] #dashboard-layout > .dashboard-column::before {
+    content: counter(cgcol, upper-alpha);
+    display: block;
+    margin-bottom: 8px;
+    padding: 0 0 3px 8px;
+    font: 600 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--text-tertiary);
+    background: repeating-linear-gradient(90deg, var(--text-tertiary) 0 1px, transparent 1px 8px) 0 100% / 100% 4px no-repeat;
+}
+
+/* A neat line, and contour lines of the land inside it. */
+html[data-theme^="cartographic-atlas"] #dashboard-layout .category:not([data-view="tiles"]) {
+    position: relative;
+    background-image: var(--cg-iso);
+    background-size: 260px 210px;
+    outline: 1px solid color-mix(in srgb, var(--cg-ink) 75%, transparent);
+    outline-offset: -5px;
+}
+
+/* The gutter lives in the list's own padding: the list is a scroll container
+   and clips anything that hangs outside it. */
+html[data-theme^="cartographic-atlas"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list { padding-left: 56px; }
+html[data-theme^="cartographic-nautical"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list { padding-left: 54px; }
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list { padding-left: 36px; position: relative; }
+
+/* Grid reference, a dashed leader, then the pin. */
+html[data-theme^="cartographic-atlas"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link::before {
+    content: counter(cgcol, upper-alpha) counter(cgrow);
+    left: -52px;
+    top: 50%;
+    width: 38px;
+    transform: translateY(-50%);
+    font: 500 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    background: repeating-linear-gradient(90deg, var(--text-tertiary) 0 3px, transparent 3px 6px) 100% 55% / 17px 1px no-repeat;
+}
+html[data-theme^="cartographic-atlas"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link::after {
+    content: "";
+    left: -13px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    margin-top: -6px;
+    /* A pin: a round head with its point to the page, turned off-axis. */
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    background: var(--accent-primary);
+    box-shadow: 0 0 0 1.5px var(--background-secondary);
+}
+
+/* ── Nautical ──────────────────────────────────────────────────────── */
+
+/* A chart: the sheet is pale paper (dark half: a navy night chart) printed in
+   one ink -- magenta on the paper, pale blue on the navy -- with soundings and
+   depth contours. */
+html[data-theme="cartographic-nautical-light"] { --cg-iso: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='210' viewBox='0 0 260 210'%3E%3Cg fill='none' stroke='%236B2C5C' stroke-opacity='.42' stroke-width='.9'%3E%3Cpath transform='translate(130 105) scale(1) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.8) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.6) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.4) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.22) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3C/g%3E%3Cg fill='none' stroke='%236B2C5C' stroke-opacity='.42' stroke-width='.9' transform='translate(-60 -40)'%3E%3Cpath transform='translate(190 185) scale(1) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3Cpath transform='translate(190 185) scale(0.6) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3Cpath transform='translate(190 185) scale(0.3) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3C/g%3E%3Cg fill='%236B2C5C' fill-opacity='0.62' font-family='Georgia,serif' font-style='italic' font-size='9'%3E%3Ctext x='52' y='70'%3E14%3C/text%3E%3Ctext x='200' y='60'%3E9%3C/text%3E%3Ctext x='110' y='150'%3E22%3C/text%3E%3Ctext x='230' y='130'%3E31%3C/text%3E%3Ctext x='150' y='95'%3E18%3C/text%3E%3Ctext x='40' y='175'%3E6%3C/text%3E%3Ctext x='98' y='28'%3E11%3C/text%3E%3C/g%3E%3C/svg%3E"); --cg-rose: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-120 -128 240 248'%3E%3Cg fill='none' stroke='%236B2C5C'%3E%3Cg stroke-width='.5' stroke-opacity='.7' clip-path='url(%23c)'%3E%3Cpath d='M0 0L0.0 -190.0' /%3E%3Cpath d='M0 0L72.7 -175.5' /%3E%3Cpath d='M0 0L134.4 -134.4' /%3E%3Cpath d='M0 0L175.5 -72.7' /%3E%3Cpath d='M0 0L190.0 -0.0' /%3E%3Cpath d='M0 0L175.5 72.7' /%3E%3Cpath d='M0 0L134.4 134.4' /%3E%3Cpath d='M0 0L72.7 175.5' /%3E%3Cpath d='M0 0L0.0 190.0' /%3E%3Cpath d='M0 0L-72.7 175.5' /%3E%3Cpath d='M0 0L-134.4 134.4' /%3E%3Cpath d='M0 0L-175.5 72.7' /%3E%3Cpath d='M0 0L-190.0 0.0' /%3E%3Cpath d='M0 0L-175.5 -72.7' /%3E%3Cpath d='M0 0L-134.4 -134.4' /%3E%3Cpath d='M0 0L-72.7 -175.5' /%3E%3C/g%3E%3Ccircle r='108' stroke-width='1.6'/%3E%3Ccircle r='100' stroke-width='.7'/%3E%3Ccircle r='64' stroke-width='.8' stroke-dasharray='2 3'/%3E%3Cpath d='M0-100L13-13L100 0L13 13L0 100L-13 13L-100 0L-13-13Z' fill='%236B2C5C' fill-opacity='.22' stroke-width='1.1'/%3E%3Cpath d='M0-100L13-13L-13-13Z' fill='%236B2C5C' fill-opacity='.85'/%3E%3Cpath d='M70-70L8-8M70 70L8 8M-70 70L-8 8M-70-70L-8-8' stroke-width='.9'/%3E%3C/g%3E%3Ctext y='-112' text-anchor='middle' font-family='Georgia,serif' font-weight='bold' font-size='17' fill='%236B2C5C'%3EN%3C/text%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Ccircle r='118'/%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E"); --cg-ink: #6b2c5c; }
+html[data-theme="cartographic-nautical-dark"]  { --cg-iso: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='210' viewBox='0 0 260 210'%3E%3Cg fill='none' stroke='%237FB6E6' stroke-opacity='.34' stroke-width='.9'%3E%3Cpath transform='translate(130 105) scale(1) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.8) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.6) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.4) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3Cpath transform='translate(130 105) scale(0.22) translate(-130 -105)' d='M30 120C20 70 70 30 120 40C170 50 210 30 235 80C250 120 215 165 160 160C110 158 90 185 55 170C35 162 32 140 30 120Z'/%3E%3C/g%3E%3Cg fill='none' stroke='%237FB6E6' stroke-opacity='.34' stroke-width='.9' transform='translate(-60 -40)'%3E%3Cpath transform='translate(190 185) scale(1) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3Cpath transform='translate(190 185) scale(0.6) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3Cpath transform='translate(190 185) scale(0.3) translate(-26 -22)' d='M0 20C10 -5 40 -5 52 15C60 32 40 48 22 46C6 44 -6 36 0 20Z'/%3E%3C/g%3E%3Cg fill='%237FB6E6' fill-opacity='0.54' font-family='Georgia,serif' font-style='italic' font-size='9'%3E%3Ctext x='52' y='70'%3E14%3C/text%3E%3Ctext x='200' y='60'%3E9%3C/text%3E%3Ctext x='110' y='150'%3E22%3C/text%3E%3Ctext x='230' y='130'%3E31%3C/text%3E%3Ctext x='150' y='95'%3E18%3C/text%3E%3Ctext x='40' y='175'%3E6%3C/text%3E%3Ctext x='98' y='28'%3E11%3C/text%3E%3C/g%3E%3C/svg%3E"); --cg-rose: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-120 -128 240 248'%3E%3Cg fill='none' stroke='%23E8A2CF'%3E%3Cg stroke-width='.5' stroke-opacity='.7' clip-path='url(%23c)'%3E%3Cpath d='M0 0L0.0 -190.0' /%3E%3Cpath d='M0 0L72.7 -175.5' /%3E%3Cpath d='M0 0L134.4 -134.4' /%3E%3Cpath d='M0 0L175.5 -72.7' /%3E%3Cpath d='M0 0L190.0 -0.0' /%3E%3Cpath d='M0 0L175.5 72.7' /%3E%3Cpath d='M0 0L134.4 134.4' /%3E%3Cpath d='M0 0L72.7 175.5' /%3E%3Cpath d='M0 0L0.0 190.0' /%3E%3Cpath d='M0 0L-72.7 175.5' /%3E%3Cpath d='M0 0L-134.4 134.4' /%3E%3Cpath d='M0 0L-175.5 72.7' /%3E%3Cpath d='M0 0L-190.0 0.0' /%3E%3Cpath d='M0 0L-175.5 -72.7' /%3E%3Cpath d='M0 0L-134.4 -134.4' /%3E%3Cpath d='M0 0L-72.7 -175.5' /%3E%3C/g%3E%3Ccircle r='108' stroke-width='1.6'/%3E%3Ccircle r='100' stroke-width='.7'/%3E%3Ccircle r='64' stroke-width='.8' stroke-dasharray='2 3'/%3E%3Cpath d='M0-100L13-13L100 0L13 13L0 100L-13 13L-100 0L-13-13Z' fill='%23E8A2CF' fill-opacity='.22' stroke-width='1.1'/%3E%3Cpath d='M0-100L13-13L-13-13Z' fill='%23E8A2CF' fill-opacity='.85'/%3E%3Cpath d='M70-70L8-8M70 70L8 8M-70 70L-8 8M-70-70L-8-8' stroke-width='.9'/%3E%3C/g%3E%3Ctext y='-112' text-anchor='middle' font-family='Georgia,serif' font-weight='bold' font-size='17' fill='%23E8A2CF'%3EN%3C/text%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Ccircle r='118'/%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E"); --cg-ink: #9cc4ea; }
+
+/* The rose is drawn on the backdrop layer, under every card, so it needs the
+   margin of the page to be seen: big and in full ink, with rhumb lines. */
+html[data-theme^="cartographic-nautical"] body > .theme-backdrop-layer::after {
+    content: "";
+    position: absolute;
+    right: 3vw;
+    bottom: 4vh;
+    width: clamp(150px, 20vw, 280px);
+    aspect-ratio: 240 / 248;
+    background: var(--cg-rose) center / contain no-repeat;
+    opacity: 0.95;
+    pointer-events: none;
+}
+/* A graticule over the whole sheet, like the meridians and parallels. */
+html[data-theme^="cartographic-nautical"] body > .theme-backdrop-layer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(90deg, color-mix(in srgb, var(--cg-ink) 18%, transparent) 0 1px, transparent 1px 120px),
+        repeating-linear-gradient(0deg, color-mix(in srgb, var(--cg-ink) 18%, transparent) 0 1px, transparent 1px 120px);
+}
+
+/* The chart cut-out: thick outer line, thin inner line, in the chart ink. */
+html[data-theme^="cartographic-nautical"] #dashboard-layout .category:not([data-view="tiles"]) {
+    position: relative;
+    background-color: var(--background-secondary);
+    background-image: var(--cg-iso);
+    background-size: 260px 210px;
+    border: 3px solid var(--cg-ink);
+    box-shadow: inset 0 0 0 5px var(--background-secondary), inset 0 0 0 6px var(--cg-ink);
+}
+/* Degrees and minutes down the left edge of each cut-out, inside the neatline. */
+html[data-theme^="cartographic-nautical"] #dashboard-layout .category:not([data-view="tiles"])::after {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 9px;
+    bottom: 9px;
+    width: 7px;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(180deg, var(--cg-ink) 0 1px, transparent 1px 10px) 0 0 / 7px 100% no-repeat,
+        repeating-linear-gradient(180deg, var(--cg-ink) 0 3px, transparent 3px 50px) 0 0 / 12px 100% no-repeat;
+}
+/* ... and along the top of each column, as a barred scale: alternate black and
+   white stretches, the border a chart is printed with. */
+html[data-theme^="cartographic-nautical"] #dashboard-layout > .dashboard-column::before {
+    content: counter(cgcol, upper-alpha);
+    display: block;
+    margin-bottom: 8px;
+    padding: 0 0 5px 8px;
+    font: italic 600 11px/1.3 Georgia, "Times New Roman", serif;
+    color: var(--text-secondary);
+    border-bottom: 5px solid transparent;
+    background: repeating-linear-gradient(90deg, var(--cg-ink) 0 14px, transparent 14px 28px) 0 100% / 100% 4px no-repeat, linear-gradient(var(--cg-ink), var(--cg-ink)) 0 100% / 100% 1px no-repeat;
+}
+
+/* Soundings: the row number in the margin, as a depth in fathoms. */
+html[data-theme^="cartographic-nautical"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link::before {
+    content: counter(cgrow);
+    left: -34px;
+    top: 50%;
+    width: 22px;
+    transform: translateY(-50%);
+    text-align: right;
+    font: italic 400 11px/1 Georgia, "Times New Roman", serif;
+    color: var(--cg-ink);
+}
+/* A pin: a ringed fix on the chart, in the ink of the sheet. */
+html[data-theme^="cartographic-nautical"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link::after {
+    content: "";
+    left: -10px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    margin-top: -4px;
+    border-radius: 50%;
+    background: var(--cg-ink);
+    box-shadow: 0 0 0 2px var(--background-secondary), 0 0 0 3px var(--cg-ink);
+}
+
+/* ── Subway Map ────────────────────────────────────────────────────── */
+
+/* One line colour per category. The dark half uses brighter inks and dark
+   lettering on the pill, so the pill passes contrast in both. */
+html[data-theme="cartographic-subway-light"] {
+    --cg-l1: #c8190f; --cg-l2: #0a64b4; --cg-l3: #1e7a38;
+    --cg-l4: #7b3fa0; --cg-l5: #a24a00; --cg-l6: #0f766e;
+    --cg-pill-fg: #ffffff; --cg-station: #ffffff; --cg-hub: #1b1b1b;
+}
+html[data-theme="cartographic-subway-dark"] {
+    --cg-l1: #ff6a5f; --cg-l2: #5aaeff; --cg-l3: #4ccb74;
+    --cg-l4: #c88bff; --cg-l5: #ffa24d; --cg-l6: #36d4c2;
+    --cg-pill-fg: #14161a; --cg-station: #14161a; --cg-hub: #f2f2ee;
+}
+/* The first line of each column starts on a different colour, so neighbouring
+   columns do not all open on red. */
+html[data-theme^="cartographic-subway"] #dashboard-layout .category { --cg-ln: var(--cg-l1); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:nth-of-type(6n+2) { --cg-ln: var(--cg-l2); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:nth-of-type(6n+3) { --cg-ln: var(--cg-l3); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:nth-of-type(6n+4) { --cg-ln: var(--cg-l4); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:nth-of-type(6n+5) { --cg-ln: var(--cg-l5); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:nth-of-type(6n+6) { --cg-ln: var(--cg-l6); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+2) .category:nth-of-type(6n+1) { --cg-ln: var(--cg-l3); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+2) .category:nth-of-type(6n+2) { --cg-ln: var(--cg-l4); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+2) .category:nth-of-type(6n+3) { --cg-ln: var(--cg-l5); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+2) .category:nth-of-type(6n+4) { --cg-ln: var(--cg-l6); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+2) .category:nth-of-type(6n+5) { --cg-ln: var(--cg-l1); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+2) .category:nth-of-type(6n+6) { --cg-ln: var(--cg-l2); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+3) .category:nth-of-type(6n+1) { --cg-ln: var(--cg-l5); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+3) .category:nth-of-type(6n+2) { --cg-ln: var(--cg-l6); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+3) .category:nth-of-type(6n+3) { --cg-ln: var(--cg-l1); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+3) .category:nth-of-type(6n+4) { --cg-ln: var(--cg-l2); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+3) .category:nth-of-type(6n+5) { --cg-ln: var(--cg-l3); }
+html[data-theme^="cartographic-subway"] #dashboard-layout .dashboard-column:nth-child(3n+3) .category:nth-of-type(6n+6) { --cg-ln: var(--cg-l4); }
+
+/* The line itself runs down the list, behind the station dots. */
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    bottom: 4px;
+    width: 8px;
+    border-radius: 4px;
+    background: var(--cg-ln);
+    pointer-events: none;
+}
+
+/* The category name becomes the line's roundel. */
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .category-title-name {
+    background: var(--cg-ln);
+    color: var(--cg-pill-fg);
+    padding: 1px 9px;
+    border-radius: 4px;
+}
+
+/* A station per bookmark. */
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link::before {
+    content: "";
+    left: -32px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: var(--cg-station);
+    border: 3px solid var(--cg-ln);
+}
+/* The last stop is where the line meets the rest of the map: an interchange,
+   bigger and ringed in the ink of the page. */
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link:last-child::before {
+    left: -35px;
+    width: 18px;
+    height: 18px;
+    margin-top: -9px;
+    border: 4px solid var(--cg-hub);
+}
+
+/* Status, in the vocabulary of a timetable. Only rows that are monitored
+   carry one of these classes, so unmonitored rows stay quiet. */
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link:is(.status-offline, .status-checking)::after {
+    right: 0;
+    top: 0;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font: 700 9px/1.4 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transform: translateY(-45%);
+}
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link.status-offline::after {
+    content: var(--nd-word-out-of-service, "out of service");
+    background: var(--accent-error);
+    color: var(--background-primary);
+}
+html[data-theme^="cartographic-subway"] #dashboard-layout .category:not([data-view="tiles"]) .bookmarks-list > .bookmark-link.status-checking::after {
+    content: var(--nd-word-delayed, "delayed");
+    background: var(--accent-warning);
+    color: var(--background-primary);
+}
+
+/* ── Narrow screens ────────────────────────────────────────────────── */
+
+@media (max-width: 520px) {
+    html[data-theme^="cartographic-nautical"] body > .theme-backdrop-layer::after { opacity: 0.5; width: 110px; }
+}

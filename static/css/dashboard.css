@@ -77,7 +77,7 @@ body {
        dashboard that never touches the setting looks exactly as it always has;
        the fallback here repeats it for the case where no body attribute is set
        at all (a view rendered before setupDOM runs). */
-    max-width: 1600px;
+    max-width: var(--dashboard-container-max, 1600px);
     width: 100%;
     margin: 0 auto;
     padding: 0 var(--dashboard-side-margin, clamp(2rem, 6vw, 8rem));
@@ -86,29 +86,64 @@ body {
 /* Left/right band beside the grid.
  *
  * Each keeps a clamp so the margin still collapses on a narrow window rather
- * than squeezing the columns — only the ceiling differs. "snug" hands roughly
- * 100px per side back to the grid on a wide screen; "airy" is for people who
- * want the columns pulled together. */
+ * than squeezing the columns — only the ceiling differs. */
+/* Seven steps with Balanced in the middle: three narrower (Full width, Tight,
+ * Snug) and three wider (Roomy, Airy, Spacious). Full width is for a big
+ * monitor that should be filled: the band shrinks to a hairline and the page
+ * container loses its ceiling, so the columns use the whole window. */
+body[data-side-margin="full"] {
+    --dashboard-side-margin: clamp(0.1rem, 0.15vw, 0.25rem);
+}
+body[data-side-margin="tight"] {
+    --dashboard-side-margin: clamp(0.5rem, 1.2vw, 1.75rem);
+}
 body[data-side-margin="snug"] {
     --dashboard-side-margin: clamp(var(--space-4, 1rem), 2.5vw, var(--space-7, 3rem));
 }
 body[data-side-margin="balanced"] {
     --dashboard-side-margin: clamp(var(--space-6, 2rem), 6vw, 8rem);
 }
+body[data-side-margin="roomy"] {
+    --dashboard-side-margin: clamp(2.5rem, 7.5vw, 10rem);
+}
 body[data-side-margin="airy"] {
     --dashboard-side-margin: clamp(var(--space-7, 3rem), 9vw, 12rem);
+}
+body[data-side-margin="spacious"] {
+    --dashboard-side-margin: clamp(4rem, 12vw, 16rem);
 }
 
 /* The columns stop growing at a width, and a wide window centres what is left,
  * so the band beside the grid only showed in the header and never moved a
- * column. The margin now also sets how wide a column may grow: snug lets the
- * columns take the room it gives back, airy pulls them together. Balanced is
- * the 360px the grid always had. */
+ * column. The margin now also sets how wide a column may grow: the narrow
+ * steps let the columns take the room they give back, the wide ones pull them
+ * together. Balanced is the 360px the grid always had. */
+body[data-side-margin="full"] .dashboard-grid {
+    --dashboard-column-max: 720px;
+}
+body[data-side-margin="tight"] .dashboard-grid {
+    --dashboard-column-max: 540px;
+}
 body[data-side-margin="snug"] .dashboard-grid {
     --dashboard-column-max: 460px;
 }
+body[data-side-margin="roomy"] .dashboard-grid {
+    --dashboard-column-max: 330px;
+}
 body[data-side-margin="airy"] .dashboard-grid {
     --dashboard-column-max: 300px;
+}
+body[data-side-margin="spacious"] .dashboard-grid {
+    --dashboard-column-max: 270px;
+}
+body[data-side-margin="full"] .container {
+    max-width: none;
+}
+/* Tight keeps a high ceiling: the page still follows the columns asked for,
+ * but a very wide monitor does not stretch it to the edge, so Tight stays a
+ * step apart from Full width there. */
+body[data-side-margin="tight"] .container {
+    max-width: max(var(--dashboard-container-max, 1600px), 2200px);
 }
 
 /* Header Top - Contains date, tabs, and config button */
@@ -1525,10 +1560,20 @@ body.no-animations .library-link.is-health-alert .library-link-anchor {
     grid-template-columns: repeat(6, 1fr);
 }
 
+.dashboard-grid.columns-7 {
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.dashboard-grid.columns-8 {
+    grid-template-columns: repeat(8, 1fr);
+}
+
 .dashboard-grid.columns-3:not(.packed-columns) .category,
 .dashboard-grid.columns-4:not(.packed-columns) .category,
 .dashboard-grid.columns-5:not(.packed-columns) .category,
-.dashboard-grid.columns-6:not(.packed-columns) .category {
+.dashboard-grid.columns-6:not(.packed-columns) .category,
+.dashboard-grid.columns-7:not(.packed-columns) .category,
+.dashboard-grid.columns-8:not(.packed-columns) .category {
     width: fit-content;
     max-width: 100%;
 }

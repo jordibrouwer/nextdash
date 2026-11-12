@@ -1,0 +1,63 @@
+{
+  "tag": "v1.28.2",
+  "date": "12 November 2026",
+  "releasedAt": "2026-11-12",
+  "modalLead": "Eight new theme groups with 50 new themes, and a page that finally fills a wide screen: seven page margins and up to eight columns.",
+  "sections": [
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Eight new theme groups.</strong> Stationery (one bookmark per line), Living (a waterline that follows the health of your services, a palette that follows the day, the weather), Instrument (heartbeat traces and gauges in the row), Tactile (label strips, keycaps, rack plates), Spatial (cut paper, slide mounts, orbits), Cartographic (atlas, sea chart, subway map), Riso (two-ink print) and Legible (high contrast, low vision, colour-blind safe). That is 25 families in light and dark, each with a backdrop of its own.",
+          "highlight": true,
+          "title": "Eight new theme groups",
+          "link": "#config/appearance/theme",
+          "linkLabel": "Browse themes",
+          "media": {
+            "image": "media/v1.28.2-theme-groups.jpg",
+            "alt": "Eight dashboards, one from each new theme group: a typewriter index card, a tide-line sea, an oscilloscope screen, label strips, film mounts, a sea chart, a pink and blue print and a black and yellow signage page"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The new families wear a New badge.</strong> The New segment in the theme browser, and searching <em>new</em>, show only this release's families."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Eighteen new backdrops.</strong> That makes 285. The Legible ones are quiet enough to keep the text readable."
+        }
+      ]
+    },
+    {
+      "title": "Layout",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Page margins in seven steps, and up to eight columns.</strong> The band beside the columns goes from Full width to Spacious, with Balanced in the middle as the default, and Columns per row goes up to eight. The page now grows with the setting, so a big monitor is really filled.",
+          "highlight": true,
+          "title": "Page margins and eight columns",
+          "link": "#config/appearance/layout",
+          "linkLabel": "Open Layout",
+          "media": {
+            "image": "media/v1.28.2-page-margins.jpg",
+            "video": "media/v1.28.2-page-margins.webm",
+            "alt": "A dashboard with six columns, its page margins moving from Full width through Balanced to Spacious"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Spacing and margins are dropdowns.</strong> Space between categories, Space between columns, Page margins and Columns per row each show their description in the option, in Appearance → Layout and in the theme studio."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Five and six columns work on a wide window.</strong> The setting offered six and drew four. It now draws what you asked for when the window has room."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Daydrift and Tidewatch.</strong> Daydrift keeps the phone's browser bar in step with the page, and Tidewatch counts each outage once."
+        }
+      ]
+    }
+  ]
+}

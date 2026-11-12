@@ -304,6 +304,7 @@
         tipTuneInfo: c('overview'),
         tipTuneTheme: p(':'),
         tipTuneThemeBrowser: STUDIO,
+        tipTuneThemeGroups: STUDIO,
         tipTuneThemeBrowserWidth: STUDIO,
         tipTuneGloss: STUDIO,
         tipTuneLooks: STUDIO,

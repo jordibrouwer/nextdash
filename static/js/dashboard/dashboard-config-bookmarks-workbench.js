@@ -37,8 +37,6 @@
     /** A column View leaves in the list; all of them when nothing is set. */
     bmViewColumn(name) {
         const cols = this.dash.settings?.bmViewColumns;
-        // Latest news has nothing to say until a feed is watched.
-        if (name === 'news' && !this.dash.feedWatch?.byKey?.size) return false;
         return !Array.isArray(cols) || cols.includes(name);
     },
 
@@ -56,15 +54,15 @@
     workbenchColumnStyle() {
         const track = {
             tick: '1.1rem', icon: '1.4rem', pinned: '1.5rem', shortcut: '3.5rem', usage: '4.5rem',
-            opens: '3rem', last: '5rem', added: '5.5rem', news: 'minmax(8rem, 14rem)', score: '2.6rem',
+            opens: '3rem', last: '5rem', added: '5.5rem', score: '2.6rem',
         };
         const build = (cells, name, tags) => cells
             .filter((c) => ['tick', 'icon', 'name'].includes(c) || this.bmViewColumn(c))
             .map((c) => (c === 'name' ? name : c === 'tags' ? tags : track[c]))
             .join(' ');
-        const wide = build(['tick', 'icon', 'name', 'tags', 'pinned', 'shortcut', 'usage', 'opens', 'last', 'added', 'news', 'score'],
+        const wide = build(['tick', 'icon', 'name', 'tags', 'pinned', 'shortcut', 'usage', 'opens', 'last', 'added', 'score'],
             'minmax(10rem, 1fr)', 'minmax(5rem, var(--bm-tags-max, 9rem))');
-        const large = build(['tick', 'icon', 'name', 'tags', 'usage', 'opens', 'last', 'added', 'news', 'score'],
+        const large = build(['tick', 'icon', 'name', 'tags', 'usage', 'opens', 'last', 'added', 'score'],
             'minmax(10rem, 1fr)', 'minmax(5rem, var(--bm-tags-max, 9rem))');
         const mid = build(['tick', 'icon', 'name', 'tags', 'opens', 'last', 'score'], 'minmax(8rem, 1fr)', 'minmax(5rem, var(--bm-tags-max-mid, 6rem))');
         const narrow = build(['tick', 'icon', 'name', 'score'], 'minmax(0, 1fr)', '');
@@ -1869,23 +1867,6 @@
     },
 
     bindWorkbench(container) {
-        // The headline of the Latest news column, ahead of the row's own click.
-        if (container && !container._bmNewsBound) {
-            container._bmNewsBound = true;
-            container.addEventListener('click', (e) => {
-                const btn = e.target.closest?.('[data-bm-news-url]');
-                if (!btn) return;
-                e.stopPropagation();
-                global.FeedWatchNews?.open?.({ focusKey: this.dash.feedWatch.key(btn.getAttribute('data-bm-news-url')), source: 'button' });
-            }, true);
-        }
-        // New or read news repaints the column.
-        if (!this._bmNewsListener) {
-            this._bmNewsListener = true;
-            document.addEventListener('feedwatch:changed', () => {
-                if (this.isActiveView() && document.getElementById('config-bm-list')) this.repaintBookmarksList();
-            });
-        }
         // Sortable headings, delegated: syncWorkbenchToolbar redraws them.
         if (container && !container._bmSortHeadsBound) {
             container._bmSortHeadsBound = true;
@@ -2097,7 +2078,6 @@
                 ${col('opens') ? `<span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>` : ''}
                 ${col('last') ? `<span class="config-bm-last" role="gridcell">${esc(last.label)}</span>` : ''}
                 ${col('added') ? this.workbenchAddedCell(b) : ''}
-                ${col('news') ? this.workbenchNewsCell(b) : ''}
                 ${col('score') ? `<span class="config-bm-row-score" role="gridcell">${score == null ? ''
                     : `<span class="config-bm-score" data-tone="${scoreTone(score)}">${esc(String(score))}</span>`}</span>` : ''}
             </div>`;
@@ -2152,22 +2132,6 @@
             counts[BARS - 1 - Math.floor(age / SPAN)] += 1;
         });
         return { days, counts };
-    },
-
-    /**
-     * The newest item of the bookmark's watched feeds: when it was published
-     * and its headline, in the accent while there is news not yet read. A
-     * click on the headline opens the combined paper on that site.
-     */
-    workbenchNewsCell(b) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const latest = this.dash.feedWatch?.latestFor?.(b);
-        if (!latest) return '<span class="config-bm-news" role="gridcell"></span>';
-        const when = global.formatLastOpened?.(latest.at, { t: this.lastOpenedTranslator() }) || { label: '', title: '' };
-        const title = latest.title || this.t('config.bmNewsUntitled', 'New item');
-        return `<span class="config-bm-news${latest.unread ? ' is-unread' : ''}" role="gridcell" title="${esc(`${when.title} · ${title}`)}">
-            <span class="config-bm-news-when">${esc(when.label)}</span>
-            <button type="button" class="config-bm-news-title" data-bm-news-url="${esc(b.url)}">${esc(title)}</button></span>`;
     },
 
     /** When it was added: day and month this year, month and year before. */
@@ -2468,7 +2432,6 @@
                 ${col('opens') ? cell('config-bm-colhead-end', this.t('config.bmViewColOpens', 'Opens'), 'opens') : ''}
                 ${col('last') ? cell('config-bm-colhead-end', this.t('config.bmViewColLast', 'Last opened'), 'lastOpened') : ''}
                 ${col('added') ? cell('config-bm-added config-bm-colhead-end', this.t('config.bmViewColAdded', 'Added'), 'recent') : ''}
-                ${col('news') ? cell('config-bm-news', this.t('config.bmViewColNews', 'Latest news'), 'news') : ''}
                 ${col('score') ? cell('config-bm-colhead-end', this.t('config.bmViewColScore', 'Score'), 'score') : ''}
             </div>`;
     },

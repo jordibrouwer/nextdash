@@ -1,0 +1,652 @@
+/*
+ * The stationery theme group; see internal/app/theme_groups.go.
+ * Keyed on html[data-theme^="stationery-"].
+ *
+ * One bookmark per line, and the white between the lines is the only
+ * separator: no row boxes, no rules. Each family sets its own gap and its own
+ * way of saying "this is the line you are on".
+ *
+ *   ledger      numbered register, dot leaders from the name to the key
+ *   gallery     museum labels; hovering a list dims every other line
+ *   typewriter  the heading hangs in a left margin, a reading line marks the row
+ *   zen         the heading stands vertical, a red sun in the corner
+ *
+ * Every selector goes through #dashboard-layout. That is deliberate: the page
+ * paints rows in several places (hover gradients, status tints, the material
+ * layers) and an id outranks all of them, so none has to be switched off. The
+ * state that carries meaning -- an offline row's tint, the shortcut and
+ * response-time columns -- is left to them; only what would draw a box is
+ * replaced.
+ *
+ * Launcher and Terminal presets draw their own rows and are left alone, as are
+ * tile-view categories and widgets. Motion is only the fade of the lens and the
+ * hover colour; it stops with prefers-reduced-motion and with Effects off.
+ */
+
+/* ── Shared shape ──────────────────────────────────────────────────── */
+
+html[data-theme^="stationery-"] {
+    /* One density factor for every family: the gap is written once per family
+       and scaled here, so the Density setting keeps meaning something. */
+    --st-density: 1;
+}
+html[data-theme^="stationery-"] body[data-density-mode="comfortable"] { --st-density: 1.2; }
+html[data-theme^="stationery-"] body[data-density-mode="compact"] { --st-density: 0.72; }
+html[data-theme^="stationery-"] body[data-density-mode="dense"] { --st-density: 0.45; }
+
+/* The row gap is the separator. Rows keep a thin padding so a click target
+   is still a comfortable size. */
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list {
+    row-gap: calc(var(--st-gap, 1rem) * var(--st-density, 1));
+}
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link {
+    padding-block: 0.15rem;
+    border-radius: 0;
+}
+/* The paper material underlines every row with a hairline of its own. This
+   group's rows have no rules, so it goes -- except on a row that is offline,
+   whose bar is the status and stays. */
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:not(.status-offline) {
+    box-shadow: none;
+}
+
+/* The paper material lays a highlighter stripe behind the name of a hovered
+   row; across a leader and a long gap it reads as a strike-through. */
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-text {
+    background: none;
+}
+
+/* A row at rest has no icon tile and no chip: the line is the thing. */
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-slot {
+    background: none;
+    border-color: transparent;
+    box-shadow: none;
+}
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-shortcut {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+}
+
+/* The category stays a plain page region, not a card. The Surface setting
+   already says open for these themes; this holds when a reader picks card. */
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) {
+    background: none;
+    background-image: none;
+    border-color: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    position: relative;
+}
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)::before,
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)::after {
+    content: none;
+}
+
+/* Heading: no icon, no rule under it, just the word. */
+html[data-theme^="stationery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title {
+    background: none;
+    border: 0;
+    box-shadow: none;
+    padding-inline: 0;
+}
+
+/* ══ Ledger ════════════════════════════════════════════════════════ */
+
+html[data-theme^="stationery-ledger-"] {
+    --st-gap: 1.05rem;
+    --st-serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+}
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) {
+    font-family: var(--st-serif);
+}
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title {
+    font-style: italic;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--accent-primary);
+}
+
+/* The register: 01 02 03 counted per list, set in the lead column in front of
+   the icon. A counter and not a data attribute, so a row that is filtered away
+   or sorted somewhere else renumbers itself. */
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list {
+    counter-reset: st-row;
+}
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link {
+    counter-increment: st-row;
+}
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-lead::before {
+    content: counter(st-row, decimal-leading-zero);
+    font: 0.7rem/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--text-tertiary);
+    margin-right: 0.45rem;
+    min-width: 1.4em;
+    pointer-events: none;
+}
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-slot {
+    color: var(--accent-primary);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    border-radius: 50%;
+    overflow: hidden;
+}
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-letter {
+    background: none;
+    color: var(--accent-primary);
+    border-radius: 50%;
+}
+
+/* Dot leaders from the name to the shortcut. The name keeps its width and the
+   dots take what is left, so a long name shortens the leader, never itself.
+   Only where there is a shortcut to lead to: "hover" draws its label as the
+   same ::after (dashboard-bookmark-row.css) and "never" has nothing to reach. */
+html[data-theme^="stationery-ledger-"] body:not([data-shortcut-display="never"]):not([data-shortcut-display="hover"]) #dashboard-layout:not(.layout-launcher):not(.layout-terminal):not(.layout-cards):not(.layout-list) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link a.bookmark-open .bookmark-text {
+    flex: 0 1 auto;
+}
+html[data-theme^="stationery-ledger-"] body:not([data-shortcut-display="never"]):not([data-shortcut-display="hover"]) #dashboard-layout:not(.layout-launcher):not(.layout-terminal):not(.layout-cards):not(.layout-list) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link a.bookmark-open::after {
+    content: "";
+    flex: 1 0 0;
+    min-width: 0;
+    margin-left: 0.5rem;
+    /* Sat on the baseline: the link clips its overflow, so a leader pushed
+       down with a transform is cut off at the bottom of the line. */
+    align-self: flex-end;
+    height: 0.85em;
+    border-bottom: 2px dotted color-mix(in srgb, var(--text-tertiary) 60%, transparent);
+}
+
+/* Hovered: the name takes the stamp colour. Selected by keyboard: a stamp in
+   the margin and a faint wash, because a colour change alone is easy to lose. */
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: none;
+}
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-text {
+    color: var(--accent-primary);
+}
+html[data-theme^="stationery-ledger-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+
+/* ══ Swiss Poster (the family id is still "gallery") ════════════════
+   Grotesque type, a grid and a single ink. Every category opens with a huge
+   numeral in the accent, a heavy rule and a bold title; each bookmark is a
+   numbered line in the same grid. The keyboard row is inverted: a solid block
+   of accent with the line reversed out of it, which no other theme here does. */
+
+html[data-theme^="stationery-gallery-"] {
+    --st-gap: 1.05rem;
+    --st-grot: "Helvetica Neue", "Neue Haas Grotesk", Helvetica, Arial, sans-serif;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) {
+    counter-reset: st-cat;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]) {
+    font-family: var(--st-grot);
+    counter-increment: st-cat;
+    gap: 0.9rem;
+}
+/* The numeral. Fluid, so it stays a poster numeral from one column to six. */
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)::before {
+    content: counter(st-cat, decimal-leading-zero);
+    display: block;
+    font-size: clamp(3.4rem, 6vw, 5.6rem);
+    font-weight: 800;
+    line-height: 0.82;
+    letter-spacing: -0.06em;
+    color: var(--accent-primary);
+    margin-bottom: 0.2rem;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title {
+    border-top: 5px solid var(--text-primary);
+    padding-top: 0.55rem;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title,
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title .category-title-name {
+    font-weight: 800;
+    font-size: 1.08rem;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    color: var(--text-primary);
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title::after {
+    content: none;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list {
+    counter-reset: st-row;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link {
+    counter-increment: st-row;
+    padding-left: 0;
+    border-radius: 0;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-lead::before {
+    content: counter(st-row, decimal-leading-zero);
+    font-size: 0.66rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    color: var(--accent-primary);
+    min-width: 1.9em;
+    margin-right: 0.35rem;
+    pointer-events: none;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-text {
+    font-weight: 600;
+    font-size: 1.02em;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-slot {
+    filter: grayscale(1);
+    opacity: 0.7;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-letter {
+    background: none;
+    color: var(--text-tertiary);
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-shortcut {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+/* Hover: the name takes the ink and is underscored with a heavy rule. */
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: none;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:hover:not(.keyboard-selected):not(:focus-within) .bookmark-text {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 0.25em;
+}
+/* Keyboard: inverted, the whole line a block of ink. */
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: var(--accent-primary);
+    padding-inline: 0.45rem;
+    margin-inline: -0.45rem;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) :is(.bookmark-text, .bookmark-shortcut, .status-text) {
+    color: var(--background-primary);
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-lead::before {
+    color: var(--background-primary);
+}
+
+/* theme-group-stationery.js numbers the categories across the masonry columns;
+   without it the per-column counter above is what shows. */
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)[data-st-n]::before {
+    content: attr(data-st-n);
+}
+
+/* Widgets are posters too: the page's own colour, the same numeral, rule and
+   title; no grey box, no corner marks. Only what is inside is a widget's. */
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget {
+    font-family: var(--st-grot);
+    background: none;
+    background-image: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    padding: 0 var(--category-inline-pad, 0.5rem);
+    gap: 0.9rem;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget::before {
+    content: counter(st-cat, decimal-leading-zero);
+    display: block;
+    position: static;
+    width: auto;
+    height: auto;
+    border: 0;
+    background: none;
+    font-size: clamp(3.4rem, 6vw, 5.6rem);
+    font-weight: 800;
+    line-height: 0.82;
+    letter-spacing: -0.06em;
+    color: var(--accent-primary);
+    margin-bottom: 0.2rem;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget[data-st-n]::before {
+    content: attr(data-st-n);
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget::after {
+    content: none;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget > .category-title {
+    background: none;
+    background-image: none;
+    border: 0;
+    border-top: 5px solid var(--text-primary);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0.55rem 0 0;
+    margin: 0;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget > .category-title,
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget > .category-title .category-title-name {
+    font-weight: 800;
+    font-size: 1.08rem;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    color: var(--text-primary);
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title-name::before,
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title-name::after,
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title::before,
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title::after {
+    content: none;
+}
+/* Inside: bold grotesque, and the figures tabular. */
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget :is(strong, b, h1, h2, h3) {
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+html[data-theme^="stationery-gallery-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget :is(td, .dashboard-widget-trend-row, [class*="value"], [class*="count"]) {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ══ Typewriter: the index card ═════════════════════════════════════
+   A category is a card with a punched edge. The heading is the red ribbon
+   run across its top; the bookmarks are typed lines, each ending in a row
+   of typed full stops that tab out to the shortcut; an offline one is typed
+   over with a row of x. Rules between the lines: none, the line spacing is
+   the machine's. */
+
+html[data-theme^="stationery-typewriter-"] {
+    --st-gap: 0.55rem;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    box-shadow: 4px 4px 0 color-mix(in srgb, var(--text-primary) 14%, transparent);
+    padding: 0 1rem 1.1rem 2.2rem;
+    gap: 0.9rem;
+}
+/* The punched edge: a column of holes the page shows through. */
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)::before {
+    content: "";
+    position: absolute;
+    top: 3.2rem;
+    bottom: 0.8rem;
+    left: 0.6rem;
+    width: 0.8rem;
+    background: radial-gradient(circle, var(--background-primary) 0 3px, color-mix(in srgb, var(--text-primary) 22%, transparent) 3.5px 4.5px, transparent 5px) 0 0 / 100% 1.6rem repeat-y;
+    pointer-events: none;
+}
+/* The ribbon: the heading is a red band the width of the card. */
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title {
+    margin: 0 -1rem 0 -2.2rem;
+    padding: 0.45rem 1rem 0.45rem 2.2rem;
+    background: var(--accent-primary);
+    border-bottom: 3px double color-mix(in srgb, var(--background-primary) 55%, transparent);
+    color: var(--background-primary);
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title .category-title-name,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title .category-title-count,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title .category-chevron {
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    color: var(--background-primary);
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .category-title-name::before,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .category-title-name::after,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .category-title::after {
+    content: none;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link {
+    padding-left: 0;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-slot {
+    filter: grayscale(1);
+    opacity: 0.7;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-letter {
+    background: none;
+    color: var(--text-tertiary);
+}
+/* Tab stop: typed full stops from the name to the shortcut. */
+html[data-theme^="stationery-typewriter-"] body:not([data-shortcut-display="never"]):not([data-shortcut-display="hover"]) #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget):not(.layout-cards) .bookmarks-list > .bookmark-link a.bookmark-open::after {
+    content: "......................................................................";
+    flex: 1 1 0;
+    min-width: 0;
+    margin-left: 0.6rem;
+    overflow: hidden;
+    white-space: nowrap;
+    color: var(--text-tertiary);
+    letter-spacing: 0.32em;
+}
+html[data-theme^="stationery-typewriter-"] body:not([data-shortcut-display="never"]):not([data-shortcut-display="hover"]) #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget):not(.layout-cards) .bookmarks-list > .bookmark-link a.bookmark-open .bookmark-text {
+    flex: 0 1 auto;
+}
+/* Typed over: an offline address is struck through with x. */
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link.status-offline .bookmark-text {
+    text-decoration: line-through;
+    text-decoration-style: double;
+    text-decoration-color: var(--accent-error);
+}
+/* The reading line: a carriage bar at the left of the line and a faint run of
+   red out from it. Hover and keyboard share it, keyboard a little stronger. */
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 16%, transparent), transparent 85%);
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+    padding-left: 0.5rem;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 26%, transparent), transparent 90%);
+}
+
+/* Widgets are cards too: the same paper, the same punched edge, the same
+   ribbon. Only what is inside differs. */
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget {
+    position: relative;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--background-secondary);
+    background-image: none;
+    border: 1px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 color-mix(in srgb, var(--text-primary) 14%, transparent);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    padding: 0 1rem 1.1rem 2.2rem;
+    gap: 0.9rem;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget::before {
+    content: "";
+    position: absolute;
+    top: 3.2rem;
+    bottom: 0.8rem;
+    left: 0.6rem;
+    right: auto;
+    width: 0.8rem;
+    height: auto;
+    border: 0;
+    background: radial-gradient(circle, var(--background-primary) 0 3px, color-mix(in srgb, var(--text-primary) 22%, transparent) 3.5px 4.5px, transparent 5px) 0 0 / 100% 1.6rem repeat-y;
+    pointer-events: none;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget::after {
+    content: none;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget > .category-title {
+    margin: 0 -1rem 0 -2.2rem;
+    padding: 0.45rem 1rem 0.45rem 2.2rem;
+    background: var(--accent-primary);
+    background-image: none;
+    border: 0;
+    border-bottom: 3px double color-mix(in srgb, var(--background-primary) 55%, transparent);
+    border-radius: 0;
+    box-shadow: none;
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget > .category-title,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget > .category-title * {
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    color: var(--background-primary);
+}
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title-name::before,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title-name::after,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title::before,
+html[data-theme^="stationery-typewriter-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title::after {
+    content: none;
+}
+
+/* ══ Zen: the hanging scroll ════════════════════════════════════════
+   A category is a kakejiku: a strip of paper between two wooden rollers.
+   The heading is a red hanko stamp pressed in the top corner, standing
+   vertical. The bookmarks are brush lines with a great deal of paper
+   between them. */
+
+html[data-theme^="stationery-zen-"] {
+    --st-gap: 1.7rem;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+    background: color-mix(in srgb, var(--background-secondary) 88%, transparent);
+    border-inline: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+    padding: 2.6rem 2.8rem 2.6rem 1.2rem;
+    margin-block: 0.6rem;
+}
+/* Rollers. Wider than the paper, so they read as rods and not as borders. */
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)::before,
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)::after {
+    content: "";
+    position: absolute;
+    left: -0.7rem;
+    right: -0.7rem;
+    height: 0.8rem;
+    border-radius: 0.4rem;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 55%, var(--background-primary)), color-mix(in srgb, var(--text-primary) 25%, var(--background-primary)));
+    box-shadow: 0 2px 6px color-mix(in srgb, #000 28%, transparent);
+    pointer-events: none;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)::before { top: 0; }
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget)::after { bottom: 0; }
+/* The hanko: a red square stamp, text reversed out of it. */
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title {
+    position: absolute;
+    top: 1.5rem;
+    right: 0.7rem;
+    z-index: 1;
+    display: block;
+    padding: 0.55rem 0.3rem;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--background-primary) 40%, transparent);
+    max-height: 10.5rem;
+    overflow: hidden;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title .category-title-label {
+    writing-mode: vertical-rl;
+    display: inline-flex;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title,
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title .category-title-name {
+    color: var(--background-primary);
+    letter-spacing: 0.22em;
+    text-transform: none;
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title .category-title-trailing,
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) > .category-title .category-reorder-handle,
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .category-title::after {
+    display: none;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link {
+    padding-left: 0.2rem;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-text {
+    letter-spacing: 0.05em;
+    font-size: 1.05em;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-slot {
+    filter: grayscale(1);
+    opacity: 0.55;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-icon-letter {
+    background: none;
+    color: var(--text-tertiary);
+}
+/* A small red sun in front of the line you are on. */
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link .bookmark-lead::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    margin-right: 0.35rem;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    background: none;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-lead::before {
+    opacity: 1;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category:not([data-view="tiles"]):not(.dashboard-widget) .bookmarks-list > .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
+    box-shadow: inset 0 -1px 0 var(--accent-primary);
+}
+
+/* Widgets are scrolls too. A Notes or Health block hangs between the same two
+   rollers on the same paper as a bookmark category, so nothing on the page
+   says which is which; only the inside differs. */
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget {
+    position: relative;
+    background: color-mix(in srgb, var(--background-secondary) 88%, transparent);
+    background-image: none;
+    border: 0;
+    border-inline: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    padding: 2.6rem 1.6rem;
+    margin-block: 0.6rem;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget::before,
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget::after {
+    content: "";
+    position: absolute;
+    left: -0.7rem;
+    right: -0.7rem;
+    width: auto;
+    height: 0.8rem;
+    border: 0;
+    border-radius: 0.4rem;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 55%, var(--background-primary)), color-mix(in srgb, var(--text-primary) 25%, var(--background-primary)));
+    box-shadow: 0 2px 6px color-mix(in srgb, #000 28%, transparent);
+    pointer-events: none;
+}
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget::before { top: 0; bottom: auto; }
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget::after { bottom: 0; top: auto; }
+html[data-theme^="stationery-zen-"] #dashboard-layout:not(.layout-launcher):not(.layout-terminal) .category.dashboard-widget .category-title::after {
+    content: none;
+}
+
+/* ── Stillness ─────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme^="stationery-"] #dashboard-layout .bookmark-link,
+    html[data-theme^="stationery-"] #dashboard-layout .bookmark-lead::before,
+    html[data-theme^="stationery-"] #dashboard-layout .category-title-trailing {
+        transition: none;
+    }
+}
+html[data-theme^="stationery-"] body[data-effects="off"] #dashboard-layout .bookmark-link,
+html[data-theme^="stationery-"] body[data-effects="off"] #dashboard-layout .bookmark-lead::before,
+html[data-theme^="stationery-"] body[data-effects="off"] #dashboard-layout .category-title-trailing,
+html[data-theme^="stationery-"] body.no-animations #dashboard-layout .bookmark-link,
+html[data-theme^="stationery-"] body.no-animations #dashboard-layout .bookmark-lead::before,
+html[data-theme^="stationery-"] body.no-animations #dashboard-layout .category-title-trailing {
+    transition: none;
+}

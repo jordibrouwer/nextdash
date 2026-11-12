@@ -10782,7 +10782,6 @@ class DashboardConfig {
                         opt('last', t('config.bmViewColLast', 'Last opened')),
                         opt('added', t('config.bmViewColAdded', 'Added')),
                         opt('usage', t('config.bmViewColUsage', 'Usage')),
-                        opt('news', t('config.bmViewColNews', 'Latest news')),
                         opt('score', t('config.bmViewColScore', 'Score')),
                     ] },
                     { field: 'bmViewUsageDays', type: 'select', label: t('config.bmViewUsageDaysLabel', 'Usage covers'), options: [
@@ -11123,7 +11122,9 @@ class DashboardConfig {
                 title: t('config.generalGroupLayout', 'Bookmarks layout'),
                 note: t('config.generalLayoutIntro', 'Grid structure, column count, layout preset, and density.'),
                 controls: [
-                    { field: 'columnsPerRow', type: 'number', label: t('config.columnsLabel', 'Columns'), min: 1, max: 12, special: 'render', art: 'grid' },
+                    { field: 'columnsPerRow', type: 'select', label: t('config.columnsLabel', 'Columns'), special: 'render', art: 'grid', options: [
+                        opt(1, '1'), opt(2, '2'), opt(3, '3'), opt(4, '4'), opt(5, '5'), opt(6, '6'), opt(7, '7'), opt(8, '8'),
+                    ] },
                     // The preset drives the grid's `layout-*` class and the
                     // data-layout-preset attribute, so it needs the chrome
                     // reapplied as well as a re-render.
@@ -11137,25 +11138,29 @@ class DashboardConfig {
                     // body attribute the CSS keys off, and without the chrome
                     // pass they only take effect after a reload.
                     //
-                    // Cards rather than a select: three options whose difference
-                    // is spatial, so seeing all three at once — and the sentence
-                    // under each — beats hiding two of them behind a click.
-                    { field: 'categorySpacing', type: 'cards', label: t('config.categorySpacingLabel', 'Space between categories'), special: 'chromeRender', art: 'spacing', options: [
-                        { value: 'theme', label: t('config.categorySpacingTheme', 'Follow the theme'), body: t('config.categorySpacingThemeBody', 'Balanced, and airy on Confetti.') },
-                        { value: 'snug', label: t('config.categorySpacingSnug', 'Snug'), body: t('config.categorySpacingSnugBody', 'Rows sit close together.') },
-                        { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced'), body: t('config.categorySpacingBalancedBody', 'A steady gap.') },
-                        { value: 'airy', label: t('config.categorySpacingAiry', 'Airy'), body: t('config.categorySpacingAiryBody', 'Extra room between rows.') },
+                    // Dropdowns, with the sentence that used to sit under each card
+                    // in the option itself ("Snug — Rows sit close together."), and
+                    // the drawing beside the field for the choice that is in force.
+                    { field: 'categorySpacing', type: 'select', label: t('config.categorySpacingLabel', 'Space between categories'), special: 'chromeRender', art: 'spacing', options: [
+                        { value: 'theme', label: t('config.categorySpacingTheme', 'Follow the theme') + ' — ' + t('config.categorySpacingThemeBody', 'Balanced, and airy on Confetti.') },
+                        { value: 'snug', label: t('config.categorySpacingSnug', 'Snug') + ' — ' + t('config.categorySpacingSnugBody', 'Rows sit close together.') },
+                        { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced') + ' — ' + t('config.categorySpacingBalancedBody', 'A steady gap.') },
+                        { value: 'airy', label: t('config.categorySpacingAiry', 'Airy') + ' — ' + t('config.categorySpacingAiryBody', 'Extra room between rows.') },
                     ] },
-                    { field: 'columnSpacing', type: 'cards', label: t('config.columnSpacingLabel', 'Space between columns'), special: 'chromeRender', art: 'columnGap', options: [
-                        { value: 'theme', label: t('config.columnSpacingTheme', 'Follow the theme'), body: t('config.columnSpacingThemeBody', 'Balanced, and airy on Confetti.') },
-                        { value: 'snug', label: t('config.columnSpacingSnug', 'Snug'), body: t('config.columnSpacingSnugBody', 'Columns sit close together.') },
-                        { value: 'balanced', label: t('config.columnSpacingBalanced', 'Balanced'), body: t('config.columnSpacingBalancedBody', 'A steady gap.') },
-                        { value: 'airy', label: t('config.columnSpacingAiry', 'Airy'), body: t('config.columnSpacingAiryBody', 'Extra room between columns.') },
+                    { field: 'columnSpacing', type: 'select', label: t('config.columnSpacingLabel', 'Space between columns'), special: 'chromeRender', art: 'columnGap', options: [
+                        { value: 'theme', label: t('config.columnSpacingTheme', 'Follow the theme') + ' — ' + t('config.columnSpacingThemeBody', 'Balanced, and airy on Confetti.') },
+                        { value: 'snug', label: t('config.columnSpacingSnug', 'Snug') + ' — ' + t('config.columnSpacingSnugBody', 'Columns sit close together.') },
+                        { value: 'balanced', label: t('config.columnSpacingBalanced', 'Balanced') + ' — ' + t('config.columnSpacingBalancedBody', 'A steady gap.') },
+                        { value: 'airy', label: t('config.columnSpacingAiry', 'Airy') + ' — ' + t('config.columnSpacingAiryBody', 'Extra room between columns.') },
                     ] },
-                    { field: 'sideMargin', type: 'cards', label: t('config.sideMarginLabel', 'Page margins'), special: 'chromeRender', art: 'margins', options: [
-                        { value: 'snug', label: t('config.sideMarginSnug', 'Snug'), body: t('config.sideMarginSnugBody', 'Narrow edges — more room for columns.') },
-                        { value: 'balanced', label: t('config.sideMarginBalanced', 'Balanced'), body: t('config.sideMarginBalancedBody', 'The default.') },
-                        { value: 'airy', label: t('config.sideMarginAiry', 'Airy'), body: t('config.sideMarginAiryBody', 'Wide edges — columns pulled together.') },
+                    { field: 'sideMargin', type: 'select', label: t('config.sideMarginLabel', 'Page margins'), special: 'chromeRender', art: 'margins', options: [
+                        { value: 'full', label: t('config.sideMarginFull', 'Full width') + ' — ' + t('config.sideMarginFullBody', 'Hardly any edge, and no ceiling on the page: the columns use the whole window.') },
+                        { value: 'tight', label: t('config.sideMarginTight', 'Tight') + ' — ' + t('config.sideMarginTightBody', 'A thin edge — for a big screen.') },
+                        { value: 'snug', label: t('config.sideMarginSnug', 'Snug') + ' — ' + t('config.sideMarginSnugBody', 'Narrow edges — more room for columns.') },
+                        { value: 'balanced', label: t('config.sideMarginBalanced', 'Balanced') + ' — ' + t('config.sideMarginBalancedBody', 'The default.') },
+                        { value: 'roomy', label: t('config.sideMarginRoomy', 'Roomy') + ' — ' + t('config.sideMarginRoomyBody', 'A little more room at the edges.') },
+                        { value: 'airy', label: t('config.sideMarginAiry', 'Airy') + ' — ' + t('config.sideMarginAiryBody', 'Wide edges — columns pulled together.') },
+                        { value: 'spacious', label: t('config.sideMarginSpacious', 'Spacious') + ' — ' + t('config.sideMarginSpaciousBody', 'The widest edges — columns close together in the middle.') },
                     ] },
                     // Unlimited is out of reach while any category is wider than
                     // one column: the limit is what caps the height of a
@@ -20892,7 +20897,6 @@ class DashboardConfig {
             ['tags', this.t('config.bmViewColTags', 'Tags')],
             ['shortcut', this.t('config.bmViewColShortcut', 'Shortcut')],
             ['usage', this.t('config.bmViewColUsage', 'Usage')],
-            ['news', this.t('config.bmViewColNews', 'Latest news')],
             ['score', this.t('config.sortByScore', 'Health score')],
         ];
         return options.map(([v, label]) =>
@@ -21672,13 +21676,6 @@ class DashboardConfig {
             },
             // The busiest of the sparkline's window first.
             usage: (a, b) => usageSum(b) - usageSum(a),
-            // Newest publish first; bookmarks without a watched feed last.
-            news: (a, b) => {
-                const la = this.dash.feedWatch?.latestFor?.(a)?.at || 0;
-                const lb = this.dash.feedWatch?.latestFor?.(b)?.at || 0;
-                if (!la || !lb) return (la ? 0 : 1) - (lb ? 0 : 1);
-                return lb - la;
-            },
             // Worst first. Rows without an issue score as healthy.
             score: (a, b) => Number(this.bmHealthIssue?.(a)?.score ?? 100) - Number(this.bmHealthIssue?.(b)?.score ?? 100),
         }[this.bmSort ?? this.defaultBookmarksSort()] || null;

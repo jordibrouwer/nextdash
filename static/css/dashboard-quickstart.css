@@ -1086,3 +1086,230 @@ body:has(#app-modal.show .look-migration-modal) :is(.quickstart-card, .notice-ca
     pointer-events: none;
     transition: opacity 0.18s ease, visibility 0s linear 0.18s;
 }
+
+/* The popover that introduces the eight new theme groups (new-themes-notice.js): tabs per group,
+   a screenshot and a line for every theme, and a click on a screenshot opens it large. */
+.new-themes-modal .modal-body {
+    overflow: visible;
+}
+
+.new-themes-intro {
+    margin: 0 0 var(--space-3, 0.75rem);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.new-themes-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.new-themes-tab,
+.new-themes-seg {
+    padding: 0.28rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.82rem);
+    cursor: pointer;
+}
+
+.new-themes-tab.is-on,
+.new-themes-seg.is-on {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.new-themes-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.new-themes-tag {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.new-themes-modes {
+    display: inline-flex;
+    gap: 0.3rem;
+}
+
+.new-themes-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+.new-themes-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.6rem);
+}
+
+.new-themes-shot {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: #000;
+    cursor: zoom-in;
+}
+
+.new-themes-shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 8 / 5;
+    object-fit: cover;
+}
+
+.new-themes-zoom {
+    position: absolute;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 6px;
+    background: rgb(0 0 0 / 0.65);
+    color: #fff;
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.new-themes-shot:hover .new-themes-zoom,
+.new-themes-shot:focus-visible .new-themes-zoom {
+    opacity: 1;
+}
+
+.new-themes-name {
+    padding: 0.5rem 0.7rem 0;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.new-themes-badge {
+    align-self: flex-start;
+    margin: 0.25rem 0.7rem 0;
+    padding: 0.05rem 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--status-success, #3fb27f) 22%, transparent);
+    color: var(--text-primary);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.new-themes-desc {
+    flex: 1;
+    margin: 0;
+    padding: 0.3rem 0.7rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.82rem);
+    line-height: 1.45;
+}
+
+.new-themes-foot {
+    padding: 0.2rem 0.7rem 0.7rem;
+}
+
+.new-themes-use {
+    width: 100%;
+    padding: 0.38rem 0.7rem;
+    border: 0;
+    border-radius: var(--radius-3, 0.45rem);
+    background: var(--accent-primary);
+    color: var(--text-on-accent, #111);
+    font: inherit;
+    font-size: var(--font-size-small, 0.82rem);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.new-themes-use.is-current,
+.new-themes-use[disabled] {
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    cursor: default;
+}
+
+.new-themes-lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgb(0 0 0 / 0.72);
+}
+
+.new-themes-lightbox-panel {
+    width: min(70rem, 100%);
+    max-height: 100%;
+    overflow: auto;
+    padding: var(--space-3, 0.9rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 0.8rem);
+    background: var(--bg-secondary, #1d1f24);
+    color: var(--text-primary);
+}
+
+.new-themes-lightbox-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: 0.6rem;
+}
+
+.new-themes-lightbox-x {
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.new-themes-lightbox-panel img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 66vh;
+    object-fit: contain;
+    border-radius: var(--radius-4, 0.5rem);
+}
+
+.new-themes-lightbox-desc {
+    margin: 0.6rem 0;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.new-themes-lightbox-foot .new-themes-use {
+    width: auto;
+    padding: 0.45rem 1.2rem;
+}
+
+@media (max-width: 640px) {
+    .new-themes-cards {
+        grid-template-columns: 1fr;
+    }
+}

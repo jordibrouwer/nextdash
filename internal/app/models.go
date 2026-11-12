@@ -764,7 +764,7 @@ type Settings struct {
 	DensityMode                 string                     `json:"densityMode"`                       // Dashboard density mode: comfortable, compact, dense
 	CategorySpacing             string                     `json:"categorySpacing"`                   // Vertical space between category rows: theme (follow the theme), snug, balanced, airy
 	ColumnSpacing               string                     `json:"columnSpacing"`                     // Horizontal space between columns on the dashboard: theme (follow the theme), snug, balanced, airy
-	SideMargin                  string                     `json:"sideMargin"`                        // Left/right page margin on the dashboard: snug, balanced, airy
+	SideMargin                  string                     `json:"sideMargin"`                        // Left/right page margin on the dashboard: full, tight, snug, balanced (the middle), roomy, airy, spacious
 	PackedColumns               bool                       `json:"packedColumns"`                     // Stack categories in vertical columns (round-robin) to reduce empty space
 	DefaultCategorySpread       bool                       `json:"defaultCategorySpread"`             // New categories may run across columns
 	CategorySpreadResetScope    string                     `json:"categorySpreadResetScope"`          // What "turn spreading off everywhere" covers: page, all
@@ -1246,6 +1246,9 @@ type DiscoverabilityState struct {
 	Bell map[string]BellRecord `json:"bell,omitempty"`
 	// TipCardShownAt is when the tip card last showed (Unix ms).
 	TipCardShownAt int64 `json:"tipCardShownAt,omitempty"`
+	// ThemeTipsFrom is the day (Unix ms) an upgraded install first ran the release that brought the
+	// theme groups: the three tips about Skywatch, Tidewatch and Daydrift count their days from it.
+	ThemeTipsFrom int64 `json:"themeTipsFrom,omitempty"`
 }
 
 // BellRecord is the pair of marks kept for one bell row.
@@ -3879,7 +3882,7 @@ var bmViewChoices = map[string][]string{
 	"keyLegend":   {"below", "above", "off"},
 }
 
-var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "news", "score"}
+var bmViewColumns = []string{"tags", "shortcut", "pinned", "opens", "last", "added", "usage", "score"}
 var bmViewRailBlocks = []string{"views", "health", "checks", "pages", "tags"}
 
 // bmViewChoice keeps a value the view knows, or its default.
@@ -5634,7 +5637,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 		}
 		// The left/right band beside the grid. "balanced" is the margin the
 		// dashboard has always had, so an existing install sees no change.
-		if _, ok := rawSettings["sideMargin"]; !ok || (settings.SideMargin != "snug" && settings.SideMargin != "balanced" && settings.SideMargin != "airy") {
+		if _, ok := rawSettings["sideMargin"]; !ok || (settings.SideMargin != "full" && settings.SideMargin != "tight" && settings.SideMargin != "snug" && settings.SideMargin != "balanced" && settings.SideMargin != "roomy" && settings.SideMargin != "airy" && settings.SideMargin != "spacious") {
 			settings.SideMargin = "balanced"
 		}
 		if _, ok := rawSettings["monitorEmphasis"]; !ok || (settings.MonitorEmphasis != "problems" && settings.MonitorEmphasis != "always" && settings.MonitorEmphasis != "never") {
@@ -6102,7 +6105,7 @@ func normalizeFavoriteThemes(ids []string) []string {
 }
 
 func getDefaultBuiltInThemes() map[string]ThemeColors {
-	return map[string]ThemeColors{
+	themes := map[string]ThemeColors{
 		/*
 		 * The four that use the character fields.
 		 *
@@ -6744,6 +6747,8 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"look-holo-dark":  {Name: "Holo [dark]", TextPrimary: "#F3FEFF", TextSecondary: "#BEC8CD", TextTertiary: "#9AA4AB", BackgroundPrimary: "#07081A", BackgroundSecondary: "#151C2D", BackgroundDots: "#15293A", BackgroundModal: "rgba(7, 8, 26, 0.9)", BorderPrimary: "#2F5D6C", BorderSecondary: "#172E3F", AccentPrimary: "#6BF5FF", AccentSuccess: "#8BFF6B", AccentWarning: "#FFF06B", AccentError: "#FF6BD6", SurfaceAlpha: 0.2, SurfaceBlur: 24, SurfaceGlow: 0.8, RadiusScale: 0.9, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Sheen: 0.65, Character: "glass", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "lookholo", Surface: "glass"},
 		"look-holo-light": {Name: "Holo [light]", TextPrimary: "#060717", TextSecondary: "#41434F", TextTertiary: "#686A74", BackgroundPrimary: "#F3FEFF", BackgroundSecondary: "#FBFFFF", BackgroundDots: "#E7FDFF", BackgroundModal: "rgba(243, 254, 255, 0.92)", BorderPrimary: "#BCDFE2", BorderSecondary: "#E1FDFF", AccentPrimary: "#00808A", AccentSuccess: "#1D8400", AccentWarning: "#7F7200", AccentError: "#DB009E", SurfaceAlpha: 0.2, SurfaceBlur: 24, SurfaceGlow: 0.8, RadiusScale: 0.9, LabelTransform: "uppercase", LabelSpacing: "0.1em", LabelWeight: 800, Sheen: 0.65, Character: "glass", Depth: "glass", Glow: "off", Collection: "looks", Backdrop: "lookholo", Surface: "glass"},
 	}
+	mergeThemeGroups(themes)
+	return themes
 }
 
 func isValidThemeID(themeID string) bool {

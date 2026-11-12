@@ -113,7 +113,11 @@ class DashboardRenderCore {
         if (this.shouldStackDashboardCategories()) {
             return 1;
         }
-        return Math.min(this.getNormalizedColumnsPerRow(), this._columnsThatFit());
+        // The ceiling first, so every caller (the grid class, the column
+        // distribution, a resize) measures against the room the setting asks for.
+        const wanted = this.getNormalizedColumnsPerRow();
+        this._applyContainerCeiling(wanted);
+        return Math.min(wanted, this._columnsThatFit());
     }
 
 
@@ -140,6 +144,43 @@ class DashboardRenderCore {
     }
 
 
+    /*
+     * Room for the columns the reader asked for.
+     *
+     * The page is a container with a ceiling of 1600px, and the side margin
+     * comes out of it, so five columns barely fit and six never did, on any
+     * screen: the setting offered 6 and drew 4 or 5. The ceiling now follows
+     * the setting: it stays 1600px for anything up to four columns and grows
+     * to what the asked-for columns need at their minimum width, so a wider
+     * window really gets the extra columns. A narrower window still keeps only
+     * the columns that fit (_columnsThatFit), because the container never
+     * exceeds the window.
+     *
+     * Set on the root so the header containers and every view line up with the
+     * grid instead of the grid alone growing past them.
+     */
+    _applyContainerCeiling(wanted) {
+        const grid = document.getElementById('dashboard-layout');
+        const box = grid?.parentElement;
+        if (!grid || !box) return;
+        const boxStyle = getComputedStyle(box);
+        const gridStyle = getComputedStyle(grid);
+        const padding = parseFloat(boxStyle.paddingLeft || '0') + parseFloat(boxStyle.paddingRight || '0')
+            + parseFloat(gridStyle.paddingLeft || '0') + parseFloat(gridStyle.paddingRight || '0');
+        const min = parseFloat(gridStyle.getPropertyValue('--dashboard-column-min')) || 250;
+        const gap = parseFloat(gridStyle.columnGap) || 16;
+        const need = Math.ceil(wanted * min + Math.max(0, wanted - 1) * gap + padding);
+        // Written only when it changes: the keyboard and the block mover ask
+        // for the column count all the time, and an unchanged write would
+        // still dirty the style and force a layout pass on the next measure.
+        const value = `${Math.max(1600, need)}px`;
+        const rootStyle = document.documentElement.style;
+        if (rootStyle.getPropertyValue('--dashboard-container-max') !== value) {
+            rootStyle.setProperty('--dashboard-container-max', value);
+        }
+    }
+
+
     shouldPackDashboardColumns() {
         const d = this.dash;
         if (this.shouldStackDashboardCategories()) {
@@ -152,7 +193,7 @@ class DashboardRenderCore {
     getNormalizedColumnsPerRow() {
         const d = this.dash;
         const parsed = parseInt(String(d.settings.columnsPerRow), 10);
-        return Math.max(1, Math.min(12, Number.isFinite(parsed) ? parsed : 3));
+        return Math.max(1, Math.min(8, Number.isFinite(parsed) ? parsed : 3));
     }
 
 

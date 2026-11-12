@@ -1,0 +1,446 @@
+/*
+ * The legible theme group; see internal/app/theme_groups.go.
+ * Keyed on html[data-theme^="legible-"].
+ *
+ * The idea is clarity, not decoration: every row is a touch target, the
+ * focused row is unmistakable without colour, nothing moves, and status
+ * says what it is in a shape and a word. The palettes (theme_group_legible.go)
+ * carry the contrast; this file carries the geometry.
+ */
+
+html[data-theme^="legible-"] {
+    --legible-focus-w: 4px;
+    --legible-focus-gap: 3px;
+    --legible-border-w: 2px;
+    --legible-target: 44px;
+    --legible-row: calc(var(--legible-target) + 2 * var(--legible-border-w));
+}
+
+/* ── No motion ─────────────────────────────────────────────────────────
+ * One millisecond rather than `none`: a row that fades in from opacity 0
+ * must still land on its final state, and `animation: none` would leave it
+ * at the first keyframe's absence instead. */
+html[data-theme^="legible-"] *,
+html[data-theme^="legible-"] *::before,
+html[data-theme^="legible-"] *::after {
+    transition: none !important;
+    animation-duration: 1ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+}
+
+/* The page keeps its own quiet backdrop (softsquares, amberhorizon, shapetiles);
+ * only the body's pattern layer is switched off. */
+html[data-theme^="legible-"] body {
+    background-image: none !important;
+}
+
+/* ── Type: open and a little wider ─────────────────────────────────────*/
+html[data-theme^="legible-"] body {
+    line-height: 1.65;
+    letter-spacing: 0.02em;
+}
+
+/* ── Focus: a thick ring, wherever focus can land ──────────────────────
+ * Scoped to the whole document so modals, menus and the config view carry it
+ * too. */
+html[data-theme^="legible-"] :focus-visible {
+    outline: var(--legible-focus-w) solid var(--accent-primary) !important;
+    outline-offset: var(--legible-focus-gap) !important;
+    box-shadow: 0 0 0 calc(var(--legible-focus-w) + var(--legible-focus-gap)) var(--background-primary) !important;
+}
+
+/* ── Rows: a target, with an edge ──────────────────────────────────────
+ * min-height rather than padding, so a denser density setting still cannot
+ * take a row below 44px but a roomier one keeps its own padding. */
+/* Config lists keep their own grid; they only get the height floor. */
+html[data-theme^="legible-"] .config-crud-row,
+html[data-theme^="legible-"] .config-bm-row {
+    min-height: var(--legible-row);
+    box-sizing: border-box;
+}
+html[data-theme^="legible-"] .bookmark-link {
+    /* border-box: the 44px is what is inside the two borders, so the whole row
+     * is a little more and never less. */
+    min-height: var(--legible-row);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    /* A status word that does not fit beside the name drops to its own line
+     * instead of squeezing the name into a column. */
+    flex-wrap: wrap;
+    border: var(--legible-border-w) solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    box-shadow: none;
+}
+html[data-theme^="legible-"] .bookmarks-list {
+    --bookmark-list-gap: 0.5rem;
+    gap: 0.5rem;
+}
+html[data-theme^="legible-"] .bookmark-link .bookmark-open {
+    flex: 1 1 9ch;
+    min-width: 9ch;
+}
+html[data-theme^="legible-"] .bookmark-link .bookmark-open,
+html[data-theme^="legible-"] .bookmark-link .bookmark-text {
+    min-height: var(--legible-target);
+    display: inline-flex;
+    align-items: center;
+}
+html[data-theme^="legible-"] .bookmark-link .bookmark-text {
+    /* The keyboard row's highlighter band is a tint; the ring and underline
+     * below are what mark it here. */
+    background-image: none !important;
+    min-height: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* ── Hover and the keyboard row: shape, not tint ───────────────────────
+ * Hover underlines the name and thickens the edge; the keyboard row gets the
+ * 4px ring on top of that. A colour change alone is never the signal. */
+html[data-theme^="legible-"] .bookmark-link:hover,
+html[data-theme^="legible-"] .bookmark-link:focus-within {
+    background: var(--background-secondary);
+    border-color: var(--text-primary);
+}
+html[data-theme^="legible-"] .bookmark-link:hover .bookmark-text,
+html[data-theme^="legible-"] .bookmark-link:focus-within .bookmark-text {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+html[data-theme^="legible-"] .bookmark-link.keyboard-selected {
+    background: var(--background-secondary);
+    border-color: var(--text-primary);
+    outline: var(--legible-focus-w) solid var(--accent-primary);
+    outline-offset: var(--legible-focus-gap);
+    box-shadow: none;
+}
+html[data-theme^="legible-"] .bookmark-link.keyboard-selected .bookmark-text {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 4px;
+    font-weight: 700;
+}
+
+/* ── Status: a shape and a word ────────────────────────────────────────
+ * The row carries status-online / -offline / -checking (status.js); the
+ * word is drawn here so it is there whether or not the ping badge is shown.
+ * The tile view already draws its own mark. */
+html[data-theme^="legible-"] .category:not([data-view="tiles"]) .bookmark-link:is(.status-online, .status-offline, .status-checking)::after {
+    flex: none;
+    margin-inline-start: auto;
+    font-size: 0.85em;
+    font-weight: 700;
+    white-space: nowrap;
+    order: 9;
+}
+html[data-theme^="legible-"] .category:not([data-view="tiles"]) .bookmark-link.status-online::after {
+    content: "● " var(--nd-word-online, "online");
+    color: var(--accent-success);
+}
+html[data-theme^="legible-"] .category:not([data-view="tiles"]) .bookmark-link.status-offline::after {
+    content: "■ " var(--nd-word-offline, "offline");
+    color: var(--accent-error);
+}
+html[data-theme^="legible-"] .category:not([data-view="tiles"]) .bookmark-link.status-checking::after {
+    content: "▲ " var(--nd-word-checking, "checking");
+    color: var(--accent-warning);
+}
+/* Colour-blind Safe: its own shapes, so the three are told apart by outline
+ * as well as by word. */
+html[data-theme^="legible-colour-blind-safe-"] .category:not([data-view="tiles"]) .bookmark-link.status-online::after {
+    content: "○ " var(--nd-word-online, "online");
+}
+html[data-theme^="legible-colour-blind-safe-"] .category:not([data-view="tiles"]) .bookmark-link.status-offline::after {
+    content: "◆ " var(--nd-word-offline, "offline");
+}
+html[data-theme^="legible-colour-blind-safe-"] .category:not([data-view="tiles"]) .bookmark-link.status-checking::after {
+    content: "◐ " var(--nd-word-checking, "checking");
+}
+/* The base rules paint an offline row red on red; here the border and word
+ * carry it instead. */
+html[data-theme^="legible-"] body .bookmarks-list .bookmark-link.status-offline {
+    background: var(--background-secondary);
+    border-style: dashed;
+    box-shadow: none;
+}
+
+/* The row already wears the ring; the link inside it would draw a second,
+ * smaller one and make the focus look like two things. */
+html[data-theme^="legible-"] .bookmark-link.keyboard-selected :focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Paper without the paper: the grain on a category and the per-category
+ * coloured rule under its title are decoration, and a category colour that
+ * happens to be red must not read as an error. */
+html[data-theme^="legible-"] .category {
+    background-image: none !important;
+}
+html[data-theme^="legible-"] .category-title {
+    background-image: linear-gradient(var(--accent-primary), var(--accent-primary)) !important;
+}
+
+/* ── One card for a category and a widget ──────────────────────────────
+ * A widget is a .category too, but it carries surface rules of its own (a
+ * tint, a shadow, a panel inside); with these !importants the two are the
+ * same card -- same fill, same border, same header -- and cannot drift. */
+html[data-theme^="legible-"] .category,
+html[data-theme^="legible-"] .category.dashboard-widget {
+    background-color: var(--background-secondary) !important;
+    background-image: none !important;
+    border: 3px solid var(--border-primary) !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 1.1rem 1.1rem 0.9rem !important;
+}
+html[data-theme^="legible-"] .dashboard-widget-panel,
+html[data-theme^="legible-"] .dashboard-widget-body {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+html[data-theme^="legible-"] .category-title {
+    text-transform: none !important;
+    letter-spacing: 0.01em !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+}
+
+/* ── High Contrast Calm: wayfinding signage ────────────────────────────
+ * Airport and transit signs: a flat band names each panel, a line of content
+ * is a ruled strip with its pictogram in a square, the place you are is the
+ * one yellow strip, and nothing is rounded or lit. Light is the day sign
+ * (black band on white), dark the night edition (yellow band on black).
+ * Categories and widgets are the same panel and use the same strips. */
+html[data-theme="legible-high-contrast-calm-light"] {
+    --lg-band-bg: #000000;
+    --lg-band-fg: #FFFFFF;
+    --lg-here: #FFD400;
+}
+html[data-theme="legible-high-contrast-calm-dark"] {
+    --lg-band-bg: #FFD400;
+    --lg-band-fg: #000000;
+    --lg-here: #FFD400;
+}
+html[data-theme^="legible-high-contrast-calm-"] body {
+    font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
+    letter-spacing: 0.01em;
+}
+
+/* The panel: square, framed in ink, no shadow. */
+html[data-theme^="legible-high-contrast-calm-"] .category,
+html[data-theme^="legible-high-contrast-calm-"] .category.dashboard-widget {
+    border: 4px solid var(--text-primary) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+/* The band. */
+html[data-theme^="legible-high-contrast-calm-"] .category-title {
+    background-image: none !important;
+    background-color: var(--lg-band-bg) !important;
+    color: var(--lg-band-fg) !important;
+    margin: 0 !important;
+    padding: 0.75rem 1.1rem !important;
+    font-size: 1.45rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.02em !important;
+    text-transform: uppercase !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .category-title :is(*, button) {
+    color: inherit !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .category-body {
+    padding: 0.4rem 1.1rem 0.9rem;
+}
+
+/* A strip: ruled underneath, flat, with a square pictogram in front. */
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link,
+html[data-theme^="legible-high-contrast-calm-"] :is(
+    .dashboard-widget-row,
+    .dashboard-widget-health-row,
+    .dashboard-widget-trend-row,
+    .dashboard-widget-weather-row,
+    .dashboard-widget-note-task,
+    .dashboard-widget-empty,
+    .dashboard-widget-headline
+) {
+    box-sizing: border-box;
+    min-height: var(--legible-row);
+    background: transparent !important;
+    border: 0 !important;
+    border-bottom: 3px solid var(--text-primary) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: var(--text-primary);
+    padding: 0.35rem 0.2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.8rem;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmarks-list {
+    gap: 0;
+    --bookmark-list-gap: 0;
+}
+html[data-theme^="legible-high-contrast-calm-"] .dashboard-widget-note-task {
+    flex-wrap: nowrap;
+}
+html[data-theme^="legible-high-contrast-calm-"] :is(.dashboard-widget-row, .dashboard-widget-health-row, .dashboard-widget-trend-row) > :first-child {
+    flex: 1 1 8ch;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link .bookmark-text {
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+/* The pictogram square. */
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-icon-slot {
+    border: 2px solid var(--text-primary);
+    border-radius: 0 !important;
+    background: var(--background-primary);
+    padding: 2px;
+    box-sizing: content-box;
+}
+
+/* Pointing at a strip and being on it: the strip inverts (pointer) or turns
+ * signage yellow (keyboard), and an arrow leads in, so neither is a colour
+ * change alone. Every colour inside is forced, because a status word coloured
+ * for white would vanish on yellow. */
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link:hover {
+    background: var(--text-primary) !important;
+    color: var(--background-primary);
+    border-color: var(--text-primary) !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link.keyboard-selected {
+    background: var(--lg-here) !important;
+    color: #000000;
+    border-color: #000000 !important;
+    outline: 4px solid var(--accent-primary);
+    outline-offset: 3px;
+    z-index: 1;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link:is(:hover, .keyboard-selected, :focus-within) :is(.bookmark-text, .bookmark-shortcut, .bookmark-open, .status-text) {
+    color: inherit !important;
+    text-decoration: none;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link:is(:hover, .keyboard-selected, :focus-within)::after {
+    color: inherit !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link:is(:hover, .keyboard-selected) .bookmark-text::before {
+    content: "\25B6\00a0";
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link:focus-within:not(:hover):not(.keyboard-selected) {
+    background: transparent !important;
+}
+html[data-theme="legible-high-contrast-calm-light"] .bookmark-link.keyboard-selected {
+    outline-color: #0A3F99;
+}
+html[data-theme="legible-high-contrast-calm-dark"] .bookmark-link.keyboard-selected {
+    outline-color: #FFFFFF;
+}
+
+/* Status: a ruled label with its shape, the way a gate sign says "closed". */
+html[data-theme^="legible-high-contrast-calm-"] .category:not([data-view="tiles"]) .bookmark-link:is(.status-online, .status-offline, .status-checking)::after {
+    border: 2px solid currentColor;
+    padding: 0 0.45rem;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+html[data-theme^="legible-high-contrast-calm-"] body .bookmarks-list .bookmark-link.status-offline {
+    border-bottom-style: dashed !important;
+}
+
+/* Free text: an inset panel, framed square. */
+html[data-theme^="legible-high-contrast-calm-"] .dashboard-widget-note-lines {
+    border: 3px solid var(--text-primary);
+    border-radius: 0;
+    background: var(--background-primary);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 0.4rem;
+}
+html[data-theme^="legible-high-contrast-calm-"] .dashboard-widget-note-heading {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+html[data-theme^="legible-high-contrast-calm-"] .dashboard-widget-note-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+html[data-theme^="legible-high-contrast-calm-"] .dashboard-widget-note-actions > * {
+    border: 3px solid var(--text-primary) !important;
+    border-radius: 0 !important;
+    min-height: var(--legible-row);
+    padding: 0.2rem 1rem;
+    background: var(--background-primary) !important;
+    font-weight: 700;
+}
+html[data-theme^="legible-high-contrast-calm-"] .dashboard-widget-stats > * {
+    background: var(--background-primary) !important;
+    border: 3px solid var(--text-primary) !important;
+    border-radius: 0 !important;
+    color: var(--text-primary);
+}
+
+/* The band is a flat single colour: whatever icon sits in it is drawn in the
+ * band's own ink so it cannot vanish into it, and the small grey labels the
+ * widgets derive for themselves take the palette's AAA secondary ink. */
+html[data-theme="legible-high-contrast-calm-light"] .category-title :is(svg, img) {
+    filter: brightness(0) invert(1);
+}
+html[data-theme="legible-high-contrast-calm-dark"] .category-title :is(svg, img) {
+    filter: brightness(0);
+}
+html[data-theme^="legible-high-contrast-calm-"] :is(
+    .dashboard-widget-health-value,
+    .dashboard-widget-health-label,
+    .dashboard-widget-row-detail,
+    .dashboard-widget-trend-label,
+    .dashboard-widget-trend-extra,
+    .dashboard-widget-trend-note,
+    .dashboard-widget-headline-note
+) {
+    color: var(--text-secondary) !important;
+    opacity: 1 !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link:not(:hover):not(.keyboard-selected) .bookmark-shortcut {
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+/* Every piece of text in a panel is the palette's ink. The widgets derive
+ * their own greys and dim some with opacity; on a flat signage panel that is
+ * where AAA is lost, so the ink is stated outright. A modifier class
+ * (--good, --bad, --warn) keeps its meaning colour: it comes with a word or
+ * a shape of its own. */
+html[data-theme^="legible-high-contrast-calm-"] .category-body :is(span, p, div, label, small, strong, em, button, dt, dd, li):not([class*="--"]):not(.bookmark-icon-letter) {
+    color: var(--text-primary) !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .category-body :is(.dashboard-widget-row-detail, .dashboard-widget-headline-note, .stat-tile-label, .dashboard-widget-health-label, .dashboard-widget-trend-label, .dashboard-widget-trend-note, .dashboard-widget-footnote, .bookmark-shortcut) {
+    color: var(--text-secondary) !important;
+    opacity: 1 !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-icon-letter {
+    color: var(--text-primary) !important;
+    opacity: 1 !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .category-title :is(button, span, .category-reorder-glyph, .smart-collection-why-btn, .category-sort-menu-btn, .category-add-inline-btn) {
+    opacity: 1 !important;
+    color: inherit !important;
+    background-color: transparent !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] .bookmark-link:is(:hover, .keyboard-selected) :is(.bookmark-shortcut, .bookmark-icon-letter) {
+    color: inherit !important;
+}
