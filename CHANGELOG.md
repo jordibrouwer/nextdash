@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.28.3 — 12 November 2026](#v1283--12-november-2026)
 - [v1.28.2 — 12 November 2026](#v1282--12-november-2026)
 - [v1.28.1 — 11 November 2026](#v1281--11-november-2026)
 - [v1.28.0 — 10 November 2026](#v1280--10-november-2026)
@@ -141,6 +142,16 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.28.3 — 12 November 2026
+
+The new theme groups on every view.
+
+### Theme groups
+
+- **fix — The new themes also dress the other views.** Instrument, Spatial, Riso, Legible, Living, Cartographic and Stationery drew their frame on the dashboard only, so Bookmarks, Inbox, Containers, Glances, Tags and Config kept the plain panel and looked like another theme. The panel of those views now takes the frame its group gives a category: the oscilloscope bezel, the slide mount, the riso ink border and shadow, the chart neatline and the rest. The pins, torn edges and rulers stay on the dashboard, where the rows they decorate are. Every pane is also filled like a column of the dashboard in the same theme, with the same opacity. Of the 440 themes 339 already matched; the other 101 (Skywatch, Nautical, Subway, Diorama, Gallery, Ledger, Zen and 44 older families with a material, such as gloss, matrix, neon and retro-crt) showed a thinner pane on Config, Inbox and the other views, and now match. The fill follows the Surface setting, the material and the weather of Skywatch (`static/js/view-pane-fill.js`).
 
 ---
 
