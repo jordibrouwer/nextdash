@@ -1,0 +1,201 @@
+/*
+ * The theme groups on the other views.
+ *
+ * The groups draw a category's frame on .dashboard-grid / #dashboard-layout
+ * .category, so the page of bookmarks wears the theme and every other view --
+ * Bookmarks, Inbox, Containers, Glances, Tags and Config -- kept the plain
+ * panel category-surface.css gives them. This file puts the same frame, from the
+ * same tokens, on the panel those views are drawn in.
+ *
+ * Only the frame is carried over: border, corners, fill, shadow and type. The
+ * decoration a group hangs on a category (pins, torn edges, rulers, rows) is
+ * made from the category's own children and pseudo-elements, which a view's
+ * panel does not share, so it stays on the dashboard.
+ *
+ * The panel selector is the one category-surface.css and theme-signature.css
+ * use; each rule is !important only where the group's own category rule is.
+ */
+
+/* ── Cartographic ──────────────────────────────────────────────────── */
+
+html:is([data-theme^="cartographic-atlas"], [data-theme^="cartographic-nautical"]) body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border-radius: 0 !important;
+    background-image: var(--cg-iso) !important;
+    background-size: 260px 210px !important;
+}
+html[data-theme^="cartographic-atlas"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    outline: 1px solid color-mix(in srgb, var(--cg-ink) 75%, transparent);
+    outline-offset: -5px;
+}
+html[data-theme^="cartographic-nautical"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border: 3px solid var(--cg-ink) !important;
+    box-shadow: inset 0 0 0 5px var(--background-secondary), inset 0 0 0 6px var(--cg-ink) !important;
+}
+
+/* ── Instrument ────────────────────────────────────────────────────── */
+
+html[data-theme^="instrument-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) :is(.lvs-header, .config-view-head, .lvs-title) {
+    font-family: var(--ig-mono);
+    font-variant-numeric: tabular-nums;
+}
+html[data-theme^="instrument-cockpit-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border: 1px solid var(--ig-hair) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background:
+        linear-gradient(var(--accent-primary), var(--accent-primary)) top left / 20px 2px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) top left / 2px 20px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) top right / 20px 2px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) top right / 2px 20px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) bottom left / 20px 2px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) bottom left / 2px 20px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) bottom right / 20px 2px no-repeat,
+        linear-gradient(var(--accent-primary), var(--accent-primary)) bottom right / 2px 20px no-repeat !important;
+}
+html[data-theme^="instrument-oscilloscope-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border: 10px solid var(--ig-bezel) !important;
+    border-radius: 30px !important;
+    background:
+        linear-gradient(var(--ig-grat-axis), var(--ig-grat-axis)) center / 100% 1px no-repeat,
+        linear-gradient(var(--ig-grat-axis), var(--ig-grat-axis)) center / 1px 100% no-repeat,
+        repeating-linear-gradient(0deg, var(--ig-grat) 0 1px, transparent 1px 32px),
+        repeating-linear-gradient(90deg, var(--ig-grat) 0 1px, transparent 1px 32px),
+        radial-gradient(ellipse at 50% 45%, var(--ig-screen-lit), var(--ig-screen) 85%) !important;
+    box-shadow:
+        inset 0 0 0 3px var(--ig-bezel-edge),
+        inset 0 0 38px rgba(0, 0, 0, 0.55),
+        0 0 0 1px var(--ig-bezel-edge),
+        0 6px 14px rgba(0, 0, 0, 0.35) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+html[data-theme^="instrument-dive-computer-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border: 8px solid transparent !important;
+    border-radius: 28px !important;
+    background: var(--ig-face) padding-box, var(--ig-metal) border-box !important;
+    box-shadow:
+        inset 0 0 0 2px color-mix(in srgb, var(--ig-scale) 60%, transparent),
+        inset 0 0 28px rgba(0, 0, 0, 0.35),
+        0 5px 14px rgba(0, 0, 0, 0.35) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* ── Spatial ───────────────────────────────────────────────────────── */
+
+html[data-theme^="spatial-diorama-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    background: var(--dio-1) !important;
+    border: 3px solid var(--dio-frame) !important;
+    border-radius: 0 !important;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--dio-1) 60%, white), 7px 9px 0 var(--dio-hard) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+html[data-theme^="spatial-lightbox-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border: 14px solid transparent !important;
+    border-radius: 2px !important;
+    background-image:
+        repeating-linear-gradient(180deg, transparent 0 5px, var(--lb-hole) 5px 15px, transparent 15px 22px),
+        repeating-linear-gradient(180deg, transparent 0 5px, var(--lb-hole) 5px 15px, transparent 15px 22px),
+        linear-gradient(135deg, var(--lb-tint-a), var(--lb-tint-b) 60%, var(--lb-tint-c)),
+        linear-gradient(var(--lb-film), var(--lb-film)),
+        linear-gradient(var(--lb-mount), var(--lb-mount)) !important;
+    background-repeat: no-repeat !important;
+    background-size: 7px 100%, 7px 100%, auto, auto, auto !important;
+    background-position: 3.5px 0, calc(100% - 3.5px) 0, 0 0, 0 0, 0 0 !important;
+    background-origin: border-box, border-box, padding-box, padding-box, border-box !important;
+    background-clip: border-box, border-box, padding-box, padding-box, border-box !important;
+    background-color: transparent !important;
+    box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.5) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+html[data-theme^="spatial-orbit-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border: 1px solid var(--orb-line) !important;
+    border-radius: 3px !important;
+    background-color: var(--orb-panel) !important;
+    background-image:
+        radial-gradient(1px 1px at 55% 9%, var(--orb-star) 98%, transparent),
+        radial-gradient(1px 1px at 83% 12%, var(--orb-star) 98%, transparent),
+        radial-gradient(1.5px 1.5px at 66% 71%, var(--orb-star) 98%, transparent),
+        radial-gradient(1px 1px at 28% 86%, var(--orb-star) 98%, transparent),
+        radial-gradient(1px 1px at 92% 52%, var(--orb-star) 98%, transparent),
+        radial-gradient(ellipse 90% 60% at 12% 0%, var(--orb-glow), transparent 70%) !important;
+    box-shadow: inset 0 0 0 3px var(--orb-panel), inset 0 0 0 4px color-mix(in srgb, var(--orb-line) 45%, transparent) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* ── Riso ──────────────────────────────────────────────────────────── */
+
+html[data-theme^="riso-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    background-color: var(--ri-card) !important;
+    background-image: none !important;
+    border: 3px solid var(--ri-1) !important;
+    border-radius: 0 !important;
+    box-shadow: var(--ri-shadow) var(--ri-shadow) 0 var(--ri-2) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+html[data-theme^="riso-green-orange"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) { outline: 2px solid var(--ri-2); outline-offset: -9px; }
+html[data-theme^="riso-mimeograph"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border-width: 2px !important;
+    border-color: color-mix(in srgb, var(--ri-1) 78%, transparent) !important;
+}
+
+/* ── Legible ───────────────────────────────────────────────────────── */
+
+html[data-theme^="legible-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    background-color: var(--background-secondary) !important;
+    background-image: none !important;
+    border: 3px solid var(--border-primary) !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+html[data-theme^="legible-high-contrast-calm-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border: 4px solid var(--text-primary) !important;
+    border-radius: 0 !important;
+}
+
+/* ── Living ────────────────────────────────────────────────────────── */
+
+html[data-theme^="living-skywatch"] body[data-living="skywatch"] :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border-radius: 3px !important;
+    background-color: color-mix(in srgb, var(--background-secondary) 80%, transparent) !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: inset 0 0 0 6px var(--sk-frame), inset 0 0 0 7px var(--sk-frame-hi), 0 7px 0 -1px var(--sk-frame) !important;
+}
+html[data-theme^="living-tidewatch"] body[data-living="tidewatch"] :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border-radius: 0 !important;
+    background-color: color-mix(in srgb, var(--background-primary) 58%, transparent) !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: inset 0 3px 0 var(--lv-c), inset 0 -1px 0 var(--lv-line), inset 1px 0 0 var(--lv-line) !important;
+}
+html[data-theme^="living-daydrift"] body[data-living="daydrift"] :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    border-radius: 2px !important;
+    background-color: var(--background-secondary) !important;
+    background-image: linear-gradient(90deg, var(--dd-lit), transparent 42%) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: inset 0 0 1px 1px var(--border-primary), 3px 4px 0 var(--dd-ink) !important;
+}
+
+/* ── Stationery ────────────────────────────────────────────────────── */
+
+html[data-theme^="stationery-gallery-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) { font-family: "Helvetica Neue", "Neue Haas Grotesk", Helvetica, Arial, sans-serif; }
+html[data-theme^="stationery-ledger-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) { font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; }
+html[data-theme^="stationery-zen-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) { font-family: "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif; }
+html[data-theme^="stationery-typewriter-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    box-shadow: 4px 4px 0 color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
