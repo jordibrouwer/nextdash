@@ -118,4 +118,29 @@ test.describe('the new theme groups popover', () => {
         await expect(popover(page)).toHaveCount(0);
         expect(await page.evaluate(() => window.NewThemesNotice.wanted())).toBe(false);
     });
+
+    test('a tip in the bell opens the popover again, after it was answered', async ({ page }) => {
+        await asInstall(page, { fresh: false });
+        await open(page);
+        await expect(popover(page)).toBeVisible({ timeout: 25_000 });
+        await page.keyboard.press('Escape');
+        await expect(popover(page)).toHaveCount(0);
+        await page.evaluate(() => window.NotificationBell.refreshAll());
+        await page.evaluate(() => window.NotificationBell.open());
+        const row = page.locator('.notification-bell-row[data-bell-id="new-themes-bell"]');
+        await expect(row).toContainText('50 new themes');
+        await row.getByRole('button', { name: 'Show the new themes' }).click();
+        await expect(popover(page)).toBeVisible({ timeout: 15_000 });
+        // Read once taken up: it is not there on the next refresh.
+        await page.evaluate(() => window.NotificationBell.refreshAll());
+        await expect(row).toHaveCount(0);
+    });
+
+    test('a fresh install has no such tip', async ({ page }) => {
+        await asInstall(page, { fresh: true });
+        await open(page);
+        await page.evaluate(() => window.NotificationBell.refreshAll());
+        await page.evaluate(() => window.NotificationBell.open());
+        await expect(page.locator('.notification-bell-row[data-bell-id="new-themes-bell"]')).toHaveCount(0);
+    });
 });

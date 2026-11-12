@@ -271,8 +271,8 @@
         return false;
     }
 
-    function show() {
-        if (!global.AppModal || shown) return;
+    function show(again) {
+        if (!global.AppModal || (shown && again !== true)) return;
         shown = true;
         group = 0;
         mode = currentMode();
@@ -291,6 +291,43 @@
             onConfirm: openStudio,
             onHide: closeLightbox,
         });
+    }
+
+    /*
+     * A tip in the bell that opens the popover again, for whoever closed it too soon: it waits in
+     * the Tips group until it is read, on every upgraded install, whether or not the popover was
+     * shown. The bell closes first and then runs the action, so the popover does not open under it.
+     */
+    function registerBellTip() {
+        if (!global.NoticeCard?.define) return;
+        const card = global.NoticeCard.define({
+            id: 'new-themes-bell',
+            title: () => t('dashboard.newThemesBellTitle', 'The eight new theme groups'),
+            bell: {
+                kind: 'tip',
+                group: 'tips',
+                icon: '\u{1F3A8}',
+                no: 'forever',
+                state: async () => (dash()?.settings && dash().settings.firstRunInstall !== true ? {
+                    count: 1,
+                    text: t('dashboard.newThemesBellText',
+                        '50 new themes in eight groups, each with a screenshot and a line about what it does. Look at them again, and put one on your page.'),
+                } : null),
+                actions: [
+                    {
+                        label: () => t('dashboard.newThemesBellOpen', 'Show the new themes'),
+                        primary: true,
+                        marksRead: true,
+                        onClick: () => show(true),
+                    },
+                ],
+            },
+        });
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', card.autoStart, { once: true });
+        } else {
+            card.autoStart();
+        }
     }
 
     /** True while the popover is still to come on this load, or on screen: no corner card opens meanwhile. */
@@ -319,6 +356,8 @@
     } else {
         start();
     }
+
+    registerBellTip();
 
     global.NewThemesNotice = { show, wanted, blocking, PROMO_ID, GROUPS };
 }(typeof window !== 'undefined' ? window : globalThis));
