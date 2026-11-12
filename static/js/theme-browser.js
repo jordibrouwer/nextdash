@@ -636,7 +636,8 @@
 
         const state = {
             query: '',
-            segment: 'all',
+            // A caller may open on a segment (the New themes popover opens on New).
+            segment: SEGMENTS.includes(opts.segment) ? opts.segment : 'all',
             // Empty means every archetype. Separate from `segment` because the
             // two narrow along different axes: light/dark is which half of a
             // family you are looking at, an archetype is what kind of thing it

@@ -261,6 +261,7 @@
                 palettes,
                 meta,
                 tab: options.tab,
+                segment: options.segment,
                 current: () => this.dash.settings?.theme || 'dark',
                 favorites: Array.isArray(settings.favoriteThemes) ? settings.favoriteThemes : [],
                 t: (key, fallback) => this.t(key, fallback),
