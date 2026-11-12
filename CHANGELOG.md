@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.28.3 — 12 November 2026](#v1283--12-november-2026)
 - [v1.28.2 — 12 November 2026](#v1282--12-november-2026)
 - [v1.28.1 — 11 November 2026](#v1281--11-november-2026)
 - [v1.28.0 — 10 November 2026](#v1280--10-november-2026)
@@ -144,6 +145,16 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
+## v1.28.3 — 12 November 2026
+
+The new theme groups on every view.
+
+### Theme groups
+
+- **fix — The new themes also dress the other views.** Instrument, Spatial, Riso, Legible, Living, Cartographic and Stationery drew their frame on the dashboard only, so Bookmarks, Inbox, Containers, Glances, Tags and Config kept the plain panel and looked like another theme. The panel of those views now takes the frame its group gives a category: the oscilloscope bezel, the slide mount, the riso ink border and shadow, the chart neatline and the rest. The pins, torn edges and rulers stay on the dashboard, where the rows they decorate are.
+
+---
+
 ## v1.28.2 — 12 November 2026
 
 Eight new theme groups, 25 families in light and dark, each built around an idea that goes beyond colour: one bookmark per line with room between them, a page that follows the health of your services, a row drawn as a label strip, a page drawn as a map. In the theme studio each group has its own chip in the Character row and on the card badge, and each family has a backdrop of its own.
@@ -159,7 +170,6 @@ Eight new theme groups, 25 families in light and dark, each built around an idea
 - **new — Riso.** A two-ink print. **Riso Pink-Blue** (blue ink with a hard pink block shadow, solid heads, halftone corners), **Riso Green-Orange** (a stamp look with a double outline and heads tilted a degree) and **Mimeograph** (one faded purple ink, speckled and bleeding). Light halves overprint with multiply; menus and the side panel stay plain (`theme_group_riso.go`, `theme-group-riso.css`).
 - **new — Legible.** Accessibility as a style. **High Contrast Calm** is airport signage: square panels with a banded title, ruled strips with a pictogram, black bands on light grey by day and yellow on black by night. **Low Vision Amber** is amber on black and dark amber on warm white. **Colour-blind Safe** uses a blue and orange pair and different shapes for different states. Rows are at least 44 px, the keyboard row has a 4 px ring, status is a shape and a word, nothing animates, and text keeps at least 7:1 against its background, measured on the real page over the backdrop (`theme_group_legible.go`, `theme-group-legible.css`).
 - **new — The 25 new families wear the **new** badge.** The list in `theme_new.go` is replaced, as the file says the next collection does, so the earlier 62 families stop being new and the **New** segment and searching `new` show only this release's families (`theme_new.go`, `tests/config-theme-browser-new.spec.js`).
-- **fix — The new themes also dress the other views.** Instrument, Spatial, Riso, Legible, Living, Cartographic and Stationery drew their frame on the dashboard only, so Bookmarks, Inbox, Containers, Glances, Tags and Config kept the plain panel and looked like another theme. The panel of those views now takes the frame its group gives a category: the oscilloscope bezel, the slide mount, the riso ink border and shadow, the chart neatline and the rest. The pins, torn edges and rulers stay on the dashboard, where the rows they decorate are.
 
 ### Backdrops
 
