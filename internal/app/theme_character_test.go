@@ -193,6 +193,13 @@ func TestDerivedGlowFollowsThePalette(t *testing.T) {
 		"bone-china-dark": true, "bone-china-light": true,
 		"salt-flat-dark": true, "salt-flat-light": true,
 		"thinkdashboard-classic-dark": true, "thinkdashboard-classic-light": true,
+		// An ink on paper does not glow, and the Legible group is signage with no effects.
+		"riso-pink-blue-dark": true, "riso-pink-blue-light": true,
+		"riso-green-orange-dark": true, "riso-green-orange-light": true,
+		"riso-mimeograph-dark": true, "riso-mimeograph-light": true,
+		"legible-high-contrast-calm-dark": true, "legible-high-contrast-calm-light": true,
+		"legible-low-vision-amber-dark": true, "legible-low-vision-amber-light": true,
+		"legible-colour-blind-safe-dark": true, "legible-colour-blind-safe-light": true,
 	}
 	for id, tc := range getDefaultBuiltInThemes() {
 		got := glowOf(tc)

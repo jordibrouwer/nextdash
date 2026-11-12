@@ -165,9 +165,9 @@ test('the preview follows the tab and the setting', async ({ page }) => {
 
     await page.locator('[data-appearance-tab="layout"]').click();
     await expect(preview).toHaveAttribute('data-preview-focus', 'grid');
-    const columns = page.locator('input[data-behavior-field="columnsPerRow"]');
-    await columns.fill('5');
-    await columns.dispatchEvent('change');
+    // Columns per row is a dropdown from 1 to 8.
+    const columns = page.locator('select[data-behavior-field="columnsPerRow"]');
+    await columns.selectOption('5');
     await expect(preview).toHaveAttribute('data-preview-cols', '5');
 
     // Behavior has no preview.

@@ -29,9 +29,11 @@ module.exports = {
             },
             async act(page) {
                 for (const step of ['tight', 'balanced', 'airy', 'spacious']) {
+                    // The recording is about time: each margin is held for a second so the viewer sees it.
                     await page.waitForTimeout(1_100);
                     await setting(page, step);
                 }
+                // Hold the last step on screen before the recording ends.
                 await page.waitForTimeout(600);
             },
         },

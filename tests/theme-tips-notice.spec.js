@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
  * The three tips in the bell about the themes that react to something: Skywatch (the weather),
@@ -11,6 +11,13 @@ const DAY = 24 * 60 * 60 * 1000;
 const IDS = { sky: 'theme-tip-skywatch', tide: 'theme-tip-tidewatch', drift: 'theme-tip-daydrift' };
 
 async function load(page, { from = 'now', fresh = false, theme = 'aurora-glass-dark' } = {}) {
+    // Pressing Use this theme or Open in the theme studio reads the tip, and the server keeps that:
+    // the next test would find no row. The three records are put back to empty, as the server takes
+    // a record that is sent per id as the truth.
+    await page.request.post('/api/settings', {
+        data: { discoverabilityState: { bell: { 'theme-tip-skywatch': {}, 'theme-tip-tidewatch': {}, 'theme-tip-daydrift': {} } } },
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });

@@ -116,6 +116,7 @@ test.describe('spatial theme group', () => {
         expect(await page.evaluate(() => window.NDSpatial.isRunning())).toBe(false);
 
         await page.mouse.move(900, 500, { steps: 4 });
+        // The pointer writes its CSS variables once per frame; give the frame time to run.
         await page.waitForTimeout(150);
         expect(await spatialVar(page)).toBe('');
         expect(await spatialVar(page, '--sp-y')).toBe('');
@@ -131,6 +132,7 @@ test.describe('spatial theme group', () => {
         await open(page);
         await page.mouse.move(100, 100);
         await page.mouse.move(1000, 600, { steps: 6 });
+        // The pointer writes its CSS variables once per frame; give the frame time to run.
         await page.waitForTimeout(200);
         expect(await spatialVar(page)).toBe('');
         expect(await spatialVar(page, '--sp-y')).toBe('');
@@ -146,6 +148,7 @@ test.describe('spatial theme group', () => {
         await page.evaluate(() => document.documentElement.setAttribute('data-effects', 'off'));
         await expect.poll(() => spatialVar(page)).toBe('');
         await page.mouse.move(1000, 600, { steps: 4 });
+        // The pointer writes its CSS variables once per frame; give the frame time to run.
         await page.waitForTimeout(150);
         expect(await spatialVar(page)).toBe('');
 
@@ -158,6 +161,7 @@ test.describe('spatial theme group', () => {
         await open(page, 'look-ocean-dark');
         await page.mouse.move(100, 100);
         await page.mouse.move(900, 500, { steps: 4 });
+        // Checks that nothing moves: give the frame time to run before reading the variables.
         await page.waitForTimeout(150);
         expect(await spatialVar(page)).toBe('');
         expect(await page.evaluate(() => window.NDSpatial.isRunning())).toBe(false);

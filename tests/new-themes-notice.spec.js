@@ -105,6 +105,7 @@ test.describe('the new theme groups popover', () => {
         // Not asked yet, and still not wanted: it is the install that is fresh.
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenSettingPromo('theme-groups-v1'))).toBe(false);
         expect(await page.evaluate(() => window.NewThemesNotice.wanted())).toBe(false);
+        // Checks that something does NOT happen: the popover must stay away past the delay it would otherwise appear after.
         await page.waitForTimeout(7_000);
         await expect(page.locator('.new-themes-modal')).toHaveCount(0);
     });

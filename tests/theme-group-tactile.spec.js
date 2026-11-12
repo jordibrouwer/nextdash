@@ -167,6 +167,7 @@ test.describe('tactile theme group', () => {
         await openDashboard(page);
         for (const theme of THEMES) {
             await use(page, theme);
+            // Let the pressed state settle before the fixture tears the page down.
             await page.waitForTimeout(250);
             const got = await page.evaluate(() => {
                 const pick = (el) => { const c = getComputedStyle(el); return { bg: c.backgroundColor, img: c.backgroundImage, shadow: c.boxShadow, r: c.borderRadius }; };
@@ -190,6 +191,7 @@ test.describe('tactile theme group', () => {
         await openDashboard(page);
         for (const theme of ['tactile-rack-unit-dark', 'tactile-rack-unit-light']) {
             await use(page, theme);
+            // Let the pressed state settle before the fixture tears the page down.
             await page.waitForTimeout(250);
             const text = await page.evaluate(() => {
                 const el = document.querySelector('.dashboard-widget .dashboard-widget-note-lines');
