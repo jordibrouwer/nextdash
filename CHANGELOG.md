@@ -151,7 +151,7 @@ The new theme groups on every view.
 
 ### Theme groups
 
-- **fix — The new themes also dress the other views.** Instrument, Spatial, Riso, Legible, Living, Cartographic and Stationery drew their frame on the dashboard only, so Bookmarks, Inbox, Containers, Glances, Tags and Config kept the plain panel and looked like another theme. The panel of those views now takes the frame its group gives a category: the oscilloscope bezel, the slide mount, the riso ink border and shadow, the chart neatline and the rest. The pins, torn edges and rulers stay on the dashboard, where the rows they decorate are.
+- **fix — The new themes also dress the other views.** Instrument, Spatial, Riso, Legible, Living, Cartographic and Stationery drew their frame on the dashboard only, so Bookmarks, Inbox, Containers, Glances, Tags and Config kept the plain panel and looked like another theme. The panel of those views now takes the frame its group gives a category: the oscilloscope bezel, the slide mount, the riso ink border and shadow, the chart neatline and the rest. The pins, torn edges and rulers stay on the dashboard, where the rows they decorate are. Every pane is also filled like a column of the dashboard in the same theme, with the same opacity, in all 440 themes: Skywatch, gloss, matrix and the rest no longer show a thinner pane on Config or Inbox.
 
 ---
 

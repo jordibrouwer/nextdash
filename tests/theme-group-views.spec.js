@@ -54,4 +54,37 @@ test.describe('theme groups on the other views', () => {
             }
         }
     });
+
+    test('the pane of a view is filled like a column, in every kind of theme', async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        const view = await page.context().newPage();
+        await view.setViewportSize({ width: 1280, height: 900 });
+        await view.goto('/#inbox');
+        await view.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
+        await expect(view.locator(PANELS.inbox)).toBeVisible();
+
+        const fill = (p, sel) => p.evaluate((q) => {
+            const el = document.querySelector(q);
+            return el ? getComputedStyle(el).backgroundColor : null;
+        }, sel);
+        // One of each new group, a material theme and a plain one.
+        for (const theme of [
+            'living-skywatch-dark', 'living-tidewatch-light', 'cartographic-nautical-dark',
+            'stationery-zen-dark', 'spatial-diorama-light', 'instrument-oscilloscope-dark',
+            'riso-pink-blue-light', 'legible-high-contrast-calm-dark',
+            'bio-abyss-dark', 'gloss-jade-light', 'matrix-rain-dark', 'slate-one-dark',
+        ]) {
+            for (const p of [page, view]) await use(p, theme);
+            await expect.poll(async () => {
+                const column = await fill(page, '.dashboard-grid .category:not(.dashboard-widget)');
+                const pane = await fill(view, PANELS.inbox);
+                return column !== null && column === pane ? 'same' : `${column} vs ${pane}`;
+            }, { message: theme }).toBe('same');
+        }
+    });
 });

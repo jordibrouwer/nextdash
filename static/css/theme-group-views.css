@@ -16,6 +16,17 @@
  * use; each rule is !important only where the group's own category rule is.
  */
 
+/*
+ * A view's panel redefines --background-primary and --background-secondary as
+ * a thin tint of the text colour, so the groups' own fills, which are written
+ * in those two, would turn to glass on it. The page keeps the real ones; take a
+ * copy where they are still the theme's, and inherit it into the panel.
+ */
+html[data-theme] body #dashboard-layout {
+    --tg-bg1: var(--background-primary);
+    --tg-bg2: var(--background-secondary);
+}
+
 /* ── Cartographic ──────────────────────────────────────────────────── */
 
 html:is([data-theme^="cartographic-atlas"], [data-theme^="cartographic-nautical"]) body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
@@ -29,7 +40,7 @@ html[data-theme^="cartographic-atlas"] body :is(#dashboard-layout:is(.tag-view-l
 }
 html[data-theme^="cartographic-nautical"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
     border: 3px solid var(--cg-ink) !important;
-    box-shadow: inset 0 0 0 5px var(--background-secondary), inset 0 0 0 6px var(--cg-ink) !important;
+    box-shadow: inset 0 0 0 5px var(--tg-bg2), inset 0 0 0 6px var(--cg-ink) !important;
 }
 
 /* ── Instrument ────────────────────────────────────────────────────── */
@@ -148,7 +159,7 @@ html[data-theme^="riso-mimeograph"] body :is(#dashboard-layout:is(.tag-view-layo
 /* ── Legible ───────────────────────────────────────────────────────── */
 
 html[data-theme^="legible-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
-    background-color: var(--background-secondary) !important;
+    background-color: var(--tg-bg2) !important;
     background-image: none !important;
     border: 3px solid var(--border-primary) !important;
     border-radius: 18px !important;
@@ -165,7 +176,7 @@ html[data-theme^="legible-high-contrast-calm-"] body :is(#dashboard-layout:is(.t
 
 html[data-theme^="living-skywatch"] body[data-living="skywatch"] :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
     border-radius: 3px !important;
-    background-color: color-mix(in srgb, var(--background-secondary) 80%, transparent) !important;
+    background-color: color-mix(in srgb, var(--tg-bg2) 80%, transparent) !important;
     background-image: none !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
@@ -173,7 +184,7 @@ html[data-theme^="living-skywatch"] body[data-living="skywatch"] :is(#dashboard-
 }
 html[data-theme^="living-tidewatch"] body[data-living="tidewatch"] :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
     border-radius: 0 !important;
-    background-color: color-mix(in srgb, var(--background-primary) 58%, transparent) !important;
+    background-color: color-mix(in srgb, var(--tg-bg1) 58%, transparent) !important;
     background-image: none !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
@@ -181,7 +192,7 @@ html[data-theme^="living-tidewatch"] body[data-living="tidewatch"] :is(#dashboar
 }
 html[data-theme^="living-daydrift"] body[data-living="daydrift"] :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
     border-radius: 2px !important;
-    background-color: var(--background-secondary) !important;
+    background-color: var(--tg-bg2) !important;
     background-image: linear-gradient(90deg, var(--dd-lit), transparent 42%) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
@@ -195,7 +206,16 @@ html[data-theme^="stationery-ledger-"] body :is(#dashboard-layout:is(.tag-view-l
 html[data-theme^="stationery-zen-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) { font-family: "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif; }
 html[data-theme^="stationery-typewriter-"] body :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
-    box-shadow: 4px 4px 0 color-mix(in srgb, var(--text-primary) 14%, transparent);
+    background: var(--tg-bg2) !important;
+    border: 1px solid var(--border-primary) !important;
+    box-shadow: 4px 4px 0 color-mix(in srgb, var(--text-primary) 14%, transparent) !important;
+}
+
+/* ── Every theme: the fill of a column ─────────────────────────────── */
+
+/* view-pane-fill.js reads what the theme gives a column and writes it to
+   --view-pane-fill. The extra attributes only out-rank the frames above and the
+   material rules, which state the pane's own fill. */
+html[data-theme] body[data-depth][data-glow][data-cat-surface] :is(#dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs, #dashboard-layout.library-layout > .config-view--library, #dashboard-layout.config-layout:not(.library-layout) > .config-view) {
+    background-color: var(--view-pane-fill, var(--cfg-pane-bg)) !important;
 }
