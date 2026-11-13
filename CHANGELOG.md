@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v1.29.0 — 13 November 2026](#v1290--13-november-2026)
 - [v1.28.3 — 12 November 2026](#v1283--12-november-2026)
 - [v1.28.2 — 12 November 2026](#v1282--12-november-2026)
 - [v1.28.1 — 11 November 2026](#v1281--11-november-2026)
@@ -144,7 +144,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
-## Unreleased
+## v1.29.0 — 13 November 2026
 
 The phone gets its own way around nextDash.
 
@@ -165,6 +165,18 @@ The phone gets its own way around nextDash.
 - **new — A phone guide in More.** It is also what the cheat sheet opens on a phone (the :cheat command, Config → Help). One screen lists what works on the phone and what needs a desktop.
 - **new — A hint about swiping pages.** With more than one page, a popover under the page name says once that a swipe changes page.
 - **new — Show a block on desktop only or on the phone only.** Categories, widgets and collections get a Show on choice in the edit panel: everywhere, desktop only or phone only. A tablet counts as a desktop. In edit mode a block hidden on this screen stays on the grid, dimmed and labelled, so nothing gets lost (`visibleOn`, `collectionVisibleOn` for built-in and per-tag collections).
+
+### List views
+
+- **new — Drag column borders to resize list view columns.** The headings of Bookmarks, Tags, Inbox and Containers have a handle on the left edge of each resizable column. Drag it left to widen the column; the name column gives way, so a row never outgrows its box. Tag chips refit as the width changes (more chips when wider, folded into +n when narrower). Double-click a handle, or press Delete on it, to put the column back; the arrow keys move a focused handle. Widths are kept per view on the device, not on the server, and a click on a handle never sorts (`static/js/shared/column-resize.js`, `tests/column-resize.spec.js`).
+
+
+### Docs
+
+- **docs — Translations.** The phone's strings were only English fallbacks in the code (`t('mobile.tabs.home', 'Home')`), in no locale file. 96 keys are now in all six languages: a new `mobile` group (tab bar, Status, More, start screens, the phone guide, the search placeholder), `config.*` (Show on column, start screen choice and its info text, the pause line and Resume now, resize column), `editMode.*` (Show on) and `dashboard.feedWatchOffer`.
+- **docs — Help and tips.** Paragraphs in `helpBehaviorBody` (the phone), `helpMonitoringConfigBody` (pausing), `helpEditModeBody` (Show on), `helpFreshBody` (a new feed shows its posts) and `helpBmViewSettingsBody` (column widths), in six languages, and five tips in `TIP_GROUPS`: `tipPhoneTabs`, `tipPhoneLongPress`, `tipWatchFirstPosts`, `tipEditShowOn`, `tipListResizeColumns`.
+- **docs — Manual and README.** §23 is rewritten around the tab bar (start screens, search sheet, Status and pause, More, Inbox, short menu, forms, Show on) with eight phone pictures, and `22-phone.jpg` and `22-phone-bookmarks.jpg` are retaken; short additions in §4, §5, §11, §12.5 and §14.2 and a bullet in the README. The pictures come from `tests/manual-screenshots-v1-29.spec.js`, which `scripts/run-manual-shots.sh` now runs; the shot kit marks the swipe hint as seen.
+- **docs — What's new and News & features.** The window leads with three highlights (the tab bar and Status, Show on, the resizable columns) and carries the start screens, the short menu, the search sheet, the new-feed popover and the pause under them. Config → Overview and About → News & features get three entries dated v1.29.0 (the phone layout, resizable columns, a new feed's posts), in six languages. The release token and data token moved, and `tests/whats-new-hidden-release.spec.js` names v1.29.0 as the release that leads (`static/data/whats-new/v1.29.0.json`, `overview-features.json`, `whats-new-stub.js`, `tests/fixtures/whats-new-media/v1.29.0.js`).
 
 ---
 
