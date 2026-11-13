@@ -26,6 +26,22 @@
 .docker-table {
     width: 100%;
     border-collapse: collapse;
+    --cr-gap: 0px;
+}
+
+/* Widths the reader dragged (column-resize.js): a colgroup rules, and the
+   cells clip instead of widening their column. */
+.docker-table.is-sized {
+    table-layout: fixed;
+}
+
+.docker-table.is-sized .docker-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.docker-table.is-sized .docker-cell--image {
+    max-width: none;
 }
 
 .docker-row {

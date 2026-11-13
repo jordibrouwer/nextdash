@@ -5410,6 +5410,7 @@ class DashboardInbox {
         body.appendChild(offers);
         this.syncOfferCount(offers, filtered);
         body.appendChild(this.renderColumnHeads());
+        this.registerColumnResize(body);
         body.appendChild(list);
         this.fitRowTags(list);
 
@@ -5554,12 +5555,19 @@ class DashboardInbox {
         cells.push(['inbox-colhead-tags', this.t('dashboard.inboxColTags', 'Tags')]);
         cells.push(['inbox-colhead-when', this.t('dashboard.inboxExportColAdded', 'Added'), 'added']);
         const sortable = this.filter !== 'snoozed';
+        // Site, Tags and Added take a drag handle; Title gives way (column-resize.js).
+        const resizeId = { 'inbox-colhead-title': null, 'inbox-colhead-site': 'site', 'inbox-colhead-tags': 'tags', 'inbox-colhead-when': 'when' };
+        const CR = window.ColumnResize;
         cells.forEach(([cls, label, key]) => {
             const span = document.createElement('span');
             if (cls) span.className = cls;
             if (!label) span.setAttribute('aria-hidden', 'true');
+            const rid = CR ? resizeId[cls] : null;
+            if (rid) span.classList.add('cr-col');
+            if (CR && cls === 'inbox-colhead-title') span.setAttribute('data-cr-flex', '');
             if (!key || !sortable) {
                 span.textContent = label;
+                if (rid) span.appendChild(CR.handle('inbox', rid));
                 head.appendChild(span);
                 return;
             }
@@ -5572,9 +5580,32 @@ class DashboardInbox {
             btn.textContent = label;
             btn.addEventListener('click', () => this.sortByHeading(key));
             span.appendChild(btn);
+            if (rid) span.appendChild(CR.handle('inbox', rid));
             head.appendChild(span);
         });
         return head;
+    }
+
+    /**
+     * Saved column widths (column-resize.js): --inbox-cols on the list's body,
+     * read by the heading's grid and by every row's first line.
+     */
+    registerColumnResize(body) {
+        const CR = window.ColumnResize;
+        if (!CR) return;
+        const base = ['1.1rem', '1.4rem', 'minmax(0, 1.6fr)', 'minmax(0, 1fr)', 'minmax(0, 1fr)', 'auto'];
+        const ids = ['', '', 'title', 'site', 'tags', 'when'];
+        const paint = (el, widths) => {
+            if (!el) return;
+            if (Object.keys(widths).length) el.style.setProperty('--inbox-cols', CR.template('inbox', base, ids));
+            else el.style.removeProperty('--inbox-cols');
+        };
+        CR.register('inbox', {
+            label: this.t('dashboard.resizeColumn', 'Resize column'),
+            freeze: true,
+            apply: (widths) => paint(document.querySelector('.inbox-colhead')?.parentElement, widths),
+        });
+        paint(body, CR.get('inbox'));
     }
 
     /** 'ascending', 'descending', or '' when the list is not sorted by this heading. */

@@ -1623,8 +1623,16 @@ class DashboardDocker {
             const th = document.createElement('th');
             th.scope = 'col';
             th.className = `docker-head docker-head--${key} lvs-colhead`;
+            // Name gives way; every other heading has a drag handle (column-resize.js).
+            if (key === 'name') th.setAttribute('data-cr-flex', '');
+            else if (window.ColumnResize) {
+                th.classList.add('cr-col');
+                th.dataset.crCol = key;
+            }
+            const resizer = () => { if (th.dataset.crCol) th.appendChild(window.ColumnResize.handle('docker', key)); };
             if (!sortKey) {
                 th.textContent = label;
+                resizer();
                 headRow.appendChild(th);
                 return;
             }
@@ -1640,10 +1648,12 @@ class DashboardDocker {
             btn.textContent = label;
             btn.addEventListener('click', () => this.sortByHeading(sortKey, key));
             th.appendChild(btn);
+            resizer();
             headRow.appendChild(th);
         });
         thead.appendChild(headRow);
         table.appendChild(thead);
+        this.registerColumnResize(table);
         const tbody = document.createElement('tbody');
         if (DashboardDocker.GROUPS.includes(this.group)) {
             this.appendGroupedRows(tbody, list, headRow.children.length);
@@ -1652,6 +1662,39 @@ class DashboardDocker {
         }
         table.appendChild(tbody);
         return table;
+    }
+
+    /**
+     * Saved column widths (column-resize.js): a colgroup under table-layout
+     * fixed, the Name column left without a width so it takes the rest.
+     */
+    registerColumnResize(table) {
+        const CR = window.ColumnResize;
+        if (!CR) return;
+        const paint = (tbl, widths) => {
+            tbl.querySelector(':scope > colgroup')?.remove();
+            const ths = [...tbl.querySelectorAll(':scope > thead th')];
+            const sized = ths.some((th) => widths[th.dataset.crCol]);
+            tbl.classList.toggle('is-sized', sized);
+            if (!sized) return;
+            const group = document.createElement('colgroup');
+            ths.forEach((th) => {
+                const col = document.createElement('col');
+                const w = widths[th.dataset.crCol];
+                if (w) col.style.width = `${w}px`;
+                group.appendChild(col);
+            });
+            tbl.insertBefore(group, tbl.firstChild);
+        };
+        CR.register('docker', {
+            label: this.t('dashboard.resizeColumn', 'Resize column'),
+            freeze: true,
+            apply: (widths) => {
+                const live = document.querySelector('.docker-table');
+                if (live) paint(live, widths);
+            },
+        });
+        paint(table, CR.get('docker'));
     }
 
     /** The logs window for one container; one at a time. */
