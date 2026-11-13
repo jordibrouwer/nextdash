@@ -44,9 +44,11 @@ module.exports = {
                 await page.waitForTimeout(500);
                 await page.mouse.down();
                 await page.mouse.move(x - 90, y, { steps: 24 });
+                // Pacing for the recording: the column holds a beat at its widest.
                 await page.waitForTimeout(500);
                 await page.mouse.move(x - 40, y, { steps: 12 });
                 await page.mouse.up();
+                // Pacing for the recording: the widened column stays in frame.
                 await page.waitForTimeout(900);
             },
         },

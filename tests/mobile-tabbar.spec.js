@@ -156,6 +156,7 @@ test.describe('phone', () => {
         await expect(page.locator('#mobile-home .mobile-notice')).toContainText('quick start on a desktop');
         // The guide loads a script and draws a bar; give it the time it would need, then it must not be there.
         await page.waitForFunction(() => window.dashboardInstance?.quickStart?.shouldStart?.() === true);
+        // This guards that something does NOT happen: the guide needs the time it would take to load and draw before its absence means anything.
         await page.waitForTimeout(1500);
         await expect(page.locator('.start-guide-bar, .start-guide-overlay')).toHaveCount(0);
     });
@@ -172,6 +173,7 @@ test.describe('phone', () => {
         await page.locator('#mobile-swipe-hint').click();
         await expect(page.locator('#mobile-swipe-hint')).toHaveCount(0);
         await page.evaluate(() => window.MobileTabbar.sync());
+        // This guards that something does NOT happen: the hint has its own delay, and its absence only counts after that.
         await page.waitForTimeout(2200);
         await expect(page.locator('#mobile-swipe-hint')).toHaveCount(0);
     });
@@ -269,6 +271,7 @@ test.describe('phone: bookmark menu and watched feeds', () => {
         // The form rises in; measure once it has stopped moving.
         await expect.poll(async () => {
             const a = await page.locator('#bookmark-form-modal .bookmark-form-modal-dialog').boundingBox();
+            // Not a condition: two measurements a moment apart show whether the rising form has stopped moving.
             await page.waitForTimeout(150);
             const b = await page.locator('#bookmark-form-modal .bookmark-form-modal-dialog').boundingBox();
             return Math.abs(a.y - b.y) < 0.5 && Math.abs(a.height - b.height) < 0.5;
@@ -327,6 +330,7 @@ test.describe('phone: bookmark menu and watched feeds', () => {
         // The header and the bar do not move when the fields are scrolled.
         const bar = () => modal.locator('.bookmark-inline-actions').boundingBox();
         const head = () => modal.locator('.bookmark-form-modal-header').boundingBox();
+        // Time itself: the form takes a moment to rise in, and its bar and header are measured only after it has stopped.
         await page.waitForTimeout(800); // the form has stopped rising in
         const [b0, h0] = [await bar(), await head()];
         await page.evaluate(() => { document.querySelector('#bookmark-form-modal .bookmark-form-modal-body').scrollTop = 500; });
@@ -348,6 +352,7 @@ test.describe('phone: bookmark menu and watched feeds', () => {
         await open(page);
         await page.locator('#mobile-fab').click();
         await expect(page.locator('#bookmark-form-modal .bookmark-inline-save')).toBeVisible();
+        // Time itself: the form takes a moment to rise in before its bar is measured.
         await page.waitForTimeout(700);
         const add = await bar();
         await page.keyboard.press('Escape');
@@ -361,6 +366,7 @@ test.describe('phone: bookmark menu and watched feeds', () => {
         });
         await page.locator('#bookmark-context-menu [data-action="edit"]').click();
         await expect(page.locator('#bookmark-form-modal .bookmark-inline-save')).toBeVisible();
+        // Time itself: the form takes a moment to rise in before its bar is measured.
         await page.waitForTimeout(700);
         const edit = await bar();
         expect(add.label).toBe(edit.label);
