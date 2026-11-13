@@ -420,6 +420,8 @@
                     const live = document.querySelector('.tag-view .tag-view-table');
                     if (live) paint(live, widths);
                 },
+                refit: () => window.TagOfferRow?.fit([...document.querySelectorAll('.tag-view-row .tag-view-tags')],
+                    { tag: '.tag-view-chip', more: '.tag-view-chip--more' }),
             });
             paint(table, CR.get('tags'));
         }

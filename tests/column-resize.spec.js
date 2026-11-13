@@ -58,6 +58,30 @@ test.describe('column resize', () => {
         expect(await width(page.locator('[data-bm-colhead] .config-bm-colhead-tags'))).toBe(before);
     });
 
+    test('Bookmarks: widening Tags shows more chips, narrowing folds them into +n', async ({ page }) => {
+        await openBookmarksWithHealth(page, undefined, { view: 'library' });
+        const head = page.locator('[data-bm-colhead] .config-bm-colhead-tags');
+        // Whole chips on show, and the +n that stands for the others, over every row.
+        const shown = () => page.evaluate(() => [...document.querySelectorAll('#config-bm-list .config-bm-row')].map((row) => {
+            const chips = [...row.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more)')].filter((c) => !c.hidden).length;
+            const more = row.querySelector('.config-bm-tag--more');
+            const n = more && !more.hidden ? Number(more.textContent.replace(/\D/g, '')) : 0;
+            return { chips, n };
+        }));
+        const sum = (rows) => rows.reduce((t, r) => t + r.chips, 0);
+        const start = await shown();
+        await drag(page, head.locator('.cr-handle'), -260);
+        await expect.poll(async () => sum(await shown())).toBeGreaterThan(sum(start));
+        const wide = await shown();
+        // Same tags, shown or folded: chips + n never changes.
+        expect(wide.map((r) => r.chips + r.n)).toEqual(start.map((r) => r.chips + r.n));
+        await drag(page, head.locator('.cr-handle'), 400);
+        await expect.poll(async () => sum(await shown())).toBeLessThan(sum(wide));
+        const narrow = await shown();
+        expect(narrow.map((r) => r.chips + r.n)).toEqual(start.map((r) => r.chips + r.n));
+        expect(narrow.some((r) => r.n > 0)).toBe(true);
+    });
+
     test('Bookmarks: a drag never sorts, and the arrow keys move a focused handle', async ({ page }) => {
         await openBookmarksWithHealth(page, undefined, { view: 'library' });
         const head = page.locator('[data-bm-colhead]');

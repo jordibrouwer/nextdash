@@ -2408,6 +2408,10 @@
                 const box = document.getElementById('config-bm-workbench');
                 if (box) box.setAttribute('style', this.workbenchColumnStyle());
             },
+            refit: () => {
+                const list = document.getElementById('config-bm-list');
+                if (list) this.fitWorkbenchTags(list);
+            },
         });
         const col = (name) => this.bmViewColumn(name);
         const current = this.bmSort ?? this.defaultBookmarksSort();

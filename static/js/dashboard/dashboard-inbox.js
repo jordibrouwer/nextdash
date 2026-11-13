@@ -5604,6 +5604,8 @@ class DashboardInbox {
             label: this.t('dashboard.resizeColumn', 'Resize column'),
             freeze: true,
             apply: (widths) => paint(document.querySelector('.inbox-colhead')?.parentElement, widths),
+            refit: () => window.TagOfferRow?.fit([...document.querySelectorAll('.inbox-item-tagcell')],
+                { tag: '.inbox-row-tag', more: '.inbox-row-tag--more' }),
         });
         paint(body, CR.get('inbox'));
     }

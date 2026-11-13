@@ -8,7 +8,7 @@
  * Double-click on a handle, or Delete on it, puts the column back.
  *
  * A view registers once per render:
- *   ColumnResize.register('bm', { label, apply(widths) {...}, freeze: false });
+ *   ColumnResize.register('bm', { label, apply(widths) {...}, refit() {...}, freeze: false });
  * and puts handles in its headings:
  *   cell.append(ColumnResize.handle('bm', 'tags'));   // or handleHtml()
  * apply() paints the widths (a CSS variable, a colgroup). One document-level
@@ -87,6 +87,8 @@
     function paint(key) {
         const reg = registry[key];
         if (reg && typeof reg.apply === 'function') reg.apply(load(key));
+        // A column's width is what the tag chips fit into: the view refits them.
+        if (reg && typeof reg.refit === 'function') reg.refit();
     }
 
     function set(key, id, width) {
