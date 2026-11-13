@@ -85,6 +85,8 @@ class DashboardEditMode {
         this.dash?.hideBookmarkPreviewCard?.();
         this._showBar();
         this._notify();
+        // Blocks kept for the other kind of screen come back, dimmed.
+        window.DashboardBlockVisibility?.refresh(this.dash);
         return true;
     }
 
@@ -101,6 +103,7 @@ class DashboardEditMode {
         this._bar?.remove();
         this._bar = null;
         this._notify();
+        window.DashboardBlockVisibility?.refresh(this.dash);
         return true;
     }
 

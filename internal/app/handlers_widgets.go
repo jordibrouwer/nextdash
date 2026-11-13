@@ -286,7 +286,7 @@ func (h *Handlers) DuplicateWidgetHandler(w http.ResponseWriter, r *http.Request
 			_ = json.Unmarshal(raw, &config)
 		}
 	}
-	copied := Widget{ID: newID, Type: source.Type, Title: source.Title, Config: config}
+	copied := Widget{ID: newID, Type: source.Type, Title: source.Title, VisibleOn: source.VisibleOn, Config: config}
 	// A widget sits in one stack at most: the copy of a stack starts empty
 	// rather than quietly taking its members from the first.
 	if source.Type == WidgetTypeStack {

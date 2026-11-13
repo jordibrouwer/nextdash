@@ -348,11 +348,12 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 
 	for _, category := range page.Categories {
 		tpl.Categories = append(tpl.Categories, Category{
-			ID:       category.ID,
-			Name:     category.Name,
-			SortMode: category.SortMode,
-			Spread:   category.Spread,
-			View:     normalizeCategoryView(category.View),
+			ID:        category.ID,
+			Name:      category.Name,
+			SortMode:  category.SortMode,
+			Spread:    category.Spread,
+			View:      normalizeCategoryView(category.View),
+			VisibleOn: normalizeVisibleOn(category.VisibleOn),
 		})
 	}
 
@@ -418,7 +419,7 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 		if _, ok := config["pageId"]; ok {
 			config["pageId"] = 0
 		}
-		tpl.Widgets = append(tpl.Widgets, Widget{ID: widget.ID, Type: widget.Type, Title: widget.Title, Config: config})
+		tpl.Widgets = append(tpl.Widgets, Widget{ID: widget.ID, Type: widget.Type, Title: widget.Title, VisibleOn: normalizeVisibleOn(widget.VisibleOn), Config: config})
 	}
 	tpl.BlockOrder = append([]string(nil), page.BlockOrder...)
 
@@ -647,7 +648,8 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 		plan.categories = append(plan.categories, foldCategoryIcon(Category{
 			ID: id, Name: clampEntityName(category.Name), Icon: icon,
 			SortMode: category.SortMode, Spread: category.Spread,
-			View: normalizeCategoryView(category.View),
+			View:      normalizeCategoryView(category.View),
+			VisibleOn: normalizeVisibleOn(category.VisibleOn),
 		}))
 	}
 

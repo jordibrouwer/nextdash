@@ -292,6 +292,9 @@ type Widget struct {
 	ID    string     `json:"id"`
 	Type  WidgetType `json:"type"`
 	Title string     `json:"title,omitempty"`
+	// VisibleOn limits the widget to one kind of screen: "desktop" or
+	// "mobile". Empty is every screen; see visible_on.go.
+	VisibleOn string `json:"visibleOn,omitempty"`
 	// Config is whatever that type understands. Never nil after normalisation,
 	// so a renderer can read it without checking.
 	Config map[string]any `json:"config,omitempty"`
@@ -349,6 +352,7 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	widget.Title = strings.TrimSpace(widget.Title)
 	// On a character: cut on a byte, a long Chinese title ended in "�".
 	widget.Title = truncateRunes(widget.Title, 80)
+	widget.VisibleOn = normalizeVisibleOn(widget.VisibleOn)
 	// Config is the client's, so it is narrowed to what this type declares
 	// before it reaches storage -- see sanitizeWidgetConfig.
 	widget.Config = sanitizeWidgetConfig(widget.Type, widget.Config)

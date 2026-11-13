@@ -343,6 +343,9 @@ type Collection struct {
 	// PageIds lists the pages the collection is shown on, like the built-in
 	// collections' smart*PageIds; empty or missing is every page.
 	PageIds []int `json:"pageIds,omitempty"`
+	// VisibleOn limits the collection to one kind of screen: "desktop" or
+	// "mobile". Empty is every screen; see visible_on.go.
+	VisibleOn string `json:"visibleOn,omitempty"`
 }
 
 /*
@@ -366,6 +369,7 @@ type Category struct {
 	SortMode   string `json:"sortMode,omitempty"`   // Bookmark sort within category: order, az, recent
 	Spread     bool   `json:"spread,omitempty"`     // May run across several grid columns; how many follows from the item limit
 	View       string `json:"view,omitempty"`       // How the bookmarks are drawn: empty is rows, "tiles" is a grid of icons; see category_view.go
+	VisibleOn  string `json:"visibleOn,omitempty"`  // Where it shows: empty is every screen, "desktop" or "mobile"; see visible_on.go
 }
 
 type Page struct {
@@ -425,6 +429,7 @@ type Settings struct {
 	OpenLinksNewTabMobile           bool   `json:"openLinksNewTabMobile"`
 	HideToastsMobile                bool   `json:"hideToastsMobile"`
 	HideCornerCardsMobile           bool   `json:"hideCornerCardsMobile"`
+	MobileHome                      string `json:"mobileHome"`            // What a phone opens on: search (search first) | status (status first)
 	ShowFeedWatchIcon               bool   `json:"showFeedWatchIcon"`     // A feed icon on bookmarks whose feed is watched
 	FeedWatchOpenOnReturn           bool   `json:"feedWatchOpenOnReturn"` // Coming back to the tab opens the news, on a computer
 	ColumnsPerRow                   int    `json:"columnsPerRow"`
@@ -801,6 +806,7 @@ type Settings struct {
 	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`              // Page IDs where smart most used is enabled (empty = all)
 	Collections                 []Collection               `json:"collections,omitempty"`             // User-defined dynamic collections
 	TagColors                   map[string]string          `json:"tagColors,omitempty"`               // A palette colour per tag (lower-cased), see tag_colors.go
+	CollectionVisibleOn         map[string]string          `json:"collectionVisibleOn,omitempty"`     // Where built-in and per-tag collections show, by collection id: desktop | mobile; everywhere is the absence of an entry
 	CollectionColumns           map[string]int             `json:"collectionColumns,omitempty"`       // Collections drawn across two columns, by collection id; one column is the absence of an entry
 	TagRules                    []TagRule                  `json:"tagRules,omitempty"`                // Patterns you wrote that propose a tag
 	DismissedTagSuggestions     []string                   `json:"dismissedTagSuggestions,omitempty"` // Proposals you turned down, as "pattern|tag"
@@ -1100,6 +1106,11 @@ type Settings struct {
 	// (quietKinds). Nil means the default list; an empty list means none. The
 	// field has no omitempty so the two stay apart on disk.
 	QuietHoursAllow []string `json:"quietHoursAllow"`
+	// NotifyPausedUntil is a one-off pause (unix milliseconds): until then every
+	// notice is held as in the quiet hours, whether those are on or not. Set
+	// from the phone's Status tab and written by /api/notify/pause alone, so a
+	// page that sends its settings back cannot undo it.
+	NotifyPausedUntil int64 `json:"notifyPausedUntil,omitempty"`
 	// The weekly digest (digest.go). All on by default; an absent key reads as on.
 	DigestEnabled bool   `json:"digestEnabled"`
 	DigestWeekday int    `json:"digestWeekday"` // 0 = Sunday … 6 = Saturday
@@ -1905,6 +1916,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowEditModeButton:              true,
 			PushNotifyNews:                  true,
 			HideToastsMobile:                true,
+			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
 			ShowFeedWatchIcon:               true,
 			FeedWatchWindowMinutes:          30,
@@ -3400,6 +3412,7 @@ func (fs *FileStore) saveCategoriesByPageLocked(pageID int, categories []Categor
 		categories[i] = foldCategoryIcon(categories[i])
 		categories[i].Name = clampEntityName(categories[i].Name)
 		categories[i].View = normalizeCategoryView(categories[i].View)
+		categories[i].VisibleOn = normalizeVisibleOn(categories[i].VisibleOn)
 	}
 	fs.ensureDataDir()
 
@@ -4664,6 +4677,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			ShowEditModeButton:              true,
 			PushNotifyNews:                  true,
 			HideToastsMobile:                true,
+			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
 			ShowFeedWatchIcon:               true,
 			FeedWatchWindowMinutes:          30,
@@ -4921,6 +4935,11 @@ func (fs *FileStore) getSettingsShared() Settings {
 			settings.NetToolsMaxChecks = 1000
 		}
 		// On unless turned off: a phone is quiet by default, errors still show.
+		// A phone opens on search until the reader picks status first.
+		if _, ok := rawSettings["mobileHome"]; !ok {
+			settings.MobileHome = "search"
+		}
+		settings.MobileHome = normalizeMobileHome(settings.MobileHome)
 		if _, ok := rawSettings["hideToastsMobile"]; !ok {
 			settings.HideToastsMobile = true
 		}

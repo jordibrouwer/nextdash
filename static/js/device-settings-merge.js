@@ -24,6 +24,8 @@
         'customFontPath',
         'fontPreset',
         'collections',
+        // Where a built-in or per-tag collection shows (desktop or phone): meant for every device.
+        'collectionVisibleOn',
         'tagRules',
         'tagColors',
         'dismissedTagSuggestions',
@@ -131,7 +133,15 @@
         'dockerViewEnabled',
         'webSearchEngine',
         'webSearchSearxngUrl',
+        // A pause set from the phone holds the server's notices for everyone.
+        'notifyPausedUntil',
     ];
+
+    /*
+     * Not listed above on purpose: `mobileHome` (what a phone opens on) is a
+     * device setting. With device-specific settings on, this browser's own value
+     * wins over the server's, so a phone and a tablet may differ.
+     */
 
     function isDeviceSpecificEnabled() {
         try {

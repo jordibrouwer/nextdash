@@ -120,8 +120,19 @@ func quietLocation(s Settings) *time.Location {
 	return time.Local
 }
 
-// quietNow reports whether the quiet hours are open at t.
+// pausedAt reports whether the one-off pause (Settings.NotifyPausedUntil) is
+// still running at t.
+func pausedAt(s Settings, t time.Time) bool {
+	return s.NotifyPausedUntil > 0 && t.UnixMilli() < s.NotifyPausedUntil
+}
+
+// quietNow reports whether notices are held at t: the quiet hours are open, or
+// a pause set by hand is running. One gate, so the hold, the summary and the
+// reminders treat both the same.
 func quietNow(s Settings, t time.Time) bool {
+	if pausedAt(s, t) {
+		return true
+	}
 	if !s.QuietHoursEnabled || len(s.QuietHours) == 0 {
 		return false
 	}
@@ -141,7 +152,10 @@ func quietEndsAt(s Settings, t time.Time) time.Time {
 	const step = time.Minute
 	limit := t.Add(48 * time.Hour)
 	for at := t.Truncate(step).Add(step); at.Before(limit); at = at.Add(step) {
-		if !inMaintenanceWindow(s.QuietHours, at.In(loc)) {
+		if pausedAt(s, at) {
+			continue
+		}
+		if !s.QuietHoursEnabled || len(s.QuietHours) == 0 || !inMaintenanceWindow(s.QuietHours, at.In(loc)) {
 			return at
 		}
 	}
@@ -824,6 +838,9 @@ func (h *Handlers) QuietStatus(w http.ResponseWriter, r *http.Request) {
 		"open":    open,
 		"zone":    zone,
 	}
+	if pausedAt(settings, now) {
+		status["pausedUntil"] = settings.NotifyPausedUntil
+	}
 	if end := quietEndsAt(settings, now); !end.IsZero() {
 		status["endsAt"] = end.UnixMilli()
 		status["endsAtLocal"] = end.In(quietLocation(settings)).Format("15:04")
@@ -831,4 +848,65 @@ func (h *Handlers) QuietStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	_ = json.NewEncoder(w).Encode(status)
+}
+
+// pauseTomorrowHour is when "until tomorrow" ends: the next 07:00 in the zone
+// the quiet hours are read in.
+const pauseTomorrowHour = 7
+
+// pauseEnd is when a pause started at now ends: "hour" is sixty minutes,
+// "tomorrow" the next morning, "off" none (zero).
+func pauseEnd(s Settings, mode string, now time.Time) (time.Time, bool) {
+	switch mode {
+	case "hour":
+		return now.Add(time.Hour), true
+	case "tomorrow":
+		local := now.In(quietLocation(s))
+		end := time.Date(local.Year(), local.Month(), local.Day(), pauseTomorrowHour, 0, 0, 0, local.Location())
+		if !end.After(local.Add(time.Hour)) {
+			end = end.AddDate(0, 0, 1)
+		}
+		return end, true
+	case "off":
+		return time.Time{}, true
+	}
+	return time.Time{}, false
+}
+
+// PauseNotifications answers POST /api/notify/pause {"mode": "hour" | "tomorrow"
+// | "off"}: hold every notice for a while, the way the quiet hours do, or end
+// the pause. The held ones are summarised when it ends, by the same tick.
+func (h *Handlers) PauseNotifications(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	var body struct {
+		Mode string `json:"mode"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	h.settingsMu.Lock()
+	settings := h.store.GetSettings()
+	end, ok := pauseEnd(settings, body.Mode, quietClock())
+	if !ok {
+		h.settingsMu.Unlock()
+		http.Error(w, "mode must be hour, tomorrow or off", http.StatusBadRequest)
+		return
+	}
+	if end.IsZero() {
+		settings.NotifyPausedUntil = 0
+	} else {
+		settings.NotifyPausedUntil = end.UnixMilli()
+	}
+	err := h.store.SaveSettings(settings)
+	h.settingsMu.Unlock()
+	if err != nil {
+		http.Error(w, "Could not save", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(map[string]any{"pausedUntil": settings.NotifyPausedUntil})
 }

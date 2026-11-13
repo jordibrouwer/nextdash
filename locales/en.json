@@ -11084,6 +11084,8 @@
     "hideToastsMobileInfoMessage": "Notifications are not shown on a touch screen, so nothing covers the page. Errors still appear, so a failure is never silent. On by default.",
     "hideCornerCardsMobileInfoTitle": "Hide corner cards on phones",
     "hideCornerCardsMobileInfoMessage": "The invitations and reports that appear in the bottom-left corner stay away on a touch screen. They are not dismissed, so they show again when you turn this off or open nextDash on a computer. On by default.",
+    "mobileHomeInfoTitle": "Phone start screen",
+    "mobileHomeInfoMessage": "What Home opens with on a phone. Search first puts a large search field on top with one line about your services; Status first puts an \"is everything fine?\" card on top and search below it. Only a phone shows it; tablets and computers are not affected. Search first by default.",
     "widgetAbout.feed-news": "The sites with new items from the feeds you watch.",
     "widgetFeedNewsLayout": "Layout",
     "widgetFeedNewsLayoutList": "Sites, one row each",

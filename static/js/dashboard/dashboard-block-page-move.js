@@ -134,7 +134,7 @@
             const full = (src.widgets || []).find((w) => String(w?.id) === id);
             if (!full) throw new Error('widget not found');
             const at = (src.widgets || []).indexOf(full);
-            const moved = { id: full.id, type: full.type, title: full.title, config: full.config || {} };
+            const moved = { id: full.id, type: full.type, title: full.title, config: full.config || {}, ...(full.visibleOn ? { visibleOn: full.visibleOn } : {}) };
             const dest = await readBlocks(to);
             await send(`/api/pages/${to}/blocks`, 'PUT', { widgets: (dest.widgets || []).concat(moved) });
             // From the stored list, not the dashboard's: the reader may have

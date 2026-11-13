@@ -2827,6 +2827,8 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	// sends back every setting it loaded, so a copy from before a change there
 	// would otherwise put the old address back with the next unrelated save.
 	settings.UnraidServers = h.store.GetSettings().UnraidServers
+	// Likewise the pause: /api/notify/pause is its only writer.
+	settings.NotifyPausedUntil = h.store.GetSettings().NotifyPausedUntil
 
 	settings.TagColors = sanitizeTagColors(settings.TagColors)
 
@@ -2866,10 +2868,12 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		col.Rules = validRules
+		col.VisibleOn = normalizeVisibleOn(col.VisibleOn)
 		sanitized = append(sanitized, col)
 	}
 	settings.Collections = sanitized
 	settings.CollectionColumns = normalizeCollectionColumns(settings.CollectionColumns)
+	settings.CollectionVisibleOn = normalizeCollectionVisibleOn(settings.CollectionVisibleOn)
 	settings.TagRules = sanitizeTagRules(settings.TagRules)
 	settings.DismissedTagSuggestions = sanitizeDismissedTagSuggestions(settings.DismissedTagSuggestions)
 	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)

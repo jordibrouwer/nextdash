@@ -4655,6 +4655,7 @@ class DashboardConfig {
         openInNewTab: ['tab', 'window', 'target'],
         openLinksNewTabMobile: ['tab', 'window', 'target', 'phone', 'mobile', 'touch'],
         hideToastsMobile: ['toast', 'notification', 'phone', 'mobile', 'touch', 'hide', 'quiet'],
+        mobileHome: ['phone', 'mobile', 'start', 'home', 'screen', 'status', 'search', 'tab'],
         hideCornerCardsMobile: ['card', 'corner', 'notice', 'phone', 'mobile', 'touch', 'hide', 'quiet'],
         globalShortcuts: ['keyboard', 'shortcut', 'hotkey'],
         enableFuzzySuggestions: ['fuzzy', 'search', 'suggestion'],
@@ -9829,6 +9830,7 @@ class DashboardConfig {
         openLinksNewTabMobile: { info: ['openLinksNewTabMobileInfoTitle', 'openLinksNewTabMobileInfoMessage'], def: false },
         hideToastsMobile: { info: ['hideToastsMobileInfoTitle', 'hideToastsMobileInfoMessage'], def: true },
         hideCornerCardsMobile: { info: ['hideCornerCardsMobileInfoTitle', 'hideCornerCardsMobileInfoMessage'], def: true },
+        mobileHome: { info: ['mobileHomeInfoTitle', 'mobileHomeInfoMessage'], def: 'search' },
         globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'], def: true },
         showShortcutTooltips: { info: ['shortcutTooltipsInfoTitle', 'shortcutTooltipsInfoMessage'], def: false },
         showModeStrip: { info: ['showModeStripInfoTitle', 'showModeStripInfoMessage'], hint: 'modeStripHint', def: true },
@@ -10963,6 +10965,11 @@ class DashboardConfig {
                     bool('openLinksNewTabMobile', 'config.openLinksNewTabMobile', 'Open links in a new tab on phones'),
                     bool('hideToastsMobile', 'config.hideToastsMobile', 'Hide notifications on phones (errors stay)'),
                     bool('hideCornerCardsMobile', 'config.hideCornerCardsMobile', 'Hide corner cards on phones'),
+                    // Read by the phone's tab bar (mobile-tabbar.js) only; also in More.
+                    { field: 'mobileHome', type: 'select', special: 'chrome', label: t('config.mobileHomeLabel', 'Phone start screen'), options: [
+                        opt('search', t('config.mobileHomeSearch', 'Search first')),
+                        opt('status', t('config.mobileHomeStatus', 'Status first')),
+                    ] },
                 ],
             },
             {
@@ -16608,11 +16615,15 @@ class DashboardConfig {
             </div>`;
         }
         const counts = collections.map((c) => (c.bookmarks || []).length);
+        const modes = { all: ['editMode.visibleAll', 'Everywhere'], desktop: ['editMode.visibleDesktop', 'Desktop only'], mobile: ['editMode.visibleMobile', 'Phone only'] };
         const rows = collections.map((c, i) => `
             <li class="config-crud-row">
                 <div class="config-crud-fields">
                     <span class="config-stat-name">${esc(c.name || '')}</span>
                     <span class="structure-num">${esc(String(counts[i]))}</span>
+                    <select class="config-select config-select--small" data-collection-visible="${esc(String(c.id))}" aria-label="${esc(this.t('config.colShowOn', 'Show on'))}">
+                        ${Object.entries(modes).map(([m, [k, f]]) => `<option value="${m}"${(window.DashboardBlockVisibility?.get(this.dash, c.id) || 'all') === m ? ' selected' : ''}>${esc(this.t(k, f))}</option>`).join('')}
+                    </select>
                 </div>
             </li>`).join('');
         return `<div class="config-panel">
@@ -16621,9 +16632,10 @@ class DashboardConfig {
                 [collections.length, ['config.collectionsStatTotal', 'active collections', 'active collection']],
                 [counts.reduce((sum, n) => sum + n, 0), ['config.collectionsStatBookmarks', 'bookmarks shown', 'bookmark shown']],
             ])}
-            ${this.renderStructureList('collection-sizes', 'minmax(0, 1fr) 5rem', this.renderStructureColumns([
+            ${this.renderStructureList('collection-sizes', 'minmax(0, 1fr) 5rem 9rem', this.renderStructureColumns([
                 [this.t('config.colName', 'Name')],
                 [this.t('config.colMatches', 'Matches'), 'structure-num'],
+                [this.t('config.colShowOn', 'Show on')],
             ]) + rows)}
         </div>`;
     }
@@ -16829,6 +16841,14 @@ class DashboardConfig {
     bindCollections(container) {
         this.bindControlPanels(container, 'collection');
         this.bindCustomCollections(container);
+        container.querySelectorAll('[data-collection-visible]').forEach((select) => {
+            select.addEventListener('change', async () => {
+                const id = select.getAttribute('data-collection-visible');
+                const ok = await window.DashboardBlockVisibility?.set?.(this.dash, id, select.value);
+                if (!ok) this.notify(this.t('config.saveFailed', 'Could not save.'), 'error');
+                this.dash.renderDashboard?.({ animate: false });
+            });
+        });
         container.querySelectorAll('[data-scope-field]').forEach((box) => {
             box.addEventListener('change', () => {
                 const field = box.getAttribute('data-scope-field');
@@ -18870,6 +18890,11 @@ class DashboardConfig {
                                 data-cat-spread="${i}" aria-pressed="${c.spread ? 'true' : 'false'}"
                                 title="${esc(spreadLabel)}" aria-label="${esc(spreadLabel)}">↔</button>
                     </div>
+                    <div class="structure-visible-cell">
+                        <select class="config-select config-select--small" data-cat-visible="${i}" aria-label="${esc(t('config.colShowOn', 'Show on'))}">
+                            ${['all', 'desktop', 'mobile'].map((m) => `<option value="${m}"${(c.visibleOn || 'all') === m ? ' selected' : ''}>${esc(this.t({ all: 'editMode.visibleAll', desktop: 'editMode.visibleDesktop', mobile: 'editMode.visibleMobile' }[m], { all: 'Everywhere', desktop: 'Desktop only', mobile: 'Phone only' }[m]))}</option>`).join('')}
+                        </select>
+                    </div>
                     <div class="config-crud-row-actions">
                         ${this.renderStructureRowExtras?.({ pageId: g.page.id, categoryId: c.id }) || ''}
                         <button type="button" class="config-btn config-btn--small" data-cat-duplicate="${i}" title="${esc(t('config.categoryDuplicateHint', 'Copy this category — with or without its bookmarks'))}">${esc(t('config.pageDuplicate', 'Duplicate'))}</button>
@@ -18890,9 +18915,10 @@ class DashboardConfig {
                 [t('config.colBookmarks', 'Bookmarks'), 'structure-num'],
                 [t('config.colBroken', 'Broken'), 'structure-num'],
                 [t('config.colSpread', 'Spread'), 'structure-spread-cell'],
+                [t('config.colShowOn', 'Show on'), 'structure-visible-cell'],
                 ['', 'structure-actions'],
             ]);
-            body = `${this.renderPtCountLabel('categories', shown, totalCategories)}${this.renderStructureList('categories', 'minmax(10rem, 1fr) 6rem 5rem minmax(max-content, 4rem) auto', columns + html)}`;
+            body = `${this.renderPtCountLabel('categories', shown, totalCategories)}${this.renderStructureList('categories', 'minmax(10rem, 1fr) 6rem 5rem minmax(max-content, 4rem) 9rem auto', columns + html)}`;
         }
         return `${intro}${summary}${toolbar}${chips}${body}`;
     }
@@ -19215,6 +19241,22 @@ class DashboardConfig {
                             delete live.spread;
                         }
                     }
+                }
+                void this.saveCategories(this._catPageId);
+            });
+        });
+        container.querySelectorAll('[data-cat-visible]').forEach((select) => {
+            select.addEventListener('change', () => {
+                this.useCategoryRowPage(select);
+                const i = Number(select.getAttribute('data-cat-visible'));
+                if (!this._categories || !this._categories[i]) return;
+                const mode = window.DashboardBlockVisibility?.normalize?.(select.value) || 'all';
+                const apply = (cat) => { if (mode === 'all') delete cat.visibleOn; else cat.visibleOn = mode; };
+                apply(this._categories[i]);
+                // The grid reads its own copy (see the Spread switch above).
+                if (Number(this._catPageId) === Number(this.dash.currentPageId)) {
+                    const live = (this.dash.categories || []).find((cat) => String(cat.id) === String(this._categories[i].id));
+                    if (live) apply(live);
                 }
                 void this.saveCategories(this._catPageId);
             });
