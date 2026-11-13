@@ -80,6 +80,14 @@ type watchNews struct {
 // baselineWatch reads the feed once and records what is already there as seen,
 // so that watching starts from "nothing new".
 func (h *Handlers) baselineWatch(ctx context.Context, w FeedWatch) (FeedWatch, error) {
+	return h.baselineWatchOpts(ctx, w, false)
+}
+
+// baselineWatchOpts is baselineWatch, and with seedNews also the feed's ten
+// newest entries as unread news: a feed that was just added shows what it has
+// right away, instead of an empty paper until its next post. Only a new watch
+// asks for that; a retry or an edit must stay silent about what is old.
+func (h *Handlers) baselineWatchOpts(ctx context.Context, w FeedWatch, seedNews bool) (FeedWatch, error) {
 	res := h.fetchFeed(ctx, w.FeedURL, "", "")
 	if res.Err != nil || res.Status < 200 || res.Status >= 300 {
 		return w, errFeedWatchNotAFeed
@@ -105,6 +113,31 @@ func (h *Handlers) baselineWatch(ctx context.Context, w FeedWatch) (FeedWatch, e
 	}
 	w.SeenIDs = dedupeStrings(w.SeenIDs, seenIDCap(len(items)))
 	w.Recent = recentFromItems(items)
+	if seedNews {
+		// The ten newest by date: a feed may list its entries oldest first. Entries
+		// without a date keep their place at the end, in feed order.
+		newest := append([]FeedItem(nil), items...)
+		sort.SliceStable(newest, func(i, j int) bool {
+			if (newest[i].PublishedAt > 0) != (newest[j].PublishedAt > 0) {
+				return newest[i].PublishedAt > 0
+			}
+			return newest[i].PublishedAt > newest[j].PublishedAt
+		})
+		for _, it := range newest {
+			if len(w.Items) >= feedWatchMaxItems {
+				break
+			}
+			if !watchKeeps(w, it) {
+				continue
+			}
+			it.Summary = sanitizeFeedHTML(it.Summary, feedWatchSummaryRunes)
+			it.FoundAt = now
+			w.Items = append(w.Items, it)
+		}
+		if len(w.Items) > 0 {
+			w.NewAt = now
+		}
+	}
 	return w, nil
 }
 

@@ -45,6 +45,13 @@ func (e *watchEnv) watch(t *testing.T, minutes int) *httptest.ResponseRecorder {
 	return e.post(e.h.WatchFeeds, "/api/feeds/watch", body)
 }
 
+// watchSeeded is the request the page sends: the feed's newest entries start as news.
+func (e *watchEnv) watchSeeded(t *testing.T, minutes int) *httptest.ResponseRecorder {
+	t.Helper()
+	body := fmt.Sprintf(`{"bookmarkUrl":%q,"seed":true,"feeds":[{"feedUrl":%q,"intervalMinutes":%d}]}`, e.url, e.srv.URL, minutes)
+	return e.post(e.h.WatchFeeds, "/api/feeds/watch", body)
+}
+
 func (e *watchEnv) list(t *testing.T) map[string]watchEntry {
 	t.Helper()
 	rec := httptest.NewRecorder()
@@ -682,5 +689,75 @@ func TestWatchItemsFlagsExpiredAsRead(t *testing.T) {
 		if it.ID == "old" && it.Unread {
 			t.Fatal("an expired item is still flagged unread")
 		}
+	}
+}
+
+func TestNewWatchStartsWithTheFeedsEntriesAsNews(t *testing.T) {
+	e := newWatchEnv(t)
+	e.srv.set(rssEntry("a", "A", 1), rssEntry("b", "B", 2), rssEntry("c", "C", 3))
+	if rec := e.watchSeeded(t, 360); rec.Code != 200 {
+		t.Fatalf("watch: %d %s", rec.Code, rec.Body.String())
+	}
+	got := e.list(t)[e.key]
+	if got.NewCount != 3 || len(got.NewItems) != 3 {
+		t.Fatalf("a new watch must show the feed's entries as news: %+v", got)
+	}
+	// Polling again finds nothing: the seeded entries are known, not news twice.
+	e.post(e.h.PollFeedWatchesNow, "/api/feeds/watch/poll", "")
+	if n := e.list(t)[e.key].NewCount; n != 3 {
+		t.Fatalf("a poll after the seed changed the count to %d", n)
+	}
+	// Opening the bookmark reads them.
+	file := readFeedWatchFile()
+	bms := e.h.store.GetAllBookmarks()
+	bms[0].LastOpened = time.Now().Add(time.Hour).UnixMilli()
+	if got := watchListFor(file, bms, 0)[e.key].NewCount; got != 0 {
+		t.Fatalf("opening the bookmark should read the seeded news, got %d", got)
+	}
+}
+
+func TestSeededNewsIsAtMostTen(t *testing.T) {
+	e := newWatchEnv(t)
+	var entries []string
+	for i := 1; i <= 14; i++ {
+		entries = append(entries, rssEntry(fmt.Sprintf("n%d", i), fmt.Sprintf("N%d", i), i))
+	}
+	e.srv.set(entries...)
+	if rec := e.watchSeeded(t, 360); rec.Code != 200 {
+		t.Fatalf("watch: %d", rec.Code)
+	}
+	if n := e.list(t)[e.key].NewCount; n != feedWatchMaxItems {
+		t.Fatalf("seeded %d, want %d", n, feedWatchMaxItems)
+	}
+}
+
+func TestWatchWithoutSeedKeepsThePlainBaseline(t *testing.T) {
+	e := newWatchEnv(t)
+	e.srv.set(rssEntry("a", "A", 1), rssEntry("b", "B", 2))
+	if rec := e.watch(t, 360); rec.Code != 200 {
+		t.Fatalf("watch: %d", rec.Code)
+	}
+	if n := e.list(t)[e.key].NewCount; n != 0 {
+		t.Fatalf("a watch that did not ask for the seed started with %d news", n)
+	}
+}
+
+func TestSeededNewsIsTheTenNewestEvenWhenListedOldestFirst(t *testing.T) {
+	e := newWatchEnv(t)
+	var entries []string
+	for i := 1; i <= 12; i++ {
+		entries = append(entries, rssEntry(fmt.Sprintf("n%d", i), fmt.Sprintf("N%d", i), i))
+	}
+	e.srv.set(entries...) // day 1 first, day 12 last
+	if rec := e.watchSeeded(t, 360); rec.Code != 200 {
+		t.Fatalf("watch: %d", rec.Code)
+	}
+	got := e.list(t)[e.key]
+	titles := map[string]bool{}
+	for _, it := range got.NewItems {
+		titles[it.Title] = true
+	}
+	if len(titles) != feedWatchMaxItems || !titles["N12"] || !titles["N3"] || titles["N1"] || titles["N2"] {
+		t.Fatalf("seeded %v, want N3..N12", titles)
 	}
 }

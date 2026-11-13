@@ -24,6 +24,18 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
     await picker.locator('[data-feed-watch-save]').click();
     await expect(page.locator('#app-notification')).toContainText(/Watching Stub News · checked every hour/);
 
+    // 1b · A feed that was just added shows what it already holds: the popover opens
+    // on the row with the feed's first post as news. Read it, so the rest of the
+    // walk starts from nothing new, as it always did.
+    const pop = page.locator('.feed-news-pop');
+    await expect(pop).toBeVisible({ timeout: 8000 });
+    await expect(pop.locator('.feed-news-pop-list > li')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(pop).toHaveCount(0);
+    expect((await request.post('/api/feeds/watch/seen', { data: { bookmarkUrl: site.url }, headers })).ok()).toBe(true);
+    await page.evaluate(() => window.dashboardInstance.feedWatch.load({ force: true }));
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.feedWatch.totalNew())).toBe(0);
+
     // 2 · The site publishes two items, one with a picture and a script in its text.
     site.add('Second post');
     site.add('Third post', { image: true, html: '<p>Body <b>bold</b></p><script>window.__pwned = 1</script>' });
@@ -60,7 +72,7 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
     // The two new posts, and the feed's older one under "Earlier".
     await expect(modal.locator('.feed-news-entry')).toHaveCount(3);
     await expect(modal.locator('.feed-news-chip')).toHaveText('2 unread');
-    await expect(modal.locator('.feed-news-index-head')).toHaveText('Earlier from the feeds');
+    // The first post, held as read news since the feed was added, is the third.
     await modal.locator('.feed-news-entry').first().click();
     await expect(modal.locator('.feed-news-title')).toHaveText('Third post');
     await expect(modal.locator('[data-feed-news-chip]')).toHaveText('1 of 3');
@@ -84,4 +96,38 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
         const list = await (await request.get('/api/feeds/watch')).json();
         return Object.values(list.watches)[0].newCount;
     }).toBe(0);
+});
+
+test('adding a feed offers the popover with its latest entries at once, on a phone too', async ({ page }) => {
+    for (let i = 0; i < 12; i += 1) site.add(`Older post ${i}`);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openDashboard(page);
+    await openPicker(page, 'Stub News');
+    const picker = page.locator('[data-feed-watch-picker]');
+    await picker.getByLabel(/Posts/).check();
+    await picker.locator('[data-feed-watch-save]').click();
+    const pop = page.locator('.feed-news-pop');
+    await expect(pop).toBeVisible({ timeout: 8000 });
+    // The server keeps ten; the popover shows up to six and "+n more" brings in the rest.
+    await expect(pop.locator('.feed-news-pop-list > li')).not.toHaveCount(0);
+    // It belongs to the bookmark: the row wears the ring, the head carries the feed
+    // mark and the site's name, and a line says why it opened.
+    await expect(row(page, 'Stub News')).toHaveClass(/feed-pop-anchor/);
+    await expect(pop).toHaveClass(/is-offer/);
+    await expect(pop.locator('.feed-news-pop-glyph')).toBeVisible();
+    await expect(pop.locator('.feed-news-pop-name')).toHaveText('Stub News');
+    await expect(pop.locator('.feed-news-pop-offer')).toBeVisible();
+    // A pointer of its own links the popover to the bookmark, and nods once offered.
+    await expect(page.locator('.feed-pop-pointer.is-offer')).toBeVisible();
+    // It is animated in (reduced motion off in the test browser).
+    expect(await pop.evaluate((el) => el.style.animation)).toContain('feed-news-pop-grow');
+    await page.keyboard.press('Escape');
+    await expect(row(page, 'Stub News')).not.toHaveClass(/feed-pop-anchor/);
+    // It folds back into the bookmark: a closing popover and a closing pointer exist for a moment.
+    await expect(page.locator('.feed-news-pop-closing')).toHaveCount(1);
+    expect(await page.locator('.feed-news-pop-closing').evaluate((el) => el.style.animation)).toContain('feed-news-pop-shrink');
+    await expect(page.locator('.feed-news-pop-closing')).toHaveCount(0);
+    await expect(page.locator('.feed-pop-pointer')).toHaveCount(0);
+    const waiting = await page.evaluate(() => window.dashboardInstance.feedWatch.totalNew());
+    expect(waiting).toBe(10);
 });

@@ -194,6 +194,8 @@
                     ? t('dashboard.feedWatchStarted', 'Watching {name} · checked every {interval}. You\'ll see news when it publishes something new.', { name, interval: intervalWords(minutes) })
                     : t('dashboard.feedWatchStopped', 'Stopped watching {name}', { name }), 'success');
                 close();
+                // A new feed shows its latest entries at once: the popover opens on the row.
+                if (urls.length) setTimeout(() => { void global.FeedWatchPopover?.openFor?.(bookmark); }, 250);
             });
         });
     }

@@ -380,6 +380,10 @@ type watchRequest struct {
 	Paused          *bool     `json:"paused"`
 	Include         *[]string `json:"include"`
 	Exclude         *[]string `json:"exclude"`
+	// Seed, on the watch route, starts a new watch with the feed's ten newest
+	// entries as unread news (baselineWatchOpts). The page asks for it; a caller
+	// that does not (a script, the MCP tools) gets the plain baseline as before.
+	Seed bool `json:"seed"`
 	// BookmarkURLs names several bookmarks, for the interval route.
 	BookmarkURLs []string `json:"bookmarkUrls"`
 	Feeds        []struct {
@@ -472,7 +476,7 @@ func (h *Handlers) WatchFeeds(w http.ResponseWriter, r *http.Request) {
 		if have[f.FeedURL] {
 			continue
 		}
-		wt, err := h.baselineWatch(ctx, FeedWatch{BookmarkKey: key, FeedURL: f.FeedURL, IntervalMinutes: f.IntervalMinutes})
+		wt, err := h.baselineWatchOpts(ctx, FeedWatch{BookmarkKey: key, FeedURL: f.FeedURL, IntervalMinutes: f.IntervalMinutes}, body.Seed)
 		if err != nil {
 			writeWatchError(w, http.StatusUnprocessableEntity, "not-a-feed", map[string]any{"feedUrl": f.FeedURL})
 			return
