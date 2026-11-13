@@ -906,3 +906,12 @@ body[data-phone-layout="true"] .inbox-layout :is(.inbox-item-domain-btn, .inbox-
 }
 /* The ✕ of a tag suggestion is 18px wide: give it room of its own so it is not hit by mistake. */
 body[data-phone-layout="true"] .inbox-layout .tag-offer-refuse { margin-inline-start: 0.5rem; }
+
+/* Press areas of 44px for the small controls of the phone screens. */
+.mobile-switch { position: relative; }
+.mobile-switch::before { content: ""; position: absolute; inset: -9px -4px; }
+.mobile-pill { display: inline-flex; align-items: center; min-height: 44px; }
+.mobile-chip { display: inline-flex; align-items: center; min-height: 44px; }
+.mobile-row[role="button"] { cursor: pointer; min-height: 44px; }
+.mobile-row[role="button"]:focus-visible, .mobile-h:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.mobile-h:focus { outline: none; }

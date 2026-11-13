@@ -98,9 +98,19 @@ test('watch a feed, get the news, read it, and opening the bookmark clears it', 
     }).toBe(0);
 });
 
-test('adding a feed offers the popover with its latest entries at once, on a phone too', async ({ page }) => {
+test.describe('on a phone', () => {
+    test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+    test('adding a feed offers the popover with its latest entries at once', async ({ page }) => {
+        await expectOffer(page);
+    });
+});
+
+test('adding a feed offers the popover with its latest entries at once, on a desktop', async ({ page }) => {
+    await expectOffer(page);
+});
+
+async function expectOffer(page) {
     for (let i = 0; i < 12; i += 1) site.add(`Older post ${i}`);
-    await page.setViewportSize({ width: 390, height: 844 });
     await openDashboard(page);
     await openPicker(page, 'Stub News');
     const picker = page.locator('[data-feed-watch-picker]');
@@ -121,13 +131,20 @@ test('adding a feed offers the popover with its latest entries at once, on a pho
     await expect(page.locator('.feed-pop-pointer.is-offer')).toBeVisible();
     // It is animated in (reduced motion off in the test browser).
     expect(await pop.evaluate((el) => el.style.animation)).toContain('feed-news-pop-grow');
+    // Watch for the closing popover as it appears: it lives for a quarter of a second.
+    await page.evaluate(() => {
+        window.__closing = [];
+        new MutationObserver(() => {
+            const el = document.querySelector('.feed-news-pop-closing');
+            if (el && !window.__closing.length) window.__closing.push(el.style.animation);
+        }).observe(document.body, { childList: true, subtree: true, attributes: true });
+    });
     await page.keyboard.press('Escape');
     await expect(row(page, 'Stub News')).not.toHaveClass(/feed-pop-anchor/);
-    // It folds back into the bookmark: a closing popover and a closing pointer exist for a moment.
-    await expect(page.locator('.feed-news-pop-closing')).toHaveCount(1);
-    expect(await page.locator('.feed-news-pop-closing').evaluate((el) => el.style.animation)).toContain('feed-news-pop-shrink');
+    // It folds back into the bookmark, and then both it and the pointer are gone.
+    await expect.poll(() => page.evaluate(() => window.__closing[0] || '')).toContain('feed-news-pop-shrink');
     await expect(page.locator('.feed-news-pop-closing')).toHaveCount(0);
     await expect(page.locator('.feed-pop-pointer')).toHaveCount(0);
     const waiting = await page.evaluate(() => window.dashboardInstance.feedWatch.totalNew());
     expect(waiting).toBe(10);
-});
+}

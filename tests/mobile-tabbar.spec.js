@@ -19,6 +19,11 @@ async function open(page) {
 test.describe('phone', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
+    // A test that stops halfway must not leave the shared server's notices paused.
+    test.afterEach(async ({ request }) => {
+        await request.post('/api/notify/pause', { data: { mode: 'off' }, headers }).catch(() => {});
+    });
+
     test('the bar replaces the footer, with the five tabs', async ({ page }) => {
         await open(page);
         const bar = page.locator('#mobile-tabbar');
@@ -132,6 +137,8 @@ test.describe('phone', () => {
         await page.locator('#mobile-tabbar [data-tab="search"]').click();
         await expect(page.locator('#shortcut-search .search-mode-tab[data-mode="assistant"]')).toBeHidden();
         await page.locator('#search-input-mobile').pressSequentially(':ask', { delay: 40 });
+        // Something is listed (the finders row), and none of it is the assistant.
+        await expect(page.locator('#search-matches .search-match').first()).toBeVisible();
         await expect(page.locator('#search-matches')).not.toContainText(/assistant/i);
     });
 
@@ -147,11 +154,13 @@ test.describe('phone', () => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await expect(page.locator('#mobile-home .mobile-notice')).toContainText('quick start on a desktop');
-        await expect(page.locator('.start-guide-modal, #start-guide-modal, .start-guide')).toHaveCount(0);
+        // The guide loads a script and draws a bar; give it the time it would need, then it must not be there.
+        await page.waitForFunction(() => window.dashboardInstance?.quickStart?.shouldStart?.() === true);
+        await page.waitForTimeout(1500);
+        await expect(page.locator('.start-guide-bar, .start-guide-overlay')).toHaveCount(0);
     });
 
     test('with more than one page a one-time popover says a swipe changes page', async ({ page }) => {
-        await page.addInitScript(() => { window.__noop = 1; });
         await open(page);
         await page.evaluate(() => {
             const d = window.dashboardInstance;

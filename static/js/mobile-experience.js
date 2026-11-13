@@ -212,7 +212,6 @@
             dash.refreshAddBookmarkToolbarLabel();
         }
         window.DashboardTagCloud?.syncFromSettings?.();
-        dash?.gridFilter?.syncPinned?.();
         if (window.configManager?.language?.applyTranslations) {
             window.configManager.language.applyTranslations();
         }

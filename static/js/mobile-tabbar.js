@@ -86,8 +86,15 @@
         return out.sort((a, b) => rank[a.state] - rank[b.state] || a.name.localeCompare(b.name));
     }
 
-    /** What the Status tab counts: services down plus those whose own expectation failed. */
+    /**
+     * What needs attention, from the one list the Status screen and the start
+     * screen draw: services that are down plus those with a certificate near its
+     * end. Before the health facts have arrived the list is empty, and the
+     * summary's own count (down, or failing its own expectation) stands in.
+     */
     function statusCount() {
+        const list = services();
+        if (list.length) return list.filter((s) => s.state !== 'ok').length;
         const s = dash()?.healthSummary;
         return Number(s?.monitorDownCount || 0) + Number(s?.contentCount || 0);
     }
@@ -116,10 +123,6 @@
         return '';
     }
 
-    function badge(n) {
-        return n > 0 ? `<span class="mobile-tab-badge">${n > 99 ? '99+' : n}</span>` : '';
-    }
-
     function renderBar() {
         let bar = document.getElementById(BAR_ID);
         if (!bar) {
@@ -139,11 +142,29 @@
             ['more', t('mobile.tabs.more', 'More'), 0],
         ];
         bar.style.setProperty('--mobile-tab-count', String(tabs.length));
-        bar.innerHTML = tabs.map(([id, label, n]) => `
-            <button type="button" data-tab="${id}"${current === id ? ' aria-current="page"' : ''}>
-                <span class="mobile-tab-icon">${ICON[id]}${badge(n)}</span>
-                <span class="mobile-tab-label">${esc(label)}</span>
-            </button>`).join('');
+        // The buttons are built when the set of tabs (or the language) changes, and
+        // after that only the counters and the current mark are touched: a redraw
+        // took the focus of a keyboard or a screen reader away every few seconds.
+        const shape = tabs.map(([id, label]) => `${id}:${label}`).join('|');
+        if (bar.dataset.shape !== shape) {
+            bar.dataset.shape = shape;
+            bar.innerHTML = tabs.map(([id, label]) => `
+                <button type="button" data-tab="${id}">
+                    <span class="mobile-tab-icon">${ICON[id]}<span class="mobile-tab-badge" hidden></span></span>
+                    <span class="mobile-tab-label">${esc(label)}</span>
+                </button>`).join('');
+        }
+        tabs.forEach(([id, , n]) => {
+            const button = bar.querySelector(`button[data-tab="${id}"]`);
+            if (!button) return;
+            if (current === id) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+            const badgeEl = button.querySelector('.mobile-tab-badge');
+            badgeEl.hidden = !(n > 0);
+            badgeEl.textContent = n > 99 ? '99+' : String(n || '');
+            // The counter is part of the name a screen reader gives the tab.
+            const label = tabs.find(([tid]) => tid === id)[1];
+            button.setAttribute('aria-label', n > 0 ? `${label}, ${n}` : label);
+        });
     }
 
     /** The footer's add button went with the footer; this brings it back on the grid. */
@@ -205,6 +226,12 @@
         renderPanel();
         sync();
         window.scrollTo?.(0, 0);
+        // A screen reader and the keyboard start at the screen's heading.
+        const heading = document.querySelector(`#${PANEL_ID} .mobile-h`);
+        if (heading) {
+            heading.setAttribute('tabindex', '-1');
+            heading.focus({ preventScroll: true });
+        }
     }
 
     function closePanel() {
@@ -238,7 +265,7 @@
         const until = pausedUntil();
         const rows = list.length
             ? list.map((s) => `
-                <div class="mobile-row" data-status-row data-bookmark-url="${esc(s.url)}">
+                <div class="mobile-row" role="button" tabindex="0" aria-haspopup="menu" data-status-row data-bookmark-url="${esc(s.url)}">
                     <i class="mobile-dot mobile-dot--${s.state}" aria-hidden="true"></i>
                     <div class="mobile-row-text"><b>${esc(s.name)}</b><small>${esc(s.detail)}</small></div>
                 </div>`).join('')
@@ -254,7 +281,7 @@
             <div class="mobile-card">
                 <h3 class="mobile-card-title">${esc(t('mobile.pause.title', 'Notifications'))}</h3>
                 ${until
-                    ? `<p class="mobile-note">${esc(t('mobile.pause.until', 'Paused until {time}. They are held and summed up afterwards.', { time: clock(until) }))}</p>
+                    ? `<p class="mobile-note">${esc(t('mobile.pause.until', 'Paused until {time}. Alerts are held and summed up afterwards, except what you always let through; feed news is skipped.', { time: clock(until) }))}</p>
                        <button type="button" class="mobile-btn" data-pause="off">${esc(t('mobile.pause.resume', 'Resume notifications'))}</button>`
                     : `<div class="mobile-btn-row">
                            <button type="button" class="mobile-btn mobile-btn--ghost" data-pause="hour">${esc(t('mobile.pause.hour', 'Pause for 1 hour'))}</button>
@@ -280,7 +307,7 @@
             <div class="mobile-card">
                 <h3 class="mobile-card-title">${esc(t('mobile.more.quick', 'Quick settings'))}</h3>
                 ${sw('dark', t('mobile.more.dark', 'Dark mode'), isDarkNow())}
-                ${sw('compact', t('mobile.more.compact', 'Compact widgets'), s.densityMode === 'compact' || s.densityMode === 'dense')}
+                ${sw('compact', t('mobile.more.compact', 'Compact rows'), s.densityMode === 'compact')}
                 ${sw('pause', t('mobile.more.pause', 'Pause notifications'), pausedUntil() > 0)}
             </div>
             <div class="mobile-card">
@@ -334,6 +361,7 @@
             el.id = PANEL_ID;
             el.className = 'mobile-panel';
             el.addEventListener('click', onPanelClick);
+            el.addEventListener('keydown', onPanelKey);
             const layout = document.getElementById('dashboard-layout');
             if (layout?.parentNode) layout.parentNode.insertBefore(el, layout);
             else document.body.appendChild(el);
@@ -378,11 +406,30 @@
         }
     }
 
+    const DENSITY_KEY = 'nextdash:mobile-density-before-compact';
+
+    /**
+     * Compact rows on or off. Off goes back to what it was before (comfortable,
+     * dense or auto), not to a guess; a save that fails puts the old value back,
+     * so the switch never says something the server does not hold.
+     */
     async function setCompact(on) {
         const d = dash();
-        d.settings.densityMode = on ? 'compact' : 'auto';
+        const previous = d.settings.densityMode;
+        if (on) {
+            try { localStorage.setItem(DENSITY_KEY, previous || 'auto'); } catch (_e) { /* no storage */ }
+            d.settings.densityMode = 'compact';
+        } else {
+            let back = 'auto';
+            try { back = localStorage.getItem(DENSITY_KEY) || 'auto'; } catch (_e) { /* no storage */ }
+            d.settings.densityMode = back === 'compact' || back === 'dense' ? 'auto' : back;
+        }
         d.setupDOM?.();
-        await d.saveSettings?.();
+        if ((await d.saveSettings?.()) === false) {
+            d.settings.densityMode = previous;
+            d.setupDOM?.();
+            d.showErrorNotification?.(t('mobile.more.saveFailed', 'Could not save.'));
+        }
     }
 
     async function setHome(value) {
@@ -404,6 +451,24 @@
             await navigator.clipboard.writeText(url);
             dash()?.showNotification?.(t('mobile.more.copied', 'Link copied.'), 'success');
         } catch (_e) { /* the share sheet was dismissed */ }
+    }
+
+    /** The bookmark's short menu for a service, from a tap or Enter (a long press opens it too). */
+    function openRowMenu(row) {
+        void dash()?.contextMenu?.load?.().then((menu) => {
+            const ref = menu.resolveRowBookmark(row);
+            if (!ref?.bookmark) return;
+            const box = row.getBoundingClientRect();
+            menu.show(row, ref, { x: box.left + 16, y: box.bottom });
+        }).catch(() => {});
+    }
+
+    function onPanelKey(event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const row = event.target instanceof Element ? event.target.closest('[data-status-row]') : null;
+        if (!row) return;
+        event.preventDefault();
+        openRowMenu(row);
     }
 
     async function onPanelClick(event) {
@@ -431,6 +496,8 @@
             renderPanel();
             return;
         }
+        const statusRow = target.closest('[data-status-row]');
+        if (statusRow) { openRowMenu(statusRow); return; }
         if (target.closest('[data-open-news]')) { void window.FeedWatchNews?.open?.({ source: 'button' }); return; }
         if (target.closest('[data-open-guide]')) { openPanel('guide'); return; }
         if (target.closest('[data-back-more]')) { openPanel('more'); return; }
@@ -586,7 +653,7 @@
         // A phone has no Escape: the palette gets a close button of its own.
         const close = document.getElementById('search-close-mobile');
         if (close) {
-            close.hidden = !phone;
+            close.hidden = false;
             if (!close.dataset.bound) {
                 close.dataset.bound = '1';
                 close.addEventListener('click', () => dash()?.searchComponent?.closeSearch?.());
@@ -607,7 +674,7 @@
     function startTimer() {
         if (timer) return;
         // Counters read what the page already holds; a cheap look now and then keeps them true.
-        timer = setInterval(() => { if (isPhone()) { renderBar(); if (panel === 'status') renderPanel(); renderHome(); } }, 15000);
+        timer = setInterval(() => { if (isPhone()) { renderBar(); if (panel === 'status' && !document.getElementById(PANEL_ID)?.contains(document.activeElement)) renderPanel(); renderHome(); } }, 15000);
     }
 
     function stopTimer() {

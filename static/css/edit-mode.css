@@ -170,11 +170,13 @@ body[data-edit-mode="on"] #dashboard-layout .category[data-visible-here="false"]
     opacity: 0.5;
     position: relative;
 }
-body[data-edit-mode="on"] #dashboard-layout .category[data-visible-here="false"]::after {
-    content: attr(data-visible-label);
+.visible-on-badge { display: none; }
+body[data-edit-mode="on"] #dashboard-layout .category[data-visible-here="false"] > .visible-on-badge {
+    display: block;
     position: absolute;
     top: 6px;
     right: 8px;
+    z-index: 3;
     padding: 2px 8px;
     border-radius: 999px;
     font-size: 11px;

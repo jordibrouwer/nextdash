@@ -56,23 +56,30 @@
         return editing() || shownHere(get(dash, id));
     }
 
-    /** Write the data-attribute the stylesheet dims by; no attribute is "all". */
+    /** Write the data-attributes the stylesheet dims by, and the label as a real element. */
     function mark(dash, el, id) {
         const mode = get(dash, id);
+        el.querySelectorAll(':scope > .visible-on-badge').forEach((node) => node.remove());
         if (mode === 'all') {
             el.removeAttribute('data-visible-on');
             el.removeAttribute('data-visible-here');
             return;
         }
+        const here = shownHere(mode);
         el.setAttribute('data-visible-on', mode);
-        el.setAttribute('data-visible-here', String(shownHere(mode)));
+        el.setAttribute('data-visible-here', String(here));
+        if (here) return;
         const t = (key, fallback) => {
             const v = dash?.language?.t?.(key);
             return v && v !== key ? v : fallback;
         };
-        el.setAttribute('data-visible-label', mode === 'mobile'
+        // A node of its own, not ::after: several themes draw their frame there.
+        const badge = document.createElement('span');
+        badge.className = 'visible-on-badge';
+        badge.textContent = mode === 'mobile'
             ? t('editMode.hiddenOnDesktop', 'Hidden on desktop')
-            : t('editMode.hiddenOnPhone', 'Hidden on phone'));
+            : t('editMode.hiddenOnPhone', 'Hidden on phone');
+        el.appendChild(badge);
     }
 
     /** Store a new answer for a block and save it; false when the save failed. */
