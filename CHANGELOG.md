@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
 - [v1.28.3 — 12 November 2026](#v1283--12-november-2026)
 - [v1.28.2 — 12 November 2026](#v1282--12-november-2026)
 - [v1.28.1 — 11 November 2026](#v1281--11-november-2026)
@@ -142,6 +143,28 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+## Unreleased
+
+The phone gets its own way around nextDash.
+
+### Mobile
+
+- **new — A tab bar on the phone.** In the phone layout the footer with search and add is replaced by a bar with Home, Search, Inbox, Status and More. Inbox and Status carry a counter (unread items; services down or failing their check). A round + button on the grid keeps the old add-bookmark route. Tablets and desktops are unchanged (`static/js/mobile-tabbar.js`).
+- **new — Status and More screens.** Status lists every monitored bookmark with a colour (green, amber for a certificate within 14 days, red when down) and pauses notifications for 1 hour or until 07:00 tomorrow: the server holds them like quiet hours and sums them up afterwards (`POST /api/notify/pause`, one-off `notifyPausedUntil`). More has dark mode, compact widgets, the pause, the start screen choice and a "send me the link" card for what is desktop-only.
+- **new — Two start screens, per device.** Home opens with search first (a big search field and one status line) or status first (an "is everything fine?" card, search below). Choose in More; the setting is `mobileHome`, default search, and follows device-specific settings.
+- **new — A compact search sheet on the phone.** The Search tab opens a full-screen sheet with a real field (it takes the keyboard and its Search key), the modes as a row of chips and bigger result rows, plus a close button, since a phone has no Escape. Typing letters that match a bookmark shortcut no longer opens that bookmark on the way to a longer word; open it with a tap or the Search key. Typing in it searches bookmark names (the desktop default only matches shortcuts and answers "press / to search names", a key a phone does not have; a shortcut needs the / in front there). The assistant is not offered on a phone, and the pinned page filter is gone there (Shift+F stays on desktop).
+- **new — The quick start waits for a desktop.** On a phone the quick start no longer opens; Home says to go through it once on a computer first.
+- **fix — The bookmark edit form is made for a thumb on the phone.** Fields are 48px high with 16px text (anything smaller makes iOS zoom the page when a field takes focus), the close, Delete, Cancel and Save buttons are 48px, the small info and link buttons have a bigger press area, and the form is a full screen of its own: the header stays on top and Delete, Cancel and Save sit in a bar fixed to the bottom while the fields between them scroll.
+- **fix — The new-bookmark form on the phone.** The bar has Cancel and Create only: no Create + New, no key hint, and no "New page…" or "New category…" entries in the selects (pages and categories are made on a desktop). The form no longer pans or rubber-bands under a finger; only the fields scroll, up and down, between the fixed header and the fixed bottom bar.
+- **new — A new feed shows its latest posts at once.** Adding a feed with Watch this feed… now fetches the ten newest posts as unread news and opens the popover on the bookmark's row with them, on desktop and on the phone (when the bookmark is not on the page in view, nothing opens). The popover springs in, the bookmark's row wears a ring in the accent colour while it is open (pulsing twice when the feed was just added), a pointer in the same colour runs from the popover to the row and nods three times, and the head carries the feed mark and the site's name with a line saying why it opened. Closing plays the same motion backwards: the popover folds back into the bookmark and the pointer fades. Any popover now has the ring and the pointer, not only the first. The save request takes `seed`; a script or the MCP tools that leave it out get the plain baseline as before, and a feed edited or retried stays silent about what is old.
+- **new — Show on, in two more places.** The category, widget and collection menus (the ⋯ on a header, also on the phone) have a Show on entry, and Config → Structure has a Show on column in the Categories list and in the Collection sizes list, so you can see and change what shows where without edit mode.
+- **fix — The Inbox on the phone is made for a thumb.** The header buttons, the filters, the site and sort selects and the search field are 44px (the fields with 16px text, so iOS does not zoom on focus), the tick box has a 44px target, titles read at body size, and the small things in a row (the site, tags, the tag suggestion buttons) have a press area around them. Phone layout only: the desktop Inbox is as it was.
+- **new — A press and hold opens a short bookmark menu on the phone.** On the grid, in the Inbox and on the Status screen. It holds what a thumb does: open in a new tab, copy, share, edit, pin, tags, move, watch the feed and delete (on Status only the first four and watch, there being no grid row to edit). No QR code, no checking or network entries, no selecting and no key chips. Before, a long press opened the inline editor, and iOS never sent the contextmenu event, so the menu could not be reached at all.
+- **new — The news of watched feeds on the phone.** The News button is a desktop control, so the Status screen now has a card with the number unread and a button that opens the news.
+- **new — A phone guide in More.** It is also what the cheat sheet opens on a phone (the :cheat command, Config → Help). One screen lists what works on the phone and what needs a desktop.
+- **new — A hint about swiping pages.** With more than one page, a popover under the page name says once that a swipe changes page.
+- **new — Show a block on desktop only or on the phone only.** Categories, widgets and collections get a Show on choice in the edit panel: everywhere, desktop only or phone only. A tablet counts as a desktop. In edit mode a block hidden on this screen stays on the grid, dimmed and labelled, so nothing gets lost (`visibleOn`, `collectionVisibleOn` for built-in and per-tag collections).
 
 ---
 
