@@ -13336,6 +13336,32 @@ class DashboardConfig {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const q = await res.json();
                 let text;
+                const pausedUntil = Number(q.pausedUntil) || 0;
+                if (pausedUntil > Date.now()) {
+                    // A pause set by hand (the phone's Status screen): shown here, and ended here too.
+                    const time = new Date(pausedUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    line.textContent = this.t('config.quietStatusPaused', 'Notifications are paused until {time}.').replace('{time}', time);
+                    const resume = document.createElement('button');
+                    resume.type = 'button';
+                    resume.className = 'config-btn config-btn--small';
+                    resume.textContent = this.t('config.quietResume', 'Resume now');
+                    resume.addEventListener('click', async () => {
+                        resume.disabled = true;
+                        const fetcher = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+                        const headers = { 'Content-Type': 'application/json' };
+                        if (typeof window.nextDashWriteHeaders === 'function') Object.assign(headers, window.nextDashWriteHeaders());
+                        try {
+                            const r = await fetcher('/api/notify/pause', { method: 'POST', headers, body: JSON.stringify({ mode: 'off' }) });
+                            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                            line.textContent = this.t('config.quietStatusResumed', 'Notifications are back on.');
+                        } catch {
+                            resume.disabled = false;
+                            this.notify(this.t('config.quietResumeFailed', 'Could not end the pause.'), 'error');
+                        }
+                    });
+                    line.after(resume);
+                    return;
+                }
                 if (!q.enabled) text = this.t('config.quietStatusOff', 'Quiet hours are off.');
                 else if (q.quiet) {
                     text = this.t('config.quietStatusOn', 'Quiet now, until {time} ({zone}). {held} held.')

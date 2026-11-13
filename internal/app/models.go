@@ -1106,8 +1106,10 @@ type Settings struct {
 	// (quietKinds). Nil means the default list; an empty list means none. The
 	// field has no omitempty so the two stay apart on disk.
 	QuietHoursAllow []string `json:"quietHoursAllow"`
-	// NotifyPausedUntil is a one-off pause (unix milliseconds): until then every
-	// notice is held as in the quiet hours, whether those are on or not. Set
+	// NotifyPausedUntil is a one-off pause (unix milliseconds): until then notices
+	// are held as in the quiet hours (whether those are on or not): alerts wait for
+	// the summary, what quietHoursAllow lets through still goes, and news pushes
+	// are skipped. Set
 	// from the phone's Status tab and written by /api/notify/pause alone, so a
 	// page that sends its settings back cannot undo it.
 	NotifyPausedUntil int64 `json:"notifyPausedUntil,omitempty"`

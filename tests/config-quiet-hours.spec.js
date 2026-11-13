@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
+const { headers } = require('./helpers/feed-watch');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
@@ -52,6 +53,20 @@ test('the switch, a window and the always-let-through kinds are saved', async ({
 test('the status line says whether the hours are open', async ({ page }) => {
     await openStatus(page);
     await expect(page.locator('[data-quiet-status]')).toContainText(/Quiet hours are off|Not quiet now|Quiet now/, { timeout: 10_000 });
+});
+
+test('a pause set from the phone shows on the status line and can be ended there', async ({ page, request }) => {
+    try {
+        expect((await request.post('/api/notify/pause', { data: { mode: 'hour' }, headers })).ok()).toBe(true);
+        await openStatus(page);
+        await expect(page.locator('[data-quiet-status]')).toContainText('Notifications are paused until', { timeout: 10_000 });
+        await page.getByRole('button', { name: 'Resume now' }).click();
+        await expect(page.locator('[data-quiet-status]')).toContainText('back on');
+        const status = await (await request.get('/api/notify/quiet')).json();
+        expect(status.pausedUntil).toBeUndefined();
+    } finally {
+        await request.post('/api/notify/pause', { data: { mode: 'off' }, headers }).catch(() => {});
+    }
 });
 
 test('reminders save their interval and their limit', async ({ page }) => {
