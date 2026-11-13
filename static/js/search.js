@@ -584,6 +584,8 @@ class SearchComponent {
      * and drawn again when they arrive.
      */
     _assistantModeMatches() {
+        // Not on a phone: the panel is made for a keyboard and a wide screen.
+        if (window.MobileExperience?.isPhoneLayout?.()) return [];
         const cc = this.commandsComponent;
         const dash = window.dashboardInstance;
         const question = this.currentQuery.slice(1).trim();
@@ -1715,6 +1717,10 @@ class SearchComponent {
      */
     _maybeAutoOpenShortcut() {
         this.cancelPendingShortcutOpen();
+        // A phone types a word into a visible field: a shortcut firing at "gi"
+        // on the way to "github" carried the reader off to another page. Opening
+        // there is a tap on a row or the Enter of the keyboard.
+        if (window.MobileExperience?.isPhoneLayout?.()) return;
         const mode = this.shortcutOpenMode();
         if (mode === 'enter') return;
         if (this._holdShortcuts) return;
@@ -3490,6 +3496,12 @@ class SearchComponent {
     }
 
     showSearch() {
+        // On a phone the words typed are names: a query is a search of the
+        // bookmarks, and a shortcut needs the / in front. The other way round (the
+        // desktop default) a word that is no shortcut found nothing and said
+        // "press / to search names", a key a phone does not have.
+        const phone = window.MobileExperience?.isPhoneLayout?.() === true;
+        this.interleaveMode = phone || this.settings?.interleaveMode === true;
         this._beginSearchSession();
         // Started at the control that opened it, when there was one: see
         // ModalOrigin in modal.js.

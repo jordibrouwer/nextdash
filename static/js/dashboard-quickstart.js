@@ -96,6 +96,9 @@
          * and the checklist that used to follow it one after the other.
          */
         async showGuide() {
+            // A phone does not run the guide: it is a modal of choices and first
+            // steps made for a desktop. Home says so instead (mobile-tabbar.js).
+            if (window.MobileExperience?.isPhoneLayout?.() === true) return;
             try {
                 await window.LazyScript.loadScriptOnce('js/start-guide.js', 'startGuide',
                     () => typeof window.StartGuide === 'function');

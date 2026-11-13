@@ -175,6 +175,10 @@
         const nowMobile = applyBodyFlag();
         const nowPhone = isPhoneLayout();
         syncDashboardColumnLayout();
+        // A block can be limited to the phone or to the desktop: crossing the
+        // phone line redraws the grid when any is.
+        if (nowPhone !== wasPhone) window.DashboardBlockVisibility?.refresh(window.dashboardInstance);
+        window.MobileTabbar?.sync?.();
 
         if (window.configManager?.generalLayers) {
             if (nowPhone) {

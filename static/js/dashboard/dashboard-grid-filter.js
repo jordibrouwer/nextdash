@@ -53,10 +53,14 @@
             return true;
         }
 
-        /** Phone layout, on the bookmarks view: the bar stays put. */
+        /**
+         * Never, now. The bar used to stay put on a phone, but the phone has its
+         * own Search tab, and a page filter (a desktop Shift+F idea) sat over the
+         * search palette's field. Kept as a question so the pinning code below
+         * stays whole.
+         */
         shouldPin() {
-            return document.body?.dataset.mobileLayout === 'true'
-                && this.dash?.activeView === 'bookmarks';
+            return false;
         }
 
         /**
