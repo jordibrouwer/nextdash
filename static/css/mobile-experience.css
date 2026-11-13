@@ -633,6 +633,12 @@ body[data-phone-layout="true"] .shortcut-search .search-matches {
     overscroll-behavior: contain;
 }
 
+/* responsive.css sets the padding of a result to 0 on a narrow screen, which put the text against the edge. */
+body[data-phone-layout="true"] .shortcut-search .search-match {
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
 body[data-phone-layout="true"] .shortcut-search .search-container { position: relative; }
 body[data-phone-layout="true"] .shortcut-search .search-close-mobile {
     position: absolute;
