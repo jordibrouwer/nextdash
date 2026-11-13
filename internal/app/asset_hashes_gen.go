@@ -18,7 +18,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/colors.css":                                         "ff3a681f67c7",
 	"css/config-bookmarks-workbench.css":                     "a77de8c07c26",
 	"css/config-setting-promo.css":                           "d980b33c2b27",
-	"css/config-structure.css":                               "a4c224f47afe",
+	"css/config-structure.css":                               "259d83a8204d",
 	"css/config-tabs.css":                                    "b7c4148ea431",
 	"css/config-view.css":                                    "47b20d3537c8",
 	"css/containers-tutorial.css":                            "c72809dcb3e9",

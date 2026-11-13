@@ -431,6 +431,12 @@ body.no-animations :is(#config-pt-body, #config-finders-body) .config-crud-row-a
     grid-template-columns: minmax(0, 1fr) 2.5rem 2.5rem 3rem auto;
 }
 
+/* The Show on choice is a column of Config → Structure; the modal's rows have
+   no room for it, and an extra cell would push the ⋯ out of its column. */
+.config-structure-overlay #config-pt-body .structure-table .structure-visible-cell {
+    display: none;
+}
+
 .config-structure-overlay #config-pt-body .structure-table[data-structure-table="pages"] > .config-crud-row {
     grid-template-columns: 3rem minmax(0, 1fr) 2.5rem auto;
 }
