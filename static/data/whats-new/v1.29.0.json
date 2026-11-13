@@ -1,0 +1,94 @@
+{
+  "tag": "v1.29.0",
+  "date": "13 November 2026",
+  "releasedAt": "2026-11-13",
+  "modalLead": "<strong>The phone</strong> gets its own way around nextDash: a tab bar, a Status screen and a short menu on a press and hold. A block can show on <strong>desktop only or phone only</strong>, and the columns of the list views can be <strong>resized</strong>.",
+  "sections": [
+    {
+      "title": "On the phone",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A tab bar and a Status screen.</strong> On a phone the bottom bar now has Home, Search, Inbox, Status and More. Status lists every monitored bookmark in green, amber or red, shows the news of the feeds you watch, and pauses notifications for an hour or until tomorrow.",
+          "highlight": true,
+          "title": "A tab bar and a Status screen on the phone",
+          "link": "#config/behavior/general",
+          "linkLabel": "Phone start screen",
+          "media": {
+            "image": "media/v1.29.0-phone-tabbar.jpg",
+            "alt": "The Status screen on a phone: a list of monitored services, each with a green dot and its uptime, above a tab bar with Home, Search, Inbox, Status and More"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Two start screens.</strong> Home opens with a big search field first, or with an <em>is everything fine?</em> card first. Choose in More; each device keeps its own choice."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A short menu on a press and hold.</strong> Hold a bookmark on the grid, in the Inbox or on Status to open it in a new tab, copy it, edit it, move it or watch its feed."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A compact search sheet.</strong> The Search tab opens a full-screen field with the modes as a row of chips and bigger result rows."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Forms and the Inbox are made for a thumb.</strong> Fields are taller, the bookmark form is a full screen with Delete, Cancel and Save fixed at the bottom, and the Inbox buttons and filters are bigger."
+        }
+      ]
+    },
+    {
+      "title": "Layout",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Show a block on desktop only or on the phone only.</strong> Categories, widgets and collections get a <em>Show on</em> choice in the edit panel, in their <em>⋯</em> menu and in Config → Structure. In edit mode a hidden block stays on the grid, dimmed and labelled.",
+          "highlight": true,
+          "title": "Show a block on desktop or phone only",
+          "link": "#config/structure",
+          "linkLabel": "Open Structure",
+          "media": {
+            "image": "media/v1.29.0-show-on.jpg",
+            "alt": "The edit panel of a category with the Show on choice: Everywhere, Desktop only and Phone only"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Lists",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Resize the columns of a list.</strong> Drag the left border of a column heading in Bookmarks, Tags, the Inbox or Containers to widen or narrow it. The name column gives way, and tag chips refit. Double-click the border to put the column back.",
+          "highlight": true,
+          "title": "Resize the columns of a list",
+          "link": "#bookmarks",
+          "linkLabel": "Open Bookmarks",
+          "media": {
+            "image": "media/v1.29.0-resize-columns.jpg",
+            "video": "media/v1.29.0-resize-columns.webm",
+            "alt": "The Bookmarks view: the border of the Tags column is dragged to the left, the column widens and the name column gives way"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Watch feeds",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A new feed shows its latest posts at once.</strong> After <em>Watch this feed…</em>, the ten newest posts open in a popover on the bookmark's row."
+        }
+      ]
+    },
+    {
+      "title": "Notifications",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Pause notifications by hand.</strong> From the phone's Status screen, for an hour or until tomorrow. Config → Monitoring → Schedules shows a running pause with a <em>Resume now</em> button."
+        }
+      ]
+    }
+  ]
+}
