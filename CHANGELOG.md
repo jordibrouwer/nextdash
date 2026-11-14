@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.29.1 — 14 November 2026](#v1291--14-november-2026)
 - [v1.29.0 — 13 November 2026](#v1290--13-november-2026)
 - [v1.28.3 — 12 November 2026](#v1283--12-november-2026)
 - [v1.28.2 — 12 November 2026](#v1282--12-november-2026)
@@ -144,6 +145,16 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
+## v1.29.1 — 14 November 2026
+
+The RSS widget on a touch screen.
+
+### RSS
+
+- **fix — RSS headlines have a preview on a touch screen.** The preview of an RSS widget row (the feed's summary, source and age) only showed on hover, so a phone never got it: a tap opened the article, and a press and hold selected a word and opened the row menu. On touch a tap or a press and hold now opens a sheet at the bottom with the preview and three buttons: Open article, Open in a new tab and Close. A tap away or Escape also closes it, the headlines no longer select text, and the desktop hover is as it was (`static/js/dashboard/dashboard-widget-rss.js`, issue 22).
+
+---
+
 ## v1.29.0 — 13 November 2026
 
 The phone gets its own way around nextDash.
@@ -165,7 +176,6 @@ The phone gets its own way around nextDash.
 - **new — A phone guide in More.** It is also what the cheat sheet opens on a phone (the :cheat command, Config → Help). One screen lists what works on the phone and what needs a desktop.
 - **new — A hint about swiping pages.** With more than one page, a popover under the page name says once that a swipe changes page.
 - **new — Show a block on desktop only or on the phone only.** Categories, widgets and collections get a Show on choice in the edit panel: everywhere, desktop only or phone only. A tablet counts as a desktop. In edit mode a block hidden on this screen stays on the grid, dimmed and labelled, so nothing gets lost (`visibleOn`, `collectionVisibleOn` for built-in and per-tag collections).
-- **fix — RSS headlines have a preview on a touch screen.** The preview of an RSS widget row (the feed's summary, source and age) only showed on hover, so a phone never got it: a tap opened the article, and a press and hold selected a word and opened the row menu. On touch a tap or a press and hold now opens a sheet at the bottom with the preview and three buttons: Open article, Open in a new tab and Close. A tap away or Escape also closes it, the headlines no longer select text, and the desktop hover is as it was (`static/js/dashboard/dashboard-widget-rss.js`, issue 22).
 
 ### List views
 
