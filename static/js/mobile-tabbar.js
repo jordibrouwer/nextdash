@@ -26,6 +26,21 @@
 
     function dash() { return window.dashboardInstance || null; }
 
+    /**
+     * Open the search sheet. The search code loads on idle (or on a key), so a tap
+     * that comes first would click a button nothing is listening to: wait for it.
+     */
+    async function openSearch() {
+        const loader = window.SearchLoader;
+        const component = loader?.ensureReady ? await loader.ensureReady() : dash()?.searchComponent;
+        if (component?.openSearchInterface) {
+            component._openVia = 'button';
+            component.openSearchInterface();
+        } else {
+            document.getElementById('search-button')?.click();
+        }
+    }
+
     function isPhone() { return window.MobileExperience?.isPhoneLayout?.() === true; }
 
     function esc(value) {
@@ -194,7 +209,7 @@
         const tab = button.getAttribute('data-tab');
         if (tab === 'search') {
             closePanel();
-            document.getElementById('search-button')?.click();
+            void openSearch();
             return;
         }
         if (tab === 'status' || tab === 'more') {
@@ -561,7 +576,7 @@
             el.id = HOME_ID;
             el.className = 'mobile-home';
             el.addEventListener('click', (e) => {
-                if (e.target.closest('[data-home-search]')) document.getElementById('search-button')?.click();
+                if (e.target.closest('[data-home-search]')) void openSearch();
                 else if (e.target.closest('[data-home-status]')) openPanel('status');
             });
         }
