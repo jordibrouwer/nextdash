@@ -73,11 +73,67 @@
         return t('dashboard.previewAgoDays', '{count} d ago', { count: Math.round(hours / 24) });
     }
 
+    /**
+     * The row the popover belongs to wears a ring while it is open, so the two
+     * read as one thing: the bookmark, and the news that came with it.
+     */
+    let pointerEl = null;
+
+    /**
+     * The pointer from the popover to its badge: a small diamond of its own on
+     * the page rather than a corner of the popover, because the popover scrolls
+     * and clips whatever sticks out of it. It points from whichever edge faces
+     * the badge, below, above or beside, and nods when the popover was offered.
+     */
+    function placePointer(el, badge) {
+        if (!el?.isConnected || !badge?.isConnected) { removePointer(); return; }
+        if (!pointerEl?.isConnected) {
+            pointerEl = document.createElement('span');
+            pointerEl.className = 'feed-pop-pointer';
+            pointerEl.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(pointerEl);
+        }
+        const pop = el.getBoundingClientRect();
+        const b = badge.getBoundingClientRect();
+        const size = 14;
+        let dir = 'up';
+        let x = Math.min(Math.max(pop.left + 16, b.left + b.width / 2), pop.right - 16) - size / 2;
+        let y = pop.top - size / 2;
+        if (el.classList.contains('is-side')) {
+            dir = el.classList.contains('is-left') ? 'right' : 'left';
+            x = dir === 'left' ? pop.left - size / 2 : pop.right - size / 2;
+            y = Math.min(Math.max(pop.top + 16, b.top + b.height / 2), pop.bottom - 16) - size / 2;
+        } else if (el.classList.contains('is-above')) {
+            dir = 'down';
+            y = pop.bottom - size / 2;
+        }
+        pointerEl.dataset.dir = dir;
+        pointerEl.classList.toggle('is-offer', el.classList.contains('is-offer'));
+        pointerEl.style.left = `${Math.round(x)}px`;
+        pointerEl.style.top = `${Math.round(y)}px`;
+    }
+
+    function removePointer({ animate = false } = {}) {
+        const el = pointerEl;
+        pointerEl = null;
+        if (!el) return;
+        if (!animate || still()) { el.remove(); return; }
+        el.classList.add('is-closing');
+        global.setTimeout(() => el.remove(), 200);
+    }
+
+    function anchor(badge, on) {
+        const link = badge?.closest?.('.bookmark-link') || badge?.closest?.('a');
+        if (link) link.classList.toggle('feed-pop-anchor', on);
+    }
+
     // Whichever way it closes, the reader lands where they were: on the badge.
     function close() {
         if (!popover) return;
         const { el, badge } = popover;
         badge?.setAttribute('aria-expanded', 'false');
+        anchor(badge, false);
+        removePointer({ animate: true });
         fadeOut(el);
         watcher?.disconnect();
         resizer?.disconnect();
@@ -106,8 +162,10 @@
         let gone = false;
         const finish = () => { if (!gone) { gone = true; el.remove(); } };
         el.addEventListener('animationend', finish, { once: true });
-        global.setTimeout(finish, 150);
-        el.style.animation = 'feed-news-pop-shrink 90ms ease-in forwards';
+        global.setTimeout(finish, 260);
+        // The way it grew, backwards: it folds back into the row it came out of
+        // (the transform origin is the pointer, set when it was placed).
+        el.style.animation = 'feed-news-pop-shrink 210ms cubic-bezier(0.4, 0, 0.9, 0.3) forwards';
     }
 
     function onOutside(event) {
@@ -150,6 +208,7 @@
             badge.setAttribute('aria-expanded', 'true');
             popover.badge = badge;
         }
+        anchor(badge, true);
         layout(popover.el, badge);
     }
 
@@ -175,6 +234,11 @@
      * the answer.
      */
     function layout(el, badge) {
+        layoutPopover(el, badge);
+        placePointer(el, badge);
+    }
+
+    function layoutPopover(el, badge) {
         const rect = badge.getBoundingClientRect();
         const row = (badge.closest('a') || badge).getBoundingClientRect();
         const vw = global.innerWidth;
@@ -261,12 +325,12 @@
      * the first six show, "+n more" brings in the rest up to ten, and `waiting`
      * is what the entry counts (more than were loaded, sometimes).
      */
-    function build(bookmark, items, waiting) {
+    function build(bookmark, items, waiting, offer = false) {
         const esc = (v) => global.NextDashHtml.escapeHtml(String(v ?? ''));
         const el = document.createElement('div');
         // The surface every menu in the app wears, so the active theme's edges,
         // depth and drop apply to it without a copy of them here.
-        el.className = 'move-popover feed-news-pop';
+        el.className = `move-popover feed-news-pop${offer ? ' is-offer' : ''}`;
         el.setAttribute('role', 'dialog');
         el.setAttribute('aria-modal', 'false');
         el.setAttribute('aria-labelledby', 'feed-news-pop-name');
@@ -290,6 +354,8 @@
         let shown = Math.min(items.length, MAX_ITEMS);
         el.innerHTML = `<div class="feed-news-pop-head">`
             + `<button type="button" class="feed-news-pop-site" data-pop-site aria-label="${esc(t('dashboard.feedWatchPopoverOpenSite', 'Open {name}', { name: bookmark.name || bookmark.url }))}">`
+            // The feed mark in front of the site's name: this is that site's feed.
+            + `<svg class="feed-news-pop-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5a14 14 0 0 1 14 14M5 11a8 8 0 0 1 8 8"/><circle cx="6" cy="18" r="1.4" fill="currentColor"/></svg>`
             + `<span class="feed-news-pop-name" id="feed-news-pop-name">${esc(bookmark.name || bookmark.url)}</span>`
             + `<span class="feed-news-pop-count">${esc(t('dashboard.feedWatchNewCount', '{n} new', { n: count }))}</span></button>`
             // Every unread headline of this site is read at once, without opening any.
@@ -297,6 +363,7 @@
             // The paper on this site alone, on a phone too.
             + `<button type="button" class="feed-news-pop-reader" data-pop-reader aria-label="${esc(t('dashboard.feedWatchPopoverReaderLabel', 'Open the reader for {name}', { name: bookmark.name || bookmark.url }))}">${esc(t('dashboard.feedWatchPopoverReader', 'Reader'))}</button>`
             + `<button type="button" class="feed-news-pop-close" data-pop-close aria-label="${esc(t('dashboard.close', 'Close'))}">×</button></div>`
+            + (offer ? `<p class="feed-news-pop-offer">${esc(t('dashboard.feedWatchOffer', 'Watching this feed now. Here are its latest posts.'))}</p>` : '')
             + `<ul class="feed-news-pop-list">` + items.slice(0, shown).map(row).join('') + `</ul>`
             + footer(shown);
         // The rest of the headlines, in the same popover: it stays open, takes
@@ -347,7 +414,7 @@
     }
 
     /** Open (or close) the popover under a row's badge. */
-    async function toggle(bookmark, badge) {
+    async function toggle(bookmark, badge, options = {}) {
         if (popover && popover.badge === badge) { close(); return; }
         close();
         const watch = dash()?.feedWatch;
@@ -362,14 +429,17 @@
         if (!items.length) { openBookmark(bookmark); return; }
         // What the entry counts, not what was loaded: more may be waiting.
         const waiting = Number(watch.watchFor(bookmark)?.newCount) || items.length;
-        const el = build(bookmark, items, waiting);
+        const el = build(bookmark, items, waiting, options.offer === true);
         document.body.appendChild(el);
         badge.setAttribute('aria-expanded', 'true');
+        anchor(badge, true);
         const same = [...document.querySelectorAll('.bookmark-news-badge.is-tappable')]
             .filter((b) => b.closest('a')?.href === badge.closest('a')?.href);
         popover = { el, badge, key, bookmark, copy: Math.max(0, same.indexOf(badge)) };
         layout(el, badge);
-        el.style.animation = still() ? 'none' : 'feed-news-pop-grow 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both';
+        el.style.animation = still() ? 'none'
+            : options.offer ? 'feed-news-pop-grow 340ms cubic-bezier(0.2, 1.25, 0.3, 1) both'
+            : 'feed-news-pop-grow 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both';
         // A page that is still settling (pictures, a repaint) moves the row after
         // the first placement.
         let queued = false;
@@ -445,6 +515,44 @@
         }
     }
 
+    /**
+     * Offer the popover for a bookmark without anyone tapping its badge: a feed
+     * has just been added, and the entries it holds are news (the server seeds
+     * the ten newest). Waits for the row to be drawn with its badge; when the
+     * bookmark is not on this page there is no badge to point at and nothing
+     * opens (the news paper is never opened unasked). Never opens the site
+     * itself either: with no news waiting it does nothing.
+     */
+    async function openFor(bookmark) {
+        const watch = dash()?.feedWatch;
+        if (!watch || !bookmark?.url) return false;
+        let target = '';
+        try { target = new URL(bookmark.url, global.location.href).href; } catch { return false; }
+        for (let tries = 0; tries < 40; tries += 1) {
+            if (Number(watch.watchFor(bookmark)?.newCount) > 0) {
+                // The bookmark's own place first: the same bookmark may also sit in
+                // a smart collection (Today, Recent), which is a view of it.
+                const copies = [...document.querySelectorAll('.bookmark-news-badge.is-tappable')]
+                    .filter((b) => b.isConnected && b.closest('a')?.href === target);
+                const badge = copies.find((b) => !String(b.closest('.bookmark-link')?.getAttribute('data-category-id') || '').startsWith('__smart'))
+                    || copies[0];
+                if (badge) {
+                    // Only when it is off screen, and before the popover exists: a scroll
+                    // while it is open closes it.
+                    const box = badge.getBoundingClientRect();
+                    if (box.top < 0 || box.bottom > global.innerHeight) {
+                        badge.closest('a')?.scrollIntoView?.({ block: 'center', behavior: 'auto' });
+                        await new Promise((resolve) => global.requestAnimationFrame(() => global.requestAnimationFrame(resolve)));
+                    }
+                    await toggle(bookmark, badge, { offer: true });
+                    return true;
+                }
+            }
+            await new Promise((resolve) => global.setTimeout(resolve, 120));
+        }
+        return false;
+    }
+
     // A phone turned sideways, or a keyboard attached, can change the answer.
     try {
         global.matchMedia?.(QUERY).addEventListener?.('change', () => {
@@ -460,5 +568,5 @@
         }
     });
 
-    global.FeedWatchPopover = { isTouch, attach, close, isOpen: () => popover !== null || opening };
+    global.FeedWatchPopover = { isTouch, attach, close, openFor, isOpen: () => popover !== null || opening };
 })(window);

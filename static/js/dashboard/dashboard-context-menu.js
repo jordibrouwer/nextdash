@@ -346,13 +346,26 @@ class DashboardContextMenu {
         // "Select" sitting below that line reads as belonging to it.
         const deleteAt = singleActions.findIndex((action) => action.danger);
         const splitAt = deleteAt >= 0 ? deleteAt : singleActions.length;
+        // A phone gets a shorter menu, opened with a long press: what is done
+        // with a thumb (open, copy, share, edit, pin, tags, move, watch, delete).
+        // No QR, no checking or network entries, no selecting, no key chips.
+        const phone = window.MobileExperience?.isPhoneLayout?.() === true;
+        // On the Status screen the row is a service, not a grid row: what needs
+        // the grid (edit, tags, move, pin, delete) is left out there.
+        // By attribute rather than by position: the screen may redraw while the menu loads.
+        const fromStatus = !!row?.hasAttribute?.('data-status-row');
+        const phoneKeeps = new Set(fromStatus
+            ? ['open-new-tab', 'copy-url', 'share', 'feed-watch']
+            : ['open-new-tab', 'copy-url', 'share', 'edit', 'pin', 'tags', 'move', 'feed-watch', 'delete']);
         const actions = selectionActions.length
             ? selectionActions
-            : [
-                ...singleActions.slice(0, splitAt),
-                ...startSelectionActions,
-                ...singleActions.slice(splitAt),
-            ];
+            : phone && bookmarkRef.scope !== 'inbox'
+                ? singleActions.filter((action) => phoneKeeps.has(action.id))
+                : [
+                    ...singleActions.slice(0, splitAt),
+                    ...startSelectionActions,
+                    ...singleActions.slice(splitAt),
+                ];
 
         const items = [];
         actions.forEach((action) => {
@@ -393,7 +406,7 @@ class DashboardContextMenu {
                 item.appendChild(caret);
             }
 
-            if (action.key) {
+            if (action.key && !phone) {
                 const kbd = document.createElement('kbd');
                 kbd.className = 'move-popover-item-key';
                 kbd.textContent = action.key;

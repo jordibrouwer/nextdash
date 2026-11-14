@@ -476,7 +476,8 @@
                 <button type="button" id="search-clear" class="search-clear" hidden
                         data-i18n-aria="dashboard.searchClearAria" aria-label="Clear search">&times;</button>
             </div>
-            <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
+            <button type="button" id="search-close-mobile" class="search-close-mobile" hidden aria-label="Close search" data-i18n-aria="dashboard.searchCloseAria">&times;</button>
+            <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
             <div class="search-body">
                 <!--
                     The rail says what there is to find before anything is
@@ -737,6 +738,7 @@
          which reads window.ListDensity when it renders the toggle. -->
     <script src="{{asset "js/shared/list-density.js"}}" defer></script>
     <script src="{{asset "js/shared/list-view-shell.js"}}" defer></script>
+    <script src="{{asset "js/shared/column-resize.js"}}" defer></script>
     <script src="{{asset "js/shared/list-view-drawer.js"}}" defer></script>
     <script src="{{asset "js/shared/side-panel-layout.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-state.js"}}" defer></script>
@@ -797,6 +799,7 @@
     <!-- Registers the push service worker and keeps this device's subscription current. -->
     <script src="{{asset "js/push-notifications.js"}}" defer></script>
     <script src="{{asset "js/mobile-experience.js"}}" defer></script>
+    <script src="{{asset "js/mobile-tabbar.js"}}" defer></script>
     <script src="{{asset "js/shared/tag-cloud-model.js"}}" defer></script>
     <script src="{{asset "js/shared/tag-view-model.js"}}" defer></script>
     <script src="{{asset "js/shared/tag-colors.js"}}" defer></script>
@@ -833,6 +836,7 @@
     <script src="{{asset "js/dashboard/dashboard-title-icons.js"}}" defer></script>
     <script src="{{asset "js/dashboard/edit-mode-model.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-edit-mode-panel.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-block-visibility.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-edit-mode.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-category-menu.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-bookmark-interactions-loader.js"}}" defer></script>

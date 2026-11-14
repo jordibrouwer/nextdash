@@ -152,6 +152,12 @@ class DashboardUiHelpers {
 
     async showKeyboardCheatSheet(options = {}) {
         const d = this.dash;
+        // A phone has no keyboard to list: it gets its own short guide (what
+        // works here, what needs a desktop), whichever way the sheet was asked for.
+        if (window.MobileExperience?.isPhoneLayout?.() === true && window.MobileTabbar?.openGuide) {
+            await window.MobileTabbar.openGuide();
+            return;
+        }
         if (!window.AppModal) {
             return;
         }

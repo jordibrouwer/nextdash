@@ -747,7 +747,9 @@ class SearchCommandsComponent {
     matchCommandNames(query, limit = 5) {
         const needle = String(query || '').trim().toLowerCase();
         if (!needle) return [];
-        const names = Object.keys(this.availableCommands);
+        // The assistant is not offered on a phone.
+        const phone = window.MobileExperience?.isPhoneLayout?.() === true;
+        const names = Object.keys(this.availableCommands).filter((name) => !(phone && name === 'ask'));
         const starts = names.filter((name) => name.startsWith(needle));
         const inside = names.filter((name) => !name.startsWith(needle) && name.includes(needle));
         const groupOf = (name) => this.commandGroups.find((g) => g.commands.includes(name));
@@ -820,6 +822,8 @@ class SearchCommandsComponent {
                 for (const cmd of group.commands) {
                     // Glances is not part of the demo.
                     if (cmd === 'glances' && document.querySelector('meta[name="nextdash-demo"]')) continue;
+                    // Nor is the assistant on a phone.
+                    if (cmd === 'ask' && window.MobileExperience?.isPhoneLayout?.()) continue;
                     if (Object.prototype.hasOwnProperty.call(this.availableCommands, cmd)) {
                         const useCtx = ctxName && bookmarkContextCmds.has(cmd);
                         result.push({
@@ -1265,7 +1269,9 @@ class SearchCommandsComponent {
         if (!dash) return [];
 
         return [{
-            name: this._t('commands.cheatLabel', 'Keyboard cheat sheet'),
+            name: window.MobileExperience?.isPhoneLayout?.()
+                ? this._t('mobile.guide.title', 'What works on a phone')
+                : this._t('commands.cheatLabel', 'Keyboard cheat sheet'),
             shortcut: ':CHEAT',
             type: 'command',
             action: () => this._runOverlayAction(() => dash.showKeyboardCheatSheet()),
@@ -1314,6 +1320,7 @@ class SearchCommandsComponent {
     // conversation and sends the question.
     handleAskCommand(args, fullQuery) {
         const dash = window.dashboardInstance;
+        if (window.MobileExperience?.isPhoneLayout?.()) return [];
         if (window.DemoLock?.on) {
             return [{
                 name: this._t('commands.askDemo', 'The assistant is not available in the demo'),

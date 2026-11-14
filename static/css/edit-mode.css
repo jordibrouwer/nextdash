@@ -164,3 +164,35 @@ body[data-edit-mode="on"] #dashboard-layout .category.is-edit-selected {
     padding-top: var(--space-3, 0.8rem);
     border-top: 1px solid var(--border-primary);
 }
+
+/* A block limited to the other kind of screen: still on the grid while editing, dimmed and labelled. */
+body[data-edit-mode="on"] #dashboard-layout .category[data-visible-here="false"] {
+    opacity: 0.5;
+    position: relative;
+}
+.visible-on-badge { display: none; }
+body[data-edit-mode="on"] #dashboard-layout .category[data-visible-here="false"] > .visible-on-badge {
+    display: block;
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 3;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--surface-2, rgba(128, 128, 128, 0.25));
+    color: var(--text-secondary, inherit);
+    pointer-events: none;
+}
+
+.edit-panel-visible {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.edit-panel-visible [aria-pressed="true"] {
+    background: var(--accent, #0f6f68);
+    color: var(--on-accent, #fff);
+    border-color: transparent;
+}

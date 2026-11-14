@@ -14,6 +14,7 @@ It started because my bookmark bar had become a graveyard, and grew into one pla
 - **Health and monitoring.** Dead links, uptime with 30 days of history, certificate and domain expiry, page drift and a public status page, with alerts to ntfy, Slack, Discord, Telegram and more, or a push notification on your phone.
 - **Containers and homelab.** A Containers view for the Docker host: logs, start, stop, update with a rollback, and each container linked to its bookmark. Widgets for Unraid, Jellyfin, Jellystat, Sonarr, Bazarr, Prowlarr, Home Assistant, Beszel and Glances.
 - **Widgets** for what is going on: weather, calendar, feeds, inbox, your machine, and any service that answers with JSON.
+- **On a phone.** Its own way around: a tab bar with Home, Search, Inbox, Status and More, a Status screen that can pause notifications, and a short menu when you press and hold a bookmark. *[Manual §23](MANUAL.md#23-phones-tablets-and-the-installed-app)*
 - **Looks.** 440 themes, 285 backdrops and a theme studio, in six languages.
 - **An assistant, if you want one.** Ask in plain words with Claude, OpenAI or a model of your own, and decide what happens to what it suggests. Off until you turn it on.
 - **Yours to keep.** One Go binary and plain JSON files, automatic backups, a 30-day trash, and imports from every browser, Pocket, Raindrop, linkding and more.

@@ -238,3 +238,686 @@ body[data-mobile-layout="true"] .app-notification {
         display: none !important;
     }
 }
+
+/* ── Phone: bottom tab bar, Status and More screens, the two start screens ── */
+
+/* The tab bar replaces the old footer (search, add). */
+body[data-mobile-tabbar] .button-container {
+    display: none !important;
+}
+
+body[data-mobile-tabbar] {
+    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+.mobile-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1100;
+    display: grid;
+    grid-template-columns: repeat(var(--mobile-tab-count, 5), 1fr);
+    padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+    background: var(--background-secondary);
+    border-top: 1px solid var(--border-primary);
+}
+
+.mobile-tabbar button {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    min-height: 48px;
+    padding: 0.25rem 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.7rem;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-tabbar button[aria-current="page"] {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.mobile-tab-icon {
+    position: relative;
+    display: inline-flex;
+}
+
+.mobile-tab-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.mobile-tab-badge {
+    position: absolute;
+    top: -4px;
+    left: 100%;
+    margin-left: -6px;
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--status-warning, #c77d0a);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+
+/* Status and More take the place of the grid. */
+body[data-mobile-panel] #dashboard-layout {
+    display: none !important;
+}
+
+.mobile-panel,
+.mobile-home {
+    width: calc(100% - 2rem);
+    max-width: 40rem;
+    margin: 0.75rem auto;
+    box-sizing: border-box;
+}
+
+.mobile-h { margin: 0.25rem 0; font-size: 1.35rem; }
+.mobile-lede { margin: 0 0 0.75rem; color: var(--text-secondary); }
+.mobile-note { margin: 0.25rem 0 0.75rem; color: var(--text-secondary); font-size: 0.9rem; }
+
+.mobile-card {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--background-secondary);
+}
+
+.mobile-card-title {
+    margin: 0.4rem 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.mobile-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--border-primary);
+}
+.mobile-row:first-child { border-top: 0; }
+.mobile-row-text { min-width: 0; flex: 1; }
+.mobile-row-text b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mobile-row-text small { color: var(--text-secondary); }
+
+.mobile-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--status-success, #14795a); }
+.mobile-dot--warn { background: var(--status-warning, #c77d0a); }
+.mobile-dot--bad { background: var(--status-error, #c0392b); }
+
+.mobile-btn-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.mobile-btn {
+    flex: 1;
+    min-height: 44px;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid var(--accent-primary);
+    border-radius: 10px;
+    background: var(--accent-primary);
+    color: var(--on-accent, #fff);
+    font: inherit;
+    font-weight: 600;
+    touch-action: manipulation;
+}
+.mobile-btn--ghost { background: transparent; color: var(--accent-primary); }
+.mobile-card > .mobile-btn { width: 100%; margin-bottom: 0.5rem; }
+
+.mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    border-top: 1px solid var(--border-primary);
+}
+.mobile-toggle:first-of-type { border-top: 0; }
+
+.mobile-switch {
+    position: relative;
+    flex: none;
+    width: 44px;
+    height: 26px;
+    border: 0;
+    border-radius: 13px;
+    background: var(--border-primary);
+    touch-action: manipulation;
+}
+.mobile-switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--background-primary, #fff);
+    transition: left 0.15s;
+}
+.mobile-switch[aria-checked="true"] { background: var(--accent-primary); }
+.mobile-switch[aria-checked="true"]::after { left: 21px; }
+@media (prefers-reduced-motion: reduce) { .mobile-switch::after { transition: none; } }
+
+.mobile-seg { display: flex; border: 1px solid var(--border-primary); border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem; }
+.mobile-seg button {
+    flex: 1;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    touch-action: manipulation;
+}
+.mobile-seg button + button { border-left: 1px solid var(--border-primary); }
+.mobile-seg button[aria-pressed="true"] { background: var(--accent-primary); color: var(--on-accent, #fff); }
+
+/* Start screen */
+.mobile-search {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+    font: inherit;
+    text-align: left;
+    touch-action: manipulation;
+}
+.mobile-search svg { width: 18px; height: 18px; flex: none; }
+.mobile-search--big { min-height: 54px; font-size: 1rem; }
+
+.mobile-pill {
+    margin-top: 0.6rem;
+    padding: 0.3rem 0.8rem;
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--status-success, #14795a) 18%, transparent);
+    color: var(--status-success, #14795a);
+}
+.mobile-pill--warn {
+    background: color-mix(in srgb, var(--status-warning, #c77d0a) 18%, transparent);
+    color: var(--status-warning, #c77d0a);
+}
+
+.mobile-statuscard {
+    display: grid;
+    gap: 0.35rem;
+    width: 100%;
+    margin-bottom: 0.6rem;
+    padding: 0.9rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 14px;
+    background: var(--background-secondary);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+.mobile-statuscard small { color: var(--text-secondary); }
+.mobile-statuscard b { font-size: 1.6rem; line-height: 1.1; }
+.mobile-meter { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--border-primary); }
+.mobile-meter i { display: block; height: 100%; }
+.mobile-meter .is-ok { background: var(--status-success, #14795a); }
+.mobile-meter .is-warn { background: var(--status-warning, #c77d0a); }
+
+.mobile-fab {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    z-index: 1090;
+    width: 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    color: var(--on-accent, #fff);
+    font-size: 1.6rem;
+    line-height: 1;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    touch-action: manipulation;
+}
+
+/* Recently opened, under the big search field */
+.mobile-chips { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.6rem 0 0; scrollbar-width: none; }
+.mobile-chips::-webkit-scrollbar { display: none; }
+.mobile-chip {
+    flex: none;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: var(--background-secondary);
+    color: inherit;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.mobile-notice {
+    display: grid;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--status-warning, #c77d0a) 60%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--status-warning, #c77d0a) 12%, var(--background-secondary));
+    font-size: 0.9rem;
+}
+
+/* ── Phone: the search palette as a compact sheet ──
+   The desktop palette is a terminal line fed by key presses. On a phone the real
+   field is the one that takes the keyboard, so it is drawn, and everything made
+   for a keyboard and a wide panel steps aside. */
+body[data-phone-layout="true"] .shortcut-search {
+    width: 100%;
+    height: 100dvh;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    background: var(--background-primary);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-phone-layout="true"] .shortcut-search .search-container {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100dvh;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: calc(0.6rem + env(safe-area-inset-top, 0px)) 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: var(--background-primary) !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none;
+}
+
+/* The terminal line goes; the field below it is the line. */
+body[data-phone-layout="true"] .shortcut-search .search-prompt {
+    display: none;
+}
+
+body[data-phone-layout="true"] .shortcut-search .search-input-mobile {
+    position: static;
+    flex: none;
+    width: 100%;
+    height: 48px;
+    margin: 0 0 0.5rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 16px; /* smaller and iOS zooms the page when the field takes focus */
+    opacity: 1;
+    box-sizing: border-box;
+}
+
+body[data-phone-layout="true"] .shortcut-search .search-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0;
+}
+
+/* The modes, as one row of chips that scrolls sideways. */
+body[data-phone-layout="true"] .shortcut-search .search-scope-rail {
+    display: flex;
+    flex: none;
+    flex-direction: row;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0 0 0.5rem;
+    scrollbar-width: none;
+}
+body[data-phone-layout="true"] .shortcut-search .search-scope-rail::-webkit-scrollbar { display: none; }
+
+body[data-phone-layout="true"] .shortcut-search .search-scope-rail .search-mode-tab {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: auto;
+    min-height: 40px;
+    padding: 0 0.8rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.85rem;
+}
+body[data-phone-layout="true"] .shortcut-search .search-scope-rail .search-mode-tab[aria-pressed="true"] {
+    background: var(--accent-primary);
+    border-color: transparent;
+    color: var(--on-accent, #fff);
+}
+body[data-phone-layout="true"] .shortcut-search .search-scope-count,
+body[data-phone-layout="true"] .shortcut-search .search-scope-hint,
+body[data-phone-layout="true"] .shortcut-search .search-scope-rule,
+body[data-phone-layout="true"] .shortcut-search .search-mode-tab--door {
+    display: none;
+}
+
+/* Results: readable size, a row you can hit. */
+body[data-phone-layout="true"] .shortcut-search .search-matches {
+    flex: 1 1 auto;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* responsive.css sets the padding of a result to 0 on a narrow screen, which put the text against the edge. */
+body[data-phone-layout="true"] .shortcut-search .search-match {
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+body[data-phone-layout="true"] .shortcut-search .search-container { position: relative; }
+body[data-phone-layout="true"] .shortcut-search .search-close-mobile {
+    position: absolute;
+    top: calc(0.6rem + env(safe-area-inset-top, 0px));
+    right: 0.75rem;
+    z-index: 1;
+    width: 48px;
+    height: 48px;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.6rem;
+    touch-action: manipulation;
+}
+body[data-phone-layout="true"] .shortcut-search .search-input-mobile { padding-right: 3rem; }
+body[data-phone-layout="true"] .shortcut-search .search-matches,
+body[data-phone-layout="true"] .shortcut-search .search-matches * { overflow-wrap: anywhere; }
+.search-close-mobile { display: none; }
+body[data-phone-layout="true"] .shortcut-search .search-close-mobile:not([hidden]) { display: block; }
+
+/* One-time hint under the page name: a swipe changes page */
+.mobile-swipe-hint {
+    position: fixed;
+    z-index: 1200;
+    display: grid;
+    gap: 0.2rem;
+    max-width: min(18rem, calc(100vw - 1rem));
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--background-modal, var(--background-secondary));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    font-size: 0.85rem;
+}
+.mobile-swipe-hint::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: 1.5rem;
+    width: 10px;
+    height: 10px;
+    border-top: 1px solid var(--border-primary);
+    border-left: 1px solid var(--border-primary);
+    background: inherit;
+    transform: rotate(45deg);
+}
+.mobile-swipe-hint span { color: var(--text-secondary); }
+
+/* The assistant is not offered on a phone. */
+body[data-phone-layout="true"] .search-mode-tab[data-mode="assistant"] { display: none !important; }
+
+.mobile-back { min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--accent-primary); font: inherit; touch-action: manipulation; }
+.mobile-guide-list { margin: 0; padding: 0; list-style: none; }
+.mobile-guide-list li { display: grid; gap: 0.1rem; padding: 0.6rem 0; border-top: 1px solid var(--border-primary); }
+.mobile-guide-list li:first-child { border-top: 0; }
+.mobile-guide-list span { color: var(--text-secondary); font-size: 0.9rem; }
+
+/* ── Phone: the add / edit bookmark form, made for a thumb ──
+   Full screen already. What was left: 36px fields with 14px text (iOS zooms the
+   page when a field under 16px takes focus), a 32px close button, and 18-26px
+   buttons and chips. */
+body[data-phone-layout="true"] #bookmark-form-modal {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+body[data-phone-layout="true"] #bookmark-form-modal input[type="text"],
+body[data-phone-layout="true"] #bookmark-form-modal input[type="url"],
+body[data-phone-layout="true"] #bookmark-form-modal input[type="search"],
+body[data-phone-layout="true"] #bookmark-form-modal input:not([type]),
+body[data-phone-layout="true"] #bookmark-form-modal textarea,
+body[data-phone-layout="true"] #bookmark-form-modal select,
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-input {
+    min-height: 48px;
+    font-size: 16px;
+}
+
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-modal-close {
+    width: 48px;
+    height: 48px;
+    font-size: 1.6rem;
+    top: max(0px, env(safe-area-inset-top, 0px));
+}
+
+/* The footer: Delete, Cancel and Save are the three things that are pressed. */
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-action-btn {
+    min-height: 48px;
+    min-width: 72px;
+    padding: 0 1rem;
+    font-size: 1rem;
+}
+
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-actions,
+body[data-phone-layout="true"] #bookmark-form-modal [class*="bookmark-form-modal-footer"] {
+    gap: 0.6rem;
+    padding-bottom: max(0.6rem, env(safe-area-inset-bottom, 0px));
+}
+
+/* Small buttons and chips inside the fields. */
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-card-retry,
+body[data-phone-layout="true"] #bookmark-form-modal .tag-suggest-search,
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-card-pencil {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 0.95rem;
+}
+
+/* The info buttons are 18px glyphs: the glyph stays, the press area grows. */
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-checkmode-info,
+body[data-phone-layout="true"] #bookmark-form-modal [class*="info-btn"] {
+    position: relative;
+    min-width: 18px;
+    min-height: 18px;
+}
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-checkmode-info::after,
+body[data-phone-layout="true"] #bookmark-form-modal [class*="info-btn"]::after {
+    content: "";
+    position: absolute;
+    inset: -13px;
+}
+
+/* The availability pills and the Pinned toggle. */
+body[data-phone-layout="true"] #bookmark-form-modal [class*="checkmode"] label,
+body[data-phone-layout="true"] #bookmark-form-modal [class*="checkmode-pill"],
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-pin label {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.9rem;
+    font-size: 0.95rem;
+}
+
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-watch-toggle {
+    min-height: 56px;
+}
+
+/* One screen: the header and the footer stay, the fields between them scroll.
+   Taller controls made the dialog outgrow the window and the whole thing scrolled,
+   header and Save with it. */
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-modal-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh !important;
+    margin: 0;
+    border-radius: 0;
+}
+
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-actions {
+    /* A bar of its own, fixed to the bottom of the screen: Delete, Cancel and
+       Save are always there, however far down the fields are scrolled. */
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0.6rem 1rem max(0.6rem, env(safe-area-inset-bottom, 0px));
+    background: var(--background-modal, var(--background-secondary));
+    border-top: 1px solid var(--border-primary);
+    box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.18);
+}
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-actions .bookmark-inline-actions-end {
+    margin-left: auto;
+    display: flex;
+    gap: 0.6rem;
+}
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-actions .bookmark-inline-save { flex: 1 1 auto; }
+/* Room under the last field for the bar. */
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-modal-body {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-form { padding-bottom: 0; }
+
+/* The form does not move under a finger. Only the fields between the header and
+   the bar scroll, and only up and down: no rubber band, no sideways pan, no
+   dragging the sheet or its elements about. */
+body[data-phone-layout="true"] #bookmark-form-modal {
+    position: fixed;
+    inset: 0;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    touch-action: none;
+}
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-modal-dialog,
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-modal-header,
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-actions {
+    touch-action: none;
+    overflow-x: hidden;
+}
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-form-modal-body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+}
+/* Fields and buttons answer taps; a long press selects nothing and drags nothing. */
+body[data-phone-layout="true"] #bookmark-form-modal * {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+}
+body[data-phone-layout="true"] #bookmark-form-modal :is(label, h2, h3, button, .bookmark-form-modal-header, .bookmark-form-card, .config-bm-field-label) {
+    -webkit-user-select: none;
+    user-select: none;
+}
+body[data-phone-layout="true"] #bookmark-form-modal :is(input, textarea, select) {
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: manipulation;
+}
+
+/* Add and edit are the same sheet: the same two buttons, the same size, the same place. */
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-actions .bookmark-inline-save,
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-actions .bookmark-inline-cancel,
+body[data-phone-layout="true"] #bookmark-form-modal .bookmark-inline-actions-end .bookmark-inline-action-btn {
+    flex: 0 0 auto;
+    min-width: 96px;
+}
+
+/* ── Phone: the Inbox, made for a thumb ──
+   Phone layout only: the desktop list is untouched. The header buttons, filters
+   and fields reach 44px (and 16px text, so iOS does not zoom on focus); the
+   small things inside a row (tick box, site, tags) keep their size and get a
+   press area around them instead of a taller row. */
+body[data-phone-layout="true"] .inbox-layout :is(.lvs-action, .lvs-filter) {
+    min-height: 44px;
+    padding-inline: 0.9rem;
+    font-size: 0.95rem;
+    touch-action: manipulation;
+}
+body[data-phone-layout="true"] .inbox-layout :is(.inbox-domain-select, .inbox-sort-select, .inbox-search-input) {
+    min-height: 44px !important;
+    font-size: 16px !important;
+    touch-action: manipulation;
+}
+body[data-phone-layout="true"] .inbox-layout .inbox-search-input { flex: 1 1 10rem; min-width: 0; }
+
+/* The row: the title reads at body size, and each row has room. */
+body[data-phone-layout="true"] .inbox-layout .inbox-item { min-height: 64px; }
+body[data-phone-layout="true"] .inbox-layout .inbox-item-title { font-size: 1rem; line-height: 1.3; }
+
+/* The tick box: a 44px square to hit, the box itself a little larger. */
+body[data-phone-layout="true"] .inbox-layout .inbox-item-check {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: -10px -6px -10px -10px;
+    touch-action: manipulation;
+}
+body[data-phone-layout="true"] .inbox-layout .inbox-item-check-input { width: 22px; height: 22px; }
+
+/* Small buttons inside a row: a press area around the visible one. */
+body[data-phone-layout="true"] .inbox-layout :is(.inbox-item-domain-btn, .inbox-row-tag, .tag-offer-add, .tag-offer-refuse, .tag-offer-count-all) {
+    position: relative;
+    touch-action: manipulation;
+}
+body[data-phone-layout="true"] .inbox-layout :is(.inbox-item-domain-btn, .inbox-row-tag, .tag-offer-add, .tag-offer-refuse, .tag-offer-count-all)::after {
+    content: "";
+    position: absolute;
+    inset: -10px -8px;
+}
+/* The ✕ of a tag suggestion is 18px wide: give it room of its own so it is not hit by mistake. */
+body[data-phone-layout="true"] .inbox-layout .tag-offer-refuse { margin-inline-start: 0.5rem; }
+
+/* Press areas of 44px for the small controls of the phone screens. */
+.mobile-switch { position: relative; }
+.mobile-switch::before { content: ""; position: absolute; inset: -9px -4px; }
+.mobile-pill { display: inline-flex; align-items: center; min-height: 44px; }
+.mobile-chip { display: inline-flex; align-items: center; min-height: 44px; }
+.mobile-row[role="button"] { cursor: pointer; min-height: 44px; }
+.mobile-row[role="button"]:focus-visible, .mobile-h:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.mobile-h:focus { outline: none; }

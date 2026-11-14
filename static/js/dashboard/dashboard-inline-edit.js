@@ -1336,6 +1336,8 @@ class DashboardInlineEdit {
         // category is one click away from the field it belongs to — no trip to the
         // config view mid-edit. Picking it swaps the select for a name input.
         const NEW_OPTION_VALUE = '__new__';
+        // Pages and categories are made on a desktop: a phone's form has no "New…" entries.
+        const isPhoneForm = window.MobileExperience?.isPhoneLayout?.() === true;
 
         const mkNewOption = (labelText) => {
             const o = document.createElement('option');
@@ -1349,7 +1351,7 @@ class DashboardInlineEdit {
         catSelect.className = 'bookmark-inline-select';
         const fillCatSelect = (cats, selectedId) => {
             catSelect.replaceChildren();
-            catSelect.appendChild(mkNewOption(cfg('addNewCategoryOption', '➕ New category…')));
+            if (!isPhoneForm) catSelect.appendChild(mkNewOption(cfg('addNewCategoryOption', '➕ New category…')));
             const optEmpty = document.createElement('option');
             optEmpty.value = '';
             optEmpty.textContent = '—';
@@ -1390,7 +1392,7 @@ class DashboardInlineEdit {
             && sourcePageId === Number(unsortedPageId);
         const fillPageSelect = (pages, selectedId) => {
             pageSelect.replaceChildren();
-            pageSelect.appendChild(mkNewOption(cfg('addNewPageOption', '➕ New page…')));
+            if (!isPhoneForm) pageSelect.appendChild(mkNewOption(cfg('addNewPageOption', '➕ New page…')));
             const list = Array.isArray(pages) ? pages : [];
             let matched = false;
             if (isUnsortedSource) {
@@ -2045,7 +2047,11 @@ class DashboardInlineEdit {
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
         saveBtn.className = 'bookmark-inline-action-btn bookmark-inline-save';
-        saveBtn.textContent = isCreate ? cfg('addNewBookmark', 'Add bookmark') : cfg('saveChanges', 'Save');
+        // A phone's bar holds two buttons, so the label is the short one.
+        const onPhone = window.MobileExperience?.isPhoneLayout?.() === true;
+        // The add form and the edit form are one sheet on a phone, down to the
+        // label of the button that saves.
+        saveBtn.textContent = isCreate && !onPhone ? cfg('addNewBookmark', 'Add bookmark') : cfg('saveChanges', 'Save');
         saveBtn.setAttribute('aria-disabled', 'false');
         saveBtn.addEventListener('mousedown', (e) => {
             e.stopPropagation();
@@ -2113,11 +2119,13 @@ class DashboardInlineEdit {
             : d.formatDashboardLabel('inlineEditHint', {}, 'Ctrl+Enter to save · Esc to cancel');
         // Where you leave on the left -- the key hint when adding, Delete when
         // editing -- and the ways out on the right, with the one that saves last.
-        actions.appendChild(isCreate ? hint : deleteBtn);
+        // No key hint on a phone, and nothing to hold it: the bar is Cancel and Create.
+        if (!(isCreate && onPhone)) actions.appendChild(isCreate ? hint : deleteBtn);
         const actionsEnd = document.createElement('div');
         actionsEnd.className = 'bookmark-inline-actions-end';
         actionsEnd.appendChild(cancelBtn);
-        if (isCreate) actionsEnd.appendChild(createAnotherBtn);
+        // Create + New is for a keyboard and a stream of links; a phone adds one at a time.
+        if (isCreate && !onPhone) actionsEnd.appendChild(createAnotherBtn);
         actionsEnd.appendChild(saveBtn);
         actions.appendChild(actionsEnd);
 
@@ -3359,7 +3367,15 @@ class DashboardInlineEdit {
                     || row.classList.contains('is-draggable')) {
                     return;
                 }
-                this.openBookmarkInlineEditor(row, bookmarkRef);
+                // A phone has no right button, and iOS never sends a contextmenu
+                // event, so the menu would be out of reach there. Its first entry
+                // after the press is Edit, so nothing is lost.
+                if (window.MobileExperience?.isPhoneLayout?.() === true && this.dash?.contextMenu?.load) {
+                    const point = { x: startX, y: startY };
+                    void this.dash.contextMenu.load().then((menu) => menu.show(row, bookmarkRef, point)).catch(() => {});
+                } else {
+                    this.openBookmarkInlineEditor(row, bookmarkRef);
+                }
                 // The icon is a link to the same address, and the release that
                 // ends the press lands on whichever of the two it began on.
                 const links = row.querySelectorAll('a.bookmark-open, a.bookmark-icon-slot');

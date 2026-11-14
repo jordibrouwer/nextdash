@@ -949,3 +949,59 @@ body.no-animations[data-view-entering] * {
         animation: none !important;
     }
 }
+
+/* ── Column resize handles (column-resize.js) ─────────────────────────────
+   A handle sits in the gap left of a heading cell; dragging it left widens
+   the column. Faint while the heading is hovered, clear on the handle. */
+.cr-col:not(.lvs-colhead) {
+    position: relative;
+}
+
+.cr-handle {
+    position: absolute;
+    top: -0.4rem;
+    bottom: -0.4rem;
+    left: calc(var(--cr-gap, 0.75rem) / -2 - 4px);
+    width: 8px;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 2;
+}
+
+.cr-handle::after {
+    content: "";
+    position: absolute;
+    top: 20%;
+    bottom: 20%;
+    left: 3px;
+    width: 2px;
+    border-radius: 1px;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.lvs-colhead:hover .cr-handle::after,
+.tag-view-colhead:hover .cr-handle::after {
+    opacity: 0.2;
+}
+
+.cr-handle:hover::after,
+.cr-handle:focus-visible::after,
+.cr-handle.is-active::after {
+    opacity: 0.8;
+    background: var(--accent-primary);
+}
+
+.cr-handle:focus-visible {
+    outline: none;
+}
+
+body.cr-dragging {
+    cursor: col-resize;
+    user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cr-handle::after { transition: none; }
+}

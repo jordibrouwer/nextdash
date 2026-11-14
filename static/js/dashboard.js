@@ -84,6 +84,7 @@ class Dashboard {
             openLinksNewTabMobile: false,
             hideToastsMobile: true,
             hideCornerCardsMobile: true,
+            mobileHome: 'search',
             showFeedWatchIcon: true,
             feedWatchOpenOnReturn: false,
             feedStatsEnabled: true,

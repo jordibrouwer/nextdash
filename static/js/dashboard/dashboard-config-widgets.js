@@ -757,7 +757,7 @@
          * under it, so moving a page is not quietly a delete and a re-add.
          */
         const widgets = (destination.widgets || []).concat(moving.map((block) => ({
-            id: block.id, type: block.type, title: block.title, config: block.config || {},
+            id: block.id, type: block.type, title: block.title, config: block.config || {}, ...(block.visibleOn ? { visibleOn: block.visibleOn } : {}),
         })));
 
         const wrote = await this.writeFetch(`/api/pages/${target}/blocks`, {
@@ -3384,7 +3384,7 @@
             this._widgetBlocks = (blocks.order || []).map((id) => {
                 const widget = widgetById.get(id);
                 if (widget) {
-                    return { id, isWidget: true, type: widget.type, title: widget.title || '', config: widget.config || {} };
+                    return { id, isWidget: true, type: widget.type, title: widget.title || '', config: widget.config || {}, visibleOn: widget.visibleOn };
                 }
                 const category = categoryById.get(String(id));
                 return { id, isWidget: false, name: category?.name || id };
@@ -3435,6 +3435,7 @@
                         type: widget.type,
                         title: widget.title || '',
                         config: widget.config || {},
+                        visibleOn: widget.visibleOn,
                         pageId: Number(page.id),
                         pageName: page.name || String(page.id),
                     });
@@ -3893,7 +3894,7 @@
         const blocks = this._widgetBlocks || [];
         return {
             widgets: blocks.filter((b) => b.isWidget).map((b) => ({
-                id: b.id, type: b.type, title: b.title, config: b.config || {},
+                id: b.id, type: b.type, title: b.title, config: b.config || {}, ...(b.visibleOn ? { visibleOn: b.visibleOn } : {}),
             })),
             order: blocks.map((b) => b.id),
         };
@@ -3924,7 +3925,7 @@
             const widgets = (current.widgets || []).map((widget) => {
                 const block = edited.get(widget.id);
                 if (!block) return widget;
-                return { id: widget.id, type: block.type, title: block.title, config: block.config || {} };
+                return { id: widget.id, type: block.type, title: block.title, config: block.config || {}, ...(block.visibleOn ? { visibleOn: block.visibleOn } : {}) };
             });
 
             const wrote = await this.writeFetch(`/api/pages/${target}/blocks`, {

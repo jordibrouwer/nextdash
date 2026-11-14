@@ -394,6 +394,7 @@ class DashboardRenderCore {
             if (!Array.isArray(collection.bookmarks) || collection.bookmarks.length === 0) {
                 return;
             }
+            if (window.DashboardBlockVisibility?.drawn(d, collection.id) === false) return;
             const collectionBookmarks = d._sortSmartCollectionBookmarks(collection);
             columnBlocks.push({
                 category: {
@@ -427,6 +428,9 @@ class DashboardRenderCore {
             // Outside its window of the day, or off today: kept in the order
             // and out of the grid, like a widget that is switched off.
             if (!this.widgetIsScheduledNow(widget)) return;
+            // Kept for the other kind of screen: out of the grid here, in the
+            // order, and still on the grid while editing.
+            if (window.DashboardBlockVisibility?.drawn(d, widget.id) === false) return;
             columnBlocks.push({
                 widget,
                 category: {
@@ -449,6 +453,7 @@ class DashboardRenderCore {
             if (d.settings.hideEmptyCategories && categoryBookmarks.length === 0 && !justCreated) {
                 return;
             }
+            if (window.DashboardBlockVisibility?.drawn(d, id) === false) return;
             columnBlocks.push({ category, bookmarks: categoryBookmarks });
         });
 
@@ -519,6 +524,7 @@ class DashboardRenderCore {
         // rowheader, and the grid around them expects the pair.
         block.setAttribute('role', 'rowgroup');
         block.dataset.categoryId = widget.id;
+        window.DashboardBlockVisibility?.mark(d, block, widget.id);
         if (window.NDShine) window.NDShine.seed(block, widget.id);
         block.dataset.widgetId = widget.id;
         block.dataset.widgetType = widget.type || '';
@@ -2463,6 +2469,10 @@ class DashboardRenderCore {
         const before = widgets[index];
         const next = { ...before };
         if ('title' in patch) next.title = String(patch.title ?? '');
+        if ('visibleOn' in patch) {
+            if (patch.visibleOn === 'desktop' || patch.visibleOn === 'mobile') next.visibleOn = patch.visibleOn;
+            else delete next.visibleOn;
+        }
         if (patch.config) {
             const config = { ...(before.config || {}), ...patch.config };
             // undefined means "back to the default", and the default is the key
@@ -3145,6 +3155,7 @@ class DashboardRenderCore {
             categoryDiv.classList.add('animate-enter');
         }
         categoryDiv.setAttribute('data-category-id', category.id || '');
+        window.DashboardBlockVisibility?.mark(d, categoryDiv, category.id || '');
         if (window.NDShine) window.NDShine.seed(categoryDiv, category.id || category.name);
         categoryDiv.setAttribute('role', 'rowgroup');
         const isSmartCollection = category.isSmartCollection === true;

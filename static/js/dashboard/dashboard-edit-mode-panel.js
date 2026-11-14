@@ -40,6 +40,40 @@ class DashboardEditModePanel {
             options.map(([v, l]) => `<option value="${v}" ${v === value ? 'selected' : ''}>${this.esc(l)}</option>`).join('')}</select>`;
     }
 
+    /** Where the block shows: three choices, one eye. Read and written by DashboardBlockVisibility. */
+    visibleOnField(id) {
+        const vis = window.DashboardBlockVisibility;
+        if (!vis) return '';
+        const now = vis.get(this.dash, id);
+        const names = {
+            all: this.t('editMode.visibleAll', 'Everywhere'),
+            desktop: this.t('editMode.visibleDesktop', 'Desktop only'),
+            mobile: this.t('editMode.visibleMobile', 'Phone only'),
+        };
+        return `
+            <div class="config-bm-field" data-edit-field-wrap="visible-on">
+                <span class="config-bm-field-label">${this.esc(this.t('editMode.visibleOn', 'Show on'))}</span>
+                <div class="edit-panel-visible" role="group" aria-label="${this.esc(this.t('editMode.visibleOn', 'Show on'))}">${
+                    vis.MODES.map((m) => `<button type="button" class="config-btn config-btn--small" data-edit-visible="${m}" aria-pressed="${m === now}">${this.esc(names[m])}</button>`).join('')}</div>
+            </div>`;
+    }
+
+    bindVisibleOn(root, selection) {
+        const vis = window.DashboardBlockVisibility;
+        root.querySelectorAll('[data-edit-visible]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const mode = button.getAttribute('data-edit-visible');
+                if (mode === vis.get(this.dash, selection.id)) return;
+                if (!(await vis.set(this.dash, selection.id, mode))) {
+                    this.dash.showErrorNotification?.(this.t('editMode.saveFailed', 'Could not save.'));
+                    return;
+                }
+                this.dash.renderDashboard?.({ animate: false });
+                this.render(selection);
+            });
+        });
+    }
+
     /** What is known about the block, as label and value rows; a row without a value is left out. */
     facts(rows) {
         const shown = rows.filter(([, value]) => value !== null && value !== undefined && value !== '');
@@ -132,6 +166,10 @@ class DashboardEditModePanel {
             heading = this.widgetOf(selection.id)?.title || this.t('editMode.widget', 'Widget');
             label = this.t('editMode.widget', 'Widget');
             html = this.widgetHtml(selection);
+        } else if (selection.kind === 'collection') {
+            heading = this.mode.dash.renderCore?.blockName?.(selection.id) || this.t('editMode.collection', 'Collection');
+            label = this.t('editMode.collection', 'Collection');
+            html = `<div data-edit-section="collection" data-edit-id="${this.esc(selection.id)}">${this.visibleOnField(selection.id)}</div>`;
         } else {
             heading = this.t('editMode.block', 'Block');
             label = heading;
@@ -218,6 +256,7 @@ class DashboardEditModePanel {
                     [['rows', this.t('editMode.viewRows', 'Rows')], ['tiles', this.t('editMode.viewTiles', 'Tiles')]], view))}
                 ${this.field('sort', this.t('editMode.sort', 'Sort'), this.select('sort',
                     [['order', this.t('editMode.sortOrder', 'As placed')], ['az', this.t('editMode.sortAz', 'A to Z')], ['recent', this.t('editMode.sortRecent', 'Recently opened')]], sort))}
+                ${this.visibleOnField(selection.id)}
                 ${actions}
             </div>`;
     }
@@ -274,6 +313,7 @@ class DashboardEditModePanel {
         const root = this.el.querySelector('[data-edit-section="category"]');
         if (!root) return;
         const name = root.querySelector('[data-edit-field="name"]');
+        this.bindVisibleOn(root, selection);
         name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
         name.addEventListener('change', () => { void this.saveName(selection, name.value); });
         // The count of broken links comes from the Health report, which is a request of its own.
@@ -462,6 +502,7 @@ class DashboardEditModePanel {
                 ${this.field('widget-width', this.t('editMode.width', 'Width'), this.select('widget-width',
                     [['one', this.t('editMode.widthOne', 'One column')], ['wide', this.t('editMode.widthWide', 'Wide')]], wide ? 'wide' : 'one', blocked))}
                 ${this.widthNote(blocked, widthWhy)}
+                ${this.visibleOnField(selection.id)}
                 <p class="edit-panel-note" data-edit-widget-state>${this.esc(state)}</p>
                 <div class="edit-panel-actions">
                     <button type="button" class="config-btn config-btn--small" data-edit-action="widget-settings">${this.esc(this.t('editMode.widgetSettings', 'Settings…'))}</button>
@@ -476,6 +517,7 @@ class DashboardEditModePanel {
         const root = this.el.querySelector('[data-edit-section="widget"]');
         if (!root) return;
         const name = root.querySelector('[data-edit-field="widget-name"]');
+        this.bindVisibleOn(root, selection);
         name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
         name.addEventListener('change', async () => {
             const widget = this.widgetOf(selection.id);
@@ -526,6 +568,10 @@ class DashboardEditModePanel {
         if (selection.kind === 'category') this.bindCategory(selection);
         else if (selection.kind === 'page') this.bindPage(selection);
         else if (selection.kind === 'widget') this.bindWidget(selection);
+        else if (selection.kind === 'collection') {
+            const root = this.el.querySelector('[data-edit-section="collection"]');
+            if (root) this.bindVisibleOn(root, selection);
+        }
     }
 }
 

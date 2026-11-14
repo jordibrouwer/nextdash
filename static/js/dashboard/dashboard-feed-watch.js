@@ -190,7 +190,8 @@ class DashboardFeedWatch {
             res = await this._fetch()('/api/feeds/watch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bookmarkUrl: url, feeds }),
+                // seed: the feed's newest entries start as news, so the popover has something to show.
+                body: JSON.stringify({ bookmarkUrl: url, feeds, seed: true }),
             });
         } catch {
             return { ok: false, error: 'network' };

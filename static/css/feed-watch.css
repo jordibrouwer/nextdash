@@ -623,7 +623,14 @@ body.no-animations .feed-news-bar > i { transition: none; }
     }
     to { transform: scale(1); opacity: 1; }
 }
-@keyframes feed-news-pop-shrink { to { opacity: 0; } }
+/* Out is in, backwards: back to the size and place it grew from, and gone. */
+@keyframes feed-news-pop-shrink {
+    from { transform: scale(1); opacity: 1; }
+    to {
+        transform: translate(var(--feed-pop-rise-x, 0px), var(--feed-pop-rise, -6px)) scale(var(--feed-pop-scale-x, 1), var(--feed-pop-scale-y, 0.2));
+        opacity: 0;
+    }
+}
 @media (prefers-reduced-motion: reduce) {
     .move-popover:is(.feed-news-pop, .feed-news-pop-closing) { animation: none !important; }
 }
@@ -1345,3 +1352,95 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     .feed-news-index.is-wide { grid-template-columns: minmax(0, 1fr); }
     .is-paper .is-wide > .feed-news-item:nth-child(2) { border-top: 1px solid #cdc3a8; }
 }
+
+/* ── The popover and its bookmark read as one ──
+   While it is open the row wears a ring in the accent colour, the pointer under
+   the popover is drawn in that colour too, and the head carries the feed mark
+   and the site's name. A feed that was just added is offered with a little more
+   motion: the ring pulses twice, the pointer nods, and a line says why it opened. */
+.bookmark-link.feed-pop-anchor {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-4, 8px);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    animation: feed-pop-anchor-pulse 900ms ease-out 2;
+}
+@keyframes feed-pop-anchor-pulse {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 55%, transparent); }
+    100% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent-primary) 0%, transparent); }
+}
+
+:is(.feed-news-pop, .feed-news-pop-closing) {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+}
+/* A bigger pointer, in the ring's colour. */
+:is(.feed-news-pop, .feed-news-pop-closing)::before {
+    width: 14px; height: 14px; top: -8px;
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+}
+.feed-news-pop.is-offer:not(.is-above):not(.is-arrowless)::before {
+    animation: feed-pop-arrow-nod 1.1s ease-in-out 3;
+}
+@keyframes feed-pop-arrow-nod {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -4px; }
+}
+.feed-news-pop.is-offer.is-side:not(.is-left)::before { animation-name: feed-pop-arrow-nod-side; }
+@keyframes feed-pop-arrow-nod-side {
+    0%, 100% { translate: 0 0; }
+    50% { translate: -4px 0; }
+}
+
+.feed-news-pop-head {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+.feed-news-pop-glyph { flex: none; color: var(--accent-primary); }
+.feed-news-pop-offer {
+    margin: 0;
+    padding: 0.45rem 0.8rem;
+    border-bottom: 1px solid var(--border-secondary);
+    color: var(--text-secondary);
+    font-size: var(--text-sm, 0.85rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-link.feed-pop-anchor,
+    .feed-news-pop.is-offer::before { animation: none !important; }
+}
+body[data-animations="off"] .bookmark-link.feed-pop-anchor,
+body.no-animations .bookmark-link.feed-pop-anchor,
+body.no-animations .feed-news-pop.is-offer::before { animation: none !important; }
+
+/* The pointer is its own element now (placePointer), so the popover's corner
+   diamond steps aside. It takes the popover's ground and the ring's colour. */
+:is(.feed-news-pop, .feed-news-pop-closing)::before { display: none !important; }
+.feed-pop-pointer {
+    position: fixed;
+    z-index: 10001;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    rotate: 45deg;
+    background: var(--background-secondary);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    animation: feed-pop-pointer-in 180ms ease-out both;
+}
+.feed-pop-pointer[data-dir="down"] { rotate: 225deg; }
+.feed-pop-pointer[data-dir="left"] { rotate: -45deg; }
+.feed-pop-pointer[data-dir="right"] { rotate: 135deg; }
+@keyframes feed-pop-pointer-in { from { opacity: 0; scale: 0.4; } to { opacity: 1; scale: 1; } }
+.feed-pop-pointer.is-offer { animation: feed-pop-pointer-in 180ms ease-out both, feed-pop-pointer-nod 1.1s ease-in-out 360ms 3; }
+@keyframes feed-pop-pointer-nod { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+.feed-pop-pointer.is-offer[data-dir="down"] { animation-name: feed-pop-pointer-in, feed-pop-pointer-nod-down; }
+@keyframes feed-pop-pointer-nod-down { 0%, 100% { translate: 0 0; } 50% { translate: 0 4px; } }
+.feed-pop-pointer.is-offer[data-dir="left"] { animation-name: feed-pop-pointer-in, feed-pop-pointer-nod-left; }
+@keyframes feed-pop-pointer-nod-left { 0%, 100% { translate: 0 0; } 50% { translate: -4px 0; } }
+.feed-pop-pointer.is-offer[data-dir="right"] { animation-name: feed-pop-pointer-in, feed-pop-pointer-nod-right; }
+@keyframes feed-pop-pointer-nod-right { 0%, 100% { translate: 0 0; } 50% { translate: 4px 0; } }
+@media (prefers-reduced-motion: reduce) { .feed-pop-pointer { animation: none !important; } }
+body.no-animations .feed-pop-pointer, body[data-animations="off"] .feed-pop-pointer { animation: none !important; }
+
+.feed-pop-pointer.is-closing { animation: feed-pop-pointer-out 160ms ease-in forwards !important; }
+@keyframes feed-pop-pointer-out { to { opacity: 0; scale: 0.3; } }

@@ -273,6 +273,7 @@
             table.style.setProperty('--tag-view-rows', String(this.rows.length));
             table.setAttribute('role', 'grid');
             table.appendChild(this.buildColHead());
+            this.registerColumnResize(table);
             this.rows.forEach((b, i) => table.appendChild(this.buildRow(b, i)));
             // A tick on a row the filters now hide is dropped: the bar acts on
             // what the reader can see.
@@ -391,9 +392,38 @@
                             : { key: sortKey, dir: null });
                     });
                 }
+                if (window.ColumnResize && !['check', 'name'].includes(key)) {
+                    cell.classList.add('cr-col');
+                    cell.appendChild(window.ColumnResize.handle('tags', key));
+                } else if (key === 'name') {
+                    cell.setAttribute('data-cr-flex', '');
+                }
                 head.appendChild(cell);
             });
             return head;
+        }
+
+        /** Saved column widths (column-resize.js) over the table's default tracks. */
+        registerColumnResize(table) {
+            const CR = window.ColumnResize;
+            if (!CR) return;
+            const base = ['1.75rem', 'minmax(0, 2.4fr)', 'minmax(0, 1.6fr)', 'minmax(5rem, 0.8fr)', '4rem', '7.5rem', '3.5rem'];
+            const ids = DashboardTagView.COLUMNS.map(([key]) => key);
+            const paint = (el, widths) => {
+                if (Object.keys(widths).length) el.style.setProperty('--tag-view-cols', CR.template('tags', base, ids));
+                else el.style.removeProperty('--tag-view-cols');
+            };
+            CR.register('tags', {
+                label: this.t('dashboard.resizeColumn', 'Resize column'),
+                freeze: true,
+                apply: (widths) => {
+                    const live = document.querySelector('.tag-view .tag-view-table');
+                    if (live) paint(live, widths);
+                },
+                refit: () => window.TagOfferRow?.fit([...document.querySelectorAll('.tag-view-row .tag-view-tags')],
+                    { tag: '.tag-view-chip', more: '.tag-view-chip--more' }),
+            });
+            paint(table, CR.get('tags'));
         }
 
         /** Everything the list shows, or nothing. */

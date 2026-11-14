@@ -356,6 +356,11 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 <summary><b>23.</b> <a href="#23-phones-tablets-and-the-installed-app">Phones, tablets and the installed app</a></summary>
 
 - [What changes on a phone or tablet](#23-phones-tablets-and-the-installed-app)
+- [The tab bar](#the-tab-bar)
+- [The start screen](#the-start-screen)
+- [Search on a phone](#search-on-a-phone)
+- [Status and pausing notifications](#status-and-pause)
+- [Show a block on desktop or phone only](#show-on)
 - [Touch gestures](#touch-gestures)
 - [Install as an app](#install-as-an-app)
 
@@ -1017,6 +1022,8 @@ Edit mode changes the dashboard itself without a trip to Config: names, icons, w
 
 **While it is on.** A bar at the top says so. A click on a bookmark selects its block instead of opening it, the grid's bare letters, arrows and `Enter` are left alone, and the link preview card stays away and comes back afterwards if you have it on. Clicking a page tab still switches page, and the panel shows that page. `Esc` goes from the inside out: a dialog or menu first, then a field in the panel gives the focus back, then the mode ends.
 
+**Show on.** A category, widget or collection can show everywhere, on desktop only or on the phone only; the panel and the **⋯** menu of the block offer it ([§23](#show-on)). A block hidden on this screen stays on the grid while edit mode is on, dimmed and labelled *Hidden on desktop* or *Hidden on phone*.
+
 **The panel.** It opens at the right when you click a block, drawn like the side panel of the views, and the grid gives way. Changes are saved as you make them; `Esc` in a text field puts the old text back.
 
 | You select | The panel offers |
@@ -1155,7 +1162,7 @@ Change the address and the whole read starts again; only the latest one counts.
 - **Save** or **`Ctrl + Enter`** saves. **Create + New** saves and clears the form for the next one, keeping page and category.
 - **Before it saves**, the form asks: with no page it says a bookmark needs one; with no category it asks **Save without** or **Choose a category**; a link already on another page is named, with **Save anyway**; a link already on the same page is refused, naming the bookmark that has it.
 - **The keyboard alone** fills in the whole form: `Tab` walks the fields in order and wraps round inside the form, and `Escape` closes the innermost thing first — the tag list, the icon menu, the page list — and the form last. The dashboard behind it does not scroll.
-- On a phone the form leaves out the icon and note fields; existing values are kept.
+- On a phone the form leaves out the icon and note fields (existing values are kept), has **Cancel** and **Create** only, and offers no *New page…* or *New category…* ([§23](#23-phones-tablets-and-the-installed-app)).
 
 This same form, titled **Promote bookmark**, is how an Unsorted bookmark from the inbox or the Bookmarks view gets a page ([§11.11](#1111-unsorted-and-promote)).
 
@@ -1988,6 +1995,8 @@ A bookmark that is a container's web UI carries a small **cube** after its title
 
 **Column headings** name the columns View shows and stay in place while the list scrolls (not at phone width). Every heading with a value under it sorts: a click sorts by that column in its natural order — Name and Tags A to Z (by the first tag, untagged last), Shortcut the keyed ones first, Usage the most opens in the sparkline's window first, Opens, Last opened and Added highest or newest first, Pinned the pinned ones first, Score the worst first — and a second click turns it round. An arrow on the heading shows which way the list runs; **Sort** follows, and picking from **Sort** starts afresh in the natural order. `Enter` or `Space` on a focused heading does the same.
 
+**Column widths.** Drag the left border of a column heading to widen that column, or narrow it; the name column gives way, so the row never outgrows its box. Double-click the border, or press `Delete` on it, to put the column back; the arrow keys move a focused border. Tag chips refit as the width changes: more chips when it is wider, folded into *+n* when it is narrower. The same borders are in the Tags view, the Inbox and the Containers view. Widths are kept per view on the device, not on the server, and a click on a border never sorts.
+
 <a id="113-the-side-panel"></a>
 
 ### 11.3 The side panel
@@ -2525,7 +2534,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 <a id="quiet-hours"></a>
 
-**Quiet hours.** Under **Monitoring → Schedules → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. Outgoing webhooks ([§20.3](#203-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
+**Quiet hours.** Under **Monitoring → Schedules → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. A pause set by hand from the phone's Status screen ([§23](#status-and-pause)) holds notices the same way, for 1 hour or until 07:00 tomorrow, and skips feed news pushes; the line then says when the pause ends, with a **Resume now** button. Outgoing webhooks ([§20.3](#203-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
 
 <p align="center"><img src="screenshots/manual.md/12-quiet-hours.jpg" alt="The Quiet hours panel: Hold notices during quiet hours ticked, a window from 02:00 to 03:00 on every day, and Always let through with an expired certificate, a mass outage and a failed backup ticked" width="860"></p>
 <p align="center"><sub>Quiet hours, and the kinds of notice that always get through.</sub></p>
@@ -2751,7 +2760,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.1 Following a site
 
-- **Start.** Right-click a bookmark → **Watch this feed…**, or use the same button in the bookmark editor. nextDash lists the feeds the page advertises (and tries the usual addresses when the page says nothing, as it does behind a cookie wall); tick one or more, or paste an address. Choose how often to check: 30 minutes, 1, 2, 4, 6, 12 or 24 hours. **Also check that this page is reachable (Periodic)** is ticked by default while the bookmark's checking is off. Up to 100 feeds can be watched. When you save, nextDash reads the feed once and counts what is already there as seen, so a bookmark shows no news until the site publishes something new; until then a click opens the site as usual. A toast says so.
+- **Start.** Right-click a bookmark → **Watch this feed…**, or use the same button in the bookmark editor. nextDash lists the feeds the page advertises (and tries the usual addresses when the page says nothing, as it does behind a cookie wall); tick one or more, or paste an address. Choose how often to check: 30 minutes, 1, 2, 4, 6, 12 or 24 hours. **Also check that this page is reachable (Periodic)** is ticked by default while the bookmark's checking is off. Up to 100 feeds can be watched. When you add a feed, nextDash reads it once and takes the ten newest posts as unread news, then opens the popover on the bookmark's row with them ([§14.2](#142-what-you-see)), on a computer and on a phone; when the bookmark is not on the page in view, nothing opens. The row wears a ring in the accent colour while the popover is open, and a pointer runs from the popover to the row; closing it folds it back into the bookmark. A feed you edit or retry stays silent about what is old, so it shows news only when the site publishes something new. A script or the MCP tools that save a feed without asking for this (`seed` left out) get the plain baseline: what is there counts as seen.
 - **The window's buttons.** **Stop watching** (when the feed is watched) stands on the left; **Save**, in the accent colour, and **Cancel**, in the warning colour, stand together on the right. Saving leaves the dashboard where it was scrolled. The empty Watch feeds section explains how to start.
 - **Keys.** `Shift + W` opens the news; `w` watches the feed of the bookmark in hand (or changes or stops it).
 
@@ -5176,29 +5185,85 @@ Use `--data-urlencode`: an address with its own `?a=1&b=2` breaks a hand-built q
 ## 23. 📱 Phones, tablets and the installed app
 
 > [!NOTE]
-> **In short:** nextDash adapts to touch screens, with its own layout, gestures and long-press editing. Add it to the home screen to install it as an app and share links to it.
+> **In short:** on a phone nextDash has its own way around: a tab bar with Home, Search, Inbox, Status and More, a Status screen that can pause notifications, and a short menu when you press and hold a bookmark. Add it to the home screen to install it as an app and share links to it.
 
-nextDash adapts to touch screens (a touch device without a hover pointer) rather than to window width alone.
+nextDash adapts to touch screens (a touch device without a hover pointer) rather than to window width alone. A tablet keeps the desktop layout; the phone layout below is for a phone.
 
-<p align="center"><img src="screenshots/manual.md/22-phone.jpg" alt="The dashboard on a phone: one column with the page name, the Today and Fresh categories and the Health widget" width="300"> <img src="screenshots/manual.md/22-phone-bookmarks.jpg" alt="The Bookmarks view on a phone: the header band, the search, a Filters button for the rail, Group and Sort, and the list of bookmarks with their scores" width="300"></p>
+<p align="center"><img src="screenshots/manual.md/22-phone.jpg" alt="The dashboard on a phone: one column with the page name, the Today and Health categories, a round + button and the tab bar at the bottom" width="300"> <img src="screenshots/manual.md/22-phone-bookmarks.jpg" alt="The Bookmarks view on a phone: the header band, the search, a Filters button for the rail, Group and Sort, and the list of bookmarks with their scores" width="300"></p>
 <p align="center"><sub>The dashboard in one column, and the Bookmarks view with its rail behind <b>Filters</b>.</sub></p>
+
+<a id="the-tab-bar"></a>
+
+### 23.1 The tab bar
+
+On a phone the footer with search and add is replaced by a bar with five tabs. **Inbox** and **Status** carry a counter: unread inbox items, and services that are down or failing their check. A round **+** button on the grid keeps the old way to add a bookmark.
+
+| Tab | What it opens |
+|---|---|
+| **Home** | The start screen: a big search field and one line about your services, or an *is everything fine?* card with search below it ([Start screen](#the-start-screen)) |
+| **Search** | A compact search sheet ([Search on a phone](#search-on-a-phone)) |
+| **Inbox** | The Inbox, with 44 px targets for a thumb |
+| **Status** | Every monitored bookmark with its state, the news of watched feeds and the pause for notifications |
+| **More** | Quick settings, the start screen choice, a guide to what works on a phone, and a link to send yourself |
+
+<a id="the-start-screen"></a>
+
+**The start screen.** Home opens in one of two ways, chosen in **More** (or under **Config → Behavior → General → On phones and tablets → Phone start screen**). **Search first** (the default) puts a large search field on top with one line about your services and your recently opened bookmarks as chips. **Status first** puts a card on top, *11 of 11 fine* with a meter, and search below it. The choice is per device: it follows the device-specific settings, so your phone and your computer need not agree.
+
+<p align="center"><img src="screenshots/manual.md/23-phone-home-search.jpg" alt="The phone start screen with search first: the page name, a search field, chips of recently opened bookmarks, a green line All services fine, the Today category and the tab bar" width="300"> <img src="screenshots/manual.md/23-phone-home-status.jpg" alt="The phone start screen with status first: a card Services 11 of 11 fine with a green meter, a search field below it, then the Today category and the tab bar" width="300"></p>
+<p align="center"><sub>The two start screens: search first, and status first.</sub></p>
+
+<a id="search-on-a-phone"></a>
+
+**Search on a phone.** The **Search** tab opens a full-screen sheet with a real field (it takes the keyboard and its Search key), the modes as a row of chips (everything, `:` commands, `!` finders, `#` tags) and bigger result rows, with a close button because a phone has no `Escape`. Typing searches bookmark names; the desktop default only matches shortcuts. Letters that match a bookmark shortcut no longer open that bookmark on the way to a longer word: open it with a tap or the Search key. The assistant is not offered on a phone.
+
+<p align="center"><img src="screenshots/manual.md/23-phone-search.jpg" alt="The search sheet on a phone: a field with doc typed in it, the mode chips everything, commands, finders and tags, and grouped results: filters, best matches such as Docker docs, MDN Web Docs and Go Documentation, and further groups" width="300"></p>
+<p align="center"><sub>The search sheet, with <code>doc</code> typed in.</sub></p>
+
+<a id="status-and-pause"></a>
+
+**Status.** The Status tab lists every monitored bookmark with a colour: green when it is up, amber when its certificate runs out within 14 days, red when it is down, with the uptime of the last 24 hours or the error. A card shows how many items of the watched feeds are unread and opens the news, because the News button is a desktop control. Tap a row for the short menu, which opens the service or its feed.
+
+**Pausing notifications.** Under the list, **Pause for 1 hour** and **Until tomorrow** (07:00) stop notifications at once. The server holds the alerts the way quiet hours do ([§12](#12-checks-health)) and sums them up afterwards, except what **Always let through** allows, and feed news pushes are skipped. While a pause runs, Status says when it ends and offers **Resume notifications**, and **Config → Monitoring → Schedules** shows the same pause with a **Resume now** button. The same switch is under **Pause notifications** in More.
+
+<p align="center"><img src="screenshots/manual.md/23-phone-status.jpg" alt="The Status screen on a phone: the heading Status, the line Everything is fine, and a list of monitored services such as Docker docs, GitHub and Hacker News, each with a green dot and 100.0% up in 24 h, above the tab bar with Status highlighted" width="300"> <img src="screenshots/manual.md/23-phone-more.jpg" alt="The More screen on a phone: Quick settings with switches for Dark mode, Compact rows and Pause notifications, a Start screen choice between Search first and Status first, a What works on a phone button and an Only on desktop card with a Send the link to myself button" width="300"></p>
+<p align="center"><sub>Status, and More.</sub></p>
+
+**More.** Quick settings has **Dark mode**, **Compact rows** (off goes back to the row height you had) and **Pause notifications**. Below come the start screen choice, **What works on a phone** (one screen listing what works on the phone and what needs a desktop; it is also what the cheat sheet opens on a phone) and **Only on desktop**, with **Send the link to myself** to open nextDash on a computer for the rest: Structure, container management, data and backups.
+
+**The quick start waits for a desktop.** On a phone the quick start does not open; Home says to go through it once on a computer first.
+
+**The Inbox.** The header buttons, the filters, the site and sort selects and the search field are 44 px high (the fields with 16 px text, so iOS does not zoom on focus), the tick box has a 44 px target and the small things in a row have a press area around them. The desktop Inbox is as it was.
+
+<p align="center"><img src="screenshots/manual.md/23-phone-inbox.jpg" alt="The Inbox on a phone: the Inbox heading, a Triage button, the filters All 18, Unread 10 and Snoozed 3, the site and sort selects, the search field and the first items, each with a tick box, a title, its site and its age" width="300"> <img src="screenshots/manual.md/23-phone-menu.jpg" alt="The short bookmark menu on a phone, opened by a press and hold on GitHub: Open in new tab, Copy URL, Copy name + URL, Edit, Unpin, Tags, Move to, Watch this feed and Delete" width="300"></p>
+<p align="center"><sub>The Inbox, and the short menu of a bookmark.</sub></p>
+
+**The short bookmark menu.** Press and hold a bookmark on the grid, in the Inbox or on the Status screen. The menu holds what a thumb does: open in a new tab, copy, share, edit, pin, tags, move, watch the feed and delete (on Status only the first four and watch). It has no QR code, no checking or network entries, no selecting and no key chips.
+
+**Forms.** The bookmark edit form is a full screen of its own: the header stays on top, **Delete**, **Cancel** and **Save** sit in a bar fixed to the bottom, and the fields between them scroll. Fields are 48 px high with 16 px text. The new-bookmark form has **Cancel** and **Create** only (no **Create + New**, no key hint, and no *New page…* or *New category…* entries: pages and categories are made on a desktop), and only its fields scroll.
+
+**Swiping pages.** With more than one page, a hint under the page name says once that a swipe left or right changes page.
 
 | | Phone | Tablet and desktop |
 |---|---|---|
 | **Header** | The page name and a **← →** hint: swipe sideways to change page. The clock, the page tabs and the destinations drop away | Full header |
-| **Action buttons** | Search | As configured |
-| **Commands and finders** | The `:` and `!` tabs in the search panel | Buttons or keys |
+| **Bottom bar** | The tab bar | The action buttons, as configured |
+| **Commands and finders** | The `:` and `!` chips in the search sheet | Buttons or keys |
 | **Tag filter** | `tag:` in search, or `:tag` | The tag cloud (`/`) |
-| **Page filter** | A bar stays above the bookmarks, full width; it does not take focus until you tap it, and the **×** and `Escape` empty it | `Shift + F` |
+| **Page filter** | Not offered | `Shift + F` |
 | **Preview cards** | Off | As configured |
 | **Categories** | One column each | Can spread |
 | **Config** | All sections; the section list scrolls sideways | Rail and content side by side |
 | **Bookmarks view** | Rail as a drawer, side panel as a sheet | Rail, list and panel |
 | **Theme editor** | Read-only | Full |
-| **Quick start bar** | Skipped | Shown on first visit |
+| **Quick start** | Waits for a desktop | Shown on first visit |
+| **Blocks** | Those set to *Everywhere* or *Phone only* | Those set to *Everywhere* or *Desktop only* |
 
-**On phones and tablets.** Three switches under **Config → Behavior → General → On phones and tablets** act on a touch screen only; on a computer they change nothing. **Open links in a new tab on phones** (off) opens bookmark and result links in a new tab; without it they open in the same tab, whatever **Open links in a new tab** says. **Hide notifications on phones (errors stay)** (on) keeps the toasts away so nothing covers the page; errors still show. **Hide corner cards on phones** (on) holds back the invitations and reports in the bottom-left corner; they are not dismissed and show again on a computer or when you switch it off.
+<a id="show-on"></a>
 
+**Show a block on desktop only or on the phone only.** A category, widget or collection has a **Show on** choice: *Everywhere*, *Desktop only* or *Phone only* (a tablet counts as a desktop). Set it in the edit panel ([§4](#edit-mode)), in the **⋯** menu of the block's header (also on the phone), or without edit mode under **Config → Structure**, where the Categories and Collection sizes lists have a **Show on** column. In edit mode a block hidden on the screen you are on stays on the grid, dimmed and labelled *Hidden on desktop* or *Hidden on phone*, so nothing gets lost. The settings are `visibleOn` and `collectionVisibleOn`.
+
+**On phones and tablets.** Four switches under **Config → Behavior → General → On phones and tablets** act on a touch screen only; on a computer they change nothing. **Open links in a new tab on phones** (off) opens bookmark and result links in a new tab; without it they open in the same tab, whatever **Open links in a new tab** says. **Hide notifications on phones (errors stay)** (on) keeps the toasts away so nothing covers the page; errors still show. **Hide corner cards on phones** (on) holds back the invitations and reports in the bottom-left corner; they are not dismissed and show again on a computer or when you switch it off. **Phone start screen** chooses what Home opens with ([above](#the-start-screen)).
 
 <a id="touch-gestures"></a>
 
@@ -5206,7 +5271,7 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 
 | Gesture | Action |
 |---|---|
-| Long-press a bookmark | Edit in place |
+| Press and hold a bookmark | The short menu: open, copy, share, edit, pin, tags, move, watch, delete |
 | Drag the grip over a bookmark's icon | Move it; the rest of the row scrolls the page, so a swipe that starts on a row never grabs it |
 | Long-press a category header or a widget title | Rename |
 | Swipe sideways | Change page |

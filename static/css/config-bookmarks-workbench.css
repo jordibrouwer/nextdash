@@ -3461,6 +3461,12 @@ html body .config-bm-more-menu .config-btn {
     text-align: right;
 }
 
+/* A heading with a resize handle fills its column (the handle sits on the
+   column's edge, not on the edge of its text); the text stays at the right. */
+.config-bm-workbench.is-library .config-bm-colhead > .config-bm-colhead-end.cr-col {
+    justify-self: stretch;
+}
+
 .config-bm-colhead .config-bm-pinned svg {
     width: 0.85rem;
     height: 0.85rem;

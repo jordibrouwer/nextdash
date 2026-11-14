@@ -3028,6 +3028,55 @@
         "appearanceTab": "layout"
       },
       "since": "v1.28.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeaturePhoneTitle",
+      "titleFallback": "A phone layout of its own",
+      "whatKey": "config.overviewNewFeaturePhoneWhat",
+      "whatFallback": "On a phone, nextDash now has a tab bar with Home, Search, Inbox, Status and More. Status lists every monitored bookmark and pauses notifications for an hour or until tomorrow, Search is a compact sheet, and a press and hold on a bookmark opens a short menu.",
+      "howKey": "config.overviewNewFeaturePhoneHow",
+      "howFallback": "Open nextDash on a phone. Config → Behavior → General → On phones and tablets picks the start screen: search first or status first.",
+      "enableKey": "config.overviewNewFeaturePhoneEnable",
+      "enableFallback": "On by default on a phone. Tablets and computers keep the layout they have.",
+      "ctaKey": "config.overviewNewFeaturePhoneCta",
+      "ctaFallback": "Open General →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "general"
+      },
+      "since": "v1.29.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureResizeColumnsTitle",
+      "titleFallback": "Resize list columns",
+      "whatKey": "config.overviewNewFeatureResizeColumnsWhat",
+      "whatFallback": "Drag the left border of a column heading in the Bookmarks view, the Tags view, the Inbox or Containers to widen or narrow that column. The name column gives way, and tag chips refit to the width.",
+      "howKey": "config.overviewNewFeatureResizeColumnsHow",
+      "howFallback": "Open the Bookmarks view and drag a column border. Double-click it to put the column back.",
+      "enableKey": "config.overviewNewFeatureResizeColumnsEnable",
+      "enableFallback": "On by default. Widths are kept per view on this device.",
+      "ctaKey": "config.overviewNewFeatureResizeColumnsCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "view": "bookmarks"
+      },
+      "since": "v1.29.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureNewFeedPostsTitle",
+      "titleFallback": "A new feed shows its latest posts at once",
+      "whatKey": "config.overviewNewFeatureNewFeedPostsWhat",
+      "whatFallback": "When you start watching a feed, nextDash fetches its ten newest posts and opens them in a popover on the bookmark’s row, so you see what you are following straight away.",
+      "howKey": "config.overviewNewFeatureNewFeedPostsHow",
+      "howFallback": "Right-click a bookmark and choose Watch this feed…, or press w on it.",
+      "enableKey": "config.overviewNewFeatureNewFeedPostsEnable",
+      "enableFallback": "On by default, on a computer and on a phone.",
+      "ctaKey": "config.overviewNewFeatureNewFeedPostsCta",
+      "ctaFallback": "Open Watch feeds →",
+      "go": {
+        "section": "feed-watch"
+      },
+      "since": "v1.29.0"
     }
   ]
 }

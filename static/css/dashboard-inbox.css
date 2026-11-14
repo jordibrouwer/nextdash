@@ -1021,7 +1021,7 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
 
 .inbox-item-line1 {
     display: grid;
-    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: var(--inbox-cols, 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto);
     align-items: center;
     gap: var(--space-3, 0.75rem);
     min-height: 1.8rem;
@@ -1068,7 +1068,7 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
    inset, so each stands over its column. */
 .inbox-colhead {
     display: grid;
-    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: var(--inbox-cols, 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto);
     align-items: center;
     gap: var(--space-3, 0.75rem);
     min-height: 2rem;
@@ -1078,6 +1078,12 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
 
 .inbox-colhead .inbox-colhead-when {
     justify-self: end;
+}
+
+/* With a resize handle the heading fills its column, text still at the right. */
+.inbox-colhead .inbox-colhead-when.cr-col {
+    justify-self: stretch;
+    text-align: right;
 }
 
 /* Title, site, tags, when: placed by column rather than in order, so a row

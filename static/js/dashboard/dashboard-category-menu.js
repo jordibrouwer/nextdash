@@ -112,6 +112,7 @@ class DashboardCategoryMenu {
                 detail: canWiden ? '' : this.t('widgetMenuWidthUnavailableShort', 'One column on this dashboard'),
                 disabled: !canWiden && !wide,
             },
+            ...this.visibleOnEntries(id),
             ...this.movePageEntries(id),
         ];
         this._openMenu({
@@ -121,6 +122,10 @@ class DashboardCategoryMenu {
             entries,
             point,
             onPick: async (action) => {
+                if (action === 'visible-on') {
+                    this.showVisibilityPicker(titleEl, id, 'collection-context-menu', name);
+                    return;
+                }
                 if (action === 'move-page') {
                     this.showPagePicker(titleEl, id, 'collection-context-menu', name);
                     return;
@@ -253,6 +258,7 @@ class DashboardCategoryMenu {
                 icon: '⧉',
                 key: 'D',
             },
+            ...this.visibleOnEntries(widget.id),
             // Same move Config -> Widgets offers, from where the widget is.
             ...this.movePageEntries(widget.id),
             {
@@ -468,6 +474,10 @@ class DashboardCategoryMenu {
             await this.toggleWidgetWidth(widget);
             return;
         }
+        if (action === 'visible-on') {
+            this.showVisibilityPicker(titleEl, widget.id, 'widget-context-menu', this.widgetName(widget));
+            return;
+        }
         if (action === 'move-page') {
             this.showPagePicker(titleEl, widget.id, 'widget-context-menu', this.widgetName(widget));
             return;
@@ -475,6 +485,66 @@ class DashboardCategoryMenu {
         if (action === 'close') {
             await this.closeWidget(widget);
         }
+    }
+
+    /**
+     * "Show on ▸": everywhere, on the desktop only, or on the phone only.
+     *
+     * Same shape as "Move to page ▸" below: an entry that opens a second menu
+     * where the first was. The answer is DashboardBlockVisibility's, which the
+     * edit panel and Config -> Structure read and write too.
+     */
+    visibleOnEntries(blockId) {
+        const vis = window.DashboardBlockVisibility;
+        if (!vis || this.dash?.settings?.lockLayout === true) return [];
+        return [{
+            id: 'visible-on',
+            label: this.t('blockMenuShowOn', 'Show on'),
+            icon: '▭',
+            submenu: true,
+            detail: this.visibleOnName(vis.get(this.dash, blockId)),
+        }];
+    }
+
+    visibleOnName(mode) {
+        return {
+            all: this.t('editMode.visibleAll', 'Everywhere'),
+            desktop: this.t('editMode.visibleDesktop', 'Desktop only'),
+            mobile: this.t('editMode.visibleMobile', 'Phone only'),
+        }[mode] || '';
+    }
+
+    showVisibilityPicker(titleEl, blockId, menuId, hint) {
+        const d = this.dash;
+        const vis = window.DashboardBlockVisibility;
+        if (!vis) return;
+        const now = vis.get(d, blockId);
+        const box = titleEl.getBoundingClientRect();
+        this._openMenu({
+            id: menuId,
+            ariaLabel: this.t('blockMenuShowOn', 'Show on'),
+            hint,
+            entries: vis.MODES.map((mode) => ({
+                id: mode,
+                label: this.visibleOnName(mode),
+                icon: mode === now ? '✓' : '',
+                checked: mode === now,
+            })),
+            point: { x: box.left + 8, y: box.bottom },
+            onPick: async (mode) => {
+                if (mode === now) return;
+                if (!(await vis.set(d, blockId, mode))) {
+                    d.showErrorNotification?.(this.t('editMode.saveFailed', 'Could not save.'));
+                    return;
+                }
+                d.renderDashboard?.({ animate: false });
+                // A block that no longer shows here would otherwise just vanish.
+                if (!vis.shownHere(mode)) {
+                    d.showNotification?.(this.t('blockMenuShowOnGone',
+                        'Hidden on this screen. Find it again in Config → Structure.'), 'info');
+                }
+            },
+        });
     }
 
     /**
@@ -671,6 +741,7 @@ class DashboardCategoryMenu {
             // control were still sitting in all four files with no caller: it
             // fell out at some point and left eight identical headers behind.
             { id: 'icon', label: this.t('categoryMenuInsertIcon', 'Insert icon…'), icon: '☺', key: 'I' },
+            ...(stored ? this.visibleOnEntries(category.id) : []),
             ...this.movePageEntries(category.id),
             { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+' },
             { id: 'delete', label: this.t('categoryMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
@@ -689,6 +760,10 @@ class DashboardCategoryMenu {
                 }
                 if (action === 'view') {
                     this.toggleView(category);
+                    return;
+                }
+                if (action === 'visible-on') {
+                    this.showVisibilityPicker(titleEl, category.id, 'category-context-menu', String(category.name || category.id));
                     return;
                 }
                 void this.runAction(action, titleEl, category);

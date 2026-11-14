@@ -331,7 +331,14 @@
                         || row.classList.contains('is-draggable')) {
                         return;
                     }
-                    void this.load().then((mod) => {
+                    // A phone has no right button (and iOS sends no contextmenu
+                    // event): the long press opens its short menu, whose first
+                    // entries include Edit.
+                    if (window.MobileExperience?.isPhoneLayout?.() === true) {
+                        const point = { x: startX, y: startY };
+                        void window.dashboardInstance?.contextMenu?.load?.()
+                            .then((menu) => menu.show(row, bookmarkRef, point)).catch(() => {});
+                    } else void this.load().then((mod) => {
                         mod.openBookmarkInlineEditor(row, bookmarkRef);
                         // The icon is a link to the same address, and the release that
                         // ends the press lands on whichever of the two it began on.
@@ -343,6 +350,16 @@
                         };
                         links.forEach((link) => link.addEventListener('click', blockNav, { capture: true, once: true }));
                     }).catch(() => {});
+                    if (window.MobileExperience?.isPhoneLayout?.() === true) {
+                        // The release that ends the press must not follow the link.
+                        const links = row.querySelectorAll('a.bookmark-open, a.bookmark-icon-slot');
+                        const blockNav = (ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            links.forEach((link) => link.removeEventListener('click', blockNav, true));
+                        };
+                        links.forEach((link) => link.addEventListener('click', blockNav, { capture: true, once: true }));
+                    }
                 }, longMs);
             };
 
@@ -612,6 +629,42 @@
                 e.stopPropagation();
                 void this.load().then((mod) => mod.handleContextMenu(e, row)).catch(() => {});
             });
+            // Rows with no long press of their own (the Inbox's cards, the Status
+            // screen's services) get one on a phone, for the same short menu.
+            // Grid rows have a long press of their own (attachBookmarkRowLongPress).
+            if (row.matches('.inbox-item, [data-status-row]')) this.bindRowLongPress(row);
+        }
+
+        bindRowLongPress(row) {
+            let timer = null;
+            let sx = 0;
+            let sy = 0;
+            const clear = () => { clearTimeout(timer); timer = null; };
+            row.addEventListener('pointerdown', (e) => {
+                if (window.MobileExperience?.isPhoneLayout?.() !== true) return;
+                if (e.button !== undefined && e.button !== 0) return;
+                if (e.target.closest('input, textarea, select, .inbox-action-btn')) return;
+                clear();
+                sx = e.clientX;
+                sy = e.clientY;
+                timer = setTimeout(() => {
+                    timer = null;
+                    if (this.dash.uiHelpers?.isModalOpen?.()) return;
+                    void this.load().then((mod) => {
+                        const ref = mod.resolveRowBookmark(row);
+                        if (!ref?.bookmark) return;
+                        mod.show(row, ref, { x: sx, y: sy });
+                        // The release that ends the press must not open the item.
+                        const swallow = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+                        row.addEventListener('click', swallow, { capture: true, once: true });
+                        setTimeout(() => row.removeEventListener('click', swallow, true), 600);
+                    }).catch(() => {});
+                }, DashboardInlineEditLoader.ROW_LONG_PRESS_MS);
+            });
+            row.addEventListener('pointermove', (e) => {
+                if (timer && (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8)) clear();
+            });
+            ['pointerup', 'pointerleave', 'pointercancel'].forEach((name) => row.addEventListener(name, clear));
         }
     }
 

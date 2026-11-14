@@ -56,9 +56,11 @@
             tick: '1.1rem', icon: '1.4rem', pinned: '1.5rem', shortcut: '3.5rem', usage: '4.5rem',
             opens: '3rem', last: '5rem', added: '5.5rem', score: '2.6rem',
         };
+        // Widths the reader dragged (column-resize.js) replace a column's track at every width.
+        const dragged = global.ColumnResize?.get('bm') || {};
         const build = (cells, name, tags) => cells
             .filter((c) => ['tick', 'icon', 'name'].includes(c) || this.bmViewColumn(c))
-            .map((c) => (c === 'name' ? name : c === 'tags' ? tags : track[c]))
+            .map((c) => (dragged[c] ? `${dragged[c]}px` : c === 'name' ? name : c === 'tags' ? tags : track[c]))
             .join(' ');
         const wide = build(['tick', 'icon', 'name', 'tags', 'pinned', 'shortcut', 'usage', 'opens', 'last', 'added', 'score'],
             'minmax(10rem, 1fr)', 'minmax(5rem, var(--bm-tags-max, 9rem))');
@@ -2398,6 +2400,19 @@
      */
     renderWorkbenchColumnHeads() {
         const esc = (v) => this.dash.escapeHtml(v);
+        // Drag handles on every heading right of Name; Name gives way (column-resize.js).
+        const CR = global.ColumnResize;
+        CR?.register('bm', {
+            label: this.t('config.resizeColumn', 'Resize column'),
+            apply: () => {
+                const box = document.getElementById('config-bm-workbench');
+                if (box) box.setAttribute('style', this.workbenchColumnStyle());
+            },
+            refit: () => {
+                const list = document.getElementById('config-bm-list');
+                if (list) this.fitWorkbenchTags(list);
+            },
+        });
         const col = (name) => this.bmViewColumn(name);
         const current = this.bmSort ?? this.defaultBookmarksSort();
         /*
@@ -2405,7 +2420,7 @@
          * list runs: a column's natural order (names A to Z, dates and counts
          * the highest first, the worst score first) or that turned round.
          */
-        const cell = (cls, label, sort = '', inner = '') => {
+        const cell = (cls, label, sort = '', inner = '', resize = '') => {
             let state = '';
             if (sort && sort === current) {
                 const natural = SORT_NATURAL[sort] || 'ascending';
@@ -2416,23 +2431,25 @@
             const content = sort
                 ? `<button type="button" class="lvs-colhead-sort" data-bm-sort-head="${esc(sort)}"${inner ? ` aria-label="${esc(label)}" title="${esc(label)}"` : ''}>${body}</button>`
                 : body;
-            return `<span class="config-bm-colhead-cell ${cls}"${state ? ` data-lvs-sort="${state}"` : ''}${
-                !sort && inner ? ` title="${esc(label)}"` : ''}>${content}</span>`;
+            const grip = CR && resize && resize !== 'flex' ? CR.handleHtml('bm', resize) : '';
+            const flex = resize === 'flex' ? ' data-cr-flex' : '';
+            return `<span class="config-bm-colhead-cell ${cls}${grip ? ' cr-col' : ''}"${flex}${state ? ` data-lvs-sort="${state}"` : ''}${
+                !sort && inner ? ` title="${esc(label)}"` : ''}>${content}${grip}</span>`;
         };
         const pinned = this.t('config.bmViewColPinned', 'Pinned');
         return `
             <div class="config-bm-colhead lvs-colhead" data-bm-colhead>
                 <span class="config-bm-colhead-cell" aria-hidden="true"></span>
                 <span class="config-bm-colhead-cell" aria-hidden="true"></span>
-                ${cell('config-bm-colhead-name', this.t('config.bookmarkName', 'Name'), 'name')}
-                ${col('tags') ? cell('config-bm-colhead-tags', this.t('config.bmViewColTags', 'Tags'), 'tags') : ''}
-                ${col('pinned') ? cell('config-bm-extra config-bm-pinned', pinned, 'pinned', global.MenuIcons?.PIN || esc(pinned)) : ''}
-                ${col('shortcut') ? cell('config-bm-extra config-bm-key', this.t('config.bmViewColShortcut', 'Shortcut'), 'shortcut') : ''}
-                ${col('usage') ? cell('config-bm-spark', this.t('config.bmViewColUsage', 'Usage'), 'usage') : ''}
-                ${col('opens') ? cell('config-bm-colhead-end', this.t('config.bmViewColOpens', 'Opens'), 'opens') : ''}
-                ${col('last') ? cell('config-bm-colhead-end', this.t('config.bmViewColLast', 'Last opened'), 'lastOpened') : ''}
-                ${col('added') ? cell('config-bm-added config-bm-colhead-end', this.t('config.bmViewColAdded', 'Added'), 'recent') : ''}
-                ${col('score') ? cell('config-bm-colhead-end', this.t('config.bmViewColScore', 'Score'), 'score') : ''}
+                ${cell('config-bm-colhead-name', this.t('config.bookmarkName', 'Name'), 'name', '', 'flex')}
+                ${col('tags') ? cell('config-bm-colhead-tags', this.t('config.bmViewColTags', 'Tags'), 'tags', '', 'tags') : ''}
+                ${col('pinned') ? cell('config-bm-extra config-bm-pinned', pinned, 'pinned', global.MenuIcons?.PIN || esc(pinned), 'pinned') : ''}
+                ${col('shortcut') ? cell('config-bm-extra config-bm-key', this.t('config.bmViewColShortcut', 'Shortcut'), 'shortcut', '', 'shortcut') : ''}
+                ${col('usage') ? cell('config-bm-spark', this.t('config.bmViewColUsage', 'Usage'), 'usage', '', 'usage') : ''}
+                ${col('opens') ? cell('config-bm-colhead-end', this.t('config.bmViewColOpens', 'Opens'), 'opens', '', 'opens') : ''}
+                ${col('last') ? cell('config-bm-colhead-end', this.t('config.bmViewColLast', 'Last opened'), 'lastOpened', '', 'last') : ''}
+                ${col('added') ? cell('config-bm-added config-bm-colhead-end', this.t('config.bmViewColAdded', 'Added'), 'recent', '', 'added') : ''}
+                ${col('score') ? cell('config-bm-colhead-end', this.t('config.bmViewColScore', 'Score'), 'score', '', 'score') : ''}
             </div>`;
     },
 
