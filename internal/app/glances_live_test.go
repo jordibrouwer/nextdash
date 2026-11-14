@@ -526,7 +526,10 @@ func TestGlancesLongRingAnswersAWeekAndAMonth(t *testing.T) {
 	every := glancesSampleEvery.Milliseconds()
 	// Three long points' worth of samples, the first half at 10, the rest at 30.
 	n := 3 * glancesLongEvery * glancesCoarseEvery
-	end := time.Now().UnixMilli()
+	// Half way into a slot of the long grid, in the past. Ending on the wall clock made the
+	// count depend on the moment of the run: right after a quarter of an hour the samples
+	// filled exactly three slots and only two were filed, as the third waits for the next.
+	end := time.Now().UnixMilli()/glancesLongMs*glancesLongMs - glancesLongMs/2
 	for i := 0; i < n; i++ {
 		value := 10.0
 		if i >= n/2 {
