@@ -132,7 +132,10 @@
                 ? `<span class="net-head-spark">${trend.sparkSvg(check.spark, { width: 64, height: 18, maxMs: check.maxMs, label: t('nettrend.spark', 'Response time, last 24 hours, now') })}</span>` : '';
             const head = `<span class="net-dot" data-state="${state}" aria-hidden="true"></span> ${esc(name)}${spark}`;
             const body = editing ? this.renderBmNetCheckForm(b) : this.renderBmTestsCheckBody(b, check, state);
-            const out = this.workbenchAcc('tests', `check-${check.id}`, head, this.bmTestsAnswer(check), body, false, { labelHtml: true, forceOpen: editing });
+            // The first check that has a trend opens by itself, so the chart is seen without a hunt;
+            // once the reader opens or closes a check, their choice is what is kept.
+            const firstTrend = (st.checks || []).find((c) => this.bmTrendApplies(c))?.id === check.id;
+            const out = this.workbenchAcc('tests', `check-${check.id}`, head, this.bmTestsAnswer(check), body, firstTrend, { labelHtml: true, forceOpen: editing });
             return out.replace('<details class="config-bm-acc"', `<details class="config-bm-acc" data-net-card="${esc(check.id)}" data-state="${state}"`);
         },
 
