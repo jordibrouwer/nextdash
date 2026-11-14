@@ -164,9 +164,10 @@ jobs:
     # again, look at those specs first.
     #
     # A shard that is stuck (a mirror that stalls, a browser that hangs) fails
-    # at twenty-five minutes instead of the six hours GitHub allows. The
-    # longest shard has been twenty.
-    timeout-minutes: 25
+    # at thirty-five minutes instead of the six hours GitHub allows. The
+    # longest shard has been twenty-five since the runners slowed down
+    # (shards 5 and 6 of run 43529237952 were cancelled at twenty-five).
+    timeout-minutes: 35
     # Twelve runners for the whole suite (six took ten to fourteen minutes
     # each, nearly all of it in the tests), one for a push that only changed
     # tests or a run of named specs; see the changes job. Inside a runner, Playwright runs

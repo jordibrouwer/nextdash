@@ -39,7 +39,11 @@ module.exports = defineConfig({
     // which is the sort of thing a red suite is supposed to tell you.
     // Run them with `npm run test:news-stream` and friends.
     testMatch: /.*\.spec\.js$/,
-    timeout: 30_000,
+    // A CI runner is several times slower than a laptop: the same tests take 10 to 30 seconds
+    // there that take 3 here, so the ones that were close to the limit timed out and, as a
+    // timed-out test cannot clean up, took the next ones in its worker with them.
+    timeout: isCI ? 60_000 : 30_000,
+    expect: { timeout: isCI ? 10_000 : 5_000 },
     // Deliberately false, and it is not about parallelism -- `workers: 1` below
     // already rules that out. It decides how `--shard` divides the suite: with
     // fullyParallel Playwright shards by individual test, so one spec file can
