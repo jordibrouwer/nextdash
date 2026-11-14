@@ -110,6 +110,68 @@
         window.location.href = link;
     }
 
+    function isTouch() {
+        return Boolean(window.matchMedia?.('(hover: none) and (pointer: coarse)').matches);
+    }
+
+    /*
+     * Touch has no hover, so the preview is a sheet: a tap or a long press on a
+     * headline opens it, with the way on (this tab or a new one) as buttons.
+     * One sheet at a time; a tap away, Escape or the Close button ends it.
+     */
+    let sheet = null;
+    let sheetOff = null;
+
+    function closeSheet() {
+        sheetOff?.();
+        sheetOff = null;
+        sheet?.remove();
+        sheet = null;
+    }
+
+    function openSheet(dash, item, row) {
+        closeSheet();
+        const el = document.createElement('div');
+        el.className = 'rss-touch-sheet';
+        el.setAttribute('role', 'dialog');
+        el.setAttribute('aria-label', String(item.title || ''));
+        const text = document.createElement('p');
+        text.className = 'rss-touch-sheet-text';
+        text.textContent = previewText(dash, item);
+        const bar = document.createElement('div');
+        bar.className = 'rss-touch-sheet-actions';
+        const add = (cls, caption, run) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = `rss-touch-sheet-btn ${cls}`;
+            b.textContent = caption;
+            b.addEventListener('click', () => { closeSheet(); run(); });
+            bar.appendChild(b);
+        };
+        add('is-primary', label(dash, 'dashboard.widgetActionOpenArticle', 'Open article'), () => openItem(dash, item.link));
+        add('', label(dash, 'dashboard.widgetRssNewTab', 'Open in a new tab'),
+            () => window.open(item.link, '_blank', 'noopener,noreferrer'));
+        add('', label(dash, 'dashboard.widgetRssClose', 'Close'), () => {});
+        el.append(text, bar);
+        document.body.appendChild(el);
+        sheet = el;
+        const onOutside = (event) => { if (!el.contains(event.target)) closeSheet(); };
+        const onKey = (event) => { if (event.key === 'Escape') closeSheet(); };
+        // Next tick: the tap that opened it must not count as a tap away.
+        const timer = setTimeout(() => document.addEventListener('pointerdown', onOutside, true), 0);
+        document.addEventListener('keydown', onKey, true);
+        sheetOff = () => {
+            clearTimeout(timer);
+            document.removeEventListener('pointerdown', onOutside, true);
+            document.removeEventListener('keydown', onKey, true);
+        };
+        el.querySelector('button')?.focus({ preventScroll: true });
+        row?.classList.add('is-previewed');
+        const clear = () => row?.classList.remove('is-previewed');
+        const prev = sheetOff;
+        sheetOff = () => { prev(); clear(); };
+    }
+
     function buildRow(dash, item) {
         const row = document.createElement('button');
         row.type = 'button';
@@ -130,9 +192,23 @@
             labelKey: 'widgetActionOpenArticle',
             labelFallback: 'Open article',
             href: item.link,
-            run: () => openItem(dash, item.link),
+            run: () => {
+                if (isTouch()) {
+                    window.DashboardSmartWhyPopover?.hide?.();
+                    openSheet(dash, item, row);
+                }
+                else openItem(dash, item.link);
+            },
         });
         window.DashboardSmartWhyPopover?.attach?.(row, previewText(dash, item));
+        // A long press is the same sheet, not a word selected and a menu.
+        row.addEventListener('contextmenu', (event) => {
+            if (!isTouch()) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            window.DashboardSmartWhyPopover?.hide?.();
+            openSheet(dash, item, row);
+        }, true);
         return row;
     }
 

@@ -220,4 +220,53 @@ test.describe('the RSS widget', () => {
         expect(await columnsAt(640)).toBe(2);
         expect(await columnsAt(280)).toBe(1);
     });
+
+    test.describe('on a touch screen', () => {
+        test.use({ hasTouch: true, isMobile: true, viewport: { width: 412, height: 915 } });
+
+        async function drawTouch(page) {
+            await open(page);
+            await page.evaluate(async (items) => {
+                const d = window.dashboardInstance;
+                const realFetch = window.fetch;
+                window.fetch = async (url, ...rest) => String(url).includes('/api/widgets/rss')
+                    ? new Response(JSON.stringify({ fetchedAt: Date.now(), items }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+                    : realFetch(url, ...rest);
+                const body = document.createElement('div');
+                body.id = 'rss-test-body';
+                document.body.prepend(body);
+                await window.DashboardWidgets.rss(body, { id: 'w_rss_touch', type: 'rss', config: {} }, d);
+                window.fetch = realFetch;
+                delete d._widgetRss;
+                window.__opened = [];
+                window.open = (u) => { window.__opened.push(String(u)); };
+            }, threeItems);
+        }
+
+        test('a tap opens the sheet and its buttons open the article', async ({ page }) => {
+            await drawTouch(page);
+            const sheet = page.locator('.rss-touch-sheet');
+            await page.locator('#rss-test-body .dashboard-widget-row').first().tap();
+            await expect(sheet).toBeVisible();
+            await expect(sheet).toContainText('Third summary');
+            await sheet.getByRole('button', { name: 'Open in a new tab' }).tap();
+            await expect(sheet).toHaveCount(0);
+            expect(await page.evaluate(() => window.__opened)).toEqual(['https://example.com/3']);
+        });
+
+        test('a long press opens the same sheet, selects nothing, and a tap away closes it', async ({ page }) => {
+            await drawTouch(page);
+            const sheet = page.locator('.rss-touch-sheet');
+            const prevented = await page.evaluate(() => {
+                const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+                document.querySelector('#rss-test-body .dashboard-widget-row').dispatchEvent(ev);
+                return ev.defaultPrevented;
+            });
+            expect(prevented).toBe(true);
+            await expect(sheet).toBeVisible();
+            expect(await page.evaluate(() => String(window.getSelection()))).toBe('');
+            await page.touchscreen.tap(200, 450);
+            await expect(sheet).toHaveCount(0);
+        });
+    });
 });

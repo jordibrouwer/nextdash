@@ -165,6 +165,7 @@ The phone gets its own way around nextDash.
 - **new — A phone guide in More.** It is also what the cheat sheet opens on a phone (the :cheat command, Config → Help). One screen lists what works on the phone and what needs a desktop.
 - **new — A hint about swiping pages.** With more than one page, a popover under the page name says once that a swipe changes page.
 - **new — Show a block on desktop only or on the phone only.** Categories, widgets and collections get a Show on choice in the edit panel: everywhere, desktop only or phone only. A tablet counts as a desktop. In edit mode a block hidden on this screen stays on the grid, dimmed and labelled, so nothing gets lost (`visibleOn`, `collectionVisibleOn` for built-in and per-tag collections).
+- **fix — RSS headlines have a preview on a touch screen.** The preview of an RSS widget row (the feed's summary, source and age) only showed on hover, so a phone never got it: a tap opened the article, and a press and hold selected a word and opened the row menu. On touch a tap or a press and hold now opens a sheet at the bottom with the preview and three buttons: Open article, Open in a new tab and Close. A tap away or Escape also closes it, the headlines no longer select text, and the desktop hover is as it was (`static/js/dashboard/dashboard-widget-rss.js`, issue 22).
 
 ### List views
 

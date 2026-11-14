@@ -923,3 +923,58 @@ body[data-phone-layout="true"] .inbox-layout .tag-offer-refuse { margin-inline-s
 .mobile-row[role="button"] { cursor: pointer; min-height: 44px; }
 .mobile-row[role="button"]:focus-visible, .mobile-h:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .mobile-h:focus { outline: none; }
+
+/* RSS widget on touch: a headline selects nothing; its preview is a bottom sheet. */
+@media (hover: none) and (pointer: coarse) {
+    .dashboard-widget-row[data-widget-href] {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+    .dashboard-widget-row.is-previewed {
+        background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    }
+}
+.rss-touch-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--layer-tooltip-top);
+    box-sizing: border-box;
+    max-height: 70dvh;
+    overflow-y: auto;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 14px 14px 0 0;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
+    border-bottom: 0;
+    background: var(--background-secondary, #141414);
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: 16px;
+    line-height: 1.45;
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
+}
+.rss-touch-sheet-text {
+    margin: 0 0 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.rss-touch-sheet-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.rss-touch-sheet-btn {
+    min-height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+}
+.rss-touch-sheet-btn.is-primary {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--background-primary, #000);
+}
