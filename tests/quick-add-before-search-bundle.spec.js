@@ -39,6 +39,11 @@ async function loadDashboard(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The header's buttons are hidden while the page is still loading, and a click
+    // sent before they are drawn waits on a button that is off screen. In the
+    // gated shard runs of CI that was all the time the test had.
+    await expect(page.locator('body')).not.toHaveClass(/(^|\s)loading(\s|$)/);
+    await expect(page.locator('#quick-add-toolbar-btn')).toBeInViewport();
     // The point of the fixture: the component really is missing at this stage.
     expect(await page.evaluate(() => Boolean(window.dashboardInstance.searchComponent)),
         'the search bundle should still be in flight').toBe(false);
