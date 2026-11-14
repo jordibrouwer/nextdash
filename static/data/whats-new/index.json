@@ -1,5 +1,12 @@
 [
   {
+    "id": "v1.29.1",
+    "tag": "v1.29.1",
+    "date": "14 November 2026",
+    "releasedAt": "2026-11-14",
+    "hideFromModal": true
+  },
+  {
     "id": "v1.29.0",
     "tag": "v1.29.0",
     "date": "13 November 2026",

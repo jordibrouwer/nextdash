@@ -1,0 +1,25 @@
+{
+  "tag": "v1.29.1",
+  "date": "14 November 2026",
+  "releasedAt": "2026-11-14",
+  "modalLead": "Search keeps the tab bar on the phone, and RSS headlines have a preview on a touch screen.",
+  "sections": [
+    {
+      "title": "Phone",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Search opens at once and keeps the tab bar.</strong> The bar stays under the search sheet, lifts above the keyboard, and Search is the highlighted tab."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>RSS headlines have a preview on a touch screen.</strong> Tap or press and hold a headline for the summary and the buttons to open the article."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Inbox selects are tall enough on an iPhone.</strong>"
+        }
+      ]
+    }
+  ]
+}

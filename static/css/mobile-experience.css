@@ -254,7 +254,7 @@ body[data-mobile-tabbar] {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: var(--mobile-kb, 0px);
     z-index: 1100;
     display: grid;
     grid-template-columns: repeat(var(--mobile-tab-count, 5), 1fr);
@@ -530,7 +530,9 @@ body[data-mobile-panel] #dashboard-layout {
    for a keyboard and a wide panel steps aside. */
 body[data-phone-layout="true"] .shortcut-search {
     width: 100%;
-    height: 100dvh;
+    /* The tab bar stays: search sits above the page and under the bar. */
+    height: calc(100dvh - 4.25rem - env(safe-area-inset-bottom, 0px) - var(--mobile-kb, 0px));
+    z-index: 1095;
     align-items: stretch;
     justify-content: flex-start;
     padding: 0;
@@ -542,10 +544,10 @@ body[data-phone-layout="true"] .shortcut-search {
 body[data-phone-layout="true"] .shortcut-search .search-container {
     width: 100% !important;
     max-width: none !important;
-    height: 100dvh;
+    height: 100%;
     max-height: none !important;
     margin: 0 !important;
-    padding: calc(0.6rem + env(safe-area-inset-top, 0px)) 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding: calc(0.6rem + env(safe-area-inset-top, 0px)) 0.75rem 0.5rem !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -881,6 +883,8 @@ body[data-phone-layout="true"] .inbox-layout :is(.lvs-action, .lvs-filter) {
 body[data-phone-layout="true"] .inbox-layout :is(.inbox-domain-select, .inbox-sort-select, .inbox-search-input) {
     min-height: 44px !important;
     font-size: 16px !important;
+    /* WebKit gives a native select its own height and ignores min-height: say it outright. */
+    height: 44px;
     touch-action: manipulation;
 }
 body[data-phone-layout="true"] .inbox-layout .inbox-search-input { flex: 1 1 10rem; min-width: 0; }
@@ -921,3 +925,58 @@ body[data-phone-layout="true"] .inbox-layout .tag-offer-refuse { margin-inline-s
 .mobile-row[role="button"] { cursor: pointer; min-height: 44px; }
 .mobile-row[role="button"]:focus-visible, .mobile-h:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .mobile-h:focus { outline: none; }
+
+/* RSS widget on touch: a headline selects nothing; its preview is a bottom sheet. */
+@media (hover: none) and (pointer: coarse) {
+    .dashboard-widget-row[data-widget-href] {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+    .dashboard-widget-row.is-previewed {
+        background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    }
+}
+.rss-touch-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--layer-tooltip-top);
+    box-sizing: border-box;
+    max-height: 70dvh;
+    overflow-y: auto;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 14px 14px 0 0;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
+    border-bottom: 0;
+    background: var(--background-secondary, #141414);
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: 16px;
+    line-height: 1.45;
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
+}
+.rss-touch-sheet-text {
+    margin: 0 0 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.rss-touch-sheet-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.rss-touch-sheet-btn {
+    min-height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+}
+.rss-touch-sheet-btn.is-primary {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--background-primary, #000);
+}
