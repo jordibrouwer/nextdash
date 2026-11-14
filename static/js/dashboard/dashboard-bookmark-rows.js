@@ -748,20 +748,26 @@ class DashboardBookmarkRows {
             row.appendChild(openCountBadge);
         }
 
-        // News from a feed the reader chose to watch: a count in the theme's
-        // accent, a stripe, a bold name and the newest headline while the news
-        // window is open. Once it has closed the row is plain again; the
-        // news itself stays until the bookmark is opened.
+        // News from a feed the reader chose to watch. The count badge, and the
+        // way to the headlines behind it, stay for as long as the news is unread.
+        // While the news window is open the row also calls attention to itself:
+        // a pulse, a stripe, a bold name and the newest headline. Once it has
+        // closed the row is quiet but still clickable; the news itself stays
+        // until the bookmark is opened.
         const news = d.feedWatch?.newsFor?.(bookmark) || null;
         const newsPhase = news ? d.feedWatch.windowPhase() : 'none';
-        const showNews = Boolean(news) && (newsPhase === 'open' || newsPhase === 'pending');
+        const showNews = Boolean(news);
+        const loudNews = showNews && (newsPhase === 'open' || newsPhase === 'pending');
         if (showNews) {
-            row.classList.add('has-feed-news');
-            if (news.muted) row.classList.add('is-feed-muted');
+            if (loudNews) {
+                row.classList.add('has-feed-news');
+                if (news.muted) row.classList.add('is-feed-muted');
+            }
             const newsBadge = document.createElement('span');
             newsBadge.className = 'bookmark-news-badge bookmark-superscript-badge';
-            // A muted feed still counts, but does not pulse.
+            // A muted feed still counts, but does not pulse; neither does a quiet one.
             if (news.muted) newsBadge.classList.add('is-muted');
+            if (!loudNews) newsBadge.classList.add('is-calm');
             newsBadge.textContent = news.newCount > 9 ? '9+' : String(news.newCount);
             const newsLabel = d.formatDashboardLabel('feedWatchBadge', { count: news.newCount },
                 `${news.newCount} new from a watched feed`);
@@ -773,7 +779,7 @@ class DashboardBookmarkRows {
             openLink.appendChild(newsBadge);
             // The newest headline under the name; the badge already says how many,
             // so a screen reader skips it. CSS drops it where there is no room.
-            const headline = String(news.newest?.title || '').trim();
+            const headline = loudNews ? String(news.newest?.title || '').trim() : '';
             if (headline) {
                 const newsLine = document.createElement('span');
                 newsLine.className = 'bookmark-news-line';

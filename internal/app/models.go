@@ -1007,7 +1007,7 @@ type Settings struct {
 	WebSearchSearxngURL string `json:"webSearchSearxngUrl,omitempty"`
 	// FeedWatchWindowMinutes is how long watched news stays open for the reader
 	// after it arrives and they are back: 15, 30, 60 or 120. Anything else
-	// reads as 30.
+	// reads as 60.
 	FeedWatchWindowMinutes int `json:"feedWatchWindowMinutes"`
 	// FeedWatchExpireHours is how long an unread item keeps counting, from the
 	// moment it was found: 4, 8, 24, 48, 72, 168, 336 or 720. Older news is no
@@ -1921,7 +1921,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
 			ShowFeedWatchIcon:               true,
-			FeedWatchWindowMinutes:          30,
+			FeedWatchWindowMinutes:          60,
 			FeedWatchExpireHours:            24,
 			FeedWatchNewsView:               "paper",
 			FeedStatsEnabled:                true,
@@ -4682,7 +4682,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
 			ShowFeedWatchIcon:               true,
-			FeedWatchWindowMinutes:          30,
+			FeedWatchWindowMinutes:          60,
 			FeedWatchExpireHours:            24,
 			FeedWatchNewsView:               "paper",
 			FeedStatsEnabled:                true,
@@ -4955,7 +4955,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 		switch settings.FeedWatchWindowMinutes {
 		case 15, 30, 60, 120:
 		default:
-			settings.FeedWatchWindowMinutes = 30
+			settings.FeedWatchWindowMinutes = 60
 		}
 		switch settings.FeedWatchExpireHours {
 		case 4, 8, 24, 48, 72, 168, 336, 720:

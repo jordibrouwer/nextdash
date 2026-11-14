@@ -9944,7 +9944,7 @@ class DashboardConfig {
         netToolsAllowCustomHost: { info: ['netToolsAllowCustomHostInfoTitle', 'netToolsAllowCustomHostInfoMessage'], def: false },
         netToolsMaxChecks: { info: ['netToolsMaxChecksInfoTitle', 'netToolsMaxChecksInfoMessage'], def: 200 },
         netToolsDashboardBadges: { info: ['netToolsDashboardBadgesInfoTitle', 'netToolsDashboardBadgesInfoMessage'], def: 'problems' },
-        feedWatchWindowMinutes: { def: 30 },
+        feedWatchWindowMinutes: { def: 60 },
         feedWatchExpireHours: { def: 24 },
         feedWatchNewsView: { def: 'paper' },
         showFeedWatchIcon: { info: ['showFeedWatchIconInfoTitle', 'showFeedWatchIconInfoMessage'], def: true },

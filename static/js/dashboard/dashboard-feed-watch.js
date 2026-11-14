@@ -297,7 +297,7 @@ class DashboardFeedWatch {
     }
 
     windowMs() {
-        const minutes = Number(this.dash?.settings?.feedWatchWindowMinutes) || 30;
+        const minutes = Number(this.dash?.settings?.feedWatchWindowMinutes) || 60;
         return minutes * 60 * 1000;
     }
 
