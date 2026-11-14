@@ -106,6 +106,9 @@ async function switchTo(page, material, extra) {
             el.setAttribute('data-material', m);
             if (e) el.setAttribute('data-effects', e);
         });
+        // The panes take the fill of a dashboard column (view-pane-fill.js), read one animation
+        // frame after an attribute changes; ask for it now, so the plate read next is the new one.
+        window.ViewPaneFill?.refresh?.();
     }, [material, extra || null]);
 }
 

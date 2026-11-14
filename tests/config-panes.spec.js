@@ -26,7 +26,13 @@ async function open(page, hash) {
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
 }
 
-const setSurface = (page, word) => page.evaluate((w) => window.ThemeLoader.applyCatSurface(w), word);
+// The panes take the fill of a dashboard column (view-pane-fill.js), which it reads one
+// animation frame after the surface changes; ask for it now, so the paint read next is the new one.
+const refreshPaneFill = (page) => page.evaluate(() => window.ViewPaneFill?.refresh?.());
+const setSurface = async (page, word) => {
+    await page.evaluate((w) => window.ThemeLoader.applyCatSurface(w), word);
+    await refreshPaneFill(page);
+};
 
 /*
  * Since v1.22.0 the default Material style is Signature: the views and Config take the
@@ -37,6 +43,7 @@ const setSurface = (page, word) => page.evaluate((w) => window.ThemeLoader.apply
 const asClassic = (page) => page.evaluate(async () => {
     await window.ThemeLoader.applySurfacesForTheme(window.dashboardInstance.settings.theme,
         { ...window.dashboardInstance.settings, materialStyle: 'classic', themeSurfacesForceAll: true });
+    window.ViewPaneFill?.refresh?.();
 });
 
 /** What a block is painted with: alpha of its fill, blur, radius, whether it has a hairline. */
@@ -123,7 +130,9 @@ test.describe('config is one pane', () => {
         await setSurface(page, 'open');
         const frame = await paint(page, view);
         expect(frame.blur).toBe('none');
-        expect(frame.alpha).toBeGreaterThan(0);
+        // Under open a column has no fill, and the pane is filled like a column
+        // (view-pane-fill.js), so what is left of the frame is its hairline.
+        expect(frame.alpha).toBeLessThan(1);
         expect(frame.hairline).toBe(true);
     });
 
@@ -211,7 +220,7 @@ test.describe('a view is one pane', () => {
             await setSurface(page, 'open');
             const signature = await paint(page, selector);
             expect(signature.blur).toBe('blur');
-            expect(signature.alpha).toBeGreaterThan(0);
+            // Filled like a column, and an open column has no fill of its own.
             expect(signature.alpha).toBeLessThan(1);
             expect(parseFloat(signature.radius)).toBeGreaterThanOrEqual(8);
 
@@ -228,7 +237,9 @@ test.describe('a view is one pane', () => {
             await setSurface(page, 'open');
             const frame = await paint(page, selector);
             expect(frame.blur).toBe('none');
-            expect(frame.alpha).toBeGreaterThan(0);
+            // Under open a column has no fill, and the pane is filled like a column
+            // (view-pane-fill.js), so what is left of the frame is its hairline.
+            expect(frame.alpha).toBeLessThan(1);
             expect(frame.hairline).toBe(true);
         });
     }
