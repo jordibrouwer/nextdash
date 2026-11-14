@@ -29,7 +29,10 @@ test.describe('page filter on a phone', () => {
     });
 });
 
-test('a desktop window does not get the bar until Shift+F', async ({ page }) => {
-    await openDashboard(page);
-    await expect(page.locator('#grid-filter-bar')).toHaveCount(0);
+test.describe('a desktop window', () => {
+    test.use({ viewport: { width: 1500, height: 950 }, hasTouch: false, isMobile: false });
+    test('does not get the bar until Shift+F', async ({ page }) => {
+        await openDashboard(page);
+        await expect(page.locator('#grid-filter-bar')).toHaveCount(0);
+    });
 });

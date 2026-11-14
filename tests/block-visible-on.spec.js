@@ -30,6 +30,8 @@ async function reset(page, ids) {
 }
 
 test.describe('block visibility on a desktop', () => {
+    // A computer, whichever device project runs this (npm run test:mobile).
+    test.use({ viewport: { width: 1500, height: 950 }, hasTouch: false, isMobile: false });
     test('Phone only from the edit panel: dimmed and labelled in edit mode, gone outside it, saved', async ({ page }) => {
         await load(page);
         const id = await firstCategoryId(page);

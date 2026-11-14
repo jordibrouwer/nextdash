@@ -115,6 +115,8 @@ test.describe('on a phone', () => {
 });
 
 test.describe('on a computer', () => {
+    // A computer, whichever device project runs this (npm run test:mobile).
+    test.use({ viewport: { width: 1500, height: 950 }, hasTouch: false, isMobile: false });
     test('the phone settings change nothing', async ({ page, context, request }) => {
         await set(request, { hideToastsMobile: true, hideCornerCardsMobile: true, openLinksNewTabMobile: false, openInNewTab: true });
         await openDashboard(page);

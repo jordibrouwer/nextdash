@@ -7,6 +7,7 @@
     "validate:json": "bash scripts/validate-json.sh",
     "test:e2e": "playwright test",
     "test:e2e:reuse": "PLAYWRIGHT_REUSE_SERVER=true playwright test",
+    "test:mobile": "PW_MOBILE=1 playwright test",
     "generate:cheatsheet": "node scripts/generate-cheatsheet.cjs",
     "validate:cheatsheet-registry": "node scripts/validate-cheatsheet-registry.cjs",
     "validate:cheatsheet": "npm run validate:cheatsheet-registry && npm run validate:cheatsheet-i18n",
