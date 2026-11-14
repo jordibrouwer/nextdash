@@ -26,6 +26,8 @@ type netDashboardRow struct {
 	State   *netStateView `json:"state,omitempty"`
 	// Beat is the last 24 hours in equal slices: up, down, degraded, unknown.
 	Beat []string `json:"beat,omitempty"`
+	// Spark is the last 24 hours as response times for the sparkline (netSpark).
+	Spark []int `json:"spark,omitempty"`
 	// DownSince is the start of the current outage (ms), 0 when up.
 	DownSince int64 `json:"downSince,omitempty"`
 	// Interval is how often the check runs, in minutes.
@@ -114,6 +116,7 @@ func (h *Handlers) GetNetDashboard(w http.ResponseWriter, r *http.Request) {
 			for _, b := range heartbeatBuckets(samples, 24*time.Hour, netWidgetBeatSlices, now) {
 				row.Beat = append(row.Beat, b.State)
 			}
+			row.Spark = netSparkOf(f.check, samples, now)
 			if stats := netCheckStats(samples, nil, interval, now); stats != nil {
 				row.DownSince = stats.DownSince
 			}

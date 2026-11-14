@@ -126,6 +126,9 @@ type netCheckView struct {
 	Display string        `json:"display,omitempty"` // the short name the UI shows
 	State   *netStateView `json:"state,omitempty"`
 	Stats   *MonitorStats `json:"stats,omitempty"`
+	// Spark is the last day as response times for the sparkline (netSpark);
+	// absent for a type without one or a check with nothing measured yet.
+	Spark []int `json:"spark,omitempty"`
 }
 
 func (h *Handlers) netCheckViews(bm Bookmark, history map[string][]HealthSample, days map[string][]HealthDay, now time.Time) []netCheckView {
@@ -138,6 +141,7 @@ func (h *Handlers) netCheckViews(bm Bookmark, history map[string][]HealthSample,
 			Display:  netCheckLabel(c, bm),
 			State:    netCheckStateFor(c, samples),
 			Stats:    netCheckStats(samples, days[key], netCheckInterval(c, bm), now),
+			Spark:    netSparkOf(c, samples, now),
 		})
 	}
 	return out
@@ -252,6 +256,9 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 		// reads them for its "DNS changed" row.
 		DriftDiff string `json:"driftDiff,omitempty"`
 		DriftAt   int64  `json:"driftAt,omitempty"`
+		// Spark is the last day as response times for the sparkline on the
+		// preview card, scheduled checks only (see netSpark).
+		Spark []int `json:"spark,omitempty"`
 	}
 	items := []item{}
 	settings := h.store.GetSettings()
@@ -275,6 +282,7 @@ func (h *Handlers) GetNetChecks(w http.ResponseWriter, r *http.Request) {
 					Label: netCheckLabel(c, bm), Enabled: c.Enabled, Muted: c.Muted || bm.NotifyMuted, State: state,
 					RecoveredAt: netRecoveredAt(samples, state, now),
 					DriftDiff:   c.DriftDiff, DriftAt: c.DriftAt,
+					Spark: netSparkOf(c, samples, now),
 				})
 				counts[c.Type]++
 				if c.Enabled {

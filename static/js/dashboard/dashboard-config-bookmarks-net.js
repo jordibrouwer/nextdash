@@ -474,7 +474,10 @@
                 const own = ['data-net-action', 'data-net-field'].find((n) => attr(n));
                 if (own) kept = `[${own}="${attr(own)}"]${part('data-net-id')}${part('data-net-type')}`;
             }
+            this.destroyBmTrends?.();
+            this._bmTrendBookmark = b;
             root.innerHTML = this.renderBmTestsBody(b);
+            this.hydrateBmTrends?.(root, b);
             if (kept) root.querySelector(`${kept}:not([disabled])`)?.focus?.({ preventScroll: true });
             this.syncBmNetPanel(b);
         },

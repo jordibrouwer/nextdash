@@ -149,6 +149,13 @@
             node.appendChild(el('span', 'netw-name', row.gone ? Tile.say(dash, widget, 'gone') : (row.name || row.url)));
             if (!row.gone) {
                 node.appendChild(badge(row, state));
+                // The last day as a small line, when the check measures milliseconds and has two readings.
+                const trend = window.NetTrend;
+                if (trend?.hasSpark(row.spark)) {
+                    const spark = el('span', 'netw-spark');
+                    spark.innerHTML = trend.sparkSvg(row.spark, { width: 44, height: 18, label: t(dash, 'nettrend.spark', 'Response time, last 24 hours, now') });
+                    node.appendChild(spark);
+                }
                 const value = el('span', 'netw-value', valueOf(dash, widget, row, state));
                 value.dataset.state = state;
                 node.appendChild(value);
@@ -263,7 +270,10 @@
     function ensureModel() {
         if (model()) return Promise.resolve();
         const load = window.LazyScript?.loadScriptOnce;
-        return load ? load('js/shared/net-checks-model.js', 'netChecksModel', () => Boolean(model())).catch(() => {}) : Promise.resolve();
+        if (!load) return Promise.resolve();
+        return load('js/shared/net-checks-model.js', 'netChecksModel', () => Boolean(model()))
+            .then(() => load('js/shared/net-trend.js', 'netTrend', () => Boolean(window.NetTrend)))
+            .catch(() => {});
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

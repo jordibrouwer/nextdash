@@ -41,6 +41,7 @@
         /** The tab's pane: a root the net part swaps in place when something changes. */
         renderBmTestsPane(b) {
             if (!this.bmNetEnabled?.()) return '';
+            this._bmTrendBookmark = b;
             return `<div class="net-tests" data-bm-tests>${this.renderBmTestsBody(b)}</div>`;
         },
 
@@ -126,7 +127,10 @@
             const state = M.badgeState(check);
             const name = M.labelFor(check, b);
             const editing = st.editing && st.editing.id === check.id;
-            const head = `<span class="net-dot" data-state="${state}" aria-hidden="true"></span> ${esc(name)}`;
+            const trend = global.NetTrend;
+            const spark = trend && check.enabled === true && trend.hasSpark(check.spark)
+                ? `<span class="net-head-spark">${trend.sparkSvg(check.spark, { width: 64, height: 18, maxMs: check.maxMs, label: t('nettrend.spark', 'Response time, last 24 hours, now') })}</span>` : '';
+            const head = `<span class="net-dot" data-state="${state}" aria-hidden="true"></span> ${esc(name)}${spark}`;
             const body = editing ? this.renderBmNetCheckForm(b) : this.renderBmTestsCheckBody(b, check, state);
             const out = this.workbenchAcc('tests', `check-${check.id}`, head, this.bmTestsAnswer(check), body, false, { labelHtml: true, forceOpen: editing });
             return out.replace('<details class="config-bm-acc"', `<details class="config-bm-acc" data-net-card="${esc(check.id)}" data-state="${state}"`);
@@ -177,7 +181,7 @@
             }
             const busy = st.testingId === check.id;
             const muteLabel = check.muted ? t('nettools.unmute', 'Unmute') : t('nettools.mute', 'Mute');
-            return `${strip}
+            return `${strip}${this.renderBmTestsTrend(check)}
                 ${lastText ? kv(t('nettools.lastResult', 'Last result'), lastText) : ''}
                 ${kv(t('nettools.everyLabel', 'Every'), every)}
                 ${fact}${drift}${testLine}${block}
@@ -456,12 +460,145 @@
             this.focusBmNetForm(b);
         },
 
+        /* ── Trend chart (24 h / 7 d / 30 d) ────────────────────────────── */
+
+        /** The trend state of the bookmark the panel shows: per check its range, status and answer. */
+        bmTrendState(b) {
+            const key = `${b?.pageId}\u0000${b?.url}`;
+            if (this._bmTrend?.key !== key) {
+                this.destroyBmTrends();
+                this._bmTrend = { key, byId: {} };
+            }
+            return this._bmTrend;
+        },
+
+        /** Only a check that measures milliseconds and is scheduled has a trend (TLS counts days). */
+        bmTrendApplies(check) {
+            return check.enabled === true && ['tcp', 'ping', 'dns', 'http', 'json'].includes(check.type) && Boolean(global.NetTrend);
+        },
+
+        /** The chart's frame: range buttons, the plot (drawn by hydrateBmTrends) and the figures. */
+        renderBmTestsTrend(check) {
+            if (!this.bmTrendApplies(check)) return '';
+            const esc = (v) => this.dash.escapeHtml(v);
+            const t = (k, f) => this.bmNetT(k, f);
+            const b = this._bmTrendBookmark;
+            const entry = (b ? this.bmTrendState(b).byId[check.id] : null) || {};
+            const range = entry.range || '24h';
+            const names = { '24h': t('nettrend.r24h', '24 h'), '7d': t('nettrend.r7d', '7 d'), '30d': t('nettrend.r30d', '30 d') };
+            const buttons = ['24h', '7d', '30d'].map((r) =>
+                `<button type="button" data-net-trend-range="${r}" aria-pressed="${r === range}">${esc(names[r])}</button>`).join('');
+            return `<div class="net-trend" data-net-chart="${esc(check.id)}" data-range="${range}">
+                    <div class="net-trend-head"><span class="net-trend-title">${esc(t('nettrend.title', 'Response time'))}</span>
+                        <span class="net-trend-range" role="group" aria-label="${esc(t('nettrend.range', 'Range'))}">${buttons}</span></div>
+                    <div class="net-trend-plot" data-net-trend-plot></div>
+                    <div class="net-trend-facts" data-net-trend-facts></div>
+                </div>`;
+        },
+
+        destroyBmTrends() {
+            for (const handle of Object.values(this._bmTrendCharts || {})) {
+                try { handle.destroy?.(); } catch { /* already gone */ }
+            }
+            this._bmTrendCharts = {};
+        },
+
+        /** Draw the trend of every open check in the panel; fetch what is not yet read. */
+        hydrateBmTrends(root, b) {
+            if (!root || !b) return;
+            this._bmTrendBookmark = b;
+            for (const box of root.querySelectorAll('[data-net-chart]')) {
+                if (!box.closest('details')?.open) continue;
+                void this.loadBmTrend(b, box.getAttribute('data-net-chart'), box);
+            }
+        },
+
+        async loadBmTrend(b, id, box) {
+            const state = this.bmTrendState(b);
+            const entry = state.byId[id] || (state.byId[id] = { range: box.getAttribute('data-range') || '24h', status: 'idle', data: null });
+            const range = entry.range;
+            if (entry.status === 'loading') return;
+            if (!entry.data || entry.data.range !== range) {
+                entry.status = 'loading';
+                this.paintBmTrendNote(box, this.bmNetT('nettrend.loading', 'Loading...'));
+                try {
+                    const res = await global.fetch(`/api/net/trend?check=${encodeURIComponent(id)}&range=${range}`, { cache: 'no-store' });
+                    entry.data = res.ok ? await res.json() : null;
+                    entry.status = entry.data ? 'ready' : 'error';
+                } catch {
+                    entry.status = 'error';
+                }
+                // A different range was chosen while this was loading: that click loads its own.
+                if (entry.range !== range) return;
+            }
+            const live = document.querySelector(`[data-net-chart="${CSS.escape(id)}"]`);
+            if (live) this.paintBmTrend(live, entry);
+        },
+
+        paintBmTrendNote(box, text) {
+            const plot = box.querySelector('[data-net-trend-plot]');
+            if (plot) plot.innerHTML = `<p class="config-bm-panel-muted net-trend-note">${this.dash.escapeHtml(text)}</p>`;
+            const facts = box.querySelector('[data-net-trend-facts]');
+            if (facts) facts.textContent = '';
+        },
+
+        async paintBmTrend(box, entry) {
+            const t = (k, f) => this.bmNetT(k, f);
+            const data = entry.data;
+            if (entry.status === 'error' || !data) return this.paintBmTrendNote(box, t('nettrend.error', 'The trend could not be read.'));
+            if (!data.points?.length) return this.paintBmTrendNote(box, t('nettrend.empty', 'Nothing measured in this range yet.'));
+            const plot = box.querySelector('[data-net-trend-plot]');
+            const factsBox = box.querySelector('[data-net-trend-facts]');
+            const trend = global.NetTrend;
+            const fact = (label, value) => `<div class="net-trend-fact"><small>${this.dash.escapeHtml(label)}</small><b>${this.dash.escapeHtml(value)}</b></div>`;
+            const checks = Number(data.checks) || 0;
+            const fails = Number(data.fails) || 0;
+            factsBox.innerHTML = [
+                fact(t('nettrend.average', 'Average'), data.avg > 0 ? trend.formatMs(data.avg) : '\u2014'),
+                fact(t('nettrend.slowest', 'Slowest'), data.peak > 0 ? trend.formatMs(data.peak) : '\u2014'),
+                fact(t('nettrend.failed', 'Failed'), checks ? `${fails} / ${checks}` : '\u2014'),
+            ].join('')
+                + (data.range === '30d' ? `<p class="config-bm-panel-muted net-trend-note">${this.dash.escapeHtml(t('nettrend.dayNote', 'One point per day. The 24 h and 7 d ranges show the peaks within a day.'))}</p>` : '')
+                + (data.range === '7d' ? `<p class="config-bm-panel-muted net-trend-note">${this.dash.escapeHtml(t('nettrend.weekNote', 'The last days are in two-hour steps, earlier days one point each.'))}</p>` : '');
+            try {
+                await global.LazyScript.loadScriptOnce('js/shared/nd-chart.js', 'ndChart', () => typeof global.NdChart !== 'undefined');
+                await global.NdChart.load();
+            } catch {
+                plot.innerHTML = '';
+                return;
+            }
+            // The panel may have been repainted while the chart library arrived.
+            if (!plot.isConnected) return;
+            const id = box.getAttribute('data-net-chart');
+            this._bmTrendCharts = this._bmTrendCharts || {};
+            this._bmTrendCharts[id]?.destroy?.();
+            plot.innerHTML = '';
+            this._bmTrendCharts[id] = global.NdChart.chart(plot, trend.chartSpec(data, t));
+        },
+
         bindBmTestsPane(panel) {
             const root = panel?.querySelector('[data-bm-tests]');
             const b = root && panel.dataset.bmPanelKey ? this.findBookmarkByKey(panel.dataset.bmPanelKey) : null;
             if (!root || !b) return;
             this.bindBmNetChecks(panel, b);
             this.bindBmHelp(root, b);
+            root.addEventListener('click', (event) => {
+                const btn = event.target.closest('[data-net-trend-range]');
+                const box = btn?.closest('[data-net-chart]');
+                if (!btn || !box || !root.contains(box)) return;
+                const state = this.bmTrendState(b);
+                const id = box.getAttribute('data-net-chart');
+                const entry = state.byId[id] || (state.byId[id] = { range: '24h', status: 'idle', data: null });
+                entry.range = btn.getAttribute('data-net-trend-range');
+                box.setAttribute('data-range', entry.range);
+                box.querySelectorAll('[data-net-trend-range]').forEach((el) => el.setAttribute('aria-pressed', String(el === btn)));
+                void this.loadBmTrend(b, id, box);
+            });
+            // A closed accordion draws nothing and asks nothing; opening it does.
+            root.addEventListener('toggle', (event) => {
+                if (event.target.open) this.hydrateBmTrends(event.target, b);
+            }, true);
+            this.hydrateBmTrends(root, b);
             root.addEventListener('change', (event) => {
                 const pick = event.target.closest('[data-net-run-record]');
                 if (pick) this.bmTestsRun(b).record = pick.value;

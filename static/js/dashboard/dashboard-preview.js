@@ -357,7 +357,33 @@ class DashboardPreview {
             news: this.bookmarkNewsState(bookmark),
             health: this.bookmarkHealthState(bookmark),
             archive: this.bookmarkArchiveState(bookmark),
+            netChecks: this.bookmarkNetChecks(bookmark),
         };
+    }
+
+    /**
+     * The scheduled network checks of the bookmark, worst first, as the card
+     * lists them: what the dashboard's row chips already read, from memory.
+     * Empty while the checks are off, not loaded yet, or the bookmark has none.
+     */
+    bookmarkNetChecks(bookmark) {
+        const badges = this.dash.netBadges;
+        const M = window.NetChecksModel;
+        if (!badges?.enabled?.() || !M) return [];
+        const items = badges.byKey.get(badges.key(badges.pageIdOf(bookmark), bookmark?.url || '')) || [];
+        const order = { down: 4, warn: 3, slow: 2, unknown: 1, ok: 0 };
+        return items
+            .map((item, i) => ({ item, i, state: M.badgeState(item) }))
+            .sort((a, b) => ((order[b.state] ?? 0) - (order[a.state] ?? 0)) || (a.i - b.i))
+            .map(({ item, state }) => ({
+                id: item.checkId,
+                label: item.label || M.typeName(item.type),
+                type: item.type,
+                state,
+                ms: item.state?.ok && Number(item.state.ms) > 0 ? Math.round(item.state.ms) : 0,
+                detail: item.state?.detail || '',
+                spark: Array.isArray(item.spark) ? item.spark : null,
+            }));
     }
 
     /*
@@ -979,6 +1005,7 @@ class DashboardPreview {
                 <button type="button" class="bookmark-preview-card-action" data-preview-action="copy"></button>
                 <button type="button" class="bookmark-preview-card-action" data-preview-action="refresh"></button>
                 <button type="button" class="bookmark-preview-card-action" data-preview-action="edit"></button>
+                <button type="button" class="bookmark-preview-card-action" data-preview-action="net" hidden></button>
                 <span class="bookmark-preview-card-esc">esc</span>
             </div>
         `;
@@ -1092,6 +1119,11 @@ class DashboardPreview {
                 d.formatDashboardLabel('previewCopied', {}, 'Link copied'),
                 'success'
             );
+            return;
+        }
+        if (action === 'net') {
+            this.hideBookmarkPreviewCard();
+            d.netBadges?.openTests(d.netBadges.pageIdOf(bookmark), bookmark.url);
             return;
         }
         if (action === 'edit') {
@@ -1643,6 +1675,7 @@ class DashboardPreview {
 
         const facts = this.buildPreviewFacts(preview, want);
         this.paintPreviewFacts(card, facts);
+        card.dataset.previewNet = want.has('status') && preview?.netChecks?.length ? '1' : '';
 
         // A link with no description, no picture and nothing to report would
         // otherwise be a title over empty space.
@@ -1673,6 +1706,12 @@ class DashboardPreview {
                     d.formatDashboardLabel('previewActionRefresh', {}, 'Refresh');
                 foot.querySelector('[data-preview-action="edit"]').textContent =
                     d.formatDashboardLabel('previewActionEdit', {}, 'Edit');
+                // Only a bookmark with checks has somewhere to go.
+                const net = foot.querySelector('[data-preview-action="net"]');
+                if (net) {
+                    net.textContent = d.formatDashboardLabel('previewActionNet', {}, 'Network checks');
+                    net.hidden = card.dataset.previewNet !== '1';
+                }
             }
         }
         if (mode === 'pinned') {
@@ -1830,6 +1869,33 @@ class DashboardPreview {
                 });
             }
         }
+        /*
+         * The network checks, one line each with the last day beside the value.
+         * Three at most, worst first; the rest is a count. Read from what the
+         * row chips already hold, so a hover asks the server for nothing.
+         */
+        if (want.has('status') && Array.isArray(preview?.netChecks) && preview.netChecks.length) {
+            const trend = window.NetTrend;
+            preview.netChecks.slice(0, 3).forEach((check) => {
+                const value = check.state === 'down'
+                    ? d.formatDashboardLabel('previewNetDown', {}, 'Down')
+                    : (check.ms > 0 ? (trend?.formatMs?.(check.ms) || `${check.ms} ms`) : check.detail);
+                rows.push({
+                    label: check.label,
+                    value,
+                    spark: trend?.hasSpark?.(check.spark)
+                        ? trend.sparkSvg(check.spark, { width: 72, height: 18, label: d.formatDashboardLabel('previewNetSpark', {}, 'Response time, last 24 hours, now') })
+                        : '',
+                    tone: { down: 'bad', warn: 'warn', slow: 'warn' }[check.state] || '',
+                });
+            });
+            if (preview.netChecks.length > 3) {
+                rows.push({
+                    label: d.formatDashboardLabel('previewNetMore', { count: preview.netChecks.length - 3 }, `+${preview.netChecks.length - 3} more checks`),
+                    value: '',
+                });
+            }
+        }
         if (want.has('opens')) {
             const openCount = Number(preview?.openCount || 0);
             if (openCount > 0) {
@@ -1878,6 +1944,12 @@ class DashboardPreview {
             dt.textContent = row.label;
             const dd = document.createElement('dd');
             if (row.tone) dd.classList.add(`is-${row.tone}`);
+            if (row.spark) {
+                const spark = document.createElement('span');
+                spark.className = 'bookmark-preview-card-spark';
+                spark.innerHTML = row.spark;
+                dd.appendChild(spark);
+            }
             if (row.value) {
                 const strong = document.createElement(row.key ? 'kbd' : 'b');
                 strong.textContent = row.value;

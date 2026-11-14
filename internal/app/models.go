@@ -7413,6 +7413,10 @@ type HealthDay struct {
 	// PN is how many checks P averages: the successful ones that had a ping.
 	// Absent in summaries written before it; those fall back to U.
 	PN int `json:"pn,omitempty"`
+	// X is the slowest response time of the day in ms, across the successful
+	// checks that had a ping. The trend chart draws it as the day's peak.
+	// Absent in summaries written before it; those draw the mean.
+	X int `json:"x,omitempty"`
 }
 
 // HealthTrendPoint is one day's summary of the whole collection.

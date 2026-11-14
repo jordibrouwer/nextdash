@@ -145,6 +145,12 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
+## Unreleased
+
+### Monitoring
+
+- **new — Response-time trends for network checks.** A check that measures milliseconds (TCP, ping, DNS, HTTP, JSON) now shows its last day as a sparkline in the Tests tab, in the Network tests widget and on the bookmark's preview card. Opening a check in the Tests tab draws its response time over 24 hours, 7 days or 30 days, with the slow limit as a dashed line and failed checks marked on the floor. Nothing new is stored: the chart reads the history the checks already keep, and from three days back one point per day (`GET /api/net/trend`, `static/js/shared/net-trend.js`). The pinned preview card has a Network checks button that opens the Tests tab.
+
 ## v1.29.1 — 14 November 2026
 
 Search, the Inbox and the RSS widget on a touch screen — held back from the What's new window (`hideFromModal`) like v1.28.3, so v1.29.0 keeps leading it.

@@ -697,3 +697,88 @@ button.config-bm-tag--more:focus-visible {
     border: 1px solid var(--border-primary);
     border-radius: 5px;
 }
+
+/* Response-time trend chart in a check's body (the sparkline itself lives in dashboard.css: the
+   preview card and the widget draw it without this file). */
+.net-head-spark {
+    margin-left: var(--space-2, 0.5rem);
+}
+
+.net-trend {
+    margin: var(--space-2, 0.5rem) 0;
+}
+
+.net-trend-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.net-trend-title {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.net-trend-range {
+    display: inline-flex;
+    border: 1px solid var(--border-primary);
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.net-trend-range button {
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-xs);
+    padding: 3px 10px;
+    cursor: pointer;
+}
+
+.net-trend-range button[aria-pressed="true"] {
+    background: var(--accent-primary);
+    color: var(--text-on-accent, #fff);
+}
+
+.net-trend-range button:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
+}
+
+.net-trend-plot {
+    min-height: 190px;
+    min-width: 0;
+}
+
+.net-trend-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-1-5, 0.4rem);
+}
+
+.net-trend-fact {
+    min-width: 88px;
+    padding: 4px 10px;
+    border-radius: 7px;
+    background: var(--bg-secondary, transparent);
+}
+
+.net-trend-fact small {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.net-trend-fact b {
+    font-variant-numeric: tabular-nums;
+}
+
+.net-trend-note {
+    flex: 1 0 100%;
+    margin: 0;
+}
