@@ -98,6 +98,38 @@ test.describe('phone', () => {
         await expect(page.locator('#shortcut-search')).not.toHaveClass(/show/);
     });
 
+    test('search opens at once with the tab bar still under it', async ({ page }) => {
+        await open(page);
+        // Loaded with the bar, not on the first tap.
+        await page.waitForFunction(() => window.SearchLoader?.isReady?.() === true);
+        await page.locator('#mobile-tabbar [data-tab="search"]').tap();
+        await expect(page.locator('#shortcut-search')).toHaveClass(/show/);
+        await expect(page.locator('#mobile-tabbar [data-tab="search"]')).toHaveAttribute('aria-current', 'page');
+        const geo = await page.evaluate(() => {
+            const bar = document.getElementById('mobile-tabbar').getBoundingClientRect();
+            const layer = document.getElementById('shortcut-search').getBoundingClientRect();
+            const hit = document.elementFromPoint(bar.left + bar.width / 2, bar.top + bar.height / 2);
+            return { barTop: bar.top, layerBottom: layer.bottom, barOnTop: !!hit?.closest('#mobile-tabbar') };
+        });
+        expect(geo.barOnTop).toBe(true);
+        expect(geo.layerBottom).toBeLessThanOrEqual(geo.barTop + 1);
+        // A keyboard of 300px lifts the bar and the search layer with it.
+        await page.evaluate(() => document.documentElement.style.setProperty('--mobile-kb', '300px'));
+        const lifted = await page.evaluate(() => ({
+            vh: window.innerHeight,
+            barBottom: document.getElementById('mobile-tabbar').getBoundingClientRect().bottom,
+            layerBottom: document.getElementById('shortcut-search').getBoundingClientRect().bottom,
+            barTop: document.getElementById('mobile-tabbar').getBoundingClientRect().top,
+        }));
+        expect(lifted.barBottom).toBeLessThanOrEqual(lifted.vh - 299);
+        expect(lifted.layerBottom).toBeLessThanOrEqual(lifted.barTop + 1);
+        await page.evaluate(() => document.documentElement.style.removeProperty('--mobile-kb'));
+        // Another tab leaves search.
+        await page.locator('#mobile-tabbar [data-tab="home"]').tap();
+        await expect(page.locator('#shortcut-search')).not.toHaveClass(/show/);
+        await expect(page.locator('#mobile-tabbar [data-tab="home"]')).toHaveAttribute('aria-current', 'page');
+    });
+
     test('the page filter bar is not on a phone', async ({ page }) => {
         await open(page);
         await expect(page.locator('#grid-filter-bar')).toHaveCount(0);

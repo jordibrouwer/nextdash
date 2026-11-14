@@ -254,7 +254,7 @@ body[data-mobile-tabbar] {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: var(--mobile-kb, 0px);
     z-index: 1100;
     display: grid;
     grid-template-columns: repeat(var(--mobile-tab-count, 5), 1fr);
@@ -530,7 +530,9 @@ body[data-mobile-panel] #dashboard-layout {
    for a keyboard and a wide panel steps aside. */
 body[data-phone-layout="true"] .shortcut-search {
     width: 100%;
-    height: 100dvh;
+    /* The tab bar stays: search sits above the page and under the bar. */
+    height: calc(100dvh - 4.25rem - env(safe-area-inset-bottom, 0px) - var(--mobile-kb, 0px));
+    z-index: 1095;
     align-items: stretch;
     justify-content: flex-start;
     padding: 0;
@@ -542,10 +544,10 @@ body[data-phone-layout="true"] .shortcut-search {
 body[data-phone-layout="true"] .shortcut-search .search-container {
     width: 100% !important;
     max-width: none !important;
-    height: 100dvh;
+    height: 100%;
     max-height: none !important;
     margin: 0 !important;
-    padding: calc(0.6rem + env(safe-area-inset-top, 0px)) 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding: calc(0.6rem + env(safe-area-inset-top, 0px)) 0.75rem 0.5rem !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;

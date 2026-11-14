@@ -129,8 +129,13 @@
 
     // ── the bar ──────────────────────────────────────────────────────────
 
+    function searchIsOpen() {
+        return Boolean(document.querySelector('.shortcut-search.show'));
+    }
+
     function activeTab() {
         if (panel === 'guide') return 'more';
+        if (searchIsOpen()) return 'search';
         if (panel) return panel;
         const view = dash()?.activeView;
         if (view === 'inbox') return 'inbox';
@@ -207,6 +212,7 @@
         const d = dash();
         if (!d) return;
         const tab = button.getAttribute('data-tab');
+        if (tab !== 'search') d.searchComponent?.closeSearch?.();
         if (tab === 'search') {
             closePanel();
             void openSearch();
@@ -697,9 +703,37 @@
         timer = null;
     }
 
+    /*
+     * The keyboard covers the bottom of the screen without moving a fixed bar:
+     * Android Chrome shrinks only the visual viewport, and iOS pans it. The gap
+     * between the layout and the visual viewport is the keyboard's height, and
+     * the bar (and the search layer above it) lifts by that much, so the bar
+     * stays in sight while a field is being typed in.
+     */
+    let followingKeyboard = false;
+    function followKeyboard() {
+        const vv = window.visualViewport;
+        if (followingKeyboard || !vv) return;
+        followingKeyboard = true;
+        const update = () => {
+            const gap = isPhone() ? Math.round(window.innerHeight - vv.height - vv.offsetTop) : 0;
+            // A gap under 80px is a browser bar sliding, not a keyboard.
+            document.documentElement.style.setProperty('--mobile-kb', `${gap > 80 ? gap : 0}px`);
+        };
+        vv.addEventListener('resize', update);
+        vv.addEventListener('scroll', update);
+        update();
+    }
+
     function init() {
         sync();
         if (observer) return;
+        followKeyboard();
+        // Search is part of the phone, not a modal fetched on the first tap: load
+        // it as the bar appears, and follow its open state in the bar.
+        if (isPhone()) void window.SearchLoader?.ensureReady?.();
+        const layer = document.querySelector('.shortcut-search');
+        if (layer) new MutationObserver(() => { if (isPhone()) renderBar(); }).observe(layer, { attributes: true, attributeFilter: ['class'] });
         // Any route to another view (a link, a key, the header) moves the highlight.
         observer = new MutationObserver(() => {
             if (!isPhone()) return;

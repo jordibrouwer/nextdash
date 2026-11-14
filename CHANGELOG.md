@@ -147,7 +147,11 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.29.1 — 14 November 2026
 
-The RSS widget on a touch screen.
+Search and the RSS widget on a touch screen.
+
+### Mobile
+
+- **fix — Search on the phone opens at once and keeps the tab bar.** The search code now loads with the bar instead of on the first tap of Search, and the search layer sits above the page and under the bar, so Home, Search, Inbox, Status and More stay in sight (Search is the highlighted tab; another tab leaves search). When the keyboard opens, the bar and the layer lift above it instead of staying behind it (`static/js/mobile-tabbar.js`, `static/css/mobile-experience.css`).
 
 ### RSS
 
