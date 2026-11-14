@@ -23,6 +23,10 @@ async function searchWith(page, bookmarks, query, before = null) {
         const s = window.dashboardInstance.searchComponent;
         s.interleaveMode = true;           // search mode: fuzzy by name
         s.emptyStateExpandedGroups.clear();
+        // The server's data holds the picks other specs made (a query that once meant a
+        // bookmark of its own); here the results are the fuzzy ones of the seeded set.
+        s.searchPicks = [];
+        s.fuzzySearchComponent.updatePicks([]);
         s.fuzzySearchComponent.updateBookmarks(bookmarks);
         if (before) {
             s.currentQuery = before.query;

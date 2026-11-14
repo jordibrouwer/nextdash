@@ -373,7 +373,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/search-loader.js":                                    "0748574ef2ba",
 	"js/search-usually-now.js":                               "e455121b7152",
 	"js/search-web.js":                                       "f014e68589dd",
-	"js/search.js":                                           "8847b113d51f",
+	"js/search.js":                                           "dccc6e6b6aa6",
 	"js/select.js":                                           "06c6b83b8b55",
 	"js/settings-sanitize.js":                                "2ab9c31bc877",
 	"js/shared/block-move-model.js":                          "ee07f635f1dd",

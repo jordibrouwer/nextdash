@@ -3500,8 +3500,11 @@ class SearchComponent {
         // bookmarks, and a shortcut needs the / in front. The other way round (the
         // desktop default) a word that is no shortcut found nothing and said
         // "press / to search names", a key a phone does not have.
-        const phone = window.MobileExperience?.isPhoneLayout?.() === true;
-        this.interleaveMode = phone || this.settings?.interleaveMode === true;
+        // Only when the panel opens: updateSearch calls this on every keystroke, and
+        // the mode a reader switched to in the session must stay.
+        if (!this.searchActive && window.MobileExperience?.isPhoneLayout?.() === true) {
+            this.interleaveMode = true;
+        }
         this._beginSearchSession();
         // Started at the control that opened it, when there was one: see
         // ModalOrigin in modal.js.
