@@ -147,19 +147,22 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.29.1 — 14 November 2026
 
-Search, the Inbox and the RSS widget on a touch screen.
+Search, the Inbox and the RSS widget on a touch screen — held back from the What's new window (`hideFromModal`) like v1.28.3, so v1.29.0 keeps leading it.
 
 ### Mobile
 
 - **fix — Search on the phone opens at once and keeps the tab bar.** The search code now loads with the bar instead of on the first tap of Search, and the search layer sits above the page and under the bar, so Home, Search, Inbox, Status and More stay in sight (Search is the highlighted tab; another tab leaves search). When the keyboard opens, the bar and the layer lift above it instead of staying behind it (`static/js/mobile-tabbar.js`, `static/css/mobile-experience.css`).
-- **fix — Search on the phone keeps the mode you switched to.** Searching bookmark names is the phone's start mode, but every key typed put it back, so a mode chosen while typing was undone at once. It is set only when the panel opens (`static/js/search.js`).
 - **fix — The Inbox selects are 44px on an iPhone.** WebKit ignores `min-height` on a native select, so the site and sort selects stayed at 23px there; they now have a height of their own (`static/css/mobile-experience.css`).
-- **fix — Show on stays out of the Pages and categories window.** The column belongs to Config → Structure; in the narrower window an extra cell pushed the ⋯ out of its column (`static/css/config-structure.css`).
 - **new — The phone specs run on an Android and an iPhone engine.** `npm run test:mobile` runs the phone specs in Chromium with a Pixel 7 and in WebKit with an iPhone 15; without it nothing changes (`playwright.config.js`).
 
 ### RSS
 
 - **fix — RSS headlines have a preview on a touch screen.** The preview of an RSS widget row (the feed's summary, source and age) only showed on hover, so a phone never got it: a tap opened the article, and a press and hold selected a word and opened the row menu. On touch a tap or a press and hold now opens a sheet at the bottom with the preview and three buttons: Open article, Open in a new tab and Close. A tap away or Escape also closes it, the headlines no longer select text, and the desktop hover is as it was (`static/js/dashboard/dashboard-widget-rss.js`, issue 22).
+
+### Docs
+
+- **docs — Manual and tip.** Manual §23 says the search sheet keeps the tab bar and lifts above the keyboard, and the RSS line says what a touch screen does with a headline; the RSS tip in Config → Help → Tips names the tap and the press and hold, in six languages. The phone search picture in the manual is taken again with the tab bar under it.
+- **docs — `static/data/whats-new/v1.29.1.json` and its index entry**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v377`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
@@ -193,6 +196,8 @@ The phone gets its own way around nextDash.
 ### Docs
 
 - **docs — Translations.** The phone's strings were only English fallbacks in the code (`t('mobile.tabs.home', 'Home')`), in no locale file. 96 keys are now in all six languages: a new `mobile` group (tab bar, Status, More, start screens, the phone guide, the search placeholder), `config.*` (Show on column, start screen choice and its info text, the pause line and Resume now, resize column), `editMode.*` (Show on) and `dashboard.feedWatchOffer`.
+- **fix — Search on the phone keeps the mode you switched to.** Searching bookmark names is the phone's start mode, but every key typed put it back, so a mode chosen while typing was undone at once. It is set only when the panel opens (`static/js/search.js`).
+- **fix — Show on stays out of the Pages and categories window.** The column belongs to Config → Structure; in the narrower window an extra cell pushed the ⋯ out of its column (`static/css/config-structure.css`).
 - **docs — Help and tips.** Paragraphs in `helpBehaviorBody` (the phone), `helpMonitoringConfigBody` (pausing), `helpEditModeBody` (Show on), `helpFreshBody` (a new feed shows its posts) and `helpBmViewSettingsBody` (column widths), in six languages, and five tips in `TIP_GROUPS`: `tipPhoneTabs`, `tipPhoneLongPress`, `tipWatchFirstPosts`, `tipEditShowOn`, `tipListResizeColumns`.
 - **docs — Manual and README.** §23 is rewritten around the tab bar (start screens, search sheet, Status and pause, More, Inbox, short menu, forms, Show on) with eight phone pictures, and `22-phone.jpg` and `22-phone-bookmarks.jpg` are retaken; short additions in §4, §5, §11, §12.5 and §14.2 and a bullet in the README. The pictures come from `tests/manual-screenshots-v1-29.spec.js`, which `scripts/run-manual-shots.sh` now runs; the shot kit marks the swipe hint as seen.
 - **docs — What's new and News & features.** The window leads with three highlights (the tab bar and Status, Show on, the resizable columns) and carries the start screens, the short menu, the search sheet, the new-feed popover and the pause under them. Config → Overview and About → News & features get three entries dated v1.29.0 (the phone layout, resizable columns, a new feed's posts), in six languages. The release token and data token moved, and `tests/whats-new-hidden-release.spec.js` names v1.29.0 as the release that leads (`static/data/whats-new/v1.29.0.json`, `overview-features.json`, `whats-new-stub.js`, `tests/fixtures/whats-new-media/v1.29.0.js`).

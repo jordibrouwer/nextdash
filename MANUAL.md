@@ -3386,7 +3386,7 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 
 **Calendar** — your server fetches the feed (the private ICS address from your calendar app, not its web page), shares one copy between widgets and refreshes it every 15 minutes. A recurring event shows every occurrence that falls within the widget's look-ahead, at the same local time on both sides of a clock change; skipped, extra, moved and cancelled occurrences show as your calendar app set them. A repeat pattern the widget cannot read (such as *the last weekday of the month*) shows only its first occurrence. Changing the address redraws the widgets at once.
 
-**RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
+**RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus; on a touch screen a tap or a press and hold opens a sheet at the bottom with the summary and the buttons **Open article**, **Open in a new tab** and **Close**. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
 
 **Jellyfin** — fill in the server's address and an API key (Jellyfin: Dashboard → API Keys) and press **Connect**. The server tries both and says *Connected to* the server's name and version, then fills the choices below: **Read as** (a user, or no one for the newest of everything) and the **Libraries** that exist, so nothing is typed by id. Then the **Layout**, what **A click** does (open the item in Jellyfin, or show its details here first), where it opens, **Hide what was watched**, **Items to show** (in the strip, per library) and how often to ask Jellyfin (a minute at least). The key stays on the server: the tile and its posters come through nextDash, which keeps the posters in `data/media-images/`, shared by all the media tiles (up to 200 MB, oldest out first, not in backups; the `data/jellyfin-images/` folder of v1.19.4 is removed the first time a poster is stored). When Jellyfin cannot be reached, the tile keeps the last list and says how old it is. Jellyfin also has a Custom widget preset for its library counts ([§16.5](#165-the-custom-widget)).
 
@@ -5215,10 +5215,10 @@ On a phone the footer with search and add is replaced by a bar with five tabs. *
 
 <a id="search-on-a-phone"></a>
 
-**Search on a phone.** The **Search** tab opens a full-screen sheet with a real field (it takes the keyboard and its Search key), the modes as a row of chips (everything, `:` commands, `!` finders, `#` tags) and bigger result rows, with a close button because a phone has no `Escape`. Typing searches bookmark names; the desktop default only matches shortcuts. Letters that match a bookmark shortcut no longer open that bookmark on the way to a longer word: open it with a tap or the Search key. The assistant is not offered on a phone.
+**Search on a phone.** The **Search** tab opens a sheet over the page with a real field (it takes the keyboard and its Search key), the modes as a row of chips (everything, `:` commands, `!` finders, `#` tags) and bigger result rows, with a close button because a phone has no `Escape`. The tab bar stays under the sheet, so Home, Inbox, Status and More are one tap away (another tab closes search), and it lifts above the keyboard while you type. Search is loaded with the bar, so the tab opens at once. Typing searches bookmark names; the desktop default only matches shortcuts. Letters that match a bookmark shortcut no longer open that bookmark on the way to a longer word: open it with a tap or the Search key. The assistant is not offered on a phone.
 
 <p align="center"><img src="screenshots/manual.md/23-phone-search.jpg" alt="The search sheet on a phone: a field with doc typed in it, the mode chips everything, commands, finders and tags, and grouped results: filters, best matches such as Docker docs, MDN Web Docs and Go Documentation, and further groups" width="300"></p>
-<p align="center"><sub>The search sheet, with <code>doc</code> typed in.</sub></p>
+<p align="center"><sub>The search sheet, with <code>doc</code> typed in and the tab bar still under it.</sub></p>
 
 <a id="status-and-pause"></a>
 

@@ -5962,7 +5962,7 @@
     "tipTuneAmbientWidgets": "Three widgets look beyond your bookmarks: Weather uses the location set under Appearance → Date &amp; weather, Calendar reads the feed address set there, and RSS takes feed addresses of its own.",
     "tipTuneClockFace": "A Clock widget two columns wide can draw a clock face, with the moon and its phase and sunrise and sunset for your weather location.",
     "tipTuneHomeAssistant": "The Home Assistant widget shows the entities you pick, room by room, and switches lights, switches, fans, scenes and scripts from the tile. Config → Widgets, then <em>Add a widget</em>.",
-    "tipTuneRssWidget": "An <em>RSS</em> block takes several feed addresses, one per line, and merges their newest articles into one list. Hover a headline for the feed's own summary; anything past the row count opens with the <em>more</em> row.",
+    "tipTuneRssWidget": "An <em>RSS</em> block takes several feed addresses, one per line, and merges their newest articles into one list. Hover a headline for the feed's own summary (on a phone, tap or press and hold it); anything past the row count opens with the <em>more</em> row.",
     "tipTuneDnsWidgets": "The <em>AdGuard Home</em> and <em>Pi-hole</em> widgets show how much your network blocks: four looks, and a click opens the top ten.",
     "tipMaintSignIn": "A service behind a login reads as broken. In the Bookmarks view's side panel, under the Health tab's <em>Expectations</em>, pick a stored sign-in under <em>Sign in with</em>.",
     "tipMaintArchive": "Switch on <em>Archive every new bookmark</em> and a copy is requested the day you save a link — the Bookmarks view can then offer a copy of the page rather than only telling you it is gone. <em>Local copies</em> keeps one on your own disk.",
