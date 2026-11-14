@@ -7474,12 +7474,15 @@ type UndoRedoManager struct {
 
 // Bookmark preview metadata
 type BookmarkPreview struct {
-	URL         string `json:"url"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
-	Domain      string `json:"domain"`
-	Icon        string `json:"icon"`
+	URL   string `json:"url"`
+	Title string `json:"title"`
+	// OriginalTitle is the page's title as it came, set only when cleaning
+	// changed it (page_title_clean.go). A form offers it back.
+	OriginalTitle string `json:"originalTitle,omitempty"`
+	Description   string `json:"description"`
+	Image         string `json:"image"`
+	Domain        string `json:"domain"`
+	Icon          string `json:"icon"`
 	/*
 	 * ImageSource and IconSource are where Image and Icon were fetched from.
 	 *
