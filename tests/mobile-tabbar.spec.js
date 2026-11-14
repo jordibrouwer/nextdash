@@ -189,6 +189,8 @@ test.describe('phone', () => {
 });
 
 test.describe('desktop', () => {
+    // A computer, whichever device project runs this (npm run test:mobile).
+    test.use({ viewport: { width: 1500, height: 950 }, hasTouch: false, isMobile: false });
     test('has no tab bar and keeps its own search', async ({ page }) => {
         await open(page);
         await expect(page.locator('#mobile-tabbar')).toHaveCount(0);

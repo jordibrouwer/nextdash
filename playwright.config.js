@@ -1,5 +1,5 @@
 // @ts-check
-const { defineConfig } = require('@playwright/test');
+const { defineConfig, devices } = require('@playwright/test');
 const { prepareE2EDataDir } = require('./tests/playwright-data-env');
 
 const skipServer = Boolean(process.env.PLAYWRIGHT_SKIP_SERVER);
@@ -16,8 +16,27 @@ const e2ePort = process.env.PORT || '18080';
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${e2ePort}`;
 const isCI = Boolean(process.env.CI);
 
+/*
+ * The phone specs on a phone's own engines: `npm run test:mobile` (PW_MOBILE=1).
+ *
+ * Android Chrome is Chromium with Pixel 7's user agent and screen; iOS Safari is
+ * WebKit with iPhone 15's. They only exist on request -- without PW_MOBILE the
+ * config has no projects and every run is what it always was -- and only the
+ * specs that are about the phone run in them. A spec's own test.use() (the
+ * phone viewport, hasTouch, isMobile) still wins over the device, and a spec that
+ * means a desktop says so the same way.
+ */
+const mobileSpecs = /(mobile-tabbar|mobile-quiet-settings|dashboard-grid-filter-mobile|block-visible-on)\.spec\.js$/;
+const mobileProjects = process.env.PW_MOBILE
+    ? [
+        { name: 'android-chrome', use: { ...devices['Pixel 7'] }, testMatch: mobileSpecs },
+        { name: 'ios-safari', use: { ...devices['iPhone 15'] }, testMatch: mobileSpecs },
+    ]
+    : undefined;
+
 module.exports = defineConfig({
     testDir: 'tests',
+    ...(mobileProjects ? { projects: mobileProjects } : {}),
     /*
      * No platform in the snapshot path.
      *
