@@ -67,6 +67,10 @@ async function resetStore(request) {
         data: {
             quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: 'keep' },
             discoveryCardDone: true,
+            // The docked bar slides off screen 2 s after load. A loaded CI runner
+            // spends that on the page's own start-up, and the spec then reaches for a
+            // button that has gone. Specs about the slide set it themselves.
+            actionBarAutoHideSeconds: 0,
         },
         headers: { 'X-NextDash-Token': WRITE_TOKEN },
     });
