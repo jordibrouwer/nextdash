@@ -354,3 +354,33 @@ func TestDigestOpensByDayCountsCalendarDays(t *testing.T) {
 		t.Fatalf("opens by day = %v, want the open on Sunday (5), not Monday (6)", w.OpensByDay)
 	}
 }
+
+func TestDigestSummaryTellsTheWeekInPlainWords(t *testing.T) {
+	week := digestNow.Add(-3 * 24 * time.Hour).UnixMilli()
+	d := buildDigest(digestInput{Now: digestNow, Settings: allOn(), InboxCount: 1,
+		Issues: []HealthIssue{
+			{Name: "Wiki", URL: "https://wiki", BrokenSince: week, Flags: []string{"broken"}},
+			{Name: "Old", URL: "https://old", Flags: []string{"broken"}},
+		},
+		Updates: map[string]*dockerImageUpdate{"plex:latest": {Status: "available"}},
+	})
+	want := "1 link broke this week, 1 link is still broken and 1 container update is waiting."
+	if d.Summary != want {
+		t.Fatalf("summary %q, want %q", d.Summary, want)
+	}
+	if n := digestNotice(d); !strings.HasPrefix(n.Error, want) {
+		t.Fatalf("the message body should start with the summary: %q", n.Error)
+	}
+}
+
+func TestDigestSummaryCalmWeekAndFigures(t *testing.T) {
+	d := digestSnapshot{Week: &digestWeek{Uptime: 99.5, Outages: 2, Opens: 12, OpensPrev: 20}}
+	got := digestSummary(d, Settings{DigestHealth: true})
+	want := "Nothing is broken this week. Your checks were up 99.5% of the time, with 2 alerts. You opened bookmarks 12 times, 8 fewer than last week."
+	if got != want {
+		t.Fatalf("summary %q, want %q", got, want)
+	}
+	if got := digestSummary(digestSnapshot{}, Settings{}); got != "" {
+		t.Fatalf("a week with nothing to say should give no summary: %q", got)
+	}
+}

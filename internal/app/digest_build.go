@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -61,6 +62,9 @@ type digestSnapshot struct {
 	Feeds       *digestFeeds   `json:"feeds,omitempty"`
 	Checkup     *digestCheckup `json:"checkup,omitempty"`
 	Week        *digestWeek    `json:"week,omitempty"`
+	// Summary is the week told in a few plain sentences, built from the figures
+	// above. The window shows it first and the notification body starts with it.
+	Summary string `json:"summary,omitempty"`
 }
 
 // digestWeek is the last seven days in figures, each next to the seven before
@@ -326,6 +330,7 @@ func buildDigest(in digestInput) digestSnapshot {
 	}
 
 	snap.Week = buildDigestWeek(in)
+	snap.Summary = digestSummary(snap, in.Settings)
 
 	// One bookmark with several findings is one thing to tidy up.
 	tidy := map[string]bool{}
@@ -465,6 +470,80 @@ func digestDayIndex(ts int64, now time.Time, loc *time.Location) (int, bool) {
 	return i, true
 }
 
+/*
+digestSummary tells the week in up to three plain sentences, from the figures
+the snapshot already holds: what needs attention first, then how the checks did,
+then how the dashboard was used. It adds no number the window does not show. A
+week with nothing to say gives "" and the window and the message skip it.
+*/
+func digestSummary(d digestSnapshot, s Settings) string {
+	plural := func(n int, one, many string) string {
+		if n == 1 {
+			return "1 " + one
+		}
+		return fmt.Sprintf("%d %s", n, many)
+	}
+	var attention []string
+	if h := d.Health; h != nil {
+		if n := len(h.NewlyBroken); n > 0 {
+			attention = append(attention, plural(n, "link broke", "links broke")+" this week")
+		}
+		if h.StillBroken > 0 {
+			attention = append(attention, plural(h.StillBroken, "link is", "links are")+" still broken")
+		}
+		if n := len(h.CertsExpiring); n > 0 {
+			attention = append(attention, plural(n, "certificate runs", "certificates run")+" out soon")
+		}
+		if n := len(h.DomainsExpiring); n > 0 {
+			attention = append(attention, plural(n, "domain runs", "domains run")+" out soon")
+		}
+	}
+	if u := d.Updates; u != nil && len(u.Available) > 0 {
+		attention = append(attention, plural(len(u.Available), "container update is", "container updates are")+" waiting")
+	}
+	if u := d.Usage; u != nil && u.Inbox > 0 {
+		attention = append(attention, plural(u.Inbox, "link waits", "links wait")+" in the Inbox")
+	}
+	var out []string
+	switch {
+	case len(attention) == 0 && s.DigestHealth && d.Health == nil:
+		out = append(out, "Nothing is broken this week.")
+	case len(attention) > 0:
+		if len(attention) > 3 {
+			attention = attention[:3]
+		}
+		text := strings.Join(attention, ", ")
+		if len(attention) > 1 {
+			i := strings.LastIndex(text, ", ")
+			text = text[:i] + " and " + text[i+2:]
+		}
+		out = append(out, strings.ToUpper(text[:1])+text[1:]+".")
+	}
+	if w := d.Week; w != nil {
+		if w.Uptime > 0 {
+			line := "Your checks were up " + strconv.FormatFloat(w.Uptime, 'f', -1, 64) + "% of the time"
+			if w.Outages > 0 {
+				line += ", with " + plural(w.Outages, "alert", "alerts")
+			}
+			out = append(out, line+".")
+		}
+		if w.Opens > 0 {
+			line := "You opened bookmarks " + plural(w.Opens, "time", "times")
+			switch {
+			case w.OpensPrev == 0:
+			case w.Opens > w.OpensPrev:
+				line += ", " + strconv.Itoa(w.Opens-w.OpensPrev) + " more than last week"
+			case w.Opens < w.OpensPrev:
+				line += ", " + strconv.Itoa(w.OpensPrev-w.Opens) + " fewer than last week"
+			default:
+				line += ", the same as last week"
+			}
+			out = append(out, line+".")
+		}
+	}
+	return strings.Join(out, " ")
+}
+
 // digestPercent is up over total as a percentage with one decimal.
 func digestPercent(up, total int) float64 {
 	return float64(int(float64(up)/float64(total)*1000+0.5)) / 10
@@ -571,6 +650,9 @@ func digestNotice(d digestSnapshot) monitorNotification {
 	}
 	if c := d.Checkup; c != nil {
 		lines = append(lines, fmt.Sprintf("%d things worth tidying up. Run :checkup.", c.Items))
+	}
+	if d.Summary != "" {
+		lines = append([]string{d.Summary}, lines...)
 	}
 	title := "Weekly digest"
 	if lead != "" {

@@ -133,6 +133,14 @@ test.describe('the digest window layout', () => {
         await expect(win.locator('.digest-summary')).toContainText('links broke this week');
     });
 
+    test('the overview opens with the week in plain sentences', async ({ page }) => {
+        const text = 'Nothing is broken this week. You opened bookmarks 12 times.';
+        const win = await openWindow(page, snapshot({ summary: text }));
+        await expect(win.locator('[data-digest-plain]')).toHaveText(text);
+        await win.locator('.digest-row[data-digest-row="broken"]').click();
+        await expect(win.locator('[data-digest-plain]')).toHaveCount(0);
+    });
+
     test('a part with nothing to show has no row, and is not counted', async ({ page }) => {
         const snap = snapshot();
         delete snap.updates;
