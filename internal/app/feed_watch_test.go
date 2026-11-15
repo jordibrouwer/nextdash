@@ -530,3 +530,29 @@ func TestWatchRecordsFailureReason(t *testing.T) {
 		t.Errorf("success must clear the reason: %+v", w)
 	}
 }
+
+// A watch stopped and watched again while a round polled it keeps its fresh
+// baseline: the round's answer belongs to the watch that was stopped.
+func TestWatchRewatchedMidRoundKeepsItsBaseline(t *testing.T) {
+	srv := newWatchFeedServer(t)
+	srv.set(rssEntry("a", "A", 1))
+	h := newDiscoveryHandlers(t, []Bookmark{{Name: "live", URL: "https://live.example/page"}})
+	key := canonicalBookmarkURLKey("https://live.example/page")
+	old, err := h.baselineWatch(context.Background(), FeedWatch{BookmarkKey: key, FeedURL: srv.URL, IntervalMinutes: 60})
+	if err != nil {
+		t.Fatal(err)
+	}
+	old.Items = []FeedItem{{ID: "forgotten", Title: "Forgotten"}}
+	// What is on disk once the round ends: the same feed, watched again.
+	fresh := old
+	fresh.WatchedAt = old.WatchedAt + 1
+	fresh.Items = nil
+	if err := writeFeedWatchFile(FeedWatchFile{Watches: []FeedWatch{fresh}}); err != nil {
+		t.Fatal(err)
+	}
+	h.runWatchPolls(context.Background(), []FeedWatch{old})
+	got := readFeedWatchFile().Watches
+	if len(got) != 1 || got[0].WatchedAt != fresh.WatchedAt || len(got[0].Items) != 0 {
+		t.Fatalf("the re-watched feed took the stopped watch's state: %+v", got)
+	}
+}
