@@ -379,6 +379,13 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/widgets/jellystat", handlers.jellystatWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/jellystat/image", handlers.jellystatImageHandler).Methods("GET")
 	r.HandleFunc("/api/widgets/jellystat/setup", handlers.jellystatSetupHandler).Methods("POST", "OPTIONS")
+	for _, immichType := range []WidgetType{WidgetTypeImmich, WidgetTypeImmichSlideshow, WidgetTypeImmichAlbums, WidgetTypeImmichPeople, WidgetTypeImmichStatus} {
+		r.HandleFunc("/api/widgets/"+string(immichType), handlers.immichWidgetHandler(immichType)).Methods("GET", "OPTIONS")
+		if immichType != WidgetTypeImmichStatus {
+			r.HandleFunc("/api/widgets/"+string(immichType)+"/image", handlers.immichImageHandler(immichType)).Methods("GET")
+		}
+	}
+	r.HandleFunc("/api/widgets/immich/setup", handlers.immichSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/widgets/bazarr", handlers.bazarrWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/bazarr/setup", handlers.bazarrSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/widgets/prowlarr", handlers.prowlarrWidgetHandler).Methods("GET", "OPTIONS")

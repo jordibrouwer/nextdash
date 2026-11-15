@@ -138,6 +138,9 @@ type MediaItem struct {
 	Remaining int64  `json:"remaining,omitempty"`
 	// Meters is what a machine reads: set only by the Beszel tiles.
 	Meters *MediaMeters `json:"meters,omitempty"`
+	// Count is how many things an album holds; Seconds how long a video runs.
+	Count   int `json:"count,omitempty"`
+	Seconds int `json:"seconds,omitempty"`
 }
 
 /*
@@ -217,6 +220,8 @@ type MediaResult struct {
 	Dns *MediaDns `json:"dns,omitempty"`
 	// Stats is what a Jellystat tile draws.
 	Stats *MediaStats `json:"stats,omitempty"`
+	// Immich is what an Immich status tile draws.
+	Immich *MediaImmich `json:"immich,omitempty"`
 	// Subs is what a Bazarr tile draws.
 	Subs *MediaSubs `json:"subs,omitempty"`
 	// Indexers is what a Prowlarr tile draws.
@@ -254,8 +259,13 @@ type mediaCacheEntry struct {
 	credentialID string
 	good         *MediaResult
 	images       map[mediaImageRef]bool
-	answer       MediaResult
-	expires      time.Time
+	// older is the pictures of the answer before, kept for one more answer:
+	// a second tab, or a tablet on the wall, still holds the list it was
+	// given, and the pictures of a list that changes at every read (random
+	// photos) would be refused the moment the next read replaced it.
+	older   map[mediaImageRef]bool
+	answer  MediaResult
+	expires time.Time
 }
 
 var mediaWidgetCache = struct {
@@ -295,7 +305,7 @@ func mediaAllowedImage(key string, ref mediaImageRef) (string, string, bool) {
 	mediaWidgetCache.Lock()
 	defer mediaWidgetCache.Unlock()
 	entry := mediaWidgetCache.at[key]
-	if entry == nil || !entry.images[ref] {
+	if entry == nil || !(entry.images[ref] || entry.older[ref]) {
 		return "", "", false
 	}
 	return entry.server, entry.credentialID, true
@@ -375,6 +385,19 @@ func (h *Handlers) mediaAnswer(ctx context.Context, pageID int, widgetID string,
 		}
 	}
 	mediaWidgetCache.Lock()
+	// What the entry held when this read began, and what a read that finished
+	// meanwhile left: two tabs opening together each wrote their own list.
+	for _, held := range []*mediaCacheEntry{entry, mediaWidgetCache.at[key]} {
+		if held == nil || held.fingerprint != spec.Fingerprint {
+			continue
+		}
+		if next.older == nil {
+			next.older = map[mediaImageRef]bool{}
+		}
+		for ref := range held.images {
+			next.older[ref] = true
+		}
+	}
 	mediaWidgetCache.at[key] = next
 	mediaWidgetCache.Unlock()
 	return next.answer

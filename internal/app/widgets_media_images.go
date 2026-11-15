@@ -146,7 +146,14 @@ func (h *Handlers) serveMediaImage(w http.ResponseWriter, r *http.Request, servi
 	}
 
 	name := mediaImageFileName(server, ref)
-	path := filepath.Join(mediaImageRoot(), service, name)
+	// The Immich tiles keep their pictures in one folder: a name is made from
+	// the server, the photo and its tag, not from the tile, and one cap should
+	// cover all of them rather than one for each of five types.
+	folder := service
+	if strings.HasPrefix(service, "immich") {
+		folder = "immich"
+	}
+	path := filepath.Join(mediaImageRoot(), folder, name)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		data, err = mediaImageOnce(service+"/"+name, func() ([]byte, error) {
@@ -160,7 +167,7 @@ func (h *Handlers) serveMediaImage(w http.ResponseWriter, r *http.Request, servi
 			defer cancel()
 			fetched, err := fetch(ctx, server, credential, ref)
 			if err == nil {
-				storeMediaImage(service, name, fetched)
+				storeMediaImage(folder, name, fetched)
 			}
 			return fetched, err
 		})
@@ -175,7 +182,13 @@ func (h *Handlers) serveMediaImage(w http.ResponseWriter, r *http.Request, servi
 		_ = os.Chtimes(path, now, now)
 	}
 	w.Header().Set("Content-Type", detectImageType(data))
-	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	// A poster is public artwork; a photo is somebody's, and no shared cache in
+	// front of nextDash should keep it for someone else to be served.
+	cacheScope := "public"
+	if folder == "immich" {
+		cacheScope = "private"
+	}
+	w.Header().Set("Cache-Control", cacheScope+", max-age=31536000, immutable")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	_, _ = w.Write(data)
 }

@@ -1,0 +1,10 @@
+{
+ "version": "v3.4.1",
+ "versionUrl": "https://github.com/immich-app/immich/releases/tag/v3.4.1",
+ "licensed": false,
+ "nodejs": "v24.22.1",
+ "exiftool": "13.59",
+ "ffmpeg": "7.1.4-3",
+ "libvips": "8.18.7",
+ "imagemagick": "7.1.2-21"
+}

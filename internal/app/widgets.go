@@ -168,6 +168,13 @@ const (
 	// WidgetTypeJellystat shows plays, the most viewed and the most active
 	// people from a Jellystat server.
 	WidgetTypeJellystat WidgetType = "jellystat"
+	// The Immich types read one photo library five ways: photos, a slideshow,
+	// albums, people and the server's own state.
+	WidgetTypeImmich          WidgetType = "immich"
+	WidgetTypeImmichSlideshow WidgetType = "immich-slideshow"
+	WidgetTypeImmichAlbums    WidgetType = "immich-albums"
+	WidgetTypeImmichPeople    WidgetType = "immich-people"
+	WidgetTypeImmichStatus    WidgetType = "immich-status"
 	// WidgetTypeBazarr shows missing and fetched subtitles from a Bazarr server.
 	WidgetTypeBazarr WidgetType = "bazarr"
 	// WidgetTypeProwlarr shows how the indexers of a Prowlarr server are doing.
@@ -260,6 +267,11 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypePihole:          {},
 	WidgetTypeJellystat:       {},
 	WidgetTypeBazarr:          {},
+	WidgetTypeImmich:          {},
+	WidgetTypeImmichSlideshow: {},
+	WidgetTypeImmichAlbums:    {},
+	WidgetTypeImmichPeople:    {},
+	WidgetTypeImmichStatus:    {},
 	WidgetTypeProwlarr:        {},
 	WidgetTypeGlances:         {},
 	WidgetTypeNetTests:        {},

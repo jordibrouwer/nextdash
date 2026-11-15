@@ -1,0 +1,268 @@
+{
+ "thumbnailGeneration": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 2,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 40,
+   "paused": 0
+  }
+ },
+ "metadataExtraction": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 3,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "videoConversion": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "faceDetection": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "facialRecognition": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "smartSearch": {
+  "queueStatus": {
+   "isPaused": true,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "duplicateDetection": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "backgroundTask": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "storageTemplateMigration": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "migration": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "search": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "sidecar": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "library": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "notifications": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "backupDatabase": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "ocr": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "workflow": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "integrityCheck": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ },
+ "editor": {
+  "queueStatus": {
+   "isPaused": false,
+   "isActive": false
+  },
+  "jobCounts": {
+   "active": 0,
+   "completed": 0,
+   "failed": 0,
+   "delayed": 0,
+   "waiting": 0,
+   "paused": 0
+  }
+ }
+}

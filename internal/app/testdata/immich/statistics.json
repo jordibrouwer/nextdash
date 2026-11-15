@@ -1,0 +1,19 @@
+{
+ "photos": 32571,
+ "videos": 1462,
+ "usage": 150330465797,
+ "usagePhotos": 70945545716,
+ "usageVideos": 79384920081,
+ "usageByUser": [
+  {
+   "userId": "00000000-0000-4000-8000-0000000000a1",
+   "userName": "Test User",
+   "photos": 32571,
+   "videos": 1462,
+   "usage": 150330465797,
+   "usagePhotos": 70945545716,
+   "usageVideos": 79384920081,
+   "quotaSizeInBytes": null
+  }
+ ]
+}

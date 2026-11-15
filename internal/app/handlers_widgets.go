@@ -125,7 +125,13 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	// Library ids name what a server holds.
 	WidgetTypeJellystat: {"server": true, "credentialId": true, "libraries": true},
 	WidgetTypeBazarr:    {"server": true, "credentialId": true},
-	WidgetTypeProwlarr:  {"server": true, "credentialId": true},
+	// Album and person ids name what a library holds.
+	WidgetTypeImmich:          {"server": true, "credentialId": true, "albumId": true, "personId": true},
+	WidgetTypeImmichSlideshow: {"server": true, "credentialId": true, "albumId": true, "personId": true},
+	WidgetTypeImmichAlbums:    {"server": true, "credentialId": true},
+	WidgetTypeImmichPeople:    {"server": true, "credentialId": true},
+	WidgetTypeImmichStatus:    {"server": true, "credentialId": true},
+	WidgetTypeProwlarr:        {"server": true, "credentialId": true},
 }
 
 /*
