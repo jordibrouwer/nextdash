@@ -90,7 +90,7 @@
             case 'alerts':
                 return `${schema()}${this.renderContainersMutedPanel()}`;
             default:
-                return `${this.renderContainersStatusPanel()}${schema()}`;
+                return `${this.renderContainersStatusPanel()}${this.renderContainersHostsPanel()}${schema()}`;
         }
     },
 
@@ -260,6 +260,288 @@
         });
     },
 
+    /**
+     * The Docker hosts besides this one. Drawn empty here and filled from
+     * /api/docker/hosts, which never sends a certificate back: a part that is
+     * saved shows as "saved", and a field left empty on Edit keeps it.
+     */
+    renderContainersHostsPanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-panel" data-docker-hosts-panel>
+                <div class="config-docker-hosts-head">
+                    <h3 class="config-panel-title">${esc(this.t('config.dockerHostsTitle', 'Other Docker hosts'))}</h3>
+                    <button type="button" class="config-btn config-btn--small" data-docker-host-add>${esc(this.t('config.dockerHostsAdd', 'Add a host'))}</button>
+                </div>
+                <p class="config-panel-note">${esc(this.t('config.dockerHostsNote',
+                    'Containers on other machines show in the Containers view as a tab each. Reach a host through a Docker socket proxy (tcp) or the daemon\'s own TLS. Actions stay off for a host until you switch them on here.'))}</p>
+                <div class="config-docker-hosts-list" data-docker-hosts-list></div>
+                <div data-docker-hosts-form></div>
+            </div>`;
+    },
+
+    dockerHostReasonText(reason) {
+        const map = {
+            refused: ['config.dockerHostRefused', 'The host refused the connection. Is the Docker API, or the socket proxy in front of it, listening on that port?'],
+            timeout: ['config.dockerHostTimeout', 'The host did not answer in time.'],
+            'tls-untrusted': ['config.dockerHostTlsUntrusted', 'The host\'s certificate is not signed by the CA saved for it.'],
+            'tls-rejected': ['config.dockerHostTlsRejected', 'The host turned the client certificate down, or wants one.'],
+            'wrong-protocol': ['config.dockerHostWrongProtocol', 'The host speaks plain HTTP. Use the tcp kind for it, not tls.'],
+            'tls-config': ['config.dockerHostTlsConfig', 'The certificate settings are not valid.'],
+            'containers-denied': ['config.dockerHostContainersDenied', 'The host answers, but does not allow listing containers. If a socket proxy is in front of it, switch CONTAINERS on there.'],
+            denied: ['config.dockerHostDenied', 'The host answered, but refused this request.'],
+            'not-docker': ['config.dockerHostNotDocker', 'Something answered, but it is not a Docker API.'],
+        };
+        const [key, fallback] = map[reason] || ['config.dockerHostUnreachable', 'The host cannot be reached.'];
+        return this.t(key, fallback);
+    },
+
+    bindContainersHosts(container) {
+        const panel = container.querySelector('[data-docker-hosts-panel]');
+        if (!panel) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        const listEl = panel.querySelector('[data-docker-hosts-list]');
+        const formEl = panel.querySelector('[data-docker-hosts-form]');
+        const addBtn = panel.querySelector('[data-docker-host-add]');
+        let hosts = [];
+        let max = 4;
+
+        const call = async (method, path, body) => {
+            const res = await window.nextDashFetch(path, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: body === undefined ? undefined : JSON.stringify(body),
+            });
+            const text = await res.text();
+            let json = null;
+            try { json = JSON.parse(text); } catch { /* a plain-text error */ }
+            return { ok: res.ok, status: res.status, json, text: text.trim() };
+        };
+
+        const load = async () => {
+            try {
+                const res = await fetch('/api/docker/hosts', { cache: 'no-store' });
+                const body = res.ok ? await res.json() : null;
+                hosts = Array.isArray(body?.hosts) ? body.hosts : [];
+                max = Number(body?.max) || 4;
+            } catch {
+                hosts = [];
+            }
+            if (!panel.isConnected) return;
+            paintList();
+        };
+
+        const paintList = () => {
+            if (addBtn) addBtn.hidden = hosts.length >= max;
+            if (!hosts.length) {
+                listEl.innerHTML = `<p class="config-field-hint">${esc(this.t('config.dockerHostsNone', 'No other host yet.'))}</p>`;
+                return;
+            }
+            listEl.innerHTML = hosts.map((h) => {
+                const certs = h.kind === 'tls'
+                    ? [h.hasCA ? 'CA' : '', h.hasCert && h.hasKey ? this.t('config.dockerHostClientCert', 'client certificate') : '']
+                        .filter(Boolean).join(' + ')
+                    : '';
+                return `
+                <div class="config-docker-host" data-docker-host-row="${esc(h.id)}">
+                    <div class="config-docker-host-name">
+                        <strong>${esc(h.name)}</strong>
+                        <span>${esc(h.kind)} · ${esc(h.address)}${certs ? ` · ${esc(certs)}` : ''}</span>
+                        <span class="config-docker-host-result" data-docker-host-result="${esc(h.id)}" aria-live="polite"></span>
+                    </div>
+                    <label class="config-docker-host-actions">
+                        <input type="checkbox" data-docker-host-actions="${esc(h.id)}" ${h.allowActions ? 'checked' : ''}>
+                        ${esc(this.t('config.dockerHostAllowActions', 'Allow actions'))}
+                    </label>
+                    <div class="config-docker-host-buttons">
+                        <button type="button" class="config-btn config-btn--small" data-docker-host-test="${esc(h.id)}">${esc(this.t('config.dockerHostTest', 'Test'))}</button>
+                        <button type="button" class="config-btn config-btn--small" data-docker-host-edit="${esc(h.id)}">${esc(this.t('config.dockerHostEdit', 'Edit'))}</button>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-docker-host-remove="${esc(h.id)}">${esc(this.t('config.dockerHostRemove', 'Remove'))}</button>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        const showProbe = (el, probe) => {
+            if (!el) return;
+            el.dataset.state = probe.ok ? 'ok' : 'bad';
+            el.textContent = probe.ok
+                ? `✓ ${probe.version ? this.t('config.dockerHostReachableVersion', 'Docker {version}').replace('{version}', probe.version) : this.t('config.dockerHostReachable', 'Reachable')}`
+                : this.dockerHostReasonText(probe.reason);
+        };
+
+        const closeForm = () => { formEl.innerHTML = ''; };
+
+        const openForm = (host) => {
+            const editing = Boolean(host);
+            const h = host || { name: '', kind: 'tcp', address: '', allowActions: false };
+            const secretHint = (isSet) => (isSet
+                ? this.t('config.dockerHostPemKeep', 'Saved. Paste to replace, leave empty to keep.')
+                : this.t('config.dockerHostPemEmpty', 'PEM'));
+            formEl.innerHTML = `
+                <form class="config-docker-host-form" data-docker-host-form novalidate>
+                    <div class="config-field">
+                        <label class="config-field-label" for="config-docker-host-name">${esc(this.t('config.dockerHostName', 'Name'))}</label>
+                        <input type="text" id="config-docker-host-name" class="config-text" data-docker-host-field="name" maxlength="64"
+                               autocomplete="off" value="${esc(h.name)}">
+                    </div>
+                    <div class="config-field">
+                        <label class="config-field-label" for="config-docker-host-kind">${esc(this.t('config.dockerHostKind', 'Connection'))}</label>
+                        <select id="config-docker-host-kind" class="config-select" data-docker-host-field="kind">
+                            <option value="tcp" ${h.kind === 'tcp' ? 'selected' : ''}>${esc(this.t('config.dockerHostKindTcp', 'tcp (socket proxy)'))}</option>
+                            <option value="tls" ${h.kind === 'tls' ? 'selected' : ''}>${esc(this.t('config.dockerHostKindTls', 'tls (certificates)'))}</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label class="config-field-label" for="config-docker-host-address">${esc(this.t('config.dockerHostAddress', 'Address'))}</label>
+                        <input type="text" id="config-docker-host-address" class="config-text" data-docker-host-field="address"
+                               autocomplete="off" spellcheck="false" placeholder="192.168.1.20:2375" value="${esc(h.address)}">
+                    </div>
+                    <div data-docker-host-tls ${h.kind === 'tls' ? '' : 'hidden'}>
+                        ${[['ca', 'config.dockerHostCa', 'CA certificate', h.hasCA],
+                            ['cert', 'config.dockerHostCert', 'Client certificate', h.hasCert],
+                            ['key', 'config.dockerHostKey', 'Client key', h.hasKey]].map(([field, key, label, isSet]) => `
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-docker-host-${field}">${esc(this.t(key, label))}</label>
+                            <textarea id="config-docker-host-${field}" class="config-text" rows="3" spellcheck="false" autocomplete="off"
+                                      data-docker-host-field="${field}" placeholder="${esc(secretHint(isSet))}"></textarea>
+                            ${isSet ? `<label class="config-field-hint config-docker-host-clear">
+                                <input type="checkbox" data-docker-host-clear="${field}">
+                                ${esc(this.t('config.dockerHostPemClear', 'Remove the saved one'))}
+                            </label>` : ''}
+                        </div>`).join('')}
+                    </div>
+                    <div class="config-field">
+                        <label class="config-docker-host-actions">
+                            <input type="checkbox" data-docker-host-field="allowActions" ${h.allowActions ? 'checked' : ''}>
+                            ${esc(this.t('config.dockerHostAllowActions', 'Allow actions'))}
+                        </label>
+                    </div>
+                    <p class="config-field-hint" data-docker-host-error role="alert" hidden></p>
+                    <div class="config-actions">
+                        <button type="submit" class="config-btn config-btn--primary" data-docker-host-save>${esc(editing ? this.t('config.dockerHostSave', 'Save') : this.t('config.dockerHostAddSave', 'Add host'))}</button>
+                        <button type="button" class="config-btn" data-docker-host-form-test>${esc(this.t('config.dockerHostTest', 'Test'))}</button>
+                        <button type="button" class="config-btn" data-docker-host-cancel>${esc(this.t('config.dockerHostCancel', 'Cancel'))}</button>
+                        <span class="config-docker-host-result" data-docker-host-form-result aria-live="polite"></span>
+                    </div>
+                </form>`;
+            const form = formEl.querySelector('form');
+            const field = (name) => form.querySelector(`[data-docker-host-field="${name}"]`);
+            const errorEl = form.querySelector('[data-docker-host-error]');
+            field('kind').addEventListener('change', () => {
+                form.querySelector('[data-docker-host-tls]').hidden = field('kind').value !== 'tls';
+            });
+            // A pasted PEM is only sent when something was typed: empty keeps what is saved.
+            const body = () => {
+                const out = {
+                    name: field('name').value, kind: field('kind').value, address: field('address').value,
+                    allowActions: field('allowActions').checked,
+                };
+                if (out.kind === 'tls') {
+                    ['ca', 'cert', 'key'].forEach((f) => {
+                        // Typed replaces, ticked removes (an empty string), neither keeps.
+                        if (field(f).value.trim()) out[f] = field(f).value;
+                        else if (form.querySelector(`[data-docker-host-clear="${f}"]`)?.checked) out[f] = '';
+                    });
+                }
+                return out;
+            };
+            form.querySelector('[data-docker-host-cancel]').addEventListener('click', closeForm);
+            form.querySelector('[data-docker-host-form-test]').addEventListener('click', async (e) => {
+                const btn = e.currentTarget;
+                btn.disabled = true;
+                const r = await call('POST', '/api/docker/hosts/test', { ...body(), ...(editing ? { id: host.id } : {}) });
+                btn.disabled = false;
+                if (r.ok && r.json) showProbe(form.querySelector('[data-docker-host-form-result]'), r.json);
+                else {
+                    errorEl.hidden = false;
+                    errorEl.textContent = r.text || this.t('config.dockerHostFailed', 'That did not work. Try again.');
+                }
+            });
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                errorEl.hidden = true;
+                const save = form.querySelector('[data-docker-host-save]');
+                save.disabled = true;
+                const r = editing
+                    ? await call('PUT', `/api/docker/hosts/${encodeURIComponent(host.id)}`, body())
+                    : await call('POST', '/api/docker/hosts', body());
+                save.disabled = false;
+                if (!r.ok) {
+                    errorEl.hidden = false;
+                    errorEl.textContent = r.text || this.t('config.dockerHostFailed', 'That did not work. Try again.');
+                    return;
+                }
+                closeForm();
+                await load();
+            });
+            field('name').focus();
+        };
+
+        addBtn?.addEventListener('click', () => openForm(null));
+
+        // One listener on the list, so a repaint needs no rebinding.
+        listEl.addEventListener('click', async (e) => {
+            const target = e.target instanceof Element ? e.target : null;
+            const id = (attr) => target?.closest(`[${attr}]`)?.getAttribute(attr);
+            const testId = id('data-docker-host-test');
+            if (testId) {
+                const btn = target.closest('button');
+                btn.disabled = true;
+                const r = await call('POST', '/api/docker/hosts/test', { id: testId });
+                btn.disabled = false;
+                const out = listEl.querySelector(`[data-docker-host-result="${CSS.escape(testId)}"]`);
+                if (r.ok && r.json) showProbe(out, r.json);
+                else if (out) {
+                    out.dataset.state = 'bad';
+                    out.textContent = r.text || this.t('config.dockerHostFailed', 'That did not work. Try again.');
+                }
+                return;
+            }
+            const editId = id('data-docker-host-edit');
+            if (editId) {
+                openForm(hosts.find((h) => h.id === editId));
+                return;
+            }
+            const removeId = id('data-docker-host-remove');
+            if (removeId) {
+                const h = hosts.find((x) => x.id === removeId);
+                const message = this.t('config.dockerHostRemoveMessage', 'Its tab goes away and its certificates are deleted. The containers on that host are not touched.');
+                const modal = global.AppModal;
+                const ok = typeof modal?.confirm === 'function'
+                    ? await modal.confirm({
+                        title: this.t('config.dockerHostRemoveTitle', 'Remove {name}?').replace('{name}', h?.name || ''),
+                        message,
+                        confirmText: this.t('config.dockerHostRemove', 'Remove'),
+                        cancelText: this.t('config.dockerHostCancel', 'Cancel'),
+                    })
+                    : global.confirm(message);
+                if (!ok) return;
+                const r = await call('DELETE', `/api/docker/hosts/${encodeURIComponent(removeId)}`);
+                if (!r.ok) this.notify(r.text || this.t('config.dockerHostFailed', 'That did not work. Try again.'), 'error');
+                closeForm();
+                await load();
+            }
+        });
+        listEl.addEventListener('change', async (e) => {
+            const box = e.target instanceof Element ? e.target.closest('[data-docker-host-actions]') : null;
+            if (!box) return;
+            const h = hosts.find((x) => x.id === box.getAttribute('data-docker-host-actions'));
+            if (!h) return;
+            const r = await call('PUT', `/api/docker/hosts/${encodeURIComponent(h.id)}`, {
+                name: h.name, kind: h.kind, address: h.address, allowActions: box.checked,
+            });
+            if (!r.ok) {
+                box.checked = !box.checked;
+                this.notify(r.text || this.t('config.dockerHostFailed', 'That did not work. Try again.'), 'error');
+                return;
+            }
+            await load();
+        });
+
+        void load();
+    },
+
     renderContainersTokenPanel() {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
@@ -302,6 +584,7 @@
             void this.fillContainersStatus(container);
         }
         this.bindContainersHostCheck(container);
+        this.bindContainersHosts(container);
         this.bindContainersHidden(container);
         this.bindContainersIgnored(container);
         this.bindContainersMuted(container);

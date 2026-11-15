@@ -4,9 +4,9 @@
  * with the same guards: a session that has turned session tips off, or is on a
  * phone, never sees it.
  *
- * Six steps on what matters most: the list and its states, the actions and
- * the setting behind them, the side panel, updates, the disk, and the config
- * and alerts. Each step has a moving picture that stands still -- on a picture
+ * Seven steps on what matters most: the list and its states, the actions and
+ * the setting behind them, the side panel, updates, the disk, other Docker
+ * hosts, and the config and alerts. Each step has a moving picture that stands still -- on a picture
  * that still tells the story -- for a reader who asked for less motion.
  */
 (function (global) {
@@ -376,6 +376,35 @@
                     'Disk (d) shows what images, volumes and the build cache take up, and what nothing uses.'))}</p>
                     <p>${esc(f('dockerTour4DiskBody2',
                     'Each tile clears its kind after asking. A volume holds data, so it goes one at a time, and only after you type delete.'))}</p>`,
+            },
+            // 6 — other Docker hosts
+            {
+                title: f('dockerTour4HostsTitle', 'Containers on other machines'),
+                visual: (() => {
+                    const local = f('dashboard.dockerHostLocal', 'This host');
+                    const host = 'vps-strato';
+                    const add = f('dashboard.dockerHostsAddShort', 'Add a host');
+                    return svg(`
+                        ${pill(14, 8, local, { kind: 'plain' })}
+                        ${pill(14 + pillWidth(local) + 6, 8, host, { kind: 'active', motion: anim('bump', 0.2) })}
+                        ${crow(14, 42, 236, 'pihole', { image: 'pihole:latest', motion: anim('drop', 0.3) })}
+                        ${crow(14, 70, 236, 'redis', { image: 'redis:7', state: 'plain', motion: anim('drop', 0.45) })}
+                        ${fitLabel(14, 112, f('dockerTourHostsCaption', 'one tab for each host'), 236, 'ctv-caption')}
+                        <g class="ctv-anim ctv-a-panel">
+                            <rect x="262" y="8" width="208" height="130" rx="8" class="ctv-panel"/>
+                            ${fitLabel(274, 28, add, 184, 'ctv-heading')}
+                            ${label(274, 48, 'tcp', 'ctv-label')}
+                            ${label(274, 64, '100.87.25.77:2375', 'ctv-mono')}
+                            ${pill(274, 78, f('dockerHostTest', 'Test'), { kind: 'plain' })}
+                            ${label(274 + pillWidth(f('dockerHostTest', 'Test')) + 10, 92, '✓ Docker', 'ctv-title')}
+                            ${pill(274, 106, f('dockerHostAllowActions', 'Allow actions'), { kind: 'dashed' })}
+                        </g>
+                    `, f('dockerTourHostsAlt', 'A tab for another Docker host above the list, and the form that adds one'));
+                })(),
+                body: `<p>${esc(f('dockerTour4HostsBody1',
+                    'Add another machine under Config → Containers → Connection → Other Docker hosts, through a Docker socket proxy (tcp) or the daemon’s own TLS. A tab for each host then shows up above the list.'))}</p>
+                    <p>${esc(f('dockerTour4HostsBody2',
+                    'Actions stay off for another host until you switch them on there. Check for updates works on every tab; updating itself stays on that host.'))}</p>`,
             },
             // 6 — config and alerts
             {

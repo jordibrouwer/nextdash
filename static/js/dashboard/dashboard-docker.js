@@ -18,8 +18,29 @@ async function dockerFetchJSON(url, init) {
     }
 }
 
+/**
+ * The remote host the Containers view is showing right now, or '' for this
+ * machine. Only while the view is open: the palette, the widgets and a search
+ * result always mean this host, whatever tab the view was last left on.
+ */
+window.dockerActiveHost = () => (window.dashboardInstance?.activeView === 'docker'
+    ? (window.nextdashDockerHost || '') : '');
+
+/**
+ * Adds ?host=<id> while a remote host is showing. The local host's requests
+ * stay exactly as they were, so one-host installs send nothing new.
+ */
+function dockerHostURL(url) {
+    const id = window.dockerActiveHost();
+    if (!id) return url;
+    return `${url}${url.includes('?') ? '&' : '?'}host=${encodeURIComponent(id)}`;
+}
+
 class DashboardDocker {
     static VIEW = 'docker';
+
+    /** The remembered host tab, so the view opens where it was left. */
+    static HOST_KEY = 'nextdash.docker.host';
 
     /*
      * The one-time tour's tip id, repeated from containers-tutorial.js so the
@@ -74,6 +95,12 @@ class DashboardDocker {
         this.actions = typeof window.DockerActions === 'function' ? new window.DockerActions(this) : null;
         this.menu = typeof window.DockerRowMenu === 'function' ? new window.DockerRowMenu(this) : null;
         this.restoreViewState();
+        // Remote hosts, the one on show ('local' = this machine) and the strip
+        // that picks it. The strip exists only while there is a remote host.
+        this.hosts = [];
+        this.hostId = 'local';
+        this.hostTabsEl = null;
+        this.restoreHost();
     }
 
     /* ── Small helpers, mirroring DashboardHealth's ──────────────────────── */
@@ -97,6 +124,158 @@ class DashboardDocker {
 
     isActiveView() {
         return this.dash.activeView === DashboardDocker.VIEW;
+    }
+
+    /* ── Hosts ─────────────────────────────────────────────────────────── */
+
+    isRemote() {
+        return this.hostId !== 'local';
+    }
+
+    currentHost() {
+        return this.hosts.find((h) => h.id === this.hostId) || null;
+    }
+
+    restoreHost() {
+        try {
+            this.hostId = localStorage.getItem(DashboardDocker.HOST_KEY) || 'local';
+        } catch {
+            this.hostId = 'local';
+        }
+        this.applyHost();
+    }
+
+    persistHost() {
+        try {
+            if (this.isRemote()) localStorage.setItem(DashboardDocker.HOST_KEY, this.hostId);
+            else localStorage.removeItem(DashboardDocker.HOST_KEY);
+        } catch {
+            // No storage: the host holds for this visit.
+        }
+    }
+
+    /**
+     * What the other docker files read: the id every request carries, and the
+     * address a port link on this host opens (docker-search-index.js).
+     */
+    applyHost() {
+        window.nextdashDockerHost = this.isRemote() ? this.hostId : '';
+        const address = this.currentHost()?.address || '';
+        const at = address.lastIndexOf(':');
+        window.nextdashDockerHostAddress = this.isRemote() && at > 0 ? address.slice(0, at) : '';
+    }
+
+    /** The remote hosts from Config; a host that is gone sends the view back to this one. */
+    async loadHosts() {
+        const body = await dockerFetchJSON('/api/docker/hosts');
+        this.hosts = Array.isArray(body?.hosts) ? body.hosts : [];
+        if (this.isRemote() && !this.currentHost()) {
+            this.hostId = 'local';
+            this.persistHost();
+        }
+        this.applyHost();
+    }
+
+    buildHostTabs() {
+        const bar = document.createElement('div');
+        bar.className = 'docker-tabs docker-host-tabs';
+        bar.setAttribute('role', 'tablist');
+        bar.setAttribute('aria-label', this.t('dashboard.dockerHostsLabel', 'Docker hosts'));
+        const entries = [['local', this.t('dashboard.dockerHostLocal', 'This host')],
+            ...this.hosts.map((h) => [h.id, h.name])];
+        entries.forEach(([id, label]) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'docker-tab';
+            b.setAttribute('role', 'tab');
+            b.setAttribute('data-docker-host', id);
+            b.setAttribute('aria-selected', String(id === this.hostId));
+            b.textContent = label;
+            b.addEventListener('click', () => { void this.switchHost(id); });
+            bar.appendChild(b);
+        });
+        return bar;
+    }
+
+    syncHostTabs() {
+        if (!this.shell) return;
+        this.hostTabsEl?.remove();
+        this.hostTabsEl = null;
+        if (!this.hosts.length) return;
+        this.hostTabsEl = this.buildHostTabs();
+        this.shell.toolbar.parentNode?.insertBefore(this.hostTabsEl, this.tabsEl || this.shell.toolbar);
+    }
+
+    async switchHost(id) {
+        if (id === this.hostId) return;
+        window.nextdashTrack?.('docker:host');
+        this.stopPolling();
+        // An answer still on its way belongs to the host that was left.
+        this._listSeq = (this._listSeq || 0) + 1;
+        this._listInflight = false;
+        this.hostId = id;
+        this.persistHost();
+        this.applyHost();
+        this.selected = null;
+        this.drawer?.close();
+        this.drawerOpen = false;
+        this.multi.clear();
+        this._multiAnchor = null;
+        this.busy.clear();
+        this.containers = [];
+        if (this.isRemote() && this.tab === 'disk') this.tab = 'containers';
+        await this.loadAndRender();
+        this.restoreDockerHash();
+        this.startPolling();
+    }
+
+    /** A host that was down: look again, and load it once it answers. */
+    async recheckHost() {
+        if (this._recheckInflight) return;
+        this._recheckInflight = true;
+        const at = this.hostId;
+        try {
+            const status = await dockerFetchJSON(dockerHostURL('/api/docker/status'));
+            if (at === this.hostId && status?.socket) await this.loadAndRender();
+        } finally {
+            this._recheckInflight = false;
+        }
+    }
+
+    /** What a person can do about a host that does not answer. */
+    hostDownText(reason) {
+        const texts = {
+            refused: this.t('dashboard.dockerHostRefused', 'The host refused the connection. Is the Docker API, or the socket proxy in front of it, listening on that port?'),
+            timeout: this.t('dashboard.dockerHostTimeout', 'The host did not answer in time.'),
+            'tls-untrusted': this.t('dashboard.dockerHostTlsUntrusted', 'The host\'s certificate is not signed by the CA saved for it.'),
+            'tls-rejected': this.t('dashboard.dockerHostTlsRejected', 'The host turned the client certificate down, or wants one.'),
+            'wrong-protocol': this.t('dashboard.dockerHostWrongProtocol', 'The host speaks plain HTTP. Use the tcp kind for it, not tls.'),
+            'tls-config': this.t('dashboard.dockerHostTlsConfig', 'The certificate settings for this host are not valid.'),
+            'unknown-host': this.t('dashboard.dockerHostGone', 'This host is no longer in the list.'),
+            daemon: this.t('dashboard.dockerHostDaemon', 'The host answered, but refused the container list{detail}. If a socket proxy is in front of it, check that it allows containers.',
+                { detail: this.status?.message ? `: ${this.status.message}` : '' }),
+        };
+        return texts[reason] || this.t('dashboard.dockerHostUnreachable', 'The host cannot be reached.');
+    }
+
+    buildHostDownCard() {
+        const wrap = document.createElement('div');
+        wrap.setAttribute('data-docker-host-down', '');
+        wrap.className = 'docker-setup';
+        const title = document.createElement('h3');
+        title.className = 'docker-setup-title';
+        title.textContent = this.t('dashboard.dockerHostDownTitle', 'Cannot reach {name}', {
+            name: this.currentHost()?.name || '',
+        });
+        const hint = document.createElement('p');
+        hint.textContent = this.hostDownText(this.status?.reason);
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'lvs-action';
+        open.textContent = this.t('dashboard.dockerHostOpenConfig', 'Open the host settings');
+        open.addEventListener('click', () => { void this.dash.config?.openConfigView?.('containers'); });
+        wrap.append(title, hint, open);
+        return wrap;
     }
 
     /* ── View state persistence ───────────────────────────────────────────── */
@@ -164,6 +343,15 @@ class DashboardDocker {
 
     async openDockerView({ select, section, filter } = {}) {
         const d = this.dash;
+        // A container picked from search or the palette is one of this host's.
+        if (select && this.isRemote()) {
+            if (d.activeView === DashboardDocker.VIEW) await this.switchHost('local');
+            else {
+                this.hostId = 'local';
+                this.persistHost();
+                this.applyHost();
+            }
+        }
         if (d.activeView === DashboardDocker.VIEW) {
             if (select) this.selectContainer(select, { openDrawer: true, section });
             if (filter) this.applyFilter(filter);
@@ -506,18 +694,36 @@ class DashboardDocker {
     /* ── Data ──────────────────────────────────────────────────────────── */
 
     async loadAndRender() {
-        this.status = await dockerFetchJSON('/api/docker/status')
+        // Only the newest load, for the host that is still on show, may draw:
+        // a slow answer from the tab that was left must not overwrite this one.
+        const seq = (this._loadSeq = (this._loadSeq || 0) + 1);
+        await this.loadHosts();
+        const at = this.hostId;
+        const stale = () => seq !== this._loadSeq || at !== this.hostId;
+        if (stale()) return;
+        const remote = this.isRemote();
+        const status = await dockerFetchJSON(dockerHostURL('/api/docker/status'))
             || { socket: false, control: false, reason: 'unreachable' };
+        if (stale()) return;
+        this.status = status;
         if (this.status.socket) {
             const [containersBody, updatesBody] = await Promise.all([
-                dockerFetchJSON('/api/docker/containers'),
-                dockerFetchJSON('/api/docker/updates'),
+                dockerFetchJSON(dockerHostURL('/api/docker/containers')),
+                dockerFetchJSON(dockerHostURL('/api/docker/updates')),
             ]);
+            if (stale()) return;
             this.containers = Array.isArray(containersBody?.containers) ? containersBody.containers : [];
             this.usageEnabled = Boolean(containersBody?.usageEnabled);
+            // A host that answers the ping but not the list (a socket proxy
+            // without CONTAINERS) is down for this view, and says why.
+            if (remote && containersBody?.available === false) {
+                this.status = { ...this.status, socket: false, reason: containersBody.reason || 'unreachable',
+                    message: containersBody.message || '' };
+            }
             // Every page's bookmarks, for the dot beside a web UI: the
             // dashboard loads only its own page's unless a setting needs more.
             if (!this.dash.allBookmarks?.length) await this.dash.deferredLoadAllBookmarks?.();
+            if (stale()) return;
             this._checkedAt = updatesBody?.checkedAt || null;
         } else {
             this.containers = [];
@@ -530,24 +736,34 @@ class DashboardDocker {
             this.sortDir = 'asc';
         }
         this.mountShell();
+        this.syncHostTabs();
         this.render();
         this.syncNavBadge();
     }
 
     /** Re-reads the container list only, for polling and the post-check refresh. */
     async refreshContainers() {
-        if (!this.status?.socket) return;
+        if (!this.status?.socket) {
+            if (this.isRemote()) void this.recheckHost();
+            return;
+        }
+        const hostAtStart = this.hostId;
         // Only the newest read is applied: a slow answer that arrives after a
         // later one would put an older list back.
         const seq = (this._listSeq || 0) + 1;
         this._listSeq = seq;
         this._listInflight = true;
-        const body = await dockerFetchJSON('/api/docker/containers');
-        if (seq !== this._listSeq) return;
+        const body = await dockerFetchJSON(dockerHostURL('/api/docker/containers'));
+        if (seq !== this._listSeq || hostAtStart !== this.hostId) return;
         this._listInflight = false;
         // A read that failed -- a timeout, a restart, the daemon answering
         // "not available" -- keeps the list on screen rather than emptying it
         // (and closing the drawer of a container that is still there).
+        // The host was removed in Config: look again, which falls back to this one.
+        if (body?.reason === 'unknown-host') {
+            void this.loadAndRender();
+            return;
+        }
         if (!body || body.available === false || !Array.isArray(body.containers)) return;
         this.containers = body.containers;
         this.usageEnabled = Boolean(body.usageEnabled);
@@ -561,6 +777,8 @@ class DashboardDocker {
 
     /** The header icon's count, from the list this view has just read. */
     syncNavBadge() {
+        // The header badge counts this host's updates; another host has none.
+        if (this.isRemote()) return;
         void this.dash.docker?.updateNavBadge?.(this.filterCount('updates'));
     }
 
@@ -601,10 +819,16 @@ class DashboardDocker {
             this.t('dashboard.dockerCheckingTitle', 'Checking for updates'),
             this.t('dashboard.dockerCheckingStatus', 'Asking the registries about {count} containers…',
                 { count: this.containers.length }));
+        // The host this check is for: a tab switched meanwhile owns the list now.
+        const hostAtStart = this.hostId;
         try {
-            const res = await window.nextDashFetch('/api/docker/updates/check', { method: 'POST' });
+            const res = await window.nextDashFetch(dockerHostURL('/api/docker/updates/check'), { method: 'POST' });
             if (!res.ok) throw new Error('check failed');
             const body = await res.json().catch(() => null);
+            if (hostAtStart !== this.hostId) {
+                overlay?.hide?.();
+                return;
+            }
             this._checkedAt = body?.checkedAt || Date.now();
             await this.refreshContainers();
             const found = this.containers.filter((c) => c.update?.status === 'available').length;
@@ -754,11 +978,13 @@ class DashboardDocker {
     syncTabs() {
         this.tabsEl?.querySelectorAll('[data-docker-tab]').forEach((b) => {
             b.setAttribute('aria-selected', String(b.getAttribute('data-docker-tab') === this.tab));
+            // Disk is this machine's disk; another host has no tab for it.
+            if (b.getAttribute('data-docker-tab') === 'disk') b.hidden = this.isRemote();
         });
     }
 
     showTab(tab) {
-        const next = tab === 'disk' ? 'disk' : 'containers';
+        const next = tab === 'disk' && !this.isRemote() ? 'disk' : 'containers';
         if (next === 'disk') {
             if (typeof window.DockerDisk !== 'function') return;
             this.disk = this.disk || new window.DockerDisk(this);
@@ -1177,7 +1403,7 @@ class DashboardDocker {
          */
         const parts = [];
         if (!this.status?.socket) {
-            parts.push(this.buildSetupCard());
+            parts.push(this.isRemote() ? this.buildHostDownCard() : this.buildSetupCard());
             body.replaceChildren(...parts);
             return;
         }
@@ -1271,7 +1497,7 @@ class DashboardDocker {
                 ['d', this.t('dashboard.dockerLegendRemove', 'remove')],
             ] : []),
             ['l', this.t('dashboard.dockerLegendLogs', 'logs')],
-            ['m', this.t('dashboard.dockerLegendMute', 'mute')],
+            ...(this.isRemote() ? [] : [['m', this.t('dashboard.dockerLegendMute', 'mute')]]),
             ['w', this.t('dashboard.dockerLegendWebUi', 'web UI')],
             ['y', this.t('dashboard.dockerLegendCopyId', 'copy ID')],
             ['Ctrl/Cmd+C', this.t('dashboard.dockerLegendCopyName', 'copy name')],
@@ -1379,11 +1605,14 @@ class DashboardDocker {
             ? this.t('dashboard.dockerMenuMute', 'Mute notifications')
             : this.t('dashboard.dockerMenuUnmute', 'Unmute notifications');
         mute.disabled = this.bulkRunning || !mutable.length;
+        // Mute and automatic updates are kept by container name for this host;
+        // a container of another host is not theirs to name.
+        mute.hidden = this.isRemote();
         // Automatic updates: on for all of them while any is off, else off.
         const auto = button('auto');
         const autoable = picked.filter((c) => !c.self);
         const turningOn = autoable.some((c) => !this.isAutoUpdated(c));
-        auto.hidden = !control;
+        auto.hidden = !control || this.isRemote();
         auto.textContent = turningOn || !autoable.length
             ? this.t('dashboard.dockerAutoUpdateOn', 'Update automatically')
             : this.t('dashboard.dockerAutoUpdateOff', 'Stop updating automatically');
@@ -1525,6 +1754,8 @@ class DashboardDocker {
     }
 
     showsHostHint() {
+        // Another host's links already point at its own address.
+        if (this.isRemote()) return false;
         if (!DashboardDocker.hostAddressUnset(this.dash.settings)) return false;
         try {
             if (localStorage.getItem(DashboardDocker.HOST_HINT_KEY) === '1') return false;
@@ -1593,6 +1824,9 @@ class DashboardDocker {
     }
 
     readOnlyText() {
+        if (this.isRemote()) {
+            return this.t('dashboard.dockerReadOnlyHost', 'Read-only — switch on actions for this host in Config → Containers.');
+        }
         return this.t('dashboard.dockerReadOnly', 'Read-only — set NEXTDASH_DOCKER_CONTROL=1 to manage containers.');
     }
 

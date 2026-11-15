@@ -1319,8 +1319,16 @@
     margin-bottom: var(--space-2, 0.5rem);
 }
 
-.docker-tabs[hidden] {
+.docker-tabs[hidden],
+.docker-tab[hidden],
+[data-docker-check][hidden],
+.docker-checked-at[hidden] {
     display: none;
+}
+
+/* Which Docker host: a second strip above Containers | Disk, only with a remote host. */
+.docker-host-tabs {
+    flex-wrap: wrap;
 }
 
 /* On the Disk tab the search, sort and group have nothing to act on. */
@@ -1337,6 +1345,7 @@
     font: inherit;
     font-size: var(--font-size-controls);
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .docker-tab[aria-selected="true"] {
@@ -1839,4 +1848,114 @@
     inset: 50% 0 auto 0;
     min-height: 24px;
     transform: translateY(-50%);
+}
+
+/* ── Config → Containers: other Docker hosts ────────────────────────── */
+
+.config-docker-hosts-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-docker-hosts-head .config-panel-title {
+    margin: 0;
+}
+
+.config-docker-hosts-list {
+    margin-top: var(--space-3, 0.75rem);
+}
+
+/* One row per host: the name and where it is, how a Test went, the actions
+   switch, and small buttons that keep their own width. */
+.config-docker-host {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    padding: var(--space-3, 0.75rem) 0;
+    border-top: 1px solid var(--border-primary);
+}
+
+.config-docker-host-name {
+    flex: 1 1 14rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.config-docker-host-name strong {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.config-docker-host-name span {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+/* A Test result sits under the address, so the row does not reflow when it arrives. */
+.config-docker-host-name .config-docker-host-result[data-state="ok"] {
+    color: var(--success, var(--accent-primary));
+}
+
+.config-docker-host-name .config-docker-host-result[data-state="bad"] {
+    color: var(--danger, #c0392b);
+}
+
+.config-docker-host-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
+.config-docker-host-buttons {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-docker-host-buttons .config-btn {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.config-docker-host-result {
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.config-docker-host-result:empty {
+    display: none;
+}
+
+.config-docker-host-result[data-state="ok"] {
+    color: var(--success, var(--accent-primary));
+}
+
+.config-docker-host-result[data-state="bad"] {
+    color: var(--danger, #c0392b);
+}
+
+.config-docker-host-form {
+    margin: var(--space-3, 0.75rem) 0;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+}
+
+.config-docker-host-form textarea {
+    font-family: ui-monospace, monospace;
+    font-size: 0.8em;
+}
+
+.config-docker-host-form [hidden] {
+    display: none;
+}
+
+.config-docker-host-form .config-actions {
+    margin-top: var(--space-3, 0.75rem);
 }

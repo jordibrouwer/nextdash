@@ -346,7 +346,7 @@
                 progress = new DockerUpdateRun(this, action, [container]);
             }
             progress?.begin(name);
-            const url = `/api/docker/containers/${encodeURIComponent(name)}/${action}`;
+            const url = dockerHostURL(`/api/docker/containers/${encodeURIComponent(name)}/${action}`);
             let res = null;
             let body = null;
             try {
@@ -518,7 +518,8 @@
 
         /** Mute or unmute a container's notices; a setting, so no control is needed. */
         async toggleMute(container, { via } = {}) {
-            if (!container?.name) return false;
+            // Muting is by name and watches this host's daemon only.
+            if (!container?.name || window.dockerActiveHost?.()) return false;
             return this.setMuted([container], !this.isMuted(container), { via });
         }
 
@@ -758,7 +759,7 @@
                 });
             }
             const mutable = picked.filter((c) => !c.self);
-            if (mutable.length) {
+            if (mutable.length && !window.dockerActiveHost?.()) {
                 const muting = mutable.some((c) => !actions?.isMuted(c));
                 list.push(muting
                     ? { id: 'mute', label: this.t('dockerMenuMute', 'Mute notifications'), icon: '🔕', divider: list.length > 0 }
@@ -783,7 +784,7 @@
             list.push({ id: 'logs', label: this.t('dockerMenuLogs', 'Show logs'), icon: '≡', divider: true, key: 'L' });
             const webui = this.webuiFor(c);
             if (webui) list.push({ id: 'webui', label: this.t('dockerLinkWebUI', 'Web UI'), icon: '↗', key: 'W' });
-            if (!c.self) {
+            if (!c.self && !window.dockerActiveHost?.()) {
                 list.push(actions?.isMuted(c)
                     ? { id: 'mute', label: this.t('dockerMenuUnmute', 'Unmute notifications'), icon: '🔔', key: 'M' }
                     : { id: 'mute', label: this.t('dockerMenuMute', 'Mute notifications'), icon: '🔕', key: 'M' });

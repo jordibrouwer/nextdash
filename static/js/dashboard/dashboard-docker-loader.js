@@ -150,6 +150,9 @@ class DashboardDockerLoader {
      */
     async runAction(action, name) {
         const mod = await this.load();
+        // The palette names this host's containers, so the action is this
+        // host's too, whatever tab the open view is on.
+        if (mod.isActiveView() && mod.isRemote()) await mod.switchHost('local');
         if (!mod.status) mod.status = await window.DockerSearchIndex?.status?.();
         const fresh = await window.DockerSearchIndex?.refresh?.();
         if (!mod.isActiveView() && Array.isArray(fresh)) mod.containers = fresh;
