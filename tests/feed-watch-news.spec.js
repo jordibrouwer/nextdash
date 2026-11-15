@@ -11,12 +11,14 @@ let site;
 test.beforeEach(async ({ request }) => {
     site = await startStubSite();
     await installWithBookmark(request, site);
+    // These specs time a 30 minute window; the default is an hour since v1.29.2.
+    await request.post('/api/settings', { data: { feedWatchWindowMinutes: 30 }, headers });
 });
 test.afterEach(async ({ request }) => {
     await site.close();
     // The server is shared with whoever runs the dev server on this data: put the
     // news layout and window back, so a test never leaves the reader's choice changed.
-    await request.post('/api/settings', { data: { feedWatchNewsView: 'paper', feedWatchWindowMinutes: 30 }, headers });
+    await request.post('/api/settings', { data: { feedWatchNewsView: 'paper', feedWatchWindowMinutes: 60 }, headers });
 });
 
 const modal = (page) => page.locator('#app-modal .modal.feed-news-modal');
@@ -255,8 +257,9 @@ test('the bar runs down and the modal closes itself after 30 minutes', async ({ 
     await page.clock.fastForward('02:00');
     await page.clock.runFor(2000);
     await expect(modal(page)).toBeHidden();
-    // The purple count steps aside; nothing else takes its place on the row.
-    await expect(link(page).locator('.bookmark-news-badge')).toHaveCount(0);
+    // The row goes quiet, but the count stays, calm and clickable, until the news is read.
+    await expect(link(page).locator('.bookmark-news-badge.is-calm')).toHaveCount(1);
+    await expect(link(page)).not.toHaveClass(/has-feed-news/);
 });
 
 test('news opened by hand after the window closed stays open and shows no bar', async ({ page }) => {
