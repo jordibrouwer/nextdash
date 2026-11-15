@@ -330,6 +330,7 @@
                 ${sw('dark', t('mobile.more.dark', 'Dark mode'), isDarkNow())}
                 ${sw('compact', t('mobile.more.compact', 'Compact rows'), s.densityMode === 'compact')}
                 ${sw('pause', t('mobile.more.pause', 'Pause notifications'), pausedUntil() > 0)}
+                ${sw('feeds', t('mobile.more.feeds', 'Watch feeds'), !(d?.feedWatch?.suppressed?.()))}
             </div>
             <div class="mobile-card">
                 <h3 class="mobile-card-title">${esc(t('mobile.more.home', 'Start screen'))}</h3>
@@ -508,6 +509,7 @@
             if (key === 'dark') await setDark(on);
             else if (key === 'compact') await setCompact(on);
             else if (key === 'pause') await postPause(on ? 'hour' : 'off');
+            else if (key === 'feeds') await dash()?.feedWatch?.setPhoneEnabled?.(on);
             renderPanel();
             return;
         }

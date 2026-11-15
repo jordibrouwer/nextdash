@@ -33,8 +33,30 @@ class DashboardFeedWatch {
         return typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
     }
 
+    /**
+     * Watch feeds switched off for this phone (More → Watch feeds). Kept in this
+     * browser, not on the server: the feeds are still watched and the server still
+     * polls them, the phone just does not show or fetch any of it. Gated here, at
+     * the source, so the row icon, badge, hover card, bell, news card and tab title
+     * all go quiet together — they only ever read byKey.
+     */
+    suppressed() {
+        if (window.MobileExperience?.isPhoneLayout?.() !== true) return false;
+        try { return localStorage.getItem(DashboardFeedWatch.PHONE_KEY) === 'off'; } catch { return false; }
+    }
+
+    /** The switch in More. Off empties what is held at once; on fetches it again. */
+    async setPhoneEnabled(on) {
+        try {
+            if (on) localStorage.removeItem(DashboardFeedWatch.PHONE_KEY);
+            else localStorage.setItem(DashboardFeedWatch.PHONE_KEY, 'off');
+        } catch { /* no storage: the switch lasts until the next load */ }
+        if (!on) this._apply({});
+        else await this.load({ force: true });
+    }
+
     _apply(data) {
-        const next = new Map(Object.entries(data?.watches || {}));
+        const next = this.suppressed() ? new Map() : new Map(Object.entries(data?.watches || {}));
         const before = JSON.stringify([...this.byKey]);
         this.byKey = next;
         this.limit = Number(data?.limit) || this.limit;
@@ -47,6 +69,7 @@ class DashboardFeedWatch {
     /** Fetch the watch list once per page view; `force` asks again. */
     async load({ force = false } = {}) {
         if (this._loading && !force) return this._loading;
+        if (this.suppressed()) { this._apply({}); return true; }
         this._loading = (async () => {
             try {
                 const res = await fetch('/api/feeds/watch');
@@ -504,4 +527,5 @@ class DashboardFeedWatch {
     }
 }
 
+DashboardFeedWatch.PHONE_KEY = 'nextdash:mobile-watch-feeds';
 window.DashboardFeedWatch = DashboardFeedWatch;
