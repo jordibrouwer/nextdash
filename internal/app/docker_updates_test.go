@@ -417,3 +417,24 @@ func TestSchedulerPrunesResultsOfHostsThatAreGone(t *testing.T) {
 		t.Error("the orphaned results stayed")
 	}
 }
+
+// With the update check switched off the scheduler still clears the results of
+// hosts that are gone.
+func TestSchedulerPrunesOrphansEvenWithTheCheckOff(t *testing.T) {
+	hostsTestDir(t)
+	h := dockerTestHandlers(t)
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", "")
+	s := h.store.GetSettings()
+	s.DockerUpdateInterval = "off"
+	if err := h.store.SaveSettings(s); err != nil {
+		t.Fatal(err)
+	}
+	orphan := dockerUpdatesPathFor("d_bbbbbbbbbbbb")
+	if err := writeIndentJSONFile(orphan, dockerUpdateStore{CheckedAt: 1}); err != nil {
+		t.Fatal(err)
+	}
+	h.maybeRunDockerUpdateCheck()
+	if _, err := os.Stat(orphan); !os.IsNotExist(err) {
+		t.Error("the orphaned results stayed while the check was off")
+	}
+}

@@ -382,7 +382,7 @@
                 title: f('dockerTour4HostsTitle', 'Containers on other machines'),
                 visual: (() => {
                     const local = f('dashboard.dockerHostLocal', 'This host');
-                    const host = 'vps-strato';
+                    const host = 'nas';
                     const add = f('dashboard.dockerHostsAddShort', 'Add a host');
                     return svg(`
                         ${pill(14, 8, local, { kind: 'plain' })}
@@ -394,7 +394,7 @@
                             <rect x="262" y="8" width="208" height="130" rx="8" class="ctv-panel"/>
                             ${fitLabel(274, 28, add, 184, 'ctv-heading')}
                             ${label(274, 48, 'tcp', 'ctv-label')}
-                            ${label(274, 64, '100.87.25.77:2375', 'ctv-mono')}
+                            ${label(274, 64, '192.168.1.20:2375', 'ctv-mono')}
                             ${pill(274, 78, f('dockerHostTest', 'Test'), { kind: 'plain' })}
                             ${label(274 + pillWidth(f('dockerHostTest', 'Test')) + 10, 92, '✓ Docker', 'ctv-title')}
                             ${pill(274, 106, f('dockerHostAllowActions', 'Allow actions'), { kind: 'dashed' })}

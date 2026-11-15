@@ -239,4 +239,32 @@ test.describe('several Docker hosts', () => {
         // The other host's check did not stamp this host with "just now".
         await expect(page.locator('[data-docker-checked-at]')).toContainText('3 h ago');
     });
+
+    test('a failed read of the hosts keeps the remembered tab', async ({ page }) => {
+        await mockDocker(page);
+        await mockRemote(page);
+        await page.goto('/#docker');
+        await hostTab(page, PI).click();
+        await expect(page.locator('[data-docker-row="pihole"]')).toBeVisible();
+        // The server is restarting: the hosts answer fails once the view reloads.
+        await page.route('**/api/docker/hosts', (route) => route.fulfill({ status: 503, body: 'restarting' }));
+        await page.reload();
+        await expect(page.locator('[data-docker-row]').first()).toBeVisible({ timeout: 15_000 }).catch(() => {});
+        const kept = await page.evaluate(() => localStorage.getItem('nextdash.docker.host'));
+        expect(kept).toBe(PI);
+    });
+
+    test('a long host name shortens its tab instead of widening the page', async ({ page }) => {
+        await page.setViewportSize({ width: 375, height: 800 });
+        await mockDocker(page);
+        const long = 'a-host-with-a-really-long-name-'.repeat(2).slice(0, 64);
+        await page.route('**/api/docker/hosts', (route) => route.fulfill({ status: 200, contentType: 'application/json',
+            body: JSON.stringify({ max: 4, hosts: [{ id: PI, name: long, kind: 'tcp', address: '10.0.0.2:2375', allowActions: false,
+                hasCA: false, hasCert: false, hasKey: false }] }) }));
+        await page.goto('/#docker');
+        await expect(hostTab(page, PI)).toBeVisible();
+        // The tab, not the page: the table below has its own width on a phone.
+        const box = await hostTab(page, PI).boundingBox();
+        expect(box.x + box.width).toBeLessThanOrEqual(375);
+    });
 });

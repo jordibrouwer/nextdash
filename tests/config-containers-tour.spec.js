@@ -22,7 +22,7 @@ test('Config → Containers has a Tour button that plays the Containers tour', a
 
     await button.click();
     await expect(page.locator('#app-modal.show .containers-tutorial-modal')).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('.containers-tutorial-progress')).toHaveText('Step 1 of 6');
+    await expect(page.locator('.containers-tutorial-progress')).toHaveText('Step 1 of 7');
 });
 
 test('the Tour button is only on the Containers section of config', async ({ page }) => {

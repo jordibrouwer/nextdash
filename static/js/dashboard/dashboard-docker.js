@@ -168,7 +168,13 @@ class DashboardDocker {
     /** The remote hosts from Config; a host that is gone sends the view back to this one. */
     async loadHosts() {
         const body = await dockerFetchJSON('/api/docker/hosts');
-        this.hosts = Array.isArray(body?.hosts) ? body.hosts : [];
+        // A read that failed (the server is restarting, say) says nothing about
+        // the hosts: keep what is known, and the tab that was remembered.
+        if (!Array.isArray(body?.hosts)) {
+            this.applyHost();
+            return;
+        }
+        this.hosts = body.hosts;
         if (this.isRemote() && !this.currentHost()) {
             this.hostId = 'local';
             this.persistHost();

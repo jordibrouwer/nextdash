@@ -192,7 +192,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"glances-history.json":   dataKeep,
 	"glances-incidents.json": dataKeep,
 	"docker-updates.json":    dataKeep,
-	"docker-hosts.json":      dataReplace, // the remote hosts; their certificates are in docker-secrets.json
+	"docker-hosts.json":      dataKeep, // the remote hosts; an older archive has none and must not wipe them. Certificates are in docker-secrets.json
 	"status-page.json":       dataKeep,
 
 	/*

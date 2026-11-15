@@ -356,13 +356,14 @@ func (h *Handlers) StartDockerUpdateScheduler(stop <-chan struct{}) {
 }
 
 func (h *Handlers) maybeRunDockerUpdateCheck() {
+	// Results of a host that is gone (removed during a check, or lost to a
+	// restore) are dropped here, so nothing stays behind for good, also when
+	// the check itself is switched off.
+	pruneDockerHostUpdateFiles()
 	every := dockerUpdateIntervalDuration(h.store.GetSettings().DockerUpdateInterval)
 	if every == 0 {
 		return
 	}
-	// Results of a host that is gone (removed during a check, or lost to a
-	// restore) are dropped here, so nothing stays behind for good.
-	pruneDockerHostUpdateFiles()
 	// Every host in its own goroutine: a slow one must not hold the others
 	// off. Each has its own timeout and busy flag.
 	var wg sync.WaitGroup

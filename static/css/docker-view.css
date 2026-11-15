@@ -1329,6 +1329,21 @@
 /* Which Docker host: a second strip above Containers | Disk, only with a remote host. */
 .docker-host-tabs {
     flex-wrap: wrap;
+    /* In the toolbar row: it never outgrows the row, so one long name shortens. */
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* With a host strip the row wraps instead of squeezing every strip to nothing. */
+.lvs-toolbar:has(.docker-host-tabs) {
+    flex-wrap: wrap;
+}
+
+/* A host name can be 64 characters: it shortens instead of widening the page. */
+.docker-host-tabs .docker-tab {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* On the Disk tab the search, sort and group have nothing to act on. */

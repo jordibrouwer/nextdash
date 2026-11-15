@@ -226,3 +226,11 @@ func TestHostsFileWithOddIDsIsNotTrusted(t *testing.T) {
 		t.Error("an id with a path in it was found")
 	}
 }
+
+// An archive made before hosts existed has no docker-hosts.json; restoring it
+// must leave the hosts alone.
+func TestHostsFileSurvivesARestoreOfAnOlderArchive(t *testing.T) {
+	if p, ok := dataFilePolicyOf("docker-hosts.json"); !ok || p != dataKeep {
+		t.Fatalf("docker-hosts.json policy = %v %v, want dataKeep", p, ok)
+	}
+}
