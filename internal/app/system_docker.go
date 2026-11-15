@@ -37,20 +37,41 @@ is a monitoring system, not a tile, and the custom widget already exists for it.
 // dockerAPIVersionFor asks for once per socket.
 const dockerAPIVersion = "v1.41"
 
-var dockerAPIVersions sync.Map // socket -> "vX.Y"
+var dockerAPIVersions sync.Map // endpoint key -> "vX.Y"
 
 // dockerAPIVersionFor is the version to put in front of every path on this
 // socket. The unversioned /version answers on every daemon; a daemon that
 // cannot be reached is asked again next time, one that answers is not.
-func dockerAPIVersionFor(socket string) string {
-	if v, ok := dockerAPIVersions.Load(socket); ok {
+func dockerAPIVersionFor(e dockerHostEndpoint) string {
+	return dockerAPIVersionForCtx(context.Background(), e)
+}
+
+// dockerAPIVersionLookupTimeout bounds the /version question, so a host that
+// accepts a connection and never answers costs the caller seconds, not the
+// whole client timeout again on every request.
+var dockerAPIVersionLookupTimeout = 3 * time.Second
+
+// dockerAPIVersionForCtx remembers an answer only when the daemon gave one: a
+// 5xx is a proxy or a daemon on its way up, and caching the default then would
+// pin a version the daemon refuses (Docker 29 wants 1.44) until a restart.
+func dockerAPIVersionForCtx(ctx context.Context, e dockerHostEndpoint) string {
+	if v, ok := dockerAPIVersions.Load(e.key()); ok {
 		return v.(string)
 	}
-	resp, err := dockerClientFor(socket).Get("http://docker/version")
+	ctx, cancel := context.WithTimeout(ctx, dockerAPIVersionLookupTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.baseURL()+"version", nil)
+	if err != nil {
+		return dockerAPIVersion
+	}
+	resp, err := dockerClientFor(e).Do(req)
 	if err != nil {
 		return dockerAPIVersion
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode >= 500 {
+		return dockerAPIVersion
+	}
 	version := dockerAPIVersion
 	var body struct {
 		MinAPIVersion string `json:"MinAPIVersion"`
@@ -59,7 +80,7 @@ func dockerAPIVersionFor(socket string) string {
 		dockerAPIVersionLess(strings.TrimPrefix(dockerAPIVersion, "v"), body.MinAPIVersion) {
 		version = "v" + body.MinAPIVersion
 	}
-	dockerAPIVersions.Store(socket, version)
+	dockerAPIVersions.Store(e.key(), version)
 	return version
 }
 
@@ -164,7 +185,7 @@ func fillDockerExtras(out *DockerMetrics, running []dockerRunningRef, now time.T
 }
 
 /*
-dockerClientFor hands back the client for this socket, building it once.
+dockerClientFor hands back the client for this endpoint, building it once.
 
 The socket comes from NEXTDASH_DOCKER_SOCKET and does not change while the
 process runs, but this was building a fresh client and transport on every
@@ -183,35 +204,61 @@ var dockerClients sync.Map
 // a test can shorten it rather than wait it out.
 var dockerClientTimeout = 5 * time.Second
 
-func dockerClientFor(socket string) *http.Client {
-	if cached, ok := dockerClients.Load(socket); ok {
+func dockerClientFor(e dockerHostEndpoint) *http.Client {
+	key := e.key()
+	if cached, ok := dockerClients.Load(key); ok {
 		return cached.(*http.Client)
 	}
-	client := &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-				return (&net.Dialer{}).DialContext(ctx, "unix", socket)
-			},
-			IdleConnTimeout: 30 * time.Second,
-		},
-		Timeout: dockerClientTimeout,
-	}
-	actual, _ := dockerClients.LoadOrStore(socket, client)
+	client := &http.Client{Transport: dockerTransportFor(e), Timeout: dockerClientTimeout}
+	actual, _ := dockerClients.LoadOrStore(key, client)
 	return actual.(*http.Client)
 }
 
-// dockerActionClients are the same per-socket clients with no overall
+func dockerTransportFor(e dockerHostEndpoint) http.RoundTripper {
+	transport := &http.Transport{IdleConnTimeout: 30 * time.Second}
+	switch e.Kind {
+	case "tcp":
+		transport.DialContext = (&net.Dialer{Timeout: 5 * time.Second}).DialContext
+	case "tls":
+		cfg, err := e.tlsConfig()
+		if err != nil {
+			return brokenTransport{err}
+		}
+		transport.DialContext = (&net.Dialer{Timeout: 5 * time.Second}).DialContext
+		transport.TLSClientConfig = cfg
+	default:
+		socket := e.Address
+		transport.DialContext = func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "unix", socket)
+		}
+	}
+	return transport
+}
+
+// dockerActionClients are the same per-endpoint clients with no overall
 // timeout, for start, stop, update and remove: dockerActionTimeout on the
 // request's context is what ends one that hangs.
 var dockerActionClients sync.Map
 
-func dockerActionClientFor(socket string) *http.Client {
-	if cached, ok := dockerActionClients.Load(socket); ok {
+func dockerActionClientFor(e dockerHostEndpoint) *http.Client {
+	key := e.key()
+	if cached, ok := dockerActionClients.Load(key); ok {
 		return cached.(*http.Client)
 	}
-	client := &http.Client{Transport: dockerClientFor(socket).Transport}
-	actual, _ := dockerActionClients.LoadOrStore(socket, client)
+	client := &http.Client{Transport: dockerClientFor(e).Transport}
+	actual, _ := dockerActionClients.LoadOrStore(key, client)
 	return actual.(*http.Client)
+}
+
+// forgetDockerEndpoint drops what was cached for an endpoint that is edited or
+// removed, and closes its idle connections.
+func forgetDockerEndpoint(e dockerHostEndpoint) {
+	key := e.key()
+	if cached, ok := dockerClients.LoadAndDelete(key); ok {
+		cached.(*http.Client).CloseIdleConnections()
+	}
+	dockerActionClients.Delete(key)
+	dockerAPIVersions.Delete(key)
 }
 
 // containerName strips the leading slash Docker puts on every name.
@@ -292,10 +339,11 @@ func readDocker() DockerMetrics {
 	if socket == "" {
 		return DockerMetrics{MetricStatus: MetricStatus{Reason: reasonNoDockerSocket}}
 	}
-	client := dockerClientFor(socket)
+	endpoint := unixDockerEndpoint(socket)
+	client := dockerClientFor(endpoint)
 
-	version := dockerAPIVersionFor(socket)
-	resp, err := client.Get("http://docker/" + version + "/containers/json?all=1")
+	version := dockerAPIVersionFor(endpoint)
+	resp, err := client.Get(endpoint.baseURL() + version + "/containers/json?all=1")
 	if err != nil {
 		return DockerMetrics{MetricStatus: MetricStatus{Reason: dockerDialReason(err)}}
 	}
@@ -318,7 +366,7 @@ func readDocker() DockerMetrics {
 	   rather than images: the same image under two tags is two CLI rows and one
 	   image here. The API's own number is the honest one.
 	*/
-	if info, err := client.Get("http://docker/" + version + "/info"); err == nil {
+	if info, err := client.Get(endpoint.baseURL() + version + "/info"); err == nil {
 		defer info.Body.Close()
 		var payload struct {
 			Images int `json:"Images"`
@@ -329,7 +377,7 @@ func readDocker() DockerMetrics {
 	}
 	// The list names a container whose tag has moved on by its image id;
 	// its own reference and the tags are what the update count needs.
-	api := &dockerAPI{client: client, socket: socket}
+	api := &dockerAPI{client: client, endpoint: endpoint}
 	ctx, cancel := context.WithTimeout(context.Background(), dockerClientTimeout)
 	defer cancel()
 	for i, c := range out.containers {

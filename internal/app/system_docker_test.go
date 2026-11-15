@@ -182,9 +182,9 @@ func TestDockerUnavailableWhenSocketMissing(t *testing.T) {
  * daemon hung up.
  */
 func TestDockerClientIsBuiltOncePerSocket(t *testing.T) {
-	first := dockerClientFor("/var/run/probe-a.sock")
-	again := dockerClientFor("/var/run/probe-a.sock")
-	other := dockerClientFor("/var/run/probe-b.sock")
+	first := dockerClientFor(unixDockerEndpoint("/var/run/probe-a.sock"))
+	again := dockerClientFor(unixDockerEndpoint("/var/run/probe-a.sock"))
+	other := dockerClientFor(unixDockerEndpoint("/var/run/probe-b.sock"))
 
 	if first != again {
 		t.Error("two reads of the same socket built two clients")

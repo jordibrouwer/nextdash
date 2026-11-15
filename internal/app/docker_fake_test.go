@@ -1,10 +1,18 @@
 package app
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/binary"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
+	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -120,21 +128,107 @@ func startFakeDocker(t *testing.T) *fakeDocker {
 		t.Skipf("unix sockets unavailable here: %v", err)
 	}
 
+	f := newFakeDockerOn(t, listener, nil)
+	f.socket = socket
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", socket)
+	return f
+}
+
+// newFakeDockerOn serves a fake daemon on any listener, with TLS when a config
+// is given. The caller decides whether the env socket points at it.
+func newFakeDockerOn(t *testing.T, listener net.Listener, tlsCfg *tls.Config) *fakeDocker {
+	t.Helper()
 	f := &fakeDocker{
 		containers: map[string]*fakeContainer{},
 		images:     map[string]fakeImage{},
 		failStart:  map[string]bool{},
-		socket:     socket,
 	}
 	server := &httptest.Server{
 		Listener: listener,
 		Config:   &http.Server{Handler: http.HandlerFunc(f.handle)},
+		TLS:      tlsCfg,
 	}
-	server.Start()
+	if tlsCfg != nil {
+		server.StartTLS()
+	} else {
+		server.Start()
+	}
 	t.Cleanup(server.Close)
-
-	t.Setenv("NEXTDASH_DOCKER_SOCKET", socket)
 	return f
+}
+
+// startFakeDockerTCP serves the daemon on 127.0.0.1 and returns "host:port".
+// It leaves NEXTDASH_DOCKER_SOCKET alone: this is a remote host.
+func startFakeDockerTCP(t *testing.T) (*fakeDocker, string) {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Skipf("tcp unavailable here: %v", err)
+	}
+	return newFakeDockerOn(t, listener, nil), listener.Addr().String()
+}
+
+// dockerTestPKI is a CA with a server certificate for 127.0.0.1 and a client
+// certificate, all PEM, made fresh for a test.
+type dockerTestPKI struct{ CA, Cert, Key, ServerCert, ServerKey string }
+
+func newDockerTestPKI(t *testing.T) dockerTestPKI {
+	t.Helper()
+	caKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	caTpl := &x509.Certificate{
+		SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "test ca"},
+		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
+		IsCA: true, BasicConstraintsValid: true, KeyUsage: x509.KeyUsageCertSign,
+	}
+	caDER, err := x509.CreateCertificate(rand.Reader, caTpl, caTpl, &caKey.PublicKey, caKey)
+	if err != nil {
+		t.Fatalf("ca: %v", err)
+	}
+	caCert, _ := x509.ParseCertificate(caDER)
+	leaf := func(serial int64, usage x509.ExtKeyUsage) (string, string) {
+		k, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		tpl := &x509.Certificate{
+			SerialNumber: big.NewInt(serial), Subject: pkix.Name{CommonName: "leaf"},
+			NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
+			KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{usage},
+			IPAddresses: []net.IP{net.ParseIP("127.0.0.1")},
+		}
+		der, err := x509.CreateCertificate(rand.Reader, tpl, caCert, &k.PublicKey, caKey)
+		if err != nil {
+			t.Fatalf("leaf: %v", err)
+		}
+		kd, _ := x509.MarshalECPrivateKey(k)
+		return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})),
+			string(pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: kd}))
+	}
+	var p dockerTestPKI
+	p.CA = string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caDER}))
+	p.ServerCert, p.ServerKey = leaf(2, x509.ExtKeyUsageServerAuth)
+	p.Cert, p.Key = leaf(3, x509.ExtKeyUsageClientAuth)
+	return p
+}
+
+// startFakeDockerTLS serves the daemon over TLS, as a daemon with --tlsverify
+// does when requireClientCert is set.
+func startFakeDockerTLS(t *testing.T, requireClientCert bool) (*fakeDocker, string, dockerTestPKI) {
+	t.Helper()
+	pki := newDockerTestPKI(t)
+	pair, err := tls.X509KeyPair([]byte(pki.ServerCert), []byte(pki.ServerKey))
+	if err != nil {
+		t.Fatalf("server pair: %v", err)
+	}
+	cfg := &tls.Config{Certificates: []tls.Certificate{pair}}
+	if requireClientCert {
+		pool := x509.NewCertPool()
+		pool.AppendCertsFromPEM([]byte(pki.CA))
+		cfg.ClientCAs = pool
+		cfg.ClientAuth = tls.RequireAndVerifyClientCert
+	}
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Skipf("tcp unavailable here: %v", err)
+	}
+	return newFakeDockerOn(t, listener, cfg), listener.Addr().String(), pki
 }
 
 func (f *fakeDocker) add(c fakeContainer) {
@@ -700,6 +794,11 @@ func (f *fakeDocker) handleLogs(w http.ResponseWriter, r *http.Request, id strin
 func newDockerTestRouter(h *Handlers) http.Handler {
 	r := mux.NewRouter()
 	r.HandleFunc("/api/docker/status", h.DockerStatusHandler).Methods("GET")
+	r.HandleFunc("/api/docker/hosts", h.DockerHostsListHandler).Methods("GET")
+	r.HandleFunc("/api/docker/hosts", h.DockerHostAddHandler).Methods("POST")
+	r.HandleFunc("/api/docker/hosts/test", h.DockerHostTestHandler).Methods("POST")
+	r.HandleFunc("/api/docker/hosts/{id}", h.DockerHostUpdateHandler).Methods("PUT")
+	r.HandleFunc("/api/docker/hosts/{id}", h.DockerHostRemoveHandler).Methods("DELETE")
 	r.HandleFunc("/api/docker/containers", h.DockerContainersHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}", h.DockerContainerDetailHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", h.DockerContainerEnvHandler).Methods("GET")

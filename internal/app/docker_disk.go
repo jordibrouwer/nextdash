@@ -277,6 +277,9 @@ func buildDockerDiskView(df dockerDfResponse, list []dockerContainerSummary) doc
 // DockerDiskHandler measures. Read-only, like the list: sizes and names say
 // nothing a reader of the view does not already see.
 func (h *Handlers) DockerDiskHandler(w http.ResponseWriter, r *http.Request) {
+	if dockerLocalOnly(w, r) {
+		return
+	}
 	api, reason := newDockerAPI()
 	if api == nil {
 		dockerRefuse(w, http.StatusServiceUnavailable, reason)
@@ -424,6 +427,9 @@ func (h *Handlers) dockerDiskGuard(w http.ResponseWriter, r *http.Request) (*doc
 // DockerPruneHandler clears one kind: images-dangling, images-unused or
 // build-cache.
 func (h *Handlers) DockerPruneHandler(w http.ResponseWriter, r *http.Request) {
+	if dockerLocalOnly(w, r) {
+		return
+	}
 	kind := mux.Vars(r)["kind"]
 	var path string
 	switch kind {
@@ -550,6 +556,9 @@ func (h *Handlers) pruneStoppedContainers(w http.ResponseWriter, r *http.Request
 // DockerVolumeRemoveHandler removes one volume, named twice (?confirm=), that
 // no container holds -- a stopped one included.
 func (h *Handlers) DockerVolumeRemoveHandler(w http.ResponseWriter, r *http.Request) {
+	if dockerLocalOnly(w, r) {
+		return
+	}
 	name := mux.Vars(r)["name"]
 	if name == "" || r.URL.Query().Get("confirm") != name {
 		dockerRefuse(w, http.StatusBadRequest, "confirm-name")

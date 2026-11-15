@@ -232,3 +232,188 @@ func TestDockerUpdateCheckMatchesAnyLocalDigest(t *testing.T) {
 		t.Fatalf("update = %+v, want current on the matching digest", u)
 	}
 }
+
+// One image reference, two hosts, two answers: the remote host's results are
+// its own and never touch the local file.
+func TestUpdateCheckOnARemoteHostKeepsItsOwnResults(t *testing.T) {
+	hostsTestDir(t)
+	reg := withTestRegistry(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Docker-Content-Digest", "sha256:new")
+	})
+	ref := reg + "/app:1"
+	local := startFakeDocker(t)
+	local.add(fakeContainer{ID: strings.Repeat("a", 64), Name: "web", Image: ref, State: "running"})
+	local.images[ref] = fakeImage{ID: "sha256:img-l", RepoDigests: []string{reg + "/app@sha256:new"}} // up to date
+	remote, addr := startFakeDockerTCP(t)
+	remote.add(fakeContainer{ID: strings.Repeat("b", 64), Name: "web", Image: ref, State: "running"})
+	remote.images[ref] = fakeImage{ID: "sha256:img-r", RepoDigests: []string{reg + "/app@sha256:old"}} // behind
+	h := dockerTestHandlers(t)
+	host := addRemoteHost(t, addr, false)
+
+	if _, err := h.runDockerUpdateCheck(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	store, err := h.runDockerUpdateCheckOn(context.Background(), host.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u := store.Images[ref]; u == nil || u.Status != "available" || u.LocalDigest != "sha256:old" {
+		t.Fatalf("remote result = %+v", u)
+	}
+	if u := h.dockerUpdateSnapshot()[ref]; u == nil || u.Status != "current" {
+		t.Fatalf("the remote check changed the local answer: %+v", u)
+	}
+	if _, err := os.Stat(dockerUpdatesPathFor(host.ID)); err != nil {
+		t.Fatalf("remote file: %v", err)
+	}
+	if got := h.dockerUpdateSnapshotFor(host.ID)[ref]; got == nil || got.Status != "available" {
+		t.Fatalf("snapshot for the host = %+v", got)
+	}
+}
+
+func TestUpdateRoutesFollowTheHostAndTheListCarriesTheBadge(t *testing.T) {
+	hostsTestDir(t)
+	h := dockerTestHandlers(t)
+	router := newDockerTestRouter(h)
+	reg := withTestRegistry(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Docker-Content-Digest", "sha256:new")
+	})
+	ref := reg + "/app:1"
+	startFakeDocker(t)
+	remote, addr := startFakeDockerTCP(t)
+	remote.add(fakeContainer{ID: strings.Repeat("b", 64), Name: "web", Image: ref, State: "running"})
+	remote.images[ref] = fakeImage{ID: "sha256:img-r", RepoDigests: []string{reg + "/app@sha256:old"}}
+	host := addRemoteHost(t, addr, false)
+
+	rec := hostsCall(t, router, "POST", "/api/docker/updates/check?host="+host.ID, "", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("check on a remote host: %d %s", rec.Code, rec.Body)
+	}
+	_, body := getJSON(t, router, "/api/docker/containers?host="+host.ID)
+	row := body["containers"].([]any)[0].(map[string]any)
+	if u, _ := row["update"].(map[string]any); u == nil || u["status"] != "available" {
+		t.Fatalf("remote row update = %v", row["update"])
+	}
+	// The local list does not know that image.
+	_, local := getJSON(t, router, "/api/docker/updates")
+	if images, _ := local["images"].(map[string]any); images[ref] != nil {
+		t.Errorf("local store holds the remote result: %v", images)
+	}
+	if rec := hostsCall(t, router, "POST", "/api/docker/updates/check?host=d_nope", "", ""); rec.Code != http.StatusNotFound {
+		t.Errorf("unknown host = %d", rec.Code)
+	}
+}
+
+func TestRemoteChecksDoNotHoldEachOtherOff(t *testing.T) {
+	h := dockerTestHandlers(t)
+	doneLocal, ok := h.beginDockerCheck(dockerLocalHostID)
+	if !ok {
+		t.Fatal("local refused")
+	}
+	defer doneLocal()
+	doneRemote, ok := h.beginDockerCheck("d_aaaaaaaaaaaa")
+	if !ok {
+		t.Fatal("a running local check held a remote one off")
+	}
+	if _, ok := h.beginDockerCheck("d_aaaaaaaaaaaa"); ok {
+		t.Error("two checks ran on one remote host")
+	}
+	doneRemote()
+	if _, ok := h.beginDockerCheck("d_aaaaaaaaaaaa"); !ok {
+		t.Error("the remote flag was not released")
+	}
+}
+
+func TestSchedulerChecksARemoteHostOnTheSameIntervalButNotEveryTick(t *testing.T) {
+	hostsTestDir(t)
+	h := dockerTestHandlers(t)
+	reg := withTestRegistry(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Docker-Content-Digest", "sha256:new")
+	})
+	ref := reg + "/app:1"
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", "") // no local daemon: only the remote one is checked
+	remote, addr := startFakeDockerTCP(t)
+	remote.add(fakeContainer{ID: strings.Repeat("b", 64), Name: "web", Image: ref, State: "running"})
+	remote.images[ref] = fakeImage{ID: "sha256:img-r", RepoDigests: []string{reg + "/app@sha256:old"}}
+	host := addRemoteHost(t, addr, false)
+	s := h.store.GetSettings()
+	s.DockerUpdateInterval = "6h"
+	if err := h.store.SaveSettings(s); err != nil {
+		t.Fatal(err)
+	}
+
+	h.maybeRunDockerUpdateCheck()
+	if h.dockerUpdateSnapshotFor(host.ID)[ref] == nil {
+		t.Fatal("the scheduler did not check the remote host")
+	}
+	first := readDockerUpdateStoreAt(dockerUpdatesPathFor(host.ID)).CheckedAt
+	h.maybeRunDockerUpdateCheck()
+	if again := readDockerUpdateStoreAt(dockerUpdatesPathFor(host.ID)).CheckedAt; again != first {
+		t.Error("a fresh result was checked again")
+	}
+}
+
+func TestRemovingAHostDeletesItsUpdateResults(t *testing.T) {
+	hostsTestDir(t)
+	host, err := addDockerHost(DockerHost{Name: "pi", Kind: "tcp", Address: "10.0.0.2:2375"}, dockerHostSecretUpdate{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := writeIndentJSONFile(dockerUpdatesPathFor(host.ID), dockerUpdateStore{CheckedAt: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := removeDockerHost(host.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dockerUpdatesPathFor(host.ID)); !os.IsNotExist(err) {
+		t.Error("the removed host's update results stayed")
+	}
+	if p, ok := dataFilePolicyOf("docker-updates-" + host.ID + ".json"); !ok || p != dataNever {
+		t.Errorf("backup policy = %v %v", p, ok)
+	}
+}
+
+// Removed while its check runs: the results must not come back as a file.
+func TestRemovingAHostDuringItsCheckLeavesNoFile(t *testing.T) {
+	hostsTestDir(t)
+	var removeNow func()
+	reg := withTestRegistry(t, func(w http.ResponseWriter, r *http.Request) {
+		if removeNow != nil {
+			removeNow()
+		}
+		w.Header().Set("Docker-Content-Digest", "sha256:new")
+	})
+	ref := reg + "/app:1"
+	remote, addr := startFakeDockerTCP(t)
+	remote.add(fakeContainer{ID: strings.Repeat("b", 64), Name: "web", Image: ref, State: "running"})
+	remote.images[ref] = fakeImage{ID: "sha256:img-r", RepoDigests: []string{reg + "/app@sha256:old"}}
+	h := dockerTestHandlers(t)
+	host := addRemoteHost(t, addr, false)
+	removeNow = func() { _ = removeDockerHost(host.ID) }
+
+	if _, err := h.runDockerUpdateCheckOn(context.Background(), host.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dockerUpdatesPathFor(host.ID)); !os.IsNotExist(err) {
+		t.Fatal("a removed host's results were written after all")
+	}
+}
+
+func TestSchedulerPrunesResultsOfHostsThatAreGone(t *testing.T) {
+	hostsTestDir(t)
+	h := dockerTestHandlers(t)
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", "")
+	s := h.store.GetSettings()
+	s.DockerUpdateInterval = "6h"
+	if err := h.store.SaveSettings(s); err != nil {
+		t.Fatal(err)
+	}
+	orphan := dockerUpdatesPathFor("d_aaaaaaaaaaaa")
+	if err := writeIndentJSONFile(orphan, dockerUpdateStore{CheckedAt: 1}); err != nil {
+		t.Fatal(err)
+	}
+	h.maybeRunDockerUpdateCheck()
+	if _, err := os.Stat(orphan); !os.IsNotExist(err) {
+		t.Error("the orphaned results stayed")
+	}
+}

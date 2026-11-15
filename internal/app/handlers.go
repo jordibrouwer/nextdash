@@ -79,10 +79,14 @@ type Handlers struct {
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
-	dockerPruneRunning atomic.Bool // one prune at a time (docker_disk.go)
-	healthReport       BookmarkHealthReport
-	healthReportAt     time.Time
-	healthReportOK     bool
+	// A remote host's check runs alone and does not hold the local one off;
+	// the attempt times keep a host that is down from being asked every tick.
+	dockerRemoteChecks   sync.Map    // host id -> struct{}
+	dockerRemoteAttempts sync.Map    // host id -> time.Time
+	dockerPruneRunning   atomic.Bool // one prune at a time (docker_disk.go)
+	healthReport         BookmarkHealthReport
+	healthReportAt       time.Time
+	healthReportOK       bool
 	// healthReportGen is the store's write count when this report was built.
 	// A cached report whose generation no longer matches describes bookmarks
 	// that have since changed, however recently it was built.

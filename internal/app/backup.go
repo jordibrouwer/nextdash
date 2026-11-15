@@ -192,6 +192,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"glances-history.json":   dataKeep,
 	"glances-incidents.json": dataKeep,
 	"docker-updates.json":    dataKeep,
+	"docker-hosts.json":      dataReplace, // the remote hosts; their certificates are in docker-secrets.json
 	"status-page.json":       dataKeep,
 
 	/*
@@ -231,10 +232,17 @@ var dataFiles = map[string]dataFilePolicy{
 // (glances_host.go): of this install, like the first one's.
 var glancesHostFileRe = regexp.MustCompile(`^glances-(history|incidents)-[a-z0-9-]+\.json$`)
 
+// dockerHostUpdatesFileRe is a remote Docker host's check results: what that
+// host's images were at the last look, of this install and no use after a restore.
+var dockerHostUpdatesFileRe = regexp.MustCompile(`^docker-updates-d_[0-9a-f]{12}\.json$`)
+
 func dataFilePolicyOf(relPath string) (dataFilePolicy, bool) {
 	policy, ok := dataFiles[relPath]
 	if !ok && glancesHostFileRe.MatchString(relPath) {
 		return dataKeep, true
+	}
+	if !ok && dockerHostUpdatesFileRe.MatchString(relPath) {
+		return dataNever, true
 	}
 	return policy, ok
 }
@@ -869,6 +877,7 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		h.invalidateHealthReportCache()
 		applyRuntimeSettings(h.store.GetSettings())
 		h.forgetUnraidAfterRestore(before, preparedHasRelPath(prepared, "unraid-secrets.json"))
+		pruneDockerHostSecrets()
 	}()
 	// Under the store lock, so no bookmark write lands between the files, and
 	// under settingsMu, so a settings save that read the old file before the

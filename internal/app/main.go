@@ -283,6 +283,11 @@ func Run(files assetFS) {
 	// The Docker view. Reading needs NEXTDASH_DOCKER_SOCKET; every POST below
 	// also needs NEXTDASH_DOCKER_CONTROL=1 and passes the write token.
 	r.HandleFunc("/api/docker/status", handlers.DockerStatusHandler).Methods("GET")
+	r.HandleFunc("/api/docker/hosts", handlers.DockerHostsListHandler).Methods("GET")
+	r.HandleFunc("/api/docker/hosts", handlers.DockerHostAddHandler).Methods("POST")
+	r.HandleFunc("/api/docker/hosts/test", handlers.DockerHostTestHandler).Methods("POST")
+	r.HandleFunc("/api/docker/hosts/{id}", handlers.DockerHostUpdateHandler).Methods("PUT")
+	r.HandleFunc("/api/docker/hosts/{id}", handlers.DockerHostRemoveHandler).Methods("DELETE")
 	r.HandleFunc("/api/docker/containers", handlers.DockerContainersHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}", handlers.DockerContainerDetailHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", handlers.DockerContainerEnvHandler).Methods("GET")

@@ -22,15 +22,15 @@ table, the drawer or recreate needs, and nothing else is decoded.
 */
 
 type dockerAPI struct {
-	client *http.Client
-	socket string
+	client   *http.Client
+	endpoint dockerHostEndpoint
 }
 
 // forActions is the same daemon without the read client's deadline. A pull
 // streams for as long as the layers take and a stop waits out the container's
 // own timeout; the action's context bounds them instead.
 func (d *dockerAPI) forActions() *dockerAPI {
-	return &dockerAPI{client: dockerActionClientFor(d.socket), socket: d.socket}
+	return &dockerAPI{client: dockerActionClientFor(d.endpoint), endpoint: d.endpoint}
 }
 
 type dockerAPIError struct {
@@ -46,11 +46,12 @@ func newDockerAPI() (*dockerAPI, string) {
 	if socket == "" {
 		return nil, reasonNoDockerSocket
 	}
-	return &dockerAPI{client: dockerClientFor(socket), socket: socket}, ""
+	endpoint := unixDockerEndpoint(socket)
+	return &dockerAPI{client: dockerClientFor(endpoint), endpoint: endpoint}, ""
 }
 
 func (d *dockerAPI) url(path string) string {
-	return "http://docker/" + dockerAPIVersionFor(d.socket) + path
+	return d.endpoint.baseURL() + dockerAPIVersionFor(d.endpoint) + path
 }
 
 func (d *dockerAPI) do(ctx context.Context, method, path string, body any) (*http.Response, error) {
@@ -62,7 +63,7 @@ func (d *dockerAPI) do(ctx context.Context, method, path string, body any) (*htt
 		}
 		reader = bytes.NewReader(buf)
 	}
-	req, err := http.NewRequestWithContext(ctx, method, d.url(path), reader)
+	req, err := http.NewRequestWithContext(ctx, method, d.endpoint.baseURL()+dockerAPIVersionForCtx(ctx, d.endpoint)+path, reader)
 	if err != nil {
 		return nil, err
 	}

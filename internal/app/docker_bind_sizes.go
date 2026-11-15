@@ -171,6 +171,9 @@ func dockerMeasurableBind(list []dockerContainerSummary, source string) bool {
 
 // DockerBindMeasureHandler measures one bind mount's folder, named in the body.
 func (h *Handlers) DockerBindMeasureHandler(w http.ResponseWriter, r *http.Request) {
+	if dockerLocalOnly(w, r) {
+		return
+	}
 	var body struct {
 		Source string `json:"source"`
 	}
