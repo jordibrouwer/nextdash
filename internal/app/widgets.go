@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 )
@@ -802,7 +801,7 @@ func (fs *FileStore) savePageBlocksLocked(pageID int, widgets []Widget, order []
 	// right by the next save of the widget.
 	if widgets != nil {
 		if err := fs.syncEverywhereLocked(pageID, previousWidgets, normalizeWidgets(page.Widgets)); err != nil {
-			log.Printf("widgets on every page: %v", err)
+			logWarn("widgets", "widgets on every page: %v", err)
 		}
 	}
 	return nil
