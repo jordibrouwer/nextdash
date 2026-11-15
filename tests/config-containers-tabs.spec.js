@@ -13,7 +13,7 @@ const TABS = ['connection', 'view', 'updates', 'alerts'];
 
 // What each tab shows, in order.
 const TITLES = {
-    connection: ['Connection', 'Safety'],
+    connection: ['Connection', 'Other Docker hosts', 'Safety'],
     view: ['View', 'Links', 'New apps', 'Ignored apps', 'Hidden containers'],
     updates: ['Updates', 'GitHub'],
     alerts: ['Notifications', 'Muted containers'],

@@ -153,6 +153,7 @@ test.describe('the Immich widgets', () => {
         await expect(toggle).toHaveAttribute('aria-label', /Pause/);
         await toggle.click();
         await expect(toggle).toHaveAttribute('aria-label', /Play/);
+        // Nothing may happen while paused: waits longer than one interval (3 s) to show the slide did not move.
         await page.waitForTimeout(3600);
         await expect(count).toHaveText('3 of 3');
     });
@@ -166,6 +167,7 @@ test.describe('the Immich widgets', () => {
         await expect(count).toHaveText('1 of 2');
         await expect(count).toHaveText('2 of 2', { timeout: 6000 });
         await tile.hover();
+        // Nothing may happen under the pointer: waits longer than one interval (3 s) to show the slide did not move.
         await page.waitForTimeout(3600);
         await expect(count).toHaveText('2 of 2');
     });
@@ -178,6 +180,7 @@ test.describe('the Immich widgets', () => {
         });
         await expect(tile.locator('.media-slides')).toHaveAttribute('data-transition', 'none');
         await expect(tile.locator('.media-slides-toggle')).toHaveAttribute('aria-label', /Play/);
+        // Nothing may happen under reduced motion: waits longer than one interval (3 s) to show it stays on the first slide.
         await page.waitForTimeout(3600);
         await expect(tile.locator('.media-slides-count')).toHaveText('1 of 2');
     });
@@ -216,6 +219,7 @@ test.describe('the Immich widgets', () => {
         await page.mouse.move(2, 2);
         // Redrawn every second, as a short refresh would: the clock is not restarted.
         for (let i = 0; i < 4; i += 1) {
+            // The slideshow's clock is about time itself: a redraw every second must not restart it.
             await page.waitForTimeout(1000);
             tile = await draw(page, { type: 'immich-slideshow', result, config, width: 400 });
         }
@@ -232,6 +236,7 @@ test.describe('the Immich widgets', () => {
         await next.click();
         await next.click();
         await next.click();
+        // Gives the leaving slides their transition time; the check after it is that only one is left.
         await page.waitForTimeout(1200);
         await expect(tile.locator('.media-slide')).toHaveCount(1);
         await expect(tile.locator('.media-slide.is-current')).toHaveCount(1);
@@ -262,6 +267,7 @@ test.describe('the Immich widgets', () => {
         const tile = await draw(page, {
             type: 'immich-slideshow', result: answer([photo(1), photo(2)]), config: { interval: 3, autoplay: false, transition: 'none' }, width: 400,
         });
+        // Nothing may happen without autoplay: waits longer than one interval (3 s) to show the slide did not move.
         await page.waitForTimeout(3600);
         await expect(tile.locator('.media-slides-count')).toHaveText('1 of 2');
     });

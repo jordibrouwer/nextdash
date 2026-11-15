@@ -27,7 +27,7 @@ test.describe('Config -> Containers', () => {
     await openSection(page);
     await expect(page.locator('[data-config-section="containers"]')).toHaveAttribute('aria-selected', 'true');
     const titles = page.locator('#config-containers-body .config-panel-title');
-    await expect(titles).toHaveText(['Connection', 'Safety']);
+    await expect(titles).toHaveText(['Connection', 'Other Docker hosts', 'Safety']);
     await page.locator('[data-containers-tab="view"]').click();
     // The same rows Behavior uses, so they line up the same way.
     await expect(page.locator('#config-containers-body [data-behavior-field="dockerRefreshSeconds"]')).toBeVisible();

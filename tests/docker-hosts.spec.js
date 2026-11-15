@@ -106,6 +106,7 @@ test.describe('several Docker hosts', () => {
         await expect(page.locator('[data-docker-readonly]')).toContainText('Config');
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('r');
+        // A key that must do nothing: gives a request time to show up, then asserts none was sent.
         await page.waitForTimeout(300);
         expect(remote.requests.filter((r) => r.startsWith('POST'))).toEqual([]);
     });
@@ -122,6 +123,7 @@ test.describe('several Docker hosts', () => {
         expect(local.calls.filter((c) => c.startsWith('POST'))).toEqual([]);
         // Update is local only: no key, no row action.
         await page.keyboard.press('u');
+        // A key that must do nothing: gives a request time to show up, then asserts none was sent.
         await page.waitForTimeout(300);
         expect(remote.requests.filter((r) => /\/containers\/.*\/update/.test(r))).toEqual([]);
     });
@@ -191,6 +193,7 @@ test.describe('several Docker hosts', () => {
         // The slow host has not answered; go back before it does.
         await hostTab(page, 'local').click();
         await expect(page.locator('[data-docker-row]')).toHaveCount(4);
+        // The slow host answers after the switch back: waits for its late answer to prove it does not replace this tab's list.
         await page.waitForTimeout(1600);
         await expect(page.locator('[data-docker-row]')).toHaveCount(4);
         await expect(page.locator('[data-docker-setup]')).toHaveCount(0);
@@ -235,6 +238,7 @@ test.describe('several Docker hosts', () => {
         // The progress overlay covers the tabs, so the switch is made the way a key would.
         await page.evaluate(() => window.dashboardInstance.docker._module.switchHost('local'));
         await expect(page.locator('[data-docker-row]')).toHaveCount(4);
+        // The other host's check finishes after the switch: waits for it to prove it does not stamp this host.
         await page.waitForTimeout(1800);
         // The other host's check did not stamp this host with "just now".
         await expect(page.locator('[data-docker-checked-at]')).toContainText('3 h ago');

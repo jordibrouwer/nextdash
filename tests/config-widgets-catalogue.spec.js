@@ -222,14 +222,14 @@ test.describe('new widget kinds', () => {
     }
 
     // The kinds of the newest release that added any, in catalogue order: the
-    // media widgets of v1.28. The DNS blockers of v1.26 and the media and
-    // Beszel kinds of v1.20 are older by then, so they stand as the "older
-    // kind" the badge must leave alone.
-    const NEWEST = ['jellystat', 'bazarr', 'prowlarr'];
+    // Immich tiles of v1.30. The media widgets of v1.28, the DNS blockers of
+    // v1.26 and the media and Beszel kinds of v1.20 are older by then, so they
+    // stand as the "older kind" the badge must leave alone.
+    const NEWEST = ['immich', 'immich-slideshow', 'immich-albums', 'immich-people', 'immich-status'];
 
     test('the newest kinds lead the picker with a New badge', async ({ page }) => {
         await openWidgets(page);
-        await setRelease(page, 'v1.28.0');
+        await setRelease(page, 'v1.30.0');
         await page.locator('[data-widget-catalogue]').click();
 
         const strip = page.locator('.config-widget-picker-group--new [data-widget-option]');
@@ -243,11 +243,12 @@ test.describe('new widget kinds', () => {
         await expect(page.locator('[data-widget-option="health"] .config-widget-new-badge')).toHaveCount(0);
         await expect(page.locator('[data-widget-option="jellyfin"] .config-widget-new-badge')).toHaveCount(0);
         await expect(page.locator('[data-widget-option="adguard"] .config-widget-new-badge')).toHaveCount(0);
+        await expect(page.locator('[data-widget-option="bazarr"] .config-widget-new-badge')).toHaveCount(0);
     });
 
     test('a minor release later the badge is gone', async ({ page }) => {
         await openWidgets(page);
-        await setRelease(page, 'v1.29.0');
+        await setRelease(page, 'v1.31.0');
         await page.locator('[data-widget-catalogue]').click();
 
         await expect(page.locator('.modal--widget-catalogue [data-widget-search]')).toBeFocused();

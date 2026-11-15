@@ -112,49 +112,56 @@ test.describe('media widget settings in three sections', () => {
 
     test('every media service draws its address in Connection and no empty section', async ({ page }) => {
         await openWidget(page, sonarr);
-        const types = await page.evaluate(async () => {
-            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-            const headers = { 'Content-Type': 'application/json',
-                ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
-            const dash = window.dashboardInstance;
-            const all = Object.keys(window.DashboardConfig.MEDIA_SERVICES);
-            const widgets = all.map((type) => ({ type, title: type, config: {} }));
-            const res = await f(`/api/pages/${dash.pages[0].id}/blocks`, { method: 'PUT', headers, body: JSON.stringify({ widgets }) });
-            if (!res.ok) throw new Error(`blocks PUT ${res.status}`);
-            return all;
-        });
-        await page.reload();
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await expect(page.locator('[data-widget-settings]')).toHaveCount(types.length, { timeout: 15_000 });
-        const result = await page.evaluate(async (types) => {
-            const dash = window.dashboardInstance;
-            const c = dash.config.instance || dash.config;
-            const until = Date.now() + 10_000;
-            const media = () => (c._widgetBlocks || []).map((block, index) => [block, index])
-                .filter(([block]) => block?.isWidget && window.DashboardConfig.MEDIA_SERVICES[block.type]);
-            while (media().length < types.length && Date.now() < until) await new Promise((r) => setTimeout(r, 50));
-            const problems = [];
-            const drawn = [];
-            for (const [block, index] of media()) {
-                const box = document.createElement('div');
-                box.innerHTML = c.renderWidgetSettings(block, index);
-                drawn.push(block.type);
-                const server = box.querySelector('[data-widget-section="connection"] [data-widget-setting="server"]');
-                if (!server) problems.push(`${block.type}: no address in Connection`);
-                box.querySelectorAll('details.config-widget-section').forEach((el) => {
-                    const body = el.querySelector('.config-widget-section-body');
-                    if (!body || (!body.children.length && !body.textContent.trim())) {
-                        problems.push(`${block.type}: empty ${el.getAttribute('data-widget-section')}`);
-                    }
-                });
-            }
-            return { types: [...types].sort(), drawn: drawn.sort(), problems };
-        }, types);
-        expect(result.drawn).toEqual(result.types);
-        expect(result.problems).toEqual([]);
+        const all = await page.evaluate(() => Object.keys(window.DashboardConfig.MEDIA_SERVICES));
+        // A page holds at most 24 widgets and the media kinds are more than that: a page at a time.
+        const chunks = [];
+        for (let i = 0; i < all.length; i += 20) chunks.push(all.slice(i, i + 20));
+        const drawnAll = [];
+        for (const types of chunks) {
+            await page.evaluate(async (types) => {
+                const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                const headers = { 'Content-Type': 'application/json',
+                    ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+                const dash = window.dashboardInstance;
+                const widgets = types.map((type) => ({ type, title: type, config: {} }));
+                const res = await f(`/api/pages/${dash.pages[0].id}/blocks`, { method: 'PUT', headers, body: JSON.stringify({ widgets }) });
+                if (!res.ok) throw new Error(`blocks PUT ${res.status}`);
+            }, types);
+            await page.reload();
+            await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+            await dismissOnboardingIfPresent(page);
+            await dismissBlockingOverlays(page);
+            await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+            await expect(page.locator('[data-widget-settings]')).toHaveCount(types.length, { timeout: 15_000 });
+            const result = await page.evaluate(async (types) => {
+                const dash = window.dashboardInstance;
+                const c = dash.config.instance || dash.config;
+                const until = Date.now() + 10_000;
+                const media = () => (c._widgetBlocks || []).map((block, index) => [block, index])
+                    .filter(([block]) => block?.isWidget && window.DashboardConfig.MEDIA_SERVICES[block.type]);
+                while (media().length < types.length && Date.now() < until) await new Promise((r) => setTimeout(r, 50));
+                const problems = [];
+                const drawn = [];
+                for (const [block, index] of media()) {
+                    const box = document.createElement('div');
+                    box.innerHTML = c.renderWidgetSettings(block, index);
+                    drawn.push(block.type);
+                    const server = box.querySelector('[data-widget-section="connection"] [data-widget-setting="server"]');
+                    if (!server) problems.push(`${block.type}: no address in Connection`);
+                    box.querySelectorAll('details.config-widget-section').forEach((el) => {
+                        const body = el.querySelector('.config-widget-section-body');
+                        if (!body || (!body.children.length && !body.textContent.trim())) {
+                            problems.push(`${block.type}: empty ${el.getAttribute('data-widget-section')}`);
+                        }
+                    });
+                }
+                return { types: [...types].sort(), drawn: drawn.sort(), problems };
+            }, types);
+            expect(result.drawn).toEqual(result.types);
+            expect(result.problems).toEqual([]);
+            drawnAll.push(...result.drawn);
+        }
+        expect(drawnAll.sort()).toEqual([...all].sort());
     });
 
     test('Jellyfin choices appear in Display after Connect', async ({ page }) => {
