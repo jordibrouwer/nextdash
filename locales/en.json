@@ -4670,6 +4670,8 @@
     "bookmarkTitleClear": "Clear",
     "bookmarkTitlePage": "Page:",
     "bookmarkTitleUse": "Use",
+    "bookmarkTitleUseCleaned": "Use cleaned title",
+    "bookmarkTitleUseOriginal": "Use original title",
     "tagSuggestLabel": "suggested",
     "tagSuggestRefresh": "Suggest tags again",
     "bookmarkPlaceLabel": "Page › category",
@@ -11169,6 +11171,7 @@
     "tipMaintNetChecks": "Select a bookmark in the Bookmarks view and press <code>4</code> for its <em>Tests</em> tab: up to six network checks — TCP, Ping, DNS, TLS, HTTP detail and JSON — each with its own schedule, history and alerts.",
     "tipMaintNetRunOnce": "<em>Run once</em> in the Tests tab sends one test from the server right now and saves nothing; <em>Save as scheduled check…</em> turns what you just tested into a check.",
     "tipMaintNetPing": "A Ping check that says <em>via TCP</em> could not use ICMP. Config → Monitoring → Checks shows the one-line setting that allows it in Docker.",
+    "tipMaintNetTrend": "Open a check in the Tests tab to see its <em>response time</em> over 24 hours, 7 days or 30 days. The dashed line is the slow limit.",
     "overviewNewFeatureNetTestsTitle": "Network tests on every bookmark",
     "overviewNewFeatureNetTestsWhat": "Is the port open, does the host answer a ping, what do its DNS records say, how long is its certificate good for, what does it answer to an HTTP request? Until now nextDash could only ask whether a page loads.",
     "overviewNewFeatureNetTestsHow": "A bookmark’s Tests tab (key 4 in the side panel of the Bookmarks view) holds up to six checks: TCP, Ping, DNS, TLS, HTTP detail and JSON. Run one once to look right now, or schedule it with a history and alerts. The checks show as chips on the rows, in the bell, in a Network tests widget and on the status page.",
@@ -11258,7 +11261,12 @@
     "overviewNewFeatureNewFeedPostsWhat": "When you start watching a feed, nextDash fetches its ten newest posts and opens them in a popover on the bookmark’s row, so you see what you are following straight away.",
     "overviewNewFeatureNewFeedPostsHow": "Right-click a bookmark and choose Watch this feed…, or press w on it.",
     "overviewNewFeatureNewFeedPostsEnable": "On by default, on a computer and on a phone.",
-    "overviewNewFeatureNewFeedPostsCta": "Open Watch feeds →"
+    "overviewNewFeatureNewFeedPostsCta": "Open Watch feeds →",
+    "overviewNewFeatureNetTrendsTitle": "Response-time trends for network checks",
+    "overviewNewFeatureNetTrendsWhat": "A green tick does not say a service is getting slower. A check that measures milliseconds now draws its response time, so a service that creeps up over days shows before it fails.",
+    "overviewNewFeatureNetTrendsHow": "Open a bookmark’s Tests tab: each check shows its last day as a small line, and opening a check draws 24 hours, 7 days or 30 days with the slow limit and the failed checks marked.",
+    "overviewNewFeatureNetTrendsEnable": "On by default. Nothing extra is stored; the chart reads the history your checks already keep.",
+    "overviewNewFeatureNetTrendsCta": "Open Checks →"
   },
   "colors": {
     "title": "theme customization",
@@ -12088,7 +12096,7 @@
     "secChecks": "Checks",
     "helpMore": "More info",
     "helpTestsTitle": "What Tests does",
-    "helpTestsBody": "A check watches one thing about this bookmark on a schedule: reachability, DNS, the certificate, a response or a JSON value. It keeps a history and alerts you with the bookmark’s alert rules.\n**Run once** looks right now and saves nothing. Open this tab with [[4]].\n**Checks** counts the scheduled checks; **down** the ones failing now. **Up 24 h** is the average of their last 24 hours. Checks that are off or not measured are left out.",
+    "helpTestsBody": "A check watches one thing about this bookmark on a schedule: reachability, DNS, the certificate, a response or a JSON value. It keeps a history and alerts you with the bookmark’s alert rules.\n**Run once** looks right now and saves nothing. Open this tab with [[4]].\n**Checks** counts the scheduled checks; **down** the ones failing now. **Up 24 h** is the average of their last 24 hours. Checks that are off or not measured are left out.\n**Response time.** A check that measures milliseconds draws its last day as a small line next to its name. Open a check to see 24 hours, 7 days or 30 days, with the slow limit and the failed checks marked.",
     "helpStatusTitle": "What the states mean",
     "helpStatusBody": "**Up**, **down**, **warning** (for example a certificate that expires soon) and **slow** (still up).\n**Via TCP**: ping fell back to TCP because ICMP is not allowed. **Not measured**: ping is off, ICMP or the host is blocked by the safety guard, or a custom host is turned off. That is not an outage, so nothing alerts.",
     "helpRunTitle": "Run once",
@@ -12439,6 +12447,28 @@
     "jsonPath": "Path",
     "jsonFound": "Found",
     "jsonExpected": "Expected"
+  },
+  "nettrend": {
+    "title": "Response time",
+    "average": "Average",
+    "slowest": "Slowest",
+    "failed": "Failed",
+    "limit": "Limit",
+    "range": "Range",
+    "r24h": "24 h",
+    "r7d": "7 d",
+    "r30d": "30 d",
+    "spark": "Response time, last 24 hours, now",
+    "summary": "Response time, {count} points, average {avg}",
+    "avgShort": "avg",
+    "failedShort": "failed",
+    "peakShort": "peak",
+    "yes": "yes",
+    "loading": "Loading…",
+    "empty": "Nothing measured in this range yet.",
+    "error": "The trend could not be read.",
+    "dayNote": "One point per day. The 24 h and 7 d ranges show the peaks within a day.",
+    "weekNote": "The last days are in two-hour steps, earlier days one point each."
   },
   "mobile": {
     "status": {

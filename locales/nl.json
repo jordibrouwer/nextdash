@@ -4697,6 +4697,8 @@
     "bookmarkTitleClear": "Wissen",
     "bookmarkTitlePage": "Pagina:",
     "bookmarkTitleUse": "Gebruiken",
+    "bookmarkTitleUseCleaned": "Opgeschoonde titel gebruiken",
+    "bookmarkTitleUseOriginal": "Originele titel gebruiken",
     "tagSuggestLabel": "voorgesteld",
     "tagSuggestRefresh": "Opnieuw tags voorstellen",
     "bookmarkPlaceLabel": "Pagina › categorie",
@@ -11167,6 +11169,7 @@
     "tipMaintNetChecks": "Selecteer een bookmark in de Bookmarks-weergave en druk op <code>4</code> voor het tabblad <em>Tests</em>: maximaal zes netwerkchecks — TCP, Ping, DNS, TLS, HTTP-detail en JSON — elk met een eigen schema, geschiedenis en meldingen.",
     "tipMaintNetRunOnce": "<em>Eenmalig uitvoeren</em> in het tabblad Tests stuurt nu één test vanaf de server en slaat niets op; <em>Opslaan als geplande check…</em> maakt van wat je net testte een check.",
     "tipMaintNetPing": "Een pingcheck die <em>via TCP</em> meldt, kon geen ICMP gebruiken. Config → Monitoring → Controles toont de ene regel instelling die dat in Docker toestaat.",
+    "tipMaintNetTrend": "Open een check in het tabblad Tests om zijn <em>reactietijd</em> over 24 uur, 7 dagen of 30 dagen te zien. De stippellijn is de langzaamgrens.",
     "overviewNewFeatureNetTestsTitle": "Netwerktests op elke bookmark",
     "overviewNewFeatureNetTestsWhat": "Staat de poort open, antwoordt de host op een ping, wat zeggen de DNS-records, hoe lang is het certificaat nog goed, wat antwoordt hij op een HTTP-verzoek? Tot nu toe kon nextDash alleen vragen of een pagina laadt.",
     "overviewNewFeatureNetTestsHow": "Het tabblad Tests van een bookmark (toets 4 in het zijpaneel van de Bookmarks-weergave) bevat maximaal zes checks: TCP, Ping, DNS, TLS, HTTP-detail en JSON. Voer er één eenmalig uit om nu te kijken, of plan hem in met geschiedenis en meldingen. De checks staan als chips op de rijen, in de bel, in een Netwerktests-widget en op de statuspagina.",
@@ -11258,7 +11261,12 @@
     "overviewNewFeatureNewFeedPostsWhat": "Zodra je een feed gaat volgen, haalt nextDash de tien nieuwste berichten op en opent ze in een popover bij de rij van de bookmark, zodat je meteen ziet wat je volgt.",
     "overviewNewFeatureNewFeedPostsHow": "Klik met rechts op een bookmark en kies Deze feed volgen…, of druk w erop.",
     "overviewNewFeatureNewFeedPostsEnable": "Standaard aan, op een computer en op een telefoon.",
-    "overviewNewFeatureNewFeedPostsCta": "Gevolgde feeds openen →"
+    "overviewNewFeatureNewFeedPostsCta": "Gevolgde feeds openen →",
+    "overviewNewFeatureNetTrendsTitle": "Reactietijdtrends voor netwerkchecks",
+    "overviewNewFeatureNetTrendsWhat": "Een groen vinkje zegt niet dat een dienst langzamer wordt. Een check die milliseconden meet tekent nu zijn reactietijd, zodat een dienst die over dagen opkruipt zichtbaar wordt voordat hij uitvalt.",
+    "overviewNewFeatureNetTrendsHow": "Open het tabblad Tests van een bookmark: elke check toont zijn laatste dag als een klein lijntje en een geopende check tekent 24 uur, 7 dagen of 30 dagen, met de langzaamgrens en de mislukte checks gemarkeerd.",
+    "overviewNewFeatureNetTrendsEnable": "Standaard aan. Er wordt niets extra opgeslagen; de grafiek leest de geschiedenis die je checks al bijhouden.",
+    "overviewNewFeatureNetTrendsCta": "Checks openen →"
   },
   "colors": {
     "title": "thema-aanpassing",
@@ -12088,7 +12096,7 @@
     "secChecks": "Checks",
     "helpMore": "Meer info",
     "helpTestsTitle": "Wat Tests doet",
-    "helpTestsBody": "Een check bewaakt volgens schema één ding van deze bookmark: bereikbaarheid, DNS, het certificaat, een antwoord of een JSON-waarde. Hij houdt een geschiedenis bij en meldt het je via de meldingsregels van de bookmark.\n**Eenmalig uitvoeren** kijkt nu meteen en slaat niets op. Open deze tab met [[4]].\n**Checks** telt de geplande checks; **down** de checks die nu falen. **Up 24 u** is het gemiddelde van hun laatste 24 uur. Checks die uit staan of niet gemeten zijn, tellen niet mee.",
+    "helpTestsBody": "Een check bewaakt volgens schema één ding van deze bookmark: bereikbaarheid, DNS, het certificaat, een antwoord of een JSON-waarde. Hij houdt een geschiedenis bij en meldt het je via de meldingsregels van de bookmark.\n**Eenmalig uitvoeren** kijkt nu meteen en slaat niets op. Open deze tab met [[4]].\n**Checks** telt de geplande checks; **down** de checks die nu falen. **Up 24 u** is het gemiddelde van hun laatste 24 uur. Checks die uit staan of niet gemeten zijn, tellen niet mee.\n**Reactietijd.** Een check die milliseconden meet tekent zijn laatste dag als een klein lijntje naast zijn naam. Open een check om 24 uur, 7 dagen of 30 dagen te zien, met de langzaamgrens en de mislukte checks gemarkeerd.",
     "helpStatusTitle": "Wat de statussen betekenen",
     "helpStatusBody": "**Up**, **down**, **waarschuwing** (bijvoorbeeld een certificaat dat binnenkort verloopt) en **traag** (nog wel up).\n**Via TCP**: ping viel terug op TCP omdat ICMP niet is toegestaan. **Niet gemeten**: ping staat uit, ICMP of de host wordt geblokkeerd door de veiligheidscontrole, of een eigen host staat uit. Dat is geen storing, dus er komt geen melding.",
     "helpRunTitle": "Eenmalig uitvoeren",
@@ -12439,6 +12447,28 @@
     "jsonPath": "Pad",
     "jsonFound": "Gevonden",
     "jsonExpected": "Verwacht"
+  },
+  "nettrend": {
+    "title": "Reactietijd",
+    "average": "Gemiddeld",
+    "slowest": "Traagst",
+    "failed": "Mislukt",
+    "limit": "Limiet",
+    "range": "Bereik",
+    "r24h": "24 u",
+    "r7d": "7 d",
+    "r30d": "30 d",
+    "spark": "Reactietijd, laatste 24 uur, nu",
+    "summary": "Reactietijd, {count} punten, gemiddeld {avg}",
+    "avgShort": "gem.",
+    "failedShort": "mislukt",
+    "peakShort": "piek",
+    "yes": "ja",
+    "loading": "Laden…",
+    "empty": "In dit bereik is nog niets gemeten.",
+    "error": "De trend kon niet worden gelezen.",
+    "dayNote": "Eén punt per dag. In 24 u en 7 d zie je de pieken binnen een dag.",
+    "weekNote": "De laatste dagen staan in stappen van twee uur, eerdere dagen één punt per dag."
   },
   "mobile": {
     "status": {

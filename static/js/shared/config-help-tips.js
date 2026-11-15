@@ -133,6 +133,7 @@
                 'tipMaintNetChecks',
                 'tipMaintNetRunOnce',
                 'tipMaintNetPing',
+                'tipMaintNetTrend',
             ],
         },
         {

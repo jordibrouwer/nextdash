@@ -4667,6 +4667,8 @@
     "bookmarkTitleClear": "Quitar",
     "bookmarkTitlePage": "Página:",
     "bookmarkTitleUse": "Usar",
+    "bookmarkTitleUseCleaned": "Usar el título limpio",
+    "bookmarkTitleUseOriginal": "Usar el título original",
     "tagSuggestLabel": "sugeridas",
     "tagSuggestRefresh": "Volver a sugerir etiquetas",
     "bookmarkPlaceLabel": "Página › categoría",
@@ -11167,6 +11169,7 @@
     "tipMaintNetChecks": "Selecciona un marcador en la vista Marcadores y pulsa <code>4</code> para su pestaña <em>Pruebas</em>: hasta seis comprobaciones de red — TCP, Ping, DNS, TLS, detalle HTTP y JSON — cada una con su propio calendario, historial y alertas.",
     "tipMaintNetRunOnce": "<em>Ejecutar una vez</em> en la pestaña Pruebas envía ahora una prueba desde el servidor y no guarda nada; <em>Guardar como comprobación programada…</em> convierte lo que acabas de probar en una comprobación.",
     "tipMaintNetPing": "Una comprobación Ping que dice <em>vía TCP</em> no pudo usar ICMP. Config → Vigilancia → Comprobaciones muestra el ajuste de una línea que lo permite en Docker.",
+    "tipMaintNetTrend": "Abre una comprobación en la pestaña Tests para ver su <em>tiempo de respuesta</em> en 24 horas, 7 días o 30 días. La línea discontinua es el límite de lentitud.",
     "overviewNewFeatureNetTestsTitle": "Pruebas de red en cada marcador",
     "overviewNewFeatureNetTestsWhat": "¿Está abierto el puerto, responde el host a un ping, qué dicen sus registros DNS, cuánto tiempo vale su certificado, qué responde a una petición HTTP? Hasta ahora nextDash solo podía preguntar si una página carga.",
     "overviewNewFeatureNetTestsHow": "La pestaña Pruebas de un marcador (tecla 4 en el panel lateral de la vista Marcadores) guarda hasta seis comprobaciones: TCP, Ping, DNS, TLS, detalle HTTP y JSON. Ejecuta una una vez para mirar ahora, o prográmala con historial y alertas. Las comprobaciones aparecen como etiquetas en las filas, en la campana, en un widget Pruebas de red y en la página de estado.",
@@ -11258,7 +11261,12 @@
     "overviewNewFeatureNewFeedPostsWhat": "En cuanto sigues un feed, nextDash obtiene sus diez publicaciones más recientes y las abre en un panel emergente en la fila del marcador, para que veas enseguida qué sigues.",
     "overviewNewFeatureNewFeedPostsHow": "Haz clic derecho en un marcador y elige Vigilar este feed…, o pulsa w sobre él.",
     "overviewNewFeatureNewFeedPostsEnable": "Activado por defecto, en el ordenador y en el móvil.",
-    "overviewNewFeatureNewFeedPostsCta": "Abrir feeds seguidos →"
+    "overviewNewFeatureNewFeedPostsCta": "Abrir feeds seguidos →",
+    "overviewNewFeatureNetTrendsTitle": "Tendencias del tiempo de respuesta de las comprobaciones de red",
+    "overviewNewFeatureNetTrendsWhat": "Una marca verde no dice que un servicio se esté volviendo más lento. Una comprobación que mide milisegundos ahora dibuja su tiempo de respuesta, de modo que un servicio que se degrada durante días se ve antes de que falle.",
+    "overviewNewFeatureNetTrendsHow": "Abre la pestaña Tests de un marcador: cada comprobación muestra su último día como una línea pequeña, y al abrir una se dibujan 24 horas, 7 días o 30 días con el límite de lentitud y los fallos marcados.",
+    "overviewNewFeatureNetTrendsEnable": "Activado por defecto. No se guarda nada extra; el gráfico lee el historial que tus comprobaciones ya conservan.",
+    "overviewNewFeatureNetTrendsCta": "Abrir comprobaciones →"
   },
   "colors": {
     "title": "personalización del tema",
@@ -12088,7 +12096,7 @@
     "secChecks": "Comprobaciones",
     "helpMore": "Más información",
     "helpTestsTitle": "Qué hace Pruebas",
-    "helpTestsBody": "Una comprobación vigila una cosa de este marcador según un horario: alcance, DNS, el certificado, una respuesta o un valor JSON. Guarda un historial y te avisa con las reglas de aviso del marcador.\n**Ejecutar una vez** mira ahora mismo y no guarda nada. Abre esta pestaña con [[4]].\n**Comprobaciones** cuenta las programadas; **caídas**, las que fallan ahora. **Disp. 24 h** es la media de sus últimas 24 horas. Las comprobaciones desactivadas o sin medir no cuentan.",
+    "helpTestsBody": "Una comprobación vigila una cosa de este marcador según un horario: alcance, DNS, el certificado, una respuesta o un valor JSON. Guarda un historial y te avisa con las reglas de aviso del marcador.\n**Ejecutar una vez** mira ahora mismo y no guarda nada. Abre esta pestaña con [[4]].\n**Comprobaciones** cuenta las programadas; **caídas**, las que fallan ahora. **Disp. 24 h** es la media de sus últimas 24 horas. Las comprobaciones desactivadas o sin medir no cuentan.\n**Tiempo de respuesta.** Una comprobación que mide milisegundos dibuja su último día como una línea pequeña junto a su nombre. Ábrela para ver 24 horas, 7 días o 30 días, con el límite de lentitud y los fallos marcados.",
     "helpStatusTitle": "Qué significan los estados",
     "helpStatusBody": "**En pie**, **caído**, **advertencia** (por ejemplo, un certificado que caduca pronto) y **lento** (sigue en pie).\n**Vía TCP**: el ping recurrió a TCP porque no se permite ICMP. **Sin medir**: el ping está desactivado, el ICMP o el host está bloqueado por la protección de seguridad, o un host propio está desactivado. Eso no es una caída, así que no se avisa.",
     "helpRunTitle": "Ejecutar una vez",
@@ -12439,6 +12447,28 @@
     "dnsOneRecord": "1 registro",
     "errExpectLong": "El valor esperado puede tener como máximo 255 caracteres.",
     "ruleDnsDown": "Caído cuando no se encuentra ningún registro"
+  },
+  "nettrend": {
+    "title": "Tiempo de respuesta",
+    "average": "Media",
+    "slowest": "Más lento",
+    "failed": "Fallidos",
+    "limit": "Límite",
+    "range": "Rango",
+    "r24h": "24 h",
+    "r7d": "7 d",
+    "r30d": "30 d",
+    "spark": "Tiempo de respuesta, últimas 24 horas, ahora",
+    "summary": "Tiempo de respuesta, {count} puntos, media {avg}",
+    "avgShort": "media",
+    "failedShort": "fallidos",
+    "peakShort": "pico",
+    "yes": "sí",
+    "loading": "Cargando…",
+    "empty": "Todavía no se ha medido nada en este rango.",
+    "error": "No se pudo leer la tendencia.",
+    "dayNote": "Un punto por día. Los rangos de 24 h y 7 d muestran los picos dentro de un día.",
+    "weekNote": "Los últimos días van en pasos de dos horas; los anteriores, un punto por día."
   },
   "mobile": {
     "status": {

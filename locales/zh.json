@@ -4668,6 +4668,8 @@
     "bookmarkTitleClear": "清除",
     "bookmarkTitlePage": "页面：",
     "bookmarkTitleUse": "使用",
+    "bookmarkTitleUseCleaned": "使用清理后的标题",
+    "bookmarkTitleUseOriginal": "使用原始标题",
     "tagSuggestLabel": "建议",
     "tagSuggestRefresh": "重新建议标签",
     "bookmarkPlaceLabel": "页面 › 分类",
@@ -11167,6 +11169,7 @@
     "tipMaintNetChecks": "在书签视图中选中一个书签，按 <code>4</code> 打开它的<em>测试</em>标签页：最多六项网络检查——TCP、Ping、DNS、TLS、HTTP 详情和 JSON——各有自己的计划、历史记录和提醒。",
     "tipMaintNetRunOnce": "测试标签页里的<em>运行一次</em>立即从服务器发送一次测试，不保存任何内容；<em>另存为计划检查…</em>把刚测试的内容变成一项检查。",
     "tipMaintNetPing": "显示<em>经 TCP</em>的 Ping 检查无法使用 ICMP。配置 → 监控 → 检查 会给出在 Docker 中允许它的那一行设置。",
+    "tipMaintNetTrend": "在“测试”标签页打开某项检查，可查看其 24 小时、7 天或 30 天的<em>响应时间</em>。虚线是慢速阈值。",
     "overviewNewFeatureNetTestsTitle": "每个书签都能做网络测试",
     "overviewNewFeatureNetTestsWhat": "端口开着吗？主机会回应 Ping 吗？它的 DNS 记录是什么？证书还能用多久？它对 HTTP 请求怎么回应？此前 nextDash 只能问页面能不能加载。",
     "overviewNewFeatureNetTestsHow": "书签的测试标签页（书签视图侧边栏中的 4 键）最多可放六项检查：TCP、Ping、DNS、TLS、HTTP 详情和 JSON。可以运行一次立即查看，也可以安排计划并保留历史记录和提醒。检查以小标签显示在行上、铃铛里、网络测试小组件里和状态页上。",
@@ -11258,7 +11261,12 @@
     "overviewNewFeatureNewFeedPostsWhat": "开始关注订阅源后,nextDash 会取回最新的十篇文章,并在书签所在行的弹出框中打开,让你立刻看到所关注的内容。",
     "overviewNewFeatureNewFeedPostsHow": "右键点击书签并选择“关注此订阅源…”,或在其上按 w。",
     "overviewNewFeatureNewFeedPostsEnable": "默认开启,电脑和手机上均如此。",
-    "overviewNewFeatureNewFeedPostsCta": "打开订阅源关注 →"
+    "overviewNewFeatureNewFeedPostsCta": "打开订阅源关注 →",
+    "overviewNewFeatureNetTrendsTitle": "网络检测的响应时间趋势",
+    "overviewNewFeatureNetTrendsWhat": "绿色对勾并不说明服务正在变慢。测量毫秒的检测现在会绘制其响应时间，因此数天内逐渐变慢的服务会在故障之前显现出来。",
+    "overviewNewFeatureNetTrendsHow": "打开书签的“测试”标签：每项检测以小曲线显示最近一天，打开某项检测会绘制 24 小时、7 天或 30 天，并标出慢速阈值和失败的检测。",
+    "overviewNewFeatureNetTrendsEnable": "默认开启。不会额外存储任何内容；图表读取检测已有的历史记录。",
+    "overviewNewFeatureNetTrendsCta": "打开检测 →"
   },
   "colors": {
     "title": "主题自定义",
@@ -12088,7 +12096,7 @@
     "secChecks": "检查",
     "helpMore": "更多信息",
     "helpTestsTitle": "“测试”有什么用",
-    "helpTestsBody": "检查会按计划关注此书签的某一方面：可达性、DNS、证书、响应或某个 JSON 值。它会保留历史记录，并按书签的告警规则通知你。\n**Run once** 立即查看一次，不保存任何内容。用 [[4]] 打开此标签页。\n**检查**统计已安排的检查；**宕机**统计当前失败的检查。**24 小时在线**是它们最近 24 小时的平均值。已关闭或未测量的检查不计入。",
+    "helpTestsBody": "检查会按计划关注此书签的某一方面：可达性、DNS、证书、响应或某个 JSON 值。它会保留历史记录，并按书签的告警规则通知你。\n**Run once** 立即查看一次，不保存任何内容。用 [[4]] 打开此标签页。\n**检查**统计已安排的检查；**宕机**统计当前失败的检查。**24 小时在线**是它们最近 24 小时的平均值。已关闭或未测量的检查不计入。\n**响应时间。** 测量毫秒的检查会在名称旁以小曲线显示最近一天。打开某项检查可查看 24 小时、7 天或 30 天，并标出慢速阈值和失败的检查。",
     "helpStatusTitle": "各状态的含义",
     "helpStatusBody": "**正常**、**宕机**、**警告**（例如证书即将到期）和**缓慢**（仍在线）。\n**经 TCP**：因 ICMP 不被允许，ping 回退到了 TCP。**未测量**：ping 已关闭、ICMP 或主机被安全防护拦截，或自定义主机已关闭。这不算中断，所以不会告警。",
     "helpRunTitle": "运行一次",
@@ -12439,6 +12447,28 @@
     "jsonPath": "路径",
     "jsonFound": "实际",
     "jsonExpected": "预期"
+  },
+  "nettrend": {
+    "title": "响应时间",
+    "average": "平均",
+    "slowest": "最慢",
+    "failed": "失败",
+    "limit": "阈值",
+    "range": "范围",
+    "r24h": "24 小时",
+    "r7d": "7 天",
+    "r30d": "30 天",
+    "spark": "响应时间，最近 24 小时，当前",
+    "summary": "响应时间，{count} 个点，平均 {avg}",
+    "avgShort": "均值",
+    "failedShort": "失败",
+    "peakShort": "峰值",
+    "yes": "是",
+    "loading": "加载中…",
+    "empty": "此范围内尚无测量数据。",
+    "error": "无法读取趋势。",
+    "dayNote": "每天一个点。24 小时和 7 天范围显示一天内的峰值。",
+    "weekNote": "最近几天以两小时为间隔，更早的日子每天一个点。"
   },
   "mobile": {
     "status": {
