@@ -1678,6 +1678,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		// it to another page. That row is still on its source page until the
 		// delete that follows, holding its shortcut under the old address.
 		MovedFrom string `json:"movedFrom"`
+		// MovedFromPage is the page that row is on. Checks are carried from
+		// that row only; without it the first row with the address elsewhere
+		// was taken, which could be another bookmark's.
+		MovedFromPage int `json:"movedFromPage"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1795,7 +1799,7 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	// brings the ones its stored source holds, never what the client sent.
 	request.Bookmark.Checks = nil
 	if request.AllowDuplicate {
-		request.Bookmark.Checks = checksOfMovedRow(h.store, request.MovedFrom, request.Page)
+		request.Bookmark.Checks = checksOfMovedRow(h.store, request.MovedFrom, request.MovedFromPage, request.Page)
 	}
 
 	addErr := h.store.AddBookmarkToPage(request.Page, request.Bookmark)
