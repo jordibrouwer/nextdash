@@ -282,6 +282,26 @@ func (h *Handlers) dueMonitorTargetsWithHistory(now time.Time, history map[strin
 	return targets, known, liveHosts
 }
 
+// knownHealthKeys is every history key that has an owner right now: the
+// canonical URL of every bookmark, monitored or not, and a "net:<id>" key for
+// every network check. The same keys dueMonitorTargetsAll collects.
+func (h *Handlers) knownHealthKeys() map[string]bool {
+	known := map[string]bool{}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			if key := canonicalBookmarkURLKey(bm.URL); key != "" {
+				known[key] = true
+			}
+			for _, chk := range bm.Checks {
+				if chk.ID != "" {
+					known[netHistoryKey(chk.ID)] = true
+				}
+			}
+		}
+	}
+	return known
+}
+
 // lastSampleAt is when samples was last added to, 0 when never.
 func lastSampleAt(samples []HealthSample) int64 {
 	if len(samples) == 0 {
@@ -596,7 +616,10 @@ func (h *Handlers) runDueMonitors() {
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
 		logWarn(logComponentHealth, "this round could not be added to the history (%v); the graph will show a gap", err)
 	}
-	if err := h.sweepHealthHistory(known); err != nil {
+	// known is read again here, not reused from the round's start: a round can
+	// run for minutes, and a monitor added and re-checked in that time would
+	// otherwise have its first sample swept away as belonging to nothing.
+	if err := h.sweepHealthHistory(h.knownHealthKeys()); err != nil {
 		logWarn(logComponentHealth, "old history could not be cleared away (%v); it will be tried again next round", err)
 	}
 	if err := h.mergeHealthCacheUpdates(cacheUpdates); err != nil {
