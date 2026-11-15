@@ -295,6 +295,7 @@ class Dashboard {
             ? window.createDashboardConfigLoader(this)
             : null;
         this.pasteChoice = new DashboardPasteChoice(this);
+        this.linkDrop = new DashboardLinkDrop(this);
         this.activeView = 'bookmarks';
         document.body?.setAttribute('data-active-view', 'bookmarks');
         this.weatherService = typeof window.WeatherService === 'function' ? new window.WeatherService() : null;
@@ -363,6 +364,7 @@ class Dashboard {
             this.setupPageShortcuts();
             this.setupReorderUndoShortcut();
             this.setupPasteToQuickAdd();
+            this.linkDrop.bind();
             this.inbox.setupEscapeShortcut();
             this.docker?.setupEscapeShortcut();
             this.glances?.setupEscapeShortcut();

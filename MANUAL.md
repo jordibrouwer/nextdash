@@ -1187,10 +1187,13 @@ With no field active, paste a URL on the dashboard. A dialog offers **Add bookma
 <p align="center"><img src="screenshots/manual.md/05-paste-prompt.jpg" alt="The Save this link dialog after pasting an address: the address, the choices Add bookmark and Save to Inbox with their number keys, Remember my choice and Cancel" width="408"></p>
 <p align="center"><sub>Pasting an address on the dashboard asks where it goes: the full form, or the inbox.</sub></p>
 
+**Drag a link in.** A link, a tab or an address dragged from another browser window and dropped on a category opens the full form with the address, the title, the page and that category filled in. Dropped anywhere else on the dashboard it goes the way a paste does: the choice dialog, or straight to the form or the Inbox, as you set it. Several links in one drop (several tabs) all go to the Inbox. A drag of your own rows and blocks, a file, a field and every view but Bookmarks are left alone, and *Paste a URL* turned off in Config turns the drop off with it.
+
 <a id="54-other-routes"></a>
 
 ### 5.4 Other routes
 
+- **Drag and drop** — a link dragged from another window onto a category ([§5.3](#53-paste-a-url-ctrl-v)).
 - **Browser extension** — saves the current tab ([§22](#22-browser-extension-and-capture)).
 - **Share sheet and bookmarklet** — save to the inbox from a phone or any browser ([§22](#22-browser-extension-and-capture)).
 - **Import** — a browser bookmark file, a CSV file, or a source such as GitHub stars ([§20](#20-data-backups-and-import)).

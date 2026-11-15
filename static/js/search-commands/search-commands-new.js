@@ -226,7 +226,8 @@ class SearchCommandNew {
                 // tags field from them, and this was the one hop that dropped
                 // them on the way.
                 tags: Array.isArray(options.tags) ? options.tags : undefined,
-                pageId: pageId || options.pageId,
+                // An explicit page beats the pin left by an earlier open: a drop passes the page it was made on.
+                pageId: options.pageId || pageId,
                 // An app found on this server: its category, set icon and
                 // status check, from the Inbox's promote.
                 category: options.category,
