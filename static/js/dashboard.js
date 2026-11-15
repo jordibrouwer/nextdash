@@ -1308,14 +1308,16 @@ class Dashboard {
          * header and rows after the switch. Ending the window on the clock alone
          * let it close before anything was there and the view just appeared; so
          * while no view content is on screen yet, the window stays open (for at
-         * most 5 seconds).
+         * most 5 seconds). A view that draws its header and a "Loading…" line
+         * first marks that line data-view-loading: the rows are still to come.
          */
         const painted = '.lvs-header, .config-bm-row, .inbox-item, .docker-row, .glances-card, .tag-view-row';
         const giveUpAt = Date.now() + 5000;
         let waited = false;
         const close = () => {
             if (body.dataset.viewEntering !== view) return;
-            if (!document.querySelector(painted) && Date.now() < giveUpAt) {
+            const pending = !document.querySelector(painted) || document.querySelector('[data-view-loading]');
+            if (pending && Date.now() < giveUpAt) {
                 waited = true;
                 this._viewEntranceTimer = setTimeout(close, 50);
                 return;

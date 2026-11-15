@@ -5318,6 +5318,8 @@ class DashboardInbox {
         if (this.loading) {
             const loading = document.createElement('p');
             loading.className = 'inbox-empty';
+            // The entrance waits for the rows behind this (playViewEntrance).
+            loading.dataset.viewLoading = '';
             loading.textContent = this.t('dashboard.inboxLoading', 'Loading…');
             body.appendChild(loading);
             this.syncKeyboardSelectionAfterRender();

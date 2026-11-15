@@ -111,6 +111,26 @@ for (const view of VIEWS) {
     });
 }
 
+// The header and "Loading…" come first when the list is not in yet; the window
+// waits for the rows rather than closing on the header (a slow CI runner).
+test('Inbox rows that arrive late still rise in', async ({ page }) => {
+    const inbox = VIEWS.find((v) => v.name === 'Inbox view');
+    await openDashboard(page);
+    await inbox.prepare(page);
+    await page.route(/\/api\/inbox(\?.*)?$/, async (route) => {
+        // Checks a late answer: the list has to land after the 550 ms window would have closed.
+        if (route.request().method() === 'GET') await new Promise((resolve) => { setTimeout(resolve, 2000); });
+        await route.fallback();
+    });
+    await openDashboard(page);
+    await inbox.open(page);
+    await expect(page.locator('.inbox-empty[data-view-loading]')).toBeVisible();
+    await expect.poll(() => risingCount(page, inbox.row), { timeout: 5000, intervals: [20] }).toBeGreaterThan(1);
+    await expect.poll(() => risingCount(page, `${inbox.header}, ${inbox.row}`), { timeout: 3000 }).toBe(0);
+    await page.unroute(/\/api\/inbox(\?.*)?$/);
+    await inbox.cleanup(page);
+});
+
 test('with animations off a view arrives without moving', async ({ page }) => {
     await mockDocker(page);
     await openDashboard(page);
@@ -145,8 +165,10 @@ function riseDuration(page, selector) {
 
 async function openContainers(page) {
     await page.locator('#page-nav-docker-host a').click();
-    await expect.poll(() => riseDuration(page, '.docker-row'), { timeout: 3000, intervals: [10] }).not.toBeNull();
-    return riseDuration(page, '.docker-row');
+    // The value the poll saw: read again afterwards, a 75 ms rise can be over on a slow runner.
+    let ms = null;
+    await expect.poll(async () => (ms = await riseDuration(page, '.docker-row')), { timeout: 3000, intervals: [10] }).not.toBeNull();
+    return ms;
 }
 
 test.describe('animation speed', () => {
