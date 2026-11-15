@@ -24,7 +24,7 @@ NextDash is a lightweight, self-hosted bookmark dashboard that features a minima
 
 Key features:
 • Keyboard-driven navigation for fast access to all your bookmarks, and a search that answers sums such as 15% of 240
-• Extensive theme and layout customization, with a theme studio beside the dashboard, a theme editor and 266 backdrops drawn in the themes' colours
+• Extensive theme and layout customization, with a theme studio beside the dashboard, a theme editor and 285 backdrops drawn in the themes' colours
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Network checks on a bookmark: TCP, Ping, DNS, TLS, HTTP and JSON on a schedule or once, with the result in the Tests tab, in the bell and on the dashboard. Ping needs ICMP; if it is blocked nextDash falls back to TCP and says so. To allow it, add --sysctl net.ipv4.ping_group_range="0 2147483647" to Extra Parameters (with Host networking set the sysctl on the Unraid host instead)
@@ -34,8 +34,8 @@ Key features:
 • Watch feeds: follow the RSS, Atom or JSON Feed of sites you choose, with news on the bookmark, in its preview card and in a news window
 • An assistant you ask in plain words, on Claude, OpenAI or a server of your own: it looks things up and changes nothing by itself
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
-• Widgets beside your bookmarks: 53 built-in kinds (tabs, clock, countdown, uptime, feeds, weather, disks, containers and more) plus a Custom widget for any JSON API
-• Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library
+• Widgets beside your bookmarks: 58 built-in kinds (tabs, clock, countdown, uptime, feeds, weather, disks, containers and more) plus a Custom widget for any JSON API
+• Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library, and Jellystat, Bazarr and Prowlarr for who watched what, missing subtitles and how your indexers are doing
 • Finds the web apps in your Docker containers and offers them as bookmarks, with an icon and a status check (needs the Docker socket below)
 • Glances on the dashboard: a page for the hosts you run Glances on, with processes, containers, graphs and incidents, and a widget for one host
 • Your Unraid server on the dashboard: seven widgets for the array, parity, shares, VMs, the UPS and notifications, with alerts
@@ -58,33 +58,34 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
-### v1.27.4 (2026-11-09)
-- Appearance: rows, chips, option cards and fields in Config, the list views and the windows follow the theme instead of showing as dark holes
-- Bookmarks: the / in the search box sits inside the field
-- Config: Monitoring, Unraid, Status page, Containers and AI Assistant open with a clearer first paragraph
+### v1.29.2 (2026-11-15)
+- Monitoring: network checks draw their response time, a small line per check and a 24 hour, 7 day or 30 day chart in the Tests tab
+- Bookmarks: a suggested name loses a login word or the site's own name, with an arrow to bring the page's own title back
+- Digest: the weekly digest opens with the week in a few plain sentences
+- Feeds: the news badge stays until the news is read, and the news window is an hour by default
+- Inbox: rows that load late still rise in
 
-### v1.27.3 (2026-11-09)
-- Appearance: dropdowns take the theme's look instead of the page's darkest colour
-- Watch feeds: a news item opened far down the list shows at once
-- Privacy: the install count waits a day and sends at most once a day
-- Config: the Version panel links the changelog on nextdash.cc
+### v1.29.1 (2026-11-14)
+- Phone: search opens at once and keeps the tab bar under it, which lifts above the keyboard
+- Phone: RSS headlines open a preview sheet on a touch screen, with buttons to open the article
+- Phone: the Inbox selects are tall enough on an iPhone
 
-### v1.27.2 (2026-11-09)
-- Config: selects, checkboxes and radios wear the theme, and the preview beside the Appearance tabs is no longer black
-- Watch feeds: the list is a table with a column head, like Structure
-- Phones: no key legends and no key tips on a touch device without a mouse
-- Docs: the cheat sheet names ? for keys and help
+### v1.29.0 (2026-11-13)
+- Phone: a tab bar with Home, Search, Inbox, Status and More; Status lists every monitored bookmark and pauses notifications for an hour or until tomorrow morning
+- Phone: two start screens, search first or status first, chosen per device
+- Phone: a compact search sheet, forms made for a thumb, an Inbox made for a thumb, and a press and hold menu on bookmarks
+- Feeds: adding a feed fetches its ten newest posts and opens the news popover on its row, on desktop and phone
+- Layout: a block can show on desktop only or on the phone only, from the edit panel, the block menus and Config → Structure
 
-### v1.27.1 (2026-11-08)
-- Screenshots: new pictures for this page and the README, taken on v1.27.0
-- No change to the app itself
+### v1.28.3 (2026-11-12)
+- Themes: the eight new theme groups also dress Bookmarks, Inbox, Containers, Glances, Tags and Config, not only the dashboard
+- Themes: the pane of every view is filled like a dashboard column, with the same opacity, in all 440 themes
 
-### v1.27.0 (2026-11-08)
-- Keyboard: one set of keys for every view; with the cursor on a row, plain letters act on it (e edits, m moves, t tags), Shift plus a letter opens a view
-- Keyboard: a mode strip beside the page name says what your keys do, every view has a key legend, and ? opens keys and help for the page you are on
-- Search: # searches by tag, with AND and OR, and : opens on your recent and most-used commands
-- Themes: Christmas Classic, Northern Lights and Gingerbread Village, with snow and lights
-- Many keys moved: an existing install is told once, and old keys say what replaced them for a while
+### v1.28.2 (2026-11-12)
+- Themes: eight new theme groups, 25 families in light and dark (Stationery, Living, Instrument, Tactile, Spatial, Cartographic, Riso and Legible), a popover and three bell tips that introduce them
+- Backdrops: eighteen new backdrops, each drawn for one family
+- Layout: page margins in seven steps, columns per row as a dropdown from 1 to 8, and five and six columns work on a wide window
+- Bookmarks view: the Latest news column is gone
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -92,7 +93,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-11-09</Date>
+  <Date>2026-11-15</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
