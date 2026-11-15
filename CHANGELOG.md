@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.30.0 — 15 November 2026](#v1300--15-november-2026)
 - [v1.29.2 — 15 November 2026](#v1292--15-november-2026)
 - [v1.29.1 — 14 November 2026](#v1291--14-november-2026)
 - [v1.29.0 — 13 November 2026](#v1290--13-november-2026)
@@ -146,7 +147,9 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
-## Unreleased
+## v1.30.0 — 15 November 2026
+
+Several Docker hosts in the Containers view, a widget you can put on every page, links dragged in from another window, a Watch feeds switch on the phone and three more Christmas themes.
 
 ### Containers
 
@@ -159,6 +162,9 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Widgets
 
 - **new — A widget on every page.** The edit panel of a widget has a *Show on pages* switch: *This page* or *Every page*. On *Every page* the widget gets a copy on each other page, as an ordinary widget you move, resize, hide or limit to a screen per page; its name and settings are shared, so a change on one page carries to the others. Deleting a copy takes it off that page only. Switching back to *This page* removes the copies from the other pages, and a page created later starts with them. A stack stays on its page (`widgets_everywhere.go`, `everywhere` and `everywhereSkip` on a widget).
+- **new — Five Immich widgets.** *Photos*, *Slideshow*, *Albums*, *People* and *Status* read one Immich library. The API key goes in the `X-Api-Key` header and is set once in Config → Widgets; *Connect* lists your albums and people to pick from, and the same key works for all five. Photos and the slideshow can show the whole library, favorites, one album, one person, memories or *On this day*, in random, newest or oldest order, with or without videos, cover or contain, and a date caption; a tile can be drawn as a frame, grid, strip, hero or list. *Status* shows the library totals, the disk and the background jobs; a key that does not belong to an administrator gets neither totals nor jobs, and the panel says so. Pictures come through `/api/widgets/<type>/image`, so the key never reaches the browser (`widgets_immich.go`, `widgets_immich_status.go`).
+- **new — A bell row for failed Immich jobs.** When the Status widget sees failed background jobs, the bell gets a quiet row for them. It reads what the widget already fetched, so it makes no request of its own, and it stays until the jobs are cleared in Immich (`immich-bell-source.js`).
+- **new — A one-photo frame and a slideshow in the media tile.** A photo can fill the tile as one big picture with its date. The slideshow changes photo every 3 to 300 seconds (8 by default), loads the next one ahead, waits while the tab is hidden or the pointer or keyboard is on it, has Play and Pause, and starts paused with no fade for someone who asked their system for less motion (`dashboard-media-tile.js`).
 
 ### Phone
 
