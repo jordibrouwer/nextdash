@@ -6,7 +6,8 @@ import "testing"
 // one word, while each keeps a real material underneath.
 func TestHolidayThemesFormTheHolidaysGroup(t *testing.T) {
 	themes := getDefaultBuiltInThemes()
-	families := []string{"holiday-christmas", "holiday-northern-lights", "holiday-gingerbread"}
+	families := []string{"holiday-christmas", "holiday-northern-lights", "holiday-gingerbread",
+		"holiday-snow-globe", "holiday-paper-advent", "holiday-nutcracker"}
 	for _, family := range families {
 		for _, half := range []string{"-dark", "-light"} {
 			id := family + half

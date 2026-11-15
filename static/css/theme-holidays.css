@@ -572,6 +572,722 @@ html[data-theme$="-light"] .hl-walker .hl-gb-dough { fill: #c98b55; }
 .hl-cane-red { fill: none; stroke: #d4202f; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 5 6; }
 .hl-gumdrop { stroke: rgba(0, 0, 0, 0.12); stroke-width: 1; }
 
+/* ── Snow Globe ────────────────────────────────────────────────────── */
+
+body[data-holiday="snow-globe"] {
+    --hl-gt-wall: #2a3557;
+    --hl-gt-beam: #1b2340;
+    --hl-gt-roof: #5a2733;
+    --hl-gt-fir: #173a3a;
+    --hl-gt-ground: #eef6ff;
+    --hl-gt-win: #ffcf7a;
+    --hl-gt-door: #3b1d14;
+    --hl-c-a: #ff5a6e;
+    --hl-c-b: #ffd36b;
+    --hl-c-c: #8fd8ff;
+    --hl-c-d: #8ee3b4;
+    --hl-c-e: #ffffff;
+}
+html[data-theme="holiday-snow-globe-light"] body {
+    --hl-gt-wall: #c97b5a;
+    --hl-gt-beam: #6e3b26;
+    --hl-gt-roof: #8a2f3a;
+    --hl-gt-fir: #2d6b4f;
+    --hl-gt-ground: #ffffff;
+    --hl-gt-win: #ffc75a;
+    --hl-gt-door: #5a2a18;
+}
+.hl-globe-sky {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(60% 50% at 50% 30%, rgba(80, 130, 210, 0.28), transparent 70%),
+        radial-gradient(120% 90% at 50% 20%, #1d3a66 0%, #0f2347 45%, #081530 100%);
+}
+html[data-theme="holiday-snow-globe-light"] .hl-globe-sky {
+    background:
+        radial-gradient(60% 50% at 50% 25%, rgba(255, 255, 255, 0.85), transparent 70%),
+        linear-gradient(180deg, #cfe3f5 0%, #e3eef8 55%, #f2f7fc 100%);
+}
+.hl-globe-aurora {
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    top: 4%;
+    height: 34%;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(120, 230, 200, 0.16), transparent 70%);
+    filter: blur(30px);
+    animation: hl-globe-aurora 22s ease-in-out infinite alternate;
+}
+html[data-theme="holiday-snow-globe-light"] .hl-globe-aurora { background: radial-gradient(50% 50% at 50% 50%, rgba(255, 210, 160, 0.35), transparent 70%); }
+@keyframes hl-globe-aurora {
+    from { transform: translateX(-12%) scaleY(0.8); }
+    to { transform: translateX(12%) scaleY(1.15); }
+}
+
+/* The town on the floor of the globe. */
+.hl-gt {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(30px, 5vh, 44px);
+    width: min(940px, 94vw);
+    height: auto;
+    transform: translateX(-50%);
+    overflow: visible;
+}
+.hl-gt-ground { fill: var(--hl-gt-ground); }
+.hl-gt-wall { fill: var(--hl-gt-wall); }
+.hl-gt-beam { fill: none; stroke: var(--hl-gt-beam); stroke-width: 1.4; }
+.hl-gt-roof { fill: var(--hl-gt-roof); }
+.hl-gt-snow { fill: #f6fbff; }
+.hl-gt-fir { fill: var(--hl-gt-fir); }
+.hl-gt-firg { transform-box: fill-box; transform-origin: 50% 100%; animation: hl-gt-fir 8s ease-in-out infinite; }
+.hl-gt-firg:nth-of-type(even) { animation-delay: -4s; }
+@keyframes hl-gt-fir { 0%, 100% { transform: rotate(-0.8deg); } 50% { transform: rotate(0.8deg); } }
+.hl-gt-door { fill: var(--hl-gt-door); }
+.hl-gt-wreath { fill: none; stroke: #2f8f5c; stroke-width: 1.6; }
+.hl-gt-win { fill: var(--hl-gt-win); animation: hl-gt-candle 3.2s ease-in-out infinite; }
+.hl-gt-win--rose { fill: #ffb36b; }
+@keyframes hl-gt-candle {
+    0%, 100% { opacity: 1; }
+    20% { opacity: 0.82; }
+    23% { opacity: 0.96; }
+    61% { opacity: 0.88; }
+}
+.hl-gt-star { fill: #ffe08a; }
+.hl-gt-halo { fill: #ffd36b; opacity: 0.35; filter: blur(3px); animation: hl-gt-halo 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes hl-gt-halo { 0%, 100% { opacity: 0.25; transform: scale(0.85); } 50% { opacity: 0.6; transform: scale(1.25); } }
+.hl-gt-smoke circle {
+    fill: rgba(220, 232, 248, 0.55);
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hl-gt-smoke 4.2s ease-out infinite;
+    opacity: 0;
+}
+@keyframes hl-gt-smoke {
+    0% { transform: translate(0, 0) scale(0.6); opacity: 0.75; }
+    100% { transform: translate(7px, -34px) scale(2.4); opacity: 0; }
+}
+.hl-gt-wire { fill: none; stroke: rgba(20, 20, 30, 0.55); stroke-width: 0.6; }
+.hl-gt .hl-bulb { animation-duration: 1.8s; }
+.hl-gt-pond { opacity: 0.95; }
+.hl-gt-glint { fill: none; stroke: #ffffff; stroke-width: 0.8; opacity: 0.7; animation: hl-twinkle 3.6s ease-in-out infinite; }
+.hl-gt-skin { fill: #f2d2b6; }
+.hl-gt-scarf { stroke: #ffd36b; stroke-width: 1.4; stroke-linecap: round; fill: none; animation: hl-gt-scarf 0.8s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 100% 50%; }
+@keyframes hl-gt-scarf { from { transform: rotate(-12deg); } to { transform: rotate(10deg); } }
+.hl-gt-leg { stroke: #1b1b22; stroke-width: 1.2; stroke-linecap: round; fill: none; }
+/* Two skaters going round the pond: one glide left and right, a slower
+   rise and fall for the far and near side, and a turn at each end. */
+.hl-gt-skater { transform: translate(548px, 120px); animation: hl-gt-glide 9s ease-in-out infinite alternate; }
+.hl-gt-skater--2 { transform: translate(584px, 121px); }
+.hl-gt-skater--2 { animation-duration: 11s; animation-delay: -5s; }
+.hl-gt-skater-y { animation: hl-gt-depth 4.5s ease-in-out infinite alternate; }
+.hl-gt-skater--2 .hl-gt-skater-y { animation-duration: 5.5s; animation-delay: -2s; }
+.hl-gt-skater-body { animation: hl-gt-face 18s steps(1) infinite; }
+.hl-gt-skater--2 .hl-gt-skater-body { animation-duration: 22s; animation-delay: -10s; }
+@keyframes hl-gt-glide { from { transform: translate(512px, 120px); } to { transform: translate(608px, 120px); } }
+@keyframes hl-gt-depth { from { transform: translateY(-4px) scale(0.9); } to { transform: translateY(4px) scale(1.05); } }
+@keyframes hl-gt-face { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
+.hl-gt-lampglow { animation: hl-flicker-glow 4s ease-in-out infinite; }
+.hl-gt-post { fill: #1d2129; stroke: #1d2129; stroke-width: 1.6; }
+.hl-gt-lamp { fill: #ffe39a; }
+
+/* The glass: darker and bluer towards the edge, a rim of light, a curved
+   highlight across the top, a faint rainbow where it bends, and a sheen
+   that sweeps across every so often. */
+.hl-globe-glass {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(140% 120% at 50% 45%, transparent 56%, rgba(170, 210, 255, 0.08) 68%, rgba(5, 15, 40, 0.5) 86%, rgba(2, 6, 20, 0.82) 100%);
+}
+html[data-theme="holiday-snow-globe-light"] .hl-globe-glass {
+    background: radial-gradient(140% 120% at 50% 45%, transparent 58%, rgba(150, 190, 230, 0.12) 72%, rgba(90, 130, 175, 0.32) 90%, rgba(60, 95, 140, 0.45) 100%);
+}
+.hl-globe-glass i { position: absolute; display: block; pointer-events: none; }
+.hl-globe-rim { inset: 0; box-shadow: inset 0 0 140px rgba(170, 215, 255, 0.16), inset 0 0 3px rgba(255, 255, 255, 0.25); }
+.hl-globe-sheen {
+    left: 4%;
+    top: 3%;
+    width: 52%;
+    height: 72%;
+    border-radius: 50%;
+    border-top: 3px solid rgba(255, 255, 255, 0.2);
+    border-left: 2px solid rgba(255, 255, 255, 0.08);
+    transform: rotate(-16deg);
+    filter: blur(1px);
+}
+.hl-globe-sheen::after {
+    content: "";
+    position: absolute;
+    right: -78%;
+    top: 12%;
+    width: 9%;
+    height: 22%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.32), transparent);
+    transform: rotate(40deg);
+}
+.hl-globe-sweep {
+    top: -20%;
+    bottom: -20%;
+    left: 0;
+    width: 22%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.07) 45%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.07) 55%, transparent);
+    transform: translateX(-140%) skewX(-12deg);
+    animation: hl-globe-sweep 16s ease-in-out infinite;
+    animation-delay: 4s;
+}
+@keyframes hl-globe-sweep {
+    0%, 70% { transform: translateX(-140%) skewX(-12deg); }
+    100% { transform: translateX(560%) skewX(-12deg); }
+}
+.hl-globe-caustic {
+    inset: 0;
+    background: conic-gradient(from 200deg at 50% 55%, rgba(255, 120, 160, 0.10), rgba(255, 220, 120, 0.10), rgba(120, 255, 200, 0.10), rgba(120, 180, 255, 0.10), rgba(200, 140, 255, 0.10), rgba(255, 120, 160, 0.10));
+    -webkit-mask: radial-gradient(140% 120% at 50% 45%, transparent 74%, #000 84%, transparent 96%);
+    mask: radial-gradient(140% 120% at 50% 45%, transparent 74%, #000 84%, transparent 96%);
+    animation: hl-globe-caustic 40s linear infinite;
+}
+@keyframes hl-globe-caustic { to { filter: hue-rotate(360deg); } }
+.holiday-layer--back.hl-shaking .hl-gt { animation: hl-globe-shake 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+.holiday-layer--back.hl-shaking .hl-globe-glass { animation: hl-globe-shake 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0.03s; }
+@keyframes hl-globe-shake {
+    10%, 90% { translate: -2px 0; }
+    20%, 80% { translate: 5px 0; rotate: 0.3deg; }
+    30%, 50%, 70% { translate: -8px 0; rotate: -0.4deg; }
+    40%, 60% { translate: 8px 0; }
+}
+
+/* The wooden base with its brass band, plate and wind-up key. */
+.hl-globe-base {
+    position: absolute;
+    left: -6%;
+    right: -6%;
+    bottom: 0;
+    height: clamp(30px, 5vh, 44px);
+    border-radius: 50% 50% 0 0 / 22px 22px 0 0;
+    background:
+        repeating-linear-gradient(92deg, rgba(0, 0, 0, 0.07) 0 2px, transparent 2px 11px, rgba(255, 220, 180, 0.04) 11px 13px, transparent 13px 23px),
+        linear-gradient(180deg, #74401f 0%, #4a2412 45%, #2a1309 100%);
+    box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.45);
+}
+.hl-globe-band {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 5px;
+    border-radius: 50% 50% 0 0 / 22px 22px 0 0;
+    background: linear-gradient(180deg, #fbe7b0, #c99a45 55%, #8a6220);
+}
+.hl-globe-plate {
+    position: absolute;
+    left: 50%;
+    bottom: 22%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 12px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #f6dfa4, #c99a45 55%, #a87a2c);
+    color: #3c260b;
+    font: 700 11px/1.3 Georgia, "Times New Roman", serif;
+    font-variant: small-caps;
+    letter-spacing: 0.16em;
+    white-space: nowrap;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(90, 60, 10, 0.4), 0 2px 4px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 0 rgba(255, 240, 200, 0.6);
+}
+.hl-screw {
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff4cf, #8a6220);
+    box-shadow: inset 0 0 0 0.5px rgba(60, 40, 10, 0.6);
+}
+.hl-globe-key {
+    position: absolute;
+    right: 9%;
+    bottom: 30%;
+    width: clamp(22px, 2.6vw, 34px);
+    height: auto;
+    animation: hl-globe-key 7s linear infinite;
+}
+.hl-brass { fill: #d6a94f; stroke: #8a6220; stroke-width: 0.8; }
+.hl-brass-dark { fill: #8a6220; }
+@keyframes hl-globe-key { from { transform: perspective(200px) rotateY(0deg); } to { transform: perspective(200px) rotateY(360deg); } }
+
+/* The snow that settled on each category; its height comes from the
+   canvas as --hl-cap and goes back to nothing when the globe is shaken. */
+body[data-holiday="snow-globe"] .category { position: relative; }
+body[data-holiday="snow-globe"] .category::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    top: 0;
+    height: var(--hl-cap, 0px);
+    transform: translateY(calc(-100% + 3px));
+    border-radius: 50% 50% 6px 6px / 100% 100% 6px 6px;
+    background:
+        radial-gradient(circle at 18% 45%, #fff 0 0.8px, transparent 1.4px),
+        radial-gradient(circle at 47% 30%, #fff 0 0.8px, transparent 1.4px),
+        radial-gradient(circle at 76% 55%, #fff 0 0.8px, transparent 1.4px),
+        linear-gradient(180deg, #ffffff, #dceaf7);
+    box-shadow: 0 -1px 6px rgba(255, 255, 255, 0.35), 0 2px 3px rgba(0, 20, 50, 0.18);
+    pointer-events: none;
+    z-index: 2;
+    transition: height 0.3s ease;
+}
+html[data-theme="holiday-snow-globe-light"] body[data-holiday="snow-globe"] .category::after {
+    background:
+        radial-gradient(circle at 18% 45%, #fff 0 0.8px, transparent 1.4px),
+        radial-gradient(circle at 47% 30%, #fff 0 0.8px, transparent 1.4px),
+        linear-gradient(180deg, #ffffff, #cfe0ef);
+    box-shadow: 0 0 0 0.5px rgba(80, 120, 165, 0.35), 0 2px 4px rgba(40, 70, 110, 0.25);
+}
+@media (prefers-reduced-motion: reduce) {
+    body[data-holiday="snow-globe"] .category::after { height: 9px; }
+}
+html[data-effects="off"] body[data-holiday="snow-globe"] .category::after,
+body[data-effects="off"][data-holiday="snow-globe"] .category::after { height: 9px; }
+.hl-globe-snow { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ── Paper Advent ──────────────────────────────────────────────────── */
+
+body[data-holiday="paper-advent"] {
+    --hl-pa-1: #5a2a14;
+    --hl-pa-2: #3b1a0c;
+    --hl-pa-3: #24100a;
+    --hl-pa-4: #130805;
+    --hl-pa-dark-win: #2a1408;
+    --hl-pa-glow: #ffae3c;
+    --hl-pa-paper: #f6ead6;
+}
+html[data-theme="holiday-paper-advent-light"] body {
+    --hl-pa-1: #e6c6a2;
+    --hl-pa-2: #d0a173;
+    --hl-pa-3: #a8693f;
+    --hl-pa-4: #7a4426;
+    --hl-pa-dark-win: #6a3a1e;
+    --hl-pa-glow: #ff9d2e;
+    --hl-pa-paper: #ffffff;
+}
+.hl-pa-sky {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(90% 70% at 62% 88%, #ff9a3d 0%, #d9601f 18%, #6e2a12 42%, #2a140b 70%, #170b06 100%);
+    animation: hl-pa-breathe 9s ease-in-out infinite alternate;
+}
+html[data-theme="holiday-paper-advent-light"] .hl-pa-sky {
+    background: radial-gradient(90% 70% at 60% 92%, #fff1d2 0%, #f8dcb0 30%, #f1d3c6 62%, #ebdcd7 100%);
+}
+@keyframes hl-pa-breathe { from { filter: brightness(0.94); } to { filter: brightness(1.06); } }
+.hl-pa-skycut {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 72%;
+}
+.hl-pa-hole { fill: #ffd99a; animation: hl-twinkle 4s ease-in-out infinite; }
+.hl-pa-hole--star { fill: #fff0c8; }
+html[data-theme="holiday-paper-advent-light"] .hl-pa-hole { display: none; }
+.hl-pa-moon circle:first-child { fill: #ffe2a8; filter: drop-shadow(0 0 18px rgba(255, 200, 110, 0.6)); }
+html[data-theme="holiday-paper-advent-light"] .hl-pa-moon circle:first-child { fill: #fff8e8; filter: drop-shadow(0 1px 2px rgba(120, 70, 30, 0.35)); }
+.hl-pa-crater { fill: rgba(170, 100, 40, 0.28); }
+.hl-pa-sleigh { fill: var(--hl-pa-3); animation: hl-pa-sleigh 38s linear infinite; animation-delay: 6s; opacity: 0; }
+.hl-pa-rein { fill: none; stroke: var(--hl-pa-3); stroke-width: 1; }
+@keyframes hl-pa-sleigh {
+    0% { transform: translate(-200px, 175px); opacity: 1; }
+    40% { transform: translate(1560px, 62px); opacity: 1; }
+    40.1%, 100% { transform: translate(1560px, 62px); opacity: 0; }
+}
+.hl-pa-grain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .28 0 0 0 0 .16 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* The Moravian star on its string. */
+.hl-pa-star {
+    position: absolute;
+    right: 0.5%;
+    top: 16vh;
+    width: clamp(90px, 8vw, 140px);
+    height: clamp(90px, 8vw, 140px);
+    transform-origin: 50% -16vh;
+    animation: hl-pa-sway 11s ease-in-out infinite alternate;
+}
+.hl-pa-star svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 16px rgba(255, 200, 100, 0.7)); }
+html[data-theme="holiday-paper-advent-light"] .hl-pa-star svg { filter: drop-shadow(0 2px 3px rgba(120, 70, 20, 0.35)); }
+.hl-pa-string { position: absolute; left: 50%; bottom: 72%; height: 16vh; border-left: 1px solid rgba(160, 100, 60, 0.7); }
+@keyframes hl-pa-sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.hl-pa-spin { animation: hl-rays 70s linear infinite; }
+.hl-pa-rays { fill: rgba(255, 220, 140, 0.13); animation: hl-rays 110s linear infinite reverse; }
+html[data-theme="holiday-paper-advent-light"] .hl-pa-rays { fill: rgba(255, 170, 60, 0.12); }
+.hl-pa-star-lit { fill: #fff0c2; }
+.hl-pa-star-shade { fill: #ffb24a; }
+.hl-pa-star-edge { stroke: rgba(130, 70, 10, 0.35); stroke-width: 0.6; }
+.hl-pa-star-core { fill: #ffe7a8; }
+
+/* The village in four cut layers, each casting a shadow on the one
+   behind it. */
+.hl-pa-scene {
+    position: absolute;
+    left: -60px;
+    right: -60px;
+    bottom: 0;
+    height: clamp(210px, 42vh, 400px);
+}
+.hl-pa-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.hl-pa-l1 { fill: var(--hl-pa-1); filter: drop-shadow(0 -2px 5px rgba(0, 0, 0, 0.35)); }
+.hl-pa-l2 { fill: var(--hl-pa-2); filter: drop-shadow(0 -3px 7px rgba(0, 0, 0, 0.4)); }
+.hl-pa-l3 { fill: var(--hl-pa-3); filter: drop-shadow(0 -3px 8px rgba(0, 0, 0, 0.45)); }
+.hl-pa-l4 { fill: var(--hl-pa-4); filter: drop-shadow(0 -4px 10px rgba(0, 0, 0, 0.5)); }
+html[data-theme="holiday-paper-advent-light"] .hl-pa-layer { filter: drop-shadow(0 -2px 4px rgba(110, 60, 25, 0.28)); }
+.hl-pa-win { fill: var(--hl-pa-dark-win); }
+.hl-pa-win.is-lit { fill: #ffc061; animation: hl-pa-candle 3s ease-in-out infinite; }
+.hl-pa-win.is-today { fill: #fff1c4; animation: hl-pa-today 2.4s ease-in-out infinite; }
+@keyframes hl-pa-candle {
+    0%, 100% { fill: #ffc061; }
+    30% { fill: #ffb24a; }
+    34% { fill: #ffcd78; }
+    70% { fill: #ffbb58; }
+}
+@keyframes hl-pa-today {
+    0%, 100% { filter: drop-shadow(0 0 4px var(--hl-pa-glow)); }
+    50% { filter: drop-shadow(0 0 14px var(--hl-pa-glow)); }
+}
+.hl-pa-num { font: 700 9px/1 system-ui, sans-serif; fill: #6e2a12; text-anchor: middle; }
+.hl-pa-sil { fill: var(--hl-pa-3); }
+.hl-pa-smoke path {
+    fill: var(--hl-pa-1);
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: hl-pa-smoke 6.6s ease-out infinite;
+}
+@keyframes hl-pa-smoke {
+    0% { transform: translate(0, 4px) scale(0.6) rotate(-6deg); opacity: 0; }
+    20% { opacity: 0.85; }
+    100% { transform: translate(10px, -46px) scale(1.25) rotate(8deg); opacity: 0; }
+}
+
+/* Cut-paper snowflakes. */
+.hl-pa-snow { color: var(--hl-pa-paper); }
+.hl-pa-snow svg { fill: currentColor; filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.35)); }
+html[data-theme="holiday-paper-advent-light"] .hl-pa-snow svg { filter: drop-shadow(1px 2px 0 rgba(120, 80, 40, 0.25)); }
+.hl-pa-flake-hole { fill: rgba(0, 0, 0, 0.28); }
+
+/* A paper ribbon tucked over the top of each category. */
+body[data-holiday="paper-advent"] .category { position: relative; }
+body[data-holiday="paper-advent"] .category::after {
+    content: "";
+    position: absolute;
+    top: -7px;
+    right: 18px;
+    width: 20px;
+    height: 30px;
+    pointer-events: none;
+    z-index: 2;
+    background:
+        radial-gradient(circle at 50% 38%, #ffe7a8 0 2.2px, transparent 2.6px),
+        linear-gradient(90deg, #a8301c, #d0452c 45%, #a8301c);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+}
+body[data-holiday="paper-advent"] .category:nth-child(3n+2)::after { background: radial-gradient(circle at 50% 38%, #ffe7a8 0 2.2px, transparent 2.6px), linear-gradient(90deg, #1f5a35, #2f7a4b 45%, #1f5a35); right: auto; left: 18px; }
+body[data-holiday="paper-advent"] .category:nth-child(3n)::after { background: radial-gradient(circle at 50% 38%, #8a3a1a 0 2.2px, transparent 2.6px), linear-gradient(90deg, #c9973a, #ecc46a 45%, #c9973a); }
+
+/* ── Nutcracker Theatre ────────────────────────────────────────────── */
+
+body[data-holiday="nutcracker"] {
+    --hl-nc-velvet: #8e1428;
+    --hl-nc-gold: #e9c46a;
+    --hl-nc-gilt: #d4af5c;
+}
+.hl-nc-stage {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(70% 60% at 50% 40%, #3a0a14 0%, #1c0409 55%, #0b0204 100%);
+}
+html[data-theme="holiday-nutcracker-light"] .hl-nc-stage {
+    background: radial-gradient(70% 60% at 50% 40%, #fffaf0 0%, #f6ecdc 55%, #e7d2b3 100%);
+}
+.hl-nc-beam {
+    position: absolute;
+    top: -14vh;
+    width: 24vw;
+    height: 150vh;
+    background: linear-gradient(90deg, transparent, rgba(255, 236, 190, 0.09) 40%, rgba(255, 236, 190, 0.13) 50%, rgba(255, 236, 190, 0.09) 60%, transparent);
+    filter: blur(10px);
+    transform-origin: 50% 0;
+    mix-blend-mode: screen;
+}
+.hl-nc-beam--l { left: 8vw; animation: hl-nc-beam-l 17s ease-in-out infinite alternate; }
+.hl-nc-beam--r { right: 8vw; animation: hl-nc-beam-r 19s ease-in-out infinite alternate; }
+html[data-theme="holiday-nutcracker-light"] .hl-nc-beam { mix-blend-mode: normal; background: linear-gradient(90deg, transparent, rgba(255, 210, 140, 0.14) 50%, transparent); }
+@keyframes hl-nc-beam-l { from { transform: rotate(-32deg); } to { transform: rotate(-10deg); } }
+@keyframes hl-nc-beam-r { from { transform: rotate(30deg); } to { transform: rotate(8deg); } }
+.hl-nc-spot {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(400px 300px at var(--hl-mx, 50%) var(--hl-my, 35%), rgba(255, 236, 190, 0.13), transparent 70%);
+    transition: background-position 0.2s;
+}
+html[data-theme="holiday-nutcracker-light"] .hl-nc-spot { background: radial-gradient(400px 300px at var(--hl-mx, 50%) var(--hl-my, 35%), rgba(255, 205, 130, 0.22), transparent 70%); }
+.hl-nc-floor {
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    bottom: 0;
+    height: clamp(70px, 13vh, 120px);
+    background:
+        linear-gradient(180deg, rgba(10, 2, 4, 0.85), rgba(10, 2, 4, 0) 60%),
+        linear-gradient(90deg, rgba(255, 220, 160, 0) 30%, rgba(255, 220, 160, 0.10) 50%, rgba(255, 220, 160, 0) 70%),
+        repeating-linear-gradient(90deg, #2a1209 0 2px, #4f2614 2px 90px, #47210f 90px 92px, #5b2d17 92px 180px);
+    transform: perspective(420px) rotateX(38deg);
+    transform-origin: 50% 100%;
+}
+html[data-theme="holiday-nutcracker-light"] .hl-nc-floor {
+    background:
+        linear-gradient(180deg, rgba(246, 236, 220, 0.9), rgba(246, 236, 220, 0) 60%),
+        repeating-linear-gradient(90deg, #a87848 0 2px, #d2a676 2px 90px, #c99b6b 90px 92px, #dcb385 92px 180px);
+}
+
+/* The tied-back drapes and the gilt pillars at the sides. */
+.hl-nc-pillar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 14px;
+    background: repeating-linear-gradient(90deg, #8a6a2b 0 2px, #f3dc95 2px 5px, #c9a24e 5px 7px);
+    box-shadow: 0 0 14px rgba(0, 0, 0, 0.6);
+}
+.hl-nc-pillar--l { left: 0; }
+.hl-nc-pillar--r { right: 0; }
+.hl-nc-drape {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: clamp(46px, 7vw, 120px);
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 22%),
+        repeating-linear-gradient(90deg, #3a0610 0, #8e1428 12%, #c0223c 18%, #8e1428 24%, #3a0610 32%);
+    clip-path: polygon(0 0, 100% 0, 46% 46%, 60% 54%, 34% 100%, 0 100%);
+}
+.hl-nc-drape--l { left: 14px; }
+.hl-nc-drape--r { right: 14px; transform: scaleX(-1); }
+.hl-nc-rope {
+    position: absolute;
+    top: 49%;
+    left: 0;
+    width: 58%;
+    height: 7px;
+    border-radius: 4px;
+    background: repeating-linear-gradient(60deg, #f3dc95 0 3px, #8a6a2b 3px 6px);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* The arch along the top. */
+.hl-nc-arch {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: clamp(52px, 7.5vh, 80px);
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.55));
+}
+html[data-theme="holiday-nutcracker-light"] .hl-nc-arch { height: clamp(38px, 5vh, 54px); filter: drop-shadow(0 3px 4px rgba(90, 40, 20, 0.3)); }
+.hl-nc-gilt { fill: var(--hl-nc-gilt); }
+.hl-nc-gilt-edge { fill: #f3dc95; }
+.hl-nc-scroll path { fill: none; stroke: #7a5a1e; stroke-width: 1.4; opacity: 0.75; }
+.hl-nc-scroll circle { fill: #7a5a1e; opacity: 0.6; }
+.hl-nc-swag { fill: var(--hl-nc-velvet); }
+.hl-nc-swag-fold { fill: none; stroke: rgba(0, 0, 0, 0.3); stroke-width: 2; }
+.hl-nc-swag-fringe { fill: none; stroke: var(--hl-nc-gold); stroke-width: 3; stroke-dasharray: 1 2; }
+.hl-nc-tassel { fill: var(--hl-nc-gold); stroke: var(--hl-nc-gold); stroke-width: 1.2; transform-box: fill-box; transform-origin: 50% 0; animation: hl-nc-tassel 4s ease-in-out infinite alternate; }
+@keyframes hl-nc-tassel { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+.hl-nc-crest {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: clamp(54px, 5vw, 82px);
+    height: auto;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
+    animation: hl-nc-shimmer 5s ease-in-out infinite;
+}
+@keyframes hl-nc-shimmer {
+    0%, 100% { filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5)) brightness(1); }
+    50% { filter: drop-shadow(0 0 10px rgba(255, 215, 120, 0.7)) brightness(1.12); }
+}
+.hl-nc-crest-ring { fill: #f3dc95; stroke: #8a6a2b; stroke-width: 1.5; }
+.hl-nc-crest-field { fill: #4a0713; }
+.hl-nc-laurel ellipse { fill: var(--hl-nc-gold); }
+.hl-nc-crest-n { font: italic 700 22px Georgia, "Times New Roman", serif; fill: #f3dc95; text-anchor: middle; }
+.hl-nc-crown { fill: var(--hl-nc-gold); stroke: #8a6a2b; stroke-width: 0.8; }
+
+/* The two nutcrackers, saluting in turn. */
+.hl-nc-soldier {
+    position: absolute;
+    bottom: clamp(14px, 3vh, 26px);
+    width: clamp(42px, 4.5vw, 70px);
+    height: auto;
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.5));
+}
+.hl-nc-soldier--l { left: clamp(70px, 10vw, 160px); }
+.hl-nc-soldier--r { right: clamp(70px, 10vw, 160px); transform: scaleX(-1); }
+.hl-nc-boot { fill: #111114; }
+.hl-nc-trousers { fill: #f6ead2; }
+.hl-nc-coat { fill: #b51d35; }
+.hl-nc-braid { stroke: var(--hl-nc-gold); stroke-width: 2; }
+.hl-nc-gold { fill: var(--hl-nc-gold); }
+.hl-nc-glove { fill: #f6ead2; }
+.hl-nc-face { fill: #f2d2b6; }
+.hl-nc-beard { fill: #ffffff; }
+.hl-nc-mouth { stroke: #111114; stroke-width: 2; }
+.hl-nc-eye { fill: #111114; }
+.hl-nc-cheek { fill: #ee8f8f; }
+.hl-nc-salute { transform-box: view-box; transform-origin: 11px 64px; animation: hl-nc-salute 9s ease-in-out infinite; }
+.hl-nc-soldier--r .hl-nc-salute { animation-delay: -4.5s; }
+@keyframes hl-nc-salute {
+    0%, 78%, 100% { transform: rotate(0deg); }
+    84%, 93% { transform: rotate(-118deg); }
+}
+
+/* The Sugar Plum Fairy on her music-box pedestal. */
+.hl-nc-dancer {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(12px, 2.6vh, 24px);
+    width: clamp(44px, 4vw, 66px);
+    height: auto;
+    transform: translateX(-50%);
+    overflow: visible;
+    filter: drop-shadow(0 0 10px rgba(255, 210, 240, 0.35));
+}
+.hl-nc-pedestal { fill: #c9a24e; }
+.hl-nc-pedestal-top { fill: #f3dc95; }
+.hl-nc-turn { transform-box: fill-box; transform-origin: 50% 100%; animation: hl-nc-pirouette 6s ease-in-out infinite; }
+@keyframes hl-nc-pirouette {
+    0%, 30% { transform: scaleX(1); }
+    37% { transform: scaleX(-1); }
+    44% { transform: scaleX(1); }
+    51% { transform: scaleX(-1); }
+    58%, 100% { transform: scaleX(1); }
+}
+.hl-nc-leg { fill: none; stroke: #f6ead2; stroke-width: 1.8; stroke-linecap: round; }
+.hl-nc-tutu { fill: #d79bdc; }
+.hl-nc-tutu-tulle { fill: none; stroke: #f6d4f2; stroke-width: 1.2; stroke-dasharray: 2 2; }
+.hl-nc-bodice { fill: #a858ad; }
+.hl-nc-arm { fill: none; stroke: #f2d2b6; stroke-width: 1.8; stroke-linecap: round; }
+.hl-nc-skin { fill: #f2d2b6; }
+.hl-nc-bun { fill: #5a3a2a; }
+.hl-nc-tiara { fill: none; stroke: var(--hl-nc-gold); stroke-width: 0.9; }
+
+/* Footlights along the front of the stage. */
+.hl-nc-footlights {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 14px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: linear-gradient(#2a1a0a, #120a04);
+    border-top: 2px solid #c9a24e;
+}
+.hl-nc-footlights i {
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ffe8a8;
+    box-shadow: 0 0 10px 4px rgba(255, 214, 130, 0.55), 0 -28px 50px 10px rgba(255, 214, 130, 0.10);
+    animation: hl-nc-foot 3s ease-in-out infinite;
+}
+@keyframes hl-nc-foot { 0%, 100% { opacity: 1; } 47% { opacity: 0.85; } 50% { opacity: 0.95; } }
+
+/* Sugar-plum glitter, and the curtain that opens once on arrival. */
+.hl-nc-plum {
+    position: absolute;
+    top: -10px;
+    width: 6px;
+    height: 6px;
+    background: #f3dc95;
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    animation: hl-nc-fall linear infinite;
+}
+.hl-nc-plum--violet { background: #d79bdc; }
+html[data-theme="holiday-nutcracker-light"] .hl-nc-plum { background: #c9973a; }
+html[data-theme="holiday-nutcracker-light"] .hl-nc-plum--violet { background: #a858ad; }
+@keyframes hl-nc-fall {
+    from { transform: translateY(0) rotate(0deg); }
+    to { transform: translateY(106vh) rotate(540deg); }
+}
+.hl-nc-curtain {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 51%;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 18%, transparent 80%, rgba(0, 0, 0, 0.35)),
+        repeating-linear-gradient(90deg, #3a0610 0, #8e1428 3%, #c0223c 5.2%, #8e1428 7.5%, #3a0610 10%);
+    animation: 2.8s cubic-bezier(0.65, 0, 0.25, 1) 0.5s forwards;
+}
+.hl-nc-curtain--l { left: 0; transform-origin: 0 50%; animation-name: hl-nc-open-l; }
+.hl-nc-curtain--r { right: 0; transform-origin: 100% 50%; animation-name: hl-nc-open-r; }
+.hl-nc-fringe {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 20px;
+    background:
+        linear-gradient(#c9a24e, #c9a24e) top / 100% 4px no-repeat,
+        repeating-linear-gradient(90deg, #e9c46a 0 2px, transparent 2px 4px);
+}
+@keyframes hl-nc-open-l {
+    0% { transform: scaleX(1); border-bottom-right-radius: 0; }
+    12% { transform: scaleX(1.02); }
+    85% { opacity: 1; }
+    100% { transform: scaleX(0.05); border-bottom-right-radius: 100% 40%; opacity: 0; }
+}
+@keyframes hl-nc-open-r {
+    0% { transform: scaleX(1); border-bottom-left-radius: 0; }
+    12% { transform: scaleX(1.02); }
+    85% { opacity: 1; }
+    100% { transform: scaleX(0.05); border-bottom-left-radius: 100% 40%; opacity: 0; }
+}
+
+/* A gilt hairline inside each category, with a small diamond on top. */
+body[data-holiday="nutcracker"] .category { position: relative; }
+body[data-holiday="nutcracker"] .category::after {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 1px solid color-mix(in srgb, var(--hl-nc-gold) 65%, transparent);
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 2;
+    background: no-repeat center top -4px / 10px 10px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 L10 5 L5 10 L0 5Z' fill='%23e9c46a'/%3E%3C/svg%3E");
+}
+html[data-theme="holiday-nutcracker-light"] body[data-holiday="nutcracker"] .category::after { border-color: rgba(176, 134, 52, 0.7); }
+
 /* ── Still ─────────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
@@ -581,12 +1297,16 @@ html[data-theme$="-light"] .hl-walker .hl-gb-dough { fill: #c98b55; }
     .hl-crystal,
     .hl-sprinkle,
     .hl-walker,
-    .hl-sleigh { display: none; }
+    .hl-sleigh,
+    .hl-pa-sleigh,
+    .hl-nc-plum,
+    .hl-nc-curtain,
+    .hl-globe-sweep { display: none; }
 }
 html[data-effects="off"] .holiday-layer *,
 body[data-effects="off"] .holiday-layer * { animation: none !important; }
-html[data-effects="off"] :is(.hl-flake, .hl-crystal, .hl-sprinkle, .hl-walker, .hl-sleigh),
-body[data-effects="off"] :is(.hl-flake, .hl-crystal, .hl-sprinkle, .hl-walker, .hl-sleigh) { display: none; }
+html[data-effects="off"] :is(.hl-flake, .hl-crystal, .hl-sprinkle, .hl-walker, .hl-sleigh, .hl-pa-sleigh, .hl-nc-plum, .hl-nc-curtain, .hl-globe-sweep),
+body[data-effects="off"] :is(.hl-flake, .hl-crystal, .hl-sprinkle, .hl-walker, .hl-sleigh, .hl-pa-sleigh, .hl-nc-plum, .hl-nc-curtain, .hl-globe-sweep) { display: none; }
 
 @media (max-width: 640px) {
     .hl-sleigh { display: none; }
