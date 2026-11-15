@@ -9944,7 +9944,7 @@ class DashboardConfig {
         netToolsAllowCustomHost: { info: ['netToolsAllowCustomHostInfoTitle', 'netToolsAllowCustomHostInfoMessage'], def: false },
         netToolsMaxChecks: { info: ['netToolsMaxChecksInfoTitle', 'netToolsMaxChecksInfoMessage'], def: 200 },
         netToolsDashboardBadges: { info: ['netToolsDashboardBadgesInfoTitle', 'netToolsDashboardBadgesInfoMessage'], def: 'problems' },
-        feedWatchWindowMinutes: { def: 30 },
+        feedWatchWindowMinutes: { def: 60 },
         feedWatchExpireHours: { def: 24 },
         feedWatchNewsView: { def: 'paper' },
         showFeedWatchIcon: { info: ['showFeedWatchIconInfoTitle', 'showFeedWatchIconInfoMessage'], def: true },
@@ -20913,6 +20913,8 @@ class DashboardConfig {
             // Network checks in the Health tab: their model, then their cards and form.
             .then(() => load('js/shared/net-checks-model.js',
                 'netChecksModel', () => Boolean(window.NetChecksModel)))
+            // Their response-time sparkline and chart.
+            .then(() => load('js/shared/net-trend.js', 'netTrend', () => Boolean(window.NetTrend)))
             .then(() => load('js/dashboard/dashboard-config-bookmarks-net.js',
                 'dashboardConfigBookmarksNet', () => window.DashboardConfigBookmarksNetReady === true))
             // The info buttons and cards of the Tests tab.

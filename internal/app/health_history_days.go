@@ -67,6 +67,9 @@ func foldSamplesIntoDays(days []HealthDay, dropped []HealthSample) []HealthDay {
 			if s.PingMs > 0 {
 				pingTotal[key] += s.PingMs
 				pingCount[key]++
+				if s.PingMs > day.X {
+					day.X = s.PingMs
+				}
 			}
 		}
 	}

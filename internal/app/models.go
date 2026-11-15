@@ -1007,7 +1007,7 @@ type Settings struct {
 	WebSearchSearxngURL string `json:"webSearchSearxngUrl,omitempty"`
 	// FeedWatchWindowMinutes is how long watched news stays open for the reader
 	// after it arrives and they are back: 15, 30, 60 or 120. Anything else
-	// reads as 30.
+	// reads as 60.
 	FeedWatchWindowMinutes int `json:"feedWatchWindowMinutes"`
 	// FeedWatchExpireHours is how long an unread item keeps counting, from the
 	// moment it was found: 4, 8, 24, 48, 72, 168, 336 or 720. Older news is no
@@ -1921,7 +1921,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
 			ShowFeedWatchIcon:               true,
-			FeedWatchWindowMinutes:          30,
+			FeedWatchWindowMinutes:          60,
 			FeedWatchExpireHours:            24,
 			FeedWatchNewsView:               "paper",
 			FeedStatsEnabled:                true,
@@ -4682,7 +4682,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
 			ShowFeedWatchIcon:               true,
-			FeedWatchWindowMinutes:          30,
+			FeedWatchWindowMinutes:          60,
 			FeedWatchExpireHours:            24,
 			FeedWatchNewsView:               "paper",
 			FeedStatsEnabled:                true,
@@ -4955,7 +4955,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 		switch settings.FeedWatchWindowMinutes {
 		case 15, 30, 60, 120:
 		default:
-			settings.FeedWatchWindowMinutes = 30
+			settings.FeedWatchWindowMinutes = 60
 		}
 		switch settings.FeedWatchExpireHours {
 		case 4, 8, 24, 48, 72, 168, 336, 720:
@@ -7413,6 +7413,10 @@ type HealthDay struct {
 	// PN is how many checks P averages: the successful ones that had a ping.
 	// Absent in summaries written before it; those fall back to U.
 	PN int `json:"pn,omitempty"`
+	// X is the slowest response time of the day in ms, across the successful
+	// checks that had a ping. The trend chart draws it as the day's peak.
+	// Absent in summaries written before it; those draw the mean.
+	X int `json:"x,omitempty"`
 }
 
 // HealthTrendPoint is one day's summary of the whole collection.
@@ -7474,12 +7478,15 @@ type UndoRedoManager struct {
 
 // Bookmark preview metadata
 type BookmarkPreview struct {
-	URL         string `json:"url"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
-	Domain      string `json:"domain"`
-	Icon        string `json:"icon"`
+	URL   string `json:"url"`
+	Title string `json:"title"`
+	// OriginalTitle is the page's title as it came, set only when cleaning
+	// changed it (page_title_clean.go). A form offers it back.
+	OriginalTitle string `json:"originalTitle,omitempty"`
+	Description   string `json:"description"`
+	Image         string `json:"image"`
+	Domain        string `json:"domain"`
+	Icon          string `json:"icon"`
 	/*
 	 * ImageSource and IconSource are where Image and Icon were fetched from.
 	 *

@@ -43,6 +43,7 @@ button.netw-beat:hover { background: color-mix(in srgb, var(--accent-primary) 10
 .netw-row { display: flex; align-items: center; gap: 0.5rem; }
 .netw-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
 .netw-row .netw-badge { flex: none; }
+.netw-spark { flex: none; display: inline-flex; align-items: center; line-height: 0; }
 
 .netw-value {
     flex: none;

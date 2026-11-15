@@ -4668,6 +4668,8 @@
     "bookmarkTitleClear": "Effacer",
     "bookmarkTitlePage": "Page :",
     "bookmarkTitleUse": "Utiliser",
+    "bookmarkTitleUseCleaned": "Utiliser le titre nettoyé",
+    "bookmarkTitleUseOriginal": "Utiliser le titre d’origine",
     "tagSuggestLabel": "suggérés",
     "tagSuggestRefresh": "Suggérer à nouveau des tags",
     "bookmarkPlaceLabel": "Page › catégorie",
@@ -11167,6 +11169,7 @@
     "tipMaintNetChecks": "Sélectionnez un favori dans la vue Favoris et appuyez sur <code>4</code> pour son onglet <em>Tests</em> : jusqu’à six vérifications réseau — TCP, Ping, DNS, TLS, détail HTTP et JSON — chacune avec son calendrier, son historique et ses alertes.",
     "tipMaintNetRunOnce": "<em>Exécuter une fois</em> dans l’onglet Tests envoie un test depuis le serveur, tout de suite, sans rien enregistrer ; <em>Enregistrer comme vérification planifiée…</em> transforme ce que vous venez de tester en vérification.",
     "tipMaintNetPing": "Une vérification Ping qui indique <em>via TCP</em> n’a pas pu utiliser l’ICMP. Config → Surveillance → Vérifications montre le réglage d’une ligne qui l’autorise dans Docker.",
+    "tipMaintNetTrend": "Ouvrez une vérification dans l’onglet Tests pour voir son <em>temps de réponse</em> sur 24 heures, 7 jours ou 30 jours. La ligne pointillée est la limite de lenteur.",
     "overviewNewFeatureNetTestsTitle": "Des tests réseau sur chaque favori",
     "overviewNewFeatureNetTestsWhat": "Le port est-il ouvert, l’hôte répond-il à un ping, que disent ses enregistrements DNS, combien de temps son certificat reste-t-il valable, que répond-il à une requête HTTP ? Jusqu’ici nextDash ne pouvait que demander si une page se charge.",
     "overviewNewFeatureNetTestsHow": "L’onglet Tests d’un favori (touche 4 dans le panneau latéral de la vue Favoris) contient jusqu’à six vérifications : TCP, Ping, DNS, TLS, détail HTTP et JSON. Lancez-en une fois pour regarder tout de suite, ou planifiez-la avec historique et alertes. Les vérifications apparaissent en pastilles sur les lignes, dans la cloche, dans un widget Tests réseau et sur la page de statut.",
@@ -11258,7 +11261,12 @@
     "overviewNewFeatureNewFeedPostsWhat": "Dès que vous suivez un flux, nextDash récupère ses dix derniers articles et les ouvre dans une bulle sur la ligne du favori, pour voir tout de suite ce que vous suivez.",
     "overviewNewFeatureNewFeedPostsHow": "Faites un clic droit sur un favori et choisissez Suivre ce flux…, ou appuyez sur w.",
     "overviewNewFeatureNewFeedPostsEnable": "Activé par défaut, sur ordinateur et sur téléphone.",
-    "overviewNewFeatureNewFeedPostsCta": "Ouvrir les flux suivis →"
+    "overviewNewFeatureNewFeedPostsCta": "Ouvrir les flux suivis →",
+    "overviewNewFeatureNetTrendsTitle": "Tendances du temps de réponse des tests réseau",
+    "overviewNewFeatureNetTrendsWhat": "Une coche verte ne dit pas qu’un service ralentit. Un test qui mesure des millisecondes dessine désormais son temps de réponse, et un service qui dérive sur plusieurs jours se voit avant de tomber.",
+    "overviewNewFeatureNetTrendsHow": "Ouvrez l’onglet Tests d’un favori : chaque test montre son dernier jour en petite courbe, et un test ouvert trace 24 heures, 7 jours ou 30 jours avec la limite de lenteur et les échecs marqués.",
+    "overviewNewFeatureNetTrendsEnable": "Activé par défaut. Rien de plus n’est stocké ; le graphique lit l’historique que vos tests conservent déjà.",
+    "overviewNewFeatureNetTrendsCta": "Ouvrir les tests →"
   },
   "colors": {
     "title": "personnalisation du thème",
@@ -12088,7 +12096,7 @@
     "secChecks": "Vérifications",
     "helpMore": "Plus d’infos",
     "helpTestsTitle": "Ce que fait Tests",
-    "helpTestsBody": "Une vérification surveille à intervalles réguliers un aspect de ce favori : joignabilité, DNS, certificat, réponse ou valeur JSON. Elle garde un historique et vous alerte selon les règles d’alerte du favori.\n**Run once** regarde tout de suite et n’enregistre rien. Ouvrez cet onglet avec [[4]].\n**Vérifications** compte les vérifications planifiées ; **hors ligne** celles qui échouent en ce moment. **Dispo 24 h** est la moyenne de leurs dernières 24 heures. Les vérifications désactivées ou non mesurées sont exclues.",
+    "helpTestsBody": "Une vérification surveille à intervalles réguliers un aspect de ce favori : joignabilité, DNS, certificat, réponse ou valeur JSON. Elle garde un historique et vous alerte selon les règles d’alerte du favori.\n**Run once** regarde tout de suite et n’enregistre rien. Ouvrez cet onglet avec [[4]].\n**Vérifications** compte les vérifications planifiées ; **hors ligne** celles qui échouent en ce moment. **Dispo 24 h** est la moyenne de leurs dernières 24 heures. Les vérifications désactivées ou non mesurées sont exclues.\n**Temps de réponse.** Une vérification qui mesure des millisecondes dessine son dernier jour en petite courbe à côté de son nom. Ouvrez-la pour voir 24 heures, 7 jours ou 30 jours, avec la limite de lenteur et les échecs marqués.",
     "helpStatusTitle": "Ce que signifient les états",
     "helpStatusBody": "**En ligne**, **hors ligne**, **avertissement** (par exemple un certificat qui expire bientôt) et **lent** (toujours en ligne).\n**Via TCP** : le ping est revenu à TCP parce que l’ICMP n’est pas autorisé. **Non mesuré** : le ping est désactivé, l’ICMP ou l’hôte est bloqué par la protection d’adresses, ou un hôte personnalisé est désactivé. Ce n’est pas une panne : aucune alerte n’est envoyée.",
     "helpRunTitle": "Exécuter une fois",
@@ -12439,6 +12447,28 @@
     "jsonPath": "Chemin",
     "jsonFound": "Trouvé",
     "jsonExpected": "Attendu"
+  },
+  "nettrend": {
+    "title": "Temps de réponse",
+    "average": "Moyenne",
+    "slowest": "Le plus lent",
+    "failed": "Échecs",
+    "limit": "Limite",
+    "range": "Période",
+    "r24h": "24 h",
+    "r7d": "7 j",
+    "r30d": "30 j",
+    "spark": "Temps de réponse, dernières 24 heures, maintenant",
+    "summary": "Temps de réponse, {count} points, moyenne {avg}",
+    "avgShort": "moy.",
+    "failedShort": "échecs",
+    "peakShort": "pic",
+    "yes": "oui",
+    "loading": "Chargement…",
+    "empty": "Rien n’a encore été mesuré sur cette période.",
+    "error": "La tendance n’a pas pu être lue.",
+    "dayNote": "Un point par jour. Les périodes 24 h et 7 j montrent les pics au sein d’une journée.",
+    "weekNote": "Les derniers jours sont par tranches de deux heures, les jours plus anciens un point chacun."
   },
   "mobile": {
     "status": {

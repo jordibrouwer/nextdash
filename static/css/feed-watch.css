@@ -77,8 +77,10 @@
     animation: feed-news-pulse 2.2s ease-in-out 3;
 }
 
-/* A muted feed still counts, but does not call attention to itself. */
-.bookmark-news-badge.is-muted { animation: none; }
+/* A muted feed still counts, but does not call attention to itself. Nor does
+   news whose window has closed: the badge stays, quietly. */
+.bookmark-news-badge.is-muted,
+.bookmark-news-badge.is-calm { animation: none; }
 
 @keyframes feed-news-pulse {
     0%, 100% { box-shadow: 0 0 0 2px var(--background-primary), 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--feed-news-color, #8b5cf6)) 55%, transparent); }

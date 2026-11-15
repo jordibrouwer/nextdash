@@ -17,7 +17,7 @@
     function next(stored, input) {
         const newest = Number(input.newestNewAt) || 0;
         const now = Number(input.now) || 0;
-        const windowMs = Number(input.windowMs) || 30 * 60 * 1000;
+        const windowMs = Number(input.windowMs) || 60 * 60 * 1000;
         if (!(newest > 0)) return { phase: 'none', stored: null, remainingMs: 0 };
 
         // Only news newer than anything the window has seen restarts it. When

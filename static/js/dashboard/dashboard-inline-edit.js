@@ -811,7 +811,12 @@ class DashboardInlineEdit {
         // Filled in once syncSaveEnabled exists, further down.
         let syncSaveFromTitle = () => {};
         const title = window.BookmarkFormTitle.attach(nameInput, nameNote, {
-            t: (key, fallback) => d.language?.t(key) || fallback,
+            // A key without a locale entry answers with itself: the English
+            // fallback is for that, until the docs round translates it.
+            t: (key, fallback) => {
+                const text = d.language?.t(key);
+                return text && text !== key ? text : fallback;
+            },
             onChange: () => syncSaveFromTitle(),
         });
         // Editing: the name is the bookmark's own, so the page's title is only
@@ -1056,7 +1061,7 @@ class DashboardInlineEdit {
             pageReadUrl = urlInput.value.trim();
             card.setPreview(preview || { url: urlInput.value.trim() });
             void refreshIconSuggestions();
-            title.offer(preview?.title, urlInput.value.trim());
+            title.offer(preview?.title, urlInput.value.trim(), preview?.originalTitle);
             void refreshSuggestions(Array.isArray(preview?.keywords) ? preview.keywords : []);
             feedRow?.refresh();
         };

@@ -25,6 +25,7 @@ func normalizePreviewCacheFile(cache PreviewCacheFile) PreviewCacheFile {
 	for key, entry := range cache.Cache {
 		entry.Title = decodePreviewText(entry.Title)
 		entry.Description = decodePreviewText(entry.Description)
+		applyTitleCleanup(&entry)
 		if isRemote(entry.Image) {
 			entry.ImageSource = entry.Image
 			entry.Image = ""
@@ -364,6 +365,6 @@ func decodePreviewText(s string) string {
 }
 
 func decodeBookmarkPreviewText(b *Bookmark) {
-	b.PreviewTitle = decodePreviewText(b.PreviewTitle)
+	b.PreviewTitle = cleanPageTitle(decodePreviewText(b.PreviewTitle), "", extractDomain(b.URL))
 	b.PreviewDesc = decodePreviewText(b.PreviewDesc)
 }

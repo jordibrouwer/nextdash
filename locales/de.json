@@ -4668,6 +4668,8 @@
     "bookmarkTitleClear": "Löschen",
     "bookmarkTitlePage": "Seite:",
     "bookmarkTitleUse": "Übernehmen",
+    "bookmarkTitleUseCleaned": "Bereinigten Titel verwenden",
+    "bookmarkTitleUseOriginal": "Originaltitel verwenden",
     "tagSuggestLabel": "vorgeschlagen",
     "tagSuggestRefresh": "Tags erneut vorschlagen",
     "bookmarkPlaceLabel": "Seite › Kategorie",
@@ -11167,6 +11169,7 @@
     "tipMaintNetChecks": "Wähle ein Lesezeichen in der Lesezeichen-Ansicht und drücke <code>4</code> für den Tab <em>Tests</em>: bis zu sechs Netzwerkprüfungen — TCP, Ping, DNS, TLS, HTTP-Details und JSON — jede mit eigenem Zeitplan, Verlauf und Benachrichtigungen.",
     "tipMaintNetRunOnce": "<em>Einmal ausführen</em> im Tab Tests schickt jetzt einen Test vom Server und speichert nichts; <em>Als geplante Prüfung speichern…</em> macht aus dem gerade Getesteten eine Prüfung.",
     "tipMaintNetPing": "Eine Ping-Prüfung, die <em>über TCP</em> meldet, konnte kein ICMP nutzen. Config → Überwachung → Prüfungen zeigt die eine Zeile Einstellung, die es in Docker erlaubt.",
+    "tipMaintNetTrend": "Öffne eine Prüfung im Tab Tests, um ihre <em>Antwortzeit</em> über 24 Stunden, 7 Tage oder 30 Tage zu sehen. Die gestrichelte Linie ist die Langsam-Grenze.",
     "overviewNewFeatureNetTestsTitle": "Netzwerktests für jedes Lesezeichen",
     "overviewNewFeatureNetTestsWhat": "Ist der Port offen, antwortet der Host auf einen Ping, was sagen seine DNS-Einträge, wie lange ist sein Zertifikat noch gültig, was antwortet er auf eine HTTP-Anfrage? Bisher konnte nextDash nur fragen, ob eine Seite lädt.",
     "overviewNewFeatureNetTestsHow": "Der Tab Tests eines Lesezeichens (Taste 4 im Seitenpanel der Lesezeichen-Ansicht) enthält bis zu sechs Prüfungen: TCP, Ping, DNS, TLS, HTTP-Details und JSON. Führe eine einmal aus, um sofort nachzusehen, oder plane sie mit Verlauf und Benachrichtigungen. Die Prüfungen erscheinen als Chips in den Zeilen, in der Glocke, in einem Netzwerktests-Widget und auf der Statusseite.",
@@ -11258,7 +11261,12 @@
     "overviewNewFeatureNewFeedPostsWhat": "Sobald du einen Feed beobachtest, holt nextDash seine zehn neuesten Beiträge und öffnet sie in einem Popover an der Zeile des Lesezeichens, damit du sofort siehst, was du beobachtest.",
     "overviewNewFeatureNewFeedPostsHow": "Klicke mit rechts auf ein Lesezeichen und wähle Diesen Feed beobachten…, oder drücke w darauf.",
     "overviewNewFeatureNewFeedPostsEnable": "Standardmäßig an, am Computer und auf dem Handy.",
-    "overviewNewFeatureNewFeedPostsCta": "Beobachtete Feeds öffnen →"
+    "overviewNewFeatureNewFeedPostsCta": "Beobachtete Feeds öffnen →",
+    "overviewNewFeatureNetTrendsTitle": "Antwortzeit-Verläufe für Netzwerkprüfungen",
+    "overviewNewFeatureNetTrendsWhat": "Ein grünes Häkchen sagt nicht, dass ein Dienst langsamer wird. Eine Prüfung, die Millisekunden misst, zeichnet jetzt ihre Antwortzeit, sodass ein Dienst, der über Tage kriecht, vor dem Ausfall auffällt.",
+    "overviewNewFeatureNetTrendsHow": "Öffne den Tab Tests eines Lesezeichens: Jede Prüfung zeigt ihren letzten Tag als kleine Linie, und eine geöffnete Prüfung zeichnet 24 Stunden, 7 Tage oder 30 Tage mit der Langsam-Grenze und den fehlgeschlagenen Prüfungen.",
+    "overviewNewFeatureNetTrendsEnable": "Standardmäßig an. Es wird nichts zusätzlich gespeichert; das Diagramm liest den Verlauf, den deine Prüfungen ohnehin führen.",
+    "overviewNewFeatureNetTrendsCta": "Prüfungen öffnen →"
   },
   "colors": {
     "title": "themenanpassung",
@@ -12088,7 +12096,7 @@
     "secChecks": "Prüfungen",
     "helpMore": "Mehr Infos",
     "helpTestsTitle": "Was Tests macht",
-    "helpTestsBody": "Eine Prüfung beobachtet nach Zeitplan eine Sache an diesem Lesezeichen: Erreichbarkeit, DNS, das Zertifikat, eine Antwort oder einen JSON-Wert. Sie führt einen Verlauf und meldet sich über die Meldungsregeln des Lesezeichens.\n**Einmal ausführen** schaut jetzt sofort nach und speichert nichts. Öffne diesen Tab mit [[4]].\n**Prüfungen** zählt die geplanten Prüfungen; **down** die, die gerade fehlschlagen. **Up 24 h** ist der Durchschnitt ihrer letzten 24 Stunden. Ausgeschaltete oder nicht gemessene Prüfungen bleiben außen vor.",
+    "helpTestsBody": "Eine Prüfung beobachtet nach Zeitplan eine Sache an diesem Lesezeichen: Erreichbarkeit, DNS, das Zertifikat, eine Antwort oder einen JSON-Wert. Sie führt einen Verlauf und meldet sich über die Meldungsregeln des Lesezeichens.\n**Einmal ausführen** schaut jetzt sofort nach und speichert nichts. Öffne diesen Tab mit [[4]].\n**Prüfungen** zählt die geplanten Prüfungen; **down** die, die gerade fehlschlagen. **Up 24 h** ist der Durchschnitt ihrer letzten 24 Stunden. Ausgeschaltete oder nicht gemessene Prüfungen bleiben außen vor.\n**Antwortzeit.** Eine Prüfung, die Millisekunden misst, zeichnet ihren letzten Tag als kleine Linie neben ihrem Namen. Öffne eine Prüfung, um 24 Stunden, 7 Tage oder 30 Tage zu sehen, mit der Langsam-Grenze und den fehlgeschlagenen Prüfungen.",
     "helpStatusTitle": "Was die Zustände bedeuten",
     "helpStatusBody": "**Up**, **down**, **Warnung** (zum Beispiel ein Zertifikat, das bald abläuft) und **langsam** (noch erreichbar).\n**Über TCP**: Ping ist auf TCP ausgewichen, weil ICMP nicht erlaubt ist. **Nicht gemessen**: Ping ist aus, ICMP oder der Host wird vom Schutzmechanismus blockiert, oder ein eigener Host ist ausgeschaltet. Das ist kein Ausfall, daher gibt es keine Meldung.",
     "helpRunTitle": "Einmal ausführen",
@@ -12439,6 +12447,28 @@
     "jsonPath": "Pfad",
     "jsonFound": "Gefunden",
     "jsonExpected": "Erwartet"
+  },
+  "nettrend": {
+    "title": "Antwortzeit",
+    "average": "Durchschnitt",
+    "slowest": "Langsamste",
+    "failed": "Fehlgeschlagen",
+    "limit": "Grenzwert",
+    "range": "Zeitraum",
+    "r24h": "24 Std.",
+    "r7d": "7 T",
+    "r30d": "30 T",
+    "spark": "Antwortzeit, letzte 24 Stunden, jetzt",
+    "summary": "Antwortzeit, {count} Punkte, Durchschnitt {avg}",
+    "avgShort": "Ø",
+    "failedShort": "fehlgeschl.",
+    "peakShort": "Spitze",
+    "yes": "ja",
+    "loading": "Wird geladen…",
+    "empty": "In diesem Zeitraum wurde noch nichts gemessen.",
+    "error": "Der Verlauf konnte nicht gelesen werden.",
+    "dayNote": "Ein Punkt pro Tag. Bei 24 Std. und 7 T siehst du die Spitzen innerhalb eines Tages.",
+    "weekNote": "Die letzten Tage stehen in Zwei-Stunden-Schritten, frühere Tage je ein Punkt."
   },
   "mobile": {
     "status": {

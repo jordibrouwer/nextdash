@@ -692,6 +692,7 @@
         }).join('');
         return `
             <section class="digest-part digest-tone--accent" data-digest-part="overview">
+                ${snapshot.summary ? `<p class="digest-plain" data-digest-plain>${esc(snapshot.summary)}</p>` : ''}
                 ${chartsHtml(snapshot)}
                 <div class="digest-lines digest-lines--overview">${rows}</div>
             </section>`;

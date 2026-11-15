@@ -64,7 +64,9 @@ class DashboardNetBadges {
         if (this.model()) return Promise.resolve(true);
         const load = window.LazyScript?.loadScriptOnce;
         if (!load) return Promise.resolve(false);
+        // The sparkline of the preview card comes with it: a few hundred bytes.
         return load('js/shared/net-checks-model.js', 'netChecksModel', () => Boolean(window.NetChecksModel))
+            .then(() => load('js/shared/net-trend.js', 'netTrend', () => Boolean(window.NetTrend)).catch(() => {}))
             .then(() => true, () => false);
     }
 

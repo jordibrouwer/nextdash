@@ -4737,7 +4737,10 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	 * readable text -- which is not for display but is the second soft-404
 	 * signal, the one that sees pages that lost their article without saying so.
 	 */
+	// The site's name is read from the raw title, whose tail is where a
+	// publisher puts it; only then is the title cleaned.
 	preview.SiteName = extractSiteName(htmlBody, preview.Title)
+	applyTitleCleanup(&preview)
 	preview.Author = extractAuthor(htmlBody)
 	preview.PublishedAt = extractPublishedAt(htmlBody)
 	preview.ContentLength = readableTextLength(string(bodySample))
@@ -6431,7 +6434,8 @@ func (h *Handlers) fetchPageTitleSafeCtx(ctx context.Context, urlStr string) str
 	if title == "" {
 		return ""
 	}
-	return strings.Join(strings.Fields(title), " ")
+	title = strings.Join(strings.Fields(title), " ")
+	return cleanPageTitle(title, "", extractDomain(urlStr))
 }
 
 // findBookmarkByURLKey returns the first bookmark anywhere holding this

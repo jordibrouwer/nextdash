@@ -4894,6 +4894,51 @@ body.no-animations .bookmarks-list.reorder-container::after {
 .bookmark-preview-card-facts dd.is-warn b { color: var(--accent-warning, #F59E0B); }
 .bookmark-preview-card-facts dd.is-bad b { color: var(--accent-error, #EF4444); }
 
+/* The response-time sparkline of a network check (Tests tab head, widget rows,
+   preview card). Tokens only. */
+.net-spark {
+    display: inline-block;
+    vertical-align: middle;
+    overflow: visible;
+}
+
+.net-spark-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.net-spark-pt,
+.net-spark-end {
+    fill: var(--accent-primary);
+}
+
+.net-spark-end.is-slow {
+    fill: var(--accent-warning);
+}
+
+.net-spark-fail {
+    fill: var(--accent-error);
+}
+
+.net-spark-thr {
+    stroke: var(--accent-warning);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0.7;
+}
+
+/* A network check's last day beside its value (peek and pinned). */
+.bookmark-preview-card-spark {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+    line-height: 0;
+    vertical-align: middle;
+}
+
 .bookmark-preview-card-facts dd kbd {
     font-family: var(--font-family-mono, monospace);
     font-size: calc(var(--font-size-controls) * 0.78);

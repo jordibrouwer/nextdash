@@ -52,7 +52,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
 
 🌐 **Website:** [nextdash.cc](https://nextdash.cc)
 
-🌐 **Dev log:** [brewedbits.dev](https://brewedbits.dev)
+🌐 **Dev log:** [www.jordibrw.nl](https://www.jordibrw.nl)
 
 🌐 **Demo:** [demo.nextdash.cc](https://demo.nextdash.cc)
 

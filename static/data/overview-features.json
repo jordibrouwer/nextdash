@@ -3077,6 +3077,22 @@
         "section": "feed-watch"
       },
       "since": "v1.29.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureNetTrendsTitle",
+      "titleFallback": "Response-time trends for network checks",
+      "whatKey": "config.overviewNewFeatureNetTrendsWhat",
+      "whatFallback": "A green tick does not say a service is getting slower. A check that measures milliseconds now draws its response time, so a service that creeps up over days shows before it fails.",
+      "howKey": "config.overviewNewFeatureNetTrendsHow",
+      "howFallback": "Open a bookmark’s Tests tab: each check shows its last day as a small line, and opening a check draws 24 hours, 7 days or 30 days with the slow limit and the failed checks marked.",
+      "enableKey": "config.overviewNewFeatureNetTrendsEnable",
+      "enableFallback": "On by default. Nothing extra is stored; the chart reads the history your checks already keep.",
+      "ctaKey": "config.overviewNewFeatureNetTrendsCta",
+      "ctaFallback": "Open Checks →",
+      "go": {
+        "section": "monitoring"
+      },
+      "since": "v1.29.2"
     }
   ]
 }

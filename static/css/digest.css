@@ -414,6 +414,14 @@ body.no-animations .digest-days-fill {
     color: var(--text-primary);
 }
 
+/* The week in a few plain sentences, first in the overview. */
+.digest-plain {
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-size: var(--digest-text);
+    line-height: 1.5;
+    color: var(--text-secondary, var(--text-primary));
+}
+
 /* The week in figures, above the list: each next to the week before. */
 .digest-stats {
     display: grid;

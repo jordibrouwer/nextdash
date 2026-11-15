@@ -509,6 +509,32 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
     border-radius: var(--radius-2, 6px);
 }
 
+/* The turned arrow at the end of the name field: the page's own title. */
+.bookmark-form-modal-body .bookmark-form-name-wrap {
+    position: relative;
+    display: block;
+}
+.bookmark-form-modal-body .bookmark-form-name-wrap.has-restore .bookmark-inline-input {
+    padding-inline-end: 2.1rem;
+}
+.bookmark-form-modal-body .bookmark-form-name-restore {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0.35rem;
+    display: flex;
+    align-items: center;
+    padding: 0 0.3rem;
+    border: 0;
+    background: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+}
+.bookmark-form-modal-body .bookmark-form-name-restore[hidden] { display: none; }
+.bookmark-form-modal-body .bookmark-form-name-restore:hover,
+.bookmark-form-modal-body .bookmark-form-name-restore:focus-visible {
+    color: var(--text-primary);
+}
+
 .bookmark-form-modal-body .bookmark-form-name-action {
     padding: 0;
     border: 0;
