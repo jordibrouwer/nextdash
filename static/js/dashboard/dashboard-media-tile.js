@@ -70,6 +70,14 @@
         playingDirect: ['dashboard.widgetMediaPlayingDirect', 'Direct play'],
         playingTranscode: ['dashboard.widgetMediaPlayingTranscode', 'Transcoding'],
         playingLeft: ['dashboard.widgetMediaPlayingLeft', '−{n} min'],
+        items: ['dashboard.widgetMediaItems', '{n} items'],
+        yearAgo: ['dashboard.widgetMediaYearAgo', '1 year ago'],
+        yearsAgo: ['dashboard.widgetMediaYearsAgo', '{n} years ago'],
+        slidePrev: ['dashboard.widgetMediaSlidePrev', 'Previous photo'],
+        slideNext: ['dashboard.widgetMediaSlideNext', 'Next photo'],
+        slidePause: ['dashboard.widgetMediaSlidePause', 'Pause the slideshow'],
+        slidePlay: ['dashboard.widgetMediaSlidePlay', 'Play the slideshow'],
+        slideCount: ['dashboard.widgetMediaSlideCount', '{n} of {total}'],
     };
 
     /* A glyph per kind of entity; Home Assistant's own mdi: icons would need a font. */
@@ -274,8 +282,33 @@
         return agoText(dash, widget, item.addedAt);
     }
 
+    /** A date as the reader's own locale writes it: "5 Jul 2024". */
+    function dateText(ms) {
+        if (!Number(ms)) return '';
+        // Immich's local time is wall-clock time labelled UTC: read it as that.
+        return new Date(Number(ms)).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+    }
+
+    const isPhoto = (item) => item?.kind === 'photo' || item?.kind === 'video';
+
     function titleText(item) {
+        // A photo's file name says nothing; the day it was taken does.
+        if (isPhoto(item) && Number(item.when) > 0) return dateText(item.when);
         return item.subtitle ? `${item.title} — ${item.subtitle}` : String(item.title || '');
+    }
+
+    /** "On this day": how many years back the photo is, or nothing. */
+    function yearsAgoText(dash, widget, item) {
+        if (item.libraryId !== 'memories' || !Number(item.year)) return '';
+        const n = new Date().getFullYear() - Number(item.year);
+        if (n < 1) return '';
+        return say(dash, widget, n === 1 ? 'yearAgo' : 'yearsAgo', { n });
+    }
+
+    /** m:ss for a video's length. */
+    function clock(seconds) {
+        const total = Math.max(0, Math.round(Number(seconds) || 0));
+        return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
     }
 
     function metaText(dash, widget, item, { wide = false } = {}) {
@@ -286,6 +319,14 @@
             const how = say(dash, widget, item.method === 'transcode' ? 'playingTranscode' : 'playingDirect');
             return [item.who, item.device, how, left].filter(Boolean).join(' · ');
         }
+        if (isPhoto(item)) {
+            return [dateText(item.when), yearsAgoText(dash, widget, item)].filter(Boolean).join(' · ');
+        }
+        if (item.kind === 'album') {
+            return [item.count > 0 ? say(dash, widget, 'items', { n: item.count }) : '', item.who,
+                Number(item.addedAt) > 0 ? agoText(dash, widget, item.addedAt) : ''].filter(Boolean).join(' · ');
+        }
+        if (item.kind === 'person') return '';
         const parts = [item.library];
         if (wide && item.year) parts.push(String(item.year));
         if (wide && item.genres?.length) parts.push(item.genres.slice(0, 2).join(', '));
@@ -337,6 +378,10 @@
             box.appendChild(img);
         } else {
             missing();
+        }
+        if (item.kind === 'video') {
+            box.appendChild(textBlock('span', 'media-badge media-badge--video',
+                Number(item.seconds) > 0 ? `▶ ${clock(item.seconds)}` : '▶'));
         }
         if (item.played) box.appendChild(textBlock('span', 'media-badge media-badge--played', '✓'));
         if (item.paused) box.appendChild(textBlock('span', 'media-badge', '⏸'));
@@ -670,12 +715,19 @@
         strip.className = 'media-strip';
         shown.forEach((item, at) => {
             const cell = itemButton(dash, widget, item, 'media-poster');
-            cell.append(
-                picture(item, 'poster'),
-                textBlock('span', 'media-caption', item.title),
-                wideOnly(textBlock('span', 'media-meta',
-                    [item.year, item.left || timeText(dash, widget, item)].filter(Boolean).join(' · '))),
-            );
+            if (isPhoto(item) || item.kind === 'album' || item.kind === 'person') {
+                cell.append(picture(item, 'poster'));
+                if (!isPhoto(item)) cell.append(textBlock('span', 'media-caption', item.title));
+                const meta = metaText(dash, widget, item);
+                if (meta) cell.append(wideOnly(textBlock('span', 'media-meta', meta)));
+            } else {
+                cell.append(
+                    picture(item, 'poster'),
+                    textBlock('span', 'media-caption', item.title),
+                    wideOnly(textBlock('span', 'media-meta',
+                        [item.year, item.left || timeText(dash, widget, item)].filter(Boolean).join(' · '))),
+                );
+            }
             if (item.progress !== undefined && item.progress !== null) cell.appendChild(progressBar(item));
             if (at >= NARROW_STRIP) wideOnly(cell);
             strip.appendChild(cell);
@@ -685,7 +737,7 @@
     }
 
     function drawHero(wrap, dash, widget, items) {
-        const [first, ...rest] = pickMixed(items, rows(widget));
+        const [first, ...rest] = pickMixed(items, rows(widget), serviceOf(widget).keepOrder === true);
         const layout = document.createElement('div');
         layout.className = 'media-hero-layout';
 
@@ -711,20 +763,200 @@
     function drawGrid(wrap, dash, widget, items) {
         const grid = document.createElement('div');
         grid.className = 'media-grid';
-        pickMixed(items, rows(widget)).forEach((item) => {
+        pickMixed(items, rows(widget), serviceOf(widget).keepOrder === true).forEach((item) => {
             const cell = itemButton(dash, widget, item, 'media-poster');
-            cell.append(
-                picture(item, 'poster'),
-                wideOnly(textBlock('span', 'media-caption', item.title)),
-                wideOnly(textBlock('span', 'media-meta', item.library)),
-            );
+            if (isPhoto(item) || item.kind === 'album' || item.kind === 'person') {
+                cell.append(picture(item, 'poster'));
+                if (!isPhoto(item)) cell.append(wideOnly(textBlock('span', 'media-caption', item.title)));
+                const meta = metaText(dash, widget, item);
+                if (meta) cell.append(wideOnly(textBlock('span', 'media-meta', meta)));
+            } else {
+                cell.append(
+                    picture(item, 'poster'),
+                    wideOnly(textBlock('span', 'media-caption', item.title)),
+                    wideOnly(textBlock('span', 'media-meta', item.library)),
+                );
+            }
             if (item.progress !== undefined && item.progress !== null) cell.appendChild(progressBar(item));
             grid.appendChild(cell);
         });
         wrap.appendChild(grid);
     }
 
-    const LAYOUTS = { list: drawList, strip: drawStrip, hero: drawHero, grid: drawGrid };
+    /*
+     * One photo, big: the frame, and every slide of the slideshow.
+     *
+     * The backdrop is the large picture of a service (Immich's preview); a
+     * caption is the date it was taken, when the widget is set to show one.
+     */
+    function slideNode(dash, widget, item) {
+        const slide = itemButton(dash, widget, item, 'media-slide');
+        slide.append(picture(item, 'backdrop'));
+        if (widget?.config?.caption === 'date') {
+            const line = metaText(dash, widget, item);
+            if (line) slide.append(textBlock('span', 'media-slide-caption', line));
+        }
+        return slide;
+    }
+
+    function drawFrame(wrap, dash, widget, items) {
+        const box = document.createElement('div');
+        box.className = 'media-slides media-slides--frame';
+        box.appendChild(slideNode(dash, widget, items[0]));
+        wrap.appendChild(box);
+    }
+
+    /*
+     * Where each slideshow was: which photo, whether it plays, and when it last
+     * moved. A redraw on the next answer builds a new box, and a box that began
+     * again would restart the clock (a slideshow of 120 seconds a photo on a
+     * 60 second refresh would never move), forget a pause, and go back to the
+     * first photo.
+     */
+    const slideState = new Map();
+
+    const calmMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    /*
+     * The slideshow: one clock for the widget, not for the answer.
+     *
+     * The answer holds every photo, so a slide costs no request but its own
+     * picture, and the next one is loaded before it is needed. The clock
+     * stops by itself when its tile is redrawn or removed (the box is no
+     * longer in the page), waits while the tab is hidden, while the pointer is
+     * over it and while the keyboard is on a control. A mouse click on a
+     * button does not hold it: the button keeps focus after a click in
+     * Chrome and Firefox, and a slideshow that waited for focus to leave would
+     * never resume after Play. Someone who asked their system for less motion
+     * starts paused, with no fade.
+     */
+    function drawSlides(wrap, dash, widget, items) {
+        const list = items.filter((item) => item.backdrop || item.poster);
+        if (!list.length) {
+            wrap.appendChild(textBlock('p', 'dashboard-widget-empty', say(dash, widget, 'nothing')));
+            return;
+        }
+        const config = widget?.config || {};
+        const calm = calmMotion();
+        const interval = Math.min(300, Math.max(3, Number(config.interval) || 8)) * 1000;
+        const transition = calm ? 'none' : (['fade', 'slide', 'none'].includes(config.transition) ? config.transition : 'fade');
+        const signature = list.map((item) => item.id).join(',');
+        const saved = slideState.get(widget.id);
+        const same = saved && saved.signature === signature;
+        const state = {
+            signature,
+            index: same ? saved.index % list.length : 0,
+            playing: list.length > 1 && (same ? saved.playing : (config.autoplay !== false && !calm)),
+            moved: same ? saved.moved : Date.now(),
+        };
+        slideState.set(widget.id, state);
+        let hovered = false;
+
+        const box = document.createElement('div');
+        box.className = 'media-slides';
+        box.dataset.transition = transition;
+        box.setAttribute('role', 'group');
+        box.setAttribute('aria-roledescription', 'carousel');
+        const stage = document.createElement('div');
+        stage.className = 'media-slides-stage';
+        box.appendChild(stage);
+
+        const count = textBlock('span', 'media-slides-count', '');
+        const control = (className, glyph, wordKey) => {
+            const button = textBlock('button', `media-slides-btn ${className}`, glyph);
+            button.type = 'button';
+            button.setAttribute('aria-label', say(dash, widget, wordKey));
+            return button;
+        };
+        const prev = control('media-slides-prev', '‹', 'slidePrev');
+        const toggle = control('media-slides-toggle', state.playing ? '❚❚' : '▶', state.playing ? 'slidePause' : 'slidePlay');
+        const next = control('media-slides-next', '›', 'slideNext');
+        if (list.length > 1) {
+            const bar = document.createElement('div');
+            bar.className = 'media-slides-controls';
+            bar.append(prev, toggle, count, next);
+            box.appendChild(bar);
+        }
+
+        const preload = (at) => {
+            const item = list[(at + list.length) % list.length];
+            const src = item.backdrop || item.poster;
+            if (src) { const img = new Image(); img.src = src; }
+        };
+        let current = null;
+        const show = (to, first = false) => {
+            const leaving = current;
+            const hadFocus = !!leaving && leaving.contains(document.activeElement);
+            const forward = first || to >= state.index;
+            state.index = (to + list.length) % list.length;
+            state.moved = Date.now();
+            slideState.set(widget.id, state);
+            const entering = slideNode(dash, widget, list[state.index]);
+            entering.classList.add('is-entering');
+            entering.dataset.direction = forward ? 'forward' : 'back';
+            if (leaving) leaving.dataset.direction = entering.dataset.direction;
+            current = entering;
+            stage.appendChild(entering);
+            const settle = () => {
+                entering.classList.remove('is-entering');
+                entering.classList.add('is-current');
+                // Every other slide goes, however many were still on their way
+                // out when a quick second click came: only the one that is
+                // leaving now is allowed its transition.
+                [...stage.children].forEach((node) => { if (node !== entering && node !== leaving) node.remove(); });
+                if (leaving) {
+                    leaving.classList.remove('is-current');
+                    leaving.classList.add('is-leaving');
+                    if (transition === 'none') leaving.remove();
+                    else setTimeout(() => leaving.remove(), 700);
+                }
+                if (hadFocus) entering.focus({ preventScroll: true });
+            };
+            if (first || transition === 'none') settle();
+            else requestAnimationFrame(() => requestAnimationFrame(settle));
+            count.textContent = say(dash, widget, 'slideCount', { n: state.index + 1, total: list.length });
+            preload(state.index + 1);
+        };
+
+        const setPlaying = (on) => {
+            state.playing = on && list.length > 1;
+            state.moved = Date.now();
+            toggle.textContent = state.playing ? '❚❚' : '▶';
+            toggle.setAttribute('aria-label', say(dash, widget, state.playing ? 'slidePause' : 'slidePlay'));
+        };
+        prev.addEventListener('click', () => show(state.index - 1));
+        next.addEventListener('click', () => show(state.index + 1));
+        toggle.addEventListener('click', () => setPlaying(!state.playing));
+        box.addEventListener('pointerenter', () => { hovered = true; });
+        box.addEventListener('pointerleave', () => { hovered = false; state.moved = Date.now(); });
+        box.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') { event.preventDefault(); show(state.index - 1); }
+            if (event.key === 'ArrowRight') { event.preventDefault(); show(state.index + 1); }
+        });
+
+        wrap.appendChild(box);
+        show(state.index, true);
+        state.moved = same ? saved.moved : Date.now();
+        // A short beat, so a photo is changed within a fraction of a second of
+        // being due, whichever box was drawn when it began to be due.
+        const timer = setInterval(() => {
+            if (!box.isConnected) { clearInterval(timer); return; }
+            if (!state.playing || document.hidden || hovered) return;
+            // Keyboard focus on a control holds it; a mouse click's does not.
+            if (box.querySelector(':focus-visible')) return;
+            if (Date.now() - state.moved >= interval) show(state.index + 1);
+        }, 250);
+    }
+
+    const LAYOUTS = { list: drawList, strip: drawStrip, hero: drawHero, grid: drawGrid, frame: drawFrame, slides: drawSlides };
+
+    /** What a service asks of its panel: square photos, round faces, how a picture fits. */
+    function decorate(wrap, widget, service) {
+        wrap.classList.add('media-panel');
+        if (service.photos) wrap.classList.add('media-panel--photos');
+        if (service.round) wrap.classList.add('media-panel--round');
+        wrap.dataset.fit = widget?.config?.fit === 'contain' ? 'contain' : 'cover';
+    }
 
     /*
      * The detail card: the facts first, the service one button away.
@@ -860,7 +1092,7 @@
         if (typeof service.draw === 'function') {
             const utils = window.DashboardWidgetUtils;
             const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
-            wrap.classList.add('media-panel');
+            decorate(wrap, widget, service);
             service.draw(wrap, dash, widget, items, result);
             if (focused) wrap.querySelector(focused)?.focus({ preventScroll: true });
             if (result.stale) {
@@ -885,7 +1117,7 @@
 
         const utils = window.DashboardWidgetUtils;
         const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
-        wrap.classList.add('media-panel');
+        decorate(wrap, widget, service);
         LAYOUTS[layout](wrap, dash, widget, items, result, activeTab);
         if (totals) wrap.prepend(totals);
         if (focused) wrap.querySelector(focused)?.focus({ preventScroll: true });
