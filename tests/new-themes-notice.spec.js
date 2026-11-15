@@ -27,10 +27,26 @@ async function asInstall(page, { fresh }) {
 }
 
 async function open(page) {
+    /*
+     * The page has to know the kind of install from its first read of the settings. The popover
+     * takes its one look 3 s after load and stops for good when it is not wanted; flipping
+     * firstRunInstall after load lost that race on a slow runner, where the store's fresh install
+     * was still in the page at the 3 s mark.
+     */
+    const fresh = page._ndFresh === true;
+    await page.route(/\/api\/settings(\?.*)?$/, async (route) => {
+        const res = await route.fetch();
+        const body = await res.json().catch(() => null);
+        if (!body || typeof body !== 'object' || Array.isArray(body)) return route.fulfill({ response: res });
+        // A GET answers with the settings; a save answers with them under .settings.
+        const json = route.request().method() === 'GET'
+            ? { ...body, firstRunInstall: fresh }
+            : { ...body, ...(body.settings ? { settings: { ...body.settings, firstRunInstall: fresh } } : {}) };
+        await route.fulfill({ response: res, json });
+    });
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
-    await page.evaluate((fresh) => { window.dashboardInstance.settings.firstRunInstall = fresh; }, page._ndFresh === true);
     // The promo is put back to "not asked" in the page's copy as well.
     await page.evaluate(() => {
         const state = window.dashboardInstance.settings.discoverabilityState || {};

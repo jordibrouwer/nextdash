@@ -37,6 +37,11 @@ async function chooseTheme(page, themeId) {
 }
 
 async function openAppearance(page) {
+    // The Random theme promo opens under the picker a moment after Appearance does, and
+    // on a slow runner it lands over the theme list and takes the click.
+    await page.addInitScript(() => {
+        try { localStorage.setItem('nextdash:config-setting-promo-seen-v1:random-theme-v2', '1'); } catch { /* private mode */ }
+    });
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);

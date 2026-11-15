@@ -121,9 +121,19 @@ test('it fades with a transition, and rises in when it comes back from hidden', 
     // Off and on again: the strip comes back through the entering animation.
     await page.keyboard.press('Shift+S');
     await expect.poll(() => enabled(page)).toBe(false);
+    // Heard, not looked for: a 450 ms rise can be over before a poll on a slow runner looks.
+    // Its end as well as its start, as Chromium can skip the start of a rise out of hidden.
+    await page.evaluate(() => {
+        window.__modeStripIn = false;
+        const heard = (event) => {
+            if (event.animationName === 'mode-strip-in' && event.target.closest?.('.mode-strip')) window.__modeStripIn = true;
+        };
+        document.addEventListener('animationstart', heard);
+        document.addEventListener('animationend', heard);
+    });
     await page.keyboard.press('Shift+S');
     await expect.poll(() => enabled(page)).toBe(true);
-    await expect.poll(() => strip(page).evaluate((el) => el.getAnimations().map((a) => a.animationName)), { timeout: 3_000 }).toContain('mode-strip-in');
+    await expect.poll(() => page.evaluate(() => window.__modeStripIn), { timeout: 3_000 }).toBe(true);
 });
 
 test('the strip stays at the top of the window once the page name has scrolled away', async ({ page }) => {
