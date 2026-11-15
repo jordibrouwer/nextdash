@@ -3093,6 +3093,71 @@
         "section": "monitoring"
       },
       "since": "v1.29.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureDockerHostsTitle",
+      "titleFallback": "Containers on more than one Docker host",
+      "whatKey": "config.overviewNewFeatureDockerHostsWhat",
+      "whatFallback": "A Raspberry Pi or a second server was out of sight. Each extra host now gets a tab in the Containers view, with its own list, side panel and logs.",
+      "howKey": "config.overviewNewFeatureDockerHostsHow",
+      "howFallback": "Config → Containers → Connection → Other Docker hosts. Add up to four hosts through a Docker socket proxy or TLS; Test says why one does not answer.",
+      "enableKey": "config.overviewNewFeatureDockerHostsEnable",
+      "enableFallback": "Off until you add a host. A host is read-only until you switch on Allow actions for it.",
+      "ctaKey": "config.overviewNewFeatureDockerHostsCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "section": "containers"
+      },
+      "since": "v1.30.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureImmichWidgetsTitle",
+      "titleFallback": "Your Immich photos on the dashboard",
+      "whatKey": "config.overviewNewFeatureImmichWidgetsWhat",
+      "whatFallback": "Photos, a slideshow, albums, people and the state of your server, from your own Immich, without leaving nextDash.",
+      "howKey": "config.overviewNewFeatureImmichWidgetsHow",
+      "howFallback": "Config → Widgets → Add a widget, pick an Immich kind, fill in the address and an API key and press Connect. Failed Immich jobs get a row in the bell.",
+      "enableKey": "config.overviewNewFeatureImmichWidgetsEnable",
+      "enableFallback": "Off until you add one. The key stays on the server.",
+      "ctaKey": "config.overviewNewFeatureImmichWidgetsCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.30.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWidgetEverywhereTitle",
+      "titleFallback": "One widget on every page",
+      "whatKey": "config.overviewNewFeatureWidgetEverywhereWhat",
+      "whatFallback": "The weather or what is playing used to be copied onto each page by hand.",
+      "howKey": "config.overviewNewFeatureWidgetEverywhereHow",
+      "howFallback": "In edit mode, pick a widget and set Show on pages to Every page. Each page gets a copy you move and resize there; the name and settings are shared.",
+      "enableKey": "config.overviewNewFeatureWidgetEverywhereEnable",
+      "enableFallback": "Off for every widget until you switch it on.",
+      "ctaKey": "config.overviewNewFeatureWidgetEverywhereCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.30.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMoreHolidayThemesTitle",
+      "titleFallback": "Three more Christmas themes",
+      "whatKey": "config.overviewNewFeatureMoreHolidayThemesWhat",
+      "whatFallback": "The season now has six themes: a snow globe, a cut-paper advent village and a theatre with a curtain.",
+      "howKey": "config.overviewNewFeatureMoreHolidayThemesHow",
+      "howFallback": "Shift+A opens the theme studio; the Holidays group lists Snow Globe, Paper Advent and Nutcracker Theatre, each in light and dark.",
+      "enableKey": "config.overviewNewFeatureMoreHolidayThemesEnable",
+      "enableFallback": "Off until you pick one. Motion stops with reduced motion.",
+      "ctaKey": "config.overviewNewFeatureMoreHolidayThemesCta",
+      "ctaFallback": "Open Theme →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "theme"
+      },
+      "since": "v1.30.0"
     }
   ]
 }

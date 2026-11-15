@@ -1,0 +1,89 @@
+{
+  "tag": "v1.30.0",
+  "date": "16 November 2026",
+  "releasedAt": "2026-11-16",
+  "modalLead": "<strong>Containers on more than one Docker host</strong>, <strong>five Immich widgets</strong>, a widget you can put on <strong>every page</strong> and links you can <strong>drag in</strong> from another window.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Containers on more than one Docker host.</strong> Add up to four more hosts under Config → Containers and each gets a tab in the Containers view, with its own list, side panel and logs. A host is read-only until you allow actions for it, and the update check works on every host.",
+          "highlight": true,
+          "title": "Containers on more than one Docker host",
+          "link": "#config/containers",
+          "linkLabel": "Add a host",
+          "media": {
+            "image": "media/v1.30.0-docker-hosts.jpg",
+            "alt": "Config, Containers, Connection: the Other Docker hosts panel with a host called Raspberry Pi, its address, a green tick with the Docker version and the buttons Allow actions, Test, Edit and Remove"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Five Immich widgets.</strong> Photos, a slideshow, albums, people and the state of your server, read from your own Immich with an API key you set once. A failed background job in Immich gets a row in the bell.",
+          "highlight": true,
+          "title": "Your Immich photos on the dashboard",
+          "link": "#config/widgets",
+          "linkLabel": "Add an Immich widget",
+          "media": {
+            "image": "media/v1.30.0-immich-widgets.jpg",
+            "alt": "The five Immich widgets on one page: a row of photos with their dates, albums with covers, a slideshow showing one large photo, two people and the server status with the totals, the disk and three failed jobs"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>One widget on every page.</strong> A widget's panel in edit mode has Show on pages: Every page puts a copy on each page, which you move and resize there, while its name and settings stay shared. Deleting a copy takes it off that page only.",
+          "highlight": true,
+          "title": "One widget on every page",
+          "link": "#config/widgets",
+          "linkLabel": "Open Widgets",
+          "media": {
+            "image": "media/v1.30.0-every-page.jpg",
+            "alt": "A page in edit mode with the panel of the Immich albums widget open: Show on pages with the choices This page and Every page, Every page chosen"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A one-photo frame and a slideshow.</strong> A photo tile can show one large photo with its date, and the slideshow changes photo every few seconds, waits while you hover it and starts paused when your device asks for less motion."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Drag a link in from another window.</strong> Drop a link or a tab on a category and the bookmark form opens with the address, the title and the category already filled in. Several tabs at once go to the Inbox.",
+          "highlight": true,
+          "title": "Drag a link in from another window"
+        }
+      ]
+    },
+    {
+      "title": "On the phone",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A Watch feeds switch in More.</strong> Turn off everything the watched feeds show on that phone; the feeds stay watched and the desktop notices do not change.",
+          "link": "#config/behavior/general"
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Three more Christmas themes.</strong> Snow Globe, Paper Advent and Nutcracker Theatre, each in light and dark, under Holidays in the theme studio.",
+          "link": "#config/appearance/theme"
+        }
+      ]
+    }
+  ]
+}

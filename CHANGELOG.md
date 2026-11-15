@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.30.0 — 15 November 2026](#v1300--15-november-2026)
+- [v1.30.0 — 16 November 2026](#v1300--16-november-2026)
 - [v1.29.2 — 15 November 2026](#v1292--15-november-2026)
 - [v1.29.1 — 14 November 2026](#v1291--14-november-2026)
 - [v1.29.0 — 13 November 2026](#v1290--13-november-2026)
@@ -147,7 +147,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
-## v1.30.0 — 15 November 2026
+## v1.30.0 — 16 November 2026
 
 Several Docker hosts in the Containers view, a widget you can put on every page, links dragged in from another window, a Watch feeds switch on the phone and three more Christmas themes.
 
@@ -173,6 +173,13 @@ Several Docker hosts in the Containers view, a widget you can put on every page,
 ### Appearance
 
 - **new — Three more Christmas themes in Holidays, each with a dark and a light half.** *Snow Globe* (frost) puts the page inside a glass globe on a wooden base with a brass plate and a turning wind-up key, over a small town with a church, smoking chimneys, a string of lights and two skaters on a frozen pond. The snow lands: it piles up on the top edge of each category, and switching page shakes the globe so the caps come off and the snow swirls before it settles again. *Paper Advent* (paper) is a cut-paper village in four layers, lit from behind, that shifts in depth as the pointer moves, under a punched-out sky with a cut moon, a passing sleigh and a turning Moravian star; from 1 to 24 December one more window is lit each day and today's glows with its number, and paper snowflakes fall. *Nutcracker Theatre* (velvet) opens a red curtain once when the page loads, onto a stage under a gilt arch with swags, tassels and a crest, between tied-back drapes, with two nutcrackers who salute in turn, the Sugar Plum Fairy turning on a pedestal, footlights, sweeping beams, a spotlight that follows the pointer and falling sugar-plum glitter. Motion stops under reduced motion and with Effects off, leaving a still picture (`static/js/theme-holidays.js`, `static/css/theme-holidays.css`, `internal/app/models.go`).
+
+
+### Docs
+
+- **docs — `README.md`, `MANUAL.md` and Config → Help.** The manual gains the five Immich widgets (kinds, settings, key, a screenshot with public-domain photos), the six holiday themes and the new theme counts (223 families, 446 themes); the README counts 63 kinds and mentions Immich, other Docker hosts, a widget on every page and dragging a link in. Help gets paragraphs for a widget on every page, Immich, other Docker hosts, the Watch feeds switch on a phone, the Immich bell row and dragging a link in, and three new tips (`tipAddDrag`, `tipWidgetEverywhere`, `tipHostOtherHosts`).
+- **docs — translations.** 175 strings that existed only as English fallbacks in the code (Docker hosts, Immich, the slideshow, *Show on pages*, the link drop, the Watch feeds switch) are in all six locale files, and seven that `validate:locale-referenced` found missing; five tips nothing referenced any more are gone.
+- **docs — `static/data/whats-new/v1.30.0.json`, its index entry and three pictures under `media/`**; `whats-new-stub.js` moved to `2026.11-dashboard-release-v1.30.0` and `whats-new-v379`, `tests/whats-new-hidden-release.spec.js` follows. Four cards in `overview-features.json` with `since: "v1.30.0"`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
