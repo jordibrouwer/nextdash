@@ -2,16 +2,17 @@ package app
 
 import "testing"
 
-func TestFeedWatchWindowDefaultsTo30(t *testing.T) {
+func TestFeedWatchWindowDefaultsTo60(t *testing.T) {
 	cases := map[string]int{
-		`{}`:                               30,
+		`{}`:                               60,
+		`{"feedWatchWindowMinutes":30}`:    30,
 		`{"feedWatchWindowMinutes":60}`:    60,
 		`{"feedWatchWindowMinutes":15}`:    15,
 		`{"feedWatchWindowMinutes":120}`:   120,
-		`{"feedWatchWindowMinutes":45}`:    30,
-		`{"feedWatchWindowMinutes":0}`:     30,
-		`{"feedWatchWindowMinutes":99999}`: 30,
-		`{"feedWatchWindowMinutes":-5}`:    30,
+		`{"feedWatchWindowMinutes":45}`:    60,
+		`{"feedWatchWindowMinutes":0}`:     60,
+		`{"feedWatchWindowMinutes":99999}`: 60,
+		`{"feedWatchWindowMinutes":-5}`:    60,
 	}
 	for body, want := range cases {
 		h, _ := healthRecheckTestHandlers(t, body)
