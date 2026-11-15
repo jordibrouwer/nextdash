@@ -140,3 +140,43 @@ func TestCarryKeepsOwnHistoryWhenStoredURLsCollide(t *testing.T) {
 		t.Fatalf("took the twin's check state: %d / %q", got.LastChecked, got.LastError)
 	}
 }
+
+// Editing a bookmark's address on the dashboard sends the whole page with the
+// new URL in the same place: the row keeps its network checks.
+func TestAPageSaveKeepsChecksWhenTheAddressIsEdited(t *testing.T) {
+	stored := []Bookmark{
+		{Name: "NAS", URL: "http://nas.lan", Checks: []NetCheck{{ID: "aaaaaaaaaaaa", Type: netTypeTCP, Port: 22}}},
+		{Name: "Other", URL: "https://other.lan"},
+	}
+	next := []Bookmark{
+		{Name: "NAS", URL: "https://nas.lan"},
+		{Name: "Other", URL: "https://other.lan"},
+	}
+	carryServerOwnedBookmarkFields(next, stored)
+	if len(next[0].Checks) != 1 || next[0].Checks[0].ID != "aaaaaaaaaaaa" {
+		t.Fatalf("the checks went with the old address: %+v", next[0].Checks)
+	}
+	if len(next[1].Checks) != 0 {
+		t.Fatalf("the other row got checks: %+v", next[1].Checks)
+	}
+}
+
+// A row whose old address is still in the list (moved elsewhere in it) is not
+// the one that was edited, so a new address beside it starts with none.
+func TestAPageSaveDoesNotHandChecksToANewRowInPlace(t *testing.T) {
+	stored := []Bookmark{
+		{Name: "NAS", URL: "http://nas.lan", Checks: []NetCheck{{ID: "aaaaaaaaaaaa", Type: netTypeTCP, Port: 22}}},
+		{Name: "Other", URL: "https://other.lan"},
+	}
+	next := []Bookmark{
+		{Name: "New", URL: "https://new.lan"},
+		{Name: "NAS", URL: "http://nas.lan"},
+	}
+	carryServerOwnedBookmarkFields(next, stored)
+	if len(next[0].Checks) != 0 {
+		t.Fatalf("a new row took the checks of a row still in the list: %+v", next[0].Checks)
+	}
+	if len(next[1].Checks) != 1 {
+		t.Fatalf("the NAS row lost its checks: %+v", next[1].Checks)
+	}
+}
