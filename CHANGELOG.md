@@ -148,7 +148,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.29.2 — 15 November 2026
 
-Response-time trends for network checks, cleaner page titles, a plain-language digest and a steadier Inbox and test suite.
+Response-time trends for network checks, cleaner page titles, a plain-language digest and a steadier Inbox and test suite — held back from the What's new window (`hideFromModal`) like v1.29.1, so v1.29.0 keeps leading it.
 
 ### Monitoring
 
@@ -178,7 +178,8 @@ Response-time trends for network checks, cleaner page titles, a plain-language d
 
 ### Docs
 
-- **docs — `asset_hashes_gen.go`** refreshed with the changed static files.
+- **docs — Manual, Help and translations.** Manual §5 and §11.14 and the weekly digest say what the title arrow, the response-time chart and the digest sentences do, with new shots (`05-title-restore.jpg`, `11-tests-trend.jpg`) and retakes of the Tests tab and the digest; a Help line, a tip and an Overview entry cover the trend, in six languages.
+- **docs — `static/data/whats-new/v1.29.2.json` and its index entry**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v378`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

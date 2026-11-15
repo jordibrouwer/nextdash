@@ -1,0 +1,38 @@
+{
+  "tag": "v1.29.2",
+  "date": "15 November 2026",
+  "releasedAt": "2026-11-15",
+  "modalLead": "Response-time trends for network checks, cleaner page titles and a digest that opens in plain sentences.",
+  "sections": [
+    {
+      "title": "Monitoring",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Response-time trends for network checks.</strong> A check that measures milliseconds shows its last day as a small line, and opening it draws 24 hours, 7 days or 30 days."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks and digest",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Cleaner page titles.</strong> A login word or the site's own name is taken off a suggested title, and a small arrow brings the original back."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The digest opens with the week in plain sentences.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Watch feeds badge stays clickable until the news is read.</strong> The news window is one hour by default."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inbox rows that load late still rise in.</strong>"
+        }
+      ]
+    }
+  ]
+}
