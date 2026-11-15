@@ -49,6 +49,7 @@
             titleFallback: 'Adding bookmarks',
             tips: [
                 'tipAddPaste',
+                'tipAddDrag',
                 'tipAddImportDestination',
                 'tipAddQuickAdd',
                 'tipAddAnywhere',
@@ -167,6 +168,7 @@
                 'tipGlancesWidget',
                 'tipTuneContainerList',
                 'tipHostHomelabPage',
+                'tipHostOtherHosts',
             ],
         },
         {
@@ -207,6 +209,7 @@
                 'tipTuneWidgetTabs',
                 'tipTuneWidgetSchedule',
                 'tipTuneWidgetMenu',
+                'tipWidgetEverywhere',
                 'tipTuneCustomWidget',
                 'tipTuneAmbientWidgets',
                 'tipTuneClockFace',
