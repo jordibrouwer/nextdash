@@ -175,3 +175,31 @@ func TestRDAPBootstrapFailureIsNotRetriedPerLookup(t *testing.T) {
 		t.Errorf("the list was asked for %d times, want once", transport.calls)
 	}
 }
+
+// The loop of a removed host ends even when a host of the same id is back:
+// otherwise it runs on the removed state, which never samples or saves, and
+// the sampler starts no loop for the new one.
+func TestGlancesLoopOfARemovedHostEndsWhenItsIDIsBack(t *testing.T) {
+	h := hostsSetup(t)
+	hostsDo(h, http.MethodPut, "/api/glances/config", `{"enabled":true,"server":"http://a.lan:61208"}`)
+	hostsDo(h, http.MethodPut, "/api/glances/config?host=new", `{"name":"NAS","server":"http://nas.lan:61208"}`)
+	old := glancesHostByID("nas")
+	if err := glancesRemoveHost("nas"); err != nil {
+		t.Fatal(err)
+	}
+	if cfg, err := glancesAddHost("NAS"); err != nil || cfg.ID != "nas" {
+		t.Fatalf("add again: %+v %v", cfg, err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ended := make(chan struct{})
+	go func() {
+		h.glancesRunHost(ctx, old)
+		close(ended)
+	}()
+	select {
+	case <-ended:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the loop of the removed host is still running")
+	}
+}
