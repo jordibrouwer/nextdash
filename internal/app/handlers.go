@@ -79,10 +79,14 @@ type Handlers struct {
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
-	dockerPruneRunning atomic.Bool // one prune at a time (docker_disk.go)
-	healthReport       BookmarkHealthReport
-	healthReportAt     time.Time
-	healthReportOK     bool
+	// A remote host's check runs alone and does not hold the local one off;
+	// the attempt times keep a host that is down from being asked every tick.
+	dockerRemoteChecks   sync.Map    // host id -> struct{}
+	dockerRemoteAttempts sync.Map    // host id -> time.Time
+	dockerPruneRunning   atomic.Bool // one prune at a time (docker_disk.go)
+	healthReport         BookmarkHealthReport
+	healthReportAt       time.Time
+	healthReportOK       bool
 	// healthReportGen is the store's write count when this report was built.
 	// A cached report whose generation no longer matches describes bookmarks
 	// that have since changed, however recently it was built.
@@ -1678,6 +1682,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		// it to another page. That row is still on its source page until the
 		// delete that follows, holding its shortcut under the old address.
 		MovedFrom string `json:"movedFrom"`
+		// MovedFromPage is the page that row is on. Checks are carried from
+		// that row only; without it the first row with the address elsewhere
+		// was taken, which could be another bookmark's.
+		MovedFromPage int `json:"movedFromPage"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1795,7 +1803,7 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	// brings the ones its stored source holds, never what the client sent.
 	request.Bookmark.Checks = nil
 	if request.AllowDuplicate {
-		request.Bookmark.Checks = checksOfMovedRow(h.store, request.MovedFrom, request.Page)
+		request.Bookmark.Checks = checksOfMovedRow(h.store, request.MovedFrom, request.MovedFromPage, request.Page)
 	}
 
 	addErr := h.store.AddBookmarkToPage(request.Page, request.Bookmark)

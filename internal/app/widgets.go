@@ -168,6 +168,13 @@ const (
 	// WidgetTypeJellystat shows plays, the most viewed and the most active
 	// people from a Jellystat server.
 	WidgetTypeJellystat WidgetType = "jellystat"
+	// The Immich types read one photo library five ways: photos, a slideshow,
+	// albums, people and the server's own state.
+	WidgetTypeImmich          WidgetType = "immich"
+	WidgetTypeImmichSlideshow WidgetType = "immich-slideshow"
+	WidgetTypeImmichAlbums    WidgetType = "immich-albums"
+	WidgetTypeImmichPeople    WidgetType = "immich-people"
+	WidgetTypeImmichStatus    WidgetType = "immich-status"
 	// WidgetTypeBazarr shows missing and fetched subtitles from a Bazarr server.
 	WidgetTypeBazarr WidgetType = "bazarr"
 	// WidgetTypeProwlarr shows how the indexers of a Prowlarr server are doing.
@@ -260,6 +267,11 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypePihole:          {},
 	WidgetTypeJellystat:       {},
 	WidgetTypeBazarr:          {},
+	WidgetTypeImmich:          {},
+	WidgetTypeImmichSlideshow: {},
+	WidgetTypeImmichAlbums:    {},
+	WidgetTypeImmichPeople:    {},
+	WidgetTypeImmichStatus:    {},
 	WidgetTypeProwlarr:        {},
 	WidgetTypeGlances:         {},
 	WidgetTypeNetTests:        {},
@@ -295,6 +307,12 @@ type Widget struct {
 	// VisibleOn limits the widget to one kind of screen: "desktop" or
 	// "mobile". Empty is every screen; see visible_on.go.
 	VisibleOn string `json:"visibleOn,omitempty"`
+	// Everywhere puts a copy of the widget on every page; see
+	// widgets_everywhere.go. EverywhereSkip lists the pages that took theirs off.
+	// A pointer so a save that leaves it out (an older tab) is told apart from
+	// one that says false: only false switches it off.
+	Everywhere     *bool `json:"everywhere,omitempty"`
+	EverywhereSkip []int `json:"everywhereSkip,omitempty"`
 	// Config is whatever that type understands. Never nil after normalisation,
 	// so a renderer can read it without checking.
 	Config map[string]any `json:"config,omitempty"`
@@ -353,6 +371,14 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	// On a character: cut on a byte, a long Chinese title ended in "�".
 	widget.Title = truncateRunes(widget.Title, 80)
 	widget.VisibleOn = normalizeVisibleOn(widget.VisibleOn)
+	if widget.Type == WidgetTypeStack || !widget.everywhereOn() {
+		widget.Everywhere = nil
+		widget.EverywhereSkip = nil
+	} else {
+		on := true
+		widget.Everywhere = &on
+		widget.EverywhereSkip = normalizeEverywhereSkip(widget.EverywhereSkip)
+	}
 	// Config is the client's, so it is narrowed to what this type declares
 	// before it reaches storage -- see sanitizeWidgetConfig.
 	widget.Config = sanitizeWidgetConfig(widget.Type, widget.Config)
@@ -743,7 +769,7 @@ func (fs *FileStore) savePageBlocksLocked(pageID int, widgets []Widget, order []
 	// order, and reading the widgets before taking it wrote back a list that
 	// could miss a widget added in between.
 	if widgets != nil {
-		saved, err := normalizeWidgetsForSave(keepRedactedWidgetAddresses(widgets, page.Widgets))
+		saved, err := normalizeWidgetsForSave(keepEverywhere(keepRedactedWidgetAddresses(widgets, page.Widgets), page.Widgets))
 		if err != nil {
 			return err
 		}
@@ -769,6 +795,14 @@ func (fs *FileStore) savePageBlocksLocked(pageID int, widgets []Widget, order []
 		// not: removing is the edit most worth being able to take back, and the
 		// state before a burst may be from before the widget was set up.
 		fs.recordLayoutSnapshot(pageID, previousWidgets, previousOrder, forceHistory || widgetDisappeared(previousWidgets, now))
+	}
+	// Only when the widgets were part of this save: a drag sends the order alone.
+	// A failed push does not undo the page that was saved: the copies are put
+	// right by the next save of the widget.
+	if widgets != nil {
+		if err := fs.syncEverywhereLocked(pageID, previousWidgets, normalizeWidgets(page.Widgets)); err != nil {
+			logWarn("widgets", "widgets on every page: %v", err)
+		}
 	}
 	return nil
 }

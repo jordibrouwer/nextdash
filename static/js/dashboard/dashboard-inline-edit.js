@@ -3248,6 +3248,9 @@ class DashboardInlineEdit {
                     bookmark: { ...bookmarkState, category },
                     allowDuplicate: true,
                     movedFrom: bookmarkRef.original?.url ?? bookmarkRef.bookmark?.url ?? '',
+                    // The source page, so the server carries the network checks
+                    // of this row and not of the same address on another page.
+                    movedFromPage: Number(sourcePageId) || 0,
                 }),
             });
             if (!addRes.ok) {

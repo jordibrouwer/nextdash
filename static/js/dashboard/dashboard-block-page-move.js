@@ -65,9 +65,14 @@
         return 'category';
     }
 
+    /** A widget that is on every page is already on the other one. */
+    function onEveryPage(dash, id) {
+        return (dash?.widgets || []).some((w) => String(w?.id) === String(id) && w.everywhere === true);
+    }
+
     /** Whether this block can go to another page at all. Tag collections follow their tag. */
     function canMoveToPage(dash, id) {
-        return !dash?.settings?.lockLayout && !String(id ?? '').startsWith('tag:');
+        return !dash?.settings?.lockLayout && !String(id ?? '').startsWith('tag:') && !onEveryPage(dash, id);
     }
 
     /** The page list a collection is filtered by, and how to set it. */
@@ -315,6 +320,9 @@
         const onPage = from === here;
         const to = Number(toPageId);
         if (!bid || (onPage && rc.blocksBelongElsewhere())) return false;
+        // Every way of moving ends here, the keyboard chord included: a widget
+        // that is on every page has a copy on the other page already.
+        if (onEveryPage(dash, bid)) return false;
         // Lock layout is the dashboard's: its menu and keys honour it, and say
         // so rather than doing nothing. A move from the Structure modal
         // (fromPageId given) is maintenance and never did.

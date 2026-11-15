@@ -282,6 +282,43 @@ func (h *Handlers) dueMonitorTargetsWithHistory(now time.Time, history map[strin
 	return targets, known, liveHosts
 }
 
+// knownHealthKeys is every history key that has an owner right now: the
+// canonical URL of every bookmark, monitored or not, and a "net:<id>" key for
+// every network check. The same keys dueMonitorTargetsAll collects.
+func (h *Handlers) knownHealthKeys() map[string]bool {
+	known, _ := h.knownHealthKeysAndHosts()
+	return known
+}
+
+// knownHealthKeysAndHosts is knownHealthKeys plus the hosts whose certificate
+// is still wanted, read now: the same sets dueMonitorTargetsAll collects at the
+// start of a round, for the prunes at its end.
+func (h *Handlers) knownHealthKeysAndHosts() (map[string]bool, map[string]struct{}) {
+	known := map[string]bool{}
+	liveHosts := map[string]struct{}{}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			if bm.CheckStatus || bm.Monitor {
+				if host := strings.ToLower(strings.TrimSpace(bm.CertHost)); host != "" {
+					liveHosts[host] = struct{}{}
+				}
+				if parsed, err := url.Parse(strings.TrimSpace(bm.URL)); err == nil && parsed.Hostname() != "" {
+					liveHosts[strings.ToLower(parsed.Hostname())] = struct{}{}
+				}
+			}
+			if key := canonicalBookmarkURLKey(bm.URL); key != "" {
+				known[key] = true
+			}
+			for _, chk := range bm.Checks {
+				if chk.ID != "" {
+					known[netHistoryKey(chk.ID)] = true
+				}
+			}
+		}
+	}
+	return known, liveHosts
+}
+
 // lastSampleAt is when samples was last added to, 0 when never.
 func lastSampleAt(samples []HealthSample) int64 {
 	if len(samples) == 0 {
@@ -596,7 +633,11 @@ func (h *Handlers) runDueMonitors() {
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
 		logWarn(logComponentHealth, "this round could not be added to the history (%v); the graph will show a gap", err)
 	}
-	if err := h.sweepHealthHistory(known); err != nil {
+	// known is read again here, not reused from the round's start: a round can
+	// run for minutes, and a monitor added and re-checked in that time would
+	// otherwise have its first sample swept away as belonging to nothing.
+	freshKnown, freshLiveHosts := h.knownHealthKeysAndHosts()
+	if err := h.sweepHealthHistory(freshKnown); err != nil {
 		logWarn(logComponentHealth, "old history could not be cleared away (%v); it will be tried again next round", err)
 	}
 	if err := h.mergeHealthCacheUpdates(cacheUpdates); err != nil {
@@ -612,7 +653,10 @@ func (h *Handlers) runDueMonitors() {
 	pending = append(pending, certExpiryNotifications(h.recordMonitorCertificates(certResults), time.Now())...)
 	// A TLS check's own warning, once per mark of its ladder.
 	pending = append(pending, h.netCertNotifications(netOutcomes, time.Now())...)
-	h.pruneNetCertificates(known)
+	// Read again, as the sweep above: a check or bookmark added while the round
+	// ran had its certificate recorded by a manual test meanwhile.
+	h.pruneNetCertificates(freshKnown)
+	liveHosts = freshLiveHosts
 	// This round's own CertHost observations belong in the live set too, so a
 	// bookmark whose first-ever check just discovered a redirect does not have
 	// its brand new certificate entry pruned again immediately below.

@@ -38,10 +38,23 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 			}
 		}
 	}
+	// The addresses the payload still holds: a stored row whose address is not
+	// among them was edited in place, and its checks belong to the row that
+	// took its position.
+	sentKeys := make(map[string]bool, len(next))
+	for _, bookmark := range next {
+		sentKeys[canonicalBookmarkURLKey(bookmark.URL)] = true
+	}
 	for i := range next {
 		key := canonicalBookmarkURLKey(next[i].URL)
 		previous, ok := byURL[key]
 		if !ok {
+			// An edit of the address: the dashboard sends the whole page with
+			// the new URL in the same place. Without this the checks went with
+			// the old address, and their history with them.
+			if len(next) == len(stored) && i < len(stored) && !sentKeys[canonicalBookmarkURLKey(stored[i].URL)] {
+				next[i].Checks = stored[i].Checks
+			}
 			continue
 		}
 		// Stored rows that share a URL used to resolve to the last one, so a

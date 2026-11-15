@@ -125,7 +125,13 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	// Library ids name what a server holds.
 	WidgetTypeJellystat: {"server": true, "credentialId": true, "libraries": true},
 	WidgetTypeBazarr:    {"server": true, "credentialId": true},
-	WidgetTypeProwlarr:  {"server": true, "credentialId": true},
+	// Album and person ids name what a library holds.
+	WidgetTypeImmich:          {"server": true, "credentialId": true, "albumId": true, "personId": true},
+	WidgetTypeImmichSlideshow: {"server": true, "credentialId": true, "albumId": true, "personId": true},
+	WidgetTypeImmichAlbums:    {"server": true, "credentialId": true},
+	WidgetTypeImmichPeople:    {"server": true, "credentialId": true},
+	WidgetTypeImmichStatus:    {"server": true, "credentialId": true},
+	WidgetTypeProwlarr:        {"server": true, "credentialId": true},
 }
 
 /*
@@ -202,8 +208,15 @@ func (h *Handlers) SavePageBlocksHandler(w http.ResponseWriter, r *http.Request)
 	// A tile answers from a cache that lives for the widget's TTL -- up to a
 	// day -- so an edited url, field or label only showed once it ran out.
 	for _, widget := range widgets {
-		if widget.Type == WidgetTypeCustom {
-			customWidgetForget(strconv.Itoa(pageID) + ":" + widget.ID)
+		if widget.Type != WidgetTypeCustom {
+			continue
+		}
+		customWidgetForget(strconv.Itoa(pageID) + ":" + widget.ID)
+		// A widget on every page has the same tile on each of them.
+		if widget.everywhereOn() {
+			for _, page := range h.store.GetPages() {
+				customWidgetForget(strconv.Itoa(page.ID) + ":" + widget.ID)
+			}
 		}
 	}
 

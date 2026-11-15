@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.30.0 — 16 November 2026](#v1300--16-november-2026)
 - [v1.29.2 — 15 November 2026](#v1292--15-november-2026)
 - [v1.29.1 — 14 November 2026](#v1291--14-november-2026)
 - [v1.29.0 — 13 November 2026](#v1290--13-november-2026)
@@ -145,6 +146,42 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+## v1.30.0 — 16 November 2026
+
+Several Docker hosts in the Containers view, a widget you can put on every page, links dragged in from another window, a Watch feeds switch on the phone and three more Christmas themes.
+
+### Containers
+
+- **new — Several Docker hosts in the Containers view.** Under Config → Containers → Connection → *Other Docker hosts* you can add up to four more hosts, each reached through a Docker socket proxy (tcp) or the daemon's own TLS with a CA and an optional client certificate. With a host added, a strip of tabs above Containers | Disk picks the host; the list, side panel, logs and live logs follow it. Test says why a host does not answer (refused, no answer, certificate not trusted, client certificate turned down). A host is read-only until its *Allow actions* switch is on, and then start, stop, restart, pause, unpause and remove work there; `NEXTDASH_DOCKER_CONTROL` and the own-container guard apply to this host only. Check for updates works on every host's tab, with an arrow on a container that is behind and the same schedule as the local check; each host keeps its own results in `docker-updates-<id>.json`, which a backup leaves out. Update, rollback, Disk, the timeline, notices, statistics, widgets, and the settings kept by container name (hidden, muted, automatic updates, web address, icon) stay with this host. Hosts live in `docker-hosts.json`, their certificates in `docker-secrets.json`; the Containers tour has a new step on other hosts (seven steps now); installs with one host change nothing (`internal/app/docker_hosts.go`, `docker_hosts_api.go`, `docker_endpoint.go`, `docker_host_request.go`, `dashboard-docker.js`, `dashboard-config-containers.js`).
+
+### Bookmarks
+
+- **new — Drag a link in from another window.** A link, tab or address dropped on a category opens the bookmark form with the address, title, page and category filled in. Dropped elsewhere on the dashboard it follows paste (the choice dialog, the form or the Inbox, as set), and several links at once go to the Inbox. Your own drags, files and fields are left alone, and turning off *Paste a URL* turns the drop off too (`dashboard-link-drop.js`, `link-drop-model.js`).
+
+### Widgets
+
+- **new — A widget on every page.** The edit panel of a widget has a *Show on pages* switch: *This page* or *Every page*. On *Every page* the widget gets a copy on each other page, as an ordinary widget you move, resize, hide or limit to a screen per page; its name and settings are shared, so a change on one page carries to the others. Deleting a copy takes it off that page only. Switching back to *This page* removes the copies from the other pages, and a page created later starts with them. A stack stays on its page (`widgets_everywhere.go`, `everywhere` and `everywhereSkip` on a widget).
+- **new — Five Immich widgets.** *Photos*, *Slideshow*, *Albums*, *People* and *Status* read one Immich library. The API key goes in the `X-Api-Key` header and is set once in Config → Widgets; *Connect* lists your albums and people to pick from, and the same key works for all five. Photos and the slideshow can show the whole library, favorites, one album, one person, memories or *On this day*, in random, newest or oldest order, with or without videos, cover or contain, and a date caption; a tile can be drawn as a frame, grid, strip, hero or list. *Status* shows the library totals, the disk and the background jobs; a key that does not belong to an administrator gets neither totals nor jobs, and the panel says so. Pictures come through `/api/widgets/<type>/image`, so the key never reaches the browser (`widgets_immich.go`, `widgets_immich_status.go`).
+- **new — A bell row for failed Immich jobs.** When the Status widget sees failed background jobs, the bell gets a quiet row for them. It reads what the widget already fetched, so it makes no request of its own, and it stays until the jobs are cleared in Immich (`immich-bell-source.js`).
+- **new — A one-photo frame and a slideshow in the media tile.** A photo can fill the tile as one big picture with its date. The slideshow changes photo every 3 to 300 seconds (8 by default), loads the next one ahead, waits while the tab is hidden or the pointer or keyboard is on it, has Play and Pause, and starts paused with no fade for someone who asked their system for less motion (`dashboard-media-tile.js`).
+
+### Phone
+
+- **new — A Watch feeds switch in More.** On a phone, More → Quick settings has a *Watch feeds* switch. Off hides everything the watched feeds show on that phone: the feed icon and badge on rows, the hover card, the Watched feeds card on Status, the bell row and the tab count, and the phone stops fetching the watch list. The feeds stay watched and the server keeps polling them, so the desktop and push notices are unchanged. The choice is kept in this browser, not on the server (`dashboard-feed-watch.js`, `mobile-tabbar.js`).
+
+### Appearance
+
+- **new — Three more Christmas themes in Holidays, each with a dark and a light half.** *Snow Globe* (frost) puts the page inside a glass globe on a wooden base with a brass plate and a turning wind-up key, over a small town with a church, smoking chimneys, a string of lights and two skaters on a frozen pond. The snow lands: it piles up on the top edge of each category, and switching page shakes the globe so the caps come off and the snow swirls before it settles again. *Paper Advent* (paper) is a cut-paper village in four layers, lit from behind, that shifts in depth as the pointer moves, under a punched-out sky with a cut moon, a passing sleigh and a turning Moravian star; from 1 to 24 December one more window is lit each day and today's glows with its number, and paper snowflakes fall. *Nutcracker Theatre* (velvet) opens a red curtain once when the page loads, onto a stage under a gilt arch with swags, tassels and a crest, between tied-back drapes, with two nutcrackers who salute in turn, the Sugar Plum Fairy turning on a pedestal, footlights, sweeping beams, a spotlight that follows the pointer and falling sugar-plum glitter. Motion stops under reduced motion and with Effects off, leaving a still picture (`static/js/theme-holidays.js`, `static/css/theme-holidays.css`, `internal/app/models.go`).
+
+
+### Docs
+
+- **docs — `README.md`, `MANUAL.md` and Config → Help.** The manual gains the five Immich widgets (kinds, settings, key, a screenshot with public-domain photos), the six holiday themes and the new theme counts (223 families, 446 themes); the README counts 63 kinds and mentions Immich, other Docker hosts, a widget on every page and dragging a link in. Help gets paragraphs for a widget on every page, Immich, other Docker hosts, the Watch feeds switch on a phone, the Immich bell row and dragging a link in, and three new tips (`tipAddDrag`, `tipWidgetEverywhere`, `tipHostOtherHosts`).
+- **docs — translations.** 175 strings that existed only as English fallbacks in the code (Docker hosts, Immich, the slideshow, *Show on pages*, the link drop, the Watch feeds switch) are in all six locale files, and seven that `validate:locale-referenced` found missing; five tips nothing referenced any more are gone.
+- **docs — `static/data/whats-new/v1.30.0.json`, its index entry and three pictures under `media/`**; `whats-new-stub.js` moved to `2026.11-dashboard-release-v1.30.0` and `whats-new-v379`, `tests/whats-new-hidden-release.spec.js` follows. Four cards in `overview-features.json` with `since: "v1.30.0"`. `go generate` refreshed `asset_hashes_gen.go`.
+
+---
 
 ## v1.29.2 — 15 November 2026
 

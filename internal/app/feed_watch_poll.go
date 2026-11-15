@@ -415,8 +415,11 @@ func (h *Handlers) runWatchPolls(ctx context.Context, targets []FeedWatch) (int,
 			}
 			for i := range file.Watches {
 				// Merged onto what is on disk now: a watch stopped mid-round stays
-				// stopped, and one re-saved with another interval keeps it.
-				if dropped[i] || file.Watches[i].BookmarkKey != p.w.BookmarkKey || file.Watches[i].FeedURL != p.from {
+				// stopped, and one re-saved with another interval keeps it. One
+				// stopped and watched again mid-round is a new watch (another
+				// WatchedAt) and keeps its fresh baseline.
+				if dropped[i] || file.Watches[i].BookmarkKey != p.w.BookmarkKey || file.Watches[i].FeedURL != p.from ||
+					file.Watches[i].WatchedAt != p.w.WatchedAt {
 					continue
 				}
 				p.w.IntervalMinutes = file.Watches[i].IntervalMinutes

@@ -245,6 +245,9 @@ func dockerTimelineFor(name string) []dockerTimelineEntry {
 // DockerContainerTimelineHandler answers one container's timeline. Read-only
 // and nothing secret in it, like the list.
 func (h *Handlers) DockerContainerTimelineHandler(w http.ResponseWriter, r *http.Request) {
+	if dockerLocalOnly(w, r) {
+		return
+	}
 	_, c, ok := h.dockerTarget(w, r)
 	if !ok {
 		return

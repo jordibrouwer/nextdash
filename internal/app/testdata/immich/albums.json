@@ -1,0 +1,89 @@
+[
+ {
+  "albumName": "Summer trip",
+  "description": "",
+  "albumThumbnailAssetId": "10000000-0000-4000-8000-000000000200",
+  "createdAt": "2025-08-11T17:21:09.796Z",
+  "updatedAt": "2026-11-15T17:43:25.069Z",
+  "id": "10000000-0000-4000-8000-000000000100",
+  "albumUsers": [
+   {
+    "user": {
+     "id": "00000000-0000-4000-8000-0000000000a1",
+     "email": "x@example.invalid",
+     "name": "Test User",
+     "profileImagePath": "",
+     "avatarColor": "orange",
+     "profileChangedAt": "2025-08-11T17:21:09.796Z"
+    },
+    "role": "owner"
+   }
+  ],
+  "shared": true,
+  "hasSharedLink": false,
+  "startDate": "2025-07-03T00:00:00.000Z",
+  "endDate": "2025-07-22T00:00:00.000Z",
+  "assetCount": 462,
+  "isActivityEnabled": true,
+  "order": "desc",
+  "lastModifiedAssetTimestamp": "2026-04-08T13:32:27.750Z"
+ },
+ {
+  "albumName": "Birthday party",
+  "description": "",
+  "albumThumbnailAssetId": null,
+  "createdAt": "2025-07-25T09:56:45.616Z",
+  "updatedAt": "2026-11-15T17:43:25.069Z",
+  "id": "10000000-0000-4000-8000-000000000101",
+  "albumUsers": [
+   {
+    "user": {
+     "id": "00000000-0000-4000-8000-0000000000a1",
+     "email": "x@example.invalid",
+     "name": "Test User",
+     "profileImagePath": "",
+     "avatarColor": "orange",
+     "profileChangedAt": "2025-07-25T09:56:45.616Z"
+    },
+    "role": "owner"
+   }
+  ],
+  "shared": false,
+  "hasSharedLink": false,
+  "startDate": "2025-04-12T00:00:00.000Z",
+  "endDate": "2026-01-23T00:00:00.000Z",
+  "assetCount": 38,
+  "isActivityEnabled": true,
+  "order": "desc",
+  "lastModifiedAssetTimestamp": "2026-04-08T13:32:30.685Z"
+ },
+ {
+  "albumName": "Shared with us",
+  "description": "",
+  "albumThumbnailAssetId": "10000000-0000-4000-8000-000000000202",
+  "createdAt": "2025-06-22T21:29:08.534Z",
+  "updatedAt": "2026-11-15T17:43:25.069Z",
+  "id": "10000000-0000-4000-8000-000000000102",
+  "albumUsers": [
+   {
+    "user": {
+     "id": "00000000-0000-4000-8000-0000000000b2",
+     "email": "x@example.invalid",
+     "name": "Anna",
+     "profileImagePath": "",
+     "avatarColor": "orange",
+     "profileChangedAt": "2025-06-22T21:29:08.534Z"
+    },
+    "role": "owner"
+   }
+  ],
+  "shared": true,
+  "hasSharedLink": false,
+  "startDate": "2009-08-01T00:00:00.000Z",
+  "endDate": "2009-08-01T00:00:00.000Z",
+  "assetCount": 22,
+  "isActivityEnabled": true,
+  "order": "desc",
+  "lastModifiedAssetTimestamp": "2026-04-08T13:32:27.265Z"
+ }
+]

@@ -1,0 +1,39 @@
+/* The Immich status tile: figures, the disk, the jobs. The photo tiles use dashboard-media-tile.css. */
+.immich-status { gap: 0.6rem; }
+.immich-status-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.immich-status-name { font-weight: 600; }
+.immich-status-version { font-size: var(--font-size-small); color: var(--text-tertiary); }
+.immich-status-update {
+    margin: 0;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm, 4px);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    font-size: var(--font-size-small);
+}
+.immich-figs { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.immich-fig { display: flex; flex-direction: column; min-width: 0; }
+.immich-fig-value { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.immich-fig-label { font-size: var(--font-size-small); color: var(--text-tertiary); }
+.immich-disk { display: flex; align-items: center; gap: 0.5rem; font-size: var(--font-size-small); }
+.immich-disk .media-meter { flex: 1; min-width: 3rem; }
+.immich-disk-pct { font-variant-numeric: tabular-nums; }
+.immich-jobs-line { margin: 0; font-size: var(--font-size-small); }
+.immich-jobs-line--quiet { color: var(--text-tertiary); }
+.immich-jobs-line--bad { color: var(--accent-danger, #d9534f); font-weight: 600; }
+.immich-queues { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.1rem; }
+.immich-queue { display: flex; justify-content: space-between; gap: 0.5rem; font-size: var(--font-size-small); }
+.immich-queue--bad { color: var(--accent-danger, #d9534f); }
+.immich-queue-count { font-variant-numeric: tabular-nums; color: var(--text-tertiary); }
+.immich-queue--bad .immich-queue-count { color: inherit; }
+.immich-dup { margin: 0; font-size: var(--font-size-small); color: var(--text-secondary, inherit); }

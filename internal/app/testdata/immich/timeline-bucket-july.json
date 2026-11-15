@@ -1,0 +1,104 @@
+{
+ "duration": [
+  null,
+  null,
+  null,
+  "0:00:02.235000"
+ ],
+ "id": [
+  "10000000-0000-4000-8000-000000000700",
+  "10000000-0000-4000-8000-000000000701",
+  "10000000-0000-4000-8000-000000000702",
+  "10000000-0000-4000-8000-000000000703"
+ ],
+ "visibility": [
+  "timeline",
+  "timeline",
+  "timeline",
+  "timeline"
+ ],
+ "isFavorite": [
+  false,
+  false,
+  false,
+  false
+ ],
+ "isImage": [
+  true,
+  true,
+  true,
+  false
+ ],
+ "isTrashed": [
+  false,
+  false,
+  false,
+  false
+ ],
+ "livePhotoVideoId": [
+  null,
+  null,
+  null,
+  null
+ ],
+ "fileCreatedAt": [
+  "2025-07-10T21:40:58",
+  "2025-07-11T21:40:58",
+  "2025-07-12T21:40:58",
+  "2025-07-13T21:40:58"
+ ],
+ "localOffsetHours": [
+  2,
+  2,
+  2,
+  2
+ ],
+ "createdAt": [
+  "2025-08-11T17:19:04.109593",
+  "2025-08-11T17:19:04.109593",
+  "2025-08-11T17:19:04.109593",
+  "2025-08-11T17:19:04.109593"
+ ],
+ "ownerId": [
+  "00000000-0000-4000-8000-0000000000b2",
+  "00000000-0000-4000-8000-0000000000b2",
+  "00000000-0000-4000-8000-0000000000b2",
+  "00000000-0000-4000-8000-0000000000b2"
+ ],
+ "projectionType": [
+  null,
+  null,
+  null,
+  null
+ ],
+ "ratio": [
+  1.5,
+  1.5,
+  1.5,
+  1.5
+ ],
+ "status": [
+  "active",
+  "active",
+  "active",
+  "active"
+ ],
+ "thumbhash": [
+  "th700",
+  "th701",
+  "th702",
+  "th703"
+ ],
+ "city": [
+  null,
+  null,
+  null,
+  null
+ ],
+ "country": [
+  null,
+  null,
+  null,
+  null
+ ]
+}

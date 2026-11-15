@@ -154,9 +154,19 @@ func mergeNetChecksInto(keeper *Bookmark, src Bookmark) {
 // with this address on a page other than the one it moves to. A move is an add
 // followed by a delete, and the checks (and so their history) go with it. nil
 // when there is no such row.
-func checksOfMovedRow(store Store, movedFrom string, toPage int) []NetCheck {
+func checksOfMovedRow(store Store, movedFrom string, fromPage, toPage int) []NetCheck {
 	key := canonicalBookmarkURLKey(movedFrom)
 	if key == "" {
+		return nil
+	}
+	// The page the row comes from, when the client names it: the same address
+	// on another page is another row, with checks of its own.
+	if fromPage > 0 && fromPage != toPage {
+		for _, bm := range store.GetBookmarksByPage(fromPage) {
+			if canonicalBookmarkURLKey(bm.URL) == key {
+				return append([]NetCheck(nil), bm.Checks...)
+			}
+		}
 		return nil
 	}
 	for _, page := range store.GetPages() {

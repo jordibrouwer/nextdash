@@ -12,7 +12,7 @@
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
 | 🗂️ | **Shortcut cheat sheet** | Press **?** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
-| 🎨 | **A new look, and more than 400 themes** | Every material draws a surface of its own and a fresh install starts on **Tarnished Brass**; 220 theme families in light and dark, twelve characters, more than 280 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
+| 🎨 | **A new look, and more than 400 themes** | Every material draws a surface of its own and a fresh install starts on **Tarnished Brass**; 223 theme families in light and dark, twelve characters, more than 280 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§17A The new look](#17a-the-new-look), [§17 Appearance](#17-appearance) and [the theme studio](#the-theme-studio) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
 | 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
@@ -690,7 +690,7 @@ It began as a place for bookmarks, and bookmarks are still the core: grouped by 
 | **Add** | One-line quick add, the full form, paste a URL, browser extension, share sheet, bookmarklet, imports |
 | **Watch** | Broken links, uptime monitoring, certificate expiry, page drift, alerts |
 | **Show** | Widgets for health, inbox, feeds, weather, calendar, your machine, your containers and your own services |
-| **Customise** | 220 theme families, 280+ backdrops, materials and surfaces, layout, header and action buttons, six languages |
+| **Customise** | 223 theme families, 280+ backdrops, materials and surfaces, layout, header and action buttons, six languages |
 | **Keep** | Automatic backups, a 30-day trash, local copies of pages, HTML and CSV export |
 
 <a id="what-nextdash-is-not"></a>
@@ -941,7 +941,7 @@ The header has three zones.
 
 #### 🔔 The notifications bell
 
-What needs you waits in the bell instead of popping up over your work: questions about privacy and maintenance, urgent notices and outages, the note that an update was installed or that a new release is out, the weekly digest, a pile of kept links, and two tips a day. Rows are grouped (*Health*, *Watch feeds*, *Clean up*, *System*, *Privacy*, *Tips*), each with the button that answers it. Each row shows on its right how old it is (*5 min ago*, *2 days ago*); the time starts over when the row gets worse, and a row that only shrinks keeps its age. New news from the feeds you watch is one row, *N new from M watched feeds*, that is updated in place and goes when the news is read or has expired. **Mark read** clears a row, **No** answers a question for good, and **Mark all read** clears the lot. A tip has a button to the place it is about: Config, the Inbox, the Bookmarks view, Containers, the tag cloud or the palette.
+What needs you waits in the bell instead of popping up over your work: questions about privacy and maintenance, urgent notices and outages, the note that an update was installed or that a new release is out, the weekly digest, a pile of kept links, and two tips a day, and the failed background jobs of an Immich status widget on screen. Rows are grouped (*Health*, *Watch feeds*, *Clean up*, *System*, *Privacy*, *Tips*), each with the button that answers it. Each row shows on its right how old it is (*5 min ago*, *2 days ago*); the time starts over when the row gets worse, and a row that only shrinks keeps its age. New news from the feeds you watch is one row, *N new from M watched feeds*, that is updated in place and goes when the news is read or has expired. **Mark read** clears a row, **No** answers a question for good, and **Mark all read** clears the lot. A tip has a button to the place it is about: Config, the Inbox, the Bookmarks view, Containers, the tag cloud or the palette.
 
 <p align="center"><img src="screenshots/manual.md/04-bell.jpg" alt="The notifications bell open: a Watch feeds row, 9 new from 5 watched feeds, a Clean up group with two questions, each with Start and No, and a Tips group with three tips; every row shows its age on the right" width="860"></p>
 <p align="center"><sub>The bell, open: one row for new watched news, and the age of each row.</sub></p>
@@ -1023,6 +1023,8 @@ Edit mode changes the dashboard itself without a trip to Config: names, icons, w
 **While it is on.** A bar at the top says so. A click on a bookmark selects its block instead of opening it, the grid's bare letters, arrows and `Enter` are left alone, and the link preview card stays away and comes back afterwards if you have it on. Clicking a page tab still switches page, and the panel shows that page. `Esc` goes from the inside out: a dialog or menu first, then a field in the panel gives the focus back, then the mode ends.
 
 **Show on.** A category, widget or collection can show everywhere, on desktop only or on the phone only; the panel and the **⋯** menu of the block offer it ([§23](#show-on)). A block hidden on this screen stays on the grid while edit mode is on, dimmed and labelled *Hidden on desktop* or *Hidden on phone*.
+
+**Show on pages.** A widget's panel also has *Show on pages*: *This page* or *Every page*. On *Every page* each other page gets its own copy of the widget, which you move, resize, hide or limit to a screen on that page like any widget; the name and the settings are shared, so a change on one page shows on all of them. *Delete* takes a copy off that page only. Setting it back to *This page* removes the copies from the other pages, and a page you add later starts with them. A stack stays on its own page, and a widget that is on every page has no *Move to page*. See [§16.2](#162-adding-and-arranging).
 
 **The panel.** It opens at the right when you click a block, drawn like the side panel of the views, and the grid gives way. Changes are saved as you make them; `Esc` in a text field puts the old text back.
 
@@ -1185,10 +1187,13 @@ With no field active, paste a URL on the dashboard. A dialog offers **Add bookma
 <p align="center"><img src="screenshots/manual.md/05-paste-prompt.jpg" alt="The Save this link dialog after pasting an address: the address, the choices Add bookmark and Save to Inbox with their number keys, Remember my choice and Cancel" width="408"></p>
 <p align="center"><sub>Pasting an address on the dashboard asks where it goes: the full form, or the inbox.</sub></p>
 
+**Drag a link in.** A link, a tab or an address dragged from another browser window and dropped on a category opens the full form with the address, the title, the page and that category filled in. Dropped anywhere else on the dashboard it goes the way a paste does: the choice dialog, or straight to the form or the Inbox, as you set it. Several links in one drop (several tabs) all go to the Inbox. A drag of your own rows and blocks, a file, a field and every view but Bookmarks are left alone, and *Paste a URL* turned off in Config turns the drop off with it.
+
 <a id="54-other-routes"></a>
 
 ### 5.4 Other routes
 
+- **Drag and drop** — a link dragged from another window onto a category ([§5.3](#53-paste-a-url-ctrl-v)).
 - **Browser extension** — saves the current tab ([§22](#22-browser-extension-and-capture)).
 - **Share sheet and bookmarklet** — save to the inbox from a phone or any browser ([§22](#22-browser-extension-and-capture)).
 - **Import** — a browser bookmark file, a CSV file, or a source such as GitHub stars ([§20](#20-data-backups-and-import)).
@@ -2776,7 +2781,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 
 ### 14.2 What you see
 
-- **News.** The **Watch feeds news** widget ([§16.1](#161-the-kinds)) lists the sites with news on the dashboard. A bookmark with news gets a badge with a halo (from ten items on it reads *9+*) that stays, and stays clickable, until you have read the news; for the first hour after the news arrives (**Config → Watch feeds → Settings**) the row also gets a pulse, a stripe, a bold name and the newest headline; a feed icon marks watched bookmarks (**Settings → Show a feed icon on watched bookmarks**, on). One row in the notifications bell ([§4](#the-notifications-bell)) covers all sites and is updated in place as more arrives, the browser tab shows a count, and **Notify when a watched feed has news** (Config → Watch feeds → Settings, on by default) sends a notification. Hovering shows the preview card that leads with the news (**Open reader**, **Open page** and a pager for up to ten items, [§4](#the-link-preview-card)). Clicking a row with news opens a popover with six headlines, a **Reader** button and an open-site button; "+n more" expands it in place up to 10. On a phone there is no hover: a tap shows the headlines first (five), **Reader** opens the news window, and the bar on top goes to the site.
+- **News.** The **Watch feeds news** widget ([§16.1](#161-the-kinds)) lists the sites with news on the dashboard. A bookmark with news gets a badge with a halo (from ten items on it reads *9+*) that stays, and stays clickable, until you have read the news; for the first hour after the news arrives (**Config → Watch feeds → Settings**) the row also gets a pulse, a stripe, a bold name and the newest headline; a feed icon marks watched bookmarks (**Settings → Show a feed icon on watched bookmarks**, on). One row in the notifications bell ([§4](#the-notifications-bell)) covers all sites and is updated in place as more arrives, the browser tab shows a count, and **Notify when a watched feed has news** (Config → Watch feeds → Settings, on by default) sends a notification. Hovering shows the preview card that leads with the news (**Open reader**, **Open page** and a pager for up to ten items, [§4](#the-link-preview-card)). Clicking a row with news opens a popover with six headlines, a **Reader** button and an open-site button; "+n more" expands it in place up to 10. On a phone there is no hover: a tap shows the headlines first (five), **Reader** opens the news window, and the bar on top goes to the site. **More → Quick settings → Watch feeds** hides all of this on one phone ([§23](#23-phones-tablets-and-the-installed-app)).
 
 <p align="center"><img src="screenshots/manual.md/12-watch-feeds-flow.svg" alt="A site feed is read by the nextDash server on the interval you chose, from 30 minutes to 24 hours. What it finds appears in three places: a row on the dashboard with a stripe, a bold name and a badge; the preview card on hover, with Open reader and Open page; and the news window opened with Shift and N, which comes in three layouts. Small dots travel from the feed to the server and on to the three places, which light up when the news arrives" width="720"></p>
 <p align="center"><sub>From feed to screen: nextDash reads, and the news shows on the row, in the preview card and in the news window.</sub></p>
@@ -2841,7 +2846,7 @@ The **Containers view** shows the Docker containers on the machine nextDash runs
 
 ### 15.1 Opening it
 
-Open it with **`Shift + C`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§15.7](#157-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a six-step walkthrough with moving drawings — offered once on your first visit ([§18](#view-tours)).
+Open it with **`Shift + C`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§15.7](#157-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a seven-step walkthrough with moving drawings, one of them on other Docker hosts ([§15.11](#1511-other-docker-hosts)) — offered once on your first visit ([§18](#view-tours)).
 
 <a id="152-the-list"></a>
 
@@ -3138,6 +3143,27 @@ services:
       - nextdash.category=Monitoring
 ```
 
+<a id="1511-other-docker-hosts"></a>
+
+### 15.11 Other Docker hosts
+
+The view can show the containers of other machines next to this one. Add a host under **Config → Containers → Connection → Other Docker hosts**; up to four. Once there is one, a strip above **Containers | Disk** has a tab for **This host** and one per host. Pick a tab and the list, the side panel, the logs and the live logs all read from that host; the last tab you used is remembered.
+
+A host is reached in one of two ways:
+
+| Connection | Address | For |
+|---|---|---|
+| **tcp** | `host:port` of a Docker socket proxy | A proxy that only lets through what you allow. Plain HTTP: keep it on a network you trust. |
+| **tls** | `host:port` of the daemon's own TLS port (usually 2376) | The CA that signed the daemon's certificate, and a client certificate and key when the daemon asks for one. |
+
+**Test** checks the address before or after saving and says why it fails: refused, no answer, a certificate that does not match, a client certificate turned down. Certificates are saved on the server and never shown again; leave a field empty on **Edit** to keep what is saved. They are part of a backup, like the other secrets, and **Remove** deletes them.
+
+A host is read-only until you switch on **Allow actions** for it; then start, stop, restart, pause, unpause and remove work on its tab, with the write token if you set one. `NEXTDASH_DOCKER_CONTROL` only applies to this host.
+
+**Check for updates** works on a host's tab too: nextDash asks that host which image each container runs and the registry what the tag is now, and puts an arrow before the name of a container that is behind. The same schedule as the local check (Config → Containers → Updates) covers every host; a host that does not answer is tried again after an hour at the earliest. nextDash only shows the state: updating is done on that host, and skip and hold do not exist there. The header's update count is this host's only.
+
+What stays with this host: updating and rolling back, the Disk tab, the timeline, notices, the statistics, the widgets and the assistant's container tools. Settings kept by container name — hidden, muted, updated automatically, a web address or an icon of your own — are for this host's containers only, so a tab of another host does not offer them. Leaving the view puts the palette and search back on this host. Port links on another host's tab open that host's address.
+
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
@@ -3274,6 +3300,11 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 | **Jellystat** | Who watched what, from Jellystat: the **recent plays** (title, who, how long ago), the **most viewed** and the **most active people** over a period you choose, and a line of **totals** (plays and time watched). Each part is optional. Narrow, one part at a time behind small tabs; two columns wide, side by side |
 | **Bazarr** | The subtitles that are missing, with the languages still wanted (`nl`, `en+hi`, `en+forced`), movies and episodes taking turns; the subtitles **fetched lately**, with the language, the provider, Bazarr's score and *upgraded* where one replaced an older one; and a line of **totals**: movies missing, episodes missing and providers in trouble. Each part is optional |
 | **Prowlarr** | The **indexers** that are on, with their queries, grabs, failures and average answer time, a paused one first; **what needs attention**, which is Prowlarr's own health messages and the indexers it has paused, with when they are tried again; and a line of **totals**. Each part is optional |
+| **Immich — photos** | Photos from one Immich library: **one photo, large** (with the day it was taken), a grid, a strip, or one large with the rest as a list. They come from the whole library, the favorites, one album, one person, *On this day, in earlier years* or a *Photo of the day*, in random, newest-first or oldest-first order, and a video shows as a still if you allow videos. A click opens the photo in Immich, or its details here |
+| **Immich — slideshow** | The same photos, one at a time. It changes photo every few seconds (fade, slide or cut), has *Previous*, *Play or Pause* and *Next*, loads the next photo ahead, waits while the pointer or the keyboard is on it or the tab is hidden, and starts paused when your device asks for less motion |
+| **Immich — albums** | The albums, all of them, the shared ones or only your own, as a list with covers, a strip, a grid or the newest large with the rest as a list, sorted by last change, name, the date of the photos or the number of photos |
+| **Immich — people** | The people Immich has recognised, as faces in a row, a grid or a list, optionally only those marked as favorite, with how many photos each is in |
+| **Immich — status** | The server at a glance: photos and videos with what they take, the disk the library lives on, the background jobs and the ones that failed, the duplicates found, and the Immich version with a note when a newer release is out. Each part is optional. Totals and jobs are an administrator's: a key of an ordinary user gets a note instead. A failed job also gets a row in the bell |
 
 <p align="center"><img src="screenshots/manual.md/15-jellystat.jpg" alt="The Jellystat tile, two columns wide: a line of totals with 214 plays and 61 hours watched, and beside each other the recent plays, the most viewed and the most active people" width="560"></p>
 <p align="center"><sub>Jellystat, two columns wide: totals on top, then the recent plays, the most viewed and the most active people.</sub></p>
@@ -3283,6 +3314,9 @@ These read one server, set once under Config → Unraid ([§16.6](#166-unraid-wi
 
 <p align="center"><img src="screenshots/manual.md/15-prowlarr.jpg" alt="The Prowlarr tile, two columns wide: five of seven indexers on, queries, grabs and failures in the totals, the indexers with a paused one first, and what needs attention beside them" width="560"></p>
 <p align="center"><sub>Prowlarr: the indexers with their queries and answer times, a paused one first, and what needs attention.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/15-immich.jpg" alt="The five Immich tiles on one page: Photos as a row of six pictures with their dates, Albums as a list with covers, the Slideshow with one large photo and its date, People as two round faces with names, and Status with 32,571 photos, 1,462 videos, 140 GB stored, the disk at 45 percent and three failed jobs in red" width="860"></p>
+<p align="center"><sub>The five Immich tiles: photos, albums, the slideshow, people and the server's status, with a failed job in red. The pictures are public-domain and CC0 photos from Wikimedia Commons.</sub></p>
 
 *What is the network blocking?*
 
@@ -3327,6 +3361,11 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 | **Jellystat** | **Topics to show** (recent plays, most viewed, most active people, totals line), **Period (days)** (1 to 365, 30 by default), **Libraries** (offered after Connect; only the totals and the recent plays follow them), **A click**, where it opens, **Items to show** (1 to 20, 5 by default), **Refresh every (seconds)** (60 to 3600, 300 by default) |
 | **Bazarr** | **Topics to show** (missing subtitles, recently fetched, totals line), **A click**, where it opens, **Items to show** (1 to 20, 5 by default), **Refresh every (seconds)** (60 to 3600, 300 by default) |
 | **Prowlarr** | **Topics to show** (indexers, needs attention, totals line), **Period (days)** (1 to 365, 7 by default), **A click**, where it opens, **Items to show** (1 to 20, 5 by default), **Refresh every (seconds)** (60 to 3600, 300 by default) |
+| **Immich — photos** | **Show photos from** (the whole library, favorites, one album, one person, on this day, photo of the day), **Album** and **Person** (offered after Connect), **In what order**, **Include videos (as a still)**, **A picture fills its space** (by cropping, or whole with bars), **Caption** (none, or the day it was taken), **Layout**, **Photos to show**, **A click**, where it opens, **Refresh every (seconds)** (60 to 3600) |
+| **Immich — slideshow** | The same as photos, without Layout, and **Seconds per photo** (3 to 300, 8 by default), **Between photos** (fade, slide, cut), **Start playing by itself** and **Photos in the slideshow** |
+| **Immich — albums** | **Which albums** (all, shared, only my own), **Sorted by**, **Layout**, **A click**, where it opens, **Refresh every (seconds)** (60 to 3600) |
+| **Immich — people** | **Only the people marked as favorite**, **Layout** (faces in a row, a grid or a list), **People to show**, **A click**, where it opens, **Refresh every (seconds)** (60 to 3600) |
+| **Immich — status** | **Topics to show** (photos, videos and what they take; the disk the library is on; background jobs and the ones that failed; duplicates found), where it opens, **Refresh every (seconds)** |
 | **Inbox** | **Rows to show**, **Show where each link came from** (on) |
 | **Sources** | **Only sources that failed**, **Rows to show** |
 | **Neglected** | **Not opened for (days)** (7 to 730, 180 by default), **Count bookmarks never opened** (on), **Only bookmarks with these tags**, **Rows to show** |
@@ -3349,7 +3388,7 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 <p align="center"><sub>The picker: the kinds grouped by the question they answer, and what the chosen one shows.</sub></p>
 
 - A kind that needs nothing, such as Notes, is added at once, on the page you picked.
-- A kind that talks to a service (the media kinds: Jellyfin, Emby, Plex, Sonarr, Radarr, Seerr, Jellystat, Bazarr, Prowlarr, qBittorrent and SABnzbd) opens a **Connect** screen: the address and, where it has one, the key. **Test** tries them and says what it found, or what to fix. A failed test never blocks you: **Add anyway** (or **Add without testing**) adds the widget as it is, and you can correct it in its settings.
+- A kind that talks to a service (the media kinds: Jellyfin, Emby, Plex, Sonarr, Radarr, Seerr, Jellystat, Bazarr, Prowlarr, the five Immich kinds, qBittorrent and SABnzbd) opens a **Connect** screen: the address and, where it has one, the key. **Test** tries them and says what it found, or what to fix. A failed test never blocks you: **Add anyway** (or **Add without testing**) adds the widget as it is, and you can correct it in its settings.
 - **Custom** is one of the kinds in the picker, under *And anything else*: any address that answers with JSON. Test the address on the Connect screen, add the widget, and choose its figures afterwards in the widget's settings ([§16.5](#165-the-custom-widget)).
 - Beszel, Home Assistant, Unraid and Glances keep their connection in the widget's settings for now; they are added straight away and filled in there.
 
@@ -3370,6 +3409,8 @@ Every widget's settings come in the same three folding sections, in this order, 
 <a id="widget-when-it-shows"></a>
 
 #### 🕒 When a widget shows
+
+**A widget on every page.** In edit mode ([§4](#edit-mode)) the panel of any widget but a stack has *Show on pages*: *This page* or *Every page*. *Every page* puts a copy of the widget on each other page, with the same name and settings; change them on one page and the others follow. What each page keeps for itself is the place in its grid, the width, whether it is shown there and *Show on* (desktop or phone). *Delete* removes the copy from that page only; switch to *This page* and back to *Every page* to bring it back everywhere. A page you add later starts with the widget.
 
 Every kind has, under Advanced, **Show from (time of day)**, **Show until (time of day)** and **Show on** (Mon to Sun). Outside them the widget is off the dashboard; its settings are kept. Set both times or neither. An end before the start runs past midnight. With no day ticked the widget shows every day, and so it does with all seven ticked.
 
@@ -3400,7 +3441,7 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 
 **Emby** — set up exactly like Jellyfin, with the Emby server's address and an API key (Emby: Dashboard → API Keys). **Plex** — the address is **Tautulli's**, not Plex's, and the key is Tautulli's API key (Settings → Web Interface → API key): it only reads, where Plex's own token opens the whole account. After Connect it offers the libraries; Tautulli has no user to read as. Pictures come through the nextDash server, so a key never sits in a page. Each *now playing* tile is set up the same way as the widget it belongs to.
 
-**Sonarr**, **Radarr**, **Seerr**, **Jellystat**, **Bazarr**, **Prowlarr**, **qBittorrent**, **SABnzbd** — set up the way Jellyfin is: the address, the key and **Connect**, which says *Connected to* with the version. Where to find the key:
+**Sonarr**, **Radarr**, **Seerr**, **Jellystat**, **Bazarr**, **Prowlarr**, **Immich** (five kinds, one setup), **qBittorrent**, **SABnzbd** — set up the way Jellyfin is: the address, the key and **Connect**, which says *Connected to* with the version. Where to find the key:
 
 | Service | Key | Chosen after Connect |
 |---|---|---|
@@ -3409,6 +3450,7 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 | Jellystat | Settings → API Keys | **Libraries**: all, or some. Only the totals and the recent plays follow the choice; the most viewed and the most active count every library |
 | Bazarr | Settings → General → Security | — |
 | Prowlarr | Settings → General → Security | — |
+| Immich | Account Settings → API Keys, header `x-api-key`. Tick all permissions, or at least read for asset, album, person, memory and user; the Status tile also needs server, job and duplicate, and an administrator's key for the totals and the jobs | **Album** and **Person**, for the photo kinds set to one album or one person |
 | qBittorrent | **Sign in with** **Username and password** (every version), or **API key** (Options → WebUI, 5.2 and later) | **Category**: all, or one |
 | SABnzbd | Config → General → API Key | — |
 
@@ -4085,7 +4127,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 ### 17.1 Themes
 
-nextDash ships **220 theme families**, each with a light and a dark half — 440 themes in all. A fresh install starts on **Tarnished Brass** — dark, with Tarnished Brass (light) for auto dark mode. (Before v1.26.0 it started on Aurora Glass.) An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§17A](#17a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§17A.3](#17a3-everyone-gets-aurora-glass-and-the-way-back)).
+nextDash ships **223 theme families**, each with a light and a dark half — 446 themes in all. A fresh install starts on **Tarnished Brass** — dark, with Tarnished Brass (light) for auto dark mode. (Before v1.26.0 it started on Aurora Glass.) An install that already chose a theme keeps it. It is drawn in the **Signature** material style ([§17A](#17a-the-new-look)), with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made; **↺** beside the theme picker comes back to it. The same goes for the room between categories and between columns and for the category header. Every install that ran an earlier release moved onto Aurora Glass once, on the light or dark half it was on; a dialog says so and offers the way back ([§17A.3](#17a3-everyone-gets-aurora-glass-and-the-way-back)).
 
 **Theme** on the Theme tab lists every theme by name. Beside it:
 
@@ -4102,7 +4144,7 @@ nextDash ships **220 theme families**, each with a light and a dark half — 440
   - **Legible** — accessibility as a style: **High Contrast Calm** (airport signage, black bands on light grey by day and yellow on black by night), **Low Vision Amber** (amber on black, dark amber on warm white) and **Colour-blind Safe** (a blue and orange pair and different shapes for different states). Rows are at least 44 px, status is a shape and a word, nothing animates, and text keeps at least **7:1** against its background.
   - **Hearing about them.** An install that was already in use sees the eight groups once, in a popover in the middle of the dashboard: a tab per group, a screenshot and a line for every theme, a Dark and Light switch, **Use this theme** on every card and **Open the theme studio** on the **New** themes. A fresh install does not see it. A row in the bell's **Tips** group (*Show the new themes*) opens it again, and one short tip a day follows for the themes that react to something: **Skywatch** (the weather), **Tidewatch** (the health of your services) and **Daydrift** (the time of day), each with **Use this theme** and **Open in the theme studio**. A theme you already wear gets no tip.
 - **For Unraid users** — four themes after the Unraid webGUI, each in light and dark: **Unraid Black** (flat black panels, small uppercase labels, the orange of the logo), **Unraid Azure** (cool grey panels, steel-blue accent), **Unraid Ember** (that orange glowing out of black glass) and **Unraid Blaze** (the red end, hard-edged lacquer on deep crimson). All four draw card panels in the colours of a server, with a rack backdrop and terminal backdrops behind them, and a calmer band.
-- **Holidays** — three seasonal themes, each in light and dark: **Christmas Classic**, **Northern Lights** and **Gingerbread Village**. Behind the cards they draw a tree, a forest or a village with its lights, with snow or sprinkles falling in front, and the category headers get snow caps or icing. The snow lands in the same places on every load. With reduced motion, or with Effects off, it all stands still. The theme studio files them under **Holidays** instead of an archetype, and Gingerbread Village brings a backdrop of its own, a baking tray.
+- **Holidays** — six seasonal themes, each in light and dark: **Christmas Classic**, **Northern Lights**, **Gingerbread Village**, **Snow Globe**, **Paper Advent** and **Nutcracker Theatre**. The first three draw a tree, a forest or a village with its lights behind the cards, with snow or sprinkles falling in front, and the category headers get snow caps or icing. **Snow Globe** puts the page inside a glass globe on a wooden base over a small town, the snow piles up on the top edge of each category, and switching page shakes the globe. **Paper Advent** is a cut-paper village lit from behind that shifts in depth with the pointer; from 1 to 24 December one more window is lit each day. **Nutcracker Theatre** opens a red curtain once when the page loads onto a stage with two nutcrackers who salute, a Sugar Plum Fairy and a spotlight that follows the pointer. With reduced motion, or with Effects off, it all stands still. The theme studio files them under **Holidays** instead of an archetype, and Gingerbread Village brings a backdrop of its own, a baking tray.
 - **Quick mode** — switches between the light and dark half of the family you are on.
 - **Follow system dark mode** — shows the light half by day and the dark half by night, following the operating system, also in a background tab.
 - **Random theme** — **Off**, **On page refresh**, or **On view change** (switching between the dashboard grid, config, the inbox, the Bookmarks view, Containers or pages). Your saved theme stays underneath and comes back when you turn it off. With follow-system on, only halves that match the current mode are picked.
@@ -4691,7 +4733,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. A **Tour** 
 
 | Tab | Panels |
 |---|---|
-| **Connection** | **Connection**: the Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable. **Safety**: also confirm stop and restart (update and remove always ask first) |
+| **Connection** | **Connection**: the Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable. **Other Docker hosts**: up to four more hosts, each with Test, Edit, Remove and its own Allow actions switch ([§15.11](#1511-other-docker-hosts)). **Safety**: also confirm stop and restart (update and remove always ask first) |
 | **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **New apps**: suggest new apps, and what happens to a new one — ask first, add straight away or propose in the inbox ([§15.10](#1510-apps-it-finds-on-its-own)). **Ignored apps**: the apps you turned down, each with Remove. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
 | **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§15.5](#155-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes, for images hosted on GHCR and for nextDash's own check for a new release ([§25](#the-update-check-fails)) |
 | **Alerts** | **Notifications**: notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§15.9](#159-notices)). **Muted containers**: where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
@@ -5212,7 +5254,7 @@ On a phone the footer with search and add is replaced by a bar with five tabs. *
 | **Search** | A compact search sheet ([Search on a phone](#search-on-a-phone)) |
 | **Inbox** | The Inbox, with 44 px targets for a thumb |
 | **Status** | Every monitored bookmark with its state, the news of watched feeds and the pause for notifications |
-| **More** | Quick settings, the start screen choice, a guide to what works on a phone, and a link to send yourself |
+| **More** | Quick settings (including a Watch feeds switch), the start screen choice, a guide to what works on a phone, and a link to send yourself |
 
 <a id="the-start-screen"></a>
 
@@ -5234,10 +5276,10 @@ On a phone the footer with search and add is replaced by a bar with five tabs. *
 
 **Pausing notifications.** Under the list, **Pause for 1 hour** and **Until tomorrow** (07:00) stop notifications at once. The server holds the alerts the way quiet hours do ([§12](#12-checks-health)) and sums them up afterwards, except what **Always let through** allows, and feed news pushes are skipped. While a pause runs, Status says when it ends and offers **Resume notifications**, and **Config → Monitoring → Schedules** shows the same pause with a **Resume now** button. The same switch is under **Pause notifications** in More.
 
-<p align="center"><img src="screenshots/manual.md/23-phone-status.jpg" alt="The Status screen on a phone: the heading Status, the line Everything is fine, and a list of monitored services such as Docker docs, GitHub and Hacker News, each with a green dot and 100.0% up in 24 h, above the tab bar with Status highlighted" width="300"> <img src="screenshots/manual.md/23-phone-more.jpg" alt="The More screen on a phone: Quick settings with switches for Dark mode, Compact rows and Pause notifications, a Start screen choice between Search first and Status first, a What works on a phone button and an Only on desktop card with a Send the link to myself button" width="300"></p>
+<p align="center"><img src="screenshots/manual.md/23-phone-status.jpg" alt="The Status screen on a phone: the heading Status, the line Everything is fine, and a list of monitored services such as Docker docs, GitHub and Hacker News, each with a green dot and 100.0% up in 24 h, above the tab bar with Status highlighted" width="300"> <img src="screenshots/manual.md/23-phone-more.jpg" alt="The More screen on a phone: Quick settings with switches for Dark mode, Compact rows, Pause notifications and Watch feeds, a Start screen choice between Search first and Status first, a What works on a phone button and an Only on desktop card with a Send the link to myself button" width="300"></p>
 <p align="center"><sub>Status, and More.</sub></p>
 
-**More.** Quick settings has **Dark mode**, **Compact rows** (off goes back to the row height you had) and **Pause notifications**. Below come the start screen choice, **What works on a phone** (one screen listing what works on the phone and what needs a desktop; it is also what the cheat sheet opens on a phone) and **Only on desktop**, with **Send the link to myself** to open nextDash on a computer for the rest: Structure, container management, data and backups.
+**More.** Quick settings has **Dark mode**, **Compact rows** (off goes back to the row height you had), **Pause notifications** and **Watch feeds**. **Watch feeds** off hides what the feeds you follow show on this phone ([§14](#14-watch-feeds)): the feed icon and badge on rows, the preview card's news, the *Watched feeds* card on Status, the bell row and the count in the tab title, and the phone stops fetching the watch list. The feeds stay watched and the server keeps polling them, so a computer and the push notifications are unchanged. The choice is kept in this browser, not on the server. Below come the start screen choice, **What works on a phone** (one screen listing what works on the phone and what needs a desktop; it is also what the cheat sheet opens on a phone) and **Only on desktop**, with **Send the link to myself** to open nextDash on a computer for the rest: Structure, container management, data and backups.
 
 **The quick start waits for a desktop.** On a phone the quick start does not open; Home says to go through it once on a computer first.
 

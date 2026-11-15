@@ -469,6 +469,58 @@
         },
     };
 
+    /*
+     * Immich: the API key (Account settings → API Keys, with the asset, album and
+     * person read permissions) in the X-Api-Key header. Connect lists the albums
+     * and the people to choose from. The five Immich widgets share this one
+     * setup, so a key that works for one works for all.
+     */
+    const immichNote = (panel, esc, key, text) => `<span class="config-widget-note">${esc(panel.t(key, text))}</span>`;
+    Config.MEDIA_SERVICES.immich = {
+        id: 'immich',
+        name: 'Immich',
+        header: 'X-Api-Key',
+        placeholder: 'http://immich.local:2283',
+        words: {
+            keyWhere: ['config.widgetImmichKeyWhere', 'Account settings → API Keys in Immich. Tick all permissions, or at least read for asset, album, person, memory and user; the status tile also needs server, job and duplicate.'],
+        },
+        choices(panel, widget, index, setup, config, esc) {
+            const source = String(config.source || 'library');
+            const select = (name, label, list, current, empty) => `
+                <div class="config-widget-field">
+                    <label for="widget-${index}-media-${name}">${esc(label)}</label>
+                    <select id="widget-${index}-media-${name}" class="config-select" data-widget-setting="${name}Id"
+                        data-widget-index="${index}" data-widget-kind="text">
+                        <option value="" ${current ? '' : 'selected'}>${esc(empty)}</option>
+                        ${list.map((entry) => `<option value="${esc(entry.id)}" ${entry.id === current ? 'selected' : ''}>${
+                            esc(entry.count ? `${entry.name} (${entry.count})` : entry.name)}</option>`).join('')}
+                    </select>
+                </div>`;
+            const parts = [];
+            if (widget.type === 'immich' || widget.type === 'immich-slideshow') {
+                parts.push(select('album', panel.t('config.widgetImmichAlbum', 'Album'), setup.albums || [],
+                    String(config.albumId || ''), panel.t('config.widgetImmichChoose', 'Choose…')));
+                parts.push(select('person', panel.t('config.widgetImmichPerson', 'Person'), setup.people || [],
+                    String(config.personId || ''), panel.t('config.widgetImmichChoose', 'Choose…')));
+                parts.push(immichNote(panel, esc, 'config.widgetImmichChoiceNote',
+                    'Used when “Show photos from” is One album or One person.'));
+            }
+            if (widget.type === 'immich-status' && setup.admin === false) {
+                parts.push(immichNote(panel, esc, 'config.widgetImmichNotAdmin',
+                    'This key belongs to a user who is not an administrator, so Immich will not tell the library totals or the jobs. Make the key as an administrator to see them.'));
+            }
+            return parts.join('');
+        },
+        connected(draft, answer) {
+            const config = draft.config;
+            if (config.albumId && !(answer.albums || []).some((album) => album.id === config.albumId)) delete config.albumId;
+            if (config.personId && !(answer.people || []).some((person) => person.id === config.personId)) delete config.personId;
+        },
+    };
+    ['immich-slideshow', 'immich-albums', 'immich-people', 'immich-status'].forEach((id) => {
+        Config.MEDIA_SERVICES[id] = { ...Config.MEDIA_SERVICES.immich, id, setup: 'immich' };
+    });
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],

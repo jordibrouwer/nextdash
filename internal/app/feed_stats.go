@@ -289,15 +289,22 @@ func flagWatchReads(file *FeedWatchFile, read map[string]int64, since int64) map
 // carryReadCounted keeps what was counted on disk while a poll was out: the
 // poll's copy of the items predates a read in between.
 func carryReadCounted(next *FeedWatch, onDisk FeedWatch) {
-	counted := map[string]bool{}
+	byID := make(map[string]FeedItem, len(onDisk.Items))
 	for _, it := range onDisk.Items {
-		if it.ReadCounted {
-			counted[it.ID] = true
-		}
+		byID[it.ID] = it
 	}
 	for i := range next.Items {
-		if counted[next.Items[i].ID] {
+		disk, ok := byID[next.Items[i].ID]
+		if !ok {
+			continue
+		}
+		if disk.ReadCounted {
 			next.Items[i].ReadCounted = true
+		}
+		// A read or unread mark made while the round polled is newer than the
+		// copy the round started from, and must not be written back over.
+		if disk.MarkedAt > next.Items[i].MarkedAt {
+			next.Items[i].MarkedRead, next.Items[i].MarkedAt = disk.MarkedRead, disk.MarkedAt
 		}
 	}
 }

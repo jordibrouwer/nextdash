@@ -331,6 +331,9 @@ func carryDockerUpdateChoices(prev dockerUpdateStore, next *dockerUpdateStore) {
 // updates, or undoes either. Behind the write token: it changes what the
 // view and an update of a selection do.
 func (h *Handlers) DockerUpdateChoiceHandler(w http.ResponseWriter, r *http.Request) {
+	if dockerLocalOnly(w, r) {
+		return
+	}
 	if !h.requireWriteAccess(w, r) {
 		return
 	}

@@ -15501,7 +15501,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown']],
-        ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'jellystat', 'bazarr', 'prowlarr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
+        ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'jellystat', 'bazarr', 'prowlarr', 'immich', 'immich-slideshow', 'immich-albums', 'immich-people', 'immich-status', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
     renderPagesTags() {
@@ -17848,7 +17848,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'jellystat', 'bazarr', 'prowlarr', 'glances', 'nettests', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'feed-news', 'notes', 'stack', 'clock', 'countdown', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'adguard', 'pihole', 'jellystat', 'bazarr', 'prowlarr', 'immich', 'immich-slideshow', 'immich-albums', 'immich-people', 'immich-status', 'glances', 'nettests', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -18137,6 +18137,143 @@ class DashboardConfig {
         ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
         { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
         { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    /*
+     * Immich, mirroring immichPhotoFields and its siblings in widgets_immich.go.
+     * What to draw (a source), how (a layout), and for a slideshow how it moves.
+     * The album and the person are chosen from what Connect lists
+     * (MEDIA_SERVICES.immich).
+     */
+    static IMMICH_COMMON_SETTINGS = [
+        { key: 'source', kind: 'choice', label: ['config.widgetImmichSource', 'Show photos from'],
+          options: [
+              ['library', ['config.widgetImmichSourceLibrary', 'The whole library']],
+              ['favorites', ['config.widgetImmichSourceFavorites', 'Favorites']],
+              ['album', ['config.widgetImmichSourceAlbum', 'One album (chosen below)']],
+              ['person', ['config.widgetImmichSourcePerson', 'One person (chosen below)']],
+              ['memories', ['config.widgetImmichSourceMemories', 'On this day, in earlier years']],
+              ['day', ['config.widgetImmichSourceDay', 'Photo of the day — one a day']],
+          ] },
+        { key: 'order', kind: 'choice', label: ['config.widgetImmichOrder', 'In what order'],
+          options: [
+              ['random', ['config.widgetImmichOrderRandom', 'Random']],
+              ['newest', ['config.widgetImmichOrderNewest', 'Newest first']],
+              ['oldest', ['config.widgetImmichOrderOldest', 'Oldest first']],
+          ],
+          hint: ['config.widgetImmichOrderHint', 'Does not apply to On this day or Photo of the day.'] },
+        { key: 'videos', kind: 'bool', label: ['config.widgetImmichVideos', 'Include videos (as a still)'] },
+        { key: 'fit', kind: 'choice', label: ['config.widgetImmichFit', 'A picture fills its space'],
+          options: [
+              ['cover', ['config.widgetImmichFitCover', 'By cropping (fills it)']],
+              ['contain', ['config.widgetImmichFitContain', 'Whole, with bars']],
+          ] },
+        { key: 'caption', kind: 'choice', label: ['config.widgetImmichCaption', 'Caption'],
+          options: [
+              ['none', ['config.widgetImmichCaptionNone', 'None']],
+              ['date', ['config.widgetImmichCaptionDate', 'The day it was taken']],
+          ] },
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['open', ['config.widgetImmichClickOpen', 'Opens it in Immich']],
+              ['detail', ['config.widgetMediaClickDetail', 'Shows details here first']],
+          ] },
+    ];
+
+    static IMMICH_SETTINGS = [
+        { key: 'layout', kind: 'choice', label: ['config.widgetImmichLayout', 'Layout'],
+          options: [
+              ['grid', ['config.widgetImmichLayoutGrid', 'Photo grid']],
+              ['frame', ['config.widgetImmichLayoutFrame', 'One photo, large']],
+              ['strip', ['config.widgetImmichLayoutStrip', 'Photo strip']],
+              ['hero', ['config.widgetImmichLayoutHero', 'One large, the rest as a list']],
+              ['list', ['config.widgetImmichLayoutList', 'List']],
+          ] },
+        ...DashboardConfig.IMMICH_COMMON_SETTINGS,
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetImmichRows', 'Photos to show'],
+          hint: ['config.widgetImmichRowsHint', 'Ignored for One photo, large and Photo of the day.'] },
+        { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    static IMMICH_SLIDESHOW_SETTINGS = [
+        ...DashboardConfig.IMMICH_COMMON_SETTINGS,
+        { key: 'interval', kind: 'int', min: 3, max: 300, label: ['config.widgetImmichInterval', 'Seconds per photo'] },
+        { key: 'transition', kind: 'choice', label: ['config.widgetImmichTransition', 'Between photos'],
+          options: [
+              ['fade', ['config.widgetImmichTransitionFade', 'Fade']],
+              ['slide', ['config.widgetImmichTransitionSlide', 'Slide']],
+              ['none', ['config.widgetImmichTransitionNone', 'Cut']],
+          ] },
+        { key: 'autoplay', kind: 'bool', defaultOn: true, label: ['config.widgetImmichAutoplay', 'Start playing by itself'],
+          hint: ['config.widgetImmichAutoplayHint', 'A device set to reduce motion starts paused.'] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetImmichSlides', 'Photos in the slideshow'] },
+        { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    static IMMICH_ALBUMS_SETTINGS = [
+        { key: 'scope', kind: 'choice', label: ['config.widgetImmichScope', 'Which albums'],
+          options: [
+              ['all', ['config.widgetImmichScopeAll', 'All of them']],
+              ['shared', ['config.widgetImmichScopeShared', 'Shared ones, and shared with me']],
+              ['mine', ['config.widgetImmichScopeMine', 'Only my own']],
+          ] },
+        { key: 'sort', kind: 'choice', label: ['config.widgetImmichSort', 'Sorted by'],
+          options: [
+              ['updated', ['config.widgetImmichSortUpdated', 'Last changed']],
+              ['newest', ['config.widgetImmichSortNewest', 'Date of the photos']],
+              ['name', ['config.widgetImmichSortName', 'Name']],
+              ['count', ['config.widgetImmichSortCount', 'Most photos']],
+          ] },
+        { key: 'layout', kind: 'choice', label: ['config.widgetImmichLayout', 'Layout'],
+          options: [
+              ['list', ['config.widgetImmichAlbumsList', 'List with covers']],
+              ['strip', ['config.widgetImmichAlbumsStrip', 'Cover strip']],
+              ['hero', ['config.widgetImmichAlbumsHero', 'Newest large, the rest as a list']],
+              ['grid', ['config.widgetImmichAlbumsGrid', 'Cover grid']],
+          ] },
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['open', ['config.widgetImmichClickOpen', 'Opens it in Immich']],
+              ['detail', ['config.widgetMediaClickDetail', 'Shows details here first']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
+        { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    static IMMICH_PEOPLE_SETTINGS = [
+        { key: 'favorites', kind: 'bool', label: ['config.widgetImmichFavoritePeople', 'Only the people marked as favorite'] },
+        { key: 'layout', kind: 'choice', label: ['config.widgetImmichLayout', 'Layout'],
+          options: [
+              ['strip', ['config.widgetImmichPeopleStrip', 'Faces in a row']],
+              ['grid', ['config.widgetImmichPeopleGrid', 'Faces in a grid']],
+              ['list', ['config.widgetImmichPeopleList', 'List with faces']],
+          ] },
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['open', ['config.widgetImmichClickOpen', 'Opens it in Immich']],
+              ['detail', ['config.widgetMediaClickDetail', 'Shows details here first']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetImmichPeopleRows', 'People to show'] },
+        { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    static IMMICH_STATUS_SETTINGS = [
+        {
+            key: 'topics', kind: 'checkset', label: ['config.widgetImmichTopics', 'Topics to show'],
+            defaults: ['library', 'storage', 'jobs'],
+            options: [
+                ['library', ['config.widgetImmichTopicLibrary', 'Photos, videos and what they take']],
+                ['storage', ['config.widgetImmichTopicStorage', 'The disk the library is on']],
+                ['jobs', ['config.widgetImmichTopicJobs', 'Background jobs, and the ones that failed']],
+                ['duplicates', ['config.widgetImmichTopicDuplicates', 'Duplicates found']],
+            ],
+        },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
     ];
 
     /*
@@ -18484,6 +18621,11 @@ class DashboardConfig {
         jellystat: DashboardConfig.JELLYSTAT_SETTINGS,
         bazarr: DashboardConfig.BAZARR_SETTINGS,
         prowlarr: DashboardConfig.PROWLARR_SETTINGS,
+        immich: DashboardConfig.IMMICH_SETTINGS,
+        'immich-slideshow': DashboardConfig.IMMICH_SLIDESHOW_SETTINGS,
+        'immich-albums': DashboardConfig.IMMICH_ALBUMS_SETTINGS,
+        'immich-people': DashboardConfig.IMMICH_PEOPLE_SETTINGS,
+        'immich-status': DashboardConfig.IMMICH_STATUS_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

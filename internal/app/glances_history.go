@@ -630,8 +630,11 @@ func (h *Handlers) glancesRunHost(ctx context.Context, hs *glancesHost) {
 		// The pace is read from Config before every wait, and a change of it
 		// (hs.wake) ends the wait: from an hour to thirty seconds does not take
 		// an hour to notice.
+		// A removed host's state stays removed. When a host of the same id is
+		// added again before the sampler noticed, this loop ends and the
+		// exited path starts one on fresh state.
 		cfg, known := loadGlancesConfigFor(hs.id)
-		if !known {
+		if !known || hs.removed.Load() {
 			return
 		}
 		timer := time.NewTimer(cfg.recordInterval())

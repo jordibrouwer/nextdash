@@ -369,7 +369,7 @@
         streamUrl(since) {
             const q = new URLSearchParams({ tail: String(this.prefs.tail) });
             if (since) q.set('since', since);
-            return `/api/docker/containers/${encodeURIComponent(this.name)}/logs/stream?${q}`;
+            return dockerHostURL(`/api/docker/containers/${encodeURIComponent(this.name)}/logs/stream?${q}`);
         }
 
         restart() {

@@ -251,7 +251,8 @@ func templateWidgetURLs(widget Widget) []string {
 			out = append(out, raw)
 		}
 	case WidgetTypeJellyfin, WidgetTypeEmby, WidgetTypeJellyfinPlaying, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
-		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeAdguard, WidgetTypePihole, WidgetTypeJellystat, WidgetTypeBazarr, WidgetTypeProwlarr:
+		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeAdguard, WidgetTypePihole, WidgetTypeJellystat, WidgetTypeBazarr, WidgetTypeProwlarr,
+		WidgetTypeImmich, WidgetTypeImmichSlideshow, WidgetTypeImmichAlbums, WidgetTypeImmichPeople, WidgetTypeImmichStatus:
 		if raw, ok := widget.Config["server"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
@@ -396,7 +397,8 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			// A category is a name on one client, an entity an id in one house.
 			delete(config, "category")
 			delete(config, "entities")
-		case WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeAdguard, WidgetTypePihole, WidgetTypeJellystat, WidgetTypeBazarr, WidgetTypeProwlarr:
+		case WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeAdguard, WidgetTypePihole, WidgetTypeJellystat, WidgetTypeBazarr, WidgetTypeProwlarr,
+			WidgetTypeImmich, WidgetTypeImmichSlideshow, WidgetTypeImmichAlbums, WidgetTypeImmichPeople, WidgetTypeImmichStatus:
 			if raw, ok := config["server"].(string); ok {
 				config["server"] = templatizeURL(raw, variables)
 			}
@@ -405,6 +407,9 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			delete(config, "system")
 			// Likewise a Jellystat library id.
 			delete(config, "libraries")
+			// And an Immich album or person id.
+			delete(config, "albumId")
+			delete(config, "personId")
 		case WidgetTypeRSS:
 			if list, ok := config["feedUrls"].([]any); ok {
 				out := make([]any, 0, len(list))
@@ -695,7 +700,8 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 				widget.Config["url"] = filled
 			}
 		case WidgetTypeJellyfin, WidgetTypeEmby, WidgetTypeJellyfinPlaying, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
-			WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeAdguard, WidgetTypePihole, WidgetTypeJellystat, WidgetTypeBazarr, WidgetTypeProwlarr:
+			WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeAdguard, WidgetTypePihole, WidgetTypeJellystat, WidgetTypeBazarr, WidgetTypeProwlarr,
+			WidgetTypeImmich, WidgetTypeImmichSlideshow, WidgetTypeImmichAlbums, WidgetTypeImmichPeople, WidgetTypeImmichStatus:
 			if raw, ok := widget.Config["server"].(string); ok {
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["server"] = filled

@@ -266,20 +266,29 @@ func dockerLanIP(c dockerContainerSummary, lan map[string]bool) string {
 }
 
 func toDockerView(c dockerContainerSummary, self string) dockerViewContainer {
+	return toDockerViewOn(c, self, false)
+}
+
+// toDockerViewOn is toDockerView for a container on another host. What is kept
+// by container name here (a web address set by hand, an icon choice) belongs
+// to this host's containers, not to one that happens to share the name.
+func toDockerViewOn(c dockerContainerSummary, self string, remote bool) dockerViewContainer {
 	_, tag := splitImageTag(c.Image)
 	v := dockerViewContainer{
 		ID: c.ID, Name: c.name(), Image: c.Image, Tag: tag, State: c.State,
 		Status: c.Status, Health: dockerHealthFromStatus(c.Status), Created: c.Created,
 		StartedAt:      dockerStartedFromStatus(c.Status, time.Now()),
 		ComposeProject: c.Labels["com.docker.compose.project"], WebUIDefault: dockerWebUI(c),
-		WebUICustom: dockerCustomWebUI(c.name()),
-		Self:        isDockerSelf(c.ID, self), Ports: []dockerViewPort{},
+		Self: isDockerSelf(c.ID, self), Ports: []dockerViewPort{},
+	}
+	if !remote {
+		v.WebUICustom = dockerCustomWebUI(c.name())
 	}
 	if len(c.ID) >= 12 {
 		v.ShortID = c.ID[:12]
 	}
 	v.Network = dockerPrimaryNetwork(c)
-	applyDockerIcon(&v, c.Image)
+	applyDockerIcon(&v, c.Image, remote)
 	// One address for everything that opens it: the table, the palette, the
 	// widget and the drawer read webui and never choose between the two.
 	v.WebUI = v.WebUICustom
@@ -305,8 +314,8 @@ var dockerSelfIcon = &iconSetRef{Name: "nextdash", Label: "nextDash", Base: "/st
 
 // applyDockerIcon: the drawer's choice wins, then nextDash's own logo, then
 // whatever the sets match.
-func applyDockerIcon(v *dockerViewContainer, image string) {
-	if o := dockerIconOverride(v.Name); o != "" {
+func applyDockerIcon(v *dockerViewContainer, image string, remote bool) {
+	if o := dockerIconOverride(v.Name); o != "" && !remote {
 		v.IconOverride = o
 		return
 	}
@@ -380,11 +389,17 @@ func isDockerDialError(err error) bool {
 func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// writeToken is whether one is set, never what it is: Config -> Containers
 	// says so beside the actions it protects.
+	remote := dockerRemote(r)
 	out := map[string]any{
-		"socket": false, "control": dockerControlEnabled(), "reason": "",
+		"socket": false, "control": dockerHostControl(r), "reason": "",
 		"self": dockerSelfID(), "selfName": "", "writeToken": writeAccessToken() != "",
 	}
-	api, reason := newDockerAPI()
+	if remote {
+		// The own container is on this host, not on that one.
+		out["self"] = ""
+		out["host"] = dockerHostOf(r)
+	}
+	api, reason := h.dockerAPIFor(r)
 	if api == nil {
 		out["reason"] = reason
 		writeJSON(w, out)
@@ -393,11 +408,11 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 	if resp, err := api.do(ctx, http.MethodGet, "/_ping", nil); err != nil {
-		out["reason"] = dockerDialReason(err)
+		out["reason"] = dockerReasonFor(r, err)
 	} else {
 		resp.Body.Close()
 		out["socket"] = true
-		if self := dockerSelfID(); self != "" {
+		if self := dockerSelfID(); self != "" && !remote {
 			if list, lerr := api.listContainers(ctx); lerr == nil {
 				for _, c := range list {
 					if isDockerSelf(c.ID, self) {
@@ -416,9 +431,13 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 // reports false. Every per-container route under /api/docker/containers/{id}
 // starts here so the not-found and dial-reason handling stays in one place.
 func (h *Handlers) dockerTarget(w http.ResponseWriter, r *http.Request) (*dockerAPI, dockerContainerSummary, bool) {
-	api, reason := newDockerAPI()
+	api, reason := h.dockerAPIFor(r)
 	if api == nil {
-		dockerRefuse(w, http.StatusServiceUnavailable, reason)
+		code := http.StatusServiceUnavailable
+		if reason == reasonUnknownDockerHost {
+			code = http.StatusNotFound
+		}
+		dockerRefuse(w, code, reason)
 		return nil, dockerContainerSummary{}, false
 	}
 	c, err := h.resolveDockerID(r.Context(), api, mux.Vars(r)["id"])
@@ -466,10 +485,17 @@ func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.R
 		writeDockerError(w, err)
 		return
 	}
-	d := dockerViewDetail{dockerViewContainer: toDockerView(c, dockerSelfID())}
+	remote := dockerRemote(r)
+	self := dockerSelfID()
+	if remote {
+		self = ""
+	}
+	d := dockerViewDetail{dockerViewContainer: toDockerViewOn(c, self, remote)}
 	d.LanIP = dockerLanIP(c, api.dockerLanNetworks(r.Context()))
-	d.Update = dockerRowUpdate(h.dockerUpdateSnapshot()[c.Image], c, api.imageTagIDs(r.Context()))
-	d.Size = dockerSizeOf(c.ID, time.Now())
+	d.Update = dockerRowUpdate(h.dockerUpdateSnapshotFor(dockerHostOf(r))[c.Image], c, api.imageTagIDs(r.Context()))
+	if !remote {
+		d.Size = dockerSizeOf(c.ID, time.Now())
+	}
 	d.StartedAt = in.State.StartedAt
 	d.RestartPolicy = in.HostConfig.RestartPolicy.Name
 	for _, m := range in.Mounts {
@@ -496,8 +522,12 @@ func (h *Handlers) DockerContainerDetailHandler(w http.ResponseWriter, r *http.R
 		d.Version = img.Config.Labels["org.opencontainers.image.version"]
 		d.Source = img.Config.Labels["org.opencontainers.image.source"]
 	}
-	d.UpdateHistory = dockerUpdateHistoryFor(c.name())
-	d.Rollback = dockerRollbackOfferFor(r.Context(), api, d.UpdateHistory, in.Image)
+	if remote {
+		d.UpdateHistory = []dockerUpdateHistoryEntry{}
+	} else {
+		d.UpdateHistory = dockerUpdateHistoryFor(c.name())
+		d.Rollback = dockerRollbackOfferFor(r.Context(), api, d.UpdateHistory, in.Image)
+	}
 	if d.Mounts == nil {
 		d.Mounts = []dockerViewMount{}
 	}
@@ -553,7 +583,8 @@ func (h *Handlers) DockerContainerStatsHandler(w http.ResponseWriter, r *http.Re
 	}
 	// With history: the sampler's last hour, and whether it is on at all, so
 	// the drawer can tell "nothing yet" from "switched off".
-	enabled := h.store.GetSettings().DockerStatsHistory
+	// The sampler watches this host's daemon only.
+	enabled := h.store.GetSettings().DockerStatsHistory && !dockerRemote(r)
 	history := []dockerStatsPoint{}
 	if enabled {
 		history = dockerStatsStore.points(c.ID)
@@ -661,7 +692,8 @@ func (h *Handlers) DockerContainerLogsHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Request) {
-	api, reason := newDockerAPI()
+	remote := dockerRemote(r)
+	api, reason := h.dockerAPIFor(r)
 	if api == nil {
 		writeJSON(w, map[string]any{"available": false, "reason": reason, "containers": []any{}})
 		return
@@ -674,29 +706,37 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 			writeJSON(w, map[string]any{"available": false, "reason": "daemon", "message": apiErr.Message, "containers": []any{}})
 			return
 		}
-		writeJSON(w, map[string]any{"available": false, "reason": dockerDialReason(err), "containers": []any{}})
+		writeJSON(w, map[string]any{"available": false, "reason": dockerReasonFor(r, err), "containers": []any{}})
 		return
 	}
 	self := dockerSelfID()
-	updates := h.dockerUpdateSnapshot() // Task 8 fills this from the real store.
+	updates := h.dockerUpdateSnapshotFor(dockerHostOf(r))
 	out := make([]dockerViewContainer, 0, len(list))
 	hidden := dockerHiddenSet()
+	if remote {
+		// What this install knows about its own host (hidden names, sizes, the
+		// timeline and the sampler) is not for a container that merely shares
+		// a name with a local one. Update checks are kept per host.
+		self, hidden = "", map[string]bool{}
+	}
 	lan := api.dockerLanNetworks(r.Context())
 	tagIDs := api.imageTagIDs(r.Context())
 	// The sampler's last reading rides along, so the table's CPU and RAM
 	// columns cost no stats call per row. Off in Config means no columns.
-	usageEnabled := h.store.GetSettings().DockerStatsHistory
+	usageEnabled := h.store.GetSettings().DockerStatsHistory && !remote
 	now := time.Now()
 	for _, c := range list {
 		// Hidden in Config, or a size measurement's throwaway container.
 		if hidden[c.name()] || c.Labels[dockerBindMeasureLabel] == "1" {
 			continue
 		}
-		v := toDockerView(c, self)
+		v := toDockerViewOn(c, self, remote)
 		v.LanIP = dockerLanIP(c, lan)
 		v.Update = dockerRowUpdate(updates[c.Image], c, tagIDs)
-		v.Size = dockerSizeOf(c.ID, now)
-		v.Restarts = dockerTimelines.restartsSince(c.name(), now.Add(-24*time.Hour))
+		if !remote {
+			v.Size = dockerSizeOf(c.ID, now)
+			v.Restarts = dockerTimelines.restartsSince(c.name(), now.Add(-24*time.Hour))
+		}
 		if usageEnabled && c.State == "running" {
 			if p, ok := dockerStatsStore.latest(c.ID); ok {
 				v.Usage = &dockerViewUsage{CPU: p.CPU, Mem: p.Mem}
@@ -704,5 +744,9 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 		}
 		out = append(out, v)
 	}
-	writeJSON(w, map[string]any{"available": true, "containers": out, "usageEnabled": usageEnabled})
+	resp := map[string]any{"available": true, "containers": out, "usageEnabled": usageEnabled}
+	if remote {
+		resp["host"] = dockerHostOf(r)
+	}
+	writeJSON(w, resp)
 }

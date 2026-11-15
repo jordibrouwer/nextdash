@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -68,8 +70,23 @@ func dockerUpdateIntervalDuration(setting string) time.Duration {
 }
 
 func readDockerUpdateStore() dockerUpdateStore {
+	return readDockerUpdateStoreAt(dockerUpdatesFilePath())
+}
+
+// dockerUpdatesPathFor is where one host's check results live. A remote host
+// has a file of its own: the same image reference can carry another digest on
+// each host, so one shared map would answer for the wrong one. Skip and hold
+// are local only and are never written to a remote file.
+func dockerUpdatesPathFor(hostID string) string {
+	if hostID == "" || hostID == dockerLocalHostID {
+		return dockerUpdatesFilePath()
+	}
+	return filepath.Join(ResolveDataDir(), "docker-updates-"+hostID+".json")
+}
+
+func readDockerUpdateStoreAt(path string) dockerUpdateStore {
 	out := dockerUpdateStore{Images: map[string]*dockerImageUpdate{}}
-	data, err := os.ReadFile(dockerUpdatesFilePath())
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return out
 	}
@@ -81,9 +98,13 @@ func readDockerUpdateStore() dockerUpdateStore {
 }
 
 func (h *Handlers) dockerUpdateSnapshot() map[string]*dockerImageUpdate {
+	return h.dockerUpdateSnapshotFor(dockerLocalHostID)
+}
+
+func (h *Handlers) dockerUpdateSnapshotFor(hostID string) map[string]*dockerImageUpdate {
 	h.dockerUpdatesMu.Lock()
 	defer h.dockerUpdatesMu.Unlock()
-	return readDockerUpdateStore().withChoices()
+	return readDockerUpdateStoreAt(dockerUpdatesPathFor(hostID)).withChoices()
 }
 
 // localDigestFor finds the digest this image was pulled as for the same
@@ -141,7 +162,16 @@ func dockerRowUpdate(u *dockerImageUpdate, c dockerContainerSummary, tagIDs map[
 }
 
 func (h *Handlers) runDockerUpdateCheck(ctx context.Context) (dockerUpdateStore, error) {
-	api, reason := newDockerAPI()
+	return h.runDockerUpdateCheckOn(ctx, dockerLocalHostID)
+}
+
+// runDockerUpdateCheckOn is one pass over one host's containers. The registry
+// is asked by nextDash itself, so a remote host needs only to answer for its
+// containers and images.
+func (h *Handlers) runDockerUpdateCheckOn(ctx context.Context, hostID string) (dockerUpdateStore, error) {
+	remote := hostID != "" && hostID != dockerLocalHostID
+	path := dockerUpdatesPathFor(hostID)
+	api, reason := dockerHostAPI(hostID)
 	if api == nil {
 		return dockerUpdateStore{}, &dockerAPIError{Status: http.StatusServiceUnavailable, Message: reason}
 	}
@@ -151,12 +181,16 @@ func (h *Handlers) runDockerUpdateCheck(ctx context.Context) (dockerUpdateStore,
 	}
 
 	h.dockerUpdatesMu.Lock()
-	previous := readDockerUpdateStore()
+	previous := readDockerUpdateStoreAt(path)
 	h.dockerUpdatesMu.Unlock()
 
 	now := time.Now().UnixMilli()
 	next := dockerUpdateStore{CheckedAt: now, Images: map[string]*dockerImageUpdate{}}
 	hidden := dockerHiddenSet()
+	if remote {
+		// Hidden containers are named for this host's own.
+		hidden = map[string]bool{}
+	}
 	for _, c := range list {
 		if hidden[c.name()] {
 			continue
@@ -172,14 +206,20 @@ func (h *Handlers) runDockerUpdateCheck(ctx context.Context) (dockerUpdateStore,
 	// Read again under the lock: a skip or hold made while the check ran
 	// must not be lost to it, and neither may an update or rollback that
 	// finished meanwhile -- its entry is newer than anything this pass saw.
-	latest := readDockerUpdateStore()
+	latest := readDockerUpdateStoreAt(path)
 	carryDockerUpdateChoices(latest, &next)
 	for img, u := range latest.Images {
 		if _, checked := next.Images[img]; checked && u != nil && u.CheckedAt >= now {
 			next.Images[img] = u
 		}
 	}
-	return next, writeIndentJSONFile(dockerUpdatesFilePath(), next)
+	// A host removed while its check ran has nothing to keep results for.
+	if remote {
+		if _, ok := findDockerHost(hostID); !ok {
+			return next, nil
+		}
+	}
+	return next, writeIndentJSONFile(path, next)
 }
 
 func (h *Handlers) checkDockerImage(ctx context.Context, api *dockerAPI, image string, prev *dockerImageUpdate, now int64) *dockerImageUpdate {
@@ -232,29 +272,64 @@ func (h *Handlers) checkDockerImage(ctx context.Context, api *dockerAPI, image s
 }
 
 func (h *Handlers) DockerUpdatesHandler(w http.ResponseWriter, r *http.Request) {
+	hostID := dockerHostOf(r)
+	if _, ok := dockerHostKnown(hostID); !ok {
+		dockerRefuse(w, http.StatusNotFound, reasonUnknownDockerHost)
+		return
+	}
 	h.dockerUpdatesMu.Lock()
-	store := readDockerUpdateStore()
+	store := readDockerUpdateStoreAt(dockerUpdatesPathFor(hostID))
 	h.dockerUpdatesMu.Unlock()
 	store.Images = store.withChoices()
 	writeJSON(w, store)
+}
+
+// dockerHostKnown is whether an id names this host or a configured remote one.
+func dockerHostKnown(id string) (DockerHost, bool) {
+	if id == "" || id == dockerLocalHostID {
+		return DockerHost{}, true
+	}
+	return findDockerHost(id)
+}
+
+// beginDockerCheck takes the right to run one pass on a host. The local host
+// keeps its own flag; each remote host has one, so a slow host does not hold
+// the others off.
+func (h *Handlers) beginDockerCheck(hostID string) (func(), bool) {
+	if hostID == "" || hostID == dockerLocalHostID {
+		if !h.dockerCheckRunning.CompareAndSwap(false, true) {
+			return nil, false
+		}
+		return func() { h.dockerCheckRunning.Store(false) }, true
+	}
+	if _, busy := h.dockerRemoteChecks.LoadOrStore(hostID, struct{}{}); busy {
+		return nil, false
+	}
+	return func() { h.dockerRemoteChecks.Delete(hostID) }, true
 }
 
 // DockerUpdatesCheckHandler runs a pass now. It changes no container, so it
 // needs the socket but not NEXTDASH_DOCKER_CONTROL; it does spend requests
 // against other hosts, so it sits behind the write token.
 func (h *Handlers) DockerUpdatesCheckHandler(w http.ResponseWriter, r *http.Request) {
+	hostID := dockerHostOf(r)
+	if _, ok := dockerHostKnown(hostID); !ok {
+		dockerRefuse(w, http.StatusNotFound, reasonUnknownDockerHost)
+		return
+	}
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	if !h.dockerCheckRunning.CompareAndSwap(false, true) {
+	done, ok := h.beginDockerCheck(hostID)
+	if !ok {
 		dockerRefuse(w, http.StatusConflict, "busy")
 		return
 	}
-	defer h.dockerCheckRunning.Store(false)
+	defer done()
 	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(dockerUpdateCheckTimeout + time.Minute))
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), dockerUpdateCheckTimeout)
 	defer cancel()
-	store, err := h.runDockerUpdateCheck(ctx)
+	store, err := h.runDockerUpdateCheckOn(ctx, hostID)
 	if err != nil {
 		writeDockerError(w, err)
 		return
@@ -281,27 +356,68 @@ func (h *Handlers) StartDockerUpdateScheduler(stop <-chan struct{}) {
 }
 
 func (h *Handlers) maybeRunDockerUpdateCheck() {
+	// Results of a host that is gone (removed during a check, or lost to a
+	// restore) are dropped here, so nothing stays behind for good, also when
+	// the check itself is switched off.
+	pruneDockerHostUpdateFiles()
 	every := dockerUpdateIntervalDuration(h.store.GetSettings().DockerUpdateInterval)
-	if every == 0 || dockerSocketPath() == "" {
+	if every == 0 {
 		return
 	}
+	// Every host in its own goroutine: a slow one must not hold the others
+	// off. Each has its own timeout and busy flag.
+	var wg sync.WaitGroup
+	if dockerSocketPath() != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			h.maybeCheckDockerHost(dockerLocalHostID, "", every)
+		}()
+	}
+	for _, host := range listDockerHosts() {
+		wg.Add(1)
+		go func(host DockerHost) {
+			defer wg.Done()
+			h.maybeCheckDockerHost(host.ID, host.Name, every)
+		}(host)
+	}
+	wg.Wait()
+}
+
+// dockerRemoteAttemptGap is the least time between two scheduled tries on a
+// remote host, so one that is down costs a try an hour, not one per tick.
+const dockerRemoteAttemptGap = time.Hour
+
+func (h *Handlers) maybeCheckDockerHost(hostID, name string, every time.Duration) {
+	remote := hostID != dockerLocalHostID
 	h.dockerUpdatesMu.Lock()
-	last := readDockerUpdateStore().CheckedAt
+	last := readDockerUpdateStoreAt(dockerUpdatesPathFor(hostID)).CheckedAt
 	h.dockerUpdatesMu.Unlock()
 	// Compared with the stored time rather than an in-process timer, so a
 	// restart neither skips a due check nor repeats a fresh one.
 	if last > 0 && time.Since(time.UnixMilli(last)) < every {
 		return
 	}
-	if !h.dockerCheckRunning.CompareAndSwap(false, true) {
+	if remote {
+		if at, ok := h.dockerRemoteAttempts.Load(hostID); ok && time.Since(at.(time.Time)) < dockerRemoteAttemptGap {
+			return
+		}
+		h.dockerRemoteAttempts.Store(hostID, time.Now())
+	}
+	done, ok := h.beginDockerCheck(hostID)
+	if !ok {
 		return
 	}
-	defer h.dockerCheckRunning.Store(false)
+	defer done()
 	ctx, cancel := context.WithTimeout(context.Background(), dockerUpdateCheckTimeout)
 	defer cancel()
-	store, err := h.runDockerUpdateCheck(ctx)
+	store, err := h.runDockerUpdateCheckOn(ctx, hostID)
+	where := "container"
+	if remote {
+		where = "container on " + name
+	}
 	if err != nil {
-		logWarn(logComponentMutate, "the scheduled container update check did not run: %v", err)
+		logWarn(logComponentMutate, "the scheduled %s update check did not run: %v", where, err)
 		return
 	}
 	available := 0
@@ -310,7 +426,7 @@ func (h *Handlers) maybeRunDockerUpdateCheck() {
 			available++
 		}
 	}
-	logInfo(logComponentMutate, "the scheduled container update check found %s", plural(available, "update", "updates"))
+	logInfo(logComponentMutate, "the scheduled %s update check found %s", where, plural(available, "update", "updates"))
 }
 
 // markDockerImageCurrent records that an update just brought this image up to
@@ -334,5 +450,24 @@ func (h *Handlers) markDockerImageCurrent(image string) {
 	entry.CheckedAt = time.Now().UnixMilli()
 	if err := writeIndentJSONFile(dockerUpdatesFilePath(), store); err != nil {
 		logWarn(logComponentMutate, "the update of %s went through, but its badge could not be cleared: %v", image, err)
+	}
+}
+
+// pruneDockerHostUpdateFiles deletes the update results of hosts that are no
+// longer configured.
+func pruneDockerHostUpdateFiles() {
+	entries, err := os.ReadDir(ResolveDataDir())
+	if err != nil {
+		return
+	}
+	known := map[string]bool{}
+	for _, h := range listDockerHosts() {
+		known[filepath.Base(dockerUpdatesPathFor(h.ID))] = true
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if dockerHostUpdatesFileRe.MatchString(name) && !known[name] {
+			_ = os.Remove(filepath.Join(ResolveDataDir(), name))
+		}
 	}
 }

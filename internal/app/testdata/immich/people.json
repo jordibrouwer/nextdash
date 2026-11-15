@@ -1,0 +1,79 @@
+{
+ "people": [
+  {
+   "id": "10000000-0000-4000-8000-000000000300",
+   "name": "Anna",
+   "birthDate": null,
+   "thumbnailPath": "/x/0.jpeg",
+   "isHidden": false,
+   "isFavorite": false,
+   "updatedAt": "2026-11-15T17:43:25.760712+00:00",
+   "otherPeople": [],
+   "sharedBy": [],
+   "sharedWith": []
+  },
+  {
+   "id": "10000000-0000-4000-8000-000000000301",
+   "name": "Ben",
+   "birthDate": null,
+   "thumbnailPath": "/x/1.jpeg",
+   "isHidden": false,
+   "isFavorite": true,
+   "updatedAt": "2026-11-15T17:43:25.57821+00:00",
+   "otherPeople": [],
+   "sharedBy": [],
+   "sharedWith": []
+  },
+  {
+   "id": "10000000-0000-4000-8000-000000000302",
+   "name": "Carol",
+   "birthDate": null,
+   "thumbnailPath": "/x/2.jpeg",
+   "isHidden": false,
+   "isFavorite": false,
+   "updatedAt": "2026-11-15T17:43:25.766978+00:00",
+   "otherPeople": [],
+   "sharedBy": [],
+   "sharedWith": []
+  },
+  {
+   "id": "10000000-0000-4000-8000-000000000303",
+   "name": "Dave",
+   "birthDate": null,
+   "thumbnailPath": "/x/3.jpeg",
+   "isHidden": false,
+   "isFavorite": false,
+   "updatedAt": "2026-11-15T17:43:25.569772+00:00",
+   "otherPeople": [],
+   "sharedBy": [],
+   "sharedWith": []
+  },
+  {
+   "id": "10000000-0000-4000-8000-000000000310",
+   "name": "",
+   "birthDate": null,
+   "thumbnailPath": "/x/0.jpeg",
+   "isHidden": false,
+   "isFavorite": false,
+   "updatedAt": "2026-11-15T17:43:25.760712+00:00",
+   "otherPeople": [],
+   "sharedBy": [],
+   "sharedWith": []
+  },
+  {
+   "id": "10000000-0000-4000-8000-000000000311",
+   "name": "Hidden",
+   "birthDate": null,
+   "thumbnailPath": "/x/0.jpeg",
+   "isHidden": true,
+   "isFavorite": false,
+   "updatedAt": "2026-11-15T17:43:25.760712+00:00",
+   "otherPeople": [],
+   "sharedBy": [],
+   "sharedWith": []
+  }
+ ],
+ "hasNextPage": true,
+ "total": 1372,
+ "hidden": 0
+}

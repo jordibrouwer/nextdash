@@ -283,6 +283,11 @@ func Run(files assetFS) {
 	// The Docker view. Reading needs NEXTDASH_DOCKER_SOCKET; every POST below
 	// also needs NEXTDASH_DOCKER_CONTROL=1 and passes the write token.
 	r.HandleFunc("/api/docker/status", handlers.DockerStatusHandler).Methods("GET")
+	r.HandleFunc("/api/docker/hosts", handlers.DockerHostsListHandler).Methods("GET")
+	r.HandleFunc("/api/docker/hosts", handlers.DockerHostAddHandler).Methods("POST")
+	r.HandleFunc("/api/docker/hosts/test", handlers.DockerHostTestHandler).Methods("POST")
+	r.HandleFunc("/api/docker/hosts/{id}", handlers.DockerHostUpdateHandler).Methods("PUT")
+	r.HandleFunc("/api/docker/hosts/{id}", handlers.DockerHostRemoveHandler).Methods("DELETE")
 	r.HandleFunc("/api/docker/containers", handlers.DockerContainersHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}", handlers.DockerContainerDetailHandler).Methods("GET")
 	r.HandleFunc("/api/docker/containers/{id}/env/{name}", handlers.DockerContainerEnvHandler).Methods("GET")
@@ -374,6 +379,13 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/widgets/jellystat", handlers.jellystatWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/jellystat/image", handlers.jellystatImageHandler).Methods("GET")
 	r.HandleFunc("/api/widgets/jellystat/setup", handlers.jellystatSetupHandler).Methods("POST", "OPTIONS")
+	for _, immichType := range []WidgetType{WidgetTypeImmich, WidgetTypeImmichSlideshow, WidgetTypeImmichAlbums, WidgetTypeImmichPeople, WidgetTypeImmichStatus} {
+		r.HandleFunc("/api/widgets/"+string(immichType), handlers.immichWidgetHandler(immichType)).Methods("GET", "OPTIONS")
+		if immichType != WidgetTypeImmichStatus {
+			r.HandleFunc("/api/widgets/"+string(immichType)+"/image", handlers.immichImageHandler(immichType)).Methods("GET")
+		}
+	}
+	r.HandleFunc("/api/widgets/immich/setup", handlers.immichSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/widgets/bazarr", handlers.bazarrWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/bazarr/setup", handlers.bazarrSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/widgets/prowlarr", handlers.prowlarrWidgetHandler).Methods("GET", "OPTIONS")

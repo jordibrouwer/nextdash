@@ -10877,3 +10877,9 @@ body.no-animations .mode-strip.is-entering { animation: none; }
     padding-bottom: var(--space-2, 0.5rem);
     background: var(--surface-1, var(--bg-primary, transparent));
 }
+
+/* A link dragged in from another window, over a category it can be filed in. */
+#dashboard-layout .category.link-drop-target {
+    outline: 2px dashed var(--accent-primary);
+    outline-offset: 3px;
+}

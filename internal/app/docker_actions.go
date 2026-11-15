@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -50,7 +51,18 @@ func (h *Handlers) dockerLock(id string) (func(), bool) {
 // the name a new id halfway through, and actions resolve names: locked by id
 // alone, a stop or remove on the name would slip in mid-update.
 func (h *Handlers) dockerLockContainer(c dockerContainerSummary) (func(), bool) {
-	releaseID, ok := h.dockerLock(c.ID)
+	return h.dockerLockContainerOn(dockerLocalHostID, c)
+}
+
+// dockerLockContainerOn is the same lock on one host. A remote host's keys
+// carry its id, so "postgres" on two hosts are two locks; the local keys stay
+// exactly as they were.
+func (h *Handlers) dockerLockContainerOn(host string, c dockerContainerSummary) (func(), bool) {
+	prefix := ""
+	if host != dockerLocalHostID {
+		prefix = host + "::"
+	}
+	releaseID, ok := h.dockerLock(prefix + c.ID)
 	if !ok {
 		return nil, false
 	}
@@ -58,7 +70,7 @@ func (h *Handlers) dockerLockContainer(c dockerContainerSummary) (func(), bool) 
 	if name == "" {
 		return releaseID, true
 	}
-	releaseName, ok := h.dockerLock("name:" + name)
+	releaseName, ok := h.dockerLock(prefix + "name:" + name)
 	if !ok {
 		releaseID()
 		return nil, false
@@ -69,7 +81,11 @@ func (h *Handlers) dockerLockContainer(c dockerContainerSummary) (func(), bool) 
 // dockerAnyBusy says whether an action is running on any container.
 func (h *Handlers) dockerAnyBusy() bool {
 	busy := false
-	h.dockerBusy.Range(func(_, _ any) bool {
+	h.dockerBusy.Range(func(key, _ any) bool {
+		// An action on another host does not stop a prune of this one.
+		if k, _ := key.(string); strings.Contains(k, "::") {
+			return true
+		}
 		busy = true
 		return false
 	})
@@ -83,7 +99,15 @@ func dockerRefuse(w http.ResponseWriter, code int, reason string) {
 }
 
 func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
-	if !dockerControlEnabled() {
+	remote := dockerRemote(r)
+	hostID := dockerHostOf(r)
+	if remote {
+		if _, ok := findDockerHost(hostID); !ok {
+			dockerRefuse(w, http.StatusNotFound, reasonUnknownDockerHost)
+			return
+		}
+	}
+	if !dockerHostControl(r) {
 		dockerRefuse(w, http.StatusForbidden, reasonDockerControlOff)
 		return
 	}
@@ -95,12 +119,18 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		dockerRefuse(w, http.StatusNotFound, "unknown-action")
 		return
 	}
+	// An update or rollback pulls, replaces and writes this install's update
+	// history; that is built around the local host only.
+	if remote && (action == "update" || action == "rollback") {
+		dockerRefuse(w, http.StatusForbidden, reasonDockerLocalOnly)
+		return
+	}
 	api, c, ok := h.dockerTarget(w, r)
 	if !ok {
 		return
 	}
 	api = api.forActions()
-	if dockerSelfBlocked[action] && isDockerSelf(c.ID, dockerSelfID()) {
+	if !remote && dockerSelfBlocked[action] && isDockerSelf(c.ID, dockerSelfID()) {
 		dockerRefuse(w, http.StatusForbidden, reasonDockerSelf)
 		return
 	}
@@ -108,7 +138,7 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 		dockerRefuse(w, http.StatusConflict, "running")
 		return
 	}
-	release, ok := h.dockerLockContainer(c)
+	release, ok := h.dockerLockContainerOn(hostID, c)
 	if !ok {
 		dockerRefuse(w, http.StatusConflict, "busy")
 		return
@@ -122,7 +152,8 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// What nextDash stops or replaces itself is not a crash to tell about --
 	// for as long as the action runs, and a moment after for the late events.
-	if action != "start" && action != "unpause" {
+	// The notifier watches the local daemon, so a remote stop is not its to expect.
+	if !remote && action != "start" && action != "unpause" {
 		dockerNotifications.expect(c.name(), time.Now().Add(dockerActionTimeout))
 		defer func() { dockerNotifications.expect(c.name(), time.Now().Add(dockerNotifyExpectWindow)) }()
 	}
@@ -173,6 +204,9 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 	logFields := map[string]any{
 		"container": name,
 		"ok":        err == nil,
+	}
+	if remote {
+		logFields["host"] = hostID
 	}
 	// A call that came through the MCP endpoint says so; the browser's own
 	// buttons log exactly what they always did.

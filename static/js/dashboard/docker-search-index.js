@@ -78,11 +78,14 @@
      */
     function allowedActions(container, control) {
         if (!control || !container || container.self) return [];
+        // Update pulls and replaces a container and writes this install's own
+        // history: it is for the local host only.
+        const remote = Boolean(window.dockerActiveHost?.());
         switch (container.state) {
-            case 'running': return ['stop', 'restart', 'pause', 'update'];
+            case 'running': return remote ? ['stop', 'restart', 'pause'] : ['stop', 'restart', 'pause', 'update'];
             case 'paused': return ['unpause', 'stop'];
             case 'restarting': return ['stop'];
-            default: return ['start', 'update', 'remove'];
+            default: return remote ? ['start', 'remove'] : ['start', 'update', 'remove'];
         }
     }
 
@@ -92,6 +95,8 @@
      * decided, so the table, drawer, row menu and palette open the same address.
      */
     function hostAddress() {
+        // Showing another Docker host: its ports are on its own address.
+        if (window.dockerActiveHost?.() && window.nextdashDockerHostAddress) return window.nextdashDockerHostAddress;
         let set = String(window.dashboardInstance?.settings?.dockerHostAddress || '').trim();
         // The server keeps a bare host only; until the page reloads the copy
         // here is what was typed, so hold it to the same rule.

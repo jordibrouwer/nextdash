@@ -250,7 +250,10 @@ func (h *Handlers) DockerChangelogHandler(w http.ResponseWriter, r *http.Request
 	}
 	// The address set by hand, when there is one: the same one every other
 	// web UI link opens.
-	ui := dockerCustomWebUI(c.name())
+	ui := ""
+	if !dockerRemote(r) {
+		ui = dockerCustomWebUI(c.name())
+	}
 	if ui == "" {
 		ui = dockerWebUI(c)
 	}

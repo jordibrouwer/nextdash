@@ -1983,6 +1983,8 @@ class DashboardInbox {
             });
             if (res.status === 409) {
                 const body = await res.json().catch(() => ({}));
+                // quiet: a caller adding several links reports once, itself.
+                if (options.quiet) return body?.item || null;
                 const msg = this.t('dashboard.inboxDuplicate', 'Already in Inbox');
                 d.showNotification(msg, 'info', { duration: 3500 });
                 if (body?.item?.id) {
@@ -2000,6 +2002,7 @@ class DashboardInbox {
             const body = await res.json();
             const item = body?.item || null;
             await this.refreshBadge();
+            if (options.quiet) return item;
             const toastMsg = this.t('dashboard.inboxAddedToast', 'Added to Inbox');
             d.showNotification(toastMsg, 'success', { duration: 3000 });
             // Adding at the cap pushes the oldest links out. That used to happen
@@ -2021,6 +2024,7 @@ class DashboardInbox {
             return item;
         } catch (error) {
             console.error('Inbox add failed:', error);
+            if (options.quiet) return null;
             d.showNotification(
                 this.t('dashboard.inboxAddFailed', 'Could not save to Inbox'),
                 'error'

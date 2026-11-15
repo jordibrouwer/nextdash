@@ -93,6 +93,9 @@ func buildDockerHistory(now time.Time) dockerHistoryResponse {
 // DockerHistoryHandler answers GET /api/docker/history. Read-only, and like the
 // timeline route nothing in it is secret.
 func (h *Handlers) DockerHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	if dockerLocalOnly(w, r) {
+		return
+	}
 	now := time.Now()
 	out := buildDockerHistory(now)
 	if _, reason := newDockerAPI(); reason == "" {

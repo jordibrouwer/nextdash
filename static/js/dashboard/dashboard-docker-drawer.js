@@ -241,7 +241,7 @@ class DockerDrawer {
         const host = panel.querySelector('[data-docker-drawer-icon]');
         if (!host) return;
         host.replaceChildren(this.view.containerIconEl(summary, 'docker-drawer-icon-img'));
-        if (summary.self) return;
+        if (summary.self || window.dockerActiveHost?.()) return;
 
         const pencil = document.createElement('button');
         pencil.type = 'button';
@@ -372,7 +372,7 @@ class DockerDrawer {
             title: summary.name,
             badge: { text: summary.state || '', tone },
             more: [
-                ...(summary.self ? [] : [{ action: 'mute', label: this._muteLabel(summary) }]),
+                ...(summary.self || window.dockerActiveHost?.() ? [] : [{ action: 'mute', label: this._muteLabel(summary) }]),
                 { action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') },
             ],
             // The address under the name, as the Bookmarks view shows a
@@ -519,7 +519,7 @@ class DockerDrawer {
     }
 
     async _loadDetail(name) {
-        const data = await dockerDrawerFetchJSON(`/api/docker/containers/${encodeURIComponent(name)}`);
+        const data = await dockerDrawerFetchJSON(dockerHostURL(`/api/docker/containers/${encodeURIComponent(name)}`));
         if (name !== this._name || !this._els) return;
         this._detail = data;
         this._renderDetail(data);
@@ -530,7 +530,11 @@ class DockerDrawer {
         if (!els) return;
         this._renderOverview(els.sections.overview, detail);
         this._renderNetwork(els.sections.network, detail);
-        this._renderCustom(els.sections.custom, detail);
+        // The web address by hand is kept by container name, for this host.
+        const remoteHost = Boolean(window.dockerActiveHost?.());
+        const customAcc = els.sections.custom?.closest('[data-slp-acc]');
+        if (customAcc) customAcc.hidden = remoteHost;
+        if (!remoteHost) this._renderCustom(els.sections.custom, detail);
         this._renderBookmark(els.sections.bookmark, detail);
         this._renderVolumes(els.sections.volumes, detail);
         this._renderEnv(els.sections.env, detail);
@@ -571,7 +575,7 @@ class DockerDrawer {
         this._fieldRow(body, 'dockerFieldRestart', 'Restart policy', detail.restartPolicy);
         this._fieldRow(body, 'dockerFieldProject', 'Project', detail.composeProject);
         this._fieldRow(body, 'dockerFieldHealth', 'Health', detail.health);
-        if (!detail.self) {
+        if (!detail.self && !window.dockerActiveHost?.()) {
             const settings = this.view.dash?.settings || {};
             const state = settings.dockerNotify === false
                 ? this.t('dockerNotifyOff', 'off')
@@ -899,7 +903,7 @@ class DockerDrawer {
         button.disabled = true;
         const containerName = this._name;
         const data = await dockerDrawerFetchJSONAuth(
-            `/api/docker/containers/${encodeURIComponent(containerName)}/env/${encodeURIComponent(name)}`
+            dockerHostURL(`/api/docker/containers/${encodeURIComponent(containerName)}/env/${encodeURIComponent(name)}`)
         );
         if (containerName !== this._name || !row.isConnected) return;
         // A value that could not be read is not an empty one: say so, and
@@ -1037,7 +1041,7 @@ class DockerDrawer {
         this._statsBeat = (this._statsBeat || 0) + 1;
         const withHistory = this._statsBeat % 15 === 1 || this._history?.name !== name;
         const query = withHistory ? '?history=1' : '';
-        const data = await dockerDrawerFetchJSON(`/api/docker/containers/${encodeURIComponent(name)}/stats${query}`);
+        const data = await dockerDrawerFetchJSON(dockerHostURL(`/api/docker/containers/${encodeURIComponent(name)}/stats${query}`));
         if (name !== this._name || !this._els) return;
         if (this._els.cpuEl) this._els.cpuEl.textContent = dockerFormatCpu(data?.cpuPercent);
         if (this._els.memEl) {
@@ -1277,7 +1281,7 @@ class DockerDrawer {
     async _loadLogs() {
         const name = this._name;
         if (!name) return;
-        const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/logs?tail=${this.logLines()}`);
+        const data = await dockerDrawerFetchJSONAuth(dockerHostURL(`/api/docker/containers/${encodeURIComponent(name)}/logs?tail=${this.logLines()}`));
         if (name !== this._name || !this._els?.logsEl) return;
         // A log that could not be read says so, rather than looking empty.
         this._els.logsEl.textContent = Array.isArray(data?.lines)
@@ -1296,7 +1300,9 @@ class DockerDrawer {
         if (!body || !detail) return;
         body.replaceChildren();
         const u = detail.update || {};
-        const control = this.view.status?.control === true && !detail.self;
+        // Skip, hold, rollback and the history are this install's own, for this host.
+        const remoteHost = Boolean(window.dockerActiveHost?.());
+        const control = this.view.status?.control === true && !detail.self && !remoteHost;
         const actions = this.view.actions;
 
         const status = document.createElement('p');
@@ -1315,12 +1321,16 @@ class DockerDrawer {
             text = this.t('dockerUpdatesRecreate', 'A newer image is already on this host; updating recreates the container on it.');
         }
         if (u.held && u.status !== 'held') text += ` ${this.t('dockerUpdatesHeldNote', 'Updates are held.')}`;
+        // Another host: the check is nextDash's, the updating is not.
+        if (remoteHost && (u.status === 'available' || u.recreate)) {
+            text = this.t('dockerUpdatesRemote', 'A newer image is available. Update it on that host: nextDash only shows the state.');
+        }
         status.textContent = text;
         body.appendChild(status);
 
         // Automatic updates: this container, in the nightly window set in
         // Config -> Containers, with a rollback if it does not keep running.
-        if (control) {
+        if (control && !window.dockerActiveHost?.()) {
             const d = this.view.dash;
             const from = String(d.settings?.dockerAutoUpdateFrom ?? 3).padStart(2, '0');
             const to = String(d.settings?.dockerAutoUpdateTo ?? 5).padStart(2, '0');
@@ -1377,6 +1387,7 @@ class DockerDrawer {
             body.appendChild(row);
         }
 
+        if (remoteHost) return;
         const history = Array.isArray(detail.updateHistory) ? detail.updateHistory : [];
         const heading = document.createElement('p');
         heading.className = 'docker-field-label';
@@ -1422,6 +1433,9 @@ class DockerDrawer {
     _wireTimeline(els) {
         const acc = els.sections.timeline?.closest('[data-slp-acc]');
         if (!acc) return;
+        // The timeline is written from this install's own event watcher.
+        acc.hidden = Boolean(window.dockerActiveHost?.());
+        if (acc.hidden) return;
         const load = () => {
             if (this._timelineLoaded || !acc.open) return;
             this._timelineLoaded = true;
@@ -1522,7 +1536,7 @@ class DockerDrawer {
     async _loadHealth() {
         const name = this._name;
         if (!name) return;
-        const data = await dockerDrawerFetchJSONAuth(`/api/docker/containers/${encodeURIComponent(name)}/health`);
+        const data = await dockerDrawerFetchJSONAuth(dockerHostURL(`/api/docker/containers/${encodeURIComponent(name)}/health`));
         if (name !== this._name || !this._els?.sections.health) return;
         this._renderHealth(this._els.sections.health, data);
     }
@@ -1613,7 +1627,7 @@ class DockerDrawer {
     async _loadChanges() {
         const name = this._name;
         if (!name) return;
-        const data = await dockerDrawerFetchJSON(`/api/docker/containers/${encodeURIComponent(name)}/changelog`);
+        const data = await dockerDrawerFetchJSON(dockerHostURL(`/api/docker/containers/${encodeURIComponent(name)}/changelog`));
         if (name !== this._name || !this._els?.changesEl) return;
         this._renderChanges(this._els.changesEl, data);
     }

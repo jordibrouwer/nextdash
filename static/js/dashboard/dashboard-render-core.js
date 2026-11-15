@@ -53,6 +53,12 @@ class DashboardRenderCore {
         jellystat: { configKey: 'ttl', floor: 60, fallback: 300 },
         // Subtitles arrive when Bazarr's own search runs, a few times an hour.
         bazarr: { configKey: 'ttl', floor: 60, fallback: 300 },
+        // A photo list moves when photos are added; the status tile follows the jobs.
+        immich: { configKey: 'ttl', floor: 60, fallback: 300 },
+        'immich-slideshow': { configKey: 'ttl', floor: 60, fallback: 300 },
+        'immich-albums': { configKey: 'ttl', floor: 60, fallback: 300 },
+        'immich-people': { configKey: 'ttl', floor: 60, fallback: 300 },
+        'immich-status': { configKey: 'ttl', floor: 30, fallback: 120 },
         // Indexer counts and pauses move over minutes.
         prowlarr: { configKey: 'ttl', floor: 60, fallback: 300 },
         // Reads the monitor loop's history, which only moves as fast as the checks run.
@@ -1008,7 +1014,7 @@ class DashboardRenderCore {
      */
     widgetCanRefreshNow(widget) {
         if (!widget?.id || !this.widgetPollSpec(widget)) return false;
-        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole|jellystat|bazarr|prowlarr)/
+        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole|jellystat|bazarr|prowlarr|immich)/
             .test(String(widget.type));
     }
 
@@ -1281,6 +1287,11 @@ class DashboardRenderCore {
         jellystat: 'Jellystat',
         bazarr: 'Bazarr',
         prowlarr: 'Prowlarr',
+        immich: 'Immich photos',
+        'immich-slideshow': 'Immich slideshow',
+        'immich-albums': 'Immich albums',
+        'immich-people': 'Immich people',
+        'immich-status': 'Immich status',
         nettests: 'Network tests',
         glances: 'Glances',
         'jellyfin-playing': 'Jellyfin — now playing',
@@ -2451,9 +2462,29 @@ class DashboardRenderCore {
         return d._blocksPageId != null && Number(d._blocksPageId) !== Number(d.currentPageId);
     }
 
+    /*
+     * A widget that is on every page is changed by saves on the other pages as
+     * well, so the copy held here may be old. The whole list goes back on a
+     * save, and an old copy of such a widget would be pushed to every page: take
+     * the server's version of those first.
+     */
+    async refreshEverywhereWidgets(pageId) {
+        const d = this.dash;
+        if (!Array.isArray(d.widgets) || !d.widgets.some((w) => w?.everywhere)) return;
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetcher(`/api/pages/${pageId}/blocks`, { cache: 'no-store' });
+            if (!res.ok || !this.onSamePage(pageId)) return;
+            const fresh = new Map(((await res.json()).widgets || []).map((w) => [String(w.id), w]));
+            if (!this.onSamePage(pageId)) return;
+            d.widgets = d.widgets.map((w) => (w?.everywhere && fresh.has(String(w.id)) ? fresh.get(String(w.id)) : w));
+        } catch (_error) { /* the save that follows says if the server is gone */ }
+    }
+
     async saveWidgetPatch(widgetId, patch) {
         const d = this.dash;
         const pageId = Number(d.currentPageId);
+        await this.refreshEverywhereWidgets(pageId);
         const widgets = Array.isArray(d.widgets) ? d.widgets : [];
         const index = widgets.findIndex((w) => String(w?.id) === String(widgetId));
         if (!Number.isFinite(pageId) || index < 0) return false;
@@ -2472,6 +2503,12 @@ class DashboardRenderCore {
         if ('visibleOn' in patch) {
             if (patch.visibleOn === 'desktop' || patch.visibleOn === 'mobile') next.visibleOn = patch.visibleOn;
             else delete next.visibleOn;
+        }
+        if ('everywhere' in patch) {
+            // Off and on again starts the skip list over.
+            // False is sent, not left out: the server keeps the setting of a save that omits it.
+            next.everywhere = patch.everywhere === true;
+            delete next.everywhereSkip;
         }
         if (patch.config) {
             const config = { ...(before.config || {}), ...patch.config };
@@ -2509,6 +2546,12 @@ class DashboardRenderCore {
         // writing it under this page's id would cache an order from elsewhere.
         if (this.onSamePage(pageId)) {
             d.data?.updatePageDataCache?.(pageId, { blocks: { widgets, order: d.blockOrder || [] } });
+        }
+        // A widget on every page is written to the other pages by the server, so
+        // what those pages hold in the cache is out of date now.
+        if (next.everywhere || before.everywhere) {
+            [...(d._pageDataCache?.keys() || [])].filter((pid) => Number(pid) !== pageId)
+                .forEach((pid) => d.data?.invalidatePageDataCache?.(pid));
         }
         this.forgetWidgetConfigCache();
         return true;

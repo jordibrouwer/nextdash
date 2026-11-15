@@ -285,6 +285,25 @@ var dockerSecretsMu sync.Mutex
 
 type dockerSecrets struct {
 	GitHubToken string `json:"githubToken,omitempty"`
+	// Hosts holds the certificates of the remote hosts by host id.
+	Hosts map[string]dockerHostSecret `json:"hosts,omitempty"`
+}
+
+// writeDockerSecretsLocked stores the secrets, or removes the file when there
+// is nothing left in it. The caller holds dockerSecretsMu.
+func writeDockerSecretsLocked(secrets dockerSecrets) error {
+	if secrets.GitHubToken == "" && len(secrets.Hosts) == 0 {
+		err := os.Remove(dockerSecretsFilePath())
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	data, err := json.Marshal(secrets)
+	if err != nil {
+		return err
+	}
+	return writeFileAtomic(dockerSecretsFilePath(), data, 0600)
 }
 
 func readDockerSecrets() dockerSecrets {
@@ -307,18 +326,7 @@ func saveDockerGitHubToken(token string) error {
 	defer dockerSecretsMu.Unlock()
 	secrets := readDockerSecrets()
 	secrets.GitHubToken = strings.TrimSpace(token)
-	if secrets.GitHubToken == "" {
-		err := os.Remove(dockerSecretsFilePath())
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	data, err := json.Marshal(secrets)
-	if err != nil {
-		return err
-	}
-	return writeFileAtomic(dockerSecretsFilePath(), data, 0600)
+	return writeDockerSecretsLocked(secrets)
 }
 
 // DockerGitHubTokenHandler says whether a token is set and takes a new one; it
