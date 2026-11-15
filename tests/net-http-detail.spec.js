@@ -152,7 +152,7 @@ test.describe('HTTP-detail in the Tests tab', () => {
     const card = net(page).locator('[data-net-card]');
     await expect(card.locator('summary')).toContainText('HTTP');
     await expect(card.locator('summary .config-bm-acc-answer')).toHaveText('Up · 96 ms');
-    await card.locator('summary').click();
+    if (!(await card.evaluate((el) => el.open))) await card.locator('summary').click();
     await expect(card).toContainText('200 · 2 redirects');
     await card.getByRole('button', { name: 'Test now' }).click();
     await expect(card.locator('[data-net-wf]')).toBeVisible();
@@ -200,7 +200,7 @@ test.describe('HTTP-detail in the Tests tab', () => {
     }]);
     const card = net(page).locator('[data-net-card]');
     await expect(card).toHaveAttribute('data-state', 'down');
-    await card.locator('summary').click();
+    if (!(await card.evaluate((el) => el.open))) await card.locator('summary').click();
     const block = card.locator('[data-net-error-class="content"]');
     await expect(block).toContainText('Header not as expected');
     await expect(block).toContainText('x-app: ok');

@@ -140,7 +140,7 @@ test.describe('JSON check in the Tests tab', () => {
     const card = net(page).locator('[data-net-card]');
     await expect(card.locator('summary')).toContainText('JSON · db.state');
     await expect(card.locator('summary .config-bm-acc-answer')).toHaveText('Up · 84 ms');
-    await card.locator('summary').click();
+    if (!(await card.evaluate((el) => el.open))) await card.locator('summary').click();
     await card.getByRole('button', { name: 'Test now' }).click();
     const rows = card.locator('[data-net-json-rows]');
     await expect(card.locator('[data-net-json-outcome]')).toHaveText('Meets the check');
@@ -158,7 +158,7 @@ test.describe('JSON check in the Tests tab', () => {
       stats: { heartbeat: [{ from: Date.now() - 60_000, state: 'down', avgMs: 0 }], downSince: Date.now() - 600_000 },
     })]);
     const card = net(page).locator('[data-net-card]');
-    await card.locator('summary').click();
+    if (!(await card.evaluate((el) => el.open))) await card.locator('summary').click();
     const block = card.locator('[data-net-error-class="content"]');
     await expect(block).toContainText('Not the expected value');
     await expect(block).toContainText('The value at db.state is degraded, but the check expects it is ok.');
@@ -178,7 +178,7 @@ test.describe('JSON check in the Tests tab', () => {
       stats: { heartbeat: [{ from: Date.now() - 60_000, state: 'down', avgMs: 0 }], downSince: Date.now() - 600_000 },
     })]);
     const card = net(page).locator('[data-net-card]');
-    await card.locator('summary').click();
+    if (!(await card.evaluate((el) => el.open))) await card.locator('summary').click();
     // The last result says it without quoting the value.
     await expect(card.locator('[data-net-error-class="content"]')).toContainText('The value at auth.token is not what the check expects.');
     await card.getByRole('button', { name: 'Test now' }).click();
@@ -199,7 +199,7 @@ test.describe('JSON check in the Tests tab', () => {
     await page.route('**/api/net/run', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...jsonRun, ...answers[n++ % 2] }) }));
     await open(page, [stored({ state: undefined })]);
     const card = net(page).locator('[data-net-card]');
-    await card.locator('summary').click();
+    if (!(await card.evaluate((el) => el.open))) await card.locator('summary').click();
     await card.getByRole('button', { name: 'Test now' }).click();
     await expect(card).toContainText('The answer is not JSON');
     await expect(card.locator('[data-net-json-found]')).toContainText('nothing at this path');
