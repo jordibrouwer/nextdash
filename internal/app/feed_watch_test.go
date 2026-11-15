@@ -556,3 +556,27 @@ func TestWatchRewatchedMidRoundKeepsItsBaseline(t *testing.T) {
 		t.Fatalf("the re-watched feed took the stopped watch's state: %+v", got)
 	}
 }
+
+// An item marked read while a round polled its feed stays read: the round's
+// copy of the items is older than the mark.
+func TestWatchReadMarkMidRoundSurvives(t *testing.T) {
+	srv := newWatchFeedServer(t)
+	srv.set(rssEntry("a", "A", 1))
+	h := newDiscoveryHandlers(t, []Bookmark{{Name: "live", URL: "https://live.example/page"}})
+	key := canonicalBookmarkURLKey("https://live.example/page")
+	w, err := h.baselineWatch(context.Background(), FeedWatch{BookmarkKey: key, FeedURL: srv.URL, IntervalMinutes: 60})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Items = []FeedItem{{ID: "old", Title: "Old", FoundAt: 1}}
+	onDisk := w
+	onDisk.Items = []FeedItem{{ID: "old", Title: "Old", FoundAt: 1, MarkedRead: true, MarkedAt: 5}}
+	if err := writeFeedWatchFile(FeedWatchFile{Watches: []FeedWatch{onDisk}}); err != nil {
+		t.Fatal(err)
+	}
+	h.runWatchPolls(context.Background(), []FeedWatch{w})
+	got := readFeedWatchFile().Watches
+	if len(got) != 1 || len(got[0].Items) != 1 || !got[0].Items[0].MarkedRead || got[0].Items[0].MarkedAt != 5 {
+		t.Fatalf("the read mark was written over: %+v", got)
+	}
+}
