@@ -58,6 +58,37 @@ class DashboardEditModePanel {
             </div>`;
     }
 
+    /** One widget, one copy per page or a copy on every page. A stack stays on its page: its members are there. */
+    everywhereField(widget) {
+        if (!widget || widget.type === 'stack') return '';
+        const on = widget.everywhere === true;
+        const names = [[false, this.t('editMode.everywhereOff', 'This page')], [true, this.t('editMode.everywhereOn', 'Every page')]];
+        const label = this.t('editMode.everywhere', 'Show on pages');
+        return `
+            <div class="config-bm-field" data-edit-field-wrap="everywhere">
+                <span class="config-bm-field-label">${this.esc(label)}</span>
+                <div class="edit-panel-visible" role="group" aria-label="${this.esc(label)}">${
+                    names.map(([v, n]) => `<button type="button" class="config-btn config-btn--small" data-edit-everywhere="${v}" aria-pressed="${v === on}">${this.esc(n)}</button>`).join('')}</div>
+                <p class="edit-panel-note">${this.esc(this.t('editMode.everywhereNote', 'On every page, the name and settings are shared. Place, width and screen are set per page.'))}</p>
+            </div>`;
+    }
+
+    bindEverywhere(root, selection) {
+        root.querySelectorAll('[data-edit-everywhere]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const want = button.getAttribute('data-edit-everywhere') === 'true';
+                const widget = this.widgetOf(selection.id);
+                if (!widget || (widget.everywhere === true) === want) return;
+                if (!(await this.dash.renderCore?.saveWidgetPatch?.(widget.id, { everywhere: want }))) {
+                    this.dash.showErrorNotification?.(this.t('editMode.saveFailed', 'Could not save.'));
+                    return;
+                }
+                this.dash.renderDashboard?.({ animate: false });
+                this.render(selection);
+            });
+        });
+    }
+
     bindVisibleOn(root, selection) {
         const vis = window.DashboardBlockVisibility;
         root.querySelectorAll('[data-edit-visible]').forEach((button) => {
@@ -503,6 +534,7 @@ class DashboardEditModePanel {
                     [['one', this.t('editMode.widthOne', 'One column')], ['wide', this.t('editMode.widthWide', 'Wide')]], wide ? 'wide' : 'one', blocked))}
                 ${this.widthNote(blocked, widthWhy)}
                 ${this.visibleOnField(selection.id)}
+                ${this.everywhereField(widget)}
                 <p class="edit-panel-note" data-edit-widget-state>${this.esc(state)}</p>
                 <div class="edit-panel-actions">
                     <button type="button" class="config-btn config-btn--small" data-edit-action="widget-settings">${this.esc(this.t('editMode.widgetSettings', 'Settings…'))}</button>
@@ -518,6 +550,7 @@ class DashboardEditModePanel {
         if (!root) return;
         const name = root.querySelector('[data-edit-field="widget-name"]');
         this.bindVisibleOn(root, selection);
+        this.bindEverywhere(root, selection);
         name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
         name.addEventListener('change', async () => {
             const widget = this.widgetOf(selection.id);

@@ -1024,6 +1024,8 @@ Edit mode changes the dashboard itself without a trip to Config: names, icons, w
 
 **Show on.** A category, widget or collection can show everywhere, on desktop only or on the phone only; the panel and the **⋯** menu of the block offer it ([§23](#show-on)). A block hidden on this screen stays on the grid while edit mode is on, dimmed and labelled *Hidden on desktop* or *Hidden on phone*.
 
+**Show on pages.** A widget's panel also has *Show on pages*: *This page* or *Every page*. On *Every page* each other page gets its own copy of the widget, which you move, resize, hide or limit to a screen on that page like any widget; the name and the settings are shared, so a change on one page shows on all of them. *Delete* takes a copy off that page only. Setting it back to *This page* removes the copies from the other pages, and a page you add later starts with them. A stack stays on its own page, and a widget that is on every page has no *Move to page*. See [§16](#widgets).
+
 **The panel.** It opens at the right when you click a block, drawn like the side panel of the views, and the grid gives way. Changes are saved as you make them; `Esc` in a text field puts the old text back.
 
 | You select | The panel offers |
@@ -3391,6 +3393,8 @@ Every widget's settings come in the same three folding sections, in this order, 
 <a id="widget-when-it-shows"></a>
 
 #### 🕒 When a widget shows
+
+**A widget on every page.** In edit mode ([§4](#edit-mode)) the panel of any widget but a stack has *Show on pages*: *This page* or *Every page*. *Every page* puts a copy of the widget on each other page, with the same name and settings; change them on one page and the others follow. What each page keeps for itself is the place in its grid, the width, whether it is shown there and *Show on* (desktop or phone). *Delete* removes the copy from that page only; switch to *This page* and back to *Every page* to bring it back everywhere. A page you add later starts with the widget.
 
 Every kind has, under Advanced, **Show from (time of day)**, **Show until (time of day)** and **Show on** (Mon to Sun). Outside them the widget is off the dashboard; its settings are kept. Set both times or neither. An end before the start runs past midnight. With no day ticked the widget shows every day, and so it does with all seven ticked.
 

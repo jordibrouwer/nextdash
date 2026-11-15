@@ -4338,6 +4338,10 @@ func (fs *FileStore) SavePage(page Page) error {
 	if len(existing.Categories) == 0 && !bookmarksReferenceCategories(existing.Bookmarks) {
 		existing.Categories = getDefaultNewPageCategories()
 	}
+	// A page that is new carries the widgets that are on every page.
+	if os.IsNotExist(err) {
+		fs.mirrorEverywhereIntoNewPage(&existing)
+	}
 
 	// May create bookmarks-N.json (new page) or rename an existing one — either
 	// way GetPages() can change, so this is not single-page-scoped.
@@ -4521,6 +4525,7 @@ func (fs *FileStore) DeletePage(pageID int) error {
 		return err
 	}
 	fs.forgetLayoutHistory(pageID)
+	fs.forgetEverywhereSkipLocked(pageID)
 	// Removing bookmarks-N.json changes what GetPages() reports — see the same
 	// note in saveBookmarksByPageLocked.
 	fs.noteDataMutation(0)

@@ -688,7 +688,7 @@
                 await this.loadWidgetsEditor();
                 return;
             }
-            for (const block of removedBlocks) await this.forgetWidgetCredential(block);
+            for (const block of removedBlocks) if (!block.everywhere) await this.forgetWidgetCredential(block);
 
             this.widgetSelection.clear();
             this.notify(this.t('config.widgetsBulkDeleted', '{n} widgets removed.')
@@ -734,7 +734,8 @@
 
         const picked = new Set(ids);
         const moving = (this._widgetBlocks || [])
-            .filter((block) => block.isWidget && picked.has(block.id))
+            // A widget that is on every page has a copy on the destination already.
+            .filter((block) => block.isWidget && picked.has(block.id) && !block.everywhere)
             // In the all-pages view a tick may already be on the destination,
             // and moving a widget to where it is would delete it from there.
             .filter((block) => !this.isAllPagesView() || Number(block.pageId) !== target);
@@ -3389,7 +3390,7 @@
             this._widgetBlocks = (blocks.order || []).map((id) => {
                 const widget = widgetById.get(id);
                 if (widget) {
-                    return { id, isWidget: true, type: widget.type, title: widget.title || '', config: widget.config || {}, visibleOn: widget.visibleOn };
+                    return { id, isWidget: true, type: widget.type, title: widget.title || '', config: widget.config || {}, visibleOn: widget.visibleOn, everywhere: widget.everywhere, everywhereSkip: widget.everywhereSkip };
                 }
                 const category = categoryById.get(String(id));
                 return { id, isWidget: false, name: category?.name || id };
@@ -3441,6 +3442,8 @@
                         title: widget.title || '',
                         config: widget.config || {},
                         visibleOn: widget.visibleOn,
+                        everywhere: widget.everywhere,
+                        everywhereSkip: widget.everywhereSkip,
                         pageId: Number(page.id),
                         pageName: page.name || String(page.id),
                     });
@@ -3900,6 +3903,7 @@
         return {
             widgets: blocks.filter((b) => b.isWidget).map((b) => ({
                 id: b.id, type: b.type, title: b.title, config: b.config || {}, ...(b.visibleOn ? { visibleOn: b.visibleOn } : {}),
+                ...(b.everywhere ? { everywhere: true, ...(b.everywhereSkip?.length ? { everywhereSkip: b.everywhereSkip } : {}) } : {}),
             })),
             order: blocks.map((b) => b.id),
         };
@@ -3930,7 +3934,7 @@
             const widgets = (current.widgets || []).map((widget) => {
                 const block = edited.get(widget.id);
                 if (!block) return widget;
-                return { id: widget.id, type: block.type, title: block.title, config: block.config || {}, ...(block.visibleOn ? { visibleOn: block.visibleOn } : {}) };
+                return { id: widget.id, type: block.type, title: block.title, config: block.config || {}, ...(block.visibleOn ? { visibleOn: block.visibleOn } : {}), ...(widget.everywhere ? { everywhere: true, ...(widget.everywhereSkip?.length ? { everywhereSkip: widget.everywhereSkip } : {}) } : {}) };
             });
 
             const wrote = await this.writeFetch(`/api/pages/${target}/blocks`, {
@@ -5028,7 +5032,8 @@
         window.nextdashTrack?.('widget:remove', { type: block.widget?.type || block.type || 'unknown' });
         // After the page save, from the block held above: forgotten first, a
         // failed save left the widget pointing at a key that was gone.
-        await this.forgetWidgetCredential(block);
+        // Not for a widget on every page: the other copies sign in with it.
+        if (!block.everywhere) await this.forgetWidgetCredential(block);
         this.notify(this.t('config.widgetsDeleted', 'Widget removed.'), 'success');
         this._widgetLoadedFor = null;
         await this.loadWidgetsEditor();

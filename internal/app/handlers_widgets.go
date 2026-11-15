@@ -208,8 +208,15 @@ func (h *Handlers) SavePageBlocksHandler(w http.ResponseWriter, r *http.Request)
 	// A tile answers from a cache that lives for the widget's TTL -- up to a
 	// day -- so an edited url, field or label only showed once it ran out.
 	for _, widget := range widgets {
-		if widget.Type == WidgetTypeCustom {
-			customWidgetForget(strconv.Itoa(pageID) + ":" + widget.ID)
+		if widget.Type != WidgetTypeCustom {
+			continue
+		}
+		customWidgetForget(strconv.Itoa(pageID) + ":" + widget.ID)
+		// A widget on every page has the same tile on each of them.
+		if widget.everywhereOn() {
+			for _, page := range h.store.GetPages() {
+				customWidgetForget(strconv.Itoa(page.ID) + ":" + widget.ID)
+			}
 		}
 	}
 
