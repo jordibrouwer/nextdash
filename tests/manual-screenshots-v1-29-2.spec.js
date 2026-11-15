@@ -59,6 +59,7 @@ test('05 the new-bookmark form: the page title, cleaned, with the way back', asy
     await page.keyboard.type('https://radarr.lab.example', { delay: 10 });
     await page.keyboard.press('Tab');
     await form.locator('.bookmark-form-name-restore').waitFor({ timeout: 15_000 });
+    // Pacing for the capture, not a condition: the preview card finishes drawing.
     await page.waitForTimeout(600);
     await crop(page, form, '05-title-restore.jpg');
 });

@@ -53,6 +53,8 @@ test.describe('inbox quick wins', () => {
     // yet" and invite the user to add more.
     test('a failed load says so and offers a retry, not an empty inbox', async ({ page }) => {
         await openInbox(page);
+        // The first load must be done: one still in flight would answer after the failure below and win.
+        await page.waitForFunction(() => window.dashboardInstance?.inbox?._itemsLoaded === true && !window.dashboardInstance.inbox.loading);
         await page.route('**/api/inbox', (route) => {
             if (route.request().method() === 'GET') return route.fulfill({ status: 500, body: 'nope' });
             return route.fallback();
