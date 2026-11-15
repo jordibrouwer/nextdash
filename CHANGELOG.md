@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.29.2 — 15 November 2026](#v1292--15-november-2026)
 - [v1.29.1 — 14 November 2026](#v1291--14-november-2026)
 - [v1.29.0 — 13 November 2026](#v1290--13-november-2026)
 - [v1.28.3 — 12 November 2026](#v1283--12-november-2026)
@@ -145,11 +146,41 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
-## Unreleased
+## v1.29.2 — 15 November 2026
+
+Response-time trends for network checks, cleaner page titles, a plain-language digest and a steadier Inbox and test suite.
 
 ### Monitoring
 
 - **new — Response-time trends for network checks.** A check that measures milliseconds (TCP, ping, DNS, HTTP, JSON) now shows its last day as a sparkline in the Tests tab, in the Network tests widget and on the bookmark's preview card. Opening a check in the Tests tab draws its response time over 24 hours, 7 days or 30 days, with the slow limit as a dashed line and failed checks marked on the floor. Nothing new is stored: the chart reads the history the checks already keep, and from three days back one point per day (`GET /api/net/trend`, `static/js/shared/net-trend.js`). The pinned preview card has a Network checks button that opens the Tests tab.
+- **fix — The Tests tab opens the first trend chart.** A check with a trend now shows its first chart straight away instead of a closed list (`dashboard-config-bookmarks-tests.js`).
+
+### Digest
+
+- **new — The digest opens with the week in plain sentences.** The digest window shows a short summary first, built from the same figures as the cards below it, and the notification body starts with it (`internal/app/digest_build.go`, `static/css/digest.css`).
+
+### Bookmarks
+
+- **new — Page titles lose login words and the site's own name.** When the form suggests a name for a new bookmark, a leading *Login -* or *Sign in |* and the site's name at the end (*- YouTube*) are taken off. A small turned arrow at the end of the name field brings the page's own title back, and another press the cleaned one; it shows only for a name the app chose and you have not touched (`internal/app/page_title_clean.go`, `bookmark-form-title.js`).
+
+### Watch feeds
+
+- **fix — The news badge stays clickable until the news is read.** Once the news window has closed the row is quiet again, but its count badge, and the way to the headlines behind it, stay until you open the bookmark.
+- **new — The news window is one hour by default.** It was 30 minutes; a window you set yourself is not changed.
+
+### Inbox
+
+- **fix — Inbox rows that load late still rise in.** When the list had not arrived at the click, the entrance animation closed after the header and the rows then appeared without it. The view now stays open while its "Loading…" line is on screen, up to the existing five-second limit (`playViewEntrance` in `dashboard.js`, `data-view-loading` in `dashboard-inbox.js`).
+
+### Tests
+
+- **fix — Timing flakes from CI run 836.** `new-themes-notice` sets the first-run state before the page loads, `view-entrance` keeps the value its poll saw and has a new spec for a delayed Inbox, `theme-glow` marks the Random theme promo as seen, `mode-strip-toggle` listens for the animation events, and the action bar stays on screen in the quick-add spec.
+
+### Docs
+
+- **docs — `asset_hashes_gen.go`** refreshed with the changed static files.
+
+---
 
 ## v1.29.1 — 14 November 2026
 
