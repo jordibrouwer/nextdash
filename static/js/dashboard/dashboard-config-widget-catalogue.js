@@ -73,6 +73,11 @@
         'beszel-storage': { bars: [['nas /', 0.88, 'warn'], ['htpc /', 0.41]] },
         adguard: { big: '31%', rows: [['blocked today', ''], ['doubleclick.net', '812']] },
         pihole: { big: '24%', rows: [['blocked today', ''], ['doubleclick.net', '812']] },
+        immich: { rows: [['Summer in Lisbon', '12 Aug 2024'], ['Birthday', '3 May 2023']] },
+        'immich-slideshow': { rows: [['Lisbon', '1 of 12'], ['next in 8 s', '']] },
+        'immich-albums': { rows: [['Summer in Lisbon', '142 items'], ['Birthday', '38 items']] },
+        'immich-people': { rows: [['Anna', ''], ['Ben', '']] },
+        'immich-status': { big: '33k', rows: [['photos', '32,571'], ['disk', '45%']], bars: [['library disk', 0.45]] },
         prowlarr: { big: '5/7', rows: [['Northgate', '2.1k queries'], ['Meridian NZB', 'paused']] },
         bazarr: { big: '18', rows: [['Copper Fields', 'nl'], ['Night Ferry 2x4', 'nl, en']] },
         jellystat: { big: '214', rows: [['Harbour Lights', '19 plays'], ['Copper Fields', '8 plays']] },
@@ -111,6 +116,11 @@
         jellystat: '1.28',
         bazarr: '1.28',
         prowlarr: '1.28',
+        immich: '1.30',
+        'immich-slideshow': '1.30',
+        'immich-albums': '1.30',
+        'immich-people': '1.30',
+        'immich-status': '1.30',
     };
 
     /** "v1.19.4" -> [1, 19]; anything else, an old date tag included, -> null. */

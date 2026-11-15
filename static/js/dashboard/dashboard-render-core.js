@@ -53,6 +53,12 @@ class DashboardRenderCore {
         jellystat: { configKey: 'ttl', floor: 60, fallback: 300 },
         // Subtitles arrive when Bazarr's own search runs, a few times an hour.
         bazarr: { configKey: 'ttl', floor: 60, fallback: 300 },
+        // A photo list moves when photos are added; the status tile follows the jobs.
+        immich: { configKey: 'ttl', floor: 60, fallback: 300 },
+        'immich-slideshow': { configKey: 'ttl', floor: 60, fallback: 300 },
+        'immich-albums': { configKey: 'ttl', floor: 60, fallback: 300 },
+        'immich-people': { configKey: 'ttl', floor: 60, fallback: 300 },
+        'immich-status': { configKey: 'ttl', floor: 30, fallback: 120 },
         // Indexer counts and pauses move over minutes.
         prowlarr: { configKey: 'ttl', floor: 60, fallback: 300 },
         // Reads the monitor loop's history, which only moves as fast as the checks run.
@@ -1008,7 +1014,7 @@ class DashboardRenderCore {
      */
     widgetCanRefreshNow(widget) {
         if (!widget?.id || !this.widgetPollSpec(widget)) return false;
-        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole|jellystat|bazarr|prowlarr)/
+        return /^(custom|jellyfin|emby|plex|sonarr|radarr|seerr|qbittorrent|sabnzbd|homeassistant|beszel|adguard|pihole|jellystat|bazarr|prowlarr|immich)/
             .test(String(widget.type));
     }
 
@@ -1281,6 +1287,11 @@ class DashboardRenderCore {
         jellystat: 'Jellystat',
         bazarr: 'Bazarr',
         prowlarr: 'Prowlarr',
+        immich: 'Immich photos',
+        'immich-slideshow': 'Immich slideshow',
+        'immich-albums': 'Immich albums',
+        'immich-people': 'Immich people',
+        'immich-status': 'Immich status',
         nettests: 'Network tests',
         glances: 'Glances',
         'jellyfin-playing': 'Jellyfin — now playing',
