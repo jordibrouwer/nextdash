@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unicode/utf8"
 )
 
 // A host removed and added again under the same name is started once more, and
@@ -201,5 +202,18 @@ func TestGlancesLoopOfARemovedHostEndsWhenItsIDIsBack(t *testing.T) {
 	case <-ended:
 	case <-time.After(2 * time.Second):
 		t.Fatal("the loop of the removed host is still running")
+	}
+}
+
+// A long name is cut on characters, not bytes.
+func TestGlancesHostNameCutOnCharacters(t *testing.T) {
+	h := hostsSetup(t)
+	hostsDo(h, http.MethodPut, "/api/glances/config", `{"enabled":true,"server":"http://a.lan:61208"}`)
+	cfg, err := glancesAddHost("Thuisserver Ölkännchen ÄÖÜ äöü éèê ñ 日本語のサーバー")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !utf8.ValidString(cfg.Name) || utf8.RuneCountInString(cfg.Name) != 40 {
+		t.Fatalf("name %q: valid=%v runes=%d", cfg.Name, utf8.ValidString(cfg.Name), utf8.RuneCountInString(cfg.Name))
 	}
 }

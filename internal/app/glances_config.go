@@ -206,8 +206,8 @@ func normalizeGlancesConfig(c GlancesConfig) GlancesConfig {
 		c.ID = glancesMainID
 	}
 	c.Name = strings.TrimSpace(c.Name)
-	if len(c.Name) > 40 {
-		c.Name = c.Name[:40]
+	if r := []rune(c.Name); len(r) > 40 {
+		c.Name = string(r[:40])
 	}
 	c.Server = strings.TrimRight(sanitizeWidgetURL(c.Server), "/")
 	c.User = strings.TrimSpace(c.User)
@@ -590,8 +590,9 @@ func glancesAddHost(name string) (GlancesConfig, error) {
 		return GlancesConfig{}, errGlancesTooManyHosts
 	}
 	name = strings.TrimSpace(name)
-	if len(name) > 40 {
-		name = name[:40]
+	// Cut on characters: a byte cut can split one and leave invalid UTF-8.
+	if r := []rune(name); len(r) > 40 {
+		name = string(r[:40])
 	}
 	slug := strings.Trim(regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(strings.ToLower(name), "-"), "-")
 	if slug == "" {
