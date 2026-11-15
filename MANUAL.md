@@ -2841,7 +2841,7 @@ The **Containers view** shows the Docker containers on the machine nextDash runs
 
 ### 15.1 Opening it
 
-Open it with **`Shift + C`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§15.7](#157-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a six-step walkthrough with moving drawings — offered once on your first visit ([§18](#view-tours)).
+Open it with **`Shift + C`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§15.7](#157-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a seven-step walkthrough with moving drawings, one of them on other Docker hosts ([§15.11](#1511-other-docker-hosts)) — offered once on your first visit ([§18](#view-tours)).
 
 <a id="152-the-list"></a>
 
@@ -3137,6 +3137,27 @@ services:
       - nextdash.url=https://grafana.lan
       - nextdash.category=Monitoring
 ```
+
+<a id="1511-other-docker-hosts"></a>
+
+### 15.11 Other Docker hosts
+
+The view can show the containers of other machines next to this one. Add a host under **Config → Containers → Connection → Other Docker hosts**; up to four. Once there is one, a strip above **Containers | Disk** has a tab for **This host** and one per host. Pick a tab and the list, the side panel, the logs and the live logs all read from that host; the last tab you used is remembered.
+
+A host is reached in one of two ways:
+
+| Connection | Address | For |
+|---|---|---|
+| **tcp** | `host:port` of a Docker socket proxy | A proxy that only lets through what you allow. Plain HTTP: keep it on a network you trust. |
+| **tls** | `host:port` of the daemon's own TLS port (usually 2376) | The CA that signed the daemon's certificate, and a client certificate and key when the daemon asks for one. |
+
+**Test** checks the address before or after saving and says why it fails: refused, no answer, a certificate that does not match, a client certificate turned down. Certificates are saved on the server and never shown again; leave a field empty on **Edit** to keep what is saved. They are part of a backup, like the other secrets, and **Remove** deletes them.
+
+A host is read-only until you switch on **Allow actions** for it; then start, stop, restart, pause, unpause and remove work on its tab, with the write token if you set one. `NEXTDASH_DOCKER_CONTROL` only applies to this host.
+
+**Check for updates** works on a host's tab too: nextDash asks that host which image each container runs and the registry what the tag is now, and puts an arrow before the name of a container that is behind. The same schedule as the local check (Config → Containers → Updates) covers every host; a host that does not answer is tried again after an hour at the earliest. nextDash only shows the state: updating is done on that host, and skip and hold do not exist there. The header's update count is this host's only.
+
+What stays with this host: updating and rolling back, the Disk tab, the timeline, notices, the statistics, the widgets and the assistant's container tools. Settings kept by container name — hidden, muted, updated automatically, a web address or an icon of your own — are for this host's containers only, so a tab of another host does not offer them. Leaving the view puts the palette and search back on this host. Port links on another host's tab open that host's address.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -4691,7 +4712,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. A **Tour** 
 
 | Tab | Panels |
 |---|---|
-| **Connection** | **Connection**: the Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable. **Safety**: also confirm stop and restart (update and remove always ask first) |
+| **Connection** | **Connection**: the Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable. **Other Docker hosts**: up to four more hosts, each with Test, Edit, Remove and its own Allow actions switch ([§15.11](#1511-other-docker-hosts)). **Safety**: also confirm stop and restart (update and remove always ask first) |
 | **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **New apps**: suggest new apps, and what happens to a new one — ask first, add straight away or propose in the inbox ([§15.10](#1510-apps-it-finds-on-its-own)). **Ignored apps**: the apps you turned down, each with Remove. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
 | **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§15.5](#155-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes, for images hosted on GHCR and for nextDash's own check for a new release ([§25](#the-update-check-fails)) |
 | **Alerts** | **Notifications**: notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§15.9](#159-notices)). **Muted containers**: where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |

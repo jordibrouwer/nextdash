@@ -146,6 +146,14 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
+## Unreleased
+
+### Containers
+
+- **new — Several Docker hosts in the Containers view.** Under Config → Containers → Connection → *Other Docker hosts* you can add up to four more hosts, each reached through a Docker socket proxy (tcp) or the daemon's own TLS with a CA and an optional client certificate. With a host added, a strip of tabs above Containers | Disk picks the host; the list, side panel, logs and live logs follow it. Test says why a host does not answer (refused, no answer, certificate not trusted, client certificate turned down). A host is read-only until its *Allow actions* switch is on, and then start, stop, restart, pause, unpause and remove work there; `NEXTDASH_DOCKER_CONTROL` and the own-container guard apply to this host only. Check for updates works on every host's tab, with an arrow on a container that is behind and the same schedule as the local check; each host keeps its own results in `docker-updates-<id>.json`, which a backup leaves out. Update, rollback, Disk, the timeline, notices, statistics, widgets, and the settings kept by container name (hidden, muted, automatic updates, web address, icon) stay with this host. Hosts live in `docker-hosts.json`, their certificates in `docker-secrets.json`; the Containers tour has a new step on other hosts (seven steps now); installs with one host change nothing (`internal/app/docker_hosts.go`, `docker_hosts_api.go`, `docker_endpoint.go`, `docker_host_request.go`, `dashboard-docker.js`, `dashboard-config-containers.js`).
+
+---
+
 ## v1.29.2 — 15 November 2026
 
 Response-time trends for network checks, cleaner page titles, a plain-language digest and a steadier Inbox and test suite — held back from the What's new window (`hideFromModal`) like v1.29.1, so v1.29.0 keeps leading it.
