@@ -394,6 +394,16 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 		"socket": false, "control": dockerHostControl(r), "reason": "",
 		"self": dockerSelfID(), "selfName": "", "writeToken": writeAccessToken() != "",
 	}
+	// The compose map as resolved, so Config can show it without a project.
+	composeMaps := composeMap()
+	if composeMaps == nil {
+		composeMaps = []composeMapping{}
+	}
+	composeRejected := composeMapRejected()
+	if composeRejected == nil {
+		composeRejected = []string{}
+	}
+	out["compose"] = map[string]any{"map": composeMaps, "rejected": composeRejected}
 	if remote {
 		// The own container is on this host, not on that one.
 		out["self"] = ""
@@ -727,7 +737,7 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	now := time.Now()
 	for _, c := range list {
 		// Hidden in Config, or a size measurement's throwaway container.
-		if hidden[c.name()] || c.Labels[dockerBindMeasureLabel] == "1" {
+		if hidden[c.name()] || dockerIsOwnHelper(c.Labels) {
 			continue
 		}
 		v := toDockerViewOn(c, self, remote)

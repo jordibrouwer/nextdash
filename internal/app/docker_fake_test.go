@@ -75,6 +75,22 @@ type fakeDocker struct {
 	versions map[string]int
 	// hostName is what GET /info reports as Name: the machine's own name.
 	hostName string
+	// Compose helpers: every create body as sent, the exit codes the next
+	// waits answer (then helperExit), the lines a helper's log holds, a start
+	// or wait that fails, a wait that never ends, and each removal.
+	createBodies    []map[string]any
+	helperExit      int
+	helperExitSeq   []int
+	helperLogs      []string
+	failStartHelper bool
+	failWait        bool
+	holdWait        bool
+	removed         []fakeRemoval
+}
+
+type fakeRemoval struct {
+	ID    string
+	Force bool
 }
 
 type fakeContainer struct {
@@ -384,6 +400,26 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 		f.handleRemove(w, r, path)
 		return
 
+	case r.Method == "POST" && strings.HasPrefix(path, "/containers/") && strings.HasSuffix(path, "/wait"):
+		id := strings.TrimSuffix(strings.TrimPrefix(path, "/containers/"), "/wait")
+		f.record("POST", "/containers/"+id+"/wait")
+		if f.failWait {
+			writeJSONFake(w, http.StatusInternalServerError, map[string]string{"message": "boom"})
+			return
+		}
+		if f.holdWait {
+			f.mu.Unlock()
+			<-r.Context().Done()
+			f.mu.Lock()
+			return
+		}
+		code := f.helperExit
+		if len(f.helperExitSeq) > 0 {
+			code, f.helperExitSeq = f.helperExitSeq[0], f.helperExitSeq[1:]
+		}
+		writeJSONFake(w, http.StatusOK, map[string]int{"StatusCode": code})
+		return
+
 	case r.Method == "POST" && path == "/containers/create":
 		f.handleCreate(w, r)
 		return
@@ -580,6 +616,10 @@ func (f *fakeDocker) handleAction(w http.ResponseWriter, path string) {
 	if action == "stop" && f.slow > 0 {
 		time.Sleep(f.slow)
 	}
+	if action == "start" && c.Labels[dockerHelperLabel] != "" && f.failStartHelper {
+		writeJSONFake(w, http.StatusInternalServerError, map[string]string{"message": "boom"})
+		return
+	}
 	if action == "start" && f.failStart[c.Name] && c.created {
 		if f.goneOnFailedStart {
 			delete(f.containers, c.ID)
@@ -624,6 +664,7 @@ func (f *fakeDocker) handleRemove(w http.ResponseWriter, r *http.Request, path s
 		writeJSONFake(w, http.StatusNotFound, map[string]string{"message": "no such container"})
 		return
 	}
+	f.removed = append(f.removed, fakeRemoval{ID: c.ID, Force: r.URL.Query().Get("force") == "true"})
 	f.record("DELETE", "/containers/"+c.ID+"?v="+r.URL.Query().Get("v"))
 	delete(f.containers, c.ID)
 	w.WriteHeader(http.StatusNoContent)
@@ -665,6 +706,7 @@ func (f *fakeDocker) handleCreate(w http.ResponseWriter, r *http.Request) {
 	_ = json.Unmarshal(raw, &body)
 	f.lastCreate = map[string]any{}
 	_ = json.Unmarshal(raw, &f.lastCreate)
+	f.createBodies = append(f.createBodies, f.lastCreate)
 	// Unique per create: a second recreate under the same name (an update,
 	// then its rollback) must not reuse the first one's id.
 	f.seq++
@@ -681,6 +723,9 @@ func (f *fakeDocker) handleCreate(w http.ResponseWriter, r *http.Request) {
 		ID: id, Name: name, Image: body.Image, ImageID: f.images[body.Image].ID, State: "created",
 		Env: body.Env, Labels: body.Labels, RestartPolicy: body.HostConfig.RestartPolicy.Name,
 		NetworkMode: body.HostConfig.NetworkMode, Networks: networks, created: true,
+	}
+	if body.Labels[dockerHelperLabel] != "" {
+		f.containers[id].Logs = f.helperLogs
 	}
 	writeJSONFake(w, http.StatusCreated, map[string]string{"Id": id})
 }
@@ -818,5 +863,12 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/binds/measure", h.DockerBindMeasureHandler).Methods("POST")
 	r.HandleFunc("/api/docker/volumes/{name}", h.DockerVolumeRemoveHandler).Methods("DELETE")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", h.DockerActionHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/files", h.DockerComposeFilesHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/files/value", h.DockerComposeValueHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/files/raw", h.DockerComposeRawHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/files", h.DockerComposeSaveHandler).Methods("PUT")
+	r.HandleFunc("/api/docker/compose/{project}/backups", h.DockerComposeBackupsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/backups/{stamp}/restore", h.DockerComposeRestoreHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/{action}", h.DockerComposeRunHandler).Methods("POST")
 	return r
 }

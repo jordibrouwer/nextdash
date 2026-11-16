@@ -1001,6 +1001,11 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			}
 			// Refused whole rather than a file at a time: an archive of a few
 			// hundred captures is a few hundred pointless stats otherwise.
+			// Compose file backups can hold secrets and belong to this host.
+			// The allowlist already leaves them out; this saves the stats.
+			if info.Name() == composeBackupsDir && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
 			if skips.archives && info.Name() == archiveDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}

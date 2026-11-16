@@ -182,3 +182,21 @@ func TestAnOlderBackupKeepsTheContainerState(t *testing.T) {
 		}
 	}
 }
+
+// Compose file backups can hold secrets and belong to this host: they never
+// travel in a settings backup.
+func TestBackupLeavesOutComposeBackups(t *testing.T) {
+	h := newTestHandlers(t)
+	dir := filepath.Join(ResolveDataDir(), composeBackupsDir, "local", "media")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "compose.yml-ab12cd34.20261116T101500Z"), []byte("services: {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for name := range backupZipNames(t, h) {
+		if strings.Contains(name, composeBackupsDir) {
+			t.Errorf("%s went into the backup", name)
+		}
+	}
+}

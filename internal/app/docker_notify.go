@@ -173,7 +173,7 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 	// nextDash's own disk-measuring containers: du exits 1 when a file vanishes
 	// mid-scan, which was recorded as a crash of a container the reader never
 	// sees, and gave each run its own timeline key for 30 days.
-	if ev.Actor.Attributes[dockerBindMeasureLabel] == "1" {
+	if dockerIsOwnHelper(ev.Actor.Attributes) {
 		return nil
 	}
 	n.mu.Lock()
@@ -279,7 +279,7 @@ func (n *containerNotifier) reconcile(list []dockerContainerSummary, now time.Ti
 	var out []monitorNotification
 	for _, c := range list {
 		name := c.name()
-		if name == "" || c.State != "running" || c.Labels[dockerBindMeasureLabel] == "1" {
+		if name == "" || c.State != "running" || dockerIsOwnHelper(c.Labels) {
 			continue
 		}
 		n.mu.Lock()

@@ -324,6 +324,13 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/binds/measure", handlers.DockerBindMeasureHandler).Methods("POST")
 	r.HandleFunc("/api/docker/volumes/{name}", handlers.DockerVolumeRemoveHandler).Methods("DELETE")
 	r.HandleFunc("/api/docker/containers/{id}/{action}", handlers.DockerActionHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/files", handlers.DockerComposeFilesHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/files/value", handlers.DockerComposeValueHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/files/raw", handlers.DockerComposeRawHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/files", handlers.DockerComposeSaveHandler).Methods("PUT")
+	r.HandleFunc("/api/docker/compose/{project}/backups", handlers.DockerComposeBackupsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/backups/{stamp}/restore", handlers.DockerComposeRestoreHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/{action}", handlers.DockerComposeRunHandler).Methods("POST")
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
 	// The same fetch, made once on demand and answered in full: what the

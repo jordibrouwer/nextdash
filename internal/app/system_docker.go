@@ -300,7 +300,7 @@ func countContainers(body io.Reader) (DockerMetrics, error) {
 	hidden := dockerHiddenSet()
 	for _, item := range list {
 		name := containerName(item.Names)
-		if hidden[name] || item.Labels[dockerBindMeasureLabel] == "1" {
+		if hidden[name] || dockerIsOwnHelper(item.Labels) {
 			continue
 		}
 		out.Total++

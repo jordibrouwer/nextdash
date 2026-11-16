@@ -147,6 +147,25 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
+## Unreleased
+
+### Containers
+
+- **new — Find a stack's compose files from its labels (engine).** `NEXTDASH_COMPOSE_MAP` (`hostPrefix:containerPrefix`, comma separated) says where a stack folder appears inside nextDash. A label path is mapped by the longest prefix, must still lie under that prefix after symlinks are followed, must be a regular file of at most 1 MiB, and compose files must end `.yml` or `.yaml`. The request names only the project; every path comes from the daemon's labels (`docker_compose_files.go`).
+- **new — Secrets masked in compose and env files (engine).** Values under keys like `password`, `secret`, `token`, `key`, `cred` or `private`, in the map and the list form of `environment`, and every value in an env file, are replaced by `••••••` in place, so comments and layout stay. A file that does not parse is masked line by line (`docker_compose_redact.go`).
+- **new — See a stack's compose file.** `GET /api/docker/compose/{project}/files` answers the compose files and env files of a stack, masked, with a sha256 and the state of each (unmapped, missing, denied, outside, not YAML, too large), and what to add when the folder is not mapped. Not on other Docker hosts. Config → Containers' status gains the resolved map (`docker_compose_api.go`).
+- **new — Reveal one masked value.** `GET /api/docker/compose/{project}/files/value` gives back a single value the file view masked, behind the write token, never cached (`docker_compose_api.go`).
+- **new — Edit a stack's compose file.** The stack panel's Compose file and .env tabs get Edit: a plain text box on the file, an unsaved marker, Save and Reload. Save sends the version it loaded, so a file changed on disk since is refused and you choose Reload or Keep editing; a YAML error shows its line and column and puts the cursor there; a file on a read-only mount or without write permission says which, instead of a Save button. Only with `NEXTDASH_DOCKER_CONTROL=1`, and never for nextDash's own stack. The Backups tab lists the copies made before each save and restores one after asking (`dashboard-docker-compose.js`).
+- **new — Up, Down and Pull for a stack.** The stack panel has Up, Down and Pull with the output as it runs, in the same progress list as an update; Down asks first and says that volumes and images stay. With control off, on nextDash's own stack or on another Docker host the buttons are disabled and say why (`dashboard-docker-compose.js`, `dashboard-docker-actions.js`).
+- **new — Save a stack's compose file (engine).** `PUT /api/docker/compose/{project}/files` checks the YAML first (line and column on an error, 422), refuses a file changed on disk since it was opened (409, with the current sha256), keeps nextDash's own stack read-only, and copies the old file to `data/compose-backups/` before every write. The file keeps its mode, owner and symlink; when the folder is not writable the answer says to set `NEXTDASH_RUN_AS_ROOT=1` or fix ownership. `GET …/files/raw` hands over the unmasked file behind the write token (`docker_compose_save.go`).
+- **new — Compose file backups (engine).** The last 20 copies per file are listed (`GET …/backups`) and can be put back (`POST …/backups/{stamp}/restore`); a restore first copies the current file. Backups stay out of the settings backup, since they can hold secrets (`docker_compose_save.go`, `backup.go`).
+- **new — Run a stack's compose without a terminal (engine).** `POST /api/docker/compose/{project}/up|down|pull` runs docker compose in a short-lived helper container (`NEXTDASH_COMPOSE_IMAGE`, default `docker:29.7-cli`; the socket's host path from nextDash's own mounts or `NEXTDASH_COMPOSE_SOCKET`) with the stack folder at its own host path, checks the file with `compose config -q` before Up, streams the output, and removes the helper whatever happens. Down never removes volumes. Not offered for nextDash's own stack or on other Docker hosts yet (`docker_compose_run.go`).
+- **fix — nextDash's own helper containers stay out of sight.** The compose helper and the disk-size probe no longer show in the container list, the Glances and system views, or raise a crash notice when they exit non-zero (`docker_compose_run.go`, `docker_notify.go`).
+
+### Docs
+
+- **Compose lines in the example files.** Commented `NEXTDASH_COMPOSE_MAP` and a read-only mount in `docker-compose.yml` and `docker-compose.prod.yml`.
+
 ## v1.30.0 — 16 November 2026
 
 Several Docker hosts in the Containers view, a widget you can put on every page, links dragged in from another window, a Watch feeds switch on the phone and three more Christmas themes.

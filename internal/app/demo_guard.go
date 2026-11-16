@@ -102,6 +102,8 @@ var demoDeniedWrites = []string{
 	"/api/status-page", "/api/status-page/token",
 	// Remote Docker hosts mean connecting to an address somebody typed.
 	"/api/docker/hosts", "/api/docker/hosts/test", "/api/docker/hosts/{id}",
+	// A compose file and its backups are the host's files, which the demo does not have.
+	"/api/docker/compose/{project}/files", "/api/docker/compose/{project}/backups/{stamp}/restore", "/api/docker/compose/{project}/{action}",
 }
 
 // demoAllowedWrites work in the demo as they do anywhere: they change the

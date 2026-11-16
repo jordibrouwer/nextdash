@@ -288,7 +288,7 @@ func (h *Handlers) glancesComputeDockerLink(ctx context.Context, cfg GlancesConf
 	}
 	for _, c := range list {
 		name := c.name()
-		if name == "" || hidden[name] || c.Labels[dockerBindMeasureLabel] == "1" {
+		if name == "" || hidden[name] || dockerIsOwnHelper(c.Labels) {
 			continue
 		}
 		var ports []int
