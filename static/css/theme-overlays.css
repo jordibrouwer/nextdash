@@ -1028,7 +1028,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     grid-row: 3;
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) :is(.bookmark-preview-card-tags, .bookmark-preview-card-facts, .bookmark-preview-card-embed) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) :is(.bookmark-preview-card-tags, .bookmark-preview-card-related, .bookmark-preview-card-facts, .bookmark-preview-card-embed) {
     grid-column: 1 / -1;
 }
 

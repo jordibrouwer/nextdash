@@ -11367,6 +11367,7 @@ class DashboardConfig {
                             { value: 'description', label: t('config.linkPreviewPartDescription', 'Description') },
                             { value: 'note', label: t('config.linkPreviewPartNote', 'Your note') },
                             { value: 'tags', label: t('config.linkPreviewPartTags', 'Tags') },
+                            { value: 'related', label: t('config.linkPreviewPartRelated', 'Related links') },
                             { value: 'status', label: t('config.linkPreviewPartStatus', 'Status & uptime') },
                             { value: 'opens', label: t('config.linkPreviewPartOpens', 'Opens & last opened') },
                             { value: 'location', label: t('config.linkPreviewPartLocation', 'Shortcut & location') },

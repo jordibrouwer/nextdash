@@ -10983,3 +10983,80 @@ body.no-animations .mode-strip.is-entering { animation: none; }
     color: var(--accent-primary);
     outline: none;
 }
+
+/* Related links: the row on the preview card, its chips and the context menu's
+   list. The list borrows the reminder menu's surface. */
+.bookmark-preview-card-related {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.8rem) 0;
+}
+.bookmark-preview-card-related-label {
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+.bookmark-related-chip {
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-3, 0.3rem);
+    border: 1px solid var(--border-secondary);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--text-xs, 0.75rem);
+    line-height: 1.6;
+}
+button.bookmark-related-chip { cursor: pointer; }
+button.bookmark-related-chip:hover,
+button.bookmark-related-chip:focus-visible {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    color: var(--accent-primary);
+    outline: none;
+}
+.related-menu {
+    position: fixed;
+    z-index: 12060;
+    display: flex;
+    flex-direction: column;
+    min-width: 12rem;
+    max-width: 22rem;
+    padding: var(--space-1, 0.3rem);
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.related-menu .inbox-snooze-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
+    border: none;
+    border-radius: var(--radius-4, 0.35rem);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--text-sm, 0.82rem);
+    text-align: left;
+    cursor: pointer;
+}
+.related-menu .inbox-snooze-option:hover,
+.related-menu .inbox-snooze-option:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    outline: none;
+}
+.related-menu-why {
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+.related-menu-note {
+    margin: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
