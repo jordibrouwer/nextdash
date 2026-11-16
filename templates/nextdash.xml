@@ -28,15 +28,15 @@ Key features:
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Network checks on a bookmark: TCP, Ping, DNS, TLS, HTTP and JSON on a schedule or once, with the result in the Tests tab, in the bell and on the dashboard. Ping needs ICMP; if it is blocked nextDash falls back to TCP and says so. To allow it, add --sysctl net.ipv4.ping_group_range="0 2147483647" to Extra Parameters (with Host networking set the sysctl on the Unraid host instead)
-• Edit mode: change categories, widgets and pages right on the dashboard
+• Edit mode: change categories, widgets and pages right on the dashboard, and put a widget on every page with one switch
 • A notifications bell: questions, notices and tips wait there, with their age, instead of popping up over your work
 • A checkup and a weekly digest that tell you what needs attention
 • Watch feeds: follow the RSS, Atom or JSON Feed of sites you choose, with news on the bookmark, in its preview card and in a news window
 • An assistant you ask in plain words, on Claude, OpenAI or a server of your own: it looks things up and changes nothing by itself
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
-• Widgets beside your bookmarks: 58 built-in kinds (tabs, clock, countdown, uptime, feeds, weather, disks, containers and more) plus a Custom widget for any JSON API
-• Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library, and Jellystat, Bazarr and Prowlarr for who watched what, missing subtitles and how your indexers are doing
-• Finds the web apps in your Docker containers and offers them as bookmarks, with an icon and a status check (needs the Docker socket below)
+• Widgets beside your bookmarks: 63 built-in kinds (tabs, clock, countdown, uptime, feeds, weather, disks, containers and more) plus a Custom widget for any JSON API
+• Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library, and your Immich photos as a frame, a slideshow, albums, people and a server status, and Jellystat, Bazarr and Prowlarr for who watched what, missing subtitles and how your indexers are doing
+• Finds the web apps in your Docker containers and offers them as bookmarks, with an icon and a status check (needs the Docker socket below), and up to four more Docker hosts as tabs in the Containers view
 • Glances on the dashboard: a page for the hosts you run Glances on, with processes, containers, graphs and incidents, and a widget for one host
 • Your Unraid server on the dashboard: seven widgets for the array, parity, shares, VMs, the UPS and notifications, with alerts
 • Web search in the search panel through your own SearXNG or the Brave Search API
@@ -58,6 +58,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.30.0 (2026-11-16)
+- Containers: up to four more Docker hosts, each as a tab above the list, read-only until you allow actions
+- Widgets: five Immich widgets (photos, slideshow, albums, people, status) and a bell row for failed Immich jobs
+- Widgets: a widget can show on every page, as an ordinary copy you move and resize per page
+- Bookmarks: a link dragged in from another window onto a category opens the bookmark form filled in
+- Phone: a Watch feeds switch in More
+- Themes: three more Christmas themes, Snow Globe, Paper Advent and Nutcracker Theatre
+
 ### v1.29.2 (2026-11-15)
 - Monitoring: network checks draw their response time, a small line per check and a 24 hour, 7 day or 30 day chart in the Tests tab
 - Bookmarks: a suggested name loses a login word or the site's own name, with an arrow to bring the page's own title back
@@ -80,12 +88,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 ### v1.28.3 (2026-11-12)
 - Themes: the eight new theme groups also dress Bookmarks, Inbox, Containers, Glances, Tags and Config, not only the dashboard
 - Themes: the pane of every view is filled like a dashboard column, with the same opacity, in all 440 themes
-
-### v1.28.2 (2026-11-12)
-- Themes: eight new theme groups, 25 families in light and dark (Stationery, Living, Instrument, Tactile, Spatial, Cartographic, Riso and Legible), a popover and three bell tips that introduce them
-- Backdrops: eighteen new backdrops, each drawn for one family
-- Layout: page margins in seven steps, columns per row as a dropdown from 1 to 8, and five and six columns work on a wide window
-- Bookmarks view: the Latest news column is gone
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -93,7 +95,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-11-15</Date>
+  <Date>2026-11-16</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
