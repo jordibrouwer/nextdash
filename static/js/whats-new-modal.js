@@ -340,6 +340,7 @@
                 <div class="wn-entry-main">
                     <div class="wn-entry-title">${title}</div>
                     ${bodyHtml(body)}
+                    ${mediaHtml(item.media)}
                 </div>
                 ${goButtonHtml(item)}
             </li>`;
