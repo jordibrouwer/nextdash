@@ -29,8 +29,11 @@ const (
 	// does not make a link related by itself: sharing "homelab" with everything
 	// is no relation. Two middling tags together do.
 	relatedMinScore = 1.0
-	// relatedSiteBonus is added for the same site.
-	relatedSiteBonus = 1.0
+	// relatedSiteCap is the most the same site adds. Like a tag, a site counts
+	// for less the more of the library it is: ln(N / bookmarks on that site),
+	// so forty github.com bookmarks in a library of a hundred are not each
+	// other's relations by address alone, and two on a small site are.
+	relatedSiteCap = 2.0
 	// relatedCoOpenWindowMs is how close two opens must be to count as together.
 	relatedCoOpenWindowMs = 10 * 60 * 1000
 	// relatedCoOpenMinPairs is how many such pairs it takes before the signal
@@ -61,6 +64,20 @@ func relatedSite(raw string) string {
 		return ""
 	}
 	return strings.TrimPrefix(strings.ToLower(u.Host), "www.")
+}
+
+// relatedLooseKey is an address without its scheme and a leading "www.", for
+// telling the same page under two spellings from two pages.
+func relatedLooseKey(raw string) string {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	key := strings.TrimPrefix(strings.ToLower(u.Host), "www.") + strings.TrimSuffix(u.EscapedPath(), "/")
+	if u.RawQuery != "" {
+		key += "?" + u.RawQuery
+	}
+	return key
 }
 
 // coOpenPairs counts the opens of a that have an open of b within the window.
@@ -142,16 +159,28 @@ func relatedTo(targetURL string, all []Bookmark) []relatedLink {
 		}
 	}
 	n := float64(len(pool))
+	siteCount := map[string]int{}
+	for _, b := range pool {
+		if site := relatedSite(b.URL); site != "" {
+			siteCount[site]++
+		}
+	}
 	targetTags := map[string]bool{}
 	for _, tag := range normalizeTags(target.Tags) {
 		targetTags[tag] = true
 	}
 	site := relatedSite(target.URL)
+	targetLoose := relatedLooseKey(target.URL)
 	targetLog := sortedLog(target.OpenLog)
 
 	out := make([]relatedLink, 0, len(pool))
 	for _, b := range pool {
 		if canonicalBookmarkURLKey(b.URL) == key {
+			continue
+		}
+		// The same page under http and https, or with and without "www.", is
+		// the bookmark itself rather than a relation of it.
+		if targetLoose != "" && relatedLooseKey(b.URL) == targetLoose {
 			continue
 		}
 		var score float64
@@ -167,7 +196,7 @@ func relatedTo(targetURL string, all []Bookmark) []relatedLink {
 			reasons = append(reasons, "tags")
 		}
 		if site != "" && relatedSite(b.URL) == site {
-			score += relatedSiteBonus
+			score += math.Min(math.Log(n/float64(siteCount[site])), relatedSiteCap)
 			reasons = append(reasons, "site")
 		}
 		if pairs := coOpenPairs(targetLog, sortedLog(b.OpenLog)); pairs >= relatedCoOpenMinPairs {
