@@ -563,7 +563,11 @@ type Settings struct {
 	// LinkPreviewPartsUpgraded marks that the rows added after the checklist
 	// shipped have been put back into a stored list. One-way: it is set once
 	// and then the reader's own choice stands.
-	LinkPreviewPartsUpgraded       bool                         `json:"linkPreviewPartsUpgraded,omitempty"`
+	LinkPreviewPartsUpgraded bool `json:"linkPreviewPartsUpgraded,omitempty"`
+	// LinkPreviewRelatedOffered marks that the "related" row has been put into a
+	// stored checklist, once: a list stored before the row existed reads as
+	// "switched off" rather than "never offered".
+	LinkPreviewRelatedOffered      bool                         `json:"linkPreviewRelatedOffered,omitempty"`
 	LinkPreviewHoverDelayMs        int                          `json:"linkPreviewHoverDelayMs"`                  // Hover delay before preview card appears
 	PreviewImageCacheMB            int                          `json:"previewImageCacheMB,omitempty"`            // Disk cap for data/preview-images
 	ShowShortcuts                  bool                         `json:"showShortcuts"`                            // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
@@ -5176,6 +5180,15 @@ func (fs *FileStore) getSettingsShared() Settings {
 		if _, ok := rawSettings["linkPreviewPartsUpgraded"]; !ok {
 			settings.LinkPreviewParts = withLaterLinkPreviewParts(settings.LinkPreviewParts)
 			settings.LinkPreviewPartsUpgraded = true
+		}
+		// The related-links row, offered once to a checklist that was stored
+		// before it existed. A nil list already means every row, and an empty one
+		// is a reader who switched them all off: both are left as they are.
+		if _, ok := rawSettings["linkPreviewRelatedOffered"]; !ok {
+			if len(settings.LinkPreviewParts) > 0 {
+				settings.LinkPreviewParts = normalizeLinkPreviewParts(append(append([]string{}, settings.LinkPreviewParts...), "related"))
+			}
+			settings.LinkPreviewRelatedOffered = true
 		}
 		if _, ok := rawSettings["showSiteNews"]; !ok {
 			settings.ShowSiteNews = true
