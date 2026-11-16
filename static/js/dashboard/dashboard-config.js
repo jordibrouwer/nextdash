@@ -4541,6 +4541,7 @@ class DashboardConfig {
         pushNotifyBackup: ['push', 'notification', 'backup'],
         pushNotifyGlances: ['push', 'notification', 'glances', 'host', 'incident'],
         pushNotifyNews: ['push', 'notification', 'news', 'feed', 'watch'],
+        pushNotifyReminders: ['push', 'notification', 'reminder', 'remind', 'bookmark', 'later'],
         notifyNewsTarget: ['notification', 'news', 'feed', 'watch', 'ntfy', 'gotify', 'discord', 'alert'],
         pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
@@ -10107,6 +10108,7 @@ class DashboardConfig {
         pushNotifyContainers: { def: false },
         pushNotifyGlances: { def: false },
         pushNotifyNews: { def: true },
+        pushNotifyReminders: { def: true },
         notifyNewsTarget: { def: false },
         pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
@@ -11935,6 +11937,7 @@ class DashboardConfig {
                     bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
                     bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
                     bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
+                    bool('pushNotifyReminders', 'config.pushNotifyRemindersLabel', 'Notify when a reminder you set on a bookmark is due'),
                     bool('pushNotifyGlances', 'config.pushNotifyGlancesLabel', 'Notify when a Glances host has an incident (kinds are chosen in Config → Glances)'),
                     { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
                     { type: 'pushDevice' },

@@ -855,6 +855,10 @@ class DashboardBookmarkRows {
             openLink.appendChild(noteBadge);
         }
 
+        // The time the reader asked to be reminded of this link, as a small clock.
+        const remindBadge = d.reminders?.badgeFor?.(bookmark);
+        if (remindBadge) openLink.appendChild(remindBadge);
+
         // Tag chips, inside the link rather than as a grid column of their own:
         // the row is a subgrid whose columns line up across every category, so a
         // new column would shift every row on the page. Off by default — a row
@@ -959,6 +963,7 @@ class DashboardBookmarkRows {
             // row whose count changed or was cleared by opening it has to be
             // redrawn by the incremental renderer.
             this.feedWatchFingerprint(bookmark),
+            d?.reminders?.fingerprintFor?.(bookmark) || '0',
             showIcons,
             iconStylingKey,
         ].join('\u0001');
