@@ -1556,6 +1556,8 @@ class DashboardPreview {
         const context = card._previewContext;
         if (context) context.mode = 'pinned';
         this.applyPreviewCardMode(card, 'pinned');
+        // The related chips were drawn to be read; a pinned card's are buttons.
+        this.paintPreviewRelated(card, this.previewParts());
         card.focus?.();
     }
 
@@ -1721,6 +1723,9 @@ class DashboardPreview {
             row.appendChild(label);
             related.chips(links, { clickable: mode === 'pinned' }).forEach((chip) => row.appendChild(chip));
             row.hidden = false;
+            // The row made the card taller after it was placed: keep it on screen.
+            const anchor = card._previewContext?.openLink;
+            if (anchor) this.positionBookmarkPreviewCard(anchor);
         });
     }
 

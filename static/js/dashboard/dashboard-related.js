@@ -17,6 +17,7 @@ class DashboardRelated {
     constructor(dash) {
         this.dash = dash;
         this._cache = new Map();
+        this._pending = new Map();
         this._menu = null;
         this._outside = null;
         this._keys = null;
@@ -55,18 +56,30 @@ class DashboardRelated {
     async for(bookmark) {
         const url = String(bookmark?.url || '').trim();
         if (!url) return [];
-        const kept = this._cache.get(url);
-        if (kept && Date.now() - kept.at < DashboardRelated.KEEP_MS) return kept.links;
-        try {
-            const res = await fetch(`/api/related?url=${encodeURIComponent(url)}`, { cache: 'no-store' });
-            if (!res.ok) return [];
-            const links = await res.json();
-            const clean = Array.isArray(links) ? links.filter((l) => l && l.url) : [];
-            this._cache.set(url, { at: Date.now(), links: clean });
-            return clean;
-        } catch {
-            return [];
-        }
+        const kept = this.cached(bookmark);
+        if (kept) return kept;
+        // One request per address at a time: the palette asks again on every
+        // redraw, and a card and a menu can ask together.
+        if (this._pending.has(url)) return this._pending.get(url);
+        const ask = (async () => {
+            let links = [];
+            try {
+                const res = await fetch(`/api/related?url=${encodeURIComponent(url)}`, { cache: 'no-store' });
+                if (res.ok) {
+                    const body = await res.json();
+                    links = Array.isArray(body) ? body.filter((l) => l && l.url) : [];
+                }
+            } catch {
+                // Treated as "none": see below.
+            }
+            // Kept even when it failed or is empty. Not kept, the palette's
+            // redraw would find nothing held, ask again and redraw again for as
+            // long as the server stayed down.
+            this._cache.set(url, { at: Date.now(), links });
+            return links;
+        })().finally(() => this._pending.delete(url));
+        this._pending.set(url, ask);
+        return ask;
     }
 
     /** What makes a link related, in words, for a tooltip. */
@@ -114,7 +127,10 @@ class DashboardRelated {
         const pageId = Number(link.pageId);
         // Always, even when it is the page on screen: that also leaves a view
         // (Bookmarks, Inbox) that is covering it.
-        if (pageId) await d.requestPageNavigation?.(pageId);
+        if (pageId) {
+            // false: the reader kept an unsaved edit and stayed where they were.
+            if ((await d.requestPageNavigation?.(pageId)) === false) return;
+        }
         const url = String(link.url || '');
         const find = () => [...document.querySelectorAll('.bookmark-link[data-bookmark-url]')]
             .find((r) => r.getAttribute('data-bookmark-url') === url

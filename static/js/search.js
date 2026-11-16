@@ -354,7 +354,11 @@ class SearchComponent {
             const selected = this.searchActive ? this.selectableMatches[this.selectedMatchIndex] : null;
             const webBookmark = e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Enter'
                 && selected?.type === 'web-result' && Boolean(selected.bookmark);
-            if (!forceNewTab && !webBookmark && (e.ctrlKey || e.altKey || e.metaKey)) {
+            // A command row that has an alternative: `:related` goes to the link's
+            // place on Alt+Enter, where plain Enter opens it.
+            const commandAlt = e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Enter'
+                && selected?.type === 'command';
+            if (!forceNewTab && !webBookmark && !commandAlt && (e.ctrlKey || e.altKey || e.metaKey)) {
                 return;
             }
 
@@ -1817,7 +1821,10 @@ class SearchComponent {
             // Ctrl/Cmd+Enter forces a new tab, as on the grid. The focused row
             // takes Enter before the document handler that honoured it, so
             // the chord opened in the same tab.
-            this._activateMatchAt(index, { newTab: e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.altKey });
+            this._activateMatchAt(index, {
+                newTab: e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.altKey,
+                alt: e.key === 'Enter' && e.altKey && !e.ctrlKey && !e.metaKey,
+            });
         });
     }
 
@@ -4331,7 +4338,10 @@ class SearchComponent {
             // The click kept a copy of it that drifted -- the mode hint had no
             // branch here and opened an undefined bookmark.
             matchElement.addEventListener('click', (e) => {
-                this._activateMatchAt(mySelectableIndex, { newTab: Boolean(e?.ctrlKey || e?.metaKey) });
+                this._activateMatchAt(mySelectableIndex, {
+                    newTab: Boolean(e?.ctrlKey || e?.metaKey),
+                    alt: Boolean(e?.altKey) && !(e?.ctrlKey || e?.metaKey),
+                });
             });
             this._bindMatchKeyboardActivate(matchElement, mySelectableIndex);
 
