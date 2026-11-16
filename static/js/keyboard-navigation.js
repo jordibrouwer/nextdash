@@ -173,6 +173,7 @@ class KeyboardNavigation {
                 || document.getElementById('move-popover')
                 || document.getElementById('delete-popover')
                 || document.getElementById('reminder-menu')
+                || document.getElementById('related-menu')
                 || document.getElementById('date-popover')
                 || document.getElementById('multi-select-tags-popover')
                 || document.getElementById('multi-select-check-popover')
@@ -693,7 +694,7 @@ class KeyboardNavigation {
             this.dashboard?.isModalOpen?.()
             || this.dashboard?.isInlineEditActive?.()
             || document.querySelector('.modal-overlay.show, #tag-popover, #move-popover, #delete-popover, #date-popover, '
-                + '#multi-select-tags-popover, #multi-select-check-popover, #bookmark-context-menu, #reminder-menu, '
+                + '#multi-select-tags-popover, #multi-select-check-popover, #bookmark-context-menu, #reminder-menu, #related-menu, '
                 + '#bookmark-check-mode-menu, .bookmark-context-menu, .feed-news-pop')
             || document.body.classList.contains('bookmark-inline-edit-active')
             || document.querySelector('.category-title--renaming')

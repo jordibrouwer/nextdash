@@ -51,7 +51,7 @@ class SearchCommandsComponent {
                 label: 'Bookmarks',
                 labelKey: 'commands.groupBookmarks',
                 commands: [
-                    'new', 'add', 'remove', 'note', 'pin', 'remind', 'move', 'edit', 'copy', 'tag',
+                    'new', 'add', 'remove', 'note', 'pin', 'remind', 'related', 'move', 'edit', 'copy', 'tag',
                     'open', 'goto', 'find', 'stale', 'duplicates', 'checkup', 'archive',
                 ],
             },
@@ -158,6 +158,7 @@ class SearchCommandsComponent {
             'pin': this.handlePinCommand.bind(this),
             'unpin': this.handlePinCommand.bind(this),
             'remind': this.handleRemindCommand.bind(this),
+            'related': this.handleRelatedCommand.bind(this),
             'move': this.handleMoveCommand.bind(this),
             'edit': this.handleEditCommand.bind(this),
             'copy': this.handleCopyCommand.bind(this),
@@ -1466,6 +1467,64 @@ class SearchCommandsComponent {
                 return this._paletteRefresh('pin');
             }
         }];
+    }
+
+    // ─── :related ─────────────────────────────────────────────────────────────
+
+    /**
+     * `:related` lists the links that belong with the bookmark under the cursor;
+     * `:related <name>` with the one found by name. Enter opens a link, Alt+Enter
+     * goes to its place on the dashboard (Shift+Enter is the web). The list arrives from the server, so the
+     * rows are filled in by a second draw of the palette once it has.
+     */
+    handleRelatedCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        const related = dash?.related;
+        if (!related) return [];
+        const needle = (args || []).join(' ').trim().toLowerCase();
+        let target = this.contextBookmark;
+        if (needle) {
+            const hits = this._getTagBookmarkPool().filter((b) => String(b.name || '').toLowerCase().includes(needle));
+            hits.sort((a, b) => (String(a.name || '').toLowerCase().startsWith(needle) ? 0 : 1)
+                - (String(b.name || '').toLowerCase().startsWith(needle) ? 0 : 1)
+                || String(a.name).length - String(b.name).length);
+            target = hits[0] || null;
+            if (!target) {
+                return [{
+                    name: this._t('commands.remindNoMatch', 'No bookmark matches "{name}"').replace('{name}', needle),
+                    shortcut: ':RELATED', action: () => true, type: 'command',
+                }];
+            }
+        }
+        if (!target) {
+            return [{
+                name: this._t('commands.tagNoSelection', 'No bookmark selected — navigate to one first'),
+                shortcut: ':RELATED', action: () => true, type: 'command',
+            }];
+        }
+        const links = related.cached(target);
+        if (!links) {
+            // Ask once, then draw the query again with the answer.
+            void related.for(target).then(() => {
+                if (/^:related\b/i.test(dash.searchComponent?.currentQuery || '')) dash.searchComponent.updateSearch?.();
+            });
+            return [{
+                name: this._t('commands.relatedLooking', 'Looking for links related to "{name}"…').replace('{name}', target.name || target.url),
+                shortcut: ':RELATED', action: () => true, type: 'command',
+            }];
+        }
+        if (!links.length) {
+            return [{
+                name: this._t('commands.relatedNone', 'No links related to "{name}"').replace('{name}', target.name || target.url),
+                shortcut: ':RELATED', action: () => true, type: 'command',
+            }];
+        }
+        return links.map((link) => ({
+            name: `${link.name || link.url} (${related.reasonText(link)})`,
+            shortcut: ':RELATED',
+            type: 'command',
+            action: (event) => this._runOverlayAction(() => related.activate(link, event)),
+        }));
     }
 
     // ─── :remind ──────────────────────────────────────────────────────────────

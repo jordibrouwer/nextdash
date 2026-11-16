@@ -1196,7 +1196,7 @@ class SearchComponent {
         if (key === 'ENTER' && (this.searchActive || this.currentQuery.length > 0)) {
             e.preventDefault();
             this._flushSearchUpdate();
-            this.selectCurrentMatch({ newTab: (e.ctrlKey || e.metaKey) && !e.altKey });
+            this.selectCurrentMatch({ newTab: (e.ctrlKey || e.metaKey) && !e.altKey, alt: e.altKey && !e.ctrlKey && !e.metaKey });
             return;
         }
         
@@ -4436,7 +4436,7 @@ class SearchComponent {
         }
     }
 
-    selectCurrentMatch({ newTab = false } = {}) {
+    selectCurrentMatch({ newTab = false, alt = false } = {}) {
         if (this.rowActions) {
             void this.runRowAction();
             return;
@@ -4474,7 +4474,7 @@ class SearchComponent {
             } else if (selectedMatch.type === 'colors') {
                 this.openColors();
             } else if (selectedMatch.type === 'command') {
-                this.invokeCommand(selectedMatch);
+                this.invokeCommand(selectedMatch, { altKey: alt });
             } else if (selectedMatch.type === 'command-completion') {
                 this.currentQuery = selectedMatch.completion;
                 this.updateSearch();
@@ -5076,10 +5076,10 @@ class SearchComponent {
         window.nextdashRecordKey?.(':' + name);
     }
 
-    invokeCommand(match) {
+    invokeCommand(match, event = undefined) {
         const queryBefore = this.currentQuery;
         this._trackCommandUse(queryBefore);
-        const result = match.action();
+        const result = match.action(event);
         if (result && typeof result.then === 'function') {
             result.then((resolved) => this._finishCommandInvoke(queryBefore, match, resolved))
                 .catch((error) => {
