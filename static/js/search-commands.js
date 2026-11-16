@@ -51,7 +51,7 @@ class SearchCommandsComponent {
                 label: 'Bookmarks',
                 labelKey: 'commands.groupBookmarks',
                 commands: [
-                    'new', 'add', 'remove', 'note', 'pin', 'move', 'edit', 'copy', 'tag',
+                    'new', 'add', 'remove', 'note', 'pin', 'remind', 'move', 'edit', 'copy', 'tag',
                     'open', 'goto', 'find', 'stale', 'duplicates', 'checkup', 'archive',
                 ],
             },
@@ -157,6 +157,7 @@ class SearchCommandsComponent {
             'note': this.handleNoteCommand.bind(this),
             'pin': this.handlePinCommand.bind(this),
             'unpin': this.handlePinCommand.bind(this),
+            'remind': this.handleRemindCommand.bind(this),
             'move': this.handleMoveCommand.bind(this),
             'edit': this.handleEditCommand.bind(this),
             'copy': this.handleCopyCommand.bind(this),
@@ -1465,6 +1466,84 @@ class SearchCommandsComponent {
                 return this._paletteRefresh('pin');
             }
         }];
+    }
+
+    // ─── :remind ──────────────────────────────────────────────────────────────
+
+    /**
+     * `:remind <when>` sets a reminder on the bookmark under the cursor;
+     * `:remind <name> <when>` on a bookmark found by name; `:remind` alone lists
+     * the presets for the bookmark under the cursor. `:remind clear` removes it.
+     *
+     * The time is the last one or two words (`tomorrow`, `3h`, `next week`,
+     * `24 dec`); whatever comes before it is the name.
+     */
+    handleRemindCommand(args, fullQuery) {
+        const dash = window.dashboardInstance;
+        const reminders = dash?.reminders;
+        if (!reminders) return [];
+        const words = (args || []).map((word) => String(word || '').trim()).filter(Boolean);
+        const row = (bookmark, at, label) => ({
+            name: label,
+            shortcut: ':REMIND',
+            type: 'command',
+            action: () => this._runOverlayAction(() => {
+                void reminders.set({ bookmark, pageId: Number(bookmark.pageId) || Number(dash.currentPageId) }, at);
+            }),
+        });
+        const describe = (bookmark, at) => (at > 0
+            ? this._t('commands.remindLabel', 'Remind me of "{name}" {time}')
+                .replace('{name}', bookmark.name || bookmark.url).replace('{time}', reminders.formatWhen(at))
+            : this._t('commands.remindClearLabel', 'Remove the reminder on "{name}"')
+                .replace('{name}', bookmark.name || bookmark.url));
+
+        // The time: the longest tail of the words that reads as one.
+        let at = 0;
+        let nameWords = words;
+        const isClear = words[words.length - 1]?.toLowerCase() === 'clear';
+        if (isClear) {
+            nameWords = words.slice(0, -1);
+        } else {
+            for (const take of [2, 1]) {
+                if (words.length < take) continue;
+                const parsed = reminders.parseWhen(words.slice(-take).join(' '));
+                if (parsed) { at = parsed; nameWords = words.slice(0, -take); break; }
+            }
+        }
+
+        let target = null;
+        if (nameWords.length) {
+            const needle = nameWords.join(' ').toLowerCase();
+            const pool = this._getTagBookmarkPool();
+            const hits = pool.filter((b) => String(b.name || '').toLowerCase().includes(needle));
+            hits.sort((a, b) => {
+                const as = String(a.name || '').toLowerCase().startsWith(needle) ? 0 : 1;
+                const bs = String(b.name || '').toLowerCase().startsWith(needle) ? 0 : 1;
+                return as - bs || String(a.name).length - String(b.name).length;
+            });
+            if ((at || isClear) && hits.length) {
+                return hits.slice(0, 5).map((b) => row(b, isClear ? 0 : at, describe(b, isClear ? 0 : at)));
+            }
+            if (!hits.length) {
+                return [{
+                    name: this._t('commands.remindNoMatch', 'No bookmark matches "{name}"').replace('{name}', nameWords.join(' ')),
+                    shortcut: ':REMIND', action: () => true, type: 'command',
+                }];
+            }
+            target = hits[0];
+        } else {
+            target = this.contextBookmark;
+        }
+        if (!target) {
+            return [{
+                name: this._t('commands.tagNoSelection', 'No bookmark selected — navigate to one first'),
+                shortcut: ':REMIND', action: () => true, type: 'command',
+            }];
+        }
+        if (isClear) return [row(target, 0, describe(target, 0))];
+        if (at) return [row(target, at, describe(target, at))];
+        // No time typed yet: the presets, for the bookmark found or under the cursor.
+        return reminders.presets().map((p) => row(target, p.at, `${describe(target, p.at)} (${p.label})`));
     }
 
     // ─── :tag (browse by tag in palette; +/− mutates focused bookmark) ───────

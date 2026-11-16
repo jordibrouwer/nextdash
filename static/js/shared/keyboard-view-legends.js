@@ -102,6 +102,7 @@
         { line: 1, more: true, keys: 'q', legendKey: 'dashboardKeyQr', cheatKey: 'dvQr', fallback: 'QR code' },
         { line: 1, more: true, keys: 'f', legendKey: 'dashboardKeyFilterTag', cheatKey: 'dvFilterTag', fallback: 'filter by tag' },
         { line: 1, more: true, keys: 'w', legendKey: 'dashboardKeyWatchFeed', cheatKey: 'dvWatchFeed', fallback: 'watch feed' },
+        { line: 1, more: true, keys: 'z', legendKey: 'dashboardKeyRemind', cheatKey: 'dvRemind', fallback: 'remind me' },
         { line: 1, more: true, keys: 'Shift+\u2190/\u2192', legendKey: 'dashboardKeyPrevNextPage', cheatKey: 'dvPrevNextPage', fallback: 'prev / next page' },
         { line: 1, more: true, keys: 'Shift+F', legendKey: 'dashboardKeyFilter', cheatKey: 'dvFilter', fallback: 'filter' },
         { line: 1, more: true, keys: 'Shift+K', legendKey: 'dashboardKeyTour', cheatKey: 'dvTour', fallback: 'tour' },

@@ -308,6 +308,14 @@ class DashboardContextMenu {
                 key: 'M',
             },
             {
+                id: 'remind',
+                label: Number(bookmarkRef.bookmark?.remindAt) > 0
+                    ? this.t('dashboard.contextMenuReminderSet', 'Reminder: {time}…', { time: d.reminders?.formatWhen?.(bookmarkRef.bookmark.remindAt) || '' })
+                    : this.t('dashboard.contextMenuRemind', 'Remind me…'),
+                icon: '\u23F0',
+                key: 'Z',
+            },
+            {
                 id: 'feed-watch',
                 label: d.feedWatch?.isWatched?.(bookmarkRef.bookmark)
                     ? this.t('dashboard.feedWatchManage', 'Watching feed…')
@@ -356,7 +364,7 @@ class DashboardContextMenu {
         const fromStatus = !!row?.hasAttribute?.('data-status-row');
         const phoneKeeps = new Set(fromStatus
             ? ['open-new-tab', 'copy-url', 'share', 'feed-watch']
-            : ['open-new-tab', 'copy-url', 'share', 'edit', 'pin', 'tags', 'move', 'feed-watch', 'delete']);
+            : ['open-new-tab', 'copy-url', 'share', 'edit', 'pin', 'tags', 'move', 'remind', 'feed-watch', 'delete']);
         const actions = selectionActions.length
             ? selectionActions
             : phone && bookmarkRef.scope !== 'inbox'
@@ -995,6 +1003,9 @@ class DashboardContextMenu {
                 else void inbox.runClaimed(item.id, () => inbox.deleteItemWithUndo(item.id));
                 break;
             }
+            case 'remind':
+                d.reminders?.openMenu(bookmarkRef, row);
+                break;
             case 'feed-watch':
                 void window.FeedWatchPicker?.open({ bookmark });
                 break;

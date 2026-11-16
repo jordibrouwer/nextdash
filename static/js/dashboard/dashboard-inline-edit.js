@@ -1447,6 +1447,28 @@ class DashboardInlineEdit {
         colWhere.appendChild(noteField);
         noteInput.dataset.field = 'note';
 
+        // When to be reminded of the link. Not part of Save: choosing a time
+        // writes it at once (PATCH), like the clock on the row, so an edit that
+        // is later cancelled does not take the reminder with it.
+        if (!isCreate && d.reminders && bookmark?.url) {
+            const remindButton = document.createElement('button');
+            remindButton.type = 'button';
+            remindButton.className = 'bookmark-inline-remind';
+            const paintRemind = () => {
+                const at = Number(bookmark.remindAt) || 0;
+                remindButton.textContent = at > 0
+                    ? d.reminders.t('bookmark.remindSet', 'Reminder: {time}', { time: d.reminders.formatWhen(at) })
+                    : d.reminders.t('bookmark.remindNone', 'No reminder');
+            };
+            paintRemind();
+            remindButton.addEventListener('click', () => {
+                d.reminders.openMenu({ bookmark, pageId: Number(bookmark.pageId) || Number(d.currentPageId) }, remindButton, { onDone: paintRemind });
+            });
+            const remindField = mkField(d.reminders.t('bookmark.remindLabel', 'Remind me'), remindButton);
+            remindField.dataset.fieldBlock = 'remind';
+            colWhere.appendChild(remindField);
+        }
+
         const loadCategoriesForPage = async (pageId) => (
             Number(pageId) === currentPageId
                 ? (d.categories || [])
