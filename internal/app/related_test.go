@@ -39,6 +39,7 @@ func TestRelatedSiteAndNoise(t *testing.T) {
 		{Name: "Forum", URL: "https://svc.example/forum", PageID: 2},
 		{Name: "Other", URL: "https://other.example/", PageID: 1},
 	}
+	all = append(all, fillers(8, "z")...)
 	got := relatedTo("https://www.svc.example/docs", all)
 	if relatedNames(got) != "Forum" || got[0].Reasons[0] != "site" {
 		t.Fatalf("same site (www ignored): %s", relatedNames(got))
@@ -136,6 +137,7 @@ func TestRelatedSiteIncludesThePort(t *testing.T) {
 		{Name: "Radarr", URL: "http://192.168.1.10:7878/", PageID: 1},
 		{Name: "Sonarr docs", URL: "http://192.168.1.10:8989/docs", PageID: 1},
 	}
+	all = append(all, fillers(8, "z")...)
 	if got := relatedTo("http://192.168.1.10:8989/", all); relatedNames(got) != "Sonarr docs" {
 		t.Fatalf("another port is another service: %s", relatedNames(got))
 	}
@@ -158,4 +160,38 @@ func TestRelatedCapsTheAnswer(t *testing.T) {
 	if got := relatedTo("https://me.example/", all); len(got) != relatedMax {
 		t.Fatalf("at most %d, got %s", relatedMax, relatedNames(got))
 	}
+}
+
+func TestRelatedACommonSiteAloneIsNoRelation(t *testing.T) {
+	// A third of the library is on one site: sharing it says nothing.
+	all := []Bookmark{{Name: "Me", URL: "https://big.example/me", PageID: 1}}
+	for i := 0; i < 6; i++ {
+		all = append(all, Bookmark{Name: "Mate" + string(rune('a'+i)), URL: "https://big.example/" + string(rune('a'+i)), PageID: 1})
+	}
+	all = append(all, fillers(7, "z")...)
+	if got := relatedTo("https://big.example/me", all); len(got) != 0 {
+		t.Fatalf("a site that is a third of the library relates nothing: %s", relatedNames(got))
+	}
+}
+
+func TestRelatedSamePageUnderTwoSpellingsIsNotARelation(t *testing.T) {
+	all := []Bookmark{
+		{Name: "Me", URL: "https://www.x.example/a", PageID: 1, Tags: []string{"t", "u"}},
+		{Name: "Same page", URL: "http://x.example/a", PageID: 1, Tags: []string{"t", "u"}},
+		{Name: "Sibling", URL: "https://x.example/b", PageID: 1, Tags: []string{"t", "u"}},
+	}
+	all = append(all, fillers(8, "z")...)
+	if got := relatedTo("https://www.x.example/a", all); relatedNames(got) != "Sibling" {
+		t.Fatalf("the same page under http or without www is the bookmark itself: %s", relatedNames(got))
+	}
+}
+
+// fillers are bookmarks on their own sites that carry one tag, to give a small
+// test library the size at which tag and site rarity mean something.
+func fillers(n int, tag string) []Bookmark {
+	out := make([]Bookmark, 0, n)
+	for i := 0; i < n; i++ {
+		out = append(out, Bookmark{Name: "filler" + strings.Repeat("x", i), URL: "https://filler" + strings.Repeat("x", i) + ".example/", PageID: 1, Tags: []string{tag}})
+	}
+	return out
 }
