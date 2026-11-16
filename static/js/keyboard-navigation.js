@@ -278,6 +278,20 @@ class KeyboardNavigation {
                 return;
             }
 
+            // Shift+V — the release notes: What's new, the same window as :whatsnew.
+            // V for version. Free since the old row key went in v1.27.0.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyV'
+                && window.openWhatsNewModal) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                if (!e.repeat) {
+                    window.nextdashRecordKey?.('Shift + V');
+                    void window.openWhatsNewModal({ force: true });
+                }
+                return;
+            }
+
             // Shift+W — set the width of the block the cursor is in, category or
             // widget. Outside the Shift block above because that one acts on a
             // bookmark row, and a block needs no row selected.
@@ -442,7 +456,7 @@ class KeyboardNavigation {
             }
 
             // '[' — the old preview key, kept working but undocumented now that
-            // Shift+V does it. Brackets mean "previous / next sub-tab" in
+            // plain v does it. Brackets mean "previous / next sub-tab" in
             // config, and one pair of keys should not mean two things.
             if (e.key === '[' && this.currentIndex >= 0) {
                 e.preventDefault();
@@ -604,7 +618,6 @@ class KeyboardNavigation {
         P: 'Shift+P opens the Pages panel',
         C: 'Shift+C opens Containers',
         R: 'Shift+R does nothing now',
-        V: 'Shift+V does nothing now',
         Q: 'Shift+Q does nothing now',
         D: 'Shift+D does nothing now',
     };

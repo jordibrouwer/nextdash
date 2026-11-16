@@ -36,6 +36,7 @@
                 { keys: 'Shift+B', text: 'Open the Bookmarks view', explain: 'Every bookmark across your pages in one list, to search, filter and clean up.', try: k('B', { shift: true, code: 'KeyB' }) },
                 { keys: 'Shift+N', text: 'Open the notifications bell', explain: 'What needs you waits there: alerts, updates, questions and two tips a day. The same key closes it.', try: k('N', { shift: true, code: 'KeyN' }) },
                 { keys: 'Shift+H', text: 'Hide or show the key legend', explain: 'The legend under the grid lists the keys that work right now.', try: k('H', { shift: true, code: 'KeyH' }) },
+                { keys: 'Shift+V', text: "Open What's new", explain: 'The release notes: what changed in this version and the ones you have not read yet. Esc closes it.', try: k('V', { shift: true, code: 'KeyV' }) },
                 { keys: 'w', text: 'Watch the feed of the bookmark under the cursor', explain: 'Pick which feeds of the site to follow and how often to check. Its news then shows on the bookmark.' },
                 { keys: 'Shift+W', text: 'Read the news of the feeds you watch', explain: 'Every watched site in one paper, with read and unread per item. With no feed watched yet it says so, and points to help.' },
             ],

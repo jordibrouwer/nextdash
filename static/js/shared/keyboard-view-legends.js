@@ -85,6 +85,7 @@
         { line: 1, keys: 'Shift+P', legendKey: 'dashboardKeyPages', cheatKey: 'dvPages', fallback: 'pages' },
         { line: 1, keys: 'Shift+N', legendKey: 'dashboardKeyBell', cheatKey: 'dvBell', fallback: 'notifications' },
         { line: 1, keys: 'Shift+W', legendKey: 'dashboardKeyNews', cheatKey: 'dvNews', fallback: 'news' },
+        { line: 1, keys: 'Shift+V', legendKey: 'dashboardKeyWhatsNew', cheatKey: 'dvWhatsNew', fallback: "what's new" },
         { line: 1, keys: 'Shift+A', legendKey: 'dashboardKeyThemeStudio', cheatKey: 'dvThemeStudio', fallback: 'theme studio' },
         { line: 1, keys: 'Shift+E', legendKey: 'dashboardKeyEditMode', cheatKey: 'dvEditMode', fallback: 'edit mode' },
         { line: 1, keys: 'Shift+H', legendKey: 'dashboardKeyHideLegend', cheatKey: 'dvHideLegend', fallback: 'hide legend' },
