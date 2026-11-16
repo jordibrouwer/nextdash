@@ -419,6 +419,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/notify/pause", handlers.PauseNotifications).Methods("POST")
 	r.HandleFunc("/api/checkup/structure", handlers.CheckupStructure).Methods("GET")
 	r.HandleFunc("/api/digest/latest", handlers.DigestLatest).Methods("GET")
+	r.HandleFunc("/api/reminders/due", handlers.RemindersDue).Methods("GET")
 	r.HandleFunc("/api/digest/test", handlers.DigestTest).Methods("POST")
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")
 	// Asking the archive to keep a copy, rather than hoping someone already
@@ -541,6 +542,8 @@ func Run(files assetFS) {
 	handlers.StartQuietHoursScheduler(schedulerStop)
 	// One digest a week, after the quiet hours.
 	handlers.StartDigestScheduler(schedulerStop)
+	// Pushes the reminders set on bookmarks when they come due.
+	handlers.StartReminderScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	handlers.StartDomainExpiryScheduler(schedulerStop)

@@ -58,6 +58,13 @@ type Bookmark struct {
 	PreviewImage string   `json:"previewImage,omitempty"` // Preview image URL
 	Note         string   `json:"note,omitempty"`         // User note for bookmark
 	Tags         []string `json:"tags,omitempty"`
+	// RemindAt is when to remind the reader of this link (unix ms; 0 is no
+	// reminder). Set from the dashboard like any other field of the row.
+	RemindAt int64 `json:"remindAt,omitempty"`
+	// RemindSentAt is when the push for RemindAt went out (unix ms). Written by
+	// the server alone, and put back to 0 whenever RemindAt changes, so a
+	// reminder pushed once is not pushed again and a postponed one is.
+	RemindSentAt int64 `json:"remindSentAt,omitempty"`
 	// Monitor opts a bookmark into uptime monitoring: a separate, faster tier than
 	// CheckStatus. Monitored bookmarks are pinged on their own interval and are the
 	// only ones that accumulate sample history (see health_history.go), so enabling
@@ -1137,6 +1144,7 @@ type Settings struct {
 	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyGlances    bool                  `json:"pushNotifyGlances"`              // Push when a Glances host has an incident of a kind switched on in Config -> Glances
 	PushNotifyNews       bool                  `json:"pushNotifyNews"`                 // Push when a watched feed has news; on unless turned off
+	PushNotifyReminders  bool                  `json:"pushNotifyReminders"`            // Push when a reminder you set on a bookmark is due; on unless turned off
 	NotifyNewsTarget     bool                  `json:"notifyNewsTarget"`               // Also send a round's news to the alert target (ntfy, Gotify, Discord...); off unless turned on
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
@@ -1917,6 +1925,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
 			PushNotifyNews:                  true,
+			PushNotifyReminders:             true,
 			HideToastsMobile:                true,
 			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
@@ -4683,6 +4692,7 @@ func (fs *FileStore) getSettingsShared() Settings {
 			ShowCheatSheetButton:            true,
 			ShowEditModeButton:              true,
 			PushNotifyNews:                  true,
+			PushNotifyReminders:             true,
 			HideToastsMobile:                true,
 			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
@@ -4925,6 +4935,10 @@ func (fs *FileStore) getSettingsShared() Settings {
 		// On unless turned off: it only fires when push is on and a feed is watched.
 		if _, ok := rawSettings["pushNotifyNews"]; !ok {
 			settings.PushNotifyNews = true
+		}
+		// On unless turned off: it only fires when push is on and a reminder is set.
+		if _, ok := rawSettings["pushNotifyReminders"]; !ok {
+			settings.PushNotifyReminders = true
 		}
 		// On unless turned off: a file written before network tests existed never answered.
 		if _, ok := rawSettings["netToolsEnabled"]; !ok {

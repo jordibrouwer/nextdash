@@ -44,7 +44,7 @@ var serverOwnedBookmarkFields = map[string]bool{
 	"archiveDiedAt": true, "archiveSnapshotUrl": true, "archiveCheckedAt": true,
 	"archiveJobId": true, "archiveJobAt": true, "driftUrl": true, "driftTitle": true,
 	"driftFingerprint": true, "driftNoticed": true, "driftSince": true, "driftReason": true,
-	"checks": true,
+	"checks": true, "remindSentAt": true,
 }
 
 // serverOwnedBookmarkFieldsFolded is the same set lowercased. json.Unmarshal
@@ -114,6 +114,20 @@ func mergeBookmarkFields(bookmark Bookmark, fields map[string]json.RawMessage) (
 	next.Icon = sanitizeBookmarkIcon(next.Icon)
 	next.Shortcut = normalizeShortcut(next.Shortcut)
 	trimBookmarkTextFields(&next)
+	// A reminder at a new time has not been pushed yet; none or a negative
+	// time is no reminder.
+	if next.RemindAt < 0 {
+		next.RemindAt = 0
+	}
+	if next.RemindAt != bookmark.RemindAt || next.RemindAt == 0 {
+		next.RemindSentAt = 0
+		// A time that is already past (an undo of an answered reminder) is due
+		// at once and was seen by the reader a moment ago: the bell shows it,
+		// and no push goes out for it.
+		if now := time.Now().UnixMilli(); next.RemindAt > 0 && next.RemindAt <= now {
+			next.RemindSentAt = now
+		}
+	}
 	if strings.TrimSpace(next.URL) == "" {
 		next.URL = bookmark.URL
 	}

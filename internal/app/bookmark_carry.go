@@ -24,7 +24,11 @@ package app
 func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 	for i := range next {
 		next[i].Checks = nil
+		// Whether a reminder's push went out is the server's to say.
+		next[i].RemindSentAt = 0
 	}
+	// The reminder itself is changed by PATCH only (see below), so a row that
+	// has a stored twin takes both fields from it.
 	if len(next) == 0 || len(stored) == 0 {
 		return
 	}
@@ -54,6 +58,10 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 			// the old address, and their history with them.
 			if len(next) == len(stored) && i < len(stored) && !sentKeys[canonicalBookmarkURLKey(stored[i].URL)] {
 				next[i].Checks = stored[i].Checks
+				// A reminder goes with the row, not with the address: fixing a
+				// typo in the URL must not push a reminder that already went out.
+				next[i].RemindAt = stored[i].RemindAt
+				next[i].RemindSentAt = stored[i].RemindSentAt
 			}
 			continue
 		}
@@ -64,6 +72,12 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 			previous = stored[i]
 		}
 		next[i].Checks = previous.Checks
+		// A reminder is set and cleared with PATCH /api/bookmarks, never by a
+		// page save: a tab that still holds the page from before a reminder was
+		// answered would otherwise write the old time back, and a time that
+		// came back is a reminder pushed again.
+		next[i].RemindAt = previous.RemindAt
+		next[i].RemindSentAt = previous.RemindSentAt
 		// A tab loaded before an open elsewhere sends the counts it loaded:
 		// non-zero, so they used to win, and the newer opens were lost. The
 		// three fields move together, and the newer last open decides.
