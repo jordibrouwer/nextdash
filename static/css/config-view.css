@@ -4520,6 +4520,12 @@ body.no-animations .config-new-features-panel-star {
     grid-area: header;
 }
 
+/* No rule under the header: the shell draws one under every band, and in Config it
+   cut the page in two between the title and the tabs. The other views keep theirs. */
+.config-view-head.lvs-header {
+    border-bottom: 0;
+}
+
 .config-view-head .config-view-section-title {
     margin: 0;
 }
