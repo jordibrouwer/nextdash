@@ -947,7 +947,22 @@
      * reader last saw. A browser that never saw any gets only the newest --
      * a new install has nothing to catch up on.
      */
-    function pickOpenReleases(visible, lastSeenTag) {
+    function pickOpenReleases(visible, lastSeenTag, wantedTag) {
+        // Asked for one release by name (a link in News & features): only that
+        // one opens, in full; every other release stays folded under Earlier.
+        if (wantedTag) {
+            const wanted = String(wantedTag).trim().toLowerCase();
+            const hit = visible.find((entry) => [entry.tag, entry.id]
+                .some((v) => String(v || '').trim().toLowerCase() === wanted));
+            if (hit) return [hit];
+            // A patch release is kept out of the modal; its link opens the
+            // release it belongs to: the newest shown one of the same v1.x.
+            const line = (v) => String(v || '').trim().toLowerCase().match(/^(v\d+\.\d+)\./)?.[1];
+            const wantedLine = line(wanted);
+            const sibling = wantedLine && visible.find((entry) => line(entry.tag || entry.id) === wantedLine
+                && compareReleaseTags(entry.tag || entry.id, wanted) <= 0);
+            if (sibling) return [sibling];
+        }
         if (!lastSeenTag) return visible.slice(0, 1);
         const unread = visible.filter((entry) => compareReleaseTags(entry.tag || entry.id, lastSeenTag) > 0);
         const open = unread.length ? unread : visible.slice(0, 1);
@@ -1206,7 +1221,7 @@
                     ));
                     return;
                 }
-                const open = pickOpenReleases(visible, lastSeenTag);
+                const open = pickOpenReleases(visible, lastSeenTag, options.release);
                 // The newest has to load; an unread one that does not is
                 // left to its row in Earlier.
                 return Promise.all(open.map((entry, i) => (i === 0
@@ -1222,7 +1237,7 @@
                     const shown = loaded.filter(Boolean);
                     const shownIds = new Set(open.filter((_, i) => loaded[i]).map((entry) => entry.id));
                     const earlier = visible.filter((entry) => !shownIds.has(entry.id));
-                    textEl.innerHTML = buildShellHtml(earlier, renderOpenReleases(shown, lastSeenTag
+                    textEl.innerHTML = buildShellHtml(earlier, renderOpenReleases(shown, lastSeenTag && !options.release
                         ? visible.filter((entry) => compareReleaseTags(entry.tag || entry.id, lastSeenTag) > 0).length
                         : 0));
                     liftFooter();

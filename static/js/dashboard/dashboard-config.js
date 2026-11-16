@@ -6516,7 +6516,7 @@ class DashboardConfig {
         if (item.source === 'site' && item.url) {
             action = `<a class="config-news-go" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(this.t('config.overviewNewsRead', 'Read on nextdash.cc ↗'))}</a>`;
         } else if (item.source === 'release') {
-            action = `<button type="button" class="config-news-go" data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>`;
+            action = `<button type="button" class="config-news-go" data-overview-action="whats-new" data-release="${esc(item.title)}">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>`;
         } else if (item.go) {
             action = `<button type="button" class="config-news-go" data-overview-go='${esc(JSON.stringify(item.go))}'>${esc(this.t(item.ctaKey, item.ctaFallback || ''))}</button>`;
         }
@@ -6836,10 +6836,12 @@ class DashboardConfig {
      * the button looking dead. Falls back to the ★ button, which is wired
      * independently, before giving up.
      */
-    async openWhatsNew() {
+    async openWhatsNew(release = '') {
         try {
             if (typeof window.openWhatsNewModal === 'function') {
-                await window.openWhatsNewModal();
+                // `force` so a release the reader has seen still opens, and
+                // `release` so it is the one they clicked, not the newest.
+                await window.openWhatsNewModal(release ? { force: true, release, markSeenOnConfirm: false } : undefined);
                 if (document.querySelector('.whats-new-modal')) return;
             }
             const star = document.getElementById('whats-new-btn');
@@ -6859,7 +6861,8 @@ class DashboardConfig {
         if (!body || body.dataset.overviewClickBound) return;
         body.dataset.overviewClickBound = '1';
         body.addEventListener('click', (e) => {
-            if (this.section !== 'overview') return;
+            // The news list lives in Overview and in About → News & features.
+            if (this.section !== 'overview' && !this.inSection('about')) return;
             const chip = e.target.closest('[data-news-filter]');
             if (chip) {
                 this.setNewsFilter(chip.getAttribute('data-news-filter'));
@@ -6870,8 +6873,9 @@ class DashboardConfig {
                 this.handleOverviewGo(go);
                 return;
             }
-            if (e.target.closest('[data-overview-action="whats-new"]')) {
-                void this.openWhatsNew();
+            const notes = e.target.closest('[data-overview-action="whats-new"]');
+            if (notes) {
+                void this.openWhatsNew(notes.getAttribute('data-release') || '');
                 return;
             }
             const step = e.target.closest('[data-overview-action="tip-prev"], [data-overview-action="tip-next"]');
