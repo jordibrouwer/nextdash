@@ -4480,7 +4480,38 @@
     "widgetMediaYearsAgo": "Il y a {n} ans",
     "widgetImmichStatusNeedsAdmin": "Immich ne donne les totaux de la bibliothèque et les tâches qu’à la clé d’un administrateur.",
     "widgetRssClose": "Fermer",
-    "widgetRssNewTab": "Ouvrir dans un nouvel onglet"
+    "widgetRssNewTab": "Ouvrir dans un nouvel onglet",
+    "contextMenuRelated": "Liens associés…",
+    "contextMenuReminderSet": "Rappel : {time}…",
+    "contextMenuRemind": "Me le rappeler…",
+    "dockerStackFiles": "Fichiers",
+    "dockerStackFilesHint": "Afficher le fichier compose et le .env de cette stack",
+    "dockerComposePending": "Modifié, non appliqué",
+    "dockerComposePendingTip": "Le fichier a changé après le dernier Up lancé par nextDash. Seules les stacks démarrées par nextDash sont suivies : une stack modifiée en dehors de nextDash n’est pas signalée.",
+    "relatedReasonTags": "tags communs",
+    "relatedReasonSite": "même site",
+    "relatedReasonCoOpen": "souvent ouverts ensemble",
+    "relatedNotFound": "Ce favori n’est pas sur cette page.",
+    "relatedMenuLabel": "Liens associés",
+    "relatedLoading": "Recherche…",
+    "relatedNone": "Aucun lien associé",
+    "relatedShiftHint": "Maj+clic y va",
+    "reminderIn3h": "Dans 3 heures",
+    "reminderEvening": "Ce soir",
+    "reminderTomorrow": "Demain",
+    "reminderWeekend": "Ce week-end",
+    "reminderNextWeek": "La semaine prochaine",
+    "reminderToday": "aujourd’hui",
+    "reminderTomorrowLower": "demain",
+    "reminderFailed": "Impossible d’enregistrer le rappel",
+    "reminderSet": "Rappel défini pour {time} : {name}",
+    "reminderCleared": "Rappel supprimé : {name}",
+    "reminderMenuLabel": "Me le rappeler",
+    "reminderCustom": "Choisir une date et une heure",
+    "reminderSetButton": "Définir le rappel",
+    "reminderRemove": "Supprimer le rappel ({time})",
+    "reminderDue": "Rappel échu depuis {time}",
+    "reminderAt": "Rappel : {time}"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -11451,7 +11482,13 @@
     "overviewNewFeatureMoreHolidayThemesWhat": "La saison compte maintenant six thèmes : une boule à neige, un village d’avent en papier découpé et un théâtre avec son rideau.",
     "overviewNewFeatureMoreHolidayThemesHow": "Shift+A ouvre le studio de thèmes ; le groupe Holidays liste Snow Globe, Paper Advent et Nutcracker Theatre, chacun en clair et en sombre.",
     "overviewNewFeatureMoreHolidayThemesEnable": "Désactivé tant que vous n’en choisissez pas un. Le mouvement s’arrête avec le mouvement réduit.",
-    "overviewNewFeatureMoreHolidayThemesCta": "Ouvrir Thème →"
+    "overviewNewFeatureMoreHolidayThemesCta": "Ouvrir Thème →",
+    "dockerStatusCompose": "Fichiers Compose",
+    "dockerStatusComposeRejected": "ignoré",
+    "dockerStatusComposeRejectedAll": "Inutilisable",
+    "dockerStatusComposeNone": "Aucun dossier associé : les fichiers des stacks ne sont pas affichés. Définissez NEXTDASH_COMPOSE_MAP et montez le dossier.",
+    "linkPreviewPartRelated": "Liens associés",
+    "pushNotifyRemindersLabel": "Notifier quand un rappel posé sur un favori arrive à échéance"
   },
   "colors": {
     "title": "personnalisation du thème",
@@ -11493,7 +11530,10 @@
   },
   "bookmark": {
     "noteLabel": "Note",
-    "hasNote": "Contient une note"
+    "hasNote": "Contient une note",
+    "remindSet": "Rappel : {time}",
+    "remindNone": "Aucun rappel",
+    "remindLabel": "Me le rappeler"
   },
   "commands": {
     "digestLabel": "Récapitulatif hebdomadaire",
@@ -11691,7 +11731,12 @@
     "glancesHostPick": "Voir un autre hôte …",
     "editModeLabel": "Mode édition",
     "checkupLabel": "Lancer la vérification de routine",
-    "paletteMostUsed": "Les plus utilisées"
+    "paletteMostUsed": "Les plus utilisées",
+    "remindNoMatch": "Aucun favori ne correspond à « {name} »",
+    "relatedLooking": "Recherche de liens associés à « {name} »…",
+    "relatedNone": "Aucun lien associé à « {name} »",
+    "remindLabel": "Me rappeler « {name} » {time}",
+    "remindClearLabel": "Supprimer le rappel sur « {name} »"
   },
   "firstStart": {
     "label": "Choisir une page de départ",
@@ -12083,7 +12128,12 @@
     "netTipOpen": "Ouvrir Tests",
     "immichFailedMany": "{count} tâches Immich ont échoué",
     "immichFailedOne": "Une tâche Immich a échoué",
-    "immichOpen": "Ouvrir dans Immich"
+    "immichOpen": "Ouvrir dans Immich",
+    "reminderOne": "Rappel : {name}",
+    "reminderMany": "Rappel : {name} et {count} autres",
+    "reminderDone": "Fait",
+    "reminderPostpone": "Plus tard",
+    "reminderOpen": "Ouvrir"
   },
   "pageHelp": {
     "bookmarks": {

@@ -4480,7 +4480,38 @@
     "widgetMediaYearsAgo": "{n} years ago",
     "widgetImmichStatusNeedsAdmin": "Immich shares the library totals and the jobs with an administrator’s key only.",
     "widgetRssClose": "Close",
-    "widgetRssNewTab": "Open in a new tab"
+    "widgetRssNewTab": "Open in a new tab",
+    "contextMenuRelated": "Related links…",
+    "contextMenuReminderSet": "Reminder: {time}…",
+    "contextMenuRemind": "Remind me…",
+    "dockerStackFiles": "Files",
+    "dockerStackFilesHint": "Show this stack's compose file and .env",
+    "dockerComposePending": "Edited, not applied",
+    "dockerComposePendingTip": "The file changed after the last Up nextDash ran. Only stacks nextDash started are tracked, so a stack changed outside nextDash is not flagged.",
+    "relatedReasonTags": "shared tags",
+    "relatedReasonSite": "same site",
+    "relatedReasonCoOpen": "often opened together",
+    "relatedNotFound": "That bookmark is not on this page.",
+    "relatedMenuLabel": "Related links",
+    "relatedLoading": "Looking…",
+    "relatedNone": "No related links",
+    "relatedShiftHint": "Shift+click goes to it",
+    "reminderIn3h": "In 3 hours",
+    "reminderEvening": "This evening",
+    "reminderTomorrow": "Tomorrow",
+    "reminderWeekend": "This weekend",
+    "reminderNextWeek": "Next week",
+    "reminderToday": "today",
+    "reminderTomorrowLower": "tomorrow",
+    "reminderFailed": "Could not save the reminder",
+    "reminderSet": "Reminder set for {time}: {name}",
+    "reminderCleared": "Reminder removed: {name}",
+    "reminderMenuLabel": "Remind me",
+    "reminderCustom": "Pick a date and time",
+    "reminderSetButton": "Set reminder",
+    "reminderRemove": "Remove reminder ({time})",
+    "reminderDue": "Reminder due since {time}",
+    "reminderAt": "Reminder: {time}"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -11451,7 +11482,13 @@
     "overviewNewFeatureMoreHolidayThemesWhat": "The season now has six themes: a snow globe, a cut-paper advent village and a theatre with a curtain.",
     "overviewNewFeatureMoreHolidayThemesHow": "Shift+A opens the theme studio; the Holidays group lists Snow Globe, Paper Advent and Nutcracker Theatre, each in light and dark.",
     "overviewNewFeatureMoreHolidayThemesEnable": "Off until you pick one. Motion stops with reduced motion.",
-    "overviewNewFeatureMoreHolidayThemesCta": "Open Theme →"
+    "overviewNewFeatureMoreHolidayThemesCta": "Open Theme →",
+    "dockerStatusCompose": "Compose files",
+    "dockerStatusComposeRejected": "ignored",
+    "dockerStatusComposeRejectedAll": "Not usable",
+    "dockerStatusComposeNone": "No folders mapped: stack files are not shown. Set NEXTDASH_COMPOSE_MAP and mount the folder.",
+    "linkPreviewPartRelated": "Related links",
+    "pushNotifyRemindersLabel": "Notify when a reminder you set on a bookmark is due"
   },
   "colors": {
     "title": "theme customization",
@@ -11493,7 +11530,10 @@
   },
   "bookmark": {
     "noteLabel": "Note",
-    "hasNote": "Has note"
+    "hasNote": "Has note",
+    "remindSet": "Reminder: {time}",
+    "remindNone": "No reminder",
+    "remindLabel": "Remind me"
   },
   "commands": {
     "digestLabel": "Weekly digest",
@@ -11691,7 +11731,12 @@
     "glancesTrackFull": "Too many items are recorded (at most 15). Stop recording another one first.",
     "glancesFailed": "Glances could not be changed",
     "glancesHostRow": "Look at {name}",
-    "glancesHostPick": "Look at another host …"
+    "glancesHostPick": "Look at another host …",
+    "remindNoMatch": "No bookmark matches \"{name}\"",
+    "relatedLooking": "Looking for links related to \"{name}\"…",
+    "relatedNone": "No links related to \"{name}\"",
+    "remindLabel": "Remind me of \"{name}\" {time}",
+    "remindClearLabel": "Remove the reminder on \"{name}\""
   },
   "firstStart": {
     "label": "Choose a starting page",
@@ -12083,7 +12128,12 @@
     "netTipOpen": "Open Tests",
     "immichFailedMany": "{count} Immich jobs failed",
     "immichFailedOne": "An Immich job failed",
-    "immichOpen": "Open in Immich"
+    "immichOpen": "Open in Immich",
+    "reminderOne": "Reminder: {name}",
+    "reminderMany": "Reminder: {name} and {count} more",
+    "reminderDone": "Done",
+    "reminderPostpone": "Later",
+    "reminderOpen": "Open"
   },
   "pageHelp": {
     "bookmarks": {

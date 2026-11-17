@@ -4480,7 +4480,38 @@
     "widgetMediaYearsAgo": "Vor {n} Jahren",
     "widgetImmichStatusNeedsAdmin": "Immich gibt die Summen der Bibliothek und die Jobs nur an den Schlüssel eines Administrators weiter.",
     "widgetRssClose": "Schließen",
-    "widgetRssNewTab": "In neuem Tab öffnen"
+    "widgetRssNewTab": "In neuem Tab öffnen",
+    "contextMenuRelated": "Verwandte Links…",
+    "contextMenuReminderSet": "Erinnerung: {time}…",
+    "contextMenuRemind": "Erinnere mich…",
+    "dockerStackFiles": "Dateien",
+    "dockerStackFilesHint": "Compose-Datei und .env dieses Stacks anzeigen",
+    "dockerComposePending": "Bearbeitet, nicht angewendet",
+    "dockerComposePendingTip": "Die Datei wurde nach dem letzten Up von nextDash geändert. Nur Stacks, die nextDash gestartet hat, werden verfolgt; ein außerhalb von nextDash geänderter Stack wird nicht markiert.",
+    "relatedReasonTags": "gemeinsame Tags",
+    "relatedReasonSite": "gleiche Website",
+    "relatedReasonCoOpen": "oft zusammen geöffnet",
+    "relatedNotFound": "Dieses Lesezeichen ist nicht auf dieser Seite.",
+    "relatedMenuLabel": "Verwandte Links",
+    "relatedLoading": "Suche…",
+    "relatedNone": "Keine verwandten Links",
+    "relatedShiftHint": "Umschalt+Klick springt dorthin",
+    "reminderIn3h": "In 3 Stunden",
+    "reminderEvening": "Heute Abend",
+    "reminderTomorrow": "Morgen",
+    "reminderWeekend": "Dieses Wochenende",
+    "reminderNextWeek": "Nächste Woche",
+    "reminderToday": "heute",
+    "reminderTomorrowLower": "morgen",
+    "reminderFailed": "Erinnerung konnte nicht gespeichert werden",
+    "reminderSet": "Erinnerung gesetzt für {time}: {name}",
+    "reminderCleared": "Erinnerung entfernt: {name}",
+    "reminderMenuLabel": "Erinnere mich",
+    "reminderCustom": "Datum und Uhrzeit wählen",
+    "reminderSetButton": "Erinnerung setzen",
+    "reminderRemove": "Erinnerung entfernen ({time})",
+    "reminderDue": "Erinnerung fällig seit {time}",
+    "reminderAt": "Erinnerung: {time}"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -11451,7 +11482,13 @@
     "overviewNewFeatureMoreHolidayThemesWhat": "Die Saison hat jetzt sechs Themen: eine Schneekugel, ein Adventsdorf aus Papier und ein Theater mit Vorhang.",
     "overviewNewFeatureMoreHolidayThemesHow": "Shift+A öffnet das Theme-Studio; die Gruppe Holidays listet Snow Globe, Paper Advent und Nutcracker Theatre, jeweils hell und dunkel.",
     "overviewNewFeatureMoreHolidayThemesEnable": "Aus, bis du eines wählst. Die Bewegung stoppt bei reduzierter Bewegung.",
-    "overviewNewFeatureMoreHolidayThemesCta": "Theme öffnen →"
+    "overviewNewFeatureMoreHolidayThemesCta": "Theme öffnen →",
+    "dockerStatusCompose": "Compose-Dateien",
+    "dockerStatusComposeRejected": "ignoriert",
+    "dockerStatusComposeRejectedAll": "Nicht nutzbar",
+    "dockerStatusComposeNone": "Keine Ordner zugeordnet: Stack-Dateien werden nicht angezeigt. Setze NEXTDASH_COMPOSE_MAP und binde den Ordner ein.",
+    "linkPreviewPartRelated": "Verwandte Links",
+    "pushNotifyRemindersLabel": "Benachrichtigen, wenn eine Erinnerung an einem Lesezeichen fällig ist"
   },
   "colors": {
     "title": "themenanpassung",
@@ -11493,7 +11530,10 @@
   },
   "bookmark": {
     "noteLabel": "Notiz",
-    "hasNote": "Enthält Notiz"
+    "hasNote": "Enthält Notiz",
+    "remindSet": "Erinnerung: {time}",
+    "remindNone": "Keine Erinnerung",
+    "remindLabel": "Erinnere mich"
   },
   "commands": {
     "digestLabel": "Wochenrückblick",
@@ -11691,7 +11731,12 @@
     "glancesHostPick": "Anderen Host ansehen …",
     "editModeLabel": "Bearbeitungsmodus",
     "checkupLabel": "Checkup starten",
-    "paletteMostUsed": "Am häufigsten"
+    "paletteMostUsed": "Am häufigsten",
+    "remindNoMatch": "Kein Lesezeichen passt zu „{name}“",
+    "relatedLooking": "Suche nach Links, die zu „{name}“ passen…",
+    "relatedNone": "Keine Links zu „{name}“",
+    "remindLabel": "Erinnere mich an „{name}“ {time}",
+    "remindClearLabel": "Erinnerung an „{name}“ entfernen"
   },
   "firstStart": {
     "label": "Startseite wählen",
@@ -12083,7 +12128,12 @@
     "netTipOpen": "Tests öffnen",
     "immichFailedMany": "{count} Immich-Jobs fehlgeschlagen",
     "immichFailedOne": "Ein Immich-Job ist fehlgeschlagen",
-    "immichOpen": "In Immich öffnen"
+    "immichOpen": "In Immich öffnen",
+    "reminderOne": "Erinnerung: {name}",
+    "reminderMany": "Erinnerung: {name} und {count} weitere",
+    "reminderDone": "Erledigt",
+    "reminderPostpone": "Später",
+    "reminderOpen": "Öffnen"
   },
   "pageHelp": {
     "bookmarks": {

@@ -4480,7 +4480,38 @@
     "widgetMediaYearsAgo": "Hace {n} años",
     "widgetImmichStatusNeedsAdmin": "Immich solo comparte los totales de la biblioteca y las tareas con la clave de un administrador.",
     "widgetRssClose": "Cerrar",
-    "widgetRssNewTab": "Abrir en una pestaña nueva"
+    "widgetRssNewTab": "Abrir en una pestaña nueva",
+    "contextMenuRelated": "Enlaces relacionados…",
+    "contextMenuReminderSet": "Recordatorio: {time}…",
+    "contextMenuRemind": "Recuérdame…",
+    "dockerStackFiles": "Archivos",
+    "dockerStackFilesHint": "Mostrar el archivo compose y el .env de esta stack",
+    "dockerComposePending": "Editado, no aplicado",
+    "dockerComposePendingTip": "El archivo cambió después del último Up que ejecutó nextDash. Solo se siguen las stacks que inició nextDash, así que una stack modificada fuera de nextDash no se marca.",
+    "relatedReasonTags": "etiquetas compartidas",
+    "relatedReasonSite": "mismo sitio",
+    "relatedReasonCoOpen": "a menudo abiertos juntos",
+    "relatedNotFound": "Ese marcador no está en esta página.",
+    "relatedMenuLabel": "Enlaces relacionados",
+    "relatedLoading": "Buscando…",
+    "relatedNone": "Sin enlaces relacionados",
+    "relatedShiftHint": "Mayús+clic va a él",
+    "reminderIn3h": "En 3 horas",
+    "reminderEvening": "Esta tarde",
+    "reminderTomorrow": "Mañana",
+    "reminderWeekend": "Este fin de semana",
+    "reminderNextWeek": "La semana que viene",
+    "reminderToday": "hoy",
+    "reminderTomorrowLower": "mañana",
+    "reminderFailed": "No se pudo guardar el recordatorio",
+    "reminderSet": "Recordatorio fijado para {time}: {name}",
+    "reminderCleared": "Recordatorio eliminado: {name}",
+    "reminderMenuLabel": "Recuérdame",
+    "reminderCustom": "Elige fecha y hora",
+    "reminderSetButton": "Fijar recordatorio",
+    "reminderRemove": "Quitar recordatorio ({time})",
+    "reminderDue": "Recordatorio vencido desde {time}",
+    "reminderAt": "Recordatorio: {time}"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -11451,7 +11482,13 @@
     "overviewNewFeatureMoreHolidayThemesWhat": "La temporada tiene ahora seis temas: una bola de nieve, un pueblo de adviento de papel recortado y un teatro con telón.",
     "overviewNewFeatureMoreHolidayThemesHow": "Shift+A abre el estudio de temas; el grupo Holidays lista Snow Globe, Paper Advent y Nutcracker Theatre, cada uno en claro y oscuro.",
     "overviewNewFeatureMoreHolidayThemesEnable": "Desactivado hasta que elijas uno. El movimiento se detiene con movimiento reducido.",
-    "overviewNewFeatureMoreHolidayThemesCta": "Abrir Tema →"
+    "overviewNewFeatureMoreHolidayThemesCta": "Abrir Tema →",
+    "dockerStatusCompose": "Archivos Compose",
+    "dockerStatusComposeRejected": "ignorado",
+    "dockerStatusComposeRejectedAll": "No utilizable",
+    "dockerStatusComposeNone": "Ninguna carpeta asignada: los archivos de las stacks no se muestran. Define NEXTDASH_COMPOSE_MAP y monta la carpeta.",
+    "linkPreviewPartRelated": "Enlaces relacionados",
+    "pushNotifyRemindersLabel": "Avisar cuando venza un recordatorio que pusiste en un marcador"
   },
   "colors": {
     "title": "personalización del tema",
@@ -11493,7 +11530,10 @@
   },
   "bookmark": {
     "noteLabel": "Nota",
-    "hasNote": "Tiene nota"
+    "hasNote": "Tiene nota",
+    "remindSet": "Recordatorio: {time}",
+    "remindNone": "Sin recordatorio",
+    "remindLabel": "Recuérdame"
   },
   "commands": {
     "digestLabel": "Resumen semanal",
@@ -11691,7 +11731,12 @@
     "glancesHostPick": "Ver otro host …",
     "editModeLabel": "Modo edición",
     "checkupLabel": "Empezar el chequeo",
-    "paletteMostUsed": "Más usados"
+    "paletteMostUsed": "Más usados",
+    "remindNoMatch": "Ningún marcador coincide con «{name}»",
+    "relatedLooking": "Buscando enlaces relacionados con «{name}»…",
+    "relatedNone": "Sin enlaces relacionados con «{name}»",
+    "remindLabel": "Recuérdame «{name}» {time}",
+    "remindClearLabel": "Quitar el recordatorio de «{name}»"
   },
   "firstStart": {
     "label": "Elige una página de inicio",
@@ -12083,7 +12128,12 @@
     "netTipOpen": "Abrir Pruebas",
     "immichFailedMany": "{count} tareas de Immich fallaron",
     "immichFailedOne": "Falló una tarea de Immich",
-    "immichOpen": "Abrir en Immich"
+    "immichOpen": "Abrir en Immich",
+    "reminderOne": "Recordatorio: {name}",
+    "reminderMany": "Recordatorio: {name} y {count} más",
+    "reminderDone": "Hecho",
+    "reminderPostpone": "Más tarde",
+    "reminderOpen": "Abrir"
   },
   "pageHelp": {
     "bookmarks": {

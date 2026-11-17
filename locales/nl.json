@@ -4480,7 +4480,38 @@
     "widgetMediaYearsAgo": "{n} jaar geleden",
     "widgetImmichStatusNeedsAdmin": "Immich geeft de totalen van de bibliotheek en de taken alleen aan de sleutel van een beheerder.",
     "widgetRssClose": "Sluiten",
-    "widgetRssNewTab": "Openen in een nieuw tabblad"
+    "widgetRssNewTab": "Openen in een nieuw tabblad",
+    "contextMenuRelated": "Gerelateerde links…",
+    "contextMenuReminderSet": "Herinnering: {time}…",
+    "contextMenuRemind": "Herinner me…",
+    "dockerStackFiles": "Bestanden",
+    "dockerStackFilesHint": "Toon het compose-bestand en de .env van deze stack",
+    "dockerComposePending": "Bewerkt, niet toegepast",
+    "dockerComposePendingTip": "Het bestand is gewijzigd na de laatste Up die nextDash uitvoerde. Alleen stacks die nextDash zelf startte worden bijgehouden, dus een stack die buiten nextDash is gewijzigd wordt niet gemarkeerd.",
+    "relatedReasonTags": "gedeelde tags",
+    "relatedReasonSite": "dezelfde site",
+    "relatedReasonCoOpen": "vaak samen geopend",
+    "relatedNotFound": "Die bookmark staat niet op deze pagina.",
+    "relatedMenuLabel": "Gerelateerde links",
+    "relatedLoading": "Zoeken…",
+    "relatedNone": "Geen gerelateerde links",
+    "relatedShiftHint": "Shift+klik gaat ernaartoe",
+    "reminderIn3h": "Over 3 uur",
+    "reminderEvening": "Vanavond",
+    "reminderTomorrow": "Morgen",
+    "reminderWeekend": "Dit weekend",
+    "reminderNextWeek": "Volgende week",
+    "reminderToday": "vandaag",
+    "reminderTomorrowLower": "morgen",
+    "reminderFailed": "Kon de herinnering niet opslaan",
+    "reminderSet": "Herinnering gezet voor {time}: {name}",
+    "reminderCleared": "Herinnering verwijderd: {name}",
+    "reminderMenuLabel": "Herinner me",
+    "reminderCustom": "Kies een datum en tijd",
+    "reminderSetButton": "Herinnering zetten",
+    "reminderRemove": "Herinnering verwijderen ({time})",
+    "reminderDue": "Herinnering aan de beurt sinds {time}",
+    "reminderAt": "Herinnering: {time}"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -11451,7 +11482,13 @@
     "overviewNewFeatureMoreHolidayThemesWhat": "Het seizoen heeft nu zes thema’s: een sneeuwbol, een adventsdorp van knipwerk en een theater met een gordijn.",
     "overviewNewFeatureMoreHolidayThemesHow": "Shift+A opent de themastudio; de groep Holidays toont Snow Globe, Paper Advent en Nutcracker Theatre, elk in licht en donker.",
     "overviewNewFeatureMoreHolidayThemesEnable": "Uit tot je er een kiest. De beweging stopt bij verminderde beweging.",
-    "overviewNewFeatureMoreHolidayThemesCta": "Thema openen →"
+    "overviewNewFeatureMoreHolidayThemesCta": "Thema openen →",
+    "dockerStatusCompose": "Compose-bestanden",
+    "dockerStatusComposeRejected": "genegeerd",
+    "dockerStatusComposeRejectedAll": "Niet bruikbaar",
+    "dockerStatusComposeNone": "Geen mappen gekoppeld: stackbestanden worden niet getoond. Stel NEXTDASH_COMPOSE_MAP in en mount de map.",
+    "linkPreviewPartRelated": "Gerelateerde links",
+    "pushNotifyRemindersLabel": "Melden wanneer een herinnering die je op een bookmark hebt gezet aan de beurt is"
   },
   "colors": {
     "title": "thema-aanpassing",
@@ -11493,7 +11530,10 @@
   },
   "bookmark": {
     "noteLabel": "Notitie",
-    "hasNote": "Heeft notitie"
+    "hasNote": "Heeft notitie",
+    "remindSet": "Herinnering: {time}",
+    "remindNone": "Geen herinnering",
+    "remindLabel": "Herinner me"
   },
   "commands": {
     "digestLabel": "Weekoverzicht",
@@ -11691,7 +11731,12 @@
     "glancesHostPick": "Naar een andere host kijken …",
     "editModeLabel": "Bewerkmodus",
     "checkupLabel": "Start de checkup",
-    "paletteMostUsed": "Meest gebruikt"
+    "paletteMostUsed": "Meest gebruikt",
+    "remindNoMatch": "Geen bookmark past bij \"{name}\"",
+    "relatedLooking": "Zoeken naar links gerelateerd aan \"{name}\"…",
+    "relatedNone": "Geen links gerelateerd aan \"{name}\"",
+    "remindLabel": "Herinner me aan \"{name}\" {time}",
+    "remindClearLabel": "Herinnering op \"{name}\" verwijderen"
   },
   "firstStart": {
     "label": "Kies een startpagina",
@@ -12083,7 +12128,12 @@
     "netTipOpen": "Tests openen",
     "immichFailedMany": "{count} Immich-taken mislukt",
     "immichFailedOne": "Een Immich-taak is mislukt",
-    "immichOpen": "Openen in Immich"
+    "immichOpen": "Openen in Immich",
+    "reminderOne": "Herinnering: {name}",
+    "reminderMany": "Herinnering: {name} en {count} meer",
+    "reminderDone": "Klaar",
+    "reminderPostpone": "Later",
+    "reminderOpen": "Openen"
   },
   "pageHelp": {
     "bookmarks": {

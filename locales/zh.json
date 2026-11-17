@@ -4480,7 +4480,38 @@
     "widgetMediaYearsAgo": "{n} 年前",
     "widgetImmichStatusNeedsAdmin": "Immich 只向管理员的密钥提供图库总数和任务信息。",
     "widgetRssClose": "关闭",
-    "widgetRssNewTab": "在新标签页中打开"
+    "widgetRssNewTab": "在新标签页中打开",
+    "contextMenuRelated": "相关链接…",
+    "contextMenuReminderSet": "提醒：{time}…",
+    "contextMenuRemind": "提醒我…",
+    "dockerStackFiles": "文件",
+    "dockerStackFilesHint": "显示此堆栈的 compose 文件和 .env",
+    "dockerComposePending": "已编辑，未应用",
+    "dockerComposePendingTip": "文件在 nextDash 最近一次 Up 之后发生了变化。只跟踪由 nextDash 启动的堆栈，因此在 nextDash 之外修改的堆栈不会被标记。",
+    "relatedReasonTags": "共同标签",
+    "relatedReasonSite": "同一网站",
+    "relatedReasonCoOpen": "经常一起打开",
+    "relatedNotFound": "该书签不在此页面上。",
+    "relatedMenuLabel": "相关链接",
+    "relatedLoading": "查找中…",
+    "relatedNone": "没有相关链接",
+    "relatedShiftHint": "Shift+点击跳转到它",
+    "reminderIn3h": "3 小时后",
+    "reminderEvening": "今晚",
+    "reminderTomorrow": "明天",
+    "reminderWeekend": "这个周末",
+    "reminderNextWeek": "下周",
+    "reminderToday": "今天",
+    "reminderTomorrowLower": "明天",
+    "reminderFailed": "无法保存提醒",
+    "reminderSet": "已设置提醒，时间 {time}：{name}",
+    "reminderCleared": "提醒已移除：{name}",
+    "reminderMenuLabel": "提醒我",
+    "reminderCustom": "选择日期和时间",
+    "reminderSetButton": "设置提醒",
+    "reminderRemove": "移除提醒（{time}）",
+    "reminderDue": "提醒自 {time} 起到期",
+    "reminderAt": "提醒：{time}"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -11451,7 +11482,13 @@
     "overviewNewFeatureMoreHolidayThemesWhat": "节日季现在有六款主题：雪景球、剪纸降临节村庄，以及带幕布的剧院。",
     "overviewNewFeatureMoreHolidayThemesHow": "Shift+A 打开主题工作室；Holidays 分组列出 Snow Globe、Paper Advent 和 Nutcracker Theatre，每款都有浅色和深色。",
     "overviewNewFeatureMoreHolidayThemesEnable": "在你选用之前保持关闭。减少动态效果时动画会停止。",
-    "overviewNewFeatureMoreHolidayThemesCta": "打开主题 →"
+    "overviewNewFeatureMoreHolidayThemesCta": "打开主题 →",
+    "dockerStatusCompose": "Compose 文件",
+    "dockerStatusComposeRejected": "已忽略",
+    "dockerStatusComposeRejectedAll": "无法使用",
+    "dockerStatusComposeNone": "未映射任何文件夹：不显示堆栈文件。请设置 NEXTDASH_COMPOSE_MAP 并挂载该文件夹。",
+    "linkPreviewPartRelated": "相关链接",
+    "pushNotifyRemindersLabel": "当你为书签设置的提醒到期时通知"
   },
   "colors": {
     "title": "主题自定义",
@@ -11493,7 +11530,10 @@
   },
   "bookmark": {
     "noteLabel": "备注",
-    "hasNote": "有备注"
+    "hasNote": "有备注",
+    "remindSet": "提醒：{time}",
+    "remindNone": "没有提醒",
+    "remindLabel": "提醒我"
   },
   "commands": {
     "digestLabel": "每周摘要",
@@ -11691,7 +11731,12 @@
     "glancesHostPick": "查看其他主机…",
     "editModeLabel": "编辑模式",
     "checkupLabel": "开始体检",
-    "paletteMostUsed": "最常用"
+    "paletteMostUsed": "最常用",
+    "remindNoMatch": "没有书签匹配“{name}”",
+    "relatedLooking": "正在查找与“{name}”相关的链接…",
+    "relatedNone": "没有与“{name}”相关的链接",
+    "remindLabel": "在 {time} 提醒我“{name}”",
+    "remindClearLabel": "移除“{name}”上的提醒"
   },
   "firstStart": {
     "label": "选择起始页面",
@@ -12083,7 +12128,12 @@
     "netTipOpen": "打开测试",
     "immichFailedMany": "{count} 个 Immich 任务失败",
     "immichFailedOne": "有一个 Immich 任务失败",
-    "immichOpen": "在 Immich 中打开"
+    "immichOpen": "在 Immich 中打开",
+    "reminderOne": "提醒：{name}",
+    "reminderMany": "提醒：{name} 以及另外 {count} 条",
+    "reminderDone": "完成",
+    "reminderPostpone": "稍后",
+    "reminderOpen": "打开"
   },
   "pageHelp": {
     "bookmarks": {
