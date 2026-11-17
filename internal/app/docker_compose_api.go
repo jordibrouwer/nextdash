@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -30,13 +31,16 @@ type composeFileView struct {
 	Sha256   string `json:"sha256"`
 	// AppliedSha256 is the contents nextDash last brought up ("" if never);
 	// PendingChange is whether the file differs from that.
-	AppliedSha256 string            `json:"appliedSha256"`
-	PendingChange bool              `json:"pendingChange"`
-	Writable      bool              `json:"writable"`
-	Content       string            `json:"content"`
-	Masked        []composeMasked   `json:"masked"`
-	YAMLErr       *composeYAMLError `json:"yamlError"`
-	Warnings      []composeWarning  `json:"warnings"`
+	AppliedSha256 string          `json:"appliedSha256"`
+	PendingChange bool            `json:"pendingChange"`
+	Writable      bool            `json:"writable"`
+	Content       string          `json:"content"`
+	Masked        []composeMasked `json:"masked"`
+	// Mask is the text every masked value shows. In an edited env file it stands
+	// for "keep the value on disk" (save with masked:true); it is never written.
+	Mask     string            `json:"mask"`
+	YAMLErr  *composeYAMLError `json:"yamlError"`
+	Warnings []composeWarning  `json:"warnings"`
 }
 
 type composeWarning struct {
@@ -164,7 +168,7 @@ func (h *Handlers) DockerComposeFilesHandler(w http.ResponseWriter, r *http.Requ
 func composeViewOf(f composeFile) composeFileView {
 	v := composeFileView{
 		ID: f.ID, Role: f.Role, HostPath: f.HostPath, State: f.State, Size: f.Size,
-		Writable: f.Writable, Masked: []composeMasked{}, Warnings: []composeWarning{},
+		Writable: f.Writable, Masked: []composeMasked{}, Warnings: []composeWarning{}, Mask: composeMask,
 	}
 	if f.State != composeStateOK {
 		return v
@@ -214,17 +218,41 @@ func (h *Handlers) DockerComposeValueHandler(w http.ResponseWriter, r *http.Requ
 		writeDockerError(w, errDockerNotFound)
 		return
 	}
+	// A value is addressed by index (what the view gives), by line plus key, or
+	// by key alone. Index and line are optional extras to the key; with an index
+	// the key may be left out.
 	key := q.Get("key")
-	var value string
-	var found bool
-	if f.Role == composeRoleEnv {
-		value, found = envValueAt(src, key)
-	} else {
-		value, found = composeValueAt(src, key)
+	index, line := -1, 0
+	if v := q.Get("index"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			dockerRefuse(w, http.StatusBadRequest, "index")
+			return
+		}
+		index = n
 	}
-	if !found || strings.TrimSpace(key) == "" {
+	if v := q.Get("line"); v != "" {
+		line, _ = strconv.Atoi(v)
+	}
+	if index < 0 && strings.TrimSpace(key) == "" {
 		writeDockerError(w, errDockerNotFound)
 		return
 	}
-	writeJSON(w, map[string]string{"file": f.ID, "key": key, "value": value})
+	var masked []composeMasked
+	if f.Role == composeRoleEnv {
+		masked = envMaskedOf(src)
+	} else {
+		masked = composeMaskedOf(src)
+	}
+	value, found := composeFindMasked(masked, key, line, index)
+	if !found {
+		writeDockerError(w, errDockerNotFound)
+		return
+	}
+	res := map[string]any{"file": f.ID, "key": key, "value": value}
+	if index >= 0 {
+		res["index"] = index
+		res["key"] = masked[index].Key
+	}
+	writeJSON(w, res)
 }

@@ -492,11 +492,18 @@ func (h *Handlers) StartDockerNotifier(stop <-chan struct{}) {
 			cancel()
 		}()
 		backoff := 2 * time.Second
+		swept := false
 		for ctx.Err() == nil {
 			api, _ := newDockerAPI()
 			if api == nil {
 				backoff = time.Minute
 			} else {
+				if !swept {
+					// Once per start: finished compose helpers of any stack, which no
+					// list shows and no later run of that stack may ever come back to.
+					swept = true
+					composeSweepAll(ctx, api)
+				}
 				started := time.Now()
 				err := h.watchDockerEventsOnce(ctx, api, dockerNotifications)
 				if ctx.Err() != nil {

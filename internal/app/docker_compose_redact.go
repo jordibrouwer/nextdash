@@ -21,17 +21,42 @@ line, so a half-edited file never shows a password.
 
 const composeMask = "••••••"
 
-var composeSecretKey = regexp.MustCompile(`(?i)pass|secret|token|key|cred|private`)
+var composeSecretKey = regexp.MustCompile(`(?i)pass|secret|token|key|cred|private|auth|dsn|pwd|salt|jwt|cookie|session|webhook`)
+
+// composeURLCreds finds credentials inside a URL (scheme://user:pw@host), whatever
+// the key is called: DATABASE_URL, SENTRY_DSN and friends hold passwords too.
+var composeURLCreds = regexp.MustCompile(`://[^/@\s]*:[^/@\s]+@`)
+
+// composeAliasKeys are keys whose value, when it is an alias, makes the anchor's
+// definition sensitive (environment: *env, labels: *l, <<: *base).
+var composeAliasKeys = map[string]bool{"environment": true, "labels": true, "command": true, "entrypoint": true, "test": true, "<<": true}
 
 // A value that is only a variable reference stays visible: ${DB_PASS} names a
 // secret, it does not hold one. A reference with a default (${X:-hunter2}) can,
 // so that one is masked.
 var composePureRef = regexp.MustCompile(`^\$(\{[A-Za-z_][A-Za-z0-9_]*(:?\?[^}]*)?\}|[A-Za-z_][A-Za-z0-9_]*)$`)
 
+// composeMasked is one hidden value. Key is its path in the file (the old
+// address). Name is the bare key or variable name, for a button label. Index is
+// its place among the file's masked values, in line order: with Line and Key it
+// tells apart two values on one line, or the same key twice.
 type composeMasked struct {
 	Key   string `json:"key"`
+	Name  string `json:"name"`
 	Line  int    `json:"line"`
+	Index int    `json:"index"`
 	value string // what the mask hides; only the reveal route reads it
+}
+
+// composeNumberMasked puts the masked values in line order (the walk order
+// within a line) and numbers them. The view and the reveal route both come
+// through here, so they count alike.
+func composeNumberMasked(m []composeMasked) []composeMasked {
+	sort.SliceStable(m, func(a, b int) bool { return m[a].Line < m[b].Line })
+	for i := range m {
+		m[i].Index = i
+	}
+	return m
 }
 
 type composeYAMLError struct {
@@ -94,10 +119,47 @@ func composeIndentOf(src []byte, from int) (indent int, blank bool) {
 }
 
 type composeWalker struct {
-	src    []byte
-	starts []int
-	splice []composeSplice
-	masked []composeMasked
+	src       []byte
+	starts    []int
+	splice    []composeSplice
+	masked    []composeMasked
+	sensitive map[string]bool // anchors that an alias uses where a secret lives
+}
+
+// newComposeWalker walks doc once to find the anchors that sit behind a secret
+// (POSTGRES_PASSWORD: *pw makes &pw sensitive), then walks it again to mask.
+func newComposeWalker(src []byte, doc *yaml.Node) *composeWalker {
+	w := &composeWalker{src: src, starts: composeLineStarts(src), sensitive: map[string]bool{}}
+	w.collect(doc, "")
+	w.walk(doc, "", -1, false, false)
+	return w
+}
+
+func (w *composeWalker) collect(n *yaml.Node, key string) {
+	if n == nil {
+		return
+	}
+	switch n.Kind {
+	case yaml.DocumentNode:
+		for _, c := range n.Content {
+			w.collect(c, "")
+		}
+	case yaml.MappingNode:
+		for i := 0; i+1 < len(n.Content); i += 2 {
+			k, v := n.Content[i], n.Content[i+1]
+			if v.Kind == yaml.AliasNode && (composeSecretKey.MatchString(k.Value) || composeAliasKeys[k.Value]) {
+				w.sensitive[v.Value] = true
+			}
+			w.collect(v, k.Value)
+		}
+	case yaml.SequenceNode:
+		for _, item := range n.Content {
+			if item.Kind == yaml.AliasNode && (composeSecretKey.MatchString(key) || composeAliasKeys[key]) {
+				w.sensitive[item.Value] = true
+			}
+			w.collect(item, key)
+		}
+	}
 }
 
 // offsetOf turns yaml.v3's 1-based line and column (columns count characters)
@@ -219,7 +281,7 @@ func (w *composeWalker) scalarSpan(start, parentIndent int, flow bool) (tokStart
 
 // mask hides one scalar. skip counts leading bytes of the token's text to keep
 // (the NAME= of an environment list item). It returns the text it hid.
-func (w *composeWalker) mask(n *yaml.Node, key string, parentIndent int, flow bool, skip int, value string) {
+func (w *composeWalker) mask(n *yaml.Node, key, name string, parentIndent int, flow bool, skip int, value string) {
 	start := w.offsetOf(n.Line, n.Column)
 	if start < 0 {
 		return
@@ -228,7 +290,7 @@ func (w *composeWalker) mask(n *yaml.Node, key string, parentIndent int, flow bo
 	if !ok {
 		return
 	}
-	entry := composeMasked{Key: key, Line: n.Line, value: value}
+	entry := composeMasked{Key: key, Name: name, Line: n.Line, value: value}
 	switch kind {
 	case 'b':
 		// Header stays; every non-blank content line is masked after its indent.
@@ -273,28 +335,46 @@ func (w *composeWalker) walk(n *yaml.Node, path string, parentIndent int, flow, 
 			}
 			indent := k.Column - 1
 			if v.Kind == yaml.ScalarNode {
-				if composeSecretKey.MatchString(k.Value) && v.Value != "" && !composeIsRef(v.Value) {
-					w.mask(v, p, indent, flow, 0, v.Value)
+				if v.Value != "" && (composeURLCreds.MatchString(v.Value) ||
+					!composeIsRef(v.Value) && (composeSecretKey.MatchString(k.Value) || v.Anchor != "" && w.sensitive[v.Anchor])) {
+					w.mask(v, p, k.Value, indent, flow, 0, v.Value)
 				}
 				continue
 			}
-			w.walk(v, p, indent, flow, k.Value == "environment")
+			w.walk(v, p, indent, flow, false)
 		}
 	case yaml.SequenceNode:
+		// Every scalar item is read as it could be a NAME=value pair, a URL with
+		// credentials, or the value of the flag before it (--requirepass x): a
+		// secret hides in labels, command and x-* lists as well as environment.
+		prevFlag := false
+		flagName := ""
 		for i, item := range n.Content {
 			p := path + "[" + strconv.Itoa(i) + "]"
 			if item.Kind == yaml.ScalarNode {
-				if !envList {
-					continue
+				was := prevFlag
+				prevFlag = false
+				v := item.Value
+				switch {
+				case v == "":
+				case composeURLCreds.MatchString(v),
+					was && !composeIsRef(v),
+					item.Anchor != "" && w.sensitive[item.Anchor] && !composeIsRef(v):
+					w.mask(item, p, flagName, w.itemIndent(item), flow, 0, v)
+				default:
+					name, val, ok := strings.Cut(v, "=")
+					if ok {
+						if val != "" && composeSecretKey.MatchString(name) && !composeIsRef(val) {
+							// The mask starts after "NAME=": a plain item is that many bytes in.
+							w.mask(item, path+"."+name, name, w.itemIndent(item), flow, len(name)+1, val)
+						}
+					} else if strings.HasPrefix(v, "-") && composeSecretKey.MatchString(v) {
+						prevFlag, flagName = true, v
+					}
 				}
-				name, val, ok := strings.Cut(item.Value, "=")
-				if !ok || val == "" || !composeSecretKey.MatchString(name) || composeIsRef(val) {
-					continue
-				}
-				// The mask starts after "NAME=": a plain item is that many bytes in.
-				w.mask(item, path+"."+name, w.itemIndent(item), flow, len(name)+1, val)
 				continue
 			}
+			prevFlag = false
 			w.walk(item, p, w.itemIndent(item), flow, false)
 		}
 	}
@@ -318,11 +398,10 @@ func redactComposeYAML(src []byte) ([]byte, []composeMasked, *composeYAMLError) 
 	var doc yaml.Node
 	if err := yaml.Unmarshal(src, &doc); err != nil {
 		out, masked := composeFallbackRedact(src)
-		return out, masked, composeYAMLErrorOf(err)
+		return out, composeNumberMasked(masked), composeYAMLErrorOf(err)
 	}
-	w := &composeWalker{src: src, starts: composeLineStarts(src)}
-	w.walk(&doc, "", -1, false, false)
-	return applyComposeSplices(src, w.splice), nonNilMasked(w.masked), nil
+	w := newComposeWalker(src, &doc)
+	return applyComposeSplices(src, w.splice), composeNumberMasked(nonNilMasked(w.masked)), nil
 }
 
 func nonNilMasked(m []composeMasked) []composeMasked {
@@ -349,6 +428,7 @@ func composeYAMLErrorOf(err error) *composeYAMLError {
 func composeFallbackRedact(src []byte) ([]byte, []composeMasked) {
 	masked := []composeMasked{}
 	var out strings.Builder
+	contIndent := -1 // after a masked key: lines indented deeper than it are its value
 	for i, line := range strings.SplitAfter(string(src), "\n") {
 		body, eol := line, ""
 		if strings.HasSuffix(body, "\n") {
@@ -357,10 +437,33 @@ func composeFallbackRedact(src []byte) ([]byte, []composeMasked) {
 				body, eol = body[:len(body)-1], "\r\n"
 			}
 		}
-		if m := composeFallbackLine.FindStringSubmatch(body); m != nil &&
-			composeSecretKey.MatchString(m[2]) && !composeIsRef(m[4]) {
-			masked = append(masked, composeMasked{Key: m[2], Line: i + 1, value: strings.TrimSpace(m[4])})
+		if contIndent >= 0 {
+			ind, blank := composeIndentOf([]byte(body), 0)
+			if blank {
+				out.WriteString(body + eol)
+				continue
+			}
+			if ind > contIndent {
+				if n := len(masked); n > 0 {
+					masked[n-1].value += "\n" + strings.TrimSpace(body)
+				}
+				out.WriteString(body[:ind] + composeMask + eol)
+				continue
+			}
+			contIndent = -1
+		}
+		m := composeFallbackLine.FindStringSubmatch(body)
+		switch {
+		case m != nil && (composeSecretKey.MatchString(m[2]) && !composeIsRef(m[4]) ||
+			composeURLCreds.MatchString(m[4]) ||
+			(strings.HasPrefix(m[4], "[") || strings.HasPrefix(m[4], "{")) && composeSecretKey.MatchString(m[4]) && !composeIsRef(m[4])):
+			masked = append(masked, composeMasked{Key: m[2], Name: m[2], Line: i + 1, value: strings.TrimSpace(m[4])})
+			ind, _ := composeIndentOf([]byte(body), 0)
+			contIndent = ind
 			body = m[1] + m[2] + m[3] + composeMask
+		case composeURLCreds.MatchString(body):
+			masked = append(masked, composeMasked{Key: "line " + strconv.Itoa(i+1), Name: "line " + strconv.Itoa(i+1), Line: i + 1, value: strings.TrimSpace(body)})
+			body = composeURLCreds.ReplaceAllString(body, "://"+composeMask+"@")
 		}
 		out.WriteString(body)
 		out.WriteString(eol)
@@ -371,17 +474,35 @@ func composeFallbackRedact(src []byte) ([]byte, []composeMasked) {
 // composeValueAt is the reveal route's lookup: the value the mask hid at a
 // masked key. Only keys the redactor masked can be revealed.
 func composeValueAt(src []byte, key string) (string, bool) {
+	return composeFindMasked(composeMaskedOf(src), key, 0, -1)
+}
+
+// composeMaskedOf is the masked list a view of src would carry, with the values.
+func composeMaskedOf(src []byte) []composeMasked {
 	var doc yaml.Node
-	var masked []composeMasked
 	if err := yaml.Unmarshal(src, &doc); err != nil {
-		_, masked = composeFallbackRedact(src)
-	} else {
-		w := &composeWalker{src: src, starts: composeLineStarts(src)}
-		w.walk(&doc, "", -1, false, false)
-		masked = w.masked
+		_, masked := composeFallbackRedact(src)
+		return composeNumberMasked(masked)
+	}
+	return composeNumberMasked(newComposeWalker(src, &doc).masked)
+}
+
+// composeFindMasked picks one masked value. index >= 0 is the address a view
+// gives (a key and a line, when sent too, must agree with it); otherwise a line
+// plus key, or the key alone (the first value under it), as before.
+func composeFindMasked(masked []composeMasked, key string, line, index int) (string, bool) {
+	if index >= 0 {
+		if index >= len(masked) {
+			return "", false
+		}
+		m := masked[index]
+		if (key != "" && m.Key != key) || (line > 0 && m.Line != line) {
+			return "", false
+		}
+		return m.value, true
 	}
 	for _, m := range masked {
-		if m.Key == key {
+		if m.Key == key && (line <= 0 || m.Line == line) {
 			return m.value, true
 		}
 	}
@@ -410,6 +531,9 @@ func parseComposeEnv(src []byte) []composeEnvEntry {
 		}
 		m := composeEnvLine.FindStringSubmatch(body)
 		if m == nil {
+			// Not NAME=value (1PASS=x, KEY: value, a bare line): fail closed. Mask
+			// everything after the first = or :, or the whole line without either.
+			out = append(out, composeEnvOddLine(body, i+1))
 			continue
 		}
 		e := composeEnvEntry{name: m[2], line: i + 1, prefix: m[1] + m[2] + m[3]}
@@ -444,6 +568,23 @@ func parseComposeEnv(src []byte) []composeEnvEntry {
 	return out
 }
 
+func composeEnvOddLine(body string, line int) composeEnvEntry {
+	trim := strings.TrimLeft(body, " \t")
+	lead := body[:len(body)-len(trim)]
+	idx := strings.IndexAny(trim, "=:")
+	if idx < 0 {
+		return composeEnvEntry{name: "line " + strconv.Itoa(line), line: line, prefix: lead, value: strings.TrimSpace(trim)}
+	}
+	rest := trim[idx+1:]
+	gap := rest[:len(rest)-len(strings.TrimLeft(rest, " \t"))]
+	return composeEnvEntry{
+		name:   strings.TrimSpace(trim[:idx]),
+		line:   line,
+		prefix: lead + trim[:idx+1] + gap,
+		value:  strings.TrimSpace(rest),
+	}
+}
+
 // redactEnvFile masks every value in an env file; names, comments and blank
 // lines stay. A quoted value that spans lines is masked on every line of it, so
 // line numbers do not move.
@@ -467,17 +608,17 @@ func redactEnvFile(src []byte) ([]byte, []composeMasked) {
 				lines[idx] = composeMask + eol
 			}
 		}
-		masked = append(masked, composeMasked{Key: e.name, Line: e.line, value: e.value})
+		masked = append(masked, composeMasked{Key: e.name, Name: e.name, Line: e.line, value: e.value})
 	}
-	return []byte(strings.Join(lines, "\n")), masked
+	return []byte(strings.Join(lines, "\n")), composeNumberMasked(masked)
 }
 
 // envValueAt is composeValueAt for an env file: key is the variable name.
 func envValueAt(src []byte, key string) (string, bool) {
-	for _, e := range parseComposeEnv(src) {
-		if e.name == key && (e.value != "" || e.extraLines > 0) {
-			return e.value, true
-		}
-	}
-	return "", false
+	return composeFindMasked(envMaskedOf(src), key, 0, -1)
+}
+
+func envMaskedOf(src []byte) []composeMasked {
+	_, m := redactEnvFile(src)
+	return m
 }

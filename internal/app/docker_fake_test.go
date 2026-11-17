@@ -108,10 +108,13 @@ type fakeContainer struct {
 	Tty                                     bool     // logs arrive raw, with no frame headers
 	// FollowLate is one more stdout line a follow request gets FollowDelay
 	// after the rest, the way a live container keeps writing.
-	FollowLate  string
-	FollowDelay time.Duration
-	Health      map[string]any // State.Health as inspect reports it
-	Healthcheck []string       // Config.Healthcheck.Test
+	FollowLate   string
+	FollowDelay  time.Duration
+	Health       map[string]any // State.Health as inspect reports it
+	RestartCount int            // RestartCount as inspect reports it
+	ExitCode     int            // State.ExitCode as inspect reports it
+	StartPeriod  int64          // Config.Healthcheck.StartPeriod, ns
+	Healthcheck  []string       // Config.Healthcheck.Test
 	// ConfigExtra joins inspect's Config: Cmd, Entrypoint and the like, as the
 	// daemon reports them after folding the image's defaults in.
 	ConfigExtra map[string]any
@@ -530,9 +533,10 @@ func (f *fakeDocker) handleInspect(w http.ResponseWriter, id string) {
 	// reports Created as an RFC3339 string rather than a unix timestamp.
 	created := time.Unix(c.Created, 0).UTC().Format(time.RFC3339Nano)
 	writeJSONFake(w, http.StatusOK, map[string]any{
-		"Id": c.ID, "Name": "/" + c.Name, "Image": c.ImageID, "Created": created,
+		"Id": c.ID, "Name": "/" + c.Name, "Image": c.ImageID, "Created": created, "RestartCount": c.RestartCount,
 		"State": map[string]any{
-			"Status": c.State, "Paused": c.State == "paused",
+			"ExitCode": c.ExitCode,
+			"Status":   c.State, "Paused": c.State == "paused",
 			// As the Engine reports it: a paused or restarting container is running.
 			"Running":   c.State == "running" || c.State == "paused" || c.State == "restarting",
 			"StartedAt": "2024-01-01T00:00:00Z", "Health": health,
@@ -577,6 +581,9 @@ func (f *fakeDocker) handleImageInspect(w http.ResponseWriter, ref string) {
 func fakeInspectConfig(c *fakeContainer) map[string]any {
 	config := map[string]any{"Image": c.Image, "Env": c.Env, "Labels": c.Labels, "Tty": c.Tty,
 		"Healthcheck": map[string]any{"Test": c.Healthcheck}}
+	if c.StartPeriod != 0 {
+		config["Healthcheck"].(map[string]any)["StartPeriod"] = c.StartPeriod
+	}
 	for k, v := range c.ConfigExtra {
 		config[k] = v
 	}
@@ -872,6 +879,13 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/compose/{project}/backups/{stamp}/restore", h.DockerComposeRestoreHandler).Methods("POST")
 	r.HandleFunc("/api/docker/compose/{project}/check", h.DockerComposeCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/compose/{project}/logs/stream", h.DockerComposeLogStreamHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/summary", h.DockerComposeSummaryHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/watches", h.DockerComposeWatchesHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/watch", h.DockerComposeWatchHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/watch/restore", h.DockerComposeWatchRestoreHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/watch/dismiss", h.DockerComposeWatchDismissHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/backups/{stamp}/diff", h.DockerComposeBackupDiffHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/preview", h.DockerComposePreviewHandler).Methods("POST")
 	r.HandleFunc("/api/docker/compose/{project}/{action}", h.DockerComposeRunHandler).Methods("POST")
 	return r
 }

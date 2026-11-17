@@ -189,33 +189,45 @@ const composeStageMax = 96 << 10
 type composeCheckBody struct {
 	File    string `json:"file"`
 	Content string `json:"content"`
+	// Masked: Content is the masked view of an env file, edited; a value that is
+	// still the mask stands for the value on disk.
+	Masked bool `json:"masked"`
+	// RemoveOrphans: the preview plans `up --remove-orphans`.
+	RemoveOrphans bool `json:"removeOrphans"`
 }
 
 // composeStagedFromBody reads the optional body of a Check: {file, content}
 // asks for that text to be checked in place of the saved file. No body is the
 // saved files. A refusal has been written when ok is false.
 func composeStagedFromBody(w http.ResponseWriter, r *http.Request, p composeProject) (*composeStage, bool) {
-	if r.ContentLength == 0 || r.Body == nil || r.Body == http.NoBody {
-		return nil, true
-	}
+	st, _, ok := composeBodyFrom(w, r, p)
+	return st, ok
+}
+
+// composeBodyFrom is composeStagedFromBody and the rest of the body's fields.
+func composeBodyFrom(w http.ResponseWriter, r *http.Request, p composeProject) (*composeStage, composeCheckBody, bool) {
 	var body composeCheckBody
+	if r.ContentLength == 0 || r.Body == nil || r.Body == http.NoBody {
+		return nil, body, true
+	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, composeFileMax+8<<10)).Decode(&body); err != nil {
 		if err == io.EOF {
-			return nil, true
+			return nil, body, true
 		}
 		dockerRefuse(w, http.StatusBadRequest, "body")
-		return nil, false
+		return nil, body, false
 	}
+	st, ok := composeStageOf(w, p, body)
+	return st, body, ok
+}
+
+func composeStageOf(w http.ResponseWriter, p composeProject, body composeCheckBody) (*composeStage, bool) {
 	if body.File == "" {
 		return nil, true
 	}
 	f, found := composeFileByID(composeFilesOf(p, composeMap()), body.File)
 	if !found {
 		writeDockerError(w, errDockerNotFound)
-		return nil, false
-	}
-	if f.Role != composeRoleCompose {
-		dockerRefuse(w, http.StatusBadRequest, "body")
 		return nil, false
 	}
 	if f.State != composeStateOK {
@@ -226,6 +238,24 @@ func composeStagedFromBody(w http.ResponseWriter, r *http.Request, p composeProj
 		dockerRefuse(w, http.StatusRequestEntityTooLarge, composeTooLarge)
 		return nil, false
 	}
+	if f.Role == composeRoleEnv {
+		content := body.Content
+		if body.Masked {
+			src, err := readComposeFile(f)
+			if err != nil {
+				writeDockerError(w, errDockerNotFound)
+				return nil, false
+			}
+			merged, merr := composeMergeMaskedEnv(src, []byte(content))
+			if merr != nil {
+				composeRefuseMerge(w, merr)
+				return nil, false
+			}
+			content = string(merged)
+		}
+		// An env file is not YAML: compose reads it as it is.
+		return &composeStage{File: f.HostPath, Role: composeRoleEnv, Content: content}, true
+	}
 	// The same parse a save runs, so a text that is not YAML says where.
 	if yerr, _ := checkComposeYAML([]byte(body.Content), f.ID == "c0"); yerr != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -233,7 +263,7 @@ func composeStagedFromBody(w http.ResponseWriter, r *http.Request, p composeProj
 		writeJSON(w, map[string]any{"reason": composeYAMLInvalid, "line": yerr.Line, "column": yerr.Column, "message": yerr.Message})
 		return nil, false
 	}
-	return &composeStage{File: f.HostPath, Content: body.Content}, true
+	return &composeStage{File: f.HostPath, Role: composeRoleCompose, Content: body.Content}, true
 }
 
 // DockerComposeCheckHandler runs `compose config -q`: the file is validated by
@@ -250,6 +280,19 @@ func (h *Handlers) DockerComposeCheckHandler(w http.ResponseWriter, r *http.Requ
 	staged, ok := composeStagedFromBody(w, r, p)
 	if !ok {
 		return
+	}
+	p.Profiles = composeProfilesOf(p)
+	// What the files use that nothing sets, read from the text (the unsaved
+	// edit when there is one), whatever compose then says.
+	varCheck := composeVarCheck(p, staged)
+	// An edited .env stands in for the env file compose reads. A text for a
+	// service's own env_file entry cannot: that one is checked as saved, and the
+	// answer says so.
+	stagedIgnored := false
+	if staged != nil && staged.Role == composeRoleEnv {
+		if _, can := composeEnvFilesStaged(p, staged.File); !can {
+			staged, stagedIgnored = nil, true
+		}
 	}
 	api, reason := h.dockerAPIFor(r)
 	if api == nil {
@@ -292,10 +335,11 @@ func (h *Handlers) DockerComposeCheckHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	if exit != 0 {
+		tail = composeLastLines(tail)
 		if tail == nil {
 			tail = []string{}
 		}
-		body := map[string]any{"reason": composeInvalid, "exitCode": exit, "tail": tail}
+		body := map[string]any{"reason": composeInvalid, "exitCode": exit, "tail": tail, "varCheck": varCheck}
 		if line, col := composeErrorPosition(tail); line > 0 {
 			body["line"] = line
 			if col > 0 {
@@ -307,7 +351,15 @@ func (h *Handlers) DockerComposeCheckHandler(w http.ResponseWriter, r *http.Requ
 		writeJSON(w, body)
 		return
 	}
-	writeJSON(w, map[string]any{"ok": true})
+	res := map[string]any{"ok": true, "varCheck": varCheck}
+	// Variables nothing sets are not an error for a Check (an Up refuses on them).
+	if names := composeUnsetNames(tail); len(names) > 0 {
+		res["unsetVars"] = names
+	}
+	if stagedIgnored {
+		res["stagedIgnored"] = true
+	}
+	writeJSON(w, res)
 }
 
 // ---- combined log ----

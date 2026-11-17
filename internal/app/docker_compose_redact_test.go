@@ -182,3 +182,82 @@ func TestRedactEnvFile(t *testing.T) {
 		t.Error("an empty value has nothing to reveal")
 	}
 }
+
+func TestRedactComposeYAMLFailsClosed(t *testing.T) {
+	src := `x-env: &env
+  - "DB_PASSWORD=anchored-list"
+x-db: &pw anchored-scalar
+services:
+  a:
+    environment: *env
+    DATABASE_URL: postgres://u:url-pw@db/x
+    SENTRY_DSN: https://pub:dsn-pw@sentry.io/1
+    BASIC_AUTH: basic-pw
+    labels:
+      - "traefik.http.middlewares.m.basicauth.users=admin:label-pw"
+      - traefik.enable=true
+    command: ["--requirepass", "flag-pw", "--port", "6379"]
+    environment2:
+      POSTGRES_PASSWORD: *pw
+`
+	out, _, yerr := redactComposeYAML([]byte(src))
+	if yerr != nil {
+		t.Fatal(yerr)
+	}
+	got := string(out)
+	for _, leak := range []string{"anchored-list", "anchored-scalar", "url-pw", "dsn-pw", "basic-pw", "label-pw", "flag-pw"} {
+		if strings.Contains(got, leak) {
+			t.Errorf("%q leaked:\n%s", leak, got)
+		}
+	}
+	for _, keep := range []string{"traefik.enable=true", `"--port", "6379"`} {
+		if !strings.Contains(got, keep) {
+			t.Errorf("%q must stay:\n%s", keep, got)
+		}
+	}
+	if v, ok := composeValueAt([]byte(src), "services.a.DATABASE_URL"); !ok || v != "postgres://u:url-pw@db/x" {
+		t.Errorf("reveal of a URL credential = %q, %v", v, ok)
+	}
+}
+
+func TestRedactComposeURLCredentialsOnly(t *testing.T) {
+	// The guard in isolation: a neutral key, no anchor, no list.
+	out, _, _ := redactComposeYAML([]byte("services:\n  a:\n    environment:\n      REDIS_URL: redis://:pw123@cache:6379\n      PLAIN_URL: http://host:8080/x\n"))
+	if strings.Contains(string(out), "pw123") || !strings.Contains(string(out), "http://host:8080/x") {
+		t.Errorf("url credentials: %s", out)
+	}
+}
+
+func TestRedactComposeFallbackBlockScalarAndURL(t *testing.T) {
+	src := "services:\n  a:\n    private_key: |\n      line-one-secret\n      line-two-secret\n    other: x\n   : broken\n  u: postgres://a:fb-pw@h/db\n"
+	out, _, yerr := redactComposeYAML([]byte(src))
+	if yerr == nil {
+		t.Fatal("expected a yaml error")
+	}
+	got := string(out)
+	for _, leak := range []string{"line-one-secret", "line-two-secret", "fb-pw"} {
+		if strings.Contains(got, leak) {
+			t.Errorf("%q leaked in the fallback:\n%s", leak, got)
+		}
+	}
+	if !strings.Contains(got, "other: x") {
+		t.Errorf("unrelated line changed:\n%s", got)
+	}
+}
+
+func TestRedactEnvFileFailsClosed(t *testing.T) {
+	src := "OK=fine\n1PASS=digit-pw\nKEY: colon-pw\nbare-secret-line\n# comment\n  spaced = sp-pw\n"
+	out, masked := redactEnvFile([]byte(src))
+	got := string(out)
+	for _, leak := range []string{"fine", "digit-pw", "colon-pw", "bare-secret-line", "sp-pw"} {
+		if strings.Contains(got, leak) {
+			t.Errorf("%q leaked:\n%s", leak, got)
+		}
+	}
+	if !strings.Contains(got, "# comment") || !strings.Contains(got, "1PASS=") || len(masked) != 5 {
+		t.Errorf("shape wrong (%d masked):\n%s", len(masked), got)
+	}
+	if v, ok := envValueAt([]byte(src), "1PASS"); !ok || v != "digit-pw" {
+		t.Errorf("reveal 1PASS = %q, %v", v, ok)
+	}
+}

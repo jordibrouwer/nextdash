@@ -404,7 +404,8 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 	if composeRejected == nil {
 		composeRejected = []string{}
 	}
-	out["compose"] = map[string]any{"map": composeMaps, "rejected": composeRejected}
+	composeStatus := map[string]any{"map": composeMaps, "rejected": composeRejected}
+	out["compose"] = composeStatus
 	if remote {
 		// The own container is on this host, not on that one.
 		out["self"] = ""
@@ -423,6 +424,12 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		resp.Body.Close()
 		out["socket"] = true
+		if !remote {
+			// The six setup checks; compose is local-only, so only the own host.
+			if setup := composeSetupCached(ctx, api); setup != nil {
+				composeStatus["setup"] = setup
+			}
+		}
 		if self := dockerSelfID(); self != "" && !remote {
 			if list, lerr := api.listContainers(ctx); lerr == nil {
 				for _, c := range list {

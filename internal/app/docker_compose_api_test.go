@@ -264,3 +264,57 @@ func TestComposeValueNeedsTheWriteToken(t *testing.T) {
 		t.Errorf("read: %d", code)
 	}
 }
+
+// F15: two masked values on one line, and the same key twice, each get an address.
+func TestComposeMaskedValuesAreAddressedByIndex(t *testing.T) {
+	_, root, router := composeFixture(t, "/opt/stacks/media/compose.yml")
+	writeTestFile(t, filepath.Join(root, "media/compose.yml"), "services:\n  a:\n    environment: {DB_PASSWORD: one-pw, API_TOKEN: two-tok, PLAIN: x}\n")
+	writeTestFile(t, filepath.Join(root, "media/.env"), "A_KEY=first\nA_KEY=second\n")
+	_, body, raw := composeGet(t, router, "/api/docker/compose/media/files", "")
+	if strings.Contains(raw, "one-pw") || strings.Contains(raw, "two-tok") || strings.Contains(raw, "second") {
+		t.Fatalf("a secret leaked in the view: %s", raw)
+	}
+	byID := map[string][]any{}
+	for _, f := range body["files"].([]any) {
+		fm := f.(map[string]any)
+		byID[fm["id"].(string)] = fm["masked"].([]any)
+	}
+	m := byID["c0"]
+	if len(m) != 2 {
+		t.Fatalf("masked = %v", m)
+	}
+	first, second := m[0].(map[string]any), m[1].(map[string]any)
+	if first["name"] != "DB_PASSWORD" || second["name"] != "API_TOKEN" || first["line"] != second["line"] ||
+		first["index"].(float64) != 0 || second["index"].(float64) != 1 {
+		t.Errorf("name/line/index = %v %v", first, second)
+	}
+	base := "/api/docker/compose/media/files/value?"
+	for q, want := range map[string]string{
+		"file=c0&index=0": "one-pw",
+		"file=c0&index=1": "two-tok",
+		"file=c0&index=1&key=" + second["key"].(string): "two-tok",
+		"file=c0&line=3&key=" + second["key"].(string):  "two-tok", // line plus key
+		"file=env&index=0": "first",
+		"file=env&index=1": "second", // the same name twice
+	} {
+		rec := hostsCall(t, router, "GET", base+q, "", "")
+		if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"value":"`+want+`"`) {
+			t.Errorf("%s: %d %s", q, rec.Code, rec.Body)
+		}
+	}
+	for _, q := range []string{"file=c0&index=2", "file=c0&index=-1", "file=c0&index=x", "file=c0&index=0&key=nope", "file=c0&index=0&line=99"} {
+		if rec := hostsCall(t, router, "GET", base+q, "", ""); rec.Code == 200 {
+			t.Errorf("%s must be refused, got %d", q, rec.Code)
+		}
+	}
+}
+
+func TestComposeIndexedRevealNeedsTheWriteToken(t *testing.T) {
+	_, root, router := composeFixture(t, "/opt/stacks/media/compose.yml")
+	writeTestFile(t, filepath.Join(root, "media/compose.yml"), composeAPIFile)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "sekret")
+	rec := hostsCall(t, router, "GET", "/api/docker/compose/media/files/value?file=c0&index=0", "", "")
+	if rec.Code != http.StatusUnauthorized || strings.Contains(rec.Body.String(), "hunter2") {
+		t.Fatalf("%d %s", rec.Code, rec.Body)
+	}
+}

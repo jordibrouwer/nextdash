@@ -469,3 +469,63 @@ func TestComposeBackupRawServesOnlyListedCopies(t *testing.T) {
 		t.Errorf("without the token: %d", rec.Code)
 	}
 }
+
+func TestComposeWriteRefusalMountAndPerms(t *testing.T) {
+	if code, b := composeWriteRefusal(errComposeFileMount); code != 409 || b["reason"] != composeFileMount || b["message"] == "" {
+		t.Errorf("mount: %d %v", code, b)
+	}
+	if code, b := composeWriteRefusal(syscall.EPERM); code != 403 || b["reason"] != composeDenied {
+		t.Errorf("EPERM: %d %v", code, b)
+	}
+	if !composeNoPermsFS(syscall.EPERM) || composeNoPermsFS(syscall.ENOSPC) {
+		t.Error("composeNoPermsFS must accept EPERM and refuse ENOSPC")
+	}
+}
+
+func TestComposeWriteKeepsInodeWhenTheFileIsSomebodyElses(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root renames and chowns")
+	}
+	dir := t.TempDir()
+	path := filepath.Join(dir, "compose.yml")
+	writeTestFile(t, path, "old\n")
+	before, _ := os.Stat(path)
+	f := composeFile{Local: path, Mode: 0644, UID: os.Geteuid() + 1}
+	if _, err := writeComposeFile(f, []byte("new\n")); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := os.Stat(path)
+	if !os.SameFile(before, after) || mustRead(t, path) != "new\n" {
+		t.Error("a file owned by somebody else must be written in place")
+	}
+	// Our own file still goes through stage and rename (atomic), and leaves no temp file.
+	g := composeFile{Local: path, Mode: 0644, UID: os.Geteuid()}
+	if _, err := writeComposeFile(g, []byte("third\n")); err != nil {
+		t.Fatal(err)
+	}
+	if left, _ := filepath.Glob(filepath.Join(dir, ".tmp-*")); len(left) != 0 || mustRead(t, path) != "third\n" {
+		t.Errorf("rename path: %v", left)
+	}
+}
+
+// F15: nothing the masked view consumes after a save or a restore is raw text.
+func TestComposeSaveAndRestoreAnswersCarryNoRawText(t *testing.T) {
+	_, file, _, router := composeSaveFixture(t)
+	secret := "services:\n  web:\n    image: x\n    environment:\n      DB_PASSWORD: raw-save-secret\n"
+	rec := hostsCall(t, router, "PUT", "/api/docker/compose/media/files?file=c0", composeSaveBodyOf(secret, composeSha([]byte(composeSaveOld))), "")
+	var out map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	if rec.Code != 200 || strings.Contains(rec.Body.String(), "raw-save-secret") || out["content"] != nil || out["sha256"] != composeSha([]byte(secret)) {
+		t.Fatalf("save answer: %d %s", rec.Code, rec.Body)
+	}
+	stamp, _ := out["backup"].(string)
+	if stamp == "" {
+		t.Fatal("no backup stamp")
+	}
+	code, rout := composeRestore(router, t, stamp, composeSha([]byte(secret)))
+	raw, _ := json.Marshal(rout)
+	if code != 200 || strings.Contains(string(raw), "raw-save-secret") || strings.Contains(string(raw), composeSaveOld) || rout["content"] != nil {
+		t.Fatalf("restore answer: %d %s", code, raw)
+	}
+	_ = file
+}

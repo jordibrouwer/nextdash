@@ -107,7 +107,7 @@ func TestComposeHelperCreateBody(t *testing.T) {
 				t.Errorf("labels = %v", labels)
 			}
 			hc := b["HostConfig"].(map[string]any)
-			if got := anyStrings(hc["Binds"]); !reflect.DeepEqual(got, []string{"/var/run/docker.sock:/var/run/docker.sock", "/opt/stacks/media:/opt/stacks/media:ro"}) {
+			if got := anyStrings(hc["Binds"]); !reflect.DeepEqual(got, []string{f.socket + ":/var/run/docker.sock", "/opt/stacks/media:/opt/stacks/media:ro"}) {
 				t.Errorf("Binds = %v", got)
 			}
 			if hc["NetworkMode"] != "none" || hc["AutoRemove"] != false {
@@ -188,16 +188,44 @@ func TestComposeHelperRemovedOnEveryPath(t *testing.T) {
 		}
 		composeAllHelpersRemoved(t, f)
 	})
-	t.Run("run times out", func(t *testing.T) {
+	t.Run("pull times out: nothing changed, helper removed", func(t *testing.T) {
+		f, _, router := composeRunFixture(t)
+		old := composePullTimeout
+		composePullTimeout = 400 * time.Millisecond
+		t.Cleanup(func() { composePullTimeout = old })
+		f.holdWait = true
+		code, out, _ := composeRunPost(t, router, "pull", "", "")
+		if code != 504 || out["reason"] != composeTimeout || out["running"] != false {
+			t.Fatalf("%d %v", code, out)
+		}
+		composeAllHelpersRemoved(t, f)
+	})
+	t.Run("up times out: compose is not killed", func(t *testing.T) {
 		f, _, router := composeRunFixture(t)
 		old := composeRunTimeout
 		composeRunTimeout = 400 * time.Millisecond
 		t.Cleanup(func() { composeRunTimeout = old })
 		f.holdWait = true
-		if code, _, _ := composeRunPost(t, router, "down", "", ""); code != 502 {
-			t.Fatalf("%d", code)
+		// validate (config) also holds, but has its own 2 minute budget: let it exit.
+		f.helperExitSeq = nil
+		code, out, _ := composeRunPost(t, router, "down", "", "")
+		if code != 504 || out["reason"] != composeTimeout || out["running"] != true {
+			t.Fatalf("%d %v", code, out)
 		}
-		composeAllHelpersRemoved(t, f)
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		for _, r := range f.removed {
+			t.Errorf("a running compose was removed: %+v", r)
+		}
+		live := 0
+		for _, c := range f.containers {
+			if c.Labels[dockerHelperLabel] == "compose" {
+				live++
+			}
+		}
+		if live != 1 {
+			t.Errorf("want the helper left running, found %d", live)
+		}
 	})
 	t.Run("create fails: nothing to remove", func(t *testing.T) {
 		f, _, router := composeRunFixture(t)
@@ -367,10 +395,15 @@ func TestComposeSocketHostPath(t *testing.T) {
 		t.Fatal(reason)
 	}
 	ctx := httpGet().Context()
-	// No self: the usual path.
+	// No self (not in a container): the configured path is the host path.
+	if got := composeHostSocket(ctx, a); got != f.socket {
+		t.Errorf("no self = %q, want the configured socket %q", got, f.socket)
+	}
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", "")
 	if got := composeHostSocket(ctx, a); got != composeDefaultSocket {
 		t.Errorf("default = %q", got)
 	}
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", f.socket)
 	// Self mounts the socket from a host path that differs from the one inside.
 	f.add(fakeContainer{ID: strings.Repeat("c", 64), Name: "nextdash", State: "running", Mounts: []map[string]any{
 		{"Type": "bind", "Source": "/Users/me/.docker/run/docker.sock", "Destination": f.socket, "RW": true},

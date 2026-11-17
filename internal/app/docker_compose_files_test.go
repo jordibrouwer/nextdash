@@ -170,14 +170,21 @@ func TestComposeProjectFromUnionAndEnvFileLabel(t *testing.T) {
 	if _, ok := composeProjectFrom(list, "nope"); ok {
 		t.Fatal("unknown project")
 	}
-	list = append(list, composeSummary("media", map[string]string{composeLabelConfig: "/s/media/z.yml"}))
+	// A member with another label, created last: a run follows ITS label in its
+	// own order (override after base), never a sorted union.
+	newer := composeSummary("media", map[string]string{composeLabelConfig: "/s/media/z.yml,/s/media/a.override.yml"})
+	newer.Created = 5
+	list = append(list, newer)
 	p, _ = composeProjectFrom(list, "media")
 	if !p.Mismatch {
 		t.Fatal("different labels must set mismatch")
 	}
-	want := []string{"/s/media/compose.override.yml", "/s/media/compose.yml", "/s/media/z.yml"}
-	if strings.Join(p.ConfigFiles, ",") != strings.Join(want, ",") {
-		t.Fatalf("sorted union = %v", p.ConfigFiles)
+	if got := strings.Join(p.ConfigFiles, ","); got != "/s/media/z.yml,/s/media/a.override.yml" {
+		t.Fatalf("run files must keep the newest label order, got %v", got)
+	}
+	shown := strings.Join(p.filesShown(), ",")
+	if shown != "/s/media/z.yml,/s/media/a.override.yml,/s/media/compose.yml,/s/media/compose.override.yml" {
+		t.Fatalf("shown union = %v", shown)
 	}
 }
 

@@ -91,6 +91,19 @@ type composeProject struct {
 	WorkingDir  string
 	EnvFiles    []string // environment_file label, when the daemon sets it
 	Mismatch    bool
+	// ShownFiles is every file any member names, for display only. A run uses
+	// ConfigFiles, which keeps the compose label order.
+	ShownFiles []string
+	// Profiles are the profiles of the running services, filled in just before a run.
+	Profiles []string
+}
+
+// filesShown is what the file list lists: the union on a mismatch, else ConfigFiles.
+func (p composeProject) filesShown() []string {
+	if p.Mismatch && len(p.ShownFiles) > 0 {
+		return p.ShownFiles
+	}
+	return p.ConfigFiles
 }
 
 // parseComposeMap reads NEXTDASH_COMPOSE_MAP. Each pair splits on its LAST colon
@@ -148,13 +161,16 @@ func composeMapRejected() []string {
 }
 
 // composeProjectFrom gathers a project from the daemon's list. config_files is
-// read per member; when members disagree the union is shown, sorted, and
-// Mismatch says so.
+// read per member. When members disagree, a run follows the label of the most
+// recently created member in ITS order (the order is the override order, so it
+// is never sorted); ShownFiles holds the union for display.
 func composeProjectFrom(list []dockerContainerSummary, name string) (composeProject, bool) {
 	p := composeProject{Name: name}
 	var first string
 	var haveFirst bool
-	union := map[string]bool{}
+	var newestRaw string
+	var newestAt int64 = -1
+	var raws []string
 	for _, c := range list {
 		if c.Labels[composeLabelProject] != name {
 			continue
@@ -176,19 +192,25 @@ func composeProjectFrom(list []dockerContainerSummary, name string) (composeProj
 		} else if raw != first {
 			p.Mismatch = true
 		}
-		for _, f := range splitComposeList(raw) {
-			union[f] = true
+		raws = append(raws, raw)
+		if c.Created > newestAt {
+			newestAt, newestRaw = c.Created, raw
 		}
 	}
 	if len(p.Members) == 0 {
 		return composeProject{}, false
 	}
 	if p.Mismatch {
-		p.ConfigFiles = p.ConfigFiles[:0]
-		for f := range union {
-			p.ConfigFiles = append(p.ConfigFiles, f)
+		p.ConfigFiles = splitComposeList(newestRaw)
+		seen := map[string]bool{}
+		for _, raw := range append([]string{newestRaw}, raws...) {
+			for _, f := range splitComposeList(raw) {
+				if !seen[f] {
+					seen[f] = true
+					p.ShownFiles = append(p.ShownFiles, f)
+				}
+			}
 		}
-		sort.Strings(p.ConfigFiles)
 	}
 	return p, true
 }
@@ -417,7 +439,7 @@ func yamlMapGet(n *yaml.Node, key string) *yaml.Node {
 func composeFilesOf(p composeProject, maps []composeMapping) []composeFile {
 	var files []composeFile
 	seen := map[string]bool{}
-	for i, hp := range p.ConfigFiles {
+	for i, hp := range p.filesShown() {
 		f := resolveComposeFile(hp, composeRoleCompose, maps)
 		f.ID = "c" + strconv.Itoa(i)
 		files = append(files, f)

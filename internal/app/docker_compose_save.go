@@ -40,6 +40,8 @@ const (
 	composeBackupsDir = "compose-backups"
 	composeBackupKeep = 20
 
+	composeFileMount      = "compose-file-mount"
+	composeFileMountHint  = "this file is mounted on its own, so it cannot be replaced: mount its folder instead of the file"
 	composePermissionHint = "permission denied: set NEXTDASH_RUN_AS_ROOT=1 or fix ownership"
 )
 
@@ -254,31 +256,97 @@ func backupComposeFile(host, project string, f composeFile, old []byte) (string,
 // resolved path, so a symlinked compose file keeps its link. Not writeFileAtomic:
 // that one is the data directory's writer, reports under the store's name, and
 // creates directories.
-func writeComposeFile(f composeFile, data []byte) error {
-	tmp, err := stageFileBeside(f.Local, data, f.Mode)
+func writeComposeFile(f composeFile, data []byte) (notes []string, err error) {
+	// Not root and the file belongs to somebody else: a rename would hand the new
+	// file to nextdash. Write into the file itself, which keeps owner, mode and inode.
+	if os.Geteuid() != 0 && f.UID != os.Geteuid() {
+		return nil, composeWriteInPlace(f, data)
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(f.Local), ".tmp-*")
+	if err != nil {
+		return nil, err
+	}
+	tmpPath := tmp.Name()
+	fail := func(e error) ([]string, error) {
+		_ = tmp.Close()
+		_ = os.Remove(tmpPath)
+		return notes, e
+	}
+	if _, err := tmp.Write(data); err != nil {
+		return fail(err)
+	}
+	// vfat (Unraid's /boot) and some network shares keep no modes or owners: that
+	// is not a reason to refuse the save.
+	if err := tmp.Chmod(f.Mode); err != nil {
+		if !composeNoPermsFS(err) {
+			return fail(err)
+		}
+		notes = append(notes, composeNoPermsNote)
+	}
+	if err := tmp.Sync(); err != nil {
+		return fail(err)
+	}
+	if err := tmp.Close(); err != nil {
+		_ = os.Remove(tmpPath)
+		return notes, err
+	}
+	if os.Geteuid() == 0 {
+		if err := os.Lchown(tmpPath, f.UID, f.GID); err != nil {
+			if !composeNoPermsFS(err) {
+				_ = os.Remove(tmpPath)
+				return notes, err
+			}
+			if len(notes) == 0 {
+				notes = append(notes, composeNoPermsNote)
+			}
+		}
+	}
+	if err := os.Rename(tmpPath, f.Local); err != nil {
+		_ = os.Remove(tmpPath)
+		if errors.Is(err, syscall.EBUSY) || errors.Is(err, syscall.EXDEV) {
+			return notes, errComposeFileMount
+		}
+		return notes, err
+	}
+	syncDir(filepath.Dir(f.Local))
+	return notes, nil
+}
+
+const composeNoPermsNote = "This file system keeps no owner or mode (for example vfat on Unraid /boot); the file was saved without them."
+
+// errComposeFileMount is a rename onto a file that is its own mount.
+var errComposeFileMount = errors.New("compose file is bind-mounted on its own")
+
+// composeNoPermsFS is whether an errno from chmod or chown only says the file
+// system cannot hold the attribute.
+func composeNoPermsFS(err error) bool {
+	return errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTSUP) || errors.Is(err, syscall.ENOSYS)
+}
+
+func composeWriteInPlace(f composeFile, data []byte) error {
+	fh, err := os.OpenFile(f.Local, os.O_WRONLY|os.O_TRUNC, 0)
 	if err != nil {
 		return err
 	}
-	if os.Geteuid() == 0 {
-		if err := os.Lchown(tmp, f.UID, f.GID); err != nil {
-			_ = os.Remove(tmp)
-			return err
-		}
-	}
-	if err := os.Rename(tmp, f.Local); err != nil {
-		_ = os.Remove(tmp)
+	if _, err := fh.Write(data); err != nil {
+		_ = fh.Close()
 		return err
 	}
-	syncDir(filepath.Dir(f.Local))
-	return nil
+	if err := fh.Sync(); err != nil {
+		_ = fh.Close()
+		return err
+	}
+	return fh.Close()
 }
 
 // composeWriteRefusal turns a write error into the reason a reader can act on.
 func composeWriteRefusal(err error) (code int, body map[string]string) {
 	switch {
+	case errors.Is(err, errComposeFileMount):
+		return http.StatusConflict, map[string]string{"reason": composeFileMount, "message": composeFileMountHint}
 	case errors.Is(err, syscall.EROFS):
 		return http.StatusConflict, map[string]string{"reason": composeReadOnly}
-	case errors.Is(err, os.ErrPermission):
+	case errors.Is(err, os.ErrPermission), errors.Is(err, syscall.EPERM):
 		return http.StatusForbidden, map[string]string{"reason": composeDenied, "message": composePermissionHint}
 	}
 	return http.StatusInternalServerError, map[string]string{"reason": "docker-error", "message": err.Error()}
@@ -345,6 +413,9 @@ func (h *Handlers) DockerComposeRawHandler(w http.ResponseWriter, r *http.Reques
 type composeSaveBody struct {
 	Content string `json:"content"`
 	Sha256  string `json:"sha256"`
+	// Masked: Content is the masked view of an env file, edited. A value that is
+	// still the mask is replaced by the value the file on disk has.
+	Masked bool `json:"masked"`
 }
 
 func (h *Handlers) DockerComposeSaveHandler(w http.ResponseWriter, r *http.Request) {
@@ -391,9 +462,23 @@ func (h *Handlers) DockerComposeSaveHandler(w http.ResponseWriter, r *http.Reque
 		writeJSON(w, map[string]string{"reason": composeStale, "sha256": current})
 		return
 	}
+	content := []byte(body.Content)
+	if f.Role == composeRoleEnv && body.Masked {
+		merged, merr := composeMergeMaskedEnv(old, content)
+		if merr != nil {
+			composeRefuseMerge(w, merr)
+			return
+		}
+		content = merged
+	}
+	// Whatever the client sent, the mask is never written as a value.
+	if composeMaskAdded(old, content) {
+		composeRefuseMerge(w, &composeMergeError{Reason: composeMaskLiteral})
+		return
+	}
 	warnings := []composeWarning{}
 	if f.Role == composeRoleCompose {
-		yerr, warn := checkComposeYAML([]byte(body.Content), f.ID == "c0")
+		yerr, warn := checkComposeYAML(content, f.ID == "c0")
 		if yerr != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnprocessableEntity)
@@ -408,14 +493,18 @@ func (h *Handlers) DockerComposeSaveHandler(w http.ResponseWriter, r *http.Reque
 		dockerRefuse(w, http.StatusInternalServerError, composeBackupFailed)
 		return
 	}
-	werr := writeComposeFile(f, []byte(body.Content))
+	notes, werr := writeComposeFile(f, content)
+	if notes == nil {
+		notes = []string{}
+	}
 	composeLogWrite(r, "compose.save", p, f, werr)
 	if werr != nil {
 		logWarn(logComponentMutate, "compose save of %s failed: %v", f.HostPath, werr)
 		composeWriteRefuse(w, werr)
 		return
 	}
-	writeJSON(w, map[string]any{"ok": true, "sha256": composeSha([]byte(body.Content)), "backup": stamp, "warnings": warnings})
+	composeLastSaveStore(dockerHostOf(r), p.Name, f, stamp, composeSha(content))
+	writeJSON(w, map[string]any{"ok": true, "sha256": composeSha(content), "backup": stamp, "warnings": warnings, "notes": notes})
 }
 
 func (h *Handlers) DockerComposeBackupsHandler(w http.ResponseWriter, r *http.Request) {
@@ -510,12 +599,13 @@ func (h *Handlers) DockerComposeRestoreHandler(w http.ResponseWriter, r *http.Re
 		dockerRefuse(w, http.StatusInternalServerError, composeBackupFailed)
 		return
 	}
-	werr := writeComposeFile(f, restored)
+	_, werr := writeComposeFile(f, restored)
 	composeLogWrite(r, "compose.restore", p, f, werr)
 	if werr != nil {
 		composeWriteRefuse(w, werr)
 		return
 	}
+	composeLastSaveStore(dockerHostOf(r), p.Name, f, newStamp, composeSha(restored))
 	writeJSON(w, map[string]any{"ok": true, "sha256": composeSha(restored), "backup": newStamp, "restored": stamp})
 }
 
