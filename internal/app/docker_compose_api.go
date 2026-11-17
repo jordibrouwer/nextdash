@@ -22,17 +22,21 @@ by an id from the read answer (c0, env, e0), never by a path.
 */
 
 type composeFileView struct {
-	ID       string            `json:"id"`
-	Role     string            `json:"role"`
-	HostPath string            `json:"hostPath"`
-	State    string            `json:"state"`
-	Size     int64             `json:"size"`
-	Sha256   string            `json:"sha256"`
-	Writable bool              `json:"writable"`
-	Content  string            `json:"content"`
-	Masked   []composeMasked   `json:"masked"`
-	YAMLErr  *composeYAMLError `json:"yamlError"`
-	Warnings []composeWarning  `json:"warnings"`
+	ID       string `json:"id"`
+	Role     string `json:"role"`
+	HostPath string `json:"hostPath"`
+	State    string `json:"state"`
+	Size     int64  `json:"size"`
+	Sha256   string `json:"sha256"`
+	// AppliedSha256 is the contents nextDash last brought up ("" if never);
+	// PendingChange is whether the file differs from that.
+	AppliedSha256 string            `json:"appliedSha256"`
+	PendingChange bool              `json:"pendingChange"`
+	Writable      bool              `json:"writable"`
+	Content       string            `json:"content"`
+	Masked        []composeMasked   `json:"masked"`
+	YAMLErr       *composeYAMLError `json:"yamlError"`
+	Warnings      []composeWarning  `json:"warnings"`
 }
 
 type composeWarning struct {
@@ -46,17 +50,20 @@ type composeSuggest struct {
 }
 
 type composeFilesView struct {
-	Project    string            `json:"project"`
-	Host       string            `json:"host"`
-	State      string            `json:"state"`
-	Self       bool              `json:"self"`
-	Control    bool              `json:"control"`
-	WriteToken bool              `json:"writeToken"`
-	WorkingDir string            `json:"workingDir"`
-	Mismatch   bool              `json:"mismatch"`
-	Map        []composeMapping  `json:"map"`
-	Suggest    *composeSuggest   `json:"suggest"`
-	Files      []composeFileView `json:"files"`
+	Project    string `json:"project"`
+	Host       string `json:"host"`
+	State      string `json:"state"`
+	Self       bool   `json:"self"`
+	Control    bool   `json:"control"`
+	WriteToken bool   `json:"writeToken"`
+	WorkingDir string `json:"workingDir"`
+	Mismatch   bool   `json:"mismatch"`
+	// PendingChange: some file changed since the last Up nextDash ran. Only
+	// stacks nextDash upped are ever flagged.
+	PendingChange bool              `json:"pendingChange"`
+	Map           []composeMapping  `json:"map"`
+	Suggest       *composeSuggest   `json:"suggest"`
+	Files         []composeFileView `json:"files"`
 }
 
 // composeProjectGate runs the gates both routes share, in order: host known,
@@ -148,6 +155,7 @@ func (h *Handlers) DockerComposeFilesHandler(w http.ResponseWriter, r *http.Requ
 	for _, f := range composeFilesOf(p, maps) {
 		out.Files = append(out.Files, composeViewOf(f))
 	}
+	composeMarkPending(&out)
 	writeJSON(w, out)
 }
 

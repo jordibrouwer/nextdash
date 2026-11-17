@@ -329,7 +329,10 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/docker/compose/{project}/files/raw", handlers.DockerComposeRawHandler).Methods("GET")
 	r.HandleFunc("/api/docker/compose/{project}/files", handlers.DockerComposeSaveHandler).Methods("PUT")
 	r.HandleFunc("/api/docker/compose/{project}/backups", handlers.DockerComposeBackupsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/backups/{stamp}/raw", handlers.DockerComposeBackupRawHandler).Methods("GET")
 	r.HandleFunc("/api/docker/compose/{project}/backups/{stamp}/restore", handlers.DockerComposeRestoreHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/check", handlers.DockerComposeCheckHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/logs/stream", handlers.DockerComposeLogStreamHandler).Methods("GET")
 	r.HandleFunc("/api/docker/compose/{project}/{action}", handlers.DockerComposeRunHandler).Methods("POST")
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")

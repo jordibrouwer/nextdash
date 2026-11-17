@@ -868,7 +868,10 @@ func newDockerTestRouter(h *Handlers) http.Handler {
 	r.HandleFunc("/api/docker/compose/{project}/files/raw", h.DockerComposeRawHandler).Methods("GET")
 	r.HandleFunc("/api/docker/compose/{project}/files", h.DockerComposeSaveHandler).Methods("PUT")
 	r.HandleFunc("/api/docker/compose/{project}/backups", h.DockerComposeBackupsHandler).Methods("GET")
+	r.HandleFunc("/api/docker/compose/{project}/backups/{stamp}/raw", h.DockerComposeBackupRawHandler).Methods("GET")
 	r.HandleFunc("/api/docker/compose/{project}/backups/{stamp}/restore", h.DockerComposeRestoreHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/check", h.DockerComposeCheckHandler).Methods("POST")
+	r.HandleFunc("/api/docker/compose/{project}/logs/stream", h.DockerComposeLogStreamHandler).Methods("GET")
 	r.HandleFunc("/api/docker/compose/{project}/{action}", h.DockerComposeRunHandler).Methods("POST")
 	return r
 }

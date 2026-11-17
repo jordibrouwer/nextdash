@@ -164,9 +164,44 @@ func (r *composeLineRing) add(line string) {
 // code and the last lines it printed. err is the daemon's, not compose's: a
 // non-zero exit is not an error here.
 func runComposeHelper(ctx context.Context, api *dockerAPI, p composeProject, args []string) (exit int, tail []string, err error) {
+	return runComposeHelperWith(ctx, api, p, args, nil)
+}
+
+// composeStage is text to run compose on in place of one of the stack's files:
+// a Check of what the editor holds, before anything is written.
+type composeStage struct {
+	File    string // the host path of the file the text stands in for
+	Content string
+}
+
+// composeRunStaged is composeRun with one file's text swapped; swappable for tests.
+var composeRunStaged = func(ctx context.Context, api *dockerAPI, p composeProject, st composeStage, args []string) (int, []string, error) {
+	return runComposeHelperWith(ctx, api, p, args, &st)
+}
+
+// composeStagedBody feeds the text to compose on stdin (`-f -`) in place of the
+// file, through an environment variable so no file is written anywhere. The
+// helper's own sh does the piping; docker's CLI image has one.
+func composeStagedBody(body dockerCreateBody, st composeStage) dockerCreateBody {
+	cmd := append([]string(nil), body["Cmd"].([]string)...)
+	for i := 0; i+1 < len(cmd); i++ {
+		if cmd[i] == "-f" && cmd[i+1] == st.File {
+			cmd[i+1] = "-"
+		}
+	}
+	body["Entrypoint"] = []string{"sh", "-c"}
+	body["Cmd"] = append([]string{`printf '%s' "$NEXTDASH_COMPOSE_STAGE" | docker "$@"`, "sh"}, cmd...)
+	body["Env"] = []string{"NEXTDASH_COMPOSE_STAGE=" + st.Content}
+	return body
+}
+
+func runComposeHelperWith(ctx context.Context, api *dockerAPI, p composeProject, args []string, stage *composeStage) (exit int, tail []string, err error) {
 	suffix := make([]byte, 4)
 	_, _ = rand.Read(suffix)
 	body := composeHelperBody(p, args, composeHostSocket(ctx, api))
+	if stage != nil {
+		body = composeStagedBody(body, *stage)
+	}
 	id, err := api.createContainer(ctx, "nextdash-compose-"+p.Name+"-"+hex.EncodeToString(suffix), body)
 	if err != nil {
 		return 0, nil, err // nothing was made, so nothing to remove
@@ -273,13 +308,15 @@ type composeRunOutcome struct {
 	Err      error
 }
 
-// composeExecute is the state machine: image, sweep, validate (up only), run.
-func composeExecute(ctx context.Context, api *dockerAPI, p composeProject, action string) composeRunOutcome {
+// composeExecute is the state machine: image, sweep, validate (up and update),
+// then the run. service, when set, is the last argument of every compose
+// command; update is a pull followed by an up.
+func composeExecute(ctx context.Context, api *dockerAPI, p composeProject, action, service string) composeRunOutcome {
 	if err := composeEnsureImage(ctx, api); err != nil {
 		return composeRunOutcome{Err: err}
 	}
 	composeSweep(ctx, api, p.Name)
-	if action == "up" {
+	if action == "up" || action == "update" {
 		dockerStep(ctx, "validate", "start")
 		vctx, cancel := context.WithTimeout(ctx, composeValidateTimeout)
 		exit, tail, err := composeRun(vctx, api, p, []string{"config", "-q"})
@@ -294,24 +331,62 @@ func composeExecute(ctx context.Context, api *dockerAPI, p composeProject, actio
 		}
 		dockerStep(ctx, "validate", "done")
 	}
-	args := map[string][]string{"up": {"up", "-d"}, "down": {"down"}, "pull": {"pull"}}[action]
-	dockerStep(ctx, "run", "start")
-	exit, tail, err := composeRun(ctx, api, p, args)
-	if err != nil {
-		dockerStep(ctx, "run", "fail")
-		return composeRunOutcome{Err: err}
+	type step struct {
+		name string
+		args []string
 	}
-	if exit != 0 {
-		dockerStep(ctx, "run", "fail")
-		return composeRunOutcome{Reason: composeFailed, ExitCode: exit, Tail: tail}
+	with := func(args ...string) []string {
+		if service != "" {
+			args = append(args, service)
+		}
+		return args
 	}
-	dockerStep(ctx, "run", "done")
+	steps := map[string][]step{
+		"up":      {{"run", with("up", "-d")}},
+		"down":    {{"run", []string{"down"}}},
+		"pull":    {{"run", with("pull")}},
+		"restart": {{"run", with("restart")}},
+		"update":  {{"pull", with("pull")}, {"run", with("up", "-d")}},
+	}[action]
+	for _, st := range steps {
+		dockerStep(ctx, st.name, "start")
+		exit, tail, err := composeRun(ctx, api, p, st.args)
+		if err != nil {
+			dockerStep(ctx, st.name, "fail")
+			return composeRunOutcome{Err: err}
+		}
+		if exit != 0 {
+			dockerStep(ctx, st.name, "fail")
+			return composeRunOutcome{Reason: composeFailed, ExitCode: exit, Tail: tail}
+		}
+		dockerStep(ctx, st.name, "done")
+	}
 	return composeRunOutcome{OK: true}
+}
+
+// composeRecordUpdates writes one update-history entry for every container of
+// the run whose image changed, found by name once the run is over.
+func (h *Handlers) composeRecordUpdates(ctx context.Context, api *dockerAPI, before []dockerContainerSummary) {
+	after, err := api.listContainers(ctx)
+	if err != nil {
+		return
+	}
+	now := map[string]dockerContainerSummary{}
+	for _, c := range after {
+		now[c.name()] = c
+	}
+	for _, b := range before {
+		c, ok := now[b.name()]
+		if !ok || b.name() == "" || c.ImageID == "" || c.ImageID == b.ImageID {
+			continue
+		}
+		h.recordDockerUpdate(ctx, api, "update", b.name(), b.Image, b.ImageID, c.ImageID)
+	}
 }
 
 func (h *Handlers) DockerComposeRunHandler(w http.ResponseWriter, r *http.Request) {
 	action := mux.Vars(r)["action"]
-	if action != "up" && action != "down" && action != "pull" {
+	if action != "up" && action != "down" && action != "pull" && action != "restart" && action != "update" {
 		dockerRefuse(w, http.StatusNotFound, "unknown-action")
 		return
 	}
@@ -323,15 +398,24 @@ func (h *Handlers) DockerComposeRunHandler(w http.ResponseWriter, r *http.Reques
 		dockerRefuse(w, http.StatusConflict, composeNoLabels)
 		return
 	}
+	service, ok := composeServiceParam(w, r, p)
+	if !ok {
+		return
+	}
+	if service != "" && action == "down" {
+		dockerRefuse(w, http.StatusUnprocessableEntity, composeServiceNotAllowed)
+		return
+	}
+	members := composeMembersIn(p, service)
 	hostID := dockerHostOf(r)
-	release, ok := h.dockerLockStackOn(hostID, p.Name, p.Members)
+	release, ok := h.dockerLockStackOn(hostID, p.Name, members)
 	if !ok {
 		dockerRefuse(w, http.StatusConflict, "busy")
 		return
 	}
 	defer release()
 	// The lock is taken before the prune flag is read, as in DockerActionHandler.
-	if (action == "up" || action == "pull") && h.dockerPruneRunning.Load() {
+	if action != "down" && action != "restart" && h.dockerPruneRunning.Load() {
 		dockerRefuse(w, http.StatusConflict, "prune-running")
 		return
 	}
@@ -342,7 +426,7 @@ func (h *Handlers) DockerComposeRunHandler(w http.ResponseWriter, r *http.Reques
 	}
 	api = api.forActions()
 	if action != "pull" {
-		for _, m := range p.Members {
+		for _, m := range members {
 			if name := m.name(); name != "" {
 				dockerNotifications.expect(name, time.Now().Add(composeRunTimeout))
 				defer func(n string) { dockerNotifications.expect(n, time.Now().Add(dockerNotifyExpectWindow)) }(name)
@@ -359,9 +443,28 @@ func (h *Handlers) DockerComposeRunHandler(w http.ResponseWriter, r *http.Reques
 		defer finish()
 	}
 
-	out := composeExecute(ctx, api, p, action)
+	// What compose is about to read; kept as "applied" only if the run works.
+	var shas map[string]string
+	if service == "" && (action == "up" || action == "update") {
+		shas = composeShasOf(p)
+	}
+	out := composeExecute(ctx, api, p, action, service)
+	if out.OK {
+		switch {
+		case shas != nil:
+			composeAppliedStore(p.Name, shas)
+		case action == "down":
+			composeAppliedStore(p.Name, nil)
+		}
+		if action == "update" {
+			h.composeRecordUpdates(ctx, api, members)
+		}
+	}
 
 	fields := map[string]any{"project": p.Name, "ok": out.OK}
+	if service != "" {
+		fields["service"] = service
+	}
 	if out.ExitCode != 0 {
 		fields["exitCode"] = out.ExitCode
 	}
@@ -390,6 +493,10 @@ func (h *Handlers) DockerComposeRunHandler(w http.ResponseWriter, r *http.Reques
 		w.WriteHeader(code)
 		writeJSON(w, map[string]any{"reason": out.Reason, "exitCode": out.ExitCode, "tail": tail})
 	default:
-		writeJSON(w, map[string]any{"ok": true, "action": action, "exitCode": 0})
+		res := map[string]any{"ok": true, "action": action, "exitCode": 0}
+		if service != "" {
+			res["service"] = service
+		}
+		writeJSON(w, res)
 	}
 }
