@@ -26,6 +26,7 @@ test.describe('reminders', () => {
         await page.locator('.bookmark-context-menu [data-action="remind"], .bookmark-context-menu >> text=Remind me').first().click();
         const menu = page.locator('#reminder-menu');
         await menu.waitFor({ state: 'visible' });
+        // Pacing for the capture, not a condition: the frame is taken once the overlay has drawn.
         await page.waitForTimeout(400);
         await snap(page, menu, '06-reminder-menu.jpg', { pad: 16 });
     });
@@ -57,6 +58,7 @@ test('04 related links on the preview card', async ({ page }) => {
     const card = page.locator('.bookmark-preview-card').first();
     await card.waitFor({ state: 'visible' });
     await card.locator('.bookmark-related-chip').first().waitFor({ state: 'visible', timeout: 10_000 });
+    // Pacing for the capture, not a condition: the frame is taken once the overlay has drawn.
     await page.waitForTimeout(1_200);
     await crop(page, card, '04-related-links.jpg');
 });
@@ -100,6 +102,7 @@ async function openStack(page) {
     await page.locator('[data-docker-stack-files="arr"]').click();
     const panel = page.locator('[data-docker-stack-panel="arr"]');
     await panel.waitFor({ state: 'visible' });
+    // Pacing for the capture, not a condition: the frame is taken once the overlay has drawn.
     await page.waitForTimeout(1_000);
     return panel;
 }
