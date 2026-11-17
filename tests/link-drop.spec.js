@@ -40,8 +40,8 @@ function dragTo(page, point, formats, { drop = true } = {}) {
         };
         const over = at('dragover');
         const marked = document.querySelectorAll('.link-drop-target').length;
-        if (drop) at('drop');
-        return { over, marked };
+        const dropped = drop ? at('drop') : false;
+        return { over, marked, dropped };
     }, { point, formats, drop });
 }
 
@@ -136,6 +136,9 @@ test('the dashboard\'s own drags, files and plain text are left alone', async ({
     // Text that is not an address: no dialog, nothing marked.
     const text = await dragTo(page, { x, y }, { 'text/plain': 'just some words' });
     expect(text.marked).toBe(1);
+    // Taken at dragover, so the drop is cancelled too: left to the browser,
+    // Firefox loads the words in this tab and the dashboard is gone.
+    expect(text.dropped).toBe(true);
     await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
     await expect(page.locator('#paste-choice-modal.show')).toHaveCount(0);
     await expect(page.locator('.link-drop-target')).toHaveCount(0);

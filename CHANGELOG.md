@@ -162,6 +162,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — Run a stack's compose without a terminal (engine).** `POST /api/docker/compose/{project}/up|down|pull` runs docker compose in a short-lived helper container (`NEXTDASH_COMPOSE_IMAGE`, default `docker:29.7-cli`; the socket's host path from nextDash's own mounts or `NEXTDASH_COMPOSE_SOCKET`) with the stack folder at its own host path, checks the file with `compose config -q` before Up, streams the output, and removes the helper whatever happens. Down never removes volumes. Not offered for nextDash's own stack or on other Docker hosts yet (`docker_compose_run.go`).
 - **fix — nextDash's own helper containers stay out of sight.** The compose helper and the disk-size probe no longer show in the container list, the Glances and system views, or raise a crash notice when they exit non-zero (`docker_compose_run.go`, `docker_notify.go`).
 
+### Dashboard
+
+- **fix — Dropping text that is not a link no longer leaves the dashboard.** Words or a `mailto:` link dragged in from another window were taken at dragover but not at the drop, so Firefox loaded them in the dashboard's tab. The drop is now cancelled whenever it was taken (`dashboard-link-drop.js`).
+
 ### Docs
 
 - **Compose lines in the example files.** Commented `NEXTDASH_COMPOSE_MAP` and a read-only mount in `docker-compose.yml` and `docker-compose.prod.yml`.
