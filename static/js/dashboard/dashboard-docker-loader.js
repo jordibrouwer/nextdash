@@ -54,6 +54,10 @@ class DashboardDockerLoader {
             await load('js/dashboard/dashboard-docker-logs.js', 'dashboardDockerLogs',
                 () => typeof window.DockerLogsModal === 'function');
         }
+        if (typeof window.DockerComposeFiles !== 'function') {
+            await load('js/dashboard/dashboard-docker-compose.js', 'dashboardDockerCompose',
+                () => typeof window.DockerComposeFiles === 'function');
+        }
         if (typeof window.DockerDrawer !== 'function') {
             await load('js/dashboard/dashboard-docker-drawer.js', 'dashboardDockerDrawer',
                 () => typeof window.DockerDrawer === 'function');

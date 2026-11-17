@@ -1,0 +1,61 @@
+{
+  "tag": "v1.31.0",
+  "date": "17 November 2026",
+  "releasedAt": "2026-11-17",
+  "modalLead": "<strong>Compose stacks</strong> you can read, edit and run from Containers, <strong>reminders</strong> on bookmarks, <strong>related links</strong> on the preview card and a bell that calls for attention more often.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Edit and run compose stacks.</strong> A stack gets a panel of its own: its services with Up, Pull and Restart each, its compose file and .env with secrets masked, one log for the whole stack and a copy of every save. Edit the file, check it and apply it, or run Up, Down, Pull and Restart, without a terminal.",
+          "highlight": true,
+          "title": "Edit and run compose stacks in Containers",
+          "link": "#docker",
+          "linkLabel": "Open Containers",
+          "media": {
+            "image": "media/v1.31.0-compose-stacks.jpg",
+            "alt": "The stack panel of the arr stack on its Services tab: Sonarr and Radarr with their state, health, ports and image, each with round Up, Pull and Restart buttons, and Reload, Up, Down, Pull and Restart in the heading"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Reminders on bookmarks.</strong> Press z on a bookmark, or choose Remind me… in its menu, and it comes back at the time you pick: a row in the bell, and a push while nextDash is closed.",
+          "link": "#config/monitoring/notifications",
+          "linkLabel": "Set it up"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Related links.</strong> The preview card shows up to three of your other bookmarks that go with the one you point at, and :related lists them in the palette."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A bell that calls more often.</strong> While something is unread the badges pulse every 20 seconds and the bell shakes every 90, and the tone sounds at most once in five minutes."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Shift + V opens What's new.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Dropping text that is not a link</strong> no longer leaves the dashboard, and the bell drops Immich failures once they are cleared."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A tag typed in full</strong> is a best match in search."
+        }
+      ]
+    }
+  ]
+}

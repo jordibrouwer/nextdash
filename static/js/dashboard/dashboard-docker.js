@@ -510,6 +510,15 @@ class DashboardDocker {
             // The logs window owns the keyboard while it is open: its own
             // handler reads /, f, Enter and Escape.
             if (window.DockerLogsModal?.isOpen?.() || document.querySelector('dialog[open]')) return;
+            // The same for the stack panel's inline log reader: its own handler
+            // reads the keys, except Escape with an empty search, which still
+            // closes the panel.
+            const inLogs = document.activeElement?.closest?.('[data-logs-view]');
+            if (inLogs) {
+                const a = document.activeElement;
+                const clearsSearch = a?.matches?.('[data-logs-search]') && a.value;
+                if (e.key !== 'Escape' || clearsSearch) return;
+            }
             // The row menu owns the keyboard while it is open; its own handler
             // closes it, and Escape must not also close the view underneath.
             if (document.getElementById('docker-row-menu')) return;
@@ -2007,6 +2016,75 @@ class DashboardDocker {
         return wrap;
     }
 
+    /** The Files button on a stack's heading: opens the stack side panel. */
+    buildStackFiles(project, stack) {
+        const wrap = document.createElement('span');
+        wrap.className = 'docker-stack-actions';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'docker-action-btn';
+        btn.setAttribute('data-docker-stack-files', project);
+        btn.textContent = this.t('dashboard.dockerStackFiles', 'Files');
+        btn.title = this.t('dashboard.dockerStackFilesHint', 'Show this stack\'s compose file and .env');
+        btn.addEventListener('click', () => {
+            if (this.drawer?.guardStack?.(() => { this.drawer?._compose?.discard?.(); btn.click(); })) return;
+            this.selected = null;
+            this.restoreDockerHash();
+            this.render();
+            this.drawer?.openStack(project, { members: stack });
+            this.drawerOpen = Boolean(this.drawer?.isOpen());
+        });
+        wrap.appendChild(btn);
+        // "Edited, not applied" next to the stack's name, as in the stack panel.
+        const chip = document.createElement('span');
+        chip.className = 'docker-stack-pending';
+        chip.setAttribute('data-docker-stack-pending', project);
+        chip.textContent = this.t('dashboard.dockerComposePending', 'Edited, not applied');
+        chip.title = this.t('dashboard.dockerComposePendingTip', 'The file changed after the last Up nextDash ran. Only stacks nextDash started are tracked, so a stack changed outside nextDash is not flagged.');
+        chip.hidden = !this.composePending?.get(project);
+        wrap.appendChild(chip);
+        this.queueComposePending(project);
+        return wrap;
+    }
+
+    /** The stack panel (or the scan below) reports whether a stack's file changed since its last Up. */
+    setComposePending(project, on) {
+        if (!this.composePending) this.composePending = new Map();
+        this.composePending.set(project, Boolean(on));
+        this.shell?.body?.querySelectorAll(`[data-docker-stack-pending="${CSS.escape(project)}"]`).forEach((el) => { el.hidden = !on; });
+    }
+
+    /**
+     * The stacks on screen are asked once in a while whether their file changed
+     * since the last Up nextDash ran (the same answer the panel uses), so the
+     * chip shows without opening the panel. Needs control; a read per stack.
+     */
+    queueComposePending(project) {
+        if (!this.status?.control || window.dockerActiveHost?.()) return;
+        if (!this._composeQueue) this._composeQueue = new Set();
+        this._composeQueue.add(project);
+        if (this._composeTimer) return;
+        this._composeTimer = setTimeout(() => { this._composeTimer = null; void this.scanComposePending(); }, 0);
+    }
+
+    async scanComposePending() {
+        const now = Date.now();
+        if (!this._composeSeen) this._composeSeen = new Map();
+        const projects = [...(this._composeQueue || [])].filter((p) => now - (this._composeSeen.get(p) || 0) > 30000).slice(0, 20);
+        this._composeQueue = new Set();
+        await Promise.all(projects.map(async (project) => {
+            this._composeSeen.set(project, now);
+            try {
+                const res = await window.nextDashFetch(`/api/docker/compose/${encodeURIComponent(project)}/files`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data?.state === 'ok') this.setComposePending(project, data.pendingChange === true);
+            } catch {
+                // No answer: the chip stays as it was.
+            }
+        }));
+    }
+
     /**
      * Grouped by compose project (project-less last) or by status (updates,
      * running, paused, stopped -- the order that needs attention first).
@@ -2085,6 +2163,8 @@ class DashboardDocker {
             count.textContent = ` · ${groups.get(key).length}`;
             cell.appendChild(count);
             if (byProject && key && this.status.control) cell.appendChild(this.buildStackActions(groups.get(key)));
+            // Files is a read, so it sits outside the control gate: it shows with control off.
+            if (byProject && key) cell.appendChild(this.buildStackFiles(key, groups.get(key)));
             heading.appendChild(cell);
             tbody.appendChild(heading);
             groups.get(key).forEach((c) => tbody.appendChild(this.buildRow(c)));
@@ -2582,6 +2662,8 @@ class DashboardDocker {
         }
         // A container asked for by name is on the Containers tab.
         if (name && this.tab !== 'containers') this.tab = 'containers';
+        // A stack panel with unsaved text asks first; Cancel leaves everything as it was.
+        if (this.drawer?.guardStack?.(() => { this.drawer?._compose?.discard?.(); this.selectContainer(name, { openDrawer, section }); })) return;
         this.selected = name || null;
         this.restoreDockerHash();
         this.render();
@@ -2601,6 +2683,7 @@ class DashboardDocker {
     }
 
     closeDrawer() {
+        if (this.drawer?.guardStack?.(() => { this.drawer?._compose?.discard?.(); this.closeDrawer(); })) return;
         this.drawer?.close();
         this.drawerOpen = false;
         this.selected = null;

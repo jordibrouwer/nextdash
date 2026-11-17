@@ -245,7 +245,7 @@
             const result = await res.json();
             // A half answer is looked at again soon, as the server does.
             const keep = result.partial ? Math.min(ttlMs(widget, service), 30_000) : ttlMs(widget, service);
-            dash._widgetMedia[key] = { result, until: Date.now() + keep };
+            dash._widgetMedia[key] = { result, at: Date.now(), until: Date.now() + keep };
             saveHeld(service, pageId, widget, result);
             window.WidgetState?.fromResult(widget.id, result, result?.items, window.WidgetState.meta(widget, pageId, false));
             return result;

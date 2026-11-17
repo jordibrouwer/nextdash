@@ -39,13 +39,16 @@
 
     class ListViewDrawer {
         /*
+         * guardClose(proceed): optional. Called before a press closes the panel;
+         * answers true when it will call proceed itself after asking the user.
          * closeOnOutside(target): opt-in. A press anywhere else on the page
          * closes the panel, unless this answers false for what was pressed --
          * a view keeps it open for a press that moves it to another row.
          * Presses in dialogs, menus and listboxes (a confirmation the panel
-         * asked for, an autocomplete under one of its fields) never close it.
+         * asked for, an autocomplete under one of its fields) and in the
+         * progress overlay of a run it started never close it.
          */
-        constructor({ id, storageKey, defaultSections = [], ariaLabel = null, onClose = null, closeLabel = 'Close', closeOnOutside = null }) {
+        constructor({ id, storageKey, defaultSections = [], ariaLabel = null, onClose = null, closeLabel = 'Close', closeOnOutside = null, guardClose = null }) {
             this.id = String(id);
             this.storageKey = storageKey;
             this.defaultSections = defaultSections;
@@ -53,6 +56,7 @@
             this.onClose = onClose;
             this.closeLabel = closeLabel;
             this.closeOnOutside = closeOnOutside;
+            this.guardClose = guardClose;
             this._outside = (e) => this._onOutsidePress(e);
             this._host = null;
             this._panel = null;
@@ -154,7 +158,7 @@
             close.className = 'lvs-drawer-close';
             close.setAttribute('aria-label', this.closeLabel);
             close.textContent = '×';
-            close.addEventListener('click', () => this.close({ via: 'pointer' }));
+            close.addEventListener('click', () => this._pointerClose());
             const heading = document.createElement('div');
             heading.className = 'lvs-drawer-heading';
             const titleEl = document.createElement('h3');
@@ -213,8 +217,14 @@
             if (!this._panel || !(target instanceof Element)) return;
             if (this._host?.contains(target)) return;
             // dialog: a native <dialog> has the role without the attribute.
-            if (target.closest('dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .modal-overlay')) return;
+            if (target.closest('dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .modal-overlay, .progress-overlay')) return;
             if (this.closeOnOutside(target) === false) return;
+            this._pointerClose();
+        }
+
+        /** A press closes the panel unless guardClose takes over (it asks first, then calls close itself). */
+        _pointerClose() {
+            if (this.guardClose?.(() => this.close({ via: 'pointer' })) === true) return;
             this.close({ via: 'pointer' });
         }
 

@@ -143,7 +143,24 @@ type dockerContainerSummary struct {
 
 func (c dockerContainerSummary) name() string { return containerName(c.Names) }
 
+// listContainers is every container the user's stacks own: nextDash's own
+// helpers (the compose helper, the disk-size probe) never appear, whoever asks.
+// Only the sweep that cleans them up reads the unfiltered list.
 func (d *dockerAPI) listContainers(ctx context.Context) ([]dockerContainerSummary, error) {
+	all, err := d.listAllContainers(ctx)
+	if err != nil {
+		return all, err
+	}
+	out := all[:0:0]
+	for _, c := range all {
+		if !dockerIsOwnHelper(c.Labels) {
+			out = append(out, c)
+		}
+	}
+	return out, nil
+}
+
+func (d *dockerAPI) listAllContainers(ctx context.Context) ([]dockerContainerSummary, error) {
 	var out []dockerContainerSummary
 	if err := d.getJSON(ctx, "/containers/json?all=1", &out); err != nil {
 		return out, err
@@ -208,7 +225,9 @@ type dockerInspect struct {
 	Name    string `json:"Name"`
 	Image   string `json:"Image"`
 	Created string `json:"Created"`
-	State   struct {
+	// RestartCount: how often the daemon restarted it under its restart policy.
+	RestartCount int `json:"RestartCount"`
+	State        struct {
 		Status    string `json:"Status"`
 		Running   bool   `json:"Running"`
 		Paused    bool   `json:"Paused"`
@@ -238,6 +257,8 @@ type dockerInspect struct {
 		// run set it: ["CMD", args...], ["CMD-SHELL", line] or ["NONE"].
 		Healthcheck *struct {
 			Test []string `json:"Test"`
+			// StartPeriod is in nanoseconds: failures inside it do not count.
+			StartPeriod int64 `json:"StartPeriod"`
 		} `json:"Healthcheck"`
 	} `json:"Config"`
 	HostConfig struct {

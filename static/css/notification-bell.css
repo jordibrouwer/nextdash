@@ -170,7 +170,7 @@
    reduced-motion.css, which shortens every animation to nothing. */
 .notification-bell-button.is-shaking svg {
     transform-origin: 50% 12%;
-    animation: notification-bell-shake 0.8s ease-in-out;
+    animation: notification-bell-shake 1.1s ease-in-out;
 }
 /* News: the bell nods once and a small paper slides in beside it, then goes. */
 .notification-bell-button.is-shaking.is-news svg {
@@ -211,17 +211,18 @@
     100% { transform: translateX(14px); opacity: 0; }
 }
 @keyframes notification-bell-shake {
-    0%, 100% { transform: rotate(0); }
-    15% { transform: rotate(18deg); }
-    30% { transform: rotate(-16deg); }
-    45% { transform: rotate(12deg); }
-    60% { transform: rotate(-9deg); }
-    75% { transform: rotate(5deg); }
-    90% { transform: rotate(-2deg); }
+    0%, 100% { transform: rotate(0) scale(1); }
+    10% { transform: rotate(26deg) scale(1.3); }
+    22% { transform: rotate(-24deg) scale(1.3); }
+    34% { transform: rotate(20deg) scale(1.25); }
+    46% { transform: rotate(-16deg) scale(1.2); }
+    58% { transform: rotate(11deg) scale(1.12); }
+    70% { transform: rotate(-7deg) scale(1.06); }
+    85% { transform: rotate(3deg) scale(1.02); }
 }
 @keyframes notification-bell-swell {
     0%, 100% { transform: scale(1); }
-    25% { transform: scale(1.35); }
+    25% { transform: scale(1.6); }
 }
 @keyframes notification-bell-ring {
     0% { transform: scale(1); opacity: 0.7; }

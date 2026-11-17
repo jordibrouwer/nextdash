@@ -19,7 +19,7 @@ class DashboardPreview {
      * monitors nothing should never see a status row — the checklist under
      * Appearance is stored as a subset of these names.
      */
-    static PARTS = ['image', 'byline', 'embed', 'description', 'note', 'tags', 'status', 'opens', 'location'];
+    static PARTS = ['image', 'byline', 'embed', 'description', 'note', 'tags', 'related', 'status', 'opens', 'location'];
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -1000,6 +1000,7 @@ class DashboardPreview {
                 <span class="bookmark-preview-card-note-text"></span>
             </div>
             <div class="bookmark-preview-card-tags" hidden></div>
+            <div class="bookmark-preview-card-related" hidden></div>
             <dl class="bookmark-preview-card-facts" hidden></dl>
             <div class="bookmark-preview-card-foot" hidden>
                 <button type="button" class="bookmark-preview-card-action" data-preview-action="copy"></button>
@@ -1555,6 +1556,8 @@ class DashboardPreview {
         const context = card._previewContext;
         if (context) context.mode = 'pinned';
         this.applyPreviewCardMode(card, 'pinned');
+        // The related chips were drawn to be read; a pinned card's are buttons.
+        this.paintPreviewRelated(card, this.previewParts());
         card.focus?.();
     }
 
@@ -1673,6 +1676,8 @@ class DashboardPreview {
             tagsEl.hidden = tags.length === 0;
         }
 
+        this.paintPreviewRelated(card, want);
+
         const facts = this.buildPreviewFacts(preview, want);
         this.paintPreviewFacts(card, facts);
         card.dataset.previewNet = want.has('status') && preview?.netChecks?.length ? '1' : '';
@@ -1689,6 +1694,39 @@ class DashboardPreview {
         }
 
         this.applyPreviewCardMode(card, mode);
+    }
+
+    /**
+     * The "Related" row: a few chips for the links that belong with this one.
+     * Filled when the server answers, after the rest of the card is drawn, so it
+     * never holds the card back; a card that has moved on to another bookmark by
+     * then is left alone. A peek card takes no pointer events, so its chips are
+     * only read; a pinned card's are buttons.
+     */
+    paintPreviewRelated(card, want) {
+        const row = card.querySelector('.bookmark-preview-card-related');
+        if (!row) return;
+        row.innerHTML = '';
+        row.hidden = true;
+        const related = this.dash.related;
+        const bookmark = card._previewContext?.bookmark;
+        const token = {};
+        card._relatedToken = token;
+        if (!related || !want.has('related') || !bookmark?.url) return;
+        const mode = card._previewContext.mode;
+        void related.for(bookmark).then((links) => {
+            if (card._relatedToken !== token || !card.classList.contains('is-visible')) return;
+            if (card._previewContext?.bookmark !== bookmark || !links.length) return;
+            const label = document.createElement('span');
+            label.className = 'bookmark-preview-card-related-label';
+            label.textContent = this.dash.formatDashboardLabel('previewRelated', {}, 'Related');
+            row.appendChild(label);
+            related.chips(links, { clickable: mode === 'pinned' }).forEach((chip) => row.appendChild(chip));
+            row.hidden = false;
+            // The row made the card taller after it was placed: keep it on screen.
+            const anchor = card._previewContext?.openLink;
+            if (anchor) this.positionBookmarkPreviewCard(anchor);
+        });
     }
 
     /** Peek takes no pointer events and carries no actions; pinned does both. */

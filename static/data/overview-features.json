@@ -3158,6 +3158,55 @@
         "appearanceTab": "theme"
       },
       "since": "v1.30.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureComposeStacksTitle",
+      "titleFallback": "Edit and run your compose stacks",
+      "whatKey": "config.overviewNewFeatureComposeStacksWhat",
+      "whatFallback": "A stack's files, services and log were a terminal away. The stack panel in Containers shows them, and lets you edit the file, check it and bring the stack up.",
+      "howKey": "config.overviewNewFeatureComposeStacksHow",
+      "howFallback": "Containers → Group by project → Files on a stack. Set NEXTDASH_COMPOSE_MAP so nextDash can see the folder; Docker actions must be on to edit or run.",
+      "enableKey": "config.overviewNewFeatureComposeStacksEnable",
+      "enableFallback": "Off until NEXTDASH_COMPOSE_MAP is set. Read-only without NEXTDASH_DOCKER_CONTROL=1.",
+      "ctaKey": "config.overviewNewFeatureComposeStacksCta",
+      "ctaFallback": "Open Containers →",
+      "go": {
+        "section": "containers"
+      },
+      "since": "v1.31.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBookmarkRemindersTitle",
+      "titleFallback": "Be reminded of a link",
+      "whatKey": "config.overviewNewFeatureBookmarkRemindersWhat",
+      "whatFallback": "Pick a time on a bookmark and it comes back to you: a row in the bell, and a push while nextDash is closed.",
+      "howKey": "config.overviewNewFeatureBookmarkRemindersHow",
+      "howFallback": "Press z on a bookmark, or Remind me… in its right-click menu, or :remind tomorrow. Later in the bell sets a new time.",
+      "enableKey": "config.overviewNewFeatureBookmarkRemindersEnable",
+      "enableFallback": "Off until you set one. The push follows Config → Monitoring → Notifications → Browser notifications.",
+      "ctaKey": "config.overviewNewFeatureBookmarkRemindersCta",
+      "ctaFallback": "Open Notifications →",
+      "go": {
+        "section": "monitoring",
+        "tab": "notifications"
+      },
+      "since": "v1.31.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureRelatedLinksTitle",
+      "titleFallback": "Links that belong together",
+      "whatKey": "config.overviewNewFeatureRelatedLinksWhat",
+      "whatFallback": "The preview card now shows up to three of your other bookmarks that go with the one you point at.",
+      "howKey": "config.overviewNewFeatureRelatedLinksHow",
+      "howFallback": "Point at a bookmark, or press v. Related links… in the right-click menu and :related list them too.",
+      "enableKey": "config.overviewNewFeatureRelatedLinksEnable",
+      "enableFallback": "On. Switch the row off under Config → Appearance → Previews.",
+      "ctaKey": "config.overviewNewFeatureRelatedLinksCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance"
+      },
+      "since": "v1.31.0"
     }
   ]
 }

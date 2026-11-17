@@ -1974,3 +1974,497 @@
 .config-docker-host-form .config-actions {
     margin-top: var(--space-3, 0.75rem);
 }
+
+/* ── Stack panel: a compose project's files, read-only ──────────────── */
+
+.docker-compose-back {
+    align-self: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.docker-compose-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding-top: var(--space-2, 0.5rem);
+}
+
+.docker-compose-file {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.docker-compose-filebar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-compose-path {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.docker-compose-meta,
+.docker-compose-legend {
+    margin: 0;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary);
+}
+
+.docker-compose-code {
+    padding: var(--space-2, 0.5rem) 0;
+    white-space: normal;
+}
+
+.docker-compose-line {
+    display: grid;
+    grid-template-columns: 2.4em minmax(0, 1fr) auto;
+    align-items: baseline;
+    padding-right: var(--space-2, 0.5rem);
+}
+
+.docker-compose-line.has-mask {
+    background: color-mix(in srgb, var(--accent-warning) 9%, transparent);
+}
+
+.docker-compose-n {
+    padding-right: 0.5em;
+    text-align: right;
+    color: var(--text-tertiary);
+    user-select: none;
+}
+
+.docker-compose-t {
+    white-space: pre;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.docker-compose-mask { color: var(--accent-warning); letter-spacing: 0.08em; }
+.docker-compose-mask.is-revealed { color: var(--accent-success); letter-spacing: normal; }
+
+.docker-compose-reveal {
+    padding: 0 0.4rem;
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-compose-yamlerr {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--accent-warning);
+}
+
+.docker-compose-note {
+    --note-tone: var(--accent-primary);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-left: 3px solid var(--note-tone);
+    border-radius: 0 var(--radius-4, 6px) var(--radius-4, 6px) 0;
+    background: color-mix(in srgb, var(--note-tone) 11%, transparent);
+}
+
+.docker-compose-note[data-tone="warn"] { --note-tone: var(--accent-warning); }
+.docker-compose-note[data-tone="bad"] { --note-tone: var(--accent-error); }
+
+.docker-compose-note h4 { margin: 0; font-size: var(--font-size-text); font-weight: 600; }
+.docker-compose-note p { margin: 0; font-size: var(--font-size-small); color: var(--text-secondary); overflow-wrap: anywhere; }
+.docker-compose-note p b { color: var(--text-primary); font-weight: 600; }
+
+.docker-compose-fixlabel {
+    font-size: var(--text-xs, 0.72rem);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+}
+
+.docker-compose-fix {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem);
+    min-width: 0;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-tertiary, var(--background-primary));
+}
+
+.docker-compose-fix code {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.docker-project-chip { font: inherit; font-size: 0.92em; }
+
+/* Compose: editor, backups and the run note */
+.docker-compose-runnote {
+    margin: 0;
+    padding: 0.35rem 0.6rem;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.docker-compose-filebar .config-btn { margin-left: auto; }
+
+.docker-compose-editor {
+    width: 100%;
+    min-height: 16rem;
+    box-sizing: border-box;
+    resize: vertical;
+    padding: 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-tertiary, var(--background-primary));
+    color: var(--text-primary);
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.78rem);
+    line-height: 1.5;
+    tab-size: 2;
+    white-space: pre;
+    overflow: auto;
+}
+
+.docker-compose-dirty {
+    margin-left: auto;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--accent-warning);
+}
+
+.docker-compose-editbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.docker-compose-status {
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.docker-compose-conflict,
+.docker-compose-readonly {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--accent-warning);
+    border-radius: var(--radius-4, 6px);
+    font-size: var(--font-size-small);
+}
+
+.docker-compose-conflict[hidden],
+.docker-compose-readonly[hidden],
+.docker-compose-yamlerr[hidden],
+.docker-compose-warnings[hidden] { display: none; }
+
+.docker-compose-conflict p { margin: 0; flex: 1 1 100%; }
+
+.docker-compose-warnings {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: var(--font-size-small);
+    color: var(--accent-warning);
+}
+
+.docker-compose-backups {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.docker-compose-backups li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small);
+}
+
+.docker-compose-backups li .config-btn { margin-left: auto; }
+
+/* Compose stack panel, round 2: services, check, diff, apply, logs */
+[data-docker-stack-panel],
+.docker-logs-modal {
+    --docker-svc-1: var(--accent-primary);
+    --docker-svc-2: var(--accent-success);
+    --docker-svc-3: var(--accent-warning);
+    --docker-svc-4: color-mix(in srgb, #a06ee0 75%, var(--text-primary));
+}
+
+.docker-compose-pending[hidden] { display: none; }
+.docker-compose-dot { background: var(--accent-warning); }
+.docker-compose-dot[hidden] { display: none; }
+
+.docker-compose-svctable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.docker-compose-svctable .c-state { width: 5.6rem; }
+.docker-compose-svctable .c-ports { width: 3.4rem; }
+.docker-compose-svctable .c-act { width: 6.4rem; }
+.docker-compose-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; min-width: 0; }
+.docker-compose-editing .docker-compose-path { flex-basis: 100%; }
+.docker-compose-svctable th {
+    padding: 0.25rem 0.4rem 0.4rem;
+    text-align: left;
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+.docker-compose-svctable td {
+    padding: 0.45rem 0.4rem;
+    border-top: 1px solid var(--border-primary);
+    vertical-align: middle;
+    overflow: hidden;
+}
+.docker-compose-svcname { font-weight: 600; font-size: var(--font-size-text); }
+.docker-compose-svcimg {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary);
+}
+.docker-compose-port { color: var(--accent-primary); font-variant-numeric: tabular-nums; }
+.docker-compose-svctable .slp-badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.docker-compose-rowact { display: flex; gap: 0.25rem; justify-content: flex-end; }
+.docker-compose-rowact .config-btn--icon { flex: none; width: 1.8rem; padding: 0.2rem 0; font-size: 0.75rem; }
+
+.docker-compose-noterow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2, 0.5rem); }
+.docker-compose-noterow:empty { display: none; }
+.docker-compose-note[data-tone="good"] { --note-tone: var(--accent-success); }
+.docker-compose-tail {
+    margin: 0;
+    padding: 0.4rem 0.5rem;
+    max-height: 7rem;
+    overflow: auto;
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-tertiary, var(--background-primary));
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* The editor with a marked line behind it */
+.docker-compose-edwrap {
+    position: relative;
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-tertiary, var(--background-primary));
+}
+.docker-compose-edwrap .docker-compose-editor { position: relative; background: transparent; }
+.docker-compose-hlbox {
+    position: absolute;
+    inset: 1px;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: var(--radius-4, 6px);
+}
+.docker-compose-hl {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    background: color-mix(in srgb, var(--accent-error) 20%, transparent);
+    box-shadow: inset 3px 0 0 var(--accent-error);
+}
+.docker-compose-hl[hidden] { display: none; }
+.docker-compose-yamlerr .config-btn { margin-left: 0.4rem; }
+
+.docker-compose-chg {
+    margin-left: auto;
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: baseline;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--radius-pill, 999px);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-xs, 0.78rem);
+    cursor: pointer;
+}
+.docker-compose-chg[hidden] { display: none; }
+.docker-compose-chg:hover, .docker-compose-chg.is-on { border-color: var(--accent-primary); color: var(--text-primary); }
+.docker-compose-chg b, .docker-compose-diffhead b { font-weight: 600; }
+.is-add { color: var(--accent-success); }
+.is-del { color: var(--accent-error); }
+
+.docker-compose-keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.9rem;
+    align-items: center;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary);
+}
+.docker-compose-keys span { display: inline-flex; gap: 0.2rem; align-items: center; }
+.docker-compose-keys kbd {
+    font-size: var(--text-xs, 0.7rem);
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border-radius: var(--radius-3, 0.25rem);
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+}
+
+/* Diff */
+.docker-compose-diff {
+    max-height: 21rem;
+    overflow: auto;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-tertiary, var(--background-primary));
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-xs, 0.78rem);
+}
+.docker-compose-diffhead {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.3rem 0.6rem;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    font-family: var(--font-family, inherit);
+    font-size: var(--text-xs, 0.78rem);
+    color: var(--text-secondary);
+}
+.docker-compose-dl { display: grid; grid-template-columns: 2.4em 2.4em 1.4em minmax(0, 1fr); align-items: baseline; }
+.docker-compose-dl .docker-compose-n { padding-right: 0.4em; }
+.docker-compose-dl .docker-compose-t { white-space: pre; overflow-x: auto; scrollbar-width: none; }
+.docker-compose-sg { text-align: center; color: var(--text-tertiary); }
+.docker-compose-dl.is-add { background: color-mix(in srgb, var(--accent-success) 15%, transparent); }
+.docker-compose-dl.is-add .docker-compose-sg { color: var(--accent-success); }
+.docker-compose-dl.is-del { background: color-mix(in srgb, var(--accent-error) 15%, transparent); }
+.docker-compose-dl.is-del .docker-compose-sg { color: var(--accent-error); }
+.docker-compose-dl.is-gap {
+    display: block;
+    padding: 0.1rem 0.6rem;
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    font-family: var(--font-family, inherit);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary);
+}
+.docker-compose-bkdiffrow { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.4rem; }
+.docker-compose-backups li .config-btn + .config-btn { margin-left: 0; }
+
+/* The shared log reader inline (a stack's Logs tab) and its stack parts. */
+.docker-logs-view {
+    display: flex;
+    flex-direction: column;
+    height: clamp(20rem, calc(100vh - 24rem), 52rem);
+    min-height: 0;
+    container-type: inline-size;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-md, 10px);
+    overflow: hidden;
+    background: var(--background-primary);
+}
+.docker-logs-view .docker-logs-bar--compact { display: flex; flex-direction: column; align-items: stretch; gap: 0.35rem; padding: 0.35rem 0.5rem; }
+.docker-logs-barrow { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+.docker-logs-barrow .docker-logs-search { flex: 1 1 0; width: 0; min-width: 4rem; }
+.docker-logs-barrow .docker-logs-count { flex: 0 0 auto; font-size: var(--text-xs, 0.72rem); }
+.docker-logs-barrow .docker-logs-btn { flex: 0 0 auto; }
+.docker-logs-viewhead { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border-primary); color: var(--text-secondary); font-size: var(--text-xs, 0.78rem); }
+.docker-logs-viewhead span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.docker-logs-open { flex: 0 0 auto; border-color: var(--accent-primary); color: var(--text-primary); }
+.docker-compose-infoline { display: flex; align-items: center; gap: 0.5rem; margin: 0.2rem 0; color: var(--text-secondary); font-size: var(--text-xs, 0.78rem); }
+.docker-compose-infoline .view-help-btn { margin-left: 0; width: 1.35rem; height: 1.35rem; }
+.docker-logs-icon { padding: 0.2rem 0.45rem; line-height: 1; }
+.docker-logs-options { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.docker-logs-options[hidden] { display: none; }
+.docker-logs-view .docker-logs-chips { flex-wrap: nowrap; overflow-x: auto; padding: 0.35rem 0.5rem; scrollbar-width: thin; }
+.docker-logs-view .docker-logs-chip { flex: 0 0 auto; }
+.docker-logs-view .docker-logs-body { font-size: 0.72rem; }
+.docker-logs-view .docker-logs-line { gap: 0.5rem; padding: 0 0.5rem; }
+.docker-logs-view .docker-logs-svc { flex: 0 0 auto; max-width: 8ch; }
+.docker-logs-view .docker-logs-foot { gap: 0.5rem; padding: 0.3rem 0.5rem; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; }
+.docker-logs-view .docker-logs-foot { justify-content: flex-start; }
+.docker-logs-keys--line { margin-left: auto; color: var(--text-tertiary, var(--text-secondary)); overflow: hidden; text-overflow: ellipsis; }
+@container (max-width: 380px) { .docker-logs-keys--line { display: none; } }
+.docker-logs-chip {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-xs, 0.78rem);
+    cursor: pointer;
+}
+.docker-logs-chip[aria-pressed="true"] { border-color: var(--accent-primary); color: var(--text-primary); background: color-mix(in srgb, var(--accent-primary) 12%, transparent); }
+.docker-logs-chip-sw { width: 8px; height: 8px; border-radius: 50%; }
+.docker-logs-svc { flex: 0 0 6.4em; max-width: 8ch; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.docker-logs-foot-left { display: flex; gap: var(--space-3, 0.75rem); align-items: center; }
+.docker-logs-status { color: var(--text-secondary); }
+.docker-logs-status[data-state="live"] { color: var(--accent-success, #3c6); }
+.docker-logs-status[data-state="paused"] { color: var(--accent-warning, #cb4); }
+.docker-logs-status[data-state="ended"] { color: var(--accent-error, #c55); }
+
+/* "Edited, not applied" on a stack's heading in the list. */
+.docker-stack-pending {
+    align-self: center;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--accent-warning);
+    border: 1px solid color-mix(in srgb, var(--accent-warning) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-warning) 12%, transparent);
+}
+.docker-stack-pending[hidden] { display: none; }
+
+/* Phones: the editor's text is 16px, or iOS Safari zooms the page on focus;
+   the services table becomes one block per service instead of four columns. */
+@media (max-width: 767px) {
+    .docker-compose-editor { font-size: 16px; }
+    .docker-compose-svctable,
+    .docker-compose-svctable tbody { display: block; }
+    .docker-compose-svctable colgroup,
+    .docker-compose-svctable thead { display: none; }
+    .docker-compose-svctable tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.3rem 0.5rem;
+        padding: 0.5rem 0;
+        border-top: 1px solid var(--border-primary);
+    }
+    .docker-compose-svctable td { display: block; padding: 0; border-top: 0; }
+    .docker-compose-svctable td:nth-child(1) { grid-column: 1; grid-row: 1; }
+    .docker-compose-svctable td:nth-child(2) { grid-column: 1; grid-row: 2; }
+    .docker-compose-svctable td:nth-child(3) { grid-column: 1; grid-row: 3; }
+    .docker-compose-svctable td:nth-child(4) { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+    .docker-compose-chips { flex-direction: row; flex-wrap: wrap; }
+    .docker-compose-rowact { flex-direction: column; }
+    .docker-compose-rowact .config-btn--icon { width: 2.4rem; padding: 0.35rem 0; }
+}

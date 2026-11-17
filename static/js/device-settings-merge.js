@@ -104,6 +104,7 @@
         'pushNotifyContainers',
         'pushNotifyGlances',
         'pushNotifyNews',
+        'pushNotifyReminders',
         'notifyNewsTarget',
         'feedWatchWindowMinutes',
         'feedWatchExpireHours',

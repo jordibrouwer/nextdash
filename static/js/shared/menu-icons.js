@@ -20,6 +20,14 @@
         + '<path d="M8 8.4v6"/>'
         + '</svg>';
 
+    // A clock: the reminder entry was a typed alarm-clock emoji, painted in its
+    // own red, which is the Pin problem again.
+    const REMIND = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor"'
+        + ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+        + '<circle cx="8" cy="8" r="5.8"/>'
+        + '<path d="M8 4.8V8l2.2 1.4"/>'
+        + '</svg>';
+
     /**
      * Put an icon into a menu row's icon slot.
      *
@@ -34,8 +42,13 @@
             slot.classList.add('move-popover-check--drawn');
             return;
         }
+        if (icon === 'remind') {
+            slot.innerHTML = REMIND;
+            slot.classList.add('move-popover-check--drawn');
+            return;
+        }
         slot.textContent = icon == null ? '' : String(icon);
     }
 
-    window.MenuIcons = { PIN, apply: applyMenuIcon };
+    window.MenuIcons = { PIN, REMIND, apply: applyMenuIcon };
 })();

@@ -110,6 +110,8 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 
 - [With the mouse](#with-the-mouse)
 - [The right-click menu](#the-right-click-menu)
+- [Reminders](#bookmark-reminders)
+- [Related links](#related-links)
 - [Editing in place](#editing-in-place)
 - [Usage](#usage)
 - [Recent bookmarks (`*`)](#recent-bookmarks)
@@ -235,6 +237,8 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [The logs window](#158-the-logs-window)
 - [Notices](#159-notices)
 - [Apps it finds on its own](#1510-apps-it-finds-on-its-own)
+- [Other Docker hosts](#1511-other-docker-hosts)
+- [Compose stacks](#1512-compose-stacks)
 
 </details>
 
@@ -1092,6 +1096,7 @@ Hovering a bookmark — or pressing **`v`** on the selected row — opens a card
 1. **What the page is** — icon, title, one address and a status pill.
 2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. A bookmark that is a video — YouTube, Vimeo, Dailymotion, or a file that ends in `.mp4` — carries a small **▶** on the corner of its icon (beside the name when icons are off), and the card opens on the thumbnail with a play button over it.
 3. **What you know about it** — last check and ping, uptime, certificate expiry, opens and last opened, shortcut and location.
+4. **What belongs with it** — up to three of your other bookmarks that go with this one, each with the reason on hover ([Related links](#related-links)).
 
 The card is not shown in the phone layout (a window narrower than 768 px); it comes back when the window widens.
 
@@ -1260,6 +1265,8 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 | Pin / Unpin | `p` | |
 | Tags… | `t` | The quick tag picker |
 | Move to… | `m` | Another category or page |
+| Remind me… | `z` | Picks a time to be reminded of the link ([Reminders](#bookmark-reminders)). With one set, the item reads *Reminder: tomorrow 09:00…* |
+| Related links… | | The bookmarks that go with this one ([Related links](#related-links)) |
 | Checking | `c` | Off / Periodic / Monitor |
 | Show in list | `r` | Opens the bookmark in the Bookmarks view, with its Health section open |
 | Select / Select all in category | `x` / `X` | Starts a selection |
@@ -1277,6 +1284,48 @@ The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
 
 <p align="center"><img src="screenshots/manual.md/06-qr-code.jpg" alt="The QR code window for the Encyclopedia bookmark: the code, the address under it and a Copy URL button" width="392"></p>
 <p align="center"><sub>A bookmark as a QR code (<kbd>q</kbd>), ready for the phone's camera.</sub></p>
+
+<a id="bookmark-reminders"></a>
+
+### ⏰ Reminders
+
+A bookmark can carry a time at which nextDash reminds you of it: a page to read tonight, a form to fill in before Friday. Pick the time in any of four places:
+
+- **The menu.** **Remind me…** in the right-click menu, or **`z`** on the selected bookmark, opens a small list: *In 3 hours*, *This evening* (only while it is before 15:00), *Tomorrow* (09:00), *This weekend* (Saturday 09:00) and *Next week*, then a **Pick a date and time** field with **Set reminder**. With a reminder set, the same menu offers **Remove reminder**.
+- **The edit form.** The form of a bookmark ([Editing in place](#editing-in-place)) has a *Remind me* button that reads *Reminder: tomorrow 09:00* or *No reminder*. A reminder is written when you choose it, not when you press **Save**, so cancelling the form does not take it back.
+- **The palette.** `:remind <when>` sets one on the bookmark under the cursor; `:remind <name> <when>` on a bookmark found by name; `:remind clear` removes it. *When* is `tonight`, `tomorrow`, `weekend`, `next week`, `3h`, `2d`, `1w`, a date (`2026-12-24`) or a day and month (`24 dec`). A lone `:remind` lists the presets.
+
+A small clock on the row shows that a reminder is waiting.
+
+<p align="center"><img src="screenshots/manual.md/06-reminder-menu.jpg" alt="The reminder menu under a bookmark row: In 3 hours, Tomorrow, This weekend, Next week, and a Pick a date and time field with a Set reminder button" width="360"></p>
+<p align="center"><sub>Choosing when to be reminded (<kbd>z</kbd>).</sub></p>
+
+When the time comes, the bell ([§4](#the-notifications-bell)) gets one quiet row — *Reminder: Hack The Box* — naming the oldest due reminder and counting the rest (*and 2 more*). Its buttons are **Done** (clears the reminder), **Later** (picks a new time) and **Open** (opens the link); **No**, as on every bell row, puts the row away without touching the reminder. Answering one brings the next into view. The row stays until you answer it; the bell shakes once when it first appears.
+
+<p align="center"><img src="screenshots/manual.md/06-reminder-bell.jpg" alt="The notifications bell open on a reminder row for Hack The Box, with Done, Later and Open" width="392"></p>
+<p align="center"><sub>A reminder that has come due.</sub></p>
+
+**Push while nextDash is closed.** Once a minute the server looks for reminders that are due and pushes each one once, as a single combined message when several fall due together. It needs **Enable browser notifications** on a device ([§12.4](#124-alerts)); under **Config → Monitoring → Notifications → Browser notifications**, **Notify when a reminder you set on a bookmark is due** switches it off. A reminder more than a week late (a restored backup, a server that was off) is not pushed, but the bell still shows it. The push is a courtesy: with no device, push off or the push service down, the bell row is still there.
+
+> [!NOTE]
+> Reminders on bookmarks are not the *Reminders* of [§12.5](#reminders), which are repeat messages about an outage that is still going.
+
+<a id="related-links"></a>
+
+### 🔗 Related links
+
+Hover a bookmark and its preview card ([§4](#the-link-preview-card)) shows a **Related** row of up to three of your other bookmarks that go with it. Hovering one tells why: *shared tags*, *same site* or *often opened together*. Nothing is asked of you; it reads your tags, your addresses and the times you opened things.
+
+<p align="center"><img src="screenshots/manual.md/04-related-links.jpg" alt="The preview card of ArchWiki with its tags and, under Related, three bookmarks that go with it: Linux From Scratch, Proxmox VE docs and Docker docs" width="408"></p>
+<p align="center"><sub>The related row on a preview card.</sub></p>
+
+- **Open one** with a click; it counts as an open. **Shift + click** goes to its place on the dashboard instead.
+- **From the right-click menu**, **Related links…** opens the same list as a small menu under the row.
+- **From the palette**, `:related` lists the links that belong with the bookmark under the cursor, and `:related <name>` with one found by name. `Enter` opens a link, `Alt + Enter` goes to it.
+
+How it ranks: a tag counts for less the more of your library carries it, so *homelab* on a third of your bookmarks relates nothing by itself and two middling tags together do. The same goes for a site: forty bookmarks on one big site are not each other's relations by address alone, while two on a small one are. The port is part of the site, because on a home network every service answers on the same address. Two opens close together count as a habit only after several such pairs. The same page under `http` and `https`, or with and without `www.`, is the bookmark itself and never shown as its own relation. The hidden Unsorted page is left out.
+
+The row is one of the checklist rows under **Config → Appearance → Previews**, so it can be switched off there.
 
 <a id="editing-in-place"></a>
 
@@ -1362,6 +1411,7 @@ With the cursor on a bookmark, its actions are **plain letters**, as in the Inbo
 | `Shift + F` | Filter this page in place |
 | `Shift + H` | Key legend under the grid off or on |
 | `Shift + K` | Play the dashboard tour again |
+| `Shift + V` | What's new: the release notes |
 | `Shift + X` | Switch whether letters search names or shortcuts (with a bookmark selected, `Shift + X` ticks the whole category) |
 | `Esc` | Close the panel; on a bare grid, go to the first page; on the first page, open search |
 
@@ -1408,6 +1458,7 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `c` | Availability checking — `o` off, `p` periodic, `m` monitor |
 | `s` | Share, or copy name and URL |
 | `q` | The bookmark as a QR code, to open it on a phone |
+| `z` | Remind me of it: choose a time ([§6](#bookmark-reminders)) |
 | `f` | Filter the grid by the bookmark's tag |
 | `r` | Open the bookmark in the Bookmarks view, on its Health tab |
 | `Ctrl + C` | Copy the URL |
@@ -1615,6 +1666,8 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 |---------|--------------|
 | `:new` / `:add` | Full form / quick add |
 | `:edit` · `:move` · `:copy` · `:note` · `:pin` · `:unpin` · `:remove` | On the selected bookmark |
+| `:remind <when>` · `:remind <name> <when>` · `:remind clear` | Set or clear a reminder on a bookmark ([§6](#bookmark-reminders)) |
+| `:related` · `:related <name>` | The links that belong with a bookmark ([§6](#related-links)) |
 | `:tag` · `:tag work` · `:tag +name` · `:tag -name` | List tags, browse a tag, add or remove a tag on the selected bookmark |
 | `:filter <tag>` | The tag view for a tag |
 | `:find <text>` / `:find clear` | Filter this page |
@@ -3164,6 +3217,58 @@ A host is read-only until you switch on **Allow actions** for it; then start, st
 
 What stays with this host: updating and rolling back, the Disk tab, the timeline, notices, the statistics, the widgets and the assistant's container tools. Settings kept by container name — hidden, muted, updated automatically, a web address or an icon of your own — are for this host's containers only, so a tab of another host does not offer them. Leaving the view puts the palette and search back on this host. Port links on another host's tab open that host's address.
 
+<a id="1512-compose-stacks"></a>
+
+### 15.12 Compose stacks
+
+A container started by Docker Compose belongs to a **stack**. The stack has a panel of its own where you read its compose file, edit it, check it and run it, without a terminal on the host.
+
+**Opening it.** With **Group by project** on, each stack's heading has **Files**; in a container's panel the chip **Compose stack {name} ›** leads to the same place, and **Back** returns to the container. A stack's heading says **Edited, not applied** when its file changed after the last Up nextDash ran (only stacks nextDash started are followed, so a stack changed outside nextDash is not flagged).
+
+**Setting it up.** nextDash sees a stack's files only where they are mounted into its own container. `NEXTDASH_COMPOSE_MAP` says where a stack folder on the host appears inside nextDash, as `hostPrefix:containerPrefix`, comma separated:
+
+```yaml
+services:
+  nextdash:
+    volumes:
+      - /opt/stacks:/stacks:ro        # read-only is enough to read; use :rw to edit
+    environment:
+      - NEXTDASH_COMPOSE_MAP=/opt/stacks:/stacks
+```
+
+The paths come from the labels Docker put on the containers, so you name only the folder, never a project. A file must be a regular file of at most 1 MiB, end in `.yml` or `.yaml`, and still lie under the mapped folder after links are followed. **Config → Containers → Connection** shows the folders the map resolved to, what it refused, or the variable to set when there is none. With no map the panel says what to add instead of showing files.
+
+| Variable | For |
+|---|---|
+| `NEXTDASH_COMPOSE_MAP` | Where stack folders appear inside nextDash (`/opt/stacks:/stacks`) |
+| `NEXTDASH_DOCKER_CONTROL=1` | Editing, Up, Down, Pull and Restart; without it the panel only reads |
+| `NEXTDASH_COMPOSE_IMAGE` | The helper image that runs `docker compose` (default `docker:29.7-cli`) |
+| `NEXTDASH_COMPOSE_SOCKET` | The Docker socket's path on the host, when nextDash cannot tell from its own mounts |
+| `NEXTDASH_COMPOSE_DOCKER_CONFIG` | A folder with `config.json`, mounted read-only into the helper, so a pull can use your registry logins |
+
+**The tabs.**
+
+- **Services** — every service of the stack with its state, health, ports and image, and round **Up**, **Pull** and **Restart** buttons that act on that service alone. The panel opens here.
+- **Compose** and **.env** — the file as text. Values under keys like `password`, `secret`, `token`, `key`, `cred` or `private`, credentials inside a URL, and every value in a `.env` are shown as `••••••`; each has its own **Reveal**, which asks the server for that one value, never cached. When a file cannot be parsed, it is masked line by line, so nothing slips through.
+- **Logs** — one log for the whole stack, each line tagged with its service. Chips filter by service; search, **Filter**, stdout/stderr, last *N* lines, timestamps, wrap, copy and download work as in a container's log ([§15.8](#158-the-logs-window)). **Pause** (`p`) holds new lines while the connection stays open; **Open logs window** shows the stack in the large window. A stopped or recreated service is picked up again by itself, and a dropped connection retries and then offers **Reconnect**.
+- **Backups** — the last 20 copies of each file, made before every save. **Restore** asks first and copies the current file before it puts the old one back; **Diff** shows what a restore would change.
+
+<p align="center"><img src="screenshots/manual.md/14-stack-services.jpg" alt="The stack panel of the arr stack on its Services tab: Sonarr and Radarr with their state, health, ports and image, each with round Up, Pull and Restart buttons, and Up, Down, Pull and Restart in the heading" width="384"></p>
+<p align="center"><sub>A stack's services, with the stack's own buttons in the heading.</sub></p>
+
+**Editing a file.** **Edit** on the Compose or .env tab turns the text into a box with an unsaved marker, **Save** and **Reload**. Save sends the version it loaded, so a file that changed on disk since is refused and you choose **Reload** or keep editing. A YAML error shows its line and column and puts the cursor there; a file on a read-only mount, or one nextDash may not write, says which instead of offering Save. `Ctrl/⌘ + S` saves and `Tab` types two spaces (`Esc`, then `Tab`, leaves the box). nextDash's own stack is never editable. A `.env` saved with its values still masked keeps every one of them exactly as it is on disk; the mask is never written as a value.
+
+- **Check** runs `compose config` on the text in the box, saved or not, and marks the line it names, with a **Go to line** link. A text over 96 KiB goes straight on to Save, since Up checks it.
+- **Changes** shows the diff of your edit against the file on disk before you save.
+- **Apply** checks, saves and runs Up, as one list of steps under the box. A text that fails the check is never written (*nothing was written*); a failed Save starts nothing; a failed Up leaves the file as saved and offers the previous copy. A `.env` has no Check; Apply saves it and runs Up.
+
+<p align="center"><img src="screenshots/manual.md/14-stack-compose.jpg" alt="The Compose tab of the arr stack in edit mode: the file as text with a masked value and an unsaved marker, a Check passed message, Save, Check, Apply, Reload and Close, and the Changes chip" width="384"></p>
+<p align="center"><sub>Editing a compose file: Check, Changes and Apply.</sub></p>
+
+**Running it.** **Up**, **Down**, **Pull**, **Restart** and **Pull and Up** sit in the stack's heading, with the output as it runs in the same progress list as a container update. nextDash runs `docker compose` in a short-lived helper container with the stack folder at its own host path, and removes the helper whatever happens. Down asks first and says that volumes and images stay; Up, Pull and Up and Apply ask once, because services whose file or image changed are recreated, and variables that exist only in your shell or an env file you passed by hand are blank in the helper. Up stops before it starts when a `${VAR}` the files use is set nowhere. A pull that takes over 30 minutes is stopped with nothing changed; a start that takes over 10 minutes is left to finish, and the next run is refused until it is done. For a minute after Up, nextDash follows the stack's containers and raises a container notice ([§15.9](#159-notices)) for a restart loop, an unhealthy or a failed one.
+
+**What it does not do.** The buttons are disabled, with the reason, with control off, on nextDash's own stack and on another Docker host ([§15.11](#1511-other-docker-hosts)). Down never removes volumes. Backups hold secrets as they were, so they stay out of the settings backup ([§20](#20-data-backups-and-import)).
+
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
@@ -3512,6 +3617,7 @@ A read-only mount is enough to look. Starting, stopping, updating and removing c
 | `NEXTDASH_HOST_ROOT` | Disks (required) |
 | `NEXTDASH_DOCKER_SOCKET` | Containers widget and view (required; unset hides both) |
 | `NEXTDASH_DOCKER_CONTROL` | Containers view: start, stop, pause, restart, update and remove (`1`; needs a writable socket) |
+| `NEXTDASH_COMPOSE_MAP` | Containers view: a stack's compose files, to read, edit and run ([§15.12](#1512-compose-stacks)) |
 
 **On Unraid** these are rows in the container template (Docker → nextDash → Edit):
 
@@ -4702,7 +4808,7 @@ Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config →
 | Tab | Settings |
 |---|---|
 | **Checks** | Checks in this browser, checks on the server, how monitored bookmarks stand out ([§12.1](#121-availability-modes)), and the **Network checks** panel: the switches, ICMP status and the table of every network check ([§11.14](#network-checks-config)) |
-| **Notifications** | Downtime alerts, browser notifications, reminders, the weekly digest, and browser notifications for Glances incidents (which kinds is chosen per host in Config → Glances → Notices, [§16A.8](#16a8-notices)) ([§12.4](#124-alerts)) |
+| **Notifications** | Downtime alerts, browser notifications, reminders (and whether a bookmark's reminder is pushed, [§6](#bookmark-reminders)), the weekly digest, and browser notifications for Glances incidents (which kinds is chosen per host in Config → Glances → Notices, [§16A.8](#16a8-notices)) ([§12.4](#124-alerts)) |
 | **Schedules** | Maintenance windows and quiet hours ([§12.5](#125-maintenance-windows)) |
 
 <a id="186-config-inbox"></a>
@@ -5575,7 +5681,7 @@ Every count is rounded into a band. **Never recorded:** bookmark names, URLs, se
 - Preview data is kept in memory and written to disk every 30 seconds and on shutdown.
 - `NEXTDASH_DATA_DIR` sets the data directory; `NEXTDASH_DISABLE_PREFETCH=1` skips the icon prefetch at start-up.
 - `NEXTDASH_HEALTH_STARTUP_GRACE` (default `15m`, a Go duration; `0` turns it off) is how long after start-up a bookmark's first failed check is held back instead of recorded, so services that start together with nextDash are not marked broken; a second failure at least 45 seconds later is recorded as usual, and Retest all always records at once.
-- For the public demo only: `NEXTDASH_DEMO=1` turns an instance into a seeded demo that puts its data back to the start every `NEXTDASH_DEMO_RESET_MINUTES` (default 30) and once nobody has written for `NEXTDASH_DEMO_IDLE_MINUTES` (default 10). It empties its data directory on every start and reset, so it needs `NEXTDASH_DATA_DIR` set to a directory of its own and refuses one that holds a real install. See `deploy/demo/docker-compose.yml`.
+- For the public demo only: `NEXTDASH_DEMO=1` turns an instance into a seeded demo that puts its data back to the start every `NEXTDASH_DEMO_RESET_MINUTES` (default 30) and once nobody has written for `NEXTDASH_DEMO_IDLE_MINUTES` (default 10). It empties its data directory on every start and reset, so it needs `NEXTDASH_DATA_DIR` set to a directory of its own and refuses one that holds a real install. Its Docker is an imaginary one, so the Containers view works too, compose stacks included: five stacks with a compose file and a `.env` that you can read, edit, check and run (Down stops a stack's containers and keeps them, so the stack stays on the list), and a reset puts them all back. See `deploy/demo/docker-compose.yml`.
 - Demo only: `NEXTDASH_DEMO_ANALYTICS_ID` is the Umami website id the demo counts its visits into (page views, events, heatmaps and screen replays), in a count separate from every install's. Unset, the demo counts nothing. The demo bar and Config → Privacy say so. A normal install ignores it, and `DISABLE_TELEMETRY` switches it off as well.
 - For the test suite only: `NEXTDASH_ICON_SETS_FIXTURE` and `NEXTDASH_UNRAID_FIXTURE` name a directory the app icon sets and the Unraid API answer from instead of the network. A real install leaves them unset.
 - For the test suite only: `NEXTDASH_SEED=minimal` starts a new data folder with the small one-page set instead of the 98 starter links, and `NEXTDASH_DISCOVERY_FIXTURE` names a JSON file that app discovery reads instead of the Docker socket. A real install leaves both unset.
@@ -5974,6 +6080,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Disk tab | Shows what images, volumes and the build cache take up, with clean-ups that ask first. | [§15.7](#157-disk) |
 | Docker control | `NEXTDASH_DOCKER_CONTROL=1`: lets nextDash start, stop, pause, restart, update and remove containers; off by default, so a mounted socket only reads. | [§15.5](#155-actions-and-updates) |
 | Docker socket | How nextDash talks to Docker; without it the Containers view shows a setup card. | [§15.6](#156-what-it-needs) |
+| Compose stack | The containers one compose project started; the Containers view opens its files, services and log in one panel. | [§15.12](#1512-compose-stacks) |
 | Drift | A page that still answers but is no longer the page you saved: it redirects, has been retitled or was rewritten. | [§12.3](#123-drift) |
 
 <a id="glossary-e"></a>

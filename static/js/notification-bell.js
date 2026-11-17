@@ -31,7 +31,8 @@
  * The bell also draws the eye: a shake and a pulse when something unread is
  * there on load, a shake, a pulse and a short bell tone when a refresh finds
  * more unread than the one before (the tone follows the `bellSound` setting),
- * and a quiet pulse once a minute until the panel is opened.
+ * and, while anything stays unread, a pulse every 20 seconds and a shake every
+ * 90 seconds. The tone sounds at most once per five minutes.
  *
  * `onReset()` is optional and undoes what onNo did: called by
  * `NotificationBell.resetDismissed()` for each source whose forever "No" it
@@ -43,9 +44,13 @@
 
     const FIRST_REFRESH_MS = 3000;
     const REFRESH_EVERY_MS = 5 * 60 * 1000;
-    const REMINDER_EVERY_MS = 60 * 1000;
-    // Every hour that something is still unread the bell shakes as well as pulses.
-    const NAG_EVERY_MS = 60 * 60 * 1000;
+    // While something is unread the badges pulse every 20 seconds and the bell
+    // shakes every 90 seconds, until the row is read or answered.
+    const REMINDER_EVERY_MS = 20 * 1000;
+    const NAG_EVERY_MS = 90 * 1000;
+    // No more than one notification tone per five minutes.
+    const SOUND_EVERY_MS = 5 * 60 * 1000;
+    const SOUND_KEY = 'nextdash-bell-sound-at';
     const Model = global.NotificationBellModel;
     const States = () => global.DiscoverabilityState;
 
@@ -60,6 +65,7 @@
     let lastUnread = null;     // unread after the previous refresh; null until the first one
     let looked = true;         // the panel was opened since the last shake
     let audioCtx = null;
+    let lastSoundAt = 0;
     let lastAnim = { kind: 'none', at: 0 };   // the last thing that drew the eye, for analytics
 
     const GROUP_FALLBACK = {
@@ -215,11 +221,29 @@
     const TONES = { bell: ring, chime };
 
     /**
+     * At most one tone per SOUND_EVERY_MS, however many sources arrive. The
+     * time of the last tone lives in localStorage so several tabs and reloads
+     * share one budget; without storage it falls back to this page's memory.
+     * The slot is taken before the audio wakes, so a tone the browser keeps
+     * shut still uses it and a burst cannot queue up behind it.
+     */
+    function claimSoundSlot() {
+        const now = Date.now();
+        let last = lastSoundAt;
+        try { last = Math.max(last, Number(localStorage.getItem(SOUND_KEY)) || 0); } catch { /* memory only */ }
+        if (now - last >= 0 && now - last < SOUND_EVERY_MS) return false;
+        lastSoundAt = now;
+        try { localStorage.setItem(SOUND_KEY, String(now)); } catch { /* memory only */ }
+        return true;
+    }
+
+    /**
      * Play a tone: the bell by default, or another by name ('chime'). A browser
      * keeps audio shut until the page has been touched; when the context will
      * not wake, this stays silent.
      */
     async function playSound(tone = 'bell') {
+        if (!claimSoundSlot()) return;
         try {
             const ctx = context();
             if (!ctx) return;
@@ -278,7 +302,7 @@
     }
 
     function remind() {
-        if (document.visibilityState !== 'visible' || looked || isOpen) return;
+        if (document.visibilityState !== 'visible' || isOpen) return;
         const { red, grey } = counts();
         if (red + grey > 0) {
             lastAnim = { kind: 'pulse', at: Date.now() };
@@ -292,9 +316,9 @@
         return styles.size === 1 ? [...styles][0] : 'swing';
     }
 
-    /** The hourly nudge: shake and pulse (no tone) while anything is still unread. */
+    /** The repeating nudge: shake and pulse (no tone) while anything is still unread. */
     function nag() {
-        if (document.visibilityState !== 'visible') return;
+        if (document.visibilityState !== 'visible' || isOpen) return;
         const unread = rows().filter((r) => r.visible && r.unread && (r.kind === 'urgent' || r.kind === 'quiet' || r.kind === 'tip'));
         if (!unread.length) return;
         shake(movementOf(unread));

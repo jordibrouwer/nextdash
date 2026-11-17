@@ -119,6 +119,9 @@ var demoAllowedWrites = []string{
 	// Docker is the demo's own daemon, registry and changelog (docker_demo.go):
 	// checking for updates asks nobody outside, and the token is never sent.
 	"/api/docker/updates/check", "/api/docker/github-token",
+	// Compose in the demo (docker_demo_compose.go): the files are the demo's own, in a folder
+	// of their own that a reset writes again, and a run is played by the demo's daemon.
+	"/api/docker/compose/{project}/files", "/api/docker/compose/{project}/backups/{stamp}/restore", "/api/docker/compose/{project}/check", "/api/docker/compose/{project}/preview", "/api/docker/compose/{project}/watch/restore", "/api/docker/compose/{project}/watch/dismiss", "/api/docker/compose/{project}/{action}",
 	"/api/health/accept-drift", "/api/health/cache-scan", "/api/health/check-mode", "/api/health/check-mode-all",
 	"/api/health/delete-bookmark", "/api/health/delete-bookmarks", "/api/health/expectations",
 	"/api/health/expectations-bulk", "/api/health/ignore", "/api/health/merge-duplicates",

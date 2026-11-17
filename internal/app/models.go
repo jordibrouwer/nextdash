@@ -58,6 +58,13 @@ type Bookmark struct {
 	PreviewImage string   `json:"previewImage,omitempty"` // Preview image URL
 	Note         string   `json:"note,omitempty"`         // User note for bookmark
 	Tags         []string `json:"tags,omitempty"`
+	// RemindAt is when to remind the reader of this link (unix ms; 0 is no
+	// reminder). Set from the dashboard like any other field of the row.
+	RemindAt int64 `json:"remindAt,omitempty"`
+	// RemindSentAt is when the push for RemindAt went out (unix ms). Written by
+	// the server alone, and put back to 0 whenever RemindAt changes, so a
+	// reminder pushed once is not pushed again and a postponed one is.
+	RemindSentAt int64 `json:"remindSentAt,omitempty"`
 	// Monitor opts a bookmark into uptime monitoring: a separate, faster tier than
 	// CheckStatus. Monitored bookmarks are pinged on their own interval and are the
 	// only ones that accumulate sample history (see health_history.go), so enabling
@@ -556,7 +563,11 @@ type Settings struct {
 	// LinkPreviewPartsUpgraded marks that the rows added after the checklist
 	// shipped have been put back into a stored list. One-way: it is set once
 	// and then the reader's own choice stands.
-	LinkPreviewPartsUpgraded       bool                         `json:"linkPreviewPartsUpgraded,omitempty"`
+	LinkPreviewPartsUpgraded bool `json:"linkPreviewPartsUpgraded,omitempty"`
+	// LinkPreviewRelatedOffered marks that the "related" row has been put into a
+	// stored checklist, once: a list stored before the row existed reads as
+	// "switched off" rather than "never offered".
+	LinkPreviewRelatedOffered      bool                         `json:"linkPreviewRelatedOffered,omitempty"`
 	LinkPreviewHoverDelayMs        int                          `json:"linkPreviewHoverDelayMs"`                  // Hover delay before preview card appears
 	PreviewImageCacheMB            int                          `json:"previewImageCacheMB,omitempty"`            // Disk cap for data/preview-images
 	ShowShortcuts                  bool                         `json:"showShortcuts"`                            // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
@@ -1137,6 +1148,7 @@ type Settings struct {
 	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
 	PushNotifyGlances    bool                  `json:"pushNotifyGlances"`              // Push when a Glances host has an incident of a kind switched on in Config -> Glances
 	PushNotifyNews       bool                  `json:"pushNotifyNews"`                 // Push when a watched feed has news; on unless turned off
+	PushNotifyReminders  bool                  `json:"pushNotifyReminders"`            // Push when a reminder you set on a bookmark is due; on unless turned off
 	NotifyNewsTarget     bool                  `json:"notifyNewsTarget"`               // Also send a round's news to the alert target (ntfy, Gotify, Discord...); off unless turned on
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
@@ -1909,14 +1921,18 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowAddBookmarkButton:      true,
 			// Every action button is on: the bar is where a new reader
 			// learns what the keys do, and the fold keeps a full bar tidy.
-			ShowFindersButton:               true,
-			ShowCommandsButton:              true,
-			ShowRecentButton:                true,
-			ShowTagCloudButton:              true,
-			ShowSearchFlowBanner:            true,
-			ShowCheatSheetButton:            true,
-			ShowEditModeButton:              true,
-			PushNotifyNews:                  true,
+			ShowFindersButton:    true,
+			ShowCommandsButton:   true,
+			ShowRecentButton:     true,
+			ShowTagCloudButton:   true,
+			ShowSearchFlowBanner: true,
+			ShowCheatSheetButton: true,
+			ShowEditModeButton:   true,
+			PushNotifyNews:       true,
+			PushNotifyReminders:  true,
+			// A new install has no older checklist to put rows back into.
+			LinkPreviewPartsUpgraded:        true,
+			LinkPreviewRelatedOffered:       true,
 			HideToastsMobile:                true,
 			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
@@ -4634,55 +4650,59 @@ func (fs *FileStore) getSettingsShared() Settings {
 	if err != nil {
 		// Return default settings if file doesn't exist
 		settings := Settings{
-			CurrentPage:                     1,
-			Theme:                           defaultThemeID,
-			OpenInNewTab:                    true,
-			AnalyticsOptIn:                  false,
-			EnableSessionTips:               true,
-			EnableTagSuggestionNotice:       true,
-			DiscoverabilityState:            freshDiscoverabilityState(),
-			EnableHealthReviewNotice:        true,
-			EnableDockerUpdateNotice:        true,
-			EnableHealthRecheckNotice:       true,
-			EnableInboxExtensionNotice:      true,
-			EnableUpdatedNotice:             true,
-			BellSound:                       true,
-			EnableSectionTours:              true,
-			ShowShortcutTooltips:            false,
-			ShowGridKeyLegend:               true,
-			ShowModeStrip:                   true,
-			ShortcutOpenMode:                "instant",
-			RememberScrollPosition:          true,
-			DetectSoftNotFound:              true,
-			DomainExpiry:                    true,
-			TagLookupOnline:                 true,
-			ColumnsPerRow:                   3,
-			FontSize:                        "m",
-			ShowTitle:                       true,
-			ShowDate:                        true,
-			ShowTime:                        true,
-			TimeFormat:                      "24h",
-			DateFormat:                      "short-slash",
-			ShowWeatherWithDate:             true,
-			WeatherSource:                   "manual",
-			WeatherLocation:                 "",
-			WeatherUnit:                     "celsius",
-			NotesProcessing:                 "server",
-			WeatherRefreshMinutes:           30,
-			ShowConfigButton:                true,
-			ShowPagesButton:                 true,
-			ShowInboxButton:                 true,
-			ShowDashboardButton:             true,
-			ShowSearchButton:                true,
-			ShowAddBookmarkButton:           true,
-			ShowFindersButton:               true,
-			ShowCommandsButton:              true,
-			ShowRecentButton:                true,
-			ShowTagCloudButton:              true,
-			ShowSearchFlowBanner:            true,
-			ShowCheatSheetButton:            true,
-			ShowEditModeButton:              true,
-			PushNotifyNews:                  true,
+			CurrentPage:                1,
+			Theme:                      defaultThemeID,
+			OpenInNewTab:               true,
+			AnalyticsOptIn:             false,
+			EnableSessionTips:          true,
+			EnableTagSuggestionNotice:  true,
+			DiscoverabilityState:       freshDiscoverabilityState(),
+			EnableHealthReviewNotice:   true,
+			EnableDockerUpdateNotice:   true,
+			EnableHealthRecheckNotice:  true,
+			EnableInboxExtensionNotice: true,
+			EnableUpdatedNotice:        true,
+			BellSound:                  true,
+			EnableSectionTours:         true,
+			ShowShortcutTooltips:       false,
+			ShowGridKeyLegend:          true,
+			ShowModeStrip:              true,
+			ShortcutOpenMode:           "instant",
+			RememberScrollPosition:     true,
+			DetectSoftNotFound:         true,
+			DomainExpiry:               true,
+			TagLookupOnline:            true,
+			ColumnsPerRow:              3,
+			FontSize:                   "m",
+			ShowTitle:                  true,
+			ShowDate:                   true,
+			ShowTime:                   true,
+			TimeFormat:                 "24h",
+			DateFormat:                 "short-slash",
+			ShowWeatherWithDate:        true,
+			WeatherSource:              "manual",
+			WeatherLocation:            "",
+			WeatherUnit:                "celsius",
+			NotesProcessing:            "server",
+			WeatherRefreshMinutes:      30,
+			ShowConfigButton:           true,
+			ShowPagesButton:            true,
+			ShowInboxButton:            true,
+			ShowDashboardButton:        true,
+			ShowSearchButton:           true,
+			ShowAddBookmarkButton:      true,
+			ShowFindersButton:          true,
+			ShowCommandsButton:         true,
+			ShowRecentButton:           true,
+			ShowTagCloudButton:         true,
+			ShowSearchFlowBanner:       true,
+			ShowCheatSheetButton:       true,
+			ShowEditModeButton:         true,
+			PushNotifyNews:             true,
+			PushNotifyReminders:        true,
+			// A new install has no older checklist to put rows back into.
+			LinkPreviewPartsUpgraded:        true,
+			LinkPreviewRelatedOffered:       true,
 			HideToastsMobile:                true,
 			MobileHome:                      "search",
 			HideCornerCardsMobile:           true,
@@ -4926,6 +4946,10 @@ func (fs *FileStore) getSettingsShared() Settings {
 		if _, ok := rawSettings["pushNotifyNews"]; !ok {
 			settings.PushNotifyNews = true
 		}
+		// On unless turned off: it only fires when push is on and a reminder is set.
+		if _, ok := rawSettings["pushNotifyReminders"]; !ok {
+			settings.PushNotifyReminders = true
+		}
 		// On unless turned off: a file written before network tests existed never answered.
 		if _, ok := rawSettings["netToolsEnabled"]; !ok {
 			settings.NetToolsEnabled = true
@@ -5162,6 +5186,15 @@ func (fs *FileStore) getSettingsShared() Settings {
 		if _, ok := rawSettings["linkPreviewPartsUpgraded"]; !ok {
 			settings.LinkPreviewParts = withLaterLinkPreviewParts(settings.LinkPreviewParts)
 			settings.LinkPreviewPartsUpgraded = true
+		}
+		// The related-links row, offered once to a checklist that was stored
+		// before it existed. A nil list already means every row, and an empty one
+		// is a reader who switched them all off: both are left as they are.
+		if _, ok := rawSettings["linkPreviewRelatedOffered"]; !ok {
+			if len(settings.LinkPreviewParts) > 0 {
+				settings.LinkPreviewParts = normalizeLinkPreviewParts(append(append([]string{}, settings.LinkPreviewParts...), "related"))
+			}
+			settings.LinkPreviewRelatedOffered = true
 		}
 		if _, ok := rawSettings["showSiteNews"]; !ok {
 			settings.ShowSiteNews = true
@@ -5995,6 +6028,11 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.NewBookmarkPeriodicMigrated = settings.NewBookmarkPeriodicMigrated || stored.NewBookmarkPeriodicMigrated
 			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
 			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
+			// One-way markers of the preview checklist: without them a list saved
+			// after the reader unticked a row reads as "never offered" on the
+			// next start, and the row comes back.
+			settings.LinkPreviewPartsUpgraded = settings.LinkPreviewPartsUpgraded || stored.LinkPreviewPartsUpgraded
+			settings.LinkPreviewRelatedOffered = settings.LinkPreviewRelatedOffered || stored.LinkPreviewRelatedOffered
 		}
 	}
 

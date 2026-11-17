@@ -402,6 +402,15 @@ html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.config-layou
     border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
 }
 
+/* Config's header has no rule under it, at rest or scrolled: the views above keep theirs,
+   but here it cut the page between the title and the tabs. */
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library > .config-view-head,
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view > .config-view-head,
+html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.library-layout > .config-view--library > .config-view-head,
+html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view > .config-view-head {
+    border-bottom: 0;
+}
+
 /* The bookmarks view: what is inside its pane is a section of it, with a
    heading and whitespace. A panel that is an alert (attention, danger) keeps
    the border that says so. */

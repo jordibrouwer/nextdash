@@ -2078,8 +2078,9 @@ class DashboardConfig {
 
         // Shift+H switches the key legend off and on, here as on the dashboard.
         if (e.shiftKey && e.code === 'KeyH' && !e.ctrlKey && !e.altKey && !e.metaKey) {
-            const bmLegend = this.dash.activeView === 'library'
-                || (this.section === 'bookmarks' && this.bmTab !== 'tags');
+            // The Bookmarks view's own legend. On Config's Bookmarks pages the legend is
+            // Config's, at the foot of the page, like every other Config page.
+            const bmLegend = this.dash.activeView === 'library';
             const hasLegend = bmLegend || this.configLegendWhere() === 'off'
                 || document.querySelector('.config-form-keyboard-legend, .config-list-keyboard-legend');
             if (!hasLegend) return false;
@@ -3072,9 +3073,6 @@ class DashboardConfig {
         legend.className = className;
         legend.setAttribute('aria-hidden', 'true');
         legend.innerHTML = this.renderKeyboardLegendPairs(pairs);
-        // On the page of forms that also holds the backup lists the legend rests
-        // under its list: stuck to the foot it covered the last rows' buttons.
-        if (this.section === 'data-backups') legend.classList.add('is-inline');
         if (where === 'above') {
             legend.classList.add('is-above');
             if (anchor === host) host.prepend(legend); else anchor.before(legend);
@@ -3089,8 +3087,10 @@ class DashboardConfig {
     /** Footer hint on every page that is not a list (Behavior, Appearance, …). */
     bindFormKeyboardLegend(container) {
         const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs',
-            'inbox', 'containers', 'help', 'status-page', 'unraid', 'glances', 'assistant']);
+            'inbox', 'containers', 'help', 'status-page', 'unraid', 'glances', 'assistant', 'bookmarks']);
         if (!formSections.has(this.section)) return;
+        // The Tags tab of Bookmarks is a list and has the list legend.
+        if (this.section === 'bookmarks' && this.bmTab === 'tags') return;
         if (this.section === 'appearance' && this.appearanceTab === 'custom-themes') {
             document.querySelectorAll('.config-form-keyboard-legend').forEach((el) => el.remove());
             return;
@@ -3492,7 +3492,9 @@ class DashboardConfig {
             else this.bindFormKeyboardLegend(document);
         }
         if (!list || list.querySelector('.config-panel-empty') || (this.section === 'data-backups' && !keyed)) return;
-        this.placeConfigLegend(body, this.section === 'widgets' ? body : list, 'config-list-keyboard-legend', this.buildConfigLegendPairs('list'));
+        // At the foot of the page, not under the list: stuck inside a panel it can only
+        // rest at the panel's end, which on Data & backups is below the window.
+        this.placeConfigLegend(body, (this.section === 'widgets' || this.section === 'data-backups') ? body : list, 'config-list-keyboard-legend', this.buildConfigLegendPairs('list'));
     }
 
     bindListKeyboard(container) {
@@ -4541,6 +4543,7 @@ class DashboardConfig {
         pushNotifyBackup: ['push', 'notification', 'backup'],
         pushNotifyGlances: ['push', 'notification', 'glances', 'host', 'incident'],
         pushNotifyNews: ['push', 'notification', 'news', 'feed', 'watch'],
+        pushNotifyReminders: ['push', 'notification', 'reminder', 'remind', 'bookmark', 'later'],
         notifyNewsTarget: ['notification', 'news', 'feed', 'watch', 'ntfy', 'gotify', 'discord', 'alert'],
         pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
@@ -6516,7 +6519,7 @@ class DashboardConfig {
         if (item.source === 'site' && item.url) {
             action = `<a class="config-news-go" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(this.t('config.overviewNewsRead', 'Read on nextdash.cc ↗'))}</a>`;
         } else if (item.source === 'release') {
-            action = `<button type="button" class="config-news-go" data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>`;
+            action = `<button type="button" class="config-news-go" data-overview-action="whats-new" data-release="${esc(item.title)}">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>`;
         } else if (item.go) {
             action = `<button type="button" class="config-news-go" data-overview-go='${esc(JSON.stringify(item.go))}'>${esc(this.t(item.ctaKey, item.ctaFallback || ''))}</button>`;
         }
@@ -6836,10 +6839,12 @@ class DashboardConfig {
      * the button looking dead. Falls back to the ★ button, which is wired
      * independently, before giving up.
      */
-    async openWhatsNew() {
+    async openWhatsNew(release = '') {
         try {
             if (typeof window.openWhatsNewModal === 'function') {
-                await window.openWhatsNewModal();
+                // `force` so a release the reader has seen still opens, and
+                // `release` so it is the one they clicked, not the newest.
+                await window.openWhatsNewModal(release ? { force: true, release, markSeenOnConfirm: false } : undefined);
                 if (document.querySelector('.whats-new-modal')) return;
             }
             const star = document.getElementById('whats-new-btn');
@@ -6859,7 +6864,8 @@ class DashboardConfig {
         if (!body || body.dataset.overviewClickBound) return;
         body.dataset.overviewClickBound = '1';
         body.addEventListener('click', (e) => {
-            if (this.section !== 'overview') return;
+            // The news list lives in Overview and in About → News & features.
+            if (this.section !== 'overview' && !this.inSection('about')) return;
             const chip = e.target.closest('[data-news-filter]');
             if (chip) {
                 this.setNewsFilter(chip.getAttribute('data-news-filter'));
@@ -6870,8 +6876,9 @@ class DashboardConfig {
                 this.handleOverviewGo(go);
                 return;
             }
-            if (e.target.closest('[data-overview-action="whats-new"]')) {
-                void this.openWhatsNew();
+            const notes = e.target.closest('[data-overview-action="whats-new"]');
+            if (notes) {
+                void this.openWhatsNew(notes.getAttribute('data-release') || '');
                 return;
             }
             const step = e.target.closest('[data-overview-action="tip-prev"], [data-overview-action="tip-next"]');
@@ -10103,6 +10110,7 @@ class DashboardConfig {
         pushNotifyContainers: { def: false },
         pushNotifyGlances: { def: false },
         pushNotifyNews: { def: true },
+        pushNotifyReminders: { def: true },
         notifyNewsTarget: { def: false },
         pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
@@ -11361,6 +11369,7 @@ class DashboardConfig {
                             { value: 'description', label: t('config.linkPreviewPartDescription', 'Description') },
                             { value: 'note', label: t('config.linkPreviewPartNote', 'Your note') },
                             { value: 'tags', label: t('config.linkPreviewPartTags', 'Tags') },
+                            { value: 'related', label: t('config.linkPreviewPartRelated', 'Related links') },
                             { value: 'status', label: t('config.linkPreviewPartStatus', 'Status & uptime') },
                             { value: 'opens', label: t('config.linkPreviewPartOpens', 'Opens & last opened') },
                             { value: 'location', label: t('config.linkPreviewPartLocation', 'Shortcut & location') },
@@ -11931,6 +11940,7 @@ class DashboardConfig {
                     bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
                     bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
                     bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
+                    bool('pushNotifyReminders', 'config.pushNotifyRemindersLabel', 'Notify when a reminder you set on a bookmark is due'),
                     bool('pushNotifyGlances', 'config.pushNotifyGlancesLabel', 'Notify when a Glances host has an incident (kinds are chosen in Config → Glances)'),
                     { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
                     { type: 'pushDevice' },
@@ -19950,9 +19960,8 @@ class DashboardConfig {
         ];
         const ctx = { esc, grouped: false, showCrumb: false, setSize: 2, isDuplicate: () => false };
         const rowHtml = rows.map((b, index) => this.renderWorkbenchRow({ type: 'row', bookmark: b, index }, ctx)).join('');
-        const legendAt = this.dash.settings?.bmViewKeyLegend || 'below';
-        const legend = legendAt === 'off' || typeof this.renderBookmarkKeyboardLegend !== 'function' ? ''
-            : `<p class="config-bm-keyboard-legend">${this.renderBookmarkKeyboardLegend()}</p>`;
+        // No legend in the sample: Config's own legend is at the foot of the page, and a
+        // second one mid-page, with the Bookmarks view's keys, read as the page's.
         // The panel's head: the tab it opens on, at the width it opens at.
         const first = rows[0];
         const fixedTab = this.dash.settings?.bmViewPanelTab;
@@ -19969,9 +19978,7 @@ class DashboardConfig {
                 <div class="config-bm-view-preview-body">
                     <div class="${esc(workbenchClass)} config-bm-view-preview-list" style="${esc(columnStyle)}">
                         <div class="config-bm-feed">
-                            ${legendAt === 'above' ? legend : ''}
                             ${rowHtml}
-                            ${legendAt === 'below' ? legend : ''}
                         </div>
                     </div>
                     <div class="config-bm-view-preview-panel${wide ? ' is-wide' : ''}">

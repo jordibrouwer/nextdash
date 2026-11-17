@@ -232,6 +232,22 @@ class FuzzySearchComponent {
                 }
             }
 
+            // A tag typed in full is a word you chose for this bookmark, so it
+            // is a best match, not a loose "in tags" hit: with a bookmark that
+            // has the same word in its name, the tagged one used to sit
+            // folded away under "In tags, note or url". Part of a tag stays
+            // in that group. Ranked at the bottom of the strong tier, below
+            // a name that starts with the word.
+            if (group !== 'strong') {
+                const exactTag = (Array.isArray(bookmark.tags) ? bookmark.tags : [])
+                    .find((tag) => this.fold(tag) === q);
+                if (exactTag) {
+                    score = Math.max(score, 500);
+                    group = 'strong';
+                    meta = meta || `#${exactTag}`;
+                }
+            }
+
             if (score === 0) continue;
             score += this.usageBonus(bookmark);
 

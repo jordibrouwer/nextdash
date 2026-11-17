@@ -122,6 +122,7 @@
                 ${row('control', this.t('config.dockerStatusActions', 'Actions'))}
                 ${row('token', this.t('config.dockerStatusWriteToken', 'Write token'))}
                 ${row('self', this.t('config.dockerStatusSelf', 'This container'))}
+                ${row('compose', this.t('config.dockerStatusCompose', 'Compose files'))}
                 <div data-docker-status-help hidden></div>
             </div>`;
     },
@@ -684,6 +685,20 @@
         else set('self', socket
             ? t('config.dockerStatusSelfUnknown', 'Not recognised — nextDash may not run in Docker')
             : '—', 'muted');
+
+        // The folders the stack panel may read: NEXTDASH_COMPOSE_MAP as the server resolved it.
+        const maps = Array.isArray(status?.compose?.map) ? status.compose.map : [];
+        const rejected = Array.isArray(status?.compose?.rejected) ? status.compose.rejected : [];
+        if (!socket) set('compose', '—', 'muted');
+        else if (maps.length) {
+            const list = maps.map((m) => `${m.host} → ${m.container}`).join(', ');
+            const note = rejected.length ? ` · ${t('config.dockerStatusComposeRejected', 'ignored')}: ${rejected.join(', ')}` : '';
+            set('compose', `${list}${note}`, rejected.length ? 'warn' : 'good');
+        } else if (rejected.length) {
+            set('compose', `${t('config.dockerStatusComposeRejectedAll', 'Not usable')}: ${rejected.join(', ')}`, 'warn');
+        } else {
+            set('compose', t('config.dockerStatusComposeNone', 'No folders mapped: stack files are not shown. Set NEXTDASH_COMPOSE_MAP and mount the folder.'), 'muted');
+        }
 
         const help = panel.querySelector('[data-docker-status-help]');
         if (!help) return;

@@ -15,6 +15,9 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/app/data
+      # Containers view, compose files: mount the folder that holds your stacks
+      # and map its host path below. :ro shows the files; drop it to edit them.
+      # - /opt/stacks:/stacks:ro
       # Dev: serve latest JS/CSS/locales from disk (main.go prefers on-disk static/locales)
       - ./static:/app/static
       - ./locales:/app/locales
@@ -72,6 +75,8 @@ services:
       # is root on the host -- :ro on the mount does not stop API writes -- so
       # set NEXTDASH_WRITE_TOKEN as well. 0 keeps the view read-only.
       - NEXTDASH_DOCKER_CONTROL=0
+      # Where a stack's compose files appear inside nextDash: hostPath:containerPath.
+      # - NEXTDASH_COMPOSE_MAP=/opt/stacks:/stacks
       # Run as root instead of the nextdash user: only when the socket belongs
       # to root's group (gid 0), as on Docker Desktop. Unraid (gid 281) and most
       # Linux hosts do not need it. 1 turns it on.

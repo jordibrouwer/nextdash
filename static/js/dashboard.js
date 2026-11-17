@@ -255,6 +255,8 @@ class Dashboard {
         this.smartCollections = new DashboardSmartCollections(this);
         this.feedWatch = typeof DashboardFeedWatch === 'function' ? new DashboardFeedWatch(this) : null;
         this.netBadges = typeof DashboardNetBadges === 'function' ? new DashboardNetBadges(this) : null;
+        this.reminders = typeof DashboardReminders === 'function' ? new DashboardReminders(this) : null;
+        this.related = typeof DashboardRelated === 'function' ? new DashboardRelated(this) : null;
         this.bookmarkRows = new DashboardBookmarkRows(this);
         this.renderCore = new DashboardRenderCore(this);
         this.renderIncremental = new DashboardRenderIncremental(this);
@@ -1398,6 +1400,8 @@ class Dashboard {
     }
 
     async refreshAfterBookmarkMutation(options = {}) {
+        // Tags, addresses and opens feed the related links; what was asked is stale.
+        this.related?.forget();
         return this.data.refreshAfterBookmarkMutation(...arguments);
     }
 

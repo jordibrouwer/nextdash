@@ -57,6 +57,7 @@ type dockerViewContainer struct {
 	StartedAt      int64            `json:"startedAt,omitempty"`
 	Ports          []dockerViewPort `json:"ports"`
 	ComposeProject string           `json:"composeProject,omitempty"`
+	ComposeService string           `json:"composeService,omitempty"`
 	WebUI          string           `json:"webui,omitempty"`
 	WebUIDefault   string           `json:"webuiDefault,omitempty"`
 	WebUICustom    string           `json:"webuiCustom,omitempty"`
@@ -278,7 +279,7 @@ func toDockerViewOn(c dockerContainerSummary, self string, remote bool) dockerVi
 		ID: c.ID, Name: c.name(), Image: c.Image, Tag: tag, State: c.State,
 		Status: c.Status, Health: dockerHealthFromStatus(c.Status), Created: c.Created,
 		StartedAt:      dockerStartedFromStatus(c.Status, time.Now()),
-		ComposeProject: c.Labels["com.docker.compose.project"], WebUIDefault: dockerWebUI(c),
+		ComposeProject: c.Labels["com.docker.compose.project"], ComposeService: c.Labels["com.docker.compose.service"], WebUIDefault: dockerWebUI(c),
 		Self: isDockerSelf(c.ID, self), Ports: []dockerViewPort{},
 	}
 	if !remote {
@@ -394,6 +395,17 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 		"socket": false, "control": dockerHostControl(r), "reason": "",
 		"self": dockerSelfID(), "selfName": "", "writeToken": writeAccessToken() != "",
 	}
+	// The compose map as resolved, so Config can show it without a project.
+	composeMaps := composeMap()
+	if composeMaps == nil {
+		composeMaps = []composeMapping{}
+	}
+	composeRejected := composeMapRejected()
+	if composeRejected == nil {
+		composeRejected = []string{}
+	}
+	composeStatus := map[string]any{"map": composeMaps, "rejected": composeRejected}
+	out["compose"] = composeStatus
 	if remote {
 		// The own container is on this host, not on that one.
 		out["self"] = ""
@@ -412,6 +424,12 @@ func (h *Handlers) DockerStatusHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		resp.Body.Close()
 		out["socket"] = true
+		if !remote {
+			// The six setup checks; compose is local-only, so only the own host.
+			if setup := composeSetupCached(ctx, api); setup != nil {
+				composeStatus["setup"] = setup
+			}
+		}
 		if self := dockerSelfID(); self != "" && !remote {
 			if list, lerr := api.listContainers(ctx); lerr == nil {
 				for _, c := range list {
@@ -727,7 +745,7 @@ func (h *Handlers) DockerContainersHandler(w http.ResponseWriter, r *http.Reques
 	now := time.Now()
 	for _, c := range list {
 		// Hidden in Config, or a size measurement's throwaway container.
-		if hidden[c.name()] || c.Labels[dockerBindMeasureLabel] == "1" {
+		if hidden[c.name()] || dockerIsOwnHelper(c.Labels) {
 			continue
 		}
 		v := toDockerViewOn(c, self, remote)

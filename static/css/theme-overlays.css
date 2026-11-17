@@ -735,6 +735,11 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     border-radius: 0;
 }
 
+/* Config's header has no rule under it (config-view.css); the plate's rule above is more specific than that. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-view-head.lvs-header {
+    border-bottom: 0;
+}
+
 /* The rail: the row in force is lit from its edge, the others light on hover. */
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.lvs-filter, .lvs-section):is(.is-active, [aria-current="true"], [aria-pressed="true"]) {
     background: var(--ov-hot);
@@ -1028,7 +1033,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     grid-row: 3;
 }
 
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) :is(.bookmark-preview-card-tags, .bookmark-preview-card-facts, .bookmark-preview-card-embed) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) :is(.bookmark-preview-card-tags, .bookmark-preview-card-related, .bookmark-preview-card-facts, .bookmark-preview-card-embed) {
     grid-column: 1 / -1;
 }
 

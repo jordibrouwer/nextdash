@@ -3088,11 +3088,11 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-spots {
 .modal.whats-new-modal .wn-hero-version { font-size: calc(var(--font-size-text) * 1.6); }
 .modal.whats-new-modal .wn-block { margin-top: var(--space-3, 0.75rem); }
 .modal.whats-new-modal .wn-entry.wn-spot--media {
-    grid-template-columns: 7.5rem minmax(0, 1fr);
+    grid-template-columns: clamp(9rem, 40%, 15rem) minmax(0, 1fr);
     align-items: start;
     gap: var(--space-3, 0.75rem);
 }
-.modal.whats-new-modal .wn-spot .wn-media { aspect-ratio: 4 / 3; align-self: start; }
+.modal.whats-new-modal .wn-spot .wn-media { aspect-ratio: 16 / 10; align-self: start; }
 .modal.whats-new-modal .wn-spot .wn-media-img,
 .modal.whats-new-modal .wn-spot .wn-media-video { width: 100%; height: 100%; object-fit: cover; }
 .modal.whats-new-modal .wn-spot .wn-media-img { cursor: zoom-in; }
@@ -3164,8 +3164,28 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-spots {
 /* The rows: the section as a short label, the title, and the detail folded
    to two lines (the "more" under it opens the rest). */
 .modal.whats-new-modal .wn-entry.wn-entry--line {
-    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
     padding-block: var(--space-1-5, 0.45rem);
+}
+/* A row's picture sits under its text, small enough that the list stays a list
+   and the lightbox opens it in full. */
+.modal.whats-new-modal .wn-entry--line .wn-media {
+    margin: var(--space-1-5, 0.4rem) 0 0;
+    max-width: 16rem;
+    aspect-ratio: 16 / 10;
+}
+.modal.whats-new-modal .wn-entry--line .wn-media-img,
+.modal.whats-new-modal .wn-entry--line .wn-media-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: zoom-in;
+}
+/* The button sits under the text: a wide label in its own column left the
+   title seven characters per line. */
+.modal.whats-new-modal .wn-entry--line .wn-go {
+    grid-column: 2;
+    justify-self: start;
 }
 .modal.whats-new-modal .wn-entry--line .wn-entry-section {
     overflow: hidden;

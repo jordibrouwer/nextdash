@@ -77,9 +77,11 @@ class DashboardLinkDrop {
         this.mark(null);
         this._own = false;
         if (ignored) return;
+        // Taken at dragover, so the drop is ours even when it holds no link:
+        // left to the browser, Firefox loads the dropped text in this tab.
+        e.preventDefault();
         const links = window.LinkDropModel.linksFromTransfer(e.dataTransfer);
         if (!links.length) return;
-        e.preventDefault();
         const d = this.dash;
         if (links.length > 1 && d.settings?.inboxEnabled !== false && d.inbox?.addFromUrl) {
             let saved = 0;

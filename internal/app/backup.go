@@ -221,6 +221,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"docker-bind-sizes.json":     dataNever, // measured from this host's disks
 	"status-page-secrets.json":   dataNever, // the link's token: a restore makes a new link
 	"docker-events.json":         dataNever, // this host's container timeline
+	"compose-applied.json":       dataNever, // which compose file text was last applied on this host
 	"discovery.json":             dataNever, // this host's containers: what was seen, proposed and found
 	"docker-update-history.json": dataNever, // rollbacks name this host's image ids
 	"digest.json":                dataNever, // last week's digest; without it the next tick only records the slot
@@ -1001,6 +1002,11 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			}
 			// Refused whole rather than a file at a time: an archive of a few
 			// hundred captures is a few hundred pointless stats otherwise.
+			// Compose file backups can hold secrets and belong to this host.
+			// The allowlist already leaves them out; this saves the stats.
+			if info.Name() == composeBackupsDir && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
 			if skips.archives && info.Name() == archiveDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}

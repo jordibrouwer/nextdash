@@ -173,7 +173,7 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 	// nextDash's own disk-measuring containers: du exits 1 when a file vanishes
 	// mid-scan, which was recorded as a crash of a container the reader never
 	// sees, and gave each run its own timeline key for 30 days.
-	if ev.Actor.Attributes[dockerBindMeasureLabel] == "1" {
+	if dockerIsOwnHelper(ev.Actor.Attributes) {
 		return nil
 	}
 	n.mu.Lock()
@@ -279,7 +279,7 @@ func (n *containerNotifier) reconcile(list []dockerContainerSummary, now time.Ti
 	var out []monitorNotification
 	for _, c := range list {
 		name := c.name()
-		if name == "" || c.State != "running" || c.Labels[dockerBindMeasureLabel] == "1" {
+		if name == "" || c.State != "running" || dockerIsOwnHelper(c.Labels) {
 			continue
 		}
 		n.mu.Lock()
@@ -492,11 +492,18 @@ func (h *Handlers) StartDockerNotifier(stop <-chan struct{}) {
 			cancel()
 		}()
 		backoff := 2 * time.Second
+		swept := false
 		for ctx.Err() == nil {
 			api, _ := newDockerAPI()
 			if api == nil {
 				backoff = time.Minute
 			} else {
+				if !swept {
+					// Once per start: finished compose helpers of any stack, which no
+					// list shows and no later run of that stack may ever come back to.
+					swept = true
+					composeSweepAll(ctx, api)
+				}
 				started := time.Now()
 				err := h.watchDockerEventsOnce(ctx, api, dockerNotifications)
 				if ctx.Err() != nil {

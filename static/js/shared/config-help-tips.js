@@ -50,6 +50,8 @@
             tips: [
                 'tipAddPaste',
                 'tipAddDrag',
+                'tipReminder',
+                'tipRelatedLinks',
                 'tipAddImportDestination',
                 'tipAddQuickAdd',
                 'tipAddAnywhere',
@@ -169,6 +171,7 @@
                 'tipTuneContainerList',
                 'tipHostHomelabPage',
                 'tipHostOtherHosts',
+                'tipComposeStacks',
             ],
         },
         {

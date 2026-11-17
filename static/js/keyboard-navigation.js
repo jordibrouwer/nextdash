@@ -172,6 +172,8 @@ class KeyboardNavigation {
                 document.getElementById('tag-popover')
                 || document.getElementById('move-popover')
                 || document.getElementById('delete-popover')
+                || document.getElementById('reminder-menu')
+                || document.getElementById('related-menu')
                 || document.getElementById('date-popover')
                 || document.getElementById('multi-select-tags-popover')
                 || document.getElementById('multi-select-check-popover')
@@ -275,6 +277,20 @@ class KeyboardNavigation {
                 e.stopPropagation();
                 window.nextdashRecordKey?.('Shift + T');
                 void this.dashboard.tagView.openAllTags({ returnPageId: this.dashboard.currentPageId });
+                return;
+            }
+
+            // Shift+V — the release notes: What's new, the same window as :whatsnew.
+            // V for version. Free since the old row key went in v1.27.0.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyV'
+                && window.openWhatsNewModal) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                if (!e.repeat) {
+                    window.nextdashRecordKey?.('Shift + V');
+                    void window.openWhatsNewModal({ force: true });
+                }
                 return;
             }
 
@@ -442,7 +458,7 @@ class KeyboardNavigation {
             }
 
             // '[' — the old preview key, kept working but undocumented now that
-            // Shift+V does it. Brackets mean "previous / next sub-tab" in
+            // plain v does it. Brackets mean "previous / next sub-tab" in
             // config, and one pair of keys should not mean two things.
             if (e.key === '[' && this.currentIndex >= 0) {
                 e.preventDefault();
@@ -585,7 +601,7 @@ class KeyboardNavigation {
      * already: with the cursor on a row the letters act on it. Shift is never a
      * row action, so every Shift letter can be a global key.
      */
-    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w']);
+    static ROW_LETTERS = new Set(['e', 'm', 't', 'f', 'p', 'c', 'r', 'v', 's', 'q', 'd', 'w', 'z']);
 
     /** Without any key or click for this long, the row cursor leaves the grid (what Esc does). */
     static ROW_CURSOR_IDLE_MS = 10000;
@@ -604,7 +620,6 @@ class KeyboardNavigation {
         P: 'Shift+P opens the Pages panel',
         C: 'Shift+C opens Containers',
         R: 'Shift+R does nothing now',
-        V: 'Shift+V does nothing now',
         Q: 'Shift+Q does nothing now',
         D: 'Shift+D does nothing now',
     };
@@ -679,7 +694,7 @@ class KeyboardNavigation {
             this.dashboard?.isModalOpen?.()
             || this.dashboard?.isInlineEditActive?.()
             || document.querySelector('.modal-overlay.show, #tag-popover, #move-popover, #delete-popover, #date-popover, '
-                + '#multi-select-tags-popover, #multi-select-check-popover, #bookmark-context-menu, '
+                + '#multi-select-tags-popover, #multi-select-check-popover, #bookmark-context-menu, #reminder-menu, #related-menu, '
                 + '#bookmark-check-mode-menu, .bookmark-context-menu, .feed-news-pop')
             || document.body.classList.contains('bookmark-inline-edit-active')
             || document.querySelector('.category-title--renaming')
@@ -850,6 +865,8 @@ class KeyboardNavigation {
             case 'v': this.togglePreviewCardForCurrent(); break;
             case 's': this.shareCurrent(); break;
             case 'q': this.qrCurrent(); break;
+            // Remind me of this link: the Inbox's Z (snooze), for a bookmark.
+            case 'z': this.openReminderMenuForCurrent(); break;
             // Watch the feed of this bookmark .
             case 'w': void window.FeedWatchPicker?.open({ bookmark: this.getSelectedBookmark() }); break;
             default: break;
@@ -2993,6 +3010,15 @@ class KeyboardNavigation {
         const bookmark = this.getSelectedBookmark();
         if (!bookmark) return;
         void this.dashboard?.contextMenu?.shareBookmark?.(bookmark, row);
+    }
+
+    /** Z — choose when to be reminded of the selected bookmark. */
+    openReminderMenuForCurrent() {
+        const row = this._resolveActionPopoverRow();
+        const bookmark = this.getSelectedBookmark();
+        const d = this.dashboard;
+        if (!row || !bookmark || !d?.reminders) return;
+        d.reminders.openMenu({ bookmark, pageId: Number(bookmark.pageId) || Number(d.currentPageId) }, row);
     }
 
     /** Shift+J — show the selected bookmark as a QR code. */
