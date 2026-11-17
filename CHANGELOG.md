@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.31.0 — 17 November 2026](#v1310--17-november-2026)
 - [v1.30.0 — 16 November 2026](#v1300--16-november-2026)
 - [v1.29.2 — 15 November 2026](#v1292--15-november-2026)
 - [v1.29.1 — 14 November 2026](#v1291--14-november-2026)
@@ -147,7 +148,23 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
 
-## Unreleased
+## v1.31.0 — 17 November 2026
+
+Compose stacks you can read, edit, check and run from the Containers view, reminders on bookmarks, related links on the preview card, and a bell that rings less and shakes more.
+
+### Bookmarks
+
+- **new — Reminders on bookmarks.** Set a time on a bookmark from its context menu (a drawn clock), with `Z`, with `:remind <when>` or `:remind <name> <when>` in the palette, or in the edit form; `:remind clear` removes it. A clock on the row shows that one is set, and a due reminder becomes a row in the bell that stays until you answer it. While the dashboard is closed the server looks once a minute for due reminders and pushes them once, as one combined push when several come due together; a reminder more than a week late is marked handled without a push, and the bell still shows it. A setting in Config turns the push off (`reminder.go`, `dashboard-reminders.js`, `reminder-bell-source.js`).
+- **new — Related links on the preview card.** The card of a bookmark gets a row with up to three links that belong with it, ranked on shared tags, the site, and bookmarks opened together. A tag or site counts for less the more of the library carries it, so a common site or a tag on a third of the library relates nothing by itself, and the same page under http and https or with and without `www.` is the bookmark itself, not a relation. The row has a checklist entry in the preview settings, a context menu item, and `:related` in the palette (Enter opens a link, Alt+Enter opens it in a new tab). `GET /api/related?url=` answers read-only (`related.go`, `dashboard-related.js`).
+- **new — Shift+V opens What's new.** Listed in the keyboard help and the legends.
+
+### Search
+
+- **fix — A tag typed in full is a best match.** Typing a bookmark's whole tag now ranks that bookmark first instead of among the fuzzy hits (`fuzzy-search.js`).
+
+### Config
+
+- **fix — The key legend sits at the foot of Bookmarks and Data & backups**, and there is no rule under the Config header.
 
 ### Containers
 
@@ -199,6 +216,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — The bell calls for attention more often while something is unread.** The badges pulse every 20 seconds (was 60, and only until the panel had been opened) and the bell shakes every 90 seconds (was every hour), both until the rows are read or answered. The shake is wider and the bell swells while it swings, and the badge pulse is larger (`notification-bell.js`, `notification-bell.css`).
 - **fix — Dropping text that is not a link no longer leaves the dashboard.** Words or a `mailto:` link dragged in from another window were taken at dragover but not at the drop, so Firefox loaded them in the dashboard's tab. The drop is now cancelled whenever it was taken (`dashboard-link-drop.js`).
 - **fix — The bell drops Immich failures once they are cleared.** With status tiles on two pages for one server, the bell kept the largest failed count, so a tile on a page left behind held it after the jobs were cleared. It now follows the newest answer per server (`immich-bell-source.js`, `dashboard-media-tile.js`).
+- **fix — Show what's new works again.** In Config → News & features the button opens the release it belongs to. In the What's new modal, rows wrap on narrow screens and pictures show in the rows and larger (`whats-new-modal.js`, `modal.css`).
+- **fix — The preview checklist keeps its upgrade markers.** Saving settings no longer drops the markers that tell which checklist rows are new (`models.go`).
 
 ### Docs
 
