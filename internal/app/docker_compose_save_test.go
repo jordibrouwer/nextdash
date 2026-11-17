@@ -447,3 +447,25 @@ func TestComposeBackupKeyDiffersByPath(t *testing.T) {
 		t.Errorf("keys %q %q", a, b)
 	}
 }
+
+func TestComposeBackupRawServesOnlyListedCopies(t *testing.T) {
+	_, file, _, router := composeSaveFixture(t)
+	composeSaveN(t, router, file, 1)
+	dir, key := composeBackupDir("local", "media"), composeFileKey("/opt/stacks/media/compose.yml")
+	stamp := listComposeBackups(dir, key)[0].Stamp
+	rec := hostsCall(t, router, "GET", "/api/docker/compose/media/backups/"+stamp+"/raw?file=c0", "", "")
+	var out map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	if rec.Code != 200 || out["content"] != composeSaveOld {
+		t.Fatalf("%d %v", rec.Code, out)
+	}
+	for _, bad := range []string{"20000101T000000Z", "20261116T101500Z.bak", "x"} {
+		if rec := hostsCall(t, router, "GET", "/api/docker/compose/media/backups/"+bad+"/raw?file=c0", "", ""); rec.Code != 404 {
+			t.Errorf("stamp %q: %d", bad, rec.Code)
+		}
+	}
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "sekret")
+	if rec := hostsCall(t, router, "GET", "/api/docker/compose/media/backups/"+stamp+"/raw?file=c0", "", ""); rec.Code != 401 {
+		t.Errorf("without the token: %d", rec.Code)
+	}
+}

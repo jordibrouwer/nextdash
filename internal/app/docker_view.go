@@ -57,6 +57,7 @@ type dockerViewContainer struct {
 	StartedAt      int64            `json:"startedAt,omitempty"`
 	Ports          []dockerViewPort `json:"ports"`
 	ComposeProject string           `json:"composeProject,omitempty"`
+	ComposeService string           `json:"composeService,omitempty"`
 	WebUI          string           `json:"webui,omitempty"`
 	WebUIDefault   string           `json:"webuiDefault,omitempty"`
 	WebUICustom    string           `json:"webuiCustom,omitempty"`
@@ -278,7 +279,7 @@ func toDockerViewOn(c dockerContainerSummary, self string, remote bool) dockerVi
 		ID: c.ID, Name: c.name(), Image: c.Image, Tag: tag, State: c.State,
 		Status: c.Status, Health: dockerHealthFromStatus(c.Status), Created: c.Created,
 		StartedAt:      dockerStartedFromStatus(c.Status, time.Now()),
-		ComposeProject: c.Labels["com.docker.compose.project"], WebUIDefault: dockerWebUI(c),
+		ComposeProject: c.Labels["com.docker.compose.project"], ComposeService: c.Labels["com.docker.compose.service"], WebUIDefault: dockerWebUI(c),
 		Self: isDockerSelf(c.ID, self), Ports: []dockerViewPort{},
 	}
 	if !remote {

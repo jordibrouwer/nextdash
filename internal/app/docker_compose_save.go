@@ -26,6 +26,7 @@ Writing a stack's compose file, and the backups that make that safe.
 PUT  /api/docker/compose/{project}/files?file=         save
 GET  /api/docker/compose/{project}/files/raw?file=     the file as it is, behind the write token
 GET  /api/docker/compose/{project}/backups?file=       the copies kept of one file
+GET  /api/docker/compose/{project}/backups/{stamp}/raw?file=  one copy as it is, behind the write token
 POST /api/docker/compose/{project}/backups/{stamp}/restore?file=
 
 The gates run in DockerActionHandler's order: host known, control, write token,
@@ -516,4 +517,48 @@ func (h *Handlers) DockerComposeRestoreHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 	writeJSON(w, map[string]any{"ok": true, "sha256": composeSha(restored), "backup": newStamp, "restored": stamp})
+}
+
+// DockerComposeBackupRawHandler hands over one kept copy unmasked, so the panel
+// can show it against the current file. Behind the write token like the raw
+// route; the stamp only selects from the listing, no path comes from the request.
+func (h *Handlers) DockerComposeBackupRawHandler(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	p, ok := h.composeProjectGate(w, r)
+	if !ok {
+		return
+	}
+	f, ok := composeFileByID(composeFilesOf(p, composeMap()), r.URL.Query().Get("file"))
+	if !ok {
+		writeDockerError(w, errDockerNotFound)
+		return
+	}
+	dir, key := composeBackupDir(dockerHostOf(r), p.Name), composeFileKey(f.HostPath)
+	stamp := mux.Vars(r)["stamp"]
+	found := false
+	for _, b := range listComposeBackups(dir, key) {
+		if b.Stamp == stamp {
+			found = true
+			break
+		}
+	}
+	if !found {
+		writeDockerError(w, errDockerNotFound)
+		return
+	}
+	fh, err := os.Open(filepath.Join(dir, key+"."+stamp))
+	if err != nil {
+		writeDockerError(w, errDockerNotFound)
+		return
+	}
+	src, err := io.ReadAll(io.LimitReader(fh, composeFileMax+1))
+	fh.Close()
+	if err != nil || len(src) > composeFileMax {
+		dockerRefuse(w, http.StatusInternalServerError, composeBackupFailed)
+		return
+	}
+	writeJSON(w, map[string]string{"file": f.ID, "stamp": stamp, "content": string(src)})
 }
