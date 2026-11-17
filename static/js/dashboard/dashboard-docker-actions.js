@@ -26,6 +26,9 @@
             up: ['image', 'validate', 'run'],
             down: ['image', 'run'],
             pull: ['image', 'run'],
+            restart: ['image', 'run'],
+            // Pull and Up; named apart because `update` is the container update above.
+            composeupdate: ['image', 'validate', 'pull', 'run'],
         };
 
         static LOG_LINES = 200;
@@ -64,7 +67,8 @@
                 validate: ['dockerStepValidate', 'Check the compose file'],
                 run: this.action === 'down' ? ['dockerStepRunDown', 'Take the stack down']
                     : this.action === 'pull' ? ['dockerStepRunPull', 'Pull the images']
-                        : ['dockerStepRunUp', 'Start the stack'],
+                        : this.action === 'restart' ? ['dockerStepRunRestart', 'Restart the services']
+                            : ['dockerStepRunUp', 'Start the stack'],
                 cleanup: ['dockerStepCleanup', 'Remove the helper'],
             };
             const [key, fallback] = labels[step] || [step, step];

@@ -11,6 +11,10 @@
  * Edit, Save and the run buttons need NEXTDASH_DOCKER_CONTROL and are never
  * offered for nextDash's own stack.
  *
+ * Tabs: Services (the stack's containers per service, with Up, Pull and
+ * Restart for one), Compose file, .env, Logs (every service in one stream) and
+ * Backups. The editor checks, diffs and applies (save, then Up).
+ *
  * Every state the server can answer has its own words and, where there is one,
  * the single line to add. The text is all t('key', 'English').
  */
@@ -37,8 +41,10 @@
 
         _tabs() {
             return [
-                { name: 'compose', label: this.t('dockerComposeTabFile', 'Compose file') },
+                { name: 'services', label: this.t('dockerComposeTabServices', 'Services') },
+                { name: 'compose', label: this.t('dockerComposeTabFile', 'Compose') },
                 { name: 'env', label: this.t('dockerComposeTabEnv', '.env') },
+                { name: 'logs', label: this.t('dockerComposeTabLogs', 'Logs') },
                 { name: 'backups', label: this.t('dockerComposeTabBackups', 'Backups') },
             ];
         }
@@ -52,19 +58,26 @@
             const esc = (v) => this.esc(v);
             L.moreLabel = this.t('dockerMoreActions', 'More actions');
             const count = members.length;
-            const head = L.head(esc, {
+            const headMarkup = L.head(esc, {
                 icon: '<span aria-hidden="true">▤</span>',
                 title: project,
                 badge: { text: this.t('dockerComposeCount', '{n} containers', { n: count }), tone: 'info' },
-                more: [{ action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') }],
+                more: [
+                    { action: 'update', label: this.t('dockerComposePullUp', 'Pull and Up'), title: this.t('dockerComposePullUpHint', 'Pull newer images, then Up: the services whose image changed are recreated') },
+                    { action: 'copy-name', label: this.t('dockerCopyName', 'Copy name') },
+                ],
                 where: this.t('dockerComposeWhere', 'Compose project'),
                 actions: [
                     { action: 'reload', label: this.t('dockerComposeReload', 'Reload') },
                     { action: 'up', label: this.t('dockerActionUp', 'Up'), title: this.t('dockerComposeUpHint', 'Start the stack, and recreate the services whose file changed') },
                     { action: 'down', label: this.t('dockerActionDown', 'Down'), title: this.t('dockerComposeDownHint', 'Stop and remove the stack\'s containers; volumes stay') },
                     { action: 'pull', label: this.t('dockerActionPull', 'Pull'), title: this.t('dockerComposePullHint', 'Pull newer images; running containers are not changed') },
+                    { action: 'restart', label: this.t('dockerActionRestart', 'Restart'), title: this.t('dockerComposeRestartHint', 'Restart every service of the stack; the file is not read again') },
                 ],
             });
+            // Next to the count: set when the file changed since the last Up nextDash ran.
+            const head = headMarkup.replace(/(<span class="config-bm-score slp-badge"[^>]*>[^<]*<\/span>)/,
+                `$1<span class="config-bm-score slp-badge docker-compose-pending" data-tone="warn" data-docker-compose-pending hidden>${esc(this.t('dockerComposePending', 'Edited, not applied'))}</span>`);
             const tabs = this._tabs();
             const back = backName
                 ? `<button type="button" class="docker-compose-back" data-slp-action="back">← ${esc(backName)}</button>` : '';
@@ -72,7 +85,7 @@
             const pane = (name) => L.pane(esc, 'dockerstack', tabs, name, body(name));
             const tabRow = L.tabs(esc, 'dockerstack', tabs);
             const runNote = '<p class="docker-compose-runnote" data-docker-compose-runnote hidden></p>';
-            return `${back}${head}${runNote}${tabRow}${pane('compose')}${pane('env')}${pane('backups')}`;
+            return `${back}${head}${runNote}${tabRow}${pane('services')}${pane('compose')}${pane('env')}${pane('logs')}${pane('backups')}`;
         }
 
         /** Binds the panel and loads. host actions: back(), copyName(). */
@@ -83,25 +96,50 @@
             this._editing = null;
             this._backups = null;
             this._running = false;
+            this._stopLogs();
+            this._logs = null;
             const mount = this._mount = (this._mount || 0) + 1;
+            const compose = panel.querySelector('[data-slp-tab="compose"]');
+            compose?.insertAdjacentHTML('beforeend', '<span class="config-bm-tab-dot docker-compose-dot" data-docker-compose-dot hidden></span>');
             global.SidePanelLayout.bind(panel, {
                 group: 'dockerstack',
                 onAction: (action) => {
                     if (action === 'reload') void this._headReload();
-                    else if (action === 'up' || action === 'down' || action === 'pull') void this._run(action);
+                    else if (['up', 'down', 'pull', 'restart', 'update'].includes(action)) void this._run(action);
+                    else if (action === 'check') void this._checkQuick();
+                    else if (action === 'edit-file') void this._editFirst();
                     else if (action === 'back') onBack?.();
                     else if (action === 'copy-name') {
                         void navigator.clipboard?.writeText?.(project);
                         this.view.dash?.showNotification?.(this.t('dockerNameCopied', 'Name copied'), 'success', { duration: 2000 });
                     }
                 },
-                onTab: (name) => { if (name === 'backups') void this._loadBackups(); },
+                onTab: (name) => {
+                    if (name === 'backups') void this._loadBackups();
+                    if (name === 'logs') void this._logsShow();
+                    else this._stopLogs();
+                    if (name === 'services') this._paintServices();
+                },
             });
+            if (panel.querySelector('[data-slp-tab="logs"].is-active')) void this._logsShow();
             panel.addEventListener('input', (e) => {
                 if (this._mount === mount && e.target.matches?.('[data-docker-compose-editor]')) this._dirtyCheck();
             });
+            panel.addEventListener('keydown', (e) => {
+                if (this._mount === mount && e.target.matches?.('[data-docker-compose-editor]')) this._editorKey(e);
+            });
+            panel.addEventListener('scroll', (e) => {
+                if (this._mount === mount && e.target.matches?.('[data-docker-compose-editor]')) this._syncHl();
+            }, true);
             panel.addEventListener('click', (e) => {
                 if (this._mount !== mount) return;
+                const svc = e.target.closest('[data-docker-compose-svc]');
+                if (svc) { void this._run(svc.getAttribute('data-docker-compose-svc'), svc.dataset.service); return; }
+                const lc = e.target.closest('[data-docker-compose-logchip]');
+                if (lc) { this._logFilter(lc.dataset.dockerComposeLogchip); return; }
+                if (e.target.closest('[data-docker-compose-logreconnect]')) { void this._logsShow(true); return; }
+                const bkd = e.target.closest('[data-docker-compose-bkdiff]');
+                if (bkd) { void this._bkDiff(bkd); return; }
                 const edit = e.target.closest('[data-docker-compose-edit]');
                 if (edit) { void this._edit(edit.getAttribute('data-docker-compose-edit')); return; }
                 const ed = e.target.closest('[data-docker-compose-editor-action]');
@@ -133,7 +171,8 @@
                 this._syncRun();
                 return;
             }
-            bodies.forEach((b) => { b.textContent = this.t('dockerComposeLoading', 'Loading…'); });
+            bodies.filter((b) => b.getAttribute('data-docker-compose-body') !== 'logs')
+                .forEach((b) => { b.textContent = this.t('dockerComposeLoading', 'Loading…'); });
             let data = null;
             let failed = false;
             try {
@@ -150,6 +189,7 @@
             this._paint();
             this._syncRun();
             if (this._panel?.querySelector('[data-slp-tab="backups"].is-active')) void this._loadBackups();
+            if (this._panel?.querySelector('[data-slp-tab="logs"].is-active')) void this._logsShow(true);
         }
 
         _bodies() {
@@ -159,6 +199,11 @@
         _paint() {
             this._bodies().forEach((b) => {
                 const role = b.getAttribute('data-docker-compose-body');
+                if (role === 'logs') return;
+                if (role === 'services') {
+                    b.replaceChildren(this._renderServices());
+                    return;
+                }
                 if (role === 'backups') {
                     b.replaceChildren(this._renderBackups());
                     return;
@@ -385,11 +430,13 @@
             const d = this._data || {};
             const why = this._runBlock();
             const off = Boolean(why) || !d.state || d.state === 'error' || this._running;
-            panel.querySelectorAll('[data-slp-action="up"],[data-slp-action="down"],[data-slp-action="pull"]').forEach((b) => {
+            panel.querySelectorAll('[data-slp-action="up"],[data-slp-action="down"],[data-slp-action="pull"],[data-slp-action="restart"],[data-slp-action="update"],[data-docker-compose-svc]').forEach((b) => {
                 if (b.dataset.hint === undefined) b.dataset.hint = b.title || '';
                 b.disabled = off;
                 b.title = why || b.dataset.hint;
             });
+            this._syncPending();
+            this._syncEditorButtons();
             const note = panel.querySelector('[data-docker-compose-runnote]');
             if (note) {
                 note.hidden = !why;
@@ -407,52 +454,688 @@
             }));
         }
 
-        async _run(action) {
+        /** The words for an action; Pull and Up is the server's `update`. */
+        _runLabel(action) {
+            return action === 'update' ? this.t('dockerComposePullUp', 'Pull and Up') : this.view.actions.label(action);
+        }
+
+        /**
+         * Runs one compose action on the stack, or on one service (service:
+         * Up, Pull, Restart). Resolves { ok, text } so Apply can say what failed.
+         */
+        async _run(action, service = '', opts = {}) {
             const actions = this.view.actions;
             const project = this._project;
-            if (this._running || !actions || this._runBlock() || this._data?.state !== 'ok') return;
+            if (this._running || !actions || this._runBlock() || this._data?.state !== 'ok') return { ok: false, skipped: true };
             if (this._editing?.dirty) {
                 this._notify(this.t('dockerComposeUnsavedRun', 'Save or discard your edit first.'), 'error');
-                return;
+                return { ok: false, skipped: true };
             }
             if (action === 'down') {
                 const ok = await this._confirm(
                     this.t('dockerComposeDownTitle', 'Take {project} down', { project }),
                     this.t('dockerComposeDownBody', 'This stops and removes the containers and networks of {project}. Volumes and images stay, and Up brings the stack back.', { project }),
                     this.t('dockerActionDown', 'Down'), true);
-                if (!ok) return;
+                if (!ok) return { ok: false, skipped: true };
+            } else if (action === 'restart' && !service) {
+                const ok = await this._confirm(
+                    this.t('dockerComposeRestartTitle', 'Restart {project}', { project }),
+                    this.t('dockerComposeRestartBody', 'This restarts every container of {project}, one after the other. The compose file is not read again and nothing is recreated.', { project }),
+                    this.t('dockerActionRestart', 'Restart'), false);
+                if (!ok) return { ok: false, skipped: true };
             }
             this._running = true;
             this._syncRun();
-            const label = actions.label(action);
+            const label = opts.label || this._runLabel(action);
+            const target = service ? `${project}/${service}` : project;
             const overlay = global.ProgressOverlay;
-            overlay?.show?.(`${label} ${project}`, '');
-            const progress = global.DockerUpdateRun ? new global.DockerUpdateRun(actions, action, [{ name: project }]) : null;
-            progress?.begin(project);
+            overlay?.show?.(`${label} ${target}`, '');
+            const runKey = action === 'update' ? 'composeupdate' : action;
+            const progress = global.DockerUpdateRun ? new global.DockerUpdateRun(actions, runKey, [{ name: target }]) : null;
+            progress?.begin(target);
             let res = null;
             let body = null;
+            const base = this._url(`/${action}`);
+            const url = `${base}${base.includes('?') ? '&' : '?'}${service ? `service=${encodeURIComponent(service)}&` : ''}stream=1`;
             try {
-                ({ res, body } = await actions.streamAction(`${this._url(`/${action}`)}${this._url(`/${action}`).includes('?') ? '&' : '?'}stream=1`, (ev) => progress?.event(project, ev)));
+                ({ res, body } = await actions.streamAction(url, (ev) => progress?.event(target, ev)));
             } catch {
                 res = null;
             }
             this._running = false;
             global.DockerSearchIndex?.invalidate?.();
+            let out;
             if (!res || !res.ok) {
                 const text = await actions.explain(res, body, { quiet: true });
                 const tail = Array.isArray(body?.tail) ? body.tail : [];
-                const row = progress?.rows?.get(project);
+                const row = progress?.rows?.get(target);
                 if (row && tail.length) progress.appendLog(row, tail.join('\n'));
-                progress?.end(project, { ok: false, text });
+                progress?.end(target, { ok: false, text });
                 overlay?.settle?.(text, this.t('dockerRunClose', 'Close'));
                 actions.track?.(`compose-${action}`, false, 'stack');
+                out = { ok: false, text };
             } else {
-                progress?.end(project, { ok: true });
-                overlay?.finish?.(this.t('dockerComposeRunDone', '{label} finished for {project}.', { label, project }));
+                progress?.end(target, { ok: true });
+                overlay?.finish?.(this.t('dockerComposeRunDone', '{label} finished for {project}.', { label, project: target }));
                 actions.track?.(`compose-${action}`, true, 'stack');
                 await this.view.refreshContainers?.();
+                out = { ok: true };
             }
             this._syncRun();
+            this._paintServices();
+            void this._pendingRefresh();
+            return out;
+        }
+
+        /* ── Services, and edited-not-applied ─────────────────────────── */
+
+        _members() {
+            return (this.view.containers || []).filter((c) => c.composeProject === this._project);
+        }
+
+        /** One row per compose service, from the container list already loaded. */
+        _services() {
+            const by = new Map();
+            this._members().forEach((c) => {
+                const name = c.composeService || c.name;
+                const row = by.get(name) || { name, image: c.image, states: new Set(), health: new Set(), ports: new Set(), count: 0 };
+                row.count += 1;
+                row.states.add(c.state || '');
+                if (c.health) row.health.add(c.health);
+                (c.ports || []).filter((p) => p && p.public).forEach((p) => row.ports.add(p.public));
+                by.set(name, row);
+            });
+            return [...by.values()].sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        _stateTone(state) {
+            if (state === 'running') return 'good';
+            if (state === 'paused' || state === 'restarting') return 'warn';
+            if (state === 'dead') return 'bad';
+            return 'muted';
+        }
+
+        _renderServices() {
+            const d = this._data || {};
+            const frag = document.createDocumentFragment();
+            const add = (html) => frag.appendChild(this._html(html));
+            if (d.state === 'remote' || d.state === 'error') return this._render('compose');
+            const esc = (v) => this.esc(v);
+            if (d.pendingChange && this._canChange()) {
+                add(`<div class="docker-compose-note" data-tone="warn" data-docker-compose-pending-note><h4>${esc(this.t('dockerComposePending', 'Edited, not applied'))}</h4>
+                    <p>${esc(this.t('dockerComposePendingBody', 'The file changed after the last Up nextDash ran, so the running containers may not match it.'))}</p>
+                    <p class="docker-compose-legend">${esc(this.t('dockerComposePendingLimit', 'nextDash can only tell for stacks it started itself.'))}</p>
+                    <div class="docker-compose-noterow">
+                        <button type="button" class="config-btn config-btn--small config-btn--primary" data-slp-action="up">${esc(this.t('dockerComposeApply', 'Apply'))}</button>
+                        <button type="button" class="config-btn config-btn--small" data-slp-action="check">${esc(this.t('dockerComposeCheck', 'Check'))}</button>
+                        <button type="button" class="config-btn config-btn--small" data-slp-action="edit-file">${esc(this.t('dockerComposeEditFile', 'Edit file'))}</button>
+                    </div></div>`);
+            }
+            const rows = this._services();
+            if (!rows.length) {
+                add(this._note('info', this.t('dockerComposeNoServices', 'No containers in this stack'), [this._p(this.t('dockerComposeNoServicesFix', 'Press Up to start the stack\'s services.'))]));
+                return frag;
+            }
+            const off = Boolean(this._runBlock()) || this._running;
+            const btn = (act, glyph, text, name) => `<button type="button" class="config-btn config-btn--icon" data-docker-compose-svc="${act}" data-service="${esc(name)}"
+                title="${esc(text)}" aria-label="${esc(text)}"${off ? ' disabled' : ''}>${glyph}</button>`;
+            const body = rows.map((r) => {
+                const states = [...r.states];
+                const state = states.length === 1 ? states[0] : (states.find((x) => x !== 'running') || states[0]);
+                const h = r.health.has('unhealthy') ? 'unhealthy' : (r.health.has('starting') ? 'starting' : (r.health.size ? 'healthy' : ''));
+                const htone = h === 'healthy' ? 'good' : (h === 'unhealthy' ? 'bad' : 'warn');
+                const ports = [...r.ports].sort((a, b) => a - b).map((p) => `<span class="docker-compose-port">${esc(p)}</span>`).join(' ');
+                const count = r.count > 1 ? ` <span class="docker-compose-meta">×${r.count}</span>` : '';
+                return `<tr data-docker-compose-service="${esc(r.name)}">
+                    <td><span class="docker-compose-svcname">${esc(r.name)}${count}</span><span class="docker-compose-svcimg" title="${esc(r.image)}">${esc(r.image)}</span></td>
+                    <td><div class="docker-compose-chips"><span class="config-bm-score slp-badge" data-tone="${this._stateTone(state)}">${esc(state || '—')}</span>${h ? `<span class="config-bm-score slp-badge" data-tone="${htone}">${esc(h)}</span>` : ''}</div></td>
+                    <td>${ports || '<span class="docker-compose-meta">—</span>'}</td>
+                    <td><div class="docker-compose-rowact">${btn('up', '▶', this.t('dockerComposeSvcUp', 'Up {service}', { service: r.name }), r.name)}${btn('pull', '↓', this.t('dockerComposeSvcPull', 'Pull {service}', { service: r.name }), r.name)}${btn('restart', '↻', this.t('dockerComposeSvcRestart', 'Restart {service}', { service: r.name }), r.name)}</div></td></tr>`;
+            }).join('');
+            add(`<table class="docker-compose-svctable"><colgroup><col class="c-name"><col class="c-state"><col class="c-ports"><col class="c-act"></colgroup>
+                <thead><tr><th>${esc(this.t('dockerComposeColService', 'Service'))}</th><th>${esc(this.t('dockerComposeColState', 'Status'))}</th><th>${esc(this.t('dockerComposeColPorts', 'Ports'))}</th><th></th></tr></thead>
+                <tbody>${body}</tbody></table>
+                <p class="docker-compose-legend">${esc(this.t('dockerComposeSvcLegend', 'Up, Pull and Restart here act on one service and lock only its containers.'))}</p>`);
+            return frag;
+        }
+
+        _paintServices() {
+            const b = this._bodies().find((x) => x.getAttribute('data-docker-compose-body') === 'services');
+            if (b && this._data?.state) b.replaceChildren(this._renderServices());
+        }
+
+        _syncPending() {
+            const panel = this._panel;
+            if (!panel) return;
+            const d = this._data || {};
+            const on = Boolean(d.pendingChange) && d.state === 'ok';
+            const chip = panel.querySelector('[data-docker-compose-pending]');
+            if (chip) {
+                chip.hidden = !on;
+                chip.title = this.t('dockerComposePendingTip', 'The file changed after the last Up nextDash ran. Only stacks nextDash started are tracked, so a stack changed outside nextDash is not flagged.');
+            }
+            const dot = panel.querySelector('[data-docker-compose-dot]');
+            if (dot) dot.hidden = !on;
+        }
+
+        /** Asks the files again, only for the flags: the editor and the tabs stay as they are. */
+        async _pendingRefresh() {
+            const project = this._project;
+            let data = null;
+            try {
+                const res = await global.nextDashFetch(this._url('/files'));
+                if (res.ok) data = await res.json();
+            } catch {
+                data = null;
+            }
+            if (!data || this._project !== project || !this._data || this._data.state !== 'ok') return;
+            this._data.pendingChange = data.pendingChange === true;
+            (data.files || []).forEach((nf) => {
+                const f = this._fileById(nf.id);
+                if (f) { f.pendingChange = nf.pendingChange; f.appliedSha256 = nf.appliedSha256; f.sha256 = nf.sha256; }
+            });
+            this._syncPending();
+            this._paintServices();
+            this._syncEditorButtons();
+        }
+
+        async _editFirst() {
+            const f = ((this._data || {}).files || []).find((x) => x.role === 'compose' && x.state === 'ok');
+            this._panel?.querySelector('[data-slp-tab="compose"]')?.click();
+            if (f) await this._edit(f.id);
+        }
+
+        /* ── Check ────────────────────────────────────────────────────── */
+
+        /**
+         * compose config -q on the saved files, or, with staged {file, content},
+         * on that text in place of the file. { ok } or { ok: false, line, column, tail, text }.
+         */
+        async _check(staged = null) {
+            let res = null;
+            let body = null;
+            try {
+                res = await global.nextDashFetch(this._url('/check'), staged
+                    ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(staged) }
+                    : { method: 'POST' });
+                body = await res.json().catch(() => null);
+            } catch {
+                res = null;
+            }
+            if (res && res.ok) return { ok: true };
+            if (res && res.status === 422 && body?.reason === 'compose-yaml') {
+                return { ok: false, line: body.line || 0, column: body.column || 0, tail: [body.message || ''].filter(Boolean) };
+            }
+            if (res && res.status === 413) return { ok: false, text: this.t('dockerComposeCheckTooLarge', 'The text is too large to check before saving. Save it, then Check.') };
+            if (res && res.status === 422 && body?.reason === 'compose-invalid') {
+                const tail = (Array.isArray(body.tail) ? body.tail : []).filter(Boolean);
+                return { ok: false, line: body.line || 0, column: body.column || 0, tail };
+            }
+            const text = (await this.view.actions?.explain?.(res, body, { quiet: true })) || this.t('dockerComposeCheckFailedRun', 'The check could not run.');
+            return { ok: false, text };
+        }
+
+        _checkText(r) {
+            if (r.text) return r.text;
+            const last = (r.tail || []).slice(-1)[0] || '';
+            if (r.line) return this.t('dockerComposeCheckAt', 'Line {line}{column}: {message}', { line: r.line, column: r.column ? `, column ${r.column}` : '', message: last });
+            return last || this.t('dockerComposeInvalidFile', 'Compose rejected this file.');
+        }
+
+        /** Check from the Services note: no editor, so the answer is a toast. */
+        async _checkQuick() {
+            if (this._running) return;
+            const r = await this._check();
+            if (r.ok) this._notify(this.t('dockerComposeCheckPassed', 'Check passed. Nothing was written or started.'), 'success');
+            else this._notify(this._checkText(r), 'error');
+        }
+
+        async _checkEditor() {
+            const ed = this._editing;
+            const ta = this._editor();
+            if (!ed || !ta || ed.checking) return;
+            ed.checking = true;
+            this._syncEditorButtons();
+            const status = this._$('[data-docker-compose-status]');
+            if (status) status.textContent = this.t('dockerComposeChecking', 'Checking…');
+            const text = ta.value;
+            const r = await this._check(ed.dirty ? { file: ed.id, content: text } : null);
+            ed.checking = false;
+            if (!this._editor()) return;
+            if (status) status.textContent = '';
+            this._syncEditorButtons();
+            if (r.ok) {
+                this._setResult('good', this.t('dockerComposeCheckPassedTitle', 'Check passed'), [this.t('dockerComposeCheckPassedBody', 'compose config found no problems. Nothing was written or started.')]);
+                ed.resultAt = text;
+                return r;
+            }
+            ed.resultAt = text;
+            r.failed = true;
+            const where = r.line ? [this.t('dockerComposeCheckWhere', 'Line {line}{column}', { line: r.line, column: r.column ? `, column ${r.column}` : '' })] : (r.text ? [r.text] : []);
+            this._setResult('bad', this.t('dockerComposeCheckFailed', 'Check failed'), where, r.line ? { line: r.line, column: r.column } : null, r.tail);
+            if (r.line) this._goto(r.line, r.column, false);
+            return r;
+        }
+
+        /* ── The result card under the editor ─────────────────────────── */
+
+        _setResult(tone, title, lines, jump, tail) {
+            const host = this._$('[data-docker-compose-result]');
+            if (!host) return;
+            const esc = (v) => this.esc(v);
+            host.className = 'docker-compose-note';
+            host.dataset.tone = tone;
+            host.innerHTML = `<h4>${esc(title)}</h4>${lines.map((l) => `<p>${esc(l)}</p>`).join('')}
+                ${tail && tail.length ? `<pre class="docker-compose-tail">${esc(tail.slice(-8).join('\n'))}</pre>` : ''}
+                ${jump ? `<div class="docker-compose-noterow"><button type="button" class="config-btn config-btn--small" data-docker-compose-editor-action="jump" data-line="${jump.line}" data-col="${jump.column || 1}">${esc(this.t('dockerComposeGoToLine', 'Go to line {n}', { n: jump.line }))}</button></div>` : ''}
+                <div class="docker-compose-noterow" data-docker-compose-result-actions></div>`;
+            host.hidden = false;
+            if (this._editing) this._editing.resultAt = this._editor()?.value ?? null;
+        }
+
+        _clearResult() {
+            const host = this._$('[data-docker-compose-result]');
+            if (host) { host.hidden = true; host.replaceChildren(); }
+            this._hl(0);
+        }
+
+        /* ── Editor line mark, jump ───────────────────────────────────── */
+
+        _lineHeight(ta) {
+            return parseFloat(getComputedStyle(ta).lineHeight) || 18;
+        }
+
+        _hl(line) {
+            const hl = this._$('[data-docker-compose-hl]');
+            if (!hl) return;
+            const ta = this._editor();
+            hl.dataset.line = line ? String(line) : '';
+            hl.hidden = !line;
+            if (line && ta) hl.style.height = `${this._lineHeight(ta)}px`;
+            this._syncHl();
+        }
+
+        _syncHl() {
+            const hl = this._$('[data-docker-compose-hl]');
+            const ta = this._editor();
+            if (!hl || !ta || hl.hidden) return;
+            const line = Number(hl.dataset.line) || 1;
+            const pad = parseFloat(getComputedStyle(ta).paddingTop) || 0;
+            hl.style.transform = `translateY(${pad + (line - 1) * this._lineHeight(ta) - ta.scrollTop}px)`;
+        }
+
+        _goto(line, column, focus = true) {
+            const ta = this._editor();
+            if (!ta) return;
+            const off = this._offsetOf(ta.value, line, column);
+            if (focus) ta.focus();
+            ta.setSelectionRange(off, off);
+            ta.scrollTop = Math.max(0, (line - 3) * this._lineHeight(ta));
+            this._hl(line);
+        }
+
+        /** The editor's error line: the words, a jump link and the line marked. */
+        _showError(text, line, column) {
+            const err = this._$('[data-docker-compose-error]');
+            if (!err) return;
+            err.replaceChildren(document.createTextNode(text));
+            if (line) {
+                err.append(' ');
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'config-btn config-btn--small';
+                b.setAttribute('data-docker-compose-editor-action', 'jump');
+                b.dataset.line = String(line);
+                b.dataset.col = String(column || 1);
+                b.textContent = this.t('dockerComposeGoToLine', 'Go to line {n}', { n: line });
+                err.append(b);
+            }
+            err.hidden = !text;
+            if (this._editing) this._editing.resultAt = this._editor()?.value ?? null;
+            this._hl(line || 0);
+        }
+
+        _editorKey(e) {
+            const ed = this._editing;
+            const ta = e.target;
+            if (!ed) return;
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                const save = this._$('[data-docker-compose-save]');
+                if (save && !save.disabled) void this._save();
+                return;
+            }
+            if (e.key === 'Escape') {
+                // Leaves the field on the next Tab; the panel stays open.
+                ed.tabFree = true;
+                e.stopPropagation();
+                return;
+            }
+            if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+                if (ed.tabFree) return;
+                e.preventDefault();
+                ta.setRangeText('  ', ta.selectionStart, ta.selectionEnd, 'end');
+                ta.dispatchEvent(new Event('input', { bubbles: true }));
+                return;
+            }
+            if (e.key !== 'Shift' && e.key !== 'Tab') ed.tabFree = false;
+        }
+
+        /* ── Diff ─────────────────────────────────────────────────────── */
+
+        /** Lines of a text, without the empty piece a closing newline leaves. */
+        _lines(text) {
+            const l = String(text ?? '').split('\n');
+            if (l.length && l[l.length - 1] === '') l.pop();
+            return l;
+        }
+
+        /**
+         * Line diff of two texts. The unchanged start and end are cut off first,
+         * so a small edit stays cheap in a long file; null when what is left in
+         * the middle is too big to compare here.
+         */
+        _diff(oldText, newText) {
+            const a = this._lines(oldText);
+            const b = this._lines(newText);
+            let pre = 0;
+            while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre += 1;
+            let suf = 0;
+            while (suf < a.length - pre && suf < b.length - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf += 1;
+            const ma = a.slice(pre, a.length - suf);
+            const mb = b.slice(pre, b.length - suf);
+            if (ma.length * mb.length > 4e6) return null;
+            const n = ma.length;
+            const m = mb.length;
+            const w = m + 1;
+            const L = new Uint16Array((n + 1) * w);
+            for (let i = n - 1; i >= 0; i -= 1) {
+                for (let j = m - 1; j >= 0; j -= 1) {
+                    L[i * w + j] = ma[i] === mb[j] ? L[(i + 1) * w + j + 1] + 1 : Math.max(L[(i + 1) * w + j], L[i * w + j + 1]);
+                }
+            }
+            const ops = [];
+            for (let i = 0; i < pre; i += 1) ops.push({ t: '=', s: a[i], i: i + 1, j: i + 1 });
+            let i = 0;
+            let j = 0;
+            while (i < n && j < m) {
+                if (ma[i] === mb[j]) { ops.push({ t: '=', s: ma[i], i: pre + i + 1, j: pre + j + 1 }); i += 1; j += 1; }
+                else if (L[(i + 1) * w + j] >= L[i * w + j + 1]) { ops.push({ t: '-', s: ma[i], i: pre + i + 1 }); i += 1; }
+                else { ops.push({ t: '+', s: mb[j], j: pre + j + 1 }); j += 1; }
+            }
+            while (i < n) { ops.push({ t: '-', s: ma[i], i: pre + i + 1 }); i += 1; }
+            while (j < m) { ops.push({ t: '+', s: mb[j], j: pre + j + 1 }); j += 1; }
+            for (let k = 0; k < suf; k += 1) ops.push({ t: '=', s: a[a.length - suf + k], i: a.length - suf + k + 1, j: b.length - suf + k + 1 });
+            const count = (t) => ops.filter((o) => o.t === t).length;
+            return { ops, added: count('+'), removed: count('-') };
+        }
+
+        /** The unified diff, two lines of context around every change. */
+        _diffHTML(diff, title, legend) {
+            const esc = (v) => this.esc(v);
+            const { ops } = diff;
+            const keep = ops.map(() => false);
+            ops.forEach((o, x) => {
+                if (o.t === '=') return;
+                for (let y = Math.max(0, x - 2); y <= Math.min(ops.length - 1, x + 2); y += 1) keep[y] = true;
+            });
+            let skipped = 0;
+            let rows = '';
+            const gap = () => {
+                if (skipped) rows += `<div class="docker-compose-dl is-gap">${esc(this.t('dockerComposeDiffGap', '⋯ {n} unchanged lines', { n: skipped }))}</div>`;
+                skipped = 0;
+            };
+            ops.forEach((o, x) => {
+                if (!keep[x]) { skipped += 1; return; }
+                gap();
+                const cls = o.t === '+' ? ' is-add' : (o.t === '-' ? ' is-del' : '');
+                rows += `<div class="docker-compose-dl${cls}"><span class="docker-compose-n">${o.i || ''}</span><span class="docker-compose-n">${o.j || ''}</span><span class="docker-compose-sg">${o.t === '+' ? '+' : (o.t === '-' ? '−' : '')}</span><span class="docker-compose-t">${esc(o.s)}</span></div>`;
+            });
+            gap();
+            return `<div class="docker-compose-diff" data-docker-compose-diffbox><div class="docker-compose-diffhead"><span>${esc(title)}</span>
+                <b class="is-add">+${diff.added}</b> <b class="is-del">−${diff.removed}</b>${legend ? `<span class="docker-compose-meta">${esc(legend)}</span>` : ''}</div>${rows}</div>`;
+        }
+
+        _diffMessage(diff) {
+            if (!diff) return `<p class="docker-compose-legend">${this.esc(this.t('dockerComposeDiffTooBig', 'Too many changed lines to compare here.'))}</p>`;
+            if (!diff.added && !diff.removed) return `<p class="docker-compose-legend">${this.esc(this.t('dockerComposeDiffSame', 'No differences.'))}</p>`;
+            return '';
+        }
+
+        /** Chip counts and, when open, the diff under the editor. */
+        _updateDiff() {
+            const ed = this._editing;
+            const ta = this._editor();
+            const chip = this._$('[data-docker-compose-chg]');
+            const host = this._$('[data-docker-compose-diff]');
+            if (!ed || !ta || !chip || !host) return;
+            if (!ed.dirty) {
+                chip.hidden = true;
+                host.hidden = true;
+                ed.diffOpen = false;
+                chip.setAttribute('aria-expanded', 'false');
+                return;
+            }
+            const diff = this._diff(ed.original, ta.value);
+            chip.hidden = false;
+            chip.querySelector('[data-docker-compose-chg-add]').textContent = diff ? `+${diff.added}` : '';
+            chip.querySelector('[data-docker-compose-chg-del]').textContent = diff ? `−${diff.removed}` : '';
+            chip.setAttribute('aria-expanded', String(Boolean(ed.diffOpen)));
+            chip.classList.toggle('is-on', Boolean(ed.diffOpen));
+            host.hidden = !ed.diffOpen;
+            if (ed.diffOpen) {
+                host.innerHTML = diff && (diff.added || diff.removed)
+                    ? this._diffHTML(diff, this.t('dockerComposeDiffSave', 'Your edit against the file on disk')) : this._diffMessage(diff);
+            }
+        }
+
+        /** Buttons in the editor bar follow what the editor can do right now. */
+        _syncEditorButtons() {
+            const ed = this._editing;
+            if (!ed) return;
+            const apply = this._$('[data-docker-compose-apply]');
+            const check = this._$('[data-docker-compose-check]');
+            const pending = Boolean((this._data || {}).pendingChange);
+            if (apply) {
+                const why = this._runBlock();
+                apply.disabled = Boolean(why) || this._running || ed.saving === true || ed.readOnly === true || ed.invalidAt !== null || (!ed.dirty && !pending);
+                apply.title = why || (!ed.dirty && !pending ? this.t('dockerComposeApplyNothing', 'Nothing to apply: the running stack matches the file.') : this.t('dockerComposeApplyHint', 'Save the file, then Up the stack.'));
+            }
+            if (check) {
+                check.disabled = ed.checking === true || ed.saving === true;
+                check.title = this.t('dockerComposeCheckHint', 'Dry run: compose config on this text. Nothing is written or started.');
+            }
+        }
+
+        async _apply() {
+            const ed = this._editing;
+            if (!ed || this._running) return;
+            ed.lastBackup = null;
+            if (ed.dirty) {
+                // Check first: a text compose refuses is never written.
+                const r = await this._checkEditor();
+                if (!r || r.failed) return;
+                const ok = await this._save();
+                if (!ok) return;
+            }
+            const r = await this._run('up', '', { label: this.t('dockerComposeApply', 'Apply') });
+            if (r.skipped || r.ok || !this._editor()) return;
+            this._setResult('warn', this.t('dockerComposeApplyUpFailed', 'The file is saved, but Up failed'), [r.text,
+                ed.lastBackup ? this.t('dockerComposeApplyKept', 'The new file stays as saved. The copy from before is in Backups.') : this.t('dockerComposeApplyKept2', 'The file stays as it is.')]);
+            if (ed.lastBackup) {
+                const row = this._$('[data-docker-compose-result-actions]');
+                row?.insertAdjacentHTML('beforeend', `<button type="button" class="config-btn config-btn--small config-btn--primary" data-docker-compose-editor-action="restore-prev">${this.esc(this.t('dockerComposeRestorePrev', 'Restore previous copy'))}</button>`);
+            }
+        }
+
+        /* ── A backup against the current file ────────────────────────── */
+
+        /** Shows, under its row, what restoring this copy would change. */
+        async _bkDiff(btn) {
+            const li = btn.closest('li');
+            if (!li) return;
+            const next = li.nextElementSibling;
+            if (next?.matches('[data-docker-compose-bkdiffrow]')) {
+                next.remove();
+                btn.setAttribute('aria-expanded', 'false');
+                return;
+            }
+            const id = btn.dataset.file;
+            const stamp = btn.dataset.stamp;
+            const project = this._project;
+            btn.disabled = true;
+            let cur = null;
+            let old = null;
+            try {
+                cur = await this._fetchRaw(id);
+                const res = await global.nextDashFetch(this._url(`/backups/${encodeURIComponent(stamp)}/raw?file=${encodeURIComponent(id)}`));
+                if (res.ok) old = await res.json();
+            } catch {
+                old = null;
+            }
+            btn.disabled = false;
+            if (this._project !== project || !li.isConnected) return;
+            if (!cur || typeof old?.content !== 'string') {
+                this._notify(this.t('dockerComposeBackupReadFailed', 'The copy could not be read. Reading it needs the write token when one is set.'), 'error');
+                return;
+            }
+            const diff = this._diff(cur.content, old.content);
+            const why = this._whyNot(this._fileById(id));
+            const msg = this._diffMessage(diff);
+            const row = document.createElement('li');
+            row.className = 'docker-compose-bkdiffrow';
+            row.setAttribute('data-docker-compose-bkdiffrow', stamp);
+            row.innerHTML = `${msg || this._diffHTML(diff, this.t('dockerComposeDiffRestore', 'Restoring this copy changes the current file like this'),
+                this.t('dockerComposeDiffRestoreLegend', 'Red goes away, green comes back.'))}
+                <div class="docker-compose-editbar"><button type="button" class="config-btn config-btn--small config-btn--primary" data-docker-compose-restore data-file="${this.esc(id)}" data-stamp="${this.esc(stamp)}"${why ? ` disabled title="${this.esc(why)}"` : ''}>${this.esc(this.t('dockerComposeRestoreThis', 'Restore this copy'))}</button>
+                <button type="button" class="config-btn config-btn--small" data-docker-compose-bkdiff data-file="${this.esc(id)}" data-stamp="${this.esc(stamp)}">${this.esc(this.t('dockerComposeClosePreview', 'Close preview'))}</button></div>`;
+            li.after(row);
+            btn.setAttribute('aria-expanded', 'true');
+        }
+
+        /* ── Logs: every service in one stream ─────────────────────────── */
+
+        _stopLogs() {
+            this._logAbort?.abort();
+            this._logAbort = null;
+        }
+
+        _svcColor(i) {
+            return `var(--docker-svc-${(i % 4) + 1})`;
+        }
+
+        /** Builds the Logs tab and follows the stack's stream; again = reconnect, keeping the shell. */
+        async _logsShow(again = false) {
+            const body = this._bodies().find((b) => b.getAttribute('data-docker-compose-body') === 'logs');
+            const d = this._data || {};
+            if (!body) return;
+            if (this._logs && this._logs.project === this._project && !again && this._logAbort) return;
+            const esc = (v) => this.esc(v);
+            if (d.state === 'remote') {
+                body.replaceChildren(this._render('compose'));
+                return;
+            }
+            const names = this._services().map((r) => r.name);
+            this._logs = { project: this._project, names, only: null, lines: 0 };
+            body.innerHTML = `<div class="docker-compose-logtool"><button type="button" class="docker-compose-logchip is-on" data-docker-compose-logchip="">${esc(this.t('dockerComposeLogAll', 'All'))}</button>
+                ${names.map((n, i) => `<button type="button" class="docker-compose-logchip" data-docker-compose-logchip="${esc(n)}"><span class="docker-compose-logsw" style="background:${this._svcColor(i)}"></span>${esc(n)}</button>`).join('')}
+                <span class="docker-compose-follow" data-docker-compose-logstate></span></div>
+                <div class="docker-logs docker-compose-logbox" data-docker-compose-logbox role="log" aria-label="${esc(this.t('dockerComposeLogLabel', 'Logs of every service'))}"></div>
+                <p class="docker-compose-legend">${esc(this.t('dockerComposeLogLegend', 'Merged from the containers\' own logs, in time order, last 200 lines of each.'))}
+                    <button type="button" class="config-btn config-btn--small" data-docker-compose-logreconnect hidden>${esc(this.t('dockerComposeLogReconnect', 'Reconnect'))}</button></p>`;
+            await this._logStream();
+        }
+
+        async _logStream() {
+            this._stopLogs();
+            const logs = this._logs;
+            const box = this._$('[data-docker-compose-logbox]');
+            const state = this._$('[data-docker-compose-logstate]');
+            const again = this._$('[data-docker-compose-logreconnect]');
+            if (!logs || !box) return;
+            const abort = new AbortController();
+            this._logAbort = abort;
+            const setState = (text) => { if (state) state.textContent = text; };
+            if (again) again.hidden = true;
+            setState(this.t('dockerComposeLogConnecting', 'Connecting…'));
+            let res = null;
+            try {
+                res = await global.nextDashFetch(this._url('/logs/stream?tail=200'), { signal: abort.signal, cache: 'no-store' });
+            } catch {
+                res = null;
+            }
+            if (abort.signal.aborted) return;
+            if (!res || !res.ok || !res.body) {
+                setState(res && res.status === 401
+                    ? this.t('dockerLogsNeedsToken', 'Reading logs needs the write token.')
+                    : this.t('dockerLogsUnreachable', 'The log could not be reached.'));
+                if (again) again.hidden = false;
+                return;
+            }
+            setState(this.t('dockerComposeLogFollowing', '● Following'));
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            try {
+                for (;;) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    if (!this._panel?.isConnected || abort.signal.aborted) return;
+                    buffer += decoder.decode(value, { stream: true });
+                    let nl = buffer.indexOf('\n');
+                    const batch = [];
+                    while (nl >= 0) {
+                        const raw = buffer.slice(0, nl).trim();
+                        buffer = buffer.slice(nl + 1);
+                        nl = buffer.indexOf('\n');
+                        if (!raw) continue;
+                        try { batch.push(JSON.parse(raw)); } catch { /* a torn line is skipped */ }
+                    }
+                    if (batch.length) this._logAppend(box, batch);
+                }
+            } catch {
+                // Aborted, or the connection dropped: both end below.
+            }
+            if (abort.signal.aborted) return;
+            setState(this.t('dockerLogsEnded', 'The stream ended — the container stopped, or the connection closed.'));
+            if (again) again.hidden = false;
+        }
+
+        _logAppend(box, batch) {
+            const logs = this._logs;
+            const stick = box.scrollTop + box.clientHeight >= box.scrollHeight - 24;
+            const frag = document.createDocumentFragment();
+            batch.forEach((l) => {
+                const service = String(l.service || '');
+                let idx = logs.names.indexOf(service);
+                if (idx < 0) { logs.names.push(service); idx = logs.names.length - 1; }
+                const row = document.createElement('div');
+                row.className = `docker-compose-lg${l.s === 'err' ? ' is-err' : ''}`;
+                row.dataset.service = service;
+                const time = String(l.t || '').slice(11, 19);
+                const t = document.createElement('span'); t.className = 'docker-compose-lgt'; t.textContent = time;
+                const tag = document.createElement('span'); tag.className = 'docker-compose-lgtag'; tag.style.color = this._svcColor(idx);
+                const i = document.createElement('i'); i.textContent = service; tag.append(i);
+                const m = document.createElement('span'); m.className = 'docker-compose-lgm'; m.textContent = String(l.m ?? '');
+                row.append(t, tag, m);
+                row.hidden = logs.only !== null && logs.only !== service;
+                frag.appendChild(row);
+            });
+            box.appendChild(frag);
+            while (box.childElementCount > 1000) box.firstElementChild.remove();
+            if (stick) box.scrollTop = box.scrollHeight;
+        }
+
+        _logFilter(name) {
+            const logs = this._logs;
+            const box = this._$('[data-docker-compose-logbox]');
+            if (!logs || !box) return;
+            logs.only = name || null;
+            this._panel.querySelectorAll('[data-docker-compose-logchip]').forEach((c) => {
+                c.classList.toggle('is-on', (c.getAttribute('data-docker-compose-logchip') || null) === logs.only);
+            });
+            box.querySelectorAll('.docker-compose-lg').forEach((r) => { r.hidden = logs.only !== null && r.dataset.service !== logs.only; });
+            box.scrollTop = box.scrollHeight;
         }
 
         _notify(text, tone) {
@@ -491,7 +1174,8 @@
                 this._notify(this.t('dockerComposeRawFailed', 'The file could not be opened for editing. Opening it needs the write token when one is set.'), 'error');
                 return;
             }
-            this._editing = { id, sha: raw.sha256, original: raw.content, dirty: false, invalidAt: null };
+            this._editing = { id, sha: raw.sha256, original: raw.content, dirty: false, invalidAt: null, resultAt: null, diffOpen: false, lastBackup: null };
+            this._syncEditorButtons();
             el.replaceWith(this._html(this._editorHTML(f, raw)));
             const ta = this._editor();
             ta?.focus();
@@ -507,9 +1191,11 @@
             return `<div class="docker-compose-file docker-compose-editing" data-docker-compose-file="${esc(f.id)}">
                 <div class="docker-compose-filebar"><span class="docker-compose-path" title="${esc(f.hostPath)}">${esc(f.hostPath)}</span>
                 <span class="docker-compose-dirty" data-docker-compose-dirty hidden>● ${esc(this.t('dockerComposeUnsaved', 'Unsaved changes'))}</span></div>
+                <div class="docker-compose-edwrap"><div class="docker-compose-hlbox" aria-hidden="true"><div class="docker-compose-hl" data-docker-compose-hl hidden></div></div>
                 <textarea class="docker-compose-editor" data-docker-compose-editor spellcheck="false" autocomplete="off" autocapitalize="off"
-                    aria-label="${esc(f.hostPath)}">${esc(raw.content)}</textarea>
+                    aria-label="${esc(f.hostPath)}">${esc(raw.content)}</textarea></div>
                 <p class="docker-compose-yamlerr" data-docker-compose-error role="alert" hidden></p>
+                <div data-docker-compose-result hidden role="status"></div>
                 <div class="docker-compose-conflict" data-docker-compose-conflict hidden>
                     <p>${esc(this.t('dockerComposeConflict', 'The file changed on disk since you opened it. Reload to take the new version, or keep editing: saving then replaces it, and the current file is backed up first.'))}</p>
                     ${btn('conflict-reload', this.t('dockerComposeReload', 'Reload'))}${btn('conflict-keep', this.t('dockerComposeKeep', 'Keep editing'))}
@@ -517,9 +1203,19 @@
                 <div class="docker-compose-readonly" data-docker-compose-readonly hidden></div>
                 <ul class="docker-compose-warnings" data-docker-compose-warnings hidden></ul>
                 <div class="docker-compose-editbar">
-                    ${btn('save', this.t('dockerComposeSave', 'Save'), ' config-btn--primary').replace('<button', '<button disabled data-docker-compose-save')}
+                    ${btn('save', this.t('dockerComposeSave', 'Save')).replace('<button', '<button disabled data-docker-compose-save')}
+                    ${btn('check', this.t('dockerComposeCheck', 'Check')).replace('<button', '<button data-docker-compose-check')}
+                    ${btn('apply', this.t('dockerComposeApply', 'Apply'), ' config-btn--primary').replace('<button', '<button disabled data-docker-compose-apply')}
                     ${btn('reload', this.t('dockerComposeReload', 'Reload'))}${btn('close', this.t('dockerComposeCloseEdit', 'Close'))}
+                    <button type="button" class="docker-compose-chg" data-docker-compose-chg data-docker-compose-editor-action="diff" aria-expanded="false" hidden>${esc(this.t('dockerComposeChanges', 'Changes'))}
+                        <b class="is-add" data-docker-compose-chg-add></b> <b class="is-del" data-docker-compose-chg-del></b></button>
                     <span class="docker-compose-status" data-docker-compose-status role="status"></span>
+                </div>
+                <div data-docker-compose-diff hidden></div>
+                <div class="docker-compose-keys" data-docker-compose-keys>
+                    <span><kbd>${esc(/Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘' : 'Ctrl')}</kbd><kbd>S</kbd> ${esc(this.t('dockerComposeKeySave', 'Save'))}</span>
+                    <span><kbd>Tab</kbd> ${esc(this.t('dockerComposeKeyTab', 'Two spaces'))}</span>
+                    <span><kbd>Esc</kbd> <kbd>Tab</kbd> ${esc(this.t('dockerComposeKeyLeave', 'Leave the field'))}</span>
                 </div></div>`;
         }
 
@@ -534,23 +1230,40 @@
             ed.dirty = ta.value !== ed.original;
             const mark = this._$('[data-docker-compose-dirty]');
             if (mark) mark.hidden = !ed.dirty;
-            // After a refused parse the same text is not sent again.
-            if (ed.invalidAt !== null && ta.value !== ed.invalidAt) {
+            // After a refused parse the same text is not sent again. The marks of a
+            // Check or a failed Up go once the text changes.
+            if (ed.resultAt !== null && ed.resultAt !== undefined && ta.value !== ed.resultAt) {
+                ed.resultAt = null;
                 ed.invalidAt = null;
                 const err = this._$('[data-docker-compose-error]');
                 if (err) err.hidden = true;
+                this._clearResult();
             }
+            if (ed.invalidAt !== null && ta.value !== ed.invalidAt) ed.invalidAt = null;
             const save = this._$('[data-docker-compose-save]');
             if (save) save.disabled = !ed.dirty || ed.invalidAt !== null || ed.saving === true || ed.readOnly === true;
             const status = this._$('[data-docker-compose-status]');
             if (status && ed.dirty) status.textContent = '';
+            this._updateDiff();
+            this._syncEditorButtons();
         }
 
         async _editorAction(action) {
             const ed = this._editing;
             if (!ed) return;
             if (action === 'save') await this._save();
-            else if (action === 'reload' || action === 'conflict-reload') {
+            else if (action === 'check') await this._checkEditor();
+            else if (action === 'apply') await this._apply();
+            else if (action === 'diff') {
+                ed.diffOpen = !ed.diffOpen;
+                this._updateDiff();
+            } else if (action === 'jump') {
+                const b = this._panel?.querySelector('[data-docker-compose-editor-action="jump"]');
+                const line = Number(b?.dataset.line) || 1;
+                this._goto(line, Number(b?.dataset.col) || 1);
+            } else if (action === 'restore-prev') {
+                if (ed.lastBackup) await this._restore(ed.id, ed.lastBackup);
+            } else if (action === 'reload' || action === 'conflict-reload') {
                 if (action === 'reload' && ed.dirty
                     && !(await this._confirm(this.t('dockerComposeDiscardTitle', 'Discard your changes?'),
                         this.t('dockerComposeDiscardBody', 'Reload replaces what you typed with the file on disk.'),
@@ -578,7 +1291,8 @@
                 this._notify(this.t('dockerComposeRawFailed', 'The file could not be opened for editing. Opening it needs the write token when one is set.'), 'error');
                 return;
             }
-            Object.assign(ed, { sha: raw.sha256, original: raw.content, dirty: false, invalidAt: null, diskSha: null, readOnly: false });
+            Object.assign(ed, { sha: raw.sha256, original: raw.content, dirty: false, invalidAt: null, resultAt: null, diskSha: null, readOnly: false, diffOpen: false });
+            this._clearResult();
             ta.value = raw.content;
             ['[data-docker-compose-error]', '[data-docker-compose-conflict]', '[data-docker-compose-readonly]', '[data-docker-compose-warnings]']
                 .forEach((s) => { const n = this._$(s); if (n) n.hidden = true; });
@@ -624,6 +1338,9 @@
             if (res && res.ok) {
                 ed.sha = body?.sha256 || ed.sha;
                 ed.original = content;
+                ed.lastBackup = body?.backup || null;
+                ed.resultAt = null;
+                this._clearResult();
                 const f = this._fileById(ed.id);
                 if (f) { f.sha256 = ed.sha; f.content = content; }
                 this._backups = null;
@@ -640,7 +1357,8 @@
                 if (status) status.textContent = body?.backup
                     ? this.t('dockerComposeSavedBackup', 'Saved. The old file is in Backups.') : this.t('dockerComposeSaved', 'Saved.');
                 if (this._$('[data-slp-tab="backups"].is-active')) void this._loadBackups();
-                return;
+                void this._pendingRefresh();
+                return true;
             }
             const reason = body?.reason;
             if (reason === 'compose-yaml' || reason === 'compose-invalid') {
@@ -649,14 +1367,8 @@
                 const where = y.line
                     ? this.t('dockerComposeYAMLAt', 'Line {line}, column {column}: {message}', { line: y.line, column: y.column || 1, message: y.message || '' })
                     : (y.message || this.t('dockerComposeInvalidFile', 'Compose rejected this file.'));
-                show('[data-docker-compose-error]', where);
-                if (y.line) {
-                    const off = this._offsetOf(content, y.line, y.column);
-                    ta.focus();
-                    ta.setSelectionRange(off, off);
-                    const lh = parseFloat(getComputedStyle(ta).lineHeight) || 18;
-                    ta.scrollTop = Math.max(0, (y.line - 3) * lh);
-                }
+                this._showError(where, y.line || 0, y.column || 1);
+                if (y.line) this._goto(y.line, y.column, true);
             } else if (reason === 'compose-stale') {
                 ed.diskSha = body?.sha256 || null;
                 const box = this._$('[data-docker-compose-conflict]');
@@ -673,6 +1385,7 @@
                 show('[data-docker-compose-error]', text);
             }
             this._dirtyCheck();
+            return false;
         }
 
         /* ── Backups ──────────────────────────────────────────────────── */
@@ -736,6 +1449,7 @@
                 } else {
                     rows = `<ul class="docker-compose-backups">${list.map((b) => `<li data-docker-compose-backup="${esc(b.stamp)}">
                         <span>${esc(this._stampDate(b.stamp))}</span><span class="docker-compose-meta">${esc(b.size >= 1024 ? `${(b.size / 1024).toFixed(1)} KB` : `${b.size} B`)}</span>
+                        <button type="button" class="config-btn config-btn--small" data-docker-compose-bkdiff data-file="${esc(f.id)}" data-stamp="${esc(b.stamp)}" aria-expanded="false">${esc(this.t('dockerComposeDiff', 'Diff'))}</button>
                         <button type="button" class="config-btn config-btn--small" data-docker-compose-restore data-file="${esc(f.id)}" data-stamp="${esc(b.stamp)}"
                             ${fileWhy ? `disabled title="${esc(fileWhy)}"` : ''}>${esc(this.t('dockerComposeRestore', 'Restore'))}</button></li>`).join('')}</ul>`;
                 }

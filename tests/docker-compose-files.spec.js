@@ -24,6 +24,7 @@ test.describe('docker compose files (stack panel)', () => {
   test('Files on the heading shows the file with the secret masked, and Reveal sends the request', async ({ page }) => {
     const state = await open(page, { compose: { media: answer() } });
     await page.locator('[data-docker-stack-files="media"]').click();
+    await page.locator('[data-docker-stack-panel=\"media\"] [data-slp-tab=\"compose\"]').click();
     const panel = page.locator('[data-docker-stack-panel="media"]');
     await expect(panel).toContainText('POSTGRES_PASSWORD');
     await expect(panel.locator('[data-docker-compose-mask]')).toHaveText('••••••');
@@ -42,6 +43,7 @@ test.describe('docker compose files (stack panel)', () => {
   test('unmapped shows the env line and the mount line', async ({ page }) => {
     await open(page, { compose: { media: answer({ files: [file({ state: 'compose-unmapped', content: '', masked: [] })] }) } });
     await page.locator('[data-docker-stack-files="media"]').click();
+    await page.locator('[data-docker-stack-panel=\"media\"] [data-slp-tab=\"compose\"]').click();
     const panel = page.locator('[data-docker-stack-panel="media"]');
     await expect(panel).toContainText('NEXTDASH_COMPOSE_MAP=/opt/stacks:/stacks');
     await expect(panel).toContainText('- /opt/stacks:/stacks:ro');
@@ -60,6 +62,7 @@ test.describe('docker compose files (stack panel)', () => {
   test('Reload makes exactly one more files request', async ({ page }) => {
     const state = await open(page, { compose: { media: answer() } });
     await page.locator('[data-docker-stack-files="media"]').click();
+    await page.locator('[data-docker-stack-panel=\"media\"] [data-slp-tab=\"compose\"]').click();
     await expect(page.locator('[data-docker-stack-panel="media"]')).toContainText('POSTGRES_PASSWORD');
     const n = () => state.calls.filter((c) => c === 'GET /compose/media/files').length;
     const before = n();
@@ -71,6 +74,7 @@ test.describe('docker compose files (stack panel)', () => {
   const panelOf = async (page, opts) => {
     await open(page, opts);
     await page.locator('[data-docker-stack-files="media"]').click();
+    await page.locator('[data-docker-stack-panel=\"media\"] [data-slp-tab=\"compose\"]').click();
     return page.locator('[data-docker-stack-panel="media"]');
   };
 
@@ -129,6 +133,7 @@ test.describe('docker compose files (stack panel)', () => {
     const state = await open(page, { compose: { media: answer() } });
     await page.evaluate(() => { window.nextdashDockerHost = 'd_remote'; });
     await page.locator('[data-docker-stack-files="media"]').click();
+    await page.locator('[data-docker-stack-panel=\"media\"] [data-slp-tab=\"compose\"]').click();
     await expect(page.locator('[data-docker-stack-panel="media"]')).toContainText('Files on another host are not supported yet');
     expect(state.calls.filter((c) => c.startsWith('GET /compose/'))).toHaveLength(0);
   });

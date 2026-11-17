@@ -20,6 +20,7 @@ async function openPanel(page, opts = {}) {
   await expect(page.locator('[data-docker-row]')).toHaveCount(4);
   await page.locator('[data-docker-group]').selectOption('project');
   await page.locator('[data-docker-stack-files="media"]').click();
+  await page.locator('[data-docker-stack-panel=\"media\"] [data-slp-tab=\"compose\"]').click();
   const panel = page.locator('[data-docker-stack-panel="media"]');
   await expect(panel).toContainText('POSTGRES_PASSWORD');
   return { state, panel };

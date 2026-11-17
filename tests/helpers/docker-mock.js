@@ -31,11 +31,11 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     containers: containers || [
       { id: 'a'.repeat(64), shortId: 'a'.repeat(12), name: 'sonarr', image: 'lscr.io/linuxserver/sonarr:latest', tag: 'latest',
         state: 'running', status: 'Up 6 days (healthy)', health: 'healthy', created: 1790000000,
-        ports: [{ private: 8989, public: 8989, type: 'tcp' }], composeProject: 'arr',
+        ports: [{ private: 8989, public: 8989, type: 'tcp' }], composeProject: 'arr', composeService: 'sonarr',
         update: { status: 'available', checkedAt: Date.now() } },
       { id: 'b'.repeat(64), shortId: 'b'.repeat(12), name: 'jellyfin', image: 'jellyfin/jellyfin:10.10', tag: '10.10',
         state: 'running', status: 'Up 12 days', health: '', created: 1790000000,
-        ports: [{ private: 8096, public: 8096, type: 'tcp' }], composeProject: 'media' },
+        ports: [{ private: 8096, public: 8096, type: 'tcp' }], composeProject: 'media', composeService: 'jellyfin' },
       { id: 'c'.repeat(64), shortId: 'c'.repeat(12), name: 'bazarr', image: 'linuxserver/bazarr', tag: 'latest',
         state: 'exited', status: 'Exited (0) 2 hours ago', health: '', created: 1790000000, ports: [] },
       { id: 'd'.repeat(64), shortId: 'd'.repeat(12), name: 'nextdash', image: 'ghcr.io/jordibrouwer/nextdash:latest', tag: 'latest',
@@ -57,9 +57,11 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
     //   state.composeBackups[id]  [{stamp,size}], newest first
     //   state.composeSaveReply    {status, body} to force the next save's answer once
     //   state.composeRun[action]  {fail:true, tail:[...]} to make a run fail
+    // Round 2: state.composeCheck {fail:true, line, column, tail} makes Check fail; state.composeBackupRaw[stamp]
+    // is a backup's text; state.composeLogs is the stack log (NDJSON lines {t,s,m,service,container}).
     // A save containing the word INVALID answers 422 compose-yaml at that line and column.
     if (path.startsWith('/compose/')) {
-      const m = path.match(/^\/compose\/([^/]+)\/(files(?:\/value|\/raw)?|backups(?:\/([^/]+)\/restore)?|up|down|pull)$/);
+      const m = path.match(/^\/compose\/([^/]+)\/(files(?:\/value|\/raw)?|backups(?:\/([^/]+)\/(restore|raw))?|check|logs\/stream|up|down|pull|restart|update)$/);
       const answer = m && state.compose && state.compose[m[1]];
       if (!answer) return json({ error: 'not found' }, 404);
       const fileId = url.searchParams.get('file');
@@ -100,15 +102,30 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
         return json(answer);
       }
       if (what.startsWith('backups')) {
+        if (m[4] === 'raw') return json({ file: fileId, stamp: m[3], content: (state.composeBackupRaw || {})[m[3]] ?? '' });
         if (m[3]) {
           state.composeRestores = [...(state.composeRestores || []), { file: fileId, stamp: m[3], body: JSON.parse(req.postData() || '{}') }];
           return json({ ok: true, sha256: 'restored0000000', backup: '20261116T111500Z', restored: m[3] });
         }
         return json({ file: fileId, backups: (state.composeBackups || {})[fileId] || [] });
       }
-      // up, down, pull: the NDJSON the run route streams (dockerProgressEvent), last line the result.
-      if (['up', 'down', 'pull'].includes(what) && req.method() === 'POST') {
-        state.composeRuns = [...(state.composeRuns || []), `${what}?${url.searchParams.get('stream') === '1' ? 'stream=1' : ''}`];
+      if (what === 'check' && req.method() === 'POST') {
+        state.composeChecks = (state.composeChecks || 0) + 1;
+        state.composeCheckBodies = [...(state.composeCheckBodies || []), req.postData() ? JSON.parse(req.postData()) : null];
+        if (state.composeCheck && state.composeCheck.fail) {
+          const c = state.composeCheck;
+          return json({ reason: 'compose-invalid', exitCode: 15, tail: c.tail || ['yaml: line 3: could not find expected \':\''], line: c.line, column: c.column }, 422);
+        }
+        return json({ ok: true });
+      }
+      if (what === 'logs/stream') {
+        const lines = state.composeLogs || [];
+        return route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: lines.map((l) => JSON.stringify(l)).join('\n') + '\n' });
+      }
+      // up, down, pull, restart, update: the NDJSON the run route streams (dockerProgressEvent), last line the result.
+      if (['up', 'down', 'pull', 'restart', 'update'].includes(what) && req.method() === 'POST') {
+        const svc = url.searchParams.get('service');
+        state.composeRuns = [...(state.composeRuns || []), `${what}${svc ? `/${svc}` : ''}?${url.searchParams.get('stream') === '1' ? 'stream=1' : ''}`];
         if (!state.control) return json({ reason: 'docker-control-off' }, 403);
         if (answer.self) return json({ reason: 'docker-self' }, 403);
         if (answer.state === 'compose-no-labels') return json({ reason: 'compose-no-labels' }, 409);
@@ -116,7 +133,7 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
         const at = Date.now();
         const step = (s, st) => ({ type: 'step', step: s, state: st, at });
         const lines = [step('image', 'start'), step('image', 'done')];
-        if (what === 'up') lines.push(step('validate', 'start'), step('validate', 'done'));
+        if (what === 'up' || what === 'update') lines.push(step('validate', 'start'), step('validate', 'done'));
         lines.push(step('run', 'start'), { type: 'log', text: `${what} ${m[1]}: first line`, at }, { type: 'log', text: `${what} ${m[1]}: second line`, at });
         // The helper is removed inside the run step, so cleanup comes before run's own done/fail.
         if (fail) {
