@@ -1033,20 +1033,27 @@ func TestComposeBackupDiffGates(t *testing.T) {
 	}
 }
 
-func TestDemoDeniesTheRound3WriteRoutes(t *testing.T) {
+// The demo has a stack folder and a daemon that plays the helper (docker_demo_compose.go),
+// so these routes work there: they are allowed, none is denied.
+func TestDemoAllowsTheRound3WriteRoutes(t *testing.T) {
 	for _, route := range []string{
 		"/api/docker/compose/{project}/preview",
 		"/api/docker/compose/{project}/watch/restore",
 		"/api/docker/compose/{project}/watch/dismiss",
 	} {
 		found := false
-		for _, d := range demoDeniedWrites {
+		for _, d := range demoAllowedWrites {
 			if d == route {
 				found = true
 			}
 		}
+		for _, d := range demoDeniedWrites {
+			if d == route {
+				t.Errorf("%s is still denied in the demo", route)
+			}
+		}
 		if !found {
-			t.Errorf("%s is not in demoDeniedWrites", route)
+			t.Errorf("%s is not in demoAllowedWrites", route)
 		}
 	}
 }

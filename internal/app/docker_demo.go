@@ -37,6 +37,10 @@ type demoContainer struct {
 	CPU                                              float64 // percent of one core
 	MemMB                                            int64
 	Logs                                             []string
+	// A compose helper (docker_demo_compose.go): its labels and the code it
+	// exited with, instead of a stack's. Nothing else sets these.
+	Helper   map[string]string
+	ExitCode int
 }
 
 type demoDocker struct {
@@ -50,6 +54,12 @@ type demoDocker struct {
 	images map[string]*demoImage
 	byID   map[string]*demoImage
 	newer  map[string]*demoImage
+	// stacksDir holds the compose files of the demo's stacks; templates is
+	// each container as the demo starts it, which an Up makes again after a
+	// Down; jobs is what each helper was asked to run.
+	stacksDir string
+	templates map[string]demoContainer
+	jobs      map[string]demoHelperJob
 }
 
 // demoImage is one image: its id, the digest the registry knows it by, and
@@ -190,6 +200,9 @@ func (d *demoDocker) reset(now time.Time) {
 			d.newer[ref] = demoImageFor(ref, info[2], info[1])
 		}
 	}
+	// The image the compose helper runs, already on the host: Up has nothing to pull first.
+	helper := demoImageFor(composeHelperImage(), "29.7", "")
+	d.images[composeHelperImage()], d.byID[helper.ID] = helper, helper
 	for i := range list {
 		c := list[i]
 		c.ID = demoID(c.Name)
@@ -201,6 +214,12 @@ func (d *demoDocker) reset(now time.Time) {
 		d.containers[c.ID] = &c
 		d.order = append(d.order, c.ID)
 	}
+	d.jobs = map[string]demoHelperJob{}
+	d.templates = map[string]demoContainer{}
+	for _, c := range d.containers {
+		d.templates[c.Name] = *c
+	}
+	d.writeStacks()
 }
 
 func (d *demoDocker) resolve(idOrName string) *demoContainer {
@@ -236,9 +255,16 @@ func (c *demoContainer) status(now time.Time) string {
 }
 
 func (c *demoContainer) labels() map[string]string {
+	if c.Helper != nil {
+		return c.Helper
+	}
+	dir := demoStackHostDir + "/" + c.Project
 	return map[string]string{
-		"com.docker.compose.project": c.Project,
-		"com.docker.compose.service": c.Name,
+		"com.docker.compose.project":                  c.Project,
+		"com.docker.compose.service":                  c.Name,
+		"com.docker.compose.project.config_files":     dir + "/compose.yml",
+		"com.docker.compose.project.working_dir":      dir,
+		"com.docker.compose.project.environment_file": dir + "/.env",
 	}
 }
 
@@ -337,18 +363,9 @@ func (d *demoDocker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodPost && strings.HasPrefix(path, "/containers/") && path != "/containers/create":
 		d.serveAction(w, r, path)
 	case r.Method == http.MethodDelete && strings.HasPrefix(path, "/containers/"):
-		if c := d.resolve(strings.TrimPrefix(path, "/containers/")); c != nil {
-			delete(d.containers, c.ID)
-			// Out of the order too: a recreate appends a new id, and the old
-			// one would otherwise stay in every list until the next reset.
-			kept := d.order[:0]
-			for _, id := range d.order {
-				if id != c.ID {
-					kept = append(kept, id)
-				}
-			}
-			d.order = kept
-		}
+		// Out of the order too: a recreate appends a new id, and the old one
+		// would otherwise stay in every list until the next reset.
+		d.removeContainer(d.resolve(strings.TrimPrefix(path, "/containers/")))
 		w.WriteHeader(http.StatusNoContent)
 	case r.Method == http.MethodPost && path == "/containers/create":
 		d.serveCreate(w, r, now)
@@ -469,6 +486,10 @@ func (d *demoDocker) serveAction(w http.ResponseWriter, r *http.Request, path st
 		demoJSON(w, http.StatusNotFound, map[string]string{"message": "no such container"})
 		return
 	}
+	if c.Helper != nil {
+		d.serveHelperAction(w, c, rest[slash+1:])
+		return
+	}
 	switch rest[slash+1:] {
 	case "start", "restart", "unpause":
 		c.State = "running"
@@ -500,10 +521,18 @@ func (d *demoDocker) serveCreate(w http.ResponseWriter, r *http.Request, now tim
 		return
 	}
 	var body struct {
-		Image string `json:"Image"`
+		Image      string            `json:"Image"`
+		Entrypoint []string          `json:"Entrypoint"`
+		Cmd        []string          `json:"Cmd"`
+		Env        []string          `json:"Env"`
+		Labels     map[string]string `json:"Labels"`
 	}
 	_ = json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&body)
 	d.seq++
+	if _, helper := body.Labels[dockerHelperLabel]; helper {
+		d.createHelper(w, name, body.Image, body.Entrypoint, body.Cmd, body.Env, body.Labels, now)
+		return
+	}
 	base := demoContainer{Image: body.Image, Project: "infra", CPU: 0.5, MemMB: 64}
 	for _, c := range d.containers {
 		if c.Image == body.Image {
@@ -632,6 +661,16 @@ func startDemoDocker() error {
 	socket := filepath.Join(dir, "docker.sock")
 	listener, err := net.Listen("unix", socket)
 	if err != nil {
+		return err
+	}
+	stacks, err := os.MkdirTemp("", "nds")
+	if err != nil {
+		return err
+	}
+	demoDockerEngine.stacksDir = stacks
+	// The demo's stacks sit under /srv/stacks on its imaginary host, and here
+	// in a folder of their own: the compose panel reads them like a real one.
+	if err := os.Setenv("NEXTDASH_COMPOSE_MAP", demoStackHostDir+":"+stacks); err != nil {
 		return err
 	}
 	demoDockerEngine.reset(time.Now())
